@@ -1,61 +1,44 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { API_URL } from "../data/config";
+import { baseApi } from "./baseApi";
 
-export const quotationApi = createApi({
-  reducerPath: "quotationApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: `${API_URL}/quotation/`,
-    credentials: "include",
-    prepareHeaders: (headers) => {
-      const token = localStorage.getItem("token");
-      if (token) {
-        headers.set("Authorization", `Bearer ${token}`);
-      }
-      headers.set("Content-Type", "application/json");
-      return headers;
-    },
-  }),
-  tagTypes: ["Quotations"],
+export const quotationApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getAllQuotations: builder.query({
-      query: () => "/",
+      query: () => "/quotation/",
       providesTags: ["Quotations"],
     }),
     getQuotationById: builder.query({
-      query: (id) => `/${id}`,
+      query: (id) => `/quotation/${id}`,
       providesTags: (result, error, id) => [{ type: "Quotations", id }],
     }),
     createQuotation: builder.mutation({
       query: (newQuotation) => ({
-        url: "/add",
+        url: "/quotation/add",
         method: "POST",
         body: newQuotation,
       }),
       invalidatesTags: ["Quotations"],
     }),
     updateQuotation: builder.mutation({
-      query: ({ id, updatedQuotation }) => {
-        return {
-          url: `/${id}`,
-          method: "PUT",
-          body: updatedQuotation,
-          headers: {
-            Accept: "application/json",
-          },
-        };
-      },
-      invalidatesTags: (result, error, { id }) => [{ type: "Quotations", id }],
+      query: ({ id, updatedQuotation }) => ({
+        url: `/quotation/${id}`,
+        method: "PUT",
+        body: updatedQuotation,
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "Quotations", id },
+        "Quotations", // ← Also invalidate list
+      ],
     }),
     deleteQuotation: builder.mutation({
       query: (id) => ({
-        url: `/${id}`,
+        url: `/quotation/${id}`,
         method: "DELETE",
       }),
       invalidatesTags: ["Quotations"],
     }),
     exportQuotation: builder.mutation({
       query: (id) => ({
-        url: `/export/${id}`,
+        url: `/quotation/export/${id}`,
         method: "POST",
         headers: {
           Accept:
@@ -63,6 +46,24 @@ export const quotationApi = createApi({
         },
         responseHandler: async (response) => response.blob(),
       }),
+    }),
+    // New endpoints for versioning
+    getQuotationVersions: builder.query({
+      query: (id) => `/quotation/${id}/versions`,
+      providesTags: (result, error, id) => [
+        { type: "Quotations", id },
+        "Quotations",
+      ],
+    }),
+    restoreQuotationVersion: builder.mutation({
+      query: ({ id, version }) => ({
+        url: `/quotation/${id}/restore/${version}`,
+        method: "POST",
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "Quotations", id },
+        "Quotations",
+      ],
     }),
   }),
 });
@@ -74,4 +75,6 @@ export const {
   useUpdateQuotationMutation,
   useDeleteQuotationMutation,
   useExportQuotationMutation,
+  useGetQuotationVersionsQuery,
+  useRestoreQuotationVersionMutation,
 } = quotationApi;

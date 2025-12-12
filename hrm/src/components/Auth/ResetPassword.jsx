@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useResetPasswordMutation } from "../../api/authApi";
-import { toast } from "sonner";
 import logo from "../../assets/img/logo.png";
 import { Spinner } from "react-bootstrap";
-
+import { message } from "antd";
 // Hypothetical query to validate the reset token
 import { useValidateResetTokenQuery } from "../../api/authApi";
 
@@ -23,7 +22,7 @@ const ResetPassword = () => {
 
   useEffect(() => {
     if (validationError) {
-      toast.error(
+      message.error(
         validationError?.data?.message || "Invalid or expired reset link."
       );
       setTimeout(() => navigate("/login"), 2000);
@@ -33,12 +32,12 @@ const ResetPassword = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validationData?.email) {
-      toast.error("Invalid or missing verification data.");
+      message.error("Invalid or missing verification data.");
       setTimeout(() => navigate("/login"), 2000);
       return;
     }
     if (newPassword !== confirmPassword) {
-      toast.error("Passwords do not match");
+      message.error("Passwords do not match");
       return;
     }
 
@@ -50,7 +49,7 @@ const ResetPassword = () => {
       }).unwrap();
       setTimeout(() => navigate("/login"), 2000);
     } catch (error) {
-      toast.error(error?.data?.message || "Failed to reset password");
+      message.error(error?.data?.message || "Failed to reset password");
     }
   };
 

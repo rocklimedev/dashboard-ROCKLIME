@@ -1,35 +1,35 @@
 import React, { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useVerifyAccountMutation } from "../../api/authApi";
-import { toast } from "sonner";
 import logo from "../../assets/img/logo.png";
-import { Spinner } from "react-bootstrap";
-
+import { message } from "antd";
 const AccountVerify = () => {
   const navigate = useNavigate();
   const { token } = useParams();
-  const [verifyAccount, { isLoading }] = useVerifyAccountMutation();
+  const [verifyAccount] = useVerifyAccountMutation();
 
   useEffect(() => {
     const verifyToken = async () => {
       if (!token || typeof token !== "string" || token.trim() === "") {
-        toast.error("Invalid verification link.");
+        message.error("Invalid verification link.");
         setTimeout(() => navigate("/login"), 2000);
         return;
       }
 
       try {
-        const response = await verifyAccount({ token }).unwrap();
-
-        setTimeout(() => navigate("/login"), 2000); // Redirect to login
+        await verifyAccount({ token }).unwrap();
+        message.success("Account verified successfully!");
+        setTimeout(() => navigate("/login"), 2000);
       } catch (error) {
-        toast.error(error?.data?.message || "Failed to verify account.");
+        const message = error?.data?.message || "Failed to verify account.";
+        message.error(message);
         setTimeout(() => navigate("/login"), 2000);
       }
     };
 
     verifyToken();
   }, [token, verifyAccount, navigate]);
+
   return (
     <div className="main-wrapper">
       <div className="account-content">
@@ -44,35 +44,20 @@ const AccountVerify = () => {
                   <div className="card-body p-5 text-center">
                     <div className="login-userheading">
                       <h3>Account Verification</h3>
-                      <h4>
-                        {isLoading
-                          ? "Verifying your account..."
-                          : "Processing your verification link"}
-                      </h4>
+                      <h4>Please wait while we verify your account...</h4>
                     </div>
-                    <div className="form-login">
+                    <div className="form-login mt-4">
                       <button
                         className="btn btn-login"
-                        disabled={isLoading}
                         onClick={() => navigate("/login")}
+                        style={{ minWidth: "140px" }}
                       >
-                        {isLoading ? (
-                          <>
-                            <Spinner
-                              as="span"
-                              animation="border"
-                              size="sm"
-                              role="status"
-                              aria-hidden="true"
-                              className="me-2"
-                            />
-                            Verifying...
-                          </>
-                        ) : (
-                          "Go to Login"
-                        )}
+                        Go to Login
                       </button>
                     </div>
+                    <p className="text-muted mt-3">
+                      You will be redirected shortly...
+                    </p>
                   </div>
                 </div>
               </div>

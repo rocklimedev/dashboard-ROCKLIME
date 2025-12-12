@@ -1,29 +1,73 @@
 import React, { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { ChevronsLeft } from "react-feather";
 import masterRoutes from "../../data/routes";
 import logo from "../../assets/img/logo.png";
 import logo_small from "../../assets/img/fav_icon.png";
 import { DownCircleOutlined } from "@ant-design/icons";
-
+import { BiLogOut } from "react-icons/bi";
+import { useAuth } from "../../context/AuthContext";
+import { useLogoutMutation } from "../../api/authApi";
+import { message } from "antd";
 const SidebarNew = ({
   isSidebarOpen,
   toggleSidebar,
   layoutMode = "vertical",
 }) => {
+  const navigate = useNavigate();
   const [openMenu, setOpenMenu] = useState(null);
+  const { auth, logout } = useAuth();
+  const [logoutMutation, { isLoading: isLoggingOut }] = useLogoutMutation();
 
   const toggleDropdown = (index) => {
-    setOpenMenu((prevIndex) => (prevIndex === index ? null : index));
+    setOpenMenu((prev) => (prev === index ? null : index));
   };
 
-  // Close all submenus when a route is clicked
-  const handleRouteClick = () => {
-    setOpenMenu(null);
+  const handleRouteClick = () => setOpenMenu(null);
+
+  // --------------------------------------------------------------
+  // 1. Roles allowed to see restricted sections
+  // --------------------------------------------------------------
+  const RESTRICTED_ROLES = ["SUPER_ADMIN", "DEVELOPER", "ADMIN"];
+
+  const canSeeMasterTable = auth?.role && RESTRICTED_ROLES.includes(auth.role);
+  const canSeePurchaseOrders =
+    auth?.role && RESTRICTED_ROLES.includes(auth.role);
+
+  const handleLogout = async () => {
+    try {
+      await logoutMutation().unwrap();
+      await logout();
+      navigate("/login", { replace: true });
+    } catch (error) {
+      message.error("Logout failed. Please try again.");
+    }
   };
+
+  // --------------------------------------------------------------
+  // 2. Filter routes: hide Master Table & Purchase Orders if not allowed
+  // --------------------------------------------------------------
+  const visibleRoutes = masterRoutes.filter((section) => {
+    // Hide "Master Table"
+    if (section.name === "Master Table") {
+      return canSeeMasterTable;
+    }
+
+    // Hide "Purchase Orders" (top-level route)
+    if (section.name === "Purchase Orders") {
+      return canSeePurchaseOrders;
+    }
+
+    // For any other section, respect isSidebarActive
+    return section.isSidebarActive;
+  });
 
   const VerticalSidebar = () => (
-    <div className={`sidebar ${isSidebarOpen ? "active" : ""}`} id="sidebar">
+    <div
+      className={`sidebar d-flex flex-column ${isSidebarOpen ? "active" : ""}`}
+      id="sidebar"
+    >
+      {/* ---------- LOGO ---------- */}
       <div className={`sidebar-logo ${isSidebarOpen ? "active" : ""}`}>
         <NavLink to="/" className="logo logo-normal">
           <img src={logo} alt="Logo" />
@@ -31,26 +75,28 @@ const SidebarNew = ({
         <NavLink to="/" className="logo-small">
           <img src={logo_small} alt="Logo" />
         </NavLink>
+        <NavLink to="/" className="logo logo-white">
+          <img src={logo} alt="Logo" />
+        </NavLink>
+
         <a
           id="toggle_btn"
           href="#"
           onClick={(e) => {
             e.preventDefault();
-            if (window.innerWidth < 768) {
-              toggleSidebar(!isSidebarOpen);
-            }
+            if (window.innerWidth < 768) toggleSidebar(!isSidebarOpen);
           }}
         >
           <ChevronsLeft size={16} />
         </a>
       </div>
 
-      <div className="sidebar-inner slimscroll">
-        <div id="sidebar-menu" className="sidebar-menu">
-          <ul>
-            {masterRoutes
-              .filter((section) => section.isSidebarActive)
-              .map((section, index) => (
+      {/* ---------- MENU SECTION ---------- */}
+      <div className="flex-grow-1 d-flex flex-column overflow-hidden">
+        <div className="sidebar-inner slimscroll flex-grow-1">
+          <div id="sidebar-menu" className="sidebar-menu">
+            <ul>
+              {visibleRoutes.map((section, index) => (
                 <li
                   key={index}
                   className={section.submenu?.length ? "submenu" : ""}
@@ -78,6 +124,8 @@ const SidebarNew = ({
                       <span>{section.name}</span>
                     </NavLink>
                   )}
+
+                  {/* Submenu rendering (unchanged) */}
                   {section.submenu?.length > 0 && (
                     <ul
                       className={
@@ -120,6 +168,7 @@ const SidebarNew = ({
                                 <span>{sub.name}</span>
                               </NavLink>
                             )}
+
                             {sub.submenu?.length > 0 && (
                               <ul
                                 className={
@@ -152,6 +201,44 @@ const SidebarNew = ({
                   )}
                 </li>
               ))}
+            </ul>
+          </div>
+        </div>
+
+        {/* ---------- LOGOUT BUTTON AT BOTTOM ---------- */}
+        <div className="sidebar-menu">
+          <ul>
+            <li>
+              <a
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleLogout();
+                }}
+                className={`d-flex align-items-center gap-2 text-danger ${
+                  isSidebarOpen ? "" : "justify-content-center"
+                }`}
+                style={{
+                  cursor: "pointer",
+                  fontWeight: 500,
+                  borderRadius: "8px",
+                  padding: isSidebarOpen ? "10px 12px" : "10px",
+                  transition: "background 0.2s ease",
+                }}
+                title={!isSidebarOpen ? "Logout" : ""}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.background = "#f8d7da")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.background = "transparent")
+                }
+              >
+                <BiLogOut size={20} />
+                {isSidebarOpen && (
+                  <span>{isLoggingOut ? "Logging out..." : "Logout"}</span>
+                )}
+              </a>
+            </li>
           </ul>
         </div>
       </div>

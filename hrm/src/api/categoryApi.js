@@ -1,15 +1,9 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { API_URL } from "../data/config";
-export const categoryApi = createApi({
-  reducerPath: "categoryApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: `${API_URL}/category`,
-  }), // Update with your actual backend URL
-  tagTypes: ["Category"],
+import { baseApi } from "./baseApi";
+export const categoryApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     createCategory: builder.mutation({
       query: (categoryData) => ({
-        url: "/",
+        url: "/category/",
         method: "POST",
         body: categoryData,
         credentials: "include", // Include cookies if using authentication
@@ -17,16 +11,16 @@ export const categoryApi = createApi({
       invalidatesTags: ["Category"],
     }),
     getAllCategories: builder.query({
-      query: () => "/all",
+      query: () => "/category/all",
       providesTags: ["Category"],
     }),
     getCategoryById: builder.query({
-      query: (id) => `/${id}`,
+      query: (id) => `/category/${id}`,
       providesTags: ["Category"],
     }),
     updateCategory: builder.mutation({
       query: ({ id, updatedData }) => ({
-        url: `/${id}`,
+        url: `/category/${id}`,
         method: "PUT",
         body: updatedData,
       }),
@@ -34,7 +28,7 @@ export const categoryApi = createApi({
     }),
     deleteCategory: builder.mutation({
       query: (id) => ({
-        url: `/${id}`,
+        url: `/category/${id}`,
         method: "DELETE",
       }),
       invalidatesTags: ["Category"],

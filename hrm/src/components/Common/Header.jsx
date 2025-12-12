@@ -1,202 +1,273 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import { useGetProfileQuery } from "../../api/userApi";
-
-import { Dropdown, Button, Menu } from "antd";
-import { FaUserCircle } from "react-icons/fa";
+import { useGetCartQuery } from "../../api/cartApi";
+import { useGetNotificationsQuery } from "../../api/notificationApi";
+import { Dropdown, Button, Menu, Badge } from "antd";
+import { FaUserCircle, FaSearch, FaBell, FaEllipsisV } from "react-icons/fa";
+import { SettingOutlined } from "@ant-design/icons";
 import { BiFullscreen, BiLogOut } from "react-icons/bi";
-import { toast } from "sonner";
+import { message } from "antd";
 import Avatar from "react-avatar";
 import logo from "../../assets/img/logo.png";
 import logo_small from "../../assets/img/fav_icon.png";
-
+import { CgShoppingCart } from "react-icons/cg";
 import { useLogoutMutation } from "../../api/authApi";
 import { useAuth } from "../../context/AuthContext";
-import { FaEllipsisV } from "react-icons/fa";
-
-const styles = `
-  .circular-avatar {
-    width: 100% !important;
-    height: 100% !important;
-    border-radius: 50% !important;
-    object-fit: cover;
-    display: inline-block;
-    overflow: hidden;
-  }
-  .avatar-container {
-    width: 40px;
-    height: 40px;
-    display: inline-block;
-  }
-  .menu-avatar-container {
-    width: 50px;
-    height: 50px;
-    display: inline-block;
-  }
-  .mobile-user-menu {
-    z-index: 1100 !important;
-  }
-  .mobile-dropdown .ant-dropdown {
-    z-index: 1100 !important;
-  }
-  @media (max-width: 991.96px) {
-    .mobile-user-menu {
-      display: block !important;
-      position: relative;
-      right: 10px;
-      padding: 0 10px;
-    }
-    .mobile-menu-button {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px !important;
-      padding: 10px !important;
-      color: #212b36 !important;
-      background: transparent !important;
-    }
-    .mobile-dropdown .ant-dropdown {
-      width: 200px !important;
-      max-width: 90vw !important;
-      top: 100% !important;
-      left: auto !important;
-      right: 0 !important;
-    }
-  }
-  .header {
-    overflow: visible !important;
-  }
-  .main-header {
-    overflow: visible !important;
-  }
-`;
-
-const styleSheet = document.createElement("style");
-styleSheet.type = "text/css";
-styleSheet.innerText = styles;
-document.head.appendChild(styleSheet);
+import { SunFilled, MoonFilled } from "@ant-design/icons";
+import PermissionsGate from "../../context/PermissionGate";
 
 const Header = ({ toggleSidebar, isSidebarOpen }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  // === Queries ===
   const {
     data: user,
     isLoading: isProfileLoading,
     error: profileError,
   } = useGetProfileQuery();
+
+  const userId = user?.user?.userId;
+  const userRoles = user?.user?.roles || [];
+  const hasAdminOrDevAccess =
+    userRoles.includes("SUPER_ADMIN") || userRoles.includes("DEVELOPER");
+
+  const { data: cart } = useGetCartQuery(userId, {
+    skip: !userId,
+  });
+
+  const { data: notifications } = useGetNotificationsQuery(userId, {
+    skip: !userId,
+  });
+
   const [logoutMutation, { isLoading: isLoggingOut }] = useLogoutMutation();
+
+  // === State ===
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const { logout } = useAuth();
+  const [darkMode, setDarkMode] = useState(() => {
+    return localStorage.getItem("theme") === "dark";
+  });
 
-  const handleLogout = async () => {
-    try {
-      await logoutMutation().unwrap();
-      await logout();
-      navigate("/login", { replace: true });
-    } catch (error) {
-      toast.error("Logout failed. Please try again.");
-    }
-  };
+  // === Dark Mode Effect ===
+  useEffect(() => {
+    const theme = darkMode ? "dark" : "light";
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("theme", theme);
+  }, [darkMode]);
 
-  const handleFullscreenToggle = () => {
+  // === Handlers (Memoized) ===
+  const toggleDarkMode = useCallback(() => {
+    setDarkMode((prev) => !prev);
+  }, []);
+
+  const handleFullscreenToggle = useCallback(() => {
     if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen();
+      document.documentElement.requestFullscreen?.();
       setIsFullscreen(true);
-    } else if (document.exitFullscreen) {
-      document.exitFullscreen();
+    } else {
+      document.exitFullscreen?.();
       setIsFullscreen(false);
     }
-  };
+  }, []);
 
-  const userMenu = (
-    <Menu className="shadow-sm rounded menu-drop-user" style={{ zIndex: 1100 }}>
-      <Menu.Item
-        key="profile-header"
-        className="d-flex align-items-center p-3 profileset"
-      >
-        <span className="menu-avatar-container me-2">
-          <Avatar
-            name={user?.user?.name || "John Smilga"}
-            src={user?.user?.profileImage || "/assets/img/profiles/avator1.jpg"}
-            size="50"
-            round={true}
-            className="circular-avatar"
-            color="#e31e24"
-          />
-        </span>
-        <div>
-          <h6 className="fw-medium mb-0">
-            {user?.user?.name || "John Smilga"}
-          </h6>
-          <p className="mb-0">{user?.user?.roles?.join(", ") || "Admin"}</p>
-        </div>
-      </Menu.Item>
-      <Menu.Divider />
-      <Menu.Item key="profile">
-        <div onClick={() => navigate(`/u/${user?.user?.userId || "profile"}`)}>
-          <FaUserCircle className="me-2" /> My Profile
-        </div>
-      </Menu.Item>
+  const handleLogout = useCallback(async () => {
+    try {
+      await logoutMutation().unwrap();
+      logout();
+      navigate("/login", { replace: true });
+    } catch (error) {
+      message.error("Logout failed. Please try again.");
+    }
+  }, [logoutMutation, logout, navigate]);
 
-      <Menu.Divider />
-      <Menu.Item
-        key="logout"
-        onClick={handleLogout}
-        disabled={isLoggingOut}
-        className="d-flex align-items-center logout pb-0"
+  // === Counters ===
+  const notificationCount = useMemo(() => {
+    return notifications?.filter((n) => !n.read).length || 0;
+  }, [notifications]);
+
+  const cartItemCount = useMemo(() => {
+    return cart?.cart?.items?.length || 0;
+  }, [cart]);
+
+  // === Desktop User Menu ===
+  const userMenu = useMemo(
+    () => (
+      <Menu
+        className="shadow-sm rounded menu-drop-user"
+        style={{ zIndex: 1100 }}
       >
-        <BiLogOut className="me-2" />
-        {isLoggingOut ? "Logging out..." : "Logout"}
-      </Menu.Item>
-    </Menu>
+        <Menu.Item
+          key="profile-header"
+          className="d-flex align-items-center p-3 profileset"
+          disabled
+        >
+          <div>
+            <h6 className="fw-medium mb-0">
+              @{user?.user?.username || "John Smilga"}
+            </h6>
+          </div>
+        </Menu.Item>
+        <Menu.Divider />
+        <Menu.Item
+          key="profile"
+          onClick={() => navigate(`/u/${userId}`)}
+          icon={<FaUserCircle className="me-2" />}
+        >
+          Profile
+        </Menu.Item>
+        <Menu.Item
+          key="settings"
+          onClick={() => navigate("/settings")}
+          icon={<SettingOutlined className="me-2" />}
+        >
+          Settings
+        </Menu.Item>
+        {/* Conditionally render Logging for SUPER_ADMIN or DEVELOPER */}
+        {hasAdminOrDevAccess && (
+          <>
+            <Menu.Divider />
+            <Menu.Item
+              key="logging"
+              onClick={() => navigate("/logging")}
+              icon={<SettingOutlined className="me-2" />}
+            >
+              Logging
+            </Menu.Item>
+          </>
+        )}
+        <Menu.Divider />
+        <Menu.Item
+          key="logout"
+          onClick={handleLogout}
+          disabled={isLoggingOut}
+          icon={<BiLogOut className="me-2" />}
+        >
+          {isLoggingOut ? "Logging out..." : "Logout"}
+        </Menu.Item>
+      </Menu>
+    ),
+    [
+      user?.user?.username,
+      user?.user?.roles,
+      userId,
+      navigate,
+      handleLogout,
+      isLoggingOut,
+      hasAdminOrDevAccess, // Add dependency
+    ]
   );
 
-  const mobileMenuItems = [
-    {
-      key: "profile",
-      label: "My Profile",
-      icon: <FaUserCircle className="me-2" />,
-      onClick: () => navigate(`/u/${user?.user?.userId || "profile"}`),
-    },
+  const mobileMenuItems = useMemo(() => {
+    const items = [
+      {
+        key: "profile",
+        label: "My Profile",
+        icon: <FaUserCircle className="me-2" />,
+        onClick: () => navigate(`/u/${userId}`),
+      },
+      {
+        key: "settings",
+        label: "Settings",
+        icon: <SettingOutlined className="me-2" />,
+        onClick: () => navigate("/settings"),
+      },
+      {
+        key: "notifications",
+        label: (
+          <div className="d-flex justify-content-between align-items-center w-100">
+            <span>Notifications</span>
+            {notificationCount > 0 && (
+              <Badge count={notificationCount} size="small" showZero={false} />
+            )}
+          </div>
+        ),
+        icon: <FaBell className="me-2" />,
+        onClick: () => navigate("/notifications"),
+      },
+      {
+        key: "cart",
+        label: (
+          <div className="d-flex justify-content-between align-items-center w-100">
+            <span>Cart</span>
+            {cartItemCount > 0 && (
+              <Badge count={cartItemCount} size="small" showZero={false} />
+            )}
+          </div>
+        ),
+        icon: <CgShoppingCart className="me-2" />,
+        onClick: () => navigate("/cart"),
+      },
+      {
+        key: "fullscreen",
+        label: isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen",
+        icon: <BiFullscreen className="me-2" />,
+        onClick: handleFullscreenToggle,
+      },
+      {
+        key: "darkmode",
+        label: darkMode ? "Light Mode" : "Dark Mode",
+        icon: darkMode ? <SunFilled /> : <MoonFilled />,
+        onClick: toggleDarkMode,
+      },
+    ];
 
-    {
-      key: "fullscreen",
-      label: isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen",
-      icon: <BiFullscreen className="me-2" />,
-      onClick: handleFullscreenToggle,
-    },
-    {
+    // Insert Logging item before Logout if user has access
+    if (hasAdminOrDevAccess) {
+      items.push({
+        key: "logging",
+        label: "Logging",
+        icon: <SettingOutlined className="me-2" />,
+        onClick: () => navigate("/logging"),
+      });
+    }
+
+    items.push({
       key: "logout",
       label: isLoggingOut ? "Logging out..." : "Logout",
       icon: <BiLogOut className="me-2" />,
       onClick: handleLogout,
       disabled: isLoggingOut,
-    },
-  ];
+    });
+
+    return items;
+  }, [
+    userId,
+    navigate,
+    notificationCount,
+    cartItemCount,
+    isFullscreen,
+    darkMode,
+    isLoggingOut,
+    handleFullscreenToggle,
+    toggleDarkMode,
+    handleLogout,
+    hasAdminOrDevAccess, // Add dependency
+  ]);
 
   return (
     <div className="header">
       <div className="main-header">
+        {/* Logo */}
         <div className="header-left active">
           <Link to="/" className="logo logo-normal">
             <img src={logo} alt="Logo" />
           </Link>
           <Link to="/" className="logo logo-white">
-            <img src={logo_small} alt="Logo" />
+            <img src={logo} alt="Logo" />
           </Link>
           <Link to="/" className="logo-small">
-            <img src={logo_small} alt="Logo" />
+            <img src={logo} alt="Logo" />
           </Link>
         </div>
 
+        {/* Mobile Toggle */}
         <a
           className="mobile_btn"
-          onClick={() => {
-            if (window.innerWidth < 992) {
-              toggleSidebar(!isSidebarOpen);
-            }
-          }}
-          aria-label="Toggle sidebar"
+          onClick={() =>
+            window.innerWidth < 992 && toggleSidebar(!isSidebarOpen)
+          }
           id="mobile_btn"
         >
           <span className="bar-icon">
@@ -206,41 +277,86 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
           </span>
         </a>
 
+        {/* Desktop Nav */}
         <ul className="nav user-menu">
           <li className="nav-item nav-searchinputs">
             {/* <div className="top-nav-search">
-              <Button
-                type="link"
-                className="responsive-search d-md-none"
-                aria-label="Search"
-              >
-                <FaSearch />
-              </Button>
-              <div className="d-none d-md-block">
-                 <SearchDropdown /> 
-              </div>
-            </div> */}
+          <Button
+            type="link"
+            className="responsive-search d-md-none"
+            aria-label="Search"
+          >
+            <FaSearch />
+          </Button>
+          <div className="d-none d-md-block">
+             <SearchDropdown /> 
+          </div>
+        </div> */}
           </li>
 
+          {/* Fullscreen */}
           <li className="nav-item nav-item-box">
             <Button
               type="link"
-              id="btnFullscreen"
               onClick={handleFullscreenToggle}
               title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
-              aria-label={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
             >
               <BiFullscreen />
             </Button>
           </li>
 
+          {/* Notifications with Badge */}
+          <li className="nav-item nav-item-box">
+            <Link to="/notifications" style={{ position: "relative" }}>
+              <Badge
+                count={notificationCount}
+                size="small"
+                offset={[-5, 5]}
+                showZero={false}
+              >
+                <FaBell style={{ fontSize: 18 }} />
+              </Badge>
+            </Link>
+          </li>
+          <PermissionsGate api="write" module="cart">
+            {/* Cart with Badge */}
+            <li className="nav-item nav-item-box">
+              <Link to="/cart" style={{ position: "relative" }}>
+                <Badge
+                  count={cartItemCount}
+                  size="small"
+                  offset={[-5, 5]}
+                  showZero={false}
+                >
+                  <CgShoppingCart style={{ fontSize: 20 }} />
+                </Badge>
+              </Link>
+            </li>
+          </PermissionsGate>
+
+          {/* Dark Mode (Desktop) */}
+          <li className="nav-item nav-item-box d-none d-lg-flex">
+            <Button
+              type="link"
+              onClick={toggleDarkMode}
+              title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {darkMode ? <SunFilled /> : <MoonFilled />}
+            </Button>
+          </li>
+
+          {/* User Dropdown */}
           <li className="nav-item dropdown main-drop profile-nav">
             {isProfileLoading ? (
               <span className="text-muted">Loading...</span>
             ) : profileError ? (
-              <span className="text-danger">Error loading profile</span>
-            ) : user ? (
-              <Dropdown overlay={userMenu} trigger={["click"]}>
+              <span className="text-danger">Error</span>
+            ) : (
+              <Dropdown
+                overlay={userMenu}
+                trigger={["click"]}
+                getPopupContainer={(trigger) => trigger.parentElement}
+              >
                 <a
                   href="#"
                   className="nav-link userset"
@@ -249,24 +365,26 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                   <span className="user-info p-0">
                     <span className="user-letter avatar-container">
                       <Avatar
-                        name={user?.user?.name || "John Smilga"}
+                        name={user?.user?.name || "User"}
                         src={
-                          user?.user?.profileImage ||
-                          "/assets/img/profiles/avator1.jpg"
+                          user?.user?.photo_thumbnail ||
+                          user?.user?.profileImage
                         }
-                        size="40"
+                        size={40} // important – tell the library the exact size
                         round={true}
                         className="circular-avatar"
-                        color="#e31e24"
+                        textSizeRatio={2.2}
+                        maxInitials={2}
                       />
                     </span>
                   </span>
                 </a>
               </Dropdown>
-            ) : null}
+            )}
           </li>
         </ul>
 
+        {/* Mobile Menu */}
         <div
           className="mobile-user-menu"
           style={{ position: "relative", zIndex: 1100 }}
@@ -274,15 +392,21 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
           <Dropdown
             menu={{ items: mobileMenuItems }}
             trigger={["click"]}
-            placement={window.innerWidth < 992 ? "bottom" : "bottomRight"}
+            placement="bottom"
             overlayClassName="mobile-dropdown"
             getPopupContainer={(trigger) => trigger.parentElement}
           >
             <Button
               type="text"
               icon={<FaEllipsisV />}
-              aria-label="More options"
               className="mobile-menu-button"
+              style={{
+                width: 40,
+                height: 40,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
             />
           </Dropdown>
         </div>

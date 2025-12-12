@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Container, Row, Col, Button } from "react-bootstrap";
-import { toast } from "sonner";
+import { Button, Space, Typography, Result, ConfigProvider } from "antd";
+import { message } from "antd";
 import { useResendVerificationEmailMutation } from "../../api/authApi";
 import { useGetProfileQuery } from "../../api/userApi";
 import { useAuth } from "../../context/AuthContext";
-import { BiLogOut } from "react-icons/bi";
+import { LogoutOutlined } from "@ant-design/icons";
 import "./NoAccess.css";
+
+const { Title, Paragraph, Text } = Typography;
 
 const NoAccess = () => {
   const { auth, logout } = useAuth();
@@ -32,7 +34,6 @@ const NoAccess = () => {
     try {
       roles = JSON.parse(roles);
     } catch (e) {
-      console.error("Failed to parse roles:", e);
       roles = [];
     }
   }
@@ -44,7 +45,7 @@ const NoAccess = () => {
   // Handle profile fetch errors
   useEffect(() => {
     if (profileError) {
-      toast.error("Failed to fetch user profile.");
+      message.error("Failed to fetch user profile.");
     }
   }, [profileError]);
 
@@ -64,122 +65,171 @@ const NoAccess = () => {
     try {
       await refetchProfile();
     } catch (error) {
-      toast.error("Failed to retry. Please try again.");
+      message.error("Failed to retry. Please try again.");
     }
   };
 
   const handleLogout = async () => {
     try {
       await logout();
-      toast.success("Logged out successfully.");
       navigate("/login", { replace: true });
     } catch (error) {
-      toast.error("Logout failed. Please try again.");
+      message.error("Logout failed. Please try again.");
     }
   };
 
   const handleResendVerification = async () => {
     if (!user?.email) {
-      toast.error("No email found for your account.");
+      message.error("No email found for your account.");
       return;
     }
     try {
       await resendVerificationEmail({ email: user.email }).unwrap();
       setEmailSent(true);
       setTimer(60);
-      toast.success("Verification email sent! Please check your inbox.");
+      message.success("Verification email sent! Please check your inbox.");
     } catch (error) {
       const errorMessage =
         error?.data?.message || "Failed to resend verification email.";
-      toast.error(errorMessage);
+      message.error(errorMessage);
     }
   };
 
-  if (isFetchingProfile) {
-    return (
-      <Container className="text-center py-5">
-        <p>Loading user data...</p>
-      </Container>
-    );
-  }
+  // Removed loading state UI — assume global loader in App.jsx
 
   if (!user) {
     return (
-      <Container className="text-center py-5">
-        <p>
-          Unable to load user data. <Button onClick={handleRetry}>Retry</Button>
-        </p>
-      </Container>
+      <div className="main-wrapper">
+        <div className="content">
+          <Result
+            status="500"
+            title="Unable to Load User Data"
+            extra={
+              <Button type="primary" onClick={handleRetry}>
+                Retry
+              </Button>
+            }
+          />
+        </div>
+      </div>
     );
   }
 
   return (
-    <div className="main-wrapper">
-      <div className="content">
-        <Container className="text-center py-5">
-          <Row className="justify-content-center">
-            <Col md={6}>
-              <div className="no-access-icon" />
-              <h2 className="mt-4">Access Denied</h2>
-              <p className="text-muted">
-                You are successfully registered but currently don’t have access
-                to the portal.
-              </p>
-              <p className="text-muted">
-                Email Verification:{" "}
+    <ConfigProvider
+      theme={{
+        token: {
+          colorPrimary: "#f97316", // orange-500
+          fontSize: 16,
+        },
+      }}
+    >
+      <div className="main-wrapper">
+        <div className="content">
+          <div
+            style={{
+              maxWidth: 600,
+              margin: "0 auto",
+              padding: "40px 20px",
+              textAlign: "center",
+            }}
+          >
+            <div className="no-access-icon" style={{ marginBottom: 24 }} />
+            <Title level={2}>Access Denied</Title>
+
+            <Paragraph type="secondary">
+              You are successfully registered but currently don’t have access to
+              the portal.
+            </Paragraph>
+
+            <Space direction="vertical" size="small" style={{ width: "100%" }}>
+              <Text strong>Email Verification:</Text>
+              <Text type={isEmailVerified ? "success" : "danger"}>
                 {isEmailVerified ? "Verified" : "Not Verified"}
-              </p>
-              <p className="text-muted">
-                Roles: {roles.length > 0 ? roles.join(", ") : "None"}
-              </p>
-              {!isEmailVerified && (
-                <p className="text-warning">
-                  Your email address is not verified. Please check your inbox or
-                  click the button below to resend the verification email.
-                </p>
+              </Text>
+            </Space>
+
+            <Space
+              direction="vertical"
+              size="small"
+              style={{ marginTop: 16, width: "100%" }}
+            >
+              <Text strong>Roles:</Text>
+              <Text type="secondary">
+                {roles.length > 0 ? roles.join(", ") : "None"}
+              </Text>
+            </Space>
+
+            {!isEmailVerified && (
+              <Paragraph type="warning" style={{ marginTop: 16 }}>
+                Your email address is not verified. Please check your inbox or
+                click the button below to resend the verification email.
+              </Paragraph>
+            )}
+
+            {accessRoles.length === 0 && (
+              <Paragraph type="secondary" style={{ marginTop: 16 }}>
+                Please contact an administrator to assign you a role.
+              </Paragraph>
+            )}
+
+            {emailSent && (
+              <Paragraph type="success" style={{ marginTop: 16 }}>
+                Verification email sent. Redirecting to login in{" "}
+                <strong>{timer}</strong> seconds.
+              </Paragraph>
+            )}
+
+            <Space
+              direction="vertical"
+              size="middle"
+              style={{ marginTop: 32, width: "100%" }}
+            >
+              <Space size="middle">
+                <Button
+                  type="primary"
+                  onClick={handleRetry}
+                  loading={isFetchingProfile}
+                >
+                  Retry
+                </Button>
+                <Button danger icon={<LogoutOutlined />} onClick={handleLogout}>
+                  Logout
+                </Button>
+              </Space>
+
+              {needsVerification && !emailSent && (
+                <Button
+                  type="default"
+                  style={{
+                    backgroundColor: "#faad14",
+                    borderColor: "#faad14",
+                    color: "white",
+                  }}
+                  onClick={handleResendVerification}
+                  loading={isResending}
+                  disabled={isFetchingProfile}
+                >
+                  {isResending ? "Resending..." : "Resend Verification Email"}
+                </Button>
               )}
-              {accessRoles.length === 0 && (
-                <p className="text-muted">
-                  Please contact an administrator to assign you a role.
-                </p>
-              )}
-              {emailSent && (
-                <p className="text-success">
-                  Verification email sent. Redirecting to login in {timer}{" "}
-                  seconds.
-                </p>
-              )}
-              <div className="d-flex flex-column align-items-center gap-3 mt-4">
-                <div className="d-flex gap-3">
-                  <Button
-                    variant="primary"
-                    onClick={handleRetry}
-                    disabled={isFetchingProfile}
-                  >
-                    Retry
-                  </Button>
-                  <Button variant="outline-danger" onClick={handleLogout}>
-                    <BiLogOut /> Logout
-                  </Button>
-                </div>
-                {needsVerification && !emailSent && (
-                  <Button
-                    variant="warning"
-                    onClick={handleResendVerification}
-                    disabled={isResending || isFetchingProfile}
-                  >
-                    {isResending ? "Resending..." : "Resend Verification Email"}
-                  </Button>
-                )}
-                <Link to="/login" className="text-orange fs-16 fw-medium">
-                  Return to Login
-                </Link>
-              </div>
-            </Col>
-          </Row>
-        </Container>
+
+              <Link
+                to="/login"
+                style={{
+                  color: "#f97316",
+                  fontSize: 16,
+                  fontWeight: 500,
+                  textDecoration: "underline",
+                }}
+              >
+                Return to Login
+              </Link>
+            </Space>
+          </div>
+        </div>
       </div>
-    </div>
+    </ConfigProvider>
   );
 };
 

@@ -25,9 +25,7 @@ const Loader = ({ loading }) => {
         role="status"
         variant="primary"
         style={{ width: "3rem", height: "3rem" }}
-      >
-        <span className="visually-hidden">Loading...</span>
-      </Spinner>
+      />
     </div>
   );
 };

@@ -1,27 +1,39 @@
+// src/pages/auth/Login.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useLoginMutation } from "../../api/authApi";
-import { toast } from "sonner";
 import { useAuth } from "../../context/AuthContext";
 import logo from "../../assets/img/logo.png";
 import { FaEnvelope, FaEye, FaEyeSlash } from "react-icons/fa";
-
+import { message } from "antd";
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [loginMutation, { isLoading }] = useLoginMutation();
+  const [loginMutation] = useLoginMutation();
   const { login: authLogin, auth } = useAuth();
   const navigate = useNavigate();
 
+  // Redirect if already logged in
+  useEffect(() => {
+    if (auth?.token) {
+      navigate("/", { replace: true });
+    }
+  }, [auth?.token, navigate]);
+
+  // Early return to avoid flash
+  if (auth?.token) return null;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
       const response = await loginMutation({ email, password }).unwrap();
       const token = response.accessToken;
       if (!token) throw new Error("No access token received");
 
+      // Store token
       if (rememberMe) {
         localStorage.setItem("token", token);
         sessionStorage.removeItem("token");
@@ -31,17 +43,11 @@ const Login = () => {
       }
 
       await authLogin(token, response.user || null);
-      // Let App.js handle redirects
+      navigate("/", { replace: true });
     } catch (err) {
-      toast.error("Login failed! " + (err?.data?.message || err.message));
+      message.error("Login failed! " + (err?.data?.message || err.message));
     }
   };
-
-  useEffect(() => {
-    if (auth?.token && auth?.user) {
-      navigate("/", { replace: true });
-    }
-  }, [auth, navigate]);
 
   return (
     <div className="account-content">
@@ -56,12 +62,15 @@ const Login = () => {
                   style={{ width: "177px", height: "auto" }}
                 />
               </div>
+
               <div className="login-userheading">
                 <h3>Sign In</h3>
                 <h4 className="fs-16">
                   Access the panel using your email and passcode.
                 </h4>
               </div>
+
+              {/* Email Field */}
               <div className="mb-3">
                 <label className="form-label">
                   Email <span className="text-danger">*</span>
@@ -80,6 +89,8 @@ const Login = () => {
                   </span>
                 </div>
               </div>
+
+              {/* Password Field */}
               <div className="mb-3">
                 <label className="form-label">
                   Password <span className="text-danger">*</span>
@@ -96,11 +107,18 @@ const Login = () => {
                   <span
                     className="input-group-text border-start-0 cursor-pointer"
                     onClick={() => setShowPassword(!showPassword)}
+                    onKeyDown={(e) =>
+                      e.key === "Enter" && setShowPassword(!showPassword)
+                    }
+                    tabIndex={0}
+                    role="button"
                   >
                     {showPassword ? <FaEyeSlash /> : <FaEye />}
                   </span>
                 </div>
               </div>
+
+              {/* Remember Me + Forgot Password */}
               <div className="form-login authentication-check">
                 <div className="row">
                   <div className="col-12 d-flex align-items-center justify-content-between">
@@ -123,31 +141,24 @@ const Login = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Submit Button */}
               <div className="form-login">
                 <button
                   type="submit"
                   className="btn btn-primary w-100 d-flex align-items-center justify-content-center"
-                  disabled={isLoading}
+                  style={{ minHeight: "44px" }}
+                  disabled={false} // Let global loader handle it
                 >
-                  {isLoading ? (
-                    <>
-                      <span
-                        className="spinner-border spinner-border-sm me-2"
-                        role="status"
-                        aria-hidden="true"
-                      ></span>
-                      Signing In...
-                    </>
-                  ) : (
-                    "Sign In"
-                  )}
+                  Sign In
                 </button>
               </div>
+
+              {/* Sign Up Link */}
               <div className="signinform text-center">
                 <h4>
-                  New on our platform?
+                  New on our platform?{" "}
                   <Link to="/signup" className="hover-a">
-                    {" "}
                     Create an account
                   </Link>
                 </h4>

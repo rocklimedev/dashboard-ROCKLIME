@@ -1,0 +1,352 @@
+/* product-details.css */
+
+/* root layout */
+.pd-root {
+    font-family: "Lato";
+  color: #646b72;
+  background-color: #f7f7f7;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+/* breadcrumbs */
+.pd-breadcrumbs {
+  margin-bottom: 18px;
+}
+
+/* main two-column visual area */
+.pd-main {
+  display: grid;
+  gap: 28px;
+}
+
+/* visual + summary layout */
+.pd-visual {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 28px;
+  align-items: start;
+}
+
+/* gallery */
+.pd-gallery {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 18px;
+  box-shadow: 0 6px 18px rgba(16,24,40,0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pd-gallery__hero {
+  width: 100%;
+  height: 420px;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg,#ffffff,#fbfdff);
+}
+
+.pd-hero-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.pd-gallery__thumbs {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-top: 8px;
+}
+
+.pd-thumb {
+  border: none;
+  background: transparent;
+  padding: 4px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: transform .12s ease, box-shadow .12s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 64px;
+  min-height: 64px;
+}
+
+.pd-thumb__img {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.pd-thumb--active {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(13, 38, 59, 0.08);
+  outline: 2px solid rgba(59,130,246,0.14);
+}
+
+/* summary card */
+.pd-summary {
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(16,24,40,0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pd-title {
+  font-size: 22px;
+  margin: 0 0 6px 0;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.pd-pricing {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.pd-price__mrp {
+  text-decoration: line-through;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.pd-price__current {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+/* description */
+.pd-description {
+  color: #374151;
+  font-size: 14px;
+  margin: 6px 0 0 0;
+  line-height: 1.5;
+}
+
+/* quantity + action row */
+.pd-qty-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.pd-qty-label {
+  font-weight: 600;
+  color: #374151;
+  min-width: 70px;
+}
+
+.pd-qty-input {
+  width: 120px;
+}
+
+
+
+/* barcode */
+.pd-barcode {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.pd-barcode__svg {
+  width: 180px;
+  height: 60px;
+  background: #fff;
+  border-radius: 6px;
+  padding: 6px;
+  box-shadow: 0 4px 12px rgba(16,24,40,0.04);
+}
+
+/* meta info */
+.pd-meta {
+  margin-top: 14px;
+  font-size: 13px;
+  color: #374151;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Tabs area */
+.pd-tabs {
+  margin-top: 22px;
+  background: transparent;
+}
+
+/* tab content */
+.pd-tab-content {
+  background: #fff;
+  padding: 18px;
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(16,24,40,0.04);
+}
+
+.pd-info-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.pd-info-list li {
+  padding: 8px 0;
+  border-bottom: 1px dashed #eef2f7;
+  display: flex;
+  gap: 10px;
+}
+
+.pd-info-list li span {
+  min-width: 120px;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* related grid */
+.pd-related {
+  margin-top: 22px;
+}
+
+.pd-related__header {
+  margin-bottom: 12px;
+}
+
+.pd-related__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+}
+/* ==========================================================================
+   DARK MODE – PRODUCT DETAILS
+   ========================================================================== */
+html[data-theme="dark"] .pd-root {
+  background-color: #1a1a1a;
+  color: #e0e0e0;
+}
+
+/* Breadcrumbs */
+html[data-theme="dark"] .ant-breadcrumb a,
+html[data-theme="dark"] .ant-breadcrumb span {
+  color: #e0e0e0;
+}
+html[data-theme="dark"] .ant-breadcrumb a:hover {
+  color: #e31e24;
+}
+
+/* Gallery */
+html[data-theme="dark"] .pd-gallery,
+html[data-theme="dark"] .pd-summary,
+html[data-theme="dark"] .pd-tab-content {
+  background: #2d2d2d;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+}
+
+html[data-theme="dark"] .pd-gallery__hero {
+  background: linear-gradient(180deg, #2d2d2d, #242424);
+}
+
+/* Text */
+html[data-theme="dark"] .pd-title,
+html[data-theme="dark"] .pd-price__current,
+html[data-theme="dark"] .pd-qty-label,
+html[data-theme="dark"] .pd-meta strong,
+html[data-theme="dark"] .pd-info-list li span {
+  color: #e0e0e0;
+}
+
+html[data-theme="dark"] .pd-price__mrp,
+html[data-theme="dark"] .pd-description,
+html[data-theme="dark"] .pd-meta,
+html[data-theme="dark"] .pd-info-list li {
+  color: #aaaaaa;
+}
+
+/* Barcode */
+html[data-theme="dark"] .pd-barcode__svg {
+  background: #333;
+  fill: #e0e0e0;
+}
+html[data-theme="dark"] .pd-barcode__svg text {
+  fill: #e0e0e0 !important;
+}
+html[data-theme="dark"] .pd-barcode__svg path {
+  stroke: #e0e0e0 !important;
+}
+
+/* Tabs */
+html[data-theme="dark"] .ant-tabs-tab {
+  color: #aaaaaa;
+}
+html[data-theme="dark"] .ant-tabs-tab-active .ant-tabs-tab-btn,
+html[data-theme="dark"] .ant-tabs-tab:hover .ant-tabs-tab-btn {
+  color: #e31e24;
+}
+html[data-theme="dark"] .ant-tabs-ink-bar {
+  background: #e31e24;
+}
+
+/* InputNumber */
+html[data-theme="dark"] .ant-input-number {
+  background: #333;
+  border-color: #555;
+  color: #e0e0e0;
+}
+html[data-theme="dark"] .ant-input-number-input {
+  background: transparent;
+  color: #e0e0e0;
+}
+html[data-theme="dark"] .ant-input-number-handler-wrap {
+  background: #333;
+  border-left-color: #555;
+}
+html[data-theme="dark"] .ant-input-number-handler {
+  color: #aaa;
+}
+html[data-theme="dark"] .ant-input-number-handler:hover {
+  color: #e31e24;
+}
+
+/* Buttons */
+html[data-theme="dark"] .ant-btn-primary {
+  background: #e31e24;
+  border-color: #e31e24;
+}
+html[data-theme="dark"] .ant-btn-primary:hover {
+  background: #c71a20;
+  border-color: #c71a20;
+}
+html[data-theme="dark"] .ant-btn-default {
+  background: #333;
+  border-color: #555;
+  color: #e0e0e0;
+}
+html[data-theme="dark"] .ant-btn-default:hover {
+  background: #444;
+  border-color: #e31e24;
+  color: #e31e24;
+}
+
+/* Related Products Header */
+html[data-theme="dark"] .pd-related__header h3 {
+  color: #e0e0e0;
+}
+
+/* Fix AntD Spin in dark mode */
+html[data-theme="dark"] .ant-spin-dot-item {
+  background-color: #e31e24;
+}
