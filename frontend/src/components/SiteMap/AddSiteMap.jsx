@@ -243,37 +243,64 @@ const AddSiteMap = () => {
 
     setFormData((prev) => ({ ...prev, floorDetails: newFloors }));
   }, [formData.totalFloors]);
-
-  // Search Handlers
-  const debouncedSearch = useCallback(
-    debounce((val, list, setter) => {
-      if (!val?.trim()) return setter([]);
-      const term = val.toLowerCase().trim();
-      const filtered = list
-        .filter((p) => {
-          const name = (
-            p.name ||
-            p.meta?.["d11da9f9-3f2e-4536-8236-9671200cca4a"] ||
-            ""
-          ).toLowerCase();
-          const code = (p.product_code || "").toLowerCase();
-          return name.includes(term) || code.includes(term);
-        })
-        .slice(0, 30);
-      setter(filtered);
-    }, 300),
-    []
-  );
-
-  const handleProductSearch = (val) => {
-    setProductSearch(val);
-    debouncedSearch(val, normalProducts, setFilteredProducts);
+  // Helper to get best possible display name
+  const getDisplayName = (p) => {
+    if (p.name && typeof p.name === "string" && p.name.trim())
+      return p.name.trim();
+    if (
+      p.product_code &&
+      typeof p.product_code === "string" &&
+      p.product_code.trim()
+    )
+      return p.product_code.trim();
+    if (
+      p.meta?.["d11da9f9-3f2e-4536-8236-9671200cca4a"] &&
+      typeof p.meta["d11da9f9-3f2e-4536-8236-9671200cca4a"] === "string"
+    )
+      return p.meta["d11da9f9-3f2e-4536-8236-9671200cca4a"].trim();
+    return "Unknown Product";
   };
 
-  const handleConcealedSearch = (val) => {
-    setConcealedSearch(val);
-    debouncedSearch(val, concealedProducts, setFilteredConcealed);
+  // Helper for searchable text
+  // Helper for searchable text — completely safe
+  const getSearchableText = (p) => {
+    const parts = [
+      p.name,
+      p.product_code,
+      p.meta?.["d11da9f9-3f2e-4536-8236-9671200cca4a"],
+      p.description,
+      p.category?.name,
+    ]
+      .filter(Boolean) // removes null, undefined, "", false
+      .map((s) => {
+        if (typeof s === "string") {
+          return s.toLowerCase().trim();
+        }
+        return "";
+      })
+      .filter(Boolean); // remove empty strings after trim
+
+    return parts.join(" ");
   };
+
+  // Live filtered lists — no debounce, no flicker, instant
+  const filteredVisibleProducts = useMemo(() => {
+    if (!productSearch.trim()) return normalProducts.slice(0, 50); // show recent/popular
+
+    const term = productSearch.toLowerCase().trim();
+    return normalProducts
+      .filter((p) => getSearchableText(p).includes(term))
+      .slice(0, 50);
+  }, [productSearch, normalProducts]);
+
+  const filteredConcealedProducts = useMemo(() => {
+    if (!concealedSearch.trim()) return concealedProducts.slice(0, 50);
+
+    const term = concealedSearch.toLowerCase().trim();
+    return concealedProducts
+      .filter((p) => getSearchableText(p).includes(term))
+      .slice(0, 50);
+  }, [concealedSearch, concealedProducts]);
 
   const getProductId = (p) => p.productId || p.id;
 
@@ -758,9 +785,14 @@ const AddSiteMap = () => {
                             <Card
                               key={room.room_id}
                               size="small"
-                              title={`${room.room_name} ${
-                                room.room_type && <Tag>{room.room_type}</Tag>
-                              }`}
+                              title={
+                                <span>
+                                  {room.room_name}{" "}
+                                  {room.room_type && (
+                                    <Tag color="blue">{room.room_type}</Tag>
+                                  )}
+                                </span>
+                              }
                               extra={
                                 <Space>
                                   <Button
@@ -785,19 +817,26 @@ const AddSiteMap = () => {
                               <Select
                                 showSearch
                                 placeholder="Search & add visible product..."
-                                onSearch={handleProductSearch}
-                                onChange={(pid) =>
+                                onSearch={setProductSearch} // ← Direct, instant
+                                onChange={(pid) => {
                                   addProduct(
                                     floor.floor_number,
                                     room.room_id,
                                     pid,
                                     false
-                                  )
-                                }
+                                  );
+                                  setProductSearch(""); // ← Clear after select
+                                }}
                                 value={null}
+                                filterOption={false} // ← We handle filtering
+                                notFoundContent={
+                                  productSearch
+                                    ? "No products found"
+                                    : "Start typing to search..."
+                                }
                                 style={{ width: "100%", marginBottom: 16 }}
                               >
-                                {filteredProducts.map((p) => (
+                                {filteredVisibleProducts.map((p) => (
                                   <Option
                                     key={getProductId(p)}
                                     value={getProductId(p)}
@@ -806,12 +845,36 @@ const AddSiteMap = () => {
                                       style={{
                                         display: "flex",
                                         justifyContent: "space-between",
+                                        alignItems: "center",
                                       }}
                                     >
-                                      <strong>
-                                        {p.name || p.product_code}
-                                      </strong>
-                                      <span>
+                                      <div>
+                                        <div>
+                                          <strong>{getDisplayName(p)}</strong>
+                                        </div>
+                                        {(p.product_code ||
+                                          p.meta?.[
+                                            "d11da9f9-3f2e-4536-8236-9671200cca4a"
+                                          ]) && (
+                                          <div
+                                            style={{
+                                              fontSize: 11,
+                                              color: "#888",
+                                            }}
+                                          >
+                                            {p.product_code ||
+                                              p.meta[
+                                                "d11da9f9-3f2e-4536-8236-9671200cca4a"
+                                              ]}
+                                          </div>
+                                        )}
+                                      </div>
+                                      <span
+                                        style={{
+                                          color: "#52c41a",
+                                          fontWeight: "bold",
+                                        }}
+                                      >
                                         ₹
                                         {Number(
                                           p.meta?.[
@@ -823,7 +886,6 @@ const AddSiteMap = () => {
                                   </Option>
                                 ))}
                               </Select>
-
                               <Table
                                 size="small"
                                 pagination={false}
@@ -916,26 +978,39 @@ const AddSiteMap = () => {
                 <Select
                   showSearch
                   placeholder="Search concealed products..."
-                  onSearch={handleConcealedSearch}
+                  onSearch={setConcealedSearch}
                   onChange={setSelectedConcealedProduct}
                   value={selectedConcealedProduct || undefined}
+                  filterOption={false}
+                  notFoundContent={
+                    concealedSearch
+                      ? "No concealed items found"
+                      : "Type to search concealed works..."
+                  }
                   style={{ width: "100%" }}
                 >
-                  {filteredConcealed.map((p) => (
+                  {filteredConcealedProducts.map((p) => (
                     <Option key={getProductId(p)} value={getProductId(p)}>
                       <div
                         style={{
                           display: "flex",
                           justifyContent: "space-between",
+                          alignItems: "center",
                         }}
                       >
                         <div>
-                          <strong>{p.name || p.product_code}</strong>
-                          <Tag color="volcano" style={{ marginLeft: 8 }}>
-                            Concealed
-                          </Tag>
+                          <div>
+                            <strong>{getDisplayName(p)}</strong>
+                          </div>
+                          <div style={{ fontSize: 11, color: "#888" }}>
+                            {p.product_code ||
+                              p.meta?.[
+                                "d11da9f9-3f2e-4536-8236-9671200cca4a"
+                              ] ||
+                              "Concealed Item"}
+                          </div>
                         </div>
-                        <span>
+                        <span style={{ color: "#ff4d4f", fontWeight: "bold" }}>
                           ₹
                           {Number(
                             p.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"] ||
@@ -946,7 +1021,6 @@ const AddSiteMap = () => {
                     </Option>
                   ))}
                 </Select>
-
                 {selectedConcealedProduct && (
                   <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
                     <Select
