@@ -119,7 +119,7 @@ const getAllRolePermissionsByRoleId = async (req, res) => {
       include: [
         {
           model: Role,
-          as: "roles",
+          as: "role",
           attributes: ["roleId", "roleName"],
         },
         {
@@ -194,7 +194,7 @@ const getRolePermissionByRoleIdAndPermissionId = async (req, res) => {
       include: [
         {
           model: Role,
-          as: "roles",
+          as: "role",
           attributes: ["roleId", "roleName"],
         },
         {
@@ -244,7 +244,7 @@ const getAllRolePermissions = async (req, res) => {
       include: [
         {
           model: Role,
-          as: "roles",
+          as: "role",
           attributes: ["roleId", "roleName"],
         },
         {
