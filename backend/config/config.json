@@ -3,21 +3,21 @@
     "username": "spsyn8lm_rocklime_dash",
     "password": "rocklime@2025",
     "database": "spsyn8lm_rocklime_dashboard",
-    "host": "119.18.54.11",
+    "host": "127.0.0.1",
     "dialect": "mysql"
   },
   "test": {
     "username": "spsyn8lm_rocklime_dash",
     "password": "rocklime@2025",
     "database": "spsyn8lm_rocklime_dashboard",
-    "host": "119.18.54.11",
+    "host": "127.0.0.1",
     "dialect": "mysql"
   },
   "production": {
     "username": "spsyn8lm_rocklime_dash",
     "password": "rocklime@2025",
     "database": "spsyn8lm_rocklime_dashboard",
-    "host": "119.18.54.11",
+    "host": "127.0.0.1",
     "dialect": "mysql"
   }
 }
