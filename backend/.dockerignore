@@ -1,18 +1,9 @@
 node_modules
 npm-debug.log
-Dockerfile
-docker-compose.yml
-.dockerignore
 .git
 .gitignore
-.vscode
-.env
-.env.local
-.env.production.local
-*.log
-dist
-build
-.cache
-.next
-LICENSE
 README.md
+.dockerignore
+.env.example
+uploads/*
+!.env  # We want to copy .env during build if needed, but better to mount from host
