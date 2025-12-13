@@ -1,19 +1,20 @@
-FROM node:22-alpine
+# Use official Node.js LTS
+FROM node:20-alpine
 
-# Set work directory
+# Set working directory
 WORKDIR /app
 
-# Only copy package files first
+# Copy package files
 COPY package*.json ./
 
-# Install dependencies (production only)
-RUN npm ci --only=production
+# Install dependencies
+RUN npm install --production
 
-# Copy rest of project
+# Copy source code
 COPY . .
 
-# Expose backend port
+# Expose port
 EXPOSE 4000
 
-# Default command
-CMD ["npm", "start"]
+# Start the app
+CMD ["node", "index.js"]

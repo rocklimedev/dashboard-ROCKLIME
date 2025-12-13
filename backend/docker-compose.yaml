@@ -1,11 +1,24 @@
-version: "3"
-
 services:
   backend:
-    container_name: backend
-    image: myusername/my-backend:latest
-    env_file:
-      - .env.production
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ghcr.io/rocklimedev/dashboard-rocklime-backend:latest # ← lowercase + -backend
+    container_name: cmtrading-api
+    restart: unless-stopped
     ports:
       - "4000:4000"
-    restart: always
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - ./.env:/app/.env:ro
+      - uploads:/app/uploads
+    networks:
+      - app-network
+
+volumes:
+  uploads:
+
+networks:
+  app-network:
+    driver: bridge
