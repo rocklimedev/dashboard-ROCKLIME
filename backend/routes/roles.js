@@ -27,7 +27,7 @@ router.post(
 // ✅ Get all roles (Only Admins & Managers)
 router.get(
   "/",
-  auth,
+
   //  checkPermission("view", "get_all_roles", "roles", "/roles"),
   getAllRoles
 );

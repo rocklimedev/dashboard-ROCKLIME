@@ -1,7 +1,7 @@
 const { v4: uuidv4 } = require("uuid");
 const { ROLES } = require("../config/constant");
 const { Op } = require("sequelize");
-const { User, Permission, Roles, RolePermission } = require("../models");
+const { User, Permission, Role, RolePermission } = require("../models");
 const assignRole = async (userId, role) => {
   try {
     const user = await User.findOne({ where: { id: userId } });
@@ -12,7 +12,7 @@ const assignRole = async (userId, role) => {
     }
 
     // Fetch roleId from Roles table
-    const roleData = await Roles.findOne({ where: { roleName: role } });
+    const roleData = await Role.findOne({ where: { roleName: role } });
 
     if (!roleData) {
       return { success: false, message: "Invalid role specified" };
@@ -31,7 +31,6 @@ const assignRole = async (userId, role) => {
       }
     }
 
-    // Assigning roles
     let userRoles = user.roles ? user.roles.split(",") : [];
 
     if (role === "Users") {
@@ -43,10 +42,9 @@ const assignRole = async (userId, role) => {
         userRoles.push(role);
       }
       user.roles = userRoles.join(",");
-      user.roleId = roleId; // Now dynamically assigned from Roles table
+      user.roleId = roleId;
       user.status = "active";
     }
-
     await user.save();
     return { success: true, message: `Role ${role} assigned successfully` };
   } catch (error) {
@@ -69,7 +67,7 @@ const getRecentRoleToGive = async () => {
         ],
         status: { [Op.ne]: "restricted" },
       },
-      include: [{ model: Roles, attributes: ["id", "name"] }], // Include role details
+      include: [{ model: Role, attributes: ["id", "name"] }], // Include role details
     });
 
     // If no users are found or all users have roleId assigned
@@ -89,19 +87,19 @@ const checkUserRoleStatus = async () => {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-    const usersToUpdate = await User.find({
-      roleId: null,
-      createdAt: { $lte: sevenDaysAgo },
-      status: { $ne: "inactive" },
-    });
-
-    if (usersToUpdate.length > 0) {
-      await User.updateMany(
-        { _id: { $in: usersToUpdate.map((user) => user._id) } },
-        { $set: { status: "inactive" } }
-      );
-    }
-  } catch (error) {}
+    await User.update(
+      { status: "inactive" },
+      {
+        where: {
+          roleId: null,
+          createdAt: { [Op.lte]: sevenDaysAgo },
+          status: { [Op.ne]: "inactive" },
+        },
+      }
+    );
+  } catch (error) {
+    console.error("Error in checkUserRoleStatus:", error);
+  }
 };
 
 // Create a new role
@@ -110,7 +108,7 @@ const createRole = async (req, res) => {
 
   try {
     // Create a new role and associate permissions
-    const newRole = await Roles.create({
+    const newRole = await Role.create({
       roleId: uuidv4(),
       roleName,
       // This will be an array of permission IDs
@@ -125,15 +123,19 @@ const createRole = async (req, res) => {
 // Get all roles with permissions
 const getAllRoles = async (req, res) => {
   try {
-    const roles = await Roles.findAll({
+    const roles = await Role.findAll({
       include: {
         model: Permission,
-        as: "permission",
+        as: "permissions", // ← Match the alias exactly
+        through: { attributes: [] }, // Optional: hide junction table attributes
       },
+      // Optional: order for consistency
+      order: [["roleName", "ASC"]],
     });
 
     res.status(200).json(roles);
   } catch (error) {
+    console.error("Error retrieving roles:", error); // ← Add logging in dev
     res.status(500).json({ message: "Error retrieving roles" });
   }
 };
@@ -143,7 +145,7 @@ const deleteRole = async (req, res) => {
   const { roleId } = req.params;
 
   try {
-    const role = await Roles.findByPk(roleId);
+    const role = await Role.findByPk(roleId);
     if (!role) {
       return res.status(404).json({ message: "Role not found" });
     }
@@ -160,7 +162,7 @@ const deleteRole = async (req, res) => {
     await RolePermission.destroy({ where: { roleId } });
 
     // Delete the role
-    await role.destroy();
+    await role.destroy(); // or Role.destroy({ where: { roleId } })
     res.status(200).json({ message: "Role deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: `Error deleting role: ${error.message}` });
@@ -174,7 +176,7 @@ const assignPermissionsToRole = async (req, res) => {
 
   try {
     // Validate if role exists
-    const roleExists = await Roles.findByPk(roleId);
+    const roleExists = await Role.findByPk(roleId);
     if (!roleExists) {
       return res.status(404).json({ message: "Role not found" });
     }
@@ -209,7 +211,7 @@ const getRoleById = async (req, res) => {
   const { roleId } = req.params;
 
   try {
-    const role = await Roles.findOne({
+    const role = await Role.findOne({
       where: { roleId },
       include: {
         model: Permission,
@@ -232,7 +234,7 @@ const removePermissionFromRole = async (req, res) => {
 
   try {
     // Validate if role exists
-    const roleExists = await Roles.findByPk(roleId);
+    const roleExists = await Role.findByPk(roleId);
     if (!roleExists) {
       return res.status(404).json({ message: "Role not found" });
     }
@@ -305,7 +307,7 @@ const updateRolePermissions = async (req, res) => {
 
   try {
     // Validate if role exists
-    const roleExists = await Roles.findByPk(roleId);
+    const roleExists = await Role.findByPk(roleId);
     if (!roleExists) {
       return res.status(404).json({ message: "Role not found" });
     }
