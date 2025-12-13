@@ -355,13 +355,13 @@ const NewQuotationsDetails = () => {
               <div className={styles.clientAddress}>{customerAddress}</div>
             </div>
             <div className={styles.pageDate}>
-              {new Date(quotation.quotation_date || Date.now())
-                .toLocaleDateString("en-IN", {
-                  day: "2-digit",
-                  month: "short",
-                  year: "numeric",
-                })
-                .replace(/ /g, " | ")}
+              {new Date(
+                quotation.quotation_date || Date.now()
+              ).toLocaleDateString("en-IN", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })}
             </div>
           </div>
 
