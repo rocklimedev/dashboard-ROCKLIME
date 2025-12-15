@@ -7,10 +7,16 @@ import {
   useGenerateQuotationFromSiteMapMutation,
 } from "../../api/siteMapApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
-import { FaSearch, FaEye, FaTrash, FaHome, FaWhatsapp } from "react-icons/fa";
-import { FiFileText } from "react-icons/fi";
+import {
+  SearchOutlined,
+  EyeOutlined,
+  DeleteOutlined,
+  HomeOutlined,
+  WhatsAppOutlined,
+  MoreOutlined,
+  FileAddFilled,
+} from "@ant-design/icons";
 import { EditOutlined } from "@ant-design/icons";
-import { BsThreeDotsVertical } from "react-icons/bs";
 import {
   message,
   Table,
@@ -212,7 +218,7 @@ View Site Map: ${window.location.origin}/site-map/${siteMap.id}
             <Menu>
               <Menu.Item key="view">
                 <Link to={`/site-map/${record.id}`}>
-                  <FaEye style={{ marginRight: 8 }} /> View
+                  <EyeOutlined style={{ marginRight: 8 }} /> View
                 </Link>
               </Menu.Item>
               <Menu.Item key="edit">
@@ -225,14 +231,17 @@ View Site Map: ${window.location.origin}/site-map/${siteMap.id}
                   key="generate"
                   onClick={() => handleGenerateQuotation(record)}
                 >
-                  <FiFileText style={{ marginRight: 8 }} /> Generate Quotation
+                  <FileAddFilled style={{ marginRight: 8 }} /> Generate
+                  Quotation
                 </Menu.Item>
               )}
               <Menu.Item
                 key="whatsapp"
                 onClick={() => handleShareOnWhatsApp(record)}
               >
-                <FaWhatsapp style={{ marginRight: 8, color: "#25D366" }} />{" "}
+                <WhatsAppOutlined
+                  style={{ marginRight: 8, color: "#25D366" }}
+                />{" "}
                 Share
               </Menu.Item>
               <Menu.Item
@@ -240,13 +249,13 @@ View Site Map: ${window.location.origin}/site-map/${siteMap.id}
                 danger
                 onClick={() => handleDeleteClick(record)}
               >
-                <FaTrash style={{ marginRight: 8 }} /> Delete
+                <DeleteOutlined style={{ marginRight: 8 }} /> Delete
               </Menu.Item>
             </Menu>
           }
           trigger={["click"]}
         >
-          <Button type="text" icon={<BsThreeDotsVertical />} />
+          <Button type="text" icon={<MoreOutlined />} />
         </Dropdown>
       ),
     },
@@ -263,7 +272,11 @@ View Site Map: ${window.location.origin}/site-map/${siteMap.id}
           />
           <Card>
             <div style={{ textAlign: "center", padding: "60px 20px" }}>
-              <FaHome size={64} color="#1890ff" style={{ marginBottom: 24 }} />
+              <HomeOutlined
+                size={64}
+                color="#1890ff"
+                style={{ marginBottom: 24 }}
+              />
               <Title level={3}>Select a Customer to View Site Maps</Title>
               <Text type="secondary">
                 Choose a customer from the dropdown to see their site plans
@@ -313,7 +326,11 @@ View Site Map: ${window.location.origin}/site-map/${siteMap.id}
         {!selectedCustomerId ? (
           <Card>
             <div style={{ textAlign: "center", padding: "80px 20px" }}>
-              <FaHome size={80} color="#1890ff" style={{ marginBottom: 24 }} />
+              <HomeOutlined
+                size={80}
+                color="#1890ff"
+                style={{ marginBottom: 24 }}
+              />
               <Title level={3}>Select a Customer to View Site Maps</Title>
               <Text type="secondary">
                 Choose a customer from the dropdown above to see their projects
@@ -326,7 +343,7 @@ View Site Map: ${window.location.origin}/site-map/${siteMap.id}
             <div className="card-body">
               <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
                 <Input
-                  prefix={<FaSearch />}
+                  prefix={<SearchOutlined />}
                   placeholder="Search site maps..."
                   value={searchTerm}
                   onChange={(e) => {
@@ -401,7 +418,7 @@ View Site Map: ${window.location.origin}/site-map/${siteMap.id}
 
               {filteredSiteMaps.length === 0 && (
                 <div style={{ textAlign: "center", padding: "60px 20px" }}>
-                  <FaHome
+                  <HomeOutlined
                     size={48}
                     color="#d9d9d9"
                     style={{ marginBottom: 16 }}

@@ -1,5 +1,5 @@
 import React from "react";
-import { Spinner } from "react-bootstrap";
+import { Spin } from "antd";
 
 const Loader = ({ loading }) => {
   if (!loading) return null;
@@ -20,12 +20,7 @@ const Loader = ({ loading }) => {
         zIndex: 9999,
       }}
     >
-      <Spinner
-        animation="border"
-        role="status"
-        variant="primary"
-        style={{ width: "3rem", height: "3rem" }}
-      />
+      <Spin size="large" />
     </div>
   );
 };

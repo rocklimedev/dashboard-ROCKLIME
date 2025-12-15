@@ -1,14 +1,14 @@
 import React from "react";
 import ReactPaginate from "react-paginate";
-import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { LeftOutlined, RightOutlined } from "@ant-design/icons";
 
 const OrderPagination = ({ pageCount, onPageChange }) => {
   return (
     <div className="row custom-pagination mt-3">
       <div className="col-md-12 d-flex justify-content-end">
         <ReactPaginate
-          previousLabel={<FaChevronLeft />}
-          nextLabel={<FaChevronRight />}
+          previousLabel={<LeftOutlined />}
+          nextLabel={<RightOutlined />}
           breakLabel={"..."}
           pageCount={pageCount}
           marginPagesDisplayed={2}

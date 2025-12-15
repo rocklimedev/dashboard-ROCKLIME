@@ -20,7 +20,6 @@ import {
   DeleteOutlined,
   PlusOutlined,
 } from "@ant-design/icons";
-import { FcEmptyTrash } from "react-icons/fc";
 import { InfoCircleOutlined } from "@ant-design/icons";
 import styled from "styled-components";
 import OrderTotal from "./OrderTotal";
@@ -322,7 +321,7 @@ const QuotationForm = ({
       <CompactCard>
         <Empty
           description="Cart empty"
-          image={<FcEmptyTrash style={{ fontSize: 48 }} />}
+          image={<DeleteOutlined style={{ fontSize: 48 }} />}
         />
         <Button
           type="primary"

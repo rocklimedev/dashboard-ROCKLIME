@@ -4,17 +4,24 @@ import { useGetProfileQuery } from "../../api/userApi";
 import { useGetCartQuery } from "../../api/cartApi";
 import { useGetNotificationsQuery } from "../../api/notificationApi";
 import { Dropdown, Button, Menu, Badge } from "antd";
-import { FaUserCircle, FaSearch, FaBell, FaEllipsisV } from "react-icons/fa";
-import { SettingOutlined } from "@ant-design/icons";
-import { BiFullscreen, BiLogOut } from "react-icons/bi";
+import {
+  BellOutlined,
+  EllipsisOutlined,
+  ShoppingCartOutlined,
+  FullscreenOutlined,
+  LogoutOutlined,
+  UserOutlined,
+  SettingOutlined,
+  SunFilled,
+  MoonFilled,
+} from "@ant-design/icons";
+
 import { message } from "antd";
 import Avatar from "react-avatar";
 import logo from "../../assets/img/logo.png";
 import logo_small from "../../assets/img/fav_icon.png";
-import { CgShoppingCart } from "react-icons/cg";
 import { useLogoutMutation } from "../../api/authApi";
 import { useAuth } from "../../context/AuthContext";
-import { SunFilled, MoonFilled } from "@ant-design/icons";
 import PermissionsGate from "../../context/PermissionGate";
 
 const Header = ({ toggleSidebar, isSidebarOpen }) => {
@@ -113,7 +120,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
         <Menu.Item
           key="profile"
           onClick={() => navigate(`/u/${userId}`)}
-          icon={<FaUserCircle className="me-2" />}
+          icon={<UserOutlined className="me-2" />}
         >
           Profile
         </Menu.Item>
@@ -142,7 +149,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
           key="logout"
           onClick={handleLogout}
           disabled={isLoggingOut}
-          icon={<BiLogOut className="me-2" />}
+          icon={<LogoutOutlined className="me-2" />}
         >
           {isLoggingOut ? "Logging out..." : "Logout"}
         </Menu.Item>
@@ -164,7 +171,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
       {
         key: "profile",
         label: "My Profile",
-        icon: <FaUserCircle className="me-2" />,
+        icon: <UserOutlined className="me-2" />,
         onClick: () => navigate(`/u/${userId}`),
       },
       {
@@ -183,7 +190,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
             )}
           </div>
         ),
-        icon: <FaBell className="me-2" />,
+        icon: <BellOutlined className="me-2" />,
         onClick: () => navigate("/notifications"),
       },
       {
@@ -196,13 +203,13 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
             )}
           </div>
         ),
-        icon: <CgShoppingCart className="me-2" />,
+        icon: <ShoppingCartOutlined className="me-2" />,
         onClick: () => navigate("/cart"),
       },
       {
         key: "fullscreen",
         label: isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen",
-        icon: <BiFullscreen className="me-2" />,
+        icon: <FullscreenOutlined className="me-2" />,
         onClick: handleFullscreenToggle,
       },
       {
@@ -226,7 +233,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
     items.push({
       key: "logout",
       label: isLoggingOut ? "Logging out..." : "Logout",
-      icon: <BiLogOut className="me-2" />,
+      icon: <LogoutOutlined className="me-2" />,
       onClick: handleLogout,
       disabled: isLoggingOut,
     });
@@ -301,7 +308,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
               onClick={handleFullscreenToggle}
               title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
             >
-              <BiFullscreen />
+              <FullscreenOutlined />
             </Button>
           </li>
 
@@ -314,7 +321,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                 offset={[-5, 5]}
                 showZero={false}
               >
-                <FaBell style={{ fontSize: 18 }} />
+                <BellOutlined style={{ fontSize: 18 }} />
               </Badge>
             </Link>
           </li>
@@ -328,7 +335,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                   offset={[-5, 5]}
                   showZero={false}
                 >
-                  <CgShoppingCart style={{ fontSize: 20 }} />
+                  <ShoppingCartOutlined style={{ fontSize: 20 }} />
                 </Badge>
               </Link>
             </li>
@@ -398,7 +405,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
           >
             <Button
               type="text"
-              icon={<FaEllipsisV />}
+              icon={<EllipsisOutlined />}
               className="mobile-menu-button"
               style={{
                 width: 40,

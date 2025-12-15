@@ -49,7 +49,7 @@ import { Document, Page, pdfjs } from "react-pdf";
 import useProductsData from "../../data/useProductdata";
 import AddAddress from "../Address/AddAddressModal";
 import "./orderpage.css";
-import { PiPaperPlaneTiltFill } from "react-icons/pi";
+import { SendOutlined } from "@ant-design/icons";
 import { Helmet } from "react-helmet";
 
 // PDF.js worker
@@ -1110,7 +1110,7 @@ const OrderPage = () => {
                       htmlType="submit"
                       disabled={!newComment.trim()}
                     >
-                      <PiPaperPlaneTiltFill />
+                      <SendOutlined />
                     </Button>
                   </Form.Item>
                 </Form>

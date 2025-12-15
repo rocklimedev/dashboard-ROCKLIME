@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { FaArrowLeft } from "react-icons/fa";
+import { ArrowLeftOutlined } from "@ant-design/icons";
 import { DeleteOutlined } from "@ant-design/icons";
 import {
   Form,
@@ -612,7 +612,7 @@ const AddPurchaseOrder = () => {
               }}
             >
               <Link to="/po/list">
-                <Button icon={<FaArrowLeft style={{ marginRight: 8 }} />}>
+                <Button icon={<ArrowLeftOutlined style={{ marginRight: 8 }} />}>
                   Back to Purchase Orders
                 </Button>
               </Link>

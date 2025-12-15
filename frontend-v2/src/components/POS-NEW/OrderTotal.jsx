@@ -3,7 +3,6 @@
 import React, { useMemo } from "react";
 import PropTypes from "prop-types";
 import { Table, Tag } from "antd";
-import { EditOutlined } from "@ant-design/icons";
 
 const formatCurrency = (value) =>
   new Intl.NumberFormat("en-IN", {

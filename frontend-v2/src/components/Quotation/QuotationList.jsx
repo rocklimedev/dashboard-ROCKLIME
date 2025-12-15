@@ -7,17 +7,19 @@ import {
 import { useGetCustomersQuery } from "../../api/customerApi";
 import { useGetAllUsersQuery } from "../../api/userApi";
 import {
-  FaSearch,
-  FaEye,
-  FaTrash,
-  FaFileInvoice,
-  FaWhatsapp,
-} from "react-icons/fa";
-import { EditOutlined, HomeOutlined } from "@ant-design/icons";
-import { BsThreeDotsVertical } from "react-icons/bs";
-
-import QuotationProductModal from "./QuotationProductModal";
+  SearchOutlined,
+  EyeOutlined,
+  DeleteFilled,
+  FileAddOutlined,
+  WhatsAppOutlined,
+  MoreOutlined,
+  CalendarOutlined,
+  EditOutlined,
+  HomeOutlined,
+} from "@ant-design/icons";
+import QuotationProductModal from "./QuotationProductModal"; // ← Your fixed modal
 import DeleteModal from "../Common/DeleteModal";
+import DatesModal from "../Orders/DateModal";
 import { message } from "antd";
 import {
   Table,
@@ -32,17 +34,12 @@ import {
 import PageHeader from "../Common/PageHeader";
 import moment from "moment";
 import PermissionGate from "../../context/PermissionGate";
-import { useAuth } from "../../context/AuthContext";
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
 
-/* -------------------------------------------------------------------------- */
-/*                               QuotationList                                */
-/* -------------------------------------------------------------------------- */
 const QuotationList = () => {
   const navigate = useNavigate();
-  const { auth } = useAuth();
 
   /* ------------------------------ RTK Queries ----------------------------- */
   const {
@@ -58,13 +55,15 @@ const QuotationList = () => {
 
   const quotations = quotationsData || [];
   const customers = customersData?.data || [];
-  const users = usersData?.users || [];
 
   /* ------------------------------- State --------------------------------- */
   const [showProductModal, setShowProductModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedQuotation, setSelectedQuotation] = useState(null);
+  const [showDatesModal, setShowDatesModal] = useState(false);
+
+  const [selectedQuotationId, setSelectedQuotationId] = useState(null); // ← For Product Modal
   const [quotationToDelete, setQuotationToDelete] = useState(null);
+  const [selectedForDates, setSelectedForDates] = useState(null); // ← For Dates Modal
 
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -95,25 +94,20 @@ const QuotationList = () => {
   }, []);
 
   /* --------------------------- Helper functions -------------------------- */
-  const getProductCount = (products) => {
-    const parsed =
-      typeof products === "string"
-        ? JSON.parse(products || "[]")
-        : products || [];
-    return parsed.length;
+  const getProductCount = (productsOrItems) => {
+    if (!productsOrItems) return 0;
+    if (Array.isArray(productsOrItems)) return productsOrItems.length;
+    try {
+      return JSON.parse(productsOrItems).length;
+    } catch {
+      return 0;
+    }
   };
 
   const getCustomerName = (customerId) => {
     const cust = customers.find((c) => c.customerId === customerId);
     return cust ? cust.name : "Unknown";
   };
-
-  const customerMap = useMemo(() => {
-    return customers.reduce((map, c) => {
-      map[c.customerId] = c.name;
-      return map;
-    }, {});
-  }, [customers]);
 
   /* -------------------------- Grouped Quotations ------------------------- */
   const groupedQuotations = useMemo(
@@ -134,7 +128,6 @@ const QuotationList = () => {
   const filteredQuotations = useMemo(() => {
     let result = groupedQuotations[activeTab] || [];
 
-    // Search
     if (searchTerm.trim()) {
       result = result.filter((q) => {
         const custName = getCustomerName(q.customerId);
@@ -148,7 +141,6 @@ const QuotationList = () => {
       });
     }
 
-    // Filters
     if (filters.finalAmount) {
       result = result.filter((q) =>
         q.finalAmount?.toString().includes(filters.finalAmount)
@@ -174,7 +166,6 @@ const QuotationList = () => {
       );
     }
 
-    // Sorting
     switch (sortBy) {
       case "Ascending":
         result = [...result].sort((a, b) =>
@@ -212,14 +203,246 @@ const QuotationList = () => {
     }
 
     return result;
-  }, [groupedQuotations, activeTab, searchTerm, sortBy, filters]);
+  }, [groupedQuotations, activeTab, searchTerm, sortBy, filters, customers]);
 
   const currentQuotations = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
     return filteredQuotations.slice(start, start + pageSize);
   }, [filteredQuotations, currentPage, pageSize]);
 
-  /* -------------------------- WhatsApp & SiteMap -------------------------- */
+  /* -------------------------- Handlers -------------------------- */
+  const handleOpenProductModal = (quotationId) => {
+    setSelectedQuotationId(quotationId);
+    setShowProductModal(true);
+  };
+
+  const handleOpenDatesModal = (quotation) => {
+    setSelectedForDates(quotation);
+    setShowDatesModal(true);
+  };
+
+  const handleDeleteClick = (q) => {
+    setQuotationToDelete(q);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!quotationToDelete?.quotationId) return;
+    try {
+      await deleteQuotation(quotationToDelete.quotationId).unwrap();
+      message.success("Quotation deleted successfully");
+      refetch();
+      if (currentQuotations.length === 1 && currentPage > 1) {
+        setCurrentPage((p) => p - 1);
+      }
+    } catch (e) {
+      message.error("Delete failed");
+    } finally {
+      setShowDeleteModal(false);
+      setQuotationToDelete(null);
+    }
+  };
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setSortBy("Recently Added");
+    setActiveTab("All");
+    setFilters({
+      finalAmount: null,
+      quotationDate: null,
+      customerId: null,
+      dateRange: null,
+    });
+    setCurrentPage(1);
+  };
+
+  /* ------------------------------ Columns ------------------------------ */
+  const columns = [
+    { title: "S.No.", dataIndex: "sNo", key: "sNo", width: 70 },
+    {
+      title: "Quotation Title",
+      dataIndex: "quotationTitle",
+      key: "quotationTitle",
+      width: 150,
+      render: (text, rec) => (
+        <Link to={`/quotation/${rec.quotationId}`}>{text || "N/A"}</Link>
+      ),
+    },
+    {
+      title: "Quotation Date",
+      dataIndex: "quotationDate",
+      key: "quotationDate",
+      width: 120,
+    },
+    {
+      title: "Due Date",
+      dataIndex: "dueDate",
+      key: "dueDate",
+      width: 120,
+    },
+    {
+      title: "Dates",
+      key: "dates",
+      width: 100,
+      render: (_, rec) => {
+        const hasDue = !!rec.raw.due_date;
+        const hasFollowups = rec.raw.followupDates?.length > 0;
+        if (!hasDue && !hasFollowups) return <span>—</span>;
+
+        return (
+          <Button
+            type="link"
+            size="small"
+            icon={<CalendarOutlined />}
+            onClick={() => handleOpenDatesModal(rec.raw)}
+            style={{ padding: 0 }}
+          >
+            View
+          </Button>
+        );
+      },
+    },
+    {
+      title: "Quotation Number",
+      dataIndex: "referenceNumber",
+      key: "referenceNumber",
+      width: 150,
+    },
+    {
+      title: "Products",
+      key: "products",
+      width: 140,
+      render: (_, rec) => (
+        <button
+          className="btn btn-link"
+          onClick={() => handleOpenProductModal(rec.quotationId)}
+          style={{ color: "#e31e24" }}
+        >
+          Quick View ({getProductCount(rec.raw.products || rec.raw.items)})
+        </button>
+      ),
+    },
+    {
+      title: "Customer",
+      dataIndex: "customer",
+      key: "customer",
+      width: 150,
+      render: (text, rec) => (
+        <Link to={`/customer/${rec.customerId}`}>{text}</Link>
+      ),
+    },
+    {
+      title: "Final Amount",
+      dataIndex: "finalAmount",
+      key: "finalAmount",
+      width: 120,
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      width: 100,
+      fixed: "right",
+      render: (_, rec) => (
+        <div className="d-flex align-items-center">
+          <PermissionGate api="edit" module="quotations">
+            <span
+              onClick={() =>
+                navigate(`/quotation/${rec.quotationId}/edit`, {
+                  state: { quotation: rec.raw },
+                })
+              }
+              style={{ cursor: "pointer", marginRight: 12 }}
+              title="Edit Quotation"
+            >
+              <EditOutlined />
+            </span>
+          </PermissionGate>
+
+          <Dropdown
+            overlay={
+              <Menu>
+                <PermissionGate api="view" module="quotations">
+                  <Menu.Item key="view">
+                    <Link to={`/quotation/${rec.quotationId}`}>
+                      <EyeOutlined style={{ marginRight: 8 }} />
+                      View
+                    </Link>
+                  </Menu.Item>
+                </PermissionGate>
+
+                <PermissionGate api="delete" module="quotations">
+                  <Menu.Item
+                    key="delete"
+                    onClick={() => handleDeleteClick(rec.raw)}
+                    disabled={isDeleting}
+                    style={{ color: "#ff4d4f" }}
+                  >
+                    <DeleteFilled style={{ marginRight: 8 }} />
+                    Delete
+                  </Menu.Item>
+                </PermissionGate>
+
+                <Menu.Item
+                  key="generate-sitemap"
+                  onClick={() => handleGenerateSiteMap(rec.raw)}
+                  style={{ color: "#722ed1" }}
+                >
+                  <HomeOutlined style={{ marginRight: 8 }} />
+                  Generate Site Map
+                </Menu.Item>
+
+                <PermissionGate api="write" module="quotations">
+                  <Menu.Item
+                    key="convert"
+                    onClick={() => handleConvertToOrder(rec.raw)}
+                  >
+                    <FileAddOutlined style={{ marginRight: 8 }} />
+                    Convert to Order
+                  </Menu.Item>
+                </PermissionGate>
+
+                <Menu.Item
+                  key="whatsapp"
+                  onClick={() => handleShareOnWhatsApp(rec.raw)}
+                  style={{ color: "#25D366" }}
+                >
+                  <WhatsAppOutlined style={{ marginRight: 8 }} />
+                  Share on WhatsApp
+                </Menu.Item>
+              </Menu>
+            }
+            trigger={["click"]}
+            placement="bottomRight"
+          >
+            <Button type="text" icon={<MoreOutlined />} />
+          </Dropdown>
+        </div>
+      ),
+    },
+  ];
+
+  /* -------------------------- Table Data --------------------------- */
+  const formattedTableData = useMemo(() => {
+    return currentQuotations.map((q, i) => ({
+      key: q.quotationId,
+      sNo: (currentPage - 1) * pageSize + i + 1,
+      quotationTitle: q.document_title || "N/A",
+      quotationDate: q.quotation_date
+        ? moment(q.quotation_date).format("DD/MM/YYYY")
+        : "N/A",
+      dueDate: q.due_date ? moment(q.due_date).format("DD/MM/YYYY") : "N/A",
+      referenceNumber: q.reference_number || "N/A",
+      customer: getCustomerName(q.customerId),
+      customerId: q.customerId,
+      finalAmount: `₹${Number(q.finalAmount || 0).toFixed(2)}`,
+      quotationId: q.quotationId,
+      raw: q, // Keep full original object
+    }));
+  }, [currentQuotations, currentPage, pageSize, customers]);
+
+  /* -------------------------- WhatsApp, SiteMap, Convert -------------------------- */
+  // (Your existing handleShareOnWhatsApp, handleGenerateSiteMap, handleConvertToOrder functions remain unchanged)
+  // Just make sure they receive the full quotation object (rec.raw)
   const handleShareOnWhatsApp = (quotation) => {
     let itemsArray = [];
     if (quotation.items && Array.isArray(quotation.items)) {
@@ -320,373 +543,7 @@ View: ${window.location.origin}/quotation/${quotation.quotationId}
       },
     });
   };
-  /* ------------------------------ Columns ------------------------------ */
-  const columns = [
-    { title: "S.No.", dataIndex: "sNo", key: "sNo", width: 70 },
-    {
-      title: "Quotation Title",
-      dataIndex: "quotationTitle",
-      key: "quotationTitle",
-      width: 150,
-      render: (text, rec) => (
-        <Link to={`/quotation/${rec.quotationId}`}>{text || "N/A"}</Link>
-      ),
-    },
-    {
-      title: "Quotation Date",
-      dataIndex: "quotationDate",
-      key: "quotationDate",
-      width: 120,
-      filterDropdown: ({
-        setSelectedKeys,
-        selectedKeys,
-        confirm,
-        clearFilters,
-      }) => (
-        <div style={{ padding: 8 }}>
-          <DatePicker
-            style={{ width: "100%", marginBottom: 8 }}
-            value={selectedKeys[0] ? moment(selectedKeys[0]) : null}
-            onChange={(d) => setSelectedKeys(d ? [d] : [])}
-            placeholder="Select Date"
-          />
-          <div>
-            <Button
-              type="primary"
-              size="small"
-              style={{ width: 90, marginRight: 8 }}
-              onClick={() => {
-                setFilters((p) => ({
-                  ...p,
-                  quotationDate: selectedKeys[0]
-                    ? selectedKeys[0].toDate()
-                    : null,
-                }));
-                confirm();
-              }}
-            >
-              OK
-            </Button>
-            <Button
-              size="small"
-              style={{ width: 90 }}
-              onClick={() => {
-                clearFilters();
-                setFilters((p) => ({ ...p, quotationDate: null }));
-                confirm();
-              }}
-            >
-              Reset
-            </Button>
-          </div>
-        </div>
-      ),
-      filterIcon: (f) => (
-        <FaSearch style={{ color: f ? "#1890ff" : undefined }} />
-      ),
-    },
-    {
-      title: "Due Date",
-      dataIndex: "dueDate",
-      key: "dueDate",
-      width: 120,
-      filterDropdown: ({
-        setSelectedKeys,
-        selectedKeys,
-        confirm,
-        clearFilters,
-      }) => (
-        <div style={{ padding: 8 }}>
-          <RangePicker
-            style={{ width: "100%", marginBottom: 8 }}
-            value={
-              selectedKeys[0]
-                ? [moment(selectedKeys[0][0]), moment(selectedKeys[0][1])]
-                : null
-            }
-            onChange={(d) => setSelectedKeys(d ? [[d[0], d[1]]] : [])}
-            placeholder={["Start", "End"]}
-          />
-          <div>
-            <Button
-              type="primary"
-              size="small"
-              style={{ width: 90, marginRight: 8 }}
-              onClick={() => {
-                setFilters((p) => ({
-                  ...p,
-                  dateRange: selectedKeys[0]
-                    ? [selectedKeys[0][0].toDate(), selectedKeys[0][1].toDate()]
-                    : null,
-                }));
-                confirm();
-              }}
-            >
-              OK
-            </Button>
-            <Button
-              size="small"
-              style={{ width: 90 }}
-              onClick={() => {
-                clearFilters();
-                setFilters((p) => ({ ...p, dateRange: null }));
-                confirm();
-              }}
-            >
-              Reset
-            </Button>
-          </div>
-        </div>
-      ),
-      filterIcon: (f) => (
-        <FaSearch style={{ color: f ? "#1890ff" : undefined }} />
-      ),
-    },
-    {
-      title: "Quotation Number",
-      dataIndex: "referenceNumber",
-      key: "referenceNumber",
-      width: 150,
-    },
-    // Inside the columns definition (Products column)
-    {
-      title: "Products",
-      dataIndex: "products",
-      key: "products",
-      width: 120,
-      render: (_, rec) => (
-        <button
-          className="btn btn-link"
-          onClick={() => handleOpenProductModal(rec)} // <-- pass whole row
-          style={{ color: "#e31e24" }}
-        >
-          Quick View ({getProductCount(rec.products)})
-        </button>
-      ),
-    },
-    {
-      title: "Customer",
-      dataIndex: "customer",
-      key: "customer",
-      width: 150,
-      filterDropdown: ({
-        setSelectedKeys,
-        selectedKeys,
-        confirm,
-        clearFilters,
-      }) => (
-        <div style={{ padding: 8 }}>
-          <Select
-            style={{ width: "100%", marginBottom: 8 }}
-            value={selectedKeys[0]}
-            onChange={(v) => setSelectedKeys(v ? [v] : [])}
-            placeholder="Select Customer"
-            allowClear
-          >
-            {customers.map((c) => (
-              <Option key={c.customerId} value={c.customerId}>
-                {c.name}
-              </Option>
-            ))}
-          </Select>
-          <div>
-            <Button
-              type="primary"
-              size="small"
-              style={{ width: 90, marginRight: 8 }}
-              onClick={() => {
-                setFilters((p) => ({
-                  ...p,
-                  customerId: selectedKeys[0] || null,
-                }));
-                confirm();
-              }}
-            >
-              OK
-            </Button>
-            <Button
-              size="small"
-              style={{ width: 90 }}
-              onClick={() => {
-                clearFilters();
-                setFilters((p) => ({ ...p, customerId: null }));
-                confirm();
-              }}
-            >
-              Reset
-            </Button>
-          </div>
-        </div>
-      ),
-      filterIcon: (f) => (
-        <FaSearch style={{ color: f ? "#1890ff" : undefined }} />
-      ),
-      render: (text, rec) => (
-        <Link to={`/customer/${rec.customerId}`}>{text}</Link>
-      ),
-    },
-    {
-      title: "Final Amount",
-      dataIndex: "finalAmount",
-      key: "finalAmount",
-      width: 120,
-      sorter: (a, b) =>
-        parseFloat(a.finalAmount.replace("₹", "")) -
-        parseFloat(b.finalAmount.replace("₹", "")),
-      filterDropdown: ({
-        setSelectedKeys,
-        selectedKeys,
-        confirm,
-        clearFilters,
-      }) => (
-        <div style={{ padding: 8 }}>
-          <Input
-            placeholder="Enter Amount"
-            value={selectedKeys[0]}
-            onChange={(e) =>
-              setSelectedKeys(e.target.value ? [e.target.value] : [])
-            }
-            style={{ width: "100%", marginBottom: 8 }}
-          />
-          <div>
-            <Button
-              type="primary"
-              size="small"
-              style={{ width: 90, marginRight: 8 }}
-              onClick={() => {
-                setFilters((p) => ({
-                  ...p,
-                  finalAmount: selectedKeys[0] || null,
-                }));
-                confirm();
-              }}
-            >
-              OK
-            </Button>
-            <Button
-              size="small"
-              style={{ width: 90 }}
-              onClick={() => {
-                clearFilters();
-                setFilters((p) => ({ ...p, finalAmount: null }));
-                confirm();
-              }}
-            >
-              Reset
-            </Button>
-          </div>
-        </div>
-      ),
-      filterIcon: (f) => (
-        <FaSearch style={{ color: f ? "#1890ff" : undefined }} />
-      ),
-    },
-    {
-      title: "Actions",
-      key: "actions",
-      width: 100,
-      fixed: "right",
-      render: (_, rec) => (
-        <div className="d-flex align-items-center">
-          <PermissionGate api="edit" module="quotations">
-            <span
-              onClick={() =>
-                navigate(`/quotation/${rec.quotationId}/edit`, {
-                  state: { quotation: rec },
-                })
-              }
-              style={{ cursor: "pointer", marginRight: 8 }}
-              title="Edit Quotation"
-            >
-              <EditOutlined />
-            </span>
-          </PermissionGate>
 
-          <Dropdown
-            overlay={
-              <Menu>
-                <PermissionGate api="view" module="quotations">
-                  <Menu.Item key="view">
-                    <Link
-                      to={`/quotation/${rec.quotationId}`}
-                      style={{ textDecoration: "none", color: "inherit" }}
-                    >
-                      <FaEye style={{ marginRight: 8 }} />
-                      View
-                    </Link>
-                  </Menu.Item>
-                </PermissionGate>
-
-                <PermissionGate api="delete" module="quotations">
-                  <Menu.Item
-                    key="delete"
-                    onClick={() => handleDeleteClick(rec)}
-                    disabled={isDeleting}
-                    style={{ color: "#ff4d4f" }}
-                  >
-                    <FaTrash style={{ marginRight: 8 }} />
-                    Delete
-                  </Menu.Item>
-                </PermissionGate>
-                {/* Inside the <Menu> of the Actions Dropdown */}
-
-                <Menu.Item
-                  key="generate-sitemap"
-                  onClick={() => handleGenerateSiteMap(rec)} // ← NEW
-                  style={{ color: "#722ed1" }}
-                >
-                  <HomeOutlined style={{ marginRight: 8 }} />
-                  Generate Site Map
-                </Menu.Item>
-
-                <PermissionGate api="write" module="quotations">
-                  <Menu.Item
-                    key="convert"
-                    onClick={() => handleConvertToOrder(rec)}
-                  >
-                    <FaFileInvoice style={{ marginRight: 8 }} />
-                    Convert to Order
-                  </Menu.Item>
-                </PermissionGate>
-
-                <Menu.Item
-                  key="whatsapp"
-                  onClick={() => handleShareOnWhatsApp(rec)}
-                  style={{ color: "#25D366" }}
-                >
-                  <FaWhatsapp style={{ marginRight: 8 }} />
-                  Share on WhatsApp
-                </Menu.Item>
-              </Menu>
-            }
-            trigger={["click"]}
-            placement="bottomRight"
-          >
-            <Button type="text" icon={<BsThreeDotsVertical />} />
-          </Dropdown>
-        </div>
-      ),
-    },
-  ];
-
-  /* -------------------------- Table Data --------------------------- */
-  const formattedTableData = useMemo(() => {
-    return currentQuotations.map((q, i) => ({
-      key: q.quotationId,
-      sNo: (currentPage - 1) * pageSize + i + 1,
-      quotationTitle: q.document_title || "N/A",
-      quotationDate: q.quotation_date
-        ? new Date(q.quotation_date).toLocaleDateString()
-        : "N/A",
-      dueDate: q.due_date ? new Date(q.due_date).toLocaleDateString() : "N/A",
-      referenceNumber: q.reference_number || "N/A",
-      products: q.products,
-      customer: getCustomerName(q.customerId),
-      customerId: q.customerId,
-      finalAmount: `₹${q.finalAmount || 0}`,
-      quotationId: q.quotationId,
-    }));
-  }, [currentQuotations, currentPage, pageSize]);
   const handleConvertToOrder = (q) => {
     let rawItems = [];
 
@@ -765,50 +622,6 @@ View: ${window.location.origin}/quotation/${quotation.quotationId}
     });
   };
 
-  /* --------------------------- Handlers --------------------------- */
-  const handlePageChange = (page, newPageSize) => {
-    setCurrentPage(page);
-    if (newPageSize !== pageSize) setPageSize(newPageSize);
-  };
-
-  const handleDeleteClick = (q) => {
-    setQuotationToDelete(q);
-    setShowDeleteModal(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!quotationToDelete?.quotationId) return;
-    try {
-      await deleteQuotation(quotationToDelete.quotationId).unwrap();
-      message.success("Quotation deleted successfully");
-      refetch();
-      if (currentQuotations.length === 1 && currentPage > 1) {
-        setCurrentPage((p) => p - 1);
-      }
-    } catch (e) {
-      message.error("Delete failed");
-    } finally {
-      setShowDeleteModal(false);
-      setQuotationToDelete(null);
-    }
-  };
-  const handleOpenProductModal = (quotation) => {
-    setSelectedQuotation(quotation); // whole object as fallback
-    setShowProductModal(true);
-  };
-  const clearFilters = () => {
-    setSearchTerm("");
-    setSortBy("Recently Added");
-    setActiveTab("All");
-    setFilters({
-      finalAmount: null,
-      quotationDate: null,
-      customerId: null,
-      dateRange: null,
-    });
-    setCurrentPage(1);
-  };
-
   /* ------------------------------- Render ------------------------------- */
   return (
     <div className="page-wrapper">
@@ -828,17 +641,16 @@ View: ${window.location.origin}/quotation/${quotation.quotationId}
                 <div className="d-flex align-items-center justify-content-lg-end flex-wrap gap-2">
                   <div className="position-relative">
                     <span className="input-icon-addon">
-                      <FaSearch />
+                      <SearchOutlined />
                     </span>
-                    <input
-                      type="text"
-                      className="form-control"
+                    <Input
                       placeholder="Search Quotations"
                       value={searchTerm}
                       onChange={(e) => {
                         setSearchTerm(e.target.value);
                         setCurrentPage(1);
                       }}
+                      style={{ width: 300 }}
                     />
                   </div>
 
@@ -868,6 +680,7 @@ View: ${window.location.origin}/quotation/${quotation.quotationId}
                 pagination={false}
                 rowKey="key"
                 scroll={{ x: "max-content" }}
+                loading={isLoading}
               />
 
               {filteredQuotations.length > pageSize && (
@@ -876,7 +689,10 @@ View: ${window.location.origin}/quotation/${quotation.quotationId}
                     current={currentPage}
                     pageSize={pageSize}
                     total={filteredQuotations.length}
-                    onChange={handlePageChange}
+                    onChange={(page, size) => {
+                      setCurrentPage(page);
+                      if (size !== pageSize) setPageSize(size);
+                    }}
                     showSizeChanger
                     pageSizeOptions={["10", "20", "50", "100"]}
                     showQuickJumper
@@ -892,10 +708,19 @@ View: ${window.location.origin}/quotation/${quotation.quotationId}
           show={showProductModal}
           onHide={() => {
             setShowProductModal(false);
-            setSelectedQuotation(null);
+            setSelectedQuotationId(null);
           }}
-          quotationId={selectedQuotation?.quotationId}
-          fallbackQuotation={selectedQuotation}
+          quotationId={selectedQuotationId}
+        />
+
+        <DatesModal
+          open={showDatesModal}
+          onClose={() => {
+            setShowDatesModal(false);
+            setSelectedForDates(null);
+          }}
+          dueDate={selectedForDates?.due_date || null}
+          followupDates={selectedForDates?.followupDates || []}
         />
 
         {showDeleteModal && (

@@ -2,7 +2,8 @@ import React, { useState, useMemo } from "react";
 import { useGetRolesQuery, useDeleteRoleMutation } from "../../api/rolesApi";
 import { useGetAllPermissionsQuery } from "../../api/permissionApi";
 import { useGetAllUsersQuery } from "../../api/userApi";
-import { FaSearch, FaShieldAlt, FaTrash } from "react-icons/fa";
+import { SearchOutlined, DeleteOutlined } from "@ant-design/icons";
+import { SafetyOutlined } from "@ant-design/icons";
 import Avatar from "react-avatar";
 import { Link } from "react-router-dom";
 import AddRoleModal from "./AddRoleModal";
@@ -264,7 +265,7 @@ const RolePermission = () => {
                     <div className="d-flex align-items-center justify-content-between flex-wrap gap-3">
                       <div className="input-icon-start position-relative">
                         <span className="input-icon-addon">
-                          <FaSearch />
+                          <SearchOutlined />
                         </span>
                         <input
                           type="text"
@@ -358,7 +359,7 @@ const RolePermission = () => {
                                     className="btn btn-icon btn-sm text-primary"
                                     aria-label={`View permissions for ${role.roleName}`}
                                   >
-                                    <FaShieldAlt />
+                                    <SafetyOutlined />
                                   </a>
                                   <button
                                     className="btn btn-icon btn-sm text-danger"
@@ -366,7 +367,7 @@ const RolePermission = () => {
                                     disabled={isDeleting}
                                     aria-label={`Delete ${role.roleName}`}
                                   >
-                                    <FaTrash />
+                                    <DeleteOutlined />
                                   </button>
                                 </div>
                               </td>
@@ -406,7 +407,7 @@ const RolePermission = () => {
                         style={{ maxWidth: "400px" }}
                       >
                         <span className="input-icon-addon">
-                          <FaSearch />
+                          <SearchOutlined />
                         </span>
                         <input
                           type="text"

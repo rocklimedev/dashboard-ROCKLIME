@@ -22,7 +22,6 @@ import {
   DeleteOutlined,
   PlusOutlined,
 } from "@ant-design/icons";
-import { FcEmptyTrash } from "react-icons/fc";
 import styled from "styled-components";
 import OrderTotal from "./OrderTotal";
 import moment from "moment";
@@ -417,7 +416,7 @@ const OrderForm = ({
       <CompactCard>
         <Empty
           description="Cart empty"
-          image={<FcEmptyTrash style={{ fontSize: 48 }} />}
+          image={<DeleteOutlined style={{ fontSize: 48 }} />}
         />
         <Button
           type="primary"

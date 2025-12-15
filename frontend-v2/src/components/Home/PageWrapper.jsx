@@ -1,8 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { message } from "antd";
-import { Link } from "react-router-dom";
-import { FaChartBar, FaBox } from "react-icons/fa6";
-import Alert from "./Alert";
 import StockModal from "../Common/StockModal";
 import DataTablePagination from "../Common/DataTablePagination";
 import {
@@ -16,14 +13,11 @@ import { useGetAllInvoicesQuery } from "../../api/invoiceApi";
 import { useGetProfileQuery } from "../../api/userApi";
 import { useGetAllOrdersQuery } from "../../api/orderApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
-import { useGetAllCategoriesQuery } from "../../api/categoryApi";
-import { useGetAllUsersQuery } from "../../api/userApi";
 import { useAddProductToCartMutation } from "../../api/cartApi";
 import { useUpdateOrderStatusMutation } from "../../api/orderApi";
 import useTopProducts from "../../data/useTopProducts";
-import { BiPencil } from "react-icons/bi";
 import "./pagewrapper.css";
-
+import { EditOutlined } from "@ant-design/icons";
 const PageWrapper = () => {
   /* ------------------------------------------------------------------ */
   /*  STATE & MODALS                                                    */
@@ -320,7 +314,7 @@ const PageWrapper = () => {
                             >
                               {o.status}
                             </span>
-                            <BiPencil
+                            <EditOutlined
                               size={16}
                               className="text-secondary cursor-pointer"
                               onClick={(e) => {
