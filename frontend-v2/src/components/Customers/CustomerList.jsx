@@ -5,11 +5,16 @@ import {
 } from "../../api/customerApi";
 import Avatar from "react-avatar";
 import { BiTrash } from "react-icons/bi";
-import { FaEye, FaSearch, FaThList, FaThLarge } from "react-icons/fa";
+import {
+  EyeOutlined,
+  SearchOutlined,
+  UnorderedListOutlined,
+  OrderedListOutlined,
+  MoreOutlined,
+} from "@ant-design/icons";
 import { message } from "antd";
 import DeleteModal from "../Common/DeleteModal";
 import PageHeader from "../Common/PageHeader";
-import { BsThreeDotsVertical } from "react-icons/bs";
 import { Dropdown, Button, Menu, Pagination, Select } from "antd";
 import { useNavigate } from "react-router-dom";
 import { EditOutlined } from "@ant-design/icons";
@@ -215,7 +220,7 @@ const CustomerList = () => {
 
               <div className="col-lg-4">
                 <div className="position-relative">
-                  <FaSearch className="position-absolute top-50 start-3 translate-middle-y text-muted" />
+                  <SearchOutlined className="position-absolute top-50 start-3 translate-middle-y text-muted" />
                   <input
                     type="text"
                     className="form-control ps-5"
@@ -247,12 +252,12 @@ const CustomerList = () => {
                   <Button
                     type={viewMode === "list" ? "primary" : "default"}
                     onClick={() => setViewMode("list")}
-                    icon={<FaThList />}
+                    icon={<UnorderedListOutlined />}
                   />
                   <Button
                     type={viewMode === "card" ? "primary" : "default"}
                     onClick={() => setViewMode("card")}
-                    icon={<FaThLarge />}
+                    icon={<OrderedListOutlined />}
                   />
                 </div>
               </div>
@@ -312,7 +317,7 @@ const CustomerList = () => {
                                         target="_blank"
                                         rel="noopener noreferrer"
                                       >
-                                        <FaEye className="me-2" /> View
+                                        <EyeOutlined className="me-2" /> View
                                       </a>
                                     </Menu.Item>
                                   </PermissionGate>
@@ -330,10 +335,7 @@ const CustomerList = () => {
                                 </Menu>
                               }
                             >
-                              <Button
-                                size="small"
-                                icon={<BsThreeDotsVertical />}
-                              />
+                              <Button size="small" icon={<MoreOutlined />} />
                             </Dropdown>
                           </PermissionGate>
                         </div>
@@ -416,7 +418,7 @@ const CustomerList = () => {
                                           target="_blank"
                                           rel="noopener noreferrer"
                                         >
-                                          <FaEye className="me-2" /> View
+                                          <EyeOutlined className="me-2" /> View
                                         </a>
                                       </Menu.Item>
                                     </PermissionGate>
@@ -439,7 +441,7 @@ const CustomerList = () => {
                                 <Button
                                   size="small"
                                   type="text"
-                                  icon={<BsThreeDotsVertical />}
+                                  icon={<MoreOutlined />}
                                 />
                               </Dropdown>
                             </PermissionGate>

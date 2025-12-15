@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { FaArrowLeft } from "react-icons/fa";
+
 import {
   useCreateProductMutation,
   useUpdateProductMutation,
@@ -8,7 +8,13 @@ import {
   useReplaceAllKeywordsForProductMutation,
   useLazyCheckProductCodeQuery,
 } from "../../api/productApi";
-import { FiImage, FiPlusCircle, FiLifeBuoy, FiPackage } from "react-icons/fi";
+import {
+  ArrowLeftOutlined,
+  PictureOutlined,
+  PlusCircleOutlined,
+  InboxOutlined,
+} from "@ant-design/icons";
+
 import { useGetAllCategoriesQuery } from "../../api/categoryApi";
 import { useGetAllBrandsQuery } from "../../api/brandsApi";
 import { useGetVendorsQuery } from "../../api/vendorApi";
@@ -592,7 +598,7 @@ const CreateProduct = () => {
           <h4 style={{ margin: 0, fontWeight: "bold" }}>
             {isEditMode ? "Edit Product" : "Create New Product"}
           </h4>
-          <Button icon={<FaArrowLeft />} onClick={() => navigate(-1)}>
+          <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)}>
             Back
           </Button>
         </Row>
@@ -718,7 +724,7 @@ const CreateProduct = () => {
             <Panel
               header={
                 <>
-                  <FiPackage style={{ marginRight: 8 }} /> Variant Settings
+                  <InboxOutlined style={{ marginRight: 8 }} /> Variant Settings
                 </>
               }
               key="2"
@@ -846,7 +852,7 @@ const CreateProduct = () => {
                                     type="dashed"
                                     onClick={() => add()}
                                     block
-                                    icon={<FiPlusCircle />}
+                                    icon={<PlusCircleOutlined />}
                                     style={{ marginTop: 8 }}
                                   >
                                     Add Variant Attribute
@@ -1002,7 +1008,11 @@ const CreateProduct = () => {
                 }}
               >
                 <input {...getInputProps()} />
-                <FiImage size={48} color="#999" style={{ marginBottom: 16 }} />
+                <PictureOutlined
+                  size={48}
+                  color="#999"
+                  style={{ marginBottom: 16 }}
+                />
                 <p style={{ margin: 0, color: "#666", fontSize: 16 }}>
                   <strong>Click to upload</strong> or drag & drop
                 </p>
@@ -1116,7 +1126,7 @@ const CreateProduct = () => {
                             <Button
                               type="text"
                               size="small"
-                              icon={<FiPlusCircle />}
+                              icon={<PlusCircleOutlined />}
                               onMouseDown={(e) => e.preventDefault()}
                               onClick={() =>
                                 handleCreateKeyword(searchKeyword.trim())

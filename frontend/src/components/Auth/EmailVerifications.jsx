@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useResendVerificationEmailMutation } from "../../api/authApi";
 import logo from "../../assets/img/logo.png";
 import logoWhite from "../../assets/img/logo.png";
-import { FaEnvelope } from "react-icons/fa";
+import { MailOutlined } from "@ant-design/icons";
 import { message } from "antd";
 const EmailVerification = () => {
   const [email, setEmail] = useState("");
@@ -101,7 +101,7 @@ const EmailVerification = () => {
                       disabled={isLoading}
                     />
                     <span className="input-group-text border-start-0">
-                      <FaEnvelope />
+                      <MailOutlined />
                     </span>
                   </div>
                 </div>

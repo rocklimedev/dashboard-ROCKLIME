@@ -40,7 +40,6 @@ import { debounce } from "lodash";
 import moment from "moment";
 import styled from "styled-components";
 import PropTypes from "prop-types";
-
 import CartTab from "./Cart";
 import QuotationForm from "./QuotationForm";
 import OrderForm from "./OrderForm";
@@ -148,7 +147,7 @@ const NewCart = ({ onConvertToOrder }) => {
   const [productSearch, setProductSearch] = useState("");
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [shipping, setShipping] = useState(0);
-  const [gst, setGst] = useState(18);
+  const [gst, setGst] = useState(0); // GST is now always 0
   const [billingAddressId, setBillingAddressId] = useState(null);
   // ────────────────────── QUERIES ──────────────────────
   const { data: cartData } = useGetCartQuery(userId, { skip: !userId });

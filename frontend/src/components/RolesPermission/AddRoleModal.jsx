@@ -1,16 +1,15 @@
 import React, { useState } from "react";
-import { message } from "antd";
+import { message, Modal, Input, Form, Button, Typography } from "antd";
 import { useCreateRoleMutation } from "../../api/rolesApi";
-import Modal from "react-bootstrap/Modal";
-import Button from "react-bootstrap/Button";
-import Form from "react-bootstrap/Form";
+
+const { Title } = Typography;
 
 const AddRoleModal = ({ show, onClose }) => {
   const [roleName, setRoleName] = useState("");
-  const [createRole] = useCreateRoleMutation();
+  const [createRole, { isLoading }] = useCreateRoleMutation();
+  const [form] = Form.useForm();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     if (!roleName.trim()) {
       message.error("Role name is required.");
       return;
@@ -18,7 +17,9 @@ const AddRoleModal = ({ show, onClose }) => {
 
     try {
       await createRole({ roleName }).unwrap();
+      message.success("Role added successfully!");
       setRoleName("");
+      form.resetFields();
       onClose();
     } catch (error) {
       message.error(
@@ -27,36 +28,51 @@ const AddRoleModal = ({ show, onClose }) => {
     }
   };
 
-  const handleClose = () => {
+  const handleCancel = () => {
     setRoleName("");
+    form.resetFields();
     onClose();
   };
 
   return (
-    <Modal show={show} onHide={handleClose} centered size="md">
-      <Modal.Header>
-        <Modal.Title>Add New Role</Modal.Title>
-      </Modal.Header>
+    <Modal
+      open={show}
+      onCancel={handleCancel}
+      title={
+        <Title level={4} style={{ margin: 0 }}>
+          Add New Role
+        </Title>
+      }
+      footer={null}
+      centered
+      width={500}
+      confirmLoading={isLoading}
+    >
+      <Form form={form} layout="vertical" onFinish={handleSubmit}>
+        <Form.Item
+          label="Role Name"
+          name="roleName"
+          rules={[
+            { required: true, message: "Please enter a role name!" },
+            { whitespace: true, message: "Role name cannot be empty!" },
+          ]}
+        >
+          <Input
+            placeholder="Enter role name"
+            value={roleName}
+            onChange={(e) => setRoleName(e.target.value)}
+            size="large"
+          />
+        </Form.Item>
 
-      <Form onSubmit={handleSubmit}>
-        <Modal.Body>
-          <Form.Group className="mb-3" controlId="roleName">
-            <Form.Label>Role Name</Form.Label>
-            <Form.Control
-              type="text"
-              placeholder="Enter role name"
-              value={roleName}
-              onChange={(e) => setRoleName(e.target.value)}
-              required
-            />
-          </Form.Group>
-        </Modal.Body>
-
-        <Modal.Footer>
-          <Button variant="primary" type="submit">
-            Add New
+        <Form.Item style={{ marginBottom: 0, textAlign: "right" }}>
+          <Button onClick={handleCancel} style={{ marginRight: 8 }}>
+            Cancel
           </Button>
-        </Modal.Footer>
+          <Button type="primary" htmlType="submit" loading={isLoading}>
+            Add Role
+          </Button>
+        </Form.Item>
       </Form>
     </Modal>
   );

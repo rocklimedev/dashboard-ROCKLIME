@@ -1,5 +1,9 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { FaSearch, FaPen, FaThList, FaThLarge } from "react-icons/fa";
+import {
+  SearchOutlined,
+  UnorderedListOutlined,
+  OrderedListOutlined,
+} from "@ant-design/icons";
 import Avatar from "react-avatar";
 import {
   useGetAllUsersQuery,
@@ -172,7 +176,7 @@ const UserList = () => {
                 <div className="d-flex justify-content-end gap-2 flex-wrap">
                   <div className="input-group" style={{ maxWidth: "280px" }}>
                     <span className="input-group-text">
-                      <FaSearch />
+                      <SearchOutlined />
                     </span>
                     <input
                       type="text"
@@ -193,7 +197,7 @@ const UserList = () => {
                       onClick={() => setViewMode("list")}
                       title="List View"
                     >
-                      <FaThList />
+                      <UnorderedListOutlined />
                     </button>
                     <button
                       className={`btn ${
@@ -204,7 +208,7 @@ const UserList = () => {
                       onClick={() => setViewMode("card")}
                       title="Card View"
                     >
-                      <FaThLarge />
+                      <OrderedListOutlined />
                     </button>
                   </div>
                 </div>
@@ -269,7 +273,7 @@ const UserList = () => {
                                 } text-white cursor-pointer`}
                               >
                                 {active ? "Active" : "Inactive"}{" "}
-                                <FaPen size={10} />
+                                <EditOutlined size={10} />
                               </span>
                             </Dropdown>
                           </div>
@@ -417,7 +421,7 @@ const UserList = () => {
                                 } text-white cursor-pointer`}
                               >
                                 {active ? "Active" : "Inactive"}{" "}
-                                <FaPen size={10} />
+                                <EditOutlined size={10} />
                               </span>
                             </Dropdown>
                           </td>

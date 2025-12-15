@@ -10,7 +10,7 @@ import {
   useUpdateOrderStatusMutation,
 } from "../../api/orderApi";
 import { message } from "antd";
-import { FaSearch } from "react-icons/fa";
+import { SearchOutlined } from "@ant-design/icons";
 import {
   EditOutlined,
   FileTextOutlined,
@@ -512,7 +512,7 @@ const OrderWrapper = () => {
                 <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
                   <div className="input-icon-start position-relative me-2">
                     <span className="input-icon-addon">
-                      <FaSearch />
+                      <SearchOutlined />
                     </span>
                     <input
                       type="text"

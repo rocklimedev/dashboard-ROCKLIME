@@ -14,8 +14,7 @@ import {
 } from "antd";
 import { ArrowLeftOutlined, ShoppingCartOutlined } from "@ant-design/icons";
 import { LazyLoadImage } from "react-lazy-load-image-component";
-import { FcEmptyTrash } from "react-icons/fc";
-import { BiTrash } from "react-icons/bi";
+import { DeleteOutlined, DeleteFilled } from "@ant-design/icons";
 import styled from "styled-components";
 import OrderTotal from "./OrderTotal";
 import { CheckCircleOutlined } from "@ant-design/icons";
@@ -179,7 +178,7 @@ const CartTab = ({
             <EmptyCartWrapper>
               <Empty
                 description="Your cart is empty"
-                image={<FcEmptyTrash style={{ fontSize: 64 }} />}
+                image={<DeleteOutlined style={{ fontSize: 64 }} />}
               />
               <Button
                 type="primary"
@@ -297,7 +296,7 @@ const CartTab = ({
                       <RemoveButton
                         type="button"
                         danger
-                        icon={<BiTrash />}
+                        icon={<DeleteFilled />}
                         onClick={(e) => handleRemoveItem(e, item.productId)}
                         disabled={updatingItems[item.productId]}
                         loading={updatingItems[item.productId]}

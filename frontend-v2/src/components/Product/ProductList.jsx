@@ -43,7 +43,6 @@ import PageHeader from "../Common/PageHeader";
 import Breadcrumb from "./Breadcrumb";
 import pos from "../../assets/img/default.png";
 import PermissionGate from "../../context/PermissionGate";
-import { useAuth } from "../../context/AuthContext";
 
 const ProductsList = () => {
   const { id: brandId, bpcId } = useParams();

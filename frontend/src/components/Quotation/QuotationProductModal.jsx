@@ -1,6 +1,9 @@
 import React, { useMemo } from "react";
-import { Modal, Table, Image, Alert, Badge } from "react-bootstrap";
+import { Modal, Table, Image, Spin, Empty, Typography } from "antd";
+import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { useGetQuotationByIdQuery } from "../../api/quotationApi";
+
+const { Text, Title } = Typography;
 
 const safeParse = (str, fallback = []) => {
   if (Array.isArray(str)) return str;
@@ -27,239 +30,308 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
     [q.items]
   );
 
-  // Prefer `q.items` (new format), fallback to `q.products` (old format)
   const lineItems = items.length > 0 ? items : products;
-
   const hasValidItems = lineItems.length > 0;
+
+  // === Summary Calculations ===
+  const subtotal = useMemo(() => {
+    return lineItems.reduce((sum, item) => sum + Number(item.total || 0), 0);
+  }, [lineItems]);
+
+  const extraDiscount = Number(q.extraDiscount || 0);
+  const extraDiscountAmount = Number(q.discountAmount || q.extraDiscount || 0);
+  const shippingAmount = Number(q.shippingAmount || 0);
+  const gstRate = Number(q.gst || 0);
+  const roundOff = Number(q.roundOff || 0);
+  const finalAmount = Number(q.finalAmount || 0);
+
+  const taxableAmount = subtotal - extraDiscountAmount + shippingAmount;
+  const gstAmount = gstRate > 0 ? (taxableAmount * gstRate) / 100 : 0;
+
+  // === Breakdown Data for Proper Antd Table Rendering ===
+  const summaryData = useMemo(() => {
+    const rows = [];
+
+    rows.push({
+      key: "subtotal",
+      label: <Text strong>Subtotal</Text>,
+      amount: <Text strong>₹{subtotal.toFixed(2)}</Text>,
+    });
+
+    if (extraDiscount > 0) {
+      rows.push({
+        key: "extraDiscount",
+        label: (
+          <Text style={{ color: "#cf1322" }}>
+            Extra Discount (
+            {q.extraDiscountType === "percent"
+              ? `${extraDiscount}%`
+              : `₹${extraDiscount.toFixed(2)}`}
+            )
+          </Text>
+        ),
+        amount: (
+          <Text style={{ color: "#cf1322" }}>
+            -₹{extraDiscountAmount.toFixed(2)}
+          </Text>
+        ),
+      });
+    }
+
+    if (shippingAmount > 0) {
+      rows.push({
+        key: "shipping",
+        label: <Text style={{ color: "#3f8600" }}>Shipping</Text>,
+        amount: (
+          <Text style={{ color: "#3f8600" }}>
+            +₹{shippingAmount.toFixed(2)}
+          </Text>
+        ),
+      });
+    }
+
+    if (gstRate > 0) {
+      rows.push({
+        key: "gst",
+        label: <Text style={{ color: "#3f8600" }}>GST ({gstRate}%)</Text>,
+        amount: (
+          <Text style={{ color: "#3f8600" }}>+₹{gstAmount.toFixed(2)}</Text>
+        ),
+      });
+    }
+
+    if (roundOff !== 0) {
+      rows.push({
+        key: "roundOff",
+        label: <Text>Round Off</Text>,
+        amount: (
+          <Text style={{ color: roundOff >= 0 ? "#3f8600" : "#cf1322" }}>
+            {roundOff >= 0 ? "+" : "-"}₹{Math.abs(roundOff).toFixed(2)}
+          </Text>
+        ),
+      });
+    }
+
+    rows.push({
+      key: "final",
+      label: (
+        <Text strong style={{ fontSize: "1.2em" }}>
+          Final Amount
+        </Text>
+      ),
+      amount: (
+        <Text strong style={{ fontSize: "1.3em" }}>
+          ₹{finalAmount.toFixed(2)}
+        </Text>
+      ),
+    });
+
+    return rows;
+  }, [
+    subtotal,
+    extraDiscount,
+    extraDiscountAmount,
+    shippingAmount,
+    gstRate,
+    gstAmount,
+    roundOff,
+    finalAmount,
+    q.extraDiscountType,
+  ]);
+
+  const summaryColumns = [
+    {
+      dataIndex: "label",
+      key: "label",
+      render: (label) => label,
+    },
+    {
+      dataIndex: "amount",
+      key: "amount",
+      width: 180,
+      align: "right",
+      render: (amount) => amount,
+    },
+  ];
 
   if (isLoading) {
     return (
-      <Modal show={show} onHide={onHide} centered>
-        <Modal.Body className="text-center py-5">
-          <div className="spinner-border text-primary" />
-          <p className="mt-2">Loading quotation…</p>
-        </Modal.Body>
+      <Modal open={show} onCancel={onHide} footer={null} centered width={800}>
+        <div style={{ textAlign: "center", padding: "60px 0" }}>
+          <Spin size="large" />
+          <div style={{ marginTop: 16 }}>
+            <Text type="secondary">Loading quotation details…</Text>
+          </div>
+        </div>
       </Modal>
     );
   }
 
   if (isError || !q.quotationId) {
     return (
-      <Modal show={show} onHide={onHide} centered>
-        <Modal.Body>
-          <Alert variant="danger">Failed to load quotation details.</Alert>
-        </Modal.Body>
+      <Modal open={show} onCancel={onHide} footer={null} centered width={600}>
+        <div style={{ textAlign: "center", padding: "50px 0" }}>
+          <ExclamationCircleOutlined
+            style={{ fontSize: 48, color: "#ff4d4f" }}
+          />
+          <Title level={4} style={{ margin: "16px 0 8px" }}>
+            Failed to load quotation
+          </Title>
+          <Text type="secondary">Please try again later.</Text>
+        </div>
       </Modal>
     );
   }
 
-  return (
-    <Modal show={show} onHide={onHide} size="xl" centered scrollable>
-      <Modal.Header>
-        <Modal.Title>
-          Quotation #{q.reference_number || q.quotationId} – Products & Pricing
-        </Modal.Title>
-      </Modal.Header>
+  const columns = [
+    {
+      title: "#",
+      width: 60,
+      align: "center",
+      render: (_, __, index) => index + 1,
+    },
+    {
+      title: "Image",
+      width: 100,
+      align: "center",
+      render: (_, record) => {
+        const imageUrl = record.imageUrl || record.images?.[0];
+        return imageUrl ? (
+          <Image
+            src={imageUrl}
+            width={60}
+            height={60}
+            style={{ objectFit: "contain", borderRadius: 6 }}
+            preview
+          />
+        ) : (
+          <div
+            style={{
+              width: 60,
+              height: 60,
+              background: "#f5f5f5",
+              borderRadius: 6,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#999",
+              fontSize: "0.8rem",
+            }}
+          >
+            No Image
+          </div>
+        );
+      },
+    },
+    {
+      title: "Product",
+      dataIndex: "name",
+      render: (name) => <Text strong>{name || "Unknown Product"}</Text>,
+    },
+    {
+      title: "Qty",
+      width: 80,
+      align: "center",
+      render: (_, record) => Number(record.quantity || record.qty || 1),
+    },
+    {
+      title: "Price",
+      width: 120,
+      align: "right",
+      render: (_, record) => {
+        const price = Number(record.price || record.sellingPrice || 0);
+        return `₹${price.toFixed(2)}`;
+      },
+    },
+    {
+      title: "Discount",
+      width: 120,
+      align: "center",
+      render: (_, record) => {
+        const discount = Number(record.discount || 0);
+        const type = record.discountType || "percent";
+        if (discount <= 0) return "—";
+        return type === "percent" ? `${discount}%` : `₹${discount.toFixed(2)}`;
+      },
+    },
+    {
+      title: "Tax %",
+      width: 80,
+      align: "center",
+      render: () => "—",
+    },
+    {
+      title: "Line Total",
+      width: 140,
+      align: "right",
+      render: (_, record) => {
+        const qty = Number(record.quantity || record.qty || 1);
+        const price = Number(record.price || record.sellingPrice || 0);
+        const discount = Number(record.discount || 0);
+        const discountType = record.discountType || "percent";
 
-      <Modal.Body className="p-4">
+        let discountAmount = 0;
+        if (discount > 0) {
+          discountAmount =
+            discountType === "percent"
+              ? (price * qty * discount) / 100
+              : discount;
+        }
+
+        const lineSubtotal = price * qty - discountAmount;
+        const savedTotal = Number(record.total);
+        const displayTotal = savedTotal > 0 ? savedTotal : lineSubtotal;
+
+        return <Text strong>₹{displayTotal.toFixed(2)}</Text>;
+      },
+    },
+  ];
+
+  return (
+    <Modal
+      open={show}
+      onCancel={onHide}
+      footer={null}
+      width={1200}
+      centered
+      title={
+        <Title level={4} style={{ margin: 0 }}>
+          Quotation #{q.reference_number || q.quotationId} – Products & Pricing
+        </Title>
+      }
+    >
+      <div style={{ padding: "16px 0" }}>
         {!hasValidItems ? (
-          <Alert variant="info">No products found in this quotation.</Alert>
+          <Empty description="No products found in this quotation." />
         ) : (
           <>
-            {/* ========== PRODUCT TABLE ========== */}
+            {/* Products Table */}
             <Table
-              striped
+              columns={columns}
+              dataSource={lineItems}
+              rowKey={(record, idx) => record.productId || record._id || idx}
+              pagination={false}
               bordered
-              hover
-              responsive
-              className="mb-4 text-center align-middle"
-            >
-              <thead className="table-dark">
-                <tr>
-                  <th>#</th>
-                  <th>Image</th>
-                  <th>Product</th>
-                  <th>Qty</th>
-                  <th>Price</th>
-                  <th>Discount</th>
-                  <th>Tax %</th>
-                  <th>Line Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {lineItems.map((item, idx) => {
-                  const qty = Number(item.quantity || item.qty || 1);
-                  const price = Number(item.price || item.sellingPrice || 0);
-                  const discount = Number(item.discount || 0);
-                  const discountType = item.discountType || "percent";
+              scroll={{ x: 900 }}
+              style={{ marginBottom: 40 }}
+            />
 
-                  // === Calculate discount amount ===
-                  let discountAmount = 0;
-                  if (discount > 0) {
-                    if (discountType === "percent") {
-                      discountAmount = (price * qty * discount) / 100;
-                    } else {
-                      discountAmount = discount;
-                    }
-                  }
-
-                  // === Subtotal = (Price × Qty) - Discount (NO TAX here) ===
-                  const subtotal = price * qty - discountAmount;
-
-                  // === DO NOT apply line-level tax (your items have tax: 0) ===
-                  // Tax is applied at document level via q.gst
-
-                  // Use saved total if valid, otherwise use calculated subtotal
-                  const savedTotal = Number(item.total);
-                  const displayTotal = savedTotal > 0 ? savedTotal : subtotal;
-
-                  const discountDisplay =
-                    discount > 0
-                      ? discountType === "percent"
-                        ? `${discount}%`
-                        : `₹${discount.toFixed(2)}`
-                      : "—";
-
-                  const imageUrl = item.imageUrl || item.images?.[0];
-
-                  return (
-                    <tr key={item.productId || item._id || idx}>
-                      <td>{idx + 1}</td>
-                      <td>
-                        {imageUrl ? (
-                          <Image
-                            src={imageUrl}
-                            rounded
-                            style={{
-                              width: 60,
-                              height: 60,
-                              objectFit: "contain",
-                            }}
-                          />
-                        ) : (
-                          <div
-                            style={{
-                              width: 60,
-                              height: 60,
-                              background: "#f5f5f5",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              fontSize: "0.8rem",
-                              color: "#999",
-                            }}
-                          >
-                            No Image
-                          </div>
-                        )}
-                      </td>
-                      <td className="text-start fw-medium">
-                        {item.name || "Unknown Product"}
-                      </td>
-                      <td>{qty}</td>
-                      <td>₹{price.toFixed(2)}</td>
-                      <td>{discountDisplay}</td>
-                      <td>—</td> {/* No per-line tax */}
-                      <td className="fw-bold">₹{displayTotal.toFixed(2)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </Table>
-
-            {/* ========== FINAL BREAKDOWN – ROBUST VERSION ========== */}
-            <div className="mt-4">
-              <Table bordered size="sm">
-                <tbody>
-                  {/* 1. Subtotal – sum of all line item totals */}
-                  <tr>
-                    <td className="text-end fw-bold">Subtotal</td>
-                    <td className="text-end">
-                      ₹
-                      {lineItems
-                        .reduce((sum, item) => sum + Number(item.total || 0), 0)
-                        .toFixed(2)}
-                    </td>
-                  </tr>
-
-                  {/* 2. Extra Discount */}
-                  {q.extraDiscount > 0 && (
-                    <tr>
-                      <td className="text-end text-danger">
-                        Extra Discount (
-                        {q.extraDiscountType === "percent"
-                          ? `${q.extraDiscount}%`
-                          : `₹${q.extraDiscount}`}
-                        )
-                      </td>
-                      <td className="text-end text-danger">
-                        -₹
-                        {Number(
-                          q.discountAmount || q.extraDiscount || 0
-                        ).toFixed(2)}
-                      </td>
-                    </tr>
-                  )}
-
-                  {/* 3. Shipping */}
-                  {q.shippingAmount > 0 && (
-                    <tr>
-                      <td className="text-end text-success">Shipping</td>
-                      <td className="text-end text-success">
-                        +₹{Number(q.shippingAmount).toFixed(2)}
-                      </td>
-                    </tr>
-                  )}
-
-                  {/* 4. GST – NOW FIXED! */}
-                  {q.gst > 0 && (
-                    <tr>
-                      <td className="text-end text-success">GST ({q.gst}%)</td>
-                      <td className="text-end text-success">
-                        +₹
-                        {(
-                          (lineItems.reduce(
-                            (sum, item) => sum + Number(item.total || 0),
-                            0
-                          ) +
-                            (q.shippingAmount || 0) -
-                            (q.discountAmount || 0)) *
-                          (q.gst / 100)
-                        ).toFixed(2)}
-                      </td>
-                    </tr>
-                  )}
-
-                  {/* 5. Round Off */}
-                  {q.roundOff != null && Number(q.roundOff) !== 0 && (
-                    <tr>
-                      <td className="text-end">Round Off</td>
-                      <td
-                        className={`text-end ${
-                          Number(q.roundOff) >= 0
-                            ? "text-success"
-                            : "text-danger"
-                        }`}
-                      >
-                        {Number(q.roundOff) >= 0 ? "+" : "-"}₹
-                        {Math.abs(Number(q.roundOff)).toFixed(2)}
-                      </td>
-                    </tr>
-                  )}
-
-                  {/* 6. Final Amount */}
-                  <tr className="table-primary fw-bold fs-5">
-                    <td className="text-end">Final Amount</td>
-                    <td className="text-end">
-                      ₹{Number(q.finalAmount || 0).toFixed(2)}
-                    </td>
-                  </tr>
-                </tbody>
-              </Table>
+            {/* Final Calculations Summary - Now Properly Rendered with Antd Table */}
+            <div style={{ maxWidth: 500, marginLeft: "auto" }}>
+              <Table
+                columns={summaryColumns}
+                dataSource={summaryData}
+                pagination={false}
+                bordered
+                showHeader={false}
+                rowClassName={(record) =>
+                  record.key === "final" ? "ant-table-row-final" : ""
+                }
+              />
             </div>
           </>
         )}
-      </Modal.Body>
+      </div>
     </Modal>
   );
 };
