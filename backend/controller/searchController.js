@@ -22,7 +22,6 @@ const searchAll = async (req, res) => {
   try {
     const { query, page = 1, limit = 10 } = req.query;
 
-    // Validate query
     if (!query || query.trim().length < 1) {
       return res.status(400).json({
         success: false,
@@ -31,12 +30,12 @@ const searchAll = async (req, res) => {
     }
 
     const searchTerm = `%${query.trim()}%`;
-    const offset = (page - 1) * limit;
     const results = {};
 
-    // Define searchable fields for each model
-    const searchQueries = [
+    // Define searchable models with explicit keys
+    const searchConfigs = [
       {
+        key: "Address",
         model: Address,
         fields: ["street", "city", "state", "postalCode", "country"],
         attributes: [
@@ -49,21 +48,25 @@ const searchAll = async (req, res) => {
         ],
       },
       {
+        key: "Brand",
         model: Brand,
         fields: ["brandSlug", "brandName"],
         attributes: ["id", "brandSlug", "brandName"],
       },
       {
+        key: "Category",
         model: Category,
         fields: ["name"],
         attributes: ["categoryId", "name", "parentCategoryId"],
       },
       {
+        key: "Company",
         model: Company,
         fields: ["name", "address", "website", "slug"],
         attributes: ["companyId", "name", "address", "website", "slug"],
       },
       {
+        key: "Customer",
         model: Customer,
         fields: ["name", "email", "customerType", "mobileNumber"],
         attributes: [
@@ -74,23 +77,26 @@ const searchAll = async (req, res) => {
           "mobileNumber",
         ],
       },
-
       {
+        key: "Keyword",
         model: Keyword,
         fields: ["keyword"],
         attributes: ["id", "keyword", "categoryId"],
       },
       {
+        key: "Order",
         model: Order,
         fields: ["orderNo", "status"],
         attributes: ["id", "orderNo", "status", "dueDate", "priority"],
       },
       {
+        key: "Product",
         model: Product,
         fields: ["name", "product_code", "images", "meta"],
         attributes: ["productId", "name", "product_code", "images", "meta"],
       },
       {
+        key: "Quotation",
         model: Quotation,
         fields: ["document_title", "reference_number"],
         attributes: [
@@ -101,30 +107,33 @@ const searchAll = async (req, res) => {
         ],
       },
       {
+        key: "Role",
         model: Role,
         fields: ["roleName"],
         attributes: ["roleId", "roleName"],
       },
       {
+        key: "Team",
         model: Team,
         fields: ["teamName", "adminName"],
         attributes: ["id", "teamName", "adminName"],
       },
       {
+        key: "User",
         model: User,
         fields: ["username", "name", "email", "mobileNumber"],
         attributes: ["userId", "username", "name", "email", "status"],
       },
       {
+        key: "Vendor",
         model: Vendor,
         fields: ["vendorId", "vendorName"],
         attributes: ["id", "vendorId", "vendorName", "brandSlug"],
       },
     ];
 
-    // Execute searches concurrently
     await Promise.all(
-      searchQueries.map(async ({ model, fields, attributes }) => {
+      searchConfigs.map(async ({ key, model, fields, attributes }) => {
         try {
           const where = {
             [Op.or]: fields.map((field) => ({
@@ -132,33 +141,32 @@ const searchAll = async (req, res) => {
             })),
           };
 
-          const { rows, count } = await model.findAndCountAll({
+          const rows = await model.findAll({
             where,
             attributes,
-            limit: parseInt(limit),
-            offset,
+            limit: 8,
             order: [["createdAt", "DESC"]],
           });
 
-          results[model.name] = {
+          results[key] = {
             items: rows,
-            total: count,
-            page: parseInt(page),
-            pages: Math.ceil(count / limit),
+            total: rows.length,
+            page: 1,
+            pages: 1,
           };
         } catch (error) {
-          results[model.name] = {
+          console.error(`Search failed for ${key}:`, error);
+          results[key] = {
             items: [],
             total: 0,
-            page: parseInt(page),
+            page: 1,
             pages: 0,
-            error: `Failed to search ${model.name}`,
+            error: `Failed to search ${key}`,
           };
         }
       })
     );
 
-    // Calculate total results across all models
     const totalResults = Object.values(results).reduce(
       (sum, { total }) => sum + total,
       0
@@ -171,10 +179,11 @@ const searchAll = async (req, res) => {
       meta: {
         total: totalResults,
         page: parseInt(page),
-        limit: parseInt(limit),
+        limit: 8, // or keep dynamic if needed
       },
     });
   } catch (error) {
+    console.error("Global search error:", error);
     return res.status(500).json({
       success: false,
       message: error.message || "An error occurred during search",

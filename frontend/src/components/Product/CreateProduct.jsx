@@ -270,12 +270,26 @@ const CreateProduct = () => {
     if (
       brandId &&
       companyCode !== undefined &&
-      companyCode !== null &&
       String(companyCode).trim() !== ""
     ) {
       generateUniqueCode(brandId, companyCode);
+    } else {
+      // Clear auto code if required fields missing
+      if (autoCode && !isCodeDirty) {
+        setAutoCode("");
+        form.setFieldsValue({ product_code: "" });
+        setCodeStatus("");
+      }
     }
-  }, [brandId, metaData, isEditMode, isCodeDirty, generateUniqueCode]);
+  }, [
+    brandId,
+    metaData,
+    isEditMode,
+    isCodeDirty,
+    generateUniqueCode,
+    autoCode,
+    form,
+  ]);
   // Load existing product
   useEffect(() => {
     if (!existingProduct) return;
@@ -646,6 +660,42 @@ const CreateProduct = () => {
                     />
                   </Form.Item>
                 </Col>
+                {/* Always show Company Code if it exists in meta list */}
+                {/* Add this inside Panel key="1", after the Product Code row */}
+                {!isEditMode && (
+                  <Col xs={24} md={12}>
+                    <Form.Item label="Company Code (for Auto SKU)">
+                      <Input
+                        placeholder="e.g. 2024, ABC123, 12345"
+                        value={metaData[COMPANY_CODE_META_ID] || ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          handleMetaChange(COMPANY_CODE_META_ID, value);
+                          // Optional: reset code status when user types
+                          if (value.trim()) {
+                            setCodeStatus("");
+                          }
+                        }}
+                        status={
+                          !metaData[COMPANY_CODE_META_ID]?.trim() ? "error" : ""
+                        }
+                        addonAfter={
+                          metaData[COMPANY_CODE_META_ID]?.trim() ? (
+                            <Tag color="blue">Used for auto code</Tag>
+                          ) : (
+                            <Tag color="orange">Required for auto code</Tag>
+                          )
+                        }
+                      />
+                      <div
+                        style={{ fontSize: 12, color: "#888", marginTop: 4 }}
+                      >
+                        This value helps generate unique product codes (e.g.
+                        EBR2024001)
+                      </div>
+                    </Form.Item>
+                  </Col>
+                )}
 
                 <Col xs={24} sm={8}>
                   <Form.Item name="categoryId" label="Category">
@@ -1139,71 +1189,6 @@ const CreateProduct = () => {
               }
               key="6"
             >
-              {/* Always show Company Code if it exists in meta list */}
-              {productMetaData
-                .filter(
-                  (m) => m.id === COMPANY_CODE_META_ID || m.id in metaData
-                )
-                .map((m) => {
-                  const value = metaData[m.id] || "";
-                  const isCompanyCode = m.id === COMPANY_CODE_META_ID;
-
-                  return (
-                    <Row
-                      key={m.id}
-                      gutter={16}
-                      align="middle"
-                      style={{ marginBottom: 16 }}
-                    >
-                      <Col flex="150px">
-                        <strong>
-                          {m.title}
-                          {isCompanyCode && (
-                            <Tag color="volcano" style={{ marginLeft: 8 }}>
-                              Auto-SKU
-                            </Tag>
-                          )}
-                          :
-                        </strong>
-                      </Col>
-                      <Col flex="1">
-                        <Input
-                          placeholder={
-                            isCompanyCode
-                              ? "Required for auto Product Code (e.g. 2024, ABC123)"
-                              : ""
-                          }
-                          value={value}
-                          onChange={(e) =>
-                            handleMetaChange(m.id, e.target.value)
-                          }
-                          status={
-                            isCompanyCode && !String(value ?? "").trim()
-                              ? "error"
-                              : ""
-                          }
-                        />
-                      </Col>
-                      {!isCompanyCode && (
-                        <Col>
-                          <Button
-                            danger
-                            size="small"
-                            onClick={() =>
-                              setMetaData((prev) => {
-                                const { [m.id]: _, ...rest } = prev;
-                                return rest;
-                              })
-                            }
-                          >
-                            Remove
-                          </Button>
-                        </Col>
-                      )}
-                    </Row>
-                  );
-                })}
-
               {/* Add other specifications */}
               {productMetaData.filter(
                 (m) => m.id !== COMPANY_CODE_META_ID && !(m.id in metaData)

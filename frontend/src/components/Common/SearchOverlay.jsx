@@ -21,29 +21,29 @@ const SearchOverlay = ({ visible, loading, results, onClose, query }) => {
         };
       case "Product":
         return {
-          link: `/products/${item.productId}`,
+          link: `/product/${item.productId}`,
           title: item.name || item.product_code,
         };
       case "Customer":
         return {
-          link: `/customers/${item.customerId}`,
+          link: `/customer/${item.customerId}`,
           title: item.name || item.companyName,
         };
       case "Order":
         return {
-          link: `/orders/${item.id}`,
+          link: `/order/${item.id}`,
           title: item.title || `Order #${item.id}`,
         };
       case "Invoice":
-        return { link: `/invoices/${item.invoiceId}`, title: item.invoiceNo };
+        return { link: `/invoice/${item.invoiceId}`, title: item.invoiceNo };
       case "Quotation":
         return {
-          link: `/quotations/${item.quotationId}`,
+          link: `/quotation/${item.quotationId}`,
           title: item.document_title || item.reference_number,
         };
       case "Brand":
         return {
-          link: `/brands/${item.brandSlug || item.id}`,
+          link: `/store/${item.id}`,
           title: item.brandName,
         };
       case "Category":
