@@ -3,9 +3,9 @@ name: Deploy Backend to VPS
 on:
   push:
     branches:
-      - main
+      - main # Change if your branch is different
     paths:
-      - "backend/**" # Only run on backend changes
+      - "backend/**" # Only trigger on backend changes
 
 jobs:
   build-and-deploy:
@@ -39,6 +39,6 @@ jobs:
           script: |
             cd /root/cmtrading-api
             docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GHCR_TOKEN }}
-            docker compose pull
-            docker compose up -d --remove-orphans
+            docker compose pull backend   # Pull only the backend service
+            docker compose up -d backend --remove-orphans  # Restart only backend
             docker image prune -f

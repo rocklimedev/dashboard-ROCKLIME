@@ -193,20 +193,23 @@ const CreateProduct = () => {
     const jsonObj = {};
 
     attributes.forEach((attr) => {
-      if (attr?.key && attr?.value) {
-        const cleanKey = attr.key.trim();
-        const cleanValue = attr.value.trim();
-        if (cleanKey && cleanValue) {
-          jsonObj[cleanKey] = cleanValue;
-        }
+      // Safely convert to string, default to empty string if falsy
+      const rawKey = attr?.key ?? "";
+      const rawValue = attr?.value ?? "";
+
+      const cleanKey = String(rawKey).trim();
+      const cleanValue = String(rawValue).trim();
+
+      if (cleanKey && cleanValue) {
+        jsonObj[cleanKey] = cleanValue;
       }
     });
 
     const jsonString =
       Object.keys(jsonObj).length > 0 ? JSON.stringify(jsonObj, null, 2) : "";
+
     form.setFieldsValue({ variantOptions: jsonString });
   }, [form]);
-
   // Auto update when variantAttributes change
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -579,7 +582,7 @@ const CreateProduct = () => {
       }
 
       message.success(isEditMode ? "Product updated!" : "Product created!");
-      navigate("/products");
+      navigate("/category-selector");
     } catch (err) {
       console.error("Save failed:", err);
       message.error(err?.data?.message || "Failed to save product or keywords");
@@ -865,81 +868,6 @@ const CreateProduct = () => {
                             <Form.Item name="variantOptions" noStyle>
                               <Input type="hidden" />
                             </Form.Item>
-                          </Form.Item>
-                        </Col>
-
-                        {/* AUTO-GENERATED PREVIEW */}
-                        <Col xs={24} md={24}>
-                          <Form.Item label="Auto-generated Preview">
-                            <Space
-                              direction="vertical"
-                              style={{ width: "100%" }}
-                            >
-                              <Input
-                                addonBefore="Variant Name"
-                                readOnly
-                                style={{ background: "#f9f9f9" }}
-                                value={getVariantDisplayName()}
-                              />
-                              <Input
-                                addonBefore="SKU Suffix"
-                                readOnly
-                                style={{ background: "#f9f9f9" }}
-                                value={getVariantSkuSuffix()}
-                              />
-                            </Space>
-                          </Form.Item>
-                        </Col>
-
-                        <Col xs={24} md={12}>
-                          <Form.Item label="Auto-generated Preview">
-                            <Space
-                              direction="vertical"
-                              style={{ width: "100%" }}
-                            >
-                              <Input
-                                addonBefore="Variant Name"
-                                readOnly
-                                style={{ background: "#f9f9f9" }}
-                                value={(() => {
-                                  try {
-                                    const opts =
-                                      form.getFieldValue("variantOptions");
-                                    if (!opts) return "";
-                                    const json = JSON.parse(opts);
-                                    return Object.values(json)
-                                      .filter(Boolean)
-                                      .join(" ")
-                                      .trim();
-                                  } catch {
-                                    return "";
-                                  }
-                                })()}
-                              />
-                              <Input
-                                addonBefore="SKU Suffix"
-                                readOnly
-                                style={{ background: "#f9f9f9" }}
-                                value={(() => {
-                                  try {
-                                    const opts =
-                                      form.getFieldValue("variantOptions");
-                                    if (!opts) return "";
-                                    const json = JSON.parse(opts);
-                                    const parts =
-                                      Object.values(json).filter(Boolean);
-                                    return parts.length > 0
-                                      ? `-${parts
-                                          .join("-")
-                                          .toUpperCase()
-                                          .replace(/\s+/g, "-")}`
-                                      : "";
-                                  } catch {
-                                    return "";
-                                  }
-                                })()}
-                              />
-                            </Space>
                           </Form.Item>
                         </Col>
                       </>
@@ -1249,7 +1177,11 @@ const CreateProduct = () => {
                           onChange={(e) =>
                             handleMetaChange(m.id, e.target.value)
                           }
-                          status={isCompanyCode && !value.trim() ? "error" : ""}
+                          status={
+                            isCompanyCode && !String(value ?? "").trim()
+                              ? "error"
+                              : ""
+                          }
                         />
                       </Col>
                       {!isCompanyCode && (

@@ -3,7 +3,7 @@ import { useLocation, Link, useNavigate } from "react-router-dom";
 import { useGetProfileQuery } from "../../api/userApi";
 import { useGetCartQuery } from "../../api/cartApi";
 import { useGetNotificationsQuery } from "../../api/notificationApi";
-import { Dropdown, Button, Menu, Badge } from "antd";
+import { Dropdown, Button, Menu, Badge, Input } from "antd";
 import {
   BellOutlined,
   EllipsisOutlined,
@@ -15,7 +15,7 @@ import {
   SunFilled,
   MoonFilled,
 } from "@ant-design/icons";
-
+import SearchOverlay from "./SearchOverlay";
 import { message } from "antd";
 import Avatar from "react-avatar";
 import logo from "../../assets/img/logo.png";
@@ -23,7 +23,9 @@ import logo_small from "../../assets/img/fav_icon.png";
 import { useLogoutMutation } from "../../api/authApi";
 import { useAuth } from "../../context/AuthContext";
 import PermissionsGate from "../../context/PermissionGate";
-
+import { useRef } from "react";
+import { useSearchAllQuery } from "../../api/searchApi";
+import { SearchOutlined } from "@ant-design/icons";
 const Header = ({ toggleSidebar, isSidebarOpen }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -56,7 +58,49 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem("theme") === "dark";
   });
+  // === Search State ===
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearchOverlay, setShowSearchOverlay] = useState(false);
+  const searchRef = useRef(null);
+  // === RTK Query Hook for Search ===
+  const {
+    data: searchData,
+    isLoading: searchLoading,
+    isFetching: searchFetching,
+    error: searchError,
+  } = useSearchAllQuery(
+    { query: searchQuery, limit: 8 }, // limit results per model
+    {
+      skip: !searchQuery.trim(), // Skip query if empty
+    }
+  );
+  const searchResults = searchData?.results || null;
 
+  // === Show overlay when typing or results exist ===
+  useEffect(() => {
+    if (searchQuery.trim() && (searchResults || searchLoading)) {
+      setShowSearchOverlay(true);
+    } else {
+      setShowSearchOverlay(false);
+    }
+  }, [searchQuery, searchResults, searchLoading]);
+  // === Close on click outside ===
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setShowSearchOverlay(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // === Close handler ===
+  const closeSearchOverlay = () => {
+    setShowSearchOverlay(false);
+    // Optionally clear search after navigation
+    // setSearchQuery("");
+  };
   // === Dark Mode Effect ===
   useEffect(() => {
     const theme = darkMode ? "dark" : "light";
@@ -287,18 +331,43 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
         {/* Desktop Nav */}
         <ul className="nav user-menu">
           <li className="nav-item nav-searchinputs">
-            {/* <div className="top-nav-search">
-          <Button
-            type="link"
-            className="responsive-search d-md-none"
-            aria-label="Search"
-          >
-            <FaSearch />
-          </Button>
-          <div className="d-none d-md-block">
-             <SearchDropdown /> 
-          </div>
-        </div> */}
+            <div className="top-nav-search">
+              {/* Mobile Search Icon */}
+              <Button
+                type="link"
+                className="responsive-search d-md-none"
+                onClick={() => setShowSearchOverlay(true)}
+              >
+                <SearchOutlined style={{ fontSize: 20 }} />
+              </Button>
+              <div className="d-none d-md-block">
+                <Input
+                  prefix={<SearchOutlined className="text-muted" />}
+                  placeholder="Search products, users, orders, invoices..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() =>
+                    searchQuery.trim() && setShowSearchOverlay(true)
+                  }
+                  allowClear={{
+                    onClick: () => {
+                      setSearchQuery("");
+                      setShowSearchOverlay(false);
+                    },
+                  }}
+                  style={{ width: 340 }}
+                  loading={searchFetching} // Shows spinner while fetching
+                />
+              </div>
+            </div>
+            {/* Reusable Search Overlay */}
+            <SearchOverlay
+              visible={showSearchOverlay}
+              loading={searchLoading || searchFetching}
+              results={searchResults}
+              query={searchQuery}
+              onClose={closeSearchOverlay}
+            />
           </li>
 
           {/* Fullscreen */}

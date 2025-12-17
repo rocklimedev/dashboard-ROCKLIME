@@ -1,7 +1,7 @@
 const { Op } = require("sequelize");
 
 const {
-  Vendor,
+  sequelize,
   User,
   Role,
   Address,
@@ -15,6 +15,7 @@ const {
   Product,
   Quotation,
   Team,
+  Vendor,
 } = require("../models");
 // Search controller to handle global search across all models
 const searchAll = async (req, res) => {
@@ -55,12 +56,7 @@ const searchAll = async (req, res) => {
       {
         model: Category,
         fields: ["name"],
-        attributes: [
-          "categoryId",
-          "name",
-          "parentCategory",
-          "parentCategoryId",
-        ],
+        attributes: ["categoryId", "name", "parentCategoryId"],
       },
       {
         model: Company,
@@ -69,27 +65,16 @@ const searchAll = async (req, res) => {
       },
       {
         model: Customer,
-        fields: ["name", "email", "companyName", "mobileNumber"],
+        fields: ["name", "email", "customerType", "mobileNumber"],
         attributes: [
           "customerId",
           "name",
           "email",
-          "companyName",
+          "customerType",
           "mobileNumber",
         ],
       },
-      {
-        model: Invoice,
-        fields: ["invoiceNo", "billTo", "signatureName"],
-        attributes: [
-          "invoiceId",
-          "invoiceNo",
-          "billTo",
-          "amount",
-          "invoiceDate",
-          "status",
-        ],
-      },
+
       {
         model: Keyword,
         fields: ["keyword"],
@@ -97,31 +82,17 @@ const searchAll = async (req, res) => {
       },
       {
         model: Order,
-        fields: ["title", "description", "source"],
-        attributes: ["id", "title", "status", "dueDate", "priority"],
+        fields: ["orderNo", "status"],
+        attributes: ["id", "orderNo", "status", "dueDate", "priority"],
       },
       {
         model: Product,
-        fields: [
-          "name",
-          "product_code",
-          "company_code",
-          "description",
-          "product_segment",
-          "productGroup",
-        ],
-        attributes: [
-          "productId",
-          "name",
-          "product_code",
-          "company_code",
-          "sellingPrice",
-          "quantity",
-        ],
+        fields: ["name", "product_code", "images", "meta"],
+        attributes: ["productId", "name", "product_code", "images", "meta"],
       },
       {
         model: Quotation,
-        fields: ["document_title", "reference_number", "signature_name"],
+        fields: ["document_title", "reference_number"],
         attributes: [
           "quotationId",
           "document_title",
