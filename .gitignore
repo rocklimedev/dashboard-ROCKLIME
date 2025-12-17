@@ -5,3 +5,4 @@ node_modules
 new_images
 .env.production
 /deploy.bat
+/.vercel
