@@ -3,9 +3,9 @@ name: Deploy Frontend to Vercel
 on:
   push:
     branches:
-      - main # Change if your branch is different (e.g., master)
+      - main
     paths:
-      - "frontend/**" # Only trigger when frontend files change
+      - "frontend/**"
 
 jobs:
   deploy:
@@ -17,14 +17,16 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20" # Or '18' if your project uses older Node
+          node-version: "20"
 
       - name: Install dependencies
         working-directory: ./frontend
-        run: npm ci # Uses package-lock.json inside frontend/
+        run: npm install
 
       - name: Build project
         working-directory: ./frontend
+        env:
+          CI: false
         run: npm run build
 
       - name: Deploy to Vercel (Production)
