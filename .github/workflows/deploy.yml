@@ -1,20 +1,38 @@
-name: Deploy to Vercel Production
+name: Deploy Frontend to Vercel
 
 on:
   push:
     branches:
-      - main
+      - main # Change if your branch is different
+    paths:
+      - "frontend/**" # Only trigger on frontend changes
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Deploy to Vercel
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20" # Use 18 or 20 – match what your project uses locally
+          cache: "npm" # Speeds up installs
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm ci # Clean install – better than npm install
+
+      - name: Build project
+        working-directory: ./frontend
+        run: npm run build
+
+      - name: Deploy to Vercel (Production)
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           vercel-args: "--prod"
+          working-directory: ./frontend
