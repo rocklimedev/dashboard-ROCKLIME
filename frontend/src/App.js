@@ -15,7 +15,7 @@ function App() {
   const { auth, setAuth, authChecked, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  console.log(auth);
+
   const [isSidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 768);
   const [layoutMode] = useState("vertical");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
