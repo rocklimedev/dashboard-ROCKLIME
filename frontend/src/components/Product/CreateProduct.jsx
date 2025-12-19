@@ -667,7 +667,7 @@ const CreateProduct = () => {
                     <Form.Item label="Company Code (for Auto SKU)">
                       <Input
                         placeholder="e.g. 2024, ABC123, 12345"
-                        value={metaData[COMPANY_CODE_META_ID] || ""}
+                        value={metaData[COMPANY_CODE_META_ID] ?? ""}
                         onChange={(e) => {
                           const value = e.target.value;
                           handleMetaChange(COMPANY_CODE_META_ID, value);
@@ -678,7 +678,10 @@ const CreateProduct = () => {
                           }
                         }}
                         addonAfter={
-                          metaData[COMPANY_CODE_META_ID]?.trim() ? (
+                          // Safely check if the value (as string) has content after trim
+                          String(
+                            metaData[COMPANY_CODE_META_ID] ?? ""
+                          ).trim() ? (
                             <Tag color="blue">Used for auto code</Tag>
                           ) : (
                             <Tag color="orange">Optional</Tag>
