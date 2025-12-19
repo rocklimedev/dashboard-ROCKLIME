@@ -1,0 +1,64 @@
+
+
+
+
+
+[
+	{
+		  
+ 
+    "name": "2XinX1 Bib Cock with Flange",
+
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "2XinX1 Bib Cock with Flange",
+    "images": "[\"https://static.cmtradingco.com/product_images/4005.png\"]",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "acbe7061-9b76-47d1-a509-e4b1f982a36f",
+    "categoryId": "bf0e35ef-17ba-4f60-8c29-140d760d5959",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 1998,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "4005"
+    },
+
+  }
+code : FFAS1701-1015L0BC0
+name: Signature Single Hole Basin Mixer withb Pop-up Drain
+caetgory: Signature
+MRP ` 14400
+product group: BASIN AREA - FITTINGS
+	}, 
+	{
+code :FFAS0301-151500BA0
+name: Cygnet basin mixer Single Hole Lava Faucet
+caetgory:Cygnet
+MRP ` 11700
+product group: BASIN AREA - FITTINGS
+	}, 
+	{
+		code :FFAS0901-102500BF0
+name: Milano Basin Mixer with Pop up Drain
+caetgory: Milano
+MRP ` 11500
+product group: BASIN AREA - FITTINGS
+	}, 
+	{
+		code :FFAS1401-101500BF0
+name:  Concept Round Basin Mixer with pop-up drain
+caetgory: Concept Round
+MRP ` 9,900
+product group: BASIN AREA - FITTINGS
+	},
+	{
+	code :	FFAS1302-102500BF0
+name:  Acacia E Extended Basin Mixer 
+caetgory: Acacia E
+MRP ` 20,800
+product group: BASIN AREA - FITTINGS
+	}
+]
