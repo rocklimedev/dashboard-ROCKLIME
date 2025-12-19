@@ -70,54 +70,65 @@ const SearchOverlay = ({ visible, loading, results, onClose, query }) => {
         </div>
 
         <Spin spinning={loading}>
-          {loading ? (
-            <div className="search-loading text-center py-5">Searching...</div>
-          ) : !hasResults && query ? (
-            <Empty
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-              description="No results found"
-            />
-          ) : !query ? (
-            <div className="text-center text-muted py-5">
-              Start typing to search across users, products, orders, invoices...
-            </div>
-          ) : (
-            <div className="search-results-list">
-              {resultGroups.map(([modelName, { items }]) => (
-                <div key={modelName} className="search-result-group">
-                  <div className="search-group-title">
-                    {modelName}s ({items.length})
-                  </div>
-                  {items.map((item) => {
-                    const { link, title } = getLinkAndTitle(modelName, item);
-                    const key =
-                      item.userId ||
-                      item.productId ||
-                      item.id ||
-                      item.invoiceId ||
-                      item.quotationId;
+          <div className="search-results-wrapper">
+            {" "}
+            {/* Add this wrapper */}
+            {loading ? (
+              <div className="search-loading text-center py-5">
+                Searching...
+              </div>
+            ) : !hasResults && query ? (
+              <Empty
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                description="No results found"
+              />
+            ) : !query ? (
+              <div className="text-center text-muted py-5">
+                Start typing to search across users, products, orders,
+                invoices...
+              </div>
+            ) : (
+              <>
+                {resultGroups.map(([modelName, { items }]) => (
+                  <div key={modelName} className="search-result-group">
+                    <div className="search-group-title">
+                      {modelName}s ({items.length})
+                    </div>
+                    {items.map((item) => {
+                      const { link, title } = getLinkAndTitle(modelName, item);
+                      const key =
+                        item.userId ||
+                        item.productId ||
+                        item.id ||
+                        item.invoiceId ||
+                        item.quotationId ||
+                        item.categoryId ||
+                        item.companyId;
 
-                    return (
-                      <Link
-                        key={key}
-                        to={link}
-                        className="search-result-item"
-                        onClick={onClose}
-                      >
-                        <span className="result-title">{title}</span>
-                        {item.email && (
-                          <span className="result-meta">{item.email}</span>
-                        )}
-                        {item.invoiceNo && (
-                          <span className="result-meta">#{item.invoiceNo}</span>
-                        )}
-                      </Link>
-                    );
-                  })}
-                </div>
-              ))}
-            </div>
-          )}
+                      return (
+                        <Link
+                          key={key}
+                          to={link}
+                          className="search-result-item"
+                          onClick={onClose}
+                        >
+                          <span className="result-title">{title}</span>
+                          {item.email && (
+                            <span className="result-meta">{item.email}</span>
+                          )}
+                          {item.invoiceNo && (
+                            <span className="result-meta">
+                              #{item.invoiceNo}
+                            </span>
+                          )}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
         </Spin>
       </div>
     </div>

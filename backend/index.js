@@ -199,10 +199,6 @@ app.use((err, req, res, next) => {
 connectMongoDB(); // MongoDB for logs, notifications, etc.
 // setupDB(); // Any seeders or initial data
 
-db.sync({ alter: false }) // Set to true only during dev/migrations
-  .then(() => console.log("MySQL Database synced successfully"))
-  .catch((err) => console.error("MySQL sync failed:", err));
-
 // ------------------- Daily Cron: Clear Cached Permissions -------------------
 cron.schedule("0 2 * * *", async () => {
   try {
