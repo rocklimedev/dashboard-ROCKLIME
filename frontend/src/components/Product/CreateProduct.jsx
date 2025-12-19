@@ -596,7 +596,6 @@ const CreateProduct = () => {
       }
 
       message.success(isEditMode ? "Product updated!" : "Product created!");
-      navigate("/category-selector");
     } catch (err) {
       console.error("Save failed:", err);
       message.error(err?.data?.message || "Failed to save product or keywords");
@@ -662,7 +661,8 @@ const CreateProduct = () => {
                 </Col>
                 {/* Always show Company Code if it exists in meta list */}
                 {/* Add this inside Panel key="1", after the Product Code row */}
-                {!isEditMode && (
+                {/* Company Code - Show in BOTH create and edit modes */}
+                {productMetaData.some((m) => m.id === COMPANY_CODE_META_ID) && (
                   <Col xs={24} md={12}>
                     <Form.Item label="Company Code (for Auto SKU)">
                       <Input
@@ -671,27 +671,26 @@ const CreateProduct = () => {
                         onChange={(e) => {
                           const value = e.target.value;
                           handleMetaChange(COMPANY_CODE_META_ID, value);
-                          // Optional: reset code status when user types
-                          if (value.trim()) {
+
+                          // Reset code status and allow regeneration if brand is selected
+                          if (!isCodeDirty && brandId && value.trim()) {
                             setCodeStatus("");
                           }
                         }}
-                        status={
-                          !metaData[COMPANY_CODE_META_ID]?.trim() ? "error" : ""
-                        }
                         addonAfter={
                           metaData[COMPANY_CODE_META_ID]?.trim() ? (
                             <Tag color="blue">Used for auto code</Tag>
                           ) : (
-                            <Tag color="orange">Required for auto code</Tag>
+                            <Tag color="orange">Optional</Tag>
                           )
                         }
                       />
                       <div
                         style={{ fontSize: 12, color: "#888", marginTop: 4 }}
                       >
-                        This value helps generate unique product codes (e.g.
-                        EBR2024001)
+                        Helps generate unique product codes like EBR2024123.
+                        {isEditMode &&
+                          " Changing this won't auto-update the code (it's already set)."}
                       </div>
                     </Form.Item>
                   </Col>
@@ -1182,37 +1181,113 @@ const CreateProduct = () => {
               </Space>
             </Panel>
             {/* 6. Specifications */}
-            {/* 6. Specifications */}
+
             <Panel
               header={
                 <>Product Specifications ({Object.keys(metaData).length})</>
               }
               key="6"
             >
-              {/* Add other specifications */}
-              {productMetaData.filter(
-                (m) => m.id !== COMPANY_CODE_META_ID && !(m.id in metaData)
-              ).length > 0 && (
-                <Select
-                  placeholder="Add another specification..."
-                  style={{ width: "100%", marginTop: 16 }}
-                  onChange={(id) =>
-                    setMetaData((prev) => ({ ...prev, [id]: "" }))
-                  }
-                  allowClear
-                >
-                  {productMetaData
-                    .filter(
-                      (m) =>
-                        m.id !== COMPANY_CODE_META_ID && !(m.id in metaData)
-                    )
-                    .map((m) => (
-                      <Option key={m.id} value={m.id}>
-                        {m.title} {m.unit && `(${m.unit})`}
-                      </Option>
-                    ))}
-                </Select>
-              )}
+              <Space
+                direction="vertical"
+                style={{ width: "100%" }}
+                size="middle"
+              >
+                {/* Render all currently added specifications with inputs */}
+                {Object.entries(metaData)
+                  .filter(([id]) => id !== COMPANY_CODE_META_ID) // Hide company code here
+                  .map(([id, value]) => {
+                    const meta = productMetaData.find((m) => m.id === id);
+                    if (!meta) return null;
+
+                    const isNumber = meta.fieldType === "number";
+
+                    return (
+                      <Row key={id} gutter={16} align="middle">
+                        <Col flex="200px">
+                          <Text strong>
+                            {meta.title}{" "}
+                            {meta.unit && (
+                              <span style={{ fontWeight: "normal" }}>
+                                ({meta.unit})
+                              </span>
+                            )}
+                          </Text>
+                        </Col>
+                        <Col flex="1">
+                          {isNumber ? (
+                            <InputNumber
+                              style={{ width: "100%" }}
+                              value={value || null}
+                              onChange={(val) => handleMetaChange(id, val)}
+                              placeholder={`Enter ${meta.title.toLowerCase()}`}
+                              min={meta.min || undefined}
+                              max={meta.max || undefined}
+                              step={meta.step || 1}
+                            />
+                          ) : (
+                            <Input
+                              value={value || ""}
+                              onChange={(e) =>
+                                handleMetaChange(id, e.target.value)
+                              }
+                              placeholder={`Enter ${meta.title.toLowerCase()}`}
+                            />
+                          )}
+                        </Col>
+                        <Col>
+                          <Button
+                            danger
+                            size="small"
+                            onClick={() =>
+                              setMetaData((prev) => {
+                                const newMeta = { ...prev };
+                                delete newMeta[id];
+                                return newMeta;
+                              })
+                            }
+                          >
+                            Remove
+                          </Button>
+                        </Col>
+                      </Row>
+                    );
+                  })}
+
+                {/* Dropdown to add more specifications */}
+                {productMetaData.filter(
+                  (m) => m.id !== COMPANY_CODE_META_ID && !(m.id in metaData)
+                ).length > 0 && (
+                  <Select
+                    placeholder="Add another specification..."
+                    style={{ width: "100%", marginTop: 16 }}
+                    onChange={(id) =>
+                      setMetaData((prev) => ({ ...prev, [id]: "" }))
+                    }
+                    allowClear
+                    dropdownMatchSelectWidth={false}
+                  >
+                    {productMetaData
+                      .filter(
+                        (m) =>
+                          m.id !== COMPANY_CODE_META_ID && !(m.id in metaData)
+                      )
+                      .map((m) => (
+                        <Option key={m.id} value={m.id}>
+                          {m.title} {m.unit && `(${m.unit})`}
+                        </Option>
+                      ))}
+                  </Select>
+                )}
+
+                {/* Optional: Show message if no specs available to add */}
+                {Object.keys(metaData).length === 1 &&
+                  metaData[COMPANY_CODE_META_ID] && (
+                    <Text type="secondary">
+                      No additional specifications available to add.
+                    </Text>
+                  )}
+              </Space>
             </Panel>
           </Collapse>
 

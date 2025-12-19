@@ -6,3 +6,4 @@ new_images
 .env.production
 /deploy.bat
 /.vercel
+/vps-cmtrading-co

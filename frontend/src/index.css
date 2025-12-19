@@ -2134,10 +2134,7 @@ body {
   color: #1890ff;
 }
 
-.search-results-list {
-  overflow-y: auto;
-  flex: 1;
-}
+
 
 .search-result-group {
   border-bottom: 1px solid #f0f0f0;
@@ -2192,7 +2189,32 @@ body {
   padding: 20px;
   animation: fadeIn 0.2s ease-out;
 }
+.search-results-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0; /* Crucial for flex children to shrink properly */
+  -webkit-overflow-scrolling: touch;
+}
 
+
+
+/* Keep your custom scrollbar styles on the wrapper */
+.search-results-wrapper::-webkit-scrollbar {
+  width: 8px;
+}
+
+.search-results-wrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.search-results-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.search-results-wrapper::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.4);
+}
 .search-overlay-content {
   background: var(--background-color, #ffffff);
   width: 100%;
@@ -2217,10 +2239,7 @@ body {
   color: #1890ff;
 }
 
-.search-results-list {
-  overflow-y: auto;
-  flex: 1;
-}
+
 
 .search-result-group {
   border-bottom: 1px solid #f0f0f0;
