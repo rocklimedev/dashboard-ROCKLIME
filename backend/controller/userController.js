@@ -1,5 +1,5 @@
 const { Op } = require("sequelize");
-const { User, Roles, Address } = require("../models");
+const { User, Role, Address } = require("../models");
 const sequelize = require("../config/database");
 const bcrypt = require("bcrypt");
 const ROLES = require("../config/constant").ROLES;
@@ -67,7 +67,7 @@ exports.createUser = async (req, res) => {
     }
 
     // Validate roleId
-    const roleData = await Roles.findOne({ where: { roleId } });
+    const roleData = await Role.findOne({ where: { roleId } });
     if (!roleData) {
       return res.status(400).json({ message: "Invalid role specified" });
     }
@@ -450,7 +450,7 @@ exports.updateUser = async (req, res) => {
 
     // === 3. Handle Role Update (with SuperAdmin protection) ===
     if (roleId) {
-      const roleData = await Roles.findOne({ where: { roleId } });
+      const roleData = await Role.findOne({ where: { roleId } });
       if (!roleData) {
         return res.status(400).json({ message: "Invalid role specified" });
       }
@@ -588,7 +588,7 @@ exports.assignRole = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const roleData = await Roles.findOne({ where: { roleId } });
+    const roleData = await Role.findOne({ where: { roleId } });
     if (!roleData) {
       return res.status(400).json({ message: "Invalid role specified" });
     }

@@ -1,9 +1,10 @@
 import React, { useMemo } from "react";
-import { Modal, Table, Image, Spin, Empty, Typography } from "antd";
+import { Modal, Table, Image, Spin, Empty, Typography, Grid, Card } from "antd";
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { useGetQuotationByIdQuery } from "../../api/quotationApi";
 
 const { Text, Title } = Typography;
+const { useBreakpoint } = Grid;
 
 const safeParse = (str, fallback = []) => {
   if (Array.isArray(str)) return str;
@@ -16,6 +17,7 @@ const safeParse = (str, fallback = []) => {
 };
 
 const QuotationProductModal = ({ show, onHide, quotationId }) => {
+  const screens = useBreakpoint();
   const {
     data: q = {},
     isLoading,
@@ -48,141 +50,6 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
   const taxableAmount = subtotal - extraDiscountAmount + shippingAmount;
   const gstAmount = gstRate > 0 ? (taxableAmount * gstRate) / 100 : 0;
 
-  // === Breakdown Data for Proper Antd Table Rendering ===
-  const summaryData = useMemo(() => {
-    const rows = [];
-
-    rows.push({
-      key: "subtotal",
-      label: <Text strong>Subtotal</Text>,
-      amount: <Text strong>₹{subtotal.toFixed(2)}</Text>,
-    });
-
-    if (extraDiscount > 0) {
-      rows.push({
-        key: "extraDiscount",
-        label: (
-          <Text style={{ color: "#cf1322" }}>
-            Extra Discount (
-            {q.extraDiscountType === "percent"
-              ? `${extraDiscount}%`
-              : `₹${extraDiscount.toFixed(2)}`}
-            )
-          </Text>
-        ),
-        amount: (
-          <Text style={{ color: "#cf1322" }}>
-            -₹{extraDiscountAmount.toFixed(2)}
-          </Text>
-        ),
-      });
-    }
-
-    if (shippingAmount > 0) {
-      rows.push({
-        key: "shipping",
-        label: <Text style={{ color: "#3f8600" }}>Shipping</Text>,
-        amount: (
-          <Text style={{ color: "#3f8600" }}>
-            +₹{shippingAmount.toFixed(2)}
-          </Text>
-        ),
-      });
-    }
-
-    if (gstRate > 0) {
-      rows.push({
-        key: "gst",
-        label: <Text style={{ color: "#3f8600" }}>GST ({gstRate}%)</Text>,
-        amount: (
-          <Text style={{ color: "#3f8600" }}>+₹{gstAmount.toFixed(2)}</Text>
-        ),
-      });
-    }
-
-    if (roundOff !== 0) {
-      rows.push({
-        key: "roundOff",
-        label: <Text>Round Off</Text>,
-        amount: (
-          <Text style={{ color: roundOff >= 0 ? "#3f8600" : "#cf1322" }}>
-            {roundOff >= 0 ? "+" : "-"}₹{Math.abs(roundOff).toFixed(2)}
-          </Text>
-        ),
-      });
-    }
-
-    rows.push({
-      key: "final",
-      label: (
-        <Text strong style={{ fontSize: "1.2em" }}>
-          Final Amount
-        </Text>
-      ),
-      amount: (
-        <Text strong style={{ fontSize: "1.3em" }}>
-          ₹{finalAmount.toFixed(2)}
-        </Text>
-      ),
-    });
-
-    return rows;
-  }, [
-    subtotal,
-    extraDiscount,
-    extraDiscountAmount,
-    shippingAmount,
-    gstRate,
-    gstAmount,
-    roundOff,
-    finalAmount,
-    q.extraDiscountType,
-  ]);
-
-  const summaryColumns = [
-    {
-      dataIndex: "label",
-      key: "label",
-      render: (label) => label,
-    },
-    {
-      dataIndex: "amount",
-      key: "amount",
-      width: 180,
-      align: "right",
-      render: (amount) => amount,
-    },
-  ];
-
-  if (isLoading) {
-    return (
-      <Modal open={show} onCancel={onHide} footer={null} centered width={800}>
-        <div style={{ textAlign: "center", padding: "60px 0" }}>
-          <Spin size="large" />
-          <div style={{ marginTop: 16 }}>
-            <Text type="secondary">Loading quotation details…</Text>
-          </div>
-        </div>
-      </Modal>
-    );
-  }
-
-  if (isError || !q.quotationId) {
-    return (
-      <Modal open={show} onCancel={onHide} footer={null} centered width={600}>
-        <div style={{ textAlign: "center", padding: "50px 0" }}>
-          <ExclamationCircleOutlined
-            style={{ fontSize: 48, color: "#ff4d4f" }}
-          />
-          <Title level={4} style={{ margin: "16px 0 8px" }}>
-            Failed to load quotation
-          </Title>
-          <Text type="secondary">Please try again later.</Text>
-        </div>
-      </Modal>
-    );
-  }
-
   const columns = [
     {
       title: "#",
@@ -192,7 +59,7 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
     },
     {
       title: "Image",
-      width: 100,
+      width: 90,
       align: "center",
       render: (_, record) => {
         const imageUrl = record.imageUrl || record.images?.[0];
@@ -201,8 +68,8 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
             src={imageUrl}
             width={60}
             height={60}
-            style={{ objectFit: "contain", borderRadius: 6 }}
-            preview
+            style={{ objectFit: "cover", borderRadius: 6 }}
+            preview={{ mask: "View" }}
           />
         ) : (
           <div
@@ -232,7 +99,8 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
       title: "Qty",
       width: 80,
       align: "center",
-      render: (_, record) => Number(record.quantity || record.qty || 1),
+      dataIndex: "quantity",
+      render: (val) => Number(val || 1),
     },
     {
       title: "Price",
@@ -240,63 +108,160 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
       align: "right",
       render: (_, record) => {
         const price = Number(record.price || record.sellingPrice || 0);
-        return `₹${price.toFixed(2)}`;
+        return <Text>₹{price.toFixed(2)}</Text>;
       },
     },
     {
       title: "Discount",
-      width: 120,
+      width: 110,
       align: "center",
       render: (_, record) => {
         const discount = Number(record.discount || 0);
         const type = record.discountType || "percent";
         if (discount <= 0) return "—";
-        return type === "percent" ? `${discount}%` : `₹${discount.toFixed(2)}`;
+        return (
+          <Text type="danger">
+            {type === "percent" ? `${discount}%` : `₹${discount.toFixed(2)}`}
+          </Text>
+        );
       },
     },
     {
-      title: "Tax %",
-      width: 80,
-      align: "center",
-      render: () => "—",
-    },
-    {
-      title: "Line Total",
+      title: "Total",
       width: 140,
       align: "right",
       render: (_, record) => {
-        const qty = Number(record.quantity || record.qty || 1);
-        const price = Number(record.price || record.sellingPrice || 0);
-        const discount = Number(record.discount || 0);
-        const discountType = record.discountType || "percent";
+        const total = Number(record.total || 0);
+        const fallback =
+          Number(record.price || record.sellingPrice || 0) *
+            Number(record.quantity || 1) -
+          (record.discountType === "percent"
+            ? (Number(record.price || record.sellingPrice || 0) *
+                Number(record.quantity || 1) *
+                Number(record.discount || 0)) /
+              100
+            : Number(record.discount || 0));
 
-        let discountAmount = 0;
-        if (discount > 0) {
-          discountAmount =
-            discountType === "percent"
-              ? (price * qty * discount) / 100
-              : discount;
-        }
-
-        const lineSubtotal = price * qty - discountAmount;
-        const savedTotal = Number(record.total);
-        const displayTotal = savedTotal > 0 ? savedTotal : lineSubtotal;
-
+        const displayTotal = total > 0 ? total : fallback;
         return <Text strong>₹{displayTotal.toFixed(2)}</Text>;
       },
     },
   ];
+
+  const tableSummary = () => (
+    <>
+      <Table.Summary.Row>
+        <Table.Summary.Cell index={0} colSpan={6} align="right">
+          <Text strong>Subtotal</Text>
+        </Table.Summary.Cell>
+        <Table.Summary.Cell index={1} align="right">
+          <Text strong>₹{subtotal.toFixed(2)}</Text>
+        </Table.Summary.Cell>
+      </Table.Summary.Row>
+
+      {extraDiscount > 0 && (
+        <Table.Summary.Row>
+          <Table.Summary.Cell index={0} colSpan={6} align="right">
+            <Text>
+              Extra Discount{" "}
+              {q.extraDiscountType === "percent" ? `(${extraDiscount}%)` : ""}
+            </Text>
+          </Table.Summary.Cell>
+          <Table.Summary.Cell index={1} align="right">
+            <Text type="danger">-₹{extraDiscountAmount.toFixed(2)}</Text>
+          </Table.Summary.Cell>
+        </Table.Summary.Row>
+      )}
+
+      {shippingAmount > 0 && (
+        <Table.Summary.Row>
+          <Table.Summary.Cell index={0} colSpan={6} align="right">
+            <Text>Shipping</Text>
+          </Table.Summary.Cell>
+          <Table.Summary.Cell index={1} align="right">
+            <Text type="success">+₹{shippingAmount.toFixed(2)}</Text>
+          </Table.Summary.Cell>
+        </Table.Summary.Row>
+      )}
+
+      {gstRate > 0 && (
+        <Table.Summary.Row>
+          <Table.Summary.Cell index={0} colSpan={6} align="right">
+            <Text>GST ({gstRate}%)</Text>
+          </Table.Summary.Cell>
+          <Table.Summary.Cell index={1} align="right">
+            <Text type="success">+₹{gstAmount.toFixed(2)}</Text>
+          </Table.Summary.Cell>
+        </Table.Summary.Row>
+      )}
+
+      {roundOff !== 0 && (
+        <Table.Summary.Row>
+          <Table.Summary.Cell index={0} colSpan={6} align="right">
+            <Text>Round Off</Text>
+          </Table.Summary.Cell>
+          <Table.Summary.Cell index={1} align="right">
+            <Text type={roundOff >= 0 ? "success" : "danger"}>
+              {roundOff >= 0 ? "+" : "-"}₹{Math.abs(roundOff).toFixed(2)}
+            </Text>
+          </Table.Summary.Cell>
+        </Table.Summary.Row>
+      )}
+
+      <Table.Summary.Row style={{ background: "#fafafa" }}>
+        <Table.Summary.Cell index={0} colSpan={6} align="right">
+          <Text strong style={{ fontSize: "1.1em" }}>
+            Final Amount
+          </Text>
+        </Table.Summary.Cell>
+        <Table.Summary.Cell index={1} align="right">
+          <Text strong style={{ fontSize: "1.3em", color: "#3f8600" }}>
+            ₹{finalAmount.toFixed(2)}
+          </Text>
+        </Table.Summary.Cell>
+      </Table.Summary.Row>
+    </>
+  );
+
+  if (isLoading) {
+    return (
+      <Modal open={show} onCancel={onHide} footer={null} centered width={600}>
+        <div style={{ textAlign: "center", padding: "60px 0" }}>
+          <Spin size="large" />
+          <div style={{ marginTop: 16 }}>
+            <Text type="secondary">Loading quotation details…</Text>
+          </div>
+        </div>
+      </Modal>
+    );
+  }
+
+  if (isError || !q.quotationId) {
+    return (
+      <Modal open={show} onCancel={onHide} footer={null} centered width={500}>
+        <div style={{ textAlign: "center", padding: "50px 0" }}>
+          <ExclamationCircleOutlined
+            style={{ fontSize: 48, color: "#ff4d4f" }}
+          />
+          <Title level={4} style={{ margin: "16px 0 8px" }}>
+            Failed to load quotation
+          </Title>
+          <Text type="secondary">Please try again later.</Text>
+        </div>
+      </Modal>
+    );
+  }
 
   return (
     <Modal
       open={show}
       onCancel={onHide}
       footer={null}
-      width={1200}
+      width={screens.lg ? 1100 : "70%"}
       centered
       title={
         <Title level={4} style={{ margin: 0 }}>
-          Quotation #{q.reference_number || q.quotationId} – Products & Pricing
+          Quotation #{q.reference_number || q.quotationId} – Products
         </Title>
       }
     >
@@ -304,32 +269,18 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
         {!hasValidItems ? (
           <Empty description="No products found in this quotation." />
         ) : (
-          <>
-            {/* Products Table */}
+          <Card bodyStyle={{ padding: 0 }}>
             <Table
               columns={columns}
               dataSource={lineItems}
-              rowKey={(record, idx) => record.productId || record._id || idx}
+              rowKey={(r, i) => r.productId || r._id || i}
               pagination={false}
               bordered
+              size="middle"
               scroll={{ x: 900 }}
-              style={{ marginBottom: 40 }}
+              summary={tableSummary}
             />
-
-            {/* Final Calculations Summary - Now Properly Rendered with Antd Table */}
-            <div style={{ maxWidth: 500, marginLeft: "auto" }}>
-              <Table
-                columns={summaryColumns}
-                dataSource={summaryData}
-                pagination={false}
-                bordered
-                showHeader={false}
-                rowClassName={(record) =>
-                  record.key === "final" ? "ant-table-row-final" : ""
-                }
-              />
-            </div>
-          </>
+          </Card>
         )}
       </div>
     </Modal>

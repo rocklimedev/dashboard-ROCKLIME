@@ -548,7 +548,6 @@ const InventoryWrapper = () => {
         )}
       </div>
 
-      {/* Modals remain unchanged */}
       <Modal
         title={
           <Title level={4}>
@@ -561,13 +560,72 @@ const InventoryWrapper = () => {
         onCancel={() => {
           setStockModalOpen(false);
           setSelectedProduct(null);
+          stockForm.resetFields();
         }}
         footer={null}
         width={isMobile ? "90%" : 520}
       >
-        {/* Form unchanged */}
-      </Modal>
+        <Form
+          form={stockForm}
+          onFinish={handleStockSubmit}
+          layout="vertical"
+          initialValues={{ quantity: 1 }}
+        >
+          <Form.Item
+            name="quantity"
+            label="Quantity"
+            rules={[
+              { required: true, message: "Please enter quantity" },
+              {
+                type: "number",
+                min: 1,
+                message: "Quantity must be at least 1",
+              },
+              // Optional: prevent removing more than available
+              () => ({
+                validator(_, value) {
+                  if (
+                    stockAction === "remove" &&
+                    value > selectedProduct?.quantity
+                  ) {
+                    return Promise.reject(
+                      `Cannot remove ${value} units — only ${selectedProduct?.quantity} available`
+                    );
+                  }
+                  return Promise.resolve();
+                },
+              }),
+            ]}
+          >
+            <InputNumber
+              min={1}
+              max={
+                stockAction === "remove" ? selectedProduct?.quantity : undefined
+              }
+              style={{ width: "100%" }}
+              size="large"
+              placeholder="Enter quantity"
+            />
+          </Form.Item>
 
+          <Form.Item style={{ marginBottom: 0, textAlign: "right" }}>
+            <Space>
+              <Button
+                onClick={() => {
+                  setStockModalOpen(false);
+                  setSelectedProduct(null);
+                  stockForm.resetFields();
+                }}
+              >
+                Cancel
+              </Button>
+              <Button type="primary" htmlType="submit">
+                {stockAction === "add" ? "Add" : "Remove"} Stock
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
       <ReportBuilderModal
         open={reportModalOpen}
         onClose={() => setReportModalOpen(false)}

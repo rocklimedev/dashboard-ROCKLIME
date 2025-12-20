@@ -103,7 +103,7 @@ const NewCart = ({ onConvertToOrder }) => {
     billTo: "",
     shipTo: null,
     signatureName: "CM TRADING CO",
-    discountType: "percent",
+    discountType: "fixed",
     discountAmount: "",
     followupDates: [],
   });
@@ -819,7 +819,7 @@ const NewCart = ({ onConvertToOrder }) => {
       billTo: "",
       shipTo: null,
       signatureName: "CM TRADING CO",
-      discountType: "percent",
+      discountType: "fixed",
       discountAmount: "",
       followupDates: [],
     });
