@@ -3,7 +3,7 @@ import { useLocation, Link, useNavigate } from "react-router-dom";
 import { useGetProfileQuery } from "../../api/userApi";
 import { useGetCartQuery } from "../../api/cartApi";
 import { useGetNotificationsQuery } from "../../api/notificationApi";
-import { Dropdown, Button, Menu, Badge, Input } from "antd";
+import { Dropdown, Button, Menu, Badge, Input, Spin } from "antd";
 import {
   BellOutlined,
   EllipsisOutlined,
@@ -142,6 +142,13 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
     return cart?.cart?.items?.length || 0;
   }, [cart]);
 
+  useEffect(() => {
+    const savedQuery = localStorage.getItem("lastSearchQuery");
+    if (savedQuery) {
+      setSearchQuery(savedQuery);
+      setShowSearchOverlay(true); // Show results immediately
+    }
+  }, []);
   // === Desktop User Menu ===
   const userMenu = useMemo(
     () => (
@@ -330,37 +337,56 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
 
         {/* Desktop Nav */}
         <ul className="nav user-menu">
-          <li className="nav-item nav-searchinputs">
-            <div className="top-nav-search">
+          <li
+            className="nav-item nav-searchinputs flex-grow-1 d-flex justify-content-center position-relative"
+            ref={searchRef}
+          >
+            <div className="top-nav-search w-100" style={{ maxWidth: "700px" }}>
               {/* Mobile Search Icon */}
               <Button
                 type="link"
-                className="responsive-search d-md-none"
+                className="responsive-search d-md-none me-3"
                 onClick={() => setShowSearchOverlay(true)}
               >
-                <SearchOutlined style={{ fontSize: 20 }} />
+                <SearchOutlined style={{ fontSize: 22 }} />
               </Button>
-              <div className="d-none d-md-block">
+
+              {/* Desktop Large Centered Search Input */}
+              <div className="d-none d-md-block w-100">
                 <Input
-                  prefix={<SearchOutlined className="text-muted" />}
-                  placeholder="Search products, users, orders, invoices..."
+                  prefix={<SearchOutlined className="search-icon" />}
+                  suffix={searchFetching ? <Spin size="small" /> : null}
+                  placeholder="Search products, users, orders, invoices, customers..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onFocus={() =>
-                    searchQuery.trim() && setShowSearchOverlay(true)
-                  }
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setSearchQuery(value);
+                    localStorage.setItem("lastSearchQuery", value);
+                  }}
+                  onFocus={() => setShowSearchOverlay(true)}
+                  onPressEnter={() => {
+                    if (searchQuery.trim()) {
+                      navigate(
+                        `/search?q=${encodeURIComponent(searchQuery.trim())}`
+                      );
+                      closeSearchOverlay();
+                    }
+                  }}
                   allowClear={{
                     onClick: () => {
                       setSearchQuery("");
+                      localStorage.removeItem("lastSearchQuery");
                       setShowSearchOverlay(false);
                     },
                   }}
-                  style={{ width: 340 }}
-                  loading={searchFetching} // Shows spinner while fetching
+                  size="large"
+                  className="global-search-input"
+                  style={{ height: 48 }}
                 />
               </div>
             </div>
-            {/* Reusable Search Overlay */}
+
+            {/* Search Overlay - Now positioned absolutely under the input */}
             <SearchOverlay
               visible={showSearchOverlay}
               loading={searchLoading || searchFetching}

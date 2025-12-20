@@ -132,16 +132,15 @@ const PageWrapper = () => {
     const price = priceEntry ? parseFloat(priceEntry.value) : null;
     if (!price || isNaN(price)) return message.error("Invalid price");
 
-    const qty = product.quantity || 1;
-    if (!Number.isInteger(qty) || qty <= 0)
-      return message.error("Invalid quantity");
+    // FIX: Always add 1 item to cart, do NOT use product.quantity (that's stock!)
+    const qty = 1;
 
     setCartLoadingStates((s) => ({ ...s, [product.productId]: true }));
     try {
       await addProductToCart({
         userId,
         productId: product.productId,
-        quantity: qty,
+        quantity: qty, // ← Now correctly set to 1
       }).unwrap();
       message.success("Added to cart");
     } catch (e) {
@@ -150,7 +149,6 @@ const PageWrapper = () => {
       setCartLoadingStates((s) => ({ ...s, [product.productId]: false }));
     }
   };
-
   const lowStockProducts = useMemo(
     () => products.filter((p) => p.quantity < p.alert_quantity),
     [products]

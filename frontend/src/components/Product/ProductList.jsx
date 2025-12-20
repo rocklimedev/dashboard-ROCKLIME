@@ -286,22 +286,27 @@ const ProductsList = () => {
     }
   };
 
-  const handleAddToCart = async ({ productId, quantity = 1 }) => {
+  const handleAddToCart = async ({ productId, quantity = 1, productName }) => {
     if (!userId) return message.error("User not logged in");
     if (quantity < 1) return message.error("Invalid quantity");
+
+    const name =
+      productName ||
+      products.find((p) => p.productId === productId)?.name ||
+      "Product";
 
     setCartLoadingStates((s) => ({ ...s, [productId]: true }));
 
     try {
       await addProductToCart({ userId, productId, quantity }).unwrap();
+      message.success(`${name} added to cart successfully!`);
       refetchCart();
     } catch (e) {
-      message.error(e.data?.message || "Failed to add");
+      message.error(e.data?.message || "Failed to add to cart");
     } finally {
       setCartLoadingStates((s) => ({ ...s, [productId]: false }));
     }
   };
-
   const openStockModal = (product, action = "add") => {
     setSelectedProduct(product);
     setStockAction(action);

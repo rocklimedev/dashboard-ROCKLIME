@@ -35,19 +35,6 @@ const searchAll = async (req, res) => {
     // Define searchable models with explicit keys
     const searchConfigs = [
       {
-        key: "Address",
-        model: Address,
-        fields: ["street", "city", "state", "postalCode", "country"],
-        attributes: [
-          "addressId",
-          "street",
-          "city",
-          "state",
-          "postalCode",
-          "country",
-        ],
-      },
-      {
         key: "Brand",
         model: Brand,
         fields: ["brandSlug", "brandName"],
