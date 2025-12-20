@@ -22,12 +22,14 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
+          username: rocklimedev
           password: ${{ secrets.GHCR_TOKEN }}
 
-      - name: Build and push Docker image
+      - name: Build and push backend image
         run: |
-          docker build -t ghcr.io/rocklimedev/dashboard-rocklime-backend:latest ./backend
+          docker build --no-cache \
+            -t ghcr.io/rocklimedev/dashboard-rocklime-backend:latest \
+            ./backend
           docker push ghcr.io/rocklimedev/dashboard-rocklime-backend:latest
 
       - name: Deploy to VPS
@@ -37,27 +39,13 @@ jobs:
           username: root
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            # Ensure Docker is available
-            if ! command -v docker &> /dev/null; then
-              echo "Docker not found. Installing..."
-              apt-get update && apt-get install -y docker.io
-              systemctl start docker
-              systemctl enable docker
-            fi
-
-            if ! command -v docker-compose &> /dev/null; then
-              echo "Docker Compose not found. Installing..."
-              apt-get update && apt-get install -y docker-compose
-            fi
+            set -e
 
             cd /root/cmtrading-api
 
-            # Login to GHCR
-            docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GHCR_TOKEN }}
+            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io \
+              -u rocklimedev --password-stdin
 
-            # Pull and restart only backend service
             docker compose pull backend
-            docker compose up -d backend --remove-orphans
-
-            # Cleanup old images
+            docker compose up -d backend --force-recreate --pull always
             docker image prune -f
