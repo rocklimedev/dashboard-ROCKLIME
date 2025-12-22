@@ -657,6 +657,8 @@ const OrderForm = ({
                     }
                     minDate={new Date()}
                     className={hasError("dueDate") ? "error-border" : ""}
+                    dateFormat="dd/MM/yyyy"
+                    placeholderText="DD/MM/YYYY"
                   />
                   {hasError("dueDate") && (
                     <Text
@@ -685,6 +687,8 @@ const OrderForm = ({
                             ? moment(orderData.dueDate).toDate()
                             : undefined
                         }
+                        dateFormat="dd/MM/yyyy"
+                        placeholderText="DD/MM/YYYY"
                       />
                       <Button
                         danger

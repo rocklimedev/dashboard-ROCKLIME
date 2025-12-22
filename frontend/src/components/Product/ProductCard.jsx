@@ -104,7 +104,7 @@ const ProductCard = ({
         {isOutOfStock ? (
           <div className="status-bar out-of-stock">Out of Stock</div>
         ) : (
-          <div className="status-bar in-stock">{`${product.quantity} in stock`}</div>
+          <div className="status-bar in-stock">{`${product.quantity}`}</div>
         )}
       </div>
 

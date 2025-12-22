@@ -22,13 +22,13 @@ const PageWrapper = () => {
   /* ------------------------------------------------------------------ */
   /*  STATE & MODALS                                                    */
   /* ------------------------------------------------------------------ */
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState(null);
+
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [cartLoadingStates, setCartLoadingStates] = useState({});
   const [editingOrderId, setEditingOrderId] = useState(null);
-
+  const [stockModalOpen, setStockModalOpen] = useState(false);
+  const [selectedProductForStock, setSelectedProductForStock] = useState(null);
   const toggleEdit = (id) => {
     setEditingOrderId((prev) => (prev === id ? null : id));
   };
@@ -44,7 +44,10 @@ const PageWrapper = () => {
     "DRAFT",
     "ONHOLD",
   ];
-
+  const handleProductClick = (p) => {
+    setSelectedProductForStock(p);
+    setStockModalOpen(true);
+  };
   /* ------------------------------------------------------------------ */
   /*  RTK-QUERY HOOKS                                                   */
   /* ------------------------------------------------------------------ */
@@ -158,16 +161,6 @@ const PageWrapper = () => {
     const start = (currentPage - 1) * itemsPerPage;
     return lowStockProducts.slice(start, start + itemsPerPage);
   }, [lowStockProducts, currentPage]);
-
-  const handleProductClick = (p) => {
-    setSelectedProduct(p);
-    setIsModalVisible(true);
-  };
-
-  const handleModalClose = () => {
-    setIsModalVisible(false);
-    setSelectedProduct(null);
-  };
 
   const [updateOrderStatus] = useUpdateOrderStatusMutation();
   const handleStatusChange = async (orderId, newStatus) => {
@@ -636,11 +629,14 @@ const PageWrapper = () => {
           </div>
         </div>
 
-        {/* Stock Modal */}
         <StockModal
-          show={isModalVisible}
-          onHide={handleModalClose}
-          product={selectedProduct}
+          open={stockModalOpen}
+          onCancel={() => {
+            setStockModalOpen(false);
+            setSelectedProductForStock(null);
+          }}
+          product={selectedProductForStock}
+          action="add" // Only allow adding from dashboard
         />
       </div>
     </div>

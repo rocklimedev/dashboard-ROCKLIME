@@ -30,7 +30,7 @@ import {
   DownloadOutlined,
   MenuOutlined,
 } from "@ant-design/icons";
-
+import StockModal from "../Common/StockModal"; // Adjust path as neededs
 import {
   useGetAllProductsQuery,
   useAddStockMutation,
@@ -548,84 +548,6 @@ const InventoryWrapper = () => {
         )}
       </div>
 
-      <Modal
-        title={
-          <Title level={4}>
-            {stockAction === "add" ? <PlusOutlined /> : <MinusOutlined />}{" "}
-            {stockAction === "add" ? "Add" : "Remove"} Stock —{" "}
-            {selectedProduct?.name}
-          </Title>
-        }
-        open={stockModalOpen}
-        onCancel={() => {
-          setStockModalOpen(false);
-          setSelectedProduct(null);
-          stockForm.resetFields();
-        }}
-        footer={null}
-        width={isMobile ? "90%" : 520}
-      >
-        <Form
-          form={stockForm}
-          onFinish={handleStockSubmit}
-          layout="vertical"
-          initialValues={{ quantity: 1 }}
-        >
-          <Form.Item
-            name="quantity"
-            label="Quantity"
-            rules={[
-              { required: true, message: "Please enter quantity" },
-              {
-                type: "number",
-                min: 1,
-                message: "Quantity must be at least 1",
-              },
-              // Optional: prevent removing more than available
-              () => ({
-                validator(_, value) {
-                  if (
-                    stockAction === "remove" &&
-                    value > selectedProduct?.quantity
-                  ) {
-                    return Promise.reject(
-                      `Cannot remove ${value} units — only ${selectedProduct?.quantity} available`
-                    );
-                  }
-                  return Promise.resolve();
-                },
-              }),
-            ]}
-          >
-            <InputNumber
-              min={1}
-              max={
-                stockAction === "remove" ? selectedProduct?.quantity : undefined
-              }
-              style={{ width: "100%" }}
-              size="large"
-              placeholder="Enter quantity"
-            />
-          </Form.Item>
-
-          <Form.Item style={{ marginBottom: 0, textAlign: "right" }}>
-            <Space>
-              <Button
-                onClick={() => {
-                  setStockModalOpen(false);
-                  setSelectedProduct(null);
-                  stockForm.resetFields();
-                }}
-              >
-                Cancel
-              </Button>
-              <Button type="primary" htmlType="submit">
-                {stockAction === "add" ? "Add" : "Remove"} Stock
-              </Button>
-            </Space>
-          </Form.Item>
-        </Form>
-      </Modal>
       <ReportBuilderModal
         open={reportModalOpen}
         onClose={() => setReportModalOpen(false)}
@@ -638,7 +560,15 @@ const InventoryWrapper = () => {
         selectedProducts={selectedReportProducts}
         setSelectedProducts={setSelectedReportProducts}
       />
-
+      <StockModal
+        open={stockModalOpen}
+        onCancel={() => {
+          setStockModalOpen(false);
+          setSelectedProduct(null);
+        }}
+        product={selectedProduct}
+        action={stockAction} // "add" or "remove"
+      />
       <HistoryModalAntD
         open={historyModalOpen}
         onCancel={() => {

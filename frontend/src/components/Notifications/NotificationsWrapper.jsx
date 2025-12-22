@@ -1,3 +1,4 @@
+// NotificationsOverlay.jsx (or NotificationsWrapper.jsx)
 import React, { useEffect, useRef, useState } from "react";
 import {
   useGetNotificationsQuery,
@@ -9,7 +10,6 @@ import { useAuth } from "../../context/AuthContext";
 import Avatar from "react-avatar";
 import { message } from "antd";
 import { formatDistanceToNow, parseISO, differenceInSeconds } from "date-fns";
-import { Tooltip } from "antd";
 import { io } from "socket.io-client";
 import { API_URL } from "../../data/config";
 
@@ -20,11 +20,11 @@ const NotificationItem = ({
   onMarkRead,
   onDelete,
   canMarkManually,
+  onClickNotification,
 }) => {
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
   const [translateX, setTranslateX] = useState(0);
-  const itemRef = useRef(null);
 
   const handleTouchStart = (e) => setTouchStart(e.changedTouches[0].clientX);
   const handleTouchMove = (e) => setTouchEnd(e.changedTouches[0].clientX);
@@ -43,15 +43,15 @@ const NotificationItem = ({
 
   return (
     <div className="position-relative overflow-hidden">
-      {/* Swipe Actions (Mobile only) */}
+      {/* Swipe Actions - Mobile Only */}
       <div
-        className="d-md-none position-absolute top-0 start-0 h-100 d-flex"
+        className="d-md-none position-absolute top-0 end-0 h-100 d-flex align-items-center"
         style={{
-          right: 0,
+          width: "160px",
           background: "#dc3545",
-          width: 160,
           transform: `translateX(${translateX + 160}px)`,
           transition: "transform 0.3s ease",
+          zIndex: 1,
         }}
       >
         <button
@@ -76,9 +76,8 @@ const NotificationItem = ({
 
       {/* Notification Card */}
       <div
-        ref={itemRef}
-        className={`card mb-3 border shadow-none ${
-          notification.read ? "bg-light" : ""
+        className={`bg-white border-bottom position-relative cursor-pointer ${
+          !notification.read ? "bg-light" : ""
         }`}
         style={{
           transform: `translateX(${translateX}px)`,
@@ -87,89 +86,149 @@ const NotificationItem = ({
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        onClick={(e) => translateX !== 0 && (e.stopPropagation(), resetSwipe())}
+        onClick={(e) => {
+          if (translateX !== 0) {
+            e.stopPropagation();
+            resetSwipe();
+            return;
+          }
+          onClickNotification(notification);
+        }}
       >
-        <div className="px-3 py-3">
-          <Tooltip
-            title={formatDistanceToNow(parseISO(notification.createdAt), {
-              addSuffix: true,
-            })}
-            placement="right"
-          >
-            <div className="d-flex align-items-center">
-              <div className="me-3">
+        <div className="p-3">
+          <div className="d-flex align-items-start">
+            {/* Unread Dot */}
+            {!notification.read && (
+              <div
+                className="me-3 mt-1"
+                style={{
+                  width: 10,
+                  height: 10,
+                  backgroundColor: "#1890ff",
+                  borderRadius: "50%",
+                  flexShrink: 0,
+                }}
+              />
+            )}
+            {notification.read && (
+              <div className="me-3" style={{ width: 34 }} />
+            )}
+
+            <a
+              href={`/u/${notification.userId?._id || "#"}`}
+              onClick={(e) => e.stopPropagation()}
+              className="me-3 flex-shrink-0"
+            >
+              <Avatar
+                name={notification.userId?.username || "User"}
+                src={notification.userId?.profileImage}
+                size="40"
+                round={true}
+                color="#1890ff"
+                textSizeRatio={2}
+              />
+            </a>
+
+            <div className="flex-grow-1 min-width-0">
+              <p className="mb-1 text-sm">
                 <a
                   href={`/u/${notification.userId?._id || "#"}`}
                   onClick={(e) => e.stopPropagation()}
-                  className="avatar avatar-rounded"
+                  className="text-decoration-none fw-medium text-dark"
                 >
-                  <Avatar
-                    name={notification.userId?.username || "User"}
-                    src={notification.userId?.profileImage}
-                    size="40"
-                    round={true}
-                    color="#1890ff"
-                    textSizeRatio={2}
-                  />
-                </a>
-              </div>
+                  {notification.userId?.username || "Someone"}
+                </a>{" "}
+                <span className="text-dark">{notification.title}</span>
+              </p>
+              <p className="text-muted small mb-1 text-truncate">
+                {notification.message}
+              </p>
+              <small className="text-muted">
+                {formatDistanceToNow(parseISO(notification.createdAt), {
+                  addSuffix: true,
+                })}
+              </small>
 
-              <div className="flex-fill">
-                <p className="mb-1 text-sm">
-                  <a
-                    href={`/u/${notification.userId?._id || "#"}`}
-                    className="text-decoration-none fw-medium"
-                    onClick={(e) => e.stopPropagation()}
+              {canMarkManually && (
+                <div className="d-none d-md-block mt-2">
+                  <button
+                    className="btn btn-link btn-sm p-0 text-primary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onMarkRead(notification._id);
+                    }}
                   >
-                    {notification.userId?.username || "Someone"}
-                  </a>{" "}
-                  <span className="text-dark">{notification.title}</span>
-                </p>
-                <p className="text-muted small mb-1">{notification.message}</p>
-                <small className="text-muted">
-                  {formatDistanceToNow(parseISO(notification.createdAt), {
-                    addSuffix: true,
-                  })}
-                </small>
-
-                {/* Desktop "Mark as Read" */}
-                {canMarkManually && (
-                  <div className="d-none d-md-block mt-2">
-                    <button
-                      className="btn btn-link btn-sm p-0 text-primary"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onMarkRead(notification._id);
-                      }}
-                    >
-                      Mark as Read
-                    </button>
-                  </div>
-                )}
-              </div>
+                    Mark as read
+                  </button>
+                </div>
+              )}
             </div>
-          </Tooltip>
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-const NotificationsWrapper = () => {
+const NotificationsOverlay = ({ isOpen, onClose }) => {
   const { auth } = useAuth();
   const userId = auth?.user?.userId;
 
   const { data: notifications = [], refetch } = useGetNotificationsQuery(
     undefined,
-    {
-      skip: !userId,
-    }
+    { skip: !userId }
   );
 
   const [markNotificationAsRead] = useMarkNotificationAsReadMutation();
   const [clearAllNotifications, { isLoading: isClearing }] =
     useClearAllNotificationsMutation();
   const [deleteNotification] = useDeleteNotificationMutation();
+
+  const overlayRef = useRef(null);
+
+  // Close on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (overlayRef.current && !overlayRef.current.contains(e.target)) {
+        onClose();
+      }
+    };
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isOpen, onClose]);
+
+  // Real-time socket updates
+  useEffect(() => {
+    if (!userId || !isOpen) return;
+
+    const socket = io(API_URL, { transports: ["websocket"] });
+    socket.on("connect", () => socket.emit("join", userId));
+    socket.on("newNotification", () => refetch());
+    socket.on("notificationsCleared", () => refetch());
+    socket.on("notificationDeleted", () => refetch());
+    socket.on("notificationsDeleted", () => refetch());
+
+    return () => socket.disconnect();
+  }, [userId, isOpen, refetch]);
+
+  // Auto mark as read after 1 hour
+  useEffect(() => {
+    if (!notifications.length) return;
+    const interval = setInterval(() => {
+      const now = new Date();
+      notifications.forEach((n) => {
+        if (
+          !n.read &&
+          differenceInSeconds(now, parseISO(n.createdAt)) >= 3600
+        ) {
+          markNotificationAsRead(n._id);
+        }
+      });
+    }, 60_000);
+    return () => clearInterval(interval);
+  }, [notifications, markNotificationAsRead]);
 
   const handleMarkRead = async (id) => {
     try {
@@ -182,111 +241,166 @@ const NotificationsWrapper = () => {
   const handleDelete = async (id) => {
     try {
       await deleteNotification(id).unwrap();
-      message.success("Notification deleted");
+      message.success("Deleted");
     } catch {
       message.error("Failed to delete");
     }
   };
 
   const handleClearAll = async () => {
-    if (!notifications.length) return;
     try {
       await clearAllNotifications().unwrap();
-      message.success("All notifications cleared");
+      message.success("All cleared");
     } catch {
-      message.error("Failed to clear notifications");
+      message.error("Failed to clear");
     }
   };
 
-  // Auto-mark after 1 hour
-  useEffect(() => {
-    if (!notifications.length) return;
-    const interval = setInterval(() => {
-      const now = new Date();
-      notifications.forEach((n) => {
-        if (
-          !n.read &&
-          differenceInSeconds(now, parseISO(n.createdAt)) >= 3600
-        ) {
-          handleMarkRead(n._id);
-        }
-      });
-    }, 60_000);
-    return () => clearInterval(interval);
-  }, [notifications]);
+  const handleNotificationClick = (notification) => {
+    let url = "/"; // fallback
 
-  // Real-time Socket.IO
-  useEffect(() => {
-    if (!userId) return;
-    const socket = io(API_URL, { transports: ["websocket"] });
-    socket.on("connect", () => socket.emit("join", userId));
-    socket.on("notificationsDeleted", refetch);
-    socket.on("notificationsCleared", refetch);
-    socket.on("notificationDeleted", refetch);
-    return () => socket.disconnect();
-  }, [userId, refetch]);
+    if (notification.type === "like" || notification.type === "comment") {
+      url = `/post/${notification.postId || ""}`;
+    } else if (
+      notification.type === "follow" ||
+      notification.type === "mention"
+    ) {
+      url = `/u/${notification.userId?._id}`;
+    } else if (notification.url) {
+      url = notification.url;
+    }
 
-  // === Render (No loading states — handled globally) ===
+    window.location.href = url;
+
+    if (!notification.read) {
+      handleMarkRead(notification._id);
+    }
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
   return (
-    <div className="page-wrapper">
-      <div className="content mb-4">
-        <div className="page-header d-flex justify-content-between align-items-center mb-4">
-          <div className="page-title">
-            <h4>All Notifications</h4>
-            <h6>Stay updated with your activities</h6>
-          </div>
+    <>
+      {/* Backdrop */}
+      <div
+        className="position-fixed top-0 start-0 w-100 h-100"
+        style={{
+          backgroundColor: "rgba(0, 0, 0, 0.5)",
+          zIndex: 1040,
+        }}
+        onClick={onClose}
+      />
 
-          {notifications.length > 0 && (
+      {/* Panel - Responsive Design */}
+      <div
+        ref={overlayRef}
+        className="position-fixed bg-white shadow-lg d-flex flex-column"
+        style={{
+          // Desktop & Tablet: Right-side narrow panel
+          top: 0,
+          bottom: 0,
+          right: 0,
+          width: "420px",
+          maxWidth: "100%",
+          zIndex: 1050,
+          borderTopLeftRadius: "12px",
+          borderBottomLeftRadius: "12px",
+
+          // Mobile: Full-width bottom sheet
+          "@media (max-width: 767.98px)": {
+            top: "auto",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            width: "100%",
+            height: "90vh",
+            borderRadius: "16px 16px 0 0",
+            borderBottomLeftRadius: 0,
+            borderBottomRightRadius: 0,
+          },
+
+          // Animation
+          transform: isOpen ? "translateX(0)" : "translateX(100%)", // Desktop: slide from right
+          transition: "transform 0.35s cubic-bezier(0.32, 0.72, 0, 1)",
+        }}
+      >
+        {/* Mobile Bottom Sheet Animation Override */}
+        <style jsx>{`
+          @media (max-width: 767.98px) {
+            div[ref="overlayRef"] {
+              transform: ${isOpen
+                ? "translateY(0)"
+                : "translateY(100%)"} !important;
+            }
+          }
+        `}</style>
+
+        {/* Header */}
+        <div className="border-bottom px-4 py-3 d-flex justify-content-between align-items-center">
+          <div>
+            <h5 className="mb-0 fw-bold">Notifications</h5>
+            {unreadCount > 0 && (
+              <small className="text-primary">{unreadCount} new</small>
+            )}
+          </div>
+          <div className="d-flex align-items-center gap-3">
+            {notifications.length > 0 && (
+              <button
+                onClick={handleClearAll}
+                disabled={isClearing}
+                className="btn btn-sm btn-outline-danger"
+              >
+                {isClearing ? "Clearing..." : "Clear all"}
+              </button>
+            )}
             <button
-              onClick={handleClearAll}
-              disabled={isClearing}
-              className={`btn btn-sm ${
-                isClearing ? "btn-secondary" : "btn-outline-danger"
-              } d-flex align-items-center`}
+              onClick={onClose}
+              className="btn btn-link text-dark p-0"
+              aria-label="Close"
             >
-              {isClearing ? (
-                <>
-                  <span className="spinner-border spinner-border-sm me-2"></span>
-                  Clearing...
-                </>
-              ) : (
-                <>Clear All</>
-              )}
+              <i className="bi bi-x-lg" />
             </button>
-          )}
+          </div>
         </div>
 
-        {/* Main Content */}
-        {!userId ? (
-          <div className="text-center py-5">
-            <p className="text-muted">Please log in to view notifications</p>
-          </div>
-        ) : notifications.length === 0 ? (
-          <div className="text-center py-5">
-            <p className="text-muted">No notifications yet</p>
-          </div>
-        ) : (
-          notifications.map((n) => {
-            const ageSec = differenceInSeconds(
-              new Date(),
-              parseISO(n.createdAt)
-            );
-            const canMarkManually = ageSec < 3600 && !n.read;
+        {/* Body */}
+        <div className="flex-grow-1 overflow-auto">
+          {!userId ? (
+            <div className="text-center py-5 text-muted">
+              Please log in to see notifications
+            </div>
+          ) : notifications.length === 0 ? (
+            <div className="text-center py-5 text-muted">
+              <i className="bi bi-bell fs-1 mb-3 opacity-50" />
+              <p>No notifications yet</p>
+            </div>
+          ) : (
+            notifications.map((n) => {
+              const ageSec = differenceInSeconds(
+                new Date(),
+                parseISO(n.createdAt)
+              );
+              const canMarkManually = ageSec < 3600 && !n.read;
 
-            return (
-              <NotificationItem
-                key={n._id}
-                notification={n}
-                onMarkRead={handleMarkRead}
-                onDelete={handleDelete}
-                canMarkManually={canMarkManually}
-              />
-            );
-          })
-        )}
+              return (
+                <NotificationItem
+                  key={n._id}
+                  notification={n}
+                  onMarkRead={handleMarkRead}
+                  onDelete={handleDelete}
+                  canMarkManually={canMarkManually}
+                  onClickNotification={handleNotificationClick}
+                />
+              );
+            })
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
-export default NotificationsWrapper;
+export default NotificationsOverlay;
