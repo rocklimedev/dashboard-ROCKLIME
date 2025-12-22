@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+// src/components/Common/StockModal.jsx
+import React, { useEffect } from "react";
 import {
   Modal,
   Form,
@@ -19,49 +20,42 @@ const { Text } = Typography;
 
 const StockModal = ({ open, onCancel, product, action = "add" }) => {
   const [form] = Form.useForm();
-  const [quantity, setQuantity] = useState(1);
-
   const [addStock, { isLoading: adding }] = useAddStockMutation();
   const [removeStock, { isLoading: removing }] = useRemoveStockMutation();
 
   const isAdd = action === "add";
   const isLoading = adding || removing;
 
-  // Reset form when modal opens/closes
+  // Reset form when modal opens or product/action changes
   useEffect(() => {
     if (open) {
-      setQuantity(1);
       form.setFieldsValue({ quantity: 1 });
     }
-  }, [open, form]);
+  }, [open, product, action, form]);
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (values) => {
     if (!product?.productId) {
-      message.error("Product not selected");
-      return;
-    }
-
-    if (!quantity || quantity < 1) {
-      message.error("Please enter a valid quantity");
+      message.error("Invalid product");
       return;
     }
 
     try {
       if (isAdd) {
-        await addStock({ productId: product.productId, quantity }).unwrap();
-        message.success(`Successfully added ${quantity} unit(s) to stock`);
+        await addStock({
+          productId: product.productId,
+          quantity: values.quantity,
+        }).unwrap();
+        message.success(`Successfully added ${values.quantity} unit(s)`);
       } else {
-        await removeStock({ productId: product.productId, quantity }).unwrap();
-        message.success(`Successfully removed ${quantity} unit(s) from stock`);
+        await removeStock({
+          productId: product.productId,
+          quantity: values.quantity,
+        }).unwrap();
+        message.success(`Successfully removed ${values.quantity} unit(s)`);
       }
-
-      form.resetFields();
-      onCancel();
+      onCancel(); // Close modal on success
     } catch (err) {
-      const errorMsg =
-        err?.data?.message ||
-        (isAdd ? "Failed to add stock" : "Failed to remove stock");
-      message.error(errorMsg);
+      message.error(err?.data?.message || "Failed to update stock");
     }
   };
 
@@ -71,28 +65,26 @@ const StockModal = ({ open, onCancel, product, action = "add" }) => {
     <Modal
       title={
         <Space>
-          {isAdd ? (
-            <PlusOutlined style={{ color: "#52c41a" }} />
-          ) : (
-            <MinusOutlined style={{ color: "#ff4d4f" }} />
-          )}
-          <strong>
-            {isAdd ? "Add" : "Remove"} Stock — {product.name || "Product"}
-          </strong>
-          {product.sku && <Text type="secondary">#{product.sku}</Text>}
+          <span>
+            <strong>
+              {isAdd ? "Add" : "Remove"} Stock — {product.name || "Product"}
+            </strong>
+            {product.product_code && (
+              <Text type="secondary" style={{ marginLeft: 8 }}>
+                #{product.product_code}
+              </Text>
+            )}
+          </span>
         </Space>
       }
       open={open}
       onCancel={onCancel}
       footer={null}
-      width={480}
+      width={500}
       destroyOnClose
     >
-      <Form form={form} layout="vertical" onFinish={handleSubmit}>
-        <Form.Item
-          label={<strong>Current Stock</strong>}
-          style={{ marginBottom: 16 }}
-        >
+      <Form form={form} onFinish={handleSubmit} layout="vertical">
+        <Form.Item label={<strong>Current Stock</strong>}>
           <Text strong style={{ fontSize: 18 }}>
             {product.quantity || 0} units
           </Text>
@@ -102,13 +94,15 @@ const StockModal = ({ open, onCancel, product, action = "add" }) => {
           name="quantity"
           label={<strong>Quantity to {isAdd ? "Add" : "Remove"}</strong>}
           rules={[
-            { required: true, message: "Please enter quantity" },
-            { type: "number", min: 1, message: "Quantity must be at least 1" },
+            { required: true, message: "Please enter a quantity" },
+            { type: "number", min: 1, message: "Must be at least 1" },
             () => ({
               validator(_, value) {
-                if (!isAdd && value > product.quantity) {
+                if (!isAdd && value > (product.quantity || 0)) {
                   return Promise.reject(
-                    new Error(`Only ${product.quantity} units available`)
+                    new Error(
+                      `Only ${product.quantity} unit(s) available to remove`
+                    )
                   );
                 }
                 return Promise.resolve();
@@ -118,11 +112,10 @@ const StockModal = ({ open, onCancel, product, action = "add" }) => {
         >
           <InputNumber
             min={1}
-            max={isAdd ? 999999 : product.quantity}
+            max={isAdd ? undefined : product.quantity || 0}
             style={{ width: "100%" }}
             size="large"
             placeholder="Enter quantity"
-            onChange={setQuantity}
             disabled={isLoading}
           />
         </Form.Item>
@@ -137,7 +130,6 @@ const StockModal = ({ open, onCancel, product, action = "add" }) => {
               htmlType="submit"
               loading={isLoading}
               danger={!isAdd}
-              icon={isAdd ? <PlusOutlined /> : <MinusOutlined />}
             >
               {isLoading
                 ? "Processing..."
@@ -153,10 +145,7 @@ const StockModal = ({ open, onCancel, product, action = "add" }) => {
         <div
           style={{
             position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
+            inset: 0,
             background: "rgba(255,255,255,0.9)",
             display: "flex",
             alignItems: "center",

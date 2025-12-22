@@ -473,6 +473,8 @@ const QuotationForm = ({
                       )
                     }
                     minDate={new Date()}
+                    dateFormat="dd/MM/yyyy"
+                    placeholderText="DD/MM/YYYY"
                   />
                 </Col>
               </TightRow>
@@ -493,6 +495,8 @@ const QuotationForm = ({
                             ? moment(quotationData.dueDate).toDate()
                             : null
                         }
+                        dateFormat="dd/MM/yyyy"
+                        placeholderText="DD/MM/YYYY"
                       />
                       <Button
                         danger

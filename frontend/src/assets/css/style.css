@@ -17355,11 +17355,11 @@ hr {
   -ms-transition: all 0.5s ease;
   transition: all 0.5s ease;
 }
-@media (max-width: 991.96px) {
+/* @media (max-width: 991.96px) {
   .user-menu {
     display: none;
   }
-}
+} */
 .user-menu > li {
   margin-left: 12px;
   margin-inline-end: 0;

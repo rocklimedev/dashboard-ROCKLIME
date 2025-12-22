@@ -61,7 +61,6 @@ import POWrapper from "../components/Orders/POWrapper";
 import AddPurchaseOrder from "../components/Orders/AddPurchaseOrder";
 import PODetails from "../components/Orders/PODetails";
 import LogTable from "../components/Logs/LogTable";
-import NotificationsWrapper from "../components/Notifications/NotificationsWrapper";
 import TaskWrapper from "../components/Tasks/TaskWrapper";
 import InventoryWrapper from "../components/Common/InventoryWrapper";
 import ProfileForm from "../components/Profile/ProfileForm";
@@ -71,6 +70,7 @@ import AddSiteMap from "../components/SiteMap/AddSiteMap";
 import SiteMapList from "../components/SiteMap/SiteMapList";
 import SiteMapDetails from "../components/SiteMap/SiteMapDetails";
 import NewSiteMapDetails from "../components/SiteMap/NewSiteMapDetails";
+import BulkProductImport from "../components/Product/BulkProductImport";
 
 const masterRoutes = [
   {
@@ -487,11 +487,11 @@ const masterRoutes = [
         requiredPermission: { api: "edit", module: "customers" },
       },
       {
-        path: "/notifications",
-        name: "Notifications",
-        icon: <NotificationOutlined />,
+        path: "/product/bulk-product",
+        element: <BulkProductImport />,
+        name: "Bulk Product",
+        icon98: <ShoppingCartOutlined />,
         isSidebarActive: false,
-        element: <NotificationsWrapper />,
       },
     ],
   },
