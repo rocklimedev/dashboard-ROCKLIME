@@ -78,21 +78,6 @@ const QuotationList = () => {
     dateRange: null,
   });
 
-  /* -------------------------- Reset on mount --------------------------- */
-  useEffect(() => {
-    setSortBy("Recently Added");
-    setSearchTerm("");
-    setActiveTab("All");
-    setFilters({
-      finalAmount: null,
-      quotationDate: null,
-      customerId: null,
-      dateRange: null,
-    });
-    setCurrentPage(1);
-    setPageSize(10);
-  }, []);
-
   /* --------------------------- Helper functions -------------------------- */
   const getProductCount = (productsOrItems) => {
     if (!productsOrItems) return 0;
@@ -179,13 +164,9 @@ const QuotationList = () => {
         break;
       case "Recently Added":
         result = [...result].sort((a, b) => {
-          const da = a.quotation_date
-            ? new Date(a.quotation_date)
-            : new Date(0);
-          const db = b.quotation_date
-            ? new Date(b.quotation_date)
-            : new Date(0);
-          return db - da;
+          const da = a.createdAt ? new Date(a.createdAt) : new Date(0);
+          const db = b.createdAt ? new Date(b.createdAt) : new Date(0);
+          return db - da; // newest first (most recently created)
         });
         break;
       case "Price High":

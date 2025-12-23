@@ -251,15 +251,14 @@ const CartTab = ({
                     <Col xs={12} sm={6}>
                       <Space size="small">
                         <QuantityButton
-                          type="button"
+                          type="default"
                           size="small"
-                          onClick={(e) => {
-                            e.preventDefault();
+                          onClick={() =>
                             handleUpdateQuantity(
                               item.productId,
-                              item.quantity - 1
-                            );
-                          }}
+                              Math.max(1, item.quantity - 1)
+                            )
+                          }
                           disabled={
                             item.quantity <= 1 || updatingItems[item.productId]
                           }
@@ -268,18 +267,32 @@ const CartTab = ({
                           -
                         </QuantityButton>
 
-                        <Text>{item.quantity}</Text>
+                        <InputNumber
+                          min={1}
+                          value={item.quantity}
+                          onChange={(value) => {
+                            if (value && value > 0) {
+                              handleUpdateQuantity(
+                                item.productId,
+                                Number(value)
+                              );
+                            }
+                          }}
+                          style={{ width: 70 }}
+                          size="middle"
+                          controls={false}
+                          disabled={updatingItems[item.productId]}
+                        />
 
                         <QuantityButton
-                          type="button"
+                          type="default"
                           size="small"
-                          onClick={(e) => {
-                            e.preventDefault();
+                          onClick={() =>
                             handleUpdateQuantity(
                               item.productId,
                               item.quantity + 1
-                            );
-                          }}
+                            )
+                          }
                           disabled={updatingItems[item.productId]}
                           loading={updatingItems[item.productId]}
                         >

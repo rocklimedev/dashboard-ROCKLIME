@@ -227,7 +227,10 @@ const QuotationForm = ({
     () => Math.round(totalBeforeRoundOff + autoRoundOff),
     [totalBeforeRoundOff, autoRoundOff]
   );
-
+  /* ────── Force GST to 0 ────── */
+  useEffect(() => {
+    setGst(0);
+  }, [setGst]);
   /* ────── Address Sync (same‑as‑billing) ────── */
   useEffect(() => {
     if (!useBillingAddress || !defaultAddress || !selectedCustomer) {
@@ -295,7 +298,12 @@ const QuotationForm = ({
     createAddress,
     handleQuotationChange,
   ]);
-
+  /* ────── Force Global Discount to Fixed Amount ────── */
+  useEffect(() => {
+    if (quotationData.discountType !== "fixed") {
+      handleQuotationChange("discountType", "fixed");
+    }
+  }, [quotationData.discountType, handleQuotationChange]);
   /* ────── Follow‑up dates ────── */
   const handleFollowup = (i, d) => {
     const arr = [...quotationData.followupDates];
@@ -465,6 +473,8 @@ const QuotationForm = ({
                       )
                     }
                     minDate={new Date()}
+                    dateFormat="dd/MM/yyyy"
+                    placeholderText="DD/MM/YYYY"
                   />
                 </Col>
               </TightRow>
@@ -485,6 +495,8 @@ const QuotationForm = ({
                             ? moment(quotationData.dueDate).toDate()
                             : null
                         }
+                        dateFormat="dd/MM/yyyy"
+                        placeholderText="DD/MM/YYYY"
                       />
                       <Button
                         danger
@@ -504,24 +516,13 @@ const QuotationForm = ({
                 </Col>
               </TightRow>
 
-              {/* GLOBAL DISCOUNT */}
-              {/* GLOBAL DISCOUNT */}
+              {/* GLOBAL DISCOUNT – Fixed Amount Only */}
               <TightRow gutter={16} align="middle" style={{ marginBottom: 16 }}>
                 <Col span={8}>
                   <Text strong>Global Discount</Text>
                 </Col>
                 <Col span={16}>
                   <Space.Compact block>
-                    <Select
-                      value={quotationData.discountType || "percent"}
-                      onChange={(value) =>
-                        handleQuotationChange("discountType", value)
-                      }
-                      style={{ width: 80 }}
-                    >
-                      <Option value="percent">%</Option>
-                      <Option value="fixed">₹</Option>
-                    </Select>
                     <InputNumber
                       value={quotationData.discountAmount || ""}
                       onChange={(value) =>
@@ -530,43 +531,18 @@ const QuotationForm = ({
                           value === null ? "" : value.toString()
                         )
                       }
-                      placeholder={
-                        quotationData.discountType === "percent" ? "8" : "500"
-                      }
+                      placeholder="500"
                       min={0}
+                      precision={2}
+                      addonBefore="₹"
                       style={{ width: "100%" }}
                     />
                   </Space.Compact>
-                </Col>
-              </TightRow>
-              <TightRow gutter={8}>
-                <Col span={8}>
-                  <Text strong>
-                    GST % <InfoCircleOutlined style={{ fontSize: 11 }} />
-                  </Text>
-                </Col>
-                <Col span={16}>
-                  <MiniNumber
-                    value={gst}
-                    onChange={(v) => setGst(v ?? 0)}
-                    min={0}
-                    max={100}
-                    step={0.01}
-                    addonAfter="%"
-                  />
-                  <Text type="secondary" style={{ fontSize: 11 }} block>
-                    +₹{(gstAmount || 0).toFixed(2)}
-                  </Text>
-                </Col>
-              </TightRow>
-
-              <TightRow gutter={8}>
-                <Col span={8}>
-                  <Text strong>Round Off</Text>
-                </Col>
-                <Col span={16}>
-                  <Text>
-                    {autoRoundOff >= 0 ? "+" : ""}₹{autoRoundOff.toFixed(2)}
+                  <Text
+                    type="secondary"
+                    style={{ fontSize: 11, display: "block", marginTop: 4 }}
+                  >
+                    Fixed amount discount applied after subtotal, tax & shipping
                   </Text>
                 </Col>
               </TightRow>
@@ -575,7 +551,6 @@ const QuotationForm = ({
         </CompactCard>
       </Col>
 
-      {/* RIGHT – SUMMARY */}
       {/* RIGHT – SUMMARY */}
       <Col xs={24} md={8}>
         <CompactCard

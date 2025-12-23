@@ -170,7 +170,7 @@ const OrderPage = () => {
 
   const { data: profileData, isLoading: profileLoading } = useGetProfileQuery();
   const user = profileData?.user || {};
-  console.log(user);
+
   const {
     data: orderData,
     isLoading: orderLoading,
@@ -247,10 +247,6 @@ const OrderPage = () => {
   const products = useMemo(() => {
     // HIGHEST PRIORITY: Full quotation fetch — this ALWAYS has correct imageUrl
     if (fullQuotation?.products && Array.isArray(fullQuotation.products)) {
-      console.log(
-        "Using products from fullQuotation (with imageUrl)",
-        fullQuotation.products
-      );
       return fullQuotation.products;
     }
 
@@ -259,10 +255,6 @@ const OrderPage = () => {
       order?.quotationData?.products &&
       Array.isArray(order.quotationData.products)
     ) {
-      console.log(
-        "Using products from order.quotationData",
-        order.quotationData.products
-      );
       return order.quotationData.products;
     }
 
@@ -1061,6 +1053,7 @@ const OrderPage = () => {
                   </Button>
                 </Form>
 
+                {/* INVOICE DOWNLOAD - FIXED */}
                 {invoiceUrl && (
                   <div style={{ marginTop: 16 }}>
                     <a
@@ -1074,16 +1067,30 @@ const OrderPage = () => {
                     <Button
                       icon={<DownloadOutlined />}
                       size="small"
-                      onClick={() => {
-                        const a = document.createElement("a");
-                        a.href = invoiceUrl;
-                        // Always use custom name with .pdf for invoices
-                        a.download = generateFileName(
-                          "INVOICE",
-                          order.orderNo,
-                          customer.name
-                        );
-                        a.click();
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        try {
+                          const response = await fetch(invoiceUrl);
+                          if (!response.ok) throw new Error("Download failed");
+
+                          const blob = await response.blob();
+                          const url = window.URL.createObjectURL(blob);
+                          const a = document.createElement("a");
+                          a.href = url;
+                          a.download = generateFileName(
+                            "INVOICE",
+                            order.orderNo,
+                            customer.name
+                          );
+                          document.body.appendChild(a);
+                          a.click();
+                          a.remove();
+                          window.URL.revokeObjectURL(url);
+                        } catch (err) {
+                          message.error("Failed to download invoice");
+                          // Fallback: open in new tab
+                          window.open(invoiceUrl, "_blank");
+                        }
                       }}
                     >
                       Download
@@ -1138,9 +1145,10 @@ const OrderPage = () => {
                     </Button>
                   </Form>
                 )}
+                {/* GATE-PASS DOWNLOAD - FIXED */}
                 {gatePassUrl && (
                   <div style={{ marginTop: 16, textAlign: "center" }}>
-                    {/* PDF preview remains the same */}
+                    {/* Preview remains the same */}
                     {gatePassUrl.endsWith(".pdf") ? (
                       <Document
                         file={gatePassUrl}
@@ -1165,31 +1173,45 @@ const OrderPage = () => {
                       icon={<DownloadOutlined />}
                       size="small"
                       style={{ marginTop: 8 }}
-                      onClick={() => {
-                        const a = document.createElement("a");
-                        a.href = gatePassUrl;
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        try {
+                          const response = await fetch(gatePassUrl);
+                          if (!response.ok) throw new Error("Download failed");
 
-                        // Better extension detection: get last part after final dot
-                        const urlPath = new URL(gatePassUrl).pathname;
-                        const originalFilename = urlPath.split("/").pop();
-                        const extMatch = originalFilename.match(/\.([^.]+)$/);
-                        const actualExt = extMatch
-                          ? extMatch[1].toLowerCase()
-                          : "pdf";
+                          const blob = await response.blob();
 
-                        // Prioritize custom name, fallback to original filename if needed
-                        let downloadName = generateFileName(
-                          "GATEPASS",
-                          order.orderNo,
-                          customer.name
-                        );
-                        downloadName = downloadName.replace(
-                          /\.pdf$/,
-                          `.${actualExt}`
-                        );
+                          // Detect actual file extension
+                          const urlPath = new URL(gatePassUrl).pathname;
+                          const originalFilename = urlPath.split("/").pop();
+                          const extMatch = originalFilename.match(/\.([^.]+)$/);
+                          const actualExt = extMatch
+                            ? extMatch[1].toLowerCase()
+                            : "pdf";
 
-                        a.download = downloadName;
-                        a.click();
+                          const blobUrl = window.URL.createObjectURL(blob);
+                          const a = document.createElement("a");
+                          a.href = blobUrl;
+
+                          let downloadName = generateFileName(
+                            "GATEPASS",
+                            order.orderNo,
+                            customer.name
+                          );
+                          downloadName = downloadName.replace(
+                            /\.pdf$/,
+                            `.${actualExt}`
+                          );
+
+                          a.download = downloadName;
+                          document.body.appendChild(a);
+                          a.click();
+                          a.remove();
+                          window.URL.revokeObjectURL(blobUrl);
+                        } catch (err) {
+                          message.error("Failed to download gate-pass");
+                          window.open(gatePassUrl, "_blank");
+                        }
                       }}
                     >
                       Download

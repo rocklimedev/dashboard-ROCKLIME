@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeftOutlined } from "@ant-design/icons";
-import { DeleteOutlined } from "@ant-design/icons";
+import { ArrowLeftOutlined, DeleteOutlined } from "@ant-design/icons";
 import {
   Form,
   Input,
@@ -25,179 +24,11 @@ import {
   useGetVendorsQuery,
   useCreateVendorMutation,
 } from "../../api/vendorApi";
-import { useGetAllBrandsQuery } from "../../api/brandsApi";
 import moment from "moment";
 import DatePicker from "react-datepicker";
+import AddVendorModal from "../POS-NEW/AddVendorModal";
 
 const { Option } = Select;
-
-// AddVendorModal Component (loading removed)
-const AddVendorModal = ({ show, onClose, onSave, isCreatingVendor }) => {
-  const { data: brandsData } = useGetAllBrandsQuery(undefined, {
-    refetchOnMountOrArgChange: true,
-  });
-  const brands = brandsData || [];
-  const [form] = Form.useForm();
-  const [vendorData, setVendorData] = useState({
-    vendorId: "",
-    vendorName: "",
-    brandId: "",
-    brandSlug: "",
-  });
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setVendorData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleBrandChange = (value) => {
-    const selectedBrand = brands.find((brand) => brand.id === value);
-    setVendorData((prev) => ({
-      ...prev,
-      brandId: value,
-      brandSlug: selectedBrand ? selectedBrand.brandSlug : "",
-    }));
-    form.setFieldsValue({ brandId: value });
-  };
-
-  const handleSubmit = async () => {
-    if (!vendorData.vendorId || !vendorData.vendorName) {
-      message.error("Vendor ID and Name are required.");
-      return;
-    }
-    try {
-      await onSave({
-        vendorId: vendorData.vendorId,
-        vendorName: vendorData.vendorName,
-        brandId: vendorData.brandId || null,
-        brandSlug: vendorData.brandSlug || null,
-      }).unwrap();
-
-      setVendorData({
-        vendorId: "",
-        vendorName: "",
-        brandId: "",
-        brandSlug: "",
-      });
-      form.resetFields();
-      onClose();
-    } catch (err) {
-      const errorMessage =
-        err.status === 400 && err.data?.message.includes("vendorId")
-          ? "Vendor ID already exists. Please use a unique ID."
-          : err.data?.message || "Failed to create vendor";
-      message.error(errorMessage);
-    }
-  };
-
-  return (
-    <Modal
-      title="Add New Vendor"
-      open={show}
-      onCancel={onClose}
-      footer={null}
-      centered
-    >
-      <Form form={form} onFinish={handleSubmit} layout="vertical">
-        <Form.Item
-          label="Vendor ID"
-          name="vendorId"
-          rules={[{ required: true, message: "Please enter a Vendor ID" }]}
-        >
-          <Input
-            name="vendorId"
-            value={vendorData.vendorId}
-            onChange={handleChange}
-            placeholder="e.g., VEND123"
-          />
-          <div style={{ color: "#8c8c8c", fontSize: "12px" }}>
-            Must be unique (e.g., VEND123).
-          </div>
-        </Form.Item>
-        <Form.Item
-          label="Vendor Name"
-          name="vendorName"
-          rules={[{ required: true, message: "Please enter a Vendor Name" }]}
-        >
-          <Input
-            name="vendorName"
-            value={vendorData.vendorName}
-            onChange={handleChange}
-            placeholder="e.g., Acme Supplies"
-          />
-        </Form.Item>
-        <Form.Item label="Brand" name="brandId">
-          <Select
-            style={{ width: "100%" }}
-            value={vendorData.brandId || undefined}
-            onChange={handleBrandChange}
-            placeholder="Select a brand"
-            aria-label="Select a brand"
-            options={brands.map((brand) => ({
-              value: brand.id,
-              label: `${brand.brandName} (${brand.brandSlug})`,
-            }))}
-          />
-        </Form.Item>
-        <div style={{ display: "flex", justifyContent: "flex-end" }}>
-          <Button
-            onClick={onClose}
-            disabled={isCreatingVendor}
-            style={{ marginRight: "10px" }}
-          >
-            Cancel
-          </Button>
-          <Button type="primary" htmlType="submit" disabled={isCreatingVendor}>
-            {isCreatingVendor ? "Saving..." : "Save Vendor"}
-          </Button>
-        </div>
-      </Form>
-    </Modal>
-  );
-};
-
-// ProductTableRow (unchanged)
-const ProductTableRow = ({
-  item,
-  index,
-  updateProductField,
-  removeProduct,
-}) => {
-  return (
-    <tr>
-      <td>{item.name}</td>
-      <td>
-        <InputNumber
-          min={1}
-          value={item.quantity}
-          onChange={(value) =>
-            updateProductField(index, "quantity", value || 1)
-          }
-          aria-label={`Quantity for ${item.name}`}
-        />
-      </td>
-      <td>
-        <InputNumber
-          min={0.01}
-          step={0.01}
-          value={item.mrp}
-          onChange={(value) => updateProductField(index, "mrp", value || 0.01)}
-          aria-label={`MRP for ${item.name}`}
-        />
-      </td>
-      <td>{Number(item.total || 0).toFixed(2)}</td>
-      <td>
-        <Button
-          type="text"
-          danger
-          icon={<DeleteOutlined />}
-          onClick={() => removeProduct(index)}
-          aria-label={`Remove ${item.name}`}
-        />
-      </td>
-    </tr>
-  );
-};
 
 const AddPurchaseOrder = () => {
   const { id } = useParams();
@@ -205,7 +36,7 @@ const AddPurchaseOrder = () => {
   const navigate = useNavigate();
   const [form] = Form.useForm();
 
-  // Queries and Mutations (no loading checks)
+  // Queries and Mutations
   const { data: existingPurchaseOrder, error: fetchError } =
     useGetPurchaseOrderByIdQuery(id, { skip: !isEditMode });
   const { data: productsData } = useGetAllProductsQuery();
@@ -309,8 +140,8 @@ const AddPurchaseOrder = () => {
         orderDate: existingPurchaseOrder.orderDate
           ? moment(existingPurchaseOrder.orderDate)
           : moment(),
-        expectedDeliveryDate: existingPurchaseOrder.expectDeliveryDate
-          ? moment(existingPurchaseOrder.expectDeliveryDate)
+        expectedDeliveryDate: existingPurchaseOrder.expectedDeliveryDate
+          ? moment(existingPurchaseOrder.expectedDeliveryDate)
           : null,
         items,
         totalAmount,
@@ -519,7 +350,7 @@ const AddPurchaseOrder = () => {
     }
   };
 
-  // Error state only (no loading)
+  // Error state
   if (fetchError) {
     return (
       <div className="content">
@@ -680,9 +511,9 @@ const AddPurchaseOrder = () => {
                         orderDate: dateToMoment(date),
                       })
                     }
-                    dateFormat="yyyy-MM-dd"
+                    dateFormat="dd/MM/yyyy"
                     className="ant-input"
-                    placeholderText="yyyy-mm-dd"
+                    placeholderText="dd/mm/yyyy"
                     minDate={new Date(2000, 0, 1)}
                     maxDate={new Date(2100, 11, 31)}
                   />
@@ -703,9 +534,9 @@ const AddPurchaseOrder = () => {
                         expectedDeliveryDate: dateToMoment(date),
                       })
                     }
-                    dateFormat="yyyy-MM-dd"
+                    dateFormat="dd/MM/yyyy"
                     className="ant-input"
-                    placeholderText="yyyy-mm-dd"
+                    placeholderText="dd/mm/yyyy"
                     minDate={new Date()}
                     isClearable
                   />
