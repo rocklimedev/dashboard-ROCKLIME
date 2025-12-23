@@ -2099,14 +2099,7 @@ body {
    Global Search Input (YouTube Style)
    =================================== */
 .global-search-input .ant-input {
-  height: 48px !important;
-  padding: 0 20px 0 50px !important;
-  font-size: 16px;
-  border-radius: 24px !important;
-  border: 1px solid #d9d9d9;
-  background: var(--background-color, #fff);
-  box-shadow: 0 1px 6px rgba(32, 33, 36, 0.08);
-  transition: all 0.3s ease;
+    padding: 0 20px 0 50px !important;
 }
 
 .global-search-input .ant-input:focus,

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useSearchParams } from "react-router-dom"; // ← ADD THIS IMPORT
 import {
   Spin,
   message,
@@ -69,7 +70,7 @@ const AddSiteMap = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-
+  const [searchParams] = useSearchParams(); // ← ADD THIS
   const isEditMode = Boolean(id);
   const fromQuotation = location.state?.fromQuotation === true;
 
@@ -192,7 +193,22 @@ const AddSiteMap = () => {
       setFormData(existingSiteMapData.data);
     }
   }, [fromQuotation, location.state, isEditMode, existingSiteMapData]);
+  // === Auto-select customer from URL query param ===
+  useEffect(() => {
+    const urlCustomerId = searchParams.get("customerId");
+    if (urlCustomerId && customers.length > 0) {
+      const customerExists = customers.some(
+        (c) => c.customerId === urlCustomerId
+      );
 
+      if (customerExists && !formData.customerId) {
+        setFormData((prev) => ({
+          ...prev,
+          customerId: urlCustomerId,
+        }));
+      }
+    }
+  }, [searchParams, customers, formData.customerId]);
   // Auto-create Ground Floor if none exist (only when from quotation and no floors)
   useEffect(() => {
     if (
@@ -516,21 +532,13 @@ const AddSiteMap = () => {
       <div className="content">
         <PageHeader
           title={isEditMode ? "Edit Site Map" : "Create Site Map"}
+          exportOptions={{ pdf: false, excel: false }}
           subtitle="Plan electrical layout by assigning products to floors and rooms"
         />
 
         <Space style={{ marginBottom: 16 }}>
           <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)}>
             Back
-          </Button>
-          <Button
-            type="primary"
-            size="large"
-            icon={<SaveOutlined />}
-            onClick={handleSubmit}
-            loading={isCreating || isUpdating}
-          >
-            {isEditMode ? "Update" : "Save"} Site Map
           </Button>
         </Space>
 
@@ -580,19 +588,6 @@ const AddSiteMap = () => {
             </Col>
           </Row>
           <Row gutter={16} style={{ marginTop: 16 }}>
-            <Col span={8}>
-              <strong>Size</strong>
-              <Input
-                style={{ marginTop: 8 }}
-                value={formData.siteSizeInBHK}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    siteSizeInBHK: e.target.value,
-                  }))
-                }
-              />
-            </Col>
             <Col span={8}>
               <strong>Total Floors</strong>
               <InputNumber
@@ -1359,6 +1354,8 @@ const AddSiteMap = () => {
                 <Option value="Kitchen">Kitchen</Option>
                 <Option value="Bedroom">Bedroom</Option>
                 <Option value="Living Room">Living Room</Option>
+                <Option value="Terrace">Terrace</Option>
+                <Option value="Parking">Parking</Option>
                 <Option value="General">General</Option>
               </Select>
             </Form.Item>

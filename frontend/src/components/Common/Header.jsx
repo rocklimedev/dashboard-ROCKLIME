@@ -5,7 +5,7 @@ import React, {
   useMemo,
   useRef,
 } from "react";
-import { useLocation, Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useGetProfileQuery } from "../../api/userApi";
 import { useGetCartQuery } from "../../api/cartApi";
 import { useGetNotificationsQuery } from "../../api/notificationApi";
@@ -83,14 +83,14 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
   );
   const searchResults = searchData?.results || null;
 
-  // Auto-focus input when mobile search opens
+  // Auto-focus mobile search
   useEffect(() => {
     if (mobileSearchOpen && mobileSearchInputRef.current) {
       mobileSearchInputRef.current.focus();
     }
   }, [mobileSearchOpen]);
 
-  // Show overlay only when typing (has query)
+  // Show overlay when typing
   useEffect(() => {
     if (searchQuery.trim()) {
       setShowSearchOverlay(true);
@@ -99,7 +99,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
     }
   }, [searchQuery]);
 
-  // Close everything on outside click
+  // Click outside to close search
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (searchRef.current && !searchRef.current.contains(e.target)) {
@@ -114,7 +114,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [mobileSearchOpen, showSearchOverlay]);
 
-  // Dark Mode
+  // Dark Mode persistence
   useEffect(() => {
     const theme = darkMode ? "dark" : "light";
     document.documentElement.setAttribute("data-theme", theme);
@@ -152,7 +152,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
 
   const cartItemCount = useMemo(() => cart?.cart?.items?.length || 0, [cart]);
 
-  // User Dropdown Menu
+  // Clean user dropdown (no fullscreen/dark mode here)
   const userMenu = useMemo(
     () => (
       <Menu
@@ -199,27 +199,6 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
         )}
         <Menu.Divider />
         <Menu.Item
-          key="fullscreen"
-          onClick={handleFullscreenToggle}
-          icon={<FullscreenOutlined className="me-2" />}
-        >
-          {isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
-        </Menu.Item>
-        <Menu.Item
-          key="darkmode"
-          onClick={toggleDarkMode}
-          icon={
-            darkMode ? (
-              <SunFilled className="me-2" />
-            ) : (
-              <MoonFilled className="me-2" />
-            )
-          }
-        >
-          {darkMode ? "Light Mode" : "Dark Mode"}
-        </Menu.Item>
-        <Menu.Divider />
-        <Menu.Item
           key="logout"
           onClick={handleLogout}
           disabled={isLoggingOut}
@@ -236,10 +215,6 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
       handleLogout,
       isLoggingOut,
       hasAdminOrDevAccess,
-      isFullscreen,
-      darkMode,
-      handleFullscreenToggle,
-      toggleDarkMode,
     ]
   );
 
@@ -255,7 +230,6 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
             <Link to="/" className="logo logo-white">
               <img src={logo} alt="Logo" />
             </Link>
-            {/* Use small logo on mobile when sidebar is closed (compact view) */}
             <Link to="/" className="logo logo-small">
               <img src={isSidebarOpen ? logo : logo_small} alt="Logo" />
             </Link>
@@ -278,9 +252,9 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
 
           {/* Main Navigation */}
           <ul className="nav user-menu" ref={searchRef}>
-            {/* Mobile Search: Icon → Input → Overlay */}
+            {/* Search Section */}
             <li className="nav-item nav-searchinputs flex-grow-1 position-relative">
-              {/* Mobile Search Trigger Icon (visible when input is closed) */}
+              {/* Mobile Search Trigger */}
               <Button
                 type="link"
                 className={`responsive-search d-md-none ${
@@ -291,7 +265,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                 <SearchOutlined style={{ fontSize: 22 }} />
               </Button>
 
-              {/* Mobile Search Input (slides in when opened) */}
+              {/* Mobile Search Input */}
               <div
                 className={`mobile-search-container d-md-none ${
                   mobileSearchOpen ? "open" : ""
@@ -332,18 +306,13 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                       setShowSearchOverlay(false);
                     }
                   }}
-                  allowClear={{
-                    onClick: () => {
-                      setSearchQuery("");
-                      localStorage.removeItem("lastSearchQuery");
-                    },
-                  }}
+                  allowClear
                   size="large"
                   className="mobile-global-search"
                 />
               </div>
 
-              {/* Desktop Search Input */}
+              {/* Desktop Search */}
               <div
                 className="d-none d-md-block w-100"
                 style={{ maxWidth: "700px" }}
@@ -369,20 +338,13 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                       setShowSearchOverlay(false);
                     }
                   }}
-                  allowClear={{
-                    onClick: () => {
-                      setSearchQuery("");
-                      localStorage.removeItem("lastSearchQuery");
-                      setShowSearchOverlay(false);
-                    },
-                  }}
+                  allowClear
                   size="large"
                   className="global-search-input"
-                  style={{ height: 48 }}
                 />
               </div>
 
-              {/* Search Overlay (shared for both mobile & desktop) */}
+              {/* Shared Search Overlay */}
               <SearchOverlay
                 visible={showSearchOverlay}
                 loading={searchLoading || searchFetching}
@@ -390,7 +352,6 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                 query={searchQuery}
                 onClose={() => {
                   setShowSearchOverlay(false);
-                  // On mobile, also close input if no query
                   if (window.innerWidth < 992 && !searchQuery.trim()) {
                     setMobileSearchOpen(false);
                   }
@@ -398,8 +359,8 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
               />
             </li>
 
-            {/* Fullscreen - Desktop only */}
-            <li className="nav-item nav-item-box d-none d-md-flex">
+            {/* Fullscreen - Visible on ALL devices (mobile + desktop) */}
+            <li className="nav-item nav-item-box">
               <Button
                 type="link"
                 onClick={handleFullscreenToggle}
@@ -443,8 +404,8 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
               </li>
             </PermissionsGate>
 
-            {/* Dark Mode - Desktop only */}
-            <li className="nav-item nav-item-box d-none d-lg-flex">
+            {/* Dark Mode - Visible on ALL devices (mobile + desktop) */}
+            <li className="nav-item nav-item-box">
               <Button
                 type="link"
                 onClick={toggleDarkMode}
@@ -495,7 +456,6 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
         </div>
       </div>
 
-      {/* Notifications Overlay */}
       <NotificationsOverlay
         isOpen={showNotifications}
         onClose={() => setShowNotifications(false)}

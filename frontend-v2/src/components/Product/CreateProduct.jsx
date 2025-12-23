@@ -22,7 +22,7 @@ import { useGetAllProductMetaQuery } from "../../api/productMetaApi";
 import { useGetBrandParentCategoriesQuery } from "../../api/brandParentCategoryApi";
 import {
   useGetAllKeywordsQuery,
-  useCreateKeywordMutation, // Add this!
+  useCreateKeywordMutation,
 } from "../../api/keywordApi";
 import { useAddKeywordsToProductMutation } from "../../api/productApi";
 import { message } from "antd";
@@ -51,13 +51,20 @@ const { Text } = Typography;
 
 const COMPANY_CODE_META_ID = "d11da9f9-3f2e-4536-8236-9671200cca4a";
 
-const CreateProduct = () => {
+const CreateProduct = ({
+  initialData, // From bulk import
+  isBulkMode = false,
+  onUpdate, // Callback to notify BulkProductImport of changes
+}) => {
   const { productId } = useParams();
   const navigate = useNavigate();
-  const isEditMode = Boolean(productId);
+
+  // isEditMode = true only when we're on /edit/:id and NOT in bulk mode
+  const isEditMode = Boolean(productId) && !isBulkMode;
 
   const [form] = Form.useForm();
   const categoryId = Form.useWatch("categoryId", form);
+
   const [newImages, setNewImages] = useState([]);
   const [existingImages, setExistingImages] = useState([]);
   const [imagesToDelete, setImagesToDelete] = useState([]);
@@ -65,14 +72,14 @@ const CreateProduct = () => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [autoCode, setAutoCode] = useState("");
   const [isCodeDirty, setIsCodeDirty] = useState(false);
-  const [codeStatus, setCodeStatus] = useState(""); // "checking", "unique", "duplicate"
-  const [selectedKeywords, setSelectedKeywords] = useState([]); // array of keyword objects
+  const [codeStatus, setCodeStatus] = useState("");
+  const [selectedKeywords, setSelectedKeywords] = useState([]);
   const [searchKeyword, setSearchKeyword] = useState("");
-  // RTK Queries
-  const { data: existingProduct, isLoading: loadingProduct } =
-    useGetProductByIdQuery(productId, {
-      skip: !isEditMode,
-    });
+
+  // RTK Queries — used only in real create/edit (not bulk preview)
+  const { data: existingProduct } = useGetProductByIdQuery(productId, {
+    skip: !isEditMode,
+  });
   const [replaceAllKeywordsForProduct] =
     useReplaceAllKeywordsForProductMutation();
   const { data: categoryData = { categories: [] } } =
@@ -84,24 +91,208 @@ const CreateProduct = () => {
   const { data: productMetas = [] } = useGetAllProductMetaQuery();
   const { data: allProducts = [] } = useGetAllProductsQuery(undefined, {
     skip: !isEditMode,
-  }); // for master product dropdown
+  });
   const { data: keywordList = [] } = useGetAllKeywordsQuery();
   const allKeywords = Array.isArray(keywordList) ? keywordList : [];
   const [addKeywordsToProduct] = useAddKeywordsToProductMutation();
-  const [triggerCheckCode] = useLazyCheckProductCodeQuery();
-  const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
-  const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
-  const [createKeyword] = useCreateKeywordMutation(); // Make sure this is imported!
-  const categories = Array.isArray(categoryData?.categories)
-    ? categoryData.categories
-    : [];
+  const categories = categoryData.categories || [];
   const brandData = Array.isArray(brands) ? brands : [];
   const vendorData = Array.isArray(vendors) ? vendors : [];
+  const productMetaData = Array.isArray(productMetas) ? productMetas : [];
   const brandParentCategoryData = Array.isArray(brandParentCategories)
     ? brandParentCategories
     : [];
-  const productMetaData = Array.isArray(productMetas) ? productMetas : [];
+  const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
+  const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
+  const [triggerCheckCode] = useLazyCheckProductCodeQuery();
+  const [createKeyword] = useCreateKeywordMutation();
 
+  // === BULK MODE: Pre-fill form from initialData ===
+  useEffect(() => {
+    if (!initialData || isEditMode) return;
+
+    // Basic form fields
+    form.setFieldsValue({
+      name: initialData.name || "",
+      product_code: initialData.product_code || "",
+      description: initialData.description || "",
+      quantity: initialData.quantity || 0,
+      tax: initialData.tax ?? null,
+      alert_quantity: initialData.alert_quantity ?? null,
+      status: initialData.status || "active",
+      discountType: initialData.discountType,
+      isFeatured: initialData.isFeatured ? "true" : "false",
+      isMaster: initialData.isMaster ? "true" : "false",
+
+      categoryId: initialData.categoryId,
+      brandId: initialData.brandId,
+      vendorId: initialData.vendorId,
+      brand_parentcategoriesId: initialData.brand_parentcategoriesId,
+    });
+
+    // Images (URLs from CSV)
+    if (Array.isArray(initialData.images) && initialData.images.length > 0) {
+      setExistingImages(initialData.images.slice(0, 5));
+    }
+
+    // Meta fields – map by slug/title fallback
+    if (initialData.meta && typeof initialData.meta === "object") {
+      const resolved = {};
+      Object.entries(initialData.meta).forEach(([key, value]) => {
+        const metaDef = productMetaData.find(
+          (m) =>
+            m.slug === key ||
+            m.title.toLowerCase().replace(/\s+/g, "") === key.toLowerCase()
+        );
+        if (metaDef) resolved[metaDef.id] = value;
+      });
+      setMetaData(resolved);
+    }
+
+    // Keywords (strings from CSV)
+    if (Array.isArray(initialData.keywords)) {
+      const fakeKeywords = initialData.keywords.map((kw, i) => ({
+        id: `bulk-${i}`,
+        keyword: kw,
+        categories: { name: "Imported" },
+      }));
+      setSelectedKeywords(fakeKeywords);
+    }
+
+    // Variant attributes
+    if (
+      initialData.variantOptions &&
+      typeof initialData.variantOptions === "object"
+    ) {
+      const list = Object.entries(initialData.variantOptions).map(([k, v]) => ({
+        key: k,
+        value: v,
+      }));
+      form.setFieldsValue({
+        variantOptions: JSON.stringify(initialData.variantOptions, null, 2),
+        variantAttributes: list,
+      });
+    }
+  }, [initialData, isEditMode, form, productMetaData]);
+
+  // === NORMAL EDIT MODE: Load from API ===
+  useEffect(() => {
+    if (!existingProduct || !isEditMode) return;
+
+    // Your original loading logic (unchanged)
+    const formValues = {
+      name: existingProduct.name || "",
+      product_code: existingProduct.product_code || "",
+      quantity: existingProduct.quantity || 0,
+      isFeatured: existingProduct.isFeatured ? "true" : "false",
+      description: existingProduct.description || "",
+      tax: existingProduct.tax || null,
+      alert_quantity: existingProduct.alert_quantity || null,
+      status: existingProduct.status || "active",
+      discountType: existingProduct.discountType || undefined,
+      isMaster: existingProduct.isMaster ? "true" : "false",
+      masterProductId: existingProduct.masterProductId || undefined,
+      variantKey: existingProduct.variantKey || "",
+      skuSuffix: existingProduct.skuSuffix || "",
+      categoryId: existingProduct.categoryId || undefined,
+      brandId: existingProduct.brandId || undefined,
+      vendorId: existingProduct.vendorId || undefined,
+      brand_parentcategoriesId:
+        existingProduct.brand_parentcategoriesId || undefined,
+    };
+
+    form.setFieldsValue(formValues);
+
+    // Images, meta, keywords, variants – your original parsing code
+    let imagesArray = [];
+    try {
+      imagesArray =
+        typeof existingProduct.images === "string"
+          ? JSON.parse(existingProduct.images)
+          : Array.isArray(existingProduct.images)
+          ? existingProduct.images
+          : [];
+    } catch (e) {
+      console.error("Failed to parse images", e);
+    }
+    setExistingImages(Array.isArray(imagesArray) ? imagesArray : []);
+
+    // Meta parsing
+    let metaObj = {};
+    try {
+      if (typeof existingProduct.meta === "string") {
+        metaObj = JSON.parse(existingProduct.meta);
+      } else if (
+        existingProduct.meta &&
+        typeof existingProduct.meta === "object"
+      ) {
+        metaObj = existingProduct.meta;
+      }
+      const valid = {};
+      Object.entries(metaObj).forEach(([k, v]) => {
+        if (productMetaData.some((m) => m.id === k)) valid[k] = v;
+      });
+      setMetaData(valid);
+    } catch (e) {
+      message.error("Failed to load specifications");
+    }
+
+    // Keywords
+    if (existingProduct.keywords) {
+      try {
+        const keywords =
+          typeof existingProduct.keywords === "string"
+            ? JSON.parse(existingProduct.keywords)
+            : existingProduct.keywords;
+        const normalized = (Array.isArray(keywords) ? keywords : []).map(
+          (kw) => ({
+            id: kw.id,
+            keyword: kw.keyword,
+            categories: kw.categories || kw.category || null,
+          })
+        );
+        setSelectedKeywords(normalized);
+      } catch (e) {
+        console.error("Failed to parse keywords", e);
+      }
+    }
+
+    // Variant options
+    if (existingProduct.variantOptions) {
+      try {
+        const opts =
+          typeof existingProduct.variantOptions === "string"
+            ? JSON.parse(existingProduct.variantOptions)
+            : existingProduct.variantOptions;
+        const listFormat = Object.entries(opts || {}).map(([key, value]) => ({
+          key,
+          value,
+        }));
+        form.setFieldsValue({
+          variantOptions: JSON.stringify(opts, null, 2),
+          variantAttributes: listFormat,
+        });
+      } catch (e) {
+        console.error("Failed to parse variantOptions", e);
+      }
+    }
+  }, [existingProduct, productMetaData, form, isEditMode]);
+
+  // Notify parent on any change (for bulk mode)
+  const handleValuesChange = () => {
+    if (isBulkMode && onUpdate) {
+      const values = form.getFieldsValue();
+      onUpdate({
+        ...values,
+        meta: metaData,
+        images: existingImages,
+        keywords: selectedKeywords.map((k) => k.keyword),
+      });
+    }
+  };
+
+  // Rest of your component (generateUniqueCode, onDrop, onFinish, etc.) remains EXACTLY the same
+  // ... [keep all your existing functions: generateUniqueCode, handleCreateKeyword, onDrop, onFinish, etc.]
   // Generate Unique Product Code
   const generateUniqueCode = useCallback(
     async (brandId, companyCodeValue, attempt = 0) => {
@@ -193,20 +384,23 @@ const CreateProduct = () => {
     const jsonObj = {};
 
     attributes.forEach((attr) => {
-      if (attr?.key && attr?.value) {
-        const cleanKey = attr.key.trim();
-        const cleanValue = attr.value.trim();
-        if (cleanKey && cleanValue) {
-          jsonObj[cleanKey] = cleanValue;
-        }
+      // Safely convert to string, default to empty string if falsy
+      const rawKey = attr?.key ?? "";
+      const rawValue = attr?.value ?? "";
+
+      const cleanKey = String(rawKey).trim();
+      const cleanValue = String(rawValue).trim();
+
+      if (cleanKey && cleanValue) {
+        jsonObj[cleanKey] = cleanValue;
       }
     });
 
     const jsonString =
       Object.keys(jsonObj).length > 0 ? JSON.stringify(jsonObj, null, 2) : "";
+
     form.setFieldsValue({ variantOptions: jsonString });
   }, [form]);
-
   // Auto update when variantAttributes change
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -267,12 +461,26 @@ const CreateProduct = () => {
     if (
       brandId &&
       companyCode !== undefined &&
-      companyCode !== null &&
       String(companyCode).trim() !== ""
     ) {
       generateUniqueCode(brandId, companyCode);
+    } else {
+      // Clear auto code if required fields missing
+      if (autoCode && !isCodeDirty) {
+        setAutoCode("");
+        form.setFieldsValue({ product_code: "" });
+        setCodeStatus("");
+      }
     }
-  }, [brandId, metaData, isEditMode, isCodeDirty, generateUniqueCode]);
+  }, [
+    brandId,
+    metaData,
+    isEditMode,
+    isCodeDirty,
+    generateUniqueCode,
+    autoCode,
+    form,
+  ]);
   // Load existing product
   useEffect(() => {
     if (!existingProduct) return;
@@ -579,7 +787,6 @@ const CreateProduct = () => {
       }
 
       message.success(isEditMode ? "Product updated!" : "Product created!");
-      navigate("/products");
     } catch (err) {
       console.error("Save failed:", err);
       message.error(err?.data?.message || "Failed to save product or keywords");
@@ -590,20 +797,28 @@ const CreateProduct = () => {
   return (
     <div className="page-wrapper">
       <div className="content">
-        <Row
-          justify="space-between"
-          align="middle"
-          style={{ marginBottom: 16 }}
-        >
-          <h4 style={{ margin: 0, fontWeight: "bold" }}>
-            {isEditMode ? "Edit Product" : "Create New Product"}
-          </h4>
-          <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)}>
-            Back
-          </Button>
-        </Row>
+        {/* Hide header in bulk mode */}
+        {!isBulkMode && (
+          <Row
+            justify="space-between"
+            align="middle"
+            style={{ marginBottom: 16 }}
+          >
+            <h4 style={{ margin: 0, fontWeight: "bold" }}>
+              {isEditMode ? "Edit Product" : "Create New Product"}
+            </h4>
+            <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)}>
+              Back
+            </Button>
+          </Row>
+        )}
 
-        <Form form={form} onFinish={onFinish} layout="vertical">
+        <Form
+          form={form}
+          onFinish={onFinish}
+          layout="vertical"
+          onValuesChange={handleValuesChange}
+        >
           <Collapse
             defaultActiveKey={["1", "2", "3", "4", "5", "6", "7"]}
             className="compact-accordion"
@@ -643,6 +858,45 @@ const CreateProduct = () => {
                     />
                   </Form.Item>
                 </Col>
+                {/* Always show Company Code if it exists in meta list */}
+                {/* Add this inside Panel key="1", after the Product Code row */}
+                {/* Company Code - Show in BOTH create and edit modes */}
+                {productMetaData.some((m) => m.id === COMPANY_CODE_META_ID) && (
+                  <Col xs={24} md={12}>
+                    <Form.Item label="Company Code (for Auto SKU)">
+                      <Input
+                        placeholder="e.g. 2024, ABC123, 12345"
+                        value={metaData[COMPANY_CODE_META_ID] ?? ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          handleMetaChange(COMPANY_CODE_META_ID, value);
+
+                          // Reset code status and allow regeneration if brand is selected
+                          if (!isCodeDirty && brandId && value.trim()) {
+                            setCodeStatus("");
+                          }
+                        }}
+                        addonAfter={
+                          // Safely check if the value (as string) has content after trim
+                          String(
+                            metaData[COMPANY_CODE_META_ID] ?? ""
+                          ).trim() ? (
+                            <Tag color="blue">Used for auto code</Tag>
+                          ) : (
+                            <Tag color="orange">Optional</Tag>
+                          )
+                        }
+                      />
+                      <div
+                        style={{ fontSize: 12, color: "#888", marginTop: 4 }}
+                      >
+                        Helps generate unique product codes like EBR2024123.
+                        {isEditMode &&
+                          " Changing this won't auto-update the code (it's already set)."}
+                      </div>
+                    </Form.Item>
+                  </Col>
+                )}
 
                 <Col xs={24} sm={8}>
                   <Form.Item name="categoryId" label="Category">
@@ -865,81 +1119,6 @@ const CreateProduct = () => {
                             <Form.Item name="variantOptions" noStyle>
                               <Input type="hidden" />
                             </Form.Item>
-                          </Form.Item>
-                        </Col>
-
-                        {/* AUTO-GENERATED PREVIEW */}
-                        <Col xs={24} md={24}>
-                          <Form.Item label="Auto-generated Preview">
-                            <Space
-                              direction="vertical"
-                              style={{ width: "100%" }}
-                            >
-                              <Input
-                                addonBefore="Variant Name"
-                                readOnly
-                                style={{ background: "#f9f9f9" }}
-                                value={getVariantDisplayName()}
-                              />
-                              <Input
-                                addonBefore="SKU Suffix"
-                                readOnly
-                                style={{ background: "#f9f9f9" }}
-                                value={getVariantSkuSuffix()}
-                              />
-                            </Space>
-                          </Form.Item>
-                        </Col>
-
-                        <Col xs={24} md={12}>
-                          <Form.Item label="Auto-generated Preview">
-                            <Space
-                              direction="vertical"
-                              style={{ width: "100%" }}
-                            >
-                              <Input
-                                addonBefore="Variant Name"
-                                readOnly
-                                style={{ background: "#f9f9f9" }}
-                                value={(() => {
-                                  try {
-                                    const opts =
-                                      form.getFieldValue("variantOptions");
-                                    if (!opts) return "";
-                                    const json = JSON.parse(opts);
-                                    return Object.values(json)
-                                      .filter(Boolean)
-                                      .join(" ")
-                                      .trim();
-                                  } catch {
-                                    return "";
-                                  }
-                                })()}
-                              />
-                              <Input
-                                addonBefore="SKU Suffix"
-                                readOnly
-                                style={{ background: "#f9f9f9" }}
-                                value={(() => {
-                                  try {
-                                    const opts =
-                                      form.getFieldValue("variantOptions");
-                                    if (!opts) return "";
-                                    const json = JSON.parse(opts);
-                                    const parts =
-                                      Object.values(json).filter(Boolean);
-                                    return parts.length > 0
-                                      ? `-${parts
-                                          .join("-")
-                                          .toUpperCase()
-                                          .replace(/\s+/g, "-")}`
-                                      : "";
-                                  } catch {
-                                    return "";
-                                  }
-                                })()}
-                              />
-                            </Space>
                           </Form.Item>
                         </Col>
                       </>
@@ -1204,111 +1383,129 @@ const CreateProduct = () => {
               </Space>
             </Panel>
             {/* 6. Specifications */}
-            {/* 6. Specifications */}
+
             <Panel
               header={
                 <>Product Specifications ({Object.keys(metaData).length})</>
               }
               key="6"
             >
-              {/* Always show Company Code if it exists in meta list */}
-              {productMetaData
-                .filter(
-                  (m) => m.id === COMPANY_CODE_META_ID || m.id in metaData
-                )
-                .map((m) => {
-                  const value = metaData[m.id] || "";
-                  const isCompanyCode = m.id === COMPANY_CODE_META_ID;
+              <Space
+                direction="vertical"
+                style={{ width: "100%" }}
+                size="middle"
+              >
+                {/* Render all currently added specifications with inputs */}
+                {Object.entries(metaData)
+                  .filter(([id]) => id !== COMPANY_CODE_META_ID) // Hide company code here
+                  .map(([id, value]) => {
+                    const meta = productMetaData.find((m) => m.id === id);
+                    if (!meta) return null;
 
-                  return (
-                    <Row
-                      key={m.id}
-                      gutter={16}
-                      align="middle"
-                      style={{ marginBottom: 16 }}
-                    >
-                      <Col flex="150px">
-                        <strong>
-                          {m.title}
-                          {isCompanyCode && (
-                            <Tag color="volcano" style={{ marginLeft: 8 }}>
-                              Auto-SKU
-                            </Tag>
+                    const isNumber = meta.fieldType === "number";
+
+                    return (
+                      <Row key={id} gutter={16} align="middle">
+                        <Col flex="200px">
+                          <Text strong>
+                            {meta.title}{" "}
+                            {meta.unit && (
+                              <span style={{ fontWeight: "normal" }}>
+                                ({meta.unit})
+                              </span>
+                            )}
+                          </Text>
+                        </Col>
+                        <Col flex="1">
+                          {isNumber ? (
+                            <InputNumber
+                              style={{ width: "100%" }}
+                              value={value || null}
+                              onChange={(val) => handleMetaChange(id, val)}
+                              placeholder={`Enter ${meta.title.toLowerCase()}`}
+                              min={meta.min || undefined}
+                              max={meta.max || undefined}
+                              step={meta.step || 1}
+                            />
+                          ) : (
+                            <Input
+                              value={value || ""}
+                              onChange={(e) =>
+                                handleMetaChange(id, e.target.value)
+                              }
+                              placeholder={`Enter ${meta.title.toLowerCase()}`}
+                            />
                           )}
-                          :
-                        </strong>
-                      </Col>
-                      <Col flex="1">
-                        <Input
-                          placeholder={
-                            isCompanyCode
-                              ? "Required for auto Product Code (e.g. 2024, ABC123)"
-                              : ""
-                          }
-                          value={value}
-                          onChange={(e) =>
-                            handleMetaChange(m.id, e.target.value)
-                          }
-                          status={isCompanyCode && !value.trim() ? "error" : ""}
-                        />
-                      </Col>
-                      {!isCompanyCode && (
+                        </Col>
                         <Col>
                           <Button
                             danger
                             size="small"
                             onClick={() =>
                               setMetaData((prev) => {
-                                const { [m.id]: _, ...rest } = prev;
-                                return rest;
+                                const newMeta = { ...prev };
+                                delete newMeta[id];
+                                return newMeta;
                               })
                             }
                           >
                             Remove
                           </Button>
                         </Col>
-                      )}
-                    </Row>
-                  );
-                })}
+                      </Row>
+                    );
+                  })}
 
-              {/* Add other specifications */}
-              {productMetaData.filter(
-                (m) => m.id !== COMPANY_CODE_META_ID && !(m.id in metaData)
-              ).length > 0 && (
-                <Select
-                  placeholder="Add another specification..."
-                  style={{ width: "100%", marginTop: 16 }}
-                  onChange={(id) =>
-                    setMetaData((prev) => ({ ...prev, [id]: "" }))
-                  }
-                  allowClear
-                >
-                  {productMetaData
-                    .filter(
-                      (m) =>
-                        m.id !== COMPANY_CODE_META_ID && !(m.id in metaData)
-                    )
-                    .map((m) => (
-                      <Option key={m.id} value={m.id}>
-                        {m.title} {m.unit && `(${m.unit})`}
-                      </Option>
-                    ))}
-                </Select>
-              )}
+                {/* Dropdown to add more specifications */}
+                {productMetaData.filter(
+                  (m) => m.id !== COMPANY_CODE_META_ID && !(m.id in metaData)
+                ).length > 0 && (
+                  <Select
+                    placeholder="Add another specification..."
+                    style={{ width: "100%", marginTop: 16 }}
+                    onChange={(id) =>
+                      setMetaData((prev) => ({ ...prev, [id]: "" }))
+                    }
+                    allowClear
+                    dropdownMatchSelectWidth={false}
+                  >
+                    {productMetaData
+                      .filter(
+                        (m) =>
+                          m.id !== COMPANY_CODE_META_ID && !(m.id in metaData)
+                      )
+                      .map((m) => (
+                        <Option key={m.id} value={m.id}>
+                          {m.title} {m.unit && `(${m.unit})`}
+                        </Option>
+                      ))}
+                  </Select>
+                )}
+
+                {/* Optional: Show message if no specs available to add */}
+                {Object.keys(metaData).length === 1 &&
+                  metaData[COMPANY_CODE_META_ID] && (
+                    <Text type="secondary">
+                      No additional specifications available to add.
+                    </Text>
+                  )}
+              </Space>
             </Panel>
           </Collapse>
 
-          <Button
-            type="primary"
-            htmlType="submit"
-            size="large"
-            block
-            loading={isCreating || isUpdating}
-            style={{ marginTop: 24 }}
-          >
-            {isEditMode ? "Update Product" : "Create Product"}
-          </Button>
+          {/* Submit button hidden in bulk mode */}
+          {!isBulkMode && (
+            <Button
+              type="primary"
+              htmlType="submit"
+              size="large"
+              block
+              loading={isCreating || isUpdating}
+              style={{ marginTop: 24 }}
+            >
+              {isEditMode ? "Update Product" : "Create Product"}
+            </Button>
+          )}
         </Form>
 
         <Modal

@@ -22,13 +22,13 @@ const PageWrapper = () => {
   /* ------------------------------------------------------------------ */
   /*  STATE & MODALS                                                    */
   /* ------------------------------------------------------------------ */
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState(null);
+
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [cartLoadingStates, setCartLoadingStates] = useState({});
   const [editingOrderId, setEditingOrderId] = useState(null);
-
+  const [stockModalOpen, setStockModalOpen] = useState(false);
+  const [selectedProductForStock, setSelectedProductForStock] = useState(null);
   const toggleEdit = (id) => {
     setEditingOrderId((prev) => (prev === id ? null : id));
   };
@@ -44,7 +44,10 @@ const PageWrapper = () => {
     "DRAFT",
     "ONHOLD",
   ];
-
+  const handleProductClick = (p) => {
+    setSelectedProductForStock(p);
+    setStockModalOpen(true);
+  };
   /* ------------------------------------------------------------------ */
   /*  RTK-QUERY HOOKS                                                   */
   /* ------------------------------------------------------------------ */
@@ -132,16 +135,15 @@ const PageWrapper = () => {
     const price = priceEntry ? parseFloat(priceEntry.value) : null;
     if (!price || isNaN(price)) return message.error("Invalid price");
 
-    const qty = product.quantity || 1;
-    if (!Number.isInteger(qty) || qty <= 0)
-      return message.error("Invalid quantity");
+    // FIX: Always add 1 item to cart, do NOT use product.quantity (that's stock!)
+    const qty = 1;
 
     setCartLoadingStates((s) => ({ ...s, [product.productId]: true }));
     try {
       await addProductToCart({
         userId,
         productId: product.productId,
-        quantity: qty,
+        quantity: qty, // ← Now correctly set to 1
       }).unwrap();
       message.success("Added to cart");
     } catch (e) {
@@ -150,7 +152,6 @@ const PageWrapper = () => {
       setCartLoadingStates((s) => ({ ...s, [product.productId]: false }));
     }
   };
-
   const lowStockProducts = useMemo(
     () => products.filter((p) => p.quantity < p.alert_quantity),
     [products]
@@ -160,16 +161,6 @@ const PageWrapper = () => {
     const start = (currentPage - 1) * itemsPerPage;
     return lowStockProducts.slice(start, start + itemsPerPage);
   }, [lowStockProducts, currentPage]);
-
-  const handleProductClick = (p) => {
-    setSelectedProduct(p);
-    setIsModalVisible(true);
-  };
-
-  const handleModalClose = () => {
-    setIsModalVisible(false);
-    setSelectedProduct(null);
-  };
 
   const [updateOrderStatus] = useUpdateOrderStatusMutation();
   const handleStatusChange = async (orderId, newStatus) => {
@@ -638,11 +629,14 @@ const PageWrapper = () => {
           </div>
         </div>
 
-        {/* Stock Modal */}
         <StockModal
-          show={isModalVisible}
-          onHide={handleModalClose}
-          product={selectedProduct}
+          open={stockModalOpen}
+          onCancel={() => {
+            setStockModalOpen(false);
+            setSelectedProductForStock(null);
+          }}
+          product={selectedProductForStock}
+          action="add" // Only allow adding from dashboard
         />
       </div>
     </div>
