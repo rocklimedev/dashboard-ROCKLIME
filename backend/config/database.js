@@ -64,15 +64,6 @@ if (process.env.DATABASE_URL) {
   );
 }
 
-// Keep-alive ping (only in production/Render)
-if (process.env.NODE_ENV === "production" || process.env.RENDER) {
-  setInterval(() => {
-    sequelize.query("SELECT 1").catch((err) => {
-      console.error("Keep-alive ping failed:", err.message);
-    });
-  }, 8 * 60 * 1000); // 8 minutes
-}
-
 // Connect with retry (works everywhere)
 async function connectWithRetry(attempt = 1) {
   try {
