@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from "react";
 import {
-  message,
   Avatar,
   Card,
   Tabs,
@@ -11,10 +10,9 @@ import {
   Statistic,
   Divider,
   Button,
-  Badge,
-  Image,
   Empty,
   Spin,
+  Skeleton,
 } from "antd";
 import {
   EditOutlined,
@@ -24,9 +22,9 @@ import {
   EnvironmentOutlined,
   MailOutlined,
   PhoneOutlined,
-  DollarCircleOutlined,
   FileTextOutlined,
   ShoppingCartOutlined,
+  DollarCircleOutlined,
   UserOutlined,
   ClockCircleOutlined,
 } from "@ant-design/icons";
@@ -40,31 +38,33 @@ import { useGetAllOrdersQuery } from "../../api/orderApi";
 import { useGetPurchaseOrdersQuery } from "../../api/poApi";
 import { useGetAllUserAddressesQuery } from "../../api/addressApi";
 
-const { TabPane } = Tabs;
-
 const Profile = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("overview");
   const [addressModalOpen, setAddressModalOpen] = useState(false);
 
   const { data: profile, isLoading: isProfileLoading } = useGetProfileQuery();
   const user = profile?.user;
   const userId = user?.userId;
 
-  const { data: quotationsData } = useGetAllQuotationsQuery(
+  // Skip all user-specific queries until we have userId
+  const skip = !userId;
+
+  const { data: quotationsData, isLoading: quotationsLoading } =
+    useGetAllQuotationsQuery({ userId }, { skip });
+
+  const { data: ordersData, isLoading: ordersLoading } = useGetAllOrdersQuery(
     { userId },
-    { skip: !userId }
+    { skip }
   );
-  const { data: ordersData } = useGetAllOrdersQuery(
-    { userId },
-    { skip: !userId }
-  );
-  const { data: purchaseOrdersData } = useGetPurchaseOrdersQuery(
-    { userId },
-    { skip: !userId }
-  );
-  const { data: addressesData, refetch: refetchAddresses } =
-    useGetAllUserAddressesQuery(undefined, { skip: !userId });
+
+  const { data: purchaseOrdersData, isLoading: posLoading } =
+    useGetPurchaseOrdersQuery({ userId }, { skip });
+
+  const {
+    data: addressesData,
+    isLoading: addressesLoading,
+    refetch: refetchAddresses,
+  } = useGetAllUserAddressesQuery(undefined, { skip });
 
   const myAddresses = useMemo(() => {
     if (!addressesData?.data || !userId) return [];
@@ -72,19 +72,30 @@ const Profile = () => {
     return currentUser?.addresses || [];
   }, [addressesData, userId]);
 
-  const myQuotations =
-    quotationsData?.filter((q) => q.createdBy === userId) || [];
-  const myOrders =
-    ordersData?.orders?.filter(
-      (o) => o.createdBy === userId || o.assignedUserId === userId
-    ) || [];
-  const myPOs =
-    purchaseOrdersData?.purchaseOrders?.filter(
-      (po) => po.createdBy === userId
-    ) || [];
+  const myQuotations = useMemo(
+    () => quotationsData?.filter((q) => q.createdBy === userId) || [],
+    [quotationsData, userId]
+  );
+
+  const myOrders = useMemo(
+    () =>
+      ordersData?.orders?.filter(
+        (o) => o.createdBy === userId || o.assignedUserId === userId
+      ) || [],
+    [ordersData, userId]
+  );
+
+  const myPOs = useMemo(
+    () =>
+      purchaseOrdersData?.purchaseOrders?.filter(
+        (po) => po.createdBy === userId
+      ) || [],
+    [purchaseOrdersData, userId]
+  );
 
   const formatDate = (date) =>
     date ? moment(date).format("DD MMM YYYY") : "—";
+
   const primaryAddress =
     myAddresses.find((a) => a.status === "PRIMARY") || myAddresses[0];
 
@@ -95,6 +106,99 @@ const Profile = () => {
       </div>
     );
   }
+
+  const tabItems = [
+    {
+      key: "overview",
+      label: "Overview",
+      children: quotationsLoading ? (
+        <Skeleton active paragraph={{ rows: 8 }} />
+      ) : myQuotations.length === 0 ? (
+        <Empty description="No quotations created yet" />
+      ) : (
+        <Row gutter={[16, 16]}>
+          {myQuotations.slice(0, 6).map((q) => (
+            <Col xs={24} sm={12} key={q.quotationId}>
+              <Card hoverable className="rounded-xl">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="font-medium text-base">
+                      {q.document_title}
+                    </h4>
+                    <p className="text-gray-500 text-sm">
+                      Ref: {q.reference_number}
+                    </p>
+                    <p className="text-sm mt-2">
+                      Due: {formatDate(q.due_date)}
+                    </p>
+                  </div>
+                  <Tag color="blue" className="text-lg font-bold">
+                    ₹{Number(q.finalAmount).toLocaleString()}
+                  </Tag>
+                </div>
+              </Card>
+            </Col>
+          ))}
+        </Row>
+      ),
+    },
+    {
+      key: "orders",
+      label: "Orders",
+      children: ordersLoading ? (
+        <Skeleton active />
+      ) : (
+        <DataTable
+          dataSource={myOrders}
+          columns={[
+            {
+              title: "Order #",
+              dataIndex: "orderNo",
+              render: (text) => <strong>{text}</strong>,
+            },
+            { title: "Customer", render: (r) => r.customers?.name || "—" },
+            { title: "Status", render: (r) => <Tag>{r.status}</Tag> },
+            {
+              title: "Total",
+              render: (r) => `₹${Number(r.finalAmount || 0).toFixed(2)}`,
+            },
+            { title: "Date", render: (r) => formatDate(r.orderDate) },
+          ]}
+          rowKey="id"
+          pagination={{ pageSize: 10 }}
+        />
+      ),
+    },
+    {
+      key: "purchaseorders",
+      label: "Purchase Orders",
+      children: posLoading ? (
+        <Skeleton active />
+      ) : (
+        <DataTable
+          dataSource={myPOs}
+          columns={[
+            { title: "PO #", dataIndex: "poNumber" },
+            {
+              title: "Vendor",
+              render: (r) => r.Vendor?.vendorName || "—",
+            },
+            {
+              title: "Status",
+              dataIndex: "status",
+              render: (t) => <Tag>{t}</Tag>,
+            },
+            {
+              title: "Amount",
+              render: (r) => `₹${Number(r.totalAmount).toFixed(2)}`,
+            },
+          ]}
+          rowKey="id"
+          pagination={{ pageSize: 10 }}
+        />
+      ),
+    },
+  ];
 
   return (
     <div className="page-wrapper">
@@ -154,7 +258,6 @@ const Profile = () => {
 
               <Divider className="my-6" />
 
-              {/* Stats Row */}
               <Row gutter={[16, 16]}>
                 <Col xs={12} md={6}>
                   <Statistic
@@ -193,15 +296,12 @@ const Profile = () => {
             </Card>
 
             <Row gutter={[24, 24]}>
-              {/* Left Column - Info & Address */}
               <Col xs={24} lg={8}>
-                {/* Personal Info */}
                 <Card
                   title="Personal Information"
-                  className="shadow rounded-xl h-100"
-                  extra={<EditOutlined className="text-gray-500" />}
+                  className="shadow rounded-xl"
                 >
-                  <Space direction="vertical" size="large" className="w-100">
+                  <Space direction="vertical" size="large" className="w-full">
                     <div>
                       <div className="text-gray-500 text-sm">Email</div>
                       <div className="font-medium flex items-center gap-2">
@@ -231,10 +331,11 @@ const Profile = () => {
                       </div>
                     </div>
                   </Space>
-                  {/* Address Card */}
+
                   <Card
                     title="Primary Address"
                     className="shadow rounded-xl mt-6"
+                    loading={addressesLoading}
                     extra={
                       <Button
                         type="text"
@@ -276,120 +377,17 @@ const Profile = () => {
                 </Card>
               </Col>
 
-              {/* Right Column - Tabs */}
               <Col xs={24} lg={16}>
                 <Card className="shadow rounded-xl">
                   <Tabs
-                    activeKey={activeTab}
-                    onChange={setActiveTab}
+                    items={tabItems}
                     size="large"
-                  >
-                    <TabPane tab="Overview" key="overview">
-                      <Row gutter={[16, 16]}>
-                        <Col span={24}>
-                          <h3 className="text-xl font-semibold mb-4">
-                            Recent Quotations
-                          </h3>
-                          {myQuotations.length === 0 ? (
-                            <Empty description="No quotations created yet" />
-                          ) : (
-                            <Row gutter={[16, 16]}>
-                              {myQuotations.slice(0, 6).map((q) => (
-                                <Col xs={24} sm={12} key={q.quotationId}>
-                                  <Card hoverable className="rounded-xl">
-                                    <div className="flex justify-between items-start">
-                                      <div>
-                                        <h4 className="font-medium text-base">
-                                          {q.document_title}
-                                        </h4>
-                                        <p className="text-gray-500 text-sm">
-                                          Ref: {q.reference_number}
-                                        </p>
-                                        <p className="text-sm mt-2">
-                                          Due: {formatDate(q.due_date)}
-                                        </p>
-                                      </div>
-                                      <Tag
-                                        color="blue"
-                                        className="text-lg font-bold"
-                                      >
-                                        ₹
-                                        {Number(q.finalAmount).toLocaleString()}
-                                      </Tag>
-                                    </div>
-                                  </Card>
-                                </Col>
-                              ))}
-                            </Row>
-                          )}
-                        </Col>
-                      </Row>
-                    </TabPane>
-
-                    <TabPane tab="Orders" key="orders">
-                      <DataTable
-                        dataSource={myOrders}
-                        columns={[
-                          {
-                            title: "Order #",
-                            dataIndex: "orderNo",
-                            render: (text) => <strong>{text}</strong>,
-                          },
-                          {
-                            title: "Customer",
-                            render: (r) => r.customers?.name || "—",
-                          },
-                          {
-                            title: "Status",
-                            render: (r) => (
-                              <Badge status="processing" text={r.status} />
-                            ),
-                          },
-                          {
-                            title: "Total",
-                            render: (r) =>
-                              `₹${Number(r.finalAmount || 0).toFixed(2)}`,
-                          },
-                          {
-                            title: "Date",
-                            render: (r) => formatDate(r.orderDate),
-                          },
-                        ]}
-                        rowKey="id"
-                        pagination={{ pageSize: 6 }}
-                      />
-                    </TabPane>
-
-                    <TabPane tab="Purchase Orders" key="purchaseorders">
-                      <DataTable
-                        dataSource={myPOs}
-                        columns={[
-                          { title: "PO #", dataIndex: "poNumber" },
-                          {
-                            title: "Vendor",
-                            render: (r) => r.Vendor?.vendorName || "—",
-                          },
-                          {
-                            title: "Status",
-                            dataIndex: "status",
-                            render: (t) => <Tag>{t}</Tag>,
-                          },
-                          {
-                            title: "Amount",
-                            render: (r) =>
-                              `₹${Number(r.totalAmount).toFixed(2)}`,
-                          },
-                        ]}
-                        rowKey="id"
-                        pagination={{ pageSize: 6 }}
-                      />
-                    </TabPane>
-                  </Tabs>
+                    defaultActiveKey="overview"
+                  />
                 </Card>
               </Col>
             </Row>
 
-            {/* Address Modal */}
             <AddAddress
               visible={addressModalOpen}
               onClose={() => setAddressModalOpen(false)}

@@ -19,13 +19,13 @@ const ProductCard = ({
   getBrandsName,
   getCategoryName,
   handleAddToCart,
-  cartLoadingStates, // Kept for potential future use, but not used in UI
+  cartLoadingStates,
   menu,
 }) => {
   const [quantity, setQuantity] = useState(product.quantity > 0 ? 1 : 0);
   const { auth } = useAuth();
 
-  // Safe image parsing – handles array or JSON string
+  // Safe image parsing
   const safeParseImages = (images) => {
     if (Array.isArray(images) && images.length) return images;
     if (typeof images === "string" && images.trim()) {
@@ -41,18 +41,34 @@ const ProductCard = ({
 
   const productImages = safeParseImages(product.images);
 
-  // Extract selling price from metaDetails
-  const sellingPriceMeta = Array.isArray(product.metaDetails)
-    ? product.metaDetails.find((m) => m.slug === "sellingPrice")
-    : null;
+  // Known UUIDs from your data
+  const SELLING_PRICE_UUID = "9ba862ef-f993-4873-95ef-1fef10036aa5";
+  const COMPANY_CODE_UUID = "d11da9f9-3f2e-4536-8236-9671200cca4a";
 
-  const sellingPrice = sellingPriceMeta
-    ? parseFloat(sellingPriceMeta.value)
-    : null;
+  // Try to get from metaDetails first
+  const sellingPriceEntry = product.metaDetails?.find(
+    (m) => m.slug?.toLowerCase() === "sellingprice"
+  );
+  const companyCodeEntry = product.metaDetails?.find(
+    (m) => m.slug?.toLowerCase() === "companycode"
+  );
+
+  // Fallback: if value is UUID (wrong), get real value from raw meta
+  const getRealValue = (entry, fallbackUuid) => {
+    if (!entry) return null;
+    const val = entry.value;
+    if (typeof val === "string" && val.length === 36 && val.includes("-")) {
+      return product.meta?.[fallbackUuid] || val;
+    }
+    return val;
+  };
+
+  const realPriceValue = getRealValue(sellingPriceEntry, SELLING_PRICE_UUID);
+  const realCodeValue = getRealValue(companyCodeEntry, COMPANY_CODE_UUID);
 
   const displayPrice =
-    sellingPrice !== null && !isNaN(sellingPrice)
-      ? `₹${sellingPrice.toFixed(2)}`
+    realPriceValue && !isNaN(parseFloat(realPriceValue))
+      ? `₹${parseFloat(realPriceValue).toFixed(2)}`
       : "Price not set";
 
   // Quantity controls
@@ -72,11 +88,15 @@ const ProductCard = ({
   };
 
   const handleAddToCartWithQuantity = () => {
-    if (quantity > 0 && sellingPrice !== null && !isNaN(sellingPrice)) {
-      handleAddToCart({ productId: product.productId, quantity });
-    } else {
-      message.error("Invalid quantity or price");
+    if (!realPriceValue || isNaN(parseFloat(realPriceValue))) {
+      message.error("Invalid price");
+      return;
     }
+    if (quantity <= 0 || quantity > product.quantity) {
+      message.error("Invalid quantity");
+      return;
+    }
+    handleAddToCart(product, quantity); // Pass quantity
   };
 
   // Permissions
@@ -90,7 +110,7 @@ const ProductCard = ({
   );
 
   const isOutOfStock = product.quantity <= 0;
-  const hasValidPrice = sellingPrice !== null && !isNaN(sellingPrice);
+  const hasValidPrice = realPriceValue && !isNaN(parseFloat(realPriceValue));
 
   return (
     <div className="card mb-0">

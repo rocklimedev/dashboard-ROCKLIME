@@ -10,6 +10,8 @@ const {
   ProductKeyword,
   Keyword,
   Category,
+  Quotation,
+  Order,
 } = require("../models");
 // ─────────────────────────────────────────────────────────────────────────────
 // Create a product with meta data
@@ -512,30 +514,48 @@ exports.getAllProducts = async (req, res) => {
   try {
     // THIS LINE FIXES EVERYTHING ON RENDER
     ensureAssociations();
-    const products = await Product.findAll({
-      attributes: {
-        exclude: ["createdAt", "updatedAt"],
-      },
-      order: [["name", "ASC"]],
-      include: [
-        {
-          model: Keyword,
-          as: "keywords",
-          attributes: ["id", "keyword"],
-          through: { attributes: [] },
-          include: [
-            {
-              model: Category,
-              as: "categories",
-              attributes: ["categoryId", "name", "slug"],
-            },
-          ],
-        },
-      ],
-    });
+
+    // Pagination parameters (standard: ?page=1&limit=20)
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50; // adjust default as needed
+    const offset = (page - 1) * limit;
+
+    // Use findAndCountAll for efficient pagination + total count
+    const { count: totalProducts, rows: products } =
+      await Product.findAndCountAll({
+        order: [["name", "ASC"]],
+        offset,
+        limit,
+        include: [
+          {
+            model: Keyword,
+            as: "keywords",
+            attributes: ["id", "keyword"],
+            through: { attributes: [] },
+            include: [
+              {
+                model: Category,
+                as: "categories",
+                attributes: ["categoryId", "name", "slug"],
+              },
+            ],
+          },
+        ],
+        // Important for complex includes to avoid subquery issues in count
+        // (ensures correct total count when nested includes are present)
+        subQuery: false,
+      });
 
     if (products.length === 0) {
-      return res.json([]);
+      return res.json({
+        data: [],
+        pagination: {
+          total: 0,
+          page,
+          limit,
+          totalPages: 0,
+        },
+      });
     }
 
     // Collect all meta IDs used across products
@@ -620,7 +640,17 @@ exports.getAllProducts = async (req, res) => {
       };
     });
 
-    res.json(enrichedProducts);
+    const totalPages = Math.ceil(totalProducts / limit);
+
+    res.json({
+      data: enrichedProducts,
+      pagination: {
+        total: totalProducts,
+        page,
+        limit,
+        totalPages,
+      },
+    });
   } catch (error) {
     console.error("getAllProducts error:", error);
     res.status(500).json({
@@ -629,7 +659,6 @@ exports.getAllProducts = async (req, res) => {
     });
   }
 };
-
 // ==================== GET SINGLE PRODUCT ====================
 exports.getProductById = async (req, res) => {
   try {
@@ -729,6 +758,11 @@ exports.deleteProduct = async (req, res) => {
 exports.getProductsByCategory = async (req, res) => {
   const { categoryId } = req.params;
 
+  // Validate categoryId
+  if (!categoryId) {
+    return res.status(400).json({ message: "Category ID is required." });
+  }
+
   try {
     const products = await Product.findAll({
       where: { categoryId },
@@ -750,44 +784,263 @@ exports.getProductsByCategory = async (req, res) => {
 
     const enrichedProducts = products.map((product) => {
       const productData = product.toJSON();
-      productData.metaDetails = [];
 
+      // Initialize metaDetails safely
+      let metaDetails = [];
+
+      // Safely process meta if it exists and is an object
       if (
         productData.meta &&
         typeof productData.meta === "object" &&
+        !Array.isArray(productData.meta) &&
         productData.product_metas &&
         Array.isArray(productData.product_metas)
       ) {
-        productData.metaDetails = Object.keys(productData.meta).map(
-          (metaId) => {
-            const id = parseInt(metaId, 10);
+        metaDetails = Object.keys(productData.meta)
+          .map((metaIdStr) => {
+            const metaId = parseInt(metaIdStr, 10);
+            if (isNaN(metaId)) return null; // Skip invalid keys
+
             const metaField = productData.product_metas.find(
-              (mf) => mf.id === id
+              (mf) => mf.id === metaId
             );
+
+            // Only include if we found matching meta field
+            if (!metaField) return null;
 
             return {
               id: metaId,
-              title: metaField?.title ?? "Unknown",
-              slug: metaField?.slug ?? null,
-              value: productData.meta[metaId],
-              fieldType: metaField?.fieldType ?? null,
-              unit: metaField?.unit ?? null,
+              title: metaField.title || "Unknown Field",
+              slug: metaField.slug || null,
+              value: productData.meta[metaIdStr],
+              fieldType: metaField.fieldType || "string",
+              unit: metaField.unit || null,
             };
-          }
-        );
+          })
+          .filter(Boolean); // Remove null entries
       }
 
-      delete productData.product_metas;
+      // Clean up unnecessary fields
       delete productData.meta;
+      delete productData.product_metas;
+
+      // Attach the properly structured metaDetails
+      productData.metaDetails = metaDetails;
+
       return productData;
     });
 
-    res.status(200).json(enrichedProducts);
+    return res.status(200).json({
+      data: enrichedProducts,
+      pagination: {
+        total: enrichedProducts.length,
+        page: 1,
+        limit: enrichedProducts.length,
+        totalPages: 1,
+      },
+    });
   } catch (error) {
-    res.status(500).json({ message: "Internal server error." });
+    console.error("Error fetching products by category:", error);
+    return res.status(500).json({
+      message: "Internal server error.",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
+// ─────────────────────────────────────────────────────────────────────────────
+// Get products by brandId (with pagination, search, and metaDetails)
+// ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Get products by brandId — NOW FULLY MATCHES getAllProducts logic
+// ─────────────────────────────────────────────────────────────────────────────
+exports.getProductsByBrand = async (req, res) => {
+  const { brandId } = req.params;
+  const { page = 1, limit = 50, search } = req.query;
 
+  if (!brandId) {
+    return res.status(400).json({ message: "Brand ID is required." });
+  }
+
+  const pageNum = parseInt(page, 10);
+  const limitNum = parseInt(limit, 10);
+  const offset = (pageNum - 1) * limitNum;
+
+  if (isNaN(pageNum) || pageNum < 1 || isNaN(limitNum) || limitNum < 1) {
+    return res.status(400).json({ message: "Invalid pagination parameters." });
+  }
+
+  try {
+    ensureAssociations();
+
+    const where = { brandId };
+
+    // Case-insensitive search for MySQL – with explicit table alias
+    if (search && search.trim()) {
+      const searchTerm = search.trim().toLowerCase();
+      where[Op.or] = [
+        sequelize.where(sequelize.fn("LOWER", sequelize.col("Product.name")), {
+          [Op.like]: `%${searchTerm}%`,
+        }),
+        sequelize.where(
+          sequelize.fn("LOWER", sequelize.col("Product.product_code")),
+          { [Op.like]: `%${searchTerm}%` }
+        ),
+      ];
+    }
+
+    const { count: totalProducts, rows: products } =
+      await Product.findAndCountAll({
+        where,
+        offset,
+        limit: limitNum,
+        order: [["name", "ASC"]],
+
+        include: [
+          {
+            model: Keyword,
+            as: "keywords",
+            attributes: ["id", "keyword"],
+            through: { attributes: [] },
+            include: [
+              {
+                model: Category,
+                as: "categories",
+                attributes: ["categoryId", "name", "slug"],
+              },
+            ],
+          },
+        ],
+        subQuery: false, // Prevents issues with count query
+      });
+
+    if (products.length === 0) {
+      return res.json({
+        data: [],
+        pagination: { total: 0, page: pageNum, limit: limitNum, totalPages: 0 },
+      });
+    }
+
+    // Fetch all ProductMeta definitions once (small table)
+    const allMetaDefs = await ProductMeta.findAll({
+      attributes: ["id", "title", "slug", "fieldType", "unit"],
+    });
+
+    const slugToMeta = {};
+    allMetaDefs.forEach((m) => {
+      const def = m.toJSON();
+      if (def.slug) {
+        slugToMeta[def.slug.toLowerCase()] = def;
+      }
+    });
+
+    // Enrich products
+    const enrichedProducts = products.map((product) => {
+      const raw = product.toJSON();
+      const metaObj = parseJsonSafely(
+        raw.meta,
+        {},
+        `product ${raw.productId} meta`
+      );
+      const images = parseJsonSafely(
+        raw.images,
+        [],
+        `product ${raw.productId} images`
+      );
+
+      const knownMetaDetails = [];
+
+      // Selling Price
+      const priceKey = Object.keys(metaObj).find((key) =>
+        allMetaDefs.some((m) => m.slug?.toLowerCase() === "sellingprice")
+      );
+      if (priceKey && slugToMeta["sellingprice"]) {
+        knownMetaDetails.push({
+          id: slugToMeta["sellingprice"].id,
+          title: slugToMeta["sellingprice"].title || "Selling Price",
+          slug: "sellingprice",
+          value: String(metaObj[priceKey]),
+          fieldType: slugToMeta["sellingprice"].fieldType || "number",
+          unit: slugToMeta["sellingprice"].unit || null,
+        });
+      }
+
+      // Company Code
+      const codeKey = Object.keys(metaObj).find((key) =>
+        allMetaDefs.some((m) => m.slug?.toLowerCase() === "companycode")
+      );
+      if (codeKey && slugToMeta["companycode"]) {
+        knownMetaDetails.push({
+          id: slugToMeta["companycode"].id,
+          title: slugToMeta["companycode"].title || "Company Code",
+          slug: "companycode",
+          value: String(metaObj[codeKey]),
+          fieldType: slugToMeta["companycode"].fieldType || "string",
+          unit: null,
+        });
+      }
+
+      const keywords = (raw.keywords || []).map((k) => ({
+        id: k.id,
+        keyword: k.keyword,
+        categories: k.categories
+          ? {
+              categoryId: k.categories.categoryId,
+              name: k.categories.name,
+              slug: k.categories.slug,
+            }
+          : null,
+      }));
+
+      return {
+        ...raw,
+        images,
+        meta: metaObj,
+        metaDetails: knownMetaDetails,
+        keywords,
+        variantOptions: raw.variantOptions || {},
+        variantKey: raw.variantKey || null,
+        skuSuffix: raw.skuSuffix || null,
+        isMaster: !!raw.isMaster,
+        isVariant: !!raw.masterProductId,
+      };
+    });
+
+    // Optional: client-side fallback search for company code (if needed)
+    let finalProducts = enrichedProducts;
+    if (search && search.trim()) {
+      const lowerSearch = search.toLowerCase().trim();
+      finalProducts = enrichedProducts.filter((p) => {
+        const companyCode =
+          p.metaDetails
+            .find((d) => d.slug === "companycode")
+            ?.value?.toLowerCase() || "";
+        return (
+          p.name?.toLowerCase().includes(lowerSearch) ||
+          p.product_code?.toLowerCase().includes(lowerSearch) ||
+          companyCode.includes(lowerSearch)
+        );
+      });
+    }
+
+    const totalPages = Math.ceil(totalProducts / limitNum);
+
+    res.json({
+      data: finalProducts,
+      pagination: {
+        total: totalProducts,
+        page: pageNum,
+        limit: limitNum,
+        totalPages,
+      },
+    });
+  } catch (error) {
+    console.error("getProductsByBrand error:", error);
+    res.status(500).json({
+      message: "Failed to fetch products by brand",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  }
+};
 // ─────────────────────────────────────────────────────────────────────────────
 // Add stock to a product (NOW USING MYSQL + TRANSACTION)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1235,43 +1488,144 @@ exports.getProductsByIds = async (req, res) => {
         .json({ message: "All productIds must be non-empty strings" });
     }
 
+    // Ensure associations are loaded (same as getAllProducts)
+    ensureAssociations();
+
+    // Fetch products with same includes as getAllProducts
     const products = await Product.findAll({
       where: {
         productId: { [Op.in]: productIds },
       },
-      attributes: [
-        "productId",
-        "name",
-        "product_code",
-        "quantity",
-        "discountType",
-        "tax",
-        "description",
-        "images",
-        "isFeatured",
-        "brandId",
-        "categoryId",
-        "vendorId",
-        "brand_parentcategoriesId",
-        "meta",
+      attributes: {
+        exclude: ["createdAt", "updatedAt"], // optional: match getAllProducts behavior
+      },
+      order: [["name", "ASC"]],
+      include: [
+        {
+          model: Keyword,
+          as: "keywords",
+          attributes: ["id", "keyword"],
+          through: { attributes: [] },
+          include: [
+            {
+              model: Category,
+              as: "categories",
+              attributes: ["categoryId", "name", "slug"],
+            },
+          ],
+        },
       ],
     });
 
+    // Check for missing products
     const foundProductIds = products.map((p) => p.productId);
     const missingIds = productIds.filter((id) => !foundProductIds.includes(id));
+
     if (missingIds.length > 0) {
       return res.status(404).json({
         message: `Products not found for IDs: ${missingIds.join(", ")}`,
       });
     }
 
+    // ──────── ENRICHMENT (same logic as getAllProducts) ────────
+
+    // Collect all meta IDs
+    const metaIds = new Set();
+    products.forEach((product) => {
+      const meta = parseJsonSafely(
+        product.meta,
+        null,
+        `product ID ${product.id} meta`
+      );
+      if (meta && typeof meta === "object") {
+        Object.keys(meta).forEach((id) => metaIds.add(id));
+      }
+    });
+
+    // Fetch meta definitions in bulk
+    const metaDefs =
+      metaIds.size > 0
+        ? await ProductMeta.findAll({
+            where: { id: { [Op.in]: Array.from(metaIds) } },
+            attributes: ["id", "title", "slug", "fieldType", "unit"],
+          })
+        : [];
+
+    const metaMap = Object.fromEntries(metaDefs.map((m) => [m.id, m.toJSON()]));
+
+    // Enrich each product
+    const enrichedProducts = products.map((product) => {
+      const raw = product.toJSON();
+
+      // Parse meta and images safely
+      const metaObj = parseJsonSafely(
+        raw.meta,
+        {},
+        `product ID ${raw.id} meta`
+      );
+      const images = parseJsonSafely(
+        raw.images,
+        [],
+        `product ID ${raw.id} images`
+      );
+
+      // Build enriched metaDetails
+      const metaDetails = Object.entries(metaObj).map(([id, value]) => {
+        const def = metaMap[id] || {};
+        return {
+          id,
+          title: def.title || "Unknown Field",
+          slug: def.slug || null,
+          value: value != null ? String(value) : "",
+          fieldType: def.fieldType || "text",
+          unit: def.unit || null,
+        };
+      });
+
+      // Clean keywords structure
+      const keywords = (raw.keywords || []).map((k) => ({
+        id: k.id,
+        keyword: k.keyword,
+        categories: k.categories
+          ? {
+              categoryId: k.categories.categoryId,
+              name: k.categories.name,
+              slug: k.categories.slug,
+            }
+          : null,
+      }));
+
+      return {
+        ...raw,
+        images, // always array
+        meta: metaObj, // parsed object
+        metaDetails, // enriched
+        keywords,
+        variantOptions: raw.variantOptions || {},
+        variantKey: raw.variantKey || null,
+        skuSuffix: raw.skuSuffix || null,
+        isMaster: !!raw.isMaster,
+        isVariant: !!raw.masterProductId,
+        masterProductId: raw.masterProductId || raw.id,
+      };
+    });
+
+    // ──────── RESPONSE (consistent with getAllProducts style) ────────
     return res.status(200).json({
-      products: products.map((p) => p.toJSON()),
+      data: enrichedProducts,
+      pagination: {
+        total: enrichedProducts.length,
+        page: 1,
+        limit: enrichedProducts.length,
+        totalPages: 1,
+      },
     });
   } catch (err) {
-    return res
-      .status(500)
-      .json({ message: "Failed to fetch products", error: err.message });
+    console.error("getProductsByIds error:", err);
+    return res.status(500).json({
+      message: "Failed to fetch products by IDs",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
+    });
   }
 };
 /**
@@ -1672,5 +2026,211 @@ exports.replaceAllKeywordsForProduct = async (req, res) => {
     await t.rollback();
     console.error("replaceAllKeywordsForProduct error:", error);
     res.status(500).json({ message: "Failed to update keywords" });
+  }
+};
+// controller/productController.js
+
+exports.getTopSellingProducts = async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 10;
+
+    const salesMap = new Map(); // productId → total sold quantity
+
+    const processItemsArray = (items) => {
+      if (!Array.isArray(items)) return;
+
+      items.forEach((item) => {
+        const id = item.productId;
+        const qty = Number(item.quantity) || 0;
+        if (id && qty > 0) {
+          salesMap.set(id, (salesMap.get(id) || 0) + qty);
+        }
+      });
+    };
+
+    // Step 1: Fetch all Quotations (using the correct 'products' column)
+    const quotations = await Quotation.findAll({
+      attributes: ["quotationId", "products"],
+      raw: true,
+    });
+
+    // Process quotations
+    quotations.forEach((q) => {
+      if (q.products) {
+        let items;
+        try {
+          items =
+            typeof q.products === "string"
+              ? JSON.parse(q.products)
+              : q.products;
+        } catch (e) {
+          console.warn(
+            "Failed to parse quotation products:",
+            q.quotationId,
+            e.message
+          );
+          return;
+        }
+        processItemsArray(items);
+      }
+    });
+
+    // Step 2: Fetch all Orders
+    const orders = await Order.findAll({
+      attributes: ["id", "products", "quotationId"],
+      raw: true,
+    });
+
+    // Build map: quotationId → products array (for fallback)
+    const quotationProductsMap = new Map();
+    quotations.forEach((q) => {
+      if (q.products) {
+        try {
+          const items =
+            typeof q.products === "string"
+              ? JSON.parse(q.products)
+              : q.products;
+          if (Array.isArray(items)) {
+            quotationProductsMap.set(q.quotationId, items);
+          }
+        } catch (e) {
+          // skip malformed
+        }
+      }
+    });
+
+    // Process orders
+    orders.forEach((order) => {
+      let itemsToUse = null;
+
+      // Priority 1: Use order's own products if present
+      if (order.products && order.products !== null) {
+        try {
+          const parsed =
+            typeof order.products === "string"
+              ? JSON.parse(order.products)
+              : order.products;
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            itemsToUse = parsed;
+          }
+        } catch (e) {
+          console.warn("Failed to parse order products:", order.id);
+        }
+      }
+
+      // Priority 2: Fallback to linked quotation's products
+      if (
+        !itemsToUse &&
+        order.quotationId &&
+        quotationProductsMap.has(order.quotationId)
+      ) {
+        itemsToUse = quotationProductsMap.get(order.quotationId);
+      }
+
+      if (itemsToUse) {
+        processItemsArray(itemsToUse);
+      }
+    });
+
+    // Convert to sorted array: highest sold first
+    const salesArray = Array.from(salesMap, ([productId, totalSold]) => ({
+      productId,
+      totalSold, // ← Clear, meaningful name
+    })).sort((a, b) => b.totalSold - a.totalSold);
+
+    if (salesArray.length === 0) {
+      return res.status(200).json({ data: [], total: 0 });
+    }
+
+    // Get top 50 candidates to enrich
+    const topProductIds = salesArray.slice(0, 50).map((s) => s.productId);
+
+    // Fetch full product details with associations
+    const products = await Product.findAll({
+      where: {
+        productId: { [Op.in]: topProductIds },
+      },
+      order: [["name", "ASC"]],
+      include: [
+        {
+          model: Keyword,
+          as: "keywords",
+          attributes: ["id", "keyword"],
+          through: { attributes: [] },
+          include: [
+            {
+              model: Category,
+              as: "category",
+              attributes: ["categoryId", "name", "slug"],
+            },
+          ],
+        },
+      ],
+    });
+
+    // Enrich with metaDetails, images, keywords, and totalSold
+    const enrichedProducts = products.map((product) => {
+      const raw = product.toJSON();
+
+      const metaObj = raw.meta
+        ? typeof raw.meta === "string"
+          ? JSON.parse(raw.meta)
+          : raw.meta
+        : {};
+      const images = raw.images
+        ? typeof raw.images === "string"
+          ? JSON.parse(raw.images)
+          : raw.images
+        : [];
+
+      const metaDetails = Object.entries(metaObj).map(([id, value]) => ({
+        id,
+        title: "Unknown Field",
+        slug: id,
+        value: value != null ? String(value) : "",
+        fieldType: "text",
+        unit: null,
+      }));
+
+      const keywords = (raw.keywords || []).map((k) => ({
+        id: k.id,
+        keyword: k.keyword,
+        categories: k.categories
+          ? {
+              categoryId: k.categories.categoryId,
+              name: k.categories.name,
+              slug: k.categories.slug,
+            }
+          : null,
+      }));
+
+      const totalSold =
+        salesArray.find((s) => s.productId === raw.productId)?.totalSold || 0;
+
+      return {
+        ...raw,
+        images,
+        meta: metaObj,
+        metaDetails,
+        keywords,
+        totalSold, // ← This is the new clear field
+      };
+    });
+
+    // Final sort by totalSold and apply limit
+    const finalTopProducts = enrichedProducts
+      .sort((a, b) => b.totalSold - a.totalSold)
+      .slice(0, limit);
+
+    res.status(200).json({
+      data: finalTopProducts,
+      total: finalTopProducts.length,
+    });
+  } catch (err) {
+    console.error("getTopSellingProducts error:", err);
+    res.status(500).json({
+      message: "Failed to fetch top selling products",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
+    });
   }
 };

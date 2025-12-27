@@ -18,6 +18,8 @@ import { DeleteOutlined, DeleteFilled } from "@ant-design/icons";
 import styled from "styled-components";
 import OrderTotal from "./OrderTotal";
 import { CheckCircleOutlined } from "@ant-design/icons";
+import { useGetProductByIdQuery } from "../../api/productApi";
+import CartItemRow from "./CartItemRow";
 const { Title, Text } = Typography;
 const { Option } = Select;
 
@@ -190,136 +192,21 @@ const CartTab = ({
               </Button>
             </EmptyCartWrapper>
           ) : (
-            cartItems.map((item) => {
-              const product = cartProductsData?.find(
-                (p) => p.productId === item.productId
-              );
-              const imageUrl = getFirstImage(product);
-              const discType = itemDiscountTypes[item.productId] || "percent";
-
-              return (
-                <CartItem key={item.productId}>
-                  <Row gutter={[12, 12]} align="middle">
-                    {/* IMAGE */}
-                    <Col xs={6} sm={4}>
-                      <CartItemImage
-                        src={imageUrl}
-                        alt={item.name}
-                        effect="blur"
-                        placeholderSrc="https://via.placeholder.com/100"
-                      />
-                    </Col>
-
-                    {/* NAME / PRICE / DISCOUNT */}
-                    <Col xs={18} sm={10}>
-                      <Text strong>{item.name}</Text>
-                      <br />
-                      <Text type="secondary" style={{ color: "green" }}>
-                        ₹{item.price?.toFixed(2)}
-                      </Text>
-
-                      {/* ---- Discount selector ---- */}
-                      <div style={{ marginTop: 8 }}>
-                        <Space>
-                          <Select
-                            size="small"
-                            value={discType}
-                            onChange={(v) =>
-                              handleDiscountTypeChange(item.productId, v)
-                            }
-                            style={{ width: 80 }}
-                          >
-                            <Option value="percent">%</Option>
-                            <Option value="fixed">₹</Option>
-                          </Select>
-
-                          <InputNumber
-                            min={0}
-                            size="small"
-                            value={itemDiscounts[item.productId] ?? 0}
-                            onChange={(v) =>
-                              handleDiscountChange(item.productId, v)
-                            }
-                            addonAfter={discType === "percent" ? "%" : "₹"}
-                            style={{ width: 90 }}
-                          />
-                        </Space>
-                      </div>
-                    </Col>
-
-                    {/* QUANTITY */}
-                    <Col xs={12} sm={6}>
-                      <Space size="small">
-                        <QuantityButton
-                          type="default"
-                          size="small"
-                          onClick={() =>
-                            handleUpdateQuantity(
-                              item.productId,
-                              Math.max(1, item.quantity - 1)
-                            )
-                          }
-                          disabled={
-                            item.quantity <= 1 || updatingItems[item.productId]
-                          }
-                          loading={updatingItems[item.productId]}
-                        >
-                          -
-                        </QuantityButton>
-
-                        <InputNumber
-                          min={1}
-                          value={item.quantity}
-                          onChange={(value) => {
-                            if (value && value > 0) {
-                              handleUpdateQuantity(
-                                item.productId,
-                                Number(value)
-                              );
-                            }
-                          }}
-                          style={{ width: 70 }}
-                          size="middle"
-                          controls={false}
-                          disabled={updatingItems[item.productId]}
-                        />
-
-                        <QuantityButton
-                          type="default"
-                          size="small"
-                          onClick={() =>
-                            handleUpdateQuantity(
-                              item.productId,
-                              item.quantity + 1
-                            )
-                          }
-                          disabled={updatingItems[item.productId]}
-                          loading={updatingItems[item.productId]}
-                        >
-                          +
-                        </QuantityButton>
-                      </Space>
-                    </Col>
-
-                    {/* LINE TOTAL + REMOVE */}
-                    <Col xs={12} sm={4} style={{ textAlign: "right" }}>
-                      <Text strong style={{ color: "green" }}>
-                        ₹{lineTotal(item)}
-                      </Text>
-                      <RemoveButton
-                        type="button"
-                        danger
-                        icon={<DeleteFilled />}
-                        onClick={(e) => handleRemoveItem(e, item.productId)}
-                        disabled={updatingItems[item.productId]}
-                        loading={updatingItems[item.productId]}
-                      />
-                    </Col>
-                  </Row>
-                  <Divider />
-                </CartItem>
-              );
-            })
+            cartItems.map((item) => (
+              <CartItemRow
+                key={item.productId}
+                item={item}
+                itemDiscounts={itemDiscounts}
+                itemDiscountTypes={itemDiscountTypes}
+                itemTaxes={itemTaxes}
+                updatingItems={updatingItems}
+                handleUpdateQuantity={handleUpdateQuantity}
+                handleRemoveItem={handleRemoveItem}
+                handleDiscountChange={handleDiscountChange}
+                handleDiscountTypeChange={handleDiscountTypeChange}
+                lineTotal={lineTotal}
+              />
+            ))
           )}
         </CartItemsCard>
       </Col>

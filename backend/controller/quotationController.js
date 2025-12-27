@@ -4,6 +4,8 @@ const QuotationVersion = require("../models/quotationVersion");
 const sequelize = require("../config/database");
 const { sendNotification } = require("./notificationController");
 const { Product, Quotation } = require("../models");
+const { Op } = require("sequelize");
+
 // ---------------------------------------------------------------------
 // Helper: Calculate totals (uses `total` if provided, else price × qty)
 // ---------------------------------------------------------------------
@@ -801,23 +803,106 @@ exports.getQuotationById = async (req, res) => {
 };
 
 // Get all quotations with their items
+
 exports.getAllQuotations = async (req, res) => {
   try {
-    const quotations = await Quotation.findAll();
+    // Pagination params
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 20;
+    const offset = (page - 1) * limit;
+
+    // Optional search (on title, reference_number, etc.)
+    const search = req.query.search?.trim();
+    const where = search
+      ? {
+          [Op.or]: [
+            { document_title: { [Op.iLike]: `%${search}%` } },
+            { reference_number: { [Op.iLike]: `%${search}%` } },
+          ],
+        }
+      : {};
+
+    // Optional filters
+    if (req.query.customerId) {
+      where.customerId = req.query.customerId;
+    }
+    if (req.query.status) {
+      where.status = req.query.status;
+    }
+
+    // Date range filter: ?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
+    if (req.query.startDate || req.query.endDate) {
+      where.quotation_date = {};
+      if (req.query.startDate) {
+        where.quotation_date[Op.gte] = req.query.startDate;
+      }
+      if (req.query.endDate) {
+        where.quotation_date[Op.lte] = req.query.endDate;
+      }
+    }
+
+    // Fetch paginated quotations from PostgreSQL (Sequelize)
+    const { count: totalQuotations, rows: quotations } =
+      await Quotation.findAndCountAll({
+        where,
+        offset,
+        limit,
+        order: [["quotation_date", "DESC"]], // or [["createdAt", "DESC"]]
+        subQuery: false,
+      });
+
+    if (quotations.length === 0) {
+      return res.status(200).json({
+        data: [],
+        pagination: {
+          total: totalQuotations,
+          page,
+          limit,
+          totalPages: Math.ceil(totalQuotations / limit),
+        },
+      });
+    }
+
+    // Extract quotationIds for current page only
     const quotationIds = quotations.map((q) => q.quotationId);
-    const items = await QuotationItem.find({
+
+    // Fetch corresponding items from MongoDB in one query
+    const mongoItems = await QuotationItem.find({
       quotationId: { $in: quotationIds },
+    }).lean(); // .lean() for plain JS objects (faster)
+
+    // Build lookup map: quotationId → items array
+    const itemsMap = {};
+    mongoItems.forEach((itemDoc) => {
+      itemsMap[itemDoc.quotationId] = itemDoc.items || [];
     });
 
-    // Merge items into quotations
-    const response = quotations.map((q) => ({
-      ...q.toJSON(),
-      items: items.find((i) => i.quotationId === q.quotationId)?.items || [],
-    }));
+    // Enrich quotations with items
+    const enrichedQuotations = quotations.map((q) => {
+      const plain = q.toJSON();
+      return {
+        ...plain,
+        items: itemsMap[plain.quotationId] || [],
+      };
+    });
 
-    res.status(200).json(response);
+    const totalPages = Math.ceil(totalQuotations / limit);
+
+    return res.status(200).json({
+      data: enrichedQuotations,
+      pagination: {
+        total: totalQuotations,
+        page,
+        limit,
+        totalPages,
+      },
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("getAllQuotations error:", error);
+    return res.status(500).json({
+      message: "Error fetching quotations",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 // Delete a quotation and its items

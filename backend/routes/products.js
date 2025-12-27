@@ -15,7 +15,7 @@ const productUpload = multer({
     const mime = allowed.test(file.mimetype);
     cb(null, ext && mime);
   },
-}).array("images", 5); // matches FormData key in React
+}).array("images", 5); // matches FormData key "images" in React
 
 // Helper: safely run multer first, then controller
 const withUpload = (handler) => (req, res) => {
@@ -33,8 +33,6 @@ const withUpload = (handler) => (req, res) => {
       return res.status(400).json({ message: err.message });
     }
 
-    // req.files = array of { buffer, originalname, ... }
-    // req.body = parsed form fields (including keywordIds as JSON string or array)
     try {
       await handler(req, res);
     } catch (error) {
@@ -53,31 +51,29 @@ router.post(
   withUpload(productController.createProduct)
 );
 
-router.get(
-  "/",
-  // checkPermission("view", "get_all_products", "products", "/products"),
-  productController.getAllProducts
-);
+router.get("/", productController.getAllProducts);
 
+// ------------------- STATIC / SPECIFIC ROUTES (MUST COME BEFORE :productId) -------------------
+router.get("/category/:categoryId", productController.getProductsByCategory);
+router.get("/brand/:brandId", productController.getProductsByBrand);
+router.get("/low-stock", productController.getLowStockProducts);
+router.get("/top-selling", productController.getTopSellingProducts);
+router.post("/by-ids", productController.getProductsByIds); // POST → no conflict
+
+// ------------------- DYNAMIC ROUTE (AFTER ALL STATIC ONES) -------------------
 router.get("/:productId", productController.getProductById);
 
-router.get("/category/:categoryId", productController.getProductsByCategory);
-
-// THIS IS THE MOST IMPORTANT ONE FOR EDIT MODE
 router.put(
   "/:productId",
   // checkPermission("edit", "update_product", "products", "/products/:productId"),
   withUpload(productController.updateProduct)
 );
 
-router.post("/by-ids", productController.getProductsByIds);
-
 router.delete("/:productId", productController.deleteProduct);
 
 // ==================== STOCK MANAGEMENT ====================
 router.post("/:productId/add-stock", productController.addStock);
 router.post("/:productId/remove-stock", productController.removeStock);
-router.get("/low-stock", productController.getLowStockProducts);
 router.get("/:productId/history", productController.getHistoryByProductId);
 
 // ==================== SEARCH & UTILS ====================

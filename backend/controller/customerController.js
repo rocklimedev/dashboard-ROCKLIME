@@ -1,7 +1,7 @@
 const { sendNotification } = require("./notificationController"); // Import sendNotification
 const { Invoice, Customer } = require("../models");
 const ADMIN_USER_ID = "2ef0f07a-a275-4fe1-832d-fe9a5d145f60"; // Replace with actual admin user ID or channel
-
+const { Op } = require("sequelize");
 // Get invoices by customer ID (no notification needed)
 exports.getInvoicesByCustomerId = async (req, res) => {
   try {
@@ -94,10 +94,53 @@ exports.createCustomer = async (req, res) => {
 // Get all customers (no notification needed)
 exports.getCustomers = async (req, res) => {
   try {
-    const customers = await Customer.findAll();
-    res.status(200).json({ success: true, data: customers });
+    // Pagination parameters: ?page=1&limit=20
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 20;
+    const offset = (page - 1) * limit;
+
+    // Optional: simple search by name or email
+    const where = {};
+    if (req.query.search) {
+      where[Op.or] = [
+        { name: { [Op.iLike]: `%${req.query.search}%` } },
+        { email: { [Op.iLike]: `%${req.query.search}%` } },
+        { phone: { [Op.iLike]: `%${req.query.search}%` } },
+      ];
+    }
+
+    // Use findAndCountAll for pagination and total count
+    const { count: totalCustomers, rows: customers } =
+      await Customer.findAndCountAll({
+        where,
+        offset,
+        limit,
+        order: [["name", "ASC"]], // or [["createdAt", "DESC"]] depending on preference
+        attributes: { exclude: ["createdAt", "updatedAt"] }, // optional: remove timestamps if not needed
+        subQuery: false, // safe to include even without nested includes
+      });
+
+    const totalPages = Math.ceil(totalCustomers / limit);
+
+    return res.status(200).json({
+      success: true,
+      data: customers.map((customer) => customer.toJSON()),
+      pagination: {
+        total: totalCustomers,
+        page,
+        limit,
+        totalPages,
+      },
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error("getCustomers error:", error);
+    return res.status(500).json({
+      success: false,
+      message:
+        process.env.NODE_ENV === "development"
+          ? error.message
+          : "Failed to fetch customers",
+    });
   }
 };
 
