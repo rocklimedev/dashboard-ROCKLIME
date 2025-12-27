@@ -230,27 +230,49 @@ exports.getPurchaseOrderById = async (req, res) => {
 // Get all purchase orders (no notification needed)
 exports.getAllPurchaseOrders = async (req, res) => {
   try {
-    const purchaseOrders = await PurchaseOrder.findAll({
-      include: [
-        {
-          model: Vendor,
-          attributes: ["id", "vendorName"],
-        },
-      ],
-      order: [["createdAt", "DESC"]],
-    });
+    // Pagination parameters: ?page=1&limit=20
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 20;
+    const offset = (page - 1) * limit;
 
-    // Map purchase orders to include items directly
+    // Use findAndCountAll to get total count and paginated results efficiently
+    const { count: totalPurchaseOrders, rows: purchaseOrders } =
+      await PurchaseOrder.findAndCountAll({
+        include: [
+          {
+            model: Vendor,
+            attributes: ["id", "vendorName"],
+          },
+        ],
+        order: [["createdAt", "DESC"]],
+        offset,
+        limit,
+        // Prevents issues with nested includes affecting the COUNT query
+        subQuery: false,
+      });
+
+    // Map purchase orders to include items directly (assuming items is a JSON field or already loaded)
     const result = purchaseOrders.map((po) => ({
       ...po.toJSON(),
       items: po.items || [],
     }));
 
-    return res.status(200).json(result);
+    const totalPages = Math.ceil(totalPurchaseOrders / limit);
+
+    return res.status(200).json({
+      data: result,
+      pagination: {
+        total: totalPurchaseOrders,
+        page,
+        limit,
+        totalPages,
+      },
+    });
   } catch (error) {
+    console.error("getAllPurchaseOrders error:", error);
     return res.status(500).json({
       message: "Error fetching purchase orders",
-      error: error.message,
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };

@@ -1,17 +1,16 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
   Form,
   Input,
-  Pagination,
   Empty,
   Table,
   Button,
   Tooltip,
   Dropdown,
-  Select,
   Menu,
   Spin,
+  Pagination,
 } from "antd";
 import {
   SearchOutlined,
@@ -20,18 +19,17 @@ import {
 } from "@ant-design/icons";
 import {
   useGetAllProductsQuery,
+  useGetAllProductsByCategoryQuery,
+  useGetProductsByBrandQuery,
   useDeleteProductMutation,
-  useUpdateProductFeaturedMutation,
 } from "../../api/productApi";
 import { useGetAllBrandsQuery } from "../../api/brandsApi";
 import { useGetBrandParentCategoryByIdQuery } from "../../api/brandParentCategoryApi";
 import { useGetAllCategoriesQuery } from "../../api/categoryApi";
-import { useGetCustomersQuery } from "../../api/customerApi";
 import { useGetProfileQuery } from "../../api/userApi";
 import {
   useAddProductToCartMutation,
   useGetCartQuery,
-  useRemoveFromCartMutation,
 } from "../../api/cartApi";
 import { message } from "antd";
 import "./productdetails.css";
@@ -45,268 +43,191 @@ import pos from "../../assets/img/default.png";
 import PermissionGate from "../../context/PermissionGate";
 
 const ProductsList = () => {
-  const { id: brandId, bpcId } = useParams();
+  const { id, bpcId } = useParams();
 
-  // ──────────────────────────────────────────────────────
-  // DATA HOOKS (no loading checks – global loader handles it)
-  // ──────────────────────────────────────────────────────
-  const { data: productsData, error } = useGetAllProductsQuery();
-  const { data: brandsData } = useGetAllBrandsQuery();
-  const { data: bpcData } = useGetBrandParentCategoryByIdQuery(bpcId, {
-    skip: !bpcId,
-  });
-  const { data: categoriesData } = useGetAllCategoriesQuery();
-  const { data: customersData } = useGetCustomersQuery();
-  const { data: user } = useGetProfileQuery();
-
-  const userId = user?.user?.userId;
-  const { data: cartData, refetch: refetchCart } = useGetCartQuery(userId, {
-    skip: !userId,
-  });
-
-  const [updateProductFeatured] = useUpdateProductFeaturedMutation();
-  const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation();
-  const [addProductToCart] = useAddProductToCartMutation();
-  const [removeFromCart] = useRemoveFromCartMutation();
-
-  // ──────────────────────────────────────────────────────
-  // STATE
-  // ──────────────────────────────────────────────────────
-  const [selectedCategoryId, setSelectedCategoryId] = useState(null);
-  const [viewMode, setViewMode] = useState("list");
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(50);
+  const [search, setSearch] = useState("");
+  const [viewMode, setViewMode] = useState("list");
+  const [cartLoadingStates, setCartLoadingStates] = useState({});
   const [isDeleteModalVisible, setDeleteModalVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [stockModalOpen, setStockModalOpen] = useState(false);
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [stockAction, setStockAction] = useState("add");
-  const [cartLoadingStates, setCartLoadingStates] = useState({});
-  const [featuredLoadingStates, setFeaturedLoadingStates] = useState({});
 
-  const [form] = Form.useForm();
-  const [search, setSearch] = useState("");
+  // View type detection
+  const isBrandView = !!id && !bpcId;
+  const isBpcView = !!bpcId;
+  const isCategoryView = !!id && !isBrandView && !isBpcView;
 
-  const itemsPerPage = 50;
+  // Data fetching
+  const brandQuery = useGetProductsByBrandQuery(
+    {
+      brandId: id || "",
+      page: currentPage,
+      limit: pageSize,
+      search: search || undefined,
+    },
+    { skip: !isBrandView }
+  );
+
+  const categoryQuery = useGetAllProductsByCategoryQuery(
+    {
+      categoryId: id || "",
+      page: currentPage,
+      limit: pageSize,
+      search: search || undefined,
+    },
+    { skip: !isCategoryView }
+  );
+
+  const bpcQuery = useGetAllProductsQuery({
+    page: currentPage,
+    limit: pageSize,
+    search: search || undefined,
+  });
+
+  const allProductsQuery = useGetAllProductsQuery({
+    page: currentPage,
+    limit: pageSize,
+    search: search || undefined,
+  });
+
+  const queryResult = isBrandView
+    ? brandQuery
+    : isCategoryView
+    ? categoryQuery
+    : isBpcView
+    ? bpcQuery
+    : allProductsQuery;
+
+  const { data: productsResponse, isLoading, isFetching, error } = queryResult;
+
+  const products = productsResponse?.data || [];
+  const pagination = productsResponse?.pagination || {
+    total: 0,
+    page: currentPage,
+    limit: pageSize,
+    totalPages: 0,
+  };
+
+  // Supporting queries
+  const { data: brandsData } = useGetAllBrandsQuery();
+  const { data: bpcData } = useGetBrandParentCategoryByIdQuery(bpcId, {
+    skip: !bpcId,
+  });
+  const { data: categoriesData } = useGetAllCategoriesQuery();
+  const { data: user } = useGetProfileQuery();
+  const userId = user?.user?.userId;
+  const { data: cartData, refetch: refetchCart } = useGetCartQuery(userId, {
+    skip: !userId,
+  });
+
+  const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation();
+  const [addProductToCart] = useAddProductToCartMutation();
 
   // ──────────────────────────────────────────────────────
-  // HELPERS
+  // HELPERS — Now robust against incorrect backend values
   // ──────────────────────────────────────────────────────
-  const getBrandsName = (brandId) => {
-    return brandId
-      ? brandsData?.find((b) => b.id === brandId)?.brandName || "Not Branded"
-      : "Not Branded";
-  };
+  const getBrandsName = (brandId) =>
+    brandsData?.find((b) => b.id === brandId)?.brandName || "Not Branded";
 
-  const getCategoryName = (categoryId) => {
-    return categoryId
-      ? categoriesData?.categories?.find((c) => c.categoryId === categoryId)
-          ?.name || "Uncategorized"
-      : "Uncategorized";
-  };
-
-  const getParentCategoryName = (categoryId) => {
-    const cat = categoriesData?.categories?.find(
-      (c) => c.categoryId === categoryId
-    );
-    return cat?.parentcategories?.name || "";
-  };
-
-  const formatPrice = (value, unit) => {
-    if (Array.isArray(unit)) {
-      const sellingPriceEntry = unit.find(
-        (detail) => detail.slug?.toLowerCase() === "sellingprice"
-      );
-      if (sellingPriceEntry) {
-        const cleaned = String(sellingPriceEntry.value).replace(/[^0-9.]/g, "");
-        const price = parseFloat(cleaned);
-        return !isNaN(price) ? `₹ ${price.toFixed(2)}` : "N/A";
-      }
-    }
-    return "N/A";
-  };
+  const getCategoryName = (categoryId) =>
+    categoriesData?.categories?.find((c) => c.categoryId === categoryId)
+      ?.name || "Uncategorized";
 
   const parseImages = (images) => {
     try {
-      if (typeof images === "string") {
-        const parsed = JSON.parse(images);
-        return Array.isArray(parsed) ? parsed : [pos];
-      }
+      if (typeof images === "string") return JSON.parse(images);
       return Array.isArray(images) ? images : [pos];
     } catch {
       return [pos];
     }
   };
 
-  const getCompanyCode = (metaDetails) => {
-    if (!Array.isArray(metaDetails)) return "N/A";
-    const entry = metaDetails.find(
-      (d) => d.slug?.toLowerCase() === "companycode"
+  // Fallback: if metaDetails has wrong value, try to get from raw meta using known slug UUIDs
+  const getPrice = (metaDetails = [], rawMeta = {}) => {
+    let entry = metaDetails.find(
+      (d) => d.slug?.toLowerCase() === "sellingprice"
     );
-    return entry ? String(entry.value) : "N/A";
+
+    // If value looks like a UUID (36 chars), it's wrong — fallback to raw meta
+    if (
+      entry &&
+      entry.value &&
+      entry.value.length === 36 &&
+      entry.value.includes("-")
+    ) {
+      // Find the actual value in raw meta using known sellingprice UUID
+      const sellingPriceKey = Object.keys(rawMeta).find(
+        (key) => key === "9ba862ef-f993-4873-95ef-1fef10036aa5" // common sellingprice field ID
+      );
+      if (sellingPriceKey) {
+        const price = parseFloat(rawMeta[sellingPriceKey]);
+        return isNaN(price) ? "N/A" : `₹ ${price.toFixed(2)}`;
+      }
+    }
+
+    if (!entry || !entry.value) return "N/A";
+    const price = parseFloat(entry.value);
+    return isNaN(price) ? "N/A" : `₹ ${price.toFixed(2)}`;
   };
 
-  // ──────────────────────────────────────────────────────
-  // MEMOIZED DATA
-  // ──────────────────────────────────────────────────────
-  const products = useMemo(
-    () => (Array.isArray(productsData) ? productsData : []),
-    [productsData]
-  );
-
-  const categoryOptions = useMemo(() => {
-    const allCategories = categoriesData?.categories ?? [];
-
-    const relevantProducts = products.filter((p) => {
-      if (brandId) return String(p.brandId) === String(brandId);
-      if (bpcId) return String(p.brand_parentcategoriesId) === String(bpcId);
-      return true;
-    });
-
-    const usedCategoryIds = new Set(
-      relevantProducts.map((p) => p.categoryId).filter(Boolean)
+  const getCompanyCode = (metaDetails = [], rawMeta = {}) => {
+    let entry = metaDetails.find(
+      (d) => d.slug?.toLowerCase() === "companycode"
     );
 
-    const filteredCategories = allCategories.filter((cat) =>
-      usedCategoryIds.has(cat.categoryId || cat.id)
-    );
-    filteredCategories.sort((a, b) => a.name.localeCompare(b.name));
+    if (
+      entry &&
+      entry.value &&
+      entry.value.length === 36 &&
+      entry.value.includes("-")
+    ) {
+      const companyCodeKey = Object.keys(rawMeta).find(
+        (key) => key === "d11da9f9-3f2e-4536-8236-9671200cca4a"
+      );
+      return companyCodeKey ? String(rawMeta[companyCodeKey]).trim() : "N/A";
+    }
 
-    return [
-      { label: "All Categories", value: "" },
-      ...filteredCategories.map((c) => ({
-        label: c.name,
-        value: c.categoryId || c.id,
-      })),
-    ];
-  }, [categoriesData, products, brandId, bpcId]);
-
-  const filteredProducts = useMemo(() => {
-    return products.filter((product) => {
-      // 1. Brand / BPC filter
-      const matchesFilter = brandId
-        ? String(product.brandId) === String(brandId)
-        : bpcId
-        ? String(product.brand_parentcategoriesId) === String(bpcId)
-        : true;
-
-      // 2. Category filter
-      const matchesCategory = selectedCategoryId
-        ? String(product.categoryId) === selectedCategoryId
-        : true;
-
-      // 3. Search term
-      const term = search.toLowerCase().trim();
-      if (!term) return matchesFilter && matchesCategory;
-
-      const productKeywords = Array.isArray(product.keywords)
-        ? product.keywords
-            .map((k) => k.keyword?.toLowerCase() || "")
-            .filter(Boolean)
-        : [];
-
-      const companyCode =
-        getCompanyCode(product.metaDetails)?.toLowerCase() || "";
-      const categoryName = getCategoryName(product.categoryId).toLowerCase();
-      const parentCategoryName = getParentCategoryName(
-        product.categoryId
-      ).toLowerCase();
-
-      const searchWords = term.split(/\s+/).filter(Boolean);
-
-      const matchesSearch =
-        searchWords.length === 0 ||
-        searchWords.some(
-          (word) =>
-            product.name?.toLowerCase().includes(word) ||
-            product.product_code?.toLowerCase().includes(word) ||
-            companyCode.includes(word) ||
-            categoryName.includes(word) ||
-            parentCategoryName.includes(word) ||
-            productKeywords.some((kw) => kw.includes(word))
-        );
-      return matchesFilter && matchesCategory && matchesSearch;
-    });
-  }, [products, brandId, bpcId, search, selectedCategoryId]);
-  const formattedTableData = useMemo(
-    () =>
-      filteredProducts.map((product) => ({
-        ...product,
-        Name: product.name || "N/A",
-        Brand: getBrandsName(product.brandId),
-        Price: formatPrice(product.meta, product.metaDetails),
-        Stock:
-          product.quantity > 0
-            ? `${product.quantity} in stock`
-            : "Out of Stock",
-        company_code: getCompanyCode(product.metaDetails),
-      })),
-    [filteredProducts]
-  );
-
-  const offset = (currentPage - 1) * itemsPerPage;
-  const currentItems = formattedTableData.slice(offset, offset + itemsPerPage);
+    return entry ? String(entry.value).trim() : "N/A";
+  };
 
   // ──────────────────────────────────────────────────────
   // HANDLERS
   // ──────────────────────────────────────────────────────
-  const handleDeleteClick = (product) => {
-    setSelectedProduct(product);
-    setDeleteModalVisible(true);
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+    setCurrentPage(1);
   };
 
-  const handleConfirmDelete = async () => {
-    if (!selectedProduct?.productId)
-      return message.error("No product selected");
+  const handlePageChange = (page) => setCurrentPage(page);
 
-    try {
-      await deleteProduct(selectedProduct.productId).unwrap();
-      if (currentItems.length === 1 && currentPage > 1)
-        setCurrentPage(currentPage - 1);
-    } catch (e) {
-      message.error(e.data?.message || "Delete failed");
-    } finally {
-      setDeleteModalVisible(false);
-      setSelectedProduct(null);
+  const handleAddToCart = async (product) => {
+    if (!userId) return message.error("Please log in");
+
+    const price = getPrice(product.metaDetails, product.meta);
+    if (price === "N/A") {
+      return message.error("Price not available");
     }
-  };
 
-  const handleToggleFeatured = async (product) => {
-    if (!userId) return message.error("User not logged in");
-    const productId = product.productId;
-    setFeaturedLoadingStates((s) => ({ ...s, [productId]: true }));
+    setCartLoadingStates((prev) => ({ ...prev, [product.productId]: true }));
     try {
-      await updateProductFeatured({
-        productId,
-        isFeatured: !product.isFeatured,
+      await addProductToCart({
+        userId,
+        productId: product.productId,
+        quantity: 1,
       }).unwrap();
-    } catch (e) {
-      message.error(e.data?.message || "Failed");
-    } finally {
-      setFeaturedLoadingStates((s) => ({ ...s, [productId]: false }));
-    }
-  };
-
-  const handleAddToCart = async ({ productId, quantity = 1, productName }) => {
-    if (!userId) return message.error("User not logged in");
-    if (quantity < 1) return message.error("Invalid quantity");
-
-    const name =
-      productName ||
-      products.find((p) => p.productId === productId)?.name ||
-      "Product";
-
-    setCartLoadingStates((s) => ({ ...s, [productId]: true }));
-
-    try {
-      await addProductToCart({ userId, productId, quantity }).unwrap();
-      message.success(`${name} added to cart successfully!`);
+      message.success("Added to cart");
       refetchCart();
     } catch (e) {
-      message.error(e.data?.message || "Failed to add to cart");
+      message.error(e?.data?.message || "Failed to add to cart");
     } finally {
-      setCartLoadingStates((s) => ({ ...s, [productId]: false }));
+      setCartLoadingStates((prev) => ({ ...prev, [product.productId]: false }));
     }
   };
+
   const openStockModal = (product, action = "add") => {
     setSelectedProduct(product);
     setStockAction(action);
@@ -318,13 +239,22 @@ const ProductsList = () => {
     setHistoryModalOpen(true);
   };
 
-  const handleSearchChange = (e) => {
-    setSearch(e.target.value);
-    setCurrentPage(1);
+  const handleDeleteClick = (product) => {
+    setSelectedProduct(product);
+    setDeleteModalVisible(true);
   };
 
-  const handleCartClick = () => {
-    document.getElementById("cart-modal")?.click();
+  const handleConfirmDelete = async () => {
+    if (!selectedProduct?.productId) return;
+    try {
+      await deleteProduct(selectedProduct.productId).unwrap();
+      message.success("Product deleted");
+    } catch (e) {
+      message.error(e?.data?.message || "Delete failed");
+    } finally {
+      setDeleteModalVisible(false);
+      setSelectedProduct(null);
+    }
   };
 
   const menu = (product) => (
@@ -366,16 +296,13 @@ const ProductsList = () => {
       title: "Image",
       dataIndex: "images",
       key: "images",
-      render: (images) => {
-        const parsed = parseImages(images);
-        return (
-          <img
-            src={parsed[0] || pos}
-            alt="Product"
-            style={{ width: 50, height: 50, objectFit: "cover" }}
-          />
-        );
-      },
+      render: (images) => (
+        <img
+          src={parseImages(images)[0] || pos}
+          alt="Product"
+          style={{ width: 50, height: 50, objectFit: "cover" }}
+        />
+      ),
       width: 80,
     },
     {
@@ -388,8 +315,8 @@ const ProductsList = () => {
     },
     {
       title: "Product Code",
-      dataIndex: "company_code",
       key: "company_code",
+      render: (_, record) => getCompanyCode(record.metaDetails, record.meta),
     },
     {
       title: "Brand",
@@ -399,9 +326,8 @@ const ProductsList = () => {
     },
     {
       title: "Price",
-      dataIndex: "meta",
       key: "price",
-      render: (_, record) => formatPrice(record.meta, record.metaDetails),
+      render: (_, record) => getPrice(record.metaDetails, record.meta),
     },
     {
       title: "Stock",
@@ -413,28 +339,22 @@ const ProductsList = () => {
       title: "Actions",
       key: "actions",
       render: (_, record) => {
-        const sellingPriceEntry = Array.isArray(record.metaDetails)
-          ? record.metaDetails.find((d) => d.slug === "sellingPrice")
-          : null;
-        const price = sellingPriceEntry
-          ? parseFloat(sellingPriceEntry.value)
-          : null;
+        const price = getPrice(record.metaDetails, record.meta);
+        const priceValid = price !== "N/A";
 
         return (
           <div style={{ display: "flex", gap: 8 }}>
-            {/* ADD TO CART */}
             <PermissionGate api="write" module="cart">
               <Tooltip
                 title={
                   record.quantity <= 0
                     ? "Out of stock"
-                    : !price || isNaN(price)
-                    ? "Invalid price"
+                    : !priceValid
+                    ? "Price not available"
                     : "Add to cart"
                 }
               >
                 <Button
-                  className="cart-button"
                   icon={
                     cartLoadingStates[record.productId] ? (
                       <Spin size="small" />
@@ -442,17 +362,11 @@ const ProductsList = () => {
                       <ShoppingCartOutlined />
                     )
                   }
-                  onClick={() =>
-                    handleAddToCart({
-                      productId: record.productId,
-                      quantity: 1, // ← Explicitly add 1
-                    })
-                  }
+                  onClick={() => handleAddToCart(record)}
                   disabled={
                     cartLoadingStates[record.productId] ||
                     record.quantity <= 0 ||
-                    !price ||
-                    isNaN(price)
+                    !priceValid
                   }
                 >
                   Add to Cart
@@ -460,7 +374,6 @@ const ProductsList = () => {
               </Tooltip>
             </PermissionGate>
 
-            {/* THREE-DOT MENU */}
             <PermissionGate api="edit|delete" module="products">
               <Dropdown overlay={menu(record)} trigger={["click"]}>
                 <Button type="text" icon={<MoreOutlined />} />
@@ -471,32 +384,38 @@ const ProductsList = () => {
       },
     },
   ];
-  const breadcrumbItems = brandId
+
+  // Title & Breadcrumbs
+  const pageTitle = isBrandView
+    ? getBrandsName(id)
+    : isBpcView
+    ? bpcData?.name || "Category Group"
+    : isCategoryView
+    ? getCategoryName(id)
+    : "All Products";
+
+  const breadcrumbItems = isBrandView
     ? [
         { label: "Home", url: "/" },
-        { label: "Brands", url: "/category-selector" },
-        { label: "Products" },
+        { label: "Brands", url: "/brands" },
+        { label: pageTitle },
       ]
-    : bpcId
+    : isBpcView
     ? [
         { label: "Home", url: "/" },
-        { label: "Categories", url: "/category-selector" },
-        {
-          label: bpcData?.name || "Category",
-          url: `/brand-parent-categories/${bpcId}`,
-        },
-        { label: "Products" },
+        { label: "Categories", url: "/categories" },
+        { label: pageTitle },
+      ]
+    : isCategoryView
+    ? [
+        { label: "Home", url: "/" },
+        { label: "Categories", url: "/categories" },
+        { label: pageTitle },
       ]
     : [{ label: "Home", url: "/" }, { label: "Products" }];
 
-  const pageTitle = brandId
-    ? "Products"
-    : bpcId
-    ? `Products in ${bpcData?.name || "Category"}`
-    : "All Products";
-
   // ──────────────────────────────────────────────────────
-  // RENDER (No local loading UI)
+  // RENDER
   // ──────────────────────────────────────────────────────
   return (
     <div className="page-wrapper">
@@ -504,90 +423,53 @@ const ProductsList = () => {
         <Breadcrumb items={breadcrumbItems} />
         <PageHeader
           title={pageTitle}
-          subtitle="Explore our latest collection"
-          tableData={formattedTableData}
+          subtitle="Explore our product collection"
           extra={{
             viewMode,
-            onViewToggle: (checked) => setViewMode(checked ? "card" : "list"),
+            onViewToggle: (c) => setViewMode(c ? "card" : "list"),
             showViewToggle: true,
             cartItems: cartData?.cart?.items || [],
-            onCartClick: handleCartClick,
           }}
-          exportOptions={{ pdf: false, excel: false }}
         />
 
-        <div className="filter-bar bg-white p-3 shadow-sm">
-          <Form layout="inline" form={form} className="filter-form">
-            <Form.Item className="filter-item">
+        <div className="filter-bar bg-white p-3 shadow-sm mb-4">
+          <Form layout="inline">
+            <Form.Item>
               <Input
                 prefix={<SearchOutlined />}
                 placeholder="Search products..."
-                allowClear
-                size="large"
+                value={search}
                 onChange={handleSearchChange}
-              />
-            </Form.Item>
-
-            <Form.Item className="filter-item">
-              <Select
-                style={{ width: 220 }}
-                placeholder="Filter by category"
                 allowClear
                 size="large"
-                options={categoryOptions}
-                onChange={(value) => {
-                  setSelectedCategoryId(value || null);
-                  setCurrentPage(1);
-                }}
-                value={selectedCategoryId}
-                showSearch
-                filterOption={(input, option) =>
-                  (option?.label ?? "")
-                    .toLowerCase()
-                    .includes(input.toLowerCase())
-                }
-                optionFilterProp="label"
+                style={{ width: 300 }}
               />
             </Form.Item>
           </Form>
         </div>
 
-        {filteredProducts.length === 0 ? (
-          <div className="empty-container text-center py-5">
-            <Empty
-              description={
-                brandId
-                  ? `No products found for brand ${getBrandsName(brandId)}.`
-                  : bpcId
-                  ? `No products found for category ${
-                      bpcData?.name || "this category"
-                    }.`
-                  : "No products available."
-              }
-            />
+        {isLoading ? (
+          <div className="text-center py-5">
+            <Spin size="large" />
           </div>
-        ) : viewMode === "card" ? (
-          <div className="products-section">
-            <div
-              className="card-view-container"
-              style={{
-                background: "#fff",
-                borderRadius: "8px",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                border: "1px solid #f0f0f0",
-                padding: "16px",
-              }}
-            >
+        ) : error ? (
+          <div className="alert alert-danger">
+            Error: {error?.data?.message || "Failed to load products"}
+          </div>
+        ) : products.length === 0 ? (
+          <Empty description="No products found" />
+        ) : (
+          <>
+            {viewMode === "card" ? (
               <div
                 className="products-grid"
                 style={{
                   display: "grid",
                   gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-                  gap: "16px",
-                  marginBottom: "16px",
+                  gap: "20px",
                 }}
               >
-                {currentItems.map((product) => (
+                {products.map((product) => (
                   <ProductCard
                     key={product.productId}
                     product={product}
@@ -599,128 +481,49 @@ const ProductsList = () => {
                   />
                 ))}
               </div>
-
-              {/* Unified Pagination */}
-              <div
-                style={{
-                  paddingTop: "16px",
-                  borderTop: "1px solid #f0f0f0",
-                  backgroundColor: "#fafafa",
-                  borderRadius: "0 0 8px 8px",
-                  margin: "0 -16px -16px -16px",
-                  padding: "16px 24px",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                  gap: "12px",
-                }}
-              >
-                <div style={{ color: "#666", fontSize: "14px" }}>
-                  Showing {offset + 1}–
-                  {Math.min(offset + itemsPerPage, filteredProducts.length)} of{" "}
-                  {filteredProducts.length}
-                </div>
-
-                <Pagination
-                  current={currentPage}
-                  total={filteredProducts.length}
-                  pageSize={itemsPerPage}
-                  onChange={setCurrentPage}
-                  showSizeChanger={false}
-                  showQuickJumper
-                  size="default"
-                />
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="products-section">
-            <div
-              className="table-container"
-              style={{
-                background: "#fff",
-                borderRadius: "8px",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                overflow: "hidden",
-                border: "1px solid #f0f0f0",
-              }}
-            >
-              {/* TABLE */}
+            ) : (
               <Table
                 columns={columns}
-                dataSource={currentItems}
+                dataSource={products}
                 rowKey="productId"
                 pagination={false}
-                scroll={{ x: true }}
-                style={{ borderBottom: "none" }}
+                loading={isFetching}
               />
+            )}
 
-              {/* PAGINATION - INSIDE container */}
-              <div
-                style={{
-                  padding: "16px 24px",
-                  borderTop: "1px solid #f0f0f0",
-                  backgroundColor: "#fafafa",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                  gap: "12px",
-                }}
-              >
-                {/* Optional: Show item count */}
-                <div style={{ color: "#666", fontSize: "14px" }}>
-                  Showing {offset + 1}–
-                  {Math.min(offset + itemsPerPage, filteredProducts.length)} of{" "}
-                  {filteredProducts.length} products
-                </div>
-
-                {/* Pagination */}
-                <Pagination
-                  current={currentPage}
-                  total={filteredProducts.length}
-                  pageSize={itemsPerPage}
-                  onChange={setCurrentPage}
-                  showSizeChanger={false}
-                  showQuickJumper
-                  size="default"
-                  style={{ margin: 0 }}
-                />
+            <div className="mt-4 d-flex justify-content-between align-items-center">
+              <div className="text-muted">
+                Showing {(currentPage - 1) * pageSize + 1}–
+                {Math.min(currentPage * pageSize, pagination.total)} of{" "}
+                {pagination.total}
               </div>
+              <Pagination
+                current={currentPage}
+                total={pagination.total}
+                pageSize={pageSize}
+                onChange={handlePageChange}
+                showSizeChanger={false}
+              />
             </div>
-          </div>
+          </>
         )}
       </div>
-
-      {/* Hidden cart trigger */}
-      <button
-        id="cart-modal"
-        data-bs-toggle="modal"
-        data-bs-target="#cartModal"
-        style={{ display: "none" }}
-      />
 
       {/* Modals */}
       <DeleteModal
         isVisible={isDeleteModalVisible}
         onConfirm={handleConfirmDelete}
-        onCancel={() => {
-          setDeleteModalVisible(false);
-          setSelectedProduct(null);
-        }}
+        onCancel={() => setDeleteModalVisible(false)}
         item={selectedProduct}
         itemType="Product"
         isLoading={isDeleting}
       />
-
       <StockModal
         open={stockModalOpen}
         onCancel={() => setStockModalOpen(false)}
         product={selectedProduct}
         action={stockAction}
       />
-
       <HistoryModalAntD
         open={historyModalOpen}
         onCancel={() => setHistoryModalOpen(false)}

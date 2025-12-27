@@ -13,7 +13,7 @@ const setupDB = require("./utils/db");
 const keys = require("./config/keys");
 const { initSocket } = require("./controller/notificationController");
 const CachedPermission = require("./models/cachedPermission");
-
+const apiLimiter = require("./middleware/rateLimit");
 // ------------------- Route Imports -------------------
 const routes = {
   auth: require("./routes/auth"),
@@ -102,6 +102,16 @@ app.use(
     hsts: { maxAge: 31536000, includeSubDomains: true },
   })
 );
+app.disable("x-powered-by");
+app.use((req, res, next) => {
+  const blockedPaths = ["/wp-admin", "/wp-login.php", "/phpmyadmin", "/.env"];
+
+  if (blockedPaths.some((p) => req.url.includes(p))) {
+    return res.status(444).end(); // nginx-style drop
+  }
+
+  next();
+});
 
 // ------------------- NON-BLOCKING API LOGGER (FIRE & FORGET) -------------------
 app.use(require("./middleware/logger")); // CRITICAL: Updated logger
@@ -119,6 +129,7 @@ app.use((req, res, next) => {
 });
 
 // ------------------- Route Mounting -------------------
+app.use("/api", apiLimiter);
 app.use("/api/auth", routes.auth);
 app.use("/api/attendance", routes.attendance);
 app.use("/api/user", routes.user);

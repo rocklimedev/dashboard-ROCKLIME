@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
 import {
@@ -89,9 +89,17 @@ const CreateProduct = ({
   const { data: brandParentCategories = [] } =
     useGetBrandParentCategoriesQuery();
   const { data: productMetas = [] } = useGetAllProductMetaQuery();
-  const { data: allProducts = [] } = useGetAllProductsQuery(undefined, {
-    skip: !isEditMode,
-  });
+  const { data: allProductsResponse, isLoading: isAllProductsLoading } =
+    useGetAllProductsQuery(undefined, {
+      skip: !isEditMode,
+    });
+
+  // Extract the actual array safely
+  const allProducts = useMemo(() => {
+    return Array.isArray(allProductsResponse?.data)
+      ? allProductsResponse.data
+      : [];
+  }, [allProductsResponse?.data]);
   const { data: keywordList = [] } = useGetAllKeywordsQuery();
   const allKeywords = Array.isArray(keywordList) ? keywordList : [];
   const [addKeywordsToProduct] = useAddKeywordsToProductMutation();

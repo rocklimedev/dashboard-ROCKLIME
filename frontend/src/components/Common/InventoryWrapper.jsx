@@ -11,32 +11,27 @@ import {
   message,
   Modal,
   Tag,
-  Badge,
-  Pagination,
   Empty,
   Form,
   Row,
-  Grid,
   Col,
+  Grid,
+  Pagination, // ← Added
 } from "antd";
 import {
   SearchOutlined,
   PlusOutlined,
   MinusOutlined,
   HistoryOutlined,
-  SortAscendingOutlined,
-  SortDescendingOutlined,
   FileTextOutlined,
   DownloadOutlined,
-  MenuOutlined,
 } from "@ant-design/icons";
-import StockModal from "../Common/StockModal"; // Adjust path as neededs
+import StockModal from "../Common/StockModal";
 import {
   useGetAllProductsQuery,
   useAddStockMutation,
   useRemoveStockMutation,
 } from "../../api/productApi";
-
 import PageHeader from "./PageHeader";
 import pos from "../../assets/img/default.png";
 import HistoryModalAntD from "./HistoryModal";
@@ -44,23 +39,48 @@ import ReportBuilderModal from "./ReportBuilderModal";
 import { generatePDF, generateExcel } from "../../data/helpers";
 
 const { TabPane } = Tabs;
-const { Text, Title } = Typography;
+const { Text } = Typography;
 
 const InventoryWrapper = () => {
   const navigate = useNavigate();
 
-  const { data: productsData, error } = useGetAllProductsQuery();
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50); // Match backend default if possible
+
+  // Pass pagination (and optionally search) to the query
+  const {
+    data: response,
+    error,
+    isLoading,
+    isFetching,
+  } = useGetAllProductsQuery({
+    page: currentPage,
+    limit: pageSize,
+    // search: search || undefined, // ← Uncomment if backend supports server-side search
+  });
+
   const [addStock] = useAddStockMutation();
   const [removeStock] = useRemoveStockMutation();
 
+  const products = useMemo(
+    () => (Array.isArray(response?.data) ? response?.data : []),
+    [response?.data]
+  );
+
+  const pagination = response?.pagination || {
+    total: 0,
+    page: 1,
+    limit: 50,
+    totalPages: 0,
+  };
+
   // UI States
-  const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState("all");
   const [search, setSearch] = useState("");
   const [lowStockThreshold, setLowStockThreshold] = useState(10);
   const [maxStockFilter, setMaxStockFilter] = useState(null);
   const [priceRange, setPriceRange] = useState([null, null]);
-  const [priceSort, setPriceSort] = useState(null);
 
   // Modals
   const [stockModalOpen, setStockModalOpen] = useState(false);
@@ -72,13 +92,9 @@ const InventoryWrapper = () => {
   const [generatingMonthly, setGeneratingMonthly] = useState(false);
 
   const [stockForm] = Form.useForm();
-  const itemsPerPage = 30;
-
-  // Responsive breakpoint (optional – helps fine-tune)
-  const screens = Grid.useBreakpoint(); // AntD v5+ has this; if v4, remove or use media queries
+  const screens = Grid.useBreakpoint();
   const isMobile = !screens.md;
 
-  // ──────── Helpers ────────
   const parseImages = (images) => {
     try {
       if (typeof images === "string") {
@@ -107,12 +123,7 @@ const InventoryWrapper = () => {
     return entry ? Number(entry.value) : null;
   };
 
-  // ──────── Data Preparation ────────
-  const products = useMemo(
-    () => (Array.isArray(productsData) ? productsData : []),
-    [productsData]
-  );
-
+  // Client-side filtering (only on current page data)
   const filteredProducts = useMemo(() => {
     const term = search.toLowerCase();
     return products.filter((p) => {
@@ -134,55 +145,36 @@ const InventoryWrapper = () => {
     });
   }, [products, search, maxStockFilter, priceRange]);
 
+  // Tab-based filtering
   const tabFilteredProducts = useMemo(() => {
-    switch (activeTab) {
-      case "in-stock":
-        return filteredProducts.filter((p) => p.quantity > 0);
-      case "out-of-stock":
-        return filteredProducts.filter((p) => p.quantity === 0);
-      case "low-stock":
-        return filteredProducts.filter(
-          (p) => p.quantity > 0 && p.quantity <= lowStockThreshold
-        );
-      default:
-        return filteredProducts;
-    }
+    if (activeTab === "in-stock")
+      return filteredProducts.filter((p) => p.quantity > 0);
+    if (activeTab === "low-stock")
+      return filteredProducts.filter(
+        (p) => p.quantity > 0 && p.quantity <= lowStockThreshold
+      );
+    if (activeTab === "out-of-stock")
+      return filteredProducts.filter((p) => p.quantity === 0);
+    return filteredProducts; // "all"
   }, [filteredProducts, activeTab, lowStockThreshold]);
 
-  const sortedProducts = useMemo(() => {
-    if (!priceSort) return tabFilteredProducts;
-    return [...tabFilteredProducts].sort((a, b) => {
-      const priceA = getSellingPrice(a.metaDetails) ?? -Infinity;
-      const priceB = getSellingPrice(b.metaDetails) ?? -Infinity;
-      return priceSort === "asc" ? priceA - priceB : priceB - priceA;
-    });
-  }, [tabFilteredProducts, priceSort]);
-
-  const currentItems = sortedProducts.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-  const totalItems = sortedProducts.length;
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [activeTab, search, maxStockFilter, priceRange, priceSort]);
-
+  // Approximate counts (based on current page only)
   const counts = useMemo(() => {
-    const inStock = products.filter((p) => p.quantity > 0).length;
-    const outStock = products.filter((p) => p.quantity === 0).length;
-    const lowStock = products.filter(
-      (p) => p.quantity > 0 && p.quantity <= lowStockThreshold
-    ).length;
-    return { all: products.length, inStock, outStock, lowStock };
-  }, [products, lowStockThreshold]);
+    return {
+      all: pagination.total,
+      inStock: products.filter((p) => p.quantity > 0).length,
+      lowStock: products.filter(
+        (p) => p.quantity > 0 && p.quantity <= lowStockThreshold
+      ).length,
+      outStock: products.filter((p) => p.quantity === 0).length,
+    };
+  }, [products, pagination.total, lowStockThreshold]);
 
-  // ──────── Report & Actions ────────
+  // Report handlers
   const generateCustomReport = (format) => {
     const selectedData = products.filter((p) =>
       selectedReportProducts.includes(p.productId)
     );
-
     const reportData = selectedData.map((p) => ({
       Name: p.name || "Unnamed Product",
       "Product Code": p.product_code || "—",
@@ -198,11 +190,9 @@ const InventoryWrapper = () => {
           ? "Low Stock"
           : "In Stock",
     }));
-
     const title = `Custom Inventory Report - ${new Date().toLocaleDateString(
       "en-IN"
     )}`;
-
     format === "pdf"
       ? generatePDF(reportData, title)
       : generateExcel(reportData, title);
@@ -292,7 +282,7 @@ const InventoryWrapper = () => {
       setSelectedProduct(null);
     }
   };
-  // ──────── Responsive Columns (hide less critical on mobile) ────────
+
   const columns = [
     {
       title: "Image",
@@ -383,14 +373,14 @@ const InventoryWrapper = () => {
     },
   ];
 
-  if (!productsData && !error) return null;
-  if (error) {
-    return (
-      <div style={{ padding: 20 }}>
-        <Empty description="Failed to load products" />
-      </div>
-    );
-  }
+  // Handle page change
+  const handlePageChange = (page, size) => {
+    setCurrentPage(page);
+    setPageSize(size);
+  };
+
+  if (isLoading) return <div>Loading products...</div>;
+  if (error) return <Empty description="Failed to load products" />;
 
   return (
     <div className="page-wrapper">
@@ -401,7 +391,6 @@ const InventoryWrapper = () => {
           exportOptions={{ pdf: false, excel: false }}
         />
 
-        {/* Responsive Filters */}
         <div className="bg-white p-4 rounded-lg shadow-sm mb-4">
           <Row gutter={[16, 16]} align="middle">
             <Col xs={24} md={12} lg={8}>
@@ -506,7 +495,6 @@ const InventoryWrapper = () => {
           </div>
         </div>
 
-        {/* Tabs */}
         <Tabs
           activeKey={activeTab}
           onChange={setActiveTab}
@@ -519,35 +507,41 @@ const InventoryWrapper = () => {
           <TabPane tab={`Out (${counts.outStock})`} key="out-of-stock" />
         </Tabs>
 
-        {/* Table */}
-        {totalItems === 0 ? (
+        {tabFilteredProducts.length === 0 ? (
           <Empty description="No products found" />
         ) : (
           <>
-            <div style={{ overflowX: "auto", marginBottom: 16 }}>
+            <div style={{ overflowX: "auto" }}>
               <Table
                 columns={columns}
-                dataSource={currentItems}
+                dataSource={tabFilteredProducts}
                 rowKey="productId"
                 pagination={false}
                 bordered
-                size={isMobile ? "small" : "middle"}
+                loading={isFetching}
               />
             </div>
 
-            <Pagination
-              current={currentPage}
-              total={totalItems}
-              pageSize={itemsPerPage}
-              onChange={setCurrentPage}
-              showTotal={(total) => `Total ${total} products`}
-              responsive
-              style={{ textAlign: "center", marginTop: 16 }}
-            />
+            {/* Pagination Controls */}
+            <div style={{ marginTop: 24, textAlign: "right" }}>
+              <Pagination
+                current={currentPage}
+                pageSize={pageSize}
+                total={pagination.total}
+                onChange={handlePageChange}
+                onShowSizeChange={handlePageChange}
+                showSizeChanger
+                pageSizeOptions={["10", "25", "50", "100"]}
+                showTotal={(total, range) =>
+                  `${range[0]}-${range[1]} of ${total} products`
+                }
+              />
+            </div>
           </>
         )}
       </div>
 
+      {/* Modals remain unchanged */}
       <ReportBuilderModal
         open={reportModalOpen}
         onClose={() => setReportModalOpen(false)}
@@ -567,7 +561,7 @@ const InventoryWrapper = () => {
           setSelectedProduct(null);
         }}
         product={selectedProduct}
-        action={stockAction} // "add" or "remove"
+        action={stockAction}
       />
       <HistoryModalAntD
         open={historyModalOpen}

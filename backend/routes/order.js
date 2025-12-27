@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const orderController = require("../controller/orderController");
 const checkPermission = require("../middleware/permission");
+const { auth } = require("../middleware/auth");
 const multer = require("multer");
 require("dotenv").config();
 
@@ -35,7 +36,7 @@ router.post("/comments", orderController.addComment);
 router.get("/comments", orderController.getComments);
 router.delete("/comments/:commentId", orderController.deleteComment);
 router.post("/delete-comment", orderController.deleteCommentsByResource);
-
+router.get("/:id/download-invoice", auth, orderController.downloadInvoice);
 router.post("/create", orderController.createOrder);
 router.get("/all", orderController.getAllOrders);
 router.get("/:id", orderController.getOrderDetails);
