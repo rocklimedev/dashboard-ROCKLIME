@@ -73,10 +73,9 @@ const Profile = () => {
   }, [addressesData, userId]);
 
   const myQuotations = useMemo(
-    () => quotationsData?.filter((q) => q.createdBy === userId) || [],
+    () => quotationsData?.data?.filter((q) => q.createdBy === userId) || [],
     [quotationsData, userId]
   );
-
   const myOrders = useMemo(
     () =>
       ordersData?.orders?.filter(
@@ -84,12 +83,9 @@ const Profile = () => {
       ) || [],
     [ordersData, userId]
   );
-
   const myPOs = useMemo(
     () =>
-      purchaseOrdersData?.purchaseOrders?.filter(
-        (po) => po.createdBy === userId
-      ) || [],
+      purchaseOrdersData?.data?.filter((po) => po.createdBy === userId) || [],
     [purchaseOrdersData, userId]
   );
 
@@ -262,9 +258,8 @@ const Profile = () => {
                 <Col xs={12} md={6}>
                   <Statistic
                     title="Total Quotations"
-                    value={myQuotations.length}
+                    value={myQuotations.length} // This will now work correctly
                     prefix={<FileTextOutlined />}
-                    valueStyle={{ color: "#1890ff" }}
                   />
                 </Col>
                 <Col xs={12} md={6}>
