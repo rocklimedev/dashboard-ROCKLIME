@@ -1,258 +1,282 @@
-import React, { useState, useMemo, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useCallback } from "react";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import {
-  Table,
-  Tabs,
-  Input,
-  InputNumber,
-  Button,
-  Space,
-  Typography,
-  message,
-  Modal,
-  Tag,
-  Empty,
   Form,
-  Row,
-  Col,
-  Grid,
-  Pagination, // ← Added
+  Input,
+  Empty,
+  Table,
+  Button,
+  Tooltip,
+  Dropdown,
+  Menu,
+  Spin,
+  Pagination,
 } from "antd";
 import {
   SearchOutlined,
-  PlusOutlined,
-  MinusOutlined,
-  HistoryOutlined,
-  FileTextOutlined,
-  DownloadOutlined,
+  ShoppingCartOutlined,
+  MoreOutlined,
 } from "@ant-design/icons";
-import StockModal from "../Common/StockModal";
 import {
   useGetAllProductsQuery,
-  useAddStockMutation,
-  useRemoveStockMutation,
+  useGetAllProductsByCategoryQuery,
+  useGetProductsByBrandQuery,
+  useDeleteProductMutation,
 } from "../../api/productApi";
-import PageHeader from "./PageHeader";
+import { useGetAllBrandsQuery } from "../../api/brandsApi";
+import { useGetBrandParentCategoryByIdQuery } from "../../api/brandParentCategoryApi";
+import { useGetAllCategoriesQuery } from "../../api/categoryApi";
+import { useGetProfileQuery } from "../../api/userApi";
+import {
+  useAddProductToCartMutation,
+  useGetCartQuery,
+} from "../../api/cartApi";
+import { message } from "antd";
+import "./productdetails.css";
+import DeleteModal from "../Common/DeleteModal";
+import HistoryModalAntD from "../Common/HistoryModal";
+import StockModal from "../Common/StockModal";
+import ProductCard from "./ProductCard";
+import PageHeader from "../Common/PageHeader";
+import Breadcrumb from "./Breadcrumb";
 import pos from "../../assets/img/default.png";
-import HistoryModalAntD from "./HistoryModal";
-import ReportBuilderModal from "./ReportBuilderModal";
-import { generatePDF, generateExcel } from "../../data/helpers";
+import PermissionGate from "../../context/PermissionGate";
 
-const { TabPane } = Tabs;
-const { Text } = Typography;
+const ProductsList = () => {
+  const { id, bpcId } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-const InventoryWrapper = () => {
-  const navigate = useNavigate();
+  // Read from URL params (with defaults)
+  const urlPage = parseInt(searchParams.get("page") || "1", 10);
+  const urlSearch = searchParams.get("search") || "";
 
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(50); // Match backend default if possible
+  const [currentPage, setCurrentPage] = useState(urlPage);
+  const [search, setSearch] = useState(urlSearch);
+  const [viewMode, setViewMode] = useState("list");
+  const [cartLoadingStates, setCartLoadingStates] = useState({});
+  const [isDeleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [stockModalOpen, setStockModalOpen] = useState(false);
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const [stockAction, setStockAction] = useState("add");
 
-  // Pass pagination (and optionally search) to the query
-  const {
-    data: response,
-    error,
-    isLoading,
-    isFetching,
-  } = useGetAllProductsQuery({
-    page: currentPage,
-    limit: pageSize,
-    // search: search || undefined, // ← Uncomment if backend supports server-side search
-  });
+  const pageSize = 50;
 
-  const [addStock] = useAddStockMutation();
-  const [removeStock] = useRemoveStockMutation();
+  // Sync internal state with URL on mount or when URL changes (e.g., back button)
+  useEffect(() => {
+    const pageFromUrl = parseInt(searchParams.get("page") || "1", 10);
+    const searchFromUrl = searchParams.get("search") || "";
 
-  const products = useMemo(
-    () => (Array.isArray(response?.data) ? response?.data : []),
-    [response?.data]
+    setCurrentPage(pageFromUrl);
+    setSearch(searchFromUrl);
+  }, [searchParams]);
+
+  // Update URL when page or search changes
+  const updateSearchParams = useCallback(
+    (newPage, newSearch) => {
+      setSearchParams(
+        (prev) => {
+          const params = new URLSearchParams(prev);
+          if (newPage !== 1) {
+            params.set("page", newPage);
+          } else {
+            params.delete("page");
+          }
+          if (newSearch) {
+            params.set("search", newSearch);
+          } else {
+            params.delete("search");
+          }
+          return params;
+        },
+        { replace: true }
+      );
+    },
+    [setSearchParams]
   );
 
-  const pagination = response?.pagination || {
+  // Handlers
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    updateSearchParams(page, search);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearch(value);
+    setCurrentPage(1); // Reset to page 1 on new search
+    updateSearchParams(1, value);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // View type detection
+  const isBrandView = !!id && !bpcId;
+  const isBpcView = !!bpcId;
+  const isCategoryView = !!id && !isBrandView && !isBpcView;
+
+  // Data fetching with current page & search
+  const brandQuery = useGetProductsByBrandQuery(
+    {
+      brandId: id || "",
+      page: currentPage,
+      limit: pageSize,
+      search: search || undefined,
+    },
+    { skip: !isBrandView }
+  );
+
+  const categoryQuery = useGetAllProductsByCategoryQuery(
+    {
+      categoryId: id || "",
+      page: currentPage,
+      limit: pageSize,
+      search: search || undefined,
+    },
+    { skip: !isCategoryView }
+  );
+
+  const bpcQuery = useGetAllProductsQuery({
+    page: currentPage,
+    limit: pageSize,
+    search: search || undefined,
+  });
+
+  const allProductsQuery = useGetAllProductsQuery({
+    page: currentPage,
+    limit: pageSize,
+    search: search || undefined,
+  });
+
+  const queryResult = isBrandView
+    ? brandQuery
+    : isCategoryView
+    ? categoryQuery
+    : isBpcView
+    ? bpcQuery
+    : allProductsQuery;
+
+  const { data: productsResponse, isLoading, isFetching, error } = queryResult;
+
+  const products = productsResponse?.data || [];
+  const pagination = productsResponse?.pagination || {
     total: 0,
-    page: 1,
-    limit: 50,
+    page: currentPage,
+    limit: pageSize,
     totalPages: 0,
   };
 
-  // UI States
-  const [activeTab, setActiveTab] = useState("all");
-  const [search, setSearch] = useState("");
-  const [lowStockThreshold, setLowStockThreshold] = useState(10);
-  const [maxStockFilter, setMaxStockFilter] = useState(null);
-  const [priceRange, setPriceRange] = useState([null, null]);
+  // Supporting queries (unchanged)
+  const { data: brandsData } = useGetAllBrandsQuery();
+  const { data: bpcData } = useGetBrandParentCategoryByIdQuery(bpcId, {
+    skip: !bpcId,
+  });
+  const { data: categoriesData } = useGetAllCategoriesQuery();
+  const { data: user } = useGetProfileQuery();
+  const userId = user?.user?.userId;
+  const { data: cartData, refetch: refetchCart } = useGetCartQuery(userId, {
+    skip: !userId,
+  });
 
-  // Modals
-  const [stockModalOpen, setStockModalOpen] = useState(false);
-  const [historyModalOpen, setHistoryModalOpen] = useState(false);
-  const [reportModalOpen, setReportModalOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState(null);
-  const [stockAction, setStockAction] = useState("add");
-  const [selectedReportProducts, setSelectedReportProducts] = useState([]);
-  const [generatingMonthly, setGeneratingMonthly] = useState(false);
+  const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation();
+  const [addProductToCart] = useAddProductToCartMutation();
 
-  const [stockForm] = Form.useForm();
-  const screens = Grid.useBreakpoint();
-  const isMobile = !screens.md;
+  // ──────────────────────────────────────────────────────
+  // HELPERS (unchanged)
+  // ──────────────────────────────────────────────────────
+  const getBrandsName = (brandId) =>
+    brandsData?.find((b) => b.id === brandId)?.brandName || "Not Branded";
+
+  const getCategoryName = (categoryId) =>
+    categoriesData?.categories?.find((c) => c.categoryId === categoryId)
+      ?.name || "Uncategorized";
 
   const parseImages = (images) => {
     try {
-      if (typeof images === "string") {
-        const parsed = JSON.parse(images);
-        return Array.isArray(parsed) && parsed.length > 0 ? parsed : [pos];
-      }
-      return Array.isArray(images) && images.length > 0 ? images : [pos];
+      if (typeof images === "string") return JSON.parse(images);
+      return Array.isArray(images) ? images : [pos];
     } catch {
       return [pos];
     }
   };
 
-  const getCompanyCode = (metaDetails) => {
-    if (!Array.isArray(metaDetails)) return "N/A";
-    const entry = metaDetails.find(
-      (d) => d.slug?.toLowerCase() === "companycode"
-    );
-    return entry ? String(entry.value || "N/A") : "N/A";
-  };
-
-  const getSellingPrice = (metaDetails) => {
-    if (!Array.isArray(metaDetails)) return null;
-    const entry = metaDetails.find(
+  const getPrice = (metaDetails = [], rawMeta = {}) => {
+    let entry = metaDetails.find(
       (d) => d.slug?.toLowerCase() === "sellingprice"
     );
-    return entry ? Number(entry.value) : null;
-  };
-
-  // Client-side filtering (only on current page data)
-  const filteredProducts = useMemo(() => {
-    const term = search.toLowerCase();
-    return products.filter((p) => {
-      const matchesSearch =
-        !term ||
-        p.name?.toLowerCase().includes(term) ||
-        p.product_code?.toLowerCase().includes(term) ||
-        getCompanyCode(p.metaDetails).toLowerCase().includes(term);
-
-      const matchesMaxStock =
-        maxStockFilter === null || p.quantity <= maxStockFilter;
-
-      const price = getSellingPrice(p.metaDetails);
-      const matchesPrice =
-        (priceRange[0] == null || price >= priceRange[0]) &&
-        (priceRange[1] == null || price <= priceRange[1]);
-
-      return matchesSearch && matchesMaxStock && matchesPrice;
-    });
-  }, [products, search, maxStockFilter, priceRange]);
-
-  // Tab-based filtering
-  const tabFilteredProducts = useMemo(() => {
-    if (activeTab === "in-stock")
-      return filteredProducts.filter((p) => p.quantity > 0);
-    if (activeTab === "low-stock")
-      return filteredProducts.filter(
-        (p) => p.quantity > 0 && p.quantity <= lowStockThreshold
-      );
-    if (activeTab === "out-of-stock")
-      return filteredProducts.filter((p) => p.quantity === 0);
-    return filteredProducts; // "all"
-  }, [filteredProducts, activeTab, lowStockThreshold]);
-
-  // Approximate counts (based on current page only)
-  const counts = useMemo(() => {
-    return {
-      all: pagination.total,
-      inStock: products.filter((p) => p.quantity > 0).length,
-      lowStock: products.filter(
-        (p) => p.quantity > 0 && p.quantity <= lowStockThreshold
-      ).length,
-      outStock: products.filter((p) => p.quantity === 0).length,
-    };
-  }, [products, pagination.total, lowStockThreshold]);
-
-  // Report handlers
-  const generateCustomReport = (format) => {
-    const selectedData = products.filter((p) =>
-      selectedReportProducts.includes(p.productId)
-    );
-    const reportData = selectedData.map((p) => ({
-      Name: p.name || "Unnamed Product",
-      "Product Code": p.product_code || "—",
-      "Company Code": getCompanyCode(p.metaDetails),
-      "Selling Price": getSellingPrice(p.metaDetails)
-        ? `₹${getSellingPrice(p.metaDetails).toLocaleString("en-IN")}`
-        : "—",
-      Stock: p.quantity,
-      Status:
-        p.quantity === 0
-          ? "Out of Stock"
-          : p.quantity <= lowStockThreshold
-          ? "Low Stock"
-          : "In Stock",
-    }));
-    const title = `Custom Inventory Report - ${new Date().toLocaleDateString(
-      "en-IN"
-    )}`;
-    format === "pdf"
-      ? generatePDF(reportData, title)
-      : generateExcel(reportData, title);
-    setReportModalOpen(false);
-    setSelectedReportProducts([]);
-    message.success("Report generated successfully!");
-  };
-
-  const generateMonthlyReport = () => {
-    setGeneratingMonthly(true);
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const monthName = now.toLocaleString("default", {
-      month: "long",
-      year: "numeric",
-    });
-
-    const updatedThisMonth = products.filter((p) => {
-      if (!p.updatedAt) return false;
-      return new Date(p.updatedAt) >= startOfMonth;
-    });
-
-    if (updatedThisMonth.length === 0) {
-      message.info("No products updated this month");
-      setGeneratingMonthly(false);
-      return;
+    if (
+      entry &&
+      entry.value &&
+      entry.value.length === 36 &&
+      entry.value.includes("-")
+    ) {
+      const sellingPriceKey = "9ba862ef-f993-4873-95ef-1fef10036aa5";
+      if (rawMeta[sellingPriceKey]) {
+        const price = parseFloat(rawMeta[sellingPriceKey]);
+        return isNaN(price) ? "N/A" : `₹ ${price.toFixed(2)}`;
+      }
     }
-
-    const reportData = updatedThisMonth.map((p) => ({
-      Name: p.name || "Unnamed Product",
-      "Product Code": p.product_code || "—",
-      "Company Code": getCompanyCode(p.metaDetails),
-      "Selling Price": getSellingPrice(p.metaDetails)
-        ? `₹${getSellingPrice(p.metaDetails).toLocaleString("en-IN")}`
-        : "—",
-      Stock: p.quantity,
-      Status:
-        p.quantity === 0
-          ? "Out of Stock"
-          : p.quantity <= lowStockThreshold
-          ? "Low Stock"
-          : "In Stock",
-      "Last Updated": new Date(p.updatedAt).toLocaleDateString("en-IN"),
-    }));
-
-    generatePDF(
-      reportData,
-      `Monthly Report - ${monthName} (${updatedThisMonth.length} updated)`
-    );
-    setGeneratingMonthly(false);
-    message.success(
-      `Monthly report generated – ${updatedThisMonth.length} products`
-    );
+    if (!entry || !entry.value) return "N/A";
+    const price = parseFloat(entry.value);
+    return isNaN(price) ? "N/A" : `₹ ${price.toFixed(2)}`;
   };
 
-  const openStockModal = (product, action) => {
+  const getCompanyCode = (metaDetails = [], rawMeta = {}) => {
+    let entry = metaDetails.find(
+      (d) => d.slug?.toLowerCase() === "companycode"
+    );
+    if (!entry) return "N/A";
+    const displayedValue = String(entry.value).trim();
+    if (displayedValue.length === 36 && displayedValue.includes("-")) {
+      const companyCodeKey = "d11da9f9-3f2e-4536-8236-9671200cca4a";
+      return rawMeta[companyCodeKey]
+        ? String(rawMeta[companyCodeKey]).trim()
+        : "N/A";
+    }
+    const sellingPriceKey = "9ba862ef-f993-4873-95ef-1fef10036aa5";
+    const sellingPrice = rawMeta[sellingPriceKey];
+    const numericDisplayed = parseFloat(displayedValue);
+    if (
+      !isNaN(numericDisplayed) &&
+      sellingPrice !== undefined &&
+      Math.abs(numericDisplayed - sellingPrice) < 1
+    ) {
+      const companyCodeKey = "d11da9f9-3f2e-4536-8236-9671200cca4a";
+      return rawMeta[companyCodeKey]
+        ? String(rawMeta[companyCodeKey]).trim()
+        : "N/A";
+    }
+    return displayedValue || "N/A";
+  };
+
+  // ──────────────────────────────────────────────────────
+  // HANDLERS (updated only for cart/delete etc.)
+  // ──────────────────────────────────────────────────────
+  const handleAddToCart = async (product) => {
+    if (!userId) return message.error("Please log in");
+    const price = getPrice(product.metaDetails, product.meta);
+    if (price === "N/A") return message.error("Price not available");
+
+    setCartLoadingStates((prev) => ({ ...prev, [product.productId]: true }));
+    try {
+      await addProductToCart({
+        userId,
+        productId: product.productId,
+        quantity: 1,
+      }).unwrap();
+      message.success("Added to cart");
+      refetchCart();
+    } catch (e) {
+      message.error(e?.data?.message || "Failed to add to cart");
+    } finally {
+      setCartLoadingStates((prev) => ({ ...prev, [product.productId]: false }));
+    }
+  };
+
+  const openStockModal = (product, action = "add") => {
     setSelectedProduct(product);
     setStockAction(action);
     setStockModalOpen(true);
-    stockForm.resetFields();
   };
 
   const openHistoryModal = (product) => {
@@ -260,319 +284,295 @@ const InventoryWrapper = () => {
     setHistoryModalOpen(true);
   };
 
-  const handleStockSubmit = async (values) => {
+  const handleDeleteClick = (product) => {
+    setSelectedProduct(product);
+    setDeleteModalVisible(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedProduct?.productId) return;
     try {
-      if (stockAction === "add") {
-        await addStock({
-          productId: selectedProduct.productId,
-          quantity: values.quantity,
-        }).unwrap();
-        message.success(`Added ${values.quantity} units`);
-      } else {
-        await removeStock({
-          productId: selectedProduct.productId,
-          quantity: values.quantity,
-        }).unwrap();
-        message.success(`Removed ${values.quantity} units`);
-      }
-    } catch (err) {
-      message.error(err?.data?.message || "Failed to update stock");
+      await deleteProduct(selectedProduct.productId).unwrap();
+      message.success("Product deleted");
+    } catch (e) {
+      message.error(e?.data?.message || "Delete failed");
     } finally {
-      setStockModalOpen(false);
+      setDeleteModalVisible(false);
       setSelectedProduct(null);
     }
   };
+
+  const menu = (product) => (
+    <Menu>
+      <Menu.Item key="view">
+        <Link to={`/product/${product.productId}`}>View</Link>
+      </Menu.Item>
+      <PermissionGate api="edit" module="products">
+        <Menu.Item key="edit">
+          <Link to={`/product/${product.productId}/edit`}>Edit</Link>
+        </Menu.Item>
+      </PermissionGate>
+      <Menu.Item key="add-stock" onClick={() => openStockModal(product, "add")}>
+        Add Stock
+      </Menu.Item>
+      <Menu.Item
+        key="remove-stock"
+        onClick={() => openStockModal(product, "remove")}
+      >
+        Remove Stock
+      </Menu.Item>
+      <Menu.Item key="history" onClick={() => openHistoryModal(product)}>
+        View History
+      </Menu.Item>
+      <PermissionGate api="delete" module="products">
+        <Menu.Item
+          danger
+          key="delete"
+          onClick={() => handleDeleteClick(product)}
+        >
+          Delete
+        </Menu.Item>
+      </PermissionGate>
+    </Menu>
+  );
 
   const columns = [
     {
       title: "Image",
       dataIndex: "images",
-      width: 70,
+      key: "images",
       render: (images) => (
         <img
-          src={parseImages(images)[0]}
+          src={parseImages(images)[0] || pos}
           alt="Product"
-          style={{
-            width: 50,
-            height: 50,
-            objectFit: "cover",
-            borderRadius: 8,
-            border: "1px solid #f0f0f0",
-          }}
+          style={{ width: 50, height: 50, objectFit: "cover" }}
         />
+      ),
+      width: 80,
+    },
+    {
+      title: "Name",
+      dataIndex: "name",
+      key: "name",
+      render: (text, record) => (
+        <Link to={`/product/${record.productId}`}>{text || "N/A"}</Link>
       ),
     },
     {
-      title: "Product",
-      dataIndex: "name",
-      render: (_, record) => (
-        <div>
-          <Link to={`/product/${record.productId}`} style={{ fontWeight: 500 }}>
-            {record.name || "Unnamed Product"}
-          </Link>
-          <div style={{ fontSize: 12, color: "#888", marginTop: 4 }}>
-            {record.product_code && <Text code>{record.product_code}</Text>}
-            {record.product_code &&
-              getCompanyCode(record.metaDetails) !== "N/A" &&
-              " • "}
-            <Text code>{getCompanyCode(record.metaDetails)}</Text>
-          </div>
-        </div>
-      ),
+      title: "Product Code",
+      key: "company_code",
+      render: (_, record) => getCompanyCode(record.metaDetails, record.meta),
+    },
+    {
+      title: "Brand",
+      dataIndex: "brandId",
+      key: "brand",
+      render: (brandId) => getBrandsName(brandId),
     },
     {
       title: "Price",
-      dataIndex: "metaDetails",
-      responsive: ["md"], // Hide on mobile
-      render: (meta) => {
-        const price = getSellingPrice(meta);
-        return price != null ? (
-          <strong>₹{price.toLocaleString("en-IN")}</strong>
-        ) : (
-          <Text type="secondary">—</Text>
-        );
-      },
+      key: "price",
+      render: (_, record) => getPrice(record.metaDetails, record.meta),
     },
     {
       title: "Stock",
       dataIndex: "quantity",
-      align: "center",
-      render: (qty) => {
-        if (qty === 0) return <Tag color="red">Out</Tag>;
-        if (qty <= lowStockThreshold)
-          return <Tag color="orange">{qty} Low</Tag>;
-        return <Tag color="green">{qty}</Tag>;
-      },
+      key: "quantity",
+      render: (qty) => (qty > 0 ? `${qty} in stock` : "Out of Stock"),
     },
     {
       title: "Actions",
       key: "actions",
-      width: 120,
-      align: "center",
-      render: (_, record) => (
-        <Space size={4}>
-          <Button
-            size="small"
-            icon={<PlusOutlined />}
-            onClick={() => openStockModal(record, "add")}
-          />
-          <Button
-            size="small"
-            danger
-            icon={<MinusOutlined />}
-            disabled={record.quantity === 0}
-            onClick={() => openStockModal(record, "remove")}
-          />
-          <Button
-            size="small"
-            icon={<HistoryOutlined />}
-            onClick={() => openHistoryModal(record)}
-          />
-        </Space>
-      ),
+      render: (_, record) => {
+        const price = getPrice(record.metaDetails, record.meta);
+        const priceValid = price !== "N/A";
+
+        return (
+          <div style={{ display: "flex", gap: 8 }}>
+            <PermissionGate api="write" module="cart">
+              <Tooltip
+                title={
+                  record.quantity <= 0
+                    ? "Out of stock"
+                    : !priceValid
+                    ? "Price not available"
+                    : "Add to cart"
+                }
+              >
+                <Button
+                  icon={
+                    cartLoadingStates[record.productId] ? (
+                      <Spin size="small" />
+                    ) : (
+                      <ShoppingCartOutlined />
+                    )
+                  }
+                  onClick={() => handleAddToCart(record)}
+                  disabled={
+                    cartLoadingStates[record.productId] ||
+                    record.quantity <= 0 ||
+                    !priceValid
+                  }
+                >
+                  Add to Cart
+                </Button>
+              </Tooltip>
+            </PermissionGate>
+
+            <PermissionGate api="edit|delete" module="products">
+              <Dropdown overlay={menu(record)} trigger={["click"]}>
+                <Button type="text" icon={<MoreOutlined />} />
+              </Dropdown>
+            </PermissionGate>
+          </div>
+        );
+      },
     },
   ];
 
-  // Handle page change
-  const handlePageChange = (page, size) => {
-    setCurrentPage(page);
-    setPageSize(size);
-  };
+  // Title & Breadcrumbs (unchanged)
+  const pageTitle = isBrandView
+    ? getBrandsName(id)
+    : isBpcView
+    ? bpcData?.name || "Category Group"
+    : isCategoryView
+    ? getCategoryName(id)
+    : "All Products";
 
-  if (isLoading) return <div>Loading products...</div>;
-  if (error) return <Empty description="Failed to load products" />;
+  const breadcrumbItems = isBrandView
+    ? [
+        { label: "Home", url: "/" },
+        { label: "Brands", url: "/category-selector" },
+        { label: pageTitle },
+      ]
+    : isBpcView
+    ? [
+        { label: "Home", url: "/" },
+        { label: "Categories", url: "/category-selector" },
+        { label: pageTitle },
+      ]
+    : isCategoryView
+    ? [
+        { label: "Home", url: "/" },
+        { label: "Categories", url: "/category-selector" },
+        { label: pageTitle },
+      ]
+    : [{ label: "Home", url: "/" }, { label: "Products" }];
 
   return (
     <div className="page-wrapper">
       <div className="content">
+        <Breadcrumb items={breadcrumbItems} />
         <PageHeader
-          title="Inventory Management"
-          subtitle="Track stock levels, add/remove stock, and view history"
-          exportOptions={{ pdf: false, excel: false }}
+          title={pageTitle}
+          subtitle="Explore our product collection"
+          extra={{
+            viewMode,
+            onViewToggle: (c) => setViewMode(c ? "card" : "list"),
+            showViewToggle: true,
+            cartItems: cartData?.cart?.items || [],
+          }}
         />
 
-        <div className="bg-white p-4 rounded-lg shadow-sm mb-4">
-          <Row gutter={[16, 16]} align="middle">
-            <Col xs={24} md={12} lg={8}>
+        <div className="filter-bar bg-white p-3 shadow-sm mb-4">
+          <Form layout="inline">
+            <Form.Item>
               <Input
                 prefix={<SearchOutlined />}
                 placeholder="Search products..."
+                value={search}
+                onChange={handleSearchChange}
                 allowClear
                 size="large"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                style={{ width: 300 }}
               />
-            </Col>
-
-            <Col xs={24} md={12} lg={16}>
-              <Space
-                direction={isMobile ? "vertical" : "horizontal"}
-                wrap
-                style={{ width: "100%", justifyContent: "flex-end" }}
-              >
-                {/* Price Filter */}
-                <Space size="small">
-                  <Text>Price:</Text>
-                  <InputNumber
-                    placeholder="Min"
-                    size="middle"
-                    value={priceRange[0]}
-                    onChange={(v) => setPriceRange([v, priceRange[1]])}
-                  />
-                  <Text>to</Text>
-                  <InputNumber
-                    placeholder="Max"
-                    size="middle"
-                    value={priceRange[1]}
-                    onChange={(v) => setPriceRange([priceRange[0], v])}
-                  />
-                  <Button
-                    size="small"
-                    onClick={() => setPriceRange([null, null])}
-                  >
-                    Clear
-                  </Button>
-                </Space>
-
-                {/* Max Stock */}
-                <Space size="small">
-                  <Text>Max ≤</Text>
-                  <InputNumber
-                    size="middle"
-                    value={maxStockFilter}
-                    onChange={setMaxStockFilter}
-                  />
-                  <Button size="small" onClick={() => setMaxStockFilter(null)}>
-                    Clear
-                  </Button>
-                </Space>
-
-                {/* Low Stock Threshold */}
-                <Space size="small">
-                  <Text>Low alert:</Text>
-                  <InputNumber
-                    min={1}
-                    size="middle"
-                    value={lowStockThreshold}
-                    onChange={(v) => setLowStockThreshold(v || 10)}
-                  />
-                </Space>
-              </Space>
-            </Col>
-          </Row>
-
-          {/* Action Buttons - Right aligned, stack on mobile */}
-          <div
-            style={{ marginTop: 16, textAlign: isMobile ? "left" : "right" }}
-          >
-            <Space
-              direction={isMobile ? "vertical" : "horizontal"}
-              size="middle"
-              wrap
-            >
-              <Button
-                type="primary"
-                icon={<FileTextOutlined />}
-                onClick={() => setReportModalOpen(true)}
-              >
-                Build Report
-              </Button>
-              <Button
-                icon={<DownloadOutlined />}
-                onClick={generateMonthlyReport}
-                loading={generatingMonthly}
-              >
-                Monthly Report
-              </Button>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => navigate("/product/add")}
-              >
-                Add Product
-              </Button>
-            </Space>
-          </div>
+            </Form.Item>
+          </Form>
         </div>
 
-        <Tabs
-          activeKey={activeTab}
-          onChange={setActiveTab}
-          tabBarGutter={isMobile ? 10 : 30}
-          size={isMobile ? "small" : "middle"}
-        >
-          <TabPane tab={`All (${counts.all})`} key="all" />
-          <TabPane tab={`In Stock (${counts.inStock})`} key="in-stock" />
-          <TabPane tab={`Low (${counts.lowStock})`} key="low-stock" />
-          <TabPane tab={`Out (${counts.outStock})`} key="out-of-stock" />
-        </Tabs>
-
-        {tabFilteredProducts.length === 0 ? (
+        {isLoading ? (
+          <div className="text-center py-5">
+            <Spin size="large" />
+          </div>
+        ) : error ? (
+          <div className="alert alert-danger">
+            Error: {error?.data?.message || "Failed to load products"}
+          </div>
+        ) : products.length === 0 ? (
           <Empty description="No products found" />
         ) : (
           <>
-            <div style={{ overflowX: "auto" }}>
+            {viewMode === "card" ? (
+              <div
+                className="products-grid"
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+                  gap: "20px",
+                }}
+              >
+                {products.map((product) => (
+                  <ProductCard
+                    key={product.productId}
+                    product={product}
+                    getBrandsName={getBrandsName}
+                    getCategoryName={getCategoryName}
+                    handleAddToCart={handleAddToCart}
+                    cartLoadingStates={cartLoadingStates}
+                    menu={menu}
+                  />
+                ))}
+              </div>
+            ) : (
               <Table
                 columns={columns}
-                dataSource={tabFilteredProducts}
+                dataSource={products}
                 rowKey="productId"
                 pagination={false}
-                bordered
                 loading={isFetching}
               />
-            </div>
+            )}
 
-            {/* Pagination Controls */}
-            <div style={{ marginTop: 24, textAlign: "right" }}>
+            <div className="mt-4 d-flex justify-content-between align-items-center">
+              <div className="text-muted">
+                Showing {(currentPage - 1) * pageSize + 1}–
+                {Math.min(currentPage * pageSize, pagination.total)} of{" "}
+                {pagination.total}
+              </div>
               <Pagination
                 current={currentPage}
-                pageSize={pageSize}
                 total={pagination.total}
+                pageSize={pageSize}
                 onChange={handlePageChange}
-                onShowSizeChange={handlePageChange}
-                showSizeChanger
-                pageSizeOptions={["10", "25", "50", "100"]}
-                showTotal={(total, range) =>
-                  `${range[0]}-${range[1]} of ${total} products`
-                }
+                showSizeChanger={false}
               />
             </div>
           </>
         )}
       </div>
 
-      {/* Modals remain unchanged */}
-      <ReportBuilderModal
-        open={reportModalOpen}
-        onClose={() => setReportModalOpen(false)}
-        products={products}
-        getCompanyCode={getCompanyCode}
-        getSellingPrice={getSellingPrice}
-        generatePDF={generatePDF}
-        generateExcel={generateExcel}
-        onGenerate={generateCustomReport}
-        selectedProducts={selectedReportProducts}
-        setSelectedProducts={setSelectedReportProducts}
+      {/* Modals */}
+      <DeleteModal
+        isVisible={isDeleteModalVisible}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeleteModalVisible(false)}
+        item={selectedProduct}
+        itemType="Product"
+        isLoading={isDeleting}
       />
       <StockModal
         open={stockModalOpen}
-        onCancel={() => {
-          setStockModalOpen(false);
-          setSelectedProduct(null);
-        }}
+        onCancel={() => setStockModalOpen(false)}
         product={selectedProduct}
         action={stockAction}
       />
       <HistoryModalAntD
         open={historyModalOpen}
-        onCancel={() => {
-          setHistoryModalOpen(false);
-          setSelectedProduct(null);
-        }}
+        onCancel={() => setHistoryModalOpen(false)}
         product={selectedProduct}
       />
     </div>
   );
 };
 
-export default InventoryWrapper;
+export default ProductsList;

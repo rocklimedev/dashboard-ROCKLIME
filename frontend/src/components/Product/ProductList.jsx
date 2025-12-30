@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import React, { useState, useEffect, useCallback } from "react";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import {
   Form,
   Input,
@@ -44,10 +44,14 @@ import PermissionGate from "../../context/PermissionGate";
 
 const ProductsList = () => {
   const { id, bpcId } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(50);
-  const [search, setSearch] = useState("");
+  // Read from URL params (with defaults)
+  const urlPage = parseInt(searchParams.get("page") || "1", 10);
+  const urlSearch = searchParams.get("search") || "";
+
+  const [currentPage, setCurrentPage] = useState(urlPage);
+  const [search, setSearch] = useState(urlSearch);
   const [viewMode, setViewMode] = useState("list");
   const [cartLoadingStates, setCartLoadingStates] = useState({});
   const [isDeleteModalVisible, setDeleteModalVisible] = useState(false);
@@ -56,12 +60,62 @@ const ProductsList = () => {
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [stockAction, setStockAction] = useState("add");
 
+  const pageSize = 50;
+
+  // Sync internal state with URL on mount or when URL changes (e.g., back button)
+  useEffect(() => {
+    const pageFromUrl = parseInt(searchParams.get("page") || "1", 10);
+    const searchFromUrl = searchParams.get("search") || "";
+
+    setCurrentPage(pageFromUrl);
+    setSearch(searchFromUrl);
+  }, [searchParams]);
+
+  // Update URL when page or search changes
+  const updateSearchParams = useCallback(
+    (newPage, newSearch) => {
+      setSearchParams(
+        (prev) => {
+          const params = new URLSearchParams(prev);
+          if (newPage !== 1) {
+            params.set("page", newPage);
+          } else {
+            params.delete("page");
+          }
+          if (newSearch) {
+            params.set("search", newSearch);
+          } else {
+            params.delete("search");
+          }
+          return params;
+        },
+        { replace: true }
+      );
+    },
+    [setSearchParams]
+  );
+
+  // Handlers
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    updateSearchParams(page, search);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearch(value);
+    setCurrentPage(1); // Reset to page 1 on new search
+    updateSearchParams(1, value);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   // View type detection
   const isBrandView = !!id && !bpcId;
   const isBpcView = !!bpcId;
   const isCategoryView = !!id && !isBrandView && !isBpcView;
 
-  // Data fetching
+  // Data fetching with current page & search
   const brandQuery = useGetProductsByBrandQuery(
     {
       brandId: id || "",
@@ -112,7 +166,7 @@ const ProductsList = () => {
     totalPages: 0,
   };
 
-  // Supporting queries
+  // Supporting queries (unchanged)
   const { data: brandsData } = useGetAllBrandsQuery();
   const { data: bpcData } = useGetBrandParentCategoryByIdQuery(bpcId, {
     skip: !bpcId,
@@ -128,7 +182,7 @@ const ProductsList = () => {
   const [addProductToCart] = useAddProductToCartMutation();
 
   // ──────────────────────────────────────────────────────
-  // HELPERS — Now robust against incorrect backend values
+  // HELPERS (unchanged)
   // ──────────────────────────────────────────────────────
   const getBrandsName = (brandId) =>
     brandsData?.find((b) => b.id === brandId)?.brandName || "Not Branded";
@@ -146,29 +200,22 @@ const ProductsList = () => {
     }
   };
 
-  // Fallback: if metaDetails has wrong value, try to get from raw meta using known slug UUIDs
   const getPrice = (metaDetails = [], rawMeta = {}) => {
     let entry = metaDetails.find(
       (d) => d.slug?.toLowerCase() === "sellingprice"
     );
-
-    // If value looks like a UUID (36 chars), it's wrong — fallback to raw meta
     if (
       entry &&
       entry.value &&
       entry.value.length === 36 &&
       entry.value.includes("-")
     ) {
-      // Find the actual value in raw meta using known sellingprice UUID
-      const sellingPriceKey = Object.keys(rawMeta).find(
-        (key) => key === "9ba862ef-f993-4873-95ef-1fef10036aa5" // common sellingprice field ID
-      );
-      if (sellingPriceKey) {
+      const sellingPriceKey = "9ba862ef-f993-4873-95ef-1fef10036aa5";
+      if (rawMeta[sellingPriceKey]) {
         const price = parseFloat(rawMeta[sellingPriceKey]);
         return isNaN(price) ? "N/A" : `₹ ${price.toFixed(2)}`;
       }
     }
-
     if (!entry || !entry.value) return "N/A";
     const price = parseFloat(entry.value);
     return isNaN(price) ? "N/A" : `₹ ${price.toFixed(2)}`;
@@ -178,39 +225,37 @@ const ProductsList = () => {
     let entry = metaDetails.find(
       (d) => d.slug?.toLowerCase() === "companycode"
     );
-
-    if (
-      entry &&
-      entry.value &&
-      entry.value.length === 36 &&
-      entry.value.includes("-")
-    ) {
-      const companyCodeKey = Object.keys(rawMeta).find(
-        (key) => key === "d11da9f9-3f2e-4536-8236-9671200cca4a"
-      );
-      return companyCodeKey ? String(rawMeta[companyCodeKey]).trim() : "N/A";
+    if (!entry) return "N/A";
+    const displayedValue = String(entry.value).trim();
+    if (displayedValue.length === 36 && displayedValue.includes("-")) {
+      const companyCodeKey = "d11da9f9-3f2e-4536-8236-9671200cca4a";
+      return rawMeta[companyCodeKey]
+        ? String(rawMeta[companyCodeKey]).trim()
+        : "N/A";
     }
-
-    return entry ? String(entry.value).trim() : "N/A";
+    const sellingPriceKey = "9ba862ef-f993-4873-95ef-1fef10036aa5";
+    const sellingPrice = rawMeta[sellingPriceKey];
+    const numericDisplayed = parseFloat(displayedValue);
+    if (
+      !isNaN(numericDisplayed) &&
+      sellingPrice !== undefined &&
+      Math.abs(numericDisplayed - sellingPrice) < 1
+    ) {
+      const companyCodeKey = "d11da9f9-3f2e-4536-8236-9671200cca4a";
+      return rawMeta[companyCodeKey]
+        ? String(rawMeta[companyCodeKey]).trim()
+        : "N/A";
+    }
+    return displayedValue || "N/A";
   };
 
   // ──────────────────────────────────────────────────────
-  // HANDLERS
+  // HANDLERS (updated only for cart/delete etc.)
   // ──────────────────────────────────────────────────────
-  const handleSearchChange = (e) => {
-    setSearch(e.target.value);
-    setCurrentPage(1);
-  };
-
-  const handlePageChange = (page) => setCurrentPage(page);
-
   const handleAddToCart = async (product) => {
     if (!userId) return message.error("Please log in");
-
     const price = getPrice(product.metaDetails, product.meta);
-    if (price === "N/A") {
-      return message.error("Price not available");
-    }
+    if (price === "N/A") return message.error("Price not available");
 
     setCartLoadingStates((prev) => ({ ...prev, [product.productId]: true }));
     try {
@@ -281,8 +326,8 @@ const ProductsList = () => {
       </Menu.Item>
       <PermissionGate api="delete" module="products">
         <Menu.Item
-          key="delete"
           danger
+          key="delete"
           onClick={() => handleDeleteClick(product)}
         >
           Delete
@@ -385,7 +430,7 @@ const ProductsList = () => {
     },
   ];
 
-  // Title & Breadcrumbs
+  // Title & Breadcrumbs (unchanged)
   const pageTitle = isBrandView
     ? getBrandsName(id)
     : isBpcView
@@ -397,26 +442,23 @@ const ProductsList = () => {
   const breadcrumbItems = isBrandView
     ? [
         { label: "Home", url: "/" },
-        { label: "Brands", url: "/brands" },
+        { label: "Brands", url: "/category-selector" },
         { label: pageTitle },
       ]
     : isBpcView
     ? [
         { label: "Home", url: "/" },
-        { label: "Categories", url: "/categories" },
+        { label: "Categories", url: "/category-selector" },
         { label: pageTitle },
       ]
     : isCategoryView
     ? [
         { label: "Home", url: "/" },
-        { label: "Categories", url: "/categories" },
+        { label: "Categories", url: "/category-selector" },
         { label: pageTitle },
       ]
     : [{ label: "Home", url: "/" }, { label: "Products" }];
 
-  // ──────────────────────────────────────────────────────
-  // RENDER
-  // ──────────────────────────────────────────────────────
   return (
     <div className="page-wrapper">
       <div className="content">
@@ -424,6 +466,7 @@ const ProductsList = () => {
         <PageHeader
           title={pageTitle}
           subtitle="Explore our product collection"
+          exportOptions={{ pdf: false, excel: false }}
           extra={{
             viewMode,
             onViewToggle: (c) => setViewMode(c ? "card" : "list"),

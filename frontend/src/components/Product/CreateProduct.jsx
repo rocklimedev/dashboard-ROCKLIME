@@ -90,9 +90,12 @@ const CreateProduct = ({
     useGetBrandParentCategoriesQuery();
   const { data: productMetas = [] } = useGetAllProductMetaQuery();
   const { data: allProductsResponse, isLoading: isAllProductsLoading } =
-    useGetAllProductsQuery(undefined, {
-      skip: !isEditMode,
-    });
+    useGetAllProductsQuery(
+      { limit: 5000 }, // Add this to fetch all or most products
+      {
+        skip: !isEditMode || isBulkMode, // also skip in bulk mode if not needed
+      }
+    );
 
   // Extract the actual array safely
   const allProducts = useMemo(() => {
@@ -1033,7 +1036,11 @@ const CreateProduct = ({
                               optionFilterProp="children"
                             >
                               {allProducts
-                                .filter((p) => p.isMaster)
+                                .filter(
+                                  (p) =>
+                                    p.isVariant === false ||
+                                    p.isVariant === null
+                                )
                                 .map((p) => (
                                   <Option key={p.productId} value={p.productId}>
                                     {p.name} ({p.product_code})

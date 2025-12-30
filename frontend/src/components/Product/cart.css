@@ -22,7 +22,7 @@
 }
 
 .floating-cart .ant-badge-count {
-  background: #ff4d4f;
+  background: #E31E24;
   color: #fff;
 }
 
@@ -132,7 +132,7 @@
 }
 
 .ant-btn-link.danger {
-  color: #ff4d4f;
+  color: #E31E24;
 }
 
 .ant-btn-link.danger:hover {
