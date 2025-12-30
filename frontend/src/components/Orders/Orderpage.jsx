@@ -1070,44 +1070,53 @@ const OrderPage = () => {
                     <Button
                       icon={<DownloadOutlined />}
                       size="small"
-                      onClick={async (e) => {
-                        e.preventDefault();
+                      onClick={async () => {
                         try {
-                          // Fetch the invoice file as blob
-                          const response = await fetch(invoiceUrl);
-                          if (!response.ok) throw new Error("Download failed");
+                          const response = await fetch(
+                            `https://api.cmtrading.com/api/order/${order.id}/download-invoice`,
+                            {
+                              credentials: "include", // Critical: sends cookies/session
+                            }
+                          );
+
+                          if (!response.ok) {
+                            throw new Error(
+                              `Download failed: ${response.status}`
+                            );
+                          }
 
                           const blob = await response.blob();
 
-                          // Create download link
-                          const blobUrl = window.URL.createObjectURL(blob);
-                          const a = document.createElement("a");
-                          a.href = blobUrl;
-
-                          // Generate clean filename (same as gate-pass)
-                          let downloadName = generateFileName(
+                          // Extract filename from header (your backend already sets it!)
+                          const contentDisposition = response.headers.get(
+                            "Content-Disposition"
+                          );
+                          let filename = generateFileName(
                             "INVOICE",
                             order.orderNo,
                             customer.name
                           );
-                          // Ensure it ends with .pdf (invoices are always PDF)
-                          if (!downloadName.toLowerCase().endsWith(".pdf")) {
-                            downloadName += ".pdf";
+                          if (contentDisposition) {
+                            const match =
+                              contentDisposition.match(/filename="(.*?)"/);
+                            if (match?.[1]) filename = match[1];
                           }
 
-                          a.download = downloadName;
+                          const blobUrl = window.URL.createObjectURL(blob);
+                          const a = document.createElement("a");
+                          a.href = blobUrl;
+                          a.download = filename;
                           document.body.appendChild(a);
                           a.click();
                           a.remove();
                           window.URL.revokeObjectURL(blobUrl);
 
-                          message.success("Invoice download started");
+                          message.success("Invoice downloaded successfully");
                         } catch (err) {
                           console.error(err);
                           message.error(
-                            "Failed to download invoice. Opening in new tab instead."
+                            "Failed to download invoice. Please try again."
                           );
-                          window.open(invoiceUrl, "_blank");
                         }
                       }}
                     >
