@@ -221,202 +221,249 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
   return (
     <>
       <div className="header">
-        <div className="main-header">
-          {/* Logo */}
-          <div className="header-left active">
-            <Link to="/" className="logo logo-normal">
-              <img src={logo} alt="Logo" />
-            </Link>
-            <Link to="/" className="logo logo-white">
-              <img src={logo} alt="Logo" />
-            </Link>
-            <Link to="/" className="logo logo-small">
-              <img src={isSidebarOpen ? logo : logo_small} alt="Logo" />
-            </Link>
+        <div className="main-header d-flex align-items-center justify-content-between">
+          {/* Left: Mobile Hamburger */}
+          <div className="d-flex align-items-center">
+            <a
+              className="mobile_btn me-3"
+              onClick={() =>
+                window.innerWidth < 992 && toggleSidebar(!isSidebarOpen)
+              }
+              id="mobile_btn"
+            >
+              <span className="bar-icon">
+                <span></span>
+                <span></span>
+                <span></span>
+              </span>
+            </a>
           </div>
 
-          {/* Mobile Sidebar Toggle */}
-          <a
-            className="mobile_btn"
-            onClick={() =>
-              window.innerWidth < 992 && toggleSidebar(!isSidebarOpen)
-            }
-            id="mobile_btn"
-          >
-            <span className="bar-icon">
-              <span></span>
-              <span></span>
-              <span></span>
-            </span>
-          </a>
+          {/* Center: Search - Takes available space */}
+          <div className="flex-grow-1 mx-md-4" ref={searchRef}>
+            <ul className="nav user-menu h-100">
+              <li className="nav-item nav-searchinputs w-100 position-relative">
+                {/* Mobile Search Trigger - Centered */}
+                <div className="d-md-none d-flex justify-content-center">
+                  <Button
+                    type="link"
+                    className={`responsive-search ${
+                      mobileSearchOpen ? "d-none" : "d-block"
+                    }`}
+                    onClick={() => setMobileSearchOpen(true)}
+                  >
+                    <SearchOutlined style={{ fontSize: 24 }} />
+                  </Button>
+                </div>
 
-          {/* Main Navigation */}
-          <ul className="nav user-menu" ref={searchRef}>
-            {/* Search Section */}
-            <li className="nav-item nav-searchinputs flex-grow-1 position-relative">
-              {/* Mobile Search Trigger */}
-              <Button
-                type="link"
-                className={`responsive-search d-md-none ${
-                  mobileSearchOpen ? "d-none" : "d-block"
-                }`}
-                onClick={() => setMobileSearchOpen(true)}
-              >
-                <SearchOutlined style={{ fontSize: 22 }} />
-              </Button>
-
-              {/* Mobile Search Input */}
-              <div
-                className={`mobile-search-container d-md-none ${
-                  mobileSearchOpen ? "open" : ""
-                }`}
-              >
-                <Input
-                  ref={mobileSearchInputRef}
-                  prefix={<SearchOutlined className="search-icon" />}
-                  suffix={
-                    searchFetching ? (
-                      <Spin size="small" />
-                    ) : (
-                      <Button
-                        type="text"
-                        icon={<CloseOutlined />}
-                        onClick={() => {
-                          setMobileSearchOpen(false);
-                          setSearchQuery("");
-                          setShowSearchOverlay(false);
-                        }}
-                        size="small"
-                      />
-                    )
-                  }
-                  placeholder="Search products, users, orders..."
-                  value={searchQuery}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setSearchQuery(value);
-                    localStorage.setItem("lastSearchQuery", value);
+                {/* Mobile Full Search Input */}
+                <div
+                  className={`mobile-search-container d-md-none ${
+                    mobileSearchOpen ? "open position-fixed" : ""
+                  }`}
+                  style={{
+                    top: mobileSearchOpen ? "0" : "",
+                    left: mobileSearchOpen ? "0" : "",
+                    right: mobileSearchOpen ? "0" : "",
+                    zIndex: 1000,
+                    background: "var(--background-color, #fff)",
+                    padding: "12px 16px",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                   }}
-                  onPressEnter={() => {
-                    if (searchQuery.trim()) {
-                      navigate(
-                        `/search?q=${encodeURIComponent(searchQuery.trim())}`
-                      );
+                >
+                  <Input
+                    ref={mobileSearchInputRef}
+                    prefix={<SearchOutlined className="search-icon" />}
+                    suffix={
+                      searchFetching ? (
+                        <Spin size="small" />
+                      ) : (
+                        <Button
+                          type="text"
+                          icon={<CloseOutlined />}
+                          onClick={() => {
+                            setMobileSearchOpen(false);
+                            setSearchQuery("");
+                            setShowSearchOverlay(false);
+                          }}
+                          size="small"
+                        />
+                      )
+                    }
+                    placeholder="Search products, users, orders..."
+                    value={searchQuery}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setSearchQuery(value);
+                      localStorage.setItem("lastSearchQuery", value);
+                    }}
+                    onPressEnter={() => {
+                      if (searchQuery.trim()) {
+                        navigate(
+                          `/search?q=${encodeURIComponent(searchQuery.trim())}`
+                        );
+                        setMobileSearchOpen(false);
+                        setShowSearchOverlay(false);
+                      }
+                    }}
+                    allowClear
+                    size="large"
+                    className="mobile-global-search"
+                  />
+                </div>
+
+                {/* Desktop Search - Centered */}
+                <div
+                  className="d-none d-md-block mx-auto"
+                  style={{ maxWidth: "680px" }}
+                >
+                  <Input
+                    prefix={<SearchOutlined className="search-icon" />}
+                    suffix={searchFetching ? <Spin size="small" /> : null}
+                    placeholder="Search products, users, orders..."
+                    value={searchQuery}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setSearchQuery(value);
+                      localStorage.setItem("lastSearchQuery", value);
+                    }}
+                    onFocus={() =>
+                      searchQuery.trim() && setShowSearchOverlay(true)
+                    }
+                    onPressEnter={() => {
+                      if (searchQuery.trim()) {
+                        navigate(
+                          `/search?q=${encodeURIComponent(searchQuery.trim())}`
+                        );
+                        setShowSearchOverlay(false);
+                      }
+                    }}
+                    allowClear
+                    size="large"
+                    className="global-search-input"
+                  />
+                </div>
+
+                {/* Search Overlay */}
+                <SearchOverlay
+                  visible={showSearchOverlay}
+                  loading={searchLoading || searchFetching}
+                  results={searchResults}
+                  query={searchQuery}
+                  onClose={() => {
+                    setShowSearchOverlay(false);
+                    if (window.innerWidth < 992 && !searchQuery.trim()) {
                       setMobileSearchOpen(false);
-                      setShowSearchOverlay(false);
                     }
                   }}
-                  allowClear
-                  size="large"
-                  className="mobile-global-search"
                 />
-              </div>
+              </li>
+            </ul>
+          </div>
 
-              {/* Desktop Search */}
-              <div
-                className="d-none d-md-block w-100"
-                style={{ maxWidth: "700px" }}
-              >
-                <Input
-                  prefix={<SearchOutlined className="search-icon" />}
-                  suffix={searchFetching ? <Spin size="small" /> : null}
-                  placeholder="Search products, users, orders..."
-                  value={searchQuery}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setSearchQuery(value);
-                    localStorage.setItem("lastSearchQuery", value);
-                  }}
-                  onFocus={() =>
-                    searchQuery.trim() && setShowSearchOverlay(true)
-                  }
-                  onPressEnter={() => {
-                    if (searchQuery.trim()) {
-                      navigate(
-                        `/search?q=${encodeURIComponent(searchQuery.trim())}`
-                      );
-                      setShowSearchOverlay(false);
-                    }
-                  }}
-                  allowClear
-                  size="large"
-                  className="global-search-input"
-                />
-              </div>
-
-              {/* Shared Search Overlay */}
-              <SearchOverlay
-                visible={showSearchOverlay}
-                loading={searchLoading || searchFetching}
-                results={searchResults}
-                query={searchQuery}
-                onClose={() => {
-                  setShowSearchOverlay(false);
-                  if (window.innerWidth < 992 && !searchQuery.trim()) {
-                    setMobileSearchOpen(false);
-                  }
-                }}
-              />
-            </li>
-
-            {/* Fullscreen - Visible on ALL devices (mobile + desktop) */}
-            <li className="nav-item nav-item-box">
+          {/* Right: Action Icons */}
+          <div className="d-flex align-items-center">
+            {/* Desktop Icons */}
+            <div className="d-none d-md-flex align-items-center gap-2">
               <Button
                 type="link"
                 onClick={handleFullscreenToggle}
                 title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
               >
-                <FullscreenOutlined />
+                <FullscreenOutlined style={{ fontSize: 18 }} />
               </Button>
-            </li>
 
-            {/* Notifications */}
-            <li className="nav-item nav-item-box">
-              <Button
-                type="link"
-                onClick={() => setShowNotifications(true)}
-                className="position-relative"
-              >
-                <Badge
-                  count={notificationCount}
-                  size="small"
-                  offset={[-5, 5]}
-                  showZero={false}
-                >
+              <Button type="link" onClick={() => setShowNotifications(true)}>
+                <Badge count={notificationCount} size="small" offset={[-4, 4]}>
                   <BellOutlined style={{ fontSize: 18 }} />
                 </Badge>
               </Button>
-            </li>
 
-            {/* Cart */}
-            <PermissionsGate api="write" module="cart">
-              <li className="nav-item nav-item-box">
-                <Link to="/cart" className="position-relative">
-                  <Badge
-                    count={cartItemCount}
-                    size="small"
-                    offset={[-5, 5]}
-                    showZero={false}
-                  >
+              <PermissionsGate api="write" module="cart">
+                <Link to="/cart">
+                  <Badge count={cartItemCount} size="small" offset={[-4, 4]}>
                     <ShoppingCartOutlined style={{ fontSize: 20 }} />
                   </Badge>
                 </Link>
-              </li>
-            </PermissionsGate>
+              </PermissionsGate>
 
-            {/* Dark Mode - Visible on ALL devices (mobile + desktop) */}
-            <li className="nav-item nav-item-box">
               <Button
                 type="link"
                 onClick={toggleDarkMode}
                 title={darkMode ? "Light Mode" : "Dark Mode"}
               >
-                {darkMode ? <SunFilled /> : <MoonFilled />}
+                {darkMode ? (
+                  <SunFilled style={{ fontSize: 18 }} />
+                ) : (
+                  <MoonFilled style={{ fontSize: 18 }} />
+                )}
               </Button>
-            </li>
+            </div>
 
-            {/* User Avatar Dropdown */}
-            <li className="nav-item dropdown main-drop profile-nav">
+            {/* Mobile: More Menu */}
+            <div className="d-md-none mx-2">
+              <Dropdown
+                overlay={
+                  <Menu className="shadow-sm rounded">
+                    <Menu.Item
+                      key="fullscreen"
+                      onClick={handleFullscreenToggle}
+                      icon={<FullscreenOutlined />}
+                    >
+                      {isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+                    </Menu.Item>
+                    <Menu.Item
+                      key="notifications"
+                      onClick={() => setShowNotifications(true)}
+                      icon={<BellOutlined />}
+                    >
+                      Notifications{" "}
+                      {notificationCount > 0 && (
+                        <Badge
+                          count={notificationCount}
+                          style={{ marginLeft: 8 }}
+                        />
+                      )}
+                    </Menu.Item>
+                    <PermissionsGate api="write" module="cart">
+                      <Menu.Item key="cart" icon={<ShoppingCartOutlined />}>
+                        <Link
+                          to="/cart"
+                          className="d-flex justify-content-between align-items-center w-100"
+                        >
+                          Cart{" "}
+                          {cartItemCount > 0 && <Badge count={cartItemCount} />}
+                        </Link>
+                      </Menu.Item>
+                    </PermissionsGate>
+                    <Menu.Item
+                      key="theme"
+                      onClick={toggleDarkMode}
+                      icon={darkMode ? <SunFilled /> : <MoonFilled />}
+                    >
+                      {darkMode ? "Light Mode" : "Dark Mode"}
+                    </Menu.Item>
+                  </Menu>
+                }
+                trigger={["click"]}
+              >
+                <Button type="link" size="large">
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <circle cx="12" cy="5" r="2" />
+                    <circle cx="12" cy="12" r="2" />
+                    <circle cx="12" cy="19" r="2" />
+                  </svg>
+                </Button>
+              </Dropdown>
+            </div>
+
+            {/* User Avatar - Always visible */}
+            <div className="ms-2">
               {isProfileLoading ? (
                 <span className="text-muted">Loading...</span>
               ) : profileError ? (
@@ -432,27 +479,22 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                     className="nav-link userset"
                     onClick={(e) => e.preventDefault()}
                   >
-                    <span className="user-info p-0">
-                      <span className="user-letter avatar-container">
-                        <Avatar
-                          name={user?.user?.name || "User"}
-                          src={
-                            user?.user?.photo_thumbnail ||
-                            user?.user?.profileImage
-                          }
-                          size={40}
-                          round={true}
-                          className="circular-avatar"
-                          textSizeRatio={2.2}
-                          maxInitials={2}
-                        />
-                      </span>
-                    </span>
+                    <Avatar
+                      name={user?.user?.name || "User"}
+                      src={
+                        user?.user?.photo_thumbnail || user?.user?.profileImage
+                      }
+                      size={40}
+                      round={true}
+                      className="circular-avatar"
+                      textSizeRatio={2.2}
+                      maxInitials={2}
+                    />
                   </a>
                 </Dropdown>
               )}
-            </li>
-          </ul>
+            </div>
+          </div>
         </div>
       </div>
 

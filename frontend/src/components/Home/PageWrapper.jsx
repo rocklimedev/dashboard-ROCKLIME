@@ -250,7 +250,7 @@ const PageWrapper = () => {
           <div className="col-12 col-md-4 d-flex flex-column gap-3">
             <div className="card shadow-sm rounded-3">
               <div className="card-header bg-light fw-semibold">
-                Orders this month
+                ORDERS THIS MONTH{" "}
               </div>
               <div className="card-body p-0">
                 {orders.length ? (
@@ -383,7 +383,7 @@ const PageWrapper = () => {
           <div className="col-12 col-md-4 d-flex flex-column gap-3">
             <div className="card shadow-sm rounded-3">
               <div className="card-header bg-light fw-semibold">
-                Total Quotations{" "}
+                TOTAL QUOTATIONS{" "}
                 <span className="text-danger fw-semibold">
                   ({quotationCount})
                 </span>
@@ -457,7 +457,7 @@ const PageWrapper = () => {
             {lowStockProducts.length > 0 && (
               <div className="card shadow-sm rounded-3">
                 <div className="card-header bg-light fw-semibold low-stock-header">
-                  <span>Low in Stock</span>
+                  <span>LOW IN STOCK</span>
                   <span className="low-stock-count">
                     {lowStockProducts.length} of {products.length} remaining
                   </span>
@@ -493,7 +493,7 @@ const PageWrapper = () => {
             {/* Top Selling Products */}
             <div className="card shadow-sm rounded-3">
               <div className="card-header bg-light fw-semibold">
-                Top Selling Products
+                TOP SELLING PRODUCTS{" "}
               </div>
               <div className="card-body p-0">
                 {topProductsLoading ? (
@@ -566,7 +566,7 @@ const PageWrapper = () => {
             {/* Recent Products */}
             <div className="card shadow-sm rounded-3">
               <div className="card-header bg-light fw-semibold d-flex justify-content-between align-items-center">
-                Total Products{" "}
+                TOTAL PRODUCTS{" "}
                 <span className="text-danger fw-semibold">
                   ({productCount})
                 </span>

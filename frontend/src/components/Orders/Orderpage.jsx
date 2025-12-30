@@ -1070,9 +1070,45 @@ const OrderPage = () => {
                     <Button
                       icon={<DownloadOutlined />}
                       size="small"
-                      onClick={() => {
-                        // This will trigger the download with correct filename
-                        window.location.href = `http://localhost:4000/api/order/${order.id}/download-invoice`;
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        try {
+                          // Fetch the invoice file as blob
+                          const response = await fetch(invoiceUrl);
+                          if (!response.ok) throw new Error("Download failed");
+
+                          const blob = await response.blob();
+
+                          // Create download link
+                          const blobUrl = window.URL.createObjectURL(blob);
+                          const a = document.createElement("a");
+                          a.href = blobUrl;
+
+                          // Generate clean filename (same as gate-pass)
+                          let downloadName = generateFileName(
+                            "INVOICE",
+                            order.orderNo,
+                            customer.name
+                          );
+                          // Ensure it ends with .pdf (invoices are always PDF)
+                          if (!downloadName.toLowerCase().endsWith(".pdf")) {
+                            downloadName += ".pdf";
+                          }
+
+                          a.download = downloadName;
+                          document.body.appendChild(a);
+                          a.click();
+                          a.remove();
+                          window.URL.revokeObjectURL(blobUrl);
+
+                          message.success("Invoice download started");
+                        } catch (err) {
+                          console.error(err);
+                          message.error(
+                            "Failed to download invoice. Opening in new tab instead."
+                          );
+                          window.open(invoiceUrl, "_blank");
+                        }
                       }}
                     >
                       Download Invoice

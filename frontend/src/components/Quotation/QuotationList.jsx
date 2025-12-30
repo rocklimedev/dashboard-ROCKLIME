@@ -84,10 +84,13 @@ const QuotationList = () => {
   } = useGetAllQuotationsQuery({
     page: currentPage,
     limit: pageSize,
-    search: debouncedSearch || undefined,
-    customerId: customerFilter || undefined,
-    status: statusFilter || undefined,
-    dateRange: formattedDateRange,
+    search: debouncedSearch.trim() === "" ? undefined : debouncedSearch.trim(),
+    customerId: customerFilter === "" ? undefined : customerFilter,
+    status: statusFilter === "" ? undefined : statusFilter,
+    dateRange:
+      formattedDateRange && formattedDateRange[0] && formattedDateRange[1]
+        ? formattedDateRange
+        : undefined,
   });
 
   const quotations = Array.isArray(response?.data) ? response?.data : [];
@@ -329,7 +332,7 @@ View: ${window.location.origin}/quotation/${q.quotationId}
           onClick={() => handleOpenProductModal(rec.quotationId)}
           style={{ padding: 0, color: "#e31e24" }}
         >
-         Quick View ({getProductCount(rec.items)})
+          Quick View ({getProductCount(rec.items)})
         </Button>
       ),
     },
@@ -339,24 +342,7 @@ View: ${window.location.origin}/quotation/${q.quotationId}
       key: "amount",
       render: (amt) => `₹${Number(amt || 0).toFixed(2)}`,
     },
-    {
-      title: "Status",
-      dataIndex: "status",
-      key: "status",
-      render: (status) => (
-        <span
-          className={`badge bg-${
-            status?.toLowerCase() === "accepted"
-              ? "success"
-              : status?.toLowerCase() === "rejected"
-              ? "danger"
-              : "warning"
-          }`}
-        >
-          {status || "Pending"}
-        </span>
-      ),
-    },
+
     {
       title: "Actions",
       key: "actions",
