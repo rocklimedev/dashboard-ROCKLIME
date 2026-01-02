@@ -510,19 +510,75 @@ exports.updateProduct = async (req, res) => {
   }
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Get all products (paginated, searchable, enriched meta & keywords)
+// ─────────────────────────────────────────────────────────────────────────────
 exports.getAllProducts = async (req, res) => {
   try {
-    // THIS LINE FIXES EVERYTHING ON RENDER
     ensureAssociations();
 
-    // Pagination parameters (standard: ?page=1&limit=20)
+    // Pagination parameters
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 50; // adjust default as needed
+    const limit = parseInt(req.query.limit) || 50;
     const offset = (page - 1) * limit;
+
+    // ── Search support (MySQL compatible – case-insensitive) ────────────
+    const searchTerm = req.query.search?.trim();
+    let whereClause = {};
+
+    if (searchTerm) {
+      const pattern = `%${searchTerm.toLowerCase()}%`;
+
+      whereClause = {
+        [Op.or]: [
+          // Product name
+          sequelize.where(
+            sequelize.fn("LOWER", sequelize.col("Product.name")),
+            Op.like,
+            pattern
+          ),
+
+          // Company code in JSON meta (using the UUID from your frontend logic)
+          // Inside the Op.or array, replace the company code line with:
+
+          sequelize.where(
+            sequelize.fn(
+              "LOWER",
+              sequelize.fn(
+                "JSON_EXTRACT",
+                sequelize.col("Product.meta"),
+                sequelize.literal("'$.d11da9f9-3f2e-4536-8236-9671200cca4a'") // ← literal string + single quotes
+              )
+            ),
+            Op.like,
+            pattern
+          ),
+
+          // Keywords
+          sequelize.where(
+            sequelize.fn("LOWER", sequelize.col("keywords.keyword")),
+            Op.like,
+            pattern
+          ),
+
+          // Category names (via keyword → category)
+          sequelize.where(
+            sequelize.fn("LOWER", sequelize.col("keywords.categories.name")),
+            Op.like,
+            pattern
+          ),
+
+          // Optional: if you have product_code / sku as real columns
+          // sequelize.where(sequelize.fn('LOWER', sequelize.col('Product.product_code')), Op.like, pattern),
+        ],
+      };
+    }
+    // ────────────────────────────────────────────────────────────────────
 
     // Use findAndCountAll for efficient pagination + total count
     const { count: totalProducts, rows: products } =
       await Product.findAndCountAll({
+        where: whereClause,
         order: [["name", "ASC"]],
         offset,
         limit,
@@ -541,12 +597,10 @@ exports.getAllProducts = async (req, res) => {
             ],
           },
         ],
-        // Important for complex includes to avoid subquery issues in count
-        // (ensures correct total count when nested includes are present)
         subQuery: false,
       });
 
-    if (products.length === 0) {
+    if (totalProducts === 0) {
       return res.json({
         data: [],
         pagination: {
@@ -558,9 +612,8 @@ exports.getAllProducts = async (req, res) => {
       });
     }
 
-    // Collect all meta IDs used across products
+    // Collect all meta IDs used across products (your original efficient approach)
     const metaIds = new Set();
-
     products.forEach((product) => {
       const meta = parseJsonSafely(
         product.meta,
@@ -600,7 +653,8 @@ exports.getAllProducts = async (req, res) => {
       );
 
       // Build detailed meta with titles, units, etc.
-      const metaDetails = Object.entries(metaObj).map(([id, value]) => {
+      const metaDetails = Object.entries(metaObj).map(([idStr, value]) => {
+        const id = parseInt(idStr, 10);
         const def = metaMap[id] || {};
         return {
           id,
@@ -627,9 +681,9 @@ exports.getAllProducts = async (req, res) => {
 
       return {
         ...raw,
-        images, // always an array
-        meta: metaObj, // parsed object or {}
-        metaDetails, // enriched with titles, units, etc.
+        images,
+        meta: metaObj,
+        metaDetails,
         keywords,
         variantOptions: raw.variantOptions || {},
         variantKey: raw.variantKey || null,
@@ -755,94 +809,198 @@ exports.deleteProduct = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // Get products by category
 // ─────────────────────────────────────────────────────────────────────────────
+
 exports.getProductsByCategory = async (req, res) => {
   const { categoryId } = req.params;
+  const { page = 1, limit = 50, search } = req.query;
 
-  // Validate categoryId
   if (!categoryId) {
     return res.status(400).json({ message: "Category ID is required." });
   }
 
+  const pageNum = parseInt(page, 10);
+  const limitNum = parseInt(limit, 10);
+  const offset = (pageNum - 1) * limitNum;
+
+  if (isNaN(pageNum) || pageNum < 1 || isNaN(limitNum) || limitNum < 1) {
+    return res.status(400).json({ message: "Invalid pagination parameters." });
+  }
+
   try {
-    const products = await Product.findAll({
-      where: { categoryId },
-      order: [["createdAt", "DESC"]],
+    ensureAssociations();
+
+    // ── Base where clause ───────────────────────────────────────────────
+    const where = { categoryId };
+
+    // ── Search support (MySQL compatible – case-insensitive) ────────────
+    if (search && search.trim()) {
+      const searchTerm = search.trim().toLowerCase();
+      const pattern = `%${searchTerm}%`;
+
+      where[Op.or] = [
+        // Product name
+        sequelize.where(
+          sequelize.fn("LOWER", sequelize.col("Product.name")),
+          Op.like,
+          pattern
+        ),
+
+        // Company code in JSON meta
+        // Inside the Op.or array, replace the company code line with:
+
+        sequelize.where(
+          sequelize.fn(
+            "LOWER",
+            sequelize.fn(
+              "JSON_EXTRACT",
+              sequelize.col("Product.meta"),
+              sequelize.literal("'$.d11da9f9-3f2e-4536-8236-9671200cca4a'") // ← literal string + single quotes
+            )
+          ),
+          Op.like,
+          pattern
+        ),
+
+        // Keywords
+        sequelize.where(
+          sequelize.fn("LOWER", sequelize.col("keywords.keyword")),
+          Op.like,
+          pattern
+        ),
+
+        // Category names (via keyword → category)
+        sequelize.where(
+          sequelize.fn("LOWER", sequelize.col("keywords.categories.name")),
+          Op.like,
+          pattern
+        ),
+
+        // Optional: if you have product_code / sku as real column
+        // sequelize.where(sequelize.fn('LOWER', sequelize.col('Product.product_code')), Op.like, pattern),
+      ];
+    }
+    // ────────────────────────────────────────────────────────────────────
+
+    const { count: total, rows: products } = await Product.findAndCountAll({
+      where,
+      offset,
+      limit: limitNum,
+      order: [["name", "ASC"]],
       include: [
         {
-          model: ProductMeta,
-          as: "product_metas",
-          attributes: ["id", "title", "slug", "fieldType", "unit"],
+          model: Keyword,
+          as: "keywords",
+          attributes: ["id", "keyword"],
+          through: { attributes: [] },
+          include: [
+            {
+              model: Category,
+              as: "categories",
+              attributes: ["categoryId", "name", "slug"],
+            },
+          ],
         },
       ],
+      subQuery: false, // Important for correct count with nested includes
     });
 
-    if (products.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "No products found for this category." });
+    if (total === 0) {
+      return res.json({
+        data: [],
+        pagination: {
+          total: 0,
+          page: pageNum,
+          limit: limitNum,
+          totalPages: 0,
+        },
+      });
     }
 
-    const enrichedProducts = products.map((product) => {
-      const productData = product.toJSON();
-
-      // Initialize metaDetails safely
-      let metaDetails = [];
-
-      // Safely process meta if it exists and is an object
-      if (
-        productData.meta &&
-        typeof productData.meta === "object" &&
-        !Array.isArray(productData.meta) &&
-        productData.product_metas &&
-        Array.isArray(productData.product_metas)
-      ) {
-        metaDetails = Object.keys(productData.meta)
-          .map((metaIdStr) => {
-            const metaId = parseInt(metaIdStr, 10);
-            if (isNaN(metaId)) return null; // Skip invalid keys
-
-            const metaField = productData.product_metas.find(
-              (mf) => mf.id === metaId
-            );
-
-            // Only include if we found matching meta field
-            if (!metaField) return null;
-
-            return {
-              id: metaId,
-              title: metaField.title || "Unknown Field",
-              slug: metaField.slug || null,
-              value: productData.meta[metaIdStr],
-              fieldType: metaField.fieldType || "string",
-              unit: metaField.unit || null,
-            };
-          })
-          .filter(Boolean); // Remove null entries
-      }
-
-      // Clean up unnecessary fields
-      delete productData.meta;
-      delete productData.product_metas;
-
-      // Attach the properly structured metaDetails
-      productData.metaDetails = metaDetails;
-
-      return productData;
+    // ── Fetch all meta definitions once ─────────────────────────────────
+    const allMetaDefs = await ProductMeta.findAll({
+      attributes: ["id", "title", "slug", "fieldType", "unit"],
     });
 
-    return res.status(200).json({
-      data: enrichedProducts,
+    const metaMap = {};
+    allMetaDefs.forEach((m) => {
+      const def = m.toJSON();
+      metaMap[def.id] = def;
+    });
+
+    // ── Enrich products ─────────────────────────────────────────────────
+    const enriched = products.map((p) => {
+      const raw = p.toJSON();
+
+      // Safely parse meta & images
+      const metaObj = parseJsonSafely(raw.meta, {}, `product ${raw.id}`);
+      const images = parseJsonSafely(
+        raw.images,
+        [],
+        `product ${raw.id} images`
+      );
+
+      // Build metaDetails
+      const metaDetails = Object.entries(metaObj)
+        .map(([idStr, value]) => {
+          const id = parseInt(idStr, 10);
+          if (isNaN(id)) return null;
+          const def = metaMap[id];
+          if (!def) return null;
+          return {
+            id,
+            title: def.title || "Unknown",
+            slug: def.slug || null,
+            value: value != null ? String(value) : "",
+            fieldType: def.fieldType || "text",
+            unit: def.unit || null,
+          };
+        })
+        .filter(Boolean);
+
+      // Clean keywords
+      const keywords = (raw.keywords || []).map((k) => ({
+        id: k.id,
+        keyword: k.keyword,
+        categories: k.categories
+          ? {
+              categoryId: k.categories.categoryId,
+              name: k.categories.name,
+              slug: k.categories.slug,
+            }
+          : null,
+      }));
+
+      return {
+        ...raw,
+        images,
+        meta: metaObj,
+        metaDetails,
+        keywords,
+        // Add other fields you need (variantOptions, skuSuffix, isMaster, etc.)
+        variantOptions: raw.variantOptions || {},
+        variantKey: raw.variantKey || null,
+        skuSuffix: raw.skuSuffix || null,
+        isMaster: !!raw.isMaster,
+        isVariant: !!raw.masterProductId,
+        masterProductId: raw.masterProductId || raw.id,
+      };
+    });
+
+    const totalPages = Math.ceil(total / limitNum);
+
+    res.json({
+      data: enriched,
       pagination: {
-        total: enrichedProducts.length,
-        page: 1,
-        limit: enrichedProducts.length,
-        totalPages: 1,
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages,
       },
     });
   } catch (error) {
-    console.error("Error fetching products by category:", error);
-    return res.status(500).json({
-      message: "Internal server error.",
+    console.error("getProductsByCategory error:", error);
+    res.status(500).json({
+      message: "Failed to fetch products by category",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
@@ -851,7 +1009,7 @@ exports.getProductsByCategory = async (req, res) => {
 // Get products by brandId (with pagination, search, and metaDetails)
 // ─────────────────────────────────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────────────────────────────
-// Get products by brandId — NOW FULLY MATCHES getAllProducts logic
+// Get products by brandId (paginated, searchable, enriched meta & keywords)
 // ─────────────────────────────────────────────────────────────────────────────
 exports.getProductsByBrand = async (req, res) => {
   const { brandId } = req.params;
@@ -872,21 +1030,59 @@ exports.getProductsByBrand = async (req, res) => {
   try {
     ensureAssociations();
 
+    // ── Base where clause ───────────────────────────────────────────────
     const where = { brandId };
 
-    // Case-insensitive search for MySQL – with explicit table alias
+    // ── Search support (MySQL compatible – case-insensitive) ────────────
     if (search && search.trim()) {
       const searchTerm = search.trim().toLowerCase();
+      const pattern = `%${searchTerm}%`;
+
       where[Op.or] = [
-        sequelize.where(sequelize.fn("LOWER", sequelize.col("Product.name")), {
-          [Op.like]: `%${searchTerm}%`,
-        }),
+        // Product name
         sequelize.where(
-          sequelize.fn("LOWER", sequelize.col("Product.product_code")),
-          { [Op.like]: `%${searchTerm}%` }
+          sequelize.fn("LOWER", sequelize.col("Product.name")),
+          Op.like,
+          pattern
         ),
+
+        // Company code / Model code in JSON meta – FIXED with quoted key
+        sequelize.where(
+          sequelize.fn(
+            "LOWER",
+            sequelize.fn(
+              "JSON_EXTRACT",
+              sequelize.col("Product.meta"),
+              sequelize.literal(`'$."d11da9f9-3f2e-4536-8236-9671200cca4a"'`)
+            )
+          ),
+          Op.like,
+          pattern
+        ),
+
+        // Keywords
+        sequelize.where(
+          sequelize.fn("LOWER", sequelize.col("keywords.keyword")),
+          Op.like,
+          pattern
+        ),
+
+        // Category names (via keyword → category relation)
+        sequelize.where(
+          sequelize.fn("LOWER", sequelize.col("keywords.categories.name")),
+          Op.like,
+          pattern
+        ),
+
+        // Optional: uncomment if you have a real product_code / sku column
+        // sequelize.where(
+        //   sequelize.fn("LOWER", sequelize.col("Product.product_code")),
+        //   Op.like,
+        //   pattern
+        // ),
       ];
     }
+    // ────────────────────────────────────────────────────────────────────
 
     const { count: totalProducts, rows: products } =
       await Product.findAndCountAll({
@@ -894,7 +1090,6 @@ exports.getProductsByBrand = async (req, res) => {
         offset,
         limit: limitNum,
         order: [["name", "ASC"]],
-
         include: [
           {
             model: Keyword,
@@ -910,75 +1105,69 @@ exports.getProductsByBrand = async (req, res) => {
             ],
           },
         ],
-        subQuery: false, // Prevents issues with count query
+        subQuery: false, // Important for correct count with nested includes
       });
 
-    if (products.length === 0) {
+    if (totalProducts === 0) {
       return res.json({
         data: [],
-        pagination: { total: 0, page: pageNum, limit: limitNum, totalPages: 0 },
+        pagination: {
+          total: 0,
+          page: pageNum,
+          limit: limitNum,
+          totalPages: 0,
+        },
       });
     }
 
-    // Fetch all ProductMeta definitions once (small table)
-    const allMetaDefs = await ProductMeta.findAll({
+    // ── Fetch all meta definitions once (small table) ───────────────────
+    const metaDefs = await ProductMeta.findAll({
       attributes: ["id", "title", "slug", "fieldType", "unit"],
     });
 
-    const slugToMeta = {};
-    allMetaDefs.forEach((m) => {
-      const def = m.toJSON();
-      if (def.slug) {
-        slugToMeta[def.slug.toLowerCase()] = def;
-      }
-    });
+    const metaMap = Object.fromEntries(
+      metaDefs.map((m) => {
+        const def = m.toJSON();
+        return [def.id, def];
+      })
+    );
 
-    // Enrich products
+    // ── Enrich products ─────────────────────────────────────────────────
     const enrichedProducts = products.map((product) => {
       const raw = product.toJSON();
+
+      // Safely parse JSON fields
       const metaObj = parseJsonSafely(
         raw.meta,
         {},
-        `product ${raw.productId} meta`
+        `product ${raw.id || raw.productId} meta`
       );
       const images = parseJsonSafely(
         raw.images,
         [],
-        `product ${raw.productId} images`
+        `product ${raw.id || raw.productId} images`
       );
 
-      const knownMetaDetails = [];
+      // Build metaDetails from meta object + definitions
+      const metaDetails = Object.entries(metaObj)
+        .map(([idStr, value]) => {
+          const id = parseInt(idStr, 10);
+          if (isNaN(id)) return null;
+          const def = metaMap[id];
+          if (!def) return null;
 
-      // Selling Price
-      const priceKey = Object.keys(metaObj).find((key) =>
-        allMetaDefs.some((m) => m.slug?.toLowerCase() === "sellingprice")
-      );
-      if (priceKey && slugToMeta["sellingprice"]) {
-        knownMetaDetails.push({
-          id: slugToMeta["sellingprice"].id,
-          title: slugToMeta["sellingprice"].title || "Selling Price",
-          slug: "sellingprice",
-          value: String(metaObj[priceKey]),
-          fieldType: slugToMeta["sellingprice"].fieldType || "number",
-          unit: slugToMeta["sellingprice"].unit || null,
-        });
-      }
+          return {
+            id,
+            title: def.title || "Unknown Field",
+            slug: def.slug || null,
+            value: value != null ? String(value) : "",
+            fieldType: def.fieldType || "text",
+            unit: def.unit || null,
+          };
+        })
+        .filter(Boolean);
 
-      // Company Code
-      const codeKey = Object.keys(metaObj).find((key) =>
-        allMetaDefs.some((m) => m.slug?.toLowerCase() === "companycode")
-      );
-      if (codeKey && slugToMeta["companycode"]) {
-        knownMetaDetails.push({
-          id: slugToMeta["companycode"].id,
-          title: slugToMeta["companycode"].title || "Company Code",
-          slug: "companycode",
-          value: String(metaObj[codeKey]),
-          fieldType: slugToMeta["companycode"].fieldType || "string",
-          unit: null,
-        });
-      }
-
+      // Clean keywords structure
       const keywords = (raw.keywords || []).map((k) => ({
         id: k.id,
         keyword: k.keyword,
@@ -995,37 +1184,21 @@ exports.getProductsByBrand = async (req, res) => {
         ...raw,
         images,
         meta: metaObj,
-        metaDetails: knownMetaDetails,
+        metaDetails,
         keywords,
         variantOptions: raw.variantOptions || {},
         variantKey: raw.variantKey || null,
         skuSuffix: raw.skuSuffix || null,
         isMaster: !!raw.isMaster,
         isVariant: !!raw.masterProductId,
+        masterProductId: raw.masterProductId || raw.id || raw.productId,
       };
     });
-
-    // Optional: client-side fallback search for company code (if needed)
-    let finalProducts = enrichedProducts;
-    if (search && search.trim()) {
-      const lowerSearch = search.toLowerCase().trim();
-      finalProducts = enrichedProducts.filter((p) => {
-        const companyCode =
-          p.metaDetails
-            .find((d) => d.slug === "companycode")
-            ?.value?.toLowerCase() || "";
-        return (
-          p.name?.toLowerCase().includes(lowerSearch) ||
-          p.product_code?.toLowerCase().includes(lowerSearch) ||
-          companyCode.includes(lowerSearch)
-        );
-      });
-    }
 
     const totalPages = Math.ceil(totalProducts / limitNum);
 
     res.json({
-      data: finalProducts,
+      data: enrichedProducts,
       pagination: {
         total: totalProducts,
         page: pageNum,

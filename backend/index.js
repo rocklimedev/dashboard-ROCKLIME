@@ -276,6 +276,24 @@ cron.schedule("0 1 * * *", async () => {
     console.error("[CRON] Failed to update log stats:", err);
   }
 });
+// ------------------- Daily Cron: Delete Old API Logs (Retention: 60 days) -------------------
+cron.schedule("0 3 * * *", async () => {
+  // Runs daily at 3 AM (after stats cron at 1 AM)
+  try {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - 60); // Keep last 60 days
+
+    const result = await ApiLog.deleteMany({
+      createdAt: { $lt: cutoffDate },
+    });
+
+    console.log(
+      `[CRON] Deleted ${result.deletedCount} old API logs (older than 60 days)`
+    );
+  } catch (err) {
+    console.error("[CRON] Failed to delete old logs:", err);
+  }
+});
 // ------------------- Socket.IO Setup -------------------
 require("./socket")(io);
 initSocket(io);

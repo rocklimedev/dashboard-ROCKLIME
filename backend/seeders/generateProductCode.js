@@ -2,92 +2,122 @@
 const fs = require("fs").promises;
 const path = require("path");
 
-// Load your actual JSON file
-const jsonData = require("./duplicate_products.json"); // make sure this is correct path
+// ────────────────────────────────────────────────
+//   CONFIGURATION – ADJUST THESE FOR YOUR BRAND
+// ────────────────────────────────────────────────
+const BRAND = {
+  shortCode: "AM", // "GR" for GROHE
+  namePrefix: "AMERICAN STANDARD", // used in readable name if needed
+};
 
-// Mock brand (or pull from real data later)
-const mockBrand = { brandName: "Grohe Premium" };
+const MODEL_META_KEY = "d11da9f9-3f2e-4536-8236-9671200cca4a"; // ← your model number key
 
-function generateRandomSuffix() {
-  return Math.floor(Math.random() * 900 + 100).toString(); // 100-999
-}
+// ────────────────────────────────────────────────
 
-async function generateCode(product, existingCodes) {
-  let last4 = "0000";
-
-  // Use company_code from metaDetails if exists
-  if (product.metaDetails) {
-    const companyCodeEntry = product.metaDetails.find(
-      (m) => m.slug === "companycode"
-    );
-    if (companyCodeEntry && companyCodeEntry.value) {
-      const match = companyCodeEntry.value.toString().match(/\d{4}(?!.*\d)/);
-      last4 = match ? match[0].padStart(4, "0") : "0000";
-    }
-  }
-
-  // Fallback: use size from meta
-  if (last4 === "0000" && product.meta) {
-    const sizeValue =
-      product.meta["06857cb5-3fbe-404b-bdef-657c8ae7c345"] || "";
-    const cleaned = sizeValue.replace(/[\*\s]/g, "");
-    last4 = cleaned.slice(-4).padStart(4, "0") || "0000";
-  }
-
-  const prefix = `E${"GR".slice(0, 2)}${mockBrand.brandName
-    .slice(0, 2)
-    .toUpperCase()}${last4}`;
-
-  let newCode;
-  let attempts = 0;
-
-  do {
-    if (attempts++ > 1000) throw new Error("Failed to generate unique code");
-    const suffix = generateRandomSuffix();
-    newCode = `${prefix}${suffix}`;
-  } while (existingCodes.has(newCode));
-
-  return newCode;
-}
-
-async function updateProductJson() {
+async function main() {
   try {
-    console.log("Processing duplicate_products.json...");
+    // Load the actual file – update path/filename if needed
+    const inputFile = path.join(__dirname, "updated_products.json"); // or "duplicate_products.json"
+    const jsonData = require(inputFile);
 
-    // Use a Set for O(1) lookup
+    console.log(`Loaded ${jsonData.length} products`);
+
+    // Collect all already-good codes (for uniqueness check)
     const existingCodes = new Set(
       jsonData
-        .filter((p) => p.product_code && p.product_code !== "undefined")
-        .map((p) => p.product_code)
+        .filter(
+          (p) =>
+            typeof p.product_code === "string" && p.product_code.length >= 8
+        )
+        .map((p) => p.product_code.trim())
     );
 
     let updatedCount = 0;
 
     for (const product of jsonData) {
-      // Fix: Check product_code (snake_case), not productCode
-      if (!product.product_code || product.product_code === "undefined") {
-        const newCode = await generateCode(product, existingCodes);
-        product.product_code = newCode;
-        existingCodes.add(newCode);
-        updatedCount++;
-        console.log(`Generated: ${newCode} → ${product.name}`);
-      } else {
+      // Skip if it already has a valid-looking product_code
+      if (
+        product.product_code &&
+        typeof product.product_code === "string" &&
+        product.product_code.length >= 8 &&
+        !product.product_code.includes("undefined")
+      ) {
+        console.log(
+          `Keeping existing: ${product.product_code.padEnd(12)} → ${
+            product.name
+          }`
+        );
         existingCodes.add(product.product_code);
-        console.log(`Kept: ${product.product_code} → ${product.name}`);
+        continue;
       }
+
+      // ─── Try to get model number from meta ───────────────────────
+      let baseCode = "0000";
+
+      if (product.meta && product.meta[MODEL_META_KEY]) {
+        const raw = String(product.meta[MODEL_META_KEY]).trim();
+        // Keep only digits, take last 4 (most GROHE models end with 4 digits)
+        const digits = raw.replace(/\D/g, "");
+        if (digits.length >= 4) {
+          baseCode = digits.slice(-4);
+        } else if (digits.length > 0) {
+          baseCode = digits.padStart(4, "0");
+        }
+      }
+
+      // ─── Build prefix ─────────────────────────────────────────────
+      // Format: E + GR + first two uppercase letters of brand name + last4digits
+      // Example: EGRGR3009XXXX  (you can adjust this pattern)
+      const prefix = `E${BRAND.shortCode}${BRAND.namePrefix
+        .slice(0, 2)
+        .toUpperCase()}${baseCode}`;
+
+      // ─── Generate unique code with random 3-digit suffix ─────────
+      let newCode;
+      let attempts = 0;
+      const MAX_ATTEMPTS = 2000;
+
+      do {
+        if (attempts++ > MAX_ATTEMPTS) {
+          throw new Error(
+            `Cannot generate unique code for ${product.name} after ${MAX_ATTEMPTS} attempts`
+          );
+        }
+
+        const suffix = Math.floor(Math.random() * 900 + 100).toString(); // 100–999
+        newCode = `${prefix}${suffix}`;
+      } while (existingCodes.has(newCode));
+
+      // Assign and track
+      product.product_code = newCode;
+      existingCodes.add(newCode);
+      updatedCount++;
+
+      console.log(
+        `Generated : ${newCode} → ${product.name} (model: ${
+          product.meta?.[MODEL_META_KEY] || "—"
+        })`
+      );
     }
 
-    // Write back to the same file
-    const outputPath = path.resolve(__dirname, "duplicate_products.json");
+    // ─── Save back (you can change filename here) ─────────────────
+    const outputPath = path.join(__dirname, "products_with_codes.json");
+    // or keep original name: path.join(__dirname, "updated_products.json")
+
     await fs.writeFile(outputPath, JSON.stringify(jsonData, null, 2));
 
+    console.log("\n" + "═".repeat(60));
+    console.log(`Success! Processed ${jsonData.length} products`);
+    console.log(`  • Newly generated codes : ${updatedCount}`);
     console.log(
-      `Done! Updated ${updatedCount} products with unique product_code`
+      `  • Kept existing codes   : ${jsonData.length - updatedCount}`
     );
-    console.log(`Total products: ${jsonData.length}`);
+    console.log(`Output saved to: ${outputPath}`);
+    console.log("═".repeat(60));
   } catch (err) {
-    console.error("Error:", err.message);
+    console.error("ERROR:", err.message);
+    if (err.stack) console.error(err.stack.split("\n").slice(1, 4).join("\n"));
   }
 }
 
-updateProductJson();
+main();

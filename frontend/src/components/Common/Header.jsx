@@ -297,15 +297,6 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                       setSearchQuery(value);
                       localStorage.setItem("lastSearchQuery", value);
                     }}
-                    onPressEnter={() => {
-                      if (searchQuery.trim()) {
-                        navigate(
-                          `/search?q=${encodeURIComponent(searchQuery.trim())}`
-                        );
-                        setMobileSearchOpen(false);
-                        setShowSearchOverlay(false);
-                      }
-                    }}
                     allowClear
                     size="large"
                     className="mobile-global-search"
@@ -330,14 +321,6 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                     onFocus={() =>
                       searchQuery.trim() && setShowSearchOverlay(true)
                     }
-                    onPressEnter={() => {
-                      if (searchQuery.trim()) {
-                        navigate(
-                          `/search?q=${encodeURIComponent(searchQuery.trim())}`
-                        );
-                        setShowSearchOverlay(false);
-                      }
-                    }}
                     allowClear
                     size="large"
                     className="global-search-input"
