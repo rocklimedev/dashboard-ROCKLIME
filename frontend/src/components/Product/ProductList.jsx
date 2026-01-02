@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { useParams, Link, useSearchParams } from "react-router-dom";
+import React, { useState } from "react";
+import { useParams, Link } from "react-router-dom";
 import {
   Form,
   Input,
@@ -42,16 +42,19 @@ import Breadcrumb from "./Breadcrumb";
 import pos from "../../assets/img/default.png";
 import PermissionGate from "../../context/PermissionGate";
 
+// ────────────────────────────────────────────────
+//   META UUIDS – keep in sync with backend / fix script
+// ────────────────────────────────────────────────
+const META_KEYS = {
+  SELLING_PRICE: "9ba862ef-f993-4873-95ef-1fef10036aa5",
+  MODEL_CODE: "d11da9f9-3f2e-4536-8236-9671200cca4a",
+};
+
 const ProductsList = () => {
   const { id, bpcId } = useParams();
-  const [searchParams, setSearchParams] = useSearchParams();
 
-  // Read from URL params (with defaults)
-  const urlPage = parseInt(searchParams.get("page") || "1", 10);
-  const urlSearch = searchParams.get("search") || "";
-
-  const [currentPage, setCurrentPage] = useState(urlPage);
-  const [search, setSearch] = useState(urlSearch);
+  const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState("list");
   const [cartLoadingStates, setCartLoadingStates] = useState({});
   const [isDeleteModalVisible, setDeleteModalVisible] = useState(false);
@@ -62,68 +65,19 @@ const ProductsList = () => {
 
   const pageSize = 50;
 
-  // Sync internal state with URL on mount or when URL changes (e.g., back button)
-  useEffect(() => {
-    const pageFromUrl = parseInt(searchParams.get("page") || "1", 10);
-    const searchFromUrl = searchParams.get("search") || "";
-
-    setCurrentPage(pageFromUrl);
-    setSearch(searchFromUrl);
-  }, [searchParams]);
-
-  // Update URL when page or search changes
-  const updateSearchParams = useCallback(
-    (newPage, newSearch) => {
-      setSearchParams(
-        (prev) => {
-          const params = new URLSearchParams(prev);
-          if (newPage !== 1) {
-            params.set("page", newPage);
-          } else {
-            params.delete("page");
-          }
-          if (newSearch) {
-            params.set("search", newSearch);
-          } else {
-            params.delete("search");
-          }
-          return params;
-        },
-        { replace: true }
-      );
-    },
-    [setSearchParams]
-  );
-
-  // Handlers
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-    updateSearchParams(page, search);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const handleSearchChange = (e) => {
-    const value = e.target.value;
-    setSearch(value);
-    setCurrentPage(1); // Reset to page 1 on new search
-    updateSearchParams(1, value);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  // View type detection
   const isBrandView = !!id && !bpcId;
   const isBpcView = !!bpcId;
   const isCategoryView = !!id && !isBrandView && !isBpcView;
 
-  // Data fetching with current page & search
+  // ── Queries ───────────────────────────────────────
   const brandQuery = useGetProductsByBrandQuery(
     {
       brandId: id || "",
       page: currentPage,
       limit: pageSize,
-      search: search || undefined,
+      search: search.trim() || undefined,
     },
-    { skip: !isBrandView }
+    { skip: !isBrandView || !id }
   );
 
   const categoryQuery = useGetAllProductsByCategoryQuery(
@@ -131,29 +85,24 @@ const ProductsList = () => {
       categoryId: id || "",
       page: currentPage,
       limit: pageSize,
-      search: search || undefined,
+      search: search.trim() || undefined,
     },
-    { skip: !isCategoryView }
+    { skip: !isCategoryView || !id }
   );
 
-  const bpcQuery = useGetAllProductsQuery({
-    page: currentPage,
-    limit: pageSize,
-    search: search || undefined,
-  });
-
-  const allProductsQuery = useGetAllProductsQuery({
-    page: currentPage,
-    limit: pageSize,
-    search: search || undefined,
-  });
+  const allProductsQuery = useGetAllProductsQuery(
+    {
+      page: currentPage,
+      limit: pageSize,
+      search: search.trim() || undefined,
+    },
+    { skip: isBrandView || isCategoryView }
+  );
 
   const queryResult = isBrandView
     ? brandQuery
     : isCategoryView
     ? categoryQuery
-    : isBpcView
-    ? bpcQuery
     : allProductsQuery;
 
   const { data: productsResponse, isLoading, isFetching, error } = queryResult;
@@ -166,7 +115,6 @@ const ProductsList = () => {
     totalPages: 0,
   };
 
-  // Supporting queries (unchanged)
   const { data: brandsData } = useGetAllBrandsQuery();
   const { data: bpcData } = useGetBrandParentCategoryByIdQuery(bpcId, {
     skip: !bpcId,
@@ -181,9 +129,7 @@ const ProductsList = () => {
   const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation();
   const [addProductToCart] = useAddProductToCartMutation();
 
-  // ──────────────────────────────────────────────────────
-  // HELPERS (unchanged)
-  // ──────────────────────────────────────────────────────
+  // ── Helpers ───────────────────────────────────────
   const getBrandsName = (brandId) =>
     brandsData?.find((b) => b.id === brandId)?.brandName || "Not Branded";
 
@@ -194,80 +140,52 @@ const ProductsList = () => {
   const parseImages = (images) => {
     try {
       if (typeof images === "string") return JSON.parse(images);
-      return Array.isArray(images) ? images : [pos];
+      if (Array.isArray(images)) return images;
+      return [pos];
     } catch {
       return [pos];
     }
   };
 
-  const getPrice = (metaDetails = [], rawMeta = {}) => {
-    let entry = metaDetails.find(
-      (d) => d.slug?.toLowerCase() === "sellingprice"
-    );
-    if (
-      entry &&
-      entry.value &&
-      entry.value.length === 36 &&
-      entry.value.includes("-")
-    ) {
-      const sellingPriceKey = "9ba862ef-f993-4873-95ef-1fef10036aa5";
-      if (rawMeta[sellingPriceKey]) {
-        const price = parseFloat(rawMeta[sellingPriceKey]);
-        return isNaN(price) ? "N/A" : `₹ ${price.toFixed(2)}`;
-      }
-    }
-    if (!entry || !entry.value) return "N/A";
-    const price = parseFloat(entry.value);
+  const getPrice = (product) => {
+    const meta = product?.meta || {};
+    const rawPrice = meta[META_KEYS.SELLING_PRICE];
+
+    if (!rawPrice) return "N/A";
+
+    const price = parseFloat(rawPrice);
     return isNaN(price) ? "N/A" : `₹ ${price.toFixed(2)}`;
   };
 
-  const getCompanyCode = (metaDetails = [], rawMeta = {}) => {
-    let entry = metaDetails.find(
-      (d) => d.slug?.toLowerCase() === "companycode"
-    );
-    if (!entry) return "N/A";
-    const displayedValue = String(entry.value).trim();
-    if (displayedValue.length === 36 && displayedValue.includes("-")) {
-      const companyCodeKey = "d11da9f9-3f2e-4536-8236-9671200cca4a";
-      return rawMeta[companyCodeKey]
-        ? String(rawMeta[companyCodeKey]).trim()
-        : "N/A";
-    }
-    const sellingPriceKey = "9ba862ef-f993-4873-95ef-1fef10036aa5";
-    const sellingPrice = rawMeta[sellingPriceKey];
-    const numericDisplayed = parseFloat(displayedValue);
-    if (
-      !isNaN(numericDisplayed) &&
-      sellingPrice !== undefined &&
-      Math.abs(numericDisplayed - sellingPrice) < 1
-    ) {
-      const companyCodeKey = "d11da9f9-3f2e-4536-8236-9671200cca4a";
-      return rawMeta[companyCodeKey]
-        ? String(rawMeta[companyCodeKey]).trim()
-        : "N/A";
-    }
-    return displayedValue || "N/A";
+  const getCompanyCode = (product) => {
+    const meta = product?.meta || {};
+    const code = meta[META_KEYS.MODEL_CODE];
+
+    if (!code) return "N/A";
+
+    // Clean & return – adjust trimming/formatting if needed
+    return String(code).trim() || "N/A";
   };
 
-  // ──────────────────────────────────────────────────────
-  // HANDLERS (updated only for cart/delete etc.)
-  // ──────────────────────────────────────────────────────
   const handleAddToCart = async (product) => {
     if (!userId) return message.error("Please log in");
-    const price = getPrice(product.metaDetails, product.meta);
+
+    const price = getPrice(product);
     if (price === "N/A") return message.error("Price not available");
 
     setCartLoadingStates((prev) => ({ ...prev, [product.productId]: true }));
+
     try {
       await addProductToCart({
         userId,
         productId: product.productId,
         quantity: 1,
       }).unwrap();
+
       message.success("Added to cart");
       refetchCart();
-    } catch (e) {
-      message.error(e?.data?.message || "Failed to add to cart");
+    } catch (err) {
+      message.error(err?.data?.message || "Failed to add to cart");
     } finally {
       setCartLoadingStates((prev) => ({ ...prev, [product.productId]: false }));
     }
@@ -294,8 +212,8 @@ const ProductsList = () => {
     try {
       await deleteProduct(selectedProduct.productId).unwrap();
       message.success("Product deleted");
-    } catch (e) {
-      message.error(e?.data?.message || "Delete failed");
+    } catch (err) {
+      message.error(err?.data?.message || "Delete failed");
     } finally {
       setDeleteModalVisible(false);
       setSelectedProduct(null);
@@ -345,7 +263,7 @@ const ProductsList = () => {
         <img
           src={parseImages(images)[0] || pos}
           alt="Product"
-          style={{ width: 50, height: 50, objectFit: "cover" }}
+          style={{ width: 50, height: 50, objectFit: "cover", borderRadius: 4 }}
         />
       ),
       width: 80,
@@ -355,13 +273,15 @@ const ProductsList = () => {
       dataIndex: "name",
       key: "name",
       render: (text, record) => (
-        <Link to={`/product/${record.productId}`}>{text || "N/A"}</Link>
+        <Link to={`/product/${record.productId}`}>
+          {text || "Unnamed product"}
+        </Link>
       ),
     },
     {
       title: "Product Code",
-      key: "company_code",
-      render: (_, record) => getCompanyCode(record.metaDetails, record.meta),
+      key: "product_code",
+      render: (_, record) => getCompanyCode(record),
     },
     {
       title: "Brand",
@@ -372,19 +292,24 @@ const ProductsList = () => {
     {
       title: "Price",
       key: "price",
-      render: (_, record) => getPrice(record.metaDetails, record.meta),
+      render: (_, record) => getPrice(record),
     },
     {
       title: "Stock",
       dataIndex: "quantity",
       key: "quantity",
-      render: (qty) => (qty > 0 ? `${qty} in stock` : "Out of Stock"),
+      render: (qty) =>
+        qty > 0 ? (
+          `${qty} in stock`
+        ) : (
+          <span style={{ color: "#ff4d4f" }}>Out of stock</span>
+        ),
     },
     {
       title: "Actions",
       key: "actions",
       render: (_, record) => {
-        const price = getPrice(record.metaDetails, record.meta);
+        const price = getPrice(record);
         const priceValid = price !== "N/A";
 
         return (
@@ -430,7 +355,7 @@ const ProductsList = () => {
     },
   ];
 
-  // Title & Breadcrumbs (unchanged)
+  // ── Title & Breadcrumbs ───────────────────────────
   const pageTitle = isBrandView
     ? getBrandsName(id)
     : isBpcView
@@ -482,7 +407,10 @@ const ProductsList = () => {
                 prefix={<SearchOutlined />}
                 placeholder="Search products..."
                 value={search}
-                onChange={handleSearchChange}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setCurrentPage(1);
+                }}
                 allowClear
                 size="large"
                 style={{ width: 300 }}
@@ -500,7 +428,12 @@ const ProductsList = () => {
             Error: {error?.data?.message || "Failed to load products"}
           </div>
         ) : products.length === 0 ? (
-          <Empty description="No products found" />
+          <Empty
+            description={
+              search ? "No products match your search" : "No products found"
+            }
+            style={{ margin: "80px 0" }}
+          />
         ) : (
           <>
             {viewMode === "card" ? (
@@ -544,7 +477,10 @@ const ProductsList = () => {
                 current={currentPage}
                 total={pagination.total}
                 pageSize={pageSize}
-                onChange={handlePageChange}
+                onChange={(page) => {
+                  setCurrentPage(page);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
                 showSizeChanger={false}
               />
             </div>
