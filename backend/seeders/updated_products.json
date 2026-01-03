@@ -1,1778 +1,11 @@
 [
   {
-    "name": "GROHE Costa L Bib Tap",
+    "name": "American Standard Acacia E extended basin mixer",
     "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "This is a GROHE Costa L Bib Tap (model 30098001), which is a wall-mounted faucet. Key specifications and features: Finish: GROHE LongLife chrome finish. Handle: Features a metal handle that is heat-insulated. Installation: Designed for wall mounting with a 1/2″ connection. Flow Rate: Maximum flow rate of 13 liters per minute at 3 bar pressure.",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "d642a7f4-9bb9-4d91-bcf3-fd63b438b85e",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 5300,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "30098001"
-    },
-    "product_code": "EGRGR8001809"
-  },
-  {
-    "name": "GROHE Bau Ceramic vessel basin with deck",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "The item pictured is a GROHE Bau Ceramic vessel basin with deck (model number 104587SH00). Key specifications and features include:  Type: Vessel basin designed for countertop installation Material: Sanitary ware (ceramic) Features: Includes a tap deck/platform and a fixation set",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "d642a7f4-9bb9-4d91-bcf3-fd63b438b85e",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 11900,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "104587SH00"
-    },
-    "product_code": "EGRGR8700111"
-  },
-  {
-    "name": "Grohe Bau Ceramic Vessel basin 50",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "The item pictured is a GROHE Bau Ceramic vessel basin with deck (model number 104587SH00). Key specifications and features include:  Type: Vessel basin designed for countertop installation Material: Sanitary ware (ceramic) Features: Includes a tap deck/platform and a fixation set",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "d642a7f4-9bb9-4d91-bcf3-fd63b438b85e",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 11900,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "104590SH00"
-    },
-    "product_code": "EGRGR9000535"
-  },
-  {
-    "name": "Grohe Bau Ceramic Vessel basin 50",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "This is a Grohe Bau Ceramic Vessel basin 50 (model 104590SH00).  It is a vessel basin designed to be mounted on a countertop. The basin does not have an overflow or tap hole. It is made from high-quality sanitary ware.",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "d642a7f4-9bb9-4d91-bcf3-fd63b438b85e",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 11500,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "104590SH00"
-    },
-    "product_code": "EGRGR9000197"
-  },
-  {
-    "name": "Grohe Uniset concealed wall-mounted cistern half frame for a WC",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "This is a Grohe Uniset concealed wall-mounted cistern half frame for a WC.  Features a steel frame with 4 fixing brackets and 2 WC fixing bolts.  Includes a flushing cistern with a dual flush option, allowing the user to choose between 6 or 9 liters of water usage.  Designed to be hidden behind a wall or cabinet, with only the flush plate and toilet bowl visible after installation. ",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "d642a7f4-9bb9-4d91-bcf3-fd63b438b85e",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 9700,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "39165001"
-    },
-    "product_code": "EGRGR5001194"
-  },
-  {
-    "name": "Grohe Surf Single Flush Plate in a chrome finish",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "This is a Grohe Surf Single Flush Plate in a chrome finish, model number 37063000.  Finish: Chrome Actuation: Single flush Material: Made of ABS plastic Installation: Suitable for vertical or horizontal installation",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "d642a7f4-9bb9-4d91-bcf3-fd63b438b85e",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 4900,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "37063000"
-    },
-    "product_code": "EGRGR3000649"
-  },
-  {
-    "name": "Grohe Surf Single Flush Plate in chrome",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "This is a Grohe Surf Single Flush Plate in chrome with product number 37063000.  It is designed for single flush actuation and works with a compatible Grohe concealed flush tank.  The product is made of ABS material.  It measures 156 x 197 mm. ",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "d642a7f4-9bb9-4d91-bcf3-fd63b438b85e",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 4900,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "37063000"
-    },
-    "product_code": "EGRGR3000439"
-  },
-  {
-    "name": "Grohe Tempesta shower rail",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "This is a Grohe Tempesta shower rail, 600mm.  Finish: Starlight chrome, durable and scratch resistant Features: Gliding element and swivel holder for easy adjustment of a hand shower Range: Part of the Tempesta collection for modern bathrooms",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "d642a7f4-9bb9-4d91-bcf3-fd63b438b85e",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 6200,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "27523001"
-    },
-    "product_code": "EGRGR3001209"
-  },
-  {
-    "name": "Grohe BauFlow single-lever shower mixer or valve",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "This is a Grohe BauFlow single-lever shower mixer or valve. Key details include:  Technology: Features a ceramic cartridge for smooth control of water flow and temperature. Design: It is a concealed installation set designed for a clean, minimalist look with a chrome finish. Origin: Designed and engineered in Germany.",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "d642a7f4-9bb9-4d91-bcf3-fd63b438b85e",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 4250,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "26018000"
-    },
-    "product_code": "EGRGR8000465"
-  },
-  {
-    "name": "Grohe BauEdge Three-Hole, 2-Handle Basin Mixer with Pop-Up",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "This is a Grohe BauEdge Three-Hole, 2-Handle Basin Mixer with Pop-Up.  Type: Three-hole, 2-handle basin mixer Features: Includes a pop-up waste Finish: Chrome finish",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "d642a7f4-9bb9-4d91-bcf3-fd63b438b85e",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 17300,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "20473001"
-    },
-    "product_code": "EGRGR3001606"
-  },
-  {
-    "name": "Hansgrohe 1-Handle Bath/Shower Mixer, Concealed Body",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "This is a Hansgrohe 1-Handle Bath/Shower Mixer, Concealed Body (product number 33963000).  Designed for use with diverter and thermostats. It is a concealed body type for a clean, minimalist installation.",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "d642a7f4-9bb9-4d91-bcf3-fd63b438b85e",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 12900,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "33963000"
-    },
-    "product_code": "EGRGR3000210"
-  },
-  {
-    "name": "GROHE Single-lever mixer, concealed body",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "This is a GROHE 32635000 Single-lever mixer, concealed body, designed for 2-hole wall-mount basin mixers.  It is for wall installation and requires a finishing trim set to be purchased separately.  It features a GROHE SilkMove 35 mm ceramic cartridge for smooth operation.  The recommended installation depth is 45 to 75 mm. ",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "d642a7f4-9bb9-4d91-bcf3-fd63b438b85e",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 13800,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "32635000"
-    },
-    "product_code": "EGRGR5000613"
-  },
-  {
-    "name": "Grohe Alira Single lever Bath/Shower Mixer trim set",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "This is a Grohe Alira Single lever Bath/Shower Mixer trim set.  Finish: Chrome finish Installation: This is a trim-only kit and requires a separate concealed body (e.g., model 33963000) for installation.",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "d642a7f4-9bb9-4d91-bcf3-fd63b438b85e",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 10100,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "29375001"
-    },
-    "product_code": "EGRGR5001986"
-  },
-  {
-    "name": "Grohe Alira 2-hole, single lever wall-mount basin mixer",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "This is a Grohe Alira 2-hole, single lever wall-mount basin mixer (product code 24254001).  Mounting Type: Wall-mounted, concealed installation Material: Stainless steel",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "d642a7f4-9bb9-4d91-bcf3-fd63b438b85e",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 9200,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24254001"
-    },
-    "product_code": "EGRGR4001662"
-  },
-  {
-    "name": "Alira Pillar Tap, XS Size",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "d642a7f4-9bb9-4d91-bcf3-fd63b438b85e",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 7800,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "20615001"
-    },
-    "product_code": "EGRGR5001189"
-  },
-  {
-    "name": "Alira Pillar Tap, XL Size",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "d642a7f4-9bb9-4d91-bcf3-fd63b438b85e",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 11000,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24246001"
-    },
-    "product_code": "EGRGR6001877"
-  },
-  {
-    "name": "Grohe Alira single-lever basin mixer M Size mixer",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "d642a7f4-9bb9-4d91-bcf3-fd63b438b85e",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 10950,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24247001"
-    },
-    "product_code": "EGRGR7001255"
-  },
-  {
-    "name": "Grohe Alira single-lever basin mixer XL Size mixer",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "d642a7f4-9bb9-4d91-bcf3-fd63b438b85e",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 17850,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24249001"
-    },
-    "product_code": "EGRGR9001342"
-  },
-  {
-    "name": "American Standard Acacia-E Basin Mono faucet",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "This is an American Standard Acacia-E Basin Mono faucet.  Collection: Acacia E Finish: Matt Black Type: Single lever mixer, deck mounted",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 10800,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1306-1T1440BFO"
-    },
-    "product_code": "EAMAM1440145"
-  },
-  {
-    "name": "American Standard Acacia E Single Hole Basin Mixer faucet",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": " This is an American Standard Acacia E Single Hole Basin Mixer faucet (model FFAS1301-101440BFO).  It is a single lever mixer designed for deck mounting.  Key features include Water-saving technology, Durashine finish, ComfortMove smooth handle performance, and Comfort Angle adjustable water flow.  The material is brass.",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 16450,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1301-101440BFO"
-    },
-    "product_code": "EAMAM1440127"
-  },
-  {
-    "name": "American Standard Acacia Evolution 3-Hole Basin Mixer faucet in matte black finish",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "This is an American Standard Acacia Evolution 3-Hole Basin Mixer faucet in matte black finish.  It is a deck-mounted mixer with two handles. Features Durashine finish for enduring brilliance. Includes water-saving technology.",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 26850,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1303-101440BFO"
-    },
-    "product_code": "EAMAM1440154"
-  },
-  {
-    "name": "American Standard Acacia E Concealed Bath & Shower Mixer",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "This is an American Standard Acacia E Concealed Bath & Shower Mixer (model FFAS1321-608ALOBFO).  Modern style with a graphite/matt black finish. Features dual functionality, easily switching between bath and shower modes. Designed for concealed installation, providing a sleek look.",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 22050,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1321-608ALOBFO"
-    },
-    "product_code": "EAMAM1608128"
-  },
-  {
-    "name": "Acacia E Wall mounted mixer",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Acacia E",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 24600,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1304-101ALOBFO"
-    },
-    "product_code": "EAMAM4101378"
-  },
-  {
-    "name": "Push-open Waste with overflow",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Push-open Waste with overflow: A clicker or pop-up drain assembly typically used for bathroom sinks with an overflow feature, allowing the user to seal the drain by pressing down on the stopper.",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 2100,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "103836A001"
-    },
-    "product_code": "EAMAM6001217"
-  },
-  {
-    "name": "Stop Valve Ceramic Valve",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "An angle valve, possibly from the Grohe Atlanta series in Phantom Black, used to control water flow to a fixture.",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 1800,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "103650A001"
-    },
-    "product_code": "EAMAM0001158"
-  },
-  {
-    "name": "Concept Square Robe Hook",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Concept",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 3450,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0481-908A00BFO"
-    },
-    "product_code": "EAMAM0800984"
-  },
-  {
-    "name": "DuoSTIX Hygiene Spray",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "DuoSTIX",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 3700,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFASTS28-000A00BFO"
-    },
-    "product_code": "EAMAM0000610"
-  },
-  {
-    "name": "American Standard Concept Square Single Towel Bar",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "This is an American Standard Concept Square Single Towel Bar.  Finish: Chrome Length: 600mm Material: Zinc die casting base and pole with a SUS201 cross bar",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 6950,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0493-908A00BFO"
-    },
-    "product_code": "EAMAM0800386"
-  },
-  {
-    "name": "American Standard Concept Square Single Tissue Holder with Shelf",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "This is an American Standard Concept Square Single Tissue Holder with Shelf (Model: WF-0498HG).  Product Type: Single tissue holder with a shelf Material/Finish: Available in PVD / Hard Graphite color/finish",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 7100,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0498-908A00BFO"
-    },
-    "product_code": "EAMAM0800469"
-  },
-  {
-    "name": "Concept Square Towel Rack",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Concept",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 21950,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0495-908A00BFO"
-    },
-    "product_code": "EAMAM0800354"
-  },
-  {
-    "name": "1.5m PVC Twist-free Flexible Hose",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 2600,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS9127-000A00BF0"
-    },
-    "product_code": "EAMAM0000925"
-  },
-  {
-    "name": "Top Installation Shower Arm",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 4350,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS9908-000A00BFO"
-    },
-    "product_code": "EAMAM0000435"
-  },
-  {
-    "name": "American Standard wall-mounted shower arm",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "This is an American Standard FFAS9909-000A00BF0 wall-mounted shower arm. Finish: PVD (Physical Vapor Deposition) Style: Contemporary Mounting Type: Wall Mounted",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 5050,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS9909-000A00BF0"
-    },
-    "product_code": "EAMAM0000649"
-  },
-  {
-    "name": "American Standard Wall Outlet - Square (G1/2') in a black finish",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": " This is an American Standard Wall Outlet - Square (G1/2') in a black finish.  Type: Wall Outlet - Square (G1/2') Material: Solid brass construction for durability Finish: Matte black, scratch resistant, and easy to clean",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 6100,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS9142-000A00BFO"
-    },
-    "product_code": "EAMAM0000572"
-  },
-  {
-    "name": "Wall Outlet with holder - Square (G1/2')",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 7750,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS9143-000A00BFO"
-    },
-    "product_code": "EAMAM0000652"
-  },
-  {
-    "name": "American Standard RainClick 130 Round 3F Hand Shower",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "",
-    "images": "Features three spray modes, switched via an instinctive EasyClick button. Equipped with EasyClean silicone nozzles for easy limescale removal. Has a shiny chrome finish for enduring brilliance.",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 8150,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS9H11-000A00BFO"
-    },
-    "product_code": "EAMAM0000141"
-  },
-  {
-    "name": "EasySet Headshower",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "EasySet",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 8300,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFASS515-000A00BFO"
-    },
-    "product_code": "EAMAM0000997"
-  },
-  {
-    "name": "American Standard EasySET body shower with a concealed body",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "  This is an American Standard EasySET body shower with a concealed body. Type: Body shower with a concealed bodyDesign: Square design, likely in a black or dark finish based on the image Features: Designed to integrate into a multi-fixture shower system for a spa-like experience",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 10600,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFASS054-000A00BCO"
-    },
-    "product_code": "EAMAM0000990"
-  },
-  {
-    "name": "American Standard Simplicity Square Bath Spout",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "It features a modern contemporary design. The construction is solid metal for durability. It has a corrosion-resistant finish that will not fade or tarnish.",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 5150,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "103835A001"
-    },
-    "product_code": "EAMAM5001101"
-  },
-  {
-    "name": "American Standard EasySet Exposed Bath & Shower 3-Way Rainshower System",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "This is an American Standard EasySet Exposed Bath & Shower 3-Way Rainshower System (FFAS4956-601A00BF0).   It is an auto temperature (thermostatic) mixer, maintaining a consistent water temperature. ",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 101400,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS4956-601A00BF0"
-    },
-    "product_code": "EAMAM1000259"
-  },
-  {
-    "name": "American Standard EasySET Easy Dial for Body Shower control knob in a polished hard graphite finish",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": " This is an American Standard EasySET Easy Dial for Body Shower control knob in a polished hard graphite finish.  Technology: Features 'Push & Turn' functionality for easy water volume adjustment. Finish: Part of the DuraTone collection, known for vibrant and long-lasting finishes. Collection: Belongs to the EasySET collection of thermostatic mixers designed for consistent water temperature.",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 18200,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0927-709A00BFO"
-    },
-    "product_code": "EAMAM0900977"
-  },
-  {
-    "name": "American Standard Easy Dial for Head Shower controller",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "This is an American Standard Easy Dial for Head Shower controller (model FFAS0926-709A00BFO).  It features an easy push-and-turn dial mechanism for water flow and volume control. The product is part of the American Standard EasySET collection. It is designed to be paired with a separate thermostatic mixer for temperature control. ",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 18200,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0926-709A00BFO"
-    },
-    "product_code": "EAMAM0900536"
-  },
-  {
-    "name": "American Standard EasySet for Hand Shower in a brushed hard graphite finish",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "This is an American Standard EasySet for Hand Shower in a brushed hard graphite finish.  Features: Push and turn button for convenient water flow control Technology: Part of the EasySet collection, offering precise control and modern design Material: Typically made of brass with a durable finish",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 18200,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0925-709A00BFO"
-    },
-    "product_code": "EAMAM0900237"
-  },
-  {
-    "name": "American Standard EasySET Conceal Thermostatic Mixer with Trim",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": " This is an American Standard EasySET Conceal Thermostatic Mixer with Trim, model FFAS0930-000A00BFO.      Provides a consistent and comfortable water temperature.   Features safety temperature control up to, with an auto shut-off function if the   cold water supply fails.  Has a shiny chrome finishing for enduring brilliance.  ",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 27600,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0930-000A00BFO"
-    },
-    "product_code": "EAMAM0000417"
-  },
-  {
-    "name": "Signature Concealed Shower Mixer",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "This is a Signature Concealed Shower Mixer with product code FFAS1722-709A00BFO. Offers overhead rainfall shower, hand shower, and tub tap functionality.",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 16650,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1722-709A00BFO"
-    },
-    "product_code": "EAMAM0900709"
-  },
-  {
-    "name": "American Standard Signature Exposed Shower Mixer",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "  This is an American Standard Signature Exposed Shower Mixer (model FFAS1712-709A00BFO). Features: Designed for usability with advanced features that improve functionality and quality.",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 22700,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1712-709A00BFO"
-    },
-    "product_code": "EAMAM0900185"
-  },
-  {
-    "name": "American Standard Signature Concealed Bath & Shower Mixer",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "  This is an American Standard Signature Concealed Bath & Shower Mixer. Features: It incorporates the brand's signature design elements (Frame, Pillow, and Line) and is part of a collection designed with soft minimalism in mind.",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 23700,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1721-609A00BFO"
-    },
-    "product_code": "EAMAM0900296"
-  },
-  {
-    "name": "American Standard Signature Exposed Bath & Shower Mixer With Integrated Rain Shower Kit",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "It is a wall-mounted mixer with a chrome finish.  It features a 3-way ceramic diverter cartridge.  The system includes a rain shower head and a 3-function hand shower. ",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 72650,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1772-701A00BFO"
-    },
-    "product_code": "EAMAM0100270"
-  },
-  {
-    "name": "American Standard Signature Single Hole Basin Mixer With Pop-up Drain",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "  This is an American Standard Signature Single Hole Basin Mixer With Pop-up Drain. Finish: Matte Black (in image; also available in chrome)Features: Water-saving technology and Durashine finish for enduring brilliance Material: Brass",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 16550,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1701-101A00BFO"
-    },
-    "product_code": "EAMAM0100227"
-  },
-  {
-    "name": "American Standard Signature Single Hole Extended Basin Mixer With Pop-up Drain",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "It features low lead brass construction for durability and better health protection.  The faucet has a shiny chrome finish for enduring brilliance.  It includes a high-quality ceramic valve tested for 500,000 cycles. The design is part of the Signature Collection, which embodies a soft minimalism style",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 0,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1702-101A00BFO"
-    },
-    "product_code": "EAMAM0100356"
-  },
-  {
-    "name": "American Standard Signature 3-Hole Basin Mixer With Pop-up Drain",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "This is an American Standard Signature 3-Hole Basin Mixer With Pop-up Drain. Type: 3-Hole Basin Mixer with Pop-up Drain Finish: Matte Black (implied by image, other finishes available)",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 27050,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1703-101A00BFO"
-    },
-    "product_code": "EAMAM0100136"
-  },
-  {
-    "name": "Push-open Waste with overflow",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 2100,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "103836DA01"
-    },
-    "product_code": "EAMAM3601431"
-  },
-  {
-    "name": "Stop Valve Ceramic Valv",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 1800,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "103650DA01"
-    },
-    "product_code": "EAMAM5001211"
-  },
-  {
-    "name": "American Standard 1.5m PVC Twist-free Flexible Hose in Polished Warm Sunset finish",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "It features a smooth surface for easy cleaning. It has a rotation cone for a TwistStop function. It is bend-proof with an AntiFold design.",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 2600,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS9127-000DA0BFO"
-    },
-    "product_code": "EAMAM0000879"
-  },
-  {
-    "name": "American Standard Concept Square Robe Hook",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "  This is an American Standard Concept Square Robe Hook. Product Type: Robe Hook Style: Contemporary Collections: Concept Material: Zinc die casting base & pole, cast brass hook",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 3450,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1703-101A00BF0"
-    },
-    "product_code": "EAMAM1000213"
-  },
-  {
-    "name": "American Standard DuoSTiX Hygiene Spray",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "It has a dual-pressure feature for both gentle personal cleansing (bidet function) and a strong jet spray for bathroom cleaning.  The cap can be removed to access the strong jet spray and can be fitted in either direction for ergonomic use.  The product is available in different finishes, including Chrome/Glossy White, Chrome/Matte Black, and Full Glossy White. ",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 3700,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFASTS28-000GL0BF0"
-    },
-    "product_code": "EAMAM0000241"
-  },
-  {
-    "name": "American Standard Concept Square Single Towel Bar",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Collection: Concept Square Material: Features zinc die casting base and pole, with a SUS201 cross bar and screw.",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 6950,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0493-908DA0BF0"
-    },
-    "product_code": "EAMAM0800438"
-  },
-  {
-    "name": "Concept Square Single Tissue Holder",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Concept",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 7100,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFASO498-908DA0BFO"
-    },
-    "product_code": "EAMAM9080241"
-  },
-  {
-    "name": "Concept Square Towel Rack",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Concept",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 21950,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0495-908DA0BFO"
-    },
-    "product_code": "EAMAM9080710"
-  },
-  {
-    "name": "Top Installation Shower Arm",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 4350,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS9908-000DA0BFO"
-    },
-    "product_code": "EAMAM0000529"
-  },
-  {
-    "name": "American Standard FFAS9909 wall-mounted shower arm",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Installation: Wall mount Material: Brass construction ensures durability and reliability Finish: The color appears to be a rose gold or bronze finish, which resists corrosion and tarnishing",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 5050,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS9909-000DA0BFO"
-    },
-    "product_code": "EAMAM0000963"
-  },
-  {
-    "name": "American Standard Square Wall Outlet (G1/2') in the Polished Warm Sunset finish",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Type: Wall Outlet - Square (G1/2')Finish: Polished Warm Sunset Material: Brass body",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 6100,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS9142WS"
-    },
-    "product_code": "EAMAM9142686"
-  },
-  {
-    "name": "American Standard Square Wall Outlet With Holder (G1/2') in a Warm Sunset finish",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Material: Brass (implied by similar products) Connection Size: G1/2' Function: Combines a water pipe connector and hand shower bracket, reducing the number of components needed for a cleaner look.",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 7750,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS9143-000DA0BFO"
-    },
-    "product_code": "EAMAM0000126"
-  },
-  {
-    "name": "American Standard RainClick 130 Round 3F Hand Shower",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "It features 3 functions/flows. The hand shower face diameter is 130 mm. It has a flow rate of 4.5.",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 8150,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS9H11-000DA0BFO"
-    },
-    "product_code": "EAMAM0000123"
-  },
-  {
-    "name": "EasySet Headshower",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "EasySet",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 8300,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFASS515-000DA0BFO"
-    },
-    "product_code": "EAMAM0000910"
-  },
-  {
-    "name": "American Standard  body shower with a conceal body",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Type: Body shower (overhead shower) with conceal body Finish: Chrome Technology: Features the EasyClean system for easy removal of limescale or dirt from the silicone aerators",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 10600,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFASS054-000DA0BCO"
-    },
-    "product_code": "EAMAM0000745"
-  },
-  {
-    "name": "American Standard Simplicity Square Bath Spout",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "It features a clean, minimalist design and compact square profile.  The product is available in a gold finish.  It is designed for use with an external diverter or stop valve for water control. ",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 5150,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "103835DA01"
-    },
-    "product_code": "EAMAM3501145"
-  },
-  {
-    "name": "American Standard EasySET Exposed Auto Temperature Mixer shower system",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "It is a 3-way rainshower system.  It features a thermostatic mixer that maintains a consistent, pre-set water temperature, preventing scalding.  The system includes safety features like a safety lock and auto shut-off if the cold water supply fails. ",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 101400,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS4956-601DA0BFO"
-    },
-    "product_code": "EAMAM6010786"
-  },
-  {
-    "name": "American Standard EasySet for Body Shower",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "It is a control dial accessory for body showers. The finish is chrome. It is designed for easy control of water flow and temperature.",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 18200,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0927-709DA0BFO"
-    },
-    "product_code": "EAMAM7090703"
-  },
-  {
-    "name": "Easy Dial for Head Shower",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "EasySet",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 18200,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0926-709DA0BFO"
-    },
-    "product_code": "EAMAM7090563"
-  },
-  {
-    "name": "American Standard EasySET Concealed Auto Temperature Mixer in a Polished Warm Sunset finish",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "    It is a thermostatic mixer designed for concealed installation with a trim.     It features an auto shut-off function if the cold water supply fails.   The finish is PVD coated, offering superior hardness, durability, and resistance to scratches,   tarnish, and corrosion.  ",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 27600,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0930-000DA0BF0"
-    },
-    "product_code": "EAMAM0000951"
-  },
-  {
-    "name": "American Standard Signature Concealed Shower Mixer",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Collection: Signature Product Type: Concealed Shower Mixer Finish: Appears to be a rose gold or polished cool sunrise finish",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 16650,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1722-709DA0BFO"
-    },
-    "product_code": "EAMAM7090988"
-  },
-  {
-    "name": "Signature Exposed Shower Mixer",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Signature",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 22700,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1712-709DA0BFO"
-    },
-    "product_code": "EAMAM7090974"
-  },
-  {
-    "name": "American Standard Signature Concealed Bath & Shower Mixer",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Type: Concealed bath and shower mixer, single handle. Features: Includes water-saving technology and a shiny chrome 'Durashine' finish for enduring brilliance. Design: Features 'soft minimalism' that blends into modern bathroom architecture.",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 23700,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1721-609DA0BFO"
-    },
-    "product_code": "EAMAM6090827"
-  },
-  {
-    "name": "American Standard Signature Exposed Bath & Shower Mixer",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Style: Contemporary Finish: The color appears to be a PVD finish, likely gold or rose gold. Technology: Features Durashine technology for a shiny finish.",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 38100,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1711-609DA0BFO"
-    },
-    "product_code": "EAMAM6090435"
-  },
-  {
-    "name": "American Standard Signature Exposed Bath & Shower Mixer with Integrated Rain Shower Kit",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Collection: Signature Type: Exposed bath and shower mixer with integrated rain shower kit Color: Chrome finish",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 72650,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1772-701DA0BFO"
-    },
-    "product_code": "EAMAM7010908"
-  },
-  {
-    "name": "American Standard Signature Single Hole Basin Mixer With Pop-up Drain",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Features Durashine finish for enduring brilliance Includes ComfortMove for smooth handle performance Designed with water-saving capabilities",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 16550,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1701-101DA0BFO"
-    },
-    "product_code": "EAMAM1010619"
-  },
-  {
-    "name": "Signature Single Hole Extended Basin Mixer With Pop-up Drain",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Signature",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 22650,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1702-101DA0BFO"
-    },
-    "product_code": "EAMAM1010941"
-  },
-  {
-    "name": "American Standard Signature 3-Hole Basin Mixer with Pop-up Drain",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Finish: Appears to be a champagne or rose gold finish Installation: Designed for deck-mounted installation with three holes",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 27050,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1703-101DA0BFO"
-    },
-    "product_code": "EAMAM1010232"
-  },
-  {
-    "name": "Signature Wall Mounted Basin Mixer with Pop-up Drain",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Signature Faucets Features: Wall mounted installation and includes a pop-up drain Material: Made of high-quality brass material",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 28100,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1704-101DA0BFO"
-    },
-    "product_code": "EAMAM1010662"
-  },
-  {
-    "name": "American Standard Acacia E Concealed Shower Mixer",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "The finish is a warm, polished golden color, possibly referred to as 'Warm Sunset' or 'Cool Sunrise'.  It is designed for concealed installation. It features a single handle for adjusting water flow and temperature. ",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 18950,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1322-708DA0BFO"
-    },
-    "product_code": "EAMAM7080881"
-  },
-  {
-    "name": "Acacia-E Deck mounted Bath and Shower Mixer",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "ACACIA EVOLUTION BATH & SHOWER FITTINGS",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 51000,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1321-608DA0BFO"
-    },
-    "product_code": "EAMAM6080469"
-  },
-  {
-    "name": "American Standard Acacia E Single Hole Basin mixer",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Finish/Color: The item appears to be a rose gold or cool sunrise finish, not the standard chrome. Key Features: It is a single lever mixer designed for deck installation with features like water-saving technology and smooth handle performance for precise control.",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 17450,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1301-101DA0BFO"
-    },
-    "product_code": "EAMAM1010527"
-  },
-  {
-    "name": "Single Hole Basin Mixer with Pop-up Drain",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 14400,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1701-1015L0BC0"
-    },
-    "product_code": "EAMAM1500601"
-  },
-  {
-    "name": "Cygnet basin mixer",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 11700,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0301-151500BA0"
-    },
-    "product_code": "EAMAM5000788"
-  },
-  {
-    "name": "Milano Basin Mixer with Pop-up Drain",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Chrome finish",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 11500,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0901-102500BFO"
-    },
-    "product_code": "EAMAM2500508"
-  },
-  {
-    "name": "Concept Round Basin Mixer with pop-up drain",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Single-lever basin mixer with a pop-up drain",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 9900,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1401-101500BF0"
-    },
-    "product_code": "EAMAM5000443"
-  },
-  {
-    "name": "Acacia Evolution  Extended Basin Mixer",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 20800,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1302-102500BFO"
-    },
-    "product_code": "EAMAM2500896"
-  },
-  {
-    "name": "Cygnet Extended Basin Mixer",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Technology: Features EcoStart, which ensures the tap always starts in the cold position, saving energy by not activating the water heater unnecessarily. Style: Contemporary with soft, thin edges and subtly curved faces.",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 18450,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0303-151500BA0"
-    },
-    "product_code": "EAMAM5000531"
-  },
-  {
-    "name": "Milano Extended Basin Mixer",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Finish: Chrome with Durashine technology for an enduring brilliance Features: Water-saving technology, ComfortMove for smooth handle performance, and a flow rate of 3.66 L/min Installation: Deck Mount, single handle mixer",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 14850,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0902-102501BF0"
-    },
-    "product_code": "EAMAM5010273"
-  },
-  {
-    "name": "Neo Modern Extended Basin Mixer with pop up drain",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Finish: Shiny chrome finish Material: Premium brass construction Features: Water-saving technology and smooth handle performance for optimal precision",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 9600,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0703-151500BAO"
-    },
-    "product_code": "EAMAM1500899"
-  },
-  {
-    "name": "Kastello 3H Basin Mixer with Pop-Up Drain",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Material: Faucet body is constructed of brass Features: Water-saving for ecological and economical sense, shiny chrome finishing, and smooth handle performance for optimal precision and comfort. Installation: 3-hole deck mount installation.",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 37950,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1603-101500BF0"
-    },
-    "product_code": "EAMAM5000280"
-  },
-  {
-    "name": "",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 1998,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "4005"
-    },
-    "product_code": "EAMAM4005702"
-  },
-  {
-    "name": "Acacia E extended basin mixer",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Material: Made of brass Finish: Features a rose gold PVD coating Features: Includes an eco-handle for saving energy and a ceramic disc valve for durability",
+    "description": "It is designed for use with vessel sinks, providing more comfortable space and ease of use.  Features a single lever for easy control of water flow and temperature.  Includes water-saving technology. ",
     "images": "",
     "isFeatured": false,
     "status": "active",
@@ -1781,17 +14,17 @@
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
       "9ba862ef-f993-4873-95ef-1fef10036aa5": 23500,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1302-101DA0BFO"
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1302-101GLOBFO"
     },
-    "product_code": "EAMAM1010167"
+    "product_code": "EAMAM2101922"
   },
   {
-    "name": "Acacia E Wall mounted mixer (faucet)",
+    "name": "Heritage Soap Dish",
     "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "It is designed for wall-mounted installation. It features American Standard's Durashine technology for a shiny finish and is water-saving.",
+    "description": "Heritage",
     "images": "",
     "isFeatured": false,
     "status": "active",
@@ -1799,241 +32,13 @@
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 24600,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1304-101DA0BFO"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 4550,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0282-908500BCO"
     },
-    "product_code": "EAMAM1010265"
+    "product_code": "EAMAM8500707"
   },
   {
-    "name": "Acacia Evolution 3-Hole Basin Mixer faucet",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Collection: Acacia Evolution Product Type: 3-Hole Basin Mixer Color/Finish: Appears to be a metallic finish, likely PVD",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 28600,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1303-101DA0BFO"
-    },
-    "product_code": "EAMAM1010315"
-  },
-  {
-    "name": "EasySET Headshower",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Finish: Polished Chrome Technology: PVD (Physical Vapor Deposition) Color: Chrome",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 8300,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFASS515-000GLOBCO"
-    },
-    "product_code": "EAMAM5000243"
-  },
-  {
-    "name": "EasySET Exposed 3-Way Rainshower System",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "   It is an auto temperature mixer, also known as a thermostatic mixer,   which maintains a constant water temperature to prevent scalding. The system includes a rain shower, hand shower, and tub spout. ",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 101400,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS4956-601GLOBCO"
-    },
-    "product_code": "EAMAM6601592"
-  },
-  {
-    "name": "Signature Concealed Shower Mixer",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Part of the minimalist Signature collection. Features Durashine finish for enduring brilliance. Includes ComfortMove for smooth handle performance and precision. Designed with water-saving technology.",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 16650,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1722-709GLOBFO"
-    },
-    "product_code": "EAMAM2709585"
-  },
-  {
-    "name": "Signature Exposed Shower Mixer",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "The product is part of the American Standard Signature collection, known for its 'soft minimalism' design.  It has a shiny chrome finish, providing an 'enduring brilliance'.  The dimensions are approximately L 150mm x W 171mm x H 128mm. ",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 22700,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1712-709GLOBFO"
-    },
-    "product_code": "EAMAM2709571"
-  },
-  {
-    "name": "Signature Concealed Bath & Shower Mixer",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Collection: Signature, crafted with a focus on soft minimalism. Features: Concealed design for a minimalist look, with the valve included in the package. Material: Made with low-lead brass for better health protection.",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 23700,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1721-609GLOBFO"
-    },
-    "product_code": "EAMAM1609306"
-  },
-  {
-    "name": "Signature Exposed Bath & Shower Mixer",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Part of the Signature Collection, known for soft minimalism and a superellipse geometric shape. Features ComfortMove technology for smooth handle performance and precise control. Designed to be water-saving.",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 38100,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1711-609GLOBFO"
-    },
-    "product_code": "EAMAM1609496"
-  },
-  {
-    "name": "Signature Exposed Bath & Shower Mixer With Integrated Rain Shower Kit",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Finish: The image shows a gold finish (other variants exist, such as chrome) Features: Includes both an overhead rain shower and a handheld sprayer",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 72650,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1772-701GLOBFO"
-    },
-    "product_code": "EAMAM2701397"
-  },
-  {
-    "name": "Signature Single Hole Basin Mixer with Pop-up Drain",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Features: Single-hole installation, mixer functionality, and a pop-up drain Finish: The finish appears to be a gold tone",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 16550,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1701-101GLOBFO"
-    },
-    "product_code": "EAMAM1101709"
-  },
-  {
-    "name": "Signature Single Hole Extended Basin Mixer With Pop-up Drain",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Signature",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 22650,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1702-101GLOBFO"
-    },
-    "product_code": "EAMAM2101867"
-  },
-  {
-    "name": "Signature 3-Hole Basin Mixer with Pop-up Drain",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "It features a polished warm sunrise finish and is made of high-quality brass. It has a contemporary design with soft minimalism elements.",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 27050,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1703-101GLOBFO"
-    },
-    "product_code": "EAMAM3101639"
-  },
-  {
-    "name": "Signature Wall Mounted Basin Mixer With Pop-up Drain",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Signature",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 28100,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1704-101GLOBFO"
-    },
-    "product_code": "EAMAM4101872"
-  },
-  {
-    "name": "Acacia E Concealed Bath & Shower Mixer",
+    "name": "American Standard Seva Tissue Holder",
     "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
@@ -2046,18 +51,18 @@
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 22000,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1321-608GLOBFO"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 2950,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "4005"
     },
-    "product_code": "EAMAM1608735"
+    "product_code": "EAMAM4005908"
   },
   {
-    "name": "Acacia E Single Hole Basin mixer",
+    "name": "American Standard Heritage Tissue Holder",
     "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Features: Single lever handle for volume and temperature control Technology: Includes ComfortMove for smooth handling and Durashine for a brilliant finish Flow Rate: 5.4 Liters/min",
+    "description": "",
     "images": "",
     "isFeatured": false,
     "status": "active",
@@ -2065,9 +70,750 @@
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 17500,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1301-101GLOBFO"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 6900,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0287-908500BC0"
     },
-    "product_code": "EAMAM1101334"
+    "product_code": "EAMAM5000143"
+  },
+  {
+    "name": "American Standard Acacia Evolution Glass Holder",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 3150,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1384-908500BC0"
+    },
+    "product_code": "EAMAM5000723"
+  },
+  {
+    "name": "Heritage Cup Holder",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "Heritage",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 4550,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0284-908500BCO"
+    },
+    "product_code": "EAMAM8500847"
+  },
+  {
+    "name": "American Standard Heritage toilet brush",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 6450,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0286-908500BCO"
+    },
+    "product_code": "EAMAM8500575"
+  },
+  {
+    "name": "American Standard Heritage Robe Hook",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 2400,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "4005"
+    },
+    "product_code": "EAMAM4005820"
+  },
+  {
+    "name": "Heritage Towel Ring",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 3650,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0290-908500BCO"
+    },
+    "product_code": "EAMAM8500652"
+  },
+  {
+    "name": "American Standard Heritage Towel Rack",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 6900,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0293-908500BCO"
+    },
+    "product_code": "EAMAM8500296"
+  },
+  {
+    "name": "Heritage Towel Rack",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "Heritage",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 6900,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0293-908500BCO"
+    },
+    "product_code": "EAMAM8500527"
+  },
+  {
+    "name": "double towel bar",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 11350,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0294-908500BCO"
+    },
+    "product_code": "EAMAM8500441"
+  },
+  {
+    "name": "Simple Towel Shelf",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 6800,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS6587-908500BFO"
+    },
+    "product_code": "EAMAM8500856"
+  },
+  {
+    "name": "American Standard Heritage Towel Shelf",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 16600,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0295-908500BCO"
+    },
+    "product_code": "EAMAM8500110"
+  },
+  {
+    "name": "American Standard Acacia E Towel Shelf",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "Part of the Acacia Evolution collection, known for modern design and technology integration. It has a shiny chrome finishing for an enduring brilliance. It is described as abrasion and corrosion resistant with a mirror-like double chrome layering.",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 22000,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "4005"
+    },
+    "product_code": "EAMAM4005598"
+  },
+  {
+    "name": "American Standard waste and overflow couplings for lavatories",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 2300,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "F78007-CHADY"
+    },
+    "product_code": "EAMAM8007868"
+  },
+  {
+    "name": "American Standard waste and overflow couplings for lavatories",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 2100,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "F78006-CHADYN"
+    },
+    "product_code": "EAMAM8006457"
+  },
+  {
+    "name": "American Standard A-8201-N stainless steel round floor drain with a lock type cover",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 1100,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "A-8201-N"
+    },
+    "product_code": "EAMAM8201160"
+  },
+  {
+    "name": "American Standard A-8200-N square floor drain with a cover plate",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "Made from stainless steel material. Features a 3.5-inch flange. Designed to fit 2-inch to 2.5-inch pipes",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 1200,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "A-8200-N"
+    },
+    "product_code": "EAMAM8200137"
+  },
+  {
+    "name": "American Standard Brass Floor Drain",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "Material: Brass, with a nickel finish. Dimensions: 10x10 Cm. Features: Deodorization with flap design.",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 3050,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "F78205-CHADY"
+    },
+    "product_code": "EAMAM8205766"
+  },
+  {
+    "name": "Senseflow Sensor Faucet (DC)",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "SenseFlow",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 33050,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS8601-000500BFO"
+    },
+    "product_code": "EAMAM0500570"
+  },
+  {
+    "name": "Line- sensor Technology Square Sensor",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "Faucet - AC Line Sensor",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 37900,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS8509-A00500BCO"
+    },
+    "product_code": "EAMAM0500125"
+  },
+  {
+    "name": "Line-Sensor Technology in Wall Sensor Faucet",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "Line Sensor",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 44000,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS8508-D00500BFO"
+    },
+    "product_code": "EAMAM0500226"
+  },
+  {
+    "name": "Line- sensor Technology Sensor In-Wall Sensor Faucet - AC",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "Line Sensor",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 41200,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS8508-A00500BC0"
+    },
+    "product_code": "EAMAM5000402"
+  },
+  {
+    "name": "Line-sensor technology square sensor faucet",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "Line Sensor",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 40650,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS8509-D00500BFO"
+    },
+    "product_code": "EAMAM0500525"
+  },
+  {
+    "name": "Line- sensor Technology In-Wall Square Sensor Faucet - AC",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "Line Sensor",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 40650,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS8511-A00500BCO"
+    },
+    "product_code": "EAMAM0500518"
+  },
+  {
+    "name": "Line-sensor technology sensor faucet",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "Line Sensor",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 39950,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS8506-D00500BFO"
+    },
+    "product_code": "EAMAM0500844"
+  },
+  {
+    "name": "Line- Sensor Technology Sensor Extended Sensor Faucet - AC",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "Line Sensor",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 44250,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS8507-A00500BCO"
+    },
+    "product_code": "EAMAM0500139"
+  },
+  {
+    "name": "American Standard Line Sensor (Bubble) Extended Basin Faucet (DC)",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "Features 'Line Sensor Technology' for unmatched sensor precision Operates on direct current (DC) power Has a shiny chrome finish for enduring brilliance",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 44450,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS8507-D00500BC0"
+    },
+    "product_code": "EAMAM5000855"
+  },
+  {
+    "name": "American Standard Line- sensor Technology Square Extended Sensor Faucet",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "It is an AC-operated, touchless or automatic sensor faucet. It features 'Line Sensor' technology for enhanced precision. The finish is chrome. It is designed for water saving.",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 44650,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS8510-A00500BCO"
+    },
+    "product_code": "EAMAM0500261"
+  },
+  {
+    "name": "American Standard wall-mounted sensor basin faucet",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "It uses Line Sensor technology for enhanced precision compared to conventional sensor faucets. The product is designed to be water-saving. The finish is chrome. It is DC operated, requiring batteries for function.",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 44800,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS8511-D00500BF0"
+    },
+    "product_code": "EAMAM5000432"
+  },
+  {
+    "name": "American Standard Neo Modern Bath Spout",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 3150,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FF1-CN521X00000477"
+    },
+    "product_code": "EAMAM0477873"
+  },
+  {
+    "name": "American Standard Neo Modern L Bend Wall Mixer in white",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "Material: Made of brass Design: Features a sleek and minimal design with ergonomic handles and visible color indicators. Technology: Includes Cool Shield Technology to minimize scalding risk",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 9300,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0714-604090BAO"
+    },
+    "product_code": "EAMAM4090537"
+  },
+  {
+    "name": "American Standard Concept Round Exposed Bath & Shower mixer",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "Features a shiny chrome finish. Part of the 'Concept' collection. Flow rate for the spout is 10.08 L/min and for the shower outlet is 4.02 L/min.",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 15450,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1411-601500BFO"
+    },
+    "product_code": "EAMAM1500948"
+  },
+  {
+    "name": "American Standard Acacia Evolution Exposed Bath & Shower Mixer",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "It features a modern design that can fit any style of bathroom.  It has a shiny chrome finish for enduring brilliance.  The product type is a bath and shower mixer with one handle.  It incorporates Airnergize technology, infusing water with air for a luxurious shower experience while using less water. ",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 37800,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1311-602500BF0"
+    },
+    "product_code": "EAMAM5000827"
+  },
+  {
+    "name": "Concept Concealed Bath & Shower",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "Mixing Valve Concept Round",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 13750,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1420-609500BFO"
+    },
+    "product_code": "EAMAM9500206"
+  },
+  {
+    "name": "American Standard Acacia Evolution Concealed Bath & Shower Mixer. ",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "Finish: Shiny chrome Style: Modern design with geometric shapes Technology: Features Airnergize technology for air-infused water",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 19550,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1321-608500BF0"
+    },
+    "product_code": "EAMAM5000572"
+  },
+  {
+    "name": "American Standard Acacia E Single Hole Basin Mixer Side Lever faucet",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "Features a single lever for easy control of water temperature and flow. Includes DuraShine technology for a long-lasting chrome finish.",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 14700,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1305-102500BFO"
+    },
+    "product_code": "EAMAM2500566"
+  },
+  {
+    "name": "American Standard Milano Wall Mount Basin Mixer",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "Collection: Milano Installation: Wall Mount Finish: Chrome with Durashine technology",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 14950,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0904-102501BF0"
+    },
+    "product_code": "EAMAM5010134"
+  },
+  {
+    "name": "American Standard Acacia E Wall Mounted Basin Mixer",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 21150,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1304-102500BF0"
+    },
+    "product_code": "EAMAM5000196"
+  },
+  {
+    "name": "American Standard Signature Wall Mounted Basin Mixer with Pop-up Drain",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 26150,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1704-1015L0BC0"
+    },
+    "product_code": "EAMAM1500149"
+  },
+  {
+    "name": "American Standard Kastello Wall Mount Basin Mixer",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "Collection: Kastello, known for its classic beauty and contemporary form Installation: Wall Mount, a 3-hole basin faucet design Finish: Shiny chrome finishing for enduring brilliance",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 32300,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1604-101501BF0"
+    },
+    "product_code": "EAMAM5010654"
+  },
+  {
+    "name": "American Standard Signature 3-Hole Basin Mixer With Pop-up Drain",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "Features a shiny chrome finish. Designed for table mounting with three holes. Incorporates Durashine and ComfortMove technologies for enduring brilliance and smooth handle performance. Has a minimal lead content for better health protection compared to standard brass.",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 23550,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1703-1015LOBCO"
+    },
+    "product_code": "EAMAM1015574"
   }
 ]
