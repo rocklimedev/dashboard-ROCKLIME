@@ -1,1182 +1,824 @@
 [
   {
-    "name": "Essence SLM Trim Shw",
-    "quantity": 20,
+    "name": "American Standard Acacia E extended basin mixer",
+
+    "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/24168KF1.png",
+    "description": "It is designed for use with vessel sinks, providing more comfortable space and ease of use.  Features a single lever for easy control of water flow and temperature.  Includes water-saving technology. ",
+    "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
+    "brandId": "AMERICAN STANDARD",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "22700",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24168KF1"
-    },
-    "product_code": "EGRGR0000619"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 23500,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1302-101GLOBFO"
+    }
   },
   {
-    "name": "GRT SmartControl THM trimset round 2SC",
-    "quantity": 20,
+    "name": "Heritage Soap Dish",
+
+    "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/29507KF0.png",
+    "description": "Heritage",
+    "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
+    "brandId": "AMERICAN STANDARD",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "138200",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "29507KF0"
-    },
-    "product_code": "EGRGR0000822"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 4550,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0282-908500BCO"
+    }
   },
   {
-    "name": "GRT SmartControl THM trimset round 3SC",
-    "quantity": 20,
+    "name": "American Standard Seva Tissue Holder",
+
+    "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/29508KF0.png",
+    "description": "",
+    "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
+    "brandId": "AMERICAN STANDARD",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "151150",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "29508KF0"
-    },
-    "product_code": "EGRGR0000421"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 2950,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "4005"
+    }
   },
   {
-    "name": "GRT SmartControl THM Trim Square",
-    "quantity": 20,
+    "name": "American Standard Heritage Tissue Holder",
+
+    "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/102166KF00.jpeg",
+    "description": "",
+    "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
+    "brandId": "AMERICAN STANDARD",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "140900",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "102166KF00"
-    },
-    "product_code": "EGRGR0000813"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 6900,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0287-908500BC0"
+    }
   },
   {
-    "name": "GRT SmartControl THM Trim Square",
-    "quantity": 20,
+    "name": "American Standard Acacia Evolution Glass Holder",
+
+    "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/102167KF00.jpeg",
+    "description": "",
+    "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
+    "brandId": "AMERICAN STANDARD",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "151600",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "102167KF00"
-    },
-    "product_code": "EGRGR0000489"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 3150,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1384-908500BC0"
+    }
   },
   {
-    "name": "BauCosmopolitan Concealed Valve Trimset",
-    "quantity": 20,
+    "name": "Heritage Cup Holder",
+
+    "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/19917000.jpeg",
+    "description": "Heritage",
+    "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
+    "brandId": "AMERICAN STANDARD",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "2700",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "19917000"
-    },
-    "product_code": "EGRGR0000370"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 4550,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0284-908500BCO"
+    }
   },
   {
-    "name": "BauCosmopolitan Concealed Valve Trimset",
-    "quantity": 20,
+    "name": "American Standard Heritage toilet brush",
+
+    "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/19917GN0.jpeg",
+    "description": "",
+    "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
+    "brandId": "AMERICAN STANDARD",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "3450",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "19917GN0"
-    },
-    "product_code": "EGRGR0000487"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 6450,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0286-908500BCO"
+    }
   },
   {
-    "name": "BauCosmopolitan Concealed Valve Trimset",
-    "quantity": 20,
+    "name": "American Standard Heritage Robe Hook",
+
+    "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/19917DL0.jpeg",
+    "description": "",
+    "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
+    "brandId": "AMERICAN STANDARD",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "3450",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "19917DL0"
-    },
-    "product_code": "EGRGR0000659"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 2400,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "4005"
+    }
   },
   {
-    "name": "BauCosmopolitan Concealed Valve Trimset",
-    "quantity": 20,
+    "name": "Heritage Towel Ring",
+
+    "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/19917AL0.jpeg",
+    "description": "",
+    "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
+    "brandId": "AMERICAN STANDARD",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "3450",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "19917AL0"
-    },
-    "product_code": "EGRGR0000920"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 3650,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0290-908500BCO"
+    }
   },
   {
-    "name": "BauCosmopolitan Concealed Valve Trimset",
-    "quantity": 20,
+    "name": "American Standard Heritage Towel Rack",
+
+    "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/19917GL0.jpeg",
+    "description": "",
+    "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
+    "brandId": "AMERICAN STANDARD",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "3450",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "19917GL0"
-    },
-    "product_code": "EGRGR0000854"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 6900,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0293-908500BCO"
+    }
   },
   {
-    "name": "BauCosmopolitan Concealed Valve Trimset",
-    "quantity": 20,
+    "name": "Heritage Towel Rack",
+
+    "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/19917DA0.jpeg",
+    "description": "Heritage",
+    "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
+    "brandId": "AMERICAN STANDARD",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "3450",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "19917DA0"
-    },
-    "product_code": "EGRGR0000485"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 6900,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0293-908500BCO"
+    }
   },
   {
-    "name": "BauCosmopolitan Concealed Valve Trimset",
-    "quantity": 20,
+    "name": "double towel bar",
+
+    "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/19917DC0.jpeg",
+    "description": "",
+    "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
+    "brandId": "AMERICAN STANDARD",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "3450",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "19917DC0"
-    },
-    "product_code": "EGRGR0000230"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 11350,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0294-908500BCO"
+    }
   },
   {
-    "name": "BauCosmopolitan Concealed Valve Trimset",
-    "quantity": 20,
+    "name": "Simple Towel Shelf",
+
+    "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/19917A00.jpeg",
+    "description": "",
+    "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
+    "brandId": "AMERICAN STANDARD",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "3450",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "19917A00"
-    },
-    "product_code": "EGRGR0000664"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 6800,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS6587-908500BFO"
+    }
   },
   {
-    "name": "BauCosmopolitan Concealed Valve Trimset",
-    "quantity": 20,
+    "name": "American Standard Heritage Towel Shelf",
+
+    "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/19917GN0.jpeg",
+    "description": "",
+    "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
+    "brandId": "AMERICAN STANDARD",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "3450",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "19917GN0"
-    },
-    "product_code": "EGRGR0000344"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 16600,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0295-908500BCO"
+    }
   },
   {
-    "name": "Loven wall hung",
-    "quantity": 20,
+    "name": "American Standard Acacia E Towel Shelf",
+
+    "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/1013962080.jpeg",
+    "description": "Part of the Acacia Evolution collection, known for modern design and technology integration. It has a shiny chrome finishing for an enduring brilliance. It is described as abrasion and corrosion resistant with a mirror-like double chrome layering.",
+    "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
+    "brandId": "AMERICAN STANDARD",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "22250",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "1013962080"
-    },
-    "product_code": "EGRGR0000757"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 22000,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "4005"
+    }
   },
   {
-    "name": "Atrio Two-Hole, Single Lever Wall-Mount Basin Mixer Joystick, L Size",
-    "quantity": 20,
+    "name": "American Standard waste and overflow couplings for lavatories",
+
+    "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/29406GN0.jpeg",
+    "description": "",
+    "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
+    "brandId": "AMERICAN STANDARD",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "62650",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "29406GN0"
-    },
-    "product_code": "EGRGR0000412"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 2300,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "F78007-CHADY"
+    }
   },
   {
-    "name": "Silverflex Shower Hose, 1750 mm",
-    "quantity": 20,
+    "name": "American Standard waste and overflow couplings for lavatories",
+
+    "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/28388001.jpeg",
+    "description": "",
+    "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": "550316f6-d0c8-11f0-ae77-52540021303b",
+    "brandId": "AMERICAN STANDARD",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "4000",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "28388001"
-    },
-    "product_code": "EGRGR0000443"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 2100,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "F78006-CHADYN"
+    }
   },
   {
-    "name": "Essence Single Lever Basin mixer, Without Pop-up, S Size",
-    "quantity": 20,
+    "name": "American Standard A-8201-N stainless steel round floor drain with a lock type cover",
+
+    "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/24172KF1.png",
+    "description": "",
+    "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
+    "brandId": "AMERICAN STANDARD",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "27150",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24172KF1"
-    },
-    "product_code": "EGRGR0000986"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 1100,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "A-8201-N"
+    }
   },
   {
-    "name": "Essence Single Lever Basin mixer, Without Pop-up, M Size",
-    "quantity": 20,
+    "name": "American Standard A-8200-N square floor drain with a cover plate",
+
+    "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/24176KF1.png",
+    "description": "Made from stainless steel material. Features a 3.5-inch flange. Designed to fit 2-inch to 2.5-inch pipes",
+    "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
+    "brandId": "AMERICAN STANDARD",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "33650",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24176KF1"
-    },
-    "product_code": "EGRGR0000943"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 1200,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "A-8200-N"
+    }
   },
   {
-    "name": "Essence Single Lever Basin mixer, Without Pop-up, L Size",
-    "quantity": 20,
+    "name": "American Standard Brass Floor Drain",
+
+    "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/24177KF1.png",
+    "description": "Material: Brass, with a nickel finish. Dimensions: 10x10 Cm. Features: Deodorization with flap design.",
+    "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
+    "brandId": "AMERICAN STANDARD",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "40650",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24177KF1"
-    },
-    "product_code": "EGRGR0000667"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 3050,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "F78205-CHADY"
+    }
   },
   {
-    "name": "Essence Single Lever Basin mixer, Without Pop-up, XL Size",
-    "quantity": 20,
+    "name": "Senseflow Sensor Faucet (DC)",
+
+    "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/24170KF1.png",
+    "description": "SenseFlow",
+    "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
+    "brandId": "AMERICAN STANDARD",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "45300",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24170KF1"
-    },
-    "product_code": "EGRGR0000353"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 33050,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS8601-000500BFO"
+    }
   },
   {
-    "name": "Essence Two holer Basin mixer, Wall Mounted, M Size",
-    "quantity": 20,
+    "name": "Line- sensor Technology Square Sensor",
+
+    "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/29192KF1.png",
+    "description": "Faucet - AC Line Sensor",
+    "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
+    "brandId": "AMERICAN STANDARD",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "53100",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "29192KF1"
-    },
-    "product_code": "EGRGR0000127"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 37900,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS8509-A00500BCO"
+    }
   },
   {
-    "name": "Essence Two holer Basin mixer, Wall Mounted, L Size",
-    "quantity": 20,
+    "name": "Line-Sensor Technology in Wall Sensor Faucet",
+
+    "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/29193KF1.png",
+    "description": "Line Sensor",
+    "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
+    "brandId": "AMERICAN STANDARD",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "56,400",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "29193KF1"
-    },
-    "product_code": "EGRGR0000534"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 44000,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS8508-D00500BFO"
+    }
   },
   {
-    "name": "Essence Single Lever Shower mixer",
-    "quantity": 20,
+    "name": "Line- sensor Technology Sensor In-Wall Sensor Faucet - AC",
+
+    "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/24168KF1.png",
+    "description": "Line Sensor",
+    "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
+    "brandId": "AMERICAN STANDARD",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "22700",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24168KF1"
-    },
-    "product_code": "EGRGR0000355"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 41200,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS8508-A00500BC0"
+    }
+  },
+
+  {
+    "name": "Line-sensor technology square sensor faucet",
+
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "Line Sensor",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "AMERICAN STANDARD",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 40650,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS8509-D00500BFO"
+    }
   },
   {
-    "name": "Essence Single Lever Bath /Shower mixer",
-    "quantity": 20,
+    "name": "Line- sensor Technology In-Wall Square Sensor Faucet - AC",
+
+    "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/24167KF1.png",
+    "description": "Line Sensor",
+    "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
+    "brandId": "AMERICAN STANDARD",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "24850",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24167KF1"
-    },
-    "product_code": "EGRGR0000617"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 40650,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS8511-A00500BCO"
+    }
   },
   {
-    "name": "Essence Single Lever Shower mixer Exposed",
-    "quantity": 20,
+    "name": "Line-sensor technology sensor faucet",
+
+    "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/25252KF1.png",
+    "description": "Line Sensor",
+    "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
+    "brandId": "AMERICAN STANDARD",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "45900",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "25252KF1"
-    },
-    "product_code": "EGRGR0000661"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 39950,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS8506-D00500BFO"
+    }
+  },
+
+  {
+    "name": "Line- Sensor Technology Sensor Extended Sensor Faucet - AC",
+
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "Line Sensor",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "AMERICAN STANDARD",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 44250,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS8507-A00500BCO"
+    }
   },
   {
-    "name": "Essence Single Lever Bath /Shower mixer exposed",
-    "quantity": 20,
+    "name": "American Standard Line Sensor (Bubble) Extended Basin Faucet (DC)",
+
+    "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/25250KF1.png",
+    "description": "Features 'Line Sensor Technology' for unmatched sensor precision Operates on direct current (DC) power Has a shiny chrome finish for enduring brilliance",
+    "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
+    "brandId": "AMERICAN STANDARD",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "58850",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "25250KF1"
-    },
-    "product_code": "EGRGR0000598"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 44450,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS8507-D00500BC0"
+    }
+  },
+
+  {
+    "name": "American Standard Line- sensor Technology Square Extended Sensor Faucet",
+
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "It is an AC-operated, touchless or automatic sensor faucet. It features 'Line Sensor' technology for enhanced precision. The finish is chrome. It is designed for water saving.",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "AMERICAN STANDARD",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 44650,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS8510-A00500BCO"
+    }
   },
   {
-    "name": "Essence Four Hole Bath Filler",
-    "quantity": 20,
+    "name": "American Standard wall-mounted sensor basin faucet",
+
+    "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/25251KF1.png",
+    "description": "It uses Line Sensor technology for enhanced precision compared to conventional sensor faucets. The product is designed to be water-saving. The finish is chrome. It is DC operated, requiring batteries for function.",
+    "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
+    "brandId": "AMERICAN STANDARD",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "126200",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "25251KF1"
-    },
-    "product_code": "EGRGR0000784"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 44800,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS8511-D00500BF0"
+    }
+  },
+
+  {
+    "name": "American Standard Neo Modern Bath Spout",
+
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "AMERICAN STANDARD",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 3150,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FF1-CN521X00000477"
+    }
   },
   {
-    "name": "Essence Freestanding Bath Filler",
-    "quantity": 20,
+    "name": "American Standard Neo Modern L Bend Wall Mixer in white",
+
+    "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/25248KF1.png",
+    "description": "Material: Made of brass Design: Features a sleek and minimal design with ergonomic handles and visible color indicators. Technology: Includes Cool Shield Technology to minimize scalding risk",
+    "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
+    "brandId": "AMERICAN STANDARD",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "153450",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "25248KF1"
-    },
-    "product_code": "EGRGR0000618"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 9300,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0714-604090BAO"
+    }
   },
   {
-    "name": "Grohtherm SmartControl Thermostat Round, 2 Control",
-    "quantity": 20,
+    "name": "American Standard Concept Round Exposed Bath & Shower mixer",
+
+    "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/29507KF0.png",
+    "description": "Features a shiny chrome finish. Part of the 'Concept' collection. Flow rate for the spout is 10.08 L/min and for the shower outlet is 4.02 L/min.",
+    "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": "550914bd-d0c8-11f0-ae77-52540021303b",
+    "brandId": "AMERICAN STANDARD",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "138200",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "29507KF0"
-    },
-    "product_code": "EGRGR0000446"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 15450,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1411-601500BFO"
+    }
   },
   {
-    "name": "Grohtherm SmartControl Thermostat Round, 3 Control",
-    "quantity": 20,
+    "name": "American Standard Acacia Evolution Exposed Bath & Shower Mixer",
+
+    "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/29508KF0.png",
+    "description": "It features a modern design that can fit any style of bathroom.  It has a shiny chrome finish for enduring brilliance.  The product type is a bath and shower mixer with one handle.  It incorporates Airnergize technology, infusing water with air for a luxurious shower experience while using less water. ",
+    "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": "550914bd-d0c8-11f0-ae77-52540021303b",
+    "brandId": "AMERICAN STANDARD",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "151150",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "29508KF0"
-    },
-    "product_code": "EGRGR0000445"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 37800,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1311-602500BF0"
+    }
   },
   {
-    "name": "Rainshower SmartActive 310 Headshower Set, Round, 400mm",
-    "quantity": 20,
+    "name": "Concept Concealed Bath & Shower",
+
+    "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/22123KF0.png",
+    "description": "Mixing Valve Concept Round",
+    "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": "550c01d9-d0c8-11f0-ae77-52540021303b",
+    "brandId": "AMERICAN STANDARD",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "95550",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "22123KF0"
-    },
-    "product_code": "EGRGR0000314"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 13750,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1420-609500BFO"
+    }
   },
   {
-    "name": "Rainshower SmartActive 310 Headshower Set, Round, 142mm",
-    "quantity": 20,
+    "name": "American Standard Acacia Evolution Concealed Bath & Shower Mixer. ",
+
+    "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/22124KF0.png",
+    "description": "Finish: Shiny chrome Style: Modern design with geometric shapes Technology: Features Airnergize technology for air-infused water",
+    "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": "550c01d9-d0c8-11f0-ae77-52540021303b",
+    "brandId": "AMERICAN STANDARD",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "95550",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "22124KF0"
-    },
-    "product_code": "EGRGR0000454"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 19550,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1321-608500BF0"
+    }
   },
   {
-    "name": "Rainshower 310 Mono Headshower Set, 422mm",
-    "quantity": 20,
+    "name": "American Standard Acacia E Single Hole Basin Mixer Side Lever faucet",
+
+    "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/22121KF0.png",
+    "description": "Features a single lever for easy control of water temperature and flow. Includes DuraShine technology for a long-lasting chrome finish.",
+    "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": "550c01d9-d0c8-11f0-ae77-52540021303b",
+    "brandId": "AMERICAN STANDARD",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "88550",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "22121KF0"
-    },
-    "product_code": "EGRGR0000656"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 14700,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1305-102500BFO"
+    }
   },
   {
-    "name": "Rainshower 310 Mono Headshower Set 9.5L, 142mm",
-    "quantity": 20,
+    "name": "American Standard Milano Wall Mount Basin Mixer",
+
+    "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/22122KF0.png",
+    "description": "Collection: Milano Installation: Wall Mount Finish: Chrome with Durashine technology",
+    "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": "550c01d9-d0c8-11f0-ae77-52540021303b",
+    "brandId": "AMERICAN STANDARD",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "88550",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "22122KF0"
-    },
-    "product_code": "EGRGR0000362"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 14950,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0904-102501BF0"
+    }
   },
   {
-    "name": "Rainshower SmartActive 130 Hand Shower 9.5L",
-    "quantity": 20,
+    "name": "American Standard Acacia E Wall Mounted Basin Mixer",
+
+    "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/22127KF0.png",
+    "description": "",
+    "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": "550c01d9-d0c8-11f0-ae77-52540021303b",
+    "brandId": "AMERICAN STANDARD",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "28050",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "22127KF0"
-    },
-    "product_code": "EGRGR0000751"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 21150,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1304-102500BF0"
+    }
   },
   {
-    "name": "Euphoria Stick Cosmo",
-    "quantity": 20,
+    "name": "American Standard Signature Wall Mounted Basin Mixer with Pop-up Drain",
+
+    "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/22126KF0.png",
+    "description": "",
+    "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": "550c01d9-d0c8-11f0-ae77-52540021303b",
+    "brandId": "AMERICAN STANDARD",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "12050",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "22126KF0"
-    },
-    "product_code": "EGRGR0000776"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 26150,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1704-1015L0BC0"
+    }
   },
   {
-    "name": "Rainshower 310 thermostatic shower system",
-    "quantity": 20,
+    "name": "American Standard Kastello Wall Mount Basin Mixer",
+
+    "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/22119KF0.png",
+    "description": "Collection: Kastello, known for its classic beauty and contemporary form Installation: Wall Mount, a 3-hole basin faucet design Finish: Shiny chrome finishing for enduring brilliance",
+    "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": "550c3009-d0c8-11f0-ae77-52540021303b",
+    "brandId": "AMERICAN STANDARD",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "198150",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "22119KF0"
-    },
-    "product_code": "EGRGR0000565"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 32300,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1604-101501BF0"
+    }
   },
+
   {
-    "name": "Euphoria SmartControl 310 Round Thermostatic Shower System, 3 Control",
-    "quantity": 20,
+    "name": "American Standard Signature 3-Hole Basin Mixer With Pop-up Drain",
+
+    "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/22120KF0.png",
+    "description": "Features a shiny chrome finish. Designed for table mounting with three holes. Incorporates Durashine and ComfortMove technologies for enduring brilliance and smooth handle performance. Has a minimal lead content for better health protection compared to standard brass.",
+    "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": "550c3009-d0c8-11f0-ae77-52540021303b",
+    "brandId": "AMERICAN STANDARD",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "205200",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "22120KF0"
-    },
-    "product_code": "EGRGR0000183"
-  },
-  {
-    "name": "Selection Robe Hook",
-    "quantity": 20,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/41216KF0.png",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "`4250",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "41216KF0"
-    },
-    "product_code": "EGRGR0000173"
-  },
-  {
-    "name": "Selection holder f.glass/dish/dispenser",
-    "quantity": 20,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/41217KF0.png",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "4800",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "41217KF0"
-    },
-    "product_code": "EGRGR0000832"
-  },
-  {
-    "name": "Selection Soap Dispenser",
-    "quantity": 20,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/41218KF0.png",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "7550",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "41218KF0"
-    },
-    "product_code": "EGRGR0000983"
-  },
-  {
-    "name": "Selection Toilet Paper Holder without cover",
-    "quantity": 20,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/41220KF0.png",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "10200",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "41220KF0"
-    },
-    "product_code": "EGRGR0000311"
-  },
-  {
-    "name": "Selection Double Towel Bar",
-    "quantity": 20,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/41219KF0.png",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "10950",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "41219KF0"
-    },
-    "product_code": "EGRGR0000497"
-  },
-  {
-    "name": "Rainshower SmartActive Shower Rail 900mm",
-    "quantity": 20,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/22125KF0.png",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "27500",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "22125KF0"
-    },
-    "product_code": "EGRGR0000388"
-  },
-  {
-    "name": "Rainshower Shower outlet elbow",
-    "quantity": 20,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/22118KF0.png",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "9900",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "22118KF0"
-    },
-    "product_code": "EGRGR0000176"
-  },
-  {
-    "name": "Rainshower Wall hand shower holder",
-    "quantity": 20,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/22117KF0.png",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "6650",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "22117KF0"
-    },
-    "product_code": "EGRGR0000499"
-  },
-  {
-    "name": "Shower Hose 1250 mm",
-    "quantity": 20,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/28362KF1.png",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "4750",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "28362KF1"
-    },
-    "product_code": "EGRGR0000196"
-  },
-  {
-    "name": "Shower Hose 1750mm",
-    "quantity": 20,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/28388KF1.png",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "4950",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "28388KF1"
-    },
-    "product_code": "EGRGR0000666"
-  },
-  {
-    "name": "Skate Air Flush Plate",
-    "quantity": 20,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/38505KF0.png",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "11450",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "38505KF0"
-    },
-    "product_code": "EGRGR0000290"
-  },
-  {
-    "name": "Skate Cosmo Flush Plate",
-    "quantity": 20,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/38732KF0.png",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "13850",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "38732KF0"
-    },
-    "product_code": "EGRGR0000509"
-  },
-  {
-    "name": "Arena Cosmopolitan Flush Plate",
-    "quantity": 20,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/38844KF0.png",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "10550",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "38844KF0"
-    },
-    "product_code": "EGRGR0000274"
-  },
-  {
-    "name": "Nova Cosmopolitan Flush Plate",
-    "quantity": 20,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/38765KF0.png",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "6450",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "38765KF0"
-    },
-    "product_code": "EGRGR0000278"
-  },
-  {
-    "name": "Nova Cosmopolitan Flush Plate, Small Size,",
-    "quantity": 20,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/37601KF0.png",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "13500",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "37601KF0"
-    },
-    "product_code": "EGRGR0000736"
-  },
-  {
-    "name": "Skate Cosmopolitan Flush Plate, Small Size",
-    "quantity": 20,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/37535KF0.png",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "14000",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "37535KF0"
-    },
-    "product_code": "EGRGR0000697"
-  },
-  {
-    "name": "Arena Cosmopolitan Flush Plate, Small Size",
-    "quantity": 20,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/37624KF0.png",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "22000",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "37624KF0"
-    },
-    "product_code": "EGRGR0000781"
-  },
-  {
-    "name": "Angle Valve 1/2” x 3/8”",
-    "quantity": 20,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/22074KF0.png",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "11650",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "22074KF0"
-    },
-    "product_code": "EGRGR0000816"
-  },
-  {
-    "name": "Waste Trap Basin 1 1/4”",
-    "quantity": 20,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/29509KF0.png",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "32350",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "29509KF0"
-    },
-    "product_code": "EGRGR0000292"
-  },
-  {
-    "name": "Waste set",
-    "quantity": 20,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Essence SLM Trim Shw",
-    "images": "https://static.cmtradingco.com/product_images/29510KF0.png",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "categoryId": null,
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": "5900",
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "29510KF0"
-    },
-    "product_code": "EGRGR0000525"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 23550,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1703-1015LOBCO"
+    }
   }
 ]

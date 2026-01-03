@@ -1,6 +1,6 @@
 // src/components/ProductCard.jsx
 import React, { useState } from "react";
-import { Button, Tooltip, Badge, Dropdown, Input } from "antd";
+import { Button, Tooltip, Badge, Dropdown, Input, message } from "antd";
 import {
   ShoppingCartOutlined,
   MoreOutlined,
@@ -10,9 +10,14 @@ import {
 import { Link } from "react-router-dom";
 import pos from "../../assets/img/default.png";
 import "./productlist.css";
-import { message } from "antd";
 import PermissionGate from "../../context/PermissionGate";
 import { useAuth } from "../../context/AuthContext";
+
+// Known meta UUIDs — keep in sync with ProductsList / backend
+const META_KEYS = {
+  SELLING_PRICE: "9ba862ef-f993-4873-95ef-1fef10036aa5",
+  COMPANY_CODE: "d11da9f9-3f2e-4536-8236-9671200cca4a", // model/company code
+};
 
 const ProductCard = ({
   product,
@@ -25,9 +30,9 @@ const ProductCard = ({
   const [quantity, setQuantity] = useState(product.quantity > 0 ? 1 : 0);
   const { auth } = useAuth();
 
-  // Safe image parsing
+  // ── Image handling ───────────────────────────────────────
   const safeParseImages = (images) => {
-    if (Array.isArray(images) && images.length) return images;
+    if (Array.isArray(images) && images.length > 0) return images;
     if (typeof images === "string" && images.trim()) {
       try {
         const parsed = JSON.parse(images);
@@ -41,37 +46,19 @@ const ProductCard = ({
 
   const productImages = safeParseImages(product.images);
 
-  // Known UUIDs from your data
-  const SELLING_PRICE_UUID = "9ba862ef-f993-4873-95ef-1fef10036aa5";
-  const COMPANY_CODE_UUID = "d11da9f9-3f2e-4536-8236-9671200cca4a";
+  // ── Price & Code from flat meta object (same as ProductsList) ──
+  const meta = product?.meta || {};
 
-  // Try to get from metaDetails first
-  const sellingPriceEntry = product.metaDetails?.find(
-    (m) => m.slug?.toLowerCase() === "sellingprice"
-  );
-  const companyCodeEntry = product.metaDetails?.find(
-    (m) => m.slug?.toLowerCase() === "companycode"
-  );
+  const rawPrice = meta[META_KEYS.SELLING_PRICE];
+  const priceValue = rawPrice ? parseFloat(rawPrice) : NaN;
+  const displayPrice = !isNaN(priceValue)
+    ? `₹${priceValue.toFixed(2)}`
+    : "Price not set";
 
-  // Fallback: if value is UUID (wrong), get real value from raw meta
-  const getRealValue = (entry, fallbackUuid) => {
-    if (!entry) return null;
-    const val = entry.value;
-    if (typeof val === "string" && val.length === 36 && val.includes("-")) {
-      return product.meta?.[fallbackUuid] || val;
-    }
-    return val;
-  };
+  const companyCode =
+    String(meta[META_KEYS.COMPANY_CODE] || "").trim() || "N/A";
 
-  const realPriceValue = getRealValue(sellingPriceEntry, SELLING_PRICE_UUID);
-  const realCodeValue = getRealValue(companyCodeEntry, COMPANY_CODE_UUID);
-
-  const displayPrice =
-    realPriceValue && !isNaN(parseFloat(realPriceValue))
-      ? `₹${parseFloat(realPriceValue).toFixed(2)}`
-      : "Price not set";
-
-  // Quantity controls
+  // ── Quantity logic ───────────────────────────────────────
   const handleIncrement = () => {
     if (quantity < product.quantity) setQuantity(quantity + 1);
   };
@@ -81,40 +68,44 @@ const ProductCard = ({
   };
 
   const handleQuantityChange = (e) => {
-    const value = e.target.value === "" ? "" : parseInt(e.target.value, 10);
-    if (value === "" || (value >= 1 && value <= product.quantity)) {
-      setQuantity(value || 1);
+    const val = e.target.value.trim();
+    if (val === "") {
+      setQuantity("");
+      return;
+    }
+    const num = parseInt(val, 10);
+    if (!isNaN(num) && num >= 1 && num <= product.quantity) {
+      setQuantity(num);
     }
   };
 
   const handleAddToCartWithQuantity = () => {
-    if (!realPriceValue || isNaN(parseFloat(realPriceValue))) {
-      message.error("Invalid price");
+    if (isNaN(priceValue)) {
+      message.error("Cannot add — price is not set");
       return;
     }
-    if (quantity <= 0 || quantity > product.quantity) {
+    if (quantity < 1 || quantity > product.quantity) {
       message.error("Invalid quantity");
       return;
     }
-    handleAddToCart(product, quantity); // Pass quantity
+    handleAddToCart(product, quantity);
   };
 
-  // Permissions
+  // ── Permissions & states ─────────────────────────────────
   const permissions = auth?.permissions ?? [];
   const canAddToCart = permissions.some(
     (p) => p.action === "write" && p.module === "cart"
   );
-
   const canEditOrDelete = permissions.some(
     (p) => ["edit", "delete"].includes(p.action) && p.module === "products"
   );
 
   const isOutOfStock = product.quantity <= 0;
-  const hasValidPrice = realPriceValue && !isNaN(parseFloat(realPriceValue));
+  const hasValidPrice = !isNaN(priceValue);
 
   return (
     <div className="card mb-0">
-      {/* Image + Stock Status */}
+      {/* Image + Stock badge */}
       <div className="image-wrapper">
         <img
           src={productImages[0] || pos}
@@ -124,11 +115,11 @@ const ProductCard = ({
         {isOutOfStock ? (
           <div className="status-bar out-of-stock">Out of Stock</div>
         ) : (
-          <div className="status-bar in-stock">{`${product.quantity}`}</div>
+          <div className="status-bar in-stock">{product.quantity}</div>
         )}
       </div>
 
-      {/* More Options Menu */}
+      {/* More options dropdown */}
       {canEditOrDelete && (
         <PermissionGate api="edit|delete" module="products">
           <Dropdown overlay={menu(product)} trigger={["click"]}>
@@ -142,21 +133,21 @@ const ProductCard = ({
         </PermissionGate>
       )}
 
-      {/* Out of Stock Badge */}
+      {/* Out of stock badge (alternative position) */}
       {isOutOfStock && (
         <Badge count="Out of Stock" className="out-of-stock-badge" />
       )}
 
-      {/* Product Name */}
+      {/* Name */}
       <h6 className="product-name">
         <Link to={`/product/${product.productId}`}>
           {product.name || "Unnamed Product"}
         </Link>
       </h6>
 
-      {/* Price + Quantity Selector */}
+      {/* Price + Quantity selector */}
       <div className="price">
-        <p className="text-gray-9 mb-0">{displayPrice}</p>
+        <p className="text-gray-9 mb-0 fw-bold">{displayPrice}</p>
 
         <div className="qty-item">
           <Tooltip title="Decrease">
@@ -176,7 +167,7 @@ const ProductCard = ({
             value={quantity}
             onChange={handleQuantityChange}
             disabled={isOutOfStock}
-            style={{ width: 50 }}
+            style={{ width: 60, textAlign: "center" }}
           />
 
           <Tooltip title="Increase">
@@ -192,7 +183,7 @@ const ProductCard = ({
         </div>
       </div>
 
-      {/* Add to Cart Button */}
+      {/* Add to Cart */}
       {canAddToCart && (
         <Tooltip
           title={
@@ -208,9 +199,14 @@ const ProductCard = ({
             className="cart-button"
             icon={<ShoppingCartOutlined />}
             onClick={handleAddToCartWithQuantity}
-            disabled={isOutOfStock || !hasValidPrice}
+            disabled={
+              isOutOfStock ||
+              !hasValidPrice ||
+              cartLoadingStates[product.productId]
+            }
             size="large"
             block
+            loading={cartLoadingStates[product.productId]}
           >
             {isOutOfStock ? "Out of Stock" : "Add to Cart"}
           </Button>

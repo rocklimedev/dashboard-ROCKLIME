@@ -82,8 +82,10 @@ const AddSiteMap = () => {
   // API
   const { data: customersData, isLoading: isCustomersLoading } =
     useGetCustomersQuery();
-  const { data: productsData = [], isLoading: isProductsLoading } =
+  const { data: response, isLoading: isProductsLoading } =
     useGetAllProductsQuery();
+
+  const productsData = response?.data || []; // ← safe array fallback
   const { data: existingSiteMapData, isLoading: isFetching } =
     useGetSiteMapByIdQuery(id, { skip: !isEditMode });
 
