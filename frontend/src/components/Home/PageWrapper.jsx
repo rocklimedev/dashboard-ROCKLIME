@@ -93,42 +93,6 @@ const PageWrapper = () => {
     return d;
   }, []);
 
-  const startDate = today.toISOString().split("T")[0];
-  const endDate = new Date(today.getTime() + 24 * 60 * 60 * 1000)
-    .toISOString()
-    .split("T")[0];
-
-  const { data: attendance } = useGetAttendanceQuery(
-    { userId, startDate, endDate },
-    { skip: !userId }
-  );
-
-  const hasClockedIn = attendance?.length > 0 && !!attendance[0]?.clockIn;
-  const hasClockedOut = hasClockedIn && !!attendance[0]?.clockOut;
-
-  const [clockIn] = useClockInMutation();
-  const [clockOut] = useClockOutMutation();
-
-  const handleClockIn = async () => {
-    if (!userId) return message.error("User ID missing");
-    try {
-      await clockIn({ userId }).unwrap();
-      message.success("Clocked in successfully");
-    } catch {
-      message.error("Clock-in failed");
-    }
-  };
-
-  const handleClockOut = async () => {
-    if (!userId) return message.error("User ID missing");
-    try {
-      await clockOut({ userId }).unwrap();
-      message.success("Clocked out successfully");
-    } catch {
-      message.error("Clock-out failed");
-    }
-  };
-
   /* ------------------------------------------------------------------ */
   /*  CART & HELPERS                                                    */
   /* ------------------------------------------------------------------ */
@@ -233,10 +197,20 @@ const PageWrapper = () => {
   };
 
   const getSellingPrice = (product) => {
-    const entry = product.metaDetails?.find(
-      (m) => m.id === SELLING_PRICE_META_ID
-    );
-    return entry?.value || "0";
+    // Preferred: use the meta object with UUID key
+    const metaValue = product.meta?.[SELLING_PRICE_META_ID];
+    if (metaValue != null) {
+      // catches null/undefined
+      return String(metaValue); // ensure string for parseFloat
+    }
+
+    // Fallback for older data (numeric id in metaDetails)
+    const entry = product.metaDetails?.find((m) => m.id === 9);
+    if (entry?.value) {
+      return entry.value;
+    }
+
+    return "0";
   };
 
   /* ------------------------------------------------------------------ */

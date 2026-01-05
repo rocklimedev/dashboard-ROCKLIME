@@ -1,44 +1,6 @@
 [
   {
-    "name": "American Standard Acacia E extended basin mixer",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "It is designed for use with vessel sinks, providing more comfortable space and ease of use.  Features a single lever for easy control of water flow and temperature.  Includes water-saving technology. ",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "AMERICAN STANDARD",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 23500,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1302-101GLOBFO"
-    },
-    "product_code": "EAMAM2101922"
-  },
-  {
-    "name": "Heritage Soap Dish",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Heritage",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "AMERICAN STANDARD",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 4550,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0282-908500BCO"
-    },
-    "product_code": "EAMAM8500707"
-  },
-  {
-    "name": "American Standard Seva Tissue Holder",
+    "name": "Allure Brilliant Single-lever mixer with 2-way diverter chrome knurled handle",
     "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
@@ -47,17 +9,17 @@
     "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "AMERICAN STANDARD",
+    "brandId": "GROHE PREMIUM",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 2950,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "4005"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 93050,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24425000"
     },
-    "product_code": "EAMAM4005908"
+    "product_code": "EGRGR5000374"
   },
   {
-    "name": "American Standard Heritage Tissue Holder",
+    "name": "Allure Brilliant Single-lever mixer with 2-way diverter chrome white Caesarstone handle",
     "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
@@ -66,17 +28,17 @@
     "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "AMERICAN STANDARD",
+    "brandId": "GROHE PREMIUM",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 6900,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0287-908500BC0"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 93050,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24426000"
     },
-    "product_code": "EAMAM5000143"
+    "product_code": "EGRGR6000616"
   },
   {
-    "name": "American Standard Acacia Evolution Glass Holder",
+    "name": "Allure Brilliant Single-lever mixer with 2-way diverter chrome black Caesarstone handle",
     "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
@@ -85,36 +47,17 @@
     "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "AMERICAN STANDARD",
+    "brandId": "GROHE PREMIUM",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 3150,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1384-908500BC0"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 93050,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24427000"
     },
-    "product_code": "EAMAM5000723"
+    "product_code": "EGRGR7000264"
   },
   {
-    "name": "Heritage Cup Holder",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Heritage",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "AMERICAN STANDARD",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 4550,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0284-908500BCO"
-    },
-    "product_code": "EAMAM8500847"
-  },
-  {
-    "name": "American Standard Heritage toilet brush",
+    "name": "Grohtherm Cube Thermostatic shower mixer for 2 outlets chrome knurled handle",
     "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
@@ -123,17 +66,17 @@
     "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "AMERICAN STANDARD",
+    "brandId": "GROHE PREMIUM",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 6450,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0286-908500BCO"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 90850,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24428000"
     },
-    "product_code": "EAMAM8500575"
+    "product_code": "EGRGR8000757"
   },
   {
-    "name": "American Standard Heritage Robe Hook",
+    "name": "Grohtherm Cube Thermostatic shower mixer for 2 outlets chrome white Caesarstone handle",
     "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
@@ -142,17 +85,17 @@
     "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "AMERICAN STANDARD",
+    "brandId": "GROHE PREMIUM",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 2400,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "4005"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 90850,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24429000"
     },
-    "product_code": "EAMAM4005820"
+    "product_code": "EGRGR9000935"
   },
   {
-    "name": "Heritage Towel Ring",
+    "name": "Grohtherm Cube Thermostatic shower mixer for 2 outlets chrome black Caesarstone handle",
     "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
@@ -161,17 +104,17 @@
     "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "AMERICAN STANDARD",
+    "brandId": "GROHE PREMIUM",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 3650,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0290-908500BCO"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 90850,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24430000"
     },
-    "product_code": "EAMAM8500652"
+    "product_code": "EGRGR0000821"
   },
   {
-    "name": "American Standard Heritage Towel Rack",
+    "name": "Grohtherm Cube Thermostatic shower mixer for 2 outlets chrome black Caesarstone handle",
     "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
@@ -180,36 +123,17 @@
     "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "AMERICAN STANDARD",
+    "brandId": "GROHE PREMIUM",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 6900,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0293-908500BCO"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 90850,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24430000"
     },
-    "product_code": "EAMAM8500296"
+    "product_code": "EGRGR0000275"
   },
   {
-    "name": "Heritage Towel Rack",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Heritage",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "AMERICAN STANDARD",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 6900,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0293-908500BCO"
-    },
-    "product_code": "EAMAM8500527"
-  },
-  {
-    "name": "double towel bar",
+    "name": "Allure Brilliant Four-hole single-lever bath combination chrome knurled handle",
     "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
@@ -218,17 +142,17 @@
     "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "AMERICAN STANDARD",
+    "brandId": "GROHE PREMIUM",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 11350,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0294-908500BCO"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 373800,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "29523000"
     },
-    "product_code": "EAMAM8500441"
+    "product_code": "EGRGR3000895"
   },
   {
-    "name": "Simple Towel Shelf",
+    "name": "Allure Brilliant Four-hole single-lever bath combination chrome white Caesarstone handle",
     "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
@@ -237,17 +161,17 @@
     "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "AMERICAN STANDARD",
+    "brandId": "GROHE PREMIUM",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 6800,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS6587-908500BFO"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 373800,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "29525000"
     },
-    "product_code": "EAMAM8500856"
+    "product_code": "EGRGR5000886"
   },
   {
-    "name": "American Standard Heritage Towel Shelf",
+    "name": "Allure Brilliant Four-hole single-lever bath combination chrome black Caesarstone handle",
     "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
@@ -256,36 +180,17 @@
     "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "AMERICAN STANDARD",
+    "brandId": "GROHE PREMIUM",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 16600,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0295-908500BCO"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 373800,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "29527000"
     },
-    "product_code": "EAMAM8500110"
+    "product_code": "EGRGR7000947"
   },
   {
-    "name": "American Standard Acacia E Towel Shelf",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Part of the Acacia Evolution collection, known for modern design and technology integration. It has a shiny chrome finishing for an enduring brilliance. It is described as abrasion and corrosion resistant with a mirror-like double chrome layering.",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "AMERICAN STANDARD",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 22000,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "4005"
-    },
-    "product_code": "EAMAM4005598"
-  },
-  {
-    "name": "American Standard waste and overflow couplings for lavatories",
+    "name": "Allure Brilliant Single-lever bath mixer 1/2“ floor mounted chrome knurled handle",
     "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
@@ -294,17 +199,17 @@
     "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "AMERICAN STANDARD",
+    "brandId": "GROHE PREMIUM",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 2300,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "F78007-CHADY"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 804200,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24422000"
     },
-    "product_code": "EAMAM8007868"
+    "product_code": "EGRGR2000966"
   },
   {
-    "name": "American Standard waste and overflow couplings for lavatories",
+    "name": "Allure Brilliant Single-lever bath mixer 1/2“ floor mounted chrome white Caesarstone handle",
     "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
@@ -313,17 +218,17 @@
     "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "AMERICAN STANDARD",
+    "brandId": "GROHE PREMIUM",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 2100,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "F78006-CHADYN"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 804200,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24423000"
     },
-    "product_code": "EAMAM8006457"
+    "product_code": "EGRGR3000466"
   },
   {
-    "name": "American Standard A-8201-N stainless steel round floor drain with a lock type cover",
+    "name": "Allure Brilliant Single-lever bath mixer 1/2“ floor mounted chrome black Caesarstone handle",
     "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
@@ -332,264 +237,17 @@
     "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "AMERICAN STANDARD",
+    "brandId": "GROHE PREMIUM",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 1100,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "A-8201-N"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 804200,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24424000"
     },
-    "product_code": "EAMAM8201160"
+    "product_code": "EGRGR4000222"
   },
   {
-    "name": "American Standard A-8200-N square floor drain with a cover plate",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Made from stainless steel material. Features a 3.5-inch flange. Designed to fit 2-inch to 2.5-inch pipes",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "AMERICAN STANDARD",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 1200,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "A-8200-N"
-    },
-    "product_code": "EAMAM8200137"
-  },
-  {
-    "name": "American Standard Brass Floor Drain",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Material: Brass, with a nickel finish. Dimensions: 10x10 Cm. Features: Deodorization with flap design.",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "AMERICAN STANDARD",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 3050,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "F78205-CHADY"
-    },
-    "product_code": "EAMAM8205766"
-  },
-  {
-    "name": "Senseflow Sensor Faucet (DC)",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "SenseFlow",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "AMERICAN STANDARD",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 33050,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS8601-000500BFO"
-    },
-    "product_code": "EAMAM0500570"
-  },
-  {
-    "name": "Line- sensor Technology Square Sensor",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Faucet - AC Line Sensor",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "AMERICAN STANDARD",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 37900,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS8509-A00500BCO"
-    },
-    "product_code": "EAMAM0500125"
-  },
-  {
-    "name": "Line-Sensor Technology in Wall Sensor Faucet",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Line Sensor",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "AMERICAN STANDARD",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 44000,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS8508-D00500BFO"
-    },
-    "product_code": "EAMAM0500226"
-  },
-  {
-    "name": "Line- sensor Technology Sensor In-Wall Sensor Faucet - AC",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Line Sensor",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "AMERICAN STANDARD",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 41200,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS8508-A00500BC0"
-    },
-    "product_code": "EAMAM5000402"
-  },
-  {
-    "name": "Line-sensor technology square sensor faucet",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Line Sensor",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "AMERICAN STANDARD",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 40650,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS8509-D00500BFO"
-    },
-    "product_code": "EAMAM0500525"
-  },
-  {
-    "name": "Line- sensor Technology In-Wall Square Sensor Faucet - AC",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Line Sensor",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "AMERICAN STANDARD",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 40650,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS8511-A00500BCO"
-    },
-    "product_code": "EAMAM0500518"
-  },
-  {
-    "name": "Line-sensor technology sensor faucet",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Line Sensor",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "AMERICAN STANDARD",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 39950,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS8506-D00500BFO"
-    },
-    "product_code": "EAMAM0500844"
-  },
-  {
-    "name": "Line- Sensor Technology Sensor Extended Sensor Faucet - AC",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Line Sensor",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "AMERICAN STANDARD",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 44250,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS8507-A00500BCO"
-    },
-    "product_code": "EAMAM0500139"
-  },
-  {
-    "name": "American Standard Line Sensor (Bubble) Extended Basin Faucet (DC)",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Features 'Line Sensor Technology' for unmatched sensor precision Operates on direct current (DC) power Has a shiny chrome finish for enduring brilliance",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "AMERICAN STANDARD",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 44450,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS8507-D00500BC0"
-    },
-    "product_code": "EAMAM5000855"
-  },
-  {
-    "name": "American Standard Line- sensor Technology Square Extended Sensor Faucet",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "It is an AC-operated, touchless or automatic sensor faucet. It features 'Line Sensor' technology for enhanced precision. The finish is chrome. It is designed for water saving.",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "AMERICAN STANDARD",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 44650,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS8510-A00500BCO"
-    },
-    "product_code": "EAMAM0500261"
-  },
-  {
-    "name": "American Standard wall-mounted sensor basin faucet",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "It uses Line Sensor technology for enhanced precision compared to conventional sensor faucets. The product is designed to be water-saving. The finish is chrome. It is DC operated, requiring batteries for function.",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "AMERICAN STANDARD",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 44800,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS8511-D00500BF0"
-    },
-    "product_code": "EAMAM5000432"
-  },
-  {
-    "name": "American Standard Neo Modern Bath Spout",
+    "name": "Five hole Bath Tube Filler Stick",
     "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
@@ -598,150 +256,17 @@
     "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "AMERICAN STANDARD",
+    "brandId": "GROHE PREMIUM",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 3150,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FF1-CN521X00000477"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 242400,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "5224000"
     },
-    "product_code": "EAMAM0477873"
+    "product_code": "EGRGR4000170"
   },
   {
-    "name": "American Standard Neo Modern L Bend Wall Mixer in white",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Material: Made of brass Design: Features a sleek and minimal design with ergonomic handles and visible color indicators. Technology: Includes Cool Shield Technology to minimize scalding risk",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "AMERICAN STANDARD",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 9300,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0714-604090BAO"
-    },
-    "product_code": "EAMAM4090537"
-  },
-  {
-    "name": "American Standard Concept Round Exposed Bath & Shower mixer",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Features a shiny chrome finish. Part of the 'Concept' collection. Flow rate for the spout is 10.08 L/min and for the shower outlet is 4.02 L/min.",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "AMERICAN STANDARD",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 15450,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1411-601500BFO"
-    },
-    "product_code": "EAMAM1500948"
-  },
-  {
-    "name": "American Standard Acacia Evolution Exposed Bath & Shower Mixer",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "It features a modern design that can fit any style of bathroom.  It has a shiny chrome finish for enduring brilliance.  The product type is a bath and shower mixer with one handle.  It incorporates Airnergize technology, infusing water with air for a luxurious shower experience while using less water. ",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "AMERICAN STANDARD",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 37800,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1311-602500BF0"
-    },
-    "product_code": "EAMAM5000827"
-  },
-  {
-    "name": "Concept Concealed Bath & Shower",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Mixing Valve Concept Round",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "AMERICAN STANDARD",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 13750,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1420-609500BFO"
-    },
-    "product_code": "EAMAM9500206"
-  },
-  {
-    "name": "American Standard Acacia Evolution Concealed Bath & Shower Mixer. ",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Finish: Shiny chrome Style: Modern design with geometric shapes Technology: Features Airnergize technology for air-infused water",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "AMERICAN STANDARD",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 19550,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1321-608500BF0"
-    },
-    "product_code": "EAMAM5000572"
-  },
-  {
-    "name": "American Standard Acacia E Single Hole Basin Mixer Side Lever faucet",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Features a single lever for easy control of water temperature and flow. Includes DuraShine technology for a long-lasting chrome finish.",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "AMERICAN STANDARD",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 14700,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1305-102500BFO"
-    },
-    "product_code": "EAMAM2500566"
-  },
-  {
-    "name": "American Standard Milano Wall Mount Basin Mixer",
-    "quantity": 67,
-    "discountType": null,
-    "alert_quantity": 20,
-    "tax": null,
-    "description": "Collection: Milano Installation: Wall Mount Finish: Chrome with Durashine technology",
-    "images": "",
-    "isFeatured": false,
-    "status": "active",
-    "brandId": "AMERICAN STANDARD",
-    "vendorId": null,
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 14950,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS0904-102501BF0"
-    },
-    "product_code": "EAMAM5010134"
-  },
-  {
-    "name": "American Standard Acacia E Wall Mounted Basin Mixer",
+    "name": "Five hole Bath Tube Filler Knob",
     "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
@@ -750,17 +275,17 @@
     "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "AMERICAN STANDARD",
+    "brandId": "GROHE PREMIUM",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 21150,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1304-102500BF0"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 269400,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "25226000"
     },
-    "product_code": "EAMAM5000196"
+    "product_code": "EGRGR6000113"
   },
   {
-    "name": "American Standard Signature Wall Mounted Basin Mixer with Pop-up Drain",
+    "name": "Freestanding Bath tub Filler Stick",
     "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
@@ -769,51 +294,1989 @@
     "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "AMERICAN STANDARD",
+    "brandId": "GROHE PREMIUM",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 26150,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1704-1015L0BC0"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 318600,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "25227000"
     },
-    "product_code": "EAMAM1500149"
+    "product_code": "EGRGR7000914"
   },
   {
-    "name": "American Standard Kastello Wall Mount Basin Mixer",
+    "name": "Freestanding Bath tub Filler knob",
     "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Collection: Kastello, known for its classic beauty and contemporary form Installation: Wall Mount, a 3-hole basin faucet design Finish: Shiny chrome finishing for enduring brilliance",
+    "description": "",
     "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "AMERICAN STANDARD",
+    "brandId": "GROHE PREMIUM",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 32300,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1604-101501BF0"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 345600,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "25229000"
     },
-    "product_code": "EAMAM5010654"
+    "product_code": "EGRGR9000462"
   },
   {
-    "name": "American Standard Signature 3-Hole Basin Mixer With Pop-up Drain",
+    "name": "Acc: white Caesarstone stick set 1 (2x) for basin OHMs and 3h basin mixers",
     "quantity": 67,
     "discountType": null,
     "alert_quantity": 20,
     "tax": null,
-    "description": "Features a shiny chrome finish. Designed for table mounting with three holes. Incorporates Durashine and ComfortMove technologies for enduring brilliance and smooth handle performance. Has a minimal lead content for better health protection compared to standard brass.",
+    "description": "",
     "images": "",
     "isFeatured": false,
     "status": "active",
-    "brandId": "AMERICAN STANDARD",
+    "brandId": "GROHE PREMIUM",
     "vendorId": null,
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
     "meta": {
-      "9ba862ef-f993-4873-95ef-1fef10036aa5": 23550,
-      "d11da9f9-3f2e-4536-8236-9671200cca4a": "FFAS1703-1015LOBCO"
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 70750,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "48458000"
     },
-    "product_code": "EAMAM1015574"
+    "product_code": "EGRGR8000533"
+  },
+  {
+    "name": "Acc: black Caesarstone stick set 1 (2x) for basin OHMs and 3h basin mixers",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 70750,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "48459000"
+    },
+    "product_code": "EGRGR9000187"
+  },
+  {
+    "name": "Acc: white Caesarstone inlay set 2 (2x) for 3h basin mixers",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 38350,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "48460000"
+    },
+    "product_code": "EGRGR0000459"
+  },
+  {
+    "name": "Acc: black Caesarstone inlay set 2 (2x) for 3h basin mixers",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 38350,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "48461000"
+    },
+    "product_code": "EGRGR1000860"
+  },
+  {
+    "name": "Acc: white Caesarstone inlay set 3 (2x) for bath mixers",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 38350,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "48462000"
+    },
+    "product_code": "EGRGR2000766"
+  },
+  {
+    "name": "Acc: black Caesarstone inlay set 3 (2x) for bath mixers",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 38350,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "48463000"
+    },
+    "product_code": "EGRGR3000424"
+  },
+  {
+    "name": "Acc: white Caesarstone stick set 2 (2x) for bath mixers",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 70750,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "48464000"
+    },
+    "product_code": "EGRGR4000882"
+  },
+  {
+    "name": "Acc: black Caesarstone stick set 2 (2x) for bath mixers",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 70750,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "48465000"
+    },
+    "product_code": "EGRGR5000134"
+  },
+  {
+    "name": "Acc: white Caesarstone inlay set 4 (2x) for THM",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 38350,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "48466000"
+    },
+    "product_code": "EGRGR6000532"
+  },
+  {
+    "name": "Acc: black Caesarstone inlay set 4 (2x) for THM",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 38350,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "48467000"
+    },
+    "product_code": "EGRGR7000829"
+  },
+  {
+    "name": "Acc: knurled stick set 1 (2x) for basin OHMs and 3h basin mixers, bath freestanding",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 70750,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "48646000"
+    },
+    "product_code": "EGRGR6000278"
+  },
+  {
+    "name": "Acc: knurled stick set 2 (2x) for 5-hole bath combination",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 70750,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "48651000"
+    },
+    "product_code": "EGRGR1000206"
+  },
+  {
+    "name": "Allure Brillant Single Lever Basin Mixer without Pop-Up, M Size",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 125250,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24342000"
+    },
+    "product_code": "EGRGR2000158"
+  },
+  {
+    "name": "Allure Brillant Single Lever Basin Mixer with Pop-Up, M Size",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 128450,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24341000"
+    },
+    "product_code": "EGRGR1000472"
+  },
+  {
+    "name": "Allure Brillant Single Lever Basin Mixer with Pop-Up, M Size",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 128450,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24341000"
+    },
+    "product_code": "EGRGR1000167"
+  },
+  {
+    "name": "Allure Brillant Single Lever Basin Mixer with Pop-Up, L Size",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 151150,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24344000"
+    },
+    "product_code": "EGRGR4000197"
+  },
+  {
+    "name": "Allure Brillant Single Lever Basin Mixer without Pop-Up, XL Size",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 214850,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24346000"
+    },
+    "product_code": "EGRGR6000427"
+  },
+  {
+    "name": "Allure Brillant Three-Hole Basin Mixer",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 2980500,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "20634SD0"
+    },
+    "product_code": "EGRGR6340698"
+  },
+  {
+    "name": "Allure Brillant Three-Hole Basin Mixer with Pop-Up, S Size",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 195250,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "20626000"
+    },
+    "product_code": "EGRGR6000701"
+  },
+  {
+    "name": "Allure Brillant Three-Hole Basin Mixer with Pop-Up, M Size",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 195450,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "20627000"
+    },
+    "product_code": "EGRGR7000259"
+  },
+  {
+    "name": "Allure Brillant Two-Hole, Single Lever Wall-Mount Basin Mixer, S Size",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 160350,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "29402000"
+    },
+    "product_code": "EGRGR2000111"
+  },
+  {
+    "name": "Allure Brillant Two-Hole, Single Lever Wall-Mount Basin Mixer, M Size",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 190050,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "29403000"
+    },
+    "product_code": "EGRGR3000627"
+  },
+  {
+    "name": "1-Handle Mixer, Concealed Body",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 20500,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "23200000"
+    },
+    "product_code": "EGRGR0000496"
+  },
+  {
+    "name": "Allure Brillant Three-Hole Wall-Mount Basin Mixer",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 2980500,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "20635SD0"
+    },
+    "product_code": "EGRGR6350398"
+  },
+  {
+    "name": "Allure Brillant Three-Hole Wall-Mount Basin Mixer, S Size",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 182100,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "20628000"
+    },
+    "product_code": "EGRGR8000207"
+  },
+  {
+    "name": "Allure Brillant Three-Hole Wall-Mount Basin Mixer, M Size",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 172250,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "20629000"
+    },
+    "product_code": "EGRGR9000955"
+  },
+  {
+    "name": "Allure Brillant Single Lever Bath/Shower Mixer",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 78250,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24279000"
+    },
+    "product_code": "EGRGR9000363"
+  },
+  {
+    "name": "Allure Brillant Single Lever Mixer, 3-Way Diverter",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 83100,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24340000"
+    },
+    "product_code": "EGRGR0000749"
+  },
+  {
+    "name": "Rapido Smartbox",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 16550,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "35600000"
+    },
+    "product_code": "EGRGR0000637"
+  },
+  {
+    "name": "Allure Brilliant 5-Way Diverter",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 61900,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "29399000"
+    },
+    "product_code": "EGRGR9000992"
+  },
+  {
+    "name": "Diverter Rough Install.",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 32800,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "29033000"
+    },
+    "product_code": "EGRGR3000239"
+  },
+  {
+    "name": "Allure Brillant Freestanding Bath Filler",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 579800,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24348000"
+    },
+    "product_code": "EGRGR8000350"
+  },
+  {
+    "name": "Allure Brilliant Bath Spout",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 78050,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "13485000"
+    },
+    "product_code": "EGRGR5000713"
+  },
+  {
+    "name": "Allure Brilliant Cascade Bath Spout",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 131750,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "13486000"
+    },
+    "product_code": "EGRGR6000348"
+  },
+  {
+    "name": "Allure Brillant Single Lever Bidet Mixer",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 114250,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24347000"
+    },
+    "product_code": "EGRGR7000364"
+  },
+  {
+    "name": "Allure Brillant Single Lever Bidet Mixer",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 114250,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24347000"
+    },
+    "product_code": "EGRGR7000162"
+  },
+  {
+    "name": "Allure Brillant Single Lever Shower Mixer",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 72850,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24277000"
+    },
+    "product_code": "EGRGR7000267"
+  },
+  {
+    "name": "Allure Brillant Volume Control Trimset",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 47400,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "29398000"
+    },
+    "product_code": "EGRGR8000803"
+  },
+  {
+    "name": "Allure Brilliant Glass including Holder",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 67900,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "40893000"
+    },
+    "product_code": "EGRGR3000592"
+  },
+  {
+    "name": "Allure Brilliant Soap Dispenser +Holder",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 106950,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "40894000"
+    },
+    "product_code": "EGRGR4000373"
+  },
+  {
+    "name": "Allure Brilliant Towel Bar",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 44500,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "40895000"
+    },
+    "product_code": "EGRGR5000659"
+  },
+  {
+    "name": "Allure Brilliant Bath Towel Bar",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 46650,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "40896000"
+    },
+    "product_code": "EGRGR6000833"
+  },
+  {
+    "name": "Allure Brilliant Hook",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 18700,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "40897000"
+    },
+    "product_code": "EGRGR7000238"
+  },
+  {
+    "name": "Allure Brilliant Toilet Paper Holder",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 75000,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "40898000"
+    },
+    "product_code": "EGRGR8000858"
+  },
+  {
+    "name": "Allure Brilliant Toilet Brush Set",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 89850,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "40900000"
+    },
+    "product_code": "EGRGR0000857"
+  },
+  {
+    "name": "Allure Brilliant Shower Holder",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 5800,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "26847000"
+    },
+    "product_code": "EGRGR7000897"
+  },
+  {
+    "name": "Allure Brilliant Wall Union",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 8850,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "26850000"
+    },
+    "product_code": "EGRGR0000842"
+  },
+  {
+    "name": "Atrio Single Lever Basin Mixer, M Size",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 107400,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24363000"
+    },
+    "product_code": "EGRGR3000276"
+  },
+  {
+    "name": "Atrio Single Lever Basin Mixer, L Size",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 114200,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24362000"
+    },
+    "product_code": "EGRGR2000211"
+  },
+  {
+    "name": "Atrio Single Lever Basin Mixer, XL Size",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 117650,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24365000"
+    },
+    "product_code": "EGRGR5000298"
+  },
+  {
+    "name": "Atrio Two-Handle Basin Mixer, L Size",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 124700,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "21144000"
+    },
+    "product_code": "EGRGR4000662"
+  },
+  {
+    "name": "Atrio Two-Handle Basin Mixer, XL Size",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 132800,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "21149000"
+    },
+    "product_code": "EGRGR9000743"
+  },
+  {
+    "name": "Atrio Three-Hole Basin Mixer",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 2533350,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "20664SD0"
+    },
+    "product_code": "EGRGR6640133"
+  },
+  {
+    "name": "Atrio Two-Hole, Single Lever Wall-Mount Basin Mixer Joystick, M Size",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 54500,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "29410000"
+    },
+    "product_code": "EGRGR0000550"
+  },
+  {
+    "name": "Atrio Pillar Tap, XS Size",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 43700,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "20658000"
+    },
+    "product_code": "EGRGR8000647"
+  },
+  {
+    "name": "Atrio Single Lever Bath/Shower Mixer",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 44550,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24355000"
+    },
+    "product_code": "EGRGR5000546"
+  },
+  {
+    "name": "Atrio Single Lever Mixer, 3-Way Diverter",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 52350,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24356000"
+    },
+    "product_code": "EGRGR6000650"
+  },
+  {
+    "name": "Atrio Single Lever Shower Mixer, Exposed",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 107200,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24366000"
+    },
+    "product_code": "EGRGR6000675"
+  },
+  {
+    "name": "Atrio Single Lever Bath Mixer, Exposed",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 107200,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24367000"
+    },
+    "product_code": "EGRGR7000268"
+  },
+  {
+    "name": "Atrio Two-Handle Bath Mixer, Exposed",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 161950,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "25268000"
+    },
+    "product_code": "EGRGR8000453"
+  },
+  {
+    "name": "Atrio Two-Handle Shower Mixer, Exposed",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 118150,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "26895000"
+    },
+    "product_code": "EGRGR5000240"
+  },
+  {
+    "name": "Atrio Thermostatic Mixer, 1-Way",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 43700,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24357000"
+    },
+    "product_code": "EGRGR7000208"
+  },
+  {
+    "name": "Lineare Three-Hole Basin Mixer with Pop-Up, M Size",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 57800,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "20304001"
+    },
+    "product_code": "EGRGR4001595"
+  },
+  {
+    "name": "Eurocube Pillar Tap",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 29450,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "23137000"
+    },
+    "product_code": "EGRGR7000780"
+  },
+  {
+    "name": "GROHE Plus Three-hole Basin Mixer with Pop-Up, M Size",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 83150,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "20301003"
+    },
+    "product_code": "EGRGR1003409"
+  },
+  {
+    "name": "Rainshower Grandera Stick Hand Shower 6, 6L",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 18100,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "26852000"
+    },
+    "product_code": "EGRGR2000804"
+  },
+  {
+    "name": "Grandera Four-Hole Bath Filler",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 238300,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "29418IG0"
+    },
+    "product_code": "EGRGR4180566"
+  },
+  {
+    "name": "Grandera Five-Hole Bath Filler",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 257400,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "29415IG0"
+    },
+    "product_code": "EGRGR4150385"
+  },
+  {
+    "name": "Grandera Freestanding Bath Filler",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 540300,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24375IG0"
+    },
+    "product_code": "EGRGR3750104"
+  },
+  {
+    "name": "Grandera Four-Hole Bath Filler",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 238650,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "29418000"
+    },
+    "product_code": "EGRGR8000941"
+  },
+  {
+    "name": "Grandera Five-Hole Bath Filler",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 232200,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "29415000"
+    },
+    "product_code": "EGRGR5000565"
+  },
+  {
+    "name": "Grandera Freestanding Bath Filler",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 385350,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24375000"
+    },
+    "product_code": "EGRGR5000654"
+  },
+  {
+    "name": "Allure Hair Dryer Inlet w/o Holder",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 1600,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "40964001"
+    },
+    "product_code": "EGRGR4001978"
+  },
+  {
+    "name": "Allure Holder (for Soap Dish & Hair Dryer Inlet)",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 12100,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "40963001"
+    },
+    "product_code": "EGRGR3001589"
+  },
+  {
+    "name": "Allure Reserve Toilet Paper Holder",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 20550,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "40956001"
+    },
+    "product_code": "EGRGR6001713"
+  },
+  {
+    "name": "Allure Grab Rail",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 18150,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "40955001"
+    },
+    "product_code": "EGRGR5001684"
+  },
+  {
+    "name": "Allure Double Towel Bar",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 20550,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "40342001"
+    },
+    "product_code": "EGRGR2001621"
+  },
+  {
+    "name": "Allure Towel Rail",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 30250,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "40341001"
+    },
+    "product_code": "EGRGR1001396"
+  },
+  {
+    "name": "Allure Toilet Brush Set",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 36300,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "40340001"
+    },
+    "product_code": "EGRGR0001888"
+  },
+  {
+    "name": "Allure Towel Ring",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 12100,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "40339001"
+    },
+    "product_code": "EGRGR9001687"
+  },
+  {
+    "name": "Allure Robe Hook",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 9050,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "40284001"
+    },
+    "product_code": "EGRGR4001717"
+  },
+  {
+    "name": "Allure Toilet Paper Holder",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 1815,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "40279001"
+    },
+    "product_code": "EGRGR9001117"
+  },
+  {
+    "name": "Allure Holder (for Soap Dispenser & Glass)",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 14550,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "40278001"
+    },
+    "product_code": "EGRGR8001696"
+  },
+  {
+    "name": "Allure Bidet Mixer",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 97200,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24160001"
+    },
+    "product_code": "EGRGR0001925"
+  },
+  {
+    "name": "Allure Five-Hole Two-Handle Bath Combination",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 241900,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "25221001"
+    },
+    "product_code": "EGRGR1001554"
+  },
+  {
+    "name": "Allure Four-Hole Single Lever Mixer Bath Combination",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 226800,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "19316001"
+    },
+    "product_code": "EGRGR6001855"
+  },
+  {
+    "name": "Allure Bath Spout",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 60500,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "13264001"
+    },
+    "product_code": "EGRGR4001550"
+  },
+  {
+    "name": "Allure Volume Control Trimset",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 24200,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "19334001"
+    },
+    "product_code": "EGRGR4001567"
+  },
+  {
+    "name": "Allure Single-Lever Bath Mixer Exposed",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 86400,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "826001"
+    },
+    "product_code": "EGRGR6001878"
+  },
+  {
+    "name": "Allure Single-Lever Shower Mixer Exposed",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 75600,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "32846001"
+    },
+    "product_code": "EGRGR6001595"
+  },
+  {
+    "name": "Allure Thermostatic Shower/Handshower Mixer - 2 Way Diverter",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 81000,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "29181002"
+    },
+    "product_code": "EGRGR1002849"
+  },
+  {
+    "name": "Allure Thermostatic Bath/Shower Mixer - 2 Way Diverter",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 81000,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "19446002"
+    },
+    "product_code": "EGRGR6002122"
+  },
+  {
+    "name": "Allure Thermostatic Shower Mixer",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 75600,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "19380002"
+    },
+    "product_code": "EGRGR0002909"
+  },
+  {
+    "name": "Allure Single Lever Mixer - 3 Way Diverter",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 64800,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "29176001"
+    },
+    "product_code": "EGRGR6001343"
+  },
+  {
+    "name": "Allure Single Lever Mixer - 3 Way Diverter",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 64800,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "29176001"
+    },
+    "product_code": "EGRGR6001146"
+  },
+  {
+    "name": "Allure Single Lever Bath/Shower Mixer",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 59400,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "19315001"
+    },
+    "product_code": "EGRGR5001266"
+  },
+  {
+    "name": "Allure Single Lever Mixer 1-Way",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 54000,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "19317001"
+    },
+    "product_code": "EGRGR7001242"
+  },
+  {
+    "name": "Allure Three-Way Diverter",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 42350,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "19590001"
+    },
+    "product_code": "EGRGR0001140"
+  },
+  {
+    "name": "Atrio Thermostatic Shower Mixer, 2-Way Diverter",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 46950,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24358000"
+    },
+    "product_code": "EGRGR8000482"
+  },
+  {
+    "name": "Atrio Thermostatic Bath/Shower Mixer, 2-Way Diverter",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 46950,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24359000"
+    },
+    "product_code": "EGRGR9000275"
+  },
+  {
+    "name": "Atrio New Bath Spout Exposed",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 26400,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "13487000"
+    },
+    "product_code": "EGRGR7000277"
+  },
+  {
+    "name": "Atrio Freestanding Bath Filler",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 267450,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "25272000"
+    },
+    "product_code": "EGRGR2000791"
+  },
+  {
+    "name": "Atrio Freestanding Bath Filler",
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "GROHE PREMIUM",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 275650,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "24368000"
+    },
+    "product_code": "EGRGR8000813"
   }
 ]

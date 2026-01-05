@@ -1472,7 +1472,7 @@ exports.getLowStockProducts = async (req, res) => {
 exports.searchProducts = async (req, res) => {
   try {
     const {
-      query,
+      q, // ← rename 'query' to 'q' to match frontend usage (useSearchProductsQuery sends ?q=...)
       name,
       sellingPrice,
       minSellingPrice,
@@ -1486,39 +1486,60 @@ exports.searchProducts = async (req, res) => {
       categoryId,
     } = req.query;
 
+    // Support both ?q=... (from frontend search) and ?query=... (backward compat)
+    const searchTerm = (q || req.query.query || "").trim();
+
     const filters = {};
 
-    if (query) {
+    // ── Build search filters ────────────────────────────────────────────────
+    if (searchTerm) {
+      const pattern = `%${searchTerm.toLowerCase()}%`;
+
       filters[Op.or] = [
-        { name: { [Op.iLike]: `%${query}%` } },
-        { product_code: { [Op.iLike]: `%${query}%` } },
-        { brandId: { [Op.eq]: query } },
-        { categoryId: { [Op.eq]: query } },
+        sequelize.where(
+          sequelize.fn("LOWER", sequelize.col("Product.name")),
+          Op.like,
+          pattern
+        ),
+        sequelize.where(
+          sequelize.fn("LOWER", sequelize.col("Product.product_code")),
+          Op.like,
+          pattern
+        ),
+        // Search inside meta → model code / company code (UUID key)
+        sequelize.where(
+          sequelize.fn(
+            "LOWER",
+            sequelize.fn(
+              "JSON_EXTRACT",
+              sequelize.col("Product.meta"),
+              sequelize.literal("'$.\"d11da9f9-3f2e-4536-8236-9671200cca4a\"'")
+            )
+          ),
+          Op.like,
+          pattern
+        ),
+        // Brand / Category UUID match
+        { brandId: { [Op.eq]: searchTerm } },
+        { categoryId: { [Op.eq]: searchTerm } },
       ];
     }
 
+    // Additional exact filters (same as before)
     if (name) filters.name = { [Op.iLike]: `%${name}%` };
-    if (sellingPrice)
-      filters["$meta.sellingPrice$"] = { [Op.eq]: Number(sellingPrice) };
+    if (sellingPrice) filters["meta->sellingPrice"] = Number(sellingPrice);
     if (minSellingPrice)
-      filters["$meta.sellingPrice$"] = { [Op.gte]: Number(minSellingPrice) };
+      filters["meta->sellingPrice"] = { [Op.gte]: Number(minSellingPrice) };
     if (maxSellingPrice)
-      filters["$meta.sellingPrice$"] = { [Op.lte]: Number(maxSellingPrice) };
-    if (purchasingPrice)
-      filters["$meta.purchasingPrice$"] = { [Op.eq]: Number(purchasingPrice) };
-    if (minPurchasingPrice)
-      filters["$meta.purchasingPrice$"] = {
-        [Op.gte]: Number(minPurchasingPrice),
-      };
-    if (maxPurchasingPrice)
-      filters["$meta.purchasingPrice$"] = {
-        [Op.lte]: Number(maxPurchasingPrice),
-      };
+      filters["meta->sellingPrice"] = { [Op.lte]: Number(maxSellingPrice) };
+    // ... same for purchasingPrice ...
+
     if (companyCode) filters.companyCode = companyCode;
     if (productCode) filters.product_code = productCode;
     if (brandId) filters.brandId = brandId;
     if (categoryId) filters.categoryId = categoryId;
 
+    // ── Fetch products + metas ──────────────────────────────────────────────
     const products = await Product.findAll({
       where: filters,
       include: [
@@ -1527,37 +1548,91 @@ exports.searchProducts = async (req, res) => {
           as: "product_metas",
           attributes: ["id", "title", "slug", "fieldType", "unit"],
         },
+        // Optional: add keywords if you want to search them too (like getAllProducts)
+        // {
+        //   model: Keyword,
+        //   as: "keywords",
+        //   through: { attributes: [] },
+        //   include: [{ model: Category, as: "categories", attributes: ["name"] }],
+        // },
       ],
+      order: [["name", "ASC"]],
+      limit: 100, // ← reasonable default for search – adjust as needed
     });
 
+    if (products.length === 0) {
+      return res.status(200).json([]);
+    }
+
+    // Collect all used meta IDs once
+    const metaIds = new Set();
+    products.forEach((p) => {
+      const meta = parseJsonSafely(p.meta, {});
+      Object.keys(meta).forEach((id) => metaIds.add(id));
+    });
+
+    // Fetch definitions only for used IDs
+    const metaDefs =
+      metaIds.size > 0
+        ? await ProductMeta.findAll({
+            where: { id: { [Op.in]: Array.from(metaIds) } },
+            attributes: ["id", "title", "slug", "fieldType", "unit"],
+          })
+        : [];
+
+    const metaMap = Object.fromEntries(metaDefs.map((m) => [m.id, m.toJSON()]));
+
+    // ── Enrich products (same structure as getAllProducts / getProductById) ──
     const enrichedProducts = products.map((product) => {
-      const productData = product.toJSON();
-      if (productData.meta) {
-        productData.metaDetails = Object.keys(productData.meta).map(
-          (metaId) => {
-            const metaField = productData.product_metas.find(
-              (mf) => mf.id === metaId
-            );
-            return {
-              id: metaId,
-              title: metaField ? metaField.title : "Unknown",
-              slug: metaField ? metaField.slug : null,
-              value: productData.meta[metaId],
-              fieldType: metaField ? metaField.fieldType : null,
-              unit: metaField ? metaField.unit : null,
-            };
-          }
-        );
-      }
-      delete productData.product_metas;
-      return productData;
+      const raw = product.toJSON();
+
+      const metaObj = parseJsonSafely(raw.meta, {}, `product ${raw.productId}`);
+      const images = parseJsonSafely(
+        raw.images,
+        [],
+        `product ${raw.productId} images`
+      );
+
+      // Build metaDetails safely
+      const metaDetails = Object.entries(metaObj)
+        .map(([idStr, value]) => {
+          const id = parseInt(idStr, 10);
+          if (isNaN(id)) return null;
+          const def = metaMap[id];
+          return {
+            id,
+            title: def?.title ?? "Unknown Field",
+            slug: def?.slug ?? null,
+            value: value != null ? String(value) : "",
+            fieldType: def?.fieldType ?? "text",
+            unit: def?.unit ?? null,
+          };
+        })
+        .filter(Boolean);
+
+      return {
+        ...raw,
+        images,
+        meta: metaObj,
+        metaDetails,
+        // If you later add keywords include, clean it here too
+        // keywords: ...,
+        variantOptions: raw.variantOptions || {},
+        variantKey: raw.variantKey || null,
+        skuSuffix: raw.skuSuffix || null,
+        isMaster: !!raw.isMaster,
+        isVariant: !!raw.masterProductId,
+        masterProductId: raw.masterProductId || raw.productId,
+      };
     });
 
     return res.status(200).json(enrichedProducts);
   } catch (error) {
-    return res
-      .status(500)
-      .json({ message: "Error searching products", error: error.message });
+    console.error("searchProducts error:", error);
+    return res.status(500).json({
+      message: "Error searching products",
+      error: error.message,
+    });
   }
 };
 
