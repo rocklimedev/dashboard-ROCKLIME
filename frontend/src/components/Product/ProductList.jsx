@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
   Form,
@@ -43,7 +43,7 @@ import pos from "../../assets/img/default.png";
 import PermissionGate from "../../context/PermissionGate";
 
 // ────────────────────────────────────────────────
-//   META UUIDS – keep in sync with backend / fix script
+//   META UUIDS – keep in sync with backend
 // ────────────────────────────────────────────────
 const META_KEYS = {
   SELLING_PRICE: "9ba862ef-f993-4873-95ef-1fef10036aa5",
@@ -57,6 +57,15 @@ const ProductsList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState("list");
   const [cartLoadingStates, setCartLoadingStates] = useState({});
+
+  // Price range filter (kept in filter bar)
+  const [priceMin, setPriceMin] = useState("");
+  const [priceMax, setPriceMax] = useState("");
+
+  // Table sorting state (controlled by column header clicks)
+  const [sortField, setSortField] = useState(null); // 'name' | 'product_code' | 'price' | null
+  const [sortOrder, setSortOrder] = useState(null); // 'ascend' | 'descend' | null
+
   const [isDeleteModalVisible, setDeleteModalVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [stockModalOpen, setStockModalOpen] = useState(false);
@@ -147,112 +156,85 @@ const ProductsList = () => {
     }
   };
 
-  const getPrice = (product) => {
+  const getNumericPrice = (product) => {
     const meta = product?.meta || {};
     const rawPrice = meta[META_KEYS.SELLING_PRICE];
-
-    if (!rawPrice) return "N/A";
-
     const price = parseFloat(rawPrice);
-    return isNaN(price) ? "N/A" : `₹ ${price.toFixed(2)}`;
+    return isNaN(price) ? null : price;
+  };
+
+  const getPriceDisplay = (product) => {
+    const price = getNumericPrice(product);
+    return price === null ? "N/A" : `₹ ${price.toFixed(2)}`;
   };
 
   const getCompanyCode = (product) => {
     const meta = product?.meta || {};
     const code = meta[META_KEYS.MODEL_CODE];
-
-    if (!code) return "N/A";
-
-    // Clean & return – adjust trimming/formatting if needed
-    return String(code).trim() || "N/A";
+    return code ? String(code).trim() : "N/A";
   };
 
-  const handleAddToCart = async (product) => {
-    if (!userId) return message.error("Please log in");
+  // ── Client-side filter + sort ─────────────────────
+  const processedProducts = useMemo(() => {
+    let result = [...products];
 
-    const price = getPrice(product);
-    if (price === "N/A") return message.error("Price not available");
+    // 1. Price range filter
+    if (priceMin || priceMax) {
+      const min = priceMin ? Number(priceMin) : -Infinity;
+      const max = priceMax ? Number(priceMax) : Infinity;
 
-    setCartLoadingStates((prev) => ({ ...prev, [product.productId]: true }));
+      result = result.filter((product) => {
+        const price = getNumericPrice(product);
+        return price !== null && price >= min && price <= max;
+      });
+    }
 
-    try {
-      await addProductToCart({
-        userId,
-        productId: product.productId,
-        quantity: 1,
-      }).unwrap();
+    // 2. Sorting (only if active)
+    if (sortField && sortOrder) {
+      result = result.sort((a, b) => {
+        let aVal, bVal;
 
-      message.success("Added to cart");
-      refetchCart();
-    } catch (err) {
-      message.error(err?.data?.message || "Failed to add to cart");
-    } finally {
-      setCartLoadingStates((prev) => ({ ...prev, [product.productId]: false }));
+        switch (sortField) {
+          case "name":
+            aVal = (a.name || "").toLowerCase();
+            bVal = (b.name || "").toLowerCase();
+            break;
+          case "product_code":
+            aVal = getCompanyCode(a).toLowerCase();
+            bVal = getCompanyCode(b).toLowerCase();
+            break;
+          case "price":
+            aVal = getNumericPrice(a) ?? Infinity;
+            bVal = getNumericPrice(b) ?? Infinity;
+            break;
+          default:
+            return 0;
+        }
+
+        if (aVal === bVal) return 0;
+
+        const direction = sortOrder === "ascend" ? 1 : -1;
+        return aVal > bVal ? direction : -direction;
+      });
+    }
+
+    return result;
+  }, [products, priceMin, priceMax, sortField, sortOrder]);
+
+  // ── Handle column sort click ──────────────────────
+  const handleSort = (field) => {
+    if (sortField === field) {
+      // Toggle direction
+      setSortOrder((prev) =>
+        prev === "ascend" ? "descend" : prev === "descend" ? null : "ascend"
+      );
+      if (sortOrder === "descend") setSortField(null); // clear sort when going back to none
+    } else {
+      // Start sorting new field (ascending first)
+      setSortField(field);
+      setSortOrder("ascend");
     }
   };
-
-  const openStockModal = (product, action = "add") => {
-    setSelectedProduct(product);
-    setStockAction(action);
-    setStockModalOpen(true);
-  };
-
-  const openHistoryModal = (product) => {
-    setSelectedProduct(product);
-    setHistoryModalOpen(true);
-  };
-
-  const handleDeleteClick = (product) => {
-    setSelectedProduct(product);
-    setDeleteModalVisible(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!selectedProduct?.productId) return;
-    try {
-      await deleteProduct(selectedProduct.productId).unwrap();
-      message.success("Product deleted");
-    } catch (err) {
-      message.error(err?.data?.message || "Delete failed");
-    } finally {
-      setDeleteModalVisible(false);
-      setSelectedProduct(null);
-    }
-  };
-
-  const menu = (product) => (
-    <Menu>
-      <Menu.Item key="view">
-        <Link to={`/product/${product.productId}`}>View</Link>
-      </Menu.Item>
-      <PermissionGate api="edit" module="products">
-        <Menu.Item key="edit">
-          <Link to={`/product/${product.productId}/edit`}>Edit</Link>
-        </Menu.Item>
-      </PermissionGate>
-      <Menu.Item key="add-stock" onClick={() => openStockModal(product, "add")}>
-        Add Stock
-      </Menu.Item>
-      <Menu.Item
-        key="remove-stock"
-        onClick={() => openStockModal(product, "remove")}
-      >
-        Remove Stock
-      </Menu.Item>
-      <Menu.Item key="history" onClick={() => openHistoryModal(product)}>
-        View History
-      </Menu.Item>
-      <PermissionGate api="delete" module="products">
-        <Menu.Item
-          danger
-          key="delete"
-          onClick={() => handleDeleteClick(product)}
-        >
-          Delete
-        </Menu.Item>
-      </PermissionGate>
-    </Menu>
-  );
 
   const columns = [
     {
@@ -272,6 +254,12 @@ const ProductsList = () => {
       title: "Name",
       dataIndex: "name",
       key: "name",
+      sorter: true,
+      sortOrder: sortField === "name" ? sortOrder : null,
+      onHeaderCell: () => ({
+        style: { cursor: "pointer" },
+        onClick: () => handleSort("name"),
+      }),
       render: (text, record) => (
         <Link to={`/product/${record.productId}`}>
           {text || "Unnamed product"}
@@ -281,6 +269,12 @@ const ProductsList = () => {
     {
       title: "Product Code",
       key: "product_code",
+      sorter: true,
+      sortOrder: sortField === "product_code" ? sortOrder : null,
+      onHeaderCell: () => ({
+        style: { cursor: "pointer" },
+        onClick: () => handleSort("product_code"),
+      }),
       render: (_, record) => getCompanyCode(record),
     },
     {
@@ -292,7 +286,13 @@ const ProductsList = () => {
     {
       title: "Price",
       key: "price",
-      render: (_, record) => getPrice(record),
+      sorter: true,
+      sortOrder: sortField === "price" ? sortOrder : null,
+      onHeaderCell: () => ({
+        style: { cursor: "pointer" },
+        onClick: () => handleSort("price"),
+      }),
+      render: (_, record) => getPriceDisplay(record),
     },
     {
       title: "Stock",
@@ -309,8 +309,8 @@ const ProductsList = () => {
       title: "Actions",
       key: "actions",
       render: (_, record) => {
-        const price = getPrice(record);
-        const priceValid = price !== "N/A";
+        const price = getNumericPrice(record);
+        const priceValid = price !== null;
 
         return (
           <div style={{ display: "flex", gap: 8 }}>
@@ -355,6 +355,92 @@ const ProductsList = () => {
     },
   ];
 
+  const menu = (product) => (
+    <Menu>
+      <Menu.Item key="view">
+        <Link to={`/product/${product.productId}`}>View</Link>
+      </Menu.Item>
+      <PermissionGate api="edit" module="products">
+        <Menu.Item key="edit">
+          <Link to={`/product/${product.productId}/edit`}>Edit</Link>
+        </Menu.Item>
+      </PermissionGate>
+      <Menu.Item key="add-stock" onClick={() => openStockModal(product, "add")}>
+        Add Stock
+      </Menu.Item>
+      <Menu.Item
+        key="remove-stock"
+        onClick={() => openStockModal(product, "remove")}
+      >
+        Remove Stock
+      </Menu.Item>
+      <Menu.Item key="history" onClick={() => openHistoryModal(product)}>
+        View History
+      </Menu.Item>
+      <PermissionGate api="delete" module="products">
+        <Menu.Item
+          danger
+          key="delete"
+          onClick={() => handleDeleteClick(product)}
+        >
+          Delete
+        </Menu.Item>
+      </PermissionGate>
+    </Menu>
+  );
+
+  // ── Cart / Delete / Stock / History handlers (unchanged) ──
+  const handleAddToCart = async (product) => {
+    if (!userId) return message.error("Please log in");
+    const price = getNumericPrice(product);
+    if (price === null) return message.error("Price not available");
+
+    setCartLoadingStates((prev) => ({ ...prev, [product.productId]: true }));
+
+    try {
+      await addProductToCart({
+        userId,
+        productId: product.productId,
+        quantity: 1,
+      }).unwrap();
+      message.success("Added to cart");
+      refetchCart();
+    } catch (err) {
+      message.error(err?.data?.message || "Failed to add to cart");
+    } finally {
+      setCartLoadingStates((prev) => ({ ...prev, [product.productId]: false }));
+    }
+  };
+
+  const openStockModal = (product, action = "add") => {
+    setSelectedProduct(product);
+    setStockAction(action);
+    setStockModalOpen(true);
+  };
+
+  const openHistoryModal = (product) => {
+    setSelectedProduct(product);
+    setHistoryModalOpen(true);
+  };
+
+  const handleDeleteClick = (product) => {
+    setSelectedProduct(product);
+    setDeleteModalVisible(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedProduct?.productId) return;
+    try {
+      await deleteProduct(selectedProduct.productId).unwrap();
+      message.success("Product deleted");
+    } catch (err) {
+      message.error(err?.data?.message || "Delete failed");
+    } finally {
+      setDeleteModalVisible(false);
+      setSelectedProduct(null);
+    }
+  };
+
   // ── Title & Breadcrumbs ───────────────────────────
   const pageTitle = isBrandView
     ? getBrandsName(id)
@@ -384,6 +470,13 @@ const ProductsList = () => {
       ]
     : [{ label: "Home", url: "/" }, { label: "Products" }];
 
+  const resetFilters = () => {
+    setPriceMin("");
+    setPriceMax("");
+    setSortField(null);
+    setSortOrder(null);
+  };
+
   return (
     <div className="page-wrapper">
       <div className="content">
@@ -401,7 +494,7 @@ const ProductsList = () => {
         />
 
         <div className="filter-bar bg-white p-3 shadow-sm mb-4">
-          <Form layout="inline">
+          <Form layout="inline" style={{ flexWrap: "wrap", gap: 16 }}>
             <Form.Item>
               <Input
                 prefix={<SearchOutlined />}
@@ -416,6 +509,30 @@ const ProductsList = () => {
                 style={{ width: 300 }}
               />
             </Form.Item>
+
+            <Form.Item label="Price Range (₹)">
+              <Input
+                placeholder="Min"
+                value={priceMin}
+                onChange={(e) => setPriceMin(e.target.value)}
+                style={{ width: 100 }}
+                type="number"
+                min={0}
+              />
+              <span style={{ margin: "0 8px" }}>–</span>
+              <Input
+                placeholder="Max"
+                value={priceMax}
+                onChange={(e) => setPriceMax(e.target.value)}
+                style={{ width: 100 }}
+                type="number"
+                min={0}
+              />
+            </Form.Item>
+
+            <Form.Item>
+              <Button onClick={resetFilters}>Reset</Button>
+            </Form.Item>
           </Form>
         </div>
 
@@ -427,10 +544,12 @@ const ProductsList = () => {
           <div className="alert alert-danger">
             Error: {error?.data?.message || "Failed to load products"}
           </div>
-        ) : products.length === 0 ? (
+        ) : processedProducts.length === 0 ? (
           <Empty
             description={
-              search ? "No products match your search" : "No products found"
+              search || priceMin || priceMax || sortField
+                ? "No products match your filters"
+                : "No products found"
             }
             style={{ margin: "80px 0" }}
           />
@@ -445,7 +564,7 @@ const ProductsList = () => {
                   gap: "20px",
                 }}
               >
-                {products.map((product) => (
+                {processedProducts.map((product) => (
                   <ProductCard
                     key={product.productId}
                     product={product}
@@ -460,7 +579,7 @@ const ProductsList = () => {
             ) : (
               <Table
                 columns={columns}
-                dataSource={products}
+                dataSource={processedProducts}
                 rowKey="productId"
                 pagination={false}
                 loading={isFetching}

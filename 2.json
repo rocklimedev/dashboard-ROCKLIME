@@ -1,1 +1,202 @@
-[]
+[
+  {
+    "name": "Pillar Tap",
+
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "COLSTON",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 5998,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "863"
+    }
+  },
+  {
+    "name": "Wall Mounted Square Shower Arm (300 mm)",
+
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "COLSTON",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 1698
+    }
+  },
+  {
+    "name": "Wall Mounted Square Shower Arm (450 mm)",
+
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "COLSTON",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 2098
+    }
+  },
+  {
+    "name": "Wall Mounted Square Shower Arm (600 mm)",
+
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "COLSTON",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 2598
+    }
+  },
+  {
+    "name": "Bathtub Spout with Wall Flange",
+
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "COLSTON",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 3798,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "PM-006 (892)"
+    }
+  },
+  {
+    "name": "RALPH - 950 * 380 * 130 mm",
+
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "COLSTON",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 26998
+    }
+  },
+  {
+    "name": "BRAVO BRUSHED BLACK - 400 * 400 * 100 mm",
+
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "COLSTON",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 39998
+    }
+  },
+  {
+    "name": "NICOLA - BURGUNDY",
+
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "COLSTON",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 64998
+    }
+  },
+  {
+    "name": "ATOM (M-SMART) Floor Mounted WC",
+
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "With Inbuilt Tank, Foot & Side Flushing, Rear Wash, Soft Close, Nozzle Cleaning",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "COLSTON",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 59998
+    }
+  },
+  {
+    "name": "VE SMART Wall Hung WC",
+
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "With Soft Close, Multifunction Side Key, Wireless Remote Control, Spray Wand Self-Cleaning, Air Temperature Regulation, Water Temperature Regulation, Water Source Filtration, Power Off Flushing, IPX4 Waterproof, Seat Ring Heating, Night Lighting, LED Display Screen, Rear Wash Cleaning, Female Cleaning, Warm Air Drying, Spray Wand UV Sterlization, Smart Flushing, Built-in Perfume, Auto Open/Close Lid with Laser, Foot Detection, Doorbell Control",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "COLSTON",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 139998
+    }
+  },
+  {
+    "name": "E-SMART (BLACK) Wall Hung WC",
+
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "With Soft Close Automatic Opening & Closing, Damping Drop, Multii-Function Side Key, Wireless Remote Control, Luminous Lighting, LED Display Screen, Seat Ring Heating, Instant Heating, Warm Air Drying, Air Temperature Regulation, Water Source Filtration, Energy/Water Saving, High/Low Voltage Protection, Leakage Protection, Dry Burn Protection, High Temperature Protection, IPX4 Waterproof, Spray Wand Self Cleaning, Rear Wash Cleaning, Female Cleaning, Mobile Cleaning, Auto Cleaning",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "COLSTON",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 119998
+    }
+  }
+]
