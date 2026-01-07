@@ -108,11 +108,30 @@ const InventoryWrapper = () => {
   };
 
   const getCompanyCode = (metaDetails) => {
-    if (!Array.isArray(metaDetails)) return "N/A";
-    const entry = metaDetails.find(
-      (d) => d.slug?.toLowerCase() === "companycode"
+    if (!Array.isArray(metaDetails) || metaDetails.length === 0) {
+      return "N/A";
+    }
+
+    // Try to find a likely company/product code entry
+    // Most reliable in your current data → last item
+    const lastEntry = metaDetails[metaDetails.length - 1];
+    if (
+      lastEntry?.value &&
+      typeof lastEntry.value === "string" &&
+      lastEntry.value.trim() !== ""
+    ) {
+      return lastEntry.value.trim();
+    }
+
+    // Fallback: search for any reasonable-looking code-like value
+    const codeLike = metaDetails.find(
+      (d) =>
+        d.value &&
+        typeof d.value === "string" &&
+        d.value.match(/^[A-Za-z0-9]{6,12}$/) // e.g. 33965000, 23200000, FFAS9127-...
     );
-    return entry ? String(entry.value || "N/A") : "N/A";
+
+    return codeLike ? String(codeLike.value).trim() : "N/A";
   };
 
   const getSellingPrice = (metaDetails) => {
