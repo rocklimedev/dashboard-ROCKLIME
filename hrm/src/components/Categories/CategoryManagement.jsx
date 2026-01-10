@@ -24,7 +24,6 @@ import {
   ExclamationCircleOutlined,
 } from "@ant-design/icons";
 import { Link } from "react-router-dom";
-
 import {
   useGetAllCategoriesQuery,
   useDeleteCategoryMutation,
@@ -38,7 +37,6 @@ import {
   useDeleteParentCategoryMutation,
 } from "../../api/parentCategoryApi";
 import { useGetAllProductCodesQuery } from "../../api/productApi";
-
 import AddParentCategoryModal from "./AddParentCategoryModal";
 import AddCategoryModal from "./AddCategoryModal";
 import AddKeywordModal from "./AddKeywordModal";

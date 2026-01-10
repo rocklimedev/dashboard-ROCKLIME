@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { message } from "antd";
-import { FaSearch } from "react-icons/fa";
+import { SearchOutlined } from "@ant-design/icons";
 import { EditOutlined, DeleteOutlined, MoreOutlined } from "@ant-design/icons";
 import { Dropdown, Menu, Button, Select, Pagination } from "antd";
 import DeleteModal from "../Common/DeleteModal";
@@ -66,8 +66,8 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
     }, {});
   }, [vendorsData]);
 
-  const purchaseOrders = poData?.purchaseOrders || [];
-  const totalCount = poData?.totalCount || 0;
+  const purchaseOrders = poData?.data || [];
+  const totalCount = poData?.pagination?.total || 0;
 
   // ──────────────────────────────────────────────────────
   // Client-side search & sort (still useful when search is sent to server)
@@ -252,7 +252,7 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
                 <div className="d-flex justify-content-lg-end flex-wrap gap-2">
                   <div className="input-icon-start position-relative me-2">
                     <span className="input-icon-addon">
-                      <FaSearch />
+                      <SearchOutlined />
                     </span>
                     <input
                       type="text"

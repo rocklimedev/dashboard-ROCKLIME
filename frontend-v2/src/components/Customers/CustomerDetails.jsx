@@ -290,10 +290,6 @@ const CustomerDetails = () => {
                 render: formatDate,
               },
               {
-                title: "Status",
-                render: () => <Tag color="processing">Pending</Tag>,
-              },
-              {
                 title: "",
                 render: (_, r) => (
                   <Button

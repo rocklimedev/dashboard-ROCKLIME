@@ -2,9 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useResetPasswordMutation } from "../../api/authApi";
 import logo from "../../assets/img/logo.png";
-import { Spinner } from "react-bootstrap";
-import { message } from "antd";
-// Hypothetical query to validate the reset token
+import { Spin, message } from "antd"; // Added Spin
 import { useValidateResetTokenQuery } from "../../api/authApi";
 
 const ResetPassword = () => {
@@ -47,6 +45,7 @@ const ResetPassword = () => {
         newPassword,
         email: validationData.email,
       }).unwrap();
+      message.success("Password reset successfully!");
       setTimeout(() => navigate("/login"), 2000);
     } catch (error) {
       message.error(error?.data?.message || "Failed to reset password");
@@ -63,6 +62,7 @@ const ResetPassword = () => {
                 <div className="login-logo">
                   <img src={logo} alt="CM Trading Co Logo" />
                 </div>
+
                 {isValidationLoading ? (
                   <div
                     className="card"
@@ -81,15 +81,10 @@ const ResetPassword = () => {
                         lineHeight: "1.6",
                       }}
                     >
-                      <Spinner
-                        as="span"
-                        animation="border"
-                        size="sm"
-                        role="status"
-                        aria-hidden="true"
-                        className="me-2"
-                      />
-                      Validating reset link...
+                      <Spin size="small" />{" "}
+                      <span style={{ marginLeft: 8 }}>
+                        Validating reset link...
+                      </span>
                     </div>
                   </div>
                 ) : validationError ? (
@@ -176,19 +171,19 @@ const ResetPassword = () => {
                               padding: "12px 20px",
                               borderRadius: "5px",
                               fontWeight: "bold",
+                              width: "100%",
+                              border: "none",
+                              display: "flex",
+                              justifyContent: "center",
+                              alignItems: "center",
                             }}
                           >
                             {isResetLoading ? (
                               <>
-                                <Spinner
-                                  as="span"
-                                  animation="border"
-                                  size="sm"
-                                  role="status"
-                                  aria-hidden="true"
-                                  className="me-2"
-                                />
-                                Changing...
+                                <Spin size="small" style={{ color: "#fff" }} />{" "}
+                                <span style={{ marginLeft: 8 }}>
+                                  Changing...
+                                </span>
                               </>
                             ) : (
                               "Change Password"

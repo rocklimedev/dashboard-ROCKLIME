@@ -22,7 +22,6 @@ import {
   DeleteOutlined,
   PlusOutlined,
 } from "@ant-design/icons";
-import { FcEmptyTrash } from "react-icons/fc";
 import styled from "styled-components";
 import OrderTotal from "./OrderTotal";
 import moment from "moment";
@@ -33,7 +32,7 @@ import { useGetAllOrdersQuery } from "../../api/orderApi";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useAuth } from "../../context/AuthContext"; // <-- ADD THIS
-
+import AddCustomerModal from "../Customers/AddCustomerModal";
 const { Text, Title } = Typography;
 const { Option } = Select;
 const { Panel } = Collapse;
@@ -168,17 +167,25 @@ const OrderForm = ({
     orderData.extraDiscount ?? 0
   );
   const [extraDiscountType, setExtraDiscountType] = useState(
-    orderData.extraDiscountType ?? "percent"
+    orderData.extraDiscountType ?? "fixed"
   );
   const [customerSearch, setCustomerSearch] = useState("");
   const [errors, setErrors] = useState({});
-
+  const [sourceModalVisible, setSourceModalVisible] = useState(false);
   /* ────── RTK ────── */
   const [createAddress] = useCreateAddressMutation();
   const { data: allOrdersData, isLoading: ordersLoading } =
     useGetAllOrdersQuery();
   const orders = useMemo(() => allOrdersData?.orders ?? [], [allOrdersData]);
+  const handleAddSourceCustomer = () => {
+    setSourceModalVisible(true);
+  };
 
+  const handleSourceCustomerAdded = () => {
+    setSourceModalVisible(false);
+    // Optional: you can refetch customers here if you pass a refetch prop
+    // or let the parent re-fetch on its own.
+  };
   /* ────── Memos ────── */
   const filteredAddresses = useMemo(
     () =>
@@ -358,7 +365,21 @@ const OrderForm = ({
       uniqueOrderNo,
     ]
   );
-
+  useEffect(() => {
+    if (
+      orderData.extraDiscountType &&
+      orderData.extraDiscountType !== "fixed"
+    ) {
+      handleOrderChange("extraDiscountType", "fixed");
+    }
+  }, [orderData.extraDiscountType, handleOrderChange]);
+  /* ────── Force Extra Discount to Fixed Amount ────── */
+  useEffect(() => {
+    if (extraDiscountType !== "fixed") {
+      setExtraDiscountType("fixed");
+      handleOrderChange("extraDiscountType", "fixed");
+    }
+  }, [extraDiscountType, handleOrderChange]);
   /* ────── Real-time Validation ────── */
   useEffect(() => {
     const newErrors = {};
@@ -417,7 +438,7 @@ const OrderForm = ({
       <CompactCard>
         <Empty
           description="Cart empty"
-          image={<FcEmptyTrash style={{ fontSize: 48 }} />}
+          image={<DeleteOutlined style={{ fontSize: 48 }} />}
         />
         <Button
           type="primary"
@@ -578,19 +599,31 @@ const OrderForm = ({
                   <Text strong>Customer</Text>
                 </Col>
                 <Col span={16}>
-                  <MiniSelect
-                    value={orderData?.source}
-                    onChange={(v) => handleOrderChange("source", v)}
-                    disabled={!sourceType}
-                    allowClear
-                    status={hasError("source") ? "error" : ""}
-                  >
-                    {sourceCustomers.map((c) => (
-                      <Option key={c.customerId} value={c.customerId}>
-                        {c.name}
-                      </Option>
-                    ))}
-                  </MiniSelect>
+                  {/* Added + button for source customer */}
+                  <Space.Compact block>
+                    <MiniSelect
+                      value={orderData?.source}
+                      onChange={(v) => handleOrderChange("source", v)}
+                      disabled={!sourceType}
+                      allowClear
+                      status={hasError("source") ? "error" : ""}
+                      placeholder="Select reference customer"
+                    >
+                      {sourceCustomers.map((c) => (
+                        <Option key={c.customerId} value={c.customerId}>
+                          {c.name}
+                        </Option>
+                      ))}
+                    </MiniSelect>
+                    <Button
+                      type="primary"
+                      onClick={handleAddSourceCustomer}
+                      disabled={!sourceType} // only allow adding when a type is selected
+                    >
+                      +
+                    </Button>
+                  </Space.Compact>
+
                   {hasError("source") && (
                     <Text
                       type="danger"
@@ -624,6 +657,8 @@ const OrderForm = ({
                     }
                     minDate={new Date()}
                     className={hasError("dueDate") ? "error-border" : ""}
+                    dateFormat="dd/MM/yyyy"
+                    placeholderText="DD/MM/YYYY"
                   />
                   {hasError("dueDate") && (
                     <Text
@@ -652,6 +687,8 @@ const OrderForm = ({
                             ? moment(orderData.dueDate).toDate()
                             : undefined
                         }
+                        dateFormat="dd/MM/yyyy"
+                        placeholderText="DD/MM/YYYY"
                       />
                       <Button
                         danger
@@ -899,34 +936,35 @@ const OrderForm = ({
                   />
                 </Col>
               </TightRow>
-
-              <TightRow gutter={8}>
+              {/* Extra Discount – Fixed Amount Only */}
+              <TightRow gutter={8} align="middle">
                 <Col span={8}>
                   <Text strong>Extra Discount</Text>
                 </Col>
                 <Col span={16}>
-                  <Radio.Group
-                    value={extraDiscountType}
-                    onChange={(e) => {
-                      setExtraDiscountType(e.target.value);
-                      handleOrderChange("extraDiscountType", e.target.value);
-                    }}
+                  <Space.Compact block>
+                    <MiniNumber
+                      min={0}
+                      precision={2}
+                      value={extraDiscount}
+                      onChange={(v) => {
+                        const val = v ?? 0;
+                        setExtraDiscount(val);
+                        handleOrderChange("extraDiscount", val);
+                      }}
+                      placeholder="0"
+                      addonBefore="₹"
+                      style={{ width: "100%" }}
+                    />
+                  </Space.Compact>
+                  <Text
+                    type="secondary"
+                    style={{ fontSize: 11, display: "block", marginTop: 4 }}
                   >
-                    <Radio value="percent">%</Radio>
-                    <Radio value="fixed">INR</Radio>
-                  </Radio.Group>
-                  <MiniNumber
-                    min={0}
-                    value={extraDiscount}
-                    onChange={(v) => {
-                      setExtraDiscount(v ?? 0);
-                      handleOrderChange("extraDiscount", v ?? 0);
-                    }}
-                    addonAfter={extraDiscountType === "percent" ? "%" : "INR"}
-                  />
+                    Fixed amount discount applied after subtotal, tax & shipping
+                  </Text>
                 </Col>
               </TightRow>
-
               <TightRow gutter={8}>
                 <Col span={8}>
                   <Text strong>Description</Text>
@@ -985,6 +1023,13 @@ const OrderForm = ({
           </Button>
         </CompactCard>
       </Col>
+      <AddCustomerModal
+        visible={sourceModalVisible}
+        onClose={() => setSourceModalVisible(false)}
+        // No customer prop → it will be in "Add" mode
+        // You can pass a callback if you want to do something after creation
+        // onSuccess={handleSourceCustomerAdded} // optional
+      />
     </Row>
   );
 };

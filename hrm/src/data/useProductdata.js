@@ -1,60 +1,60 @@
-import { useEffect, useMemo, useState } from "react";
-import { API_URL } from "./config";
+// src/hooks/useProductsData.js
+import { useGetProductsByIdsQuery } from "../api/productApi";
+import { useMemo } from "react";
 
 /**
- * Custom hook that fetches product details for an array of products using direct API calls.
- * Each product must have a productId.
- * @param {Array<{ productId: string }>} products - Array of products with productId
- * @returns {Object} - Object containing productsData, errors, and loading state
+ * Efficient hook that fetches product details in bulk using RTK Query.
+ * Automatically caches results and avoids N+1 requests.
+ *
+ * @param {Array<{ productId: string }>} rawProducts - Array of items with productId
+ * @returns {{ productsData: Array, loading: boolean, errors: Array }}
  */
-export default function useProductsData(products = []) {
-  const [productsData, setProductsData] = useState([]);
-  const [errors, setErrors] = useState([]);
-  const [loading, setLoading] = useState(false);
+export default function useProductsData(rawProducts = []) {
+  // Extract unique, valid product IDs
+  const productIds = useMemo(() => {
+    const ids = rawProducts.map((item) => item?.productId).filter(Boolean);
 
-  // Create a stable array of product IDs
-  const productIds = useMemo(
-    () => products.map((product) => product?.productId).filter(Boolean),
-    [products]
-  );
+    return [...new Set(ids)]; // dedupe
+  }, [rawProducts]);
 
-  useEffect(() => {
-    if (productIds.length === 0) {
-      setProductsData([]);
-      setErrors([]);
-      setLoading(false);
-      return;
-    }
+  const {
+    data: fetchedProducts = [],
+    isLoading,
+    isError,
+    error,
+  } = useGetProductsByIdsQuery(productIds, {
+    skip: productIds.length === 0, // Don't call if no IDs
+  });
 
-    const fetchProducts = async () => {
-      setLoading(true);
-      const tempErrors = [];
-      const results = await Promise.all(
-        productIds.map(async (productId) => {
-          if (!productId) return null;
-          try {
-            const response = await fetch(`${API_URL}/products/${productId}`);
-            if (!response.ok) {
-              throw new Error(
-                `Failed to fetch product ${productId}: ${response.statusText}`
-              );
-            }
-            const data = await response.json();
-            return { productId, ...data };
-          } catch (error) {
-            tempErrors.push({ productId, error: error.message });
-            return null;
-          }
-        })
-      );
+  // Map back to original order + include quantity if needed
+  const productsData = useMemo(() => {
+    if (!Array.isArray(fetchedProducts)) return [];
 
-      const validResults = results.filter(Boolean);
-      setProductsData(validResults);
-      setErrors(tempErrors);
-      setLoading(false);
-    };
+    const productMap = fetchedProducts.reduce((map, product) => {
+      map[product.productId] = product;
+      return map;
+    }, {});
 
-    fetchProducts();
-  }, [productIds]);
-  return { productsData, errors, loading };
+    // Preserve original order from input array
+    return rawProducts
+      .map((item) => {
+        const product = productMap[item.productId];
+        if (!product) return null;
+        return {
+          ...product,
+          quantity: item.quantity || 1, // useful for top products / carts
+        };
+      })
+      .filter(Boolean);
+  }, [fetchedProducts, rawProducts]);
+
+  const errors = isError
+    ? [{ error: error?.data?.message || "Failed to fetch products" }]
+    : [];
+
+  return {
+    productsData,
+    loading: isLoading,
+    errors,
+  };
 }

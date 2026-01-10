@@ -2,85 +2,123 @@
 const { Sequelize } = require("sequelize");
 require("dotenv").config();
 
-console.log("Connecting to MySQL...");
+console.log("Initializing MySQL connection...");
 
-// Auto-detect: use DATABASE_URL on Render, fall back to individual vars locally
 let sequelize;
+let isConnected = false;
+let isConnecting = false;
 
-if (process.env.DATABASE_URL) {
-  // Render.com (and any platform using DATABASE_URL)
-  console.log("Using DATABASE_URL (Render/Production mode)");
-  sequelize = new Sequelize(process.env.DATABASE_URL, {
-    dialect: "mysql",
-    logging: false,
-    dialectOptions: {
-      connectTimeout: 60000,
-      acquireTimeout: 60000,
-      timeout: 60000,
-      ssl: {
-        require: true,
-        rejectUnauthorized: false,
-      },
-    },
-    pool: {
-      max: 5,
-      min: 0,
-      acquire: 60000,
-      idle: 10000,
-    },
-    retry: {
-      match: [
-        /ETIMEDOUT/,
-        /EHOSTUNREACH/,
-        /ECONNRESET/,
-        /ESOCKETTIMEDOUT/,
-        /Connection lost/,
-      ],
-      max: 10,
-    },
-  });
-} else {
-  // Local development
-  console.log("Using individual DB credentials (Local mode)");
-  sequelize = new Sequelize(
-    process.env.DB_NAME,
-    process.env.DB_USER,
-    process.env.DB_PASSWORD,
-    {
-      host: process.env.DB_HOST,
-      port: process.env.DB_PORT || 3306,
+/**
+ * Create Sequelize instance (singleton)
+ */
+function createSequelize() {
+  if (sequelize) return sequelize;
+
+  if (process.env.DATABASE_URL) {
+    console.log("Using DATABASE_URL (Production)");
+
+    sequelize = new Sequelize(process.env.DATABASE_URL, {
       dialect: "mysql",
       logging: false,
+
       dialectOptions: {
-        connectTimeout: 60000,
+        connectTimeout: 30000,
+        ssl: {
+          require: true,
+          rejectUnauthorized: false,
+        },
       },
+
       pool: {
-        max: 10,
+        max: 2, // VERY IMPORTANT (low traffic VPS)
         min: 0,
-        acquire: 60000,
-        idle: 10000,
+        acquire: 30000,
+        idle: 5000,
       },
-    }
-  );
+    });
+  } else {
+    console.log("Using individual DB credentials (Local)");
+
+    sequelize = new Sequelize(
+      process.env.DB_NAME,
+      process.env.DB_USER,
+      process.env.DB_PASSWORD,
+      {
+        host: process.env.DB_HOST,
+        port: process.env.DB_PORT || 3306,
+        dialect: "mysql",
+        logging: false,
+
+        dialectOptions: {
+          connectTimeout: 30000,
+        },
+
+        pool: {
+          max: 2,
+          min: 0,
+          acquire: 30000,
+          idle: 5000,
+        },
+      }
+    );
+  }
+
+  return sequelize;
 }
 
-// Connect with retry (works everywhere)
+/**
+ * Connect with controlled retry (NO STORM)
+ */
 async function connectWithRetry(attempt = 1) {
+  if (isConnected || isConnecting) return;
+
+  isConnecting = true;
+
   try {
     await sequelize.authenticate();
-    console.log("MySQL connected successfully!");
+    isConnected = true;
+    isConnecting = false;
+    console.log("✅ MySQL connected successfully");
   } catch (err) {
-    console.log(`MySQL connection attempt ${attempt} failed:`, err.message);
-    if (attempt >= 15) {
-      console.error("Max retries reached. Giving up.");
+    isConnecting = false;
+
+    console.error(
+      `❌ MySQL connection failed (attempt ${attempt}):`,
+      err.message
+    );
+
+    if (attempt >= 5) {
+      console.error("🛑 Max retries reached. Exiting.");
       process.exit(1);
     }
-    const delay = Math.min(1000 * 2 ** attempt, 30000);
-    console.log(`Retrying in ${delay / 1000}s...`);
+
+    const delay = Math.min(5000 * attempt, 30000);
+    console.log(`🔁 Retrying in ${delay / 1000}s...`);
+
     setTimeout(() => connectWithRetry(attempt + 1), delay);
   }
 }
 
+/**
+ * Graceful shutdown (VERY IMPORTANT for Docker)
+ */
+async function gracefulShutdown(signal) {
+  console.log(`🛑 Received ${signal}. Closing DB connections...`);
+  try {
+    if (sequelize) await sequelize.close();
+    console.log("✅ DB connections closed");
+    process.exit(0);
+  } catch (err) {
+    console.error("❌ Error during DB shutdown:", err.message);
+    process.exit(1);
+  }
+}
+
+process.on("SIGTERM", gracefulShutdown);
+process.on("SIGINT", gracefulShutdown);
+
+// Initialize
+sequelize = createSequelize();
 connectWithRetry();
 
 module.exports = sequelize;

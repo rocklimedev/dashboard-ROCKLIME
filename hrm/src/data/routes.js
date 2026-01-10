@@ -1,30 +1,29 @@
-import { PiUserList } from "react-icons/pi";
-import { LiaFileSignatureSolid } from "react-icons/lia";
-import { MdError, MdOutlineSettings } from "react-icons/md";
-import { AiOutlineProduct } from "react-icons/ai";
 import {
-  BiAccessibility,
-  BiCart,
-  BiCategory,
-  BiUser,
-  BiCoinStack,
-  BiNotification,
-  BiTask,
-} from "react-icons/bi";
-import { FaFileCircleCheck } from "react-icons/fa6";
-import { FaTeamspeak } from "react-icons/fa";
-import { CgProfile } from "react-icons/cg";
-import { IoDocumentAttach, IoLogIn } from "react-icons/io5";
-import { MdOutlinePerson } from "react-icons/md";
-import { RiDashboardLine, RiListOrdered } from "react-icons/ri";
+  FaHome, // DashboardOutlined
+  FaThLarge, // AppstoreOutlined
+  FaFileAlt, // FileTextOutlined
+  FaUsers, // TeamOutlined / UsergroupAddOutlined
+  FaUser, // UserOutlined
+  FaCog, // SettingOutlined
+  FaShoppingCart, // ShoppingCartOutlined
+  FaListUl, // UnorderedListOutlined
+  FaUserCircle, // ProfileOutlined
+  FaFile, // FileOutlined
+  FaTags, // TagsOutlined / TagOutlined
+  FaExclamationCircle, // ExclamationCircleOutlined
+  FaSignInAlt, // LoginOutlined
+  FaUserTimes, // UserDeleteOutlined
+  FaCheckCircle, // CheckCircleOutlined
+  FaIdCard, // IdcardOutlined
+  FaBell, // NotificationOutlined
+  FaBoxOpen, // ContainerOutlined
+  FaPercentage, // PercentageOutlined
+} from "react-icons/fa";
+
 import {
-  MdOutlineInventory2,
-  MdOutlineDiscount,
-  MdOutlinePeopleAlt,
+  MdOutlineInventory2, // Inventory (ContainerOutlined alternative)
 } from "react-icons/md";
-import { TiBusinessCard } from "react-icons/ti";
-import { IoPricetagOutline } from "react-icons/io5";
-import { RiFileListLine } from "react-icons/ri";
+
 import ForgotPassword from "../components/Auth/ForgotPassword";
 import Login from "../components/Auth/Login";
 import Signup from "../components/Auth/Signup";
@@ -65,7 +64,6 @@ import POWrapper from "../components/Orders/POWrapper";
 import AddPurchaseOrder from "../components/Orders/AddPurchaseOrder";
 import PODetails from "../components/Orders/PODetails";
 import LogTable from "../components/Logs/LogTable";
-import NotificationsWrapper from "../components/Notifications/NotificationsWrapper";
 import TaskWrapper from "../components/Tasks/TaskWrapper";
 import InventoryWrapper from "../components/Common/InventoryWrapper";
 import ProfileForm from "../components/Profile/ProfileForm";
@@ -75,308 +73,92 @@ import AddSiteMap from "../components/SiteMap/AddSiteMap";
 import SiteMapList from "../components/SiteMap/SiteMapList";
 import SiteMapDetails from "../components/SiteMap/SiteMapDetails";
 import NewSiteMapDetails from "../components/SiteMap/NewSiteMapDetails";
+import BulkProductImport from "../components/Product/BulkProductImport";
+
 const masterRoutes = [
   {
     path: "/",
     name: "Dashboard",
-    icon: <RiDashboardLine />,
+    icon: <FaHome />,
     isSidebarActive: true,
     element: <PageWrapper />,
     submenu: [],
-  },
-  {
-    path: "/category-selector",
-    name: "Products",
-    element: <Product />,
-    icon: <MdOutlineInventory2 />,
-    isSidebarActive: true,
-  },
-  {
-    path: "/orders/list",
-    name: "Orders",
-    icon: <MdOutlineDiscount />,
-    element: <OrderWrapper />,
-    isSidebarActive: true,
-  },
-  {
-    path: "/quotations/list",
-    name: "Quotations",
-    icon: <IoDocumentAttach />,
-    element: <QuotationList />,
-    isSidebarActive: true,
-  },
-  {
-    path: "/site-map/list",
-    name: "Site Maps",
-    icon: <BiCategory />,
-    element: <SiteMapList />,
-    isSidebarActive: true,
-  },
-  {
-    path: "/po/list",
-    name: "Purchase Orders",
-    icon: <RiListOrdered />,
-    element: <POWrapper />,
-    isSidebarActive: true,
-  },
-  {
-    path: "/customers/list",
-    name: "Customers",
-    icon: <MdOutlinePeopleAlt />,
-    isSidebarActive: true,
-    element: <CustomerList />,
   },
 
   {
     path: "/tasks",
     name: "Tasks",
-    icon: <BiTask />,
+    icon: <FaBoxOpen />,
     isSidebarActive: false,
     element: <TaskWrapper />,
   },
   {
-    path: "/inventory/list",
-    name: "Inventory",
-    icon: <BiCoinStack />,
+    path: "/roles-permission/list",
+    name: "Roles",
+    icon: <FaIdCard />,
+    element: <RolePermission />,
     isSidebarActive: true,
-    element: <InventoryWrapper />,
   },
   {
-    path: "/cart",
-    name: "Cart",
-    icon: <BiCart />,
-    isSidebarActive: false,
-    element: <NewCart />,
+    path: "/users/list",
+    name: "Users",
+    icon: <FaUser />,
+    isSidebarActive: true,
+    element: <UserList />,
+  },
+  {
+    path: "/orders/teams",
+    name: "Teams",
+    icon: <FaUsers />,
+    element: <TeamsList />,
+    isSidebarActive: true,
   },
   {
     path: "#",
     name: "Master Table",
-    icon: <BiCoinStack />,
-    isSidebarActive: true,
-
+    icon: <FaBoxOpen />,
+    isSidebarActive: false,
     submenu: [
-      {
-        path: "/users/list",
-        name: "Users",
-        icon: <BiUser />,
-        isSidebarActive: true,
-        element: <UserList />,
-      },
-      {
-        path: "/orders/teams",
-        name: "Teams",
-        icon: <FaTeamspeak />,
-        element: <TeamsList />,
-        isSidebarActive: true,
-      },
       {
         path: "/user/add",
         name: "Create User",
-        icon: <BiUser />,
+        icon: <FaUser />,
         isSidebarActive: false,
         element: <NewAddUser />,
       },
       {
         path: "/user/:userId",
         name: "User Details",
-        icon: <BiUser />,
+        icon: <FaUser />,
         isSidebarActive: false,
         element: <UserPage />,
       },
       {
         path: "/user/:userId/edit",
         name: "Edit User",
-        icon: <BiUser />,
+        icon: <FaUser />,
         isSidebarActive: false,
         element: <NewAddUser />,
-      },
-      {
-        path: "/roles-permission/list",
-        name: "Roles",
-        icon: <TiBusinessCard />,
-        element: <RolePermission />,
-        isSidebarActive: true,
-      },
-
-      {
-        path: "/inventory/categories-keywords",
-        element: <CategoryManagement />,
-        name: "Categories",
-        icon: <BiCategory />,
-        isSidebarActive: true,
       },
     ],
   },
   {
     path: "#",
     name: "Others",
-    icon: <FaFileCircleCheck />,
+    icon: <FaCheckCircle />,
     isSidebarActive: false,
     submenu: [
       {
-        path: "/site-map/add",
-        name: "Add Site Map",
-        icon: <BiCategory />,
-        isSidebarActive: false,
-        element: <AddSiteMap />,
-      },
-      {
-        path: "/site-map/:id/edit",
-        name: "Edit Site Map",
-        icon: <BiCategory />,
-        isSidebarActive: false,
-        element: <AddSiteMap />,
-      },
-      {
-        path: "/site-map/:id/new",
-        name: "Edit Site Map",
-        icon: <BiCategory />,
-        isSidebarActive: false,
-        element: <SiteMapDetails />,
-      },
-      {
-        path: "/site-map/:id",
-        name: "Site Map Details",
-        icon: <BiCategory />,
-        isSidebarActive: false,
-        element: <NewSiteMapDetails />,
-      },
-      {
         path: "/settings",
         name: "Settings",
-        icon: <MdOutlineSettings />,
+        icon: <FaCog />,
         isSidebarActive: false,
         element: <GeneralSettings />,
-      },
-
-      {
-        path: "/customer/:id",
-        name: "Customer Details",
-        icon: <PiUserList />,
-        isSidebarActive: false,
-        element: <CustomerDetails />,
-      },
-
-      {
-        path: "/po/:id",
-        name: "PO Details",
-        icon: <LiaFileSignatureSolid />,
-        element: <PODetails />,
-        isSidebarActive: false,
-      },
-      {
-        path: "/po/add",
-        name: "Add Purchase Order",
-        icon: <LiaFileSignatureSolid />,
-        isSidebarActive: false,
-        element: <AddPurchaseOrder />,
-        requiredPermission: { api: "write", module: "purchase_orders" },
-      },
-      {
-        path: "/po/:id/edit",
-        name: "Edit Purchase Order",
-        icon: <LiaFileSignatureSolid />,
-        isSidebarActive: false,
-        element: <AddPurchaseOrder />,
-        requiredPermission: { api: "edit", module: "purchase_orders" },
-      },
-
-      {
-        path: "/product/add",
-        name: "Create Product",
-        icon: <AiOutlineProduct />,
-        isSidebarActive: false,
-        element: <CreateProduct />,
-        requiredPermission: { api: "write", module: "products" },
-      },
-      {
-        path: "/product/:id",
-        name: "Product Details",
-        icon: <AiOutlineProduct />,
-        isSidebarActive: false,
-        element: <ProductDetails />,
-      },
-      {
-        path: "/product/:productId/edit",
-        name: "Edit Product",
-        icon: <AiOutlineProduct />,
-        isSidebarActive: false,
-        element: <CreateProduct />,
-        requiredPermission: { api: "edit", module: "products" },
-      },
-      {
-        path: "/store/:id",
-        name: "Products",
-        icon: <AiOutlineProduct />,
-        element: <ProductList />,
-        isSidebarActive: false,
-      },
-      {
-        path: "/category-selector/:bpcId",
-        name: "Products",
-        icon: <AiOutlineProduct />,
-        element: <BrandSelection />,
-        isSidebarActive: false,
-      },
-      {
-        path: "/order/:id",
-        name: "Order Details",
-        icon: <RiFileListLine />,
-        isSidebarActive: false,
-        element: <OrderPage />,
-      },
-      {
-        path: "/order/add",
-        name: "Add Order",
-        icon: <RiFileListLine />,
-        isSidebarActive: false,
-        element: <AddNewOrder />,
-        requiredPermission: { api: "write", module: "orders" },
-      },
-      {
-        path: "/order/:id/edit",
-        name: "Edit Order",
-        icon: <RiDashboardLine />,
-        isSidebarActive: false,
-        element: <AddNewOrder />,
-        requiredPermission: { api: "edit", module: "orders" },
-      },
-
-      {
-        path: "/quotation/:id",
-        name: "Quotations Details",
-        icon: <IoPricetagOutline />,
-        isSidebarActive: false,
-        element: <NewQuotationsDetails />,
-        requiredPermission: { api: "view", module: "quotations" },
-      },
-      {
-        path: "/quotation/add",
-        name: "Add Quotations",
-        icon: <IoPricetagOutline />,
-        element: <AddQuotation />,
-        isSidebarActive: false,
-        requiredPermission: { api: "write", module: "quotations" },
-      },
-      {
-        path: "/quotation/:id/view",
-        name: "View Quotations",
-        icon: <IoPricetagOutline />,
-        element: <QuotationsDetails />,
-        isSidebarActive: false,
-      },
-      {
-        path: "/quotation/:id/edit",
-        name: "Edit Quotations",
-        icon: <IoPricetagOutline />,
-        element: <AddQuotation />,
-        isSidebarActive: false,
-        requiredPermission: { api: "edit", module: "quotations" },
       },
       {
         path: "/roles-permission/permissions/:id",
         name: "Grant Permissions",
-        icon: <MdOutlinePerson />,
+        icon: <FaUser />,
         isSidebarActive: false,
         element: <Permissions />,
         requiredPermission: { api: "view", module: "rolepermissions" },
@@ -384,126 +166,95 @@ const masterRoutes = [
       {
         path: "/u/:id/edit",
         name: "Edit Profile",
-        icon: <CgProfile />,
+        icon: <FaUserCircle />,
         isSidebarActive: false,
         element: <ProfileForm />,
       },
       {
         path: "/u/:id",
         name: "Profile",
-        icon: <CgProfile />,
+        icon: <FaUserCircle />,
         isSidebarActive: false,
         element: <Profile />,
       },
       {
         path: "/verify-account",
-        name: "Veriy Account",
-        icon: <IoLogIn />,
+        name: "Verify Account",
+        icon: <FaSignInAlt />,
         isSidebarActive: false,
         element: <EmailVerification />,
       },
       {
         path: "/login",
-        name: "login",
-        icon: <IoLogIn />,
+        name: "Login",
+        icon: <FaSignInAlt />,
         isSidebarActive: false,
         element: <Login />,
       },
-
       {
         path: "/no-access",
         name: "No Access",
-        icon: <BiAccessibility />,
+        icon: <FaUserTimes />,
         isSidebarActive: false,
         element: <NoAccess />,
       },
       {
         path: "/signup",
         name: "Signup",
-        icon: <IoLogIn />,
+        icon: <FaSignInAlt />,
         isSidebarActive: false,
         element: <Signup />,
       },
       {
         path: "/404",
         name: "Error",
-        icon: <MdError />,
+        icon: <FaExclamationCircle />,
         isSidebarActive: false,
         element: <Error404 />,
       },
       {
         path: "/403",
         name: "Error",
-        icon: <MdError />,
+        icon: <FaExclamationCircle />,
         isSidebarActive: false,
         element: <Error403 />,
       },
       {
         path: "/forgot-password",
         name: "Forgot Password",
-        icon: <MdError />,
+        icon: <FaExclamationCircle />,
         isSidebarActive: false,
         element: <ForgotPassword />,
       },
       {
         path: "/reset-password/:token",
         name: "Reset Password",
-        icon: <MdError />,
+        icon: <FaExclamationCircle />,
         isSidebarActive: false,
         element: <ResetPassword />,
       },
       {
         path: "/500",
         name: "ERROR 500",
-        icon: <MdError />,
+        icon: <FaExclamationCircle />,
         isSidebarActive: false,
         element: <Error500 />,
       },
       {
         path: "/under-maintenance",
         name: "Under Maintenance",
-        icon: <MdError />,
+        icon: <FaExclamationCircle />,
         isSidebarActive: false,
         element: <UnderMaintanance />,
       },
       {
         path: "/coming-soon",
         name: "Coming Soon",
-        icon: <MdError />,
+        icon: <FaExclamationCircle />,
         isSidebarActive: false,
         element: <ComingSoon />,
       },
-      {
-        path: "/customer/add",
-        element: <AddCustomer />,
-        name: "Add Customer",
-        icon: <BiCart />,
-        isSidebarActive: false,
-        requiredPermission: { api: "write", module: "customers" },
-      },
-      {
-        path: "/customer/edit/:customerId",
-        element: <AddCustomer />,
-        name: "Edit Customer",
-        icon: <BiCart />,
-        isSidebarActive: false,
-        requiredPermission: { api: "edit", module: "customers" },
-      },
-      {
-        path: "/notifications",
-        name: "Notifications",
-        icon: <BiNotification />,
-        isSidebarActive: false,
-        element: <NotificationsWrapper />,
-      },
     ],
-  },
-  {
-    path: "/logging",
-    name: "Logs",
-    icon: <IoDocumentAttach />,
-    element: <LogTable />,
-    isSidebarActive: false,
   },
 ];
 

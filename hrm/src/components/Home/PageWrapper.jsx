@@ -1,8 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { message } from "antd";
-import { Link } from "react-router-dom";
-import { FaChartBar, FaBox } from "react-icons/fa6";
-import Alert from "./Alert";
 import StockModal from "../Common/StockModal";
 import DataTablePagination from "../Common/DataTablePagination";
 import {
@@ -10,30 +7,33 @@ import {
   useClockOutMutation,
   useGetAttendanceQuery,
 } from "../../api/attendanceApi";
-import { useGetAllProductsQuery } from "../../api/productApi";
+import {
+  useGetAllProductsQuery,
+  useGetTopSellingProductsQuery,
+} from "../../api/productApi";
 import { useGetAllQuotationsQuery } from "../../api/quotationApi";
 import { useGetAllInvoicesQuery } from "../../api/invoiceApi";
 import { useGetProfileQuery } from "../../api/userApi";
 import { useGetAllOrdersQuery } from "../../api/orderApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
-import { useGetAllCategoriesQuery } from "../../api/categoryApi";
-import { useGetAllUsersQuery } from "../../api/userApi";
 import { useAddProductToCartMutation } from "../../api/cartApi";
 import { useUpdateOrderStatusMutation } from "../../api/orderApi";
-import useTopProducts from "../../data/useTopProducts";
-import { BiPencil } from "react-icons/bi";
 import "./pagewrapper.css";
+import { EditOutlined } from "@ant-design/icons";
+
+// Fixed meta ID for selling price (from your data)
+const SELLING_PRICE_META_ID = "9ba862ef-f993-4873-95ef-1fef10036aa5";
 
 const PageWrapper = () => {
   /* ------------------------------------------------------------------ */
   /*  STATE & MODALS                                                    */
   /* ------------------------------------------------------------------ */
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [cartLoadingStates, setCartLoadingStates] = useState({});
   const [editingOrderId, setEditingOrderId] = useState(null);
+  const [stockModalOpen, setStockModalOpen] = useState(false);
+  const [selectedProductForStock, setSelectedProductForStock] = useState(null);
 
   const toggleEdit = (id) => {
     setEditingOrderId((prev) => (prev === id ? null : id));
@@ -51,6 +51,11 @@ const PageWrapper = () => {
     "ONHOLD",
   ];
 
+  const handleProductClick = (p) => {
+    setSelectedProductForStock(p);
+    setStockModalOpen(true);
+  };
+
   /* ------------------------------------------------------------------ */
   /*  RTK-QUERY HOOKS                                                   */
   /* ------------------------------------------------------------------ */
@@ -58,31 +63,29 @@ const PageWrapper = () => {
   const { data: profile } = useGetProfileQuery();
   const userId = profile?.user?.userId;
 
-  const { data: ordersData, refetch: refetchOrders } = useGetAllOrdersQuery(
+  const { data: ordersResponse, refetch: refetchOrders } = useGetAllOrdersQuery(
     undefined,
-    {
-      pollingInterval: 30000,
-    }
+    { pollingInterval: 30000 }
   );
+  const orders = ordersResponse?.data || [];
 
-  const { data: quotationData = [] } = useGetAllQuotationsQuery();
-  const { data: productsData } = useGetAllProductsQuery();
-  const { data: customers } = useGetCustomersQuery();
+  const { data: quotationsResponse } = useGetAllQuotationsQuery({ limit: 20 });
+  const quotations = quotationsResponse?.data || [];
+
+  const { data: productsResponse } = useGetAllProductsQuery({ limit: 10000 });
+  const products = productsResponse?.data || [];
+
+  const { data: customersResponse } = useGetCustomersQuery({ limit: 1000 });
+  const customersData = customersResponse?.data || [];
+
   const { data: invoiceData } = useGetAllInvoicesQuery();
 
-  const orders = ordersData?.orders || [];
-  const products = Array.isArray(productsData)
-    ? productsData
-    : productsData?.data || [];
-  const customersData = customers?.data || [];
-
-  const { topProducts, loading: topProductsLoading } = useTopProducts({
-    quotations: quotationData,
-    orders,
-  });
+  const { data: topSellingData, isLoading: topProductsLoading } =
+    useGetTopSellingProductsQuery(10);
+  const topProducts = topSellingData?.data || [];
 
   /* ------------------------------------------------------------------ */
-  /*  ATTENDANCE (clock-in/out)                                         */
+  /*  ATTENDANCE                                                        */
   /* ------------------------------------------------------------------ */
   const today = useMemo(() => {
     const d = new Date();
@@ -90,57 +93,19 @@ const PageWrapper = () => {
     return d;
   }, []);
 
-  const startDate = today.toISOString().split("T")[0];
-  const endDate = new Date(today.getTime() + 24 * 60 * 60 * 1000)
-    .toISOString()
-    .split("T")[0];
-
-  const { data: attendance } = useGetAttendanceQuery(
-    { userId, startDate, endDate },
-    { skip: !userId }
-  );
-
-  const hasClockedIn = attendance?.length > 0 && !!attendance[0]?.clockIn;
-  const hasClockedOut = hasClockedIn && !!attendance[0]?.clockOut;
-
-  const [clockIn] = useClockInMutation();
-  const [clockOut] = useClockOutMutation();
-
-  const handleClockIn = async () => {
-    if (!userId) return message.error("User ID missing");
-    try {
-      await clockIn({ userId }).unwrap();
-      message.success("Clocked in successfully");
-    } catch {
-      message.error("Clock-in failed");
-    }
-  };
-
-  const handleClockOut = async () => {
-    if (!userId) return message.error("User ID missing");
-    try {
-      await clockOut({ userId }).unwrap();
-      message.success("Clocked out successfully");
-    } catch {
-      message.error("Clock-out failed");
-    }
-  };
-
   /* ------------------------------------------------------------------ */
-  /*  CART & PRODUCT HELPERS                                            */
+  /*  CART & HELPERS                                                    */
   /* ------------------------------------------------------------------ */
   const handleAddToCart = async (product) => {
     if (!userId) return message.error("User not logged in!");
 
-    const priceEntry = Array.isArray(product.metaDetails)
-      ? product.metaDetails.find((d) => d.slug === "sellingPrice")
-      : null;
+    const priceEntry = product.metaDetails?.find(
+      (d) => d.id === SELLING_PRICE_META_ID
+    );
     const price = priceEntry ? parseFloat(priceEntry.value) : null;
     if (!price || isNaN(price)) return message.error("Invalid price");
 
-    const qty = product.quantity || 1;
-    if (!Number.isInteger(qty) || qty <= 0)
-      return message.error("Invalid quantity");
+    const qty = 1;
 
     setCartLoadingStates((s) => ({ ...s, [product.productId]: true }));
     try {
@@ -157,8 +122,11 @@ const PageWrapper = () => {
     }
   };
 
+  /* ------------------------------------------------------------------ */
+  /*  LOW STOCK & PAGINATION                                            */
+  /* ------------------------------------------------------------------ */
   const lowStockProducts = useMemo(
-    () => products.filter((p) => p.quantity < p.alert_quantity),
+    () => products.filter((p) => p.quantity < (p.alert_quantity || 20)),
     [products]
   );
 
@@ -167,41 +135,43 @@ const PageWrapper = () => {
     return lowStockProducts.slice(start, start + itemsPerPage);
   }, [lowStockProducts, currentPage]);
 
-  const handleProductClick = (p) => {
-    setSelectedProduct(p);
-    setIsModalVisible(true);
-  };
-
-  const handleModalClose = () => {
-    setIsModalVisible(false);
-    setSelectedProduct(null);
-  };
-
+  /* ------------------------------------------------------------------ */
+  /*  STATUS UPDATE                                                     */
+  /* ------------------------------------------------------------------ */
   const [updateOrderStatus] = useUpdateOrderStatusMutation();
   const handleStatusChange = async (orderId, newStatus) => {
     try {
       await updateOrderStatus({ orderId, status: newStatus }).unwrap();
       refetchOrders();
       message.success("Status updated");
+      setEditingOrderId(null);
     } catch (e) {
       message.error(e?.data?.message || "Status update failed");
     }
   };
 
   /* ------------------------------------------------------------------ */
-  /*  COUNTS & LATEST LISTS                                             */
+  /*  COUNTS & LATEST                                                   */
   /* ------------------------------------------------------------------ */
   const orderCount = orders.length;
-  const quotationCount = quotationData.length || 0;
+  const quotationCount = quotations.length;
   const productCount = products.length;
   const invoiceCount = invoiceData?.data?.length || 0;
 
-  const lastFiveQuotations = quotationData.slice(-5).reverse();
-  const lastFiveOrders = orders.slice(-5).reverse();
-  const lastFiveProducts = products.slice(-5).reverse();
+  const lastFiveQuotations = [...quotations]
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, 5);
+
+  const lastFiveOrders = [...orders]
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, 5);
+
+  const lastFiveProducts = [...products]
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, 5);
 
   /* ------------------------------------------------------------------ */
-  /*  CUSTOMER NAME MAP                                                 */
+  /*  CUSTOMER MAP                                                      */
   /* ------------------------------------------------------------------ */
   const customerMap = useMemo(() => {
     return customersData.reduce((map, c) => {
@@ -215,48 +185,46 @@ const PageWrapper = () => {
   /* ------------------------------------------------------------------ */
   /*  UI HELPERS                                                        */
   /* ------------------------------------------------------------------ */
-  const statusColors = {
-    PREPARING: "badge bg-warning text-dark",
-    CHECKING: "badge bg-info text-dark",
-    INVOICE: "badge bg-secondary",
-    DISPATCHED: "badge bg-primary",
-    DELIVERED: "badge bg-success",
-    PARTIALLY_DELIVERED: "badge bg-light text-dark border",
-    CANCELED: "badge bg-danger",
-    DRAFT: "badge bg-secondary",
-    ONHOLD: "badge bg-dark",
-  };
-
   const getImageUrl = (images) => {
-    if (!images) return null;
+    if (!images || images.length === 0) return null;
+    if (Array.isArray(images)) return images[0];
     try {
-      const arr = JSON.parse(images);
-      return Array.isArray(arr) && arr[0] ? arr[0] : images;
+      const parsed = JSON.parse(images);
+      return Array.isArray(parsed) && parsed[0] ? parsed[0] : null;
     } catch {
-      return images;
+      return null;
     }
   };
 
   const getSellingPrice = (product) => {
-    return (
-      product.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"] ||
-      product.metaDetails?.find((m) => m.slug === "sellingPrice")?.value ||
-      0
-    );
+    // Preferred: use the meta object with UUID key
+    const metaValue = product.meta?.[SELLING_PRICE_META_ID];
+    if (metaValue != null) {
+      // catches null/undefined
+      return String(metaValue); // ensure string for parseFloat
+    }
+
+    // Fallback for older data (numeric id in metaDetails)
+    const entry = product.metaDetails?.find((m) => m.id === 9);
+    if (entry?.value) {
+      return entry.value;
+    }
+
+    return "0";
   };
 
   /* ------------------------------------------------------------------ */
-  /*  RENDER (No loading states — handled globally)                     */
+  /*  RENDER                                                            */
   /* ------------------------------------------------------------------ */
   return (
     <div className="page-wrapper">
       <div className="content">
         <div className="row gx-3 gy-3">
-          {/* LEFT COLUMN – ORDERS */}
+          {/* LEFT: Orders */}
           <div className="col-12 col-md-4 d-flex flex-column gap-3">
             <div className="card shadow-sm rounded-3">
               <div className="card-header bg-light fw-semibold">
-                Orders this month
+                ORDERS THIS MONTH{" "}
               </div>
               <div className="card-body p-0">
                 {orders.length ? (
@@ -320,8 +288,7 @@ const PageWrapper = () => {
                             >
                               {o.status}
                             </span>
-                            <BiPencil
-                              size={16}
+                            <EditOutlined
                               className="text-secondary cursor-pointer"
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -386,12 +353,11 @@ const PageWrapper = () => {
             </div>
           </div>
 
-          {/* MIDDLE COLUMN */}
+          {/* MIDDLE: Quotations + Low Stock */}
           <div className="col-12 col-md-4 d-flex flex-column gap-3">
-            {/* Quotations */}
             <div className="card shadow-sm rounded-3">
               <div className="card-header bg-light fw-semibold">
-                Total Quotations{" "}
+                TOTAL QUOTATIONS{" "}
                 <span className="text-danger fw-semibold">
                   ({quotationCount})
                 </span>
@@ -429,7 +395,10 @@ const PageWrapper = () => {
                               Due:{" "}
                               {new Date(q.due_date).toLocaleDateString(
                                 "en-IN",
-                                { day: "2-digit", month: "short" }
+                                {
+                                  day: "2-digit",
+                                  month: "short",
+                                }
                               )}
                             </span>
                           </div>
@@ -462,7 +431,7 @@ const PageWrapper = () => {
             {lowStockProducts.length > 0 && (
               <div className="card shadow-sm rounded-3">
                 <div className="card-header bg-light fw-semibold low-stock-header">
-                  <span>Low in Stock</span>
+                  <span>LOW IN STOCK</span>
                   <span className="low-stock-count">
                     {lowStockProducts.length} of {products.length} remaining
                   </span>
@@ -471,7 +440,7 @@ const PageWrapper = () => {
                   <ul className="list-unstyled m-0">
                     {paginatedLowStock.map((p) => (
                       <li
-                        key={p._id || p.productId}
+                        key={p.productId}
                         onClick={() => handleProductClick(p)}
                         className="low-stock-item"
                       >
@@ -493,12 +462,12 @@ const PageWrapper = () => {
             )}
           </div>
 
-          {/* RIGHT COLUMN */}
+          {/* RIGHT: Top Selling + Recent Products */}
           <div className="col-12 col-md-4 d-flex flex-column gap-3">
             {/* Top Selling Products */}
             <div className="card shadow-sm rounded-3">
               <div className="card-header bg-light fw-semibold">
-                Top Selling Products
+                TOP SELLING PRODUCTS{" "}
               </div>
               <div className="card-body p-0">
                 {topProductsLoading ? (
@@ -524,13 +493,9 @@ const PageWrapper = () => {
                                 src={imgUrl}
                                 alt={product.name}
                                 className="product-image"
-                                onError={(e) => {
-                                  e.target.style.display = "none";
-                                  const fallback = e.target.nextElementSibling;
-                                  if (fallback) {
-                                    fallback.style.display = "flex";
-                                  }
-                                }}
+                                onError={(e) =>
+                                  (e.target.style.display = "none")
+                                }
                               />
                             )}
                             <div className="d-flex flex-column">
@@ -541,8 +506,9 @@ const PageWrapper = () => {
                                 {product.name}
                               </a>
                               <div className="sold-text">
-                                {product.quantity}{" "}
-                                {product.quantity === 1 ? "unit" : "units"} sold
+                                {product.totalSold}{" "}
+                                {product.totalSold === 1 ? "unit" : "units"}{" "}
+                                sold
                               </div>
                             </div>
                           </div>
@@ -566,15 +532,15 @@ const PageWrapper = () => {
                     })}
                   </ul>
                 ) : (
-                  <p className="empty-state">No sales data yet.</p>
+                  <p className="empty-state p-3">No sales data yet.</p>
                 )}
               </div>
             </div>
 
-            {/* Last Five Products */}
+            {/* Recent Products */}
             <div className="card shadow-sm rounded-3">
               <div className="card-header bg-light fw-semibold d-flex justify-content-between align-items-center">
-                Total Products{" "}
+                TOTAL PRODUCTS{" "}
                 <span className="text-danger fw-semibold">
                   ({productCount})
                 </span>
@@ -601,13 +567,9 @@ const PageWrapper = () => {
                                 src={imgUrl}
                                 alt={p.name}
                                 className="product-image"
-                                onError={(e) => {
-                                  e.target.style.display = "none";
-                                  const fallback = e.target.nextElementSibling;
-                                  if (fallback) {
-                                    fallback.style.display = "flex";
-                                  }
-                                }}
+                                onError={(e) =>
+                                  (e.target.style.display = "none")
+                                }
                               />
                             )}
                             <div className="d-flex flex-column">
@@ -644,11 +606,14 @@ const PageWrapper = () => {
           </div>
         </div>
 
-        {/* Stock Modal */}
         <StockModal
-          show={isModalVisible}
-          onHide={handleModalClose}
-          product={selectedProduct}
+          open={stockModalOpen}
+          onCancel={() => {
+            setStockModalOpen(false);
+            setSelectedProductForStock(null);
+          }}
+          product={selectedProductForStock}
+          action="add"
         />
       </div>
     </div>

@@ -4,7 +4,11 @@ import { useNavigate, Link } from "react-router-dom";
 import { useLoginMutation } from "../../api/authApi";
 import { useAuth } from "../../context/AuthContext";
 import logo from "../../assets/img/logo.png";
-import { FaEnvelope, FaEye, FaEyeSlash } from "react-icons/fa";
+import {
+  MailOutlined,
+  EyeOutlined,
+  EyeInvisibleOutlined,
+} from "@ant-design/icons";
 import { message } from "antd";
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -85,7 +89,7 @@ const Login = () => {
                     placeholder="Enter your email"
                   />
                   <span className="input-group-text border-start-0">
-                    <FaEnvelope />
+                    <MailOutlined />
                   </span>
                 </div>
               </div>
@@ -113,7 +117,7 @@ const Login = () => {
                     tabIndex={0}
                     role="button"
                   >
-                    {showPassword ? <FaEyeSlash /> : <FaEye />}
+                    {showPassword ? <EyeInvisibleOutlined /> : <EyeOutlined />}
                   </span>
                 </div>
               </div>

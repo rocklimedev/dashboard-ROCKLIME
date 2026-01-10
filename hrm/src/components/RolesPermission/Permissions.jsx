@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { FaSearch, FaArrowLeft } from "react-icons/fa";
+import { SearchOutlined, LeftOutlined } from "@ant-design/icons";
 import { MoreOutlined } from "@ant-design/icons";
 import { Dropdown, Menu, Button } from "antd";
 import { message } from "antd";
@@ -162,7 +162,7 @@ const Permissions = () => {
               <div className="col-lg-6">
                 <div className="input-icon-start position-relative">
                   <span className="input-icon-addon">
-                    <FaSearch />
+                    <SearchOutlined />
                   </span>
                   <input
                     type="text"
@@ -176,7 +176,7 @@ const Permissions = () => {
               </div>
               <div className="col-lg-6 text-lg-end">
                 <Link to="/roles-permission/list" className="btn btn-secondary">
-                  <FaArrowLeft className="me-2" /> Back to Roles
+                  <LeftOutlined className="me-2" /> Back to Roles
                 </Link>
               </div>
             </div>

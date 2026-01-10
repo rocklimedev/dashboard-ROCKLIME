@@ -38,6 +38,15 @@ export const orderApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Comment"],
     }),
+    downloadInvoice: builder.query({
+      query: (orderId) => ({
+        url: `/order/${orderId}/download-invoice`,
+        // Important: responseType tells RTK Query this is a blob/stream
+        responseHandler: "content-type", // keeps raw response
+        cache: "no-cache",
+      }),
+      // No provides/invalidates tags needed — this is a download only
+    }),
     uploadInvoice: builder.mutation({
       query: ({ orderId, formData }) => ({
         url: `/order/invoice-upload/${orderId}`,
@@ -182,4 +191,5 @@ export const {
   useDraftOrderMutation,
   useUpdateOrderTeamMutation,
   useGetFilteredOrdersQuery,
+  useLazyDownloadInvoiceQuery,
 } = orderApi;

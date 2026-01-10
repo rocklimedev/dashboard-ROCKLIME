@@ -1,7 +1,22 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { message } from "antd";
+import {
+  message,
+  Modal,
+  Form,
+  Input,
+  Button,
+  Typography,
+  Space,
+  Tag,
+} from "antd";
+import {
+  MailOutlined,
+  EyeOutlined,
+  UserDeleteOutlined,
+  EditOutlined,
+} from "@ant-design/icons";
 import {
   useDeleteUserMutation,
   useInactiveUserMutation,
@@ -12,63 +27,52 @@ import {
   useResendVerificationEmailMutation,
 } from "../../api/authApi";
 import { logout } from "../../api/userSlice";
-import { Modal, Button, Form } from "react-bootstrap";
 import { Link } from "react-router-dom";
-import "./settingsWrapper.css";
-import {
-  MailOutlined,
-  EyeOutlined,
-  UserDeleteOutlined,
-  EditOutlined, // <-- new icon
-} from "@ant-design/icons";
 import PageHeader from "../Common/PageHeader";
+import "./settingsWrapper.css";
+
+const { Title, Text } = Typography;
 
 const GeneralSettings = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  // RTK Query hooks
-  const [changePassword, { isLoading: isChangingPassword }] =
-    useChangePasswordMutation();
-  const [deactivateAccount, { isLoading: isDeactivating }] =
-    useInactiveUserMutation();
-  const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
-  const [resendVerificationEmail, { isLoading: isResendingVerification }] =
-    useResendVerificationEmailMutation();
+  const [changePassword] = useChangePasswordMutation();
+  const [deactivateAccount] = useInactiveUserMutation();
+  const [deleteUser] = useDeleteUserMutation();
+  const [resendVerificationEmail] = useResendVerificationEmailMutation();
+
   const {
     data: profile,
     isLoading: isProfileLoading,
     error: profileError,
   } = useGetProfileQuery();
 
-  // State
-  const [activeSection, setActiveSection] = useState("Profile");
-  const [passwordData, setPasswordData] = useState({
-    password: "", // current password
-    newPassword: "", // new password
-  });
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [passwordForm] = Form.useForm();
   const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [confirmAction, setConfirmAction] = useState(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmMessage, setConfirmMessage] = useState("");
+  const [confirmAction, setConfirmAction] = useState(null);
 
-  // Handle password change
-  const handlePasswordChange = async (e) => {
-    e.preventDefault();
+  // Handlers
+  const handlePasswordChange = async (values) => {
     try {
-      await changePassword(passwordData).unwrap();
-      setPasswordData({ password: "", newPassword: "" });
+      await changePassword({
+        password: values.currentPassword,
+        newPassword: values.newPassword,
+      }).unwrap();
+      message.success("Password changed successfully!");
+      passwordForm.resetFields();
       setShowPasswordModal(false);
     } catch (error) {
       message.error(error?.data?.message || "Failed to change password");
     }
   };
 
-  // Handle resend verification email
   const handleResendVerification = async () => {
     try {
       await resendVerificationEmail({ email: profile?.user?.email }).unwrap();
-      message.success("Verification email sent");
+      message.success("Verification email sent successfully!");
     } catch (error) {
       message.error(
         error?.data?.message || "Failed to send verification email"
@@ -76,38 +80,46 @@ const GeneralSettings = () => {
     }
   };
 
-  // Handle logout
   const handleLogout = () => {
     setConfirmMessage("Are you sure you want to log out?");
     setConfirmAction(() => () => {
       dispatch(logout());
       navigate("/login");
-      setShowConfirmModal(false);
     });
-    setShowConfirmModal(true);
-  };
-
-  // Handle account deactivation
-  const handleInitiateDeactivateAccount = () => {
-    setConfirmMessage("Are you sure you want to deactivate your account?");
-    setConfirmAction(() => handleDeactivateAccount);
     setShowConfirmModal(true);
   };
 
   const handleDeactivateAccount = async () => {
     try {
       await deactivateAccount().unwrap();
+      message.success(
+        "Account deactivated. You can reactivate it by logging in again."
+      );
       dispatch(logout());
       navigate("/login");
     } catch (error) {
       message.error(error?.data?.message || "Failed to deactivate account");
-    } finally {
-      setShowConfirmModal(false);
     }
   };
 
-  // Handle account deletion
-  const handleInitiateDeleteAccount = () => {
+  const handleInitiateDeactivate = () => {
+    setConfirmMessage("Are you sure you want to deactivate your account?");
+    setConfirmAction(() => handleDeactivateAccount);
+    setShowConfirmModal(true);
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      await deleteUser().unwrap();
+      message.success("Account permanently deleted.");
+      dispatch(logout());
+      navigate("/login");
+    } catch (error) {
+      message.error(error?.data?.message || "Failed to delete account");
+    }
+  };
+
+  const handleInitiateDelete = () => {
     setConfirmMessage(
       "Are you sure you want to permanently delete your account? This action cannot be undone."
     );
@@ -115,26 +127,19 @@ const GeneralSettings = () => {
     setShowConfirmModal(true);
   };
 
-  const handleDeleteAccount = async () => {
-    try {
-      await deleteUser().unwrap();
-      dispatch(logout());
-      navigate("/login");
-    } catch (error) {
-      message.error(error?.data?.message || "Failed to delete account");
-    } finally {
-      setShowConfirmModal(false);
-    }
-  };
-
-  // Handle modal confirmation
-  const handleConfirmAction = () => {
+  const handleConfirm = () => {
     if (confirmAction) confirmAction();
+    setShowConfirmModal(false);
   };
 
-  // Loading / error states
-  if (isProfileLoading) return <div>Loading...</div>;
-  if (profileError) return <div>Error: {profileError.message}</div>;
+  if (isProfileLoading)
+    return <div style={{ padding: 20, textAlign: "center" }}>Loading...</div>;
+  if (profileError)
+    return (
+      <div style={{ padding: 20, color: "red" }}>Error loading profile.</div>
+    );
+
+  const user = profile?.user || {};
 
   return (
     <div className="page-wrapper">
@@ -143,216 +148,203 @@ const GeneralSettings = () => {
           <div className="card-header d-flex align-items-center">
             <PageHeader
               title="Settings"
-              subtitle="Manage your settings"
+              subtitle="Manage your account settings"
               exportOptions={{ pdf: false, excel: false }}
             />
           </div>
 
           <div className="card-body">
-            {/* ---------- NEW: Edit Profile Section ---------- */}
-            <div className="d-flex align-items-center justify-content-between flex-wrap row-gap-3 border-bottom mb-3 pb-3">
-              <div className="d-flex align-items-center">
-                <span className="avatar avatar-lg border bg-light fs-24 me-2">
-                  <EditOutlined />
-                </span>
+            {/* Edit Profile */}
+            <div className="d-flex align-items-center justify-content-between flex-wrap border-bottom pb-4 mb-4">
+              <Space size={16}>
+                <div className="avatar avatar-lg border bg-light d-flex align-items-center justify-content-center">
+                  <EditOutlined style={{ fontSize: 24 }} />
+                </div>
                 <div>
-                  <h5 className="fs-16 fw-medium mb-1">Edit Profile</h5>
-                  <p className="fs-16">
+                  <Title level={5} style={{ margin: 0 }}>
+                    Edit Profile
+                  </Title>
+                  <Text type="secondary">
                     Update your personal information, avatar, and other profile
                     details.
-                  </p>
+                  </Text>
                 </div>
-              </div>
+              </Space>
               <Button
-                variant="primary"
-                onClick={() => navigate(`/u/${profile?.user?.userId}/edit`)}
+                type="primary"
+                onClick={() => navigate(`/u/${user.userId}/edit`)}
               >
                 Edit Profile
               </Button>
             </div>
-            {/* ------------------------------------------------ */}
 
-            {/* Email Verification Section */}
-            <div className="d-flex align-items-center justify-content-between flex-wrap row-gap-3 border-bottom mb-3 pb-3">
-              <div className="d-flex align-items-center">
-                <span className="avatar avatar-lg border bg-light fs-24 me-2">
-                  <MailOutlined />
-                </span>
+            {/* Email Verification */}
+            <div className="d-flex align-items-center justify-content-between flex-wrap border-bottom pb-4 mb-4">
+              <Space size={16}>
+                <div className="avatar avatar-lg border bg-light d-flex align-items-center justify-content-center">
+                  <MailOutlined style={{ fontSize: 24 }} />
+                </div>
                 <div>
-                  <h5 className="fs-16 fw-medium mb-1">Email Verification</h5>
-                  <p className="fs-16">
-                    Email: {profile?.user?.email || "Not available"}
+                  <Title level={5} style={{ margin: 0 }}>
+                    Email Verification
+                  </Title>
+                  <Text>
+                    Email: <strong>{user.email || "Not available"}</strong>
                     <br />
                     Status:{" "}
-                    {profile?.user?.isEmailVerified ? (
-                      <span className="text-success">Verified</span>
+                    {user.isEmailVerified ? (
+                      <Tag color="success">Verified</Tag>
                     ) : (
-                      <span className="text-danger">Not Verified</span>
+                      <Tag color="error">Not Verified</Tag>
                     )}
-                  </p>
+                  </Text>
                 </div>
-              </div>
-              {!profile?.user?.isEmailVerified && (
-                <Button
-                  variant="primary"
-                  onClick={handleResendVerification}
-                  disabled={isResendingVerification}
-                >
-                  {isResendingVerification
-                    ? "Sending..."
-                    : "Resend Verification Email"}
+              </Space>
+              {!user.isEmailVerified && (
+                <Button type="primary" onClick={handleResendVerification}>
+                  Resend Verification Email
                 </Button>
               )}
             </div>
 
-            {/* Password Section */}
-            <div className="d-flex align-items-center justify-content-between flex-wrap row-gap-3 border-bottom mb-3 pb-3">
-              <div className="d-flex align-items-center">
-                <span className="avatar avatar-lg border bg-light fs-24 me-2">
-                  <EyeOutlined />
-                </span>
-                <div>
-                  <h5 className="fs-16 fw-medium mb-1">Password</h5>
-                  <p className="fs-16 mb-1">Update your password securely.</p>
-                  <p className="fs-14 text-muted">
-                    Forgot your password?{" "}
-                    <Link to="/forgot-password">Click here to reset it</Link>.
-                  </p>
+            {/* Password */}
+            <div className="d-flex align-items-center justify-content-between flex-wrap border-bottom pb-4 mb-4">
+              <Space size={16}>
+                <div className="avatar avatar-lg border bg-light d-flex align-items-center justify-content-center">
+                  <EyeOutlined style={{ fontSize: 24 }} />
                 </div>
-              </div>
-              <Button
-                variant="primary"
-                onClick={() => setShowPasswordModal(true)}
-                disabled={isChangingPassword}
-              >
-                {isChangingPassword ? "Saving..." : "Change Password"}
+                <div>
+                  <Title level={5} style={{ margin: 0 }}>
+                    Password
+                  </Title>
+                  <Text type="secondary">
+                    Update your password securely.
+                    <br />
+                    Forgot your password?{" "}
+                    <Link to="/forgot-password" style={{ color: "#1890ff" }}>
+                      Click here to reset it
+                    </Link>
+                    .
+                  </Text>
+                </div>
+              </Space>
+              <Button type="primary" onClick={() => setShowPasswordModal(true)}>
+                Change Password
               </Button>
             </div>
 
             {/* Deactivate Account */}
-            <div className="d-flex align-items-center justify-content-between flex-wrap row-gap-3 border-bottom mb-3 pb-3">
-              <div className="d-flex align-items-center">
-                <span className="avatar avatar-lg border bg-light fs-24 me-2">
-                  <UserDeleteOutlined />
-                </span>
-                <div>
-                  <h5 className="fs-16 fw-medium mb-1">Deactivate Account</h5>
-                  <p className="fs-16">
-                    This will shut down your account. Your account will be
-                    reactivated when you sign in again.
-                  </p>
+            <div className="d-flex align-items-center justify-content-between flex-wrap border-bottom pb-4 mb-4">
+              <Space size={16}>
+                <div className="avatar avatar-lg border bg-light d-flex align-items-center justify-content-center">
+                  <UserDeleteOutlined style={{ fontSize: 24 }} />
                 </div>
-              </div>
-              <Button
-                variant="primary"
-                onClick={handleInitiateDeactivateAccount}
-                disabled={isDeactivating}
-              >
-                {isDeactivating ? "Deactivating..." : "Deactivate"}
+                <div>
+                  <Title level={5} style={{ margin: 0 }}>
+                    Deactivate Account
+                  </Title>
+                  <Text type="secondary">
+                    This will temporarily disable your account. You can
+                    reactivate it anytime by logging in again.
+                  </Text>
+                </div>
+              </Space>
+              <Button danger onClick={handleInitiateDeactivate}>
+                Deactivate
               </Button>
             </div>
 
             {/* Delete Account */}
-            <div className="d-flex align-items-center justify-content-between flex-wrap row-gap-3">
-              <div className="d-flex align-items-center">
-                <span className="avatar avatar-lg border bg-light fs-24 me-2">
-                  <UserDeleteOutlined />
-                </span>
-                <div>
-                  <h5 className="fs-16 fw-medium mb-1">Delete Account</h5>
-                  <p className="fs-16">
-                    Your account will be permanently deleted.
-                  </p>
+            <div className="d-flex align-items-center justify-content-between flex-wrap">
+              <Space size={16}>
+                <div className="avatar avatar-lg border bg-light d-flex align-items-center justify-content-center">
+                  <UserDeleteOutlined style={{ fontSize: 24 }} />
                 </div>
-              </div>
-              <Button
-                variant="danger"
-                onClick={handleInitiateDeleteAccount}
-                disabled={isDeleting}
-              >
-                {isDeleting ? "Deleting..." : "Delete"}
+                <div>
+                  <Title level={5} style={{ margin: 0 }}>
+                    Delete Account
+                  </Title>
+                  <Text type="secondary">
+                    Permanently delete your account and all associated data.
+                    This action cannot be undone.
+                  </Text>
+                </div>
+              </Space>
+              <Button type="primary" danger onClick={handleInitiateDelete}>
+                Delete Account
               </Button>
             </div>
           </div>
-
-          {/* Password Change Modal */}
-          <Modal
-            show={showPasswordModal}
-            onHide={() => setShowPasswordModal(false)}
-            centered
-            aria-labelledby="changePasswordLabel"
-          >
-            <Modal.Header closeButton>
-              <Modal.Title id="changePasswordLabel">
-                Change Password
-              </Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
-              <Form onSubmit={handlePasswordChange}>
-                <Form.Group className="mb-3" controlId="password">
-                  <Form.Label>Current Password</Form.Label>
-                  <Form.Control
-                    type="password"
-                    value={passwordData.password}
-                    onChange={(e) =>
-                      setPasswordData({
-                        ...passwordData,
-                        password: e.target.value,
-                      })
-                    }
-                    required
-                    autoFocus
-                  />
-                </Form.Group>
-                <Form.Group className="mb-3" controlId="newPassword">
-                  <Form.Label>New Password</Form.Label>
-                  <Form.Control
-                    type="password"
-                    value={passwordData.newPassword}
-                    onChange={(e) =>
-                      setPasswordData({
-                        ...passwordData,
-                        newPassword: e.target.value,
-                      })
-                    }
-                    required
-                  />
-                </Form.Group>
-                <Button
-                  type="submit"
-                  variant="primary"
-                  disabled={isChangingPassword}
-                >
-                  {isChangingPassword ? "Saving..." : "Save Changes"}
-                </Button>
-              </Form>
-            </Modal.Body>
-          </Modal>
-
-          {/* Confirmation Modal */}
-          <Modal
-            show={showConfirmModal}
-            onHide={() => setShowConfirmModal(false)}
-            centered
-          >
-            <Modal.Header closeButton>
-              <Modal.Title>Confirm Action</Modal.Title>
-            </Modal.Header>
-            <Modal.Body>{confirmMessage}</Modal.Body>
-            <Modal.Footer>
-              <Button
-                variant="secondary"
-                onClick={() => setShowConfirmModal(false)}
-              >
-                Cancel
-              </Button>
-              <Button variant="danger" onClick={handleConfirmAction}>
-                Confirm
-              </Button>
-            </Modal.Footer>
-          </Modal>
         </div>
       </div>
+
+      {/* Change Password Modal */}
+      <Modal
+        open={showPasswordModal}
+        title="Change Password"
+        onCancel={() => {
+          passwordForm.resetFields();
+          setShowPasswordModal(false);
+        }}
+        footer={null}
+        width={500}
+      >
+        <Form
+          form={passwordForm}
+          layout="vertical"
+          onFinish={handlePasswordChange}
+        >
+          <Form.Item
+            name="currentPassword"
+            label="Current Password"
+            rules={[
+              { required: true, message: "Please enter your current password" },
+            ]}
+          >
+            <Input.Password placeholder="Enter current password" />
+          </Form.Item>
+
+          <Form.Item
+            name="newPassword"
+            label="New Password"
+            rules={[
+              { required: true, message: "Please enter a new password" },
+              { min: 6, message: "Password must be at least 6 characters" },
+            ]}
+          >
+            <Input.Password placeholder="Enter new password" />
+          </Form.Item>
+
+          <Form.Item style={{ marginBottom: 0, textAlign: "right" }}>
+            <Button
+              onClick={() => setShowPasswordModal(false)}
+              style={{ marginRight: 8 }}
+            >
+              Cancel
+            </Button>
+            <Button type="primary" htmlType="submit">
+              Save Changes
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* Confirmation Modal */}
+      <Modal
+        open={showConfirmModal}
+        title="Confirm Action"
+        onCancel={() => setShowConfirmModal(false)}
+        footer={
+          <Space>
+            <Button onClick={() => setShowConfirmModal(false)}>Cancel</Button>
+            <Button type="primary" danger onClick={handleConfirm}>
+              Confirm
+            </Button>
+          </Space>
+        }
+      >
+        <Text>{confirmMessage}</Text>
+      </Modal>
     </div>
   );
 };

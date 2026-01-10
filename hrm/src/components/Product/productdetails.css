@@ -145,7 +145,7 @@ html[data-theme="dark"] .modal-footer {
 }
 .cart-button {
   background-color:  #f7f7f7;
-  border: 1px solid #646b72;
+  border: 1px solid #333333;
   color: var(--text-dark);
   padding: 8px 16px;
   border-radius: 6px;
@@ -162,14 +162,14 @@ html[data-theme="dark"] .modal-footer {
 
 .cart-button:disabled {
   background-color: var(--background-light);
-  border-color: #646b72;
+  border-color: #333333;
   color: rgba(0, 0, 0, 0.25);
   cursor: not-allowed;
 }
 
 .cart-button:disabled:hover {
   background-color: var(--background-light);
-  border-color: #646b72;
+  border-color: #333333;
   color: rgba(0, 0, 0, 0.25);
 }
 
@@ -379,7 +379,7 @@ input:focus {
   width: 60px;
   height: 40px;
   text-align: center;
-  border: 1px solid #646b72;
+  border: 1px solid #333333;
   border-radius: 6px;
   font-size: 16px;
   padding: 8px;
@@ -522,7 +522,7 @@ input:focus {
    ProductCard Styles
    ========================================================================== */
 .product-info.card {
-  border: 1px solid #646b72;
+  border: 1px solid #333333;
   border-radius: 8px;
   overflow: hidden;
   background:  #f7f7f7;
@@ -625,7 +625,7 @@ input:focus {
   width: 60px;
   height: 36px;
   font-size: 14px;
-  border: 1px solid #646b72;
+  border: 1px solid #333333;
   border-radius: 6px;
   text-align: center;
 }
@@ -635,7 +635,7 @@ input:focus {
   width: 36px;
   height: 36px;
   background: var(--background-light);
-  border: 1px solid #646b72;
+  border: 1px solid #333333;
   border-radius: 6px;
   display: flex;
   align-items: center;
@@ -646,14 +646,14 @@ input:focus {
 
 .dec:hover,
 .inc:hover {
-  background: #646b72;
+  background: #333333;
 }
 
 .product-actions {
   display: flex;
   gap: 8px;
   padding: 12px 16px;
-  border-top: 1px solid #646b72;
+  border-top: 1px solid #333333;
 }
 
 .product-actions .ant-btn {

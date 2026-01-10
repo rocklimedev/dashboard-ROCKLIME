@@ -1,42 +1,75 @@
 import moment from "moment";
 
-// Generate Quotation Number
-export const generateQuotationNumber = () => {
-  const timestamp = Date.now().toString().slice(-6);
-  const random = Math.floor(1000 + Math.random() * 9000);
-  return `QUO-${timestamp}-${random}`;
+// Helper: Get today's prefix in format DDMMYY (e.g., 271225 for Dec 27, 2025)
+const getTodayPrefix = () => {
+  const now = moment();
+  const day = now.format("D"); // 1-31 (no leading zero)
+  const month = now.format("M"); // 1-12 (no leading zero)
+  const year = now.format("YY"); // Last 2 digits of year (25 for 2025)
+  return `${day}${month}${year}`;
 };
 
-// Generate Order Number
-export const generateOrderNumber = (orders = []) => {
-  const today = moment().format("DDMMYY"); // Changed from DDMMYYYY to DDMMYY
-  const day = today.getDate(); // No leading zero (e.g., 1 instead of 01)
-  const month = today.getMonth() + 1; // No leading zero (e.g., 1 instead of 01)
-  const year = "25"; // Hardcode to 25 for 2025
+// === 1. Generate Quotation Number (Daily Sequential) ===
+export const generateQuotationNumber = (quotations = []) => {
+  const prefix = getTodayPrefix(); // e.g., "271225"
 
-  // Find the highest sequence number for orders with today's prefix (DDMM25)
-  const prefix = `${day}${month}${year}`;
-  const existingOrders = orders.filter((order) =>
-    order.orderNo.startsWith(prefix)
+  // Filter quotations created today
+  const todayQuotations = quotations.filter((q) =>
+    q.quotationNo?.startsWith(prefix)
   );
+
   let sequence = 101; // Start from 101
 
-  if (existingOrders.length > 0) {
-    const sequenceNumbers = existingOrders
-      .map((order) => parseInt(order.orderNo.slice(prefix.length), 10))
+  if (todayQuotations.length > 0) {
+    const sequenceNumbers = todayQuotations
+      .map((q) => parseInt(q.quotationNo.slice(prefix.length), 10))
       .filter((num) => !isNaN(num));
-    const maxSequence = Math.max(...sequenceNumbers, 100); // Ensure at least 100
-    sequence = maxSequence + 1; // Increment from the highest sequence
+
+    const maxSequence = Math.max(...sequenceNumbers, 100);
+    sequence = maxSequence + 1;
   }
 
-  return `${prefix}${sequence}`;
+  return `QUO${prefix}${sequence}`; // e.g., QUO271225101, QUO271225102
 };
-// Generate Purchase Order Number
-export const generatePurchaseOrderNumber = (orders) => {
-  const today = moment().format("DDMMYYYY");
-  const todayOrders = orders.filter((order) =>
-    moment(order.createdAt).isSame(moment(), "day")
+
+// === 2. Generate Order Number (Daily Sequential - Your Desired Format) ===
+export const generateOrderNumber = (orders = []) => {
+  const prefix = getTodayPrefix(); // e.g., "271225"
+
+  const todayOrders = orders.filter((o) => o.orderNo?.startsWith(prefix));
+
+  let sequence = 101;
+
+  if (todayOrders.length > 0) {
+    const sequenceNumbers = todayOrders
+      .map((o) => parseInt(o.orderNo.slice(prefix.length), 10))
+      .filter((num) => !isNaN(num));
+
+    const maxSequence = Math.max(...sequenceNumbers, 100);
+    sequence = maxSequence + 1;
+  }
+
+  return `${prefix}${sequence}`; // e.g., 271225101, 271225102
+};
+
+// === 3. Generate Purchase Order Number (Daily Sequential) ===
+export const generatePurchaseOrderNumber = (purchaseOrders = []) => {
+  const prefix = getTodayPrefix(); // e.g., "271225"
+
+  const todayPOs = purchaseOrders.filter((po) =>
+    po.purchaseOrderNo?.startsWith(prefix)
   );
-  const serialNumber = String(todayOrders.length + 1).padStart(5, "0");
-  return `PO-${today}-${serialNumber}`;
+
+  let sequence = 101;
+
+  if (todayPOs.length > 0) {
+    const sequenceNumbers = todayPOs
+      .map((po) => parseInt(po.purchaseOrderNo.slice(prefix.length), 10))
+      .filter((num) => !isNaN(num));
+
+    const maxSequence = Math.max(...sequenceNumbers, 100);
+    sequence = maxSequence + 1;
+  }
+
+  return `PO${prefix}${sequence}`; // e.g., PO271225101, PO271225102
 };

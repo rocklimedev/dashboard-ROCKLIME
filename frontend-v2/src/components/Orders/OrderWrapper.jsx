@@ -1,23 +1,29 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { useGetAllUsersQuery } from "../../api/userApi";
-import { useGetAllTeamsQuery } from "../../api/teamApi";
-import { useGetCustomersQuery } from "../../api/customerApi";
-import { useGetAllQuotationsQuery } from "../../api/quotationApi";
 import {
   useGetAllOrdersQuery,
   useDeleteOrderMutation,
   useUpdateOrderStatusMutation,
 } from "../../api/orderApi";
-import { message } from "antd";
-import { SearchOutlined } from "@ant-design/icons";
+import { useGetAllTeamsQuery } from "../../api/teamApi";
+import { useGetAllUsersQuery } from "../../api/userApi";
+import { useGetAllQuotationsQuery } from "../../api/quotationApi";
 import {
+  message,
+  Input,
+  Button,
+  Select,
+  Pagination,
+  Dropdown,
+  Menu,
+} from "antd";
+import {
+  SearchOutlined,
   EditOutlined,
   FileTextOutlined,
   DeleteOutlined,
   MoreOutlined,
 } from "@ant-design/icons";
-import { Dropdown, Menu, Button, Select, Pagination } from "antd";
 import DatesModal from "./DateModal";
 import DeleteModal from "../Common/DeleteModal";
 import PageHeader from "../Common/PageHeader";
@@ -27,10 +33,6 @@ const { Option } = Select;
 
 const OrderWrapper = () => {
   const navigate = useNavigate();
-
-  // ──────────────────────────────────────────────────────
-  // PERMISSIONS
-  // ──────────────────────────────────────────────────────
   const { auth } = useAuth();
   const permissions = auth?.permissions || [];
 
@@ -44,13 +46,17 @@ const OrderWrapper = () => {
     (p) => p.action === "write" && p.module === "orders"
   );
 
-  // ──────────────────────────────────────────────────────
-  // STATE
-  // ──────────────────────────────────────────────────────
-  const [teamMap, setTeamMap] = useState({});
-  const [customerMap, setCustomerMap] = useState({});
-  const [userMap, setUserMap] = useState({});
-  const [quotationMap, setQuotationMap] = useState({});
+  // State
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [filters, setFilters] = useState({
+    status: "",
+    priority: "",
+  });
+  const [sortBy, setSortBy] = useState("Recently Added");
+
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState(null);
   const [showDatesModal, setShowDatesModal] = useState(false);
@@ -58,268 +64,108 @@ const OrderWrapper = () => {
     dueDate: null,
     followupDates: [],
   });
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState("Recently Added");
-  const [filters, setFilters] = useState({
-    status: "",
-    priority: "",
-    source: "",
-    page: 1,
-    limit: 10,
-    masterPipelineNo: null,
-    previousOrderNo: null,
-  });
-  const [dateRange, setDateRange] = useState({
-    startDate: "",
-    endDate: "",
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setCurrentPage(1);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Fetch Orders with server-side pagination + search
+  const {
+    data: response,
+    error,
+    isLoading,
+    isFetching,
+  } = useGetAllOrdersQuery({
+    page: currentPage,
+    limit: pageSize,
+    search: debouncedSearch || undefined,
+    status: filters.status || undefined,
+    priority: filters.priority || undefined,
   });
 
-  // ──────────────────────────────────────────────────────
-  // FETCH DATA
-  // ──────────────────────────────────────────────────────
+  const orders = response?.data || [];
+  const pagination = response?.pagination || {
+    total: 0,
+    page: 1,
+    limit: 20,
+    totalPages: 0,
+  };
+
+  // Fetch supporting data
   const { data: teamsData } = useGetAllTeamsQuery();
-  const { data: customersData } = useGetCustomersQuery();
   const { data: usersData } = useGetAllUsersQuery();
   const { data: quotationsData } = useGetAllQuotationsQuery();
-  const { data: allData, error: allError } = useGetAllOrdersQuery();
-
-  const orders = allData?.orders || [];
-  const totalCount = allData?.totalCount || orders.length;
-  const error = allError;
 
   const [deleteOrder] = useDeleteOrderMutation();
   const [updateOrderStatus] = useUpdateOrderStatusMutation();
 
-  // ──────────────────────────────────────────────────────
-  // MAP DATA
-  // ──────────────────────────────────────────────────────
-  useEffect(() => {
-    if (teamsData?.teams) {
-      const map = teamsData.teams.reduce((acc, team) => {
-        acc[team.id] = team.teamName || "—";
-        return acc;
-      }, {});
-      setTeamMap(map);
-    }
+  // Build lookup maps
+  const teamMap = useMemo(() => {
+    if (!teamsData?.teams) return {};
+    return teamsData.teams.reduce((acc, t) => {
+      acc[t.id] = t.teamName || "—";
+      return acc;
+    }, {});
   }, [teamsData]);
 
-  useEffect(() => {
-    if (customersData?.data) {
-      const map = customersData.data.reduce((acc, customer) => {
-        acc[customer.customerId] = customer.name || "—";
-        return acc;
-      }, {});
-      setCustomerMap(map);
-    }
-  }, [customersData]);
-
-  useEffect(() => {
-    if (usersData?.users) {
-      const map = usersData.users.reduce((acc, user) => {
-        acc[user.userId] = user.username || user.name || "—";
-        return acc;
-      }, {});
-      setUserMap(map);
-    }
+  const userMap = useMemo(() => {
+    if (!usersData?.users) return {};
+    return usersData.users.reduce((acc, u) => {
+      acc[u.userId] = u.username || u.name || "—";
+      return acc;
+    }, {});
   }, [usersData]);
 
-  useEffect(() => {
-    if (quotationsData) {
-      const map = quotationsData.reduce((acc, quotation) => {
-        acc[quotation.quotationId] = quotation.reference_number || "—";
-        return acc;
-      }, {});
-      setQuotationMap(map);
-    }
+  const quotationMap = useMemo(() => {
+    if (!quotationsData?.data || !Array.isArray(quotationsData.data)) return {};
+    return quotationsData.data.reduce((acc, q) => {
+      acc[q.quotationId] = q.reference_number || "—";
+      return acc;
+    }, {});
   }, [quotationsData]);
-
-  // ──────────────────────────────────────────────────────
-  // HELPERS
-  // ──────────────────────────────────────────────────────
-  const getStatusDisplay = (status) => {
-    const statuses = [
-      "PREPARING",
-      "CHECKING",
-      "INVOICE",
-      "DISPATCHED",
-      "DELIVERED",
-      "PARTIALLY_DELIVERED",
-      "CANCELED",
-      "DRAFT",
-      "ONHOLD",
-      "CLOSED",
-    ];
-    return statuses.includes(status) ? status : "PREPARING";
-  };
-
-  const getQuotationStatus = (quotationId) => {
-    return quotationId ? "QUOTATIONED" : "IDLE";
-  };
-
+  // Helper displays
   const getAssignedToDisplay = (order) => {
-    const assignments = [];
-    if (order.assignedTeamId && teamMap[order.assignedTeamId]) {
-      assignments.push(`${teamMap[order.assignedTeamId]} (Team)`);
+    const parts = [];
+    if (order.assignedTeam?.id && teamMap[order.assignedTeam.id]) {
+      parts.push(`${teamMap[order.assignedTeam.id]} (Team)`);
     }
-    if (order.assignedUserId && userMap[order.assignedUserId]) {
-      assignments.push(`${userMap[order.assignedUserId]} (User)`);
+    if (order.assignedUser?.userId && userMap[order.assignedUser.userId]) {
+      parts.push(`${userMap[order.assignedUser.userId]} (User)`);
     }
-    if (order.secondaryUserId && userMap[order.secondaryUserId]) {
-      assignments.push(`${userMap[order.secondaryUserId]} (User)`);
+    if (order.secondaryUser?.userId && userMap[order.secondaryUser.userId]) {
+      parts.push(`${userMap[order.secondaryUser.userId]} (User)`);
     }
-    return assignments.length > 0 ? assignments.join(", ") : "—";
+    return parts.length > 0 ? parts.join(", ") : "—";
   };
 
-  // ──────────────────────────────────────────────────────
-  // FILTERED & SORTED ORDERS
-  // ──────────────────────────────────────────────────────
-  const filteredOrders = useMemo(() => {
-    let result = orders;
+  const isDueDateClose = (dueDate) => {
+    if (!dueDate) return false;
+    const diffDays = (new Date(dueDate) - new Date()) / (1000 * 60 * 60 * 24);
+    return diffDays <= 3 && diffDays >= 0;
+  };
 
-    if (filters.status) {
-      result = result.filter((ord) => ord.status === filters.status);
-    }
-    if (filters.priority) {
-      result = result.filter((ord) => ord.priority === filters.priority);
-    }
-    if (filters.source) {
-      result = result.filter((ord) =>
-        ord.source?.toLowerCase().includes(filters.source.toLowerCase())
-      );
-    }
-    if (filters.masterPipelineNo) {
-      result = result.filter(
-        (ord) => ord.masterPipelineNo === filters.masterPipelineNo
-      );
-    }
-    if (filters.previousOrderNo) {
-      result = result.filter(
-        (ord) => ord.previousOrderNo === filters.previousOrderNo
-      );
-    }
-    if (searchTerm.trim()) {
-      result = result.filter((ord) => {
-        const customerName = ord.createdFor
-          ? customerMap[ord.createdFor] || "—"
-          : "N/A";
-        const reference_number = ord.quotationId
-          ? quotationMap[ord.quotationId] || "—"
-          : "—";
-        return (
-          customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          ord.source?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          reference_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          ord.orderNo.toString().includes(searchTerm.toLowerCase()) ||
-          (ord.masterPipelineNo &&
-            ord.masterPipelineNo
-              .toString()
-              .includes(searchTerm.toLowerCase())) ||
-          (ord.previousOrderNo &&
-            ord.previousOrderNo.toString().includes(searchTerm.toLowerCase()))
-        );
-      });
-    }
-    if (dateRange.startDate || dateRange.endDate) {
-      result = result.filter((ord) => {
-        const orderDate = new Date(ord.createdAt);
-        const start = dateRange.startDate
-          ? new Date(dateRange.startDate)
-          : null;
-        const end = dateRange.endDate ? new Date(dateRange.endDate) : null;
-        return (!start || orderDate >= start) && (!end || orderDate <= end);
-      });
-    }
-
-    switch (sortBy) {
-      case "Recently Added":
-        result = [...result].sort(
-          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-        );
-        break;
-      case "Due Date Ascending":
-        result = [...result].sort(
-          (a, b) =>
-            new Date(a.dueDate || "9999-12-31") -
-            new Date(b.dueDate || "9999-12-31")
-        );
-        break;
-      case "Due Date Descending":
-        result = [...result].sort(
-          (a, b) =>
-            new Date(b.dueDate || "9999-12-31") -
-            new Date(a.dueDate || "9999-12-31")
-        );
-        break;
-      default:
-        break;
-    }
-    return result;
-  }, [
-    orders,
-    searchTerm,
-    sortBy,
-    dateRange,
-    customerMap,
-    quotationMap,
-    filters,
-  ]);
-
-  const paginatedOrders = useMemo(() => {
-    const startIndex = (filters.page - 1) * filters.limit;
-    return filteredOrders.slice(startIndex, startIndex + filters.limit);
-  }, [filteredOrders, filters.page, filters.limit]);
-
-  const tableDataForExport = useMemo(() => {
-    return paginatedOrders.map((order, index) => ({
-      "S.No.": (filters.page - 1) * filters.limit + index + 1,
-      "Order No.": order.orderNo,
-      "Master Pipeline": order.masterPipelineNo || "—",
-      "Previous Order": order.previousOrderNo || "—",
-      Status: getStatusDisplay(order.status),
-      Quotation: order.quotationId
-        ? quotationMap[order.quotationId] || "—"
-        : "—",
-      Customer: order.createdFor ? customerMap[order.createdFor] || "—" : "N/A",
-      Priority: order.priority || "Medium",
-      "Assigned To": getAssignedToDisplay(order),
-      "Created By": order.createdBy ? userMap[order.createdBy] || "—" : "N/A",
-      "Due Date": order.dueDate
-        ? new Date(order.dueDate).toLocaleDateString()
-        : "—",
-    }));
-  }, [
-    paginatedOrders,
-    filters.page,
-    filters.limit,
-    customerMap,
-    teamMap,
-    userMap,
-    quotationMap,
-  ]);
-
-  // ──────────────────────────────────────────────────────
-  // HANDLERS
-  // ──────────────────────────────────────────────────────
+  // Handlers
   const handleStatusChange = async (orderId, newStatus) => {
     if (!canUpdateOrderStatus) {
-      message.error("You don't have permission to update order status");
+      message.error("No permission to update status");
       return;
     }
     try {
       await updateOrderStatus({ orderId, status: newStatus }).unwrap();
-      message.success("Status updated successfully");
+      message.success("Status updated");
     } catch (err) {
-      message.error(
-        `Failed to update status: ${err.data?.message || "Unknown error"}`
-      );
+      message.error(err?.data?.message || "Failed to update status");
     }
   };
 
-  const handleOpenAddOrder = () => navigate("/order/add");
-
   const handleEditClick = (order) => {
     if (!canEditOrder) {
-      message.error("You don't have permission to edit orders");
+      message.error("No permission to edit");
       return;
     }
     navigate(`/order/${order.id}/edit`, { state: { order } });
@@ -327,53 +173,45 @@ const OrderWrapper = () => {
 
   const handleDeleteClick = (orderId) => {
     if (!canDeleteOrder) {
-      message.error("You don't have permission to delete orders");
+      message.error("No permission to delete");
       return;
     }
     setOrderToDelete(orderId);
     setShowDeleteModal(true);
   };
 
-  const handleModalClose = () => {
-    setOrderToDelete(null);
-    setShowDeleteModal(false);
-    setShowDatesModal(false);
-    setSelectedDates({ dueDate: null, followupDates: [] });
-  };
-
-  const handleViewInvoice = (order) => {
-    window.open(order.invoiceLink, "_blank");
-  };
-
-  const handleDeleteOrder = async (orderId) => {
+  const handleDeleteOrder = async () => {
     try {
-      await deleteOrder(orderId).unwrap();
-      message.success("Order deleted successfully");
-      handleModalClose();
+      await deleteOrder(orderToDelete).unwrap();
+      message.success("Order deleted");
+      if (orders.length === 1 && currentPage > 1) {
+        setCurrentPage(currentPage - 1);
+      }
     } catch (err) {
-      message.error(
-        `Failed to delete order: ${err.data?.message || "Unknown error"}`
-      );
+      message.error(err?.data?.message || "Failed to delete");
+    } finally {
+      setShowDeleteModal(false);
+      setOrderToDelete(null);
     }
   };
 
-  const handlePageChange = (page, pageSize) => {
-    setFilters((prev) => ({ ...prev, page, limit: pageSize }));
+  const handleViewInvoice = (invoiceLink) => {
+    if (invoiceLink) window.open(invoiceLink, "_blank");
+  };
+
+  const handlePageChange = (page, newPageSize) => {
+    setCurrentPage(page);
+    if (newPageSize !== pageSize) {
+      setPageSize(newPageSize);
+      setCurrentPage(1);
+    }
   };
 
   const handleClearFilters = () => {
-    setFilters({
-      status: "",
-      priority: "",
-      source: "",
-      page: 1,
-      limit: 10,
-      masterPipelineNo: null,
-      previousOrderNo: null,
-    });
     setSearchTerm("");
+    setFilters({ status: "", priority: "" });
     setSortBy("Recently Added");
-    setDateRange({ startDate: "", endDate: "" });
+    setCurrentPage(1);
   };
 
   const handleOpenDatesModal = (dueDate, followupDates) => {
@@ -381,15 +219,27 @@ const OrderWrapper = () => {
     setShowDatesModal(true);
   };
 
-  const isDueDateClose = (dueDate) => {
-    if (!dueDate) return false;
-    const diffDays = (new Date(dueDate) - new Date()) / (1000 * 60 * 60 * 24);
-    return diffDays <= 3;
-  };
+  // Export data (using current page)
+  const tableDataForExport = useMemo(() => {
+    return orders.map((order, index) => ({
+      "S.No.": (currentPage - 1) * pageSize + index + 1,
+      "Order No.": order.orderNo,
+      "Master Pipeline": order.masterOrder?.orderNo || "—",
+      "Previous Order": order.previousOrder?.orderNo || "—",
+      Status: order.status || "PREPARING",
+      Quotation: order.quotationId
+        ? quotationMap[order.quotationId] || "—"
+        : "—",
+      Customer: order.customer?.name || "N/A",
+      Priority: order.priority || "Medium",
+      "Assigned To": getAssignedToDisplay(order),
+      "Created By": order.creator?.name || order.creator?.username || "N/A",
+      "Due Date": order.dueDate
+        ? new Date(order.dueDate).toLocaleDateString()
+        : "—",
+    }));
+  }, [orders, currentPage, pageSize, quotationMap, teamMap, userMap]);
 
-  // ──────────────────────────────────────────────────────
-  // RENDER
-  // ──────────────────────────────────────────────────────
   return (
     <div className="page-wrapper">
       <div className="content">
@@ -397,176 +247,121 @@ const OrderWrapper = () => {
           <PageHeader
             title="Orders"
             subtitle="Manage your Orders"
+            onAdd={() => navigate("/order/add")}
             tableData={tableDataForExport}
             exportOptions={{ pdf: true, excel: true }}
           />
 
           <div className="card-body">
-            {/* Filters & Search */}
-            <div className="row">
-              <div className="col-lg-6">
-                <div className="d-flex align-items-center flex-wrap row-gap-3 mb-3">
-                  <div className="me-3">
-                    <select
-                      className="form-select"
-                      value={filters.status}
-                      onChange={(e) =>
-                        setFilters((prev) => ({
-                          ...prev,
-                          status: e.target.value,
-                          page: 1,
-                        }))
-                      }
-                    >
-                      <option value="">All Statuses</option>
-                      {[
-                        "PREPARING",
-                        "CHECKING",
-                        "INVOICE",
-                        "DISPATCHED",
-                        "DELIVERED",
-                        "PARTIALLY_DELIVERED",
-                        "CANCELED",
-                        "DRAFT",
-                        "ONHOLD",
-                        "CLOSED",
-                      ].map((status) => (
-                        <option key={status} value={status}>
-                          {status}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+            {/* Filters */}
+            <div className="row mb-4 align-items-center g-3">
+              <div className="col-lg-8">
+                <div className="d-flex flex-wrap gap-3 align-items-center">
+                  <Select
+                    value={filters.status}
+                    onChange={(val) => {
+                      setFilters((prev) => ({ ...prev, status: val || "" }));
+                      setCurrentPage(1);
+                    }}
+                    placeholder="All Statuses"
+                    allowClear
+                    style={{ width: 180 }}
+                    size="large"
+                  >
+                    {[
+                      "PREPARING",
+                      "CHECKING",
+                      "INVOICE",
+                      "DISPATCHED",
+                      "DELIVERED",
+                      "PARTIALLY_DELIVERED",
+                      "CANCELED",
+                      "DRAFT",
+                      "ONHOLD",
+                      "CLOSED",
+                    ].map((s) => (
+                      <Option key={s} value={s}>
+                        {s}
+                      </Option>
+                    ))}
+                  </Select>
 
-                  <div className="me-3">
-                    <select
-                      className="form-select"
-                      value={filters.priority}
-                      onChange={(e) =>
-                        setFilters((prev) => ({
-                          ...prev,
-                          priority: e.target.value,
-                          page: 1,
-                        }))
-                      }
-                    >
-                      {["All", "high", "medium", "low"].map((p) => (
-                        <option key={p} value={p === "All" ? "" : p}>
-                          {p === "All" ? "All Priorities" : p}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <Select
+                    value={filters.priority}
+                    onChange={(val) => {
+                      setFilters((prev) => ({ ...prev, priority: val || "" }));
+                      setCurrentPage(1);
+                    }}
+                    placeholder="Priority"
+                    allowClear
+                    style={{ width: 140 }}
+                    size="large"
+                  >
+                    <Option value="high">High</Option>
+                    <Option value="medium">Medium</Option>
+                    <Option value="low">Low</Option>
+                  </Select>
 
-                  <div className="me-3">
-                    <Select
-                      style={{ width: 200 }}
-                      value={filters.masterPipelineNo || undefined}
-                      onChange={(value) =>
-                        setFilters((prev) => ({
-                          ...prev,
-                          masterPipelineNo: value || null,
-                          page: 1,
-                        }))
-                      }
-                      placeholder="Master Pipeline"
-                      allowClear
-                    >
-                      {orders
-                        .filter((o) => o.orderNo)
-                        .map((o) => (
-                          <Option key={o.orderNo} value={o.orderNo}>
-                            {o.orderNo}
-                          </Option>
-                        ))}
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Select
-                      style={{ width: 200 }}
-                      value={filters.previousOrderNo || undefined}
-                      onChange={(value) =>
-                        setFilters((prev) => ({
-                          ...prev,
-                          previousOrderNo: value || null,
-                          page: 1,
-                        }))
-                      }
-                      placeholder="Previous Order"
-                      allowClear
-                    >
-                      {orders
-                        .filter((o) => o.orderNo)
-                        .map((o) => (
-                          <Option key={o.orderNo} value={o.orderNo}>
-                            {o.orderNo}
-                          </Option>
-                        ))}
-                    </Select>
-                  </div>
+                  <Select
+                    value={sortBy}
+                    onChange={setSortBy}
+                    style={{ width: 200 }}
+                    size="large"
+                  >
+                    <Option value="Recently Added">Recently Added</Option>
+                    <Option value="Due Date Ascending">
+                      Due Date (Soonest)
+                    </Option>
+                    <Option value="Due Date Descending">
+                      Due Date (Latest)
+                    </Option>
+                  </Select>
                 </div>
               </div>
 
-              <div className="col-lg-6">
-                <div className="d-flex align-items-center justify-content-lg-end flex-wrap row-gap-3 mb-3">
-                  <div className="input-icon-start position-relative me-2">
-                    <span className="input-icon-addon">
-                      <SearchOutlined />
-                    </span>
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="Search Orders"
-                      value={searchTerm}
-                      onChange={(e) => {
-                        setSearchTerm(e.target.value);
-                        setFilters((prev) => ({ ...prev, page: 1 }));
-                      }}
-                    />
-                  </div>
-
-                  <button
-                    className="btn btn-outline-secondary me-2"
-                    onClick={handleClearFilters}
-                  >
-                    Clear Filters
-                  </button>
-
-                  <select
-                    className="form-select"
-                    style={{ width: 200 }}
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                  >
-                    {[
-                      "Recently Added",
-                      "Due Date Ascending",
-                      "Due Date Descending",
-                    ].map((opt) => (
-                      <option key={opt} value={opt}>
-                        {opt}
-                      </option>
-                    ))}
-                  </select>
+              <div className="col-lg-4">
+                <div className="d-flex justify-content-end gap-2">
+                  <Input
+                    prefix={<SearchOutlined />}
+                    placeholder="Search order no, customer, quotation..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    allowClear
+                    size="large"
+                    style={{ width: 300 }}
+                  />
+                  <Button onClick={handleClearFilters} size="large">
+                    Clear
+                  </Button>
                 </div>
               </div>
             </div>
 
+            {/* Loading */}
+            {isFetching && !isLoading && (
+              <div className="text-center my-3">
+                <span className="text-muted">Updating...</span>
+              </div>
+            )}
+
             {/* Table */}
-            <div className="tab-content">
-              {error ? (
-                <p className="text-danger">
-                  Error loading orders: {error.message}
-                </p>
-              ) : paginatedOrders.length === 0 ? (
-                <p className="text-muted">
-                  No orders match the applied filters
-                </p>
-              ) : (
+            {isLoading ? (
+              <div className="text-center py-5">
+                <div className="spinner-border text-primary" role="status">
+                  <span className="visually-hidden">Loading...</span>
+                </div>
+              </div>
+            ) : error ? (
+              <div className="alert alert-danger">
+                Error: {error?.data?.message || "Failed to load orders"}
+              </div>
+            ) : orders.length === 0 ? (
+              <div className="text-center py-5 text-muted">No orders found</div>
+            ) : (
+              <>
                 <div className="table-responsive">
-                  <table className="table table-hover">
-                    <thead>
+                  <table className="table table-hover align-middle">
+                    <thead className="table-light">
                       <tr>
                         <th>S.No.</th>
                         <th>Order No.</th>
@@ -579,110 +374,68 @@ const OrderWrapper = () => {
                         <th>ASSIGNED TO</th>
                         <th>CREATED BY</th>
                         <th>DUE DATE</th>
-                        <th></th>
+                        <th className="text-end">ACTIONS</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {paginatedOrders.map((order, index) => {
-                        const customerName = order.createdFor
-                          ? customerMap[order.createdFor] || "—"
-                          : "N/A";
-                        const createdByName = order.createdBy
-                          ? userMap[order.createdBy] || "—"
-                          : "N/A";
-                        const reference_number = order.quotationId
-                          ? quotationMap[order.quotationId] || "—"
-                          : "—";
-                        const serialNumber =
-                          (filters.page - 1) * filters.limit + index + 1;
-                        const showInvoiceOption =
+                      {orders.map((order, index) => {
+                        const serialNo =
+                          (currentPage - 1) * pageSize + index + 1;
+                        const hasInvoice =
                           [
                             "INVOICE",
                             "DISPATCHED",
                             "DELIVERED",
                             "PARTIALLY_DELIVERED",
                             "CLOSED",
-                          ].includes(order.status) && order.invoiceLink?.trim();
-
-                        const menuItems = [
-                          showInvoiceOption && {
-                            key: "invoice",
-                            label: (
-                              <span onClick={() => handleViewInvoice(order)}>
-                                <FileTextOutlined style={{ marginRight: 8 }} />
-                                Show Invoice
-                              </span>
-                            ),
-                          },
-                          canDeleteOrder && {
-                            key: "delete",
-                            label: (
-                              <span
-                                onClick={() => handleDeleteClick(order.id)}
-                                style={{ color: "#ff4d4f" }}
-                              >
-                                <DeleteOutlined style={{ marginRight: 8 }} />
-                                Delete Order
-                              </span>
-                            ),
-                          },
-                        ].filter(Boolean);
+                          ].includes(order.status) && order.invoiceLink;
 
                         return (
                           <tr key={order.id}>
-                            <td>{serialNumber}</td>
+                            <td>{serialNo}</td>
                             <td>
-                              <Link to={`/order/${order.id}`}>
-                                {order.orderNo}{" "}
-                                <span
-                                  className="priority-badge"
-                                  style={{
-                                    backgroundColor: order.quotationId
-                                      ? "#d4edda"
-                                      : "#f8d7da",
-                                    color: order.quotationId
-                                      ? "#155724"
-                                      : "#721c24",
-                                    marginLeft: 8,
-                                  }}
-                                >
-                                  {order.quotationId ? "QUOTATIONED" : "IDLE"}
-                                </span>
+                              <Link
+                                to={`/order/${order.id}`}
+                                className="fw-medium"
+                              >
+                                {order.orderNo}
                               </Link>
+                              <span
+                                className="badge ms-2"
+                                style={{
+                                  backgroundColor: order.quotationId
+                                    ? "#d4edda"
+                                    : "#f8d7da",
+                                  color: order.quotationId
+                                    ? "#155724"
+                                    : "#721c24",
+                                }}
+                              >
+                                {order.quotationId ? "QUOTATIONED" : "IDLE"}
+                              </span>
                             </td>
                             <td>
                               {order.masterOrder ? (
                                 <Link to={`/order/${order.masterOrder.id}`}>
                                   {order.masterPipelineNo}
                                 </Link>
-                              ) : order.masterPipelineNo ? (
-                                order.masterPipelineNo
                               ) : (
-                                "—"
+                                order.masterPipelineNo || "—"
                               )}
                             </td>
                             <td>
                               {order.previousOrder ? (
                                 <Link to={`/order/${order.previousOrder.id}`}>
-                                  {order.previousOrderNo}
+                                  {order.previousOrder.orderNo}
                                 </Link>
-                              ) : order.previousOrderNo ? (
-                                order.previousOrderNo
                               ) : (
-                                "—"
+                                order.previousOrderNo || "—"
                               )}
                             </td>
                             <td>
-                              <span
-                                className="priority-badge"
-                                style={{
-                                  backgroundColor: "#f2f2f2",
-                                  marginRight: 8,
-                                }}
-                              >
-                                {getStatusDisplay(order.status)}
+                              <span className="badge bg-secondary">
+                                {order.status || "PREPARING"}
                               </span>
-
                               {canUpdateOrderStatus && (
                                 <Dropdown
                                   overlay={
@@ -713,23 +466,28 @@ const OrderWrapper = () => {
                                   }
                                   trigger={["click"]}
                                 >
-                                  <EditOutlined style={{ cursor: "pointer" }} />
+                                  <EditOutlined
+                                    className="ms-2 text-primary"
+                                    style={{ cursor: "pointer" }}
+                                  />
                                 </Dropdown>
                               )}
                             </td>
                             <td>
                               {order.quotationId ? (
                                 <Link to={`/quotation/${order.quotationId}`}>
-                                  {reference_number}
+                                  {quotationMap[order.quotationId] || "—"}
                                 </Link>
                               ) : (
                                 "—"
                               )}
                             </td>
                             <td>
-                              {order.createdFor ? (
-                                <Link to={`/customer/${order.createdFor}`}>
-                                  {customerName}
+                              {order.customer ? (
+                                <Link
+                                  to={`/customer/${order.customer.customerId}`}
+                                >
+                                  {order.customer.name}
                                 </Link>
                               ) : (
                                 "N/A"
@@ -737,8 +495,12 @@ const OrderWrapper = () => {
                             </td>
                             <td>
                               <span
-                                className={`priority-badge ${
-                                  order.priority?.toLowerCase() || "medium"
+                                className={`badge bg-${
+                                  order.priority === "high"
+                                    ? "danger"
+                                    : order.priority === "low"
+                                    ? "info"
+                                    : "warning"
                                 }`}
                               >
                                 {order.priority || "Medium"}
@@ -746,28 +508,20 @@ const OrderWrapper = () => {
                             </td>
                             <td>{getAssignedToDisplay(order)}</td>
                             <td>
-                              {order.createdBy ? (
-                                <Link to={`/user/${order.createdBy}`}>
-                                  {createdByName}
-                                </Link>
-                              ) : (
-                                "N/A"
-                              )}
+                              {order.creator
+                                ? order.creator.name || order.creator.username
+                                : "N/A"}
                             </td>
                             <td
                               className={
                                 isDueDateClose(order.dueDate)
-                                  ? "due-date-close"
+                                  ? "text-danger fw-bold"
                                   : ""
                               }
                             >
                               {order.dueDate ? (
                                 <span
-                                  className="due-date-link"
-                                  style={{
-                                    color: "#e31e24",
-                                    cursor: "pointer",
-                                  }}
+                                  className="cursor-pointer"
                                   onClick={() =>
                                     handleOpenDatesModal(
                                       order.dueDate,
@@ -781,17 +535,41 @@ const OrderWrapper = () => {
                                 "—"
                               )}
                             </td>
-                            <td>
+                            <td className="text-end">
                               {canEditOrder && (
-                                <EditOutlined
-                                  style={{ marginRight: 12, cursor: "pointer" }}
+                                <Button
+                                  type="text"
+                                  icon={<EditOutlined />}
                                   onClick={() => handleEditClick(order)}
                                 />
                               )}
-
-                              {(canDeleteOrder || showInvoiceOption) && (
+                              {(canDeleteOrder || hasInvoice) && (
                                 <Dropdown
-                                  menu={{ items: menuItems }}
+                                  overlay={
+                                    <Menu>
+                                      {hasInvoice && (
+                                        <Menu.Item
+                                          key="invoice"
+                                          onClick={() =>
+                                            handleViewInvoice(order.invoiceLink)
+                                          }
+                                        >
+                                          <FileTextOutlined /> View Invoice
+                                        </Menu.Item>
+                                      )}
+                                      {canDeleteOrder && (
+                                        <Menu.Item
+                                          key="delete"
+                                          danger
+                                          onClick={() =>
+                                            handleDeleteClick(order.id)
+                                          }
+                                        >
+                                          <DeleteOutlined /> Delete
+                                        </Menu.Item>
+                                      )}
+                                    </Menu>
+                                  }
                                   trigger={["click"]}
                                 >
                                   <Button type="text" icon={<MoreOutlined />} />
@@ -803,38 +581,46 @@ const OrderWrapper = () => {
                       })}
                     </tbody>
                   </table>
-
-                  {totalCount > filters.limit && (
-                    <div className="d-flex justify-content-end mt-4">
-                      <Pagination
-                        current={filters.page}
-                        pageSize={filters.limit}
-                        total={totalCount}
-                        onChange={handlePageChange}
-                        showSizeChanger
-                        pageSizeOptions={["10", "20", "50", "100"]}
-                        showQuickJumper
-                      />
-                    </div>
-                  )}
                 </div>
-              )}
-            </div>
+
+                {/* Pagination */}
+                {pagination.total > 0 && (
+                  <div className="mt-4 d-flex justify-content-between align-items-center">
+                    <div className="text-muted small">
+                      Showing {(currentPage - 1) * pageSize + 1}–
+                      {Math.min(currentPage * pageSize, pagination.total)} of{" "}
+                      {pagination.total} orders
+                    </div>
+                    <Pagination
+                      current={currentPage}
+                      pageSize={pageSize}
+                      total={pagination.total}
+                      onChange={handlePageChange}
+                      showSizeChanger
+                      pageSizeOptions={["10", "20", "50", "100"]}
+                      disabled={isFetching}
+                    />
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
 
         {/* Modals */}
         <DeleteModal
           isVisible={showDeleteModal}
-          item={orderToDelete}
-          itemType="Order"
           onConfirm={handleDeleteOrder}
-          onCancel={handleModalClose}
+          onCancel={() => {
+            setShowDeleteModal(false);
+            setOrderToDelete(null);
+          }}
+          itemType="Order"
         />
 
         <DatesModal
           show={showDatesModal}
-          onHide={handleModalClose}
+          onHide={() => setShowDatesModal(false)}
           dueDate={selectedDates.dueDate}
           followupDates={selectedDates.followupDates}
         />

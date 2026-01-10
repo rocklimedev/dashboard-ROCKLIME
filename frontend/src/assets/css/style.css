@@ -18067,12 +18067,7 @@ div#global-loader .whirly-loader:not(:required) {
     background: #ffffff;
   }
 }
-@media (max-width: 574.98px) {
-  .sidebar,
-  .settings-sidebar {
-    width: 100%;
-  }
-}
+
 @media (max-width: 574.98px) {
   .sidebar .slimScrollDiv,
   .settings-sidebar .slimScrollDiv {
