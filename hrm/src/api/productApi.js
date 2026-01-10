@@ -2,28 +2,63 @@ import { baseApi } from "./baseApi";
 
 export const productApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    // CREATE PRODUCT — with images & variant support
+    // CREATE PRODUCT
     createProduct: builder.mutation({
       query: (formData) => ({
         url: "/products/",
         method: "POST",
         body: formData,
-        formData: true, // This tells RTK not to JSON.stringify
+        formData: true,
       }),
       transformResponse: (response) => response.product,
-      invalidatesTags: ["Product", "ProductCode"],
+      invalidatesTags: [
+        "Product",
+        "ProductCode",
+        { type: "Product", id: "LIST" },
+      ],
     }),
 
-    // UPDATE PRODUCT — critical: send FormData + keywordIds
+    // UPDATE PRODUCT (images + fields)
     updateProduct: builder.mutation({
       query: ({ productId, formData }) => ({
         url: `/products/${productId}`,
         method: "PUT",
         body: formData,
-        formData: true, // This is the key
+        formData: true,
       }),
       transformResponse: (response) => response.product,
-      invalidatesTags: ["Product", "ProductCode"],
+      invalidatesTags: (result, error, { productId }) => [
+        { type: "Product", id: productId },
+        { type: "Product", id: "LIST" },
+        "ProductCode",
+      ],
+    }),
+
+    // REPLACE ALL KEYWORDS — CRITICAL ENDPOINT
+    replaceAllKeywordsForProduct: builder.mutation({
+      query: ({ productId, keywordIds = [] }) => ({
+        url: `/products/${productId}/keywords`,
+        method: "PUT",
+        body: { keywordIds },
+        // No Content-Type header needed — RTK handles JSON automatically
+      }),
+      invalidatesTags: (result, error, { productId }) => [
+        { type: "Product", id: productId },
+        { type: "Product", id: "LIST" },
+      ],
+    }),
+
+    // Optional: add single keywords (if needed elsewhere)
+    addKeywordsToProduct: builder.mutation({
+      query: ({ productId, keywords }) => ({
+        url: `/products/${productId}/keywords`,
+        method: "POST",
+        body: { keywords },
+      }),
+      invalidatesTags: (result, error, { productId }) => [
+        { type: "Product", id: productId },
+        { type: "Product", id: "LIST" },
+      ],
     }),
 
     // CHECK PRODUCT CODE UNIQUENESS
@@ -32,40 +67,19 @@ export const productApi = baseApi.injectEndpoints({
       providesTags: (result, error, code) => [
         { type: "ProductCode", id: code },
       ],
-      keepUnusedDataFor: 10,
+      keepUnusedDataFor: 30, // slightly longer cache
     }),
 
-    // REPLACE ALL KEYWORDS — this is the one you use on save!
-    // In productApi.js — THIS IS THE FIX
-    replaceAllKeywordsForProduct: builder.mutation({
-      query: ({ productId, keywordIds = [] }) => ({
-        url: `/products/${productId}/keywords`,
-        method: "PUT",
-        // REMOVE THIS LINE COMPLETELY:
-        // headers: { "Content-Type": "application/json" },
-        body: { keywordIds },
-      }),
-      invalidatesTags: ["Product"],
-    }),
-
-    // Optional: add single keyword (not needed if using replaceAll)
-    addKeywordsToProduct: builder.mutation({
-      query: ({ productId, keywords }) => ({
-        url: `/products/${productId}/keywords`,
-        method: "POST",
-
-        body: { keywords },
-      }),
-      invalidatesTags: ["Product"],
-    }),
-
-    // GET ALL PRODUCTS
+    // GET ALL PRODUCTS — NOW PAGINATED!
     getAllProducts: builder.query({
-      query: () => "/products",
+      query: ({ page = 1, limit = 20, search } = {}) => ({
+        url: "/products",
+        params: { page, limit, search },
+      }),
       providesTags: (result) =>
-        result
+        result?.data
           ? [
-              ...result.map(({ productId }) => ({
+              ...result.data.map(({ productId }) => ({
                 type: "Product",
                 id: productId,
               })),
@@ -73,7 +87,6 @@ export const productApi = baseApi.injectEndpoints({
             ]
           : [{ type: "Product", id: "LIST" }],
     }),
-
     // GET SINGLE PRODUCT
     getProductById: builder.query({
       query: (productId) => `/products/${productId}`,
@@ -88,17 +101,24 @@ export const productApi = baseApi.injectEndpoints({
         url: `/products/${productId}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Product"],
+      invalidatesTags: (result, error, productId) => [
+        { type: "Product", id: productId },
+        { type: "Product", id: "LIST" },
+        "ProductCode",
+      ],
     }),
 
-    // STOCK
+    // STOCK MANAGEMENT
     addStock: builder.mutation({
       query: ({ productId, quantity }) => ({
         url: `/products/${productId}/add-stock`,
         method: "POST",
         body: { quantity },
       }),
-      invalidatesTags: ["Product"],
+      invalidatesTags: (result, error, { productId }) => [
+        { type: "Product", id: productId },
+        { type: "Product", id: "LIST" },
+      ],
     }),
 
     removeStock: builder.mutation({
@@ -107,31 +127,55 @@ export const productApi = baseApi.injectEndpoints({
         method: "POST",
         body: { quantity },
       }),
-      invalidatesTags: ["Product"],
+      invalidatesTags: (result, error, { productId }) => [
+        { type: "Product", id: productId },
+        { type: "Product", id: "LIST" },
+      ],
     }),
 
-    // REST OF YOUR ENDPOINTS — all perfect
+    // BULK FETCH BY IDS (for top products, etc.)
     getProductsByIds: builder.query({
       query: (productIds) => ({
         url: "/products/by-ids",
         method: "POST",
         body: { productIds },
       }),
-    }),
+      // FIX: Safely handle both { data: [...] } and direct array responses
+      providesTags: (result) => {
+        const products = Array.isArray(result) ? result : result?.data || [];
 
+        return products.map(({ productId }) => ({
+          type: "Product",
+          id: productId,
+        }));
+      },
+    }),
+    // OTHER ENDPOINTS
     getAllProductsByCategory: builder.query({
       query: (categoryId) => `/products/category/${categoryId}`,
       providesTags: ["Product"],
     }),
-
+    getProductsByBrand: builder.query({
+      query: ({ brandId, page = 1, limit = 50, search }) => ({
+        url: `/products/brand/${brandId}`,
+        params: { page, limit, search },
+      }),
+    }),
     getLowStockProducts: builder.query({
       query: () => "/products/low-stock",
+      providesTags: ["Product"],
+    }),
+    // productApi.js
+    getTopSellingProducts: builder.query({
+      query: (limit = 10) => `/products/top-selling?limit=${limit}`,
       providesTags: ["Product"],
     }),
 
     getHistoryByProductId: builder.query({
       query: (productId) => `/products/${productId}/history`,
-      providesTags: ["Product"],
+      providesTags: (result, error, productId) => [
+        { type: "Product", id: productId },
+      ],
     }),
 
     searchProducts: builder.query({
@@ -156,7 +200,10 @@ export const productApi = baseApi.injectEndpoints({
         method: "PATCH",
         body: { isFeatured },
       }),
-      invalidatesTags: ["Product"],
+      invalidatesTags: (result, error, { productId }) => [
+        { type: "Product", id: productId },
+        { type: "Product", id: "LIST" },
+      ],
     }),
   }),
 });
@@ -165,6 +212,9 @@ export const {
   useCreateProductMutation,
   useUpdateProductMutation,
   useGetAllProductsQuery,
+  useLazyGetAllProductsQuery, // ← useful for pagination
+  useGetProductsByBrandQuery,
+  useGetTopSellingProductsQuery,
   useGetProductByIdQuery,
   useLazyGetProductByIdQuery,
   useDeleteProductMutation,

@@ -8,6 +8,7 @@ import {
   useDeleteOrderMutation,
   useUpdateOrderStatusMutation,
   useUploadInvoiceMutation,
+  useLazyDownloadInvoiceQuery,
   useIssueGatePassMutation,
 } from "../../api/orderApi";
 import {
@@ -167,7 +168,7 @@ const OrderPage = () => {
     useUploadInvoiceMutation();
   const [issueGatePass, { isLoading: isGatePassUploading }] =
     useIssueGatePassMutation();
-
+  const [triggerInvoiceDownload] = useLazyDownloadInvoiceQuery();
   const { data: profileData, isLoading: profileLoading } = useGetProfileQuery();
   const user = profileData?.user || {};
 
@@ -1054,6 +1055,7 @@ const OrderPage = () => {
                 </Form>
 
                 {/* INVOICE DOWNLOAD - FIXED */}
+                {/* INVOICE DOWNLOAD - NOW SAME AS GATE PASS (WORKING) */}
                 {invoiceUrl && (
                   <div style={{ marginTop: 16 }}>
                     <a
@@ -1062,38 +1064,63 @@ const OrderPage = () => {
                       rel="noopener noreferrer"
                       style={{ marginRight: 12 }}
                     >
-                      <FilePdfOutlined /> {order.invoiceLink?.split("/").pop()}
+                      <FilePdfOutlined /> View Invoice
                     </a>
+
                     <Button
                       icon={<DownloadOutlined />}
                       size="small"
-                      onClick={async (e) => {
-                        e.preventDefault();
+                      onClick={async () => {
                         try {
-                          const response = await fetch(invoiceUrl);
-                          if (!response.ok) throw new Error("Download failed");
+                          const response = await fetch(
+                            `https://api.cmtrading.com/api/order/${order.id}/download-invoice`,
+                            {
+                              credentials: "include", // Critical: sends cookies/session
+                            }
+                          );
+
+                          if (!response.ok) {
+                            throw new Error(
+                              `Download failed: ${response.status}`
+                            );
+                          }
 
                           const blob = await response.blob();
-                          const url = window.URL.createObjectURL(blob);
-                          const a = document.createElement("a");
-                          a.href = url;
-                          a.download = generateFileName(
+
+                          // Extract filename from header (your backend already sets it!)
+                          const contentDisposition = response.headers.get(
+                            "Content-Disposition"
+                          );
+                          let filename = generateFileName(
                             "INVOICE",
                             order.orderNo,
                             customer.name
                           );
+                          if (contentDisposition) {
+                            const match =
+                              contentDisposition.match(/filename="(.*?)"/);
+                            if (match?.[1]) filename = match[1];
+                          }
+
+                          const blobUrl = window.URL.createObjectURL(blob);
+                          const a = document.createElement("a");
+                          a.href = blobUrl;
+                          a.download = filename;
                           document.body.appendChild(a);
                           a.click();
                           a.remove();
-                          window.URL.revokeObjectURL(url);
+                          window.URL.revokeObjectURL(blobUrl);
+
+                          message.success("Invoice downloaded successfully");
                         } catch (err) {
-                          message.error("Failed to download invoice");
-                          // Fallback: open in new tab
-                          window.open(invoiceUrl, "_blank");
+                          console.error(err);
+                          message.error(
+                            "Failed to download invoice. Please try again."
+                          );
                         }
                       }}
                     >
-                      Download
+                      Download Invoice
                     </Button>
                   </div>
                 )}

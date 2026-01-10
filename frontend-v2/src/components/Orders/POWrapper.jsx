@@ -66,8 +66,8 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
     }, {});
   }, [vendorsData]);
 
-  const purchaseOrders = poData?.purchaseOrders || [];
-  const totalCount = poData?.totalCount || 0;
+  const purchaseOrders = poData?.data || [];
+  const totalCount = poData?.pagination?.total || 0;
 
   // ──────────────────────────────────────────────────────
   // Client-side search & sort (still useful when search is sent to server)

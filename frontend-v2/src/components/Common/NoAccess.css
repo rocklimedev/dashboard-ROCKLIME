@@ -18,7 +18,7 @@
   width: 120px; /* Larger circle for prominence */
   height: 120px;
   background: #ffffff; /* White background for contrast */
-  border: 10px solid #dc3545; /* Bootstrap's danger red */
+  border: 10px solid #E31E24; /* Bootstrap's danger red */
   border-radius: 50%;
   position: absolute;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
@@ -29,7 +29,7 @@
   content: "";
   width: 140px; /* Slightly wider than the circle */
   height: 12px; /* Thin bar */
-  background: #dc3545; /* Red to match border */
+  background: #E31E24; /* Red to match border */
   position: absolute;
   transform: rotate(45deg); /* Diagonal orientation */
   border-radius: 6px; /* Rounded edges */
@@ -52,7 +52,7 @@ h2.mt-4 {
 }
 
 .text-muted a {
-  color: #dc3545; /* Red for links to match theme */
+  color: #E31E24; /* Red for links to match theme */
   text-decoration: none;
   transition: color 0.2s ease;
 }
@@ -69,17 +69,17 @@ h2.mt-4 {
 
 /* Outline danger button (Logout) */
 .btn-outline-danger {
-  color: #dc3545;
-  border-color: #dc3545;
+  color: #E31E24;
+  border-color: #E31E24;
   font-size: 1rem;
   padding: 0.5rem 1.5rem;
   transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
 }
 
 .btn-outline-danger:hover {
-  background-color: #dc3545;
+  background-color: #E31E24;
   color: #ffffff;
-  border-color: #dc3545;
+  border-color: #E31E24;
   transform: translateY(-1px);
 }
 

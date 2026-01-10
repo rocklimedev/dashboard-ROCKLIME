@@ -4,7 +4,7 @@ import {
   useGetAllBrandsQuery,
   useDeleteBrandMutation,
 } from "../../api/brandsApi";
-import { AiOutlineEdit, AiOutlineDelete } from "react-icons/ai";
+import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import AddBrand from "./AddBrandModal";
 import DeleteModal from "../Common/DeleteModal";
 import DataTablePagination from "../Common/DataTablePagination";
@@ -124,12 +124,12 @@ const Brands = () => {
                 <div className="card-content">
                   <span>{brand.brandName}</span>
                   <div className="actions">
-                    <AiOutlineEdit
+                    <EditOutlined
                       className="action-icon edit-icon"
                       onClick={() => handleEditBrand(brand)}
                       aria-label={`Edit ${brand.brandName}`}
                     />
-                    <AiOutlineDelete
+                    <DeleteOutlined
                       className="action-icon delete-icon"
                       onClick={() => handleDeleteBrand(brand)}
                       aria-label={`Delete ${brand.brandName}`}

@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from "react";
-import { FaSearch } from "react-icons/fa";
 import {
   useGetAllAddressesQuery,
   useDeleteAddressMutation,
@@ -12,6 +11,7 @@ import {
   MoreOutlined,
 } from "@ant-design/icons";
 import { Dropdown, Menu, Button, Pagination, Input, message } from "antd";
+import { SearchOutlined } from "@ant-design/icons";
 import DeleteModal from "../Common/DeleteModal";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "../Common/PageHeader";
@@ -275,7 +275,7 @@ const AddressList = () => {
                     placeholder="Search by username, street, city, etc."
                     value={searchQuery}
                     onChange={handleSearchChange}
-                    prefix={<FaSearch />}
+                    prefix={<SearchOutlined />}
                     style={{ width: 300 }}
                   />
 

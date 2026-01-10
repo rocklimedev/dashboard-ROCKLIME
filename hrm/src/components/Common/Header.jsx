@@ -1,24 +1,39 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { useLocation, Link, useNavigate } from "react-router-dom";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useGetProfileQuery } from "../../api/userApi";
 import { useGetCartQuery } from "../../api/cartApi";
 import { useGetNotificationsQuery } from "../../api/notificationApi";
-import { Dropdown, Button, Menu, Badge } from "antd";
-import { FaUserCircle, FaSearch, FaBell, FaEllipsisV } from "react-icons/fa";
-import { SettingOutlined } from "@ant-design/icons";
-import { BiFullscreen, BiLogOut } from "react-icons/bi";
+import { Dropdown, Button, Menu, Badge, Input, Spin } from "antd";
+import {
+  BellOutlined,
+  ShoppingCartOutlined,
+  FullscreenOutlined,
+  LogoutOutlined,
+  UserOutlined,
+  SettingOutlined,
+  SunFilled,
+  MoonFilled,
+  SearchOutlined,
+  CloseOutlined,
+} from "@ant-design/icons";
+import SearchOverlay from "./SearchOverlay";
 import { message } from "antd";
 import Avatar from "react-avatar";
 import logo from "../../assets/img/logo.png";
 import logo_small from "../../assets/img/fav_icon.png";
-import { CgShoppingCart } from "react-icons/cg";
 import { useLogoutMutation } from "../../api/authApi";
 import { useAuth } from "../../context/AuthContext";
-import { SunFilled, MoonFilled } from "@ant-design/icons";
 import PermissionsGate from "../../context/PermissionGate";
+import { useSearchAllQuery } from "../../api/searchApi";
+import NotificationsOverlay from "../Notifications/NotificationsWrapper";
 
 const Header = ({ toggleSidebar, isSidebarOpen }) => {
-  const location = useLocation();
   const navigate = useNavigate();
   const { logout } = useAuth();
 
@@ -34,11 +49,9 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
   const hasAdminOrDevAccess =
     userRoles.includes("SUPER_ADMIN") || userRoles.includes("DEVELOPER");
 
-  const { data: cart } = useGetCartQuery(userId, {
-    skip: !userId,
-  });
+  const { data: cart } = useGetCartQuery(userId, { skip: !userId });
 
-  const { data: notifications } = useGetNotificationsQuery(userId, {
+  const { data: notifications = [] } = useGetNotificationsQuery(undefined, {
     skip: !userId,
   });
 
@@ -50,17 +63,66 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
     return localStorage.getItem("theme") === "dark";
   });
 
-  // === Dark Mode Effect ===
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  // Mobile Search States
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearchOverlay, setShowSearchOverlay] = useState(false);
+
+  const searchRef = useRef(null);
+  const mobileSearchInputRef = useRef(null);
+
+  const {
+    data: searchData,
+    isLoading: searchLoading,
+    isFetching: searchFetching,
+  } = useSearchAllQuery(
+    { query: searchQuery, limit: 8 },
+    { skip: !searchQuery.trim() }
+  );
+  const searchResults = searchData?.results || null;
+
+  // Auto-focus mobile search
+  useEffect(() => {
+    if (mobileSearchOpen && mobileSearchInputRef.current) {
+      mobileSearchInputRef.current.focus();
+    }
+  }, [mobileSearchOpen]);
+
+  // Show overlay when typing
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      setShowSearchOverlay(true);
+    } else {
+      setShowSearchOverlay(false);
+    }
+  }, [searchQuery]);
+
+  // Click outside to close search
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setShowSearchOverlay(false);
+        setMobileSearchOpen(false);
+        setSearchQuery("");
+      }
+    };
+    if (mobileSearchOpen || showSearchOverlay) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [mobileSearchOpen, showSearchOverlay]);
+
+  // Dark Mode persistence
   useEffect(() => {
     const theme = darkMode ? "dark" : "light";
     document.documentElement.setAttribute("data-theme", theme);
     localStorage.setItem("theme", theme);
   }, [darkMode]);
 
-  // === Handlers (Memoized) ===
-  const toggleDarkMode = useCallback(() => {
-    setDarkMode((prev) => !prev);
-  }, []);
+  // Handlers
+  const toggleDarkMode = useCallback(() => setDarkMode((prev) => !prev), []);
 
   const handleFullscreenToggle = useCallback(() => {
     if (!document.fullscreenElement) {
@@ -77,21 +139,20 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
       await logoutMutation().unwrap();
       logout();
       navigate("/login", { replace: true });
-    } catch (error) {
+    } catch {
       message.error("Logout failed. Please try again.");
     }
   }, [logoutMutation, logout, navigate]);
 
-  // === Counters ===
-  const notificationCount = useMemo(() => {
-    return notifications?.filter((n) => !n.read).length || 0;
-  }, [notifications]);
+  // Counters
+  const notificationCount = useMemo(
+    () => notifications.filter((n) => !n.read).length || 0,
+    [notifications]
+  );
 
-  const cartItemCount = useMemo(() => {
-    return cart?.cart?.items?.length || 0;
-  }, [cart]);
+  const cartItemCount = useMemo(() => cart?.cart?.items?.length || 0, [cart]);
 
-  // === Desktop User Menu ===
+  // Clean user dropdown (no fullscreen/dark mode here)
   const userMenu = useMemo(
     () => (
       <Menu
@@ -113,7 +174,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
         <Menu.Item
           key="profile"
           onClick={() => navigate(`/u/${userId}`)}
-          icon={<FaUserCircle className="me-2" />}
+          icon={<UserOutlined className="me-2" />}
         >
           Profile
         </Menu.Item>
@@ -124,7 +185,6 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
         >
           Settings
         </Menu.Item>
-        {/* Conditionally render Logging for SUPER_ADMIN or DEVELOPER */}
         {hasAdminOrDevAccess && (
           <>
             <Menu.Divider />
@@ -142,7 +202,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
           key="logout"
           onClick={handleLogout}
           disabled={isLoggingOut}
-          icon={<BiLogOut className="me-2" />}
+          icon={<LogoutOutlined className="me-2" />}
         >
           {isLoggingOut ? "Logging out..." : "Logout"}
         </Menu.Item>
@@ -150,268 +210,282 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
     ),
     [
       user?.user?.username,
-      user?.user?.roles,
       userId,
       navigate,
       handleLogout,
       isLoggingOut,
-      hasAdminOrDevAccess, // Add dependency
+      hasAdminOrDevAccess,
     ]
   );
 
-  const mobileMenuItems = useMemo(() => {
-    const items = [
-      {
-        key: "profile",
-        label: "My Profile",
-        icon: <FaUserCircle className="me-2" />,
-        onClick: () => navigate(`/u/${userId}`),
-      },
-      {
-        key: "settings",
-        label: "Settings",
-        icon: <SettingOutlined className="me-2" />,
-        onClick: () => navigate("/settings"),
-      },
-      {
-        key: "notifications",
-        label: (
-          <div className="d-flex justify-content-between align-items-center w-100">
-            <span>Notifications</span>
-            {notificationCount > 0 && (
-              <Badge count={notificationCount} size="small" showZero={false} />
-            )}
-          </div>
-        ),
-        icon: <FaBell className="me-2" />,
-        onClick: () => navigate("/notifications"),
-      },
-      {
-        key: "cart",
-        label: (
-          <div className="d-flex justify-content-between align-items-center w-100">
-            <span>Cart</span>
-            {cartItemCount > 0 && (
-              <Badge count={cartItemCount} size="small" showZero={false} />
-            )}
-          </div>
-        ),
-        icon: <CgShoppingCart className="me-2" />,
-        onClick: () => navigate("/cart"),
-      },
-      {
-        key: "fullscreen",
-        label: isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen",
-        icon: <BiFullscreen className="me-2" />,
-        onClick: handleFullscreenToggle,
-      },
-      {
-        key: "darkmode",
-        label: darkMode ? "Light Mode" : "Dark Mode",
-        icon: darkMode ? <SunFilled /> : <MoonFilled />,
-        onClick: toggleDarkMode,
-      },
-    ];
-
-    // Insert Logging item before Logout if user has access
-    if (hasAdminOrDevAccess) {
-      items.push({
-        key: "logging",
-        label: "Logging",
-        icon: <SettingOutlined className="me-2" />,
-        onClick: () => navigate("/logging"),
-      });
-    }
-
-    items.push({
-      key: "logout",
-      label: isLoggingOut ? "Logging out..." : "Logout",
-      icon: <BiLogOut className="me-2" />,
-      onClick: handleLogout,
-      disabled: isLoggingOut,
-    });
-
-    return items;
-  }, [
-    userId,
-    navigate,
-    notificationCount,
-    cartItemCount,
-    isFullscreen,
-    darkMode,
-    isLoggingOut,
-    handleFullscreenToggle,
-    toggleDarkMode,
-    handleLogout,
-    hasAdminOrDevAccess, // Add dependency
-  ]);
-
   return (
-    <div className="header">
-      <div className="main-header">
-        {/* Logo */}
-        <div className="header-left active">
-          <Link to="/" className="logo logo-normal">
-            <img src={logo} alt="Logo" />
-          </Link>
-          <Link to="/" className="logo logo-white">
-            <img src={logo} alt="Logo" />
-          </Link>
-          <Link to="/" className="logo-small">
-            <img src={logo} alt="Logo" />
-          </Link>
-        </div>
-
-        {/* Mobile Toggle */}
-        <a
-          className="mobile_btn"
-          onClick={() =>
-            window.innerWidth < 992 && toggleSidebar(!isSidebarOpen)
-          }
-          id="mobile_btn"
-        >
-          <span className="bar-icon">
-            <span></span>
-            <span></span>
-            <span></span>
-          </span>
-        </a>
-
-        {/* Desktop Nav */}
-        <ul className="nav user-menu">
-          <li className="nav-item nav-searchinputs">
-            {/* <div className="top-nav-search">
-          <Button
-            type="link"
-            className="responsive-search d-md-none"
-            aria-label="Search"
-          >
-            <FaSearch />
-          </Button>
-          <div className="d-none d-md-block">
-             <SearchDropdown /> 
+    <>
+      <div className="header">
+        <div className="main-header d-flex align-items-center justify-content-between">
+          {/* Left: Mobile Hamburger */}
+          <div className="d-flex align-items-center">
+            <a
+              className="mobile_btn me-3"
+              onClick={() =>
+                window.innerWidth < 992 && toggleSidebar(!isSidebarOpen)
+              }
+              id="mobile_btn"
+            >
+              <span className="bar-icon">
+                <span></span>
+                <span></span>
+                <span></span>
+              </span>
+            </a>
           </div>
-        </div> */}
-          </li>
 
-          {/* Fullscreen */}
-          <li className="nav-item nav-item-box">
-            <Button
-              type="link"
-              onClick={handleFullscreenToggle}
-              title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
-            >
-              <BiFullscreen />
-            </Button>
-          </li>
+          {/* Center: Search - Takes available space */}
+          <div className="flex-grow-1 mx-md-4" ref={searchRef}>
+            <ul className="nav user-menu h-100">
+              <li className="nav-item nav-searchinputs w-100 position-relative">
+                {/* Mobile Search Trigger - Centered */}
+                <div className="d-md-none d-flex justify-content-center">
+                  <Button
+                    type="link"
+                    className={`responsive-search ${
+                      mobileSearchOpen ? "d-none" : "d-block"
+                    }`}
+                    onClick={() => setMobileSearchOpen(true)}
+                  >
+                    <SearchOutlined style={{ fontSize: 24 }} />
+                  </Button>
+                </div>
 
-          {/* Notifications with Badge */}
-          <li className="nav-item nav-item-box">
-            <Link to="/notifications" style={{ position: "relative" }}>
-              <Badge
-                count={notificationCount}
-                size="small"
-                offset={[-5, 5]}
-                showZero={false}
-              >
-                <FaBell style={{ fontSize: 18 }} />
-              </Badge>
-            </Link>
-          </li>
-          <PermissionsGate api="write" module="cart">
-            {/* Cart with Badge */}
-            <li className="nav-item nav-item-box">
-              <Link to="/cart" style={{ position: "relative" }}>
-                <Badge
-                  count={cartItemCount}
-                  size="small"
-                  offset={[-5, 5]}
-                  showZero={false}
+                {/* Mobile Full Search Input */}
+                <div
+                  className={`mobile-search-container d-md-none ${
+                    mobileSearchOpen ? "open position-fixed" : ""
+                  }`}
+                  style={{
+                    top: mobileSearchOpen ? "0" : "",
+                    left: mobileSearchOpen ? "0" : "",
+                    right: mobileSearchOpen ? "0" : "",
+                    zIndex: 1000,
+                    background: "var(--background-color, #fff)",
+                    padding: "12px 16px",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                  }}
                 >
-                  <CgShoppingCart style={{ fontSize: 20 }} />
+                  <Input
+                    ref={mobileSearchInputRef}
+                    prefix={<SearchOutlined className="search-icon" />}
+                    suffix={
+                      searchFetching ? (
+                        <Spin size="small" />
+                      ) : (
+                        <Button
+                          type="text"
+                          icon={<CloseOutlined />}
+                          onClick={() => {
+                            setMobileSearchOpen(false);
+                            setSearchQuery("");
+                            setShowSearchOverlay(false);
+                          }}
+                          size="small"
+                        />
+                      )
+                    }
+                    placeholder="Search products, users, orders..."
+                    value={searchQuery}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setSearchQuery(value);
+                      localStorage.setItem("lastSearchQuery", value);
+                    }}
+                    allowClear
+                    size="large"
+                    className="mobile-global-search"
+                  />
+                </div>
+
+                {/* Desktop Search - Centered */}
+                <div
+                  className="d-none d-md-block mx-auto"
+                  style={{ maxWidth: "680px" }}
+                >
+                  <Input
+                    prefix={<SearchOutlined className="search-icon" />}
+                    suffix={searchFetching ? <Spin size="small" /> : null}
+                    placeholder="Search products, users, orders..."
+                    value={searchQuery}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setSearchQuery(value);
+                      localStorage.setItem("lastSearchQuery", value);
+                    }}
+                    onFocus={() =>
+                      searchQuery.trim() && setShowSearchOverlay(true)
+                    }
+                    allowClear
+                    size="large"
+                    className="global-search-input"
+                  />
+                </div>
+
+                {/* Search Overlay */}
+                <SearchOverlay
+                  visible={showSearchOverlay}
+                  loading={searchLoading || searchFetching}
+                  results={searchResults}
+                  query={searchQuery}
+                  onClose={() => {
+                    setShowSearchOverlay(false);
+                    if (window.innerWidth < 992 && !searchQuery.trim()) {
+                      setMobileSearchOpen(false);
+                    }
+                  }}
+                />
+              </li>
+            </ul>
+          </div>
+
+          {/* Right: Action Icons */}
+          <div className="d-flex align-items-center">
+            {/* Desktop Icons */}
+            <div className="d-none d-md-flex align-items-center gap-2">
+              <Button
+                type="link"
+                onClick={handleFullscreenToggle}
+                title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+              >
+                <FullscreenOutlined style={{ fontSize: 18 }} />
+              </Button>
+
+              <Button type="link" onClick={() => setShowNotifications(true)}>
+                <Badge count={notificationCount} size="small" offset={[-4, 4]}>
+                  <BellOutlined style={{ fontSize: 18 }} />
                 </Badge>
-              </Link>
-            </li>
-          </PermissionsGate>
+              </Button>
 
-          {/* Dark Mode (Desktop) */}
-          <li className="nav-item nav-item-box d-none d-lg-flex">
-            <Button
-              type="link"
-              onClick={toggleDarkMode}
-              title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-            >
-              {darkMode ? <SunFilled /> : <MoonFilled />}
-            </Button>
-          </li>
+              <PermissionsGate api="write" module="cart">
+                <Link to="/cart">
+                  <Badge count={cartItemCount} size="small" offset={[-4, 4]}>
+                    <ShoppingCartOutlined style={{ fontSize: 20 }} />
+                  </Badge>
+                </Link>
+              </PermissionsGate>
 
-          {/* User Dropdown */}
-          <li className="nav-item dropdown main-drop profile-nav">
-            {isProfileLoading ? (
-              <span className="text-muted">Loading...</span>
-            ) : profileError ? (
-              <span className="text-danger">Error</span>
-            ) : (
-              <Dropdown
-                overlay={userMenu}
-                trigger={["click"]}
-                getPopupContainer={(trigger) => trigger.parentElement}
+              <Button
+                type="link"
+                onClick={toggleDarkMode}
+                title={darkMode ? "Light Mode" : "Dark Mode"}
               >
-                <a
-                  href="#"
-                  className="nav-link userset"
-                  onClick={(e) => e.preventDefault()}
-                >
-                  <span className="user-info p-0">
-                    <span className="user-letter avatar-container">
-                      <Avatar
-                        name={user?.user?.name || "User"}
-                        src={
-                          user?.user?.photo_thumbnail ||
-                          user?.user?.profileImage
-                        }
-                        size={40} // important – tell the library the exact size
-                        round={true}
-                        className="circular-avatar"
-                        textSizeRatio={2.2}
-                        maxInitials={2}
-                      />
-                    </span>
-                  </span>
-                </a>
-              </Dropdown>
-            )}
-          </li>
-        </ul>
+                {darkMode ? (
+                  <SunFilled style={{ fontSize: 18 }} />
+                ) : (
+                  <MoonFilled style={{ fontSize: 18 }} />
+                )}
+              </Button>
+            </div>
 
-        {/* Mobile Menu */}
-        <div
-          className="mobile-user-menu"
-          style={{ position: "relative", zIndex: 1100 }}
-        >
-          <Dropdown
-            menu={{ items: mobileMenuItems }}
-            trigger={["click"]}
-            placement="bottom"
-            overlayClassName="mobile-dropdown"
-            getPopupContainer={(trigger) => trigger.parentElement}
-          >
-            <Button
-              type="text"
-              icon={<FaEllipsisV />}
-              className="mobile-menu-button"
-              style={{
-                width: 40,
-                height: 40,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            />
-          </Dropdown>
+            {/* Mobile: More Menu */}
+            <div className="d-md-none mx-2">
+              <Dropdown
+                overlay={
+                  <Menu className="shadow-sm rounded">
+                    <Menu.Item
+                      key="fullscreen"
+                      onClick={handleFullscreenToggle}
+                      icon={<FullscreenOutlined />}
+                    >
+                      {isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+                    </Menu.Item>
+                    <Menu.Item
+                      key="notifications"
+                      onClick={() => setShowNotifications(true)}
+                      icon={<BellOutlined />}
+                    >
+                      Notifications{" "}
+                      {notificationCount > 0 && (
+                        <Badge
+                          count={notificationCount}
+                          style={{ marginLeft: 8 }}
+                        />
+                      )}
+                    </Menu.Item>
+                    <PermissionsGate api="write" module="cart">
+                      <Menu.Item key="cart" icon={<ShoppingCartOutlined />}>
+                        <Link
+                          to="/cart"
+                          className="d-flex justify-content-between align-items-center w-100"
+                        >
+                          Cart{" "}
+                          {cartItemCount > 0 && <Badge count={cartItemCount} />}
+                        </Link>
+                      </Menu.Item>
+                    </PermissionsGate>
+                    <Menu.Item
+                      key="theme"
+                      onClick={toggleDarkMode}
+                      icon={darkMode ? <SunFilled /> : <MoonFilled />}
+                    >
+                      {darkMode ? "Light Mode" : "Dark Mode"}
+                    </Menu.Item>
+                  </Menu>
+                }
+                trigger={["click"]}
+              >
+                <Button type="link" size="large">
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <circle cx="12" cy="5" r="2" />
+                    <circle cx="12" cy="12" r="2" />
+                    <circle cx="12" cy="19" r="2" />
+                  </svg>
+                </Button>
+              </Dropdown>
+            </div>
+
+            {/* User Avatar - Always visible */}
+            <div className="ms-2">
+              {isProfileLoading ? (
+                <span className="text-muted">Loading...</span>
+              ) : profileError ? (
+                <span className="text-danger">Error</span>
+              ) : (
+                <Dropdown
+                  overlay={userMenu}
+                  trigger={["click"]}
+                  getPopupContainer={(trigger) => trigger.parentElement}
+                >
+                  <a
+                    href="#"
+                    className="nav-link userset"
+                    onClick={(e) => e.preventDefault()}
+                  >
+                    <Avatar
+                      name={user?.user?.name || "User"}
+                      src={
+                        user?.user?.photo_thumbnail || user?.user?.profileImage
+                      }
+                      size={40}
+                      round={true}
+                      className="circular-avatar"
+                      textSizeRatio={2.2}
+                      maxInitials={2}
+                    />
+                  </a>
+                </Dropdown>
+              )}
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+
+      <NotificationsOverlay
+        isOpen={showNotifications}
+        onClose={() => setShowNotifications(false)}
+      />
+    </>
   );
 };
 

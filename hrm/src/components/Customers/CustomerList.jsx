@@ -1,37 +1,80 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import {
   useGetCustomersQuery,
   useDeleteCustomerMutation,
 } from "../../api/customerApi";
 import Avatar from "react-avatar";
 import { BiTrash } from "react-icons/bi";
-import { FaEye, FaSearch, FaThList, FaThLarge } from "react-icons/fa";
-import { message } from "antd";
+import {
+  EyeOutlined,
+  SearchOutlined,
+  AppstoreOutlined, // Better for card/grid view
+  BarsOutlined, // Better for list view
+  MoreOutlined,
+  EditOutlined,
+} from "@ant-design/icons";
+import {
+  message,
+  Button,
+  Dropdown,
+  Menu,
+  Pagination,
+  Select,
+  Input,
+} from "antd";
 import DeleteModal from "../Common/DeleteModal";
 import PageHeader from "../Common/PageHeader";
-import { BsThreeDotsVertical } from "react-icons/bs";
-import { Dropdown, Button, Menu, Pagination, Select } from "antd";
 import { useNavigate } from "react-router-dom";
-import { EditOutlined } from "@ant-design/icons";
 import PermissionGate from "../../context/PermissionGate";
 
 const { Option } = Select;
 
 const CustomerList = () => {
   const navigate = useNavigate();
-  const { data, error, isLoading } = useGetCustomersQuery();
-  const customers = Array.isArray(data?.data) ? data.data : [];
-  const [deleteCustomer] = useDeleteCustomerMutation();
 
   // State
-  const [viewMode, setViewMode] = useState("list"); // that's it!
+  const [viewMode, setViewMode] = useState("list"); // "list" or "card"
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState("Recently Added");
   const [customerTypeFilter, setCustomerTypeFilter] = useState("All");
+  const [sortBy, setSortBy] = useState("Recently Added");
+
+  // Debounced search to avoid too many requests
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setCurrentPage(1); // Reset to page 1 on search
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // RTK Query with server-side pagination + search
+  const {
+    data: response,
+    error,
+    isLoading,
+    isFetching,
+  } = useGetCustomersQuery({
+    page: currentPage,
+    limit: pageSize,
+    search: debouncedSearch || undefined, // only send if not empty
+  });
+
+  const customers = response?.data || [];
+  const pagination = response?.pagination || {
+    total: 0,
+    page: 1,
+    limit: 20,
+    totalPages: 0,
+  };
+
+  const [deleteCustomer] = useDeleteCustomerMutation();
 
   const customerTypes = [
     { value: "All", label: "All Customers" },
@@ -42,8 +85,6 @@ const CustomerList = () => {
     { value: "Contractor", label: "Contractor" },
   ];
 
-  // Safe helpers
-  const safeString = (val) => (val ? String(val).trim() : "");
   const getInitials = (name) => {
     if (!name) return "CU";
     return name
@@ -54,8 +95,8 @@ const CustomerList = () => {
       .slice(0, 2);
   };
 
-  // Filtered & sorted
-  const filteredCustomers = useMemo(() => {
+  // Client-side filtering by customer type only (since search is server-side)
+  const filteredCustomers = React.useMemo(() => {
     let result = customers;
 
     if (customerTypeFilter !== "All") {
@@ -67,50 +108,36 @@ const CustomerList = () => {
       });
     }
 
-    if (searchTerm.trim()) {
-      const term = searchTerm.toLowerCase();
-      result = result.filter((c) =>
-        [c.name, c.email, c.companyName, c.mobileNumber]
-          .filter(Boolean)
-          .some((f) => safeString(f).toLowerCase().includes(term))
-      );
-    }
-
+    // Client-side sorting (you can move this to backend later)
     switch (sortBy) {
       case "Ascending":
-        result = [...result].sort((a, b) =>
-          safeString(a.name).localeCompare(safeString(b.name))
+        return [...result].sort((a, b) =>
+          (a.name || "").localeCompare(b.name || "")
         );
-        break;
       case "Descending":
-        result = [...result].sort((a, b) =>
-          safeString(b.name).localeCompare(safeString(a.name))
+        return [...result].sort((a, b) =>
+          (b.name || "").localeCompare(a.name || "")
         );
-        break;
       case "Recently Added":
-        result = [...result].sort(
+        return [...result].sort(
           (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
         );
-        break;
       default:
-        break;
+        return result;
     }
-
-    return result;
-  }, [customers, customerTypeFilter, searchTerm, sortBy]);
-
-  const paginatedCustomers = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    return filteredCustomers.slice(start, start + pageSize);
-  }, [filteredCustomers, currentPage, pageSize]);
+  }, [customers, customerTypeFilter, sortBy]);
 
   // Handlers
   const handlePageChange = (page, newPageSize) => {
     setCurrentPage(page);
-    if (newPageSize !== pageSize) setPageSize(newPageSize);
+    if (newPageSize !== pageSize) {
+      setPageSize(newPageSize);
+      setCurrentPage(1);
+    }
   };
 
   const handleAddCustomer = () => navigate("/customer/add");
+
   const handleEditCustomer = (customer) => {
     navigate(`/customer/edit/${customer.customerId}`, { state: { customer } });
   };
@@ -125,14 +152,18 @@ const CustomerList = () => {
 
     try {
       await deleteCustomer(customerToDelete).unwrap();
-      if (paginatedCustomers.length === 1 && currentPage > 1) {
+      message.success("Customer deleted successfully");
+
+      // If current page becomes empty, go to previous page
+      if (filteredCustomers.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
       }
     } catch (err) {
-      if (err?.data?.message?.toLowerCase().includes("quotation")) {
-        message.error("Cannot delete — quotations are linked.");
+      const msg = err?.data?.message || "Failed to delete customer";
+      if (msg.toLowerCase().includes("quotation")) {
+        message.error("Cannot delete — customer has linked quotations.");
       } else {
-        message.error(err?.data?.message || "Failed to delete customer");
+        message.error(msg);
       }
     } finally {
       setShowDeleteModal(false);
@@ -142,12 +173,12 @@ const CustomerList = () => {
 
   const clearFilters = () => {
     setSearchTerm("");
-    setSortBy("Recently Added");
     setCustomerTypeFilter("All");
+    setSortBy("Recently Added");
     setCurrentPage(1);
   };
 
-  // Loading / Error
+  // Loading state
   if (isLoading) {
     return (
       <div className="content p-5 text-center">
@@ -180,7 +211,7 @@ const CustomerList = () => {
           />
 
           <div className="card-body">
-            {/* Filters + View Toggle */}
+            {/* Filters */}
             <div className="row mb-4 align-items-center g-3">
               <div className="col-lg-3">
                 <Select
@@ -194,9 +225,9 @@ const CustomerList = () => {
                 >
                   {customerTypes.map((type) => (
                     <Option key={type.value} value={type.value}>
-                      {type.label}{" "}
+                      {type.label}
                       {type.value !== "All" && (
-                        <span className="text-muted">
+                        <span className="text-muted ms-2">
                           (
                           {
                             customers.filter((c) =>
@@ -214,19 +245,14 @@ const CustomerList = () => {
               </div>
 
               <div className="col-lg-4">
-                <div className="position-relative">
-                  <FaSearch className="position-absolute top-50 start-3 translate-middle-y text-muted" />
-                  <input
-                    type="text"
-                    className="form-control ps-5"
-                    placeholder="Search name, email, phone..."
-                    value={searchTerm}
-                    onChange={(e) => {
-                      setSearchTerm(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                  />
-                </div>
+                <Input
+                  prefix={<SearchOutlined className="text-muted" />}
+                  placeholder="Search name, email, phone..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  size="large"
+                  allowClear
+                />
               </div>
 
               <div className="col-lg-5 d-flex justify-content-end gap-2 flex-wrap">
@@ -234,162 +260,81 @@ const CustomerList = () => {
                   value={sortBy}
                   onChange={setSortBy}
                   style={{ width: 180 }}
+                  size="large"
                 >
                   <Option value="Recently Added">Recently Added</Option>
                   <Option value="Ascending">Name: A to Z</Option>
                   <Option value="Descending">Name: Z to A</Option>
                 </Select>
 
-                <Button onClick={clearFilters}>Clear</Button>
+                <Button onClick={clearFilters} size="large">
+                  Clear
+                </Button>
 
-                {/* View Toggle */}
-                <div className="btn-group">
+                {/* View Mode Toggle */}
+                <div className="btn-group" role="group">
                   <Button
                     type={viewMode === "list" ? "primary" : "default"}
+                    icon={<BarsOutlined />}
                     onClick={() => setViewMode("list")}
-                    icon={<FaThList />}
+                    size="large"
                   />
                   <Button
                     type={viewMode === "card" ? "primary" : "default"}
+                    icon={<AppstoreOutlined />}
                     onClick={() => setViewMode("card")}
-                    icon={<FaThLarge />}
+                    size="large"
                   />
                 </div>
               </div>
             </div>
 
-            {/* CARD VIEW */}
-            {viewMode === "card" && (
-              <div className="row g-4">
-                {paginatedCustomers.map((c) => (
-                  <div
-                    key={c.customerId}
-                    className="col-md-6 col-lg-4 col-xl-3"
-                  >
-                    <div className="card h-100 shadow-sm border-0 hover-shadow">
-                      <div className="card-body text-center p-4">
-                        <Avatar
-                          name={c.name || c.companyName || "Customer"}
-                          round
-                          size="80"
-                          className="mb-3"
-                          color="#1890ff"
-                          fgColor="#fff"
-                        />
-                        <h6 className="mb-1">{c.name || "Unnamed Customer"}</h6>
-                        {c.companyName && (
-                          <p className="text-muted small">{c.companyName}</p>
-                        )}
-                        <p className="text-muted small mb-2">
-                          {c.email || c.mobileNumber || "—"}
-                        </p>
-
-                        <div className="d-flex justify-content-center gap-2 mb-3">
-                          <span className="badge bg-light text-dark">
-                            {c.customerType || "Retail"}
-                          </span>
-                        </div>
-
-                        <div className="d-flex justify-content-center gap-2">
-                          <PermissionGate api="edit" module="customers">
-                            <Button
-                              size="small"
-                              onClick={() => handleEditCustomer(c)}
-                            >
-                              <EditOutlined />
-                            </Button>
-                          </PermissionGate>
-
-                          <PermissionGate api="view|delete" module="customers">
-                            <Dropdown
-                              trigger={["click"]}
-                              overlay={
-                                <Menu>
-                                  <PermissionGate api="view" module="customers">
-                                    <Menu.Item>
-                                      <a
-                                        href={`/customer/${c.customerId}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                      >
-                                        <FaEye className="me-2" /> View
-                                      </a>
-                                    </Menu.Item>
-                                  </PermissionGate>
-                                  <PermissionGate
-                                    api="delete"
-                                    module="customers"
-                                  >
-                                    <Menu.Item
-                                      danger
-                                      onClick={() => handleDelete(c.customerId)}
-                                    >
-                                      <BiTrash className="me-2" /> Delete
-                                    </Menu.Item>
-                                  </PermissionGate>
-                                </Menu>
-                              }
-                            >
-                              <Button
-                                size="small"
-                                icon={<BsThreeDotsVertical />}
-                              />
-                            </Dropdown>
-                          </PermissionGate>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+            {/* Loading indicator for fetching */}
+            {isFetching && !isLoading && (
+              <div className="text-center my-3">
+                <span className="text-muted">Updating...</span>
               </div>
             )}
 
-            {/* LIST VIEW */}
-            {viewMode === "list" && (
-              <div className="table-responsive">
-                <table className="table table-hover align-middle">
-                  <thead className="table-light">
-                    <tr>
-                      <th>Customer</th>
-                      <th>Email</th>
-                      <th>Phone</th>
-                      <th>Company</th>
-                      <th>Type</th>
-                      <th className="text-end">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedCustomers.map((c) => (
-                      <tr key={c.customerId}>
-                        <td>
-                          <div className="d-flex align-items-center gap-3">
-                            <Avatar
-                              name={c.name || c.companyName}
-                              round
-                              size="40"
-                              color="#1890ff"
-                              fgColor="#fff"
-                            />
-                            <a
-                              href={`/customer/${c.customerId}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-primary fw-medium"
-                            >
-                              {c.name || "Unnamed"}
-                            </a>
+            {/* CARD VIEW */}
+            {viewMode === "card" && (
+              <div className="row g-4">
+                {filteredCustomers.length === 0 ? (
+                  <div className="col-12 text-center py-5">
+                    <p className="text-muted">No customers found.</p>
+                  </div>
+                ) : (
+                  filteredCustomers.map((c) => (
+                    <div
+                      key={c.customerId}
+                      className="col-md-6 col-lg-4 col-xl-3"
+                    >
+                      <div className="card h-100 shadow-sm border-0 hover-shadow">
+                        <div className="card-body text-center p-4">
+                          <Avatar
+                            name={c.name || c.companyName || "Customer"}
+                            round
+                            size="80"
+                            className="mb-3"
+                            color="#1890ff"
+                            fgColor="#fff"
+                          />
+                          <h6 className="mb-1">
+                            {c.name || "Unnamed Customer"}
+                          </h6>
+                          {c.companyName && (
+                            <p className="text-muted small">{c.companyName}</p>
+                          )}
+                          <p className="text-muted small mb-2">
+                            {c.email || c.mobileNumber || "—"}
+                          </p>
+                          <div className="d-flex justify-content-center gap-2 mb-3">
+                            <span className="badge bg-light text-dark">
+                              {c.customerType || "Retail"}
+                            </span>
                           </div>
-                        </td>
-                        <td>{c.email || "—"}</td>
-                        <td>{c.mobileNumber || "—"}</td>
-                        <td>{c.companyName || "—"}</td>
-                        <td>
-                          <span className="badge bg-light text-dark">
-                            {c.customerType || "Retail"}
-                          </span>
-                        </td>
-                        <td className="text-end">
-                          <div className="d-flex justify-content-end gap-2">
+
+                          <div className="d-flex justify-content-center gap-2">
                             <PermissionGate api="edit" module="customers">
                               <Button
                                 size="small"
@@ -410,13 +355,13 @@ const CustomerList = () => {
                                       api="view"
                                       module="customers"
                                     >
-                                      <Menu.Item>
+                                      <Menu.Item key="view">
                                         <a
                                           href={`/customer/${c.customerId}`}
                                           target="_blank"
                                           rel="noopener noreferrer"
                                         >
-                                          <FaEye className="me-2" /> View
+                                          <EyeOutlined className="me-2" /> View
                                         </a>
                                       </Menu.Item>
                                     </PermissionGate>
@@ -425,6 +370,7 @@ const CustomerList = () => {
                                       module="customers"
                                     >
                                       <Menu.Item
+                                        key="delete"
                                         danger
                                         onClick={() =>
                                           handleDelete(c.customerId)
@@ -436,37 +382,150 @@ const CustomerList = () => {
                                   </Menu>
                                 }
                               >
-                                <Button
-                                  size="small"
-                                  type="text"
-                                  icon={<BsThreeDotsVertical />}
-                                />
+                                <Button size="small" icon={<MoreOutlined />} />
                               </Dropdown>
                             </PermissionGate>
                           </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             )}
 
-            {/* Pagination */}
-            {filteredCustomers.length > pageSize && (
+            {/* LIST VIEW */}
+            {viewMode === "list" && (
+              <div className="table-responsive">
+                {filteredCustomers.length === 0 ? (
+                  <div className="text-center py-5">
+                    <p className="text-muted">No customers found.</p>
+                  </div>
+                ) : (
+                  <table className="table table-hover align-middle">
+                    <thead className="table-light">
+                      <tr>
+                        <th>Customer</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Company</th>
+                        <th>Type</th>
+                        <th className="text-end">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredCustomers.map((c) => (
+                        <tr key={c.customerId}>
+                          <td>
+                            <div className="d-flex align-items-center gap-3">
+                              <Avatar
+                                name={c.name || c.companyName}
+                                round
+                                size="40"
+                                color="#1890ff"
+                                fgColor="#fff"
+                              />
+                              <a
+                                href={`/customer/${c.customerId}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary fw-medium"
+                              >
+                                {c.name || "Unnamed"}
+                              </a>
+                            </div>
+                          </td>
+                          <td>{c.email || "—"}</td>
+                          <td>{c.mobileNumber || "—"}</td>
+                          <td>{c.companyName || "—"}</td>
+                          <td>
+                            <span className="badge bg-light text-dark">
+                              {c.customerType || "Retail"}
+                            </span>
+                          </td>
+                          <td className="text-end">
+                            <div className="d-flex justify-content-end gap-2">
+                              <PermissionGate api="edit" module="customers">
+                                <Button
+                                  size="small"
+                                  icon={<EditOutlined />}
+                                  onClick={() => handleEditCustomer(c)}
+                                />
+                              </PermissionGate>
+
+                              <PermissionGate
+                                api="view|delete"
+                                module="customers"
+                              >
+                                <Dropdown
+                                  trigger={["click"]}
+                                  overlay={
+                                    <Menu>
+                                      <PermissionGate
+                                        api="view"
+                                        module="customers"
+                                      >
+                                        <Menu.Item key="view">
+                                          <a
+                                            href={`/customer/${c.customerId}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                          >
+                                            <EyeOutlined className="me-2" />{" "}
+                                            View
+                                          </a>
+                                        </Menu.Item>
+                                      </PermissionGate>
+                                      <PermissionGate
+                                        api="delete"
+                                        module="customers"
+                                      >
+                                        <Menu.Item
+                                          key="delete"
+                                          danger
+                                          onClick={() =>
+                                            handleDelete(c.customerId)
+                                          }
+                                        >
+                                          <BiTrash className="me-2" /> Delete
+                                        </Menu.Item>
+                                      </PermissionGate>
+                                    </Menu>
+                                  }
+                                >
+                                  <Button
+                                    size="small"
+                                    type="text"
+                                    icon={<MoreOutlined />}
+                                  />
+                                </Dropdown>
+                              </PermissionGate>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            )}
+
+            {/* Pagination - uses server total */}
+            {pagination.total > 0 && (
               <div className="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
                 <div className="text-muted small">
                   Showing {(currentPage - 1) * pageSize + 1}–
-                  {Math.min(currentPage * pageSize, filteredCustomers.length)}{" "}
-                  of {filteredCustomers.length}
+                  {Math.min(currentPage * pageSize, pagination.total)} of{" "}
+                  {pagination.total} customers
                 </div>
                 <Pagination
                   current={currentPage}
                   pageSize={pageSize}
-                  total={filteredCustomers.length}
+                  total={pagination.total}
                   onChange={handlePageChange}
                   showSizeChanger
                   pageSizeOptions={["10", "20", "50", "100"]}
+                  disabled={isFetching}
                 />
               </div>
             )}

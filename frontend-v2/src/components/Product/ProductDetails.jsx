@@ -58,12 +58,14 @@ const ProductDetails = () => {
   });
 
   const {
-    data: allProducts,
+    data: allProductsResponse,
     isLoading: isAllProductsLoading,
     error: allProductsError,
   } = useGetAllProductsQuery({
     skip: !!recommendedProducts?.length,
   });
+
+  const allProducts = allProductsResponse?.data || []; // Extract the actual array
 
   const { data: user, isLoading: userLoading } = useGetProfileQuery();
   const userId = user?.user?.userId;
@@ -278,16 +280,14 @@ const ProductDetails = () => {
      -------------------------------------------------------------- */
   const images = safeParseImages(product.images);
   const sellingPrice = getSellingPrice(product.metaDetails);
-
   const relatedProducts = (
-    recommendedProducts?.length
+    recommendedProducts?.length > 0
       ? recommendedProducts.filter((p) => p.productId !== product.productId)
-      : allProducts?.filter(
+      : allProducts.filter(
           (p) =>
             p.productId !== product.productId && p.brandId === product.brandId
-        ) || []
+        )
   ).slice(0, 4);
-
   /* --------------------------------------------------------------
      8. RENDER
      -------------------------------------------------------------- */

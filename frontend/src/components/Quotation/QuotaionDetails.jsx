@@ -12,7 +12,7 @@ import { useGetAllUsersQuery } from "../../api/userApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
 import { useGetCompanyByIdQuery } from "../../api/companyApi";
 import { useGetAddressByIdQuery } from "../../api/addressApi";
-import "./quotation.css";
+
 import useProductsData from "../../data/useProductdata";
 import { useGetAllBrandsQuery } from "../../api/brandsApi";
 import { exportToPDF, exportToExcel } from "./hooks/exportHelpers";

@@ -107,7 +107,7 @@
   position: absolute;
   top: 10px;
   left: 10px;
-  background-color: #ff4d4f;
+  background-color: #E31E24;
   color: #fff;
   font-size: 12px;
   padding: 2px 8px;
@@ -284,5 +284,5 @@
 }
 
 .status-bar.out-of-stock {
-  background-color: #ff4d4f; /* Red */
+  background-color: #E31E24; /* Red */
 }

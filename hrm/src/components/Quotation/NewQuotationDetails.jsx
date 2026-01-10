@@ -137,10 +137,10 @@ const NewQuotationsDetails = () => {
   const customerAddress = address
     ? `${address.street || ""}, ${address.city || ""}, ${
         address.state || ""
-      } - ${address.pincode || address.zip || ""}`
+      } - ${address.postalCode || ""}`
         .replace(/^,\s*|,*\s*$/g, "")
         .trim()
-    : "487/65, National Market, Peera Garhi, Delhi, 110087";
+    : "--";
 
   // BRAND NAMES
   const brandNames = useMemo(() => {
@@ -175,6 +175,7 @@ const NewQuotationsDetails = () => {
   const {
     subtotal,
     extraDiscountAmt,
+    amountAfterDiscount,
     gst: gstAmount,
     total: finalTotal,
   } = calcTotals(
@@ -292,7 +293,7 @@ const NewQuotationsDetails = () => {
           <img src={groheLogo} alt="GROHE" className={styles.brandLogoRight} />
         </div>
 
-        <h1 className={styles.companyTitle}>CHHABRA MARBLE PVT.LTD</h1>
+        <h1 className={styles.companyTitle}>CM TRADING CO.</h1>
         <h2 className={styles.subtitle}>Quotation Letter</h2>
 
         <div className={styles.clientInfoGrid}>
@@ -302,37 +303,16 @@ const NewQuotationsDetails = () => {
           <div className={styles.value}>{customerPhone}</div>
           <div className={styles.label}>Address</div>
           <div className={styles.value}>{customerAddress}</div>
-          <div className={styles.label}>ID</div>
+          <div className={styles.label}>Quotation No.</div>
           <div className={styles.value}>
             {quotation.reference_number || "—"}
           </div>
         </div>
 
-        <table className={styles.summaryTable}>
-          <thead>
-            <tr>
-              <th>Particulars</th>
-              <th>MRP</th>
-              <th>Discounted Price</th>
-            </tr>
-          </thead>
-          <tbody>
-            {Array(2)
-              .fill()
-              .map((_, i) => (
-                <tr key={i}>
-                  <td></td>
-                  <td></td>
-                  <td></td>
-                </tr>
-              ))}
-          </tbody>
-        </table>
-
         <div className={styles.letterheadFooter}>
           <img src={logo} alt="Logo" style={{ height: 80 }} />
           <div style={{ textAlign: "center", fontSize: 16 }}>
-            <strong>CHHABRA MARBLE PVT. LTD.</strong>
+            <strong>CM TRADING CO.</strong>
             <br />
             487/65, National Market, Peera Garhi, Delhi, 110087
             <br />
@@ -355,13 +335,13 @@ const NewQuotationsDetails = () => {
               <div className={styles.clientAddress}>{customerAddress}</div>
             </div>
             <div className={styles.pageDate}>
-              {new Date(quotation.quotation_date || Date.now())
-                .toLocaleDateString("en-IN", {
-                  day: "2-digit",
-                  month: "short",
-                  year: "numeric",
-                })
-                .replace(/ /g, " | ")}
+              {new Date(
+                quotation.quotation_date || Date.now()
+              ).toLocaleDateString("en-IN", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })}
             </div>
           </div>
 
@@ -431,36 +411,29 @@ const NewQuotationsDetails = () => {
             <div className={styles.finalSummaryWrapper}>
               <div className={styles.finalSummarySection}>
                 <div className={styles.summaryLeft}>
+                  {/* Subtotal (after item discounts) */}
                   <div className={styles.summaryRow}>
-                    <span>Taxable Value</span>
+                    <span>Subtotal</span>
                     <span>₹{subtotal.toLocaleString("en-IN")}</span>
                   </div>
-                  {gstAmount > 0 ? (
-                    <>
-                      <div className={styles.summaryRow}>
-                        <span>CGST @{(gstRate / 2).toFixed(1)}%</span>
-                        <span>₹{(gstAmount / 2).toLocaleString("en-IN")}</span>
-                      </div>
-                      <div className={styles.summaryRow}>
-                        <span>SGST @{(gstRate / 2).toFixed(1)}%</span>
-                        <span>₹{(gstAmount / 2).toLocaleString("en-IN")}</span>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className={styles.summaryRow}>
-                        <span>CGST @0.0%</span>
-                        <span>₹0</span>
-                      </div>
-                      <div className={styles.summaryRow}>
-                        <span>SGST @0.0%</span>
-                        <span>₹0</span>
-                      </div>
-                    </>
+
+                  {/* Extra Discount Line - Only show if > 0 */}
+                  {extraDiscountAmt > 0 && (
+                    <div className={styles.summaryRow}>
+                      <span>Extra Discount</span>
+                      <span>-₹{extraDiscountAmt.toLocaleString("en-IN")}</span>
+                    </div>
                   )}
+
+                  {/* Correct Taxable Value = subtotal - extraDiscount */}
+                  <div className={styles.summaryRow}>
+                    <span>Taxable Value</span>
+                    <span>₹{amountAfterDiscount.toLocaleString("en-IN")}</span>
+                  </div>
+
+                  {/* Round Off - FIXED HERE */}
                   <div className={styles.summaryRow}>
                     <span>Round off</span>
-
                     <span>
                       ₹
                       {Number(
@@ -468,10 +441,22 @@ const NewQuotationsDetails = () => {
                       ).toFixed(2)}
                     </span>
                   </div>
-                  <div className={styles.summaryRow}>
-                    <span style={{ fontSize: "26px" }}>Total Amount</span>
-                    <span style={{ fontSize: "26px" }}>
+
+                  {/* Final Total */}
+                  <div
+                    className={styles.summaryRow}
+                    style={{ fontSize: "26px", fontWeight: "bold" }}
+                  >
+                    <span>Total Amount</span>
+                    <span>
                       ₹{Math.round(finalTotal).toLocaleString("en-IN")}
+                    </span>
+                  </div>
+
+                  {/* Amount in Words */}
+                  <div className={styles.summaryRow}>
+                    <span style={{ fontStyle: "italic", color: "#555" }}>
+                      {finalAmountInWords}
                     </span>
                   </div>
                 </div>

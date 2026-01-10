@@ -20,6 +20,7 @@ const ibis = "https://static.cmtradingco.com/brands/ibis.avif";
 const sgt = "https://static.cmtradingco.com/brands/sgt.jpg";
 const plumbing = "https://static.cmtradingco.com/brands/plumbing.jpg";
 const jayna = "https://via.placeholder.com/300";
+const grohe_pr = "https://static.cmtradingco.com/brands/grohe_pr.jpeg";
 
 const BrandSelection = () => {
   const { bpcId } = useParams();
@@ -31,7 +32,7 @@ const BrandSelection = () => {
       GB_004: groheBau,
       AS_001: americanStandard,
       colston: colston,
-      GP_002: grohe,
+      GP_002: grohe_pr,
       JA_003: groheBau,
       surface: groheBau,
       sgt: sgt,

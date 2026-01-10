@@ -1,7 +1,11 @@
 // src/components/SiteMap/AddSiteMap.jsx
-
-import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import React, { useState, useEffect, useMemo } from "react";
+import {
+  useParams,
+  useNavigate,
+  useLocation,
+  useSearchParams,
+} from "react-router-dom";
 import {
   Spin,
   message,
@@ -9,7 +13,6 @@ import {
   Select,
   Table,
   InputNumber,
-  Space,
   Button,
   Card,
   Row,
@@ -24,20 +27,24 @@ import {
   Tabs,
   Badge,
   Alert,
+  Space,
+  Empty,
+  Tooltip,
 } from "antd";
 import {
   ArrowLeftOutlined,
   PlusOutlined,
   DeleteOutlined,
   SaveOutlined,
-  FileTextOutlined,
   HomeOutlined,
   EditOutlined,
   EyeInvisibleOutlined,
   ToolOutlined,
   WarningOutlined,
+  SearchOutlined,
+  ApartmentOutlined,
+  TagsOutlined,
 } from "@ant-design/icons";
-import { debounce } from "lodash";
 import { v4 as uuidv4 } from "uuid";
 
 import PageHeader from "../Common/PageHeader";
@@ -46,29 +53,22 @@ import {
   useGetSiteMapByIdQuery,
   useUpdateSiteMapMutation,
 } from "../../api/siteMapApi";
-import { useGetAllProductsQuery } from "../../api/productApi";
+import {
+  useGetAllProductsQuery,
+  useSearchProductsQuery,
+} from "../../api/productApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
 
 const { Panel } = Collapse;
-const { Text } = Typography;
+const { Title, Text } = Typography;
 const { Option } = Select;
 const { TabPane } = Tabs;
-
-const CONCEALED_CATEGORIES = [
-  "conduit-pipe",
-  "wiring-cable",
-  "junction-box",
-  "distribution-board",
-  "mcb-dp",
-  "modular-box",
-  "earthing",
-  "network-cabling",
-];
 
 const AddSiteMap = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
 
   const isEditMode = Boolean(id);
   const fromQuotation = location.state?.fromQuotation === true;
@@ -78,22 +78,27 @@ const AddSiteMap = () => {
   const [selectedFloor, setSelectedFloor] = useState(null);
   const [selectedRoom, setSelectedRoom] = useState(null);
 
-  // API
-  const { data: customersData, isLoading: isCustomersLoading } =
+  // ─── API ────────────────────────────────────────────────
+  const { data: customersData, isLoading: customersLoading } =
     useGetCustomersQuery();
-  const { data: productsData = [], isLoading: isProductsLoading } =
+  const { data: productsResponse, isLoading: productsLoading } =
     useGetAllProductsQuery();
-  const { data: existingSiteMapData, isLoading: isFetching } =
+  const { data: existingData, isLoading: fetchingExisting } =
     useGetSiteMapByIdQuery(id, { skip: !isEditMode });
 
-  const [createSiteMap, { isLoading: isCreating }] = useCreateSiteMapMutation();
-  const [updateSiteMap, { isLoading: isUpdating }] = useUpdateSiteMapMutation();
+  const [searchTerm, setSearchTerm] = useState("");
+  const { data: searchResult = [], isFetching: searching } =
+    useSearchProductsQuery(searchTerm, {
+      skip: !searchTerm.trim(),
+    });
+
+  const [createSiteMap, { isLoading: creating }] = useCreateSiteMapMutation();
+  const [updateSiteMap, { isLoading: updating }] = useUpdateSiteMapMutation();
 
   const customers = customersData?.data || [];
-  const validProducts = productsData.filter(
-    (p) => p && (p.name || p.product_code)
-  );
+  const products = productsResponse?.data || [];
 
+  // ─── Form State ─────────────────────────────────────────
   const [formData, setFormData] = useState({
     customerId: "",
     name: "",
@@ -104,13 +109,9 @@ const AddSiteMap = () => {
     quotationId: null,
   });
 
-  const [productSearch, setProductSearch] = useState("");
-  const [concealedSearch, setConcealedSearch] = useState("");
-  const [filteredProducts, setFilteredProducts] = useState([]);
-  const [filteredConcealed, setFilteredConcealed] = useState([]);
   const [assignModal, setAssignModal] = useState({
     visible: false,
-    itemIndex: null, // index in formData.items
+    itemIndex: null,
   });
   const [roomModal, setRoomModal] = useState({
     visible: false,
@@ -119,40 +120,7 @@ const AddSiteMap = () => {
   });
   const [roomForm] = Form.useForm();
 
-  // === Detect Concealed vs Normal Products ===
-  const { normalProducts, concealedProducts } = useMemo(() => {
-    const normal = [];
-    const concealed = [];
-
-    validProducts.forEach((p) => {
-      const category = (p.category?.name || "").toLowerCase();
-      const name = (p.name || "").toLowerCase();
-      const code = (p.product_code || "").toLowerCase();
-
-      const isConcealedItem =
-        CONCEALED_CATEGORIES.some(
-          (cat) =>
-            category.includes(cat) || name.includes(cat) || code.includes(cat)
-        ) ||
-        name.includes("conduit") ||
-        name.includes("concealed") ||
-        name.includes("wiring") ||
-        name.includes("cable") ||
-        name.includes("junction") ||
-        name.includes("mcb") ||
-        name.includes("db");
-
-      if (isConcealedItem) {
-        concealed.push({ ...p, isConcealed: true });
-      } else {
-        normal.push({ ...p, isConcealed: false });
-      }
-    });
-
-    return { normalProducts: normal, concealedProducts: concealed };
-  }, [validProducts]);
-
-  // === Load Data from Quotation or Edit Mode ===
+  // ─── Load initial data ──────────────────────────────────
   useEffect(() => {
     if (fromQuotation && location.state) {
       const {
@@ -163,19 +131,19 @@ const AddSiteMap = () => {
         quotationId,
       } = location.state;
 
-      const mappedItems = items.map((it) => ({
+      const mapped = items.map((it) => ({
         productId: it.productId,
-        name: (it.name || "Unknown Product").trim(),
+        name: (it.name || "Unknown").trim(),
         imageUrl: it.imageUrl || null,
         quantity: Number(it.quantity) || 1,
         price: Number(it.price) || 0,
         discount: it.discount || 0,
         discountType: it.discountType || "percent",
         total: it.total || it.price,
-        floor_number: null, // ← Crucial: unassigned
+        floor_number: null,
         room_id: null,
         productType: it.category?.name || "Quotation Item",
-        isConcealed: false, // will be recalculated in useMemo
+        isConcealed: false,
       }));
 
       setFormData((prev) => ({
@@ -183,25 +151,34 @@ const AddSiteMap = () => {
         customerId: customerId || "",
         name:
           projectName || `Site Map - ${new Date().toLocaleDateString("en-IN")}`,
-        siteSizeInBHK: "",
         totalFloors: items.length > 0 ? totalFloors : 1,
-        items: mappedItems,
+        items: mapped,
         quotationId,
       }));
-    } else if (isEditMode && existingSiteMapData?.data) {
-      setFormData(existingSiteMapData.data);
+    } else if (isEditMode && existingData?.data) {
+      setFormData(existingData.data);
     }
-  }, [fromQuotation, location.state, isEditMode, existingSiteMapData]);
+  }, [fromQuotation, location.state, isEditMode, existingData]);
 
-  // Auto-create Ground Floor if none exist (only when from quotation and no floors)
+  // Auto select customer from query param
+  useEffect(() => {
+    const cid = searchParams.get("customerId");
+    if (cid && customers.length > 0 && !formData.customerId) {
+      if (customers.some((c) => c.customerId === cid)) {
+        setFormData((p) => ({ ...p, customerId: cid }));
+      }
+    }
+  }, [searchParams, customers, formData.customerId]);
+
+  // Auto-create Ground Floor
   useEffect(() => {
     if (
       fromQuotation &&
       formData.floorDetails.length === 0 &&
       formData.totalFloors >= 1
     ) {
-      setFormData((prev) => ({
-        ...prev,
+      setFormData((p) => ({
+        ...p,
         floorDetails: [
           {
             floor_number: 1,
@@ -213,301 +190,172 @@ const AddSiteMap = () => {
         ],
       }));
     }
-  }, [fromQuotation, formData.floorDetails.length]);
+  }, [fromQuotation, formData.floorDetails.length, formData.totalFloors]);
 
-  // Auto-manage floors based on totalFloors
+  // Auto-sync floors count
   useEffect(() => {
     if (!formData.totalFloors) return;
+    let floors = [...formData.floorDetails];
 
-    let newFloors = [...formData.floorDetails];
-    if (newFloors.length < formData.totalFloors) {
-      for (let i = newFloors.length; i < formData.totalFloors; i++) {
-        const floorNum = i + 1;
-        const floorName =
-          floorNum === 1
-            ? "Ground Floor"
-            : `${floorNum - 1}${
-                ["th", "st", "nd", "rd"][(floorNum - 1) % 10] || "th"
-              } Floor`;
-        newFloors.push({
-          floor_number: floorNum,
-          floor_name: floorName,
-          floor_size: "",
-          details: "",
-          rooms: [],
-        });
-      }
-    } else if (newFloors.length > formData.totalFloors) {
-      newFloors = newFloors.slice(0, formData.totalFloors);
+    while (floors.length < formData.totalFloors) {
+      const num = floors.length + 1;
+      const name =
+        num === 1
+          ? "Ground Floor"
+          : `${num - 1}${["st", "nd", "rd"][(num - 2) % 3] || "th"} Floor`;
+      floors.push({
+        floor_number: num,
+        floor_name: name,
+        floor_size: "",
+        details: "",
+        rooms: [],
+      });
     }
 
-    setFormData((prev) => ({ ...prev, floorDetails: newFloors }));
+    if (floors.length > formData.totalFloors) {
+      floors = floors.slice(0, formData.totalFloors);
+    }
+
+    setFormData((p) => ({ ...p, floorDetails: floors }));
   }, [formData.totalFloors]);
-  // Helper to get best possible display name
-  const getDisplayName = (p) => {
-    if (p.name && typeof p.name === "string" && p.name.trim())
-      return p.name.trim();
-    if (
-      p.product_code &&
-      typeof p.product_code === "string" &&
-      p.product_code.trim()
-    )
-      return p.product_code.trim();
-    if (
-      p.meta?.["d11da9f9-3f2e-4536-8236-9671200cca4a"] &&
-      typeof p.meta["d11da9f9-3f2e-4536-8236-9671200cca4a"] === "string"
-    )
-      return p.meta["d11da9f9-3f2e-4536-8236-9671200cca4a"].trim();
-    return "Unknown Product";
-  };
 
-  // Helper for searchable text
-  // Helper for searchable text — completely safe
-  const getSearchableText = (p) => {
-    const parts = [
-      p.name,
-      p.product_code,
-      p.meta?.["d11da9f9-3f2e-4536-8236-9671200cca4a"],
-      p.description,
-      p.category?.name,
-    ]
-      .filter(Boolean) // removes null, undefined, "", false
-      .map((s) => {
-        if (typeof s === "string") {
-          return s.toLowerCase().trim();
-        }
-        return "";
-      })
-      .filter(Boolean); // remove empty strings after trim
-
-    return parts.join(" ");
-  };
-
-  // Live filtered lists — no debounce, no flicker, instant
-  const filteredVisibleProducts = useMemo(() => {
-    if (!productSearch.trim()) return normalProducts.slice(0, 50); // show recent/popular
-
-    const term = productSearch.toLowerCase().trim();
-    return normalProducts
-      .filter((p) => getSearchableText(p).includes(term))
-      .slice(0, 50);
-  }, [productSearch, normalProducts]);
-
-  const filteredConcealedProducts = useMemo(() => {
-    if (!concealedSearch.trim()) return concealedProducts.slice(0, 50);
-
-    const term = concealedSearch.toLowerCase().trim();
-    return concealedProducts
-      .filter((p) => getSearchableText(p).includes(term))
-      .slice(0, 50);
-  }, [concealedSearch, concealedProducts]);
+  // ─── Helpers ────────────────────────────────────────────
+  const getProductDisplayName = (p) =>
+    p.name?.trim() ||
+    p.product_code?.trim() ||
+    p.meta?.["d11da9f9-3f2e-4536-8236-9671200cca4a"]?.trim() ||
+    "Unknown";
 
   const getProductId = (p) => p.productId || p.id;
 
-  // === Add Product (Visible) ===
-  const addProduct = (floorNumber, roomId, productId, isConcealed = false) => {
-    const list = isConcealed ? concealedProducts : normalProducts;
-    const prod = list.find((p) => getProductId(p) === productId);
+  const searchOptions = useMemo(() => {
+    return (searchResult.length ? searchResult : products).map((p) => ({
+      value: getProductId(p),
+      label: (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <div>
+            <div style={{ fontWeight: 500 }}>{getProductDisplayName(p)}</div>
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              {p.product_code || "—"}
+            </Text>
+          </div>
+          <Text strong style={{ color: "#52c41a" }}>
+            ₹
+            {(
+              Number(p.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"]) || 0
+            ).toLocaleString("en-IN")}
+          </Text>
+        </div>
+      ),
+    }));
+  }, [searchResult, products]);
+
+  // ─── Actions ────────────────────────────────────────────
+  const addVisibleProduct = (floorNumber, roomId, productId) => {
+    const prod =
+      searchResult.find((p) => getProductId(p) === productId) ||
+      products.find((p) => getProductId(p) === productId);
+
     if (!prod) return message.error("Product not found");
 
     const price = Number(
       prod.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"] || 0
     );
 
-    const newItem = {
+    const item = {
       productId: getProductId(prod),
-      name: prod.name?.trim() || prod.product_code || "Unknown",
+      name: getProductDisplayName(prod),
       imageUrl: prod.images?.[0]?.url || null,
       quantity: 1,
       price,
       floor_number: floorNumber,
       room_id: roomId || null,
-      productType: prod.category?.name || "Others",
-      isConcealed,
+      productType: prod.category?.name || "Visible",
+      isConcealed: false,
     };
 
-    setFormData((prev) => ({
-      ...prev,
-      items: [...prev.items, newItem],
-    }));
-
-    if (!isConcealed) {
-      setProductSearch("");
-      setFilteredProducts([]);
-    }
+    setFormData((p) => ({ ...p, items: [...p.items, item] }));
+    setSearchTerm("");
   };
 
-  // === Add Concealed Item ===
-  const addSelectedConcealedItem = () => {
+  const addConcealedProduct = () => {
     if (!selectedConcealedProduct || !selectedFloor) return;
 
-    const prod = concealedProducts.find(
+    const prod = products.find(
       (p) => getProductId(p) === selectedConcealedProduct
     );
-    if (!prod) return;
+    if (!prod) return message.error("Product not found");
 
     const price = Number(
       prod.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"] || 0
     );
 
-    const newItem = {
+    const item = {
       productId: getProductId(prod),
-      name: prod.name?.trim() || prod.product_code || "Unknown Concealed Item",
+      name: getProductDisplayName(prod),
       imageUrl: prod.images?.[0]?.url || null,
       quantity: 1,
       price,
       floor_number: selectedFloor,
       room_id: selectedRoom || null,
-      productType: prod.category?.name || "Concealed Works",
+      productType: prod.category?.name || "Concealed",
       isConcealed: true,
     };
 
-    setFormData((prev) => ({
-      ...prev,
-      items: [...prev.items, newItem],
-    }));
-
+    setFormData((p) => ({ ...p, items: [...p.items, item] }));
     setSelectedConcealedProduct(null);
     setSelectedFloor(null);
     setSelectedRoom(null);
-    setConcealedSearch("");
-    setFilteredConcealed([]);
+    setSearchTerm("");
   };
 
-  const removeItem = (index) => {
-    setFormData((prev) => ({
-      ...prev,
-      items: prev.items.filter((_, i) => i !== index),
+  const removeItem = (idx) => {
+    setFormData((p) => ({
+      ...p,
+      items: p.items.filter((_, i) => i !== idx),
     }));
   };
 
-  const updateItemQty = (index, qty) => {
+  const updateQuantity = (idx, qty) => {
     if (qty < 1) return;
-    setFormData((prev) => {
-      const items = [...prev.items];
-      items[index].quantity = qty;
-      return { ...prev, items };
+    setFormData((p) => {
+      const items = [...p.items];
+      items[idx].quantity = qty;
+      return { ...p, items };
     });
   };
 
-  // Room Modal Logic
-  const openRoomModal = (floor, room = null) => {
-    roomForm.resetFields();
-    setRoomModal({ visible: true, floor, room });
-    if (room) roomForm.setFieldsValue(room);
-  };
-
-  const saveRoom = () => {
-    roomForm.validateFields().then((values) => {
-      setFormData((prev) => {
-        const updatedFloors = prev.floorDetails.map((f) => ({
-          ...f,
-          rooms: [...f.rooms],
-        }));
-        const floorIndex = updatedFloors.findIndex(
-          (f) => f.floor_number === roomModal.floor.floor_number
-        );
-
-        if (roomModal.room) {
-          const roomIndex = updatedFloors[floorIndex].rooms.findIndex(
-            (r) => r.room_id === roomModal.room.room_id
-          );
-          updatedFloors[floorIndex].rooms[roomIndex] = {
-            ...updatedFloors[floorIndex].rooms[roomIndex],
-            ...values,
-          };
-        } else {
-          updatedFloors[floorIndex].rooms.push({
-            room_id: uuidv4(),
-            room_name: values.room_name,
-            room_type: values.room_type || "General",
-            room_size: values.room_size || "",
-            details: values.details || "",
-          });
-        }
-
-        return { ...prev, floorDetails: updatedFloors };
-      });
-
-      setRoomModal({ visible: false });
-      roomForm.resetFields();
-    });
-  };
-
-  const deleteRoom = (floorNumber, roomId) => {
-    setFormData((prev) => ({
-      ...prev,
-      floorDetails: prev.floorDetails.map((f) => ({
-        ...f,
-        rooms: f.rooms.filter((r) => r.room_id !== roomId),
-      })),
-      items: prev.items.filter(
-        (i) => !(i.floor_number === floorNumber && i.room_id === roomId)
-      ),
-    }));
-  };
-
-  const handleSubmit = async () => {
-    if (!formData.customerId) return message.error("Select a customer");
-    if (!formData.name.trim()) return message.error("Enter project name");
-
-    try {
-      const payload = {
-        ...formData,
-        items: formData.items.map((i) => ({
-          ...i,
-          quantity: Number(i.quantity) || 1,
-          price: Number(i.price) || 0,
-        })),
-      };
-
-      if (isEditMode) {
-        await updateSiteMap({ id, updatedSiteMap: payload }).unwrap();
-        message.success("Site Map updated successfully!");
-      } else {
-        await createSiteMap(payload).unwrap();
-        message.success("Site Map created successfully!");
-      }
-      navigate("/site-map/list");
-    } catch (err) {
-      message.error(err?.data?.message || "Failed to save site map");
-    }
-  };
-
-  // === Group Items by Location ===
-  const itemsByLocation = useMemo(() => {
-    const map = {};
-    formData.items.forEach((item) => {
-      const floorKey = item.floor_number || "unassigned";
-      const roomKey = item.room_id || "floor-level";
-      if (!map[floorKey]) map[floorKey] = {};
-      if (!map[floorKey][roomKey]) map[floorKey][roomKey] = [];
-      map[floorKey][roomKey].push(item);
-    });
-    return map;
-  }, [formData.items]);
-
-  // === Totals ===
+  // ─── Totals ─────────────────────────────────────────────
   const { visibleTotal, concealedTotal, grandTotal } = useMemo(() => {
-    let visible = 0,
-      concealed = 0;
+    let v = 0,
+      c = 0;
     formData.items.forEach((i) => {
       const amt = i.quantity * i.price;
-      if (i.isConcealed) concealed += amt;
-      else visible += amt;
+      if (i.isConcealed) c += amt;
+      else v += amt;
     });
     return {
-      visibleTotal: visible,
-      concealedTotal: concealed,
-      grandTotal: visible + concealed,
+      visibleTotal: v,
+      concealedTotal: c,
+      grandTotal: v + c,
     };
   }, [formData.items]);
 
-  const hasUnassignedItems = formData.items.some((i) => !i.floor_number);
+  const hasUnassigned = formData.items.some((i) => !i.floor_number);
 
-  if (isFetching || isCustomersLoading || isProductsLoading) {
+  if (fetchingExisting || customersLoading || productsLoading) {
     return (
-      <Spin tip="Loading..." style={{ display: "block", marginTop: 100 }} />
+      <Spin
+        tip="Loading project data..."
+        size="large"
+        style={{ margin: "120px auto", display: "block" }}
+      />
     );
   }
 
@@ -515,50 +363,47 @@ const AddSiteMap = () => {
     <div className="page-wrapper">
       <div className="content">
         <PageHeader
-          title={isEditMode ? "Edit Site Map" : "Create Site Map"}
-          subtitle="Plan electrical layout by assigning products to floors and rooms"
+          title={isEditMode ? "Edit Site Map" : "New Site Map"}
+          subtitle="Electrical layout planning & product assignment"
+          extra={[
+            <Button
+              key="back"
+              icon={<ArrowLeftOutlined />}
+              onClick={() => navigate(-1)}
+            >
+              Back
+            </Button>,
+          ]}
         />
 
-        <Space style={{ marginBottom: 16 }}>
-          <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)}>
-            Back
-          </Button>
-          <Button
-            type="primary"
-            size="large"
-            icon={<SaveOutlined />}
-            onClick={handleSubmit}
-            loading={isCreating || isUpdating}
-          >
-            {isEditMode ? "Update" : "Save"} Site Map
-          </Button>
-        </Space>
-
-        {/* Warning if items are unassigned */}
-        {hasUnassignedItems && (
+        {hasUnassigned && (
           <Alert
-            message="Unassigned Items Detected"
-            description="Some products are not yet assigned to any floor/room. Please assign them for accurate planning. They will still be saved."
+            message="There are unassigned items"
+            description="Some products from quotation are not yet placed. Assign them to floors/rooms for better visualization."
             type="warning"
             showIcon
-            icon={<WarningOutlined />}
-            style={{ marginBottom: 20 }}
+            closable
+            style={{ marginBottom: 24 }}
           />
         )}
 
-        {/* Project Info */}
-        <Card title="Project Information" style={{ marginBottom: 20 }}>
-          <Row gutter={16}>
-            <Col span={12}>
-              <strong>Customer *</strong>
+        {/* ─── Project Header ──────────────────────────────────────── */}
+        <Card
+          bordered={false}
+          className="shadow-sm"
+          style={{ marginBottom: 24, background: "#fafafa" }}
+        >
+          <Row gutter={[24, 16]} align="middle">
+            <Col xs={24} md={8}>
+              <label className="ant-form-item-required">Customer</label>
               <Select
                 showSearch
-                style={{ width: "100%", marginTop: 8 }}
                 placeholder="Select customer"
                 value={formData.customerId}
-                onChange={(v) =>
-                  setFormData((prev) => ({ ...prev, customerId: v }))
-                }
+                onChange={(v) => setFormData((p) => ({ ...p, customerId: v }))}
+                style={{ width: "100%" }}
+                size="large"
+                optionFilterProp="children"
               >
                 {customers.map((c) => (
                   <Option key={c.customerId} value={c.customerId}>
@@ -567,76 +412,63 @@ const AddSiteMap = () => {
                 ))}
               </Select>
             </Col>
-            <Col span={12}>
-              <strong>Project Name *</strong>
+
+            <Col xs={24} md={10}>
+              <label className="ant-form-item-required">Project Name</label>
               <Input
-                style={{ marginTop: 8 }}
-                placeholder="e.g., Jethalal Gada 3BHK Residence"
+                size="large"
+                placeholder="e.g. Jethalal Gada 3BHK – Goregaon"
                 value={formData.name}
                 onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, name: e.target.value }))
+                  setFormData((p) => ({ ...p, name: e.target.value }))
                 }
               />
             </Col>
-          </Row>
-          <Row gutter={16} style={{ marginTop: 16 }}>
-            <Col span={8}>
-              <strong>Size</strong>
-              <Input
-                style={{ marginTop: 8 }}
-                value={formData.siteSizeInBHK}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    siteSizeInBHK: e.target.value,
-                  }))
-                }
-              />
-            </Col>
-            <Col span={8}>
-              <strong>Total Floors</strong>
+
+            <Col xs={24} md={6}>
+              <label>Total Floors</label>
               <InputNumber
                 min={1}
                 max={50}
-                style={{ width: "100%", marginTop: 8 }}
+                size="large"
+                style={{ width: "100%" }}
                 value={formData.totalFloors}
-                onChange={(v) =>
-                  setFormData((prev) => ({ ...prev, totalFloors: v }))
-                }
+                onChange={(v) => setFormData((p) => ({ ...p, totalFloors: v }))}
               />
             </Col>
           </Row>
         </Card>
 
-        <Tabs defaultActiveKey="visible" size="large">
-          {/* ==================== VISIBLE PRODUCTS TAB ==================== */}
+        {/* ─── Main Tabs ───────────────────────────────────────────── */}
+        <Tabs
+          defaultActiveKey="visible"
+          size="large"
+          type="card"
+          tabBarStyle={{ marginBottom: 0 }}
+        >
+          {/* VISIBLE PRODUCTS */}
           <TabPane
             tab={
-              <span>
-                <HomeOutlined /> Visible Products
+              <Space>
+                <HomeOutlined />
+                Visible Products
                 <Badge
                   count={formData.items.filter((i) => !i.isConcealed).length}
-                  style={{ marginLeft: 8, backgroundColor: "#52c41a" }}
+                  color="#52c41a"
                 />
-              </span>
+              </Space>
             }
             key="visible"
           >
             {formData.items.some((i) => !i.isConcealed && !i.floor_number) && (
               <Card
                 title={
-                  <>
-                    <WarningOutlined /> Unassigned Visible Products (From
-                    Quotation)
-                  </>
+                  <Space>
+                    <WarningOutlined /> Unassigned Products (from Quotation)
+                  </Space>
                 }
-                style={{
-                  marginBottom: 24,
-                  border: "2px dashed #1890ff",
-                  backgroundColor: "#f0f8ff",
-                }}
                 extra={
-                  <Tag color="blue">
+                  <Tag color="processing">
                     {
                       formData.items.filter(
                         (i) => !i.isConcealed && !i.floor_number
@@ -645,31 +477,30 @@ const AddSiteMap = () => {
                     items
                   </Tag>
                 }
+                bordered={false}
+                style={{ marginBottom: 24, background: "#fffbe6" }}
               >
                 <Table
-                  size="small"
+                  size="middle"
                   pagination={false}
                   dataSource={formData.items.filter(
                     (i) => !i.isConcealed && !i.floor_number
                   )}
+                  rowKey={(r, idx) => `unassigned-${idx}`}
                   columns={[
-                    { title: "Product", dataIndex: "name", width: "35%" },
+                    { title: "Product", dataIndex: "name", ellipsis: true },
                     {
                       title: "Qty",
-                      width: 100,
+                      width: 120,
                       render: (_, r) => (
                         <InputNumber
                           min={1}
                           value={r.quantity}
                           onChange={(v) =>
-                            updateItemQty(formData.items.indexOf(r), v)
+                            updateQuantity(formData.items.indexOf(r), v)
                           }
                         />
                       ),
-                    },
-                    {
-                      title: "Price",
-                      render: (_, r) => `₹${r.price.toLocaleString("en-IN")}`,
                     },
                     {
                       title: "Total",
@@ -678,55 +509,50 @@ const AddSiteMap = () => {
                     },
                     {
                       title: "Action",
-                      width: 120,
-                      render: (_, record) => (
-                        <Button
-                          type="primary"
-                          size="small"
-                          icon={<HomeOutlined />}
-                          onClick={() => {
-                            setAssignModal({
-                              visible: true,
-                              itemIndex: formData.items.indexOf(record),
-                            });
-                          }}
-                        >
-                          Assign
-                        </Button>
-                      ),
-                    },
-                    {
-                      title: "",
+                      width: 140,
                       render: (_, r) => (
-                        <Button
-                          danger
-                          size="small"
-                          icon={<DeleteOutlined />}
-                          onClick={() => removeItem(formData.items.indexOf(r))}
-                        />
+                        <Space>
+                          <Button
+                            type="primary"
+                            size="small"
+                            icon={<ApartmentOutlined />}
+                            onClick={() =>
+                              setAssignModal({
+                                visible: true,
+                                itemIndex: formData.items.indexOf(r),
+                              })
+                            }
+                          >
+                            Assign
+                          </Button>
+                          <Button
+                            danger
+                            size="small"
+                            icon={<DeleteOutlined />}
+                            onClick={() =>
+                              removeItem(formData.items.indexOf(r))
+                            }
+                          />
+                        </Space>
                       ),
                     },
                   ]}
                 />
-                <div style={{ marginTop: 12, textAlign: "right" }}>
-                  <Tag color="blue" size="large">
-                    Total: ₹
-                    {formData.items
-                      .filter((i) => !i.isConcealed && !i.floor_number)
-                      .reduce((s, i) => s + i.quantity * i.price, 0)
-                      .toLocaleString("en-IN")}
-                  </Tag>
-                </div>
               </Card>
             )}
 
-            <Collapse accordion>
+            <Collapse
+              defaultActiveKey={formData.floorDetails.map(
+                (f) => f.floor_number
+              )}
+              accordion
+              ghost
+            >
               {formData.floorDetails.map((floor) => {
-                const floorItems = itemsByLocation[floor.floor_number] || {};
-                const visibleItems = Object.values(floorItems)
-                  .flat()
-                  .filter((i) => !i.isConcealed);
-                const floorTotal = visibleItems.reduce(
+                const floorItems = formData.items.filter(
+                  (i) => i.floor_number === floor.floor_number && !i.isConcealed
+                );
+                const total = floorItems.reduce(
                   (s, i) => s + i.quantity * i.price,
                   0
                 );
@@ -735,47 +561,52 @@ const AddSiteMap = () => {
                   <Panel
                     key={floor.floor_number}
                     header={
-                      <div
+                      <Space
                         style={{
-                          display: "flex",
-                          justifyContent: "space-between",
                           width: "100%",
+                          justifyContent: "space-between",
                         }}
                       >
-                        <span>
-                          <HomeOutlined /> {floor.floor_name} (
-                          {visibleItems.length} items)
-                        </span>
-                        <Tag color="green">
-                          ₹{floorTotal.toLocaleString("en-IN")}
+                        <Space>
+                          <HomeOutlined style={{ color: "#1890ff" }} />
+                          <Text strong>{floor.floor_name}</Text>
+                          <Text type="secondary">({floorItems.length})</Text>
+                        </Space>
+                        <Tag
+                          color="green"
+                          style={{ fontSize: 14, padding: "4px 12px" }}
+                        >
+                          ₹{total.toLocaleString("en-IN")}
                         </Tag>
-                      </div>
+                      </Space>
                     }
                   >
                     <Space
                       direction="vertical"
-                      style={{ width: "100%", size: "large" }}
+                      style={{ width: "100%" }}
+                      size="middle"
                     >
                       <Button
                         type="dashed"
-                        block
                         icon={<PlusOutlined />}
-                        onClick={() => openRoomModal(floor)}
+                        onClick={() =>
+                          setRoomModal({ visible: true, floor, room: null })
+                        }
+                        block
                       >
                         Add Room
                       </Button>
 
                       {floor.rooms.length === 0 ? (
-                        <Card size="small">
-                          <Text type="secondary">
-                            Add rooms to assign visible products
-                          </Text>
-                        </Card>
+                        <Empty
+                          image={Empty.PRESENTED_IMAGE_SIMPLE}
+                          description="No rooms yet — add rooms to start assigning products"
+                        />
                       ) : (
                         floor.rooms.map((room) => {
-                          const roomItems = (
-                            floorItems[room.room_id] || []
-                          ).filter((i) => !i.isConcealed);
+                          const roomItems = floorItems.filter(
+                            (i) => i.room_id === room.room_id
+                          );
                           const roomTotal = roomItems.reduce(
                             (s, i) => s + i.quantity * i.price,
                             0
@@ -786,157 +617,178 @@ const AddSiteMap = () => {
                               key={room.room_id}
                               size="small"
                               title={
-                                <span>
-                                  {room.room_name}{" "}
-                                  {room.room_type && (
-                                    <Tag color="blue">{room.room_type}</Tag>
-                                  )}
-                                </span>
+                                <Space>
+                                  <Text strong>{room.room_name}</Text>
+                                  <Tag color="blue">
+                                    {room.room_type || "General"}
+                                  </Tag>
+                                </Space>
                               }
                               extra={
                                 <Space>
-                                  <Button
-                                    size="small"
-                                    icon={<EditOutlined />}
-                                    onClick={() => openRoomModal(floor, room)}
-                                  />
-                                  <Button
-                                    danger
-                                    size="small"
-                                    icon={<DeleteOutlined />}
-                                    onClick={() =>
-                                      deleteRoom(
-                                        floor.floor_number,
-                                        room.room_id
-                                      )
-                                    }
-                                  />
+                                  <Tooltip title="Edit room">
+                                    <Button
+                                      size="small"
+                                      icon={<EditOutlined />}
+                                      onClick={() =>
+                                        setRoomModal({
+                                          visible: true,
+                                          floor,
+                                          room,
+                                        })
+                                      }
+                                    />
+                                  </Tooltip>
+                                  <Tooltip title="Delete room">
+                                    <Button
+                                      danger
+                                      size="small"
+                                      icon={<DeleteOutlined />}
+                                      onClick={() => {
+                                        if (
+                                          window.confirm(
+                                            "Delete room and all assigned items?"
+                                          )
+                                        ) {
+                                          setFormData((p) => ({
+                                            ...p,
+                                            floorDetails: p.floorDetails.map(
+                                              (f) =>
+                                                f.floor_number ===
+                                                floor.floor_number
+                                                  ? {
+                                                      ...f,
+                                                      rooms: f.rooms.filter(
+                                                        (r) =>
+                                                          r.room_id !==
+                                                          room.room_id
+                                                      ),
+                                                    }
+                                                  : f
+                                            ),
+                                            items: p.items.filter(
+                                              (i) =>
+                                                !(
+                                                  i.floor_number ===
+                                                    floor.floor_number &&
+                                                  i.room_id === room.room_id
+                                                )
+                                            ),
+                                          }));
+                                        }
+                                      }}
+                                    />
+                                  </Tooltip>
                                 </Space>
                               }
                             >
-                              <Select
-                                showSearch
-                                placeholder="Search & add visible product..."
-                                onSearch={setProductSearch} // ← Direct, instant
-                                onChange={(pid) => {
-                                  addProduct(
-                                    floor.floor_number,
-                                    room.room_id,
-                                    pid,
-                                    false
-                                  );
-                                  setProductSearch(""); // ← Clear after select
-                                }}
-                                value={null}
-                                filterOption={false} // ← We handle filtering
-                                notFoundContent={
-                                  productSearch
-                                    ? "No products found"
-                                    : "Start typing to search..."
-                                }
-                                style={{ width: "100%", marginBottom: 16 }}
-                              >
-                                {filteredVisibleProducts.map((p) => (
-                                  <Option
-                                    key={getProductId(p)}
-                                    value={getProductId(p)}
-                                  >
-                                    <div
-                                      style={{
-                                        display: "flex",
-                                        justifyContent: "space-between",
-                                        alignItems: "center",
-                                      }}
-                                    >
-                                      <div>
-                                        <div>
-                                          <strong>{getDisplayName(p)}</strong>
-                                        </div>
-                                        {(p.product_code ||
-                                          p.meta?.[
-                                            "d11da9f9-3f2e-4536-8236-9671200cca4a"
-                                          ]) && (
-                                          <div
-                                            style={{
-                                              fontSize: 11,
-                                              color: "#888",
-                                            }}
-                                          >
-                                            {p.product_code ||
-                                              p.meta[
-                                                "d11da9f9-3f2e-4536-8236-9671200cca4a"
-                                              ]}
-                                          </div>
-                                        )}
-                                      </div>
-                                      <span
-                                        style={{
-                                          color: "#52c41a",
-                                          fontWeight: "bold",
-                                        }}
-                                      >
-                                        ₹
-                                        {Number(
-                                          p.meta?.[
-                                            "9ba862ef-f993-4873-95ef-1fef10036aa5"
-                                          ] || 0
-                                        ).toLocaleString("en-IN")}
-                                      </span>
-                                    </div>
-                                  </Option>
-                                ))}
-                              </Select>
-                              <Table
-                                size="small"
-                                pagination={false}
-                                dataSource={roomItems}
-                                columns={[
-                                  { title: "Product", dataIndex: "name" },
-                                  {
-                                    title: "Qty",
-                                    render: (_, r, idx) => (
-                                      <InputNumber
-                                        min={1}
-                                        value={r.quantity}
-                                        onChange={(v) =>
-                                          updateItemQty(
-                                            formData.items.indexOf(r),
-                                            v
-                                          )
-                                        }
-                                      />
-                                    ),
-                                  },
-                                  {
-                                    title: "Price",
-                                    render: (_, r) => `₹${r.price.toFixed(0)}`,
-                                  },
-                                  {
-                                    title: "Total",
-                                    render: (_, r) =>
-                                      `₹${(r.quantity * r.price).toFixed(0)}`,
-                                  },
-                                  {
-                                    title: "",
-                                    render: (_, r) => (
-                                      <Button
-                                        danger
-                                        size="small"
-                                        icon={<DeleteOutlined />}
-                                        onClick={() =>
-                                          removeItem(formData.items.indexOf(r))
-                                        }
-                                      />
-                                    ),
-                                  },
-                                ]}
-                              />
-                              <div style={{ textAlign: "right", marginTop: 8 }}>
-                                <Tag color="green">
-                                  Room Total: ₹
-                                  {roomTotal.toLocaleString("en-IN")}
-                                </Tag>
+                              <div style={{ marginBottom: 12 }}>
+                                <Select
+                                  showSearch
+                                  placeholder="Search product..."
+                                  prefix={<SearchOutlined />}
+                                  value={null}
+                                  onSearch={setSearchTerm}
+                                  onChange={(val) => {
+                                    addVisibleProduct(
+                                      floor.floor_number,
+                                      room.room_id,
+                                      val
+                                    );
+                                  }}
+                                  filterOption={false}
+                                  options={searchOptions}
+                                  notFoundContent={
+                                    searching ? (
+                                      <Spin size="small" />
+                                    ) : searchTerm ? (
+                                      "No match"
+                                    ) : (
+                                      "Type to search"
+                                    )
+                                  }
+                                  style={{ width: "100%" }}
+                                  size="large"
+                                  dropdownStyle={{ maxHeight: 380 }}
+                                />
                               </div>
+
+                              {roomItems.length > 0 ? (
+                                <Table
+                                  size="small"
+                                  pagination={false}
+                                  dataSource={roomItems}
+                                  rowKey={(_, idx) => `room-item-${idx}`}
+                                  columns={[
+                                    {
+                                      title: "Product",
+                                      dataIndex: "name",
+                                      ellipsis: true,
+                                    },
+                                    {
+                                      title: "Qty",
+                                      width: 100,
+                                      render: (_, r) => (
+                                        <InputNumber
+                                          min={1}
+                                          value={r.quantity}
+                                          onChange={(v) =>
+                                            updateQuantity(
+                                              formData.items.indexOf(r),
+                                              v
+                                            )
+                                          }
+                                        />
+                                      ),
+                                    },
+                                    {
+                                      title: "Total",
+                                      width: 140,
+                                      render: (_, r) =>
+                                        `₹${(
+                                          r.quantity * r.price
+                                        ).toLocaleString("en-IN")}`,
+                                    },
+                                    {
+                                      title: "",
+                                      width: 60,
+                                      render: (_, r) => (
+                                        <Button
+                                          danger
+                                          size="small"
+                                          icon={<DeleteOutlined />}
+                                          onClick={() =>
+                                            removeItem(
+                                              formData.items.indexOf(r)
+                                            )
+                                          }
+                                        />
+                                      ),
+                                    },
+                                  ]}
+                                />
+                              ) : (
+                                <Text type="secondary">
+                                  No products assigned yet
+                                </Text>
+                              )}
+
+                              {roomItems.length > 0 && (
+                                <div
+                                  style={{ textAlign: "right", marginTop: 12 }}
+                                >
+                                  <Tag
+                                    color="green"
+                                    style={{
+                                      fontSize: 14,
+                                      padding: "6px 12px",
+                                    }}
+                                  >
+                                    Room Total: ₹
+                                    {roomTotal.toLocaleString("en-IN")}
+                                  </Tag>
+                                </div>
+                              )}
                             </Card>
                           );
                         })
@@ -948,25 +800,25 @@ const AddSiteMap = () => {
             </Collapse>
           </TabPane>
 
-          {/* ==================== CONCEALED WORKS TAB ==================== */}
+          {/* CONCEALED WORKS */}
           <TabPane
             tab={
-              <span>
-                <EyeInvisibleOutlined /> Concealed Works
+              <Space>
+                <EyeInvisibleOutlined />
+                Concealed Works
                 <Badge
                   count={formData.items.filter((i) => i.isConcealed).length}
-                  style={{ marginLeft: 8, backgroundColor: "#ff4d4f" }}
+                  color="#ff4d4f"
                 />
-              </span>
+              </Space>
             }
             key="concealed"
           >
-            {/* Add Concealed Item */}
             <Card
               title={
-                <>
+                <Space>
                   <ToolOutlined /> Add Concealed Item
-                </>
+                </Space>
               }
               style={{ marginBottom: 24 }}
             >
@@ -977,256 +829,172 @@ const AddSiteMap = () => {
               >
                 <Select
                   showSearch
-                  placeholder="Search concealed products..."
-                  onSearch={setConcealedSearch}
+                  prefix={<SearchOutlined />}
+                  placeholder="Search product for concealed work..."
+                  value={selectedConcealedProduct}
+                  onSearch={setSearchTerm}
                   onChange={setSelectedConcealedProduct}
-                  value={selectedConcealedProduct || undefined}
                   filterOption={false}
-                  notFoundContent={
-                    concealedSearch
-                      ? "No concealed items found"
-                      : "Type to search concealed works..."
-                  }
+                  options={searchOptions}
+                  notFoundContent={searching ? <Spin /> : "No results"}
                   style={{ width: "100%" }}
-                >
-                  {filteredConcealedProducts.map((p) => (
-                    <Option key={getProductId(p)} value={getProductId(p)}>
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                        }}
-                      >
-                        <div>
-                          <div>
-                            <strong>{getDisplayName(p)}</strong>
-                          </div>
-                          <div style={{ fontSize: 11, color: "#888" }}>
-                            {p.product_code ||
-                              p.meta?.[
-                                "d11da9f9-3f2e-4536-8236-9671200cca4a"
-                              ] ||
-                              "Concealed Item"}
-                          </div>
-                        </div>
-                        <span style={{ color: "#ff4d4f", fontWeight: "bold" }}>
-                          ₹
-                          {Number(
-                            p.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"] ||
-                              0
-                          ).toLocaleString("en-IN")}
-                        </span>
-                      </div>
-                    </Option>
-                  ))}
-                </Select>
+                  size="large"
+                />
+
                 {selectedConcealedProduct && (
-                  <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-                    <Select
-                      placeholder="Select Floor"
-                      style={{ minWidth: 250 }}
-                      value={selectedFloor}
-                      onChange={setSelectedFloor}
-                    >
-                      {formData.floorDetails.map((f) => (
-                        <Option key={f.floor_number} value={f.floor_number}>
-                          {f.floor_name}
-                        </Option>
-                      ))}
-                    </Select>
-                    <Select
-                      placeholder="Select Room (optional)"
-                      style={{ minWidth: 250 }}
-                      value={selectedRoom}
-                      onChange={setSelectedRoom}
-                      allowClear
-                    >
-                      {selectedFloor &&
-                        formData.floorDetails
-                          .find((f) => f.floor_number === selectedFloor)
-                          ?.rooms.map((room) => (
-                            <Option key={room.room_id} value={room.room_id}>
-                              {room.room_name} ({room.room_type})
-                            </Option>
-                          ))}
-                    </Select>
-                    <Button
-                      type="primary"
-                      icon={<PlusOutlined />}
-                      onClick={addSelectedConcealedItem}
-                      disabled={!selectedFloor}
-                    >
-                      Add
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        setSelectedConcealedProduct(null);
-                        setSelectedFloor(null);
-                        setSelectedRoom(null);
-                      }}
-                    >
-                      Clear
-                    </Button>
-                  </div>
+                  <Row gutter={16}>
+                    <Col xs={24} sm={10} md={8}>
+                      <Select
+                        placeholder="Select Floor"
+                        value={selectedFloor}
+                        onChange={setSelectedFloor}
+                        style={{ width: "100%" }}
+                        size="large"
+                      >
+                        {formData.floorDetails.map((f) => (
+                          <Option key={f.floor_number} value={f.floor_number}>
+                            {f.floor_name}
+                          </Option>
+                        ))}
+                      </Select>
+                    </Col>
+
+                    <Col xs={24} sm={10} md={8}>
+                      <Select
+                        placeholder="Room (optional)"
+                        value={selectedRoom}
+                        onChange={setSelectedRoom}
+                        allowClear
+                        style={{ width: "100%" }}
+                        size="large"
+                        disabled={!selectedFloor}
+                      >
+                        {selectedFloor &&
+                          formData.floorDetails
+                            .find((f) => f.floor_number === selectedFloor)
+                            ?.rooms.map((r) => (
+                              <Option key={r.room_id} value={r.room_id}>
+                                {r.room_name} ({r.room_type || "—"})
+                              </Option>
+                            ))}
+                      </Select>
+                    </Col>
+
+                    <Col xs={24} sm={4} md={4}>
+                      <Space>
+                        <Button
+                          type="primary"
+                          icon={<PlusOutlined />}
+                          onClick={addConcealedProduct}
+                          disabled={!selectedFloor}
+                          size="large"
+                          block
+                        >
+                          Add
+                        </Button>
+                        <Button
+                          size="large"
+                          onClick={() => {
+                            setSelectedConcealedProduct(null);
+                            setSelectedFloor(null);
+                            setSelectedRoom(null);
+                          }}
+                        >
+                          Clear
+                        </Button>
+                      </Space>
+                    </Col>
+                  </Row>
                 )}
               </Space>
             </Card>
 
-            {/* Unassigned Concealed Items */}
-            {formData.items.some((i) => i.isConcealed && !i.floor_number) && (
-              <Card
-                title="Unassigned Concealed Items"
-                style={{
-                  marginBottom: 24,
-                  border: "2px dashed #ff4d4f",
-                  backgroundColor: "#fff2f0",
-                }}
-              >
-                <Table
-                  size="small"
-                  dataSource={formData.items.filter(
-                    (i) => i.isConcealed && !i.floor_number
-                  )}
-                  columns={[
-                    { title: "Product", dataIndex: "name" },
-                    {
-                      title: "Qty",
-                      render: (_, r) => (
-                        <InputNumber
-                          min={1}
-                          value={r.quantity}
-                          onChange={(v) =>
-                            updateItemQty(formData.items.indexOf(r), v)
-                          }
-                        />
-                      ),
-                    },
-                    {
-                      title: "Price",
-                      render: (_, r) => `₹${r.price.toLocaleString("en-IN")}`,
-                    },
-                    {
-                      title: "Total",
-                      render: (_, r) =>
-                        `₹${(r.quantity * r.price).toLocaleString("en-IN")}`,
-                    },
-                    {
-                      title: "",
-                      render: (_, r) => (
-                        <Button
-                          danger
-                          size="small"
-                          icon={<DeleteOutlined />}
-                          onClick={() => removeItem(formData.items.indexOf(r))}
-                        />
-                      ),
-                    },
-                  ]}
-                />
-              </Card>
-            )}
-
-            {/* Assigned Concealed Items by Floor */}
-            <Collapse accordion>
+            {/* Concealed items per floor */}
+            <Collapse accordion ghost>
               {formData.floorDetails.map((floor) => {
-                const concealedInFloor = formData.items.filter(
+                const concealed = formData.items.filter(
                   (i) => i.isConcealed && i.floor_number === floor.floor_number
                 );
-                if (concealedInFloor.length === 0) return null;
+                if (concealed.length === 0) return null;
 
                 const byRoom = {};
-                concealedInFloor.forEach((item) => {
-                  const key = item.room_id || "floor-level";
+                concealed.forEach((i) => {
+                  const key = i.room_id || "floor";
                   if (!byRoom[key]) byRoom[key] = [];
-                  byRoom[key].push(item);
+                  byRoom[key].push(i);
                 });
+
+                const floorTotal = concealed.reduce(
+                  (s, i) => s + i.quantity * i.price,
+                  0
+                );
 
                 return (
                   <Panel
                     key={floor.floor_number}
                     header={
-                      <div
+                      <Space
                         style={{
-                          display: "flex",
-                          justifyContent: "space-between",
                           width: "100%",
+                          justifyContent: "space-between",
                         }}
                       >
-                        <span>
-                          <EyeInvisibleOutlined /> {floor.floor_name} -
-                          Concealed ({concealedInFloor.length})
-                        </span>
-                        <Tag color="volcano">
-                          ₹
-                          {concealedInFloor
-                            .reduce((s, i) => s + i.quantity * i.price, 0)
-                            .toLocaleString("en-IN")}
+                        <Space>
+                          <EyeInvisibleOutlined style={{ color: "#ff4d4f" }} />
+                          <Text strong>{floor.floor_name}</Text>
+                          <Text type="secondary">({concealed.length})</Text>
+                        </Space>
+                        <Tag
+                          color="volcano"
+                          style={{ fontSize: 14, padding: "4px 12px" }}
+                        >
+                          ₹{floorTotal.toLocaleString("en-IN")}
                         </Tag>
-                      </div>
+                      </Space>
                     }
                   >
                     <Space
                       direction="vertical"
                       style={{ width: "100%" }}
-                      size="large"
+                      size="middle"
                     >
-                      {Object.entries(byRoom).map(([roomKey, items]) => {
+                      {Object.entries(byRoom).map(([key, items]) => {
                         const room =
-                          roomKey !== "floor-level"
-                            ? floor.rooms.find((r) => r.room_id === roomKey)
+                          key !== "floor"
+                            ? floor.rooms.find((r) => r.room_id === key)
                             : null;
-
-                        const roomTotal = items.reduce(
+                        const total = items.reduce(
                           (s, i) => s + i.quantity * i.price,
                           0
                         );
 
                         return (
                           <Card
-                            key={roomKey}
+                            key={key}
                             size="small"
                             title={
                               room ? (
-                                <span>
-                                  {room.room_name} <Tag>{room.room_type}</Tag>
-                                </span>
+                                <Space>
+                                  {room.room_name}{" "}
+                                  <Tag color="default">
+                                    {room.room_type || "General"}
+                                  </Tag>
+                                </Space>
                               ) : (
-                                <span>
-                                  <strong>Floor Level (Common Areas)</strong>
-                                </span>
+                                <Text strong>Floor-level (common areas)</Text>
                               )
                             }
-                            extra={
-                              <Tag color="red">
-                                {items.length} concealed items
-                              </Tag>
-                            }
+                            extra={<Tag color="red">{items.length} items</Tag>}
                           >
                             <Table
                               size="small"
                               pagination={false}
                               dataSource={items}
-                              rowKey={(_, i) =>
-                                `conc-${floor.floor_number}-${roomKey}-${i}`
-                              }
                               columns={[
                                 {
                                   title: "Product",
                                   dataIndex: "name",
-                                  width: "40%",
-                                },
-                                {
-                                  title: "Category",
-                                  render: (_, r) => (
-                                    <Tag color="volcano">
-                                      {r.concealedCategory
-                                        ? r.concealedCategory
-                                            .replace(/-/g, " ")
-                                            .toUpperCase()
-                                        : "OTHERS"}
-                                    </Tag>
-                                  ),
+                                  ellipsis: true,
                                 },
                                 {
                                   title: "Qty",
@@ -1236,7 +1004,7 @@ const AddSiteMap = () => {
                                       min={1}
                                       value={r.quantity}
                                       onChange={(v) =>
-                                        updateItemQty(
+                                        updateQuantity(
                                           formData.items.indexOf(r),
                                           v
                                         )
@@ -1245,12 +1013,8 @@ const AddSiteMap = () => {
                                   ),
                                 },
                                 {
-                                  title: "Price",
-                                  render: (_, r) =>
-                                    `₹${r.price.toLocaleString("en-IN")}`,
-                                },
-                                {
                                   title: "Total",
+                                  width: 140,
                                   render: (_, r) =>
                                     `₹${(r.quantity * r.price).toLocaleString(
                                       "en-IN"
@@ -1258,7 +1022,7 @@ const AddSiteMap = () => {
                                 },
                                 {
                                   title: "",
-                                  width: 50,
+                                  width: 60,
                                   render: (_, r) => (
                                     <Button
                                       danger
@@ -1272,9 +1036,12 @@ const AddSiteMap = () => {
                                 },
                               ]}
                             />
-                            <div style={{ marginTop: 12, textAlign: "right" }}>
-                              <Tag color="red" size="large">
-                                Total: ₹{roomTotal.toLocaleString("en-IN")}
+                            <div style={{ textAlign: "right", marginTop: 12 }}>
+                              <Tag
+                                color="red"
+                                style={{ fontSize: 14, padding: "6px 12px" }}
+                              >
+                                Subtotal: ₹{total.toLocaleString("en-IN")}
                               </Tag>
                             </div>
                           </Card>
@@ -1288,125 +1055,221 @@ const AddSiteMap = () => {
           </TabPane>
         </Tabs>
 
-        {/* Summary */}
-        <div
+        {/* ─── Summary Footer ──────────────────────────────────────── */}
+        <Card
+          bordered={false}
           style={{
             marginTop: 32,
-            padding: 24,
-            background: "#f0f2f5",
-            borderRadius: 8,
+            background: "linear-gradient(135deg, #f6f9fc 0%, #ffffff 100%)",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
           }}
         >
-          <Row gutter={32}>
-            <Col>
+          <Row gutter={[24, 24]} justify="space-around">
+            <Col xs={12} sm={6}>
               <Statistic
-                title="Visible Items"
-                value={`₹${visibleTotal.toLocaleString("en-IN")}`}
+                title="Visible Products"
+                value={visibleTotal}
+                precision={0}
+                formatter={(v) => `₹${v.toLocaleString("en-IN")}`}
+                valueStyle={{ color: "#52c41a", fontSize: 28 }}
               />
             </Col>
-            <Col>
+            <Col xs={12} sm={6}>
               <Statistic
                 title="Concealed Works"
-                value={`₹${concealedTotal.toLocaleString("en-IN")}`}
-                valueStyle={{ color: "#ff4d4f" }}
+                value={concealedTotal}
+                precision={0}
+                formatter={(v) => `₹${v.toLocaleString("en-IN")}`}
+                valueStyle={{ color: "#ff4d4f", fontSize: 28 }}
               />
             </Col>
-            <Col>
+            <Col xs={12} sm={6}>
               <Statistic
-                title="Grand Total (excl. GST)"
-                value={`₹${grandTotal.toLocaleString("en-IN")}`}
+                title="Grand Total"
+                value={grandTotal}
+                precision={0}
+                formatter={(v) => `₹${v.toLocaleString("en-IN")}`}
+                valueStyle={{ fontWeight: 600, fontSize: 28 }}
               />
             </Col>
-            <Col>
+            <Col xs={12} sm={6}>
               <Statistic
-                title="With 18% GST"
-                value={`₹${(grandTotal * 1.18).toLocaleString("en-IN", {
-                  maximumFractionDigits: 0,
-                })}`}
+                title="incl. 18% GST"
+                value={grandTotal * 1.18}
+                precision={0}
+                formatter={(v) => `₹${Math.round(v).toLocaleString("en-IN")}`}
+                valueStyle={{ color: "#722ed1", fontSize: 28 }}
               />
             </Col>
           </Row>
-          <Divider />
-          <Button
-            type="primary"
-            size="large"
-            icon={<SaveOutlined />}
-            onClick={handleSubmit}
-            loading={isCreating || isUpdating}
-          >
-            {isEditMode ? "Update" : "Save"} Site Map
-          </Button>
-        </div>
 
-        {/* Room Modal */}
+          <Divider />
+
+          <div style={{ textAlign: "center" }}>
+            <Button
+              type="primary"
+              size="large"
+              icon={<SaveOutlined />}
+              loading={creating || updating}
+              onClick={async () => {
+                if (!formData.customerId)
+                  return message.error("Please select customer");
+                if (!formData.name.trim())
+                  return message.error("Project name is required");
+
+                const payload = {
+                  ...formData,
+                  items: formData.items.map((i) => ({
+                    ...i,
+                    quantity: Number(i.quantity),
+                    price: Number(i.price),
+                  })),
+                };
+
+                try {
+                  if (isEditMode) {
+                    await updateSiteMap({
+                      id,
+                      updatedSiteMap: payload,
+                    }).unwrap();
+                    message.success("Site map updated");
+                  } else {
+                    await createSiteMap(payload).unwrap();
+                    message.success("Site map created");
+                  }
+                  navigate("/site-map/list");
+                } catch (err) {
+                  message.error(err?.data?.message || "Save failed");
+                }
+              }}
+              style={{ height: 48, fontSize: 16, minWidth: 180 }}
+            >
+              {isEditMode ? "Update Site Map" : "Create Site Map"}
+            </Button>
+          </div>
+        </Card>
+
+        {/* ─── Modals ──────────────────────────────────────────────── */}
         <Modal
-          title={roomModal.room ? "Edit Room" : "Add New Room"}
+          title={roomModal.room ? "Edit Room" : "Add Room"}
           open={roomModal.visible}
-          onOk={saveRoom}
-          onCancel={() => setRoomModal({ visible: false })}
+          onOk={() => roomForm.submit()}
+          onCancel={() => {
+            setRoomModal({ visible: false });
+            roomForm.resetFields();
+          }}
+          okText="Save Room"
+          width={500}
         >
-          <Form form={roomForm} layout="vertical">
+          <Form
+            form={roomForm}
+            layout="vertical"
+            onFinish={(values) => {
+              setFormData((prev) => {
+                const floors = prev.floorDetails.map((f) => ({
+                  ...f,
+                  rooms: [...f.rooms],
+                }));
+                const floorIdx = floors.findIndex(
+                  (f) => f.floor_number === roomModal.floor.floor_number
+                );
+
+                if (roomModal.room) {
+                  const roomIdx = floors[floorIdx].rooms.findIndex(
+                    (r) => r.room_id === roomModal.room.room_id
+                  );
+                  floors[floorIdx].rooms[roomIdx] = {
+                    ...floors[floorIdx].rooms[roomIdx],
+                    ...values,
+                  };
+                } else {
+                  floors[floorIdx].rooms.push({
+                    room_id: uuidv4(),
+                    room_name: values.room_name,
+                    room_type: values.room_type,
+                    room_size: values.room_size,
+                    details: values.details,
+                  });
+                }
+
+                return { ...prev, floorDetails: floors };
+              });
+              setRoomModal({ visible: false });
+              roomForm.resetFields();
+            }}
+          >
             <Form.Item
               name="room_name"
               label="Room Name"
               rules={[{ required: true }]}
             >
-              <Input />
+              <Input placeholder="e.g. Master Bedroom" />
             </Form.Item>
-            <Form.Item name="room_type" label="Type">
-              <Select>
-                <Option value="Bathroom">Bathroom</Option>
-                <Option value="Kitchen">Kitchen</Option>
+
+            <Form.Item name="room_type" label="Room Type">
+              <Select placeholder="Select type">
                 <Option value="Bedroom">Bedroom</Option>
-                <Option value="Living Room">Living Room</Option>
-                <Option value="General">General</Option>
+                <Option value="Living Room">Living / Drawing</Option>
+                <Option value="Kitchen">Kitchen</Option>
+                <Option value="Bathroom">Bathroom</Option>
+                <Option value="Balcony">Balcony / Terrace</Option>
+                <Option value="Parking">Parking</Option>
+                <Option value="Puja Room">Puja Room</Option>
+                <Option value="General">Other / General</Option>
               </Select>
             </Form.Item>
-            <Form.Item name="room_size" label="Size">
-              <Input />
+
+            <Form.Item name="room_size" label="Size (optional)">
+              <Input placeholder="e.g. 12 × 14 ft" />
             </Form.Item>
-            <Form.Item name="details" label="Details">
-              <Input.TextArea />
+
+            <Form.Item name="details" label="Notes / Details">
+              <Input.TextArea
+                rows={3}
+                placeholder="Any special requirements..."
+              />
             </Form.Item>
           </Form>
         </Modal>
-        {/* Assign Product Modal */}
+
         <Modal
-          title="Assign Product to Location"
+          title="Assign Product"
           open={assignModal.visible}
           onOk={() => {
-            if (!selectedFloor) return message.error("Please select a floor");
-            const index = assignModal.itemIndex;
-            setFormData((prev) => {
-              const items = [...prev.items];
-              items[index] = {
-                ...items[index],
+            if (!selectedFloor) return message.error("Select floor");
+            const idx = assignModal.itemIndex;
+            setFormData((p) => {
+              const items = [...p.items];
+              items[idx] = {
+                ...items[idx],
                 floor_number: selectedFloor,
                 room_id: selectedRoom || null,
               };
-              return { ...prev, items };
+              return { ...p, items };
             });
             setAssignModal({ visible: false, itemIndex: null });
             setSelectedFloor(null);
             setSelectedRoom(null);
-            message.success("Product assigned successfully!");
+            message.success("Assigned successfully");
           }}
           onCancel={() => {
             setAssignModal({ visible: false, itemIndex: null });
             setSelectedFloor(null);
             setSelectedRoom(null);
           }}
-          okText="Assign"
-          cancelText="Cancel"
+          okText="Assign Now"
         >
           <Space direction="vertical" style={{ width: "100%" }}>
             <div>
-              <strong>Select Floor *</strong>
+              <strong style={{ display: "block", marginBottom: 8 }}>
+                Floor *
+              </strong>
               <Select
                 placeholder="Choose floor"
-                style={{ width: "100%", marginTop: 8 }}
                 value={selectedFloor}
                 onChange={setSelectedFloor}
+                style={{ width: "100%" }}
+                size="large"
               >
                 {formData.floorDetails.map((f) => (
                   <Option key={f.floor_number} value={f.floor_number}>
@@ -1418,19 +1281,22 @@ const AddSiteMap = () => {
 
             {selectedFloor && (
               <div>
-                <strong>Select Room (optional)</strong>
+                <strong style={{ display: "block", marginBottom: 8 }}>
+                  Room (optional)
+                </strong>
                 <Select
-                  placeholder="Common area if not selected"
-                  style={{ width: "100%", marginTop: 8 }}
+                  placeholder="Common area"
                   value={selectedRoom}
                   onChange={setSelectedRoom}
                   allowClear
+                  style={{ width: "100%" }}
+                  size="large"
                 >
                   {formData.floorDetails
                     .find((f) => f.floor_number === selectedFloor)
-                    ?.rooms.map((room) => (
-                      <Option key={room.room_id} value={room.room_id}>
-                        {room.room_name} ({room.room_type})
+                    ?.rooms.map((r) => (
+                      <Option key={r.room_id} value={r.room_id}>
+                        {r.room_name} ({r.room_type || "—"})
                       </Option>
                     ))}
                 </Select>

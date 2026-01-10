@@ -8,12 +8,17 @@ import {
   useDeleteOrderMutation,
   useUpdateOrderStatusMutation,
   useUploadInvoiceMutation,
+  useLazyDownloadInvoiceQuery,
   useIssueGatePassMutation,
 } from "../../api/orderApi";
 import {
   useGetCustomerByIdQuery,
   useGetCustomersQuery,
 } from "../../api/customerApi";
+import {
+  // ... your existing imports
+  useGetQuotationByIdQuery,
+} from "../../api/quotationApi"; // adjust path if needed
 import { useGetAllAddressesQuery } from "../../api/addressApi";
 import { useGetAllTeamsQuery } from "../../api/teamApi";
 import { useGetProfileQuery } from "../../api/userApi";
@@ -49,7 +54,7 @@ import { Document, Page, pdfjs } from "react-pdf";
 import useProductsData from "../../data/useProductdata";
 import AddAddress from "../Address/AddAddressModal";
 import "./orderpage.css";
-import { PiPaperPlaneTiltFill } from "react-icons/pi";
+import { SendOutlined } from "@ant-design/icons";
 import { Helmet } from "react-helmet";
 
 // PDF.js worker
@@ -163,10 +168,10 @@ const OrderPage = () => {
     useUploadInvoiceMutation();
   const [issueGatePass, { isLoading: isGatePassUploading }] =
     useIssueGatePassMutation();
-
+  const [triggerInvoiceDownload] = useLazyDownloadInvoiceQuery();
   const { data: profileData, isLoading: profileLoading } = useGetProfileQuery();
   const user = profileData?.user || {};
-  console.log(user);
+
   const {
     data: orderData,
     isLoading: orderLoading,
@@ -195,7 +200,15 @@ const OrderPage = () => {
       { customerId: order.createdFor },
       { skip: !order.createdFor }
     );
+  const quotationId = order.quotationId || order.quotation?.quotationId;
 
+  const {
+    data: fullQuotation,
+    isLoading: quotationLoading,
+    error: quotationError,
+  } = useGetQuotationByIdQuery(quotationId, {
+    skip: !quotationId,
+  });
   const { data: teamData } = useGetAllTeamsQuery();
   const { data: customersData } = useGetCustomersQuery();
   const totalOrders = useMemo(() => {
@@ -232,14 +245,26 @@ const OrderPage = () => {
       finalAmount: parseFloat(details.finalAmount || 0),
     };
   }, [order.quotationDetails, order.quotation]);
-
   const products = useMemo(() => {
+    // HIGHEST PRIORITY: Full quotation fetch — this ALWAYS has correct imageUrl
+    if (fullQuotation?.products && Array.isArray(fullQuotation.products)) {
+      return fullQuotation.products;
+    }
+
+    // SECOND: quotationData inside order (your sample has this)
     if (
-      order.products &&
-      Array.isArray(order.products) &&
-      order.products.length > 0
-    )
-      return order.products;
+      order?.quotationData?.products &&
+      Array.isArray(order.quotationData.products)
+    ) {
+      return order.quotationData.products;
+    }
+
+    // THIRD: quotationItems array
+    if (order?.quotationItems && Array.isArray(order.quotationItems)) {
+      return order.quotationItems;
+    }
+
+    // FOURTH: embedded quotation.products (string or object)
     if (order.quotation?.products) {
       try {
         const qp =
@@ -247,11 +272,28 @@ const OrderPage = () => {
             ? JSON.parse(order.quotation.products)
             : order.quotation.products;
         if (Array.isArray(qp)) return qp;
-      } catch {}
+      } catch (e) {
+        console.error("Failed to parse embedded quotation products", e);
+      }
     }
-    return [];
-  }, [order.products, order.quotation]);
 
+    // LAST: order.products (usually empty)
+    if (
+      order.products &&
+      Array.isArray(order.products) &&
+      order.products.length > 0
+    ) {
+      return order.products;
+    }
+
+    return [];
+  }, [
+    fullQuotation,
+    order.quotationData,
+    order.quotationItems,
+    order.quotation,
+    order.products,
+  ]);
   const productInputs = useMemo(
     () =>
       products.map((p) => ({
@@ -268,16 +310,22 @@ const OrderPage = () => {
     useProductsData(productInputs);
 
   const mergedProducts = useMemo(() => {
-    return productInputs.map((op) => {
+    return productInputs.map((op, index) => {
+      const originalProduct = products[index]; // ← This is the raw item from quotation
       const pd = productsData.find((p) => p.productId === op.productId) || {};
-      let imageUrl = "https://via.placeholder.com/60";
-      try {
-        if (pd.images) {
+
+      // PRIORITIZE quotation's imageUrl (it's always there and correct)
+      let imageUrl =
+        originalProduct.imageUrl || "https://via.placeholder.com/60";
+
+      // Fallback to catalog images only if quotation has none
+      if (!originalProduct.imageUrl && pd.images) {
+        try {
           const imgs = JSON.parse(pd.images);
           imageUrl =
             Array.isArray(imgs) && imgs.length > 0 ? imgs[0] : imageUrl;
-        }
-      } catch {}
+        } catch {}
+      }
 
       let brandName = pd.brandName || "N/A";
       if (pd.metaDetails) {
@@ -292,6 +340,7 @@ const OrderPage = () => {
         pd.product_code ||
         pd.meta?.d11da9f9_3f2e_4536_8236_9671200cca4a ||
         "N/A";
+
       const sellingPrice =
         pd.metaDetails?.find((m) => m.title === "Selling Price")?.value ||
         op.price ||
@@ -303,14 +352,13 @@ const OrderPage = () => {
         total: parseFloat(op.total) || sellingPrice * op.quantity,
         discount: parseFloat(op.discount) || 0,
         quantity: op.quantity || 1,
-        name: pd.name || op.name || "Unnamed Product",
+        name: pd.name || originalProduct.name || "Unnamed Product", // ← also prioritize quotation name
         brand: brandName,
         sku: productCode,
-        image: imageUrl,
+        image: imageUrl, // ← now uses quotation imageUrl first
       };
     });
-  }, [productsData, productInputs]);
-
+  }, [productsData, productInputs, products]); // ← add 'products' to deps
   const comments = useMemo(() => commentData?.comments || [], [commentData]);
   const totalComments = commentData?.totalCount || 0;
 
@@ -350,7 +398,14 @@ const OrderPage = () => {
       message.error("Only PDF, PNG, JPG allowed for gate-pass.");
     }
   };
+  // Helper to generate clean filename
+  const generateFileName = (type, orderNo, customerName) => {
+    const cleanName = (customerName || "Customer")
+      .replace(/[^a-zA-Z0-9]/g, "_") // Replace special chars with _
+      .substring(0, 30); // Limit length
 
+    return `${type} #${orderNo} for ${cleanName}.pdf`;
+  };
   const handleInvoiceSubmit = async () => {
     if (!invoiceFile) return message.error("Select a PDF file.");
     const formData = new FormData();
@@ -502,10 +557,13 @@ const OrderPage = () => {
       render: (_, r) => (
         <div className="product-cell">
           <img
-            src={r.imageUrl}
+            src={r.image || r.imageUrl || "https://via.placeholder.com/60"}
             alt={r.name}
             className="product-image"
-            onError={(e) => (e.target.src = "https://via.placeholder.com/60")}
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = "https://via.placeholder.com/60";
+            }}
           />
           <div>
             <Text strong>{r.name}</Text>
@@ -589,77 +647,99 @@ const OrderPage = () => {
                       pagination={false}
                       rowKey="productId"
                       scroll={{ x: "max-content" }}
-                      footer={() => (
-                        <div
-                          className="table-footer"
-                          style={{
-                            padding: "16px 24px",
-                            background: "#fafafa",
-                          }}
-                        >
-                          <table
+                      footer={() => {
+                        const shippingAmount = order.shipping
+                          ? parseFloat(order.shipping)
+                          : 0;
+
+                        return (
+                          <div
+                            className="table-footer"
                             style={{
-                              width: "100%",
-                              borderCollapse: "collapse",
+                              padding: "16px 24px",
+                              background: "#fafafa",
                             }}
                           >
-                            <tbody>
-                              <tr>
-                                <td style={{ padding: "6px 0" }}>Sub Total:</td>
-                                <td align="right">
-                                  ₹{lineItemsTotal.toFixed(2)}
-                                </td>
-                              </tr>
-                              {extraDiscountAmount > 0 && (
+                            <table
+                              style={{
+                                width: "100%",
+                                borderCollapse: "collapse",
+                              }}
+                            >
+                              <tbody>
                                 <tr>
-                                  <td
-                                    style={{
-                                      padding: "6px 0",
-                                      color: "#d9363e",
-                                    }}
-                                  >
-                                    Extra Discount{" "}
-                                    {order.extraDiscountType === "percent"
-                                      ? `(${order.extraDiscount}%)`
-                                      : ""}
+                                  <td style={{ padding: "6px 0" }}>
+                                    Sub Total:
                                   </td>
-                                  <td
-                                    align="right"
-                                    style={{ color: "#d9363e" }}
-                                  >
-                                    -₹{extraDiscountAmount.toFixed(2)}
+                                  <td align="right">
+                                    ₹{lineItemsTotal.toFixed(2)}
                                   </td>
                                 </tr>
-                              )}
-                              <tr>
-                                <td style={{ padding: "6px 0" }}>
-                                  GST {gstRate > 0 ? `(${gstRate}%)` : ""}
-                                </td>
-                                <td align="right">₹{gstAmount.toFixed(2)}</td>
-                              </tr>
-                              <tr
-                                style={{
-                                  borderTop: "2px solid #ddd",
-                                  fontSize: "1.1em",
-                                }}
-                              >
-                                <td style={{ padding: "12px 0" }}>
-                                  <Text strong>Final Amount:</Text>
-                                </td>
-                                <td align="right">
-                                  <Text
-                                    strong
-                                    type="danger"
-                                    style={{ fontSize: "1.3em" }}
-                                  >
-                                    ₹{finalAmount.toFixed(2)}
-                                  </Text>
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
+
+                                {shippingAmount > 0 && (
+                                  <tr>
+                                    <td style={{ padding: "6px 0" }}>
+                                      Shipping Charges:
+                                    </td>
+                                    <td align="right">
+                                      +₹{shippingAmount.toFixed(2)}
+                                    </td>
+                                  </tr>
+                                )}
+
+                                {extraDiscountAmount > 0 && (
+                                  <tr>
+                                    <td
+                                      style={{
+                                        padding: "6px 0",
+                                        color: "#d9363e",
+                                      }}
+                                    >
+                                      Extra Discount{" "}
+                                      {order.extraDiscountType === "percent"
+                                        ? `(${order.extraDiscount}%)`
+                                        : ""}
+                                    </td>
+                                    <td
+                                      align="right"
+                                      style={{ color: "#d9363e" }}
+                                    >
+                                      -₹{extraDiscountAmount.toFixed(2)}
+                                    </td>
+                                  </tr>
+                                )}
+
+                                <tr>
+                                  <td style={{ padding: "6px 0" }}>
+                                    GST {gstRate > 0 ? `(${gstRate}%)` : ""}
+                                  </td>
+                                  <td align="right">₹{gstAmount.toFixed(2)}</td>
+                                </tr>
+
+                                <tr
+                                  style={{
+                                    borderTop: "2px solid #ddd",
+                                    fontSize: "1.1em",
+                                  }}
+                                >
+                                  <td style={{ padding: "12px 0" }}>
+                                    <Text strong>Final Amount:</Text>
+                                  </td>
+                                  <td align="right">
+                                    <Text
+                                      strong
+                                      type="danger"
+                                      style={{ fontSize: "1.3em" }}
+                                    >
+                                      ₹{finalAmount.toFixed(2)}
+                                    </Text>
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+                        );
+                      }}
                     />
                   </Card>
                 </Col>
@@ -974,27 +1054,73 @@ const OrderPage = () => {
                   </Button>
                 </Form>
 
+                {/* INVOICE DOWNLOAD - FIXED */}
+                {/* INVOICE DOWNLOAD - NOW SAME AS GATE PASS (WORKING) */}
                 {invoiceUrl && (
                   <div style={{ marginTop: 16 }}>
                     <a
                       href={invoiceUrl}
                       target="_blank"
                       rel="noopener noreferrer"
+                      style={{ marginRight: 12 }}
                     >
-                      <FilePdfOutlined /> {order.invoiceLink.split("/").pop()}
+                      <FilePdfOutlined /> View Invoice
                     </a>
+
                     <Button
                       icon={<DownloadOutlined />}
                       size="small"
-                      style={{ marginLeft: 8 }}
-                      onClick={() => {
-                        const a = document.createElement("a");
-                        a.href = invoiceUrl;
-                        a.download = order.invoiceLink.split("/").pop();
-                        a.click();
+                      onClick={async () => {
+                        try {
+                          const response = await fetch(
+                            `https://api.cmtrading.com/api/order/${order.id}/download-invoice`,
+                            {
+                              credentials: "include", // Critical: sends cookies/session
+                            }
+                          );
+
+                          if (!response.ok) {
+                            throw new Error(
+                              `Download failed: ${response.status}`
+                            );
+                          }
+
+                          const blob = await response.blob();
+
+                          // Extract filename from header (your backend already sets it!)
+                          const contentDisposition = response.headers.get(
+                            "Content-Disposition"
+                          );
+                          let filename = generateFileName(
+                            "INVOICE",
+                            order.orderNo,
+                            customer.name
+                          );
+                          if (contentDisposition) {
+                            const match =
+                              contentDisposition.match(/filename="(.*?)"/);
+                            if (match?.[1]) filename = match[1];
+                          }
+
+                          const blobUrl = window.URL.createObjectURL(blob);
+                          const a = document.createElement("a");
+                          a.href = blobUrl;
+                          a.download = filename;
+                          document.body.appendChild(a);
+                          a.click();
+                          a.remove();
+                          window.URL.revokeObjectURL(blobUrl);
+
+                          message.success("Invoice downloaded successfully");
+                        } catch (err) {
+                          console.error(err);
+                          message.error(
+                            "Failed to download invoice. Please try again."
+                          );
+                        }
                       }}
                     >
-                      Download
+                      Download Invoice
                     </Button>
                   </div>
                 )}
@@ -1046,9 +1172,10 @@ const OrderPage = () => {
                     </Button>
                   </Form>
                 )}
-
+                {/* GATE-PASS DOWNLOAD - FIXED */}
                 {gatePassUrl && (
                   <div style={{ marginTop: 16, textAlign: "center" }}>
+                    {/* Preview remains the same */}
                     {gatePassUrl.endsWith(".pdf") ? (
                       <Document
                         file={gatePassUrl}
@@ -1067,16 +1194,51 @@ const OrderPage = () => {
                         }}
                       />
                     )}
+
                     <br />
                     <Button
                       icon={<DownloadOutlined />}
                       size="small"
                       style={{ marginTop: 8 }}
-                      onClick={() => {
-                        const a = document.createElement("a");
-                        a.href = gatePassUrl;
-                        a.download = order.gatePassLink.split("/").pop();
-                        a.click();
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        try {
+                          const response = await fetch(gatePassUrl);
+                          if (!response.ok) throw new Error("Download failed");
+
+                          const blob = await response.blob();
+
+                          // Detect actual file extension
+                          const urlPath = new URL(gatePassUrl).pathname;
+                          const originalFilename = urlPath.split("/").pop();
+                          const extMatch = originalFilename.match(/\.([^.]+)$/);
+                          const actualExt = extMatch
+                            ? extMatch[1].toLowerCase()
+                            : "pdf";
+
+                          const blobUrl = window.URL.createObjectURL(blob);
+                          const a = document.createElement("a");
+                          a.href = blobUrl;
+
+                          let downloadName = generateFileName(
+                            "GATEPASS",
+                            order.orderNo,
+                            customer.name
+                          );
+                          downloadName = downloadName.replace(
+                            /\.pdf$/,
+                            `.${actualExt}`
+                          );
+
+                          a.download = downloadName;
+                          document.body.appendChild(a);
+                          a.click();
+                          a.remove();
+                          window.URL.revokeObjectURL(blobUrl);
+                        } catch (err) {
+                          message.error("Failed to download gate-pass");
+                          window.open(gatePassUrl, "_blank");
+                        }
                       }}
                     >
                       Download
@@ -1110,7 +1272,7 @@ const OrderPage = () => {
                       htmlType="submit"
                       disabled={!newComment.trim()}
                     >
-                      <PiPaperPlaneTiltFill />
+                      <SendOutlined />
                     </Button>
                   </Form.Item>
                 </Form>

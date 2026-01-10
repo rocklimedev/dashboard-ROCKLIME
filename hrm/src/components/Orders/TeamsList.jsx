@@ -11,8 +11,13 @@ import {
 } from "@ant-design/icons";
 import { message, Button, Space, Tooltip, Card } from "antd";
 import Avatar from "react-avatar";
-import { BsThreeDotsVertical } from "react-icons/bs";
-import { FaThList, FaThLarge } from "react-icons/fa";
+
+import {
+  MoreOutlined,
+  UnorderedListOutlined,
+  AppstoreOutlined,
+} from "@ant-design/icons";
+
 import { Dropdown, Menu } from "antd";
 
 const TeamsList = () => {
@@ -178,7 +183,7 @@ const TeamsList = () => {
                       onClick={() => setViewMode("list")}
                       title="List View"
                     >
-                      <FaThList />
+                      <UnorderedListOutlined />
                     </button>
                     <button
                       className={`btn ${
@@ -189,7 +194,7 @@ const TeamsList = () => {
                       onClick={() => setViewMode("card")}
                       title="Card View"
                     >
-                      <FaThLarge />
+                      <AppstoreOutlined />
                     </button>
                   </div>
                 </div>
@@ -223,7 +228,7 @@ const TeamsList = () => {
                           }
                           trigger={["click"]}
                         >
-                          <Button type="text" icon={<BsThreeDotsVertical />} />
+                          <Button type="text" icon={<MoreOutlined />} />
                         </Dropdown>,
                       ]}
                     >
@@ -347,10 +352,7 @@ const TeamsList = () => {
                               }
                               trigger={["click"]}
                             >
-                              <Button
-                                type="text"
-                                icon={<BsThreeDotsVertical />}
-                              />
+                              <Button type="text" icon={<MoreOutlined />} />
                             </Dropdown>
                           </Space>
                         </td>

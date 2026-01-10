@@ -1,12 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useParams, Link, useLocation } from "react-router-dom";
 import {
-  Form,
-  Alert,
-  Button as BootstrapButton,
-  Collapse,
-} from "react-bootstrap";
-import {
   PlusOutlined,
   DeleteOutlined,
   UserAddOutlined,
@@ -22,6 +16,8 @@ import {
   Row,
   Col,
   InputNumber,
+  Collapse,
+  Alert,
 } from "antd";
 import { message } from "antd";
 import { debounce } from "lodash";
@@ -51,6 +47,8 @@ import DatePicker from "react-datepicker";
 
 const { Option } = Select;
 const { Text } = Typography;
+const { Panel } = Collapse;
+
 // ────────────────────── QUOTATION → ORDER TRANSFORMER ──────────────────────
 
 /* ────────────────────── Constants ────────────────────── */
@@ -616,8 +614,6 @@ const AddNewOrder = ({ adminName }) => {
             extraDiscount: null,
             extraDiscountType: null,
           }),
-      // gstValue: gstValue || null,
-      // extraDiscountValue: extraDiscountValue || null,
     };
     console.log(formData.gst);
     try {
@@ -674,16 +670,16 @@ const AddNewOrder = ({ adminName }) => {
               </Typography.Text>
             </div>
             <Space>
-              <Link to="/orders/list" className="btn btn-secondary">
-                Back
+              <Link to="/orders/list">
+                <Button type="default">Back</Button>
               </Link>
-              <BootstrapButton variant="outline-secondary" onClick={clearForm}>
+              <Button type="default" onClick={clearForm}>
                 Clear
-              </BootstrapButton>
+              </Button>
             </Space>
           </HeaderContainer>
 
-          <Form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit}>
             <Row gutter={[16, 12]}>
               {/* ---------- Customer ---------- */}
               <Col xs={24} md={12}>
@@ -703,7 +699,7 @@ const AddNewOrder = ({ adminName }) => {
                       onSearch={debouncedCustomerSearch}
                       placeholder="Select a customer"
                       filterOption={false}
-                      style={{ flex: 1 }} // 👈 makes select take full width
+                      style={{ flex: 1 }}
                     >
                       {filteredCustomers.length ? (
                         filteredCustomers.map((c) => (
@@ -739,7 +735,7 @@ const AddNewOrder = ({ adminName }) => {
                       onChange={handleAddressChange}
                       placeholder="Select shipping address"
                       disabled={!formData.createdFor}
-                      style={{ flex: 1 }} // 👈 expand select
+                      style={{ flex: 1 }}
                     >
                       {formData.createdFor && defaultAddress && (
                         <Option value="sameAsBilling">
@@ -851,7 +847,6 @@ const AddNewOrder = ({ adminName }) => {
 
                       setFormData((p) => ({
                         ...p,
-                        // Only nullify the fields that belong to the other type
                         ...(value === "team"
                           ? { assignedUserId: "", secondaryUserId: "" }
                           : { assignedTeamId: "" }),
@@ -914,7 +909,7 @@ const AddNewOrder = ({ adminName }) => {
                         placeholder="Select primary user"
                       >
                         {users
-                          .filter((u) => u.userId !== formData.secondaryUserId) // EXCLUDE SECONDARY USER
+                          .filter((u) => u.userId !== formData.secondaryUserId)
                           .map((u) => (
                             <Option key={u.userId} value={u.userId}>
                               {u.name || "—"}
@@ -934,10 +929,10 @@ const AddNewOrder = ({ adminName }) => {
                         onChange={(v) => handleChange("secondaryUserId", v)}
                         placeholder="Select secondary user"
                         allowClear
-                        disabled={!formData.assignedUserId} // optional: disable until primary is selected
+                        disabled={!formData.assignedUserId}
                       >
                         {users
-                          .filter((u) => u.userId !== formData.assignedUserId) // EXCLUDE PRIMARY USER
+                          .filter((u) => u.userId !== formData.assignedUserId)
                           .map((u) => (
                             <Option key={u.userId} value={u.userId}>
                               {u.name || "—"}
@@ -986,8 +981,8 @@ const AddNewOrder = ({ adminName }) => {
                     Advanced Options {advancedOpen ? "Hide" : "Show"}
                   </Button>
                 </Divider>
-                <Collapse in={advancedOpen}>
-                  <div>
+                <Collapse activeKey={advancedOpen ? ["1"] : []}>
+                  <Panel header="" key="1">
                     <Row gutter={[16, 12]}>
                       {/* Source Type & Customer */}
                       <Col xs={24} md={12}>
@@ -1115,12 +1110,11 @@ const AddNewOrder = ({ adminName }) => {
                           <InputNumber
                             value={formData.extraDiscount}
                             onChange={(v) => {
-                              // v is number or null
                               handleNumericChange("extraDiscount", v);
                             }}
                             min={0}
                             precision={2}
-                            stringMode={false} // ensures number output
+                            stringMode={false}
                           />
                         </FormSection>
                       </Col>
@@ -1206,26 +1200,26 @@ const AddNewOrder = ({ adminName }) => {
                         </FormSection>
                       </Col>
                     </Row>
-                  </div>
+                  </Panel>
                 </Collapse>
               </Col>
 
               {/* ---------- Submit ---------- */}
               <Col xs={24}>
                 <Space style={{ width: "100%", justifyContent: "flex-end" }}>
-                  <BootstrapButton
-                    variant="secondary"
+                  <Button
+                    type="default"
                     onClick={() => navigate("/orders/list")}
                   >
                     Cancel
-                  </BootstrapButton>
-                  <BootstrapButton variant="primary" type="submit">
+                  </Button>
+                  <Button type="primary" htmlType="submit">
                     {isEditMode ? "Update Order" : "Create Order"}
-                  </BootstrapButton>
+                  </Button>
                 </Space>
               </Col>
             </Row>
-          </Form>
+          </form>
 
           {/* ---------- Modals ---------- */}
           {showNewTeamModal && (

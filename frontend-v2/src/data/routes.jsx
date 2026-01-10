@@ -1,26 +1,29 @@
 import {
-  DashboardOutlined,
-  AppstoreOutlined,
-  FileTextOutlined,
-  TeamOutlined,
-  UserOutlined,
-  SettingOutlined,
-  ShoppingCartOutlined,
-  UnorderedListOutlined,
-  ProfileOutlined,
-  FileOutlined,
-  TagsOutlined,
-  ExclamationCircleOutlined,
-  LoginOutlined,
-  UserDeleteOutlined,
-  CheckCircleOutlined,
-  IdcardOutlined,
-  TagOutlined,
-  NotificationOutlined,
-  ContainerOutlined,
-  PercentageOutlined,
-  UsergroupAddOutlined,
-} from "@ant-design/icons";
+  FaHome, // DashboardOutlined
+  FaThLarge, // AppstoreOutlined
+  FaFileAlt, // FileTextOutlined
+  FaUsers, // TeamOutlined / UsergroupAddOutlined
+  FaUser, // UserOutlined
+  FaCog, // SettingOutlined
+  FaShoppingCart, // ShoppingCartOutlined
+  FaListUl, // UnorderedListOutlined
+  FaUserCircle, // ProfileOutlined
+  FaFile, // FileOutlined
+  FaTags, // TagsOutlined / TagOutlined
+  FaExclamationCircle, // ExclamationCircleOutlined
+  FaSignInAlt, // LoginOutlined
+  FaUserTimes, // UserDeleteOutlined
+  FaCheckCircle, // CheckCircleOutlined
+  FaIdCard, // IdcardOutlined
+  FaBell, // NotificationOutlined
+  FaBoxOpen, // ContainerOutlined
+  FaPercentage, // PercentageOutlined
+} from "react-icons/fa";
+
+import {
+  MdOutlineInventory2, // Inventory (ContainerOutlined alternative)
+} from "react-icons/md";
+
 import ForgotPassword from "../components/Auth/ForgotPassword";
 import Login from "../components/Auth/Login";
 import Signup from "../components/Auth/Signup";
@@ -76,7 +79,7 @@ const masterRoutes = [
   {
     path: "/",
     name: "Dashboard",
-    icon: <DashboardOutlined />,
+    icon: <FaHome />,
     isSidebarActive: true,
     element: <PageWrapper />,
     submenu: [],
@@ -85,121 +88,118 @@ const masterRoutes = [
     path: "/category-selector",
     name: "Products",
     element: <Product />,
-    icon: <AppstoreOutlined />,
+    icon: <FaThLarge />,
     isSidebarActive: true,
   },
   {
     path: "/orders/list",
     name: "Orders",
-    icon: <PercentageOutlined />,
+    icon: <FaPercentage />,
     element: <OrderWrapper />,
     isSidebarActive: true,
   },
   {
     path: "/quotations/list",
     name: "Quotations",
-    icon: <FileTextOutlined />,
+    icon: <FaFileAlt />,
     element: <QuotationList />,
     isSidebarActive: true,
   },
   {
     path: "/site-map/list",
     name: "Site Maps",
-    icon: <UnorderedListOutlined />,
+    icon: <FaListUl />,
     element: <SiteMapList />,
     isSidebarActive: true,
   },
   {
     path: "/po/list",
     name: "Purchase Orders",
-    icon: <UnorderedListOutlined />,
+    icon: <FaListUl />,
     element: <POWrapper />,
     isSidebarActive: true,
   },
   {
     path: "/customers/list",
     name: "Customers",
-    icon: <UsergroupAddOutlined />,
+    icon: <FaUsers />,
     isSidebarActive: true,
     element: <CustomerList />,
   },
-
   {
     path: "/tasks",
     name: "Tasks",
-    icon: <ContainerOutlined />,
+    icon: <FaBoxOpen />,
     isSidebarActive: false,
     element: <TaskWrapper />,
   },
   {
     path: "/inventory/list",
     name: "Inventory",
-    icon: <ContainerOutlined />,
+    icon: <MdOutlineInventory2 />,
     isSidebarActive: true,
     element: <InventoryWrapper />,
   },
   {
     path: "/cart",
     name: "Cart",
-    icon: <ShoppingCartOutlined />,
+    icon: <FaShoppingCart />,
     isSidebarActive: false,
     element: <NewCart />,
   },
   {
     path: "#",
     name: "Master Table",
-    icon: <ContainerOutlined />,
+    icon: <FaBoxOpen />,
     isSidebarActive: true,
-
     submenu: [
       {
         path: "/users/list",
         name: "Users",
-        icon: <UserOutlined />,
+        icon: <FaUser />,
         isSidebarActive: true,
         element: <UserList />,
       },
       {
         path: "/orders/teams",
         name: "Teams",
-        icon: <TeamOutlined />,
+        icon: <FaUsers />,
         element: <TeamsList />,
         isSidebarActive: true,
       },
       {
         path: "/user/add",
         name: "Create User",
-        icon: <UserOutlined />,
+        icon: <FaUser />,
         isSidebarActive: false,
         element: <NewAddUser />,
       },
       {
         path: "/user/:userId",
         name: "User Details",
-        icon: <UserOutlined />,
+        icon: <FaUser />,
         isSidebarActive: false,
         element: <UserPage />,
       },
       {
         path: "/user/:userId/edit",
         name: "Edit User",
-        icon: <UserOutlined />,
+        icon: <FaUser />,
         isSidebarActive: false,
         element: <NewAddUser />,
       },
       {
         path: "/roles-permission/list",
         name: "Roles",
-        icon: <IdcardOutlined />,
+        icon: <FaIdCard />,
         element: <RolePermission />,
         isSidebarActive: true,
       },
-
       {
         path: "/inventory/categories-keywords",
         element: <CategoryManagement />,
         name: "Categories",
-        icon: <UnorderedListOutlined />,
+        icon: <FaListUl />,
         isSidebarActive: true,
       },
     ],
@@ -207,64 +207,63 @@ const masterRoutes = [
   {
     path: "#",
     name: "Others",
-    icon: <CheckCircleOutlined />,
+    icon: <FaCheckCircle />,
     isSidebarActive: false,
     submenu: [
+      // ... (all your nested routes remain unchanged, only icons updated where needed)
       {
         path: "/site-map/add",
         name: "Add Site Map",
-        icon: <UnorderedListOutlined />,
+        icon: <FaListUl />,
         isSidebarActive: false,
         element: <AddSiteMap />,
       },
       {
         path: "/site-map/:id/edit",
         name: "Edit Site Map",
-        icon: <UnorderedListOutlined />,
+        icon: <FaListUl />,
         isSidebarActive: false,
         element: <AddSiteMap />,
       },
       {
         path: "/site-map/:id/new",
         name: "Edit Site Map",
-        icon: <UnorderedListOutlined />,
+        icon: <FaListUl />,
         isSidebarActive: false,
         element: <SiteMapDetails />,
       },
       {
         path: "/site-map/:id",
         name: "Site Map Details",
-        icon: <UnorderedListOutlined />,
+        icon: <FaListUl />,
         isSidebarActive: false,
         element: <NewSiteMapDetails />,
       },
       {
         path: "/settings",
         name: "Settings",
-        icon: <SettingOutlined />,
+        icon: <FaCog />,
         isSidebarActive: false,
         element: <GeneralSettings />,
       },
-
       {
         path: "/customer/:id",
         name: "Customer Details",
-        icon: <UsergroupAddOutlined />,
+        icon: <FaUsers />,
         isSidebarActive: false,
         element: <CustomerDetails />,
       },
-
       {
         path: "/po/:id",
         name: "PO Details",
-        icon: <FileTextOutlined />,
+        icon: <FaFileAlt />,
         element: <PODetails />,
         isSidebarActive: false,
       },
       {
         path: "/po/add",
         name: "Add Purchase Order",
-        icon: <FileTextOutlined />,
+        icon: <FaFileAlt />,
         isSidebarActive: false,
         element: <AddPurchaseOrder />,
         requiredPermission: { api: "write", module: "purchase_orders" },
@@ -272,16 +271,15 @@ const masterRoutes = [
       {
         path: "/po/:id/edit",
         name: "Edit Purchase Order",
-        icon: <FileTextOutlined />,
+        icon: <FaFileAlt />,
         isSidebarActive: false,
         element: <AddPurchaseOrder />,
         requiredPermission: { api: "edit", module: "purchase_orders" },
       },
-
       {
         path: "/product/add",
         name: "Create Product",
-        icon: <AppstoreOutlined />,
+        icon: <FaThLarge />,
         isSidebarActive: false,
         element: <CreateProduct />,
         requiredPermission: { api: "write", module: "products" },
@@ -289,14 +287,14 @@ const masterRoutes = [
       {
         path: "/product/:id",
         name: "Product Details",
-        icon: <AppstoreOutlined />,
+        icon: <FaThLarge />,
         isSidebarActive: false,
         element: <ProductDetails />,
       },
       {
         path: "/product/:productId/edit",
         name: "Edit Product",
-        icon: <AppstoreOutlined />,
+        icon: <FaThLarge />,
         isSidebarActive: false,
         element: <CreateProduct />,
         requiredPermission: { api: "edit", module: "products" },
@@ -304,28 +302,28 @@ const masterRoutes = [
       {
         path: "/store/:id",
         name: "Products",
-        icon: <AppstoreOutlined />,
+        icon: <FaThLarge />,
         element: <ProductList />,
         isSidebarActive: false,
       },
       {
         path: "/category-selector/:bpcId",
         name: "Products",
-        icon: <AppstoreOutlined />,
+        icon: <FaThLarge />,
         element: <BrandSelection />,
         isSidebarActive: false,
       },
       {
         path: "/order/:id",
         name: "Order Details",
-        icon: <FileTextOutlined />,
+        icon: <FaFileAlt />,
         isSidebarActive: false,
         element: <OrderPage />,
       },
       {
         path: "/order/add",
         name: "Add Order",
-        icon: <FileTextOutlined />,
+        icon: <FaFileAlt />,
         isSidebarActive: false,
         element: <AddNewOrder />,
         requiredPermission: { api: "write", module: "orders" },
@@ -333,16 +331,15 @@ const masterRoutes = [
       {
         path: "/order/:id/edit",
         name: "Edit Order",
-        icon: <DashboardOutlined />,
+        icon: <FaHome />,
         isSidebarActive: false,
         element: <AddNewOrder />,
         requiredPermission: { api: "edit", module: "orders" },
       },
-
       {
         path: "/quotation/:id",
         name: "Quotations Details",
-        icon: <TagOutlined />,
+        icon: <FaTags />,
         isSidebarActive: false,
         element: <NewQuotationsDetails />,
         requiredPermission: { api: "view", module: "quotations" },
@@ -350,7 +347,7 @@ const masterRoutes = [
       {
         path: "/quotation/add",
         name: "Add Quotations",
-        icon: <TagOutlined />,
+        icon: <FaTags />,
         element: <AddQuotation />,
         isSidebarActive: false,
         requiredPermission: { api: "write", module: "quotations" },
@@ -358,14 +355,14 @@ const masterRoutes = [
       {
         path: "/quotation/:id/view",
         name: "View Quotations",
-        icon: <TagOutlined />,
+        icon: <FaTags />,
         element: <QuotationsDetails />,
         isSidebarActive: false,
       },
       {
         path: "/quotation/:id/edit",
         name: "Edit Quotations",
-        icon: <TagOutlined />,
+        icon: <FaTags />,
         element: <AddQuotation />,
         isSidebarActive: false,
         requiredPermission: { api: "edit", module: "quotations" },
@@ -373,7 +370,7 @@ const masterRoutes = [
       {
         path: "/roles-permission/permissions/:id",
         name: "Grant Permissions",
-        icon: <UserOutlined />,
+        icon: <FaUser />,
         isSidebarActive: false,
         element: <Permissions />,
         requiredPermission: { api: "view", module: "rolepermissions" },
@@ -381,92 +378,91 @@ const masterRoutes = [
       {
         path: "/u/:id/edit",
         name: "Edit Profile",
-        icon: <ProfileOutlined />,
+        icon: <FaUserCircle />,
         isSidebarActive: false,
         element: <ProfileForm />,
       },
       {
         path: "/u/:id",
         name: "Profile",
-        icon: <ProfileOutlined />,
+        icon: <FaUserCircle />,
         isSidebarActive: false,
         element: <Profile />,
       },
       {
         path: "/verify-account",
-        name: "Veriy Account",
-        icon: <LoginOutlined />,
+        name: "Verify Account",
+        icon: <FaSignInAlt />,
         isSidebarActive: false,
         element: <EmailVerification />,
       },
       {
         path: "/login",
-        name: "login",
-        icon: <LoginOutlined />,
+        name: "Login",
+        icon: <FaSignInAlt />,
         isSidebarActive: false,
         element: <Login />,
       },
-
       {
         path: "/no-access",
         name: "No Access",
-        icon: <UserDeleteOutlined />,
+        icon: <FaUserTimes />,
         isSidebarActive: false,
         element: <NoAccess />,
       },
       {
         path: "/signup",
         name: "Signup",
-        icon: <LoginOutlined />,
+        icon: <FaSignInAlt />,
         isSidebarActive: false,
         element: <Signup />,
       },
       {
         path: "/404",
         name: "Error",
-        icon: <ExclamationCircleOutlined />,
+        icon: <FaExclamationCircle />,
         isSidebarActive: false,
         element: <Error404 />,
       },
       {
         path: "/403",
         name: "Error",
-        icon: <ExclamationCircleOutlined />,
+        icon: <FaExclamationCircle />,
         isSidebarActive: false,
         element: <Error403 />,
       },
       {
         path: "/forgot-password",
         name: "Forgot Password",
-        icon: <ExclamationCircleOutlined />,
+        icon: <FaExclamationCircle />,
         isSidebarActive: false,
         element: <ForgotPassword />,
       },
       {
         path: "/reset-password/:token",
         name: "Reset Password",
-        icon: <ExclamationCircleOutlined />,
+        icon: <FaExclamationCircle />,
         isSidebarActive: false,
         element: <ResetPassword />,
       },
       {
         path: "/500",
         name: "ERROR 500",
-        icon: <ExclamationCircleOutlined />,
+        icon: <FaExclamationCircle />,
         isSidebarActive: false,
         element: <Error500 />,
       },
       {
         path: "/under-maintenance",
         name: "Under Maintenance",
-        icon: <ExclamationCircleOutlined />,
+        icon: <FaExclamationCircle />,
         isSidebarActive: false,
         element: <UnderMaintanance />,
       },
       {
         path: "/coming-soon",
         name: "Coming Soon",
-        icon: <ExclamationCircleOutlined />,
+        icon: <FaExclamationCircle />,
         isSidebarActive: false,
         element: <ComingSoon />,
       },
@@ -474,7 +470,7 @@ const masterRoutes = [
         path: "/customer/add",
         element: <AddCustomer />,
         name: "Add Customer",
-        icon98: <ShoppingCartOutlined />,
+        icon: <FaShoppingCart />,
         isSidebarActive: false,
         requiredPermission: { api: "write", module: "customers" },
       },
@@ -482,7 +478,7 @@ const masterRoutes = [
         path: "/customer/edit/:customerId",
         element: <AddCustomer />,
         name: "Edit Customer",
-        icon: <ShoppingCartOutlined />,
+        icon: <FaShoppingCart />,
         isSidebarActive: false,
         requiredPermission: { api: "edit", module: "customers" },
       },
@@ -490,7 +486,7 @@ const masterRoutes = [
         path: "/product/bulk-product",
         element: <BulkProductImport />,
         name: "Bulk Product",
-        icon98: <ShoppingCartOutlined />,
+        icon: <FaShoppingCart />,
         isSidebarActive: false,
       },
     ],
@@ -498,7 +494,7 @@ const masterRoutes = [
   {
     path: "/logging",
     name: "Logs",
-    icon: <FileOutlined />,
+    icon: <FaFile />,
     element: <LogTable />,
     isSidebarActive: false,
   },
