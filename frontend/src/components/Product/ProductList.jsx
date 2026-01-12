@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from "react";
-import { useParams, Link } from "react-router-dom";
+import React, { useMemo, useState } from "react";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import {
   Form,
   Input,
@@ -52,25 +52,18 @@ const META_KEYS = {
 
 const ProductsList = () => {
   const { id, bpcId } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [search, setSearch] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
+  // ── Read state from URL ───────────────────────────────
+  const currentPage = Number(searchParams.get("page")) || 1;
+  const search = searchParams.get("search")?.trim() || "";
+  const priceMin = searchParams.get("minPrice") || "";
+  const priceMax = searchParams.get("maxPrice") || "";
+  const sortField = searchParams.get("sort") || null; // name, product_code, price
+  const sortOrder = searchParams.get("order") || null; // ascend, descend
+
   const [viewMode, setViewMode] = useState("list");
   const [cartLoadingStates, setCartLoadingStates] = useState({});
-
-  // Price range filter (kept in filter bar)
-  const [priceMin, setPriceMin] = useState("");
-  const [priceMax, setPriceMax] = useState("");
-
-  // Table sorting state (controlled by column header clicks)
-  const [sortField, setSortField] = useState(null); // 'name' | 'product_code' | 'price' | null
-  const [sortOrder, setSortOrder] = useState(null); // 'ascend' | 'descend' | null
-
-  const [isDeleteModalVisible, setDeleteModalVisible] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState(null);
-  const [stockModalOpen, setStockModalOpen] = useState(false);
-  const [historyModalOpen, setHistoryModalOpen] = useState(false);
-  const [stockAction, setStockAction] = useState("add");
 
   const pageSize = 50;
 
@@ -78,13 +71,13 @@ const ProductsList = () => {
   const isBpcView = !!bpcId;
   const isCategoryView = !!id && !isBrandView && !isBpcView;
 
-  // ── Queries ───────────────────────────────────────
+  // ── Queries ────────────────────────────────────────────
   const brandQuery = useGetProductsByBrandQuery(
     {
       brandId: id || "",
       page: currentPage,
       limit: pageSize,
-      search: search.trim() || undefined,
+      search: search || undefined,
     },
     { skip: !isBrandView || !id }
   );
@@ -94,7 +87,7 @@ const ProductsList = () => {
       categoryId: id || "",
       page: currentPage,
       limit: pageSize,
-      search: search.trim() || undefined,
+      search: search || undefined,
     },
     { skip: !isCategoryView || !id }
   );
@@ -103,7 +96,7 @@ const ProductsList = () => {
     {
       page: currentPage,
       limit: pageSize,
-      search: search.trim() || undefined,
+      search: search || undefined,
     },
     { skip: isBrandView || isCategoryView }
   );
@@ -138,7 +131,7 @@ const ProductsList = () => {
   const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation();
   const [addProductToCart] = useAddProductToCartMutation();
 
-  // ── Helpers ───────────────────────────────────────
+  // ── Helpers ────────────────────────────────────────────
   const getBrandsName = (brandId) =>
     brandsData?.find((b) => b.id === brandId)?.brandName || "Not Branded";
 
@@ -174,11 +167,11 @@ const ProductsList = () => {
     return code ? String(code).trim() : "N/A";
   };
 
-  // ── Client-side filter + sort ─────────────────────
+  // ── Client-side filter + sort ──────────────────────────
   const processedProducts = useMemo(() => {
     let result = [...products];
 
-    // 1. Price range filter
+    // 1. Price range filter (client-side)
     if (priceMin || priceMax) {
       const min = priceMin ? Number(priceMin) : -Infinity;
       const max = priceMax ? Number(priceMax) : Infinity;
@@ -189,7 +182,7 @@ const ProductsList = () => {
       });
     }
 
-    // 2. Sorting (only if active)
+    // 2. Sorting (client-side)
     if (sortField && sortOrder) {
       result = result.sort((a, b) => {
         let aVal, bVal;
@@ -221,21 +214,53 @@ const ProductsList = () => {
     return result;
   }, [products, priceMin, priceMax, sortField, sortOrder]);
 
-  // ── Handle column sort click ──────────────────────
-  const handleSort = (field) => {
-    if (sortField === field) {
-      // Toggle direction
-      setSortOrder((prev) =>
-        prev === "ascend" ? "descend" : prev === "descend" ? null : "ascend"
-      );
-      if (sortOrder === "descend") setSortField(null); // clear sort when going back to none
-    } else {
-      // Start sorting new field (ascending first)
-      setSortField(field);
-      setSortOrder("ascend");
-    }
+  // ── URL Param Helpers ──────────────────────────────────
+  const updateSearchParams = (updates) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === "" || value === null || value === undefined) {
+          next.delete(key);
+        } else {
+          next.set(key, value);
+        }
+      });
+      // Always reset to page 1 when filters/sort change (except page itself)
+      if (!updates.page) {
+        next.set("page", "1");
+      }
+      return next;
+    });
   };
 
+  const handleSort = (field) => {
+    let newOrder = "ascend";
+
+    if (sortField === field) {
+      if (sortOrder === "ascend") newOrder = "descend";
+      else if (sortOrder === "descend") newOrder = null;
+    }
+
+    updateSearchParams({
+      sort: newOrder ? field : null,
+      order: newOrder,
+    });
+  };
+
+  const handleSearchChange = (e) => {
+    updateSearchParams({ search: e.target.value.trim() });
+  };
+
+  const handlePriceChange = (type, value) => {
+    updateSearchParams({ [type]: value });
+  };
+
+  const resetFilters = () => {
+    setSearchParams({ page: currentPage.toString() }); // keep page if wanted
+    // or setSearchParams({}); to completely reset
+  };
+
+  // ── Table Columns ──────────────────────────────────────
   const columns = [
     {
       title: "Image",
@@ -389,7 +414,7 @@ const ProductsList = () => {
     </Menu>
   );
 
-  // ── Cart / Delete / Stock / History handlers (unchanged) ──
+  // ── Handlers ───────────────────────────────────────────
   const handleAddToCart = async (product) => {
     if (!userId) return message.error("Please log in");
     const price = getNumericPrice(product);
@@ -411,6 +436,12 @@ const ProductsList = () => {
       setCartLoadingStates((prev) => ({ ...prev, [product.productId]: false }));
     }
   };
+
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [isDeleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [stockModalOpen, setStockModalOpen] = useState(false);
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const [stockAction, setStockAction] = useState("add");
 
   const openStockModal = (product, action = "add") => {
     setSelectedProduct(product);
@@ -441,7 +472,7 @@ const ProductsList = () => {
     }
   };
 
-  // ── Title & Breadcrumbs ───────────────────────────
+  // ── Title & Breadcrumbs ────────────────────────────────
   const pageTitle = isBrandView
     ? getBrandsName(id)
     : isBpcView
@@ -470,13 +501,6 @@ const ProductsList = () => {
       ]
     : [{ label: "Home", url: "/" }, { label: "Products" }];
 
-  const resetFilters = () => {
-    setPriceMin("");
-    setPriceMax("");
-    setSortField(null);
-    setSortOrder(null);
-  };
-
   return (
     <div className="page-wrapper">
       <div className="content">
@@ -500,10 +524,7 @@ const ProductsList = () => {
                 prefix={<SearchOutlined />}
                 placeholder="Search products..."
                 value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setCurrentPage(1);
-                }}
+                onChange={handleSearchChange}
                 allowClear
                 size="large"
                 style={{ width: 300 }}
@@ -514,7 +535,7 @@ const ProductsList = () => {
               <Input
                 placeholder="Min"
                 value={priceMin}
-                onChange={(e) => setPriceMin(e.target.value)}
+                onChange={(e) => handlePriceChange("minPrice", e.target.value)}
                 style={{ width: 100 }}
                 type="number"
                 min={0}
@@ -523,7 +544,7 @@ const ProductsList = () => {
               <Input
                 placeholder="Max"
                 value={priceMax}
-                onChange={(e) => setPriceMax(e.target.value)}
+                onChange={(e) => handlePriceChange("maxPrice", e.target.value)}
                 style={{ width: 100 }}
                 type="number"
                 min={0}
@@ -597,7 +618,11 @@ const ProductsList = () => {
                 total={pagination.total}
                 pageSize={pageSize}
                 onChange={(page) => {
-                  setCurrentPage(page);
+                  setSearchParams((prev) => {
+                    const next = new URLSearchParams(prev);
+                    next.set("page", page.toString());
+                    return next;
+                  });
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
                 showSizeChanger={false}

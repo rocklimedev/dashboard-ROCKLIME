@@ -113,6 +113,23 @@ async function gracefulShutdown(signal) {
     process.exit(1);
   }
 }
+process.on("uncaughtException", async (err) => {
+  console.error("Uncaught Exception:", err);
+  try {
+    if (sequelize) await sequelize.close();
+  } finally {
+    process.exit(1);
+  }
+});
+
+process.on("unhandledRejection", async (err) => {
+  console.error("Unhandled Rejection:", err);
+  try {
+    if (sequelize) await sequelize.close();
+  } finally {
+    process.exit(1);
+  }
+});
 
 process.on("SIGTERM", gracefulShutdown);
 process.on("SIGINT", gracefulShutdown);
