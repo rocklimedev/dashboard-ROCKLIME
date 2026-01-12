@@ -3,9 +3,9 @@ const path = require("path");
 const excelToJson = require("convert-excel-to-json");
 
 // === CONFIG ===
-const inputFilePath = path.join(__dirname, "./PRODUCT REPLACEMENTS (1).xlsx");
+const inputFilePath = path.join(__dirname, "./OnePager_Colston (2).xlsx");
 const outputFolder = path.join(__dirname, "json-outputs");
-const outputFile = path.join(outputFolder, "product_replacements.json");
+const outputFile = path.join(outputFolder, "all_sheets_data.json");
 
 // === VALIDATE INPUT ===
 if (!fs.existsSync(inputFilePath)) {
@@ -17,34 +17,35 @@ if (!fs.existsSync(outputFolder)) {
   fs.mkdirSync(outputFolder, { recursive: true });
 }
 
-// === CONVERT EXCEL WITHOUT TRUSTING HEADERS ===
+// === CONVERT EXCEL - PROCESS ALL SHEETS WITHOUT PREDEFINED COLUMN MAPPING ===
 const result = excelToJson({
   sourceFile: inputFilePath,
-  columnToKey: {
-    A: "S.NO",
-    B: "REMOVE",
-    C: "REPLACE",
-    D: "MRP",
-  },
-  header: { rows: 1 }, // skip header row in sheet
+  header: { rows: 1 }, // Skip the first row as header
 });
 
+// Process each sheet
 const finalOutput = {};
 
 Object.keys(result).forEach((sheetName) => {
-  const rows = result[sheetName];
+  let rows = result[sheetName];
 
-  // remove empty rows
+  // Remove empty rows (rows where all values are empty)
   const cleanedData = rows.filter((row) =>
     Object.values(row).some((v) => v && String(v).trim() !== "")
   );
 
   finalOutput[sheetName] = cleanedData;
 
-  console.log(`Processed ${cleanedData.length} rows from ${sheetName}`);
+  console.log(`Processed ${cleanedData.length} rows from sheet: ${sheetName}`);
+  console.log(
+    `Columns found in ${sheetName}:`,
+    Object.keys(cleanedData[0] || {})
+  );
 });
 
 // === WRITE JSON ===
 fs.writeFileSync(outputFile, JSON.stringify(finalOutput, null, 2), "utf-8");
 
-console.log("Saved to:", outputFile);
+console.log("✅ All sheets processed successfully!");
+console.log("📁 Saved to:", outputFile);
+console.log("📊 Total sheets processed:", Object.keys(finalOutput).length);

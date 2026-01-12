@@ -1,0 +1,698 @@
+[
+  {
+    "productId": "0000294c-9b2d-45a6-b549-ec059bc55b99",
+    "name": "LARA 2 in 1 Bib Cock with Flange",
+    "companyCode": "COL-4005",
+    "oldPrice": "(missing)",
+    "newPrice": "1998",
+    "changedAt": "2026-01-12T05:53:32.541Z"
+  },
+  {
+    "productId": "01c85f38-d4d3-4910-9f2e-a1333e89dc64",
+    "name": "WALK MIST ROSE GOLD with Rain Shower, Mist & Ceiling Kit",
+    "companyCode": "623",
+    "oldPrice": "99998",
+    "newPrice": "109998",
+    "changedAt": "2026-01-12T05:53:32.542Z"
+  },
+  {
+    "productId": "04dfd8a5-06c4-4901-b6a0-56df1bf63f22",
+    "name": "WISE RAIN CHROME with Rain shower & Ceiling Kit",
+    "companyCode": "2020",
+    "oldPrice": "67998",
+    "newPrice": "69998",
+    "changedAt": "2026-01-12T05:53:32.542Z"
+  },
+  {
+    "productId": "068a9a83-5d45-437a-8e74-b5cca072f764",
+    "name": "MATTE BLACK WISE RAIN",
+    "companyCode": "2023",
+    "oldPrice": "82998",
+    "newPrice": "89998",
+    "changedAt": "2026-01-12T05:53:32.542Z"
+  },
+  {
+    "productId": "0cd4f2b5-bfc8-4f6b-870a-a3b1300468c9",
+    "name": "RETRO MAXX 6+ CHROME",
+    "companyCode": "8500",
+    "oldPrice": "43998",
+    "newPrice": "48998",
+    "changedAt": "2026-01-12T05:53:32.542Z"
+  },
+  {
+    "productId": "1156d28a-ce6d-4230-ba52-685b1b6d23ca",
+    "name": "Crown - Single Lever Tall Basin Mixer",
+    "companyCode": "COL-2002",
+    "oldPrice": "4698",
+    "newPrice": "5798",
+    "changedAt": "2026-01-12T05:53:32.542Z"
+  },
+  {
+    "productId": "11a0b60d-731a-409b-a4dd-3ac53dab15ec",
+    "name": "AURA SHORT BASIN MIXER - PLATINUM BLACK",
+    "companyCode": "704",
+    "oldPrice": "34998",
+    "newPrice": "37998",
+    "changedAt": "2026-01-12T05:53:32.542Z"
+  },
+  {
+    "productId": "11ba88ca-9594-4f2c-ae31-9b5cf96caef0",
+    "name": "RETRO MAXX 6+ Rose Gold",
+    "companyCode": "8503",
+    "oldPrice": "54998",
+    "newPrice": "59998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "1642c7b8-4b37-4c52-8db6-e137826a4e48",
+    "name": "GL WISDOM NEXTGEN",
+    "companyCode": "8703",
+    "oldPrice": "199998",
+    "newPrice": "219998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "16859bf3-eba5-47d9-8879-aa7e6ee9e11a",
+    "name": "TASMANIA ROSE GOLD Multifunctional Ceiling Head Shower",
+    "companyCode": "2011",
+    "oldPrice": "99998",
+    "newPrice": "109998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "176fd018-b773-4756-8e9e-5cb83718ef92",
+    "name": "MATTE BLACK NEXTGEN",
+    "companyCode": "8528",
+    "oldPrice": "199998",
+    "newPrice": "219998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "18b1d2d8-b0ad-4cab-9e96-f17a2c671a18",
+    "name": "RG WISE RAIN",
+    "companyCode": "2021",
+    "oldPrice": "82998",
+    "newPrice": "89998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "2073af6b-d6ee-4b46-9e74-316674f0a257",
+    "name": "ICONIC AMBIENT with LED Light, Wave Massage jet - BLACK",
+    "companyCode": "8551",
+    "oldPrice": "19998",
+    "newPrice": "21998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "21e5e791-8f43-4e9a-b2ec-b438272a5eb7",
+    "name": "MILO WX 1825 * 1215 * 645 mm – WATERFALL & WHIRLPOOL",
+    "companyCode": "8059",
+    "oldPrice": "249998",
+    "newPrice": "248998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "2492562c-676a-45bd-a3bd-02fd88f50083",
+    "name": "FERRY 102",
+    "companyCode": "1338",
+    "oldPrice": "27998",
+    "newPrice": "6800",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "25b426b8-6af1-4d91-a819-018c9b0f5e37",
+    "name": "AURA 3 WAY DIVERTER - GOLD",
+    "companyCode": "822",
+    "oldPrice": "29998",
+    "newPrice": "32998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "290c0823-3a7e-4fe7-a3c6-e320b4962833",
+    "name": "WISE RAIN MATTE BLACK with Rain shower & Ceiling Kit",
+    "companyCode": "2023",
+    "oldPrice": "82998",
+    "newPrice": "89998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "2da34341-0f6e-401b-ba16-ae87d9bffe3a",
+    "name": "STORM MATTE BLACK with Rain Shower, Mist, Waterfall, Column Spray & Ceiling Kit",
+    "companyCode": "2019",
+    "oldPrice": "134998",
+    "newPrice": "139998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "325f4976-9277-4bbc-bf35-df7f7304c477",
+    "name": "BULLION BRUSH GOLD WC",
+    "companyCode": "9049",
+    "oldPrice": "39998",
+    "newPrice": "42998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "34193c66-e004-4a7c-abdc-9873b8181eaf",
+    "name": "AQUA CHROME Body Jet",
+    "companyCode": "859",
+    "oldPrice": "7998",
+    "newPrice": "8498",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "3c438514-2d70-467b-ba4e-a6aa7ddba8e6",
+    "name": "ICONIC WAVE with  Wave Massage jet - BLACK",
+    "companyCode": "8547",
+    "oldPrice": "14998",
+    "newPrice": "16998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "3e3bfa45-8f5c-4c78-a1b6-414e390d312f",
+    "name": "WALK MIST GOLD with Rain shower, Mist & Ceiling Kit",
+    "companyCode": "622",
+    "oldPrice": "99998",
+    "newPrice": "109998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "3eee0b03-e4b4-4cc5-8059-f8c5c3a4154d",
+    "name": "BRITISH HUNK Tall Basin Mixer",
+    "companyCode": "3346",
+    "oldPrice": "46998",
+    "newPrice": "49998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "418130dc-c5ad-4c61-b87f-4e9aeb28b847",
+    "name": "RETRO MAXX 6+ Diverter Body",
+    "companyCode": "8467",
+    "oldPrice": "87998",
+    "newPrice": "94998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "42ccacf1-80e5-4274-bf82-71db9b09c27e",
+    "name": "AQUA ROSE GOLD",
+    "companyCode": "8926",
+    "oldPrice": "13998",
+    "newPrice": "14998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "42dfecbc-ba88-41f3-b7a9-8a8f6b16a90b",
+    "name": "RETRO MAXX 4+ MATTE BLACK",
+    "companyCode": "7808",
+    "oldPrice": "23998",
+    "newPrice": "26998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "45adac29-3313-419a-ba53-48f591a97490",
+    "name": "AURA KITCHEN MIXER - GOLD",
+    "companyCode": "722",
+    "oldPrice": "29998",
+    "newPrice": "32998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "47a586e2-49cb-4fc0-9165-6159cccd731a",
+    "name": "RETRO MAXX 6+ BRUSHED GOLD",
+    "companyCode": "8501",
+    "oldPrice": "54998",
+    "newPrice": "59998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "481cdda2-7155-4fd1-89c3-5459be063ee7",
+    "name": "WY WHITE with Rain & Mist",
+    "companyCode": "1422",
+    "oldPrice": "7998",
+    "newPrice": "5998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "48397cad-b0d3-4499-9638-3032d1b8ccc0",
+    "name": "RETRO MAXX 4+ Diverter Body",
+    "companyCode": "7884",
+    "oldPrice": "41998",
+    "newPrice": "43998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "48e1fa70-a6ec-4358-abbc-5564f18f4e04",
+    "name": "ICONIC WAVE with  Wave Massage jet - CHROME",
+    "companyCode": "8544",
+    "oldPrice": "9998",
+    "newPrice": "10998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "49f601ab-ccf3-415d-a482-9c898cd211da",
+    "name": "MAGGIO WHITE",
+    "companyCode": "4136",
+    "oldPrice": "26998",
+    "newPrice": "27998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "4b654e0f-38ad-4c07-91d8-8a3d8af5f020",
+    "name": "PRIME MADRID Single Towel Rail",
+    "companyCode": "1234",
+    "oldPrice": "2798",
+    "newPrice": "2789",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "4e6eaffd-c257-47cd-8677-2a331d42342f",
+    "name": "STORM ROSE GOLD with Rain Shower, Mist, Waterfall, Column Spray & Ceiling Kit",
+    "companyCode": "2017",
+    "oldPrice": "134998",
+    "newPrice": "139998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "57843d48-6503-4ea5-a78e-d080fccd0e13",
+    "name": "HEAD SHOWER with SHOWER ARM - ROSE GOLD",
+    "companyCode": "1383",
+    "oldPrice": "18998",
+    "newPrice": "19998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "57c2fcde-e615-4211-ad54-b364caee90a5",
+    "name": "ICONIC AMBIENT with LED Light, Wave Massage jet - CHROME",
+    "companyCode": "8548",
+    "oldPrice": "14998",
+    "newPrice": "16998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "5981ee22-a291-4e56-988d-a7f8adc21f77",
+    "name": "CROWN Single Lever Basin Mixer",
+    "companyCode": "COL-2001",
+    "oldPrice": "13998",
+    "newPrice": "4698",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "5b60973d-64bb-41e1-852c-96319d136b00",
+    "name": "AURA HAND SHOWER - ROSE GOLD",
+    "companyCode": "1382",
+    "oldPrice": "17998",
+    "newPrice": "18998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "5c1a4ee8-007f-4d10-8506-b395bdf0a3c3",
+    "name": "BRITISH HUNK Wall Mounted Basin Mixer",
+    "companyCode": "1538",
+    "oldPrice": "37998",
+    "newPrice": "39998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "6cdeeed2-ec37-4b41-b265-55621aafbdbf",
+    "name": "AURA Hand Shower",
+    "companyCode": "808",
+    "oldPrice": "14998",
+    "newPrice": "16998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "6e4b0d00-21cf-40e8-ad76-edb62519d01a",
+    "name": "AURA TALL BASIN MIXER - GOLD",
+    "companyCode": "721",
+    "oldPrice": "35998",
+    "newPrice": "38998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "6f563bba-df10-4188-b8e2-90a9bffb9c5b",
+    "name": "Diverter Body - Thermostatic with 5 outlet & volume control",
+    "companyCode": "8586",
+    "oldPrice": "76998",
+    "newPrice": "83998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "72499f0c-a240-46ad-9624-a127dffc1be4",
+    "name": "AURA SHORT BASIN MIXER - GOLD",
+    "companyCode": "720",
+    "oldPrice": "29998",
+    "newPrice": "32998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "75a8c57a-5550-4052-b671-ab64b0f0ed94",
+    "name": "STORM GOLD with Rain Shower, Mist, Waterfall, Column Spray & Ceiling Kit",
+    "companyCode": "2018",
+    "oldPrice": "134998",
+    "newPrice": "139998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "791f6c01-9f13-41c3-8f58-d453bf322192",
+    "name": "AURA 3 WAY DIVERTER - ROSE GOLD",
+    "companyCode": "1381",
+    "oldPrice": "35998",
+    "newPrice": "37998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "796721db-4b7d-4595-a628-4e3b972abdf7",
+    "name": "RG WISDOM NEXTGEN",
+    "companyCode": "8704",
+    "oldPrice": "199998",
+    "newPrice": "219998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "7f383cf1-8c8e-4a97-9300-a07579bb8fce",
+    "name": "HEAD SHOWER with SHOWER ARM - GOLD",
+    "companyCode": "729",
+    "oldPrice": "14998",
+    "newPrice": "16998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "7fafc5d7-5eab-420c-9881-020233e20fac",
+    "name": "BRITISH HUNK Short Basin Mixer",
+    "companyCode": "1532",
+    "oldPrice": "30998",
+    "newPrice": "32998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "805acdab-0154-4bde-a4c8-e4551bb08c98",
+    "name": "RETRO MAXX 5+ MATTE BLACK",
+    "companyCode": "8630",
+    "oldPrice": "43998",
+    "newPrice": "49998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "81dd8926-1540-4784-a9a8-96dacfdc747e",
+    "name": "AQUA GOLD",
+    "companyCode": "8925",
+    "oldPrice": "13998",
+    "newPrice": "14998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "8ca27d52-0085-44f4-8a22-c8e99139d704",
+    "name": "TASMANIA GOLD with Rain shower, Waterfall,  Mist & Ceiling Kit",
+    "companyCode": "2010",
+    "oldPrice": "99998",
+    "newPrice": "109998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "907e6e00-5534-41b3-aa86-ae5e708e5f18",
+    "name": "RETRO MAXX 4+ BRUSHED GOLD",
+    "companyCode": "7593",
+    "oldPrice": "23998",
+    "newPrice": "26998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "92e0e84b-e7c2-4c38-8be8-b2c0ff5d571f",
+    "name": "WISE RAIN - GOLD with Rain showert & Ceiling Kit",
+    "companyCode": "2022",
+    "oldPrice": "82998",
+    "newPrice": "89998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "93052299-fd73-4993-b10d-32d121f0d9e2",
+    "name": "AURA KITCHEN MIXER - ROSE GOLD",
+    "companyCode": "3131",
+    "oldPrice": "35998",
+    "newPrice": "37998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "93794a51-1268-488d-bebc-815890b4fbe8",
+    "name": "AQUA PLATINUM BLACK",
+    "companyCode": "2715",
+    "oldPrice": "14998",
+    "newPrice": "15998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "99f69491-1652-45cf-b841-7ceb450431d1",
+    "name": "AURA HAND SHOWER - PLATINUM BLACK",
+    "companyCode": "795",
+    "oldPrice": "17998",
+    "newPrice": "18998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "9a66097c-280e-41e7-974f-05b86ff4a917",
+    "name": "AURA BATH SPOUT - ROSE GOLD",
+    "companyCode": "1380",
+    "oldPrice": "16998",
+    "newPrice": "17998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "9b46bfd6-f052-4d80-9f2a-7b4d54f2082e",
+    "name": "RETRO MAXX 4+ CHROME",
+    "companyCode": "7809",
+    "oldPrice": "12998",
+    "newPrice": "14998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "9c0426d6-ebc3-445d-9a64-bec9b2ab8193",
+    "name": "AURA WALL MOUNTED BASIN MIXER - PLATINUM BLACK",
+    "companyCode": "794",
+    "oldPrice": "40998",
+    "newPrice": "42998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "9ed2de50-976a-4aa8-a0fd-88d25ec22463",
+    "name": "RETRO MAXX 4+ ROSE GOLD",
+    "companyCode": "7827",
+    "oldPrice": "33998",
+    "newPrice": "26998",
+    "changedAt": "2026-01-12T05:53:32.543Z"
+  },
+  {
+    "productId": "a07c5e9d-53c3-4c11-a809-c28a23a91358",
+    "name": "RETRO MAXX 5+ ROSE GOLD",
+    "companyCode": "8629",
+    "oldPrice": "43998",
+    "newPrice": "49998",
+    "changedAt": "2026-01-12T05:53:32.544Z"
+  },
+  {
+    "productId": "a13d7669-1a0b-4aa6-9e56-dff1745ad830",
+    "name": "LARA Swan Neck Tap",
+    "companyCode": "COL-4007",
+    "oldPrice": "4008",
+    "newPrice": "2598",
+    "changedAt": "2026-01-12T05:53:32.544Z"
+  },
+  {
+    "productId": "ab6d7959-75cf-4545-8fac-972bce9794c6",
+    "name": "TASMANIA MATTE BLACK with Rain shower, Waterfall,  Mist & Ceiling Kit",
+    "companyCode": "2012",
+    "oldPrice": "99998",
+    "newPrice": "109998",
+    "changedAt": "2026-01-12T05:53:32.544Z"
+  },
+  {
+    "productId": "adf5561c-fe95-4ddd-9ebb-db0e893db576",
+    "name": "HEAD SHOWER with SHOWER ARM - PLATINUM BLACK",
+    "companyCode": "841",
+    "oldPrice": "18998",
+    "newPrice": "19998",
+    "changedAt": "2026-01-12T05:53:32.544Z"
+  },
+  {
+    "productId": "bc46f737-5fc5-479b-9ff7-6e291b19ec50",
+    "name": "WALK MIST MATTE BLACK with Rain shower, Mist & Ceiling Kit",
+    "companyCode": "3056",
+    "oldPrice": "99998",
+    "newPrice": "109998",
+    "changedAt": "2026-01-12T05:53:32.544Z"
+  },
+  {
+    "productId": "c30ee13d-9220-4e41-8c13-4aa1ec8b9c3c",
+    "name": "AURA BATH SPOUT - PLATINUM BLACK",
+    "companyCode": "723",
+    "oldPrice": "16998",
+    "newPrice": "17998",
+    "changedAt": "2026-01-12T05:53:32.544Z"
+  },
+  {
+    "productId": "c67f64fc-fb0b-4f2b-90c9-956757335f98",
+    "name": "BRITISH HUNK Tall Pillar Tap",
+    "companyCode": "2336",
+    "oldPrice": "14998",
+    "newPrice": "15998",
+    "changedAt": "2026-01-12T05:53:32.544Z"
+  },
+  {
+    "productId": "c6a8205a-4269-47b8-b566-eccbaa4c20b4",
+    "name": "AURA TALL BASIN MIXER - ROSE GOLD",
+    "companyCode": "1378",
+    "oldPrice": "41998",
+    "newPrice": "44998",
+    "changedAt": "2026-01-12T05:53:32.544Z"
+  },
+  {
+    "productId": "ca479073-7879-47ac-a0af-7af02b3da68a",
+    "name": "AURA 3 WAY DIVERTER - PLATINUM BLACK",
+    "companyCode": "806",
+    "oldPrice": "35998",
+    "newPrice": "37998",
+    "changedAt": "2026-01-12T05:53:32.544Z"
+  },
+  {
+    "productId": "caeb5989-a79d-498e-8840-bfe0e5d12897",
+    "name": "RETRO MAXX -5+ BRUSHED GOLD",
+    "companyCode": "8628",
+    "oldPrice": "43998",
+    "newPrice": "49998",
+    "changedAt": "2026-01-12T05:53:32.544Z"
+  },
+  {
+    "productId": "cd082abc-10b7-40a0-8832-88e4a3af1f61",
+    "name": "RETRO MAXX 5+ CHROME",
+    "companyCode": "8607",
+    "oldPrice": "34998",
+    "newPrice": "37998",
+    "changedAt": "2026-01-12T05:53:32.544Z"
+  },
+  {
+    "productId": "d2b7579d-1e56-44cb-8530-e12d37928bd4",
+    "name": "ARIES WHITE Counter Top Basin with Tap Hole",
+    "companyCode": "1376",
+    "oldPrice": "6498",
+    "newPrice": "8498",
+    "changedAt": "2026-01-12T05:53:32.544Z"
+  },
+  {
+    "productId": "d47adc5a-214a-435a-a464-ce26f9777e96",
+    "name": "CRYSTA GOLD DIVERTER",
+    "companyCode": "719",
+    "oldPrice": "34998",
+    "newPrice": "37998",
+    "changedAt": "2026-01-12T05:53:32.544Z"
+  },
+  {
+    "productId": "e53508c6-1c3c-4610-8d3d-95743414e05e",
+    "name": "AURA BATH SPOUT - GOLD",
+    "companyCode": "735",
+    "oldPrice": "14998",
+    "newPrice": "15998",
+    "changedAt": "2026-01-12T05:53:32.544Z"
+  },
+  {
+    "productId": "e697a886-e435-40e1-b594-4e9c7d038866",
+    "name": "Computer Control System For Bathtubs",
+    "companyCode": "1360",
+    "oldPrice": "19800",
+    "newPrice": "35980",
+    "changedAt": "2026-01-12T05:53:32.544Z"
+  },
+  {
+    "productId": "e82ee72e-e39c-43d9-8a88-0b684a74a463",
+    "name": "AURA TALL BASIN MIXER - PLATINUM BLACK",
+    "companyCode": "705",
+    "oldPrice": "41998",
+    "newPrice": "44998",
+    "changedAt": "2026-01-12T05:53:32.544Z"
+  },
+  {
+    "productId": "ed3da749-b16d-43f1-bba1-76e7f95fbb80",
+    "name": "WISE RAIN ROSE GOLD with Rain shower & Ceiling Kit",
+    "companyCode": "2021",
+    "oldPrice": "82998",
+    "newPrice": "89998",
+    "changedAt": "2026-01-12T05:53:32.544Z"
+  },
+  {
+    "productId": "f1c32dcf-897f-46cf-b8e3-5b28f7a44446",
+    "name": "WALK MIST CHROME with Rain shower, Mist & Ceiling Kit",
+    "companyCode": "656",
+    "oldPrice": "79998",
+    "newPrice": "84998",
+    "changedAt": "2026-01-12T05:53:32.544Z"
+  },
+  {
+    "productId": "f3c1d371-dd5e-485e-b4cc-7656e4cc6b2d",
+    "name": "ARIES BLACK Counter Top Basin with Tap Hole",
+    "companyCode": "1375",
+    "oldPrice": "8498",
+    "newPrice": "6498",
+    "changedAt": "2026-01-12T05:53:32.544Z"
+  },
+  {
+    "productId": "f415346b-75fb-4f1b-92ee-8078814849a0",
+    "name": "AQUA MATTE BLACK",
+    "companyCode": "2928",
+    "oldPrice": "13998",
+    "newPrice": "14998",
+    "changedAt": "2026-01-12T05:53:32.544Z"
+  },
+  {
+    "productId": "f4587499-f66d-4d29-8b97-3c5690bf13e0",
+    "name": "X - PINT DUO - WHIRLPOOL + BUBBLE",
+    "companyCode": "578",
+    "oldPrice": "208998",
+    "newPrice": "208980",
+    "changedAt": "2026-01-12T05:53:32.544Z"
+  },
+  {
+    "productId": "f54cd10d-c929-4f33-8f0e-db3fedba81c9",
+    "name": "AURA WALL MOUNTED BASIN MIXER - GOLD",
+    "companyCode": "821",
+    "oldPrice": "35998",
+    "newPrice": "38998",
+    "changedAt": "2026-01-12T05:53:32.544Z"
+  },
+  {
+    "productId": "fa0c6bbf-b6de-45fc-87b4-a3630ba4f271",
+    "name": "AURA KITCHEN MIXER - PLATINUM BLACK",
+    "companyCode": "3130",
+    "oldPrice": "35998",
+    "newPrice": "37998",
+    "changedAt": "2026-01-12T05:53:32.544Z"
+  },
+  {
+    "productId": "fa52ba5a-2398-4916-af6c-be9bdc90ec9b",
+    "name": "COURTYARD",
+    "companyCode": "8865",
+    "oldPrice": "19998",
+    "newPrice": "18998",
+    "changedAt": "2026-01-12T05:53:32.544Z"
+  },
+  {
+    "productId": "fb183c54-7cd0-4a4a-98a2-dcfa4246a747",
+    "name": "GL WISE RAIN",
+    "companyCode": "2022",
+    "oldPrice": "82998",
+    "newPrice": "89998",
+    "changedAt": "2026-01-12T05:53:32.544Z"
+  },
+  {
+    "productId": "fc9f8625-b02c-4ecf-9330-f7bb6af81535",
+    "name": "FAUCET FILLER FOR ESTONIA 15X",
+    "companyCode": "1324",
+    "oldPrice": "19980",
+    "newPrice": "19998",
+    "changedAt": "2026-01-12T05:53:32.544Z"
+  },
+  {
+    "productId": "ffb269f9-ff59-4a95-bc5a-1b5f990272f6",
+    "name": "MAXX TOUCH PAD - Black",
+    "companyCode": "2931",
+    "oldPrice": "119998",
+    "newPrice": "109998",
+    "changedAt": "2026-01-12T05:53:32.544Z"
+  }
+]
