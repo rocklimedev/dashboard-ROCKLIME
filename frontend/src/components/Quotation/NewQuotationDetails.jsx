@@ -26,7 +26,7 @@ import { useGetAllBrandsQuery } from "../../api/brandsApi";
 
 import { exportToPDF, exportToExcel } from "./hooks/exportHelpers";
 import { calcTotals, amountInWords } from "./hooks/calcHelpers";
-
+const colston = "https://static.cmtradingco.com/brands/colston-logo_black.png";
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
 
@@ -128,7 +128,9 @@ const NewQuotationsDetails = () => {
   const { data: addressResponse, isFetching: addrLoading } =
     useGetAddressByIdQuery(shipToId, { skip: !shipToId });
 
-  const address = addressResponse?.data;
+  const address = addressResponse; // ← most likely correct
+  // or (safer / more explicit):
+  // const address = addressResponse?.data ?? addressResponse;
   // CUSTOMER DISPLAY VALUES
   const customerName = customer?.name || "Dear Client";
   const customerPhone =
@@ -290,11 +292,15 @@ const NewQuotationsDetails = () => {
             alt="American Standard"
             className={styles.brandLogoLeft}
           />
+          <img
+            src={colston}
+            alt="Colston"
+            className={`${styles.brandLogoColston} ${styles.brandLogoMiddle}`} // optional extra class
+          />
           <img src={groheLogo} alt="GROHE" className={styles.brandLogoRight} />
         </div>
 
         <h1 className={styles.companyTitle}>CM TRADING CO.</h1>
-        <h2 className={styles.subtitle}>Quotation Letter</h2>
 
         <div className={styles.clientInfoGrid}>
           <div className={styles.label}>Client Name</div>
@@ -310,13 +316,14 @@ const NewQuotationsDetails = () => {
         </div>
 
         <div className={styles.letterheadFooter}>
-          <img src={logo} alt="Logo" style={{ height: 80 }} />
-          <div style={{ textAlign: "center", fontSize: 16 }}>
-            <strong>CM TRADING CO.</strong>
-            <br />
+          <img src={logo} alt="Logo" />
+
+          <div>
             487/65, National Market, Peera Garhi, Delhi, 110087
             <br />
-            Phone: 099110 80605 • Web: www.cmtradingco.com
+            099110 80605
+            <br />
+            www.cmtradingco.com
           </div>
         </div>
       </div>
@@ -374,8 +381,10 @@ const NewQuotationsDetails = () => {
                   productsData?.find((x) => x.productId === p.productId) || {};
                 const img = p.imageUrl || pd.images?.[0] || "";
                 const code =
+                  pd.product_code || // ← most reliable
                   pd.metaDetails?.find((m) => m.slug === "companyCode")
-                    ?.value || "—";
+                    ?.value ||
+                  "—";
                 const mrp = Number(p.price || p.sellingPrice || 0);
                 const qty = Number(p.quantity || 1);
                 const discount = Number(p.discount || 0);

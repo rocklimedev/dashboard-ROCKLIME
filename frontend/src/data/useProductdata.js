@@ -1,6 +1,6 @@
 // src/hooks/useProductsData.js
 import { useGetProductsByIdsQuery } from "../api/productApi";
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 
 /**
  * Efficient hook that fetches product details in bulk using RTK Query.
@@ -47,7 +47,14 @@ export default function useProductsData(rawProducts = []) {
       })
       .filter(Boolean);
   }, [fetchedProducts, rawProducts]);
-
+  // ← Add this
+  useEffect(() => {
+    if (isError) {
+      console.error("Failed to load products:", error);
+    } else if (productIds.length > 0 && fetchedProducts.length === 0) {
+      console.warn("No products returned for IDs:", productIds);
+    }
+  }, [isError, error, productIds, fetchedProducts]);
   const errors = isError
     ? [{ error: error?.data?.message || "Failed to fetch products" }]
     : [];
