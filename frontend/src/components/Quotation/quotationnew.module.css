@@ -62,8 +62,29 @@ margin: 351px 0;
 /* ======================= PAGE 2: LETTERHEAD ======================= */
 /* (kept exactly as you want – no changes needed) */
 .letterheadPage { padding: 50px 60px 180px 60px; position: relative; font-family: "Helvetica Neue",Helvetica,Arial,sans-serif; }
-.letterheadTop { display: flex; justify-content: space-between; margin-bottom: 30px; }
-.brandLogoLeft { height: 85px; } .brandLogoRight { height: 75px; }
+.letterheadTop {
+  display: flex;
+  justify-content: space-between;           /* or space-around / center – test what looks best */
+  align-items: center;                      /* ← important: vertical alignment */
+  margin-bottom: 30px;
+  gap: 20px;                                /* breathing room between logos if needed */
+}
+
+.brandLogoLeft,
+.brandLogoRight,
+/* Add a class for Colston too */
+.brandLogoColston {
+  height: 80px;                             /* ← pick one value that looks good for all */
+  width: auto;                              /* preserve aspect ratio */
+  object-fit: contain;                      /* very important – prevents stretching */
+}
+
+/* If you want even stricter control (max width fallback) */
+.brandLogoLeft,
+.brandLogoRight,
+.brandLogoColston {
+  max-width: 180px;                         /* prevents one logo from becoming too wide */
+}
 .companyTitle { text-align:center; font-size:44px; font-weight:bold; color:#aa0f1f; margin:40px 0 10px; letter-spacing:4px; text-transform:uppercase; }
 .subtitle { text-align:center; font-size:30px; color:#333; margin-bottom:60px; }
 .clientInfoGrid { display:grid; grid-template-columns:220px 1fr; gap:18px 35px; font-size:19px; margin-bottom:70px; }
@@ -72,18 +93,41 @@ margin: 351px 0;
 .summaryTable { width:100%; border-collapse:collapse; margin:70px 0; font-size:18px; }
 .summaryTable th { background:#aa0f1f; color:white; padding:22px; font-size:21px; }
 .summaryTable td { height:62px; border-bottom:2px solid #eee; }
+/* ======================= LETTERHEAD FOOTER – IMAGE MATCH ======================= */
+
 .letterheadFooter {
-    position: absolute;
-    bottom: 40px;
-    left: 60px;
-    right: 60px;
-    height: 110px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-top: 4px solid #aa0f1f;
-    background: white;
-    padding: 20px 0;
+  position: absolute;
+  bottom: 40px;
+  left: 60px;
+  right: 60px;
+
+  display: flex;
+  align-items: flex-start;              /* important: logo sits slightly higher */
+  gap: 30px;
+
+  padding-top: 18px;
+  border-top: 1.5px solid #111;         /* thin divider like the image */
+  background: white;
+}
+
+/* Logo – left */
+.letterheadFooter img {
+  height: 72px;                         /* matches image scale */
+  width: auto;
+  object-fit: contain;
+}
+
+/* Text block – right */
+.letterheadFooter > div {
+  text-align: left;                     /* NOT center */
+  font-size: 14px;                      /* tighter typography */
+  line-height: 1.6;
+  color: #111;
+}
+
+/* Optional: slightly mute phone + website */
+.letterheadFooter > div span {
+  color: #444;
 }
 
 /* ======================= PAGE 3+: PRODUCT PAGES – CONTENT NEVER BREAKS ======================= */
