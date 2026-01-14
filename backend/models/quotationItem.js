@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
 
-// models/quotationItem.js
 const quotationItemsSchema = new mongoose.Schema({
   quotationId: { type: String, required: true },
   items: [
@@ -8,17 +7,26 @@ const quotationItemsSchema = new mongoose.Schema({
       productId: String,
       name: String,
       imageUrl: String,
+      productCode: {
+        // ← NEW
+        type: String,
+        trim: true,
+      },
+      companyCode: {
+        // ← NEW
+        type: String,
+        trim: true,
+      },
       quantity: Number,
       price: Number,
-      discount: Number, // e.g., 10 (for 10% or ₹10)
+      discount: Number,
       discountType: {
-        // ← ADD THIS
         type: String,
         enum: ["percent", "fixed"],
         default: "percent",
       },
       tax: Number,
-      total: Number, // optional: pre-calculated line total (before discount/tax)
+      total: Number,
     },
   ],
 });

@@ -8,7 +8,7 @@ import styles from "./quotationnew.module.css";
 import logo from "../../assets/img/logo-quotation.png";
 import americanStandard from "../../assets/img/american-standard-logo-2.png";
 import groheLogo from "../../assets/img/Grohe-Logo.png";
-import coverImage from "../../assets/img/quotation_first_page.png";
+import coverImage from "../../assets/img/quotation_first_page.jpeg";
 
 import { calcTotals, amountInWords } from "./hooks/calcHelpers";
 const { Title, Text } = Typography;

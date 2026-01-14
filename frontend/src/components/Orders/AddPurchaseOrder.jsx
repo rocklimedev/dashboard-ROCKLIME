@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeftOutlined, DeleteOutlined } from "@ant-design/icons";
+import {
+  ArrowLeftOutlined,
+  DeleteOutlined,
+  SearchOutlined,
+} from "@ant-design/icons";
 import {
   Form,
   Input,
@@ -9,6 +13,8 @@ import {
   Modal,
   Alert,
   Table,
+  Spin,
+  Typography,
   InputNumber,
 } from "antd";
 import { message } from "antd";
@@ -19,7 +25,10 @@ import {
   useGetPurchaseOrderByIdQuery,
   useUpdatePurchaseOrderMutation,
 } from "../../api/poApi";
-import { useGetAllProductsQuery } from "../../api/productApi";
+import {
+  useGetAllProductsQuery,
+  useSearchProductsQuery,
+} from "../../api/productApi";
 import {
   useGetVendorsQuery,
   useCreateVendorMutation,
@@ -29,7 +38,7 @@ import DatePicker from "react-datepicker";
 import AddVendorModal from "../POS-NEW/AddVendorModal";
 
 const { Option } = Select;
-
+const { Text } = Typography;
 const AddPurchaseOrder = () => {
   const { id } = useParams();
   const isEditMode = Boolean(id);
@@ -39,7 +48,8 @@ const AddPurchaseOrder = () => {
   // Queries and Mutations
   const { data: existingPurchaseOrder, error: fetchError } =
     useGetPurchaseOrderByIdQuery(id, { skip: !isEditMode });
-  const { data: productsData } = useGetAllProductsQuery();
+  const { data: productsResponse } = useGetAllProductsQuery();
+  const productsData = productsResponse?.data || [];
   const { data: vendorsData } = useGetVendorsQuery();
   const [createPurchaseOrder, { isLoading: isCreating }] =
     useCreatePurchaseOrderMutation();
@@ -47,11 +57,18 @@ const AddPurchaseOrder = () => {
     useUpdatePurchaseOrderMutation();
   const [createVendor, { isLoading: isCreatingVendor }] =
     useCreateVendorMutation();
-
+  // ─── Search State (like AddSiteMap) ─────────────────────
+  const [searchTerm, setSearchTerm] = useState("");
+  const { data: searchResult = [], isFetching: searching } =
+    useSearchProductsQuery(searchTerm.trim(), {
+      skip: !searchTerm.trim(),
+    });
   const vendors = vendorsData || [];
   const products = productsData || [];
   const statuses = ["pending", "confirmed", "delivered", "cancelled"];
-
+  const getProductDisplayName = (p) =>
+    p.name?.trim() || p.product_code?.trim() || "Unknown Product";
+  const getProductId = (p) => p.productId || p.id;
   const initialFormData = useMemo(
     () => ({
       vendorId: "",
@@ -159,63 +176,82 @@ const AddPurchaseOrder = () => {
   }, [existingPurchaseOrder, isEditMode, products, vendors, form]);
 
   // Debounced product search
-  const debouncedSearch = useCallback(
-    debounce((value) => {
-      setProductSearch(value);
-      if (value) {
-        const filtered = products
-          .filter(
-            (product) =>
-              product.productId &&
-              (product.name.toLowerCase().includes(value.toLowerCase()) ||
-                product.product_code
-                  ?.toLowerCase()
-                  .includes(value.toLowerCase()))
-          )
-          .slice(0, 5);
-        setFilteredProducts(filtered);
-      } else {
-        setFilteredProducts([]);
-      }
-    }, 300),
-    [products]
-  );
 
+  const searchOptions = useMemo(() => {
+    const source = searchResult.length > 0 ? searchResult : products;
+
+    return source.map((p) => {
+      const price =
+        Number(
+          p.metaDetails?.find((m) => m.slug === "sellingPrice")?.value ||
+            p.sellingPrice ||
+            0
+        ) || 0;
+
+      return {
+        value: getProductId(p),
+        label: (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              padding: "4px 0",
+            }}
+          >
+            <div>
+              <div style={{ fontWeight: 500 }}>{getProductDisplayName(p)}</div>
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                {p.product_code || "—"}
+              </Text>
+            </div>
+            <Text strong style={{ color: "#52c41a" }}>
+              ₹{price.toLocaleString("en-IN")}
+            </Text>
+          </div>
+        ),
+      };
+    });
+  }, [searchResult, products]);
   // Add product
+  // ─── Add Product ────────────────────────────────────────
   const addProduct = (productId) => {
-    const product = products.find((p) => p.productId === productId);
+    const prod =
+      searchResult.find((p) => getProductId(p) === productId) ||
+      products.find((p) => getProductId(p) === productId);
 
-    if (
-      !product ||
-      formData.items.some((item) => item.productId === productId)
-    ) {
-      if (!product) message.error("Product not found.");
-      else message.error("Product already added.");
+    if (!prod) {
+      message.error("Product not found");
       return;
     }
+
+    if (formData.items.some((item) => item.productId === productId)) {
+      message.error("Product already added");
+      return;
+    }
+
     const sellingPrice =
-      product.metaDetails?.find((meta) => meta.slug === "sellingPrice")
-        ?.value || 0;
+      Number(
+        prod.metaDetails?.find((m) => m.slug === "sellingPrice")?.value ||
+          prod.sellingPrice ||
+          0
+      ) || 0;
+
     if (sellingPrice <= 0) {
-      message.error(
-        `Product ${product.name} has an invalid MRP (₹${sellingPrice}).`
-      );
+      message.error(`Product ${prod.name} has invalid MRP (₹${sellingPrice})`);
       return;
     }
-    const quantity = 1;
-    const total = quantity * sellingPrice;
+
+    const newItem = {
+      productId: getProductId(prod),
+      name: getProductDisplayName(prod),
+      quantity: 1,
+      mrp: sellingPrice,
+      total: sellingPrice,
+    };
+
     setFormData((prev) => {
-      const newItems = [
-        ...prev.items,
-        {
-          id: product.productId,
-          productId: product.productId,
-          name: product.name || "Unknown",
-          quantity,
-          mrp: sellingPrice,
-          total,
-        },
-      ];
+      const newItems = [...prev.items, newItem];
       const totalAmount = newItems
         .reduce((sum, item) => sum + Number(item.total || 0), 0)
         .toFixed(2);
@@ -226,8 +262,8 @@ const AddPurchaseOrder = () => {
         totalAmount,
       };
     });
-    setProductSearch("");
-    setFilteredProducts([]);
+
+    setSearchTerm(""); // clear search after add
   };
 
   // Remove product
@@ -543,18 +579,6 @@ const AddPurchaseOrder = () => {
                 </Form.Item>
 
                 <Form.Item
-                  label="Total Amount (₹)"
-                  style={{ flex: 1, minWidth: 300 }}
-                >
-                  <InputNumber
-                    style={{ width: "100%" }}
-                    value={formData.totalAmount}
-                    readOnly
-                    aria-readonly="true"
-                  />
-                </Form.Item>
-
-                <Form.Item
                   label="Status"
                   name="status"
                   rules={[
@@ -572,25 +596,30 @@ const AddPurchaseOrder = () => {
               </div>
 
               {/* Product Search */}
-              <Select
-                showSearch
-                style={{ width: "100%", marginBottom: 16 }}
-                placeholder="Search by product name or code"
-                onSearch={debouncedSearch}
-                onChange={addProduct}
-                filterOption={false}
-                notFoundContent="No products found"
-              >
-                {filteredProducts.map((product, index) => (
-                  <Option
-                    key={product.productId ?? `fallback-${index}`}
-                    value={product.productId}
-                  >
-                    {product.name} ({product.product_code ?? "N/A"})
-                  </Option>
-                ))}
-              </Select>
-
+              <div style={{ margin: "24px 0" }}>
+                <Select
+                  showSearch
+                  size="large"
+                  style={{ width: "100%" }}
+                  placeholder="Search product by name or code..."
+                  prefix={<SearchOutlined />}
+                  value={null}
+                  onSearch={setSearchTerm}
+                  onChange={addProduct}
+                  filterOption={false}
+                  options={searchOptions}
+                  notFoundContent={
+                    searching ? (
+                      <Spin size="small" />
+                    ) : searchTerm.trim() ? (
+                      "No products found"
+                    ) : (
+                      "Start typing to search products"
+                    )
+                  }
+                  dropdownStyle={{ maxHeight: 400 }}
+                />
+              </div>
               {/* Products Table */}
               <Table
                 columns={columns}
@@ -599,6 +628,17 @@ const AddPurchaseOrder = () => {
                 locale={{ emptyText: "No products added" }}
                 pagination={false}
               />
+              <Form.Item
+                label="Total Amount (₹)"
+                style={{ flex: 1, minWidth: 300 }}
+              >
+                <InputNumber
+                  style={{ width: "20%" }}
+                  value={formData.totalAmount}
+                  readOnly
+                  aria-readonly="true"
+                />
+              </Form.Item>
 
               {/* Submit Buttons */}
               <div

@@ -143,11 +143,11 @@ const AddAddress = ({
   };
 
   const handleSubmit = async (values) => {
-    if (!values.customerId && !values.userId) {
+    const effectiveCustomerId = values.customerId || selectedCustomer;
+    if (!effectiveCustomerId && !values.userId) {
       message.error("Please select either a Customer or a User");
       return;
     }
-
     const payload = {
       street: values.street.trim(),
       city: values.city.trim(),
@@ -155,7 +155,7 @@ const AddAddress = ({
       postalCode: values.postalCode?.trim() || null,
       country: values.country || "India",
       status: values.status || "ADDITIONAL",
-      customerId: values.customerId || null,
+      customerId: effectiveCustomerId || null,
       userId: values.userId || null,
     };
 
@@ -183,6 +183,7 @@ const AddAddress = ({
       onClose();
       form.resetFields();
     } catch (err) {
+      console.log(err);
       message.error(err?.data?.message || "Failed to save address");
     }
   };

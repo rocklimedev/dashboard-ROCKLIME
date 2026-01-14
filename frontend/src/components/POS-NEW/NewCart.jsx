@@ -1139,8 +1139,16 @@ const NewCart = ({ onConvertToOrder }) => {
 
         {showAddAddressModal && (
           <AddAddress
+            visible={true} // or = {showAddAddressModal}
             onClose={() => setShowAddAddressModal(false)}
-            onSave={() => {}}
+            onSave={(addressId) => {
+              console.log("New address created:", addressId);
+              // Optional: auto-select for order
+              if (documentType === "Order") {
+                setOrderData((prev) => ({ ...prev, shipTo: addressId }));
+              }
+              setShowAddAddressModal(false);
+            }}
             selectedCustomer={selectedCustomer}
           />
         )}

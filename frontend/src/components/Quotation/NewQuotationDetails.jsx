@@ -13,8 +13,8 @@ import logo from "../../assets/img/logo-quotation.png";
 import styles from "./quotationnew.module.css";
 import americanStandard from "../../assets/img/american-standard-logo-2.png";
 import groheLogo from "../../assets/img/Grohe-Logo.png";
-import coverImage from "../../assets/img/quotation_first_page.png";
-
+import coverImage from "../../assets/img/quotation_first_page.jpeg";
+import quotationBgImage from "../../assets/img/quotation_letterhead.jpeg";
 import {
   useGetQuotationByIdQuery,
   useGetQuotationVersionsQuery,
@@ -284,44 +284,41 @@ const NewQuotationsDetails = () => {
     );
 
     // PAGE 2: LETTERHEAD
+    // PAGE 2: LETTERHEAD with background image + overlays
     pages.push(
       <div key="letterhead" className={`${styles.letterheadPage} page`}>
-        <div className={styles.letterheadTop}>
-          <img
-            src={americanStandard}
-            alt="American Standard"
-            className={styles.brandLogoLeft}
-          />
-          <img
-            src={colston}
-            alt="Colston"
-            className={`${styles.brandLogoColston} ${styles.brandLogoMiddle}`} // optional extra class
-          />
-          <img src={groheLogo} alt="GROHE" className={styles.brandLogoRight} />
-        </div>
+        <img
+          src={quotationBgImage} // import at top: import quotationBg from "../../assets/img/quotation-letter-bg.jpg";
+          alt="Quotation Background"
+          className={styles.letterheadBg}
+        />
 
-        <h1 className={styles.companyTitle}>CM TRADING CO.</h1>
-
-        <div className={styles.clientInfoGrid}>
-          <div className={styles.label}>Client Name</div>
-          <div className={styles.value}>{customerName}</div>
-          <div className={styles.label}>Contact Number</div>
-          <div className={styles.value}>{customerPhone}</div>
-          <div className={styles.label}>Address</div>
-          <div className={styles.value}>{customerAddress}</div>
-          <div className={styles.label}>Quotation No.</div>
-          <div className={styles.value}>
+        <div className={styles.letterheadContent}>
+          {/* Overlaid fields – position matches blanks in your image */}
+          <div className={`${styles.clientField} ${styles.clientNameField}`}>
+            {customerName}
+          </div>
+          <div className={`${styles.clientField} ${styles.contactField}`}>
+            {customerPhone}
+          </div>
+          <div className={`${styles.clientField} ${styles.addressField}`}>
+            {customerAddress}
+          </div>
+          <div className={`${styles.clientField} ${styles.quotationNoField}`}>
             {quotation.reference_number || "—"}
           </div>
+
+          {/* If you still want company title or other static parts */}
+          {/* <h1 className={styles.companyTitle}>CM TRADING CO.</h1> */}
         </div>
 
+        {/* Keep footer if needed – or bake it into background image */}
         <div className={styles.letterheadFooter}>
           <img src={logo} alt="Logo" />
-
           <div>
             487/65, National Market, Peera Garhi, Delhi, 110087
             <br />
-            099110 80605
+            0991180605
             <br />
             www.cmtradingco.com
           </div>
@@ -380,11 +377,7 @@ const NewQuotationsDetails = () => {
                 const pd =
                   productsData?.find((x) => x.productId === p.productId) || {};
                 const img = p.imageUrl || pd.images?.[0] || "";
-                const code =
-                  pd.product_code || // ← most reliable
-                  pd.metaDetails?.find((m) => m.slug === "companyCode")
-                    ?.value ||
-                  "—";
+                const code = p.companyCode || "—";
                 const mrp = Number(p.price || p.sellingPrice || 0);
                 const qty = Number(p.quantity || 1);
                 const discount = Number(p.discount || 0);

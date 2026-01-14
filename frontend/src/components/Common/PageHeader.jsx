@@ -114,7 +114,7 @@ const PageHeader = ({
         {/* Then: Default "Add" button */}
         {onAdd && (
           <button onClick={onAdd} className="btn btn-primary ms-2">
-            + Add {title}
+            Add {title}
           </button>
         )}
       </div>

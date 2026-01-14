@@ -135,11 +135,38 @@ const InventoryWrapper = () => {
   };
 
   const getSellingPrice = (metaDetails) => {
-    if (!Array.isArray(metaDetails)) return null;
-    const entry = metaDetails.find(
-      (d) => d.slug?.toLowerCase() === "sellingprice"
-    );
-    return entry ? Number(entry.value) : null;
+    if (!Array.isArray(metaDetails) || metaDetails.length === 0) return null;
+
+    // Strategy 1: look for numeric-looking value that is not UUID / code
+    for (const d of metaDetails) {
+      const val = String(d.value || "").trim();
+      if (!val) continue;
+
+      // Skip UUIDs and short alphanumeric codes
+      if (val.match(/^[0-9a-f-]{30,}/i)) continue; // UUID-like
+      if (val.match(/^[A-Za-z0-9]{8,12}$/) && !val.includes(".")) continue; // codes like 33965000
+
+      // Looks like money (has digits, maybe decimal)
+      if (val.match(/^\d+(?:\.\d+)?$/)) {
+        const num = Number(val);
+        if (!isNaN(num) && num > 10) {
+          // avoid very small numbers that might be tax %
+          return num;
+        }
+      }
+    }
+
+    // Strategy 2: fallback → last numeric-ish entry
+    for (let i = metaDetails.length - 1; i >= 0; i--) {
+      const val = String(metaDetails[i].value || "").trim();
+      const num = Number(val);
+      if (!isNaN(num) && num > 50) {
+        // reasonable price threshold
+        return num;
+      }
+    }
+
+    return null;
   };
 
   // Client-side filtering (only on current page data)

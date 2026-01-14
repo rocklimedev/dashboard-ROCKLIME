@@ -6,7 +6,7 @@ import logo from "../../assets/img/logo-quotation.png";
 import { exportToPDF } from "./hooks/exportSiteMapPDF";
 import styles from "./newsitemap.module.css";
 import useProductsData from "../../data/useProductdata";
-import coverImage from "../../assets/img/quotation_first_page.png";
+import coverImage from "../../assets/img/quotation_first_page.jpeg";
 
 // Indian Number to Words (unchanged)
 const NumberToWords = (num) => {

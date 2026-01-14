@@ -14,6 +14,7 @@ import {
   Form,
   Card,
   Row,
+  Spin,
   Col,
 } from "antd";
 import {
@@ -74,7 +75,7 @@ const AddQuotation = () => {
   const userId = userData?.user?.userId || "nill";
   const customers = customersData?.data || [];
   const addresses = Array.isArray(addressesData) ? addressesData : [];
-  const products = productsData || [];
+  const products = productsData?.data || [];
   const versions = versionsData || [];
 
   /* ────────────────────── STATE ────────────────────── */
@@ -200,29 +201,43 @@ const AddQuotation = () => {
 
   /* ────────────────────── PRODUCT HANDLERS ────────────────────── */
   const addProduct = (productId) => {
+    if (!productId) return;
+
     const prod = products.find((p) => (p.id || p.productId) === productId);
-    if (!prod) return message.error("Product not found");
+    if (!prod) {
+      message.warning("Product not found – possibly still loading");
+      return;
+    }
 
     const price =
       Number(prod.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"]) || 0;
 
-    setFormData((prev) => ({
-      ...prev,
-      products: [
-        ...prev.products,
-        {
-          id: prod.id || prod.productId,
-          productId: prod.id || prod.productId,
-          name: prod.name || "Unknown",
-          qty: 1,
-          sellingPrice: price,
-          discount: 0,
-          discountType: "fixed",
-          tax: 0,
-          total: price,
-        },
-      ],
-    }));
+    setFormData((prev) => {
+      // Optional: prevent duplicate addition
+      if (prev.products.some((item) => item.productId === productId)) {
+        message.info("Product already added");
+        return prev;
+      }
+
+      return {
+        ...prev,
+        products: [
+          ...prev.products,
+          {
+            id: prod.id || prod.productId,
+            productId: prod.id || prod.productId,
+            name: prod.name || "Unknown",
+            qty: 1,
+            sellingPrice: price,
+            discount: 0,
+            discountType: "fixed",
+            tax: 0,
+            total: price,
+          },
+        ],
+      };
+    });
+
     setProductSearch("");
     setFilteredProducts([]);
   };
@@ -666,35 +681,97 @@ const AddQuotation = () => {
             extra={
               <Select
                 showSearch
-                placeholder="Search product..."
+                placeholder="Search product by name, code or company code..."
                 onSearch={debouncedSearch}
                 onChange={addProduct}
                 value={productSearch || undefined}
-                style={{ width: 260 }}
-                notFoundContent={filteredProducts.length ? null : "No results"}
-                filterOption={false}
+                style={{ width: 340 }}
+                filterOption={false} // we handle filtering manually
+                notFoundContent={
+                  productSearch ? (
+                    filteredProducts.length === 0 ? (
+                      products.length === 0 ? (
+                        <span>
+                          <Spin size="small" /> Loading products...
+                        </span>
+                      ) : (
+                        "No matching products"
+                      )
+                    ) : null
+                  ) : (
+                    "Start typing to search"
+                  )
+                }
+                dropdownRender={(menu) => (
+                  <>
+                    {menu}
+                    {products.length === 0 && productSearch && (
+                      <div
+                        style={{
+                          padding: "8px",
+                          textAlign: "center",
+                          color: "#888",
+                        }}
+                      >
+                        <Spin size="small" /> Fetching products...
+                      </div>
+                    )}
+                  </>
+                )}
+                loading={products.length === 0} // optional visual cue
               >
-                {filteredProducts.map((p) => (
-                  <Option key={p.id || p.productId} value={p.id || p.productId}>
-                    {p.name} ({p.product_code}) - ₹
-                    {Number(
-                      p.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"] || 0
-                    ).toFixed(2)}
-                  </Option>
-                ))}
+                {filteredProducts.map((p) => {
+                  const price = Number(
+                    p.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"] || 0
+                  );
+                  return (
+                    <Option
+                      key={p.id || p.productId}
+                      value={p.id || p.productId}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <span>
+                          <strong>{p.name}</strong> ({p.product_code || "—"})
+                        </span>
+                        <span style={{ color: "#52c41a" }}>
+                          ₹{price.toFixed(2)}
+                        </span>
+                      </div>
+                      {p.meta?.["d11da9f9-3f2e-4536-8236-9671200cca4a"] && (
+                        <div style={{ fontSize: "0.9em", color: "#888" }}>
+                          Company:{" "}
+                          {p.meta["d11da9f9-3f2e-4536-8236-9671200cca4a"]}
+                        </div>
+                      )}
+                    </Option>
+                  );
+                })}
               </Select>
             }
           >
             <Table
               columns={columns}
               dataSource={formData.products}
-              rowKey="id"
+              rowKey={(record) => record.productId || record.id}
               pagination={false}
-              scroll={{ y: 240 }}
-              locale={{ emptyText: "No products – start typing above to add" }}
+              scroll={{ y: 300 }} // slightly taller is usually better
+              locale={{
+                emptyText:
+                  products.length === 0 ? (
+                    <span>
+                      <Spin /> Loading products...
+                    </span>
+                  ) : (
+                    "No products added – search & select above"
+                  ),
+              }}
             />
           </Card>
-
           {/* Financials */}
           <Card title="Financials" style={{ marginBottom: 16 }}>
             <Row gutter={16}>

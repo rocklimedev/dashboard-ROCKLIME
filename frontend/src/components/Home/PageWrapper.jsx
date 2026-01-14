@@ -241,12 +241,6 @@ const PageWrapper = () => {
                         <div className="flex-grow-1">
                           <a href={`/order/${o.id}`} className="order-link">
                             #{o.orderNo}{" "}
-                            <span className="me-2">
-                              <i className="bi bi-person info-icon"></i>
-                              {o.customer?.name ||
-                                getCustomerName(o.customerId) ||
-                                "Unknown"}
-                            </span>
                             {o.priority && (
                               <span
                                 className={`ms-2 fw-semibold ${
@@ -265,7 +259,9 @@ const PageWrapper = () => {
                           <div className="mt-1 info-text">
                             <span className="me-2">
                               <i className="bi bi-person-badge info-icon"></i>
-                              {o.assignedUser?.name || "Unassigned"}
+                              {o.customer?.name ||
+                                getCustomerName(o.customerId) ||
+                                "Unknown"}
                             </span>
                             <span className="ms-2 info-text">
                               {new Date(o.createdAt).toLocaleDateString(
