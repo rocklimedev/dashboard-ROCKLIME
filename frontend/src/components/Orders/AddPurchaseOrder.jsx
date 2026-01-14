@@ -39,6 +39,33 @@ import AddVendorModal from "../POS-NEW/AddVendorModal";
 
 const { Option } = Select;
 const { Text } = Typography;
+const SELLING_PRICE_META_KEY = "9ba862ef-f993-4873-95ef-1fef10036aa5";
+
+const getSellingPrice = (product) => {
+  if (!product) return 0;
+
+  // 1. Direct lookup using the known UUID (fastest & most reliable)
+  if (product.meta?.[SELLING_PRICE_META_KEY]) {
+    const val = Number(product.meta[SELLING_PRICE_META_KEY]);
+    if (!isNaN(val) && val > 0) {
+      return val;
+    }
+  }
+
+  // 2. Fallback: scan metaDetails for any numeric value that looks like a price
+  if (product.metaDetails) {
+    for (const m of product.metaDetails) {
+      const val = Number(m?.value);
+      if (!isNaN(val) && val > 50) {
+        // reasonable threshold to avoid IDs/numbers like 0,1,20
+        return val;
+      }
+    }
+  }
+
+  // 3. Last fallback: any top-level sellingPrice / mrp field
+  return Number(product.sellingPrice || product.mrp || 0);
+};
 const AddPurchaseOrder = () => {
   const { id } = useParams();
   const isEditMode = Boolean(id);
@@ -119,11 +146,7 @@ const AddPurchaseOrder = () => {
                 ? product.name
                 : `Product ${item.productId} (Not Found)`;
               const sellingPrice =
-                product?.metaDetails?.find(
-                  (meta) => meta.slug === "sellingPrice"
-                )?.value ||
-                item.unitPrice ||
-                0;
+                getSellingPrice(product) || item.unitPrice || 0;
               const quantity = Number(item.quantity) || 1;
 
               if (sellingPrice <= 0) {
@@ -181,12 +204,7 @@ const AddPurchaseOrder = () => {
     const source = searchResult.length > 0 ? searchResult : products;
 
     return source.map((p) => {
-      const price =
-        Number(
-          p.metaDetails?.find((m) => m.slug === "sellingPrice")?.value ||
-            p.sellingPrice ||
-            0
-        ) || 0;
+      const price = getSellingPrice(p) || 0; // ← changed here
 
       return {
         value: getProductId(p),
@@ -230,12 +248,7 @@ const AddPurchaseOrder = () => {
       return;
     }
 
-    const sellingPrice =
-      Number(
-        prod.metaDetails?.find((m) => m.slug === "sellingPrice")?.value ||
-          prod.sellingPrice ||
-          0
-      ) || 0;
+    const sellingPrice = getSellingPrice(prod) || 0;
 
     if (sellingPrice <= 0) {
       message.error(`Product ${prod.name} has invalid MRP (₹${sellingPrice})`);

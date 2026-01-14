@@ -612,434 +612,537 @@ const OrderPage = () => {
         <title>ORDER #{order.orderNo}</title>
       </Helmet>
       <div className="content">
-        <div className="container-fluid">
-          {/* MAIN GRID */}
-          <Row gutter={[16, 16]}>
-            <Col xs={24} lg={16} xxl={18}>
-              <Row gutter={[16, 16]}>
-                <Col xs={24}>
-                  <Card
-                    title={
-                      <Space>
-                        <Title level={5} style={{ margin: 0 }}>
-                          Order #{order.orderNo}
-                        </Title>
-                        <Badge
-                          status={
-                            order.status === "DRAFT"
-                              ? "warning"
-                              : order.status === "ONHOLD"
-                              ? "error"
-                              : "success"
-                          }
-                          text={order.status}
-                        />
-                        <Dropdown overlay={menu} trigger={["click"]}>
-                          <Button type="text" icon={<EllipsisOutlined />} />
-                        </Dropdown>
-                      </Space>
-                    }
-                    className="order-card"
-                  >
-                    <Table
-                      columns={columns}
-                      dataSource={mergedProducts}
-                      pagination={false}
-                      rowKey="productId"
-                      scroll={{ x: "max-content" }}
-                      footer={() => {
-                        const shippingAmount = order.shipping
-                          ? parseFloat(order.shipping)
-                          : 0;
+        {/* MAIN GRID */}
+        <Row gutter={[16, 16]}>
+          <Col xs={24} lg={16} xxl={18}>
+            <Row gutter={[16, 16]}>
+              <Col xs={24}>
+                <Card
+                  title={
+                    <Space>
+                      <Title level={5} style={{ margin: 0 }}>
+                        Order #{order.orderNo}
+                      </Title>
+                      <Badge
+                        status={
+                          order.status === "DRAFT"
+                            ? "warning"
+                            : order.status === "ONHOLD"
+                            ? "error"
+                            : "success"
+                        }
+                        text={order.status}
+                      />
+                      <Dropdown overlay={menu} trigger={["click"]}>
+                        <Button type="text" icon={<EllipsisOutlined />} />
+                      </Dropdown>
+                    </Space>
+                  }
+                  className="order-card"
+                >
+                  <Table
+                    columns={columns}
+                    dataSource={mergedProducts}
+                    pagination={false}
+                    rowKey="productId"
+                    scroll={{ x: "max-content" }}
+                    footer={() => {
+                      const shippingAmount = order.shipping
+                        ? parseFloat(order.shipping)
+                        : 0;
 
-                        return (
-                          <div
-                            className="table-footer"
+                      return (
+                        <div
+                          className="table-footer"
+                          style={{
+                            padding: "16px 24px",
+                            background: "#fafafa",
+                          }}
+                        >
+                          <table
                             style={{
-                              padding: "16px 24px",
-                              background: "#fafafa",
+                              width: "100%",
+                              borderCollapse: "collapse",
                             }}
                           >
-                            <table
-                              style={{
-                                width: "100%",
-                                borderCollapse: "collapse",
-                              }}
-                            >
-                              <tbody>
+                            <tbody>
+                              <tr>
+                                <td style={{ padding: "6px 0" }}>Sub Total:</td>
+                                <td align="right">
+                                  ₹{lineItemsTotal.toFixed(2)}
+                                </td>
+                              </tr>
+
+                              {shippingAmount > 0 && (
                                 <tr>
                                   <td style={{ padding: "6px 0" }}>
-                                    Sub Total:
+                                    Shipping Charges:
                                   </td>
                                   <td align="right">
-                                    ₹{lineItemsTotal.toFixed(2)}
+                                    +₹{shippingAmount.toFixed(2)}
                                   </td>
                                 </tr>
+                              )}
 
-                                {shippingAmount > 0 && (
-                                  <tr>
-                                    <td style={{ padding: "6px 0" }}>
-                                      Shipping Charges:
-                                    </td>
-                                    <td align="right">
-                                      +₹{shippingAmount.toFixed(2)}
-                                    </td>
-                                  </tr>
-                                )}
-
-                                {extraDiscountAmount > 0 && (
-                                  <tr>
-                                    <td
-                                      style={{
-                                        padding: "6px 0",
-                                        color: "#d9363e",
-                                      }}
-                                    >
-                                      Extra Discount{" "}
-                                      {order.extraDiscountType === "percent"
-                                        ? `(${order.extraDiscount}%)`
-                                        : ""}
-                                    </td>
-                                    <td
-                                      align="right"
-                                      style={{ color: "#d9363e" }}
-                                    >
-                                      -₹{extraDiscountAmount.toFixed(2)}
-                                    </td>
-                                  </tr>
-                                )}
-
+                              {extraDiscountAmount > 0 && (
                                 <tr>
-                                  <td style={{ padding: "6px 0" }}>
-                                    GST {gstRate > 0 ? `(${gstRate}%)` : ""}
+                                  <td
+                                    style={{
+                                      padding: "6px 0",
+                                      color: "#d9363e",
+                                    }}
+                                  >
+                                    Extra Discount{" "}
+                                    {order.extraDiscountType === "percent"
+                                      ? `(${order.extraDiscount}%)`
+                                      : ""}
                                   </td>
-                                  <td align="right">₹{gstAmount.toFixed(2)}</td>
+                                  <td
+                                    align="right"
+                                    style={{ color: "#d9363e" }}
+                                  >
+                                    -₹{extraDiscountAmount.toFixed(2)}
+                                  </td>
                                 </tr>
+                              )}
 
-                                <tr
-                                  style={{
-                                    borderTop: "2px solid #ddd",
-                                    fontSize: "1.1em",
-                                  }}
-                                >
-                                  <td style={{ padding: "12px 0" }}>
-                                    <Text strong>Final Amount:</Text>
-                                  </td>
-                                  <td align="right">
-                                    <Text
-                                      strong
-                                      type="danger"
-                                      style={{ fontSize: "1.3em" }}
-                                    >
-                                      ₹{finalAmount.toFixed(2)}
-                                    </Text>
-                                  </td>
-                                </tr>
-                              </tbody>
-                            </table>
+                              <tr>
+                                <td style={{ padding: "6px 0" }}>
+                                  GST {gstRate > 0 ? `(${gstRate}%)` : ""}
+                                </td>
+                                <td align="right">₹{gstAmount.toFixed(2)}</td>
+                              </tr>
+
+                              <tr
+                                style={{
+                                  borderTop: "2px solid #ddd",
+                                  fontSize: "1.1em",
+                                }}
+                              >
+                                <td style={{ padding: "12px 0" }}>
+                                  <Text strong>Final Amount:</Text>
+                                </td>
+                                <td align="right">
+                                  <Text
+                                    strong
+                                    type="danger"
+                                    style={{ fontSize: "1.3em" }}
+                                  >
+                                    ₹{finalAmount.toFixed(2)}
+                                  </Text>
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      );
+                    }}
+                  />
+                </Card>
+              </Col>
+            </Row>
+            <Row>
+              <Col xs={4} md={12} xl={14}>
+                <Card title="Order Activity" className="activity-card">
+                  <ul className="activity-list">
+                    <li>
+                      <Row justify="space-between">
+                        <Col xs={24} sm={12}>
+                          <Text strong>Order Placed</Text>
+                          <div>
+                            <Text type="secondary">
+                              Order successfully placed and awaiting processing.
+                            </Text>
                           </div>
-                        );
-                      }}
-                    />
-                  </Card>
-                </Col>
-
-                <Col xs={24} md={12} xl={14}>
-                  <Card title="Order Activity" className="activity-card">
-                    <ul className="activity-list">
-                      <li>
+                        </Col>
+                        <Col xs={24} sm={12} className="activity-time">
+                          <Text>
+                            {new Date(order.createdAt).toLocaleDateString()}
+                          </Text>
+                          <br />
+                          <Text type="secondary">
+                            {new Date(order.createdAt).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </Text>
+                        </Col>
+                      </Row>
+                    </li>
+                    {order.status === "CREATED" && (
+                      <li className="activity-pending">
                         <Row justify="space-between">
                           <Col xs={24} sm={12}>
-                            <Text strong>Order Placed</Text>
-                            <div>
+                            <Text strong>Payment Confirmed</Text>
+                            <div style={{ display: "none" }}>
                               <Text type="secondary">
-                                Order successfully placed and awaiting
-                                processing.
+                                Payment successfully processed.
                               </Text>
                             </div>
                           </Col>
-                          <Col xs={24} sm={12} className="activity-time">
-                            <Text>
-                              {new Date(order.createdAt).toLocaleDateString()}
-                            </Text>
+                          <Col
+                            xs={24}
+                            sm={12}
+                            className="activity-time"
+                            style={{ display: "none" }}
+                          >
+                            <Text>-</Text>
                             <br />
-                            <Text type="secondary">
-                              {new Date(order.createdAt).toLocaleTimeString(
-                                [],
-                                {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                }
-                              )}
-                            </Text>
+                            <Text type="secondary">-</Text>
                           </Col>
                         </Row>
                       </li>
-                      {order.status === "CREATED" && (
-                        <li className="activity-pending">
-                          <Row justify="space-between">
-                            <Col xs={24} sm={12}>
-                              <Text strong>Payment Confirmed</Text>
-                              <div style={{ display: "none" }}>
-                                <Text type="secondary">
-                                  Payment successfully processed.
-                                </Text>
-                              </div>
-                            </Col>
-                            <Col
-                              xs={24}
-                              sm={12}
-                              className="activity-time"
-                              style={{ display: "none" }}
-                            >
-                              <Text>-</Text>
-                              <br />
-                              <Text type="secondary">-</Text>
-                            </Col>
-                          </Row>
-                        </li>
-                      )}
-                    </ul>
-                  </Card>
-                </Col>
-
-                <Col xs={24} md={12} xl={10}>
-                  <Card
-                    title="Billing Address"
-                    extra={
-                      <Button
-                        type="primary"
-                        ghost
-                        icon={<EditOutlined />}
-                        onClick={() => setIsBillingModalVisible(true)}
-                      >
-                        {billingAddress ? "Edit" : "Add"}
-                      </Button>
-                    }
-                    className="address-card"
-                  >
-                    {billingAddress ? (
-                      <>
-                        <Text strong className="address-name">
-                          {customer.name || "N/A"}
-                        </Text>
-                        <ul className="address-list">
-                          <li>{billingAddress.street || "N/A"}</li>
-                          <li>
-                            {billingAddress.city}, {billingAddress.state}{" "}
-                            {billingAddress.postalCode || billingAddress.zip}
-                          </li>
-                          <li>{billingAddress.country || "India"}</li>
-                          <li>{customer.mobileNumber || "N/A"}</li>
-                        </ul>
-                      </>
-                    ) : (
-                      <Text type="secondary">No billing address available</Text>
                     )}
-                  </Card>
-                  <Card
-                    title="Shipping Address"
-                    extra={
-                      <Button
-                        type="primary"
-                        ghost
-                        icon={<EditOutlined />}
-                        onClick={() => setIsShippingModalVisible(true)}
-                      >
-                        {shippingAddress ? "Edit" : "Add"}
-                      </Button>
-                    }
-                    className="address-card"
-                  >
-                    {shippingAddress ? (
-                      <>
-                        <Text strong className="address-name">
-                          {customer.name || "N/A"}
-                        </Text>
-                        <ul className="address-list">
-                          <li>
-                            {shippingAddress.street ||
-                              shippingAddress.address ||
-                              "N/A"}
-                          </li>
-                          <li>
-                            {shippingAddress.city}, {shippingAddress.state}{" "}
-                            {shippingAddress.postalCode || shippingAddress.zip}
-                          </li>
-                          <li>{shippingAddress.country || "India"}</li>
-                          <li>{customer.mobileNumber || "N/A"}</li>
-                        </ul>
-                      </>
-                    ) : (
-                      <Text type="secondary">
-                        No shipping address available
+                  </ul>
+                </Card>
+              </Col>
+
+              <Col xs={4} md={12} xl={14}>
+                <Card
+                  title="Billing Address"
+                  extra={
+                    <Button
+                      type="primary"
+                      ghost
+                      icon={<EditOutlined />}
+                      onClick={() => setIsBillingModalVisible(true)}
+                    >
+                      {billingAddress ? "Edit" : "Add"}
+                    </Button>
+                  }
+                  className="address-card"
+                >
+                  {billingAddress ? (
+                    <>
+                      <Text strong className="address-name">
+                        {customer.name || "N/A"}
                       </Text>
-                    )}
-                  </Card>
-                </Col>
-              </Row>
-            </Col>
+                      <ul className="address-list">
+                        <li>{billingAddress.street || "N/A"}</li>
+                        <li>
+                          {billingAddress.city}, {billingAddress.state}{" "}
+                          {billingAddress.postalCode || billingAddress.zip}
+                        </li>
+                        <li>{billingAddress.country || "India"}</li>
+                        <li>{customer.mobileNumber || "N/A"}</li>
+                      </ul>
+                    </>
+                  ) : (
+                    <Text type="secondary">No billing address available</Text>
+                  )}
+                </Card>
+              </Col>
+              <Col xs={4} md={12} xl={14}>
+                <Card
+                  title="Shipping Address"
+                  extra={
+                    <Button
+                      type="primary"
+                      ghost
+                      icon={<EditOutlined />}
+                      onClick={() => setIsShippingModalVisible(true)}
+                    >
+                      {shippingAddress ? "Edit" : "Add"}
+                    </Button>
+                  }
+                  className="address-card"
+                >
+                  {shippingAddress ? (
+                    <>
+                      <Text strong className="address-name">
+                        {customer.name || "N/A"}
+                      </Text>
+                      <ul className="address-list">
+                        <li>
+                          {shippingAddress.street ||
+                            shippingAddress.address ||
+                            "N/A"}
+                        </li>
+                        <li>
+                          {shippingAddress.city}, {shippingAddress.state}{" "}
+                          {shippingAddress.postalCode || shippingAddress.zip}
+                        </li>
+                        <li>{shippingAddress.country || "India"}</li>
+                        <li>{customer.mobileNumber || "N/A"}</li>
+                      </ul>
+                    </>
+                  ) : (
+                    <Text type="secondary">No shipping address available</Text>
+                  )}
+                </Card>
+              </Col>
+            </Row>
+          </Col>
 
-            <Col xs={24} lg={8} xxl={6}>
-              <Row gutter={[16, 16]}>
-                <Col xs={24}>
-                  <Card
-                    title="Customer Details"
-                    extra={
-                      <Badge
-                        count={`${totalOrders} Orders`}
-                        style={{ backgroundColor: "#1890ff" }}
-                      />
+          <Col xs={24} lg={8} xxl={6}>
+            <Row gutter={[16, 16]}>
+              <Col xs={24}>
+                <Card title="Customer Details" className="customer-card">
+                  <ul className="customer-details">
+                    <li>
+                      <Text type="secondary">
+                        <UserOutlined className="icon" />
+                        Full Name
+                      </Text>
+                      <Space>
+                        <div className="avatar small">
+                          {customer.name?.[0]?.toUpperCase() || "N/A"}
+                        </div>
+                        <Text strong>{customer.name || "N/A"}</Text>
+                      </Space>
+                    </li>
+                    <li>
+                      <Text type="secondary">
+                        <MailOutlined className="icon" />
+                        Email
+                      </Text>
+                      <Text strong>
+                        <a href={`mailto:${customer.email || "N/A"}`}>
+                          {customer.email || "N/A"}
+                        </a>
+                      </Text>
+                    </li>
+                    <li>
+                      <Text type="secondary">
+                        <PhoneOutlined className="icon" />
+                        Phone
+                      </Text>
+                      <Text strong>{customer.mobileNumber || "N/A"}</Text>
+                    </li>
+                  </ul>
+                </Card>
+              </Col>
+              <Col xs={24}>
+                <Card title="Payment Details" className="payment-card">
+                  <ul className="payment-details">
+                    <li>
+                      <Text type="secondary">Order ID</Text>
+                      <Text strong>{order.orderNo || "N/A"}</Text>
+                    </li>
+
+                    <li>
+                      <Text type="secondary">Final Amount</Text>
+                      <Text strong>₹{finalAmount.toFixed(2)}</Text>
+                    </li>
+                    <li>
+                      <Text type="secondary">Order Date</Text>
+                      <Text strong>
+                        {order.createdAt
+                          ? new Date(order.createdAt).toLocaleString()
+                          : "N/A"}
+                      </Text>
+                    </li>
+                  </ul>
+                </Card>
+              </Col>
+              <Col xs={24}>
+                <Card>
+                  {(quotationDetails.quotationId || order.quotation) && (
+                    <div style={{ marginBottom: 16 }}>
+                      <Text strong>Quotation Details:</Text>
+                      <ul className="quotation-details">
+                        <li>
+                          <Text type="secondary">Reference Number:</Text>{" "}
+                          <Text>{quotationDetails.reference_number}</Text>
+                        </li>
+                        <li>
+                          <Text type="secondary">Document Title:</Text>{" "}
+                          <Text>{quotationDetails.document_title}</Text>
+                        </li>
+                        <li>
+                          <Text type="secondary">Quotation Date:</Text>{" "}
+                          <Text>
+                            {quotationDetails.quotation_date
+                              ? new Date(
+                                  quotationDetails.quotation_date
+                                ).toLocaleDateString()
+                              : "N/A"}
+                          </Text>
+                        </li>
+                        <li>
+                          <Text type="secondary">Due Date:</Text>{" "}
+                          <Text>
+                            {quotationDetails.due_date
+                              ? new Date(
+                                  quotationDetails.due_date
+                                ).toLocaleDateString()
+                              : "N/A"}
+                          </Text>
+                        </li>
+                        <li>
+                          <Text type="secondary">Follow-up Dates:</Text>{" "}
+                          <Text>
+                            {quotationDetails.followupDates.length > 0
+                              ? quotationDetails.followupDates
+                                  .map((date) =>
+                                    new Date(date).toLocaleDateString()
+                                  )
+                                  .join(", ")
+                              : "N/A"}
+                          </Text>
+                        </li>
+                        <li>
+                          <Text type="secondary">Status:</Text>{" "}
+                          <Text>{quotationDetails.status}</Text>
+                        </li>
+                        <li>
+                          <Text type="secondary">Final Amount:</Text>{" "}
+                          <Text>
+                            ₹
+                            {parseFloat(quotationDetails.finalAmount).toFixed(
+                              2
+                            )}
+                          </Text>
+                        </li>
+                      </ul>
+                    </div>
+                  )}
+                </Card>
+              </Col>
+            </Row>
+          </Col>
+        </Row>
+
+        {/* INVOICE + GATE-PASS */}
+        <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
+          <Col xs={24} md={12}>
+            <Card title="Invoice">
+              <Form onFinish={handleInvoiceSubmit} layout="vertical">
+                <Form.Item label="Upload PDF">
+                  <Upload
+                    accept="application/pdf"
+                    beforeUpload={() => false}
+                    onChange={handleInvoiceChange}
+                    fileList={
+                      invoiceFile
+                        ? [
+                            {
+                              uid: "-1",
+                              name: invoiceFile.name,
+                              status: "done",
+                            },
+                          ]
+                        : []
                     }
-                    className="customer-card"
+                    disabled={isUploading}
                   >
-                    <ul className="customer-details">
-                      <li>
-                        <Text type="secondary">
-                          <UserOutlined className="icon" />
-                          Full Name
-                        </Text>
-                        <Space>
-                          <div className="avatar small">
-                            {customer.name?.[0]?.toUpperCase() || "N/A"}
-                          </div>
-                          <Text strong>{customer.name || "N/A"}</Text>
-                        </Space>
-                      </li>
-                      <li>
-                        <Text type="secondary">
-                          <MailOutlined className="icon" />
-                          Email
-                        </Text>
-                        <Text strong>
-                          <a href={`mailto:${customer.email || "N/A"}`}>
-                            {customer.email || "N/A"}
-                          </a>
-                        </Text>
-                      </li>
-                      <li>
-                        <Text type="secondary">
-                          <PhoneOutlined className="icon" />
-                          Phone
-                        </Text>
-                        <Text strong>{customer.mobileNumber || "N/A"}</Text>
-                      </li>
-                    </ul>
-                  </Card>
-                </Col>
-                <Col xs={24}>
-                  <Card title="Payment Details" className="payment-card">
-                    <ul className="payment-details">
-                      <li>
-                        <Text type="secondary">Order ID</Text>
-                        <Text strong>{order.orderNo || "N/A"}</Text>
-                      </li>
+                    <Button>Choose File</Button>
+                  </Upload>
+                </Form.Item>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  disabled={!invoiceFile || isUploading}
+                  loading={isUploading}
+                >
+                  Upload
+                </Button>
+              </Form>
 
-                      <li>
-                        <Text type="secondary">Final Amount</Text>
-                        <Text strong>₹{finalAmount.toFixed(2)}</Text>
-                      </li>
-                      <li>
-                        <Text type="secondary">Order Date</Text>
-                        <Text strong>
-                          {order.createdAt
-                            ? new Date(order.createdAt).toLocaleString()
-                            : "N/A"}
-                        </Text>
-                      </li>
-                    </ul>
-                  </Card>
-                </Col>
-                <Col xs={24}>
-                  <Card>
-                    {(quotationDetails.quotationId || order.quotation) && (
-                      <div style={{ marginBottom: 16 }}>
-                        <Text strong>Quotation Details:</Text>
-                        <ul className="quotation-details">
-                          <li>
-                            <Text type="secondary">Reference Number:</Text>{" "}
-                            <Text>{quotationDetails.reference_number}</Text>
-                          </li>
-                          <li>
-                            <Text type="secondary">Document Title:</Text>{" "}
-                            <Text>{quotationDetails.document_title}</Text>
-                          </li>
-                          <li>
-                            <Text type="secondary">Quotation Date:</Text>{" "}
-                            <Text>
-                              {quotationDetails.quotation_date
-                                ? new Date(
-                                    quotationDetails.quotation_date
-                                  ).toLocaleDateString()
-                                : "N/A"}
-                            </Text>
-                          </li>
-                          <li>
-                            <Text type="secondary">Due Date:</Text>{" "}
-                            <Text>
-                              {quotationDetails.due_date
-                                ? new Date(
-                                    quotationDetails.due_date
-                                  ).toLocaleDateString()
-                                : "N/A"}
-                            </Text>
-                          </li>
-                          <li>
-                            <Text type="secondary">Follow-up Dates:</Text>{" "}
-                            <Text>
-                              {quotationDetails.followupDates.length > 0
-                                ? quotationDetails.followupDates
-                                    .map((date) =>
-                                      new Date(date).toLocaleDateString()
-                                    )
-                                    .join(", ")
-                                : "N/A"}
-                            </Text>
-                          </li>
-                          <li>
-                            <Text type="secondary">Status:</Text>{" "}
-                            <Text>{quotationDetails.status}</Text>
-                          </li>
-                          <li>
-                            <Text type="secondary">Final Amount:</Text>{" "}
-                            <Text>
-                              ₹
-                              {parseFloat(quotationDetails.finalAmount).toFixed(
-                                2
-                              )}
-                            </Text>
-                          </li>
-                        </ul>
-                      </div>
-                    )}
-                  </Card>
-                </Col>
-              </Row>
-            </Col>
-          </Row>
+              {/* INVOICE DOWNLOAD - FIXED */}
+              {/* INVOICE DOWNLOAD - NOW SAME AS GATE PASS (WORKING) */}
+              {invoiceUrl && (
+                <div style={{ marginTop: 16 }}>
+                  <a
+                    href={invoiceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ marginRight: 12 }}
+                  >
+                    <FilePdfOutlined /> View Invoice
+                  </a>
 
-          {/* INVOICE + GATE-PASS */}
-          <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
-            <Col xs={24} md={12}>
-              <Card title="Invoice">
-                <Form onFinish={handleInvoiceSubmit} layout="vertical">
-                  <Form.Item label="Upload PDF">
+                  <Button
+                    icon={<DownloadOutlined />}
+                    size="small"
+                    onClick={async () => {
+                      try {
+                        const response = await fetch(
+                          `https://api.cmtrading.com/api/order/${order.id}/download-invoice`,
+                          {
+                            credentials: "include", // Critical: sends cookies/session
+                          }
+                        );
+
+                        if (!response.ok) {
+                          throw new Error(
+                            `Download failed: ${response.status}`
+                          );
+                        }
+
+                        const blob = await response.blob();
+
+                        // Extract filename from header (your backend already sets it!)
+                        const contentDisposition = response.headers.get(
+                          "Content-Disposition"
+                        );
+                        let filename = generateFileName(
+                          "INVOICE",
+                          order.orderNo,
+                          customer.name
+                        );
+                        if (contentDisposition) {
+                          const match =
+                            contentDisposition.match(/filename="(.*?)"/);
+                          if (match?.[1]) filename = match[1];
+                        }
+
+                        const blobUrl = window.URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = blobUrl;
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                        window.URL.revokeObjectURL(blobUrl);
+
+                        message.success("Invoice downloaded successfully");
+                      } catch (err) {
+                        console.error(err);
+                        message.error(
+                          "Failed to download invoice. Please try again."
+                        );
+                      }
+                    }}
+                  >
+                    Download Invoice
+                  </Button>
+                </div>
+              )}
+            </Card>
+          </Col>
+
+          <Col xs={24} md={12}>
+            <Card
+              title="Gate-Pass"
+              extra={
+                isDispatched && <Badge status="success" text="Dispatched" />
+              }
+            >
+              {isDispatched ? (
+                <Alert
+                  message="Cannot modify gate-pass after dispatch"
+                  type="info"
+                />
+              ) : (
+                <Form onFinish={handleGatePassSubmit} layout="vertical">
+                  <Form.Item label="Upload (PDF/PNG/JPG)">
                     <Upload
-                      accept="application/pdf"
+                      accept="application/pdf,image/*"
                       beforeUpload={() => false}
-                      onChange={handleInvoiceChange}
+                      onChange={handleGatePassChange}
                       fileList={
-                        invoiceFile
+                        gatePassFile
                           ? [
                               {
                                 uid: "-1",
-                                name: invoiceFile.name,
+                                name: gatePassFile.name,
                                 status: "done",
                               },
                             ]
                           : []
                       }
-                      disabled={isUploading}
+                      disabled={isGatePassUploading}
                     >
                       <Button>Choose File</Button>
                     </Upload>
@@ -1047,297 +1150,178 @@ const OrderPage = () => {
                   <Button
                     type="primary"
                     htmlType="submit"
-                    disabled={!invoiceFile || isUploading}
-                    loading={isUploading}
+                    disabled={!gatePassFile || isGatePassUploading}
+                    loading={isGatePassUploading}
                   >
                     Upload
                   </Button>
                 </Form>
-
-                {/* INVOICE DOWNLOAD - FIXED */}
-                {/* INVOICE DOWNLOAD - NOW SAME AS GATE PASS (WORKING) */}
-                {invoiceUrl && (
-                  <div style={{ marginTop: 16 }}>
-                    <a
-                      href={invoiceUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ marginRight: 12 }}
+              )}
+              {/* GATE-PASS DOWNLOAD - FIXED */}
+              {gatePassUrl && (
+                <div style={{ marginTop: 16, textAlign: "center" }}>
+                  {/* Preview remains the same */}
+                  {gatePassUrl.endsWith(".pdf") ? (
+                    <Document
+                      file={gatePassUrl}
+                      onLoadSuccess={({ numPages }) => setNumPages(numPages)}
                     >
-                      <FilePdfOutlined /> View Invoice
-                    </a>
-
-                    <Button
-                      icon={<DownloadOutlined />}
-                      size="small"
-                      onClick={async () => {
-                        try {
-                          const response = await fetch(
-                            `https://api.cmtrading.com/api/order/${order.id}/download-invoice`,
-                            {
-                              credentials: "include", // Critical: sends cookies/session
-                            }
-                          );
-
-                          if (!response.ok) {
-                            throw new Error(
-                              `Download failed: ${response.status}`
-                            );
-                          }
-
-                          const blob = await response.blob();
-
-                          // Extract filename from header (your backend already sets it!)
-                          const contentDisposition = response.headers.get(
-                            "Content-Disposition"
-                          );
-                          let filename = generateFileName(
-                            "INVOICE",
-                            order.orderNo,
-                            customer.name
-                          );
-                          if (contentDisposition) {
-                            const match =
-                              contentDisposition.match(/filename="(.*?)"/);
-                            if (match?.[1]) filename = match[1];
-                          }
-
-                          const blobUrl = window.URL.createObjectURL(blob);
-                          const a = document.createElement("a");
-                          a.href = blobUrl;
-                          a.download = filename;
-                          document.body.appendChild(a);
-                          a.click();
-                          a.remove();
-                          window.URL.revokeObjectURL(blobUrl);
-
-                          message.success("Invoice downloaded successfully");
-                        } catch (err) {
-                          console.error(err);
-                          message.error(
-                            "Failed to download invoice. Please try again."
-                          );
-                        }
+                      <Page pageNumber={1} width={300} />
+                    </Document>
+                  ) : (
+                    <img
+                      src={gatePassUrl}
+                      alt="Gate Pass"
+                      style={{
+                        maxWidth: "100%",
+                        maxHeight: 300,
+                        borderRadius: 8,
                       }}
-                    >
-                      Download Invoice
-                    </Button>
-                  </div>
-                )}
-              </Card>
-            </Col>
-
-            <Col xs={24} md={12}>
-              <Card
-                title="Gate-Pass"
-                extra={
-                  isDispatched && <Badge status="success" text="Dispatched" />
-                }
-              >
-                {isDispatched ? (
-                  <Alert
-                    message="Cannot modify gate-pass after dispatch"
-                    type="info"
-                  />
-                ) : (
-                  <Form onFinish={handleGatePassSubmit} layout="vertical">
-                    <Form.Item label="Upload (PDF/PNG/JPG)">
-                      <Upload
-                        accept="application/pdf,image/*"
-                        beforeUpload={() => false}
-                        onChange={handleGatePassChange}
-                        fileList={
-                          gatePassFile
-                            ? [
-                                {
-                                  uid: "-1",
-                                  name: gatePassFile.name,
-                                  status: "done",
-                                },
-                              ]
-                            : []
-                        }
-                        disabled={isGatePassUploading}
-                      >
-                        <Button>Choose File</Button>
-                      </Upload>
-                    </Form.Item>
-                    <Button
-                      type="primary"
-                      htmlType="submit"
-                      disabled={!gatePassFile || isGatePassUploading}
-                      loading={isGatePassUploading}
-                    >
-                      Upload
-                    </Button>
-                  </Form>
-                )}
-                {/* GATE-PASS DOWNLOAD - FIXED */}
-                {gatePassUrl && (
-                  <div style={{ marginTop: 16, textAlign: "center" }}>
-                    {/* Preview remains the same */}
-                    {gatePassUrl.endsWith(".pdf") ? (
-                      <Document
-                        file={gatePassUrl}
-                        onLoadSuccess={({ numPages }) => setNumPages(numPages)}
-                      >
-                        <Page pageNumber={1} width={300} />
-                      </Document>
-                    ) : (
-                      <img
-                        src={gatePassUrl}
-                        alt="Gate Pass"
-                        style={{
-                          maxWidth: "100%",
-                          maxHeight: 300,
-                          borderRadius: 8,
-                        }}
-                      />
-                    )}
-
-                    <br />
-                    <Button
-                      icon={<DownloadOutlined />}
-                      size="small"
-                      style={{ marginTop: 8 }}
-                      onClick={async (e) => {
-                        e.preventDefault();
-                        try {
-                          const response = await fetch(gatePassUrl);
-                          if (!response.ok) throw new Error("Download failed");
-
-                          const blob = await response.blob();
-
-                          // Detect actual file extension
-                          const urlPath = new URL(gatePassUrl).pathname;
-                          const originalFilename = urlPath.split("/").pop();
-                          const extMatch = originalFilename.match(/\.([^.]+)$/);
-                          const actualExt = extMatch
-                            ? extMatch[1].toLowerCase()
-                            : "pdf";
-
-                          const blobUrl = window.URL.createObjectURL(blob);
-                          const a = document.createElement("a");
-                          a.href = blobUrl;
-
-                          let downloadName = generateFileName(
-                            "GATEPASS",
-                            order.orderNo,
-                            customer.name
-                          );
-                          downloadName = downloadName.replace(
-                            /\.pdf$/,
-                            `.${actualExt}`
-                          );
-
-                          a.download = downloadName;
-                          document.body.appendChild(a);
-                          a.click();
-                          a.remove();
-                          window.URL.revokeObjectURL(blobUrl);
-                        } catch (err) {
-                          message.error("Failed to download gate-pass");
-                          window.open(gatePassUrl, "_blank");
-                        }
-                      }}
-                    >
-                      Download
-                    </Button>
-                  </div>
-                )}
-              </Card>
-            </Col>
-          </Row>
-
-          {/* COMMENTS */}
-          <Row style={{ marginTop: 24 }}>
-            <Col xs={24}>
-              <Card title="Comments">
-                <Form
-                  onFinish={handleAddComment}
-                  layout="inline"
-                  style={{ marginBottom: 16 }}
-                >
-                  <Form.Item style={{ flex: 1 }}>
-                    <Input.TextArea
-                      rows={2}
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      placeholder="Add a comment..."
                     />
-                  </Form.Item>
-                  <Form.Item>
-                    <Button
-                      type="primary"
-                      htmlType="submit"
-                      disabled={!newComment.trim()}
-                    >
-                      <SendOutlined />
-                    </Button>
-                  </Form.Item>
-                </Form>
+                  )}
 
-                {commentLoading ? (
-                  <Spin />
-                ) : comments.length > 0 ? (
-                  <div>
-                    {comments.map((c) => (
-                      <CommentRow
-                        key={c._id}
-                        comment={c}
-                        onDelete={handleDeleteComment}
-                        currentUserId={String(user.userId || "").trim()}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <Text type="secondary">No comments yet.</Text>
-                )}
+                  <br />
+                  <Button
+                    icon={<DownloadOutlined />}
+                    size="small"
+                    style={{ marginTop: 8 }}
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      try {
+                        const response = await fetch(gatePassUrl);
+                        if (!response.ok) throw new Error("Download failed");
 
-                {totalComments > commentLimit && (
-                  <div style={{ marginTop: 16, textAlign: "center" }}>
-                    <Button
-                      disabled={commentPage === 1}
-                      onClick={() => handlePageChange(commentPage - 1)}
-                    >
-                      Prev
-                    </Button>
-                    <Text style={{ margin: "0 8px" }}>
-                      Page {commentPage} of{" "}
-                      {Math.ceil(totalComments / commentLimit)}
-                    </Text>
-                    <Button
-                      disabled={
-                        commentPage >= Math.ceil(totalComments / commentLimit)
+                        const blob = await response.blob();
+
+                        // Detect actual file extension
+                        const urlPath = new URL(gatePassUrl).pathname;
+                        const originalFilename = urlPath.split("/").pop();
+                        const extMatch = originalFilename.match(/\.([^.]+)$/);
+                        const actualExt = extMatch
+                          ? extMatch[1].toLowerCase()
+                          : "pdf";
+
+                        const blobUrl = window.URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = blobUrl;
+
+                        let downloadName = generateFileName(
+                          "GATEPASS",
+                          order.orderNo,
+                          customer.name
+                        );
+                        downloadName = downloadName.replace(
+                          /\.pdf$/,
+                          `.${actualExt}`
+                        );
+
+                        a.download = downloadName;
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                        window.URL.revokeObjectURL(blobUrl);
+                      } catch (err) {
+                        message.error("Failed to download gate-pass");
+                        window.open(gatePassUrl, "_blank");
                       }
-                      onClick={() => handlePageChange(commentPage + 1)}
-                    >
-                      Next
-                    </Button>
-                  </div>
-                )}
-              </Card>
-            </Col>
-          </Row>
+                    }}
+                  >
+                    Download
+                  </Button>
+                </div>
+              )}
+            </Card>
+          </Col>
+        </Row>
 
-          {/* MODALS */}
-          {isBillingModalVisible && (
-            <AddAddress
-              onClose={() => setIsBillingModalVisible(false)}
-              onSave={refetchAddresses}
-              existingAddress={billingAddress}
-              selectedCustomer={order.createdFor}
-            />
-          )}
-          {isShippingModalVisible && (
-            <AddAddress
-              onClose={() => setIsShippingModalVisible(false)}
-              onSave={refetchAddresses}
-              existingAddress={shippingAddress}
-              selectedCustomer={order.createdFor}
-            />
-          )}
-        </div>
+        {/* COMMENTS */}
+        <Row style={{ marginTop: 24 }}>
+          <Col xs={24}>
+            <Card title="Comments">
+              <Form
+                onFinish={handleAddComment}
+                layout="inline"
+                style={{ marginBottom: 16 }}
+              >
+                <Form.Item style={{ flex: 1 }}>
+                  <Input.TextArea
+                    rows={2}
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    placeholder="Add a comment..."
+                  />
+                </Form.Item>
+                <Form.Item>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    disabled={!newComment.trim()}
+                  >
+                    <SendOutlined />
+                  </Button>
+                </Form.Item>
+              </Form>
+
+              {commentLoading ? (
+                <Spin />
+              ) : comments.length > 0 ? (
+                <div>
+                  {comments.map((c) => (
+                    <CommentRow
+                      key={c._id}
+                      comment={c}
+                      onDelete={handleDeleteComment}
+                      currentUserId={String(user.userId || "").trim()}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <Text type="secondary">No comments yet.</Text>
+              )}
+
+              {totalComments > commentLimit && (
+                <div style={{ marginTop: 16, textAlign: "center" }}>
+                  <Button
+                    disabled={commentPage === 1}
+                    onClick={() => handlePageChange(commentPage - 1)}
+                  >
+                    Prev
+                  </Button>
+                  <Text style={{ margin: "0 8px" }}>
+                    Page {commentPage} of{" "}
+                    {Math.ceil(totalComments / commentLimit)}
+                  </Text>
+                  <Button
+                    disabled={
+                      commentPage >= Math.ceil(totalComments / commentLimit)
+                    }
+                    onClick={() => handlePageChange(commentPage + 1)}
+                  >
+                    Next
+                  </Button>
+                </div>
+              )}
+            </Card>
+          </Col>
+        </Row>
+
+        {/* MODALS */}
+        {isBillingModalVisible && (
+          <AddAddress
+            onClose={() => setIsBillingModalVisible(false)}
+            onSave={refetchAddresses}
+            existingAddress={billingAddress}
+            selectedCustomer={order.createdFor}
+          />
+        )}
+        {isShippingModalVisible && (
+          <AddAddress
+            onClose={() => setIsShippingModalVisible(false)}
+            onSave={refetchAddresses}
+            existingAddress={shippingAddress}
+            selectedCustomer={order.createdFor}
+          />
+        )}
       </div>
     </div>
   );

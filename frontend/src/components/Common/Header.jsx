@@ -353,7 +353,9 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                 onClick={handleFullscreenToggle}
                 title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
               >
-                <FullscreenOutlined style={{ fontSize: 18 }} />
+                <FullscreenOutlined
+                  style={{ fontSize: 18, color: "#333333" }}
+                />
               </Button>
 
               <Button type="link" onClick={() => setShowNotifications(true)}>

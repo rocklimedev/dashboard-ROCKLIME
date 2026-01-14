@@ -250,40 +250,36 @@ margin: 351px 0;
 
 /* Image stays neat */
 .prodImg {
-    height: 68px;
-    width: 110px;
-    object-fit: contain;
-    border-radius: 8px;
+height: 66px;
+    width: 135px;
+    /* object-fit: contain; */
+    /* border-radius: 8px; */
     /* box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); */
-    /* border: 1px solid #eee; */
+    border: 0px solid #eee;
 }
 
 .snoCell { font-weight: bold; font-size: 16px; color: #333; }
-.discountCell, .totalCell { color: #e31e24; font-weight: bold; font-size: 17.5px; }
+.discountCell, .totalCell { color: #333; font-weight: bold; font-size: 15px; }
 /* REPLACE THE OLD .finalSummarySection COMPLETELY WITH THIS */
 
 .finalSummaryWrapper {
-  margin-top: 60px;                    /* space after table */
-  page-break-inside: avoid;            /* critical: never split this block */
+  margin-top: 60px;
+  page-break-inside: avoid;
   break-inside: avoid;
 }
 
 .finalSummarySection {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
-  font-weight: bold;
-  font-size: 15px;
-  line-height: 2.6;
+  align-items: flex-start;
   padding: 30px 0 20px;
   border-top: 3px solid #e31e24;
   page-break-inside: avoid;
 }
 
-/* Remove all absolute positioning! */
+/* LEFT COLUMN */
 .summaryLeft {
-  flex: 1;
-  min-width: 500px;
+  width: 55%;
 }
 
 .summaryRow {
@@ -291,41 +287,36 @@ margin: 351px 0;
   justify-content: space-between;
   padding: 8px 0;
   border-bottom: 1px dashed #ccc;
+  font-size: 15px;
   color: #333;
 }
 
-.summaryRow:last-child {
-  border-bottom: none;
-  font-weight: 900 24px/1.2 "Lato";
-  color: #e31e24;
+/* RIGHT COLUMN */
+.summaryRight {
+  width: 40%;
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
-/* Big beautiful box – now flows naturally */
-.finalAmountBox {
-  background: white;
-  border: 9px solid #e31e24;
-  border-radius: 20px;
-  padding: 34px 80px;
-  text-align: center;
-  box-shadow: 0 30px 70px rgba(170, 15, 31, 0.45);
-  min-width: 420px;
-}
-
-.finalAmountLabel {
-  font-size: 20px;
-  color: #e31e24;
-  margin-bottom: 12px;
-  font-weight: 800;
-  letter-spacing: 1.5px;
-}
-
-.finalAmountValue {
-  font-size: 48px;
+/* TOTAL AMOUNT */
+.totalAmount {
+  display: flex;
+  justify-content: space-between;
+  font-size: 26px;
   font-weight: 900;
   color: #e31e24;
-  letter-spacing: 5px;
-  line-height: 1;
 }
+
+/* AMOUNT IN WORDS */
+.amountInWords {
+  font-style: italic;
+  font-size: 14px;
+  color: #555;
+  line-height: 1.6;
+}
+
 /* PAGE NUMBER – LUXURY TOUCH */
 .productPage::after {
   content: "Page " counter(page);
@@ -380,4 +371,31 @@ margin: 351px 0;
     border-radius: 0 !important;
     page-break-after: always !important;
   }
+}
+/* Tab text */
+.version-tabs .ant-tabs-tab {
+  color: #333333;
+}
+
+/* Active tab */
+.version-tabs .ant-tabs-tab.ant-tabs-tab-active {
+  color: #333333;
+  font-weight: 500;
+}
+
+/* Card background */
+.version-tabs.ant-tabs-card .ant-tabs-tab {
+  background: #f5f5f5;
+  border-color: #d9d9d9;
+}
+
+/* Active card tab */
+.version-tabs.ant-tabs-card .ant-tabs-tab-active {
+  background: #ffffff;
+  border-bottom-color: #ffffff;
+}
+
+/* Hover */
+.version-tabs .ant-tabs-tab:hover {
+  color: #000000;
 }

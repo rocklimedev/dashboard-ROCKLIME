@@ -145,7 +145,6 @@ html[data-theme="dark"] .modal-footer {
 }
 .cart-button {
   background-color:  #f7f7f7;
-  border: 1px solid #333333;
   color: var(--text-dark);
   padding: 8px 16px;
   border-radius: 6px;
@@ -613,7 +612,7 @@ input:focus {
   justify-content: space-between;
   font-size: 16px;
   font-weight: 600;
-  color: #e31e24;
+  color: #333333;
 }
 
 .text-gray-9 {

@@ -1,49 +1,48 @@
 // src/components/Quotation/PreviewQuotation.jsx
 import React, { useRef, useMemo } from "react";
-import { Modal, Button, Spin, Typography } from "antd";
+import { Modal, Button, Typography } from "antd";
 import { FilePdfFilled, CloseOutlined } from "@ant-design/icons";
-import { exportToPDF } from "./hooks/exportHelpers";
-import styles from "./quotationnew.module.css";
 
 import logo from "../../assets/img/logo-quotation.png";
-import americanStandard from "../../assets/img/american-standard-logo-2.png";
-import groheLogo from "../../assets/img/Grohe-Logo.png";
 import coverImage from "../../assets/img/quotation_first_page.jpeg";
+import quotationBgImage from "../../assets/img/quotation_letterhead.jpeg"; // ← ADD THIS
 
+import { exportToPDF } from "./hooks/exportHelpers";
 import { calcTotals, amountInWords } from "./hooks/calcHelpers";
-const { Title, Text } = Typography;
+import styles from "./quotationnew.module.css";
+
+const { Title } = Typography;
 
 const PreviewQuotation = ({
   visible,
   onClose,
-  cartItems,
-  productsData,
-  customer,
-  address,
-  quotationData,
+  cartItems = [],
+  productsData = [],
+  customer = {},
+  address = {},
+  quotationData = {},
   gstRate = 18,
   includeGst = true,
   itemDiscounts = {},
   itemDiscountTypes = {},
-  itemTaxes = {},
 }) => {
   const previewRef = useRef(null);
 
   const customerName = customer?.name || "Dear Client";
-  const customerPhone =
-    customer?.mobileNumber || customer?.phone || "XXXXXXXXXX";
-  const customerAddress = address
-    ? `${address.street || ""}, ${address.city || ""}, ${
-        address.state || ""
-      } - ${address.pincode || address.zip || ""}`
-        .replace(/^,\s*|,*\s*$/g, "")
-        .trim()
-    : "487/65, National Market, Peera Garhi, Delhi, 110087";
+  const customerPhone = customer?.mobileNumber || customer?.phone || "—";
+  const customerAddress =
+    address && (address.street || address.city)
+      ? `${address.street || ""}, ${address.city || ""}, ${
+          address.state || ""
+        } - ${address.pincode || address.postalCode || address.zip || ""}`
+          .replace(/^,\s*|,*\s*$/g, "")
+          .trim()
+      : "—";
 
   const brandNames = useMemo(() => {
     const set = new Set();
     cartItems.forEach((item) => {
-      const pd = productsData?.find((p) => p.productId === item.productId);
+      const pd = productsData.find((p) => p.productId === item.productId);
       const brand =
         pd?.brandName ||
         pd?.metaDetails?.find((m) => m.title?.toLowerCase().includes("brand"))
@@ -53,64 +52,40 @@ const PreviewQuotation = ({
     return set.size ? [...set].join(" / ") : "GROHE / AMERICAN STANDARD";
   }, [cartItems, productsData]);
 
-  const calculated = useMemo(() => {
-    let subtotal = 0;
-    cartItems.forEach((p) => {
-      const mrp = Number(p.price || p.sellingPrice || 0);
-      const qty = Number(p.quantity || 1);
-      const discount = Number(itemDiscounts[p.productId] || 0);
-      const discountType = itemDiscountTypes[p.productId] || "percent";
-      let unitAfterDiscount =
-        discountType === "percent"
-          ? mrp * (1 - discount / 100)
-          : mrp - discount;
-      subtotal += unitAfterDiscount * qty;
-    });
+  // Reuse same calc logic as NewQuotationsDetails
+  const {
+    subtotal,
+    extraDiscountAmt,
+    amountAfterDiscount,
+    gst: gstAmount,
+    total: finalTotal,
+  } = useMemo(() => {
+    const priceMap = cartItems.reduce((map, p) => {
+      map[p.productId] = {
+        sellingPrice: Number(p.price || p.sellingPrice || 0),
+        name: p.name,
+      };
+      return map;
+    }, {});
 
-    const extraDiscount = Number(
-      quotationData?.discountAmount || quotationData?.extraDiscount || 0
+    return calcTotals(
+      cartItems,
+      gstRate,
+      includeGst,
+      priceMap,
+      quotationData?.extraDiscount || 0,
+      quotationData?.extraDiscountType || "amount",
+      quotationData?.roundOff || 0
     );
-    const extraType =
-      quotationData?.discountType ||
-      quotationData?.extraDiscountType ||
-      "percent";
-    let extraDiscountAmt =
-      extraType === "percent"
-        ? subtotal * (extraDiscount / 100)
-        : extraDiscount;
-    subtotal -= extraDiscountAmt;
-    subtotal = parseFloat(subtotal.toFixed(2));
+  }, [cartItems, gstRate, includeGst, quotationData]);
 
-    const gstAmount = includeGst
-      ? parseFloat(((subtotal * gstRate) / 100).toFixed(2))
-      : 0;
-    let total = subtotal + gstAmount;
-    const roundOff = Number(quotationData?.roundOff || 0);
-    total += roundOff;
-    const finalTotal = Math.round(total);
-
-    return {
-      subtotal,
-      extraDiscountAmt,
-      gstAmount,
-      total: finalTotal,
-      roundOff,
-    };
-  }, [
-    cartItems,
-    itemDiscounts,
-    itemDiscountTypes,
-    gstRate,
-    includeGst,
-    quotationData,
-  ]);
-
-  const finalAmountInWords = amountInWords(calculated.total);
+  const finalAmountInWords = amountInWords(Math.round(finalTotal));
 
   const handleExportPDF = async () => {
     if (!previewRef.current) return;
-    const safeTitle = (quotationData?.document_title || "Quotation_Preview")
+    const safeTitle = (quotationData?.document_title || "Quotation")
       .replace(/[\\/:*?"<>|]/g, "_")
+      .replace(/\s+/g, "_")
       .substring(0, 50);
     await exportToPDF(
       previewRef,
@@ -137,42 +112,38 @@ const PreviewQuotation = ({
       </div>
     );
 
-    // Page 2: Letterhead
+    // Page 2: Letterhead – aligned with NewQuotationsDetails
     pages.push(
       <div key="letterhead" className={`${styles.letterheadPage} page`}>
-        <div className={styles.letterheadTop}>
-          <img
-            src={americanStandard}
-            alt="American Standard"
-            className={styles.brandLogoLeft}
-          />
-          <img src={groheLogo} alt="GROHE" className={styles.brandLogoRight} />
-        </div>
+        <img
+          src={quotationBgImage}
+          alt="Letterhead Background"
+          className={styles.letterheadBg}
+        />
 
-        <h1 className={styles.companyTitle}>CHHABRA MARBLE PVT.LTD</h1>
-        <h2 className={styles.subtitle}>Quotation Letter</h2>
-
-        <div className={styles.clientInfoGrid}>
-          <div className={styles.label}>Client Name</div>
-          <div className={styles.value}>{customerName}</div>
-          <div className={styles.label}>Contact Number</div>
-          <div className={styles.value}>{customerPhone}</div>
-          <div className={styles.label}>Address</div>
-          <div className={styles.value}>{customerAddress}</div>
-          <div className={styles.label}>ID</div>
-          <div className={styles.value}>
+        <div className={styles.letterheadContent}>
+          <div className={`${styles.clientField} ${styles.clientNameField}`}>
+            {customerName}
+          </div>
+          <div className={`${styles.clientField} ${styles.contactField}`}>
+            {customerPhone}
+          </div>
+          <div className={`${styles.clientField} ${styles.addressField}`}>
+            {customerAddress}
+          </div>
+          <div className={`${styles.clientField} ${styles.quotationNoField}`}>
             {quotationData.reference_number || "PREVIEW"}
           </div>
         </div>
 
         <div className={styles.letterheadFooter}>
-          <img src={logo} alt="Logo" style={{ height: 80 }} />
-          <div style={{ textAlign: "center", fontSize: 16 }}>
-            <strong>CHHABRA MARBLE PVT. LTD.</strong>
-            <br />
+          <img src={logo} alt="Logo" />
+          <div>
             487/65, National Market, Peera Garhi, Delhi, 110087
             <br />
-            Phone: 099110 80605 • Web: www.cmtradingco.com
+            0991180605
+            <br />
+            www.cmtradingco.com
           </div>
         </div>
       </div>
@@ -187,19 +158,15 @@ const PreviewQuotation = ({
         <div key={`product-${i}`} className={`${styles.productPage} page`}>
           <div className={styles.pageTopHeader}>
             <div>
-              <div className={styles.clientName}>
-                MR {customerName.toUpperCase()}
-              </div>
+              <div className={styles.clientName}>Mr {customerName}</div>
               <div className={styles.clientAddress}>{customerAddress}</div>
             </div>
             <div className={styles.pageDate}>
-              {new Date()
-                .toLocaleDateString("en-IN", {
-                  day: "2-digit",
-                  month: "short",
-                  year: "numeric",
-                })
-                .replace(/ /g, " | ")}
+              {new Date().toLocaleDateString("en-IN", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })}
             </div>
           </div>
 
@@ -229,26 +196,32 @@ const PreviewQuotation = ({
             <tbody>
               {items.map((p, idx) => {
                 const pd =
-                  productsData?.find((x) => x.productId === p.productId) || {};
+                  productsData.find((x) => x.productId === p.productId) || {};
                 const img = p.imageUrl || pd.images?.[0] || "";
                 const code =
+                  p.companyCode ||
+                  pd.companyCode ||
                   pd.metaDetails?.find((m) => m.slug === "companyCode")
-                    ?.value || "—";
+                    ?.value ||
+                  "—";
                 const mrp = Number(p.price || p.sellingPrice || 0);
                 const qty = Number(p.quantity || 1);
                 const discount = Number(itemDiscounts[p.productId] || 0);
                 const discountType =
                   itemDiscountTypes[p.productId] || "percent";
-                let unitAfterDiscount =
+
+                const unitPrice =
                   discountType === "percent"
                     ? mrp * (1 - discount / 100)
                     : mrp - discount;
-                const total = Math.round(unitAfterDiscount * qty);
+                const total = Math.round(unitPrice * qty);
 
                 return (
-                  <tr key={p.productId}>
+                  <tr key={p.productId || idx}>
                     <td className={styles.snoCell}>{i + idx + 1}.</td>
-                    <td className={styles.prodNameCell}>{p.name}</td>
+                    <td className={styles.prodNameCell}>
+                      {p.name || pd.name || "—"}
+                    </td>
                     <td>{code}</td>
                     <td>
                       {img ? (
@@ -280,124 +253,52 @@ const PreviewQuotation = ({
               <div className={styles.finalSummarySection}>
                 <div className={styles.summaryLeft}>
                   <div className={styles.summaryRow}>
-                    <span>Taxable Value</span>
-                    <span>₹{calculated.subtotal.toLocaleString("en-IN")}</span>
+                    <span>Subtotal</span>
+                    <span>₹{subtotal.toLocaleString("en-IN")}</span>
                   </div>
-                  {calculated.gstAmount > 0 ? (
-                    <>
-                      <div className={styles.summaryRow}>
-                        <span>CGST @{(gstRate / 2).toFixed(1)}%</span>
-                        <span>
-                          ₹{(calculated.gstAmount / 2).toLocaleString("en-IN")}
-                        </span>
-                      </div>
-                      <div className={styles.summaryRow}>
-                        <span>SGST @{(gstRate / 2).toFixed(1)}%</span>
-                        <span>
-                          ₹{(calculated.gstAmount / 2).toLocaleString("en-IN")}
-                        </span>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className={styles.summaryRow}>
-                        <span>CGST @0.0%</span>
-                        <span>₹0</span>
-                      </div>
-                      <div className={styles.summaryRow}>
-                        <span>SGST @0.0%</span>
-                        <span>₹0</span>
-                      </div>
-                    </>
+
+                  {extraDiscountAmt > 0 && (
+                    <div className={styles.summaryRow}>
+                      <span>Extra Discount</span>
+                      <span>-₹{extraDiscountAmt.toLocaleString("en-IN")}</span>
+                    </div>
                   )}
+
+                  <div className={styles.summaryRow}>
+                    <span>Taxable Value</span>
+                    <span>₹{amountAfterDiscount.toLocaleString("en-IN")}</span>
+                  </div>
+
+                  <div className={styles.summaryRow}>
+                    <span>GST @{gstRate}%</span>
+                    <span>₹{gstAmount.toLocaleString("en-IN")}</span>
+                  </div>
+
                   <div className={styles.summaryRow}>
                     <span>Round off</span>
-                    <span>₹{Number(calculated.roundOff).toFixed(2)}</span>
-                  </div>
-                  <div className={styles.summaryRow}>
-                    <span style={{ fontSize: "26px" }}>Total Amount</span>
-                    <span style={{ fontSize: "26px" }}>
-                      ₹{calculated.total.toLocaleString("en-IN")}
+                    <span>
+                      ₹{Number(quotationData?.roundOff || 0).toFixed(2)}
                     </span>
+                  </div>
+                </div>
+
+                <div className={styles.summaryRight}>
+                  <div className={styles.totalAmount}>
+                    <span>Total Amount</span>
+                    <span>
+                      ₹{Math.round(finalTotal).toLocaleString("en-IN")}
+                    </span>
+                  </div>
+                  <div className={styles.amountInWords}>
+                    {finalAmountInWords}
                   </div>
                 </div>
               </div>
             </div>
           )}
-          {isLastPage && (
-            <div style={{ textAlign: "right", marginTop: "10px" }}>Page 2</div>
-          )}
         </div>
       );
     }
-
-    // Terms Page
-    pages.push(
-      <div key="terms" className={`${styles.termsPage} page`}>
-        <table
-          className={styles.termsTable}
-          style={{ width: "100%", border: "1px solid black" }}
-        >
-          <thead>
-            <tr>
-              <th style={{ border: "1px solid black", padding: "8px" }}>
-                Terms & Conditions
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td style={{ border: "1px solid black", padding: "8px" }}>
-                <ol style={{ margin: 0, paddingLeft: "20px" }}>
-                  <li>
-                    Rates/Discounts are as per our above quote. Any changes to
-                    the quote may affect the discounts.
-                  </li>
-                  <li>
-                    Delivery will be within 7 to 10 working days from the date
-                    of confirmed PO and payment. Availability of some items is
-                    subject to company stock.
-                  </li>
-                  <li>
-                    100% advance payment is required to process the order.
-                  </li>
-                  <li>
-                    Delivery and unloading charges will be borne by the buyer.
-                  </li>
-                  <li>
-                    Any damages at the site during or after unloading will be
-                    the responsibility of the customer.
-                  </li>
-                  <li>
-                    This quotation is valid for 30 days from the date above.
-                  </li>
-                  <li>
-                    Payment Terms: Full payment is required to confirm the
-                    order. Under no circumstances will old rates apply if 100%
-                    advance is not received.
-                  </li>
-                  <li>
-                    Partial Advance: In the case of partial advance payments,
-                    only the discounts will be locked in, and the MRPs
-                    applicable at that time will be charged.
-                  </li>
-                  <li>
-                    If the product is supplied as a special order, the company
-                    reserves the right to refuse any returns.
-                  </li>
-                  <li>
-                    The client must provide a lifting schedule for final
-                    delivery to ensure goods are ordered and arranged in
-                    advance, avoiding partial or delayed deliveries.
-                  </li>
-                  <li>Brand standard warranty terms are applicable.</li>
-                </ol>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    );
 
     return pages;
   };
@@ -411,17 +312,15 @@ const PreviewQuotation = ({
       }
       open={visible}
       onCancel={onClose}
-      footer={
-        <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <Button icon={<FilePdfFilled />} onClick={handleExportPDF}>
-            Download PDF
-          </Button>
-        </div>
-      }
-      width={900}
+      width={1000}
       style={{ top: 20 }}
       bodyStyle={{ padding: 0, background: "#f5f5f5" }}
       destroyOnClose
+      footer={[
+        <Button key="close" onClick={onClose} icon={<CloseOutlined />}>
+          Close
+        </Button>,
+      ]}
     >
       <div
         ref={previewRef}
@@ -431,7 +330,11 @@ const PreviewQuotation = ({
       </div>
 
       <div
-        style={{ padding: "20px", background: "#f5f5f5", minHeight: "80vh" }}
+        style={{
+          padding: "40px 20px",
+          background: "#f5f5f5",
+          minHeight: "80vh",
+        }}
       >
         <div className={styles.printArea}>{renderPages()}</div>
       </div>

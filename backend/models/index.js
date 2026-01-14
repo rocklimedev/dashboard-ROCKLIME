@@ -9,7 +9,7 @@ const User = require("./users")(sequelize, DataTypes);
 const Role = require("./roles")(sequelize, DataTypes);
 const Permission = require("./permission")(sequelize, DataTypes);
 const RolePermission = require("./rolePermission")(sequelize, DataTypes);
-
+const Company = require("./company")(sequelize, DataTypes);
 const Address = require("./address")(sequelize, DataTypes);
 const Team = require("./team")(sequelize, DataTypes);
 const TeamMember = require("./teamMember")(sequelize, DataTypes);
@@ -48,6 +48,7 @@ const PurchaseOrder = require("./purchaseorder")(sequelize, DataTypes);
   Permission,
   RolePermission,
   Address,
+  Company,
   Team,
   TeamMember,
   ProductKeyword,
@@ -81,6 +82,7 @@ const PurchaseOrder = require("./purchaseorder")(sequelize, DataTypes);
       TeamMember,
       ProductKeyword,
       Product,
+      Company,
       ProductMeta,
       Category,
       ParentCategory,
@@ -126,6 +128,7 @@ module.exports = {
   Customer,
   Quotation,
   Invoice,
+  Company,
   Order,
   Signature,
   Cart,

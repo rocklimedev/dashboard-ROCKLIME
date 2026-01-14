@@ -104,7 +104,7 @@ const CategoryManagement = () => {
         <span className="tree-title-text">
           {name}
           {type === "category" && count > 0 && (
-            <Tag color="blue" style={{ marginLeft: 8, fontSize: 11 }}>
+            <Tag color="#333333" style={{ marginLeft: 8, fontSize: 11 }}>
               {count}
             </Tag>
           )}
@@ -112,7 +112,7 @@ const CategoryManagement = () => {
         <Space size={4} className="tree-actions">
           <Tooltip title="Edit">
             <EditOutlined
-              style={{ fontSize: 12, color: "#1890ff", cursor: "pointer" }}
+              style={{ fontSize: 12, color: "#333333", cursor: "pointer" }}
               onClick={(e) => {
                 e.stopPropagation();
                 handleEdit(item, type);
@@ -298,7 +298,7 @@ const CategoryManagement = () => {
           <div className="tree-node">{renderTreeTitle(parent, "parent")}</div>
         ),
         key: `parent-${parent.id}`,
-        icon: <FolderOutlined style={{ color: "#1890ff" }} />,
+        icon: <FolderOutlined style={{ color: "#333333" }} />,
         children: catNodes,
         data: parent,
         type: "parent",
@@ -327,17 +327,6 @@ const CategoryManagement = () => {
         /* Professional Admin Dashboard Theme */
         :global(.ant-typography) {
           color: #1a1a1a;
-        }
-
-        .page-wrapper {
-          height: 100vh;
-          background: #f5f7fa;
-          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-            "Helvetica Neue", Arial, sans-serif;
-        }
-
-        .content {
-          height: 100%;
         }
 
         .main-layout {
@@ -477,7 +466,7 @@ const CategoryManagement = () => {
         }
 
         .product-checker-card {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          background-color: #333333;
           color: white;
           border: none;
           border-radius: 14px;
