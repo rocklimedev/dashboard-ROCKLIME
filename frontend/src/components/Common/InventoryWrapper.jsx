@@ -356,7 +356,7 @@ const InventoryWrapper = () => {
           <Link to={`/product/${record.productId}`} style={{ fontWeight: 500 }}>
             {record.name || "Unnamed Product"}
           </Link>
-          <div style={{ fontSize: 12, color: "#888", marginTop: 4 }}>
+          <div style={{ fontSize: 12, color: "#000", marginTop: 4 }}>
             {record.product_code && <Text code>{record.product_code}</Text>}
             {record.product_code &&
               getCompanyCode(record.metaDetails) !== "N/A" &&
@@ -520,6 +520,7 @@ const InventoryWrapper = () => {
                 type="primary"
                 icon={<FileTextOutlined />}
                 onClick={() => setReportModalOpen(true)}
+                style={{ backgroundColor: "#333333" }}
               >
                 Build Report
               </Button>
@@ -534,6 +535,7 @@ const InventoryWrapper = () => {
                 type="primary"
                 icon={<PlusOutlined />}
                 onClick={() => navigate("/product/add")}
+                style={{ backgroundColor: "#333333" }}
               >
                 Add Product
               </Button>

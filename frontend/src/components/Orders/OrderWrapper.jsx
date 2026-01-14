@@ -255,8 +255,21 @@ const OrderWrapper = () => {
           <div className="card-body">
             {/* Filters */}
             <div className="row mb-4 align-items-center g-3">
-              <div className="col-lg-8">
-                <div className="d-flex flex-wrap gap-3 align-items-center">
+              <div className="col-lg-6">
+                <div className="d-flex">
+                  <Input
+                    prefix={<SearchOutlined />}
+                    placeholder="Search order no, customer, quotation..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    allowClear
+                    size="large"
+                    style={{ width: 500 }}
+                  />
+                </div>
+              </div>
+              <div className="col-lg-6">
+                <div className="d-flex gap-3">
                   <Select
                     value={filters.status}
                     onChange={(val) => {
@@ -316,20 +329,6 @@ const OrderWrapper = () => {
                       Due Date (Latest)
                     </Option>
                   </Select>
-                </div>
-              </div>
-
-              <div className="col-lg-4">
-                <div className="d-flex justify-content-end gap-2">
-                  <Input
-                    prefix={<SearchOutlined />}
-                    placeholder="Search order no, customer, quotation..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    allowClear
-                    size="large"
-                    style={{ width: 300 }}
-                  />
                   <Button onClick={handleClearFilters} size="large">
                     Clear
                   </Button>
@@ -365,8 +364,7 @@ const OrderWrapper = () => {
                       <tr>
                         <th>S.No.</th>
                         <th>Order No.</th>
-                        <th>Master Pipeline</th>
-                        <th>Previous Order</th>
+
                         <th>STATUS</th>
                         <th>QUOTATION</th>
                         <th>CUSTOMER</th>
@@ -413,24 +411,6 @@ const OrderWrapper = () => {
                               >
                                 {order.quotationId ? "QUOTATIONED" : "IDLE"}
                               </span>
-                            </td>
-                            <td>
-                              {order.masterOrder ? (
-                                <Link to={`/order/${order.masterOrder.id}`}>
-                                  {order.masterPipelineNo}
-                                </Link>
-                              ) : (
-                                order.masterPipelineNo || "—"
-                              )}
-                            </td>
-                            <td>
-                              {order.previousOrder ? (
-                                <Link to={`/order/${order.previousOrder.id}`}>
-                                  {order.previousOrder.orderNo}
-                                </Link>
-                              ) : (
-                                order.previousOrderNo || "—"
-                              )}
                             </td>
                             <td>
                               <span className="badge bg-secondary">

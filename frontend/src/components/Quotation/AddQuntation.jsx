@@ -128,17 +128,18 @@ const AddQuotation = () => {
         const prod = products.find(
           (pr) => (pr.id || pr.productId) === p.productId
         );
-        const price =
-          Number(prod?.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"]) || 0;
 
         return {
           id: p.productId,
           productId: p.productId,
           name: prod?.name || p.name || "Unknown",
           qty: Number(p.quantity) || 1,
-          sellingPrice: price,
+
+          // OPTION B – use saved historical price
+          sellingPrice: Number(p.price || p.sellingPrice || 0),
+
           discount: Number(p.discount) || 0,
-          discountType: "fixed",
+          discountType: p.discountType || "fixed",
           tax: Number(p.tax) || 0,
           total: null,
         };
@@ -174,7 +175,6 @@ const AddQuotation = () => {
       });
     }
   }, [existingQuotation, isEditMode, products, userId]);
-
   const debouncedSearch = useCallback(
     debounce((val) => {
       if (!val) {

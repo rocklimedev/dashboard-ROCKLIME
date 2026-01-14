@@ -66,46 +66,45 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
     }, {});
   }, [vendorsData]);
 
-  const purchaseOrders = poData?.data || [];
-  const totalCount = poData?.pagination?.total || 0;
+  const purchaseOrders = poData?.purchaseOrders?.data || [];
+  const totalCount = poData?.purchaseOrders?.pagination?.total || 0;
 
   // ──────────────────────────────────────────────────────
   // Client-side search & sort (still useful when search is sent to server)
   // ──────────────────────────────────────────────────────
   const filteredPOs = useMemo(() => {
-    let result = purchaseOrders;
+    let result = [...purchaseOrders]; // always copy
 
-    // Additional client-side sorting if you want UI consistency
-    switch (sortBy) {
+    switch (sortBy?.trim()) {
       case "Recently Added":
-        return [...result].sort(
+        return result.sort(
           (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
         );
       case "Ascending":
-        return [...result].sort((a, b) =>
+        return result.sort((a, b) =>
           (a.poNumber || "").localeCompare(b.poNumber || "")
         );
       case "Descending":
-        return [...result].sort((a, b) =>
+        return result.sort((a, b) =>
           (b.poNumber || "").localeCompare(a.poNumber || "")
         );
       case "Order Date Ascending":
-        return [...result].sort(
+        return result.sort(
           (a, b) =>
             new Date(a.orderDate || "9999-12-31") -
             new Date(b.orderDate || "9999-12-31")
         );
       case "Order Date Descending":
-        return [...result].sort(
+        return result.sort(
           (a, b) =>
             new Date(b.orderDate || "9999-12-31") -
             new Date(a.orderDate || "9999-12-31")
         );
       default:
+        console.log("Using default sort (no match for:", sortBy, ")");
         return result;
     }
   }, [purchaseOrders, sortBy]);
-
   // ──────────────────────────────────────────────────────
   // Helpers
   // ──────────────────────────────────────────────────────

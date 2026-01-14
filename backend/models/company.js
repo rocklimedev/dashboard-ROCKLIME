@@ -59,6 +59,21 @@ module.exports = (sequelize, DataTypes) => {
       ],
     }
   );
+  Company.associate = (models) => {
+    // A company can have many child companies
+    Company.hasMany(models.Company, {
+      as: "ChildCompanies", // ← this must match what you use in include
+      foreignKey: "parentCompanyId",
+      sourceKey: "companyId",
+    });
+
+    // Each company (except root) belongs to one parent
+    Company.belongsTo(models.Company, {
+      as: "ParentCompany", // ← optional: useful if you want to include parents later
+      foreignKey: "parentCompanyId",
+      targetKey: "companyId",
+    });
+  };
 
   return Company;
 };

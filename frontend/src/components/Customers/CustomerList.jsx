@@ -316,9 +316,10 @@ const CustomerList = () => {
                             round
                             size="80"
                             className="mb-3"
-                            color="#1890ff"
+                            style={{ color: "#333333" }}
                             fgColor="#fff"
                           />
+
                           <h6 className="mb-1">
                             {c.name || "Unnamed Customer"}
                           </h6>

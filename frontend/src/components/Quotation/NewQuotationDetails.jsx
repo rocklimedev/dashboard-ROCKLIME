@@ -376,17 +376,45 @@ const NewQuotationsDetails = () => {
               {items.map((p, idx) => {
                 const pd =
                   productsData?.find((x) => x.productId === p.productId) || {};
-                const img = p.imageUrl || pd.images?.[0] || "";
-                const code = p.companyCode || "—";
-                const mrp = Number(p.price || p.sellingPrice || 0);
+
+                // Look in quotation.items if it exists
+                const matchingItem = quotation?.items?.find(
+                  (it) => it.productId === p.productId
+                );
+
+                const code =
+                  matchingItem?.companyCode || // ← highest priority
+                  p.companyCode ||
+                  p.productCode ||
+                  matchingItem?.productCode ||
+                  pd.companyCode ||
+                  "—";
+
+                const img =
+                  p.imageUrl ||
+                  matchingItem?.imageUrl ||
+                  pd.images?.[0] ||
+                  pd.imageUrl ||
+                  "";
+
+                const mrp = Number(
+                  p.price ||
+                    p.sellingPrice ||
+                    matchingItem?.price ||
+                    pd.price ||
+                    0
+                );
                 const qty = Number(p.quantity || 1);
                 const discount = Number(p.discount || 0);
+
                 const total = Math.round(mrp * qty * (1 - discount / 100));
 
                 return (
-                  <tr key={p.productId}>
+                  <tr key={p.productId || idx}>
                     <td className={styles.snoCell}>{i + idx + 1}.</td>
-                    <td className={styles.prodNameCell}>{p.name}</td>
+                    <td className={styles.prodNameCell}>
+                      {p.name || matchingItem?.name || pd.name || "—"}
+                    </td>
                     <td>{code}</td>
                     <td>
                       {img ? (
@@ -412,14 +440,13 @@ const NewQuotationsDetails = () => {
           {isLastPage && (
             <div className={styles.finalSummaryWrapper}>
               <div className={styles.finalSummarySection}>
+                {/* LEFT SIDE */}
                 <div className={styles.summaryLeft}>
-                  {/* Subtotal (after item discounts) */}
                   <div className={styles.summaryRow}>
                     <span>Subtotal</span>
                     <span>₹{subtotal.toLocaleString("en-IN")}</span>
                   </div>
 
-                  {/* Extra Discount Line - Only show if > 0 */}
                   {extraDiscountAmt > 0 && (
                     <div className={styles.summaryRow}>
                       <span>Extra Discount</span>
@@ -427,13 +454,11 @@ const NewQuotationsDetails = () => {
                     </div>
                   )}
 
-                  {/* Correct Taxable Value = subtotal - extraDiscount */}
                   <div className={styles.summaryRow}>
                     <span>Taxable Value</span>
                     <span>₹{amountAfterDiscount.toLocaleString("en-IN")}</span>
                   </div>
 
-                  {/* Round Off - FIXED HERE */}
                   <div className={styles.summaryRow}>
                     <span>Round off</span>
                     <span>
@@ -443,23 +468,19 @@ const NewQuotationsDetails = () => {
                       ).toFixed(2)}
                     </span>
                   </div>
+                </div>
 
-                  {/* Final Total */}
-                  <div
-                    className={styles.summaryRow}
-                    style={{ fontSize: "26px", fontWeight: "bold" }}
-                  >
+                {/* RIGHT SIDE */}
+                <div className={styles.summaryRight}>
+                  <div className={styles.totalAmount}>
                     <span>Total Amount</span>
                     <span>
                       ₹{Math.round(finalTotal).toLocaleString("en-IN")}
                     </span>
                   </div>
 
-                  {/* Amount in Words */}
-                  <div className={styles.summaryRow}>
-                    <span style={{ fontStyle: "italic", color: "#555" }}>
-                      {finalAmountInWords}
-                    </span>
+                  <div className={styles.amountInWords}>
+                    {finalAmountInWords}
                   </div>
                 </div>
               </div>
@@ -505,22 +526,24 @@ const NewQuotationsDetails = () => {
               </div>
 
               <Space size="large">
-                <Tabs
-                  activeKey={activeVersion}
-                  onChange={setActiveVersion}
-                  type="card"
-                >
-                  {versions.map((v) => (
-                    <TabPane
-                      tab={
-                        v.version === "current"
-                          ? "Current Version"
-                          : `Version ${v.version}`
-                      }
-                      key={v.version}
-                    />
-                  ))}
-                </Tabs>
+                <div className="version-tabs">
+                  <Tabs
+                    activeKey={activeVersion}
+                    onChange={setActiveVersion}
+                    type="card"
+                  >
+                    {versions.map((v) => (
+                      <TabPane
+                        tab={
+                          v.version === "current"
+                            ? "Current Version"
+                            : `Version ${v.version}`
+                        }
+                        key={v.version}
+                      />
+                    ))}
+                  </Tabs>
+                </div>
 
                 <Space>
                   <select

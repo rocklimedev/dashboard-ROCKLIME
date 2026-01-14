@@ -428,7 +428,7 @@ View Site Map: ${window.location.origin}/site-map/${siteMap.id}
                   <Button
                     type="primary"
                     size="large"
-                    style={{ marginTop: 16 }}
+                    style={{ marginTop: 16, backgroundColor: "#333333" }}
                     onClick={() =>
                       navigate(`/site-map/add?customerId=${selectedCustomerId}`)
                     }
