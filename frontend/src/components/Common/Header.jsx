@@ -370,7 +370,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                 </Link>
               </PermissionsGate>
 
-              <Button
+              {/* <Button
                 type="link"
                 onClick={toggleDarkMode}
                 title={darkMode ? "Light Mode" : "Dark Mode"}
@@ -380,7 +380,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                 ) : (
                   <MoonFilled style={{ fontSize: 18 }} />
                 )}
-              </Button>
+              </Button> */}
             </div>
 
             {/* Mobile: More Menu */}
@@ -419,13 +419,13 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                         </Link>
                       </Menu.Item>
                     </PermissionsGate>
-                    <Menu.Item
+                    {/* <Menu.Item
                       key="theme"
                       onClick={toggleDarkMode}
                       icon={darkMode ? <SunFilled /> : <MoonFilled />}
                     >
                       {darkMode ? "Light Mode" : "Dark Mode"}
-                    </Menu.Item>
+                    </Menu.Item> */}
                   </Menu>
                 }
                 trigger={["click"]}

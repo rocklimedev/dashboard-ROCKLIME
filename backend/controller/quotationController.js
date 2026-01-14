@@ -138,7 +138,15 @@ exports.createQuotation = async (req, res) => {
     if (productIds.length > 0) {
       const dbProducts = await Product.findAll({
         where: { productId: productIds },
-        attributes: ["productId", "name", "images"],
+        attributes: [
+          "productId",
+          "name",
+          "images",
+          "product_code",
+          "meta",
+          "tax",
+          "discountType",
+        ],
         transaction: t,
       });
 
@@ -153,20 +161,24 @@ exports.createQuotation = async (req, res) => {
         productMap[p.productId] = {
           name: p.name?.trim() || "Unnamed Product",
           imageUrl,
+          productCode: p.product_code || null,
+          companyCode: p.meta?.["d11da9f9-3f2e-4536-8236-9671200cca4a"] || null,
+          tax: p.tax || 0,
+          discountType: p.discountType || "percent",
         };
       });
     }
 
     // ---------- 4. Enrich products ----------
+    // In createQuotation – enrichedProducts
     const enrichedProducts = products.map((p) => {
       const id = p.productId || p.id;
       const db = productMap[id] || {};
 
-      // Calculate correct line total AFTER item discount (same as frontend)
       const price = Number(p.price || 0);
       const qty = Number(p.quantity) || 1;
       const discount = Number(p.discount || 0);
-      const discountType = p.discountType || "percent";
+      const discountType = p.discountType || db.discountType || "percent";
 
       let lineTotalAfterDiscount;
       if (discountType === "percent") {
@@ -178,13 +190,15 @@ exports.createQuotation = async (req, res) => {
       return {
         productId: id,
         name: p.name || db.name || "Unknown Product",
-        imageUrl: p.imageUrl || db.imageUrl,
+        imageUrl: p.imageUrl || db.imageUrl || null,
+        productCode: p.productCode || db.productCode || null, // ← NEW
+        companyCode: p.companyCode || db.companyCode || null, // ← NEW
         quantity: qty,
         price: parseFloat(price.toFixed(2)),
         discount: parseFloat(discount.toFixed(2)),
         discountType,
-        tax: Number(p.tax || 0),
-        total: parseFloat(lineTotalAfterDiscount.toFixed(2)), // ← Use correct total
+        tax: Number(p.tax || db.tax || 0),
+        total: parseFloat(lineTotalAfterDiscount.toFixed(2)),
       };
     });
 
@@ -367,7 +381,15 @@ exports.updateQuotation = async (req, res) => {
     if (productIds.length > 0) {
       const dbProducts = await Product.findAll({
         where: { productId: productIds },
-        attributes: ["productId", "name", "images"],
+        attributes: [
+          "productId",
+          "name",
+          "images",
+          "product_code",
+          "meta",
+          "tax",
+          "discountType",
+        ],
         transaction: t,
       });
 
@@ -380,8 +402,12 @@ exports.updateQuotation = async (req, res) => {
           } catch {}
         }
         productMap[p.productId] = {
-          name: p.name?.trim() || "Unknown Product",
+          name: p.name?.trim() || "Unnamed Product",
           imageUrl,
+          productCode: p.product_code || null,
+          companyCode: p.meta?.["d11da9f9-3f2e-4536-8236-9671200cca4a"] || null,
+          tax: p.tax || 0,
+          discountType: p.discountType || "percent",
         };
       });
     }
@@ -419,19 +445,33 @@ exports.updateQuotation = async (req, res) => {
     );
 
     // 9. Update MongoDB items
+    // In updateQuotation – mongoItems block
     const mongoItems = products.map((p) => {
-      const fallback = productMap[p.productId] || {};
-      const total = p.total ? parseFloat(p.total) : calculateLineTotal(p);
+      const fallback = productMap[p.productId || p.id] || {};
+      const qty = Number(p.quantity) || 1;
+      const price = Number(p.price) || 0;
+      const discount = Number(p.discount) || 0;
+      const discountType = p.discountType || fallback.discountType || "percent";
+
+      let total = p.total ? Number(p.total) : 0;
+      if (!total) {
+        total =
+          discountType === "percent"
+            ? price * qty * (1 - discount / 100)
+            : (price - discount) * qty;
+      }
 
       return {
         productId: p.productId || p.id,
         name: p.name || fallback.name || "Unknown Product",
         imageUrl: p.imageUrl || fallback.imageUrl || null,
-        quantity: Number(p.quantity) || 1,
-        price: Number(p.price) || 0,
-        discount: Number(p.discount) || 0,
-        discountType: p.discountType || "percent",
-        tax: Number(p.tax) || 0,
+        productCode: p.productCode || fallback.productCode || null, // ← NEW
+        companyCode: p.companyCode || fallback.companyCode || null, // ← NEW
+        quantity: qty,
+        price: parseFloat(price.toFixed(2)),
+        discount: parseFloat(discount.toFixed(2)),
+        discountType,
+        tax: Number(p.tax || fallback.tax || 0),
         total: parseFloat(total.toFixed(2)),
       };
     });

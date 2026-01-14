@@ -20,6 +20,16 @@ const quotationVersionSchema = new mongoose.Schema(
         productId: String,
         name: String,
         imageUrl: String,
+        productCode: {
+          // ← NEW
+          type: String,
+          trim: true,
+        },
+        companyCode: {
+          // ← NEW
+          type: String,
+          trim: true,
+        },
         quantity: Number,
         price: Number,
         discount: Number,
@@ -35,15 +45,15 @@ const quotationVersionSchema = new mongoose.Schema(
     updatedAt: {
       type: Date,
       default: Date.now,
-      index: true, // helpful for sorting
+      index: true,
     },
   },
   {
-    timestamps: false, // we control updatedAt manually
+    timestamps: false,
   }
 );
 
-// CRITICAL: This is what prevents duplicates and makes versioning reliable
+// Keep the unique index
 quotationVersionSchema.index({ quotationId: 1, version: 1 }, { unique: true });
 
 const QuotationVersion = mongoose.model(

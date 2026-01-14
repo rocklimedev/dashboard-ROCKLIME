@@ -486,22 +486,6 @@ View: ${window.location.origin}/quotation/${q.quotationId}
                     ))}
                   </Select>
 
-                  <Select
-                    placeholder="Status"
-                    value={statusFilter || undefined}
-                    onChange={(val) => {
-                      setStatusFilter(val || "");
-                      setCurrentPage(1);
-                    }}
-                    allowClear
-                    style={{ width: 160 }}
-                    size="large"
-                  >
-                    <Option value="accepted">Accepted</Option>
-                    <Option value="pending">Pending</Option>
-                    <Option value="rejected">Rejected</Option>
-                  </Select>
-
                   <RangePicker
                     value={dateRange}
                     onChange={(dates) => {
