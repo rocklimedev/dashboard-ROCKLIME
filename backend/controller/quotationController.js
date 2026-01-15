@@ -95,9 +95,11 @@ const calculateTotals = (
 // Safe inside transaction — retries on collision
 // ---------------------------------------------------------------------
 async function generateQuotationNumber(t) {
-  const todayStart = moment().startOf("day").toDate();
-  const todayEnd = moment().endOf("day").toDate();
-  const prefix = moment().format("DDMMYY"); // e.g. 150126
+  const today = moment();
+  const prefixDate = today.format("DDMMYY"); // "150126" (no leading zeros)
+  const fullPrefix = `QUO${prefixDate}`; // "QUO150126" – always 9 chars
+  const todayStart = today.startOf("day").toDate();
+  const todayEnd = today.endOf("day").toDate();
 
   let attempt = 0;
   const MAX_ATTEMPTS = 15;
@@ -105,11 +107,11 @@ async function generateQuotationNumber(t) {
   while (attempt < MAX_ATTEMPTS) {
     attempt++;
 
-    // Find the highest sequence number used today
-    const lastQuotation = await Quotation.findOne({
+    // Find the highest existing number today
+    const last = await Quotation.findOne({
       where: {
         reference_number: {
-          [Op.like]: `QUO${prefix}%`,
+          [Op.like]: `${fullPrefix}%`,
         },
         createdAt: {
           [Op.between]: [todayStart, todayEnd],
@@ -119,42 +121,41 @@ async function generateQuotationNumber(t) {
       order: [["reference_number", "DESC"]],
       limit: 1,
       transaction: t,
-      lock: t.LOCK.UPDATE, // Helps reduce race window
+      lock: t.LOCK.UPDATE,
     });
 
-    let nextSeq = 101;
+    let nextSeq = 101; // your starting number
 
-    if (lastQuotation) {
-      const lastNumStr = lastQuotation.reference_number.slice(8); // after QUO + DDMMYY
-      const parsed = parseInt(lastNumStr, 10);
-      if (!isNaN(parsed)) {
+    if (last) {
+      const seqStr = last.reference_number.slice(fullPrefix.length); // ← correct: after 9 chars
+      const parsed = parseInt(seqStr, 10);
+      if (!isNaN(parsed) && parsed >= 100) {
+        // safety check
         nextSeq = parsed + 1;
       }
     }
 
-    const candidate = `QUO${prefix}${nextSeq}`;
+    const candidate = `${fullPrefix}${nextSeq}`;
 
-    // Final check — does this exact number already exist?
-    const conflict = await Quotation.findOne({
+    // Collision check (should be extremely rare with lock + transaction)
+    const exists = await Quotation.findOne({
       where: { reference_number: candidate },
       transaction: t,
     });
 
-    if (!conflict) {
+    if (!exists) {
       return candidate;
     }
 
-    // Collision → try next number
     console.warn(
-      `Quotation number collision: ${candidate} — retrying (${attempt}/${MAX_ATTEMPTS})`
+      `Collision detected: ${candidate} — retrying (${attempt}/${MAX_ATTEMPTS})`
     );
   }
 
   throw new Error(
-    `Failed to generate unique quotation number after ${MAX_ATTEMPTS} attempts`
+    `Could not generate unique quotation number after ${MAX_ATTEMPTS} attempts`
   );
 }
-
 // ---------------------------------------------------------------------
 // CREATE QUOTATION – WITH SERVER-GENERATED reference_number
 // ---------------------------------------------------------------------

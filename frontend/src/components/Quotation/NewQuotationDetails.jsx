@@ -176,9 +176,11 @@ const NewQuotationsDetails = () => {
 
   const {
     subtotal,
+    totalProductDiscount,
     extraDiscountAmt,
-    amountAfterDiscount,
-    gst: gstAmount,
+    taxableValue,
+    gst,
+    roundOffApplied,
     total: finalTotal,
   } = calcTotals(
     activeProducts,
@@ -191,6 +193,7 @@ const NewQuotationsDetails = () => {
   );
 
   const finalAmountInWords = amountInWords(Math.round(finalTotal));
+
   // Add this with your other useMemo/useState
   const pageTitle = useMemo(() => {
     if (!quotation) return "Loading Quotation...";
@@ -447,38 +450,49 @@ const NewQuotationsDetails = () => {
                     <span>₹{subtotal.toLocaleString("en-IN")}</span>
                   </div>
 
+                  {totalProductDiscount > 0 && (
+                    <div className={styles.summaryRow}>
+                      <span>Total Discount</span>
+                      <span>
+                        -₹
+                        {Math.round(totalProductDiscount).toLocaleString(
+                          "en-IN"
+                        )}
+                      </span>
+                    </div>
+                  )}
+
                   {extraDiscountAmt > 0 && (
                     <div className={styles.summaryRow}>
                       <span>Extra Discount</span>
-                      <span>-₹{extraDiscountAmt.toLocaleString("en-IN")}</span>
+                      <span>
+                        -₹{Math.round(extraDiscountAmt).toLocaleString("en-IN")}
+                      </span>
                     </div>
                   )}
 
                   <div className={styles.summaryRow}>
                     <span>Taxable Value</span>
-                    <span>₹{amountAfterDiscount.toLocaleString("en-IN")}</span>
-                  </div>
-
-                  <div className={styles.summaryRow}>
-                    <span>Round off</span>
                     <span>
-                      ₹
-                      {Number(
-                        activeVersionData.quotation?.roundOff || 0
-                      ).toFixed(2)}
+                      ₹{Math.round(taxableValue).toLocaleString("en-IN")}
                     </span>
                   </div>
+
+                  {gst > 0 && (
+                    <div className={styles.summaryRow}>
+                      <span>GST ({gstRate}%)</span>
+                      <span>₹{Math.round(gst).toLocaleString("en-IN")}</span>
+                    </div>
+                  )}
                 </div>
 
-                {/* RIGHT SIDE */}
                 <div className={styles.summaryRight}>
                   <div className={styles.totalAmount}>
-                    <span>Total Amount:</span>
-                    <span>
+                    <strong>Total Amount:</strong>
+                    <strong>
                       {""} ₹{Math.round(finalTotal).toLocaleString("en-IN")}
-                    </span>
+                    </strong>
                   </div>
-
                   <div className={styles.amountInWords}>
                     {finalAmountInWords}
                   </div>

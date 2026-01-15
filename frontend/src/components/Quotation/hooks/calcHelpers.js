@@ -6,7 +6,8 @@ import numberToWords from "number-to-words";
    -------------------------------------------------------------- */
 export const amountInWords = (num) => {
   try {
-    if (isNaN(num)) return "N/A";
+    if (isNaN(num) || num == null) return "N/A";
+
     const int = Math.floor(num);
     const dec = Math.round((num - int) * 100);
 
@@ -67,91 +68,113 @@ export const amountInWords = (num) => {
       if (thousand) words.push(toWords(thousand) + " thousand");
       if (hundred) words.push(units[hundred] + " hundred");
       if (rest) words.push(toWords(rest));
-      return words.join(" ");
+
+      return words.filter(Boolean).join(" ");
     };
 
     let out = convert(int);
     out = out
       ? out.charAt(0).toUpperCase() + out.slice(1) + " rupees"
       : "Zero rupees";
-    if (dec) out += ` and ${numberToWords.toWords(dec)} paisa`;
+
+    if (dec > 0) {
+      out += ` and ${numberToWords.toWords(dec)} paisa`;
+    }
+
     return out + " only";
-  } catch {
+  } catch (err) {
+    console.error("amountInWords failed:", err);
     return "N/A";
   }
 };
 
 /* --------------------------------------------------------------
-   Totals calculation – now includes extra discount & round-off
+   Improved totals with full discount visibility
    -------------------------------------------------------------- */
 export const calcTotals = (
   products = [],
-  gstRate = 0, // <-- can be `gst` or `gst_value`
-  includeGst = true, // <-- default to true (most Indian B2B quotes)
+  gstRate = 18,
+  includeGst = true,
   productDetailsMap = {},
   extraDiscount = 0,
   extraDiscountType = "amount",
   roundOff = 0
 ) => {
-  // === SAFELY PARSE ALL INPUTS ===
   const safeGstRate = Number(gstRate) || 0;
-  const safeIncludeGst = Boolean(includeGst);
+  const safeIncludeGst = includeGst !== false;
   const safeExtraDiscount = Number(extraDiscount) || 0;
-  const safeExtraDiscountType = String(
-    extraDiscountType || "amount"
-  ).toLowerCase();
+  const safeExtraDiscType = (extraDiscountType || "amount").toLowerCase();
   const safeRoundOff = Number(roundOff) || 0;
 
-  // === 1. Subtotal (after per-item discount) ===
-  let subtotal = 0;
+  let subtotal = 0; // MRP × Qty (before any discount)
+  let totalProductDiscount = 0; // Sum of all per-item discounts
 
   products.forEach((p) => {
     const qty = Number(p.quantity) || 1;
     const detail = productDetailsMap[p.productId] || {};
-    const mrp = Number(detail.sellingPrice) || 0;
+    const basePrice = Number(
+      detail.sellingPrice || detail.price || p.price || 0
+    );
 
-    // Use the line-total that was saved with the product (already discounted)
-    const lineTotal = Number(p.total) || 0;
+    // 1. Original amount before discount
+    const originalLineTotal = basePrice * qty;
 
-    // Defensive: line total must never exceed MRP × qty
-    if (lineTotal > mrp * qty) {
-      console.warn("calcTotals: line total exceeds MRP", {
-        productId: p.productId,
-        mrp,
-        qty,
-        lineTotal,
+    // 2. Discount applied on this item
+    const itemDiscPercent = Number(p.discount || 0);
+    const itemDiscAmount = originalLineTotal * (itemDiscPercent / 100);
+
+    // 3. Final line total for this item
+    const finalLineTotal = originalLineTotal - itemDiscAmount;
+
+    subtotal += originalLineTotal;
+    totalProductDiscount += itemDiscAmount;
+
+    // Optional: warn if saved total differs significantly
+    const savedTotal = Number(p.total || 0);
+    if (savedTotal > 0 && Math.abs(savedTotal - finalLineTotal) > 1) {
+      console.warn(`Item ${p.productId || p.name} total mismatch`, {
+        calculated: finalLineTotal,
+        saved: savedTotal,
+        discountPercent: itemDiscPercent,
       });
     }
-
-    subtotal += lineTotal;
   });
 
-  // === 2. Extra Discount ===
+  // Extra discount (on subtotal after product discount)
   let extraDiscountAmt = 0;
   if (safeExtraDiscount > 0) {
-    if (safeExtraDiscountType === "percent") {
-      extraDiscountAmt = subtotal * (safeExtraDiscount / 100);
-    } else {
-      extraDiscountAmt = safeExtraDiscount;
-    }
+    const baseForExtra = subtotal - totalProductDiscount;
+    extraDiscountAmt =
+      safeExtraDiscType === "percent"
+        ? baseForExtra * (safeExtraDiscount / 100)
+        : safeExtraDiscount;
   }
 
-  const amountAfterDiscount = subtotal - extraDiscountAmt;
+  const taxableValue = subtotal - totalProductDiscount - extraDiscountAmt;
 
-  // === 3. GST (only if includeGst === true) ===
-  const gstAmount = safeIncludeGst
-    ? (amountAfterDiscount * safeGstRate) / 100
-    : 0;
+  // GST
+  const gstAmount = safeIncludeGst ? (taxableValue * safeGstRate) / 100 : 0;
 
-  // === 4. Final Total + Round-off ===
-  let total = amountAfterDiscount + gstAmount + safeRoundOff;
+  // Final total with round-off
+  const totalBeforeRound = taxableValue + gstAmount;
+  const finalTotal = Math.round(totalBeforeRound + safeRoundOff);
 
-  // === 5. Return (all values rounded to 2 dp) ===
+  // Actual round-off applied (useful to display)
+  const roundOffApplied = finalTotal - totalBeforeRound;
+
   return {
+    // Core values
     subtotal: Number(subtotal.toFixed(2)),
+    totalProductDiscount: Number(totalProductDiscount.toFixed(2)),
     extraDiscountAmt: Number(extraDiscountAmt.toFixed(2)),
-    amountAfterDiscount: Number(amountAfterDiscount.toFixed(2)),
+    taxableValue: Number(taxableValue.toFixed(2)),
     gst: Number(gstAmount.toFixed(2)),
-    total: Number(total.toFixed(2)),
+    roundOffApplied: Number(roundOffApplied.toFixed(2)),
+    total: Number(finalTotal.toFixed(2)),
+
+    // For convenience
+    amountAfterAllDiscount: Number(
+      (subtotal - totalProductDiscount - extraDiscountAmt).toFixed(2)
+    ),
   };
 };
