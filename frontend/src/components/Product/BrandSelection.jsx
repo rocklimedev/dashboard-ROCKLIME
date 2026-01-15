@@ -7,7 +7,7 @@ const mainWrapper =
   "https://static.cmtradingco.com/brands/product_page_title.png";
 const americanStandard =
   "https://static.cmtradingco.com/brands/american_standard.png?v=2";
-const grohe = "https://static.cmtradingco.com/brands/grohe.png";
+const grohe = "https://static.cmtradingco.com/brands/grohe_bau.png";
 const colston = "https://static.cmtradingco.com/brands/colston-logo_black.png";
 const groheBau = "https://static.cmtradingco.com/brands/grohe.png";
 const jk = "https://static.cmtradingco.com/brands/jk_cement.png";
@@ -20,7 +20,7 @@ const ibis = "https://static.cmtradingco.com/brands/ibis.avif";
 const sgt = "https://static.cmtradingco.com/brands/sgt.jpg";
 const plumbing = "https://static.cmtradingco.com/brands/plumbing.jpg";
 const jayna = "https://via.placeholder.com/300";
-const grohe_pr = "https://static.cmtradingco.com/brands/grohe_pr.jpeg";
+const grohe_pr = "https://static.cmtradingco.com/brands/grohe_premium.png";
 
 const BrandSelection = () => {
   const { bpcId } = useParams();

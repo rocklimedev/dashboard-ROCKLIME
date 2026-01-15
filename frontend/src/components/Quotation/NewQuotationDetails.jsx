@@ -473,9 +473,9 @@ const NewQuotationsDetails = () => {
                 {/* RIGHT SIDE */}
                 <div className={styles.summaryRight}>
                   <div className={styles.totalAmount}>
-                    <span>Total Amount</span>
+                    <span>Total Amount:</span>
                     <span>
-                      ₹{Math.round(finalTotal).toLocaleString("en-IN")}
+                      {""} ₹{Math.round(finalTotal).toLocaleString("en-IN")}
                     </span>
                   </div>
 
@@ -517,7 +517,7 @@ const NewQuotationsDetails = () => {
               }}
             >
               <div>
-                <Title level={2} style={{ margin: 0, color: "#aa0f1f" }}>
+                <Title level={2} style={{ margin: 0, color: "#E31E24" }}>
                   {quotation.document_title || "Quotation"}
                 </Title>
                 <Text type="secondary">
@@ -567,7 +567,7 @@ const NewQuotationsDetails = () => {
                         <FileExcelFilled />
                       )
                     }
-                    style={{ background: "#aa0f1f", border: "none" }}
+                    style={{ background: "#E31E24", border: "none" }}
                   >
                     {isExporting ? "Exporting..." : "Export Quotation"}
                   </Button>

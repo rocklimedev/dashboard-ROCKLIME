@@ -1,1242 +1,709 @@
-// src/components/SiteMap/AddSiteMap.jsx
-
-import React, { useState, useEffect, useMemo } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { useSearchParams } from "react-router-dom";
+import React, { useState, useMemo, useCallback } from "react";
+import { debounce } from "lodash";
 import {
-  Spin,
-  message,
-  Input,
-  Select,
-  Table,
-  InputNumber,
-  Space,
-  Button,
+  Tree,
   Card,
-  Row,
-  Col,
-  Collapse,
+  Input,
+  Button,
+  Table,
+  Space,
   Tag,
-  Divider,
-  Statistic,
-  Typography,
-  Modal,
-  Form,
-  Tabs,
-  Badge,
-  Alert,
+  Tooltip,
+  Empty,
+  message,
+  Popconfirm,
 } from "antd";
 import {
-  ArrowLeftOutlined,
-  PlusOutlined,
-  DeleteOutlined,
-  SaveOutlined,
-  HomeOutlined,
+  SearchOutlined,
   EditOutlined,
-  EyeInvisibleOutlined,
-  ToolOutlined,
-  WarningOutlined,
+  DeleteOutlined,
+  PlusOutlined,
+  FolderOutlined,
+  TagOutlined,
+  CheckCircleOutlined,
+  ExclamationCircleOutlined,
 } from "@ant-design/icons";
-import { v4 as uuidv4 } from "uuid";
-
-import PageHeader from "../Common/PageHeader";
+import { Link, useNavigate } from "react-router-dom";
 import {
-  useCreateSiteMapMutation,
-  useGetSiteMapByIdQuery,
-  useUpdateSiteMapMutation,
-} from "../../api/siteMapApi";
+  useGetAllCategoriesQuery,
+  useDeleteCategoryMutation,
+} from "../../api/categoryApi";
 import {
-  useGetAllProductsQuery,
-  useSearchProductsQuery,
-} from "../../api/productApi";
-import { useGetCustomersQuery } from "../../api/customerApi";
+  useGetAllKeywordsQuery,
+  useDeleteKeywordMutation,
+} from "../../api/keywordApi";
+import {
+  useGetAllParentCategoriesQuery,
+  useDeleteParentCategoryMutation,
+} from "../../api/parentCategoryApi";
+import { useGetAllProductCodesQuery } from "../../api/productApi";
+import AddParentCategoryModal from "./AddParentCategoryModal";
+import AddCategoryModal from "./AddCategoryModal";
+import AddKeywordModal from "./AddKeywordModal";
 
-const { Panel } = Collapse;
-const { Text } = Typography;
-const { Option } = Select;
-const { TabPane } = Tabs;
+const { Search } = Input;
 
-const AddSiteMap = () => {
-  const { id } = useParams();
+const CategoryManagement = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const [searchParams] = useSearchParams();
-  const isEditMode = Boolean(id);
-  const fromQuotation = location.state?.fromQuotation === true;
 
-  const [selectedConcealedProduct, setSelectedConcealedProduct] =
-    useState(null);
-  const [selectedFloor, setSelectedFloor] = useState(null);
-  const [selectedRoom, setSelectedRoom] = useState(null);
-
-  // API
-  const { data: customersData, isLoading: isCustomersLoading } =
-    useGetCustomersQuery();
-  const { data: response, isLoading: isProductsLoading } =
-    useGetAllProductsQuery();
-
-  const productsData = response?.data || [];
-  const { data: existingSiteMapData, isLoading: isFetching } =
-    useGetSiteMapByIdQuery(id, { skip: !isEditMode });
-
-  // SINGLE SHARED SEARCH
+  // === State ===
   const [searchTerm, setSearchTerm] = useState("");
-  const { data: searchResult = [], isFetching: isSearching } =
-    useSearchProductsQuery(searchTerm, {
-      skip: !searchTerm.trim(),
-    });
+  const [selectedNode, setSelectedNode] = useState(null);
+  const [expandedKeys, setExpandedKeys] = useState([]);
+  const [showParentModal, setShowParentModal] = useState(false);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [showKeywordModal, setShowKeywordModal] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [productSearch, setProductSearch] = useState("");
+  const [filteredProduct, setFilteredProduct] = useState(null);
+  const [productNotFound, setProductNotFound] = useState(false);
 
-  const [createSiteMap, { isLoading: isCreating }] = useCreateSiteMapMutation();
-  const [updateSiteMap, { isLoading: isUpdating }] = useUpdateSiteMapMutation();
+  // === API ===
+  const { data: parentData } = useGetAllParentCategoriesQuery();
+  const { data: catData } = useGetAllCategoriesQuery();
+  const { data: kwData } = useGetAllKeywordsQuery();
+  const { data: prodData } = useGetAllProductCodesQuery();
 
-  const customers = customersData?.data || [];
-  const validProducts = productsData.filter(
-    (p) => p && (p.name || p.product_code)
-  );
+  const [deleteParent] = useDeleteParentCategoryMutation();
+  const [deleteCategory] = useDeleteCategoryMutation();
+  const [deleteKeyword] = useDeleteKeywordMutation();
 
-  const [formData, setFormData] = useState({
-    customerId: "",
-    name: "",
-    siteSizeInBHK: "",
-    totalFloors: 1,
-    floorDetails: [],
-    items: [],
-    quotationId: null,
-  });
+  // === Data ===
+  const parentCategories = parentData?.data || [];
+  const categories = catData?.categories || [];
+  const keywords = kwData?.keywords || [];
+  const products = prodData?.data || [];
 
-  const [assignModal, setAssignModal] = useState({
-    visible: false,
-    itemIndex: null,
-  });
-  const [roomModal, setRoomModal] = useState({
-    visible: false,
-    floor: null,
-    room: null,
-  });
-  const [roomForm] = Form.useForm();
+  // === Mappings ===
+  const categoryMap = useMemo(() => {
+    const map = {};
+    categories.forEach((c) => (map[c.categoryId] = c.name));
+    return map;
+  }, [categories]);
 
-  // === Load Data from Quotation or Edit Mode ===
-  useEffect(() => {
-    if (fromQuotation && location.state) {
-      const {
-        customerId,
-        projectName,
-        items = [],
-        totalFloors = 1,
-        quotationId,
-      } = location.state;
+  const parentMap = useMemo(() => {
+    const map = {};
+    parentCategories.forEach((p) => (map[p.id] = p.name));
+    return map;
+  }, [parentCategories]);
 
-      const mappedItems = items.map((it) => ({
-        productId: it.productId,
-        name: (it.name || "Unknown Product").trim(),
-        imageUrl: it.imageUrl || null,
-        quantity: Number(it.quantity) || 1,
-        price: Number(it.price) || 0,
-        discount: it.discount || 0,
-        discountType: it.discountType || "percent",
-        total: it.total || it.price,
-        floor_number: null,
-        room_id: null,
-        productType: it.category?.name || "Quotation Item",
-        isConcealed: false,
-      }));
+  // === Filtered products for selected category ===
+  const selectedCategoryProducts = useMemo(() => {
+    if (selectedNode?.type !== "category") return [];
+    return products.filter((p) => p.categoryId === selectedNode.id);
+  }, [products, selectedNode]);
 
-      setFormData((prev) => ({
-        ...prev,
-        customerId: customerId || "",
-        name:
-          projectName || `Site Map - ${new Date().toLocaleDateString("en-IN")}`,
-        siteSizeInBHK: "",
-        totalFloors: items.length > 0 ? totalFloors : 1,
-        items: mappedItems,
-        quotationId,
-      }));
-    } else if (isEditMode && existingSiteMapData?.data) {
-      setFormData(existingSiteMapData.data);
-    }
-  }, [fromQuotation, location.state, isEditMode, existingSiteMapData]);
+  // === Tree Title Renderer ===
+  const renderTreeTitle = (item, type) => {
+    const name =
+      type === "parent"
+        ? item.name
+        : type === "category"
+        ? item.name
+        : item.keyword;
 
-  // === Auto-select customer from URL query param ===
-  useEffect(() => {
-    const urlCustomerId = searchParams.get("customerId");
-    if (urlCustomerId && customers.length > 0) {
-      const customerExists = customers.some(
-        (c) => c.customerId === urlCustomerId
-      );
-      if (customerExists && !formData.customerId) {
-        setFormData((prev) => ({ ...prev, customerId: urlCustomerId }));
-      }
-    }
-  }, [searchParams, customers, formData.customerId]);
+    const count =
+      type === "category"
+        ? products.filter((p) => p.categoryId === item.categoryId).length
+        : 0;
 
-  // Auto-create Ground Floor if none exist
-  useEffect(() => {
-    if (
-      fromQuotation &&
-      formData.floorDetails.length === 0 &&
-      formData.totalFloors >= 1
-    ) {
-      setFormData((prev) => ({
-        ...prev,
-        floorDetails: [
-          {
-            floor_number: 1,
-            floor_name: "Ground Floor",
-            floor_size: "",
-            details: "",
-            rooms: [],
-          },
-        ],
-      }));
-    }
-  }, [fromQuotation, formData.floorDetails.length]);
-
-  // Auto-manage floors based on totalFloors
-  useEffect(() => {
-    if (!formData.totalFloors) return;
-
-    let newFloors = [...formData.floorDetails];
-    if (newFloors.length < formData.totalFloors) {
-      for (let i = newFloors.length; i < formData.totalFloors; i++) {
-        const floorNum = i + 1;
-        const floorName =
-          floorNum === 1
-            ? "Ground Floor"
-            : `${floorNum - 1}${
-                ["th", "st", "nd", "rd"][(floorNum - 1) % 10] || "th"
-              } Floor`;
-        newFloors.push({
-          floor_number: floorNum,
-          floor_name: floorName,
-          floor_size: "",
-          details: "",
-          rooms: [],
-        });
-      }
-    } else if (newFloors.length > formData.totalFloors) {
-      newFloors = newFloors.slice(0, formData.totalFloors);
-    }
-
-    setFormData((prev) => ({ ...prev, floorDetails: newFloors }));
-  }, [formData.totalFloors]);
-
-  // Helper to get best possible display name
-  const getDisplayName = (p) => {
-    if (p.name && typeof p.name === "string" && p.name.trim())
-      return p.name.trim();
-    if (
-      p.product_code &&
-      typeof p.product_code === "string" &&
-      p.product_code.trim()
-    )
-      return p.product_code.trim();
-    if (p.meta?.["d11da9f9-3f2e-4536-8236-9671200cca4a"])
-      return p.meta["d11da9f9-3f2e-4536-8236-9671200cca4a"].trim();
-    return "Unknown Product";
+    return (
+      <div className="tree-title">
+        <span className="tree-title-text">
+          {name}
+          {type === "category" && count > 0 && (
+            <Tag color="#333333" style={{ marginLeft: 8, fontSize: 11 }}>
+              {count}
+            </Tag>
+          )}
+        </span>
+        <Space size={4} className="tree-actions">
+          <Tooltip title="Edit">
+            <EditOutlined
+              style={{ fontSize: 12, color: "#333333", cursor: "pointer" }}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEdit(item, type);
+              }}
+            />
+          </Tooltip>
+          <Popconfirm
+            title={`Delete this ${type}?`}
+            onConfirm={(e) => {
+              e?.stopPropagation();
+              handleDelete(item, type);
+            }}
+            onCancel={(e) => e?.stopPropagation()}
+            okText="Yes"
+            cancelText="No"
+          >
+            <DeleteOutlined
+              style={{ fontSize: 12, color: "#ff4d4f", cursor: "pointer" }}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </Popconfirm>
+        </Space>
+      </div>
+    );
   };
 
-  const getProductId = (p) => p.productId || p.id;
+  // === Handlers ===
+  const handleEdit = (item, type) => {
+    setEditingItem({ ...item, type });
+    if (type === "parent") setShowParentModal(true);
+    else if (type === "category") setShowCategoryModal(true);
+    else if (type === "keyword") setShowKeywordModal(true);
+  };
 
-  // === Shared Search Options ===
-  const searchOptions = useMemo(() => {
-    const items = searchResult || [];
-    console.log("Shared Search - Term:", searchTerm);
-    console.log("Shared Search - Results count:", items.length);
+  const handleDelete = async (item, type) => {
+    try {
+      if (type === "parent") await deleteParent(item.id).unwrap();
+      else if (type === "category")
+        await deleteCategory(item.categoryId).unwrap();
+      else if (type === "keyword") await deleteKeyword(item.id).unwrap();
 
-    return items.map((p) => ({
-      value: getProductId(p),
-      label: (
-        <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <div>
-            <strong>{getDisplayName(p)}</strong>
-            <div style={{ fontSize: 12, color: "#888" }}>
-              {p.product_code ||
-                p.meta?.["d11da9f9-3f2e-4536-8236-9671200cca4a"] ||
-                "—"}
-            </div>
-          </div>
-          <span>
-            ₹
-            {Number(
-              p.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"] || 0
-            ).toLocaleString("en-IN")}
-          </span>
-        </div>
-      ),
-    }));
-  }, [searchResult, searchTerm]);
-
-  // === Add Product (Visible) ===
-  const addProduct = (floorNumber, roomId, productId, isConcealed = false) => {
-    let prod = searchResult.find((p) => getProductId(p) === productId);
-
-    if (!prod) {
-      prod = validProducts.find((p) => getProductId(p) === productId);
+      if (
+        selectedNode?.id === item.id ||
+        selectedNode?.id === item.categoryId ||
+        selectedNode?.id === item.id
+      ) {
+        setSelectedNode(null);
+      }
+      message.success("Deleted successfully");
+    } catch (err) {
+      message.error(err?.data?.message || "Delete failed");
     }
+  };
 
-    if (!prod) {
-      message.error("Product not found");
+  const handleNodeSelect = (selectedKeys, info) => {
+    if (!selectedKeys.length) {
+      setSelectedNode(null);
       return;
     }
 
-    const price = Number(
-      prod.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"] || 0
-    );
+    const node = info.node;
+    let id;
+    if (node.type === "parent") id = node.data?.id;
+    else if (node.type === "category") id = node.data?.categoryId;
+    else if (node.type === "keyword") id = node.data?.id;
 
-    const newItem = {
-      productId: getProductId(prod),
-      name: prod.name?.trim() || prod.product_code || "Unknown",
-      imageUrl: prod.images?.[0]?.url || null,
-      quantity: 1,
-      price,
-      floor_number: floorNumber,
-      room_id: roomId || null,
-      productType:
-        prod.category?.name || (isConcealed ? "Concealed" : "Others"),
-      isConcealed,
-    };
+    if (id === undefined || id === null) {
+      console.warn("Invalid node selected", node);
+      setSelectedNode(null);
+      return;
+    }
 
-    setFormData((prev) => ({ ...prev, items: [...prev.items, newItem] }));
-    setSearchTerm(""); // Clear search after adding
-  };
-
-  // === Add Concealed Item ===
-  const addSelectedConcealedItem = () => {
-    if (!selectedConcealedProduct || !selectedFloor) return;
-
-    const prod = validProducts.find(
-      (p) => getProductId(p) === selectedConcealedProduct
-    );
-    if (!prod) return message.error("Concealed product not found");
-
-    const price = Number(
-      prod.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"] || 0
-    );
-
-    const newItem = {
-      productId: getProductId(prod),
-      name: prod.name?.trim() || prod.product_code || "Unknown Concealed Item",
-      imageUrl: prod.images?.[0]?.url || null,
-      quantity: 1,
-      price,
-      floor_number: selectedFloor,
-      room_id: selectedRoom || null,
-      productType: prod.category?.name || "Concealed Works",
-      isConcealed: true,
-    };
-
-    setFormData((prev) => ({ ...prev, items: [...prev.items, newItem] }));
-
-    setSelectedConcealedProduct(null);
-    setSelectedFloor(null);
-    setSelectedRoom(null);
-    setSearchTerm(""); // Clear search
-  };
-
-  const removeItem = (index) => {
-    setFormData((prev) => ({
-      ...prev,
-      items: prev.items.filter((_, i) => i !== index),
-    }));
-  };
-
-  const updateItemQty = (index, qty) => {
-    if (qty < 1) return;
-    setFormData((prev) => {
-      const items = [...prev.items];
-      items[index].quantity = qty;
-      return { ...prev, items };
+    setSelectedNode({
+      type: node.type,
+      id,
+      data: node.data,
+      key: node.key,
     });
   };
 
-  const openRoomModal = (floor, room = null) => {
-    roomForm.resetFields();
-    setRoomModal({ visible: true, floor, room });
-    if (room) roomForm.setFieldsValue(room);
+  const debouncedSearch = useCallback(
+    debounce((value) => setSearchTerm(value), 300),
+    []
+  );
+
+  const handleProductSearch = () => {
+    const code = productSearch.trim().toLowerCase();
+    if (!code) return;
+
+    const found = products.find((p) => p.product_code?.toLowerCase() === code);
+    setFilteredProduct(found || null);
+    setProductNotFound(!found);
   };
 
-  const saveRoom = () => {
-    roomForm.validateFields().then((values) => {
-      setFormData((prev) => {
-        const updatedFloors = prev.floorDetails.map((f) => ({
-          ...f,
-          rooms: [...f.rooms],
-        }));
-        const floorIndex = updatedFloors.findIndex(
-          (f) => f.floor_number === roomModal.floor.floor_number
-        );
-
-        if (roomModal.room) {
-          const roomIndex = updatedFloors[floorIndex].rooms.findIndex(
-            (r) => r.room_id === roomModal.room.room_id
-          );
-          updatedFloors[floorIndex].rooms[roomIndex] = {
-            ...updatedFloors[floorIndex].rooms[roomIndex],
-            ...values,
-          };
-        } else {
-          updatedFloors[floorIndex].rooms.push({
-            room_id: uuidv4(),
-            room_name: values.room_name,
-            room_type: values.room_type || "General",
-            room_size: values.room_size || "",
-            details: values.details || "",
-          });
+  // === Table Columns ===
+  const productColumns = [
+    { title: "#", key: "index", width: 60, render: (_, __, i) => i + 1 },
+    {
+      title: "Image",
+      key: "image",
+      width: 70,
+      render: (_, r) => {
+        let url = null;
+        if (r.images) {
+          try {
+            const parsed = JSON.parse(r.images);
+            url = Array.isArray(parsed)
+              ? parsed[0]
+              : typeof parsed === "string"
+              ? parsed
+              : null;
+          } catch {}
         }
+        return url ? (
+          <img src={url} alt={r.name} className="product-image" />
+        ) : (
+          <div className="no-image">No img</div>
+        );
+      },
+    },
+    { title: "Name", dataIndex: "name", ellipsis: true },
+    { title: "Code", dataIndex: "product_code" },
+    {
+      title: "Action",
+      width: 100,
+      render: (_, r) => (
+        <Link to={`/product/${r.productId}/edit`}>
+          <Button size="small" type="link">
+            Edit
+          </Button>
+        </Link>
+      ),
+    },
+  ];
 
-        return { ...prev, floorDetails: updatedFloors };
+  // === Tree Data ===
+  const treeData = useMemo(() => {
+    const filteredParents = parentCategories.filter((p) =>
+      p.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    return filteredParents.map((parent) => {
+      const childCats = categories.filter(
+        (c) => c.parentCategoryId === parent.id
+      );
+      const filteredCats = childCats.filter((c) =>
+        c.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+
+      const catNodes = filteredCats.map((cat) => {
+        const catKeywords = keywords
+          .filter((k) => k.categoryId === cat.categoryId)
+          .filter((k) =>
+            k.keyword.toLowerCase().includes(searchTerm.toLowerCase())
+          );
+
+        return {
+          title: (
+            <div className="tree-node">{renderTreeTitle(cat, "category")}</div>
+          ),
+          key: `cat-${cat.categoryId}`,
+          icon: <FolderOutlined />,
+          children: catKeywords.map((kw) => ({
+            title: (
+              <div className="tree-node">{renderTreeTitle(kw, "keyword")}</div>
+            ),
+            key: `kw-${kw.id}`,
+            icon: <TagOutlined />,
+            isLeaf: true,
+          })),
+          data: cat,
+          type: "category",
+        };
       });
 
-      setRoomModal({ visible: false });
-      roomForm.resetFields();
-    });
-  };
-
-  const deleteRoom = (floorNumber, roomId) => {
-    setFormData((prev) => ({
-      ...prev,
-      floorDetails: prev.floorDetails.map((f) => ({
-        ...f,
-        rooms: f.rooms.filter((r) => r.room_id !== roomId),
-      })),
-      items: prev.items.filter(
-        (i) => !(i.floor_number === floorNumber && i.room_id === roomId)
-      ),
-    }));
-  };
-
-  const handleSubmit = async () => {
-    if (!formData.customerId) return message.error("Select a customer");
-    if (!formData.name.trim()) return message.error("Enter project name");
-
-    try {
-      const payload = {
-        ...formData,
-        items: formData.items.map((i) => ({
-          ...i,
-          quantity: Number(i.quantity) || 1,
-          price: Number(i.price) || 0,
-        })),
+      return {
+        title: (
+          <div className="tree-node">{renderTreeTitle(parent, "parent")}</div>
+        ),
+        key: `parent-${parent.id}`,
+        icon: <FolderOutlined style={{ color: "#333333" }} />,
+        children: catNodes,
+        data: parent,
+        type: "parent",
       };
+    });
+  }, [parentCategories, categories, keywords, searchTerm, products]);
 
-      if (isEditMode) {
-        await updateSiteMap({ id, updatedSiteMap: payload }).unwrap();
-        message.success("Site Map updated successfully!");
-      } else {
-        await createSiteMap(payload).unwrap();
-        message.success("Site Map created successfully!");
-      }
-      navigate("/site-map/list");
-    } catch (err) {
-      message.error(err?.data?.message || "Failed to save site map");
-    }
+  // === Modal Close Handlers ===
+  const closeParentModal = () => {
+    setShowParentModal(false);
+    setEditingItem(null);
   };
-
-  // === Group Items by Location & Totals ===
-  const itemsByLocation = useMemo(() => {
-    const map = {};
-    formData.items.forEach((item) => {
-      const floorKey = item.floor_number || "unassigned";
-      const roomKey = item.room_id || "floor-level";
-      if (!map[floorKey]) map[floorKey] = {};
-      if (!map[floorKey][roomKey]) map[floorKey][roomKey] = [];
-      map[floorKey][roomKey].push(item);
-    });
-    return map;
-  }, [formData.items]);
-
-  const { visibleTotal, concealedTotal, grandTotal } = useMemo(() => {
-    let visible = 0,
-      concealed = 0;
-    formData.items.forEach((i) => {
-      const amt = i.quantity * i.price;
-      if (i.isConcealed) concealed += amt;
-      else visible += amt;
-    });
-    return {
-      visibleTotal: visible,
-      concealedTotal: concealed,
-      grandTotal: visible + concealed,
-    };
-  }, [formData.items]);
-
-  const hasUnassignedItems = formData.items.some((i) => !i.floor_number);
-
-  if (isFetching || isCustomersLoading || isProductsLoading) {
-    return (
-      <Spin tip="Loading..." style={{ display: "block", marginTop: 100 }} />
-    );
-  }
+  const closeCategoryModal = () => {
+    setShowCategoryModal(false);
+    setEditingItem(null);
+  };
+  const closeKeywordModal = () => {
+    setShowKeywordModal(false);
+    setEditingItem(null);
+  };
 
   return (
-    <div className="page-wrapper">
-      <div className="content">
-        <PageHeader
-          title={isEditMode ? "Edit Site Map" : "Create Site Map"}
-          exportOptions={{ pdf: false, excel: false }}
-          subtitle="Plan electrical layout by assigning products to floors and rooms"
-        />
+    <>
+      {/* Embedded CSS */}
+      <style jsx>{`
+        :global(.ant-typography) {
+          color: #1a1a1a;
+        }
 
-        <Space style={{ marginBottom: 16 }}>
-          <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)}>
-            Back
-          </Button>
-        </Space>
+        .main-layout {
+          display: flex;
+          height: 100%;
+          background: #fff;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+          border-radius: 12px;
+          overflow: hidden;
+        }
 
-        {hasUnassignedItems && (
-          <Alert
-            message="Unassigned Items Detected"
-            description="Some products are not yet assigned to any floor/room. Please assign them for accurate planning. They will still be saved."
-            type="warning"
-            showIcon
-            icon={<WarningOutlined />}
-            style={{ marginBottom: 20 }}
-          />
-        )}
+        .left-panel {
+          width: 380px;
+          min-width: 320px;
+          background: #fafbfc;
+          border-right: 1px solid #e8ecef;
+          display: flex;
+          flex-direction: column;
+          box-shadow: 2px 0 10px rgba(0, 0, 0, 0.04);
+        }
 
-        {/* Project Info */}
-        <Card title="Project Information" style={{ marginBottom: 20 }}>
-          <Row gutter={16}>
-            <Col span={12}>
-              <strong>Customer *</strong>
-              <Select
-                showSearch
-                style={{ width: "100%", marginTop: 8 }}
-                placeholder="Select customer"
-                value={formData.customerId}
-                onChange={(v) =>
-                  setFormData((prev) => ({ ...prev, customerId: v }))
-                }
-              >
-                {customers.map((c) => (
-                  <Option key={c.customerId} value={c.customerId}>
-                    {c.name}
-                  </Option>
-                ))}
-              </Select>
-            </Col>
-            <Col span={12}>
-              <strong>Project Name *</strong>
-              <Input
-                style={{ marginTop: 8 }}
-                placeholder="e.g., Jethalal Gada 3BHK Residence"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, name: e.target.value }))
-                }
-              />
-            </Col>
-          </Row>
-          <Row gutter={16} style={{ marginTop: 16 }}>
-            <Col span={8}>
-              <strong>Total Floors</strong>
-              <InputNumber
-                min={1}
-                max={50}
-                style={{ width: "100%", marginTop: 8 }}
-                value={formData.totalFloors}
-                onChange={(v) =>
-                  setFormData((prev) => ({ ...prev, totalFloors: v }))
-                }
-              />
-            </Col>
-          </Row>
-        </Card>
+        .left-header {
+          padding: 20px;
+          background: #ffffff;
+          border-bottom: 1px solid #e8ecef;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
 
-        <Tabs defaultActiveKey="visible" size="large">
-          {/* VISIBLE PRODUCTS TAB */}
-          <TabPane
-            tab={
-              <span>
-                <HomeOutlined /> Visible Products
-                <Badge
-                  count={formData.items.filter((i) => !i.isConcealed).length}
-                  style={{ marginLeft: 8, backgroundColor: "#52c41a" }}
-                />
-              </span>
-            }
-            key="visible"
-          >
-            {formData.items.some((i) => !i.isConcealed && !i.floor_number) && (
-              <Card
-                title={
-                  <>
-                    <WarningOutlined /> Unassigned Visible Products (From
-                    Quotation)
-                  </>
-                }
-                style={{
-                  marginBottom: 24,
-                  border: "2px dashed #1890ff",
-                  backgroundColor: "#f0f8ff",
-                }}
-                extra={
-                  <Tag color="blue">
-                    {
-                      formData.items.filter(
-                        (i) => !i.isConcealed && !i.floor_number
-                      ).length
-                    }{" "}
-                    items
-                  </Tag>
-                }
-              >
-                <Table
-                  size="small"
-                  pagination={false}
-                  dataSource={formData.items.filter(
-                    (i) => !i.isConcealed && !i.floor_number
-                  )}
-                  columns={[
-                    { title: "Product", dataIndex: "name", width: "35%" },
-                    {
-                      title: "Qty",
-                      width: 100,
-                      render: (_, r) => (
-                        <InputNumber
-                          min={1}
-                          value={r.quantity}
-                          onChange={(v) =>
-                            updateItemQty(formData.items.indexOf(r), v)
-                          }
-                        />
-                      ),
-                    },
-                    {
-                      title: "Price",
-                      render: (_, r) => `₹${r.price.toLocaleString("en-IN")}`,
-                    },
-                    {
-                      title: "Total",
-                      render: (_, r) =>
-                        `₹${(r.quantity * r.price).toLocaleString("en-IN")}`,
-                    },
-                    {
-                      title: "Action",
-                      width: 120,
-                      render: (_, record) => (
-                        <Button
-                          type="primary"
-                          size="small"
-                          icon={<HomeOutlined />}
-                          onClick={() => {
-                            setAssignModal({
-                              visible: true,
-                              itemIndex: formData.items.indexOf(record),
-                            });
-                          }}
-                        >
-                          Assign
-                        </Button>
-                      ),
-                    },
-                    {
-                      title: "",
-                      render: (_, r) => (
-                        <Button
-                          danger
-                          size="small"
-                          icon={<DeleteOutlined />}
-                          onClick={() => removeItem(formData.items.indexOf(r))}
-                        />
-                      ),
-                    },
-                  ]}
-                />
-                <div style={{ marginTop: 12, textAlign: "right" }}>
-                  <Tag color="blue" size="large">
-                    Total: ₹
-                    {formData.items
-                      .filter((i) => !i.isConcealed && !i.floor_number)
-                      .reduce((s, i) => s + i.quantity * i.price, 0)
-                      .toLocaleString("en-IN")}
-                  </Tag>
-                </div>
-              </Card>
-            )}
+        .left-header :global(.ant-input-search) {
+          border-radius: 10px;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        }
 
-            <Collapse accordion>
-              {formData.floorDetails.map((floor) => {
-                const floorItems = itemsByLocation[floor.floor_number] || {};
-                const visibleItems = Object.values(floorItems)
-                  .flat()
-                  .filter((i) => !i.isConcealed);
-                const floorTotal = visibleItems.reduce(
-                  (s, i) => s + i.quantity * i.price,
-                  0
-                );
+        .action-buttons {
+          margin-top: 16px;
+          display: grid;
+          grid-template-columns: 1fr 1fr 1fr;
+          gap: 10px;
+        }
 
-                return (
-                  <Panel
-                    key={floor.floor_number}
-                    header={
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          width: "100%",
-                        }}
-                      >
-                        <span>
-                          <HomeOutlined /> {floor.floor_name} (
-                          {visibleItems.length} items)
-                        </span>
-                        <Tag color="green">
-                          ₹{floorTotal.toLocaleString("en-IN")}
-                        </Tag>
-                      </div>
-                    }
-                  >
-                    <Space
-                      direction="vertical"
-                      style={{ width: "100%" }}
-                      size="large"
-                    >
-                      <Button
-                        type="dashed"
-                        block
-                        icon={<PlusOutlined />}
-                        onClick={() => openRoomModal(floor)}
-                      >
-                        Add Room
-                      </Button>
+        .action-buttons :global(.ant-btn) {
+          border-radius: 8px;
+          font-weight: 500;
+          height: 38px;
+          font-size: 13px;
+          transition: all 0.2s ease;
+        }
 
-                      {floor.rooms.length === 0 ? (
-                        <Card size="small">
-                          <Text type="secondary">
-                            Add rooms to assign visible products
-                          </Text>
-                        </Card>
-                      ) : (
-                        floor.rooms.map((room) => {
-                          const roomItems = (
-                            floorItems[room.room_id] || []
-                          ).filter((i) => !i.isConcealed);
-                          const roomTotal = roomItems.reduce(
-                            (s, i) => s + i.quantity * i.price,
-                            0
-                          );
+        .tree-container {
+          flex: 1;
+          overflow-y: auto;
+          padding: 12px 8px;
+          background: #fafbfc;
+        }
 
-                          return (
-                            <Card
-                              key={room.room_id}
-                              size="small"
-                              title={
-                                <span>
-                                  {room.room_name}{" "}
-                                  {room.room_type && (
-                                    <Tag color="blue">{room.room_type}</Tag>
-                                  )}
-                                </span>
-                              }
-                              extra={
-                                <Space>
-                                  <Button
-                                    size="small"
-                                    icon={<EditOutlined />}
-                                    onClick={() => openRoomModal(floor, room)}
-                                  />
-                                  <Button
-                                    danger
-                                    size="small"
-                                    icon={<DeleteOutlined />}
-                                    onClick={() =>
-                                      deleteRoom(
-                                        floor.floor_number,
-                                        room.room_id
-                                      )
-                                    }
-                                  />
-                                </Space>
-                              }
-                            >
-                              <Select
-                                showSearch
-                                placeholder="Search & select product..."
-                                searchValue={searchTerm}
-                                onSearch={setSearchTerm}
-                                onChange={(value) => {
-                                  addProduct(
-                                    floor.floor_number,
-                                    room.room_id,
-                                    value,
-                                    false
-                                  );
-                                  setSearchTerm("");
-                                }}
-                                filterOption={false}
-                                options={searchOptions}
-                                notFoundContent={
-                                  isSearching ? (
-                                    <Spin size="small" />
-                                  ) : searchTerm ? (
-                                    "No products found"
-                                  ) : (
-                                    "Start typing..."
-                                  )
-                                }
-                                style={{ width: "100%" }}
-                                dropdownMatchSelectWidth={false}
-                                dropdownStyle={{
-                                  maxHeight: 400,
-                                  overflow: "auto",
-                                }}
-                              />
-                              {/* Table and totals unchanged */}
-                            </Card>
-                          );
-                        })
-                      )}
-                    </Space>
-                  </Panel>
-                );
-              })}
-            </Collapse>
-          </TabPane>
+        .tree-node {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          width: 100%;
+          padding: 4px 8px;
+          border-radius: 8px;
+          transition: all 0.2s ease;
+          margin: 2px 4px;
+        }
 
-          {/* CONCEALED WORKS TAB */}
-          <TabPane
-            tab={
-              <span>
-                <EyeInvisibleOutlined /> Concealed Works
-                <Badge
-                  count={formData.items.filter((i) => i.isConcealed).length}
-                  style={{ marginLeft: 8, backgroundColor: "#ff4d4f" }}
-                />
-              </span>
-            }
-            key="concealed"
-          >
-            <Card
-              title={
-                <>
-                  <ToolOutlined /> Add Concealed Item
-                </>
-              }
-              style={{ marginBottom: 24 }}
-            >
-              <Space
-                direction="vertical"
-                style={{ width: "100%" }}
-                size="middle"
-              >
-                <Select
-                  showSearch
-                  placeholder="Search any product..."
-                  searchValue={searchTerm}
-                  onSearch={setSearchTerm}
-                  onChange={setSelectedConcealedProduct}
-                  filterOption={false}
-                  options={searchOptions}
-                  notFoundContent={
-                    isSearching ? (
-                      <Spin size="small" />
-                    ) : searchTerm ? (
-                      "No products found"
-                    ) : (
-                      "Start typing to search..."
-                    )
-                  }
+        .tree-node:hover {
+          background: #f0f5ff;
+        }
+
+        .tree-title {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          width: 100%;
+          font-size: 14px;
+          font-weight: 500;
+        }
+
+        .tree-actions {
+          opacity: 0;
+          transition: opacity 0.25s ease;
+          display: flex;
+          gap: 6px;
+        }
+
+        .tree-node:hover .tree-actions {
+          opacity: 1;
+        }
+
+        .right-panel {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          background: #ffffff;
+          padding: 24px;
+          gap: 20px;
+        }
+
+        .product-checker-card {
+          color: white;
+          border: none;
+          border-radius: 14px;
+          padding: 20px;
+          box-shadow: 0 8px 25px rgba(102, 126, 234, 0.25);
+        }
+
+        .details-card {
+          flex: 1;
+          border-radius: 14px;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+          border: 1px solid #f0f0f0;
+        }
+
+        .product-table :global(.ant-table) {
+          border-radius: 10px;
+          overflow: hidden;
+          box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .product-image {
+          width: 48px;
+          height: 48px;
+          object-fit: cover;
+          border-radius: 8px;
+          border: 1px solid #e8e8e8;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .no-image {
+          width: 48px;
+          height: 48px;
+          background: #f9f9f9;
+          border: 1px dashed #d9d9d9;
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 11px;
+          color: #aaa;
+        }
+      `}</style>
+
+      <div className="page-wrapper">
+        <div className="content">
+          <div className="main-layout">
+            {/* Left: Tree */}
+            <div className="left-panel">
+              <div className="left-header">
+                <Search
+                  placeholder="Search hierarchy..."
+                  allowClear
+                  onChange={(e) => debouncedSearch(e.target.value)}
                   style={{ width: "100%" }}
                 />
-                {selectedConcealedProduct && (
-                  <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-                    <Select
-                      placeholder="Select Floor"
-                      style={{ minWidth: 250 }}
-                      value={selectedFloor}
-                      onChange={setSelectedFloor}
-                    >
-                      {formData.floorDetails.map((f) => (
-                        <Option key={f.floor_number} value={f.floor_number}>
-                          {f.floor_name}
-                        </Option>
-                      ))}
-                    </Select>
-                    <Select
-                      placeholder="Select Room (optional)"
-                      style={{ minWidth: 250 }}
-                      value={selectedRoom}
-                      onChange={setSelectedRoom}
-                      allowClear
-                    >
-                      {selectedFloor &&
-                        formData.floorDetails
-                          .find((f) => f.floor_number === selectedFloor)
-                          ?.rooms.map((room) => (
-                            <Option key={room.room_id} value={room.room_id}>
-                              {room.room_name} ({room.room_type})
-                            </Option>
-                          ))}
-                    </Select>
-                    <Button
-                      type="primary"
-                      icon={<PlusOutlined />}
-                      onClick={addSelectedConcealedItem}
-                      disabled={!selectedFloor}
-                    >
-                      Add
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        setSelectedConcealedProduct(null);
-                        setSelectedFloor(null);
-                        setSelectedRoom(null);
-                      }}
-                    >
-                      Clear
-                    </Button>
-                  </div>
+                <Space className="action-buttons" wrap>
+                  <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={() => {
+                      setEditingItem(null);
+                      setShowParentModal(true);
+                    }}
+                  >
+                    Parent
+                  </Button>
+                  <Button
+                    icon={<PlusOutlined />}
+                    disabled={!selectedNode || selectedNode.type !== "parent"}
+                    onClick={() => {
+                      setEditingItem(null);
+                      setShowCategoryModal(true);
+                    }}
+                  >
+                    Category
+                  </Button>
+                  <Button
+                    icon={<PlusOutlined />}
+                    disabled={!selectedNode || selectedNode.type !== "category"}
+                    onClick={() => {
+                      setEditingItem(null);
+                      setShowKeywordModal(true);
+                    }}
+                  >
+                    Keyword
+                  </Button>
+                </Space>
+              </div>
+
+              <div className="tree-container">
+                {treeData.length > 0 ? (
+                  <Tree
+                    showIcon
+                    defaultExpandAll
+                    expandedKeys={expandedKeys}
+                    onExpand={setExpandedKeys}
+                    onSelect={handleNodeSelect}
+                    selectedKeys={
+                      selectedNode
+                        ? [`${selectedNode.type}-${selectedNode.id}`]
+                        : []
+                    }
+                    treeData={treeData}
+                    height={window.innerHeight - 200}
+                  />
+                ) : (
+                  <Empty
+                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                    style={{ margin: 32 }}
+                  />
                 )}
-              </Space>
-            </Card>
+              </div>
+            </div>
 
-            {formData.items.some((i) => i.isConcealed && !i.floor_number) && (
-              <Card
-                title="Unassigned Concealed Items"
-                style={{
-                  marginBottom: 24,
-                  border: "2px dashed #ff4d4f",
-                  backgroundColor: "#fff2f0",
-                }}
-              >
-                <Table
-                  size="small"
-                  dataSource={formData.items.filter(
-                    (i) => i.isConcealed && !i.floor_number
+            {/* Right: Details */}
+            <div className="right-panel">
+              <Card className="product-checker-card">
+                <Space direction="vertical" style={{ width: "100%" }}>
+                  <Search
+                    placeholder="Check Product Code"
+                    enterButton="Check"
+                    value={productSearch}
+                    onChange={(e) => setProductSearch(e.target.value)}
+                    onSearch={handleProductSearch}
+                    style={{ width: 300, maxWidth: "100%" }}
+                  />
+
+                  {filteredProduct && (
+                    <div className="result-box result-success">
+                      <CheckCircleOutlined />
+                      <strong>{filteredProduct.name}</strong> |{" "}
+                      {filteredProduct.product_code}
+                      <Link to={`/product/${filteredProduct.productId}/edit`}>
+                        <Button size="small" type="link">
+                          Edit
+                        </Button>
+                      </Link>
+                    </div>
                   )}
-                  columns={[
-                    { title: "Product", dataIndex: "name" },
-                    {
-                      title: "Qty",
-                      render: (_, r) => (
-                        <InputNumber
-                          min={1}
-                          value={r.quantity}
-                          onChange={(v) =>
-                            updateItemQty(formData.items.indexOf(r), v)
-                          }
-                        />
-                      ),
-                    },
-                    {
-                      title: "Price",
-                      render: (_, r) => `₹${r.price.toLocaleString("en-IN")}`,
-                    },
-                    {
-                      title: "Total",
-                      render: (_, r) =>
-                        `₹${(r.quantity * r.price).toLocaleString("en-IN")}`,
-                    },
-                    {
-                      title: "",
-                      render: (_, r) => (
-                        <Button
-                          danger
-                          size="small"
-                          icon={<DeleteOutlined />}
-                          onClick={() => removeItem(formData.items.indexOf(r))}
-                        />
-                      ),
-                    },
-                  ]}
-                />
+
+                  {productNotFound && (
+                    <div className="result-box result-warning">
+                      <ExclamationCircleOutlined />
+                      <span>Code available</span>
+                    </div>
+                  )}
+                </Space>
               </Card>
-            )}
 
-            <Collapse accordion>
-              {formData.floorDetails.map((floor) => {
-                const concealedInFloor = formData.items.filter(
-                  (i) => i.isConcealed && i.floor_number === floor.floor_number
-                );
-                if (concealedInFloor.length === 0) return null;
-
-                const byRoom = {};
-                concealedInFloor.forEach((item) => {
-                  const key = item.room_id || "floor-level";
-                  if (!byRoom[key]) byRoom[key] = [];
-                  byRoom[key].push(item);
-                });
-
-                return (
-                  <Panel
-                    key={floor.floor_number}
-                    header={
+              <Card
+                className="details-card"
+                title={
+                  <Space>
+                    {selectedNode?.type === "parent" && <FolderOutlined />}
+                    {selectedNode?.type === "category" && <FolderOutlined />}
+                    {selectedNode?.type === "keyword" && <TagOutlined />}
+                    {selectedNode
+                      ? selectedNode.type === "parent"
+                        ? parentMap[selectedNode.id]
+                        : selectedNode.type === "category"
+                        ? categoryMap[selectedNode.id]
+                        : selectedNode.data.keyword
+                      : "Category Details"}
+                    {selectedNode?.type === "category" && (
+                      <Tag color="blue" style={{ marginLeft: 8 }}>
+                        {selectedCategoryProducts.length} products
+                      </Tag>
+                    )}
+                  </Space>
+                }
+              >
+                {selectedNode ? (
+                  <>
+                    {selectedNode.type === "category" ? (
+                      selectedCategoryProducts.length > 0 ? (
+                        <Table
+                          className="product-table"
+                          columns={productColumns}
+                          dataSource={selectedCategoryProducts}
+                          pagination={{ pageSize: 10, showSizeChanger: true }}
+                          rowKey="productId"
+                          locale={{ emptyText: "No products in this category" }}
+                        />
+                      ) : (
+                        <Empty
+                          image={Empty.PRESENTED_IMAGE_SIMPLE}
+                          description="No products assigned to this category yet"
+                          style={{ margin: "60px 0" }}
+                        >
+                          <Button
+                            type="primary"
+                            icon={<PlusOutlined />}
+                            onClick={() =>
+                              navigate("/product/add", {
+                                state: { prefillCategoryId: selectedNode.id },
+                              })
+                            }
+                          >
+                            Add Product to this Category
+                          </Button>
+                        </Empty>
+                      )
+                    ) : selectedNode.type === "parent" ? (
                       <div
                         style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          width: "100%",
+                          textAlign: "center",
+                          padding: "60px 0",
+                          color: "#8c8c8c",
                         }}
                       >
-                        <span>
-                          <EyeInvisibleOutlined /> {floor.floor_name} -
-                          Concealed ({concealedInFloor.length})
-                        </span>
-                        <Tag color="volcano">
-                          ₹
-                          {concealedInFloor
-                            .reduce((s, i) => s + i.quantity * i.price, 0)
-                            .toLocaleString("en-IN")}
-                        </Tag>
+                        <FolderOutlined
+                          style={{ fontSize: 48, marginBottom: 16 }}
+                        />
+                        <p>
+                          Select a category under this parent to view products
+                        </p>
                       </div>
-                    }
-                  >
-                    <Space
-                      direction="vertical"
-                      style={{ width: "100%" }}
-                      size="large"
-                    >
-                      {Object.entries(byRoom).map(([roomKey, items]) => {
-                        const room =
-                          roomKey !== "floor-level"
-                            ? floor.rooms.find((r) => r.room_id === roomKey)
-                            : null;
-                        const roomTotal = items.reduce(
-                          (s, i) => s + i.quantity * i.price,
-                          0
-                        );
-
-                        return (
-                          <Card
-                            key={roomKey}
-                            size="small"
-                            title={
-                              room ? (
-                                <span>
-                                  {room.room_name} <Tag>{room.room_type}</Tag>
-                                </span>
-                              ) : (
-                                <strong>Floor Level (Common Areas)</strong>
-                              )
-                            }
-                            extra={<Tag color="red">{items.length} items</Tag>}
-                          >
-                            <Table
-                              size="small"
-                              pagination={false}
-                              dataSource={items}
-                              columns={[
-                                {
-                                  title: "Product",
-                                  dataIndex: "name",
-                                  width: "40%",
-                                },
-                                {
-                                  title: "Qty",
-                                  width: 100,
-                                  render: (_, r) => (
-                                    <InputNumber
-                                      min={1}
-                                      value={r.quantity}
-                                      onChange={(v) =>
-                                        updateItemQty(
-                                          formData.items.indexOf(r),
-                                          v
-                                        )
-                                      }
-                                    />
-                                  ),
-                                },
-                                {
-                                  title: "Price",
-                                  render: (_, r) =>
-                                    `₹${r.price.toLocaleString("en-IN")}`,
-                                },
-                                {
-                                  title: "Total",
-                                  render: (_, r) =>
-                                    `₹${(r.quantity * r.price).toLocaleString(
-                                      "en-IN"
-                                    )}`,
-                                },
-                                {
-                                  title: "",
-                                  width: 50,
-                                  render: (_, r) => (
-                                    <Button
-                                      danger
-                                      size="small"
-                                      icon={<DeleteOutlined />}
-                                      onClick={() =>
-                                        removeItem(formData.items.indexOf(r))
-                                      }
-                                    />
-                                  ),
-                                },
-                              ]}
-                            />
-                            <div style={{ marginTop: 12, textAlign: "right" }}>
-                              <Tag color="red" size="large">
-                                Total: ₹{roomTotal.toLocaleString("en-IN")}
-                              </Tag>
-                            </div>
-                          </Card>
-                        );
-                      })}
-                    </Space>
-                  </Panel>
-                );
-              })}
-            </Collapse>
-          </TabPane>
-        </Tabs>
-
-        {/* Summary */}
-        <div
-          style={{
-            marginTop: 32,
-            padding: 24,
-            background: "#f0f2f5",
-            borderRadius: 8,
-          }}
-        >
-          <Row gutter={32}>
-            <Col>
-              <Statistic
-                title="Visible Items"
-                value={`₹${visibleTotal.toLocaleString("en-IN")}`}
-              />
-            </Col>
-            <Col>
-              <Statistic
-                title="Concealed Works"
-                value={`₹${concealedTotal.toLocaleString("en-IN")}`}
-                valueStyle={{ color: "#ff4d4f" }}
-              />
-            </Col>
-            <Col>
-              <Statistic
-                title="Grand Total (excl. GST)"
-                value={`₹${grandTotal.toLocaleString("en-IN")}`}
-              />
-            </Col>
-            <Col>
-              <Statistic
-                title="With 18% GST"
-                value={`₹${(grandTotal * 1.18).toLocaleString("en-IN", {
-                  maximumFractionDigits: 0,
-                })}`}
-              />
-            </Col>
-          </Row>
-          <Divider />
-          <Button
-            type="primary"
-            size="large"
-            icon={<SaveOutlined />}
-            onClick={handleSubmit}
-            loading={isCreating || isUpdating}
-          >
-            {isEditMode ? "Update" : "Save"} Site Map
-          </Button>
-        </div>
-
-        {/* Room Modal */}
-        <Modal
-          title={roomModal.room ? "Edit Room" : "Add New Room"}
-          open={roomModal.visible}
-          onOk={saveRoom}
-          onCancel={() => setRoomModal({ visible: false })}
-        >
-          <Form form={roomForm} layout="vertical">
-            <Form.Item
-              name="room_name"
-              label="Room Name"
-              rules={[{ required: true }]}
-            >
-              <Input />
-            </Form.Item>
-            <Form.Item name="room_type" label="Type">
-              <Select>
-                <Option value="Bathroom">Bathroom</Option>
-                <Option value="Kitchen">Kitchen</Option>
-                <Option value="Bedroom">Bedroom</Option>
-                <Option value="Living Room">Living Room</Option>
-                <Option value="Terrace">Terrace</Option>
-                <Option value="Parking">Parking</Option>
-                <Option value="General">General</Option>
-              </Select>
-            </Form.Item>
-            <Form.Item name="room_size" label="Size">
-              <Input />
-            </Form.Item>
-            <Form.Item name="details" label="Details">
-              <Input.TextArea />
-            </Form.Item>
-          </Form>
-        </Modal>
-
-        {/* Assign Product Modal */}
-        <Modal
-          title="Assign Product to Location"
-          open={assignModal.visible}
-          onOk={() => {
-            if (!selectedFloor) return message.error("Please select a floor");
-            const index = assignModal.itemIndex;
-            setFormData((prev) => {
-              const items = [...prev.items];
-              items[index] = {
-                ...items[index],
-                floor_number: selectedFloor,
-                room_id: selectedRoom || null,
-              };
-              return { ...prev, items };
-            });
-            setAssignModal({ visible: false, itemIndex: null });
-            setSelectedFloor(null);
-            setSelectedRoom(null);
-            message.success("Product assigned successfully!");
-          }}
-          onCancel={() => {
-            setAssignModal({ visible: false, itemIndex: null });
-            setSelectedFloor(null);
-            setSelectedRoom(null);
-          }}
-          okText="Assign"
-          cancelText="Cancel"
-        >
-          <Space direction="vertical" style={{ width: "100%" }}>
-            <div>
-              <strong>Select Floor *</strong>
-              <Select
-                placeholder="Choose floor"
-                style={{ width: "100%", marginTop: 8 }}
-                value={selectedFloor}
-                onChange={setSelectedFloor}
-              >
-                {formData.floorDetails.map((f) => (
-                  <Option key={f.floor_number} value={f.floor_number}>
-                    {f.floor_name}
-                  </Option>
-                ))}
-              </Select>
+                    ) : (
+                      <div style={{ padding: "20px" }}>
+                        <Tag
+                          color="purple"
+                          style={{ fontSize: 14, padding: "6px 12px" }}
+                        >
+                          {selectedNode.data.keyword}
+                        </Tag>
+                        <p style={{ marginTop: 16, color: "#595959" }}>
+                          This keyword is associated with category:{" "}
+                          <strong>
+                            {categoryMap[selectedNode.data.categoryId]}
+                          </strong>
+                        </p>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="empty-state">
+                    <Empty description="Select a category from the tree to view its products" />
+                  </div>
+                )}
+              </Card>
             </div>
-            {selectedFloor && (
-              <div>
-                <strong>Select Room (optional)</strong>
-                <Select
-                  placeholder="Common area if not selected"
-                  style={{ width: "100%", marginTop: 8 }}
-                  value={selectedRoom}
-                  onChange={setSelectedRoom}
-                  allowClear
-                >
-                  {formData.floorDetails
-                    .find((f) => f.floor_number === selectedFloor)
-                    ?.rooms.map((room) => (
-                      <Option key={room.room_id} value={room.room_id}>
-                        {room.room_name} ({room.room_type})
-                      </Option>
-                    ))}
-                </Select>
-              </div>
-            )}
-          </Space>
-        </Modal>
+          </div>
+
+          {/* Modals */}
+          <AddParentCategoryModal
+            open={showParentModal}
+            onClose={closeParentModal}
+            editMode={!!editingItem && editingItem.type === "parent"}
+            parentCategoryData={
+              editingItem?.type === "parent" ? editingItem : null
+            }
+          />
+
+          <AddCategoryModal
+            open={showCategoryModal}
+            onClose={closeCategoryModal}
+            editMode={!!editingItem && editingItem.type === "category"}
+            categoryData={editingItem?.type === "category" ? editingItem : null}
+            selectedParentId={
+              selectedNode?.type === "parent" ? selectedNode.id : null
+            }
+          />
+
+          <AddKeywordModal
+            open={showKeywordModal}
+            onClose={closeKeywordModal}
+            editData={editingItem?.type === "keyword" ? editingItem : null}
+            selectedCategoryId={
+              selectedNode?.type === "category" ? selectedNode.id : null
+            }
+          />
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
-export default AddSiteMap;
+export default CategoryManagement;

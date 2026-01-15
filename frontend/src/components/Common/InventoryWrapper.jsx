@@ -357,11 +357,17 @@ const InventoryWrapper = () => {
             {record.name || "Unnamed Product"}
           </Link>
           <div style={{ fontSize: 12, color: "#000", marginTop: 4 }}>
-            {record.product_code && <Text code>{record.product_code}</Text>}
+            {record.product_code && (
+              <Text code style={{ color: "#333" }}>
+                {record.product_code}
+              </Text>
+            )}
             {record.product_code &&
               getCompanyCode(record.metaDetails) !== "N/A" &&
               " • "}
-            <Text code>{getCompanyCode(record.metaDetails)}</Text>
+            <Text code style={{ color: "#333" }}>
+              {getCompanyCode(record.metaDetails)}
+            </Text>
           </div>
         </div>
       ),

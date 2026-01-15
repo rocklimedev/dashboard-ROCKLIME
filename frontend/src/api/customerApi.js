@@ -11,8 +11,27 @@ export const customerApi = baseApi.injectEndpoints({
       invalidatesTags: ["Customers"], // Invalidate to refetch customers
     }),
     getCustomers: builder.query({
-      query: () => "/customers/",
-      providesTags: ["Customers"], // Tag to allow invalidation
+      query: (filters = {}) => {
+        const params = new URLSearchParams();
+
+        // Always include pagination
+        params.append("page", filters.page ?? 1);
+        params.append("limit", filters.limit ?? 20);
+
+        // Search (only if provided)
+        if (filters.search?.trim()) {
+          params.append("search", filters.search.trim());
+        }
+
+        // Add more filters here later if needed (e.g. customerType)
+        // if (filters.customerType && filters.customerType !== "All") {
+        //   params.append("customerType", filters.customerType);
+        // }
+
+        const queryString = params.toString();
+        return queryString ? `/customers/?${queryString}` : "/customers/";
+      },
+      providesTags: ["Customers"],
     }),
     getCustomerById: builder.query({
       query: (id) => `/customers/${id}`,

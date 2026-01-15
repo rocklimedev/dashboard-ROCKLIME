@@ -179,6 +179,7 @@ const CartItemRow = ({
           <RemoveButton
             danger
             icon={<DeleteFilled />}
+            style={{ color: "#333333", border: "none" }}
             onClick={(e) => handleRemoveItem(e, item.productId)}
             disabled={updatingItems[item.productId]}
             loading={updatingItems[item.productId]}

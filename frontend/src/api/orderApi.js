@@ -108,7 +108,26 @@ export const orderApi = baseApi.injectEndpoints({
       providesTags: ["Orders"],
     }),
     getAllOrders: builder.query({
-      query: () => "/order/all",
+      query: (filters = {}) => {
+        const params = new URLSearchParams();
+
+        // Add only non-empty values
+        if (filters.search?.trim()) {
+          params.append("search", filters.search.trim());
+        }
+        if (filters.status?.trim()) {
+          params.append("status", filters.status.trim());
+        }
+        if (filters.priority?.trim()) {
+          params.append("priority", filters.priority.trim());
+        }
+
+        // Always include pagination
+        params.append("page", filters.page ?? 1);
+        params.append("limit", filters.limit ?? 20);
+
+        return `/order/all?${params.toString()}`;
+      },
       providesTags: ["Orders"],
     }),
     orderById: builder.query({
