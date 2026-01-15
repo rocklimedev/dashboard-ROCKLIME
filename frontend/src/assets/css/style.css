@@ -14,7 +14,7 @@
 /******* Base *******/
 body {
   font-family: "Lato";
-  font-size: 13px;
+  font-size: 14px;
   color: #333333;
   line-height: 1.5;
   background-color: #f7f7f7;
@@ -4558,7 +4558,7 @@ h3,
 
 h4,
 .h4 {
-  font-size: 1.125rem;
+    font-size: 25px;
 }
 
 h5,

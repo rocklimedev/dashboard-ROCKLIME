@@ -168,7 +168,7 @@ const SearchPage = () => {
       },
       Order: {
         link: `/order/${item.id}`,
-        title: item.title || `Order #${item.id || "N/A"}`,
+        title: item.title || `Order #${item.orderNo || "N/A"}`,
       },
       Invoice: {
         link: `/invoice/${item.invoiceId}`,

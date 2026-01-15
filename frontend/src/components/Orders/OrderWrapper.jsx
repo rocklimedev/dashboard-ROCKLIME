@@ -402,14 +402,21 @@ const OrderWrapper = () => {
                                     : "#721c24",
                                 }}
                               >
-                                {order.quotationId ? "QUOTATIONED" : "IDLE"}
+                                {order.quotationId ? "" : "IDLE"}
                               </span>
                             </td>
 
                             <td>
-                              <span className="badge bg-secondary">
+                              <span
+                                className="badge"
+                                style={{
+                                  backgroundColor: "#e6eaed",
+                                  color: "black",
+                                }}
+                              >
                                 {order.status || "PREPARING"}
                               </span>
+
                               {canUpdateOrderStatus && (
                                 <Dropdown
                                   overlay={

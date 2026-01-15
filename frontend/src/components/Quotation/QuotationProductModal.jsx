@@ -1,23 +1,21 @@
-import React, { useMemo } from "react";
-import { Modal, Table, Image, Spin, Empty, Typography, Grid, Card } from "antd";
+import React from "react";
+import { Modal, Table, Image, Spin, Empty, Typography, Card } from "antd";
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { useGetQuotationByIdQuery } from "../../api/quotationApi";
-
+import { useMemo } from "react";
 const { Text, Title } = Typography;
-const { useBreakpoint } = Grid;
 
-const safeParse = (str, fallback = []) => {
-  if (Array.isArray(str)) return str;
-  if (!str) return fallback;
+const safeParse = (data, fallback = []) => {
+  if (Array.isArray(data)) return data;
+  if (!data) return fallback;
   try {
-    return JSON.parse(str);
+    return JSON.parse(data);
   } catch {
     return fallback;
   }
 };
 
 const QuotationProductModal = ({ show, onHide, quotationId }) => {
-  const screens = useBreakpoint();
   const {
     data: q = {},
     isLoading,
@@ -26,29 +24,23 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
     skip: !quotationId,
   });
 
-  const products = useMemo(() => safeParse(q.products, []), [q.products]);
-  const items = useMemo(
-    () => (Array.isArray(q.items) ? q.items : []),
-    [q.items]
-  );
+  // Prefer items array if available, fallback to products
+  const lineItems = useMemo(() => {
+    const items = safeParse(q.items, []);
+    const products = safeParse(q.products, []);
+    return items.length > 0 ? items : products;
+  }, [q.items, q.products]);
 
-  const lineItems = items.length > 0 ? items : products;
   const hasValidItems = lineItems.length > 0;
 
-  // === Summary Calculations ===
-  const subtotal = useMemo(() => {
-    return lineItems.reduce((sum, item) => sum + Number(item.total || 0), 0);
-  }, [lineItems]);
-
-  const extraDiscount = Number(q.extraDiscount || 0);
+  // Use pre-calculated financials from API response (no manual math)
+  const subtotal = Number(q.subtotal || 0); // If API sends it, otherwise fallback
   const extraDiscountAmount = Number(q.discountAmount || q.extraDiscount || 0);
   const shippingAmount = Number(q.shippingAmount || 0);
   const gstRate = Number(q.gst || 0);
+  const gstAmount = Number(q.gstAmount || 0); // Prefer if API sends
   const roundOff = Number(q.roundOff || 0);
   const finalAmount = Number(q.finalAmount || 0);
-
-  const taxableAmount = subtotal - extraDiscountAmount + shippingAmount;
-  const gstAmount = gstRate > 0 ? (taxableAmount * gstRate) / 100 : 0;
 
   const columns = [
     {
@@ -70,6 +62,7 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
             height={60}
             style={{ objectFit: "cover", borderRadius: 6 }}
             preview={{ mask: "View" }}
+            fallback="https://via.placeholder.com/60?text=No+Image"
           />
         ) : (
           <div
@@ -132,39 +125,32 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
       align: "right",
       render: (_, record) => {
         const total = Number(record.total || 0);
-        const fallback =
-          Number(record.price || record.sellingPrice || 0) *
-            Number(record.quantity || 1) -
-          (record.discountType === "percent"
-            ? (Number(record.price || record.sellingPrice || 0) *
-                Number(record.quantity || 1) *
-                Number(record.discount || 0)) /
-              100
-            : Number(record.discount || 0));
-
-        const displayTotal = total > 0 ? total : fallback;
-        return <Text strong>₹{displayTotal.toFixed(2)}</Text>;
+        return <Text strong>₹{total.toFixed(2)}</Text>;
       },
     },
   ];
 
   const tableSummary = () => (
     <>
-      <Table.Summary.Row>
-        <Table.Summary.Cell index={0} colSpan={6} align="right">
-          <Text strong>Subtotal</Text>
-        </Table.Summary.Cell>
-        <Table.Summary.Cell index={1} align="right">
-          <Text strong>₹{subtotal.toFixed(2)}</Text>
-        </Table.Summary.Cell>
-      </Table.Summary.Row>
+      {/* Subtotal */}
+      {subtotal > 0 && (
+        <Table.Summary.Row>
+          <Table.Summary.Cell index={0} colSpan={6} align="right">
+            <Text strong>Subtotal</Text>
+          </Table.Summary.Cell>
+          <Table.Summary.Cell index={1} align="right">
+            <Text strong>₹{subtotal.toFixed(2)}</Text>
+          </Table.Summary.Cell>
+        </Table.Summary.Row>
+      )}
 
-      {extraDiscount > 0 && (
+      {/* Extra Discount */}
+      {extraDiscountAmount > 0 && (
         <Table.Summary.Row>
           <Table.Summary.Cell index={0} colSpan={6} align="right">
             <Text>
               Extra Discount{" "}
-              {q.extraDiscountType === "percent" ? `(${extraDiscount}%)` : ""}
+              {q.extraDiscountType === "percent" ? `(${q.extraDiscount}%)` : ""}
             </Text>
           </Table.Summary.Cell>
           <Table.Summary.Cell index={1} align="right">
@@ -173,6 +159,7 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
         </Table.Summary.Row>
       )}
 
+      {/* Shipping */}
       {shippingAmount > 0 && (
         <Table.Summary.Row>
           <Table.Summary.Cell index={0} colSpan={6} align="right">
@@ -184,6 +171,7 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
         </Table.Summary.Row>
       )}
 
+      {/* GST */}
       {gstRate > 0 && (
         <Table.Summary.Row>
           <Table.Summary.Cell index={0} colSpan={6} align="right">
@@ -195,6 +183,7 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
         </Table.Summary.Row>
       )}
 
+      {/* Round Off */}
       {roundOff !== 0 && (
         <Table.Summary.Row>
           <Table.Summary.Cell index={0} colSpan={6} align="right">
@@ -208,7 +197,8 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
         </Table.Summary.Row>
       )}
 
-      <Table.Summary.Row style={{ background: "#fafafa" }}>
+      {/* Final Amount - Highlighted */}
+      <Table.Summary.Row style={{ background: "#f0f9ff" }}>
         <Table.Summary.Cell index={0} colSpan={6} align="right">
           <Text strong style={{ fontSize: "1.1em" }}>
             Final Amount
@@ -226,9 +216,9 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
   if (isLoading) {
     return (
       <Modal open={show} onCancel={onHide} footer={null} centered width={600}>
-        <div style={{ textAlign: "center", padding: "60px 0" }}>
+        <div style={{ textAlign: "center", padding: "80px 0" }}>
           <Spin size="large" />
-          <div style={{ marginTop: 16 }}>
+          <div style={{ marginTop: 24 }}>
             <Text type="secondary">Loading quotation details…</Text>
           </div>
         </div>
@@ -239,14 +229,16 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
   if (isError || !q.quotationId) {
     return (
       <Modal open={show} onCancel={onHide} footer={null} centered width={500}>
-        <div style={{ textAlign: "center", padding: "50px 0" }}>
+        <div style={{ textAlign: "center", padding: "60px 0" }}>
           <ExclamationCircleOutlined
-            style={{ fontSize: 48, color: "#ff4d4f" }}
+            style={{ fontSize: 64, color: "#ff4d4f" }}
           />
-          <Title level={4} style={{ margin: "16px 0 8px" }}>
+          <Title level={4} style={{ margin: "24px 0 8px" }}>
             Failed to load quotation
           </Title>
-          <Text type="secondary">Please try again later.</Text>
+          <Text type="secondary">
+            Please try again later or contact support.
+          </Text>
         </div>
       </Modal>
     );
@@ -257,7 +249,7 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
       open={show}
       onCancel={onHide}
       footer={null}
-      width={screens.lg ? 1100 : "70%"}
+      width={1200}
       centered
       title={
         <Title level={4} style={{ margin: 0 }}>
@@ -267,7 +259,9 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
     >
       <div style={{ padding: "16px 0" }}>
         {!hasValidItems ? (
-          <Empty description="No products found in this quotation." />
+          <Card>
+            <Empty description="No products found in this quotation." />
+          </Card>
         ) : (
           <Card bodyStyle={{ padding: 0 }}>
             <Table
@@ -277,7 +271,7 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
               pagination={false}
               bordered
               size="middle"
-              scroll={{ x: 900 }}
+              scroll={{ x: "max-content" }}
               summary={tableSummary}
             />
           </Card>
