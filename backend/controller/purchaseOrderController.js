@@ -1,12 +1,13 @@
 const { Op } = require("sequelize");
+const moment = require("moment");
 const sequelize = require("../config/database");
 const { v4: uuidv4 } = require("uuid");
-const { sendNotification } = require("./notificationController"); // Import sendNotification
+const { sendNotification } = require("./notificationController");
 const { Product, Vendor, PurchaseOrder } = require("../models");
-// Assume an admin user ID or system channel for notifications
-const ADMIN_USER_ID = "2ef0f07a-a275-4fe1-832d-fe9a5d145f60"; // Replace with actual admin user ID or channel
 
-// Helper function to validate items
+const ADMIN_USER_ID = "2ef0f07a-a275-4fe1-832d-fe9a5d145f60"; // ← replace if needed
+
+// Helper function to validate items (unchanged)
 const validateItems = async (items, transaction) => {
   if (!Array.isArray(items) || items.length === 0) {
     throw new Error("Items array is required and cannot be empty");
@@ -23,7 +24,6 @@ const validateItems = async (items, transaction) => {
     if (!item.quantity || item.quantity <= 0 || isNaN(item.quantity)) {
       throw new Error(`Invalid quantity for product: ${item.productId}`);
     }
-    // Accept either unitPrice or mrp, with unitPrice taking precedence
     const price = item.unitPrice ?? item.mrp;
     if (!price || price <= 0 || isNaN(price)) {
       throw new Error(`Invalid unit price for product: ${item.productId}`);
@@ -33,15 +33,77 @@ const validateItems = async (items, transaction) => {
   return totalAmount.toFixed(2);
 };
 
-// Utility function to generate random PO number
-function generateRandomPONumber() {
-  const randomNumber = Math.floor(100000 + Math.random() * 900000); // 6-digit number
-  return `PO-${randomNumber}`;
+// ─────────────────────────────────────────────────────────────
+// Helper: Generate next daily sequential poNumber (PO + DDMMYY + seq)
+// Safe inside transaction — retries on collision
+// ─────────────────────────────────────────────────────────────
+async function generateDailyPONumber(t) {
+  const todayStart = moment().startOf("day").toDate();
+  const todayEnd = moment().endOf("day").toDate();
+  const prefix = moment().format("DDMMYY"); // e.g. 150126
+
+  let attempt = 0;
+  const MAX_ATTEMPTS = 15;
+
+  while (attempt < MAX_ATTEMPTS) {
+    attempt++;
+
+    // Find the highest sequence number used today
+    const lastPO = await PurchaseOrder.findOne({
+      where: {
+        poNumber: {
+          [Op.like]: `PO${prefix}%`,
+        },
+        createdAt: {
+          [Op.between]: [todayStart, todayEnd],
+        },
+      },
+      attributes: ["poNumber"],
+      order: [["poNumber", "DESC"]],
+      limit: 1,
+      transaction: t,
+      lock: t.LOCK.UPDATE, // helps reduce race condition window
+    });
+
+    let nextSeq = 101;
+
+    if (lastPO) {
+      const lastSeqStr = lastPO.poNumber.slice(8); // after "PO" + "DDMMYY"
+      const parsed = parseInt(lastSeqStr, 10);
+      if (!isNaN(parsed)) {
+        nextSeq = parsed + 1;
+      }
+    }
+
+    const candidate = `PO${prefix}${nextSeq}`;
+
+    // Final check — does this exact number already exist?
+    const conflict = await PurchaseOrder.findOne({
+      where: { poNumber: candidate },
+      transaction: t,
+    });
+
+    if (!conflict) {
+      return candidate;
+    }
+
+    // Collision → try next number
+    console.warn(
+      `PO number collision: ${candidate} — retrying (${attempt}/${MAX_ATTEMPTS})`
+    );
+  }
+
+  throw new Error(
+    `Failed to generate unique PO number after ${MAX_ATTEMPTS} attempts`
+  );
 }
 
-// Create a new purchase order
+// ─────────────────────────────────────────────────────────────
+// Create a new purchase order — with server-generated poNumber
+// ─────────────────────────────────────────────────────────────
 exports.createPurchaseOrder = async (req, res) => {
   const t = await sequelize.transaction();
+
   try {
     const { vendorId, items, expectedDeliveryDate } = req.body;
 
@@ -61,33 +123,22 @@ exports.createPurchaseOrder = async (req, res) => {
     // Validate items and calculate total amount
     const totalAmount = await validateItems(items, t);
 
-    // Generate unique order number
-    let poNumber;
-    let isUnique = false;
-
-    // Ensure uniqueness in the DB
-    while (!isUnique) {
-      poNumber = generateRandomPONumber();
-      const existingPO = await PurchaseOrder.findOne({
-        where: { poNumber },
-        transaction: t,
-      });
-      if (!existingPO) isUnique = true;
-    }
+    // Generate unique daily sequential PO number
+    const poNumber = await generateDailyPONumber(t);
 
     // Create Sequelize PurchaseOrder
     const purchaseOrder = await PurchaseOrder.create(
       {
-        poNumber,
+        poNumber, // ← generated here
         vendorId,
         status: "pending",
         orderDate: new Date(),
         totalAmount,
-        expectDeliveryDate: expectedDeliveryDate,
+        expectDeliveryDate: expectedDeliveryDate || null,
         items: items.map((item) => ({
           productId: item.productId,
           quantity: item.quantity,
-          unitPrice: item.unitPrice ?? item.mrp, // Use unitPrice or mrp
+          unitPrice: item.unitPrice ?? item.mrp,
         })),
       },
       { transaction: t }
@@ -97,10 +148,11 @@ exports.createPurchaseOrder = async (req, res) => {
     await sendNotification({
       userId: ADMIN_USER_ID,
       title: `New Purchase Order Created #${poNumber}`,
-      message: `Purchase order #${poNumber} created for vendor ${vendor.vendorName} with total amount $${totalAmount}.`,
+      message: `Purchase order #${poNumber} created for vendor ${vendor.vendorName} with total amount ₹${totalAmount}.`,
     });
 
     await t.commit();
+
     return res.status(201).json({
       message: "Purchase order created successfully",
       purchaseOrder: {
@@ -110,6 +162,7 @@ exports.createPurchaseOrder = async (req, res) => {
     });
   } catch (error) {
     await t.rollback();
+    console.error("Create Purchase Order Error:", error);
     return res.status(500).json({
       message: "Error creating purchase order",
       error: error.message,

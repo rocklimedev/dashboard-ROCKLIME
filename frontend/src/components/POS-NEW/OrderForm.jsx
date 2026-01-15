@@ -31,12 +31,14 @@ import { useCreateAddressMutation } from "../../api/addressApi";
 import { useGetAllOrdersQuery } from "../../api/orderApi";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { useAuth } from "../../context/AuthContext"; // <-- ADD THIS
+import { useAuth } from "../../context/AuthContext";
 import AddCustomerModal from "../Customers/AddCustomerModal";
+
 const { Text, Title } = Typography;
 const { Option } = Select;
 const { Panel } = Collapse;
 const RESTRICTED_ROLES = ["SUPER_ADMIN", "DEVELOPER", "ADMIN"];
+
 /* ────────────────────── Styled ────────────────────── */
 const CompactCard = styled(Card)`
   border-radius: 8px;
@@ -148,7 +150,7 @@ const OrderForm = ({
   documentType,
   setDocumentType,
 }) => {
-  const { auth } = useAuth(); // <-- GET CURRENT USER ROLE
+  const { auth } = useAuth();
   const canCreatePurchaseOrder =
     auth?.role && RESTRICTED_ROLES.includes(auth.role);
 
@@ -183,8 +185,6 @@ const OrderForm = ({
 
   const handleSourceCustomerAdded = () => {
     setSourceModalVisible(false);
-    // Optional: you can refetch customers here if you pass a refetch prop
-    // or let the parent re-fetch on its own.
   };
   /* ────── Memos ────── */
   const filteredAddresses = useMemo(
@@ -298,15 +298,11 @@ const OrderForm = ({
 
   const gstBase = (base - Number(extraDiscAmt)).toFixed(2);
   const gstAmt = ((Number(gstBase) * gst) / 100).toFixed(2);
-
-  /* ────── Validation Helpers ────── */
-  const validOrderNo = (no) => /^\d{1,2}\d{1,2}25\d{3,}$/.test(no);
-  const uniqueOrderNo = (no) => !orders.some((o) => o.orderNo === no);
-  /* ────── Prevent same user in Primary & Secondary ────── */
   const availableSecondaryUsers = useMemo(() => {
     if (!orderData?.assignedUserId) return users;
     return users.filter((u) => u.userId !== orderData.assignedUserId);
   }, [users, orderData?.assignedUserId]);
+  /* ────── Validation Helpers ────── */
   const validateField = useCallback(
     (field) => {
       const err = {};
@@ -321,15 +317,6 @@ const OrderForm = ({
           break;
         case "dueDate":
           if (!orderData?.dueDate) err.dueDate = "Due date is required";
-          break;
-        case "orderNo":
-          if (!orderData?.orderNo) {
-            err.orderNo = "Order number is required";
-          } else if (!validOrderNo(orderData.orderNo)) {
-            err.orderNo = "Invalid format (e.g., 250425001)";
-          } else if (!uniqueOrderNo(orderData.orderNo)) {
-            err.orderNo = "Order number already exists";
-          }
           break;
         case "assignment":
           if (assignmentType === "team" && !orderData?.assignedTeamId) {
@@ -355,24 +342,9 @@ const OrderForm = ({
 
       return err;
     },
-    [
-      selectedCustomer,
-      useBillingAddress,
-      orderData,
-      assignmentType,
-      sourceType,
-      validOrderNo,
-      uniqueOrderNo,
-    ]
+    [selectedCustomer, useBillingAddress, orderData, assignmentType, sourceType]
   );
-  useEffect(() => {
-    if (
-      orderData.extraDiscountType &&
-      orderData.extraDiscountType !== "fixed"
-    ) {
-      handleOrderChange("extraDiscountType", "fixed");
-    }
-  }, [orderData.extraDiscountType, handleOrderChange]);
+
   /* ────── Force Extra Discount to Fixed Amount ────── */
   useEffect(() => {
     if (extraDiscountType !== "fixed") {
@@ -380,19 +352,15 @@ const OrderForm = ({
       handleOrderChange("extraDiscountType", "fixed");
     }
   }, [extraDiscountType, handleOrderChange]);
+
   /* ────── Real-time Validation ────── */
   useEffect(() => {
     const newErrors = {};
-    [
-      "customer",
-      "shipping",
-      "dueDate",
-      "orderNo",
-      "assignment",
-      "source",
-    ].forEach((field) => {
-      Object.assign(newErrors, validateField(field));
-    });
+    ["customer", "shipping", "dueDate", "assignment", "source"].forEach(
+      (field) => {
+        Object.assign(newErrors, validateField(field));
+      }
+    );
     setErrors(newErrors);
   }, [
     selectedCustomer,
@@ -599,7 +567,6 @@ const OrderForm = ({
                   <Text strong>Customer</Text>
                 </Col>
                 <Col span={16}>
-                  {/* Added + button for source customer */}
                   <Space.Compact block>
                     <MiniSelect
                       value={orderData?.source}
@@ -618,7 +585,7 @@ const OrderForm = ({
                     <Button
                       type="primary"
                       onClick={handleAddSourceCustomer}
-                      disabled={!sourceType} // only allow adding when a type is selected
+                      disabled={!sourceType}
                     >
                       +
                     </Button>
@@ -840,33 +807,6 @@ const OrderForm = ({
             <Panel header="Misc & Discount" key="5">
               <TightRow gutter={8}>
                 <Col span={8}>
-                  <Text strong>
-                    Order No <span style={{ color: "red" }}>*</span>
-                  </Text>
-                </Col>
-                <Col span={16}>
-                  <MiniInput
-                    value={orderData?.orderNo || ""}
-                    onChange={(e) =>
-                      handleOrderChange("orderNo", e.target.value)
-                    }
-                    placeholder="e.g., 250425001"
-                    status={hasError("orderNo") ? "error" : ""}
-                    disabled
-                  />
-                  {hasError("orderNo") && (
-                    <Text
-                      type="danger"
-                      style={{ fontSize: 12, display: "block" }}
-                    >
-                      {getError("orderNo")}
-                    </Text>
-                  )}
-                </Col>
-              </TightRow>
-
-              <TightRow gutter={8}>
-                <Col span={8}>
                   <Text strong>Status</Text>
                 </Col>
                 <Col span={16}>
@@ -898,26 +838,6 @@ const OrderForm = ({
                   </MiniSelect>
                 </Col>
               </TightRow>
-              {/* <TightRow gutter={8}>
-                <Col span={8}>
-                  <Text strong>Shipping</Text>
-                </Col>
-                <Col span={16}>
-                  <Space.Compact block>
-                    <MiniNumber
-                      value={shipping}
-                      onChange={onShippingChange}
-                      min={0}
-                      step={1}
-                      placeholder="0"
-                      addonAfter="₹"
-                    />
-                  </Space.Compact>
-                  <Text type="secondary" style={{ fontSize: 11 }} block>
-                    +₹{safeShipping.toFixed(2)}
-                  </Text>
-                </Col>
-              </TightRow> */}
               <TightRow gutter={8}>
                 <Col span={8}>
                   <Text strong>GST %</Text>
@@ -989,7 +909,6 @@ const OrderForm = ({
       <Col xs={24} md={8}>
         <CompactCard title={<Text strong>Summary</Text>}>
           <OrderTotal
-            // shipping={shipping}
             tax={tax}
             discount={totalDiscount}
             roundOff={roundOff}
@@ -1026,9 +945,6 @@ const OrderForm = ({
       <AddCustomerModal
         visible={sourceModalVisible}
         onClose={() => setSourceModalVisible(false)}
-        // No customer prop → it will be in "Add" mode
-        // You can pass a callback if you want to do something after creation
-        // onSuccess={handleSourceCustomerAdded} // optional
       />
     </Row>
   );

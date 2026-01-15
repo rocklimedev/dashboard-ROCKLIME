@@ -1,4 +1,5 @@
 const { v4: uuidv4 } = require("uuid");
+const moment = require("moment");
 const QuotationItem = require("../models/quotationItem");
 const QuotationVersion = require("../models/quotationVersion");
 const sequelize = require("../config/database");
@@ -7,9 +8,7 @@ const { Product, Quotation } = require("../models");
 const { Op } = require("sequelize");
 
 // ---------------------------------------------------------------------
-// Helper: Calculate totals (uses `total` if provided, else price × qty)
-// ---------------------------------------------------------------------
-// Helper: Calculate totals (ROUND-OFF BEFORE GST, GST LAST)
+// Helper: Calculate totals (unchanged)
 // ---------------------------------------------------------------------
 const calculateTotals = (
   products,
@@ -92,9 +91,73 @@ const calculateTotals = (
 };
 
 // ---------------------------------------------------------------------
-// CREATE QUOTATION – FULLY FIXED
+// Helper: Generate next daily sequential reference_number (QUO + DDMMYY + seq)
+// Safe inside transaction — retries on collision
 // ---------------------------------------------------------------------
+async function generateQuotationNumber(t) {
+  const todayStart = moment().startOf("day").toDate();
+  const todayEnd = moment().endOf("day").toDate();
+  const prefix = moment().format("DDMMYY"); // e.g. 150126
 
+  let attempt = 0;
+  const MAX_ATTEMPTS = 15;
+
+  while (attempt < MAX_ATTEMPTS) {
+    attempt++;
+
+    // Find the highest sequence number used today
+    const lastQuotation = await Quotation.findOne({
+      where: {
+        reference_number: {
+          [Op.like]: `QUO${prefix}%`,
+        },
+        createdAt: {
+          [Op.between]: [todayStart, todayEnd],
+        },
+      },
+      attributes: ["reference_number"],
+      order: [["reference_number", "DESC"]],
+      limit: 1,
+      transaction: t,
+      lock: t.LOCK.UPDATE, // Helps reduce race window
+    });
+
+    let nextSeq = 101;
+
+    if (lastQuotation) {
+      const lastNumStr = lastQuotation.reference_number.slice(8); // after QUO + DDMMYY
+      const parsed = parseInt(lastNumStr, 10);
+      if (!isNaN(parsed)) {
+        nextSeq = parsed + 1;
+      }
+    }
+
+    const candidate = `QUO${prefix}${nextSeq}`;
+
+    // Final check — does this exact number already exist?
+    const conflict = await Quotation.findOne({
+      where: { reference_number: candidate },
+      transaction: t,
+    });
+
+    if (!conflict) {
+      return candidate;
+    }
+
+    // Collision → try next number
+    console.warn(
+      `Quotation number collision: ${candidate} — retrying (${attempt}/${MAX_ATTEMPTS})`
+    );
+  }
+
+  throw new Error(
+    `Failed to generate unique quotation number after ${MAX_ATTEMPTS} attempts`
+  );
+}
+
+// ---------------------------------------------------------------------
+// CREATE QUOTATION – WITH SERVER-GENERATED reference_number
+// ---------------------------------------------------------------------
 exports.createQuotation = async (req, res) => {
   const t = await sequelize.transaction();
   let mongoItem;
@@ -106,11 +169,11 @@ exports.createQuotation = async (req, res) => {
       extraDiscountType = "percent",
       shippingAmount = 0,
       gst = 0,
-      // ← IGNORE clientRoundOff & clientFinalAmount → WE TRUST SERVER ONLY
+      // IGNORE client-provided reference_number if sent
       ...quotationData
     } = req.body;
 
-    // ---------- 1. Safe parsing ----------
+    // 1. Safe parsing
     if (typeof products === "string") {
       try {
         products = JSON.parse(products);
@@ -119,7 +182,7 @@ exports.createQuotation = async (req, res) => {
       }
     }
 
-    // ---------- 2. Validation ----------
+    // 2. Validation
     if (!Array.isArray(products) || products.length === 0) {
       return res
         .status(400)
@@ -129,7 +192,7 @@ exports.createQuotation = async (req, res) => {
       return res.status(400).json({ error: "Customer ID is required" });
     }
 
-    // ---------- 3. Fetch product names & images ----------
+    // 3. Fetch product details
     const productIds = [
       ...new Set(products.map((p) => p.productId || p.id).filter(Boolean)),
     ];
@@ -169,8 +232,7 @@ exports.createQuotation = async (req, res) => {
       });
     }
 
-    // ---------- 4. Enrich products ----------
-    // In createQuotation – enrichedProducts
+    // 4. Enrich products
     const enrichedProducts = products.map((p) => {
       const id = p.productId || p.id;
       const db = productMap[id] || {};
@@ -191,8 +253,8 @@ exports.createQuotation = async (req, res) => {
         productId: id,
         name: p.name || db.name || "Unknown Product",
         imageUrl: p.imageUrl || db.imageUrl || null,
-        productCode: p.productCode || db.productCode || null, // ← NEW
-        companyCode: p.companyCode || db.companyCode || null, // ← NEW
+        productCode: p.productCode || db.productCode || null,
+        companyCode: p.companyCode || db.companyCode || null,
         quantity: qty,
         price: parseFloat(price.toFixed(2)),
         discount: parseFloat(discount.toFixed(2)),
@@ -202,7 +264,7 @@ exports.createQuotation = async (req, res) => {
       };
     });
 
-    // ---------- 5. SERVER-SIDE CALCULATION (TRUSTED) ----------
+    // 5. Server-side calculation
     const {
       subTotal,
       totalItemDiscount,
@@ -210,7 +272,7 @@ exports.createQuotation = async (req, res) => {
       extraDiscountAmount,
       roundOff,
       gstAmount,
-      finalAmount, // ← THIS IS THE SOURCE OF TRUTH
+      finalAmount,
     } = calculateTotals(
       enrichedProducts,
       Number(extraDiscount),
@@ -219,10 +281,14 @@ exports.createQuotation = async (req, res) => {
       Number(gst)
     );
 
-    // ---------- 6. Save to PostgreSQL ----------
+    // 6. Generate unique daily sequential reference_number
+    const reference_number = await generateQuotationNumber(t);
+
+    // 7. Save to MySQL
     const quotation = await Quotation.create(
       {
         ...quotationData,
+        reference_number, // ← generated here
         products: enrichedProducts,
         extraDiscount: Number(extraDiscount) || 0,
         extraDiscountType: extraDiscountType || "percent",
@@ -231,13 +297,13 @@ exports.createQuotation = async (req, res) => {
         gst: Number(gst) || 0,
         gstAmount: parseFloat(gstAmount.toFixed(2)),
         roundOff: parseFloat(roundOff.toFixed(2)),
-        finalAmount: parseFloat(finalAmount.toFixed(2)), // ← SERVER VALUE
+        finalAmount: parseFloat(finalAmount.toFixed(2)),
         subTotal: parseFloat(subTotal.toFixed(2)),
       },
       { transaction: t }
     );
 
-    // ---------- 7. Save items to MongoDB ----------
+    // 8. Save items to MongoDB
     await QuotationItem.create({
       quotationId: quotation.quotationId,
       items: enrichedProducts.map((p) => ({
@@ -249,9 +315,9 @@ exports.createQuotation = async (req, res) => {
         discount: p.discount,
         discountType: p.discountType,
         tax: p.tax,
-        total: p.total, // ← FIX: was null
+        total: p.total,
       })),
-    });
+    }); // Note: MongoDB session if using transactions there too
 
     await t.commit();
 
@@ -259,6 +325,7 @@ exports.createQuotation = async (req, res) => {
       message: "Quotation created successfully",
       quotation: {
         ...quotation.toJSON(),
+        reference_number,
         finalAmount: parseFloat(finalAmount.toFixed(2)),
       },
       calculated: {
@@ -278,13 +345,13 @@ exports.createQuotation = async (req, res) => {
       await QuotationItem.deleteOne({ _id: mongoItem._id }).catch(() => {});
     }
 
+    console.error("Create Quotation Error:", error);
     return res.status(500).json({
       error: "Failed to create quotation",
       details: error.message,
     });
   }
 };
-
 // ========== UPDATE FUNCTION ==========
 exports.updateQuotation = async (req, res) => {
   const t = await sequelize.transaction();
@@ -846,26 +913,36 @@ exports.getQuotationById = async (req, res) => {
 
 exports.getAllQuotations = async (req, res) => {
   try {
-    // Pagination params
+    // ─────────────────────────────────────────────
+    // Pagination parameters
+    // ─────────────────────────────────────────────
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 20;
     const offset = (page - 1) * limit;
 
-    // Optional search (on title, reference_number, etc.)
-    const search = req.query.search?.trim();
-    const where = search
-      ? {
-          [Op.or]: [
-            { document_title: { [Op.iLike]: `%${search}%` } },
-            { reference_number: { [Op.iLike]: `%${search}%` } },
-          ],
-        }
-      : {};
+    // ─────────────────────────────────────────────
+    // Build dynamic WHERE clause
+    // ─────────────────────────────────────────────
+    const where = {};
 
-    // Optional filters
+    // Search filter (case-insensitive via LIKE on common collation)
+    const search = req.query.search?.trim();
+    if (search) {
+      const searchTerm = `%${search}%`;
+      where[Op.or] = [
+        { document_title: { [Op.like]: searchTerm } },
+        { reference_number: { [Op.like]: searchTerm } },
+        // You can easily add more searchable fields here:
+        // { customer_notes: { [Op.like]: searchTerm } },
+      ];
+    }
+
+    // Customer filter
     if (req.query.customerId) {
       where.customerId = req.query.customerId;
     }
+
+    // Status filter
     if (req.query.status) {
       where.status = req.query.status;
     }
@@ -881,16 +958,19 @@ exports.getAllQuotations = async (req, res) => {
       }
     }
 
-    // Fetch paginated quotations from PostgreSQL (Sequelize)
+    // ─────────────────────────────────────────────
+    // Fetch paginated quotations (PostgreSQL → MySQL compatible)
+    // ─────────────────────────────────────────────
     const { count: totalQuotations, rows: quotations } =
       await Quotation.findAndCountAll({
         where,
         offset,
         limit,
-        order: [["quotation_date", "DESC"]], // or [["createdAt", "DESC"]]
+        order: [["quotation_date", "DESC"]], // or [['createdAt', 'DESC']]
         subQuery: false,
       });
 
+    // If no results → early return with empty array
     if (quotations.length === 0) {
       return res.status(200).json({
         data: [],
@@ -903,21 +983,22 @@ exports.getAllQuotations = async (req, res) => {
       });
     }
 
-    // Extract quotationIds for current page only
+    // ─────────────────────────────────────────────
+    // Enrich with MongoDB items (your hybrid setup)
+    // ─────────────────────────────────────────────
     const quotationIds = quotations.map((q) => q.quotationId);
 
-    // Fetch corresponding items from MongoDB in one query
     const mongoItems = await QuotationItem.find({
       quotationId: { $in: quotationIds },
-    }).lean(); // .lean() for plain JS objects (faster)
+    }).lean();
 
-    // Build lookup map: quotationId → items array
+    // Build lookup: quotationId → items array
     const itemsMap = {};
     mongoItems.forEach((itemDoc) => {
       itemsMap[itemDoc.quotationId] = itemDoc.items || [];
     });
 
-    // Enrich quotations with items
+    // Merge items into SQL quotations
     const enrichedQuotations = quotations.map((q) => {
       const plain = q.toJSON();
       return {
@@ -928,6 +1009,9 @@ exports.getAllQuotations = async (req, res) => {
 
     const totalPages = Math.ceil(totalQuotations / limit);
 
+    // ─────────────────────────────────────────────
+    // Final response
+    // ─────────────────────────────────────────────
     return res.status(200).json({
       data: enrichedQuotations,
       pagination: {

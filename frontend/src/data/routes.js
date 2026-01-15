@@ -74,6 +74,7 @@ import SiteMapList from "../components/SiteMap/SiteMapList";
 import SiteMapDetails from "../components/SiteMap/SiteMapDetails";
 import NewSiteMapDetails from "../components/SiteMap/NewSiteMapDetails";
 import BulkProductImport from "../components/Product/BulkProductImport";
+import SearchPage from "../components/Search/Search";
 
 const masterRoutes = [
   {
@@ -231,6 +232,13 @@ const masterRoutes = [
         icon: <FaListUl />,
         isSidebarActive: false,
         element: <SiteMapDetails />,
+      },
+      {
+        path: "/search",
+        name: "Search  Results",
+        icon: <FaListUl />,
+        isSidebarActive: false,
+        element: <SearchPage />,
       },
       {
         path: "/site-map/:id",

@@ -92,32 +92,44 @@ exports.createCustomer = async (req, res) => {
 };
 
 // Get all customers (no notification needed)
+
 exports.getCustomers = async (req, res) => {
   try {
-    // Pagination parameters: ?page=1&limit=20
+    // Pagination parameters
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 20;
     const offset = (page - 1) * limit;
 
-    // Optional: simple search by name or email
+    // Build dynamic WHERE clause
     const where = {};
-    if (req.query.search) {
+
+    // Search by name, email, or phone (use LIKE – case-insensitive in MySQL ci collation)
+    const search = req.query.search?.trim();
+    if (search) {
+      const searchTerm = `%${search}%`;
       where[Op.or] = [
-        { name: { [Op.iLike]: `%${req.query.search}%` } },
-        { email: { [Op.iLike]: `%${req.query.search}%` } },
-        { phone: { [Op.iLike]: `%${req.query.search}%` } },
+        { name: { [Op.like]: searchTerm } },
+        { email: { [Op.like]: searchTerm } },
+        { mobileNumber: { [Op.like]: searchTerm } },
+        // Add more fields if needed, e.g.:
+        // { companyName: { [Op.like]: searchTerm } },
       ];
     }
 
-    // Use findAndCountAll for pagination and total count
+    // Optional: Add customerType filter later if you want server-side
+    // if (req.query.customerType && req.query.customerType !== "All") {
+    //   where.customerType = req.query.customerType;
+    // }
+
+    // Fetch paginated customers
     const { count: totalCustomers, rows: customers } =
       await Customer.findAndCountAll({
         where,
         offset,
         limit,
-        order: [["name", "ASC"]], // or [["createdAt", "DESC"]] depending on preference
-        attributes: { exclude: ["createdAt", "updatedAt"] }, // optional: remove timestamps if not needed
-        subQuery: false, // safe to include even without nested includes
+        order: [["name", "ASC"]], // or [["createdAt", "DESC"]]
+        attributes: { exclude: ["createdAt", "updatedAt"] },
+        subQuery: false,
       });
 
     const totalPages = Math.ceil(totalCustomers / limit);

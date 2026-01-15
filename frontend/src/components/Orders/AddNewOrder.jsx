@@ -142,7 +142,7 @@ const AddNewOrder = ({ adminName }) => {
     priority: "medium",
     description: quotationData.description || "",
     invoiceLink: isEditMode ? "" : null,
-    orderNo: "",
+    // orderNo removed – backend assigns
     quotationId: quotationData.quotationId || "",
     masterPipelineNo: null,
     previousOrderNo: null,
@@ -241,18 +241,6 @@ const AddNewOrder = ({ adminName }) => {
   }, [formData.gst, formData.extraDiscount, formData.extraDiscountType]);
 
   /* ────────────────────── Effects ────────────────────── */
-  // generate orderNo
-  useEffect(() => {
-    if (!isEditMode && allOrdersData !== undefined) {
-      const today = moment().format("DDMM25");
-      const todayOrders = orders.filter((o) =>
-        moment(o.createdAt).isSame(moment(), "day")
-      );
-      const serial = todayOrders.length + 101;
-      setFormData((p) => ({ ...p, orderNo: `${today}${serial}` }));
-    }
-  }, [isEditMode, allOrdersData, orders]);
-
   // populate edit mode
   useEffect(() => {
     if (isEditMode && order && formData.orderNo !== order.orderNo) {
@@ -270,7 +258,7 @@ const AddNewOrder = ({ adminName }) => {
         priority: order.priority || "medium",
         description: order.description || "",
         invoiceLink: order.invoiceLink || "",
-        orderNo: order.orderNo || "",
+        orderNo: order.orderNo || "", // ← keep for display in edit mode
         quotationId: order.quotationId || "",
         masterPipelineNo: order.masterPipelineNo || null,
         previousOrderNo: order.previousOrderNo || null,
@@ -413,7 +401,7 @@ const AddNewOrder = ({ adminName }) => {
       priority: "medium",
       description: "",
       invoiceLink: isEditMode ? "" : null,
-      orderNo: isEditMode ? formData.orderNo : "",
+      // orderNo removed
       quotationId: "",
       masterPipelineNo: null,
       previousOrderNo: null,
@@ -458,34 +446,6 @@ const AddNewOrder = ({ adminName }) => {
   const momentToDate = (m) => (m && m.isValid() ? m.toDate() : null);
   const dateToMomentStr = (d) => (d ? moment(d).format("YYYY-MM-DD") : "");
 
-  const validateOrderNo = (no) => /^\d{1,2}\d{1,2}25\d{3,}$/.test(no);
-  const checkOrderNoUniqueness = useCallback(
-    (no, setNew = true) => {
-      if (!no || isEditMode) return true;
-      const exists = orders.some((o) => o.orderNo === no);
-      if (exists && setNew) {
-        const today = moment().format("DDMM25");
-        const todayOrders = orders.filter((o) =>
-          moment(o.createdAt).isSame(moment(), "day")
-        );
-        const newSerial = todayOrders.length + 102;
-        const newNo = `${today}${newSerial}`;
-        setFormData((p) => ({ ...p, orderNo: newNo }));
-        message.warning(
-          `Order number ${no} already exists. Generated ${newNo}`
-        );
-        return false;
-      }
-      return !exists;
-    },
-    [orders, isEditMode]
-  );
-
-  useEffect(() => {
-    if (!isEditMode && formData.orderNo)
-      checkOrderNoUniqueness(formData.orderNo);
-  }, [formData.orderNo, isEditMode, checkOrderNoUniqueness]);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -515,23 +475,19 @@ const AddNewOrder = ({ adminName }) => {
     )
       return message.error("Primary and Secondary Users cannot be the same.");
 
-    if (!validateOrderNo(formData.orderNo))
-      return message.error("Order Number must be DDMM25XXX (e.g., 151025101).");
-    if (isEditMode && formData.orderNo !== order?.orderNo)
-      return message.error("Order Number cannot be changed in update mode.");
-    if (!isEditMode && !checkOrderNoUniqueness(formData.orderNo, false))
-      return message.error("Order Number already exists.");
-
     if (!formData.dueDate) return message.error("Please select a due date.");
     if (!validateFollowupDates())
       return message.error("Timeline dates cannot be after the due date.");
 
     if (
       formData.masterPipelineNo &&
-      !validateOrderNo(formData.masterPipelineNo)
+      !/^\d{1,2}\d{1,2}25\d{3,}$/.test(formData.masterPipelineNo)
     )
       return message.error("Master Pipeline Number must be DDMM25XXX.");
-    if (formData.previousOrderNo && !validateOrderNo(formData.previousOrderNo))
+    if (
+      formData.previousOrderNo &&
+      !/^\d{1,2}\d{1,2}25\d{3,}$/.test(formData.previousOrderNo)
+    )
       return message.error("Previous Order Number must be DDMM25XXX.");
 
     if (
@@ -559,7 +515,7 @@ const AddNewOrder = ({ adminName }) => {
       createdBy: formData.createdBy,
       products:
         quotationData.products && quotationData.products.length > 0
-          ? quotationData.products // ← Already correctly transformed in QuotationList
+          ? quotationData.products
           : products.length > 0
           ? products
           : [],
@@ -585,7 +541,7 @@ const AddNewOrder = ({ adminName }) => {
       priority: formData.priority || null,
       description: formData.description || null,
       invoiceLink: isEditMode ? formData.invoiceLink || null : null,
-      orderNo: formData.orderNo,
+      // orderNo removed – backend generates
       quotationId: sanitize(formData.quotationId),
       masterPipelineNo: sanitize(formData.masterPipelineNo),
       previousOrderNo: sanitize(formData.previousOrderNo),
@@ -602,7 +558,6 @@ const AddNewOrder = ({ adminName }) => {
         const parsed = parseFloat(formData.gst);
         return isNaN(parsed) || parsed < 0 || parsed > 100 ? null : parsed;
       })(),
-      // Only include discount fields if a valid discount exists
       ...(formData.extraDiscount != null &&
       formData.extraDiscount !== "" &&
       parseFloat(formData.extraDiscount) > 0
@@ -615,13 +570,15 @@ const AddNewOrder = ({ adminName }) => {
             extraDiscountType: null,
           }),
     };
-    console.log(formData.gst);
+
     try {
       if (isEditMode) {
         if (!id) return message.error("Invalid order ID.");
         await updateOrder({ id, ...payload }).unwrap();
+        message.success("Order updated successfully");
       } else {
-        await createOrder(payload).unwrap();
+        const result = await createOrder(payload).unwrap();
+        message.success(`Order ${result.orderNo} created successfully`);
       }
       navigate("/orders/list");
     } catch (err) {
@@ -765,17 +722,6 @@ const AddNewOrder = ({ adminName }) => {
                       +
                     </Button>
                   </Space>
-                </FormSection>
-              </Col>
-
-              {/* ---------- Order Number ---------- */}
-              <Col xs={24} md={12}>
-                <FormSection>
-                  <Text strong>Order Number</Text>
-                  <CompactInput
-                    value={formData.orderNo || "Generating..."}
-                    disabled
-                  />
                 </FormSection>
               </Col>
 

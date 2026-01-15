@@ -47,11 +47,6 @@ import PurchaseOrderForm from "./PurchaseOrderForm";
 import AddAddress from "../Address/AddAddressModal";
 import AddVendorModal from "./AddVendorModal";
 import AddNewTeam from "../Orders/AddNewTeam";
-import {
-  generateQuotationNumber,
-  generateOrderNumber,
-  generatePurchaseOrderNumber,
-} from "../../data/cartUtils";
 import { useGetAllUsersQuery } from "../../api/userApi";
 import AddCustomerModal from "../Customers/AddCustomerModal";
 import PreviewQuotation from "../Quotation/PreviewQuotation";
@@ -89,11 +84,6 @@ const NewCart = ({ onConvertToOrder }) => {
   const [showAddTeamModal, setShowAddTeamModal] = useState(false);
   const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
   const [documentType, setDocumentType] = useState("Quotation");
-  const [quotationNumber, setQuotationNumber] = useState(
-    generateQuotationNumber()
-  );
-  const [orderNumber, setOrderNumber] = useState("");
-  const [purchaseOrderNumber, setPurchaseOrderNumber] = useState("");
   const [useBillingAddress, setUseBillingAddress] = useState(false);
 
   // Form data
@@ -122,7 +112,7 @@ const NewCart = ({ onConvertToOrder }) => {
     priority: "medium",
     description: "",
     invoiceLink: null,
-    orderNo: "",
+    orderNo: "", // ← No longer pre-filled — backend assigns
     quotationId: "",
     masterPipelineNo: "",
     previousOrderNo: "",
@@ -149,6 +139,7 @@ const NewCart = ({ onConvertToOrder }) => {
   const [shipping, setShipping] = useState(0);
   const [gst, setGst] = useState(0); // GST is now always 0
   const [billingAddressId, setBillingAddressId] = useState(null);
+
   // ────────────────────── QUERIES ──────────────────────
   const { data: cartData } = useGetCartQuery(userId, { skip: !userId });
   const { data: customerData } = useGetCustomersQuery();
@@ -313,23 +304,6 @@ const NewCart = ({ onConvertToOrder }) => {
     }
   }, [cartItems, itemTaxes, documentType]);
 
-  // Generate order / PO numbers
-  useEffect(() => {
-    if (!orderNumber && allOrdersData) {
-      const today = moment().format("DDMMYY");
-      const todayOrders = orders.filter((o) =>
-        moment(o.createdAt).isSame(moment(), "day")
-      );
-      const serial = todayOrders.length + 101;
-      const generated = `${today}${serial}`;
-      setOrderData((prev) => ({ ...prev, orderNo: generated }));
-      setOrderNumber(generated);
-    }
-    if (!purchaseOrderNumber && allOrdersData) {
-      setPurchaseOrderNumber(generatePurchaseOrderNumber(orders));
-    }
-  }, [allOrdersData, orders, orderNumber, purchaseOrderNumber]);
-
   // Auto-fill customer name
   useEffect(() => {
     if (selectedCustomer) {
@@ -442,13 +416,16 @@ const NewCart = ({ onConvertToOrder }) => {
     },
     [userId, updateCart]
   );
+
   const handleTeamAdded = (showModal) => {
     setShowAddTeamModal(showModal);
     if (!showModal) refetchTeams();
   };
+
   const handleQuotationChange = useCallback((key, value) => {
     setQuotationData((prev) => ({ ...prev, [key]: value }));
   }, []);
+
   const purchaseOrderTotal = useMemo(
     () =>
       purchaseOrderData.items
@@ -504,7 +481,7 @@ const NewCart = ({ onConvertToOrder }) => {
         productId: item.productId,
         quantity: Number(item.quantity) || 1,
         mrp: Number(item.mrp) || 0.01,
-        tax: Number(item.tax) || 0, // Include tax
+        tax: Number(item.tax) || 0,
       }));
 
       const formattedFormData = {
@@ -517,7 +494,10 @@ const NewCart = ({ onConvertToOrder }) => {
       };
 
       try {
-        await createPurchaseOrder(formattedFormData).unwrap();
+        const result = await createPurchaseOrder(formattedFormData).unwrap();
+        message.success(
+          `Purchase Order ${result.purchaseOrder.poNumber} created!`
+        );
         await handleClearCart();
         resetForm();
         navigate("/po/list");
@@ -585,7 +565,7 @@ const NewCart = ({ onConvertToOrder }) => {
       );
     }
 
-    // Auto-create address if useBillingAddress is true and no shipTo is set
+    // Auto-create address if needed
     if (
       useBillingAddress &&
       !orderData.shipTo &&
@@ -644,24 +624,20 @@ const NewCart = ({ onConvertToOrder }) => {
         );
       }
     }
+
     if (documentType === "Quotation") {
-      // === BUILD PAYLOAD ===
-      // === BUILD PAYLOAD (MATCH BACKEND EXACTLY) ===
       const quotationPayload = {
         quotationId: uuidv4(),
         document_title: `Quotation for ${selectedCustomerData.name}`,
         quotation_date: quotationData.quotationDate,
         due_date: quotationData.dueDate,
-        reference_number: quotationNumber,
+        // reference_number → removed (backend assigns)
 
-        // === GLOBAL DISCOUNT: Use backend field names ===
         extraDiscount: parseFloat(quotationData.discountAmount) || 0,
         extraDiscountType: quotationData.discountType || "percent",
 
         shippingAmount: Number(shipping),
         gst: gst,
-
-        // === FINAL VALUES (calculated on frontend) ===
 
         finalAmount: totalAmount,
 
@@ -671,12 +647,10 @@ const NewCart = ({ onConvertToOrder }) => {
           const rawDiscount = Number(itemDiscounts[item.productId]) || 0;
           const discountType = itemDiscountTypes[item.productId] || "percent";
 
-          // Calculate correct line total AFTER item discount
           let lineTotalAfterDiscount;
           if (discountType === "percent") {
             lineTotalAfterDiscount = price * quantity * (1 - rawDiscount / 100);
           } else {
-            // fixed discount = amount per unit
             lineTotalAfterDiscount = (price - rawDiscount) * quantity;
           }
 
@@ -687,8 +661,8 @@ const NewCart = ({ onConvertToOrder }) => {
             quantity,
             discount: Number(rawDiscount.toFixed(2)),
             discountType,
-            tax: Number(itemTaxes[item.productId] || 0),
-            total: parseFloat(lineTotalAfterDiscount.toFixed(2)), // ← THIS IS KEY
+            tax: Number(itemTaxes[item.productId]) || 0,
+            total: parseFloat(lineTotalAfterDiscount.toFixed(2)),
           };
         }),
 
@@ -702,7 +676,10 @@ const NewCart = ({ onConvertToOrder }) => {
       };
 
       try {
-        await createQuotation(quotationPayload).unwrap();
+        const result = await createQuotation(quotationPayload).unwrap();
+        message.success(
+          `Quotation ${result.quotation.reference_number} created!`
+        );
         await handleClearCart();
         resetForm();
         navigate("/quotations/list");
@@ -710,18 +687,12 @@ const NewCart = ({ onConvertToOrder }) => {
         message.error(e?.data?.message || "Failed to create quotation");
       }
     } else if (documentType === "Order") {
-      const orderNoRegex = /^\d{1,2}\d{2}25\d{3,}$/;
-      if (!orderData.orderNo || !orderNoRegex.test(orderData.orderNo)) {
-        return message.error(
-          "Order Number must be in the format DDMM25XXX (e.g., 151025101)."
-        );
-      }
+      // orderNo removed from payload — backend assigns
 
       if (!validateFollowupDates()) {
         return message.error("Follow-up dates cannot be after the due date.");
       }
 
-      // Calculate extra discount value FIRST
       const taxableBase = subTotal - totalDiscount + tax;
       const afterTax = taxableBase + shipping;
 
@@ -732,11 +703,12 @@ const NewCart = ({ onConvertToOrder }) => {
 
       const amountForGst =
         subTotal + shipping + tax - totalDiscount - extraDiscountValue;
-      const gstAmount = Math.round((amountForGst * gst) / 100); // ← Integer
+      const gstAmount = Math.round((amountForGst * gst) / 100);
 
       const orderPayload = {
         id: uuidv4(),
-        orderNo: orderData.orderNo,
+        // orderNo removed — backend generates
+
         createdFor: selectedCustomerData.customerId,
         createdBy: userId,
         assignedTeamId: orderData.assignedTeamId || null,
@@ -767,29 +739,28 @@ const NewCart = ({ onConvertToOrder }) => {
           const quantity = parseInt(item.quantity, 10) || 1;
 
           const rawDiscount = Number(itemDiscounts[item.productId]) || 0;
-          const discountType = itemDiscountTypes[item.productId] || "percent"; // ← CRITICAL
+          const discountType = itemDiscountTypes[item.productId] || "percent";
 
-          // CORRECT: Apply discount per unit
           const unitPriceAfterDiscount =
             discountType === "percent"
               ? price * (1 - rawDiscount / 100)
               : price - rawDiscount;
 
-          // CORRECT: Line total (NO TAX)
           const total = Number((unitPriceAfterDiscount * quantity).toFixed(2));
 
           return {
             id: item.productId,
             price: Number(price.toFixed(2)),
             discount: Number(rawDiscount.toFixed(2)),
-            total, // ← will be 63.00 → 63
+            total,
             quantity,
           };
         }),
       };
 
       try {
-        await createOrder(orderPayload).unwrap();
+        const result = await createOrder(orderPayload).unwrap();
+        message.success(`Order ${result.orderNo} created!`);
         await handleClearCart();
         resetForm();
         navigate("/orders/list");
@@ -851,15 +822,13 @@ const NewCart = ({ onConvertToOrder }) => {
     setItemDiscounts({});
     setItemTaxes({});
     setItemDiscountTypes({});
-    setQuotationNumber(generateQuotationNumber());
-    setOrderNumber("");
-    setPurchaseOrderNumber("");
     setDocumentType("Quotation");
     setActiveTab("cart");
     setProductSearch("");
     setFilteredProducts([]);
     setUseBillingAddress(false);
   };
+
   const validateFollowupDates = () => {
     if (!orderData.dueDate || orderData.followupDates.length === 0) return true;
     const dueDate = moment(orderData.dueDate);
@@ -885,7 +854,6 @@ const NewCart = ({ onConvertToOrder }) => {
   const handleAddAddress = () => setShowAddAddressModal(true);
 
   // ────────────────────── RENDER ──────────────────────
-  // Global loader handles loading → only show real errors here
   if (productErrors.length > 0) {
     return (
       <PageWrapper>
@@ -1035,7 +1003,7 @@ const NewCart = ({ onConvertToOrder }) => {
                   }))
                 }
                 purchaseOrderTotal={purchaseOrderTotal}
-                purchaseOrderNumber={purchaseOrderNumber}
+                // purchaseOrderNumber removed — backend assigns
                 documentType={documentType}
                 setDocumentType={setDocumentType}
                 cartItems={cartItems}
@@ -1062,7 +1030,7 @@ const NewCart = ({ onConvertToOrder }) => {
                 customerQueries={customerQueries}
                 teams={teams}
                 users={users}
-                orderNumber={orderData.orderNo}
+                // orderNumber removed — backend assigns
                 documentType={documentType}
                 setDocumentType={setDocumentType}
                 cartItems={cartItems}
@@ -1095,7 +1063,7 @@ const NewCart = ({ onConvertToOrder }) => {
                 customerMap={customerMap}
                 userQueries={userQueries}
                 customerQueries={customerQueries}
-                quotationNumber={quotationNumber}
+                // quotationNumber removed — backend assigns
                 documentType={documentType}
                 setDocumentType={setDocumentType}
                 cartItems={cartItems}
@@ -1139,11 +1107,10 @@ const NewCart = ({ onConvertToOrder }) => {
 
         {showAddAddressModal && (
           <AddAddress
-            visible={true} // or = {showAddAddressModal}
+            visible={true}
             onClose={() => setShowAddAddressModal(false)}
             onSave={(addressId) => {
               console.log("New address created:", addressId);
-              // Optional: auto-select for order
               if (documentType === "Order") {
                 setOrderData((prev) => ({ ...prev, shipTo: addressId }));
               }
@@ -1185,7 +1152,7 @@ const NewCart = ({ onConvertToOrder }) => {
           address={addresses.find((a) => a.addressId === quotationData.shipTo)}
           quotationData={{
             ...quotationData,
-            reference_number: quotationNumber,
+            // reference_number removed — can show placeholder or omit
           }}
           itemDiscounts={itemDiscounts}
           itemDiscountTypes={itemDiscountTypes}

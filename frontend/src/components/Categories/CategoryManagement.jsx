@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { debounce } from "lodash";
 import {
   Tree,
@@ -23,7 +23,7 @@ import {
   CheckCircleOutlined,
   ExclamationCircleOutlined,
 } from "@ant-design/icons";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   useGetAllCategoriesQuery,
   useDeleteCategoryMutation,
@@ -44,6 +44,12 @@ import AddKeywordModal from "./AddKeywordModal";
 const { Search } = Input;
 
 const CategoryManagement = () => {
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Read category from URL on mount
+  const urlCategoryId = searchParams.get("category");
+
   // === State ===
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedNode, setSelectedNode] = useState(null);
@@ -60,7 +66,11 @@ const CategoryManagement = () => {
   const { data: parentData } = useGetAllParentCategoriesQuery();
   const { data: catData } = useGetAllCategoriesQuery();
   const { data: kwData } = useGetAllKeywordsQuery();
-  const { data: prodData } = useGetAllProductCodesQuery();
+
+  // Fetch products with optional category filter
+  const { data: prodData } = useGetAllProductCodesQuery(
+    urlCategoryId ? { category: urlCategoryId } : {}
+  );
 
   const [deleteParent] = useDeleteParentCategoryMutation();
   const [deleteCategory] = useDeleteCategoryMutation();
@@ -84,6 +94,75 @@ const CategoryManagement = () => {
     parentCategories.forEach((p) => (map[p.id] = p.name));
     return map;
   }, [parentCategories]);
+
+  // === Sync selected node with URL category param ===
+  useEffect(() => {
+    if (urlCategoryId) {
+      // Find category node matching the URL param
+      const foundCategory = categories.find(
+        (c) => String(c.categoryId) === urlCategoryId
+      );
+      if (foundCategory) {
+        setSelectedNode({
+          type: "category",
+          id: foundCategory.categoryId,
+          data: foundCategory,
+          key: `cat-${foundCategory.categoryId}`,
+        });
+      } else {
+        // Invalid category in URL → clear it
+        setSearchParams((prev) => {
+          prev.delete("category");
+          return prev;
+        });
+      }
+    } else {
+      setSelectedNode(null);
+    }
+  }, [urlCategoryId, categories, setSearchParams]);
+
+  // When user selects a category node → update URL
+  const handleNodeSelect = (selectedKeys, info) => {
+    if (!selectedKeys.length) {
+      setSelectedNode(null);
+      setSearchParams((prev) => {
+        prev.delete("category");
+        return prev;
+      });
+      return;
+    }
+
+    const node = info.node;
+    let id;
+    if (node.type === "parent") id = node.data?.id;
+    else if (node.type === "category") id = node.data?.categoryId;
+    else if (node.type === "keyword") id = node.data?.id;
+
+    if (id === undefined || id === null) {
+      console.warn("Invalid node selected", node);
+      setSelectedNode(null);
+      return;
+    }
+
+    const newNode = {
+      type: node.type,
+      id,
+      data: node.data,
+      key: node.key,
+    };
+
+    setSelectedNode(newNode);
+
+    // Update URL only for category selection
+    if (node.type === "category") {
+      setSearchParams({ category: id });
+    } else {
+      setSearchParams((prev) => {
+        prev.delete("category");
+        return prev;
+      });
+    }
+  };
 
   // === Tree Title Renderer ===
   const renderTreeTitle = (item, type) => {
@@ -160,37 +239,15 @@ const CategoryManagement = () => {
         selectedNode?.id === item.id
       ) {
         setSelectedNode(null);
+        setSearchParams((prev) => {
+          prev.delete("category");
+          return prev;
+        });
       }
       message.success("Deleted successfully");
     } catch (err) {
       message.error(err?.data?.message || "Delete failed");
     }
-  };
-
-  const handleNodeSelect = (selectedKeys, info) => {
-    if (!selectedKeys.length) {
-      setSelectedNode(null);
-      return;
-    }
-
-    const node = info.node;
-    let id;
-    if (node.type === "parent") id = node.data?.id;
-    else if (node.type === "category") id = node.data?.categoryId;
-    else if (node.type === "keyword") id = node.data?.id;
-
-    if (id === undefined || id === null) {
-      console.warn("Invalid node selected", node);
-      setSelectedNode(null);
-      return;
-    }
-
-    setSelectedNode({
-      type: node.type,
-      id,
-      data: node.data,
-      key: node.key,
-    });
   };
 
   const debouncedSearch = useCallback(
@@ -247,11 +304,6 @@ const CategoryManagement = () => {
       ),
     },
   ];
-
-  const selectedCategoryProducts =
-    selectedNode?.type === "category"
-      ? products.filter((p) => p.categoryId === selectedNode.id)
-      : [];
 
   // === Tree Data ===
   const treeData = useMemo(() => {
@@ -322,9 +374,8 @@ const CategoryManagement = () => {
 
   return (
     <>
-      {/* Embedded CSS */}
+      {/* Embedded CSS remains the same */}
       <style jsx>{`
-        /* Professional Admin Dashboard Theme */
         :global(.ant-typography) {
           color: #1a1a1a;
         }
@@ -338,7 +389,6 @@ const CategoryManagement = () => {
           overflow: hidden;
         }
 
-        /* Left Panel - Tree Navigation */
         .left-panel {
           width: 380px;
           min-width: 320px;
@@ -376,12 +426,6 @@ const CategoryManagement = () => {
           transition: all 0.2s ease;
         }
 
-        .action-buttons :global(.ant-btn[disabled]) {
-          background: #f5f5f5;
-          border-color: #d9d9d9;
-          color: #999;
-        }
-
         .tree-container {
           flex: 1;
           overflow-y: auto;
@@ -389,7 +433,6 @@ const CategoryManagement = () => {
           background: #fafbfc;
         }
 
-        /* Tree Node Styling */
         .tree-node {
           display: flex;
           align-items: center;
@@ -405,11 +448,6 @@ const CategoryManagement = () => {
           background: #f0f5ff;
         }
 
-        .tree-node.ant-tree-treenode-selected > .tree-node {
-          background: #e6f7ff;
-          border: 1px solid #91d5ff;
-        }
-
         .tree-title {
           display: flex;
           align-items: center;
@@ -417,14 +455,6 @@ const CategoryManagement = () => {
           width: 100%;
           font-size: 14px;
           font-weight: 500;
-        }
-
-        .tree-title-text {
-          flex: 1;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-          color: #262626;
         }
 
         .tree-actions {
@@ -438,24 +468,6 @@ const CategoryManagement = () => {
           opacity: 1;
         }
 
-        .tree-actions :global(.anticon) {
-          font-size: 13px;
-          padding: 4px;
-          border-radius: 4px;
-          transition: all 0.2s;
-        }
-
-        .tree-actions :global(.anticon-edit):hover {
-          background: #e6f7ff;
-          color: #1677ff;
-        }
-
-        .tree-actions :global(.anticon-delete):hover {
-          background: #fff1f0;
-          color: #ff4d4f;
-        }
-
-        /* Right Panel */
         .right-panel {
           flex: 1;
           display: flex;
@@ -466,7 +478,6 @@ const CategoryManagement = () => {
         }
 
         .product-checker-card {
-          background-color: #333333;
           color: white;
           border: none;
           border-radius: 14px;
@@ -474,51 +485,6 @@ const CategoryManagement = () => {
           box-shadow: 0 8px 25px rgba(102, 126, 234, 0.25);
         }
 
-        .product-checker-card :global(.ant-card-head) {
-          border: none;
-          color: white;
-        }
-
-        .product-checker-card :global(.ant-input-search .ant-input) {
-          background: rgba(255, 255, 255, 0.2);
-          border: none;
-          color: white;
-        }
-
-        .product-checker-card :global(.ant-input::placeholder) {
-          color: rgba(255, 255, 255, 0.7);
-        }
-
-        .product-checker-card :global(.ant-btn-primary) {
-          background: rgba(255, 255, 255, 0.25);
-          border: none;
-          color: white;
-        }
-
-        .result-box {
-          margin-top: 12px;
-          padding: 14px 16px;
-          border-radius: 10px;
-          font-weight: 500;
-          backdrop-filter: blur(10px);
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-
-        .result-success {
-          background: rgba(82, 196, 26, 0.15);
-          border: 1px solid rgba(82, 196, 26, 0.3);
-          color: #237804;
-        }
-
-        .result-warning {
-          background: rgba(250, 173, 20, 0.15);
-          border: 1px solid rgba(250, 173, 20, 0.3);
-          color: #d4380d;
-        }
-
-        /* Details Card */
         .details-card {
           flex: 1;
           border-radius: 14px;
@@ -526,36 +492,10 @@ const CategoryManagement = () => {
           border: 1px solid #f0f0f0;
         }
 
-        .details-card :global(.ant-card-head) {
-          background: #f8fafc;
-          border-bottom: 1px solid #e8ecef;
-          border-radius: 14px 14px 0 0 !important;
-          padding: 16px 24px;
-        }
-
-        .details-card :global(.ant-card-head-title) {
-          font-size: 17px;
-          font-weight: 600;
-          color: #1a1a1a;
-        }
-
-        /* Table */
         .product-table :global(.ant-table) {
           border-radius: 10px;
           overflow: hidden;
           box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
-        }
-
-        .product-table :global(.ant-table-thead > tr > th) {
-          background: #f8fafc;
-          font-weight: 600;
-          color: #595959;
-          font-size: 13px;
-          padding: 12px 16px !important;
-        }
-
-        .product-table :global(.ant-table-tbody > tr:hover > td) {
-          background: #fafbff !important;
         }
 
         .product-image {
@@ -578,47 +518,6 @@ const CategoryManagement = () => {
           justify-content: center;
           font-size: 11px;
           color: #aaa;
-        }
-
-        /* Empty States */
-        .empty-state {
-          height: 300px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: #8c8c8c;
-          font-size: 15px;
-        }
-
-        /* Responsive */
-        @media (max-width: 1200px) {
-          .left-panel {
-            width: 340px;
-          }
-        }
-
-        @media (max-width: 992px) {
-          .main-layout {
-            flex-direction: column;
-          }
-          .left-panel {
-            width: 100%;
-            max-height: 50vh;
-            border-right: none;
-            border-bottom: 1px solid #e8ecef;
-          }
-          .action-buttons {
-            grid-template-columns: 1fr;
-          }
-        }
-
-        @media (max-width: 768px) {
-          .right-panel {
-            padding: 16px;
-          }
-          .action-buttons :global(.ant-btn) {
-            height: 44px;
-          }
         }
       `}</style>
 
@@ -728,49 +627,98 @@ const CategoryManagement = () => {
                 </Space>
               </Card>
 
-              {selectedNode ? (
-                <Card
-                  className="details-card"
-                  title={
-                    <Space>
-                      {selectedNode.type === "parent" && <FolderOutlined />}
-
-                      {selectedNode.type === "category" && <FolderOutlined />}
-                      {selectedNode.type === "keyword" && <TagOutlined />}
-                      {selectedNode.type === "parent"
+              <Card
+                className="details-card"
+                title={
+                  <Space>
+                    {selectedNode?.type === "parent" && <FolderOutlined />}
+                    {selectedNode?.type === "category" && <FolderOutlined />}
+                    {selectedNode?.type === "keyword" && <TagOutlined />}
+                    {selectedNode
+                      ? selectedNode.type === "parent"
                         ? parentMap[selectedNode.id]
                         : selectedNode.type === "category"
                         ? categoryMap[selectedNode.id]
-                        : selectedNode.data.keyword}
-                    </Space>
-                  }
-                >
-                  {selectedNode.type === "category" && (
-                    <Table
-                      className="product-table"
-                      columns={productColumns}
-                      dataSource={selectedCategoryProducts}
-                      pagination={{ pageSize: 10 }}
-                      rowKey="productId"
-                      locale={{ emptyText: "No products" }}
-                    />
-                  )}
-                  {selectedNode.type === "parent" && (
-                    <p>Select a category to view products.</p>
-                  )}
-                  {selectedNode.type === "keyword" && (
-                    <p>
-                      Keyword: <Tag>{selectedNode.data.keyword}</Tag>
-                    </p>
-                  )}
-                </Card>
-              ) : (
-                <Card className="details-card">
+                        : selectedNode.data.keyword
+                      : "Category Details"}
+                    {selectedNode?.type === "category" &&
+                      products.length > 0 && (
+                        <Tag color="blue" style={{ marginLeft: 8 }}>
+                          {products.length} products
+                        </Tag>
+                      )}
+                  </Space>
+                }
+              >
+                {selectedNode ? (
+                  <>
+                    {selectedNode.type === "category" ? (
+                      products.length > 0 ? (
+                        <Table
+                          className="product-table"
+                          columns={productColumns}
+                          dataSource={products}
+                          pagination={{ pageSize: 10, showSizeChanger: true }}
+                          rowKey="productId"
+                          locale={{ emptyText: "No products in this category" }}
+                        />
+                      ) : (
+                        <Empty
+                          image={Empty.PRESENTED_IMAGE_SIMPLE}
+                          description="No products assigned to this category yet"
+                          style={{ margin: "60px 0" }}
+                        >
+                          <Button
+                            type="primary"
+                            icon={<PlusOutlined />}
+                            onClick={() =>
+                              navigate("/product/add", {
+                                state: { prefillCategoryId: selectedNode.id },
+                              })
+                            }
+                          >
+                            Add Product to this Category
+                          </Button>
+                        </Empty>
+                      )
+                    ) : selectedNode.type === "parent" ? (
+                      <div
+                        style={{
+                          textAlign: "center",
+                          padding: "60px 0",
+                          color: "#8c8c8c",
+                        }}
+                      >
+                        <FolderOutlined
+                          style={{ fontSize: 48, marginBottom: 16 }}
+                        />
+                        <p>
+                          Select a category under this parent to view products
+                        </p>
+                      </div>
+                    ) : (
+                      <div style={{ padding: "20px" }}>
+                        <Tag
+                          color="purple"
+                          style={{ fontSize: 14, padding: "6px 12px" }}
+                        >
+                          {selectedNode.data.keyword}
+                        </Tag>
+                        <p style={{ marginTop: 16, color: "#595959" }}>
+                          This keyword is associated with category:{" "}
+                          <strong>
+                            {categoryMap[selectedNode.data.categoryId]}
+                          </strong>
+                        </p>
+                      </div>
+                    )}
+                  </>
+                ) : (
                   <div className="empty-state">
-                    <Empty description="Select a parent, category, or keyword to view details" />
+                    <Empty description="Select a category from the tree to view its products" />
                   </div>
-                </Card>
-              )}
+                )}
+              </Card>
             </div>
           </div>
 

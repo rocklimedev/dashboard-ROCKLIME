@@ -251,7 +251,7 @@ margin: 351px 0;
 /* Image stays neat */
 .prodImg {
 height: 66px;
-    width: 135px;
+    /* width: 135px; */
     /* object-fit: contain; */
     /* border-radius: 8px; */
     /* box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); */
@@ -302,11 +302,11 @@ height: 66px;
 
 /* TOTAL AMOUNT */
 .totalAmount {
-  display: flex;
-  justify-content: space-between;
-  font-size: 26px;
-  font-weight: 900;
-  color: #e31e24;
+    display: block;
+    justify-content: space-between;
+    font-size: 20px;
+    /* font-weight: 900; */
+    color: #e31e24;
 }
 
 /* AMOUNT IN WORDS */

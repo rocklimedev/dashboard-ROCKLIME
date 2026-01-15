@@ -46,14 +46,13 @@ const OrderWrapper = () => {
     (p) => p.action === "write" && p.module === "orders"
   );
 
-  // State
   const [searchTerm, setSearchTerm] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
-  const [filters, setFilters] = useState({
+  const [committedFilters, setCommittedFilters] = useState({
+    search: "",
     status: "",
     priority: "",
+    page: 1,
+    limit: 20,
   });
   const [sortBy, setSortBy] = useState("Recently Added");
 
@@ -65,38 +64,33 @@ const OrderWrapper = () => {
     followupDates: [],
   });
 
-  // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedSearch(searchTerm);
-      setCurrentPage(1);
+      setCommittedFilters((prev) => ({
+        ...prev,
+        search: searchTerm.trim(),
+        page: 1,
+      }));
     }, 500);
+
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Fetch Orders with server-side pagination + search
   const {
     data: response,
     error,
     isLoading,
     isFetching,
-  } = useGetAllOrdersQuery({
-    page: currentPage,
-    limit: pageSize,
-    search: debouncedSearch || undefined,
-    status: filters.status || undefined,
-    priority: filters.priority || undefined,
-  });
+  } = useGetAllOrdersQuery(committedFilters);
 
   const orders = response?.data || [];
   const pagination = response?.pagination || {
     total: 0,
-    page: 1,
-    limit: 20,
+    page: committedFilters.page,
+    limit: committedFilters.limit,
     totalPages: 0,
   };
 
-  // Fetch supporting data
   const { data: teamsData } = useGetAllTeamsQuery();
   const { data: usersData } = useGetAllUsersQuery();
   const { data: quotationsData } = useGetAllQuotationsQuery();
@@ -104,7 +98,6 @@ const OrderWrapper = () => {
   const [deleteOrder] = useDeleteOrderMutation();
   const [updateOrderStatus] = useUpdateOrderStatusMutation();
 
-  // Build lookup maps
   const teamMap = useMemo(() => {
     if (!teamsData?.teams) return {};
     return teamsData.teams.reduce((acc, t) => {
@@ -128,7 +121,7 @@ const OrderWrapper = () => {
       return acc;
     }, {});
   }, [quotationsData]);
-  // Helper displays
+
   const getAssignedToDisplay = (order) => {
     const parts = [];
     if (order.assignedTeam?.id && teamMap[order.assignedTeam.id]) {
@@ -145,30 +138,49 @@ const OrderWrapper = () => {
 
   const isDueDateClose = (dueDate) => {
     if (!dueDate) return false;
-    const diffDays = (new Date(dueDate) - new Date()) / (1000 * 60 * 60 * 24);
+    const diffDays =
+      (new Date(dueDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
     return diffDays <= 3 && diffDays >= 0;
   };
 
-  // Handlers
-  const handleStatusChange = async (orderId, newStatus) => {
-    if (!canUpdateOrderStatus) {
-      message.error("No permission to update status");
-      return;
-    }
-    try {
-      await updateOrderStatus({ orderId, status: newStatus }).unwrap();
-      message.success("Status updated");
-    } catch (err) {
-      message.error(err?.data?.message || "Failed to update status");
-    }
+  const handleStatusChange = (val) => {
+    setCommittedFilters((prev) => ({
+      ...prev,
+      status: val || "",
+      page: 1,
+    }));
   };
 
-  const handleEditClick = (order) => {
-    if (!canEditOrder) {
-      message.error("No permission to edit");
-      return;
-    }
-    navigate(`/order/${order.id}/edit`, { state: { order } });
+  const handlePriorityChange = (val) => {
+    setCommittedFilters((prev) => ({
+      ...prev,
+      priority: val || "",
+      page: 1,
+    }));
+  };
+
+  const handleSortChange = (val) => {
+    setSortBy(val);
+  };
+
+  const handlePageChange = (page, newLimit) => {
+    setCommittedFilters((prev) => ({
+      ...prev,
+      page,
+      limit: newLimit ?? prev.limit,
+    }));
+  };
+
+  const handleClearFilters = () => {
+    setSearchTerm("");
+    setSortBy("Recently Added");
+    setCommittedFilters({
+      search: "",
+      status: "",
+      priority: "",
+      page: 1,
+      limit: 20,
+    });
   };
 
   const handleDeleteClick = (orderId) => {
@@ -181,12 +193,10 @@ const OrderWrapper = () => {
   };
 
   const handleDeleteOrder = async () => {
+    if (!orderToDelete) return;
     try {
       await deleteOrder(orderToDelete).unwrap();
       message.success("Order deleted");
-      if (orders.length === 1 && currentPage > 1) {
-        setCurrentPage(currentPage - 1);
-      }
     } catch (err) {
       message.error(err?.data?.message || "Failed to delete");
     } finally {
@@ -199,30 +209,14 @@ const OrderWrapper = () => {
     if (invoiceLink) window.open(invoiceLink, "_blank");
   };
 
-  const handlePageChange = (page, newPageSize) => {
-    setCurrentPage(page);
-    if (newPageSize !== pageSize) {
-      setPageSize(newPageSize);
-      setCurrentPage(1);
-    }
-  };
-
-  const handleClearFilters = () => {
-    setSearchTerm("");
-    setFilters({ status: "", priority: "" });
-    setSortBy("Recently Added");
-    setCurrentPage(1);
-  };
-
-  const handleOpenDatesModal = (dueDate, followupDates) => {
-    setSelectedDates({ dueDate, followupDates: followupDates || [] });
+  const handleOpenDatesModal = (dueDate, followupDates = []) => {
+    setSelectedDates({ dueDate, followupDates });
     setShowDatesModal(true);
   };
 
-  // Export data (using current page)
   const tableDataForExport = useMemo(() => {
     return orders.map((order, index) => ({
-      "S.No.": (currentPage - 1) * pageSize + index + 1,
+      "S.No.": (committedFilters.page - 1) * committedFilters.limit + index + 1,
       "Order No.": order.orderNo,
       "Master Pipeline": order.masterOrder?.orderNo || "—",
       "Previous Order": order.previousOrder?.orderNo || "—",
@@ -238,7 +232,14 @@ const OrderWrapper = () => {
         ? new Date(order.dueDate).toLocaleDateString()
         : "—",
     }));
-  }, [orders, currentPage, pageSize, quotationMap, teamMap, userMap]);
+  }, [
+    orders,
+    committedFilters.page,
+    committedFilters.limit,
+    quotationMap,
+    teamMap,
+    userMap,
+  ]);
 
   return (
     <div className="page-wrapper">
@@ -253,29 +254,24 @@ const OrderWrapper = () => {
           />
 
           <div className="card-body">
-            {/* Filters */}
             <div className="row mb-4 align-items-center g-3">
               <div className="col-lg-6">
-                <div className="d-flex">
-                  <Input
-                    prefix={<SearchOutlined />}
-                    placeholder="Search order no, customer, quotation..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    allowClear
-                    size="large"
-                    style={{ width: 500 }}
-                  />
-                </div>
+                <Input
+                  prefix={<SearchOutlined />}
+                  placeholder="Search order no, customer, quotation..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  allowClear
+                  size="large"
+                  style={{ width: 500 }}
+                />
               </div>
+
               <div className="col-lg-6">
-                <div className="d-flex gap-3">
+                <div className="d-flex gap-3 flex-wrap">
                   <Select
-                    value={filters.status}
-                    onChange={(val) => {
-                      setFilters((prev) => ({ ...prev, status: val || "" }));
-                      setCurrentPage(1);
-                    }}
+                    value={committedFilters.status}
+                    onChange={handleStatusChange}
                     placeholder="All Statuses"
                     allowClear
                     style={{ width: 180 }}
@@ -300,11 +296,8 @@ const OrderWrapper = () => {
                   </Select>
 
                   <Select
-                    value={filters.priority}
-                    onChange={(val) => {
-                      setFilters((prev) => ({ ...prev, priority: val || "" }));
-                      setCurrentPage(1);
-                    }}
+                    value={committedFilters.priority}
+                    onChange={handlePriorityChange}
                     placeholder="Priority"
                     allowClear
                     style={{ width: 140 }}
@@ -317,7 +310,7 @@ const OrderWrapper = () => {
 
                   <Select
                     value={sortBy}
-                    onChange={setSortBy}
+                    onChange={handleSortChange}
                     style={{ width: 200 }}
                     size="large"
                   >
@@ -329,6 +322,7 @@ const OrderWrapper = () => {
                       Due Date (Latest)
                     </Option>
                   </Select>
+
                   <Button onClick={handleClearFilters} size="large">
                     Clear
                   </Button>
@@ -336,14 +330,12 @@ const OrderWrapper = () => {
               </div>
             </div>
 
-            {/* Loading */}
             {isFetching && !isLoading && (
               <div className="text-center my-3">
                 <span className="text-muted">Updating...</span>
               </div>
             )}
 
-            {/* Table */}
             {isLoading ? (
               <div className="text-center py-5">
                 <div className="spinner-border text-primary" role="status">
@@ -364,7 +356,6 @@ const OrderWrapper = () => {
                       <tr>
                         <th>S.No.</th>
                         <th>Order No.</th>
-
                         <th>STATUS</th>
                         <th>QUOTATION</th>
                         <th>CUSTOMER</th>
@@ -376,9 +367,11 @@ const OrderWrapper = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {orders.map((order, index) => {
+                      {orders.map((order) => {
                         const serialNo =
-                          (currentPage - 1) * pageSize + index + 1;
+                          (committedFilters.page - 1) * committedFilters.limit +
+                          (orders.indexOf(order) + 1);
+
                         const hasInvoice =
                           [
                             "INVOICE",
@@ -412,6 +405,7 @@ const OrderWrapper = () => {
                                 {order.quotationId ? "QUOTATIONED" : "IDLE"}
                               </span>
                             </td>
+
                             <td>
                               <span className="badge bg-secondary">
                                 {order.status || "PREPARING"}
@@ -435,7 +429,10 @@ const OrderWrapper = () => {
                                         <Menu.Item
                                           key={s}
                                           onClick={() =>
-                                            handleStatusChange(order.id, s)
+                                            updateOrderStatus({
+                                              orderId: order.id,
+                                              status: s,
+                                            })
                                           }
                                           disabled={order.status === s}
                                         >
@@ -453,6 +450,7 @@ const OrderWrapper = () => {
                                 </Dropdown>
                               )}
                             </td>
+
                             <td>
                               {order.quotationId ? (
                                 <Link to={`/quotation/${order.quotationId}`}>
@@ -462,6 +460,7 @@ const OrderWrapper = () => {
                                 "—"
                               )}
                             </td>
+
                             <td>
                               {order.customer ? (
                                 <Link
@@ -473,6 +472,7 @@ const OrderWrapper = () => {
                                 "N/A"
                               )}
                             </td>
+
                             <td>
                               <span
                                 className={`badge bg-${
@@ -486,12 +486,15 @@ const OrderWrapper = () => {
                                 {order.priority || "Medium"}
                               </span>
                             </td>
+
                             <td>{getAssignedToDisplay(order)}</td>
+
                             <td>
                               {order.creator
                                 ? order.creator.name || order.creator.username
                                 : "N/A"}
                             </td>
+
                             <td
                               className={
                                 isDueDateClose(order.dueDate)
@@ -515,14 +518,20 @@ const OrderWrapper = () => {
                                 "—"
                               )}
                             </td>
+
                             <td className="text-end">
                               {canEditOrder && (
                                 <Button
                                   type="text"
                                   icon={<EditOutlined />}
-                                  onClick={() => handleEditClick(order)}
+                                  onClick={() =>
+                                    navigate(`/order/${order.id}/edit`, {
+                                      state: { order },
+                                    })
+                                  }
                                 />
                               )}
+
                               {(canDeleteOrder || hasInvoice) && (
                                 <Dropdown
                                   overlay={
@@ -563,17 +572,21 @@ const OrderWrapper = () => {
                   </table>
                 </div>
 
-                {/* Pagination */}
                 {pagination.total > 0 && (
                   <div className="mt-4 d-flex justify-content-between align-items-center">
                     <div className="text-muted small">
-                      Showing {(currentPage - 1) * pageSize + 1}–
-                      {Math.min(currentPage * pageSize, pagination.total)} of{" "}
-                      {pagination.total} orders
+                      Showing{" "}
+                      {(committedFilters.page - 1) * committedFilters.limit + 1}
+                      –
+                      {Math.min(
+                        committedFilters.page * committedFilters.limit,
+                        pagination.total
+                      )}{" "}
+                      of {pagination.total} orders
                     </div>
                     <Pagination
-                      current={currentPage}
-                      pageSize={pageSize}
+                      current={committedFilters.page}
+                      pageSize={committedFilters.limit}
                       total={pagination.total}
                       onChange={handlePageChange}
                       showSizeChanger
@@ -587,7 +600,6 @@ const OrderWrapper = () => {
           </div>
         </div>
 
-        {/* Modals */}
         <DeleteModal
           isVisible={showDeleteModal}
           onConfirm={handleDeleteOrder}

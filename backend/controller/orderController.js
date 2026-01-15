@@ -460,7 +460,68 @@ function computeTotals({
     finalAmount, // <-- NEW
   };
 }
+// ─────────────────────────────────────────────────────────────
+// Helper: Generate next daily sequential orderNo (DDMMYY101, etc.)
+// ─────────────────────────────────────────────────────────────
+async function generateDailyOrderNumber(t) {
+  const todayStart = moment().startOf("day").toDate();
+  const todayEnd = moment().endOf("day").toDate();
+  const prefix = moment().format("DDMMYY"); // e.g. 150126
 
+  let attempt = 0;
+  const MAX_ATTEMPTS = 15;
+
+  while (attempt < MAX_ATTEMPTS) {
+    attempt++;
+
+    // Find the highest sequence today
+    const lastOrder = await Order.findOne({
+      where: {
+        orderNo: {
+          [Op.like]: `${prefix}%`,
+        },
+        createdAt: {
+          [Op.between]: [todayStart, todayEnd],
+        },
+      },
+      attributes: ["orderNo"],
+      order: [["orderNo", "DESC"]],
+      limit: 1,
+      transaction: t,
+      lock: t.LOCK.UPDATE, // reduces race window
+    });
+
+    let nextSeq = 101;
+
+    if (lastOrder) {
+      const lastSeqStr = lastOrder.orderNo.slice(prefix.length);
+      const parsed = parseInt(lastSeqStr, 10);
+      if (!isNaN(parsed)) {
+        nextSeq = parsed + 1;
+      }
+    }
+
+    const candidate = `${prefix}${nextSeq}`;
+
+    // Final collision check
+    const conflict = await Order.findOne({
+      where: { orderNo: candidate },
+      transaction: t,
+    });
+
+    if (!conflict) {
+      return candidate;
+    }
+
+    console.warn(
+      `Order number collision: ${candidate} — retrying (${attempt}/${MAX_ATTEMPTS})`
+    );
+  }
+
+  throw new Error(
+    `Failed to generate unique order number after ${MAX_ATTEMPTS} attempts`
+  );
+}
 /**
  * Reduce stock + log history (shared by create & update)
  */
@@ -580,7 +641,7 @@ exports.createOrder = async (req, res) => {
       source,
       priority,
       description,
-      orderNo: rawOrderNo,
+      orderNo: rawOrderNo, // ← we will ignore this from client
       quotationId,
       products = [],
       masterPipelineNo,
@@ -595,17 +656,13 @@ exports.createOrder = async (req, res) => {
     } = req.body;
 
     // ── BASIC REQUIRED FIELDS ──
-    if (!createdFor || !createdBy || !rawOrderNo) {
+    if (!createdFor || !createdBy) {
       return sendErrorResponse(
         res,
         400,
-        "createdFor, createdBy, and orderNo are required"
+        "createdFor and createdBy are required"
       );
     }
-
-    const orderNo = parseInt(rawOrderNo);
-    if (isNaN(orderNo))
-      return sendErrorResponse(res, 400, "orderNo must be a valid number");
 
     // ── VALIDATE USERS & CUSTOMER ──
     const [creator, customer] = await Promise.all([
@@ -618,14 +675,6 @@ exports.createOrder = async (req, res) => {
 
     if (!creator) return sendErrorResponse(res, 404, "Creator user not found");
     if (!customer) return sendErrorResponse(res, 404, "Customer not found");
-
-    // ── ORDER NUMBER UNIQUENESS ──
-    const existingOrder = await Order.findOne({
-      where: { orderNo },
-      transaction: t,
-    });
-    if (existingOrder)
-      return sendErrorResponse(res, 400, "Order number already exists");
 
     // ── OPTIONAL REFERENCES VALIDATION ──
     if (quotationId) {
@@ -761,6 +810,9 @@ exports.createOrder = async (req, res) => {
       return sendErrorResponse(res, 400, `Invalid status: ${status}`);
     }
 
+    // ── GENERATE DAILY SEQUENTIAL orderNo (e.g. 150126101) ──
+    const orderNo = await generateDailyOrderNumber(t);
+
     // ── CREATE ORDER (MySQL) ──
     const order = await Order.create(
       {
@@ -774,7 +826,7 @@ exports.createOrder = async (req, res) => {
         source: source || null,
         priority: priorityLower,
         description: description || null,
-        orderNo,
+        orderNo, // ← generated here!
         quotationId: quotationId || null,
         masterPipelineNo: masterPipelineNo || null,
         previousOrderNo: previousOrderNo || null,
@@ -801,7 +853,7 @@ exports.createOrder = async (req, res) => {
         createdBy,
         orderNo: order.orderNo,
         customMessage,
-        transaction: t, // Critical!
+        transaction: t,
       });
     }
 
@@ -863,14 +915,14 @@ exports.createOrder = async (req, res) => {
     for (const userId of recipients) {
       await sendNotification({
         userId,
-        title: `New Order #${orderNo}`,
-        message: `Order #${orderNo} created for ${customer.name}.`,
+        title: `New Order #${order.orderNo}`,
+        message: `Order #${order.orderNo} created for ${customer.name}.`,
       });
     }
     await sendNotification({
       userId: ADMIN_USER_ID,
-      title: `New Order #${orderNo}`,
-      message: `Order #${orderNo} created by ${creator.name} for ${customer.name}.`,
+      title: `New Order #${order.orderNo}`,
+      message: `Order #${order.orderNo} created by ${creator.name} for ${customer.name}.`,
     });
 
     return res.status(201).json({
@@ -879,14 +931,10 @@ exports.createOrder = async (req, res) => {
       orderNo: order.orderNo,
     });
   } catch (err) {
-    // ── SAFE ROLLBACK (PREVENT "connection closed" CRASH) ──
     try {
       await t.rollback();
     } catch (rollbackErr) {
-      console.warn(
-        "Rollback failed (connection likely already closed):",
-        rollbackErr.message
-      );
+      console.warn("Rollback failed:", rollbackErr.message);
     }
 
     console.error("Create Order Error:", err);
@@ -1644,15 +1692,41 @@ exports.draftOrder = async (req, res) => {
 };
 
 // Get all orders (no notification needed)
+
 exports.getAllOrders = async (req, res) => {
   try {
-    // Pagination parameters: ?page=1&limit=20
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 20;
-    const offset = (page - 1) * limit;
+    const { page = 1, limit = 20, search = "", status, priority } = req.query;
 
-    // Use findAndCountAll for efficient pagination and accurate total count
+    const pageNum = parseInt(page, 10);
+    const limitNum = parseInt(limit, 10);
+    const offset = (pageNum - 1) * limitNum;
+
+    // Build the where condition dynamically
+    const where = {};
+
+    // Status filter (exact match)
+    if (status && status.trim() !== "") {
+      where.status = status.trim();
+    }
+
+    // Priority filter (exact match)
+    if (priority && priority.trim() !== "") {
+      where.priority = priority.trim();
+    }
+
+    // Search – usually across orderNo + customer name
+    if (search && search.trim() !== "") {
+      const searchTerm = `%${search.trim()}%`;
+      where[Op.or] = [
+        { orderNo: { [Op.like]: searchTerm } },
+        { "$customer.name$": { [Op.like]: searchTerm } },
+        // Optional: add more searchable fields
+        // { someOtherField: { [Op.like]: searchTerm } },
+      ];
+    }
+
     const { count: totalOrders, rows: orders } = await Order.findAndCountAll({
+      where, // ← this was missing!
       include: [
         {
           model: Customer,
@@ -1697,21 +1771,18 @@ exports.getAllOrders = async (req, res) => {
       ],
       order: [["createdAt", "DESC"]],
       offset,
-      limit,
-      // Critical for correct count when multiple includes are present
+      limit: limitNum,
       subQuery: false,
-      // Optional: avoid sending timestamps if not needed on frontend
-      // attributes: { exclude: ["createdAt", "updatedAt"] },
     });
 
-    const totalPages = Math.ceil(totalOrders / limit);
+    const totalPages = Math.ceil(totalOrders / limitNum);
 
     return res.status(200).json({
-      data: orders.map((order) => order.toJSON()), // ensure plain objects
+      data: orders.map((order) => order.toJSON()),
       pagination: {
         total: totalOrders,
-        page,
-        limit,
+        page: pageNum,
+        limit: limitNum,
         totalPages,
       },
     });

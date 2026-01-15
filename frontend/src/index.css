@@ -2611,3 +2611,7 @@ html[data-theme="dark"]::-webkit-scrollbar-thumb:hover {
 html[data-theme="dark"] .react-avatar {
   filter: brightness(1.1);
 }
+.ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: #333333 !important;
+  font-weight: 600;               /* optional – makes active tab bolder */
+}

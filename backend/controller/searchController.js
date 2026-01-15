@@ -46,12 +46,7 @@ const searchAll = async (req, res) => {
         fields: ["name"],
         attributes: ["categoryId", "name", "parentCategoryId"],
       },
-      {
-        key: "Company",
-        model: Company,
-        fields: ["name", "address", "website", "slug"],
-        attributes: ["companyId", "name", "address", "website", "slug"],
-      },
+
       {
         key: "Customer",
         model: Customer,
@@ -64,12 +59,7 @@ const searchAll = async (req, res) => {
           "mobileNumber",
         ],
       },
-      {
-        key: "Keyword",
-        model: Keyword,
-        fields: ["keyword"],
-        attributes: ["id", "keyword", "categoryId"],
-      },
+
       {
         key: "Order",
         model: Order,
