@@ -17,16 +17,12 @@ import {
   LogoutOutlined,
   UserOutlined,
   SettingOutlined,
-  SunFilled,
-  MoonFilled,
   SearchOutlined,
   CloseOutlined,
 } from "@ant-design/icons";
 import SearchOverlay from "./SearchOverlay";
 import { message } from "antd";
 import Avatar from "react-avatar";
-import logo from "../../assets/img/logo.png";
-import logo_small from "../../assets/img/fav_icon.png";
 import { useLogoutMutation } from "../../api/authApi";
 import { useAuth } from "../../context/AuthContext";
 import PermissionsGate from "../../context/PermissionGate";
@@ -59,15 +55,12 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
 
   // === State ===
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [darkMode, setDarkMode] = useState(() => {
-    return localStorage.getItem("theme") === "dark";
-  });
-
   const [showNotifications, setShowNotifications] = useState(false);
 
   // Mobile Search States
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
   const [showSearchOverlay, setShowSearchOverlay] = useState(false);
 
   const searchRef = useRef(null);
@@ -92,11 +85,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
 
   // Show overlay when typing
   useEffect(() => {
-    if (searchQuery.trim()) {
-      setShowSearchOverlay(true);
-    } else {
-      setShowSearchOverlay(false);
-    }
+    setShowSearchOverlay(!!searchQuery.trim());
   }, [searchQuery]);
 
   // Click outside to close search
@@ -114,16 +103,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [mobileSearchOpen, showSearchOverlay]);
 
-  // Dark Mode persistence
-  useEffect(() => {
-    const theme = darkMode ? "dark" : "light";
-    document.documentElement.setAttribute("data-theme", theme);
-    localStorage.setItem("theme", theme);
-  }, [darkMode]);
-
   // Handlers
-  const toggleDarkMode = useCallback(() => setDarkMode((prev) => !prev), []);
-
   const handleFullscreenToggle = useCallback(() => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen?.();
@@ -152,7 +132,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
 
   const cartItemCount = useMemo(() => cart?.cart?.items?.length || 0, [cart]);
 
-  // Clean user dropdown (no fullscreen/dark mode here)
+  // User Dropdown Menu
   const userMenu = useMemo(
     () => (
       <Menu
@@ -166,7 +146,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
         >
           <div>
             <h6 className="fw-medium mb-0">
-              @{user?.user?.username || "John Smilga"}
+              @{user?.user?.username || "User"}
             </h6>
           </div>
         </Menu.Item>
@@ -220,15 +200,13 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
 
   return (
     <>
-      <div className="header">
-        <div className="main-header d-flex align-items-center justify-content-between">
-          {/* Left: Mobile Hamburger */}
+      <header className="header bg-white shadow-sm">
+        <div className="main-header d-flex align-items-center justify-content-between px-3 px-md-4 py-2">
+          {/* Left: Hamburger (mobile) */}
           <div className="d-flex align-items-center">
             <a
-              className="mobile_btn me-3"
-              onClick={() =>
-                window.innerWidth < 992 && toggleSidebar(!isSidebarOpen)
-              }
+              className="mobile_btn me-3 d-lg-none"
+              onClick={() => toggleSidebar(!isSidebarOpen)}
               id="mobile_btn"
             >
               <span className="bar-icon">
@@ -239,115 +217,98 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
             </a>
           </div>
 
-          {/* Center: Search - Takes available space */}
-          <div className="flex-grow-1 mx-md-4" ref={searchRef}>
-            <ul className="nav user-menu h-100">
-              <li className="nav-item nav-searchinputs w-100 position-relative">
-                {/* Mobile Search Trigger - Centered */}
-                <div className="d-md-none d-flex justify-content-center">
-                  <Button
-                    type="link"
-                    className={`responsive-search ${
-                      mobileSearchOpen ? "d-none" : "d-block"
-                    }`}
-                    onClick={() => setMobileSearchOpen(true)}
-                  >
-                    <SearchOutlined style={{ fontSize: 24 }} />
-                  </Button>
-                </div>
-
-                {/* Mobile Full Search Input */}
-                <div
-                  className={`mobile-search-container d-md-none ${
-                    mobileSearchOpen ? "open position-fixed" : ""
-                  }`}
-                  style={{
-                    top: mobileSearchOpen ? "0" : "",
-                    left: mobileSearchOpen ? "0" : "",
-                    right: mobileSearchOpen ? "0" : "",
-                    zIndex: 1000,
-                    background: "var(--background-color, #fff)",
-                    padding: "12px 16px",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                  }}
+          {/* Center: Search */}
+          <div className="flex-grow-1 px-2 px-md-4" ref={searchRef}>
+            <div className="position-relative w-100">
+              {/* Mobile Search Trigger */}
+              <div className="d-md-none text-center">
+                <Button
+                  type="link"
+                  className={mobileSearchOpen ? "d-none" : "d-inline-block"}
+                  onClick={() => setMobileSearchOpen(true)}
                 >
-                  <Input
-                    ref={mobileSearchInputRef}
-                    prefix={<SearchOutlined className="search-icon" />}
-                    suffix={
-                      searchFetching ? (
-                        <Spin size="small" />
-                      ) : (
-                        <Button
-                          type="text"
-                          icon={<CloseOutlined />}
-                          onClick={() => {
-                            setMobileSearchOpen(false);
-                            setSearchQuery("");
-                            setShowSearchOverlay(false);
-                          }}
-                          size="small"
-                        />
-                      )
-                    }
-                    placeholder="Search products, users, orders..."
-                    value={searchQuery}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setSearchQuery(value);
-                      localStorage.setItem("lastSearchQuery", value);
-                    }}
-                    allowClear
-                    size="large"
-                    className="mobile-global-search"
-                  />
-                </div>
+                  <SearchOutlined style={{ fontSize: 24 }} />
+                </Button>
+              </div>
 
-                {/* Desktop Search - Centered */}
-                <div
-                  className="d-none d-md-block mx-auto"
-                  style={{ maxWidth: "680px" }}
-                >
-                  <Input
-                    prefix={<SearchOutlined className="search-icon" />}
-                    suffix={searchFetching ? <Spin size="small" /> : null}
-                    placeholder="Search products, users, orders..."
-                    value={searchQuery}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setSearchQuery(value);
-                      localStorage.setItem("lastSearchQuery", value);
-                    }}
-                    onFocus={() =>
-                      searchQuery.trim() && setShowSearchOverlay(true)
-                    }
-                    allowClear
-                    size="large"
-                    className="global-search-input"
-                  />
-                </div>
-
-                {/* Search Overlay */}
-                <SearchOverlay
-                  visible={showSearchOverlay}
-                  loading={searchLoading || searchFetching}
-                  results={searchResults}
-                  query={searchQuery}
-                  onClose={() => {
-                    setShowSearchOverlay(false);
-                    if (window.innerWidth < 992 && !searchQuery.trim()) {
-                      setMobileSearchOpen(false);
-                    }
-                  }}
+              {/* Mobile Full-width Search */}
+              <div
+                className={`mobile-search-container d-md-none ${
+                  mobileSearchOpen ? "open" : ""
+                }`}
+                style={{
+                  position: mobileSearchOpen ? "fixed" : "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  zIndex: 1000,
+                  background: "var(--background-color, white)",
+                  padding: "12px 16px",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                }}
+              >
+                <Input
+                  ref={mobileSearchInputRef}
+                  prefix={<SearchOutlined />}
+                  suffix={
+                    searchFetching ? (
+                      <Spin size="small" />
+                    ) : (
+                      <Button
+                        type="text"
+                        icon={<CloseOutlined />}
+                        onClick={() => {
+                          setMobileSearchOpen(false);
+                          setSearchQuery("");
+                          setShowSearchOverlay(false);
+                        }}
+                        size="small"
+                      />
+                    )
+                  }
+                  placeholder="Search products, users, orders..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  allowClear
+                  size="large"
                 />
-              </li>
-            </ul>
+              </div>
+
+              {/* Desktop Search Bar */}
+              <div className="d-none d-md-block">
+                <Input
+                  prefix={<SearchOutlined />}
+                  suffix={searchFetching ? <Spin size="small" /> : null}
+                  placeholder="Search products, users, orders..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() =>
+                    searchQuery.trim() && setShowSearchOverlay(true)
+                  }
+                  allowClear
+                  size="large"
+                  className="global-search-input"
+                />
+              </div>
+
+              {/* Search Results Overlay */}
+              <SearchOverlay
+                visible={showSearchOverlay}
+                loading={searchLoading || searchFetching}
+                results={searchResults}
+                query={searchQuery}
+                onClose={() => {
+                  setShowSearchOverlay(false);
+                  if (window.innerWidth < 992) setMobileSearchOpen(false);
+                }}
+              />
+            </div>
           </div>
 
-          {/* Right: Action Icons */}
-          <div className="d-flex align-items-center">
-            {/* Desktop Icons */}
-            <div className="d-none d-md-flex align-items-center gap-2">
+          {/* Right: Actions + User */}
+          <div className="d-flex align-items-center gap-2 gap-md-3">
+            {/* Desktop-only icons */}
+            <div className="d-none d-md-flex align-items-center gap-3">
               <Button
                 type="link"
                 onClick={handleFullscreenToggle}
@@ -371,31 +332,19 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                   </Badge>
                 </Link>
               </PermissionsGate>
-
-              {/* <Button
-                type="link"
-                onClick={toggleDarkMode}
-                title={darkMode ? "Light Mode" : "Dark Mode"}
-              >
-                {darkMode ? (
-                  <SunFilled style={{ fontSize: 18 }} />
-                ) : (
-                  <MoonFilled style={{ fontSize: 18 }} />
-                )}
-              </Button> */}
             </div>
 
-            {/* Mobile: More Menu */}
-            <div className="d-md-none mx-2">
+            {/* Mobile More Menu */}
+            <div className="d-md-none">
               <Dropdown
                 overlay={
-                  <Menu className="shadow-sm rounded">
+                  <Menu>
                     <Menu.Item
                       key="fullscreen"
                       onClick={handleFullscreenToggle}
                       icon={<FullscreenOutlined />}
                     >
-                      {isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+                      {isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
                     </Menu.Item>
                     <Menu.Item
                       key="notifications"
@@ -404,30 +353,20 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                     >
                       Notifications{" "}
                       {notificationCount > 0 && (
-                        <Badge
-                          count={notificationCount}
-                          style={{ marginLeft: 8 }}
-                        />
+                        <Badge count={notificationCount} />
                       )}
                     </Menu.Item>
                     <PermissionsGate api="write" module="cart">
                       <Menu.Item key="cart" icon={<ShoppingCartOutlined />}>
                         <Link
                           to="/cart"
-                          className="d-flex justify-content-between align-items-center w-100"
+                          className="d-flex justify-content-between w-100"
                         >
                           Cart{" "}
                           {cartItemCount > 0 && <Badge count={cartItemCount} />}
                         </Link>
                       </Menu.Item>
                     </PermissionsGate>
-                    {/* <Menu.Item
-                      key="theme"
-                      onClick={toggleDarkMode}
-                      icon={darkMode ? <SunFilled /> : <MoonFilled />}
-                    >
-                      {darkMode ? "Light Mode" : "Dark Mode"}
-                    </Menu.Item> */}
                   </Menu>
                 }
                 trigger={["click"]}
@@ -447,29 +386,25 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
               </Dropdown>
             </div>
 
-            {/* User Avatar - Always visible */}
-            <div className="ms-2">
+            {/* User Avatar */}
+            <div className="ms-1 ms-md-2">
               {isProfileLoading ? (
                 <span className="text-muted">Loading...</span>
               ) : profileError ? (
                 <span className="text-danger">Error</span>
               ) : (
-                <Dropdown
-                  overlay={userMenu}
-                  trigger={["click"]}
-                  getPopupContainer={(trigger) => trigger.parentElement}
-                >
+                <Dropdown overlay={userMenu} trigger={["click"]}>
                   <a
                     href="#"
-                    className="nav-link userset"
+                    className="nav-link userset d-flex align-items-center"
                     onClick={(e) => e.preventDefault()}
                   >
                     <Avatar
-                      name={user?.user?.name || "User"}
+                      name={user?.user?.name || user?.user?.username || "User"}
                       src={
                         user?.user?.photo_thumbnail || user?.user?.profileImage
                       }
-                      size={40}
+                      size={36}
                       round={true}
                       className="circular-avatar"
                       textSizeRatio={2.2}
@@ -481,7 +416,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
       <NotificationsOverlay
         isOpen={showNotifications}

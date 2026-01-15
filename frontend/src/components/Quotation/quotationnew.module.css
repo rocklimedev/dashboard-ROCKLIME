@@ -47,9 +47,7 @@
 .coverBg { position: absolute; inset: 0; object-fit: cover; opacity: 0.94; z-index: 1; }
 .coverContent { position: relative; z-index: 3; padding: 40px; }
 .dynamicCustomerName {
-
     font-size: 50px;
-    font-weight: 900;
     letter-spacing: 12px;
     text-transform: uppercase;
 margin: 351px 0;
@@ -94,13 +92,13 @@ margin: 351px 0;
 }
 
 /* Measure these values from your image in pixels (use dev tools or image editor) */
-.clientNameField     { top: 350px;
+.clientNameField     { top: 205px;
     left: 305px; width: 420px; }
-.contactField        { top: 406px;
+.contactField        { top: 264px;
     left: 305px;}
-.addressField        {     top: 459px;
+.addressField        {    top: 319px;
     left: 305px; width: 420px; }
-.quotationNoField    {     top: 512px;
+.quotationNoField    {     top: 380px;
     left: 307px; }
 
 /* Optional: if you want to keep logos on top of image */
