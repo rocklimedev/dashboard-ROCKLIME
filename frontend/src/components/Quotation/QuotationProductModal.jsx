@@ -3,6 +3,7 @@ import { Modal, Table, Image, Spin, Empty, Typography, Card } from "antd";
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import { useGetQuotationByIdQuery } from "../../api/quotationApi";
 import { useMemo } from "react";
+
 const { Text, Title } = Typography;
 
 const safeParse = (data, fallback = []) => {
@@ -33,14 +34,35 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
 
   const hasValidItems = lineItems.length > 0;
 
-  // Use pre-calculated financials from API response (no manual math)
-  const subtotal = Number(q.subtotal || 0); // If API sends it, otherwise fallback
+  // ── Financial values from API (preferred) or fallback ──
+  const subtotal = Number(q.subtotal || 0);
   const extraDiscountAmount = Number(q.discountAmount || q.extraDiscount || 0);
+  const extraDiscountType = q.extraDiscountType || "amount"; // percent / amount
   const shippingAmount = Number(q.shippingAmount || 0);
-  const gstRate = Number(q.gst || 0);
-  const gstAmount = Number(q.gstAmount || 0); // Prefer if API sends
+
   const roundOff = Number(q.roundOff || 0);
   const finalAmount = Number(q.finalAmount || 0);
+
+  // ── Calculate total product-level discount ──
+  const totalProductDiscount = useMemo(() => {
+    return lineItems.reduce((sum, item) => {
+      const discount = Number(item.discount || 0);
+      if (discount <= 0) return sum;
+
+      const price = Number(item.price || item.sellingPrice || 0);
+      const qty = Number(item.quantity || 1);
+
+      let discountAmount = 0;
+      if (item.discountType === "percent") {
+        discountAmount = ((price * discount) / 100) * qty;
+      } else {
+        // fixed amount per unit
+        discountAmount = discount * qty;
+      }
+
+      return sum + discountAmount;
+    }, 0);
+  }, [lineItems]);
 
   const columns = [
     {
@@ -135,25 +157,39 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
       {/* Subtotal */}
       {subtotal > 0 && (
         <Table.Summary.Row>
-          <Table.Summary.Cell index={0} colSpan={6} align="right">
+          <Table.Summary.Cell colSpan={6} align="right">
             <Text strong>Subtotal</Text>
           </Table.Summary.Cell>
-          <Table.Summary.Cell index={1} align="right">
+          <Table.Summary.Cell align="right">
             <Text strong>₹{subtotal.toFixed(2)}</Text>
           </Table.Summary.Cell>
         </Table.Summary.Row>
       )}
 
-      {/* Extra Discount */}
+      {/* Total Product Discount (line-item discounts) */}
+      {totalProductDiscount > 0 && (
+        <Table.Summary.Row>
+          <Table.Summary.Cell colSpan={6} align="right">
+            <Text>Product Discount</Text>
+          </Table.Summary.Cell>
+          <Table.Summary.Cell align="right">
+            <Text type="danger">-₹{totalProductDiscount.toFixed(2)}</Text>
+          </Table.Summary.Cell>
+        </Table.Summary.Row>
+      )}
+
+      {/* Extra Discount (quotation-level) */}
       {extraDiscountAmount > 0 && (
         <Table.Summary.Row>
-          <Table.Summary.Cell index={0} colSpan={6} align="right">
+          <Table.Summary.Cell colSpan={6} align="right">
             <Text>
               Extra Discount{" "}
-              {q.extraDiscountType === "percent" ? `(${q.extraDiscount}%)` : ""}
+              {extraDiscountType === "percent"
+                ? `(${q.extraDiscount || "?"}%)`
+                : ""}
             </Text>
           </Table.Summary.Cell>
-          <Table.Summary.Cell index={1} align="right">
+          <Table.Summary.Cell align="right">
             <Text type="danger">-₹{extraDiscountAmount.toFixed(2)}</Text>
           </Table.Summary.Cell>
         </Table.Summary.Row>
@@ -162,23 +198,11 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
       {/* Shipping */}
       {shippingAmount > 0 && (
         <Table.Summary.Row>
-          <Table.Summary.Cell index={0} colSpan={6} align="right">
+          <Table.Summary.Cell colSpan={6} align="right">
             <Text>Shipping</Text>
           </Table.Summary.Cell>
-          <Table.Summary.Cell index={1} align="right">
+          <Table.Summary.Cell align="right">
             <Text type="success">+₹{shippingAmount.toFixed(2)}</Text>
-          </Table.Summary.Cell>
-        </Table.Summary.Row>
-      )}
-
-      {/* GST */}
-      {gstRate > 0 && (
-        <Table.Summary.Row>
-          <Table.Summary.Cell index={0} colSpan={6} align="right">
-            <Text>GST ({gstRate}%)</Text>
-          </Table.Summary.Cell>
-          <Table.Summary.Cell index={1} align="right">
-            <Text type="success">+₹{gstAmount.toFixed(2)}</Text>
           </Table.Summary.Cell>
         </Table.Summary.Row>
       )}
@@ -186,10 +210,10 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
       {/* Round Off */}
       {roundOff !== 0 && (
         <Table.Summary.Row>
-          <Table.Summary.Cell index={0} colSpan={6} align="right">
+          <Table.Summary.Cell colSpan={6} align="right">
             <Text>Round Off</Text>
           </Table.Summary.Cell>
-          <Table.Summary.Cell index={1} align="right">
+          <Table.Summary.Cell align="right">
             <Text type={roundOff >= 0 ? "success" : "danger"}>
               {roundOff >= 0 ? "+" : "-"}₹{Math.abs(roundOff).toFixed(2)}
             </Text>
@@ -199,12 +223,12 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
 
       {/* Final Amount - Highlighted */}
       <Table.Summary.Row style={{ background: "#f0f9ff" }}>
-        <Table.Summary.Cell index={0} colSpan={6} align="right">
+        <Table.Summary.Cell colSpan={6} align="right">
           <Text strong style={{ fontSize: "1.1em" }}>
             Final Amount
           </Text>
         </Table.Summary.Cell>
-        <Table.Summary.Cell index={1} align="right">
+        <Table.Summary.Cell align="right">
           <Text strong style={{ fontSize: "1.3em", color: "#3f8600" }}>
             ₹{finalAmount.toFixed(2)}
           </Text>

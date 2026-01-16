@@ -26,10 +26,8 @@ import { useGetAllBrandsQuery } from "../../api/brandsApi";
 
 import { exportToPDF, exportToExcel } from "./hooks/exportHelpers";
 import { calcTotals, amountInWords } from "./hooks/calcHelpers";
-const colston = "https://static.cmtradingco.com/brands/colston-logo_black.png";
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
-
 const NewQuotationsDetails = () => {
   const { id } = useParams();
   const [activeVersion, setActiveVersion] = useState("current");
@@ -48,7 +46,7 @@ const NewQuotationsDetails = () => {
     useGetQuotationVersionsQuery(id);
   const { data: brandsData } = useGetAllBrandsQuery();
 
-  // SAFE PARSE PRODUCTS (handles string/array)
+  // SAFE PARSE PRODUCTS
   const safeParseProducts = (data) => {
     if (!data) return [];
     if (Array.isArray(data)) return data;
@@ -93,24 +91,20 @@ const NewQuotationsDetails = () => {
 
   const activeProducts = activeVersionData.products || [];
 
-  // THIS LINE WAS MISSING — ADD IT BACK!
   const { productsData, loading: prodLoading } =
     useProductsData(activeProducts);
 
-  // Prioritize version-specific customer & address if available
-  const versionQuotation = activeVersionData.quotation;
-  let customerId = versionQuotation?.customerId;
-  let shipToId = versionQuotation?.shipTo;
+  // Customer & Address
+  let customerId = activeVersionData.quotation?.customerId;
+  let shipToId = activeVersionData.quotation?.shipTo;
 
-  // Fallback: Try to get from the version's quotationData (for historical versions)
-  if (!customerId && versionQuotation?.quotationData?.customerId) {
-    customerId = versionQuotation.quotationData.customerId;
+  if (!customerId && activeVersionData.quotation?.quotationData?.customerId) {
+    customerId = activeVersionData.quotation.quotationData.customerId;
   }
-  if (!shipToId && versionQuotation?.quotationData?.shipTo) {
-    shipToId = versionQuotation.quotationData.shipTo;
+  if (!shipToId && activeVersionData.quotation?.quotationData?.shipTo) {
+    shipToId = activeVersionData.quotation.quotationData.shipTo;
   }
 
-  // Optional: Even fallback to main quotation if still missing
   if (!customerId && quotation?.customerId) customerId = quotation.customerId;
   if (!shipToId && quotation?.shipTo) shipToId = quotation.shipTo;
 
@@ -118,20 +112,15 @@ const NewQuotationsDetails = () => {
     data: customerResponse,
     isFetching: custLoading,
     error: custError,
-  } = useGetCustomerByIdQuery(customerId, {
-    skip: !customerId,
-  });
+  } = useGetCustomerByIdQuery(customerId, { skip: !customerId });
 
   const customer = customerResponse?.data || {};
 
-  // Now fetch address
   const { data: addressResponse, isFetching: addrLoading } =
     useGetAddressByIdQuery(shipToId, { skip: !shipToId });
 
-  const address = addressResponse; // ← most likely correct
-  // or (safer / more explicit):
-  // const address = addressResponse?.data ?? addressResponse;
-  // CUSTOMER DISPLAY VALUES
+  const address = addressResponse;
+
   const customerName = customer?.name || "Dear Client";
   const customerPhone =
     customer?.mobileNumber || customer?.phone || "XXXXXXXXXX";
@@ -160,10 +149,7 @@ const NewQuotationsDetails = () => {
     return set.size ? [...set].join(" / ") : "GROHE / AMERICAN STANDARD";
   }, [activeProducts, productsData, brandsData]);
 
-  // CALCULATIONS
-  const gstRate = Number(activeVersionData.quotation?.gst || 18);
-  const includeGst = activeVersionData.quotation?.include_gst !== false;
-
+  // CALCULATIONS (NO GST)
   const priceMap = activeProducts.reduce((map, p) => {
     if (p.productId) {
       map[p.productId] = {
@@ -179,31 +165,26 @@ const NewQuotationsDetails = () => {
     totalProductDiscount,
     extraDiscountAmt,
     taxableValue,
-    gst,
     roundOffApplied,
     total: finalTotal,
   } = calcTotals(
     activeProducts,
-    gstRate,
-    includeGst,
     priceMap,
-    activeVersionData.quotation?.extraDiscount || 0,
-    activeVersionData.quotation?.extraDiscountType || "amount",
+    activeVersionData.quotation?.extraDiscount || 0, // e.g. 4
+    activeVersionData.quotation?.extraDiscountType, // "percent" – no fallback needed now
     activeVersionData.quotation?.roundOff || 0
   );
 
   const finalAmountInWords = amountInWords(Math.round(finalTotal));
 
-  // Add this with your other useMemo/useState
   const pageTitle = useMemo(() => {
     if (!quotation) return "Loading Quotation...";
-
     const title =
       quotation.document_title || quotation.quotation_title || "Quotation";
     const ref = quotation.reference_number || id || "QID";
-
     return `${title.trim()} - ${ref}`;
   }, [quotation, id]);
+
   // EXPORT HANDLER
   const handleExport = async () => {
     if (!quotationRef.current) return;
@@ -287,17 +268,15 @@ const NewQuotationsDetails = () => {
     );
 
     // PAGE 2: LETTERHEAD
-    // PAGE 2: LETTERHEAD with background image + overlays
     pages.push(
       <div key="letterhead" className={`${styles.letterheadPage} page`}>
         <img
-          src={quotationBgImage} // import at top: import quotationBg from "../../assets/img/quotation-letter-bg.jpg";
+          src={quotationBgImage}
           alt="Quotation Background"
           className={styles.letterheadBg}
         />
 
         <div className={styles.letterheadContent}>
-          {/* Overlaid fields – position matches blanks in your image */}
           <div className={`${styles.clientField} ${styles.clientNameField}`}>
             {customerName}
           </div>
@@ -310,12 +289,8 @@ const NewQuotationsDetails = () => {
           <div className={`${styles.clientField} ${styles.quotationNoField}`}>
             {quotation.reference_number || "—"}
           </div>
-
-          {/* If you still want company title or other static parts */}
-          {/* <h1 className={styles.companyTitle}>CM TRADING CO.</h1> */}
         </div>
 
-        {/* Keep footer if needed – or bake it into background image */}
         <div className={styles.letterheadFooter}>
           <img src={logo} alt="Logo" />
           <div>
@@ -329,7 +304,7 @@ const NewQuotationsDetails = () => {
       </div>
     );
 
-    // PAGE 3+: PRODUCT PAGES
+    // PRODUCT PAGES
     for (let i = 0; i < activeProducts.length; i += itemsPerPage) {
       const items = activeProducts.slice(i, i + itemsPerPage);
       const isLastPage = i + itemsPerPage >= activeProducts.length;
@@ -380,13 +355,12 @@ const NewQuotationsDetails = () => {
                 const pd =
                   productsData?.find((x) => x.productId === p.productId) || {};
 
-                // Look in quotation.items if it exists
                 const matchingItem = quotation?.items?.find(
                   (it) => it.productId === p.productId
                 );
 
                 const code =
-                  matchingItem?.companyCode || // ← highest priority
+                  matchingItem?.companyCode ||
                   p.companyCode ||
                   p.productCode ||
                   matchingItem?.productCode ||
@@ -439,7 +413,8 @@ const NewQuotationsDetails = () => {
               })}
             </tbody>
           </table>
-          {/* FINAL SUMMARY – ONLY ON LAST PAGE */}
+
+          {/* FINAL SUMMARY – ONLY ON LAST PAGE (NO GST) */}
           {isLastPage && (
             <div className={styles.finalSummaryWrapper}>
               <div className={styles.finalSummarySection}>
@@ -477,20 +452,14 @@ const NewQuotationsDetails = () => {
                       ₹{Math.round(taxableValue).toLocaleString("en-IN")}
                     </span>
                   </div>
-
-                  {gst > 0 && (
-                    <div className={styles.summaryRow}>
-                      <span>GST ({gstRate}%)</span>
-                      <span>₹{Math.round(gst).toLocaleString("en-IN")}</span>
-                    </div>
-                  )}
                 </div>
 
                 <div className={styles.summaryRight}>
                   <div className={styles.totalAmount}>
                     <strong>Total Amount:</strong>
                     <strong>
-                      {""} ₹{Math.round(finalTotal).toLocaleString("en-IN")}
+                      {" "}
+                      ₹{Math.round(finalTotal).toLocaleString("en-IN")}
                     </strong>
                   </div>
                   <div className={styles.amountInWords}>
@@ -506,6 +475,7 @@ const NewQuotationsDetails = () => {
 
     return pages;
   };
+
   return (
     <>
       <Helmet>

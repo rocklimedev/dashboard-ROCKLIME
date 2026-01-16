@@ -226,7 +226,7 @@ margin: 351px 0;
 .productTable td {
 /*width: 100%; */
     border-collapse: collapse;
-    /* font-size: 15.5px; */
+    font-size: 13px;
     table-layout: fixed;
     /* margin-top: 15px;*/
 }
@@ -257,7 +257,9 @@ height: 66px;
 }
 
 .snoCell { font-weight: bold; font-size: 16px; color: #333; }
-.discountCell, .totalCell { color: #333; font-weight: bold; font-size: 15px; }
+.discountCell, .totalCell {     color: #333;
+    /* font-weight: bold; */
+    font-size: 13px; }
 /* REPLACE THE OLD .finalSummarySection COMPLETELY WITH THIS */
 
 .finalSummaryWrapper {

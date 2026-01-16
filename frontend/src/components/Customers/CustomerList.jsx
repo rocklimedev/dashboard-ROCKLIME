@@ -274,13 +274,13 @@ const CustomerList = () => {
                 {/* View Mode Toggle */}
                 <div className="btn-group" role="group">
                   <Button
-                    type={viewMode === "list" ? "primary" : "default"}
+                    className={viewMode === "list" ? "active-red-btn" : ""}
                     icon={<BarsOutlined />}
                     onClick={() => setViewMode("list")}
                     size="large"
                   />
                   <Button
-                    type={viewMode === "card" ? "primary" : "default"}
+                    className={viewMode === "card" ? "active-red-btn" : ""}
                     icon={<AppstoreOutlined />}
                     onClick={() => setViewMode("card")}
                     size="large"
@@ -316,7 +316,7 @@ const CustomerList = () => {
                             round
                             size="80"
                             className="mb-3"
-                            style={{ color: "#333333" }}
+                            color="#e31e24"
                             fgColor="#fff"
                           />
 
@@ -423,7 +423,7 @@ const CustomerList = () => {
                                 name={c.name || c.companyName}
                                 round
                                 size="40"
-                                color="#1890ff"
+                                color="#e31e24"
                                 fgColor="#fff"
                               />
                               <a
