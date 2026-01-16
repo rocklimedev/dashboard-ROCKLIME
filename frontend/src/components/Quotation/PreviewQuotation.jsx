@@ -12,7 +12,10 @@ import { calcTotals, amountInWords } from "./hooks/calcHelpers";
 import styles from "./quotationnew.module.css";
 
 const { Title } = Typography;
-
+const formatINR = (value) => {
+  const num = Number(value);
+  return isNaN(num) ? "—" : `₹${num.toLocaleString("en-IN")}`;
+};
 const PreviewQuotation = ({
   visible,
   onClose,
@@ -233,15 +236,13 @@ const PreviewQuotation = ({
                       ) : null}
                     </td>
                     <td>{qty}</td>
-                    <td>₹{mrp.toLocaleString("en-IN")}</td>
+                    <td>{formatINR(mrp)}</td>
                     <td className={styles.discountCell}>
                       {discountType === "percent"
                         ? `${discount}%`
                         : `₹${discount}`}
                     </td>
-                    <td className={styles.totalCell}>
-                      ₹{total.toLocaleString("en-IN")}
-                    </td>
+                    <td className={styles.totalCell}>{formatINR(total)}</td>
                   </tr>
                 );
               })}
@@ -254,7 +255,7 @@ const PreviewQuotation = ({
                 <div className={styles.summaryLeft}>
                   <div className={styles.summaryRow}>
                     <span>Subtotal</span>
-                    <span>₹{subtotal.toLocaleString("en-IN")}</span>
+                    <span>{formatINR(subtotal)}</span>
                   </div>
 
                   {extraDiscountAmt > 0 && (
@@ -266,12 +267,12 @@ const PreviewQuotation = ({
 
                   <div className={styles.summaryRow}>
                     <span>Taxable Value</span>
-                    <span>₹{amountAfterDiscount.toLocaleString("en-IN")}</span>
+                    <span>{formatINR(amountAfterDiscount)}</span>
                   </div>
 
                   <div className={styles.summaryRow}>
                     <span>GST @{gstRate}%</span>
-                    <span>₹{gstAmount.toLocaleString("en-IN")}</span>
+                    <span>{formatINR(gstAmount)}</span>
                   </div>
 
                   <div className={styles.summaryRow}>
@@ -286,7 +287,10 @@ const PreviewQuotation = ({
                   <div className={styles.totalAmount}>
                     <span>Total Amount</span>
                     <span>
-                      ₹{Math.round(finalTotal).toLocaleString("en-IN")}
+                      ₹
+                      {(Number(Math.round(finalTotal)) || 0).toLocaleString(
+                        "en-IN"
+                      )}
                     </span>
                   </div>
                   <div className={styles.amountInWords}>
