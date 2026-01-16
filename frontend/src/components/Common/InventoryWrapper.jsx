@@ -356,16 +356,18 @@ const InventoryWrapper = () => {
           <Link to={`/product/${record.productId}`} style={{ fontWeight: 500 }}>
             {record.name || "Unnamed Product"}
           </Link>
-          <div style={{ fontSize: 12, color: "#000", marginTop: 4 }}>
+          <div style={{ fontSize: 12, marginTop: 4 }}>
             {record.product_code && (
-              <Text code style={{ color: "#333" }}>
+              <Text code className="black-code">
                 {record.product_code}
               </Text>
             )}
+
             {record.product_code &&
               getCompanyCode(record.metaDetails) !== "N/A" &&
               " • "}
-            <Text code style={{ color: "#333" }}>
+
+            <Text code className="black-code">
               {getCompanyCode(record.metaDetails)}
             </Text>
           </div>

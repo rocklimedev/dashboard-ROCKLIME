@@ -89,91 +89,97 @@ export const amountInWords = (num) => {
 };
 
 /* --------------------------------------------------------------
-   Improved totals with full discount visibility
+   Calculate totals – GST removed, extra discount fixed
    -------------------------------------------------------------- */
 export const calcTotals = (
   products = [],
-  gstRate = 18,
-  includeGst = true,
   productDetailsMap = {},
   extraDiscount = 0,
-  extraDiscountType = "amount",
+  extraDiscountType = "percent", // default changed to "percent" (common case)
   roundOff = 0
 ) => {
-  const safeGstRate = Number(gstRate) || 0;
-  const safeIncludeGst = includeGst !== false;
   const safeExtraDiscount = Number(extraDiscount) || 0;
-  const safeExtraDiscType = (extraDiscountType || "amount").toLowerCase();
+  const safeExtraDiscType = (extraDiscountType || "percent").toLowerCase();
   const safeRoundOff = Number(roundOff) || 0;
 
-  let subtotal = 0; // MRP × Qty (before any discount)
-  let totalProductDiscount = 0; // Sum of all per-item discounts
+  let subtotal = 0; // Sum of (price × qty) before any discount
+  let totalProductDiscount = 0; // Sum of line-item discounts
 
   products.forEach((p) => {
     const qty = Number(p.quantity) || 1;
     const detail = productDetailsMap[p.productId] || {};
+
+    // Use the most reliable price source
     const basePrice = Number(
-      detail.sellingPrice || detail.price || p.price || 0
+      detail.sellingPrice || detail.price || p.price || p.sellingPrice || 0
     );
 
-    // 1. Original amount before discount
+    // 1. Line total before discount
     const originalLineTotal = basePrice * qty;
 
-    // 2. Discount applied on this item
+    // 2. Item-level discount (usually percent)
     const itemDiscPercent = Number(p.discount || 0);
-    const itemDiscAmount = originalLineTotal * (itemDiscPercent / 100);
+    let itemDiscAmount = 0;
 
-    // 3. Final line total for this item
+    if (p.discountType?.toLowerCase() === "fixed") {
+      itemDiscAmount = Number(p.discount || 0) * qty;
+    } else {
+      // percent (default)
+      itemDiscAmount = originalLineTotal * (itemDiscPercent / 100);
+    }
+
+    // 3. Final amount for this line item
     const finalLineTotal = originalLineTotal - itemDiscAmount;
 
     subtotal += originalLineTotal;
     totalProductDiscount += itemDiscAmount;
 
-    // Optional: warn if saved total differs significantly
+    // Optional: warn on mismatch with stored total
     const savedTotal = Number(p.total || 0);
     if (savedTotal > 0 && Math.abs(savedTotal - finalLineTotal) > 1) {
       console.warn(`Item ${p.productId || p.name} total mismatch`, {
         calculated: finalLineTotal,
         saved: savedTotal,
-        discountPercent: itemDiscPercent,
+        discount: itemDiscPercent,
+        discountType: p.discountType,
       });
     }
   });
 
-  // Extra discount (on subtotal after product discount)
+  // Extra discount (quotation-level) – applied after product discounts
   let extraDiscountAmt = 0;
   if (safeExtraDiscount > 0) {
     const baseForExtra = subtotal - totalProductDiscount;
-    extraDiscountAmt =
-      safeExtraDiscType === "percent"
-        ? baseForExtra * (safeExtraDiscount / 100)
-        : safeExtraDiscount;
+
+    if (safeExtraDiscType === "percent") {
+      extraDiscountAmt = baseForExtra * (safeExtraDiscount / 100);
+    } else {
+      // fixed / amount
+      extraDiscountAmt = safeExtraDiscount;
+    }
+
+    // Round to 2 decimals (common for money)
+    extraDiscountAmt = Math.round(extraDiscountAmt * 100) / 100;
   }
 
+  // Final values
   const taxableValue = subtotal - totalProductDiscount - extraDiscountAmt;
-
-  // GST
-  const gstAmount = safeIncludeGst ? (taxableValue * safeGstRate) / 100 : 0;
-
-  // Final total with round-off
-  const totalBeforeRound = taxableValue + gstAmount;
+  const totalBeforeRound = taxableValue;
   const finalTotal = Math.round(totalBeforeRound + safeRoundOff);
 
-  // Actual round-off applied (useful to display)
+  // Actual round-off adjustment applied
   const roundOffApplied = finalTotal - totalBeforeRound;
 
   return {
-    // Core values
     subtotal: Number(subtotal.toFixed(2)),
     totalProductDiscount: Number(totalProductDiscount.toFixed(2)),
     extraDiscountAmt: Number(extraDiscountAmt.toFixed(2)),
     taxableValue: Number(taxableValue.toFixed(2)),
-    gst: Number(gstAmount.toFixed(2)),
     roundOffApplied: Number(roundOffApplied.toFixed(2)),
     total: Number(finalTotal.toFixed(2)),
 
-    // For convenience
-    amountAfterAllDiscount: Number(
+    // Optional helpers
+    netAfterDiscounts: Number(
       (subtotal - totalProductDiscount - extraDiscountAmt).toFixed(2)
     ),
   };

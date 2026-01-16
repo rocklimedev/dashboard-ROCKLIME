@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useParams, Link, useSearchParams } from "react-router-dom";
 import {
   Form,
@@ -41,6 +41,7 @@ import PageHeader from "../Common/PageHeader";
 import Breadcrumb from "./Breadcrumb";
 import pos from "../../assets/img/default.png";
 import PermissionGate from "../../context/PermissionGate";
+import { debounce } from "lodash"; // Make sure lodash is installed: npm install lodash
 
 // ────────────────────────────────────────────────
 //   META UUIDS – keep in sync with backend
@@ -56,14 +57,15 @@ const ProductsList = () => {
 
   // ── Read state from URL ───────────────────────────────
   const currentPage = Number(searchParams.get("page")) || 1;
-  const search = searchParams.get("search")?.trim() || "";
+  const urlSearch = searchParams.get("search")?.trim() || "";
   const priceMin = searchParams.get("minPrice") || "";
   const priceMax = searchParams.get("maxPrice") || "";
-  const sortField = searchParams.get("sort") || null; // name, product_code, price
-  const sortOrder = searchParams.get("order") || null; // ascend, descend
+  const sortField = searchParams.get("sort") || null;
+  const sortOrder = searchParams.get("order") || null;
 
   const [viewMode, setViewMode] = useState("list");
   const [cartLoadingStates, setCartLoadingStates] = useState({});
+  const [localSearch, setLocalSearch] = useState(urlSearch);
 
   const pageSize = 50;
 
@@ -71,13 +73,49 @@ const ProductsList = () => {
   const isBpcView = !!bpcId;
   const isCategoryView = !!id && !isBrandView && !isBpcView;
 
+  // ── Debounced search update ───────────────────────────
+  const debouncedUpdateSearch = useMemo(
+    () =>
+      debounce((value) => {
+        setSearchParams((prev) => {
+          const next = new URLSearchParams(prev);
+          if (value.trim()) {
+            next.set("search", value.trim());
+          } else {
+            next.delete("search");
+          }
+          next.set("page", "1"); // reset to page 1 on search change
+          return next;
+        });
+      }, 400),
+    [setSearchParams]
+  );
+
+  // Sync local search when URL search changes (browser back/forward, reset, etc.)
+  useEffect(() => {
+    setLocalSearch(urlSearch);
+  }, [urlSearch]);
+
+  // Cleanup debounce
+  useEffect(() => {
+    return () => {
+      debouncedUpdateSearch.cancel();
+    };
+  }, [debouncedUpdateSearch]);
+
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setLocalSearch(value); // instant UI update
+    debouncedUpdateSearch(value); // delayed URL + query trigger
+  };
+
   // ── Queries ────────────────────────────────────────────
   const brandQuery = useGetProductsByBrandQuery(
     {
       brandId: id || "",
       page: currentPage,
       limit: pageSize,
-      search: search || undefined,
+      search: urlSearch || undefined,
     },
     { skip: !isBrandView || !id }
   );
@@ -87,7 +125,7 @@ const ProductsList = () => {
       categoryId: id || "",
       page: currentPage,
       limit: pageSize,
-      search: search || undefined,
+      search: urlSearch || undefined,
     },
     { skip: !isCategoryView || !id }
   );
@@ -96,7 +134,7 @@ const ProductsList = () => {
     {
       page: currentPage,
       limit: pageSize,
-      search: search || undefined,
+      search: urlSearch || undefined,
     },
     { skip: isBrandView || isCategoryView }
   );
@@ -171,7 +209,7 @@ const ProductsList = () => {
   const processedProducts = useMemo(() => {
     let result = [...products];
 
-    // 1. Price range filter (client-side)
+    // Price range filter
     if (priceMin || priceMax) {
       const min = priceMin ? Number(priceMin) : -Infinity;
       const max = priceMax ? Number(priceMax) : Infinity;
@@ -182,7 +220,7 @@ const ProductsList = () => {
       });
     }
 
-    // 2. Sorting (client-side)
+    // Sorting
     if (sortField && sortOrder) {
       result = result.sort((a, b) => {
         let aVal, bVal;
@@ -225,7 +263,6 @@ const ProductsList = () => {
           next.set(key, value);
         }
       });
-      // Always reset to page 1 when filters/sort change (except page itself)
       if (!updates.page) {
         next.set("page", "1");
       }
@@ -247,17 +284,13 @@ const ProductsList = () => {
     });
   };
 
-  const handleSearchChange = (e) => {
-    updateSearchParams({ search: e.target.value.trim() });
-  };
-
   const handlePriceChange = (type, value) => {
     updateSearchParams({ [type]: value });
   };
 
   const resetFilters = () => {
-    setSearchParams({ page: currentPage.toString() }); // keep page if wanted
-    // or setSearchParams({}); to completely reset
+    setSearchParams({ page: currentPage.toString() });
+    setLocalSearch("");
   };
 
   // ── Table Columns ──────────────────────────────────────
@@ -523,7 +556,7 @@ const ProductsList = () => {
               <Input
                 prefix={<SearchOutlined />}
                 placeholder="Search products..."
-                value={search}
+                value={localSearch}
                 onChange={handleSearchChange}
                 allowClear
                 size="large"
@@ -568,7 +601,7 @@ const ProductsList = () => {
         ) : processedProducts.length === 0 ? (
           <Empty
             description={
-              search || priceMin || priceMax || sortField
+              urlSearch || priceMin || priceMax || sortField
                 ? "No products match your filters"
                 : "No products found"
             }

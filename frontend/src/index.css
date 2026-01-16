@@ -2615,3 +2615,12 @@ html[data-theme="dark"] .react-avatar {
   color: #333333 !important;
   font-weight: 600;               /* optional – makes active tab bolder */
 }
+.active-red-btn {
+  background-color: #e31e24  !important;
+  border-color: #e31e24  !important;
+  color: #fff !important;
+}
+.black-code code {
+  color: #000 !important;
+  background-color: transparent !important;
+}
