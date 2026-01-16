@@ -1,191 +1,21 @@
 [
-    {
-        Bath Spout with Flange	COL-2020	 ₹ 1,548.00 	
+  {
+    "name": "",
+
+    "quantity": 67,
+    "discountType": null,
+    "alert_quantity": 20,
+    "tax": null,
+    "description": "",
+    "images": "",
+    "isFeatured": false,
+    "status": "active",
+    "brandId": "AMERICAN STANDARD",
+    "vendorId": null,
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "meta": {
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 1998,
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "4005"
     }
-    {
-        COASTAL - 2 Piece - S TRAP - 225 mm	9132	 ₹ 13,998.00 	
-    }
-    {
-        NEST Wall Hung Urinal	9227	 ₹ 3,998.00 	
-    }
-    {
-        X - TASMANIA with Rain shower, Waterfall, XXL Mist & Ceiling Kit - 750 * 400 mm	9998	 ₹ 84,998.00 		
-X - TASMANIA (GOLD) with Rain shower, Waterfall, XXL Mist & Ceiling Kit - 750 * 400 mm		 ₹ 109,998.00 		
-X - TASMANIA (ROSE GOLD) with Rain shower, Waterfall, XXL Mist & Ceiling Kit - 750 * 400 mm		 ₹ 109,998.00 		
-X - TASMANIA (MATTE BLACK) with Rain shower, Waterfall, XXL Mist & Ceiling Kit - 750 * 400 mm		 ₹ 109,998.00 		
-X - TASMANIA (PLATINUM BLACK) with Rain shower, Waterfall, XXL Mist & Ceiling Kit - 750 * 400 mm		 ₹ 109,998.00 		
-    }
-    {
-        TASMANIA - PLATINUM BLACK with Rain shower, Waterfall,  Mist & Ceiling Kit - 750 * 400 mm		 ₹ 99,998.00 		
-    }
-    {
-        VIVA  with Rain shower, Waterfall & Ceiling Kit - GOLD	7867	 ₹ 59,998.00 		
-VIVA  with Rain shower, Waterfall & Ceiling Kit - ROSE GOLD	7868	 ₹ 59,998.00 		
-VIVA  with Rain shower, Waterfall & Ceiling Kit - MATTE BLACK	7866	 ₹ 59,998.00 		
-    }
-    {
-        VOLVO - ROSE GOLD with Rain shower & Ceiling Kit - 400 * 400 mm	8028	 ₹ 54,998.00 		
-VOLVO - MATTE BLACK with Rain shower & Ceiling Kit - 400 * 400 mm	7388	 ₹ 54,998.00 		
-X - SYDNEY MIST (CHROME)  with Rain shower, XXL Mist & Ceiling Kit - 300 * 300 mm	10019	 ₹ 34,998.00 		
-    }
-{
-    HELIOS MATTE BLACK - with Ambient Light, Soft rain, XXL mist, Waterfall & Wall mounted                                                                     450 * 450 * 45 mm		 ₹ 189,998.00 		
-}
-{
-    X - RETRO MAXX - Thermostatic with 4 outlet & volume control - BRUSHED GOLD	10073	 ₹ 33,998.00 		
-X - RETRO MAXX - Thermostatic with 4 outlet & volume control - ROSE GOLD	10091	 ₹ 33,998.00 		
-}
-{
-    RETRO MAXX - Thermostatic with 5 outlet & volume control - BRUSHED GOLD	8628	 ₹ 49,998.00 		
-}
-{
-    FOREST NX 6WAY Diverter Body 	1548	 ₹ 59,000.00 		
-FOREST NX 6 WAY - CHROME ROUND	1022	 ₹ 29,998.00 		
-FOREST NX 6 WAY - GOLD  ROUND	1024	 ₹ 54,998.00 		
-FOREST NX 6 WAY - ROSE GOLD  ROUND	1026	 ₹ 54,998.00 		
-FOREST NX 6 WAY -  GOLD  SQUARE	1547	 ₹ 54,998.00 		
-FOREST NX 6 WAY -  ROSE GOLD  SQUARE	1546	 ₹ 54,998.00 		
-}
-{
-    SENSATION with LED Light - PLATINUM BLACK		 ₹ 59,998.00 		
-}
-{
-    ICONIC AMBIENT with LED Light, Wave Massage jet - BRUSHED GOLD	10115	 ₹ 21,998.00 		
-ICONIC AMBIENT with LED Light, Wave Massage jet - BRUSHED GOLD	8550	 ₹ 21,998.00 		
-}
-{
-    ICONIC WAVE with  Wave Massage jet - BRUSHED GOLD	10116	 ₹ 16,998.00 		
-ICONIC WAVE with  Wave Massage jet - ROSE GOLD	8546	 ₹ 16,998.00 		
-}
-{
-    X - AKON WAVE - BRUSHED GOLD - 120 * 120 mm		 ₹ 14,998.00 		
-X - AKON WAVE - BRUSHED ROSE GOLD - 120 * 120 mm		 ₹ 14,998.00 		
-X - AKON WAVE - GUN METAL - 120 * 120 mm		 ₹ 14,998.00 		
-}
-{
-    LIDO Hand Shower Slide Rail - BRUSHED ROSE GOLD - 650 mm		 ₹ 6,998.00 		
-LIDO Hand Shower Slide Rail - BRUSHED GOLD - 650 mm		 ₹ 6,998.00 		
-LIDO Hand Shower Slide Rail - GUN METAL - 650 mm		 ₹ 6,998.00 		
-LIDO Hand Shower Slide Rail - BLACK - 650 mm		 ₹ 6,998.00 		
-LIDO Hand Shower Slide Rail - CHROME - 650 mm		 ₹ 4,998.00 		
-LIDO Hand Shower - BRUSHED ROSE GOLD		 ₹ 6,498.00 		
-LIDO Hand Shower - BRUSHED GOLD		 ₹ 6,498.00 		
-LIDO Hand Shower - GUN METAL		 ₹ 6,498.00 		
-LIDO Hand Shower - BLACK		 ₹ 6,498.00 		
-LIDO Hand Shower - CHROME		 ₹ 3,998.00 		
-HOSE PIPE - 1.5 mtr - BRUSHED ROSE GOLD		 ₹ 1,698.00 		
-HOSE PIPE - 1.5 mtr - BRUSHED  GOLD		 ₹ 1,698.00 		
-HOSE PIPE - 1.5 mtr - GUN METAL		 ₹ 1,698.00 		
-HOSE PIPE - 1.5 mtr - BLACK		 ₹ 1,698.00 		
-HOSE PIPE - 1.5 mtr - CHROME		 ₹ 1,198.00 		
-SHOWER HOLDER - BRUSHED ROSE GOLD		 ₹ 998.00 		
-SHOWER HOLDER - BRUSHED  GOLD		 ₹ 998.00 		
-SHOWER HOLDER - GUN METAL		 ₹ 998.00 		
-SHOWER HOLDER - BLACK		 ₹ 998.00 		
-SHOWER HOLDER - CHROME		 ₹ 778.00 		
-SHOWER OUTLET ELBOW - BRUSHED ROSE GOLD		 ₹ 3,998.00 		
-SHOWER OUTLET ELBOW - BRUSHED  GOLD		 ₹ 3,998.00 		
-SHOWER OUTLET ELBOW - GUN METAL		 ₹ 3,998.00 		
-SHOWER OUTLET ELBOW - BLACK		 ₹ 3,998.00 		
-SHOWER OUTLET ELBOW - CHROME		 ₹ 3,498.00 		
-}
-{
-    GL SLIDE (GOLD)                                  Sliding Door Mounted on Aluminium Frame,  6mm Toughened Glass, Designer Handle                                         1700 * 1900 mm	2936	 ₹ 74,998.00 			
-}
-{
-    E-SMART (WHITE) Wall Hung WC                                                                 With Soft Close Automatic Opening & Closing, Damping Drop, Multii-Function Side Key, Wireless Remote Control, Luminous Lighting, LED Display Screen, Seat Ring Heating, Instant Heating, Warm Air Drying, Air Temperature Regulation, Water Source Filtration, Energy/Water Saving, High/Low Voltage Protection, Leakage Protection, Dry Burn Protection, High Temperature Protection, IPX4 Waterproof, Spray Wand Self Cleaning, Rear Wash Cleaning, Female Cleaning, Mobile Cleaning, Auto Cleaning		 ₹ 89,998.00 	
-}
-{
-    BULLION BRUSHED ROSE GOLD 		 ₹ 42,998.00 	
-}
-{
-    BULLION BRUSHED ROSE GOLD  - 610 * 345 * 115 mm		 ₹ 18,998.00 	
-}
-{
-    NICOLA - BURGUNDY - 550 * 380 * 115 mm		 ₹ 29,998.00 	
-NICOLA - DARK BLUE - 550 * 380 * 115 mm		 ₹ 29,998.00 	
-NICOLA - MANGO - 550 * 380 * 115 mm		 ₹ 29,998.00 	
-NICOLA - BLACK - 550 * 380 * 115 mm		 ₹ 29,998.00 	
-NICOLA - WHITE - 550 * 380 * 115 mm		 ₹ 21,998.00 	
-}
-{
-    BLACK NATURAL MARBLE PEDESTAL		 ₹ 109,998.00 	
-}
-{
-    BLACK NATURAL MARBLE PEDESTAL		 ₹ 109,998.00 	
-}
-{
-    WHITE NATURAL MARBLE PEDESTAL		 ₹ 109,998.00 	
-}
-{
-    VOILA XXL - GLOSSY WHITE -  900 * 460 * 110 mm	7497	 ₹ 48,998.00 	
-}
-{
-    FORT - 400 * 400 * 135 mm		 ₹ 18,998.00 	
-}
-{
-    PIN Sensor Urinal 		 ₹ 29,998.00 	
-}
-{
-    STORI - FULL FRAME (PNEUMATIC)		 ₹ 19,998.00 	
-STORI - HALF FRAME (PNEUMATIC)		 ₹ 16,998.00 	
-STORI - WITHOUT FRAME (PNEUMATIC)		 ₹ 11,998.00 	
-}
-{
-    STORI - FLUSH PLATE - CHROME		 ₹ 2,998.00 	
-STORI - FLUSH PLATE - BLACK		 ₹ 2,998.00 	
-STORI - FLUSH PLATE - BRUSHED GOLD		 ₹ 4,998.00 	
-STORI - FLUSH PLATE - BRUSHED ROSE GOLD		 ₹ 4,998.00 	
-STORI - FLUSH PLATE - BEIGE		 ₹ 3,998.00 	
-STORI - FLUSH PLATE - BURGUNDY		 ₹ 3,998.00 	
-STORI - FLUSH PLATE - DARK GREEN		 ₹ 3,998.00 	
-STORI - FLUSH PLATE - ROYAL BLUE		 ₹ 3,998.00 	
-}
-{
-    COUPE                                                                                      SHOWER HEAD 250 mm + SHOWER ARM 400 mm                                                                                                      (MATTE ROSE GOLD)		 ₹ 18,998.00 	
-}
-{
-    COUPE                                                                                      SHOWER HEAD 250 mm + SHOWER ARM 400 mm                                                                                                      (MATTE GOLD)		 ₹ 18,998.00 	
-}
-{
-    COUPE                                                                                      SHOWER HEAD 250 mm + SHOWER ARM 400 mm                                                                                                      (GUN METAL)		 ₹ 20,998.00 	
-COUPE - Short Towel Bar - BRUSHED GOLD		 ₹ 7,548.00 	
-COUPE - Towel Rack with Lower Hanger - BRUSHED GOLD		 ₹ 16,498.00 	
-COUPE - Towel Rack - BRUSHED GOLD		 ₹ 4,298.00 	
-COUPE - Paper Holder - BRUSHED GOLD		 ₹ 3,498.00 	
-COUPE - Soap Dish Holder - BRUSHED GOLD		 ₹ 3,948.00 	
-COUPE - Tumbler Holder - BRUSHED GOLD		 ₹ 3,898.00 	
-COUPE - Robe Hook - BRUSHED GOLD		 ₹ 2,998.00 	
-COUPE - Short Towel Bar - BRUSHED ROSE GOLD		 ₹ 7,548.00 	
-COUPE - Towel Rack with Lower Hanger - BRUSHED ROSE GOLD		 ₹ 16,498.00 	
-COUPE - Towel Rack - BRUSHED ROSE GOLD		 ₹ 4,298.00 	
-COUPE - Paper Holder - BRUSHED ROSE GOLD		 ₹ 3,498.00 	
-COUPE - Soap Dish Holder - BRUSHED ROSE GOLD		 ₹ 3,948.00 	
-COUPE - Tumbler Holder - BRUSHED ROSE GOLD		 ₹ 3,898.00 	
-COUPE - Robe Hook - BRUSHED ROSE GOLD		 ₹ 2,998.00 	
-COUPE - Short Towel Bar - GUN METAL		 ₹ 7,548.00 	
-COUPE - Towel Rack with Lower Hanger - GUN METAL		 ₹ 16,498.00 	
-COUPE - Towel Rack - GUN METAL		 ₹ 4,298.00 	
-COUPE - Paper Holder - GUN METAL		 ₹ 3,498.00 	
-COUPE - Soap Dish Holder - GUN METAL		 ₹ 3,948.00 	
-COUPE - Tumbler Holder - GUN METAL		 ₹ 3,898.00 	
-COUPE - Robe Hook - GUN METAL		 ₹ 2,998.00 	
-COUPE - Short Towel Bar - BLACK		 ₹ 5,798.00 	
-COUPE - Towel Rack with Lower Hanger - BLACK		 ₹ 12,698.00 	
-COUPE - Towel Rack - BLACK		 ₹ 3,498.00 	
-COUPE - Paper Holder - BLACK		 ₹ 2,748.00 	
-COUPE - Soap Dish Holder - BLACK		 ₹ 3,148.00 	
-COUPE - Tumbler Holder - BLACK		 ₹ 3,098.00 	
-COUPE - Robe Hook - BLACK		 ₹ 2,498.00 	
-}
-{
-     Hand Shower - CHROME		 ₹ 8,998.00 	
-DOLCE - Hand Shower - BRUSHED GOLD		 ₹ 17,998.00 	
-SHOWER HEAD - 250 mm + SHOWER ARM - 400 mm                                 BRUSHED GOLD		 ₹ 18,998.00 	
-SHOWER HEAD - 250 mm + SHOWER ARM - 400 mm                                 CHROME		 ₹ 14,998.00 	
-}
-{
-    BLACK HAUTE - Bathroom Set -  BLACK		 ₹ 89,998.00 	
-BLACK HAUTE - Deck Mounted Basin Mixer -  BLACK		 ₹ 79,998.00 	
-}
+  }
 ]

@@ -5,17 +5,19 @@ import { FilePdfFilled, CloseOutlined } from "@ant-design/icons";
 
 import logo from "../../assets/img/logo-quotation.png";
 import coverImage from "../../assets/img/quotation_first_page.jpeg";
-import quotationBgImage from "../../assets/img/quotation_letterhead.jpeg"; // ← ADD THIS
+import quotationBgImage from "../../assets/img/quotation_letterhead.jpeg";
 
 import { exportToPDF } from "./hooks/exportHelpers";
 import { calcTotals, amountInWords } from "./hooks/calcHelpers";
 import styles from "./quotationnew.module.css";
 
 const { Title } = Typography;
+
 const formatINR = (value) => {
   const num = Number(value);
   return isNaN(num) ? "—" : `₹${num.toLocaleString("en-IN")}`;
 };
+
 const PreviewQuotation = ({
   visible,
   onClose,
@@ -55,11 +57,13 @@ const PreviewQuotation = ({
     return set.size ? [...set].join(" / ") : "GROHE / AMERICAN STANDARD";
   }, [cartItems, productsData]);
 
-  // Reuse same calc logic as NewQuotationsDetails
+  // ────────────────────────────────────────────────────────────────
+  // Safe & consistent totals calculation (matches NewQuotationsDetails logic)
+  // ────────────────────────────────────────────────────────────────
   const {
     subtotal,
     extraDiscountAmt,
-    amountAfterDiscount,
+    taxableValue: amountAfterDiscount, // renamed for your original naming
     gst: gstAmount,
     total: finalTotal,
   } = useMemo(() => {
@@ -71,16 +75,33 @@ const PreviewQuotation = ({
       return map;
     }, {});
 
+    // Safe normalization to prevent typeof !== string crashes
+    let extraDiscValue = quotationData?.extraDiscount ?? 0;
+    let extraDiscType = quotationData?.extraDiscountType;
+
+    extraDiscValue = Number(extraDiscValue) || 0;
+
+    // Normalize type – fallback to "percent" (same as calcTotals default)
+    extraDiscType =
+      extraDiscType == null
+        ? "percent"
+        : String(extraDiscType).toLowerCase().trim();
+
+    // Optional: normalize common variants (helps with dirty data)
+    if (["fixed", "amount", "rs", "₹"].includes(extraDiscType)) {
+      extraDiscType = "amount";
+    } else if (["%", "percentage"].includes(extraDiscType)) {
+      extraDiscType = "percent";
+    }
+
     return calcTotals(
       cartItems,
-      gstRate,
-      includeGst,
-      priceMap,
-      quotationData?.extraDiscount || 0,
-      quotationData?.extraDiscountType || "amount",
-      quotationData?.roundOff || 0
+      priceMap, // Note: your calcHelpers expects productDetailsMap as 2nd arg
+      extraDiscValue,
+      extraDiscType,
+      Number(quotationData?.roundOff) || 0
     );
-  }, [cartItems, gstRate, includeGst, quotationData]);
+  }, [cartItems, quotationData]);
 
   const finalAmountInWords = amountInWords(Math.round(finalTotal));
 
@@ -115,7 +136,7 @@ const PreviewQuotation = ({
       </div>
     );
 
-    // Page 2: Letterhead – aligned with NewQuotationsDetails
+    // Page 2: Letterhead
     pages.push(
       <div key="letterhead" className={`${styles.letterheadPage} page`}>
         <img
@@ -271,11 +292,6 @@ const PreviewQuotation = ({
                   </div>
 
                   <div className={styles.summaryRow}>
-                    <span>GST @{gstRate}%</span>
-                    <span>{formatINR(gstAmount)}</span>
-                  </div>
-
-                  <div className={styles.summaryRow}>
                     <span>Round off</span>
                     <span>
                       ₹{Number(quotationData?.roundOff || 0).toFixed(2)}
@@ -287,10 +303,7 @@ const PreviewQuotation = ({
                   <div className={styles.totalAmount}>
                     <span>Total Amount</span>
                     <span>
-                      ₹
-                      {(Number(Math.round(finalTotal)) || 0).toLocaleString(
-                        "en-IN"
-                      )}
+                      ₹{Number(Math.round(finalTotal)).toLocaleString("en-IN")}
                     </span>
                   </div>
                   <div className={styles.amountInWords}>
@@ -324,6 +337,15 @@ const PreviewQuotation = ({
         <Button key="close" onClick={onClose} icon={<CloseOutlined />}>
           Close
         </Button>,
+        // Uncomment if you want export button inside modal too
+        // <Button
+        //   key="export"
+        //   type="primary"
+        //   onClick={handleExportPDF}
+        //   icon={<FilePdfFilled />}
+        // >
+        //   Export PDF
+        // </Button>,
       ]}
     >
       <div
