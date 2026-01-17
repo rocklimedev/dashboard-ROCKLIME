@@ -149,6 +149,32 @@ const NewQuotationsDetails = () => {
     return set.size ? [...set].join(" / ") : "GROHE / AMERICAN STANDARD";
   }, [activeProducts, productsData, brandsData]);
 
+  // ── BUILD DISCOUNT MAPS FROM ACTUAL ITEMS ─────────────────────────────────
+  const quotationItems =
+    activeVersionData.quotation?.items ||
+    activeVersionData.quotation?.products ||
+    [];
+
+  const itemDiscounts = useMemo(() => {
+    const map = {};
+    quotationItems.forEach((item) => {
+      if (item.productId && item.discount !== undefined) {
+        map[item.productId] = Number(item.discount);
+      }
+    });
+    return map;
+  }, [quotationItems]);
+
+  const itemDiscountTypes = useMemo(() => {
+    const map = {};
+    quotationItems.forEach((item) => {
+      if (item.productId && item.discountType) {
+        map[item.productId] = item.discountType.toLowerCase();
+      }
+    });
+    return map;
+  }, [quotationItems]);
+
   // CALCULATIONS (NO GST)
   const priceMap = activeProducts.reduce((map, p) => {
     if (p.productId) {
@@ -171,8 +197,10 @@ const NewQuotationsDetails = () => {
     activeProducts,
     priceMap,
     activeVersionData.quotation?.extraDiscount || 0,
-    activeVersionData.quotation?.extraDiscountType,
-    activeVersionData.quotation?.roundOff || 0
+    activeVersionData.quotation?.extraDiscountType || "percent",
+    activeVersionData.quotation?.roundOff || 0,
+    itemDiscounts,
+    itemDiscountTypes
   );
 
   const finalAmountInWords = amountInWords(Math.round(finalTotal));
@@ -305,7 +333,7 @@ const NewQuotationsDetails = () => {
 
     // ── PRODUCT + SUMMARY PAGES ────────────────────────────────────────
     const MAX_PRODUCTS_NORMAL = 10;
-    const MAX_PRODUCTS_WITH_SUMMARY = 8; // leave space for summary
+    const MAX_PRODUCTS_WITH_SUMMARY = 8;
 
     let remaining = [...activeProducts];
     let globalSno = 0;
@@ -318,11 +346,9 @@ const NewQuotationsDetails = () => {
       let showSummaryThisPage = false;
 
       if (canFitSummaryHere) {
-        // Last chunk small enough → show products + summary together
         itemsThisPage = remaining;
         showSummaryThisPage = true;
       } else {
-        // Take full page of products (no summary yet)
         itemsThisPage = remaining.slice(0, MAX_PRODUCTS_NORMAL);
         showSummaryThisPage = false;
       }
@@ -334,7 +360,7 @@ const NewQuotationsDetails = () => {
         >
           <div className={styles.pageTopHeader}>
             <div>
-              <div className={styles.clientName}>Mr {customerName}</div>
+              <div className={styles.clientName}>{customerName}</div>
               <div className={styles.clientAddress}>{customerAddress}</div>
             </div>
             <div className={styles.pageDate}>
@@ -375,10 +401,15 @@ const NewQuotationsDetails = () => {
               {itemsThisPage.map((p, idx) => {
                 const pd =
                   productsData?.find((x) => x.productId === p.productId) || {};
+
                 const matchingItem =
                   quotation?.items?.find(
                     (it) => it.productId === p.productId
-                  ) || p;
+                  ) ||
+                  quotation?.products?.find(
+                    (it) => it.productId === p.productId
+                  ) ||
+                  p;
 
                 const code =
                   matchingItem?.companyCode ||
@@ -403,10 +434,31 @@ const NewQuotationsDetails = () => {
                     0
                 );
                 const qty = Number(p.quantity || 1);
-                const discount = Number(p.discount || 0);
 
-                const total = Math.round(mrp * qty * (1 - discount / 100));
+                // ── Use built discount maps + fallback to item itself ──
+                const discValue = Number(
+                  itemDiscounts[p.productId] ?? matchingItem?.discount ?? 0
+                );
+                const discType = (
+                  itemDiscountTypes[p.productId] ??
+                  matchingItem?.discountType ??
+                  "percent"
+                ).toLowerCase();
 
+                let itemDiscAmount = 0;
+                let displayDiscount = "—";
+
+                if (discValue > 0) {
+                  if (discType === "fixed" || discType === "amount") {
+                    itemDiscAmount = discValue * qty;
+                    displayDiscount = `₹${discValue.toFixed(2)}`;
+                  } else {
+                    itemDiscAmount = mrp * qty * (discValue / 100);
+                    displayDiscount = `${discValue}%`;
+                  }
+                }
+
+                const lineTotal = Math.round(mrp * qty - itemDiscAmount);
                 globalSno++;
 
                 return (
@@ -427,9 +479,9 @@ const NewQuotationsDetails = () => {
                     </td>
                     <td>{qty}</td>
                     <td>₹{mrp.toLocaleString("en-IN")}</td>
-                    <td className={styles.discountCell}>{discount}%</td>
+                    <td className={styles.discountCell}>{displayDiscount}</td>
                     <td className={styles.totalCell}>
-                      ₹{total.toLocaleString("en-IN")}
+                      ₹{lineTotal.toLocaleString("en-IN")}
                     </td>
                   </tr>
                 );
@@ -490,16 +542,15 @@ const NewQuotationsDetails = () => {
         </div>
       );
 
-      // Consume the items we just rendered
       remaining = remaining.slice(itemsThisPage.length);
 
-      // If we just did a full page without summary → and nothing left → add summary-only page
+      // Summary-only page if needed
       if (remaining.length === 0 && !showSummaryThisPage) {
         pages.push(
           <div key="summary-only" className={`${styles.productPage} page`}>
             <div className={styles.pageTopHeader}>
               <div>
-                <div className={styles.clientName}>Mr {customerName}</div>
+                <div className={styles.clientName}>{customerName}</div>
                 <div className={styles.clientAddress}>{customerAddress}</div>
               </div>
               <div className={styles.pageDate}>
@@ -513,7 +564,6 @@ const NewQuotationsDetails = () => {
               </div>
             </div>
 
-            {/* Optional: centered title for summary-only page */}
             <div
               style={{
                 textAlign: "center",
