@@ -152,90 +152,119 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
     },
   ];
 
-  const tableSummary = () => (
-    <>
-      {/* Subtotal */}
-      {subtotal > 0 && (
+  const tableSummary = () => {
+    // Calculate gross subtotal (before any discounts) - for reference / debugging
+    const calculatedGrossSubtotal = lineItems.reduce((sum, item) => {
+      const price = Number(item.price || item.sellingPrice || 0);
+      const qty = Number(item.quantity || 1);
+      return sum + price * qty;
+    }, 0);
+
+    // Already have totalProductDiscount from useMemo
+
+    // Preferred: use backend subtotal if available and reasonable
+    // Fallback: calculate it ourselves (after product discounts)
+    const displayedSubtotal =
+      subtotal > 0 && Math.abs(subtotal - calculatedGrossSubtotal) < 1000
+        ? subtotal // trust backend if close enough
+        : calculatedGrossSubtotal - totalProductDiscount;
+
+    return (
+      <>
+        {/* Gross Subtotal (optional - show if you want transparency) */}
+        {calculatedGrossSubtotal > 0 && totalProductDiscount > 0 && (
+          <Table.Summary.Row>
+            <Table.Summary.Cell colSpan={6} align="right">
+              <Text type="secondary">Gross Subtotal</Text>
+            </Table.Summary.Cell>
+            <Table.Summary.Cell align="right">
+              <Text type="secondary">
+                ₹{calculatedGrossSubtotal.toFixed(2)}
+              </Text>
+            </Table.Summary.Cell>
+          </Table.Summary.Row>
+        )}
+
+        {/* Main Subtotal – after product discounts, before extra discount */}
         <Table.Summary.Row>
           <Table.Summary.Cell colSpan={6} align="right">
             <Text strong>Subtotal</Text>
           </Table.Summary.Cell>
           <Table.Summary.Cell align="right">
-            <Text strong>₹{subtotal.toFixed(2)}</Text>
+            <Text strong>₹{displayedSubtotal.toFixed(2)}</Text>
           </Table.Summary.Cell>
         </Table.Summary.Row>
-      )}
 
-      {/* Total Product Discount (line-item discounts) */}
-      {totalProductDiscount > 0 && (
-        <Table.Summary.Row>
-          <Table.Summary.Cell colSpan={6} align="right">
-            <Text>Product Discount</Text>
-          </Table.Summary.Cell>
-          <Table.Summary.Cell align="right">
-            <Text type="danger">-₹{totalProductDiscount.toFixed(2)}</Text>
-          </Table.Summary.Cell>
-        </Table.Summary.Row>
-      )}
+        {/* Product Discount (only if exists) */}
+        {totalProductDiscount > 0 && (
+          <Table.Summary.Row>
+            <Table.Summary.Cell colSpan={6} align="right">
+              <Text type="danger">Product Discount</Text>
+            </Table.Summary.Cell>
+            <Table.Summary.Cell align="right">
+              <Text type="danger">-₹{totalProductDiscount.toFixed(2)}</Text>
+            </Table.Summary.Cell>
+          </Table.Summary.Row>
+        )}
 
-      {/* Extra Discount (quotation-level) */}
-      {extraDiscountAmount > 0 && (
-        <Table.Summary.Row>
+        {/* Extra Discount */}
+        {extraDiscountAmount > 0 && (
+          <Table.Summary.Row>
+            <Table.Summary.Cell colSpan={6} align="right">
+              <Text>
+                Extra Discount{" "}
+                {extraDiscountType === "percent" &&
+                  `(${Number(q.extraDiscount || q.discountAmount || 0)}%)`}
+              </Text>
+            </Table.Summary.Cell>
+            <Table.Summary.Cell align="right">
+              <Text type="danger">-₹{extraDiscountAmount.toFixed(2)}</Text>
+            </Table.Summary.Cell>
+          </Table.Summary.Row>
+        )}
+
+        {/* Shipping */}
+        {shippingAmount > 0 && (
+          <Table.Summary.Row>
+            <Table.Summary.Cell colSpan={6} align="right">
+              <Text>Shipping</Text>
+            </Table.Summary.Cell>
+            <Table.Summary.Cell align="right">
+              <Text type="success">+₹{shippingAmount.toFixed(2)}</Text>
+            </Table.Summary.Cell>
+          </Table.Summary.Row>
+        )}
+
+        {/* Round Off */}
+        {roundOff !== 0 && (
+          <Table.Summary.Row>
+            <Table.Summary.Cell colSpan={6} align="right">
+              <Text>Round Off</Text>
+            </Table.Summary.Cell>
+            <Table.Summary.Cell align="right">
+              <Text type={roundOff >= 0 ? "success" : "danger"}>
+                {roundOff >= 0 ? "+" : "-"}₹{Math.abs(roundOff).toFixed(2)}
+              </Text>
+            </Table.Summary.Cell>
+          </Table.Summary.Row>
+        )}
+
+        {/* Final Amount */}
+        <Table.Summary.Row style={{ background: "#f0f9ff" }}>
           <Table.Summary.Cell colSpan={6} align="right">
-            <Text>
-              Extra Discount{" "}
-              {extraDiscountType === "percent"
-                ? `(${q.extraDiscount || "?"}%)`
-                : ""}
+            <Text strong style={{ fontSize: "1.1em" }}>
+              Final Amount
             </Text>
           </Table.Summary.Cell>
           <Table.Summary.Cell align="right">
-            <Text type="danger">-₹{extraDiscountAmount.toFixed(2)}</Text>
-          </Table.Summary.Cell>
-        </Table.Summary.Row>
-      )}
-
-      {/* Shipping */}
-      {shippingAmount > 0 && (
-        <Table.Summary.Row>
-          <Table.Summary.Cell colSpan={6} align="right">
-            <Text>Shipping</Text>
-          </Table.Summary.Cell>
-          <Table.Summary.Cell align="right">
-            <Text type="success">+₹{shippingAmount.toFixed(2)}</Text>
-          </Table.Summary.Cell>
-        </Table.Summary.Row>
-      )}
-
-      {/* Round Off */}
-      {roundOff !== 0 && (
-        <Table.Summary.Row>
-          <Table.Summary.Cell colSpan={6} align="right">
-            <Text>Round Off</Text>
-          </Table.Summary.Cell>
-          <Table.Summary.Cell align="right">
-            <Text type={roundOff >= 0 ? "success" : "danger"}>
-              {roundOff >= 0 ? "+" : "-"}₹{Math.abs(roundOff).toFixed(2)}
+            <Text strong style={{ fontSize: "1.3em", color: "#3f8600" }}>
+              ₹{Number(finalAmount || 0).toFixed(2)}
             </Text>
           </Table.Summary.Cell>
         </Table.Summary.Row>
-      )}
-
-      {/* Final Amount - Highlighted */}
-      <Table.Summary.Row style={{ background: "#f0f9ff" }}>
-        <Table.Summary.Cell colSpan={6} align="right">
-          <Text strong style={{ fontSize: "1.1em" }}>
-            Final Amount
-          </Text>
-        </Table.Summary.Cell>
-        <Table.Summary.Cell align="right">
-          <Text strong style={{ fontSize: "1.3em", color: "#3f8600" }}>
-            ₹{finalAmount.toFixed(2)}
-          </Text>
-        </Table.Summary.Cell>
-      </Table.Summary.Row>
-    </>
-  );
+      </>
+    );
+  };
 
   if (isLoading) {
     return (

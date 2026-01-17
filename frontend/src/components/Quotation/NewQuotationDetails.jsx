@@ -11,8 +11,6 @@ import { Helmet } from "react-helmet";
 
 import logo from "../../assets/img/logo-quotation.png";
 import styles from "./quotationnew.module.css";
-import americanStandard from "../../assets/img/american-standard-logo-2.png";
-import groheLogo from "../../assets/img/Grohe-Logo.png";
 import coverImage from "../../assets/img/quotation_first_page.jpeg";
 import quotationBgImage from "../../assets/img/quotation_letterhead.jpeg";
 import {
@@ -26,8 +24,10 @@ import { useGetAllBrandsQuery } from "../../api/brandsApi";
 
 import { exportToPDF, exportToExcel } from "./hooks/exportHelpers";
 import { calcTotals, amountInWords } from "./hooks/calcHelpers";
+
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
+
 const NewQuotationsDetails = () => {
   const { id } = useParams();
   const [activeVersion, setActiveVersion] = useState("current");
@@ -170,8 +170,8 @@ const NewQuotationsDetails = () => {
   } = calcTotals(
     activeProducts,
     priceMap,
-    activeVersionData.quotation?.extraDiscount || 0, // e.g. 4
-    activeVersionData.quotation?.extraDiscountType, // "percent" – no fallback needed now
+    activeVersionData.quotation?.extraDiscount || 0,
+    activeVersionData.quotation?.extraDiscountType,
     activeVersionData.quotation?.roundOff || 0
   );
 
@@ -236,7 +236,7 @@ const NewQuotationsDetails = () => {
     }
   };
 
-  // LOADING STATES
+  // LOADING / ERROR STATES
   if (qLoading || vLoading || prodLoading || custLoading || addrLoading) {
     return (
       <Spin
@@ -253,7 +253,6 @@ const NewQuotationsDetails = () => {
 
   const renderPages = () => {
     const pages = [];
-    const itemsPerPage = 10;
 
     // PAGE 1: COVER
     pages.push(
@@ -304,13 +303,35 @@ const NewQuotationsDetails = () => {
       </div>
     );
 
-    // PRODUCT PAGES
-    for (let i = 0; i < activeProducts.length; i += itemsPerPage) {
-      const items = activeProducts.slice(i, i + itemsPerPage);
-      const isLastPage = i + itemsPerPage >= activeProducts.length;
+    // ── PRODUCT + SUMMARY PAGES ────────────────────────────────────────
+    const MAX_PRODUCTS_NORMAL = 10;
+    const MAX_PRODUCTS_WITH_SUMMARY = 8; // leave space for summary
+
+    let remaining = [...activeProducts];
+    let globalSno = 0;
+
+    while (remaining.length > 0) {
+      const isVeryLastChunk = remaining.length <= MAX_PRODUCTS_WITH_SUMMARY;
+      const canFitSummaryHere = isVeryLastChunk;
+
+      let itemsThisPage;
+      let showSummaryThisPage = false;
+
+      if (canFitSummaryHere) {
+        // Last chunk small enough → show products + summary together
+        itemsThisPage = remaining;
+        showSummaryThisPage = true;
+      } else {
+        // Take full page of products (no summary yet)
+        itemsThisPage = remaining.slice(0, MAX_PRODUCTS_NORMAL);
+        showSummaryThisPage = false;
+      }
 
       pages.push(
-        <div key={`product-${i}`} className={`${styles.productPage} page`}>
+        <div
+          key={`content-page-${globalSno}`}
+          className={`${styles.productPage} page`}
+        >
           <div className={styles.pageTopHeader}>
             <div>
               <div className={styles.clientName}>Mr {customerName}</div>
@@ -351,13 +372,13 @@ const NewQuotationsDetails = () => {
               </tr>
             </thead>
             <tbody>
-              {items.map((p, idx) => {
+              {itemsThisPage.map((p, idx) => {
                 const pd =
                   productsData?.find((x) => x.productId === p.productId) || {};
-
-                const matchingItem = quotation?.items?.find(
-                  (it) => it.productId === p.productId
-                );
+                const matchingItem =
+                  quotation?.items?.find(
+                    (it) => it.productId === p.productId
+                  ) || p;
 
                 const code =
                   matchingItem?.companyCode ||
@@ -386,9 +407,11 @@ const NewQuotationsDetails = () => {
 
                 const total = Math.round(mrp * qty * (1 - discount / 100));
 
+                globalSno++;
+
                 return (
-                  <tr key={p.productId || idx}>
-                    <td className={styles.snoCell}>{i + idx + 1}.</td>
+                  <tr key={p.productId || globalSno}>
+                    <td className={styles.snoCell}>{globalSno}.</td>
                     <td className={styles.prodNameCell}>
                       {p.name || matchingItem?.name || pd.name || "—"}
                     </td>
@@ -414,17 +437,14 @@ const NewQuotationsDetails = () => {
             </tbody>
           </table>
 
-          {/* FINAL SUMMARY – ONLY ON LAST PAGE (NO GST) */}
-          {isLastPage && (
+          {showSummaryThisPage && (
             <div className={styles.finalSummaryWrapper}>
               <div className={styles.finalSummarySection}>
-                {/* LEFT SIDE */}
                 <div className={styles.summaryLeft}>
                   <div className={styles.summaryRow}>
                     <span>Subtotal</span>
                     <span>₹{subtotal.toLocaleString("en-IN")}</span>
                   </div>
-
                   {totalProductDiscount > 0 && (
                     <div className={styles.summaryRow}>
                       <span>Total Discount</span>
@@ -436,7 +456,6 @@ const NewQuotationsDetails = () => {
                       </span>
                     </div>
                   )}
-
                   {extraDiscountAmt > 0 && (
                     <div className={styles.summaryRow}>
                       <span>Extra Discount</span>
@@ -445,7 +464,6 @@ const NewQuotationsDetails = () => {
                       </span>
                     </div>
                   )}
-
                   <div className={styles.summaryRow}>
                     <span>Taxable Value</span>
                     <span>
@@ -471,6 +489,94 @@ const NewQuotationsDetails = () => {
           )}
         </div>
       );
+
+      // Consume the items we just rendered
+      remaining = remaining.slice(itemsThisPage.length);
+
+      // If we just did a full page without summary → and nothing left → add summary-only page
+      if (remaining.length === 0 && !showSummaryThisPage) {
+        pages.push(
+          <div key="summary-only" className={`${styles.productPage} page`}>
+            <div className={styles.pageTopHeader}>
+              <div>
+                <div className={styles.clientName}>Mr {customerName}</div>
+                <div className={styles.clientAddress}>{customerAddress}</div>
+              </div>
+              <div className={styles.pageDate}>
+                {new Date(
+                  quotation.quotation_date || Date.now()
+                ).toLocaleDateString("en-IN", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                })}
+              </div>
+            </div>
+
+            {/* Optional: centered title for summary-only page */}
+            <div
+              style={{
+                textAlign: "center",
+                margin: "40px 0 60px",
+                fontSize: "24px",
+                fontWeight: "bold",
+                color: "#E31E24",
+              }}
+            >
+              Quotation Summary
+            </div>
+
+            <div className={styles.finalSummaryWrapper}>
+              <div className={styles.finalSummarySection}>
+                <div className={styles.summaryLeft}>
+                  <div className={styles.summaryRow}>
+                    <span>Subtotal</span>
+                    <span>₹{subtotal.toLocaleString("en-IN")}</span>
+                  </div>
+                  {totalProductDiscount > 0 && (
+                    <div className={styles.summaryRow}>
+                      <span>Total Discount</span>
+                      <span>
+                        -₹
+                        {Math.round(totalProductDiscount).toLocaleString(
+                          "en-IN"
+                        )}
+                      </span>
+                    </div>
+                  )}
+                  {extraDiscountAmt > 0 && (
+                    <div className={styles.summaryRow}>
+                      <span>Extra Discount</span>
+                      <span>
+                        -₹{Math.round(extraDiscountAmt).toLocaleString("en-IN")}
+                      </span>
+                    </div>
+                  )}
+                  <div className={styles.summaryRow}>
+                    <span>Taxable Value</span>
+                    <span>
+                      ₹{Math.round(taxableValue).toLocaleString("en-IN")}
+                    </span>
+                  </div>
+                </div>
+
+                <div className={styles.summaryRight}>
+                  <div className={styles.totalAmount}>
+                    <strong>Total Amount:</strong>
+                    <strong>
+                      {" "}
+                      ₹{Math.round(finalTotal).toLocaleString("en-IN")}
+                    </strong>
+                  </div>
+                  <div className={styles.amountInWords}>
+                    {finalAmountInWords}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }
     }
 
     return pages;
@@ -564,7 +670,7 @@ const NewQuotationsDetails = () => {
             </div>
           </div>
 
-          {/* HIDDEN FOR PRINT */}
+          {/* HIDDEN PRINT REF */}
           <div
             ref={quotationRef}
             style={{ position: "absolute", left: "-9999px", top: 0 }}
