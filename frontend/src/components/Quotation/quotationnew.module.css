@@ -190,7 +190,7 @@ margin: 351px 0;
 
 .clientName { font-size:28px; font-weight:bold; color:#e31e24; text-transform:uppercase; letter-spacing:1px; }
 .clientAddress { font-size:18px; color:#333; margin-top:8px; line-height:1.5; max-width:600px; }
-.pageDate { font-size:26px; font-weight:bold; color:#e31e24; text-align:right; }
+.pageDate { font-weight:bold; color:#e31e24; text-align:right; }
 
 /* MAIN TABLE – THIS IS WHERE THE MAGIC HAPPENS */
 .productTable {

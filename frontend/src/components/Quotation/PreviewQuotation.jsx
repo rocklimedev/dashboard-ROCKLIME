@@ -33,6 +33,27 @@ const PreviewQuotation = ({
 }) => {
   const previewRef = useRef(null);
 
+  // ────────────────────────────────────────────────────────────────
+  // Normalize field names (bridge between form names and calc logic)
+  // This is the ONLY change needed — everything else remains identical
+  // ────────────────────────────────────────────────────────────────
+  const normalizedQuotation = useMemo(
+    () => ({
+      ...quotationData,
+      // Prefer extraDiscount if it exists (future-proof), else use discountAmount from form
+      extraDiscount:
+        quotationData.extraDiscount ?? quotationData.discountAmount ?? 0,
+      extraDiscountType: (
+        quotationData.extraDiscountType ??
+        quotationData.discountType ??
+        "percent"
+      )
+        .toLowerCase()
+        .trim(),
+    }),
+    [quotationData]
+  );
+
   const customerName = customer?.name || "Dear Client";
   const customerPhone = customer?.mobileNumber || customer?.phone || "—";
   const customerAddress =
@@ -58,14 +79,15 @@ const PreviewQuotation = ({
   }, [cartItems, productsData]);
 
   // ────────────────────────────────────────────────────────────────
-  // Safe & consistent totals calculation (matches NewQuotationsDetails logic)
+  // Totals calculation – using normalized quotation data
   // ────────────────────────────────────────────────────────────────
   const {
-    subtotal,
-    extraDiscountAmt,
-    taxableValue: amountAfterDiscount, // renamed for your original naming
-    gst: gstAmount,
-    total: finalTotal,
+    subtotal = 0, // gross subtotal (before discounts)
+    totalProductDiscount = 0, // sum of all item-level discounts
+    extraDiscountAmt = 0, // global/quotation discount amount
+    taxableValue: amountAfterDiscount = 0,
+    roundOffApplied = 0,
+    total: finalTotal = 0,
   } = useMemo(() => {
     const priceMap = cartItems.reduce((map, p) => {
       map[p.productId] = {
@@ -75,33 +97,49 @@ const PreviewQuotation = ({
       return map;
     }, {});
 
-    // Safe normalization to prevent typeof !== string crashes
-    let extraDiscValue = quotationData?.extraDiscount ?? 0;
-    let extraDiscType = quotationData?.extraDiscountType;
+    // Use normalized values
+    let extraDiscValue = Number(normalizedQuotation.extraDiscount ?? 0);
+    let extraDiscType = normalizedQuotation.extraDiscountType;
 
-    extraDiscValue = Number(extraDiscValue) || 0;
-
-    // Normalize type – fallback to "percent" (same as calcTotals default)
-    extraDiscType =
-      extraDiscType == null
-        ? "percent"
-        : String(extraDiscType).toLowerCase().trim();
-
-    // Optional: normalize common variants (helps with dirty data)
-    if (["fixed", "amount", "rs", "₹"].includes(extraDiscType)) {
+    // Normalize discount type (same as your original logic)
+    if (["fixed", "amount", "rs", "rupees", "₹"].includes(extraDiscType)) {
       extraDiscType = "amount";
-    } else if (["%", "percentage"].includes(extraDiscType)) {
+    } else {
       extraDiscType = "percent";
     }
 
-    return calcTotals(
+    const result = calcTotals(
       cartItems,
-      priceMap, // Note: your calcHelpers expects productDetailsMap as 2nd arg
+      priceMap,
       extraDiscValue,
       extraDiscType,
-      Number(quotationData?.roundOff) || 0
+      Number(quotationData?.roundOff) || 0,
+      itemDiscounts,
+      itemDiscountTypes
     );
-  }, [cartItems, quotationData]);
+
+    // Debug log (you can remove this in production)
+    console.log("[PreviewQuotation] Totals (with global discount fix):", {
+      grossSubtotal: result.subtotal,
+      productDiscount: result.totalProductDiscount,
+      extraDiscount: result.extraDiscountAmt,
+      taxableValue: result.taxableValue,
+      roundOffApplied: result.roundOffApplied,
+      finalTotal: result.total,
+      extraDiscInput: extraDiscValue,
+      extraDiscTypeUsed: extraDiscType,
+      originalQuotationKeys: Object.keys(quotationData),
+      normalizedExtraDiscount: normalizedQuotation.extraDiscount,
+    });
+
+    return result;
+  }, [
+    cartItems,
+    normalizedQuotation,
+    itemDiscounts,
+    itemDiscountTypes,
+    quotationData?.roundOff,
+  ]);
 
   const finalAmountInWords = amountInWords(Math.round(finalTotal));
 
@@ -274,27 +312,50 @@ const PreviewQuotation = ({
             <div className={styles.finalSummaryWrapper}>
               <div className={styles.finalSummarySection}>
                 <div className={styles.summaryLeft}>
+                  {/* Gross Subtotal */}
                   <div className={styles.summaryRow}>
                     <span>Subtotal</span>
                     <span>{formatINR(subtotal)}</span>
                   </div>
 
-                  {extraDiscountAmt > 0 && (
+                  {/* Item-level discount */}
+                  {totalProductDiscount > 0 && (
                     <div className={styles.summaryRow}>
-                      <span>Extra Discount</span>
-                      <span>-₹{extraDiscountAmt.toLocaleString("en-IN")}</span>
+                      <span>Product Discount</span>
+                      <span style={{ color: "#cf1322" }}>
+                        -{formatINR(totalProductDiscount)}
+                      </span>
                     </div>
                   )}
 
+                  {/* Global / Extra discount – now using normalized value */}
+                  {extraDiscountAmt > 0 && (
+                    <div className={styles.summaryRow}>
+                      <span>
+                        Extra Discount
+                        {normalizedQuotation.extraDiscountType === "percent" &&
+                        normalizedQuotation.extraDiscount
+                          ? ` (${normalizedQuotation.extraDiscount}%)`
+                          : ""}
+                      </span>
+                      <span style={{ color: "#cf1322" }}>
+                        -{formatINR(extraDiscountAmt)}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Taxable Value */}
                   <div className={styles.summaryRow}>
                     <span>Taxable Value</span>
                     <span>{formatINR(amountAfterDiscount)}</span>
                   </div>
 
+                  {/* Round Off */}
                   <div className={styles.summaryRow}>
-                    <span>Round off</span>
+                    <span>Round Off</span>
                     <span>
-                      ₹{Number(quotationData?.roundOff || 0).toFixed(2)}
+                      {roundOffApplied >= 0 ? "+" : ""}
+                      {formatINR(Math.abs(roundOffApplied))}
                     </span>
                   </div>
                 </div>
@@ -337,15 +398,6 @@ const PreviewQuotation = ({
         <Button key="close" onClick={onClose} icon={<CloseOutlined />}>
           Close
         </Button>,
-        // Uncomment if you want export button inside modal too
-        // <Button
-        //   key="export"
-        //   type="primary"
-        //   onClick={handleExportPDF}
-        //   icon={<FilePdfFilled />}
-        // >
-        //   Export PDF
-        // </Button>,
       ]}
     >
       <div
