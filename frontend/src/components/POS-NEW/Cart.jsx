@@ -34,8 +34,13 @@ const CartHeader = styled.div`
 `;
 const CartItem = styled.div`
   padding: 12px 0;
+  transition: background-color 0.2s ease;
+
   &:hover {
-    background: #fafafa;
+    background: #ffebee; /* very light red – subtle & professional */
+    /* Alternatives if you want stronger: */
+    /* background: #ffcccc;       medium light red */
+    /* background: #fecdd3;       tailwind-like red-100 */
   }
 `;
 const CartItemImage = styled(LazyLoadImage)`
@@ -67,9 +72,18 @@ const CartSummaryCard = styled(Card)`
 const CheckoutButton = styled(Button)`
   background: #e31e24;
   border-color: #e31e24;
-  &:hover {
-    background: #e31e24;
-    border-color: #e31e24;
+  color: white; /* ensure text is always visible */
+
+  &:hover,
+  &:focus {
+    background: #c41e1e; /* darker red – feels "pressed/engaged" */
+    border-color: #c41e1e;
+    color: white;
+  }
+
+  &:active {
+    background: #a71a1a; /* even darker when clicked */
+    border-color: #a71a1a;
   }
 `;
 const EmptyCartWrapper = styled.div`

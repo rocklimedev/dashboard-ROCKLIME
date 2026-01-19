@@ -271,11 +271,11 @@ const AddCustomer = () => {
         const isDuplicate = allCustomersData.data.some(
           (cust) =>
             cust.email === values.email.trim() ||
-            cust.mobileNumber === values.mobileNumber.trim()
+            cust.mobileNumber === values.mobileNumber.trim(),
         );
         if (isDuplicate) {
           message.error(
-            "Customer with same email or mobile number already exists."
+            "Customer with same email or mobile number already exists.",
           );
           return;
         }
@@ -314,7 +314,7 @@ const AddCustomer = () => {
         dispatch(
           api.util.invalidateTags([
             { type: "Customer", id: existingCustomer.customerId },
-          ])
+          ]),
         );
       } else {
         await createCustomer(payload).unwrap();
@@ -460,7 +460,6 @@ const AddCustomer = () => {
                         label="Email"
                         name="email"
                         rules={[
-                          { required: true, message: "Please enter email" },
                           { type: "email", message: "Enter a valid email" },
                         ]}
                       >
@@ -486,7 +485,7 @@ const AddCustomer = () => {
                             validator: (_, value) =>
                               value && !/^\d+$/.test(value)
                                 ? Promise.reject(
-                                    new Error("Only numeric digits allowed")
+                                    new Error("Only numeric digits allowed"),
                                   )
                                 : Promise.resolve(),
                           },
@@ -524,7 +523,7 @@ const AddCustomer = () => {
                             validator: (_, value) =>
                               value && !/^\d+$/.test(value)
                                 ? Promise.reject(
-                                    new Error("Only numeric digits allowed")
+                                    new Error("Only numeric digits allowed"),
                                   )
                                 : Promise.resolve(),
                           },
@@ -633,8 +632,8 @@ const AddCustomer = () => {
                   {isCreating || isEditing
                     ? "Processing..."
                     : existingCustomer
-                    ? "Update Customer"
-                    : "Add Customer"}
+                      ? "Update Customer"
+                      : "Add Customer"}
                 </Button>
               </div>
 

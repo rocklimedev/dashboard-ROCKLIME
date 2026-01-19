@@ -136,12 +136,12 @@ const QuotationForm = ({
   /* ────── Customer / Address memos ────── */
   const selectedCustomerData = useMemo(
     () => customers.find((c) => c.customerId === selectedCustomer),
-    [customers, selectedCustomer]
+    [customers, selectedCustomer],
   );
 
   const defaultAddress = useMemo(() => {
     const billing = addresses.find(
-      (a) => a.customerId === selectedCustomer && a.status === "BILLING"
+      (a) => a.customerId === selectedCustomer && a.status === "BILLING",
     );
     if (billing) return billing;
 
@@ -170,15 +170,15 @@ const QuotationForm = ({
 
   const filteredAddresses = useMemo(
     () => addresses.filter((a) => a.customerId === selectedCustomer),
-    [addresses, selectedCustomer]
+    [addresses, selectedCustomer],
   );
 
   const hasBillingAddress = useMemo(
     () =>
       addresses.some(
-        (a) => a.customerId === selectedCustomer && a.status === "BILLING"
+        (a) => a.customerId === selectedCustomer && a.status === "BILLING",
       ),
-    [addresses, selectedCustomer]
+    [addresses, selectedCustomer],
   );
 
   const dropdownValue = useMemo(() => {
@@ -202,7 +202,7 @@ const QuotationForm = ({
   /* ────── GST & Auto‑Round‑Off ────── */
   const amountBeforeGst = useMemo(
     () => subTotal + tax + shipping - discount - extraDiscount,
-    [subTotal, tax, shipping, discount, extraDiscount]
+    [subTotal, tax, shipping, discount, extraDiscount],
   );
 
   const gstAmount = useMemo(() => {
@@ -212,7 +212,7 @@ const QuotationForm = ({
 
   const totalBeforeRoundOff = useMemo(
     () => amountBeforeGst + gstAmount,
-    [amountBeforeGst, gstAmount]
+    [amountBeforeGst, gstAmount],
   );
 
   const autoRoundOff = useMemo(() => {
@@ -225,7 +225,7 @@ const QuotationForm = ({
 
   const finalRoundedTotal = useMemo(
     () => Math.round(totalBeforeRoundOff + autoRoundOff),
-    [totalBeforeRoundOff, autoRoundOff]
+    [totalBeforeRoundOff, autoRoundOff],
   );
   /* ────── Force GST to 0 ────── */
   useEffect(() => {
@@ -254,7 +254,7 @@ const QuotationForm = ({
         normalize(a.postalCode || a.zip) ===
           normalize(defaultAddress.postalCode || defaultAddress.zip) &&
         normalize(a.country || "india") ===
-          normalize(defaultAddress.country || "india")
+          normalize(defaultAddress.country || "india"),
     );
 
     const finalize = (addressId) => {
@@ -320,7 +320,7 @@ const QuotationForm = ({
   const rmFollow = (i) =>
     handleQuotationChange(
       "followupDates",
-      quotationData.followupDates.filter((_, x) => x !== i)
+      quotationData.followupDates.filter((_, x) => x !== i),
     );
 
   /* ────── Render ────── */
@@ -398,9 +398,7 @@ const QuotationForm = ({
 
               <TightRow gutter={8}>
                 <Col span={8}>
-                  <Text strong>
-                    Address <span style={{ color: "red" }}>*</span>
-                  </Text>
+                  <Text strong>Address</Text>
                 </Col>
                 <Col span={16}>
                   <Space.Compact block>
@@ -464,12 +462,12 @@ const QuotationForm = ({
                     selected={momentToDate(
                       quotationData.dueDate
                         ? moment(quotationData.dueDate)
-                        : null
+                        : null,
                     )}
                     onChange={(d) =>
                       handleQuotationChange(
                         "dueDate",
-                        d ? moment(d).format("YYYY-MM-DD") : ""
+                        d ? moment(d).format("YYYY-MM-DD") : "",
                       )
                     }
                     minDate={new Date()}
@@ -487,17 +485,23 @@ const QuotationForm = ({
                   {quotationData.followupDates.map((d, i) => (
                     <Space key={i} style={{ width: "100%", marginBottom: 4 }}>
                       <MiniDate
-                        selected={momentToDate(d ? moment(d) : null)}
-                        onChange={(v) => handleFollowup(i, v)}
-                        minDate={new Date()}
-                        maxDate={
+                        selected={momentToDate(
                           quotationData.dueDate
-                            ? moment(quotationData.dueDate).toDate()
-                            : null
+                            ? moment(quotationData.dueDate)
+                            : null,
+                        )}
+                        onChange={(d) =>
+                          handleQuotationChange(
+                            "dueDate",
+                            d ? moment(d).format("YYYY-MM-DD") : "",
+                          )
                         }
+                        minDate={new Date()}
                         dateFormat="dd/MM/yyyy"
                         placeholderText="DD/MM/YYYY"
+                        onKeyDown={(e) => e.preventDefault()} // 🔥 BLOCK typing
                       />
+
                       <Button
                         danger
                         size="small"
@@ -528,7 +532,7 @@ const QuotationForm = ({
                       onChange={(value) =>
                         handleQuotationChange(
                           "discountAmount",
-                          value === null ? "" : value.toString()
+                          value === null ? "" : value.toString(),
                         )
                       }
                       placeholder="500"

@@ -88,7 +88,7 @@ const ProductsList = () => {
           return next;
         });
       }, 400),
-    [setSearchParams]
+    [setSearchParams],
   );
 
   // Sync local search when URL search changes (browser back/forward, reset, etc.)
@@ -117,7 +117,7 @@ const ProductsList = () => {
       limit: pageSize,
       search: urlSearch || undefined,
     },
-    { skip: !isBrandView || !id }
+    { skip: !isBrandView || !id },
   );
 
   const categoryQuery = useGetAllProductsByCategoryQuery(
@@ -127,7 +127,7 @@ const ProductsList = () => {
       limit: pageSize,
       search: urlSearch || undefined,
     },
-    { skip: !isCategoryView || !id }
+    { skip: !isCategoryView || !id },
   );
 
   const allProductsQuery = useGetAllProductsQuery(
@@ -136,14 +136,14 @@ const ProductsList = () => {
       limit: pageSize,
       search: urlSearch || undefined,
     },
-    { skip: isBrandView || isCategoryView }
+    { skip: isBrandView || isCategoryView },
   );
 
   const queryResult = isBrandView
     ? brandQuery
     : isCategoryView
-    ? categoryQuery
-    : allProductsQuery;
+      ? categoryQuery
+      : allProductsQuery;
 
   const { data: productsResponse, isLoading, isFetching, error } = queryResult;
 
@@ -378,8 +378,8 @@ const ProductsList = () => {
                   record.quantity <= 0
                     ? "Out of stock"
                     : !priceValid
-                    ? "Price not available"
-                    : "Add to cart"
+                      ? "Price not available"
+                      : "Add to cart"
                 }
               >
                 <Button
@@ -509,10 +509,10 @@ const ProductsList = () => {
   const pageTitle = isBrandView
     ? getBrandsName(id)
     : isBpcView
-    ? bpcData?.name || "Category Group"
-    : isCategoryView
-    ? getCategoryName(id)
-    : "All Products";
+      ? bpcData?.name || "Category Group"
+      : isCategoryView
+        ? getCategoryName(id)
+        : "All Products";
 
   const breadcrumbItems = isBrandView
     ? [
@@ -521,18 +521,18 @@ const ProductsList = () => {
         { label: pageTitle },
       ]
     : isBpcView
-    ? [
-        { label: "Home", url: "/" },
-        { label: "Categories", url: "/category-selector" },
-        { label: pageTitle },
-      ]
-    : isCategoryView
-    ? [
-        { label: "Home", url: "/" },
-        { label: "Categories", url: "/category-selector" },
-        { label: pageTitle },
-      ]
-    : [{ label: "Home", url: "/" }, { label: "Products" }];
+      ? [
+          { label: "Home", url: "/" },
+          { label: "Categories", url: "/category-selector" },
+          { label: pageTitle },
+        ]
+      : isCategoryView
+        ? [
+            { label: "Home", url: "/" },
+            { label: "Categories", url: "/category-selector" },
+            { label: pageTitle },
+          ]
+        : [{ label: "Home", url: "/" }, { label: "Products" }];
 
   return (
     <div className="page-wrapper">

@@ -1883,8 +1883,8 @@ body {
 }
 
 .cart-button:hover {
-  background-color: #52c41a !important;
-  border-color: #52c41a !important;
+  background-color: #e31e24 !important;
+  border-color: #e31e24 !important;
   color: #fff !important;
 }
 .cart-button:disabled {
