@@ -91,9 +91,25 @@ const QuotationList = () => {
       formattedDateRange && formattedDateRange[0] && formattedDateRange[1]
         ? formattedDateRange
         : undefined,
+
+    // ──────────────── Add sorting ────────────────
+    sortBy: "createdAt", // or "quotation_date" depending on your backend
+    order: "desc", // desc = newest first
   });
 
   const quotations = Array.isArray(response?.data) ? response?.data : [];
+  const sortedQuotations = useMemo(() => {
+    if (!quotations?.length) return [];
+
+    return [...quotations].sort((a, b) => {
+      // createdAt is ISO string → can be compared directly or parsed
+      return new Date(b.createdAt) - new Date(a.createdAt);
+      // Alternative if you want to fall back to quotation_date:
+      // const dateA = new Date(a.createdAt || a.quotation_date || 0);
+      // const dateB = new Date(b.createdAt || b.quotation_date || 0);
+      // return dateB - dateA;
+    });
+  }, [quotations]);
   const pagination = response?.pagination || {
     total: 0,
     page: 1,
@@ -157,7 +173,7 @@ const QuotationList = () => {
         (it, i) =>
           `${i + 1}. ${it.name || "Product"} (ID: ${it.productId})\n   Qty: ${
             it.quantity
-          } | Price: ₹${it.price} | Total: ₹${it.total}`
+          } | Price: ₹${it.price} | Total: ₹${it.total}`,
       )
       .join("\n");
 
@@ -527,7 +543,7 @@ View: ${window.location.origin}/quotation/${q.quotationId}
                 <div className="table-responsive">
                   <Table
                     columns={columns}
-                    dataSource={quotations}
+                    dataSource={sortedQuotations} // ← changed here
                     rowKey="quotationId"
                     pagination={false}
                     scroll={{ x: "max-content" }}
