@@ -125,7 +125,7 @@ const AddNewOrder = ({ adminName }) => {
 
   const quotationData = location.state?.quotationData || {};
   const [products, setProducts] = useState(
-    quotationData.products || [] // ← Pre-fill if from quotation
+    quotationData.products || [], // ← Pre-fill if from quotation
   );
   const [formData, setFormData] = useState({
     createdFor: quotationData.createdFor || "",
@@ -168,30 +168,30 @@ const AddNewOrder = ({ adminName }) => {
   const { data: addressesData, refetch: refetchAddresses } =
     useGetAllAddressesQuery(
       { customerId: formData.createdFor },
-      { skip: !formData.createdFor }
+      { skip: !formData.createdFor },
     );
 
   const order = orderData?.order;
   const teams = useMemo(
     () => (Array.isArray(teamsData?.teams) ? teamsData.teams : []),
-    [teamsData]
+    [teamsData],
   );
   const customers = useMemo(
     () => (Array.isArray(customersData?.data) ? customersData.data : []),
-    [customersData]
+    [customersData],
   );
   const users = useMemo(
     () => (Array.isArray(usersData?.users) ? usersData.users : []),
-    [usersData]
+    [usersData],
   );
   const user = profileData?.user || {};
   const orders = useMemo(
     () => (Array.isArray(allOrdersData?.orders) ? allOrdersData.orders : []),
-    [allOrdersData]
+    [allOrdersData],
   );
   const addresses = useMemo(
     () => (Array.isArray(addressesData) ? addressesData : []),
-    [addressesData]
+    [addressesData],
   );
 
   /* ────────────────────── Local State ────────────────────── */
@@ -202,7 +202,7 @@ const AddNewOrder = ({ adminName }) => {
   const [customerSearch, setCustomerSearch] = useState("");
   const [filteredCustomers, setFilteredCustomers] = useState(customers);
   const [descriptionLength, setDescriptionLength] = useState(
-    quotationData.description?.length || 0
+    quotationData.description?.length || 0,
   );
   const [useBillingAddress, setUseBillingAddress] = useState(false);
   const [isCreatingAddress, setIsCreatingAddress] = useState(false);
@@ -328,7 +328,7 @@ const AddNewOrder = ({ adminName }) => {
         message.error(
           `Failed to create billing address: ${
             e.data?.message || "Unknown error"
-          }`
+          }`,
         );
         handleChange("shipTo", null);
       } finally {
@@ -353,14 +353,14 @@ const AddNewOrder = ({ adminName }) => {
         const filtered = customers.filter(
           (c) =>
             c.name.toLowerCase().includes(value.toLowerCase()) ||
-            c.email?.toLowerCase().includes(value.toLowerCase())
+            c.email?.toLowerCase().includes(value.toLowerCase()),
         );
         setFilteredCustomers(filtered);
       } else {
         setFilteredCustomers(customers);
       }
     }, 300),
-    [customers]
+    [customers],
   );
 
   useEffect(() => setFilteredCustomers(customers), [customers]);
@@ -423,7 +423,7 @@ const AddNewOrder = ({ adminName }) => {
     if (!formData.dueDate || !formData.followupDates.length) return true;
     const due = moment(formData.dueDate);
     return formData.followupDates.every(
-      (d) => !d || moment(d).isSameOrBefore(due, "day")
+      (d) => !d || moment(d).isSameOrBefore(due, "day"),
     );
   };
   const handleFollowupDateChange = (idx, m) => {
@@ -458,14 +458,14 @@ const AddNewOrder = ({ adminName }) => {
       return message.error("Selected Secondary User does not exist.");
     if (formData.sourceType && !formData.source)
       return message.error(
-        "Please select a Source Customer for the selected Source Type."
+        "Please select a Source Customer for the selected Source Type.",
       );
 
     if (assignmentType === "team" && !formData.assignedTeamId)
       return message.error("Please select a Team for assignment.");
     if (assignmentType === "users" && !formData.assignedUserId)
       return message.error(
-        "Please select at least a Primary User for assignment."
+        "Please select at least a Primary User for assignment.",
       );
     if (
       assignmentType === "users" &&
@@ -495,14 +495,14 @@ const AddNewOrder = ({ adminName }) => {
       orders.every((o) => o.orderNo !== formData.masterPipelineNo)
     )
       return message.error(
-        "Master Pipeline Number does not match any existing order."
+        "Master Pipeline Number does not match any existing order.",
       );
     if (
       formData.previousOrderNo &&
       orders.every((o) => o.orderNo !== formData.previousOrderNo)
     )
       return message.error(
-        "Previous Order Number does not match any existing order."
+        "Previous Order Number does not match any existing order.",
       );
 
     if (!formData.shipTo && !useBillingAddress)
@@ -517,8 +517,8 @@ const AddNewOrder = ({ adminName }) => {
         quotationData.products && quotationData.products.length > 0
           ? quotationData.products
           : products.length > 0
-          ? products
-          : [],
+            ? products
+            : [],
       assignedTeamId:
         assignmentType === "team" && formData.assignedTeamId
           ? formData.assignedTeamId
@@ -534,7 +534,7 @@ const AddNewOrder = ({ adminName }) => {
       status: formData.status,
       dueDate: formData.dueDate || null,
       followupDates: formData.followupDates.filter(
-        (d) => d && moment(d).isValid()
+        (d) => d && moment(d).isValid(),
       ),
       source: sanitize(formData.source),
       sourceType: sanitize(formData.sourceType),
@@ -586,10 +586,10 @@ const AddNewOrder = ({ adminName }) => {
         err?.status === 400
           ? `Bad Request: ${err.data?.message || "Invalid data."}`
           : err?.status === 404
-          ? `Not Found: ${err.data?.message || "Resource not found."}`
-          : err?.status === 500
-          ? "Server error."
-          : "Something went wrong.";
+            ? `Not Found: ${err.data?.message || "Resource not found."}`
+            : err?.status === 500
+              ? "Server error."
+              : "Something went wrong.";
       console.error(err);
       message.error(msg);
     }
@@ -716,7 +716,9 @@ const AddNewOrder = ({ adminName }) => {
 
                     <Button
                       type="primary"
-                      onClick={() => setShowAddAddressModal(true)}
+                      onClick={() => {
+                        setShowAddAddressModal(true);
+                      }}
                       disabled={!formData.createdFor}
                     >
                       +
@@ -985,7 +987,7 @@ const AddNewOrder = ({ adminName }) => {
                             {orders
                               .filter(
                                 (o) =>
-                                  o.orderNo && o.orderNo !== formData.orderNo
+                                  o.orderNo && o.orderNo !== formData.orderNo,
                               )
                               .map((o) => (
                                 <Option key={o.orderNo} value={o.orderNo}>
@@ -1007,7 +1009,7 @@ const AddNewOrder = ({ adminName }) => {
                             {orders
                               .filter(
                                 (o) =>
-                                  o.orderNo && o.orderNo !== formData.orderNo
+                                  o.orderNo && o.orderNo !== formData.orderNo,
                               )
                               .map((o) => (
                                 <Option key={o.orderNo} value={o.orderNo}>
@@ -1092,7 +1094,7 @@ const AddNewOrder = ({ adminName }) => {
                               placeholder="Enter invoice link"
                               disabled={
                                 !INVOICE_EDITABLE_STATUSES.includes(
-                                  formData.status
+                                  formData.status,
                                 )
                               }
                             />
@@ -1181,6 +1183,8 @@ const AddNewOrder = ({ adminName }) => {
               onClose={() => setShowAddAddressModal(false)}
               onSave={handleAddressSave}
               selectedCustomer={formData.createdFor}
+              // Add this temporary prop to test
+              visible={showAddAddressModal}
             />
           )}
           {showAddCustomerModal && (

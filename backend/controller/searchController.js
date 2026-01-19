@@ -17,6 +17,7 @@ const {
   Team,
   Vendor,
 } = require("../models");
+
 // Search controller to handle global search across all models
 const searchAll = async (req, res) => {
   try {
@@ -30,6 +31,7 @@ const searchAll = async (req, res) => {
     }
 
     const searchTerm = `%${query.trim()}%`;
+    const rawQuery = query.trim(); // used for custom escaping in JSON fields
     const results = {};
 
     // Define searchable models with explicit keys
@@ -46,7 +48,6 @@ const searchAll = async (req, res) => {
         fields: ["name"],
         attributes: ["categoryId", "name", "parentCategoryId"],
       },
-
       {
         key: "Customer",
         model: Customer,
@@ -59,7 +60,6 @@ const searchAll = async (req, res) => {
           "mobileNumber",
         ],
       },
-
       {
         key: "Order",
         model: Order,
@@ -69,8 +69,33 @@ const searchAll = async (req, res) => {
       {
         key: "Product",
         model: Product,
-        fields: ["name", "product_code", "images", "meta"],
+        fields: ["name", "product_code"],
         attributes: ["productId", "name", "product_code", "images", "meta"],
+        customWhere: (searchTerm, rawQuery) => {
+          const escapedSearch = rawQuery.replace(/'/g, "''");
+
+          const castMeta = sequelize.cast(
+            sequelize.col("meta"),
+            "CHAR CHARACTER SET utf8mb4",
+          );
+          const castImages = sequelize.cast(
+            sequelize.col("images"),
+            "CHAR CHARACTER SET utf8mb4",
+          );
+
+          return {
+            [Op.or]: [
+              { name: { [Op.like]: searchTerm } },
+              { product_code: { [Op.like]: searchTerm } },
+              sequelize.where(castMeta, {
+                [Op.like]: sequelize.literal(`'%${escapedSearch}%'`),
+              }),
+              sequelize.where(castImages, {
+                [Op.like]: sequelize.literal(`'%${escapedSearch}%'`),
+              }),
+            ],
+          };
+        },
       },
       {
         key: "Quotation",
@@ -110,43 +135,50 @@ const searchAll = async (req, res) => {
     ];
 
     await Promise.all(
-      searchConfigs.map(async ({ key, model, fields, attributes }) => {
-        try {
-          const where = {
-            [Op.or]: fields.map((field) => ({
-              [field]: { [Op.like]: searchTerm },
-            })),
-          };
+      searchConfigs.map(
+        async ({ key, model, fields, attributes, customWhere }) => {
+          try {
+            let where = {
+              [Op.or]: fields.map((field) => ({
+                [field]: { [Op.like]: searchTerm },
+              })),
+            };
 
-          const rows = await model.findAll({
-            where,
-            attributes,
-            limit: 8,
-            order: [["createdAt", "DESC"]],
-          });
+            // Apply custom where clause if defined (for Product JSON fields)
+            if (customWhere) {
+              where = customWhere(searchTerm, rawQuery);
+            }
 
-          results[key] = {
-            items: rows,
-            total: rows.length,
-            page: 1,
-            pages: 1,
-          };
-        } catch (error) {
-          console.error(`Search failed for ${key}:`, error);
-          results[key] = {
-            items: [],
-            total: 0,
-            page: 1,
-            pages: 0,
-            error: `Failed to search ${key}`,
-          };
-        }
-      })
+            const rows = await model.findAll({
+              where,
+              attributes,
+              limit: 8,
+              order: [["createdAt", "DESC"]],
+            });
+
+            results[key] = {
+              items: rows,
+              total: rows.length,
+              page: 1,
+              pages: 1,
+            };
+          } catch (error) {
+            console.error(`Search failed for ${key}:`, error);
+            results[key] = {
+              items: [],
+              total: 0,
+              page: 1,
+              pages: 0,
+              error: `Failed to search ${key}`,
+            };
+          }
+        },
+      ),
     );
 
     const totalResults = Object.values(results).reduce(
       (sum, { total }) => sum + total,
-      0
+      0,
     );
 
     return res.status(200).json({
@@ -156,7 +188,7 @@ const searchAll = async (req, res) => {
       meta: {
         total: totalResults,
         page: parseInt(page),
-        limit: 8, // or keep dynamic if needed
+        limit: parseInt(limit) || 8, // respect the requested limit
       },
     });
   } catch (error) {
