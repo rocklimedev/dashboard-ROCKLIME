@@ -187,7 +187,7 @@ const OrderPage = () => {
       page: commentPage,
       limit: commentLimit,
     },
-    { skip: !id }
+    { skip: !id },
   );
 
   const { data: customerData } = useGetCustomerByIdQuery(order.createdFor, {
@@ -198,7 +198,7 @@ const OrderPage = () => {
   const { data: addressesData, refetch: refetchAddresses } =
     useGetAllAddressesQuery(
       { customerId: order.createdFor },
-      { skip: !order.createdFor }
+      { skip: !order.createdFor },
     );
   const quotationId = order.quotationId || order.quotation?.quotationId;
 
@@ -215,7 +215,7 @@ const OrderPage = () => {
     if (!customersData?.data || !order.createdFor) return 0;
 
     const customer = customersData.data.find(
-      (c) => c.customerId === order.createdFor
+      (c) => c.customerId === order.createdFor,
     );
 
     // Try multiple possible shapes
@@ -303,7 +303,7 @@ const OrderPage = () => {
         discount: p.discount || 0,
         quantity: p.quantity || 1,
       })),
-    [products]
+    [products],
   );
 
   const { productsData, loading: productsLoading } =
@@ -330,7 +330,7 @@ const OrderPage = () => {
       let brandName = pd.brandName || "N/A";
       if (pd.metaDetails) {
         const brandMeta = pd.metaDetails.find(
-          (m) => m.title === "brandName" || m.title === "brand"
+          (m) => m.title === "brandName" || m.title === "brand",
         );
         brandName = brandMeta?.value || brandName;
       }
@@ -366,19 +366,19 @@ const OrderPage = () => {
   const billingAddress = useMemo(
     () =>
       addressesData?.find(
-        (a) => a.status === "BILLING" && a.customerId === order.createdFor
+        (a) => a.status === "BILLING" && a.customerId === order.createdFor,
       ) || null,
-    [addressesData, order.createdFor]
+    [addressesData, order.createdFor],
   );
 
   const shippingAddress = useMemo(
     () =>
       addressesData?.find(
-        (a) => a.status === "ADDITIONAL" && a.customerId === order.createdFor
+        (a) => a.status === "ADDITIONAL" && a.customerId === order.createdFor,
       ) ||
       order.shippingAddress ||
       null,
-    [addressesData, order.createdFor, order.shippingAddress]
+    [addressesData, order.createdFor, order.shippingAddress],
   );
 
   // ── FILE HANDLERS ──
@@ -496,7 +496,7 @@ const OrderPage = () => {
   const lineItemsTotal = useMemo(() => {
     return mergedProducts.reduce(
       (sum, p) => sum + (parseFloat(p.total) || 0),
-      0
+      0,
     );
   }, [mergedProducts]);
 
@@ -628,8 +628,8 @@ const OrderPage = () => {
                           order.status === "DRAFT"
                             ? "warning"
                             : order.status === "ONHOLD"
-                            ? "error"
-                            : "success"
+                              ? "error"
+                              : "success"
                         }
                         text={order.status}
                       />
@@ -647,9 +647,20 @@ const OrderPage = () => {
                     rowKey="productId"
                     scroll={{ x: "max-content" }}
                     footer={() => {
+                      const lineItemsTotal = mergedProducts.reduce(
+                        (sum, p) => sum + (parseFloat(p.total) || 0),
+                        0,
+                      );
+
                       const shippingAmount = order.shipping
                         ? parseFloat(order.shipping)
                         : 0;
+                      const extraDiscountAmount = order.extraDiscountValue
+                        ? parseFloat(order.extraDiscountValue)
+                        : 0;
+
+                      // Use the authoritative finalAmount from the order itself
+                      const displayedFinal = parseFloat(order.finalAmount || 0);
 
                       return (
                         <div
@@ -705,14 +716,19 @@ const OrderPage = () => {
                                   </td>
                                 </tr>
                               )}
-
-                              <tr>
-                                <td style={{ padding: "6px 0" }}>
-                                  GST {gstRate > 0 ? `(${gstRate}%)` : ""}
-                                </td>
-                                <td align="right">₹{gstAmount.toFixed(2)}</td>
-                              </tr>
-
+                              {/* Optional: show quotation round-off for context */}
+                              {quotationDetails.roundOff !== 0 && (
+                                <tr>
+                                  <td
+                                    style={{ padding: "6px 0", color: "#888" }}
+                                  >
+                                    Round-off (from quotation)
+                                  </td>
+                                  <td align="right" style={{ color: "#888" }}>
+                                    +₹{quotationDetails.roundOff.toFixed(2)}
+                                  </td>
+                                </tr>
+                              )}
                               <tr
                                 style={{
                                   borderTop: "2px solid #ddd",
@@ -728,7 +744,7 @@ const OrderPage = () => {
                                     type="danger"
                                     style={{ fontSize: "1.3em" }}
                                   >
-                                    ₹{finalAmount.toFixed(2)}
+                                    ₹{displayedFinal.toFixed(2)}
                                   </Text>
                                 </td>
                               </tr>
@@ -885,7 +901,10 @@ const OrderPage = () => {
                         Full Name
                       </Text>
                       <Space>
-                        <div className="avatar small">
+                        <div
+                          className="avatar small"
+                          style={{ backgroundColor: "#333333" }}
+                        >
                           {customer.name?.[0]?.toUpperCase() || "N/A"}
                         </div>
                         <Text strong>{customer.name || "N/A"}</Text>
@@ -897,7 +916,10 @@ const OrderPage = () => {
                         Email
                       </Text>
                       <Text strong>
-                        <a href={`mailto:${customer.email || "N/A"}`}>
+                        <a
+                          href={`mailto:${customer.email || "N/A"}`}
+                          style={{ color: "#333333" }}
+                        >
                           {customer.email || "N/A"}
                         </a>
                       </Text>
@@ -954,7 +976,7 @@ const OrderPage = () => {
                           <Text>
                             {quotationDetails.quotation_date
                               ? new Date(
-                                  quotationDetails.quotation_date
+                                  quotationDetails.quotation_date,
                                 ).toLocaleDateString()
                               : "N/A"}
                           </Text>
@@ -964,7 +986,7 @@ const OrderPage = () => {
                           <Text>
                             {quotationDetails.due_date
                               ? new Date(
-                                  quotationDetails.due_date
+                                  quotationDetails.due_date,
                                 ).toLocaleDateString()
                               : "N/A"}
                           </Text>
@@ -975,7 +997,7 @@ const OrderPage = () => {
                             {quotationDetails.followupDates.length > 0
                               ? quotationDetails.followupDates
                                   .map((date) =>
-                                    new Date(date).toLocaleDateString()
+                                    new Date(date).toLocaleDateString(),
                                   )
                                   .join(", ")
                               : "N/A"}
@@ -990,7 +1012,7 @@ const OrderPage = () => {
                           <Text>
                             ₹
                             {parseFloat(quotationDetails.finalAmount).toFixed(
-                              2
+                              2,
                             )}
                           </Text>
                         </li>
@@ -1061,12 +1083,12 @@ const OrderPage = () => {
                           `https://api.cmtrading.com/api/order/${order.id}/download-invoice`,
                           {
                             credentials: "include", // Critical: sends cookies/session
-                          }
+                          },
                         );
 
                         if (!response.ok) {
                           throw new Error(
-                            `Download failed: ${response.status}`
+                            `Download failed: ${response.status}`,
                           );
                         }
 
@@ -1074,12 +1096,12 @@ const OrderPage = () => {
 
                         // Extract filename from header (your backend already sets it!)
                         const contentDisposition = response.headers.get(
-                          "Content-Disposition"
+                          "Content-Disposition",
                         );
                         let filename = generateFileName(
                           "INVOICE",
                           order.orderNo,
-                          customer.name
+                          customer.name,
                         );
                         if (contentDisposition) {
                           const match =
@@ -1100,7 +1122,7 @@ const OrderPage = () => {
                       } catch (err) {
                         console.error(err);
                         message.error(
-                          "Failed to download invoice. Please try again."
+                          "Failed to download invoice. Please try again.",
                         );
                       }
                     }}
@@ -1208,11 +1230,11 @@ const OrderPage = () => {
                         let downloadName = generateFileName(
                           "GATEPASS",
                           order.orderNo,
-                          customer.name
+                          customer.name,
                         );
                         downloadName = downloadName.replace(
                           /\.pdf$/,
-                          `.${actualExt}`
+                          `.${actualExt}`,
                         );
 
                         a.download = downloadName;

@@ -68,14 +68,14 @@ const NewQuotationsDetails = () => {
         version: "current",
         quotationData: quotation,
         quotationItems: safeParseProducts(
-          quotation.products || quotation.items
+          quotation.products || quotation.items,
         ),
         updatedAt: quotation.updatedAt || new Date(),
         updatedBy: quotation.createdBy,
       });
     }
     return list.sort((a, b) =>
-      a.version === "current" ? -1 : b.version - a.version
+      a.version === "current" ? -1 : b.version - a.version,
     );
   }, [quotation, versionsData]);
 
@@ -200,7 +200,7 @@ const NewQuotationsDetails = () => {
     activeVersionData.quotation?.extraDiscountType || "percent",
     activeVersionData.quotation?.roundOff || 0,
     itemDiscounts,
-    itemDiscountTypes
+    itemDiscountTypes,
   );
 
   const finalAmountInWords = amountInWords(Math.round(finalTotal));
@@ -233,7 +233,7 @@ const NewQuotationsDetails = () => {
           id,
           activeVersion,
           activeVersionData.quotation,
-          `${fileName}.pdf`
+          `${fileName}.pdf`,
         );
       } else {
         await exportToExcel(
@@ -252,7 +252,7 @@ const NewQuotationsDetails = () => {
           id,
           activeVersion,
           [],
-          `${fileName}.xlsx`
+          `${fileName}.xlsx`,
         );
       }
       message.success(`${exportFormat.toUpperCase()} exported successfully!`);
@@ -291,7 +291,7 @@ const NewQuotationsDetails = () => {
             {customerName.toUpperCase()}
           </div>
         </div>
-      </div>
+      </div>,
     );
 
     // PAGE 2: LETTERHEAD
@@ -328,7 +328,7 @@ const NewQuotationsDetails = () => {
             www.cmtradingco.com
           </div>
         </div>
-      </div>
+      </div>,
     );
 
     // ── PRODUCT + SUMMARY PAGES ────────────────────────────────────────
@@ -365,7 +365,7 @@ const NewQuotationsDetails = () => {
             </div>
             <div className={styles.pageDate}>
               {new Date(
-                quotation.quotation_date || Date.now()
+                quotation.quotation_date || Date.now(),
               ).toLocaleDateString("en-IN", {
                 day: "2-digit",
                 month: "short",
@@ -404,10 +404,10 @@ const NewQuotationsDetails = () => {
 
                 const matchingItem =
                   quotation?.items?.find(
-                    (it) => it.productId === p.productId
+                    (it) => it.productId === p.productId,
                   ) ||
                   quotation?.products?.find(
-                    (it) => it.productId === p.productId
+                    (it) => it.productId === p.productId,
                   ) ||
                   p;
 
@@ -431,13 +431,13 @@ const NewQuotationsDetails = () => {
                     p.sellingPrice ||
                     matchingItem?.price ||
                     pd.price ||
-                    0
+                    0,
                 );
                 const qty = Number(p.quantity || 1);
 
                 // ── Use built discount maps + fallback to item itself ──
                 const discValue = Number(
-                  itemDiscounts[p.productId] ?? matchingItem?.discount ?? 0
+                  itemDiscounts[p.productId] ?? matchingItem?.discount ?? 0,
                 );
                 const discType = (
                   itemDiscountTypes[p.productId] ??
@@ -503,7 +503,7 @@ const NewQuotationsDetails = () => {
                       <span>
                         -₹
                         {Math.round(totalProductDiscount).toLocaleString(
-                          "en-IN"
+                          "en-IN",
                         )}
                       </span>
                     </div>
@@ -539,7 +539,7 @@ const NewQuotationsDetails = () => {
               </div>
             </div>
           )}
-        </div>
+        </div>,
       );
 
       remaining = remaining.slice(itemsThisPage.length);
@@ -555,7 +555,7 @@ const NewQuotationsDetails = () => {
               </div>
               <div className={styles.pageDate}>
                 {new Date(
-                  quotation.quotation_date || Date.now()
+                  quotation.quotation_date || Date.now(),
                 ).toLocaleDateString("en-IN", {
                   day: "2-digit",
                   month: "short",
@@ -589,7 +589,7 @@ const NewQuotationsDetails = () => {
                       <span>
                         -₹
                         {Math.round(totalProductDiscount).toLocaleString(
-                          "en-IN"
+                          "en-IN",
                         )}
                       </span>
                     </div>
@@ -624,7 +624,7 @@ const NewQuotationsDetails = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </div>,
         );
       }
     }
