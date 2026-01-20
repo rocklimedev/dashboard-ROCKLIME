@@ -21,14 +21,14 @@ const ParentCategory = require("./parentCategory")(sequelize, DataTypes);
 const Brand = require("./brand")(sequelize, DataTypes);
 const Vendor = require("./vendor")(sequelize, DataTypes);
 const Keyword = require("./keyword")(sequelize, DataTypes);
-
+const ImportJob = require("./import")(sequelize, DataTypes);
 const BrandParentCategory = require("./brandParentCategory")(
   sequelize,
-  DataTypes
+  DataTypes,
 );
 const BrandParentCategoryBrand = require("./brandParentCategoryBrand")(
   sequelize,
-  DataTypes
+  DataTypes,
 );
 const SiteMap = require("./siteMap")(sequelize, DataTypes);
 const InventoryHistory = require("./history")(sequelize, DataTypes);
@@ -67,6 +67,7 @@ const PurchaseOrder = require("./purchaseorder")(sequelize, DataTypes);
   Order,
   Signature,
   Cart,
+  ImportJob,
   SiteMap,
   PurchaseOrder,
   InventoryHistory,
@@ -83,6 +84,7 @@ const PurchaseOrder = require("./purchaseorder")(sequelize, DataTypes);
       ProductKeyword,
       Product,
       Company,
+      ImportJob,
       ProductMeta,
       Category,
       ParentCategory,

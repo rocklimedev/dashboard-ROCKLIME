@@ -48,7 +48,7 @@ const withUpload = (handler) => (req, res) => {
 router.post(
   "/",
   // checkPermission("write", "create_product", "products", "/products"),
-  withUpload(productController.createProduct)
+  withUpload(productController.createProduct),
 );
 
 router.get("/", productController.getAllProducts);
@@ -66,11 +66,11 @@ router.get("/:productId", productController.getProductById);
 router.put(
   "/:productId",
   // checkPermission("edit", "update_product", "products", "/products/:productId"),
-  withUpload(productController.updateProduct)
+  withUpload(productController.updateProduct),
 );
 
 router.delete("/:productId", productController.deleteProduct);
-
+router.post("/bulk-import", productController.bulkImportProducts);
 // ==================== STOCK MANAGEMENT ====================
 router.post("/:productId/add-stock", productController.addStock);
 router.post("/:productId/remove-stock", productController.removeStock);
@@ -88,7 +88,7 @@ router.patch("/:productId/featured", productController.updateProductFeatured);
 // 1. Replace ALL keywords (used in your React form → best performance & reliability)
 router.put(
   "/:productId/keywords",
-  productController.replaceAllKeywordsForProduct
+  productController.replaceAllKeywordsForProduct,
 );
 
 // 2. Optional: Add single keyword (not needed if using replaceAll)
@@ -97,13 +97,13 @@ router.post("/:productId/keywords", productController.addKeywordsToProduct);
 // 3. Remove one keyword
 router.delete(
   "/:productId/keywords/:keywordId",
-  productController.removeKeywordFromProduct
+  productController.removeKeywordFromProduct,
 );
 
 // 4. Remove all (fallback)
 router.delete(
   "/:productId/keywords",
-  productController.removeAllKeywordsFromProduct
+  productController.removeAllKeywordsFromProduct,
 );
 
 module.exports = router;
