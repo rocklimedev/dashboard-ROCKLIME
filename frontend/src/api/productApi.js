@@ -17,7 +17,18 @@ export const productApi = baseApi.injectEndpoints({
         { type: "Product", id: "LIST" },
       ],
     }),
-
+    bulkImportProducts: builder.mutation({
+      query: (products) => ({
+        url: "/products/bulk-import",
+        method: "POST",
+        body: { products },
+      }),
+      invalidatesTags: [
+        "Product",
+        { type: "Product", id: "LIST" },
+        "ProductCode",
+      ],
+    }),
     // UPDATE PRODUCT (images + fields)
     updateProduct: builder.mutation({
       query: ({ productId, formData }) => ({
@@ -214,6 +225,7 @@ export const {
   useGetAllProductsQuery,
   useLazyGetAllProductsQuery, // ← useful for pagination
   useGetProductsByBrandQuery,
+  useBulkImportProductsMutation,
   useGetTopSellingProductsQuery,
   useGetProductByIdQuery,
   useLazyGetProductByIdQuery,

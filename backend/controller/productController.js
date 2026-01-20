@@ -65,7 +65,7 @@ const parseJsonSafely = (input, fallback = {}, context = "") => {
   } catch (error) {
     console.warn(
       `Invalid JSON detected in ${context}:`,
-      trimmed.substring(0, 200)
+      trimmed.substring(0, 200),
     );
     return fallback;
   }
@@ -146,7 +146,7 @@ exports.createProduct = async (req, res) => {
           variantKey: null,
           skuSuffix: null,
         },
-        { transaction: t }
+        { transaction: t },
       );
     }
     // CASE 2: Variant of a Master
@@ -199,14 +199,14 @@ exports.createProduct = async (req, res) => {
           meta: Object.keys(metaObj).length > 0 ? metaObj : master.meta,
           description: restFields.description || master.description,
         },
-        { transaction: t }
+        { transaction: t },
       );
     }
     // CASE 3: Standalone Product
     else {
       finalProduct = await Product.create(
         { ...productData, isMaster: false },
-        { transaction: t }
+        { transaction: t },
       );
     }
 
@@ -214,11 +214,11 @@ exports.createProduct = async (req, res) => {
     const cleanKeywordIds = Array.isArray(keywordIds)
       ? keywordIds.filter((id) => id)
       : typeof keywordIds === "string"
-      ? keywordIds
-          .split(",")
-          .map((id) => id.trim())
-          .filter((id) => id)
-      : [];
+        ? keywordIds
+            .split(",")
+            .map((id) => id.trim())
+            .filter((id) => id)
+        : [];
 
     await finalProduct.setKeywords(cleanKeywordIds, { transaction: t });
 
@@ -329,7 +329,7 @@ exports.updateProduct = async (req, res) => {
         : deleteInput
       : [];
     currentImages = currentImages.filter(
-      (url) => !imagesToDelete.includes(url)
+      (url) => !imagesToDelete.includes(url),
     );
 
     if (req.files?.length > 0) {
@@ -448,11 +448,11 @@ exports.updateProduct = async (req, res) => {
     const cleanKeywordIds = Array.isArray(keywordIds)
       ? keywordIds.filter(Boolean)
       : typeof keywordIds === "string"
-      ? keywordIds
-          .split(",")
-          .map((id) => id.trim())
-          .filter((id) => id)
-      : [];
+        ? keywordIds
+            .split(",")
+            .map((id) => id.trim())
+            .filter((id) => id)
+        : [];
     await product.setKeywords(cleanKeywordIds, { transaction: t });
 
     await t.commit();
@@ -535,7 +535,7 @@ exports.getAllProducts = async (req, res) => {
           sequelize.where(
             sequelize.fn("LOWER", sequelize.col("Product.name")),
             Op.like,
-            pattern
+            pattern,
           ),
 
           // Company code in JSON meta (using the UUID from your frontend logic)
@@ -547,25 +547,25 @@ exports.getAllProducts = async (req, res) => {
               sequelize.fn(
                 "JSON_EXTRACT",
                 sequelize.col("Product.meta"),
-                sequelize.literal("'$.d11da9f9-3f2e-4536-8236-9671200cca4a'") // ← literal string + single quotes
-              )
+                sequelize.literal("'$.d11da9f9-3f2e-4536-8236-9671200cca4a'"), // ← literal string + single quotes
+              ),
             ),
             Op.like,
-            pattern
+            pattern,
           ),
 
           // Keywords
           sequelize.where(
             sequelize.fn("LOWER", sequelize.col("keywords.keyword")),
             Op.like,
-            pattern
+            pattern,
           ),
 
           // Category names (via keyword → category)
           sequelize.where(
             sequelize.fn("LOWER", sequelize.col("keywords.categories.name")),
             Op.like,
-            pattern
+            pattern,
           ),
 
           // Optional: if you have product_code / sku as real columns
@@ -618,7 +618,7 @@ exports.getAllProducts = async (req, res) => {
       const meta = parseJsonSafely(
         product.meta,
         null,
-        `product ID ${product.id} meta`
+        `product ID ${product.id} meta`,
       );
       if (meta && typeof meta === "object") {
         Object.keys(meta).forEach((id) => metaIds.add(id));
@@ -644,12 +644,12 @@ exports.getAllProducts = async (req, res) => {
       const metaObj = parseJsonSafely(
         raw.meta,
         {},
-        `product ID ${raw.id} meta`
+        `product ID ${raw.id} meta`,
       );
       const images = parseJsonSafely(
         raw.images,
         [],
-        `product ID ${raw.id} images`
+        `product ID ${raw.id} images`,
       );
 
       // Build detailed meta with titles, units, etc.
@@ -842,7 +842,7 @@ exports.getProductsByCategory = async (req, res) => {
         sequelize.where(
           sequelize.fn("LOWER", sequelize.col("Product.name")),
           Op.like,
-          pattern
+          pattern,
         ),
 
         // Company code in JSON meta
@@ -854,25 +854,25 @@ exports.getProductsByCategory = async (req, res) => {
             sequelize.fn(
               "JSON_EXTRACT",
               sequelize.col("Product.meta"),
-              sequelize.literal("'$.d11da9f9-3f2e-4536-8236-9671200cca4a'") // ← literal string + single quotes
-            )
+              sequelize.literal("'$.d11da9f9-3f2e-4536-8236-9671200cca4a'"), // ← literal string + single quotes
+            ),
           ),
           Op.like,
-          pattern
+          pattern,
         ),
 
         // Keywords
         sequelize.where(
           sequelize.fn("LOWER", sequelize.col("keywords.keyword")),
           Op.like,
-          pattern
+          pattern,
         ),
 
         // Category names (via keyword → category)
         sequelize.where(
           sequelize.fn("LOWER", sequelize.col("keywords.categories.name")),
           Op.like,
-          pattern
+          pattern,
         ),
 
         // Optional: if you have product_code / sku as real column
@@ -936,7 +936,7 @@ exports.getProductsByCategory = async (req, res) => {
       const images = parseJsonSafely(
         raw.images,
         [],
-        `product ${raw.id} images`
+        `product ${raw.id} images`,
       );
 
       // Build metaDetails
@@ -1043,7 +1043,7 @@ exports.getProductsByBrand = async (req, res) => {
         sequelize.where(
           sequelize.fn("LOWER", sequelize.col("Product.name")),
           Op.like,
-          pattern
+          pattern,
         ),
 
         // Company code / Model code in JSON meta – FIXED with quoted key
@@ -1053,25 +1053,25 @@ exports.getProductsByBrand = async (req, res) => {
             sequelize.fn(
               "JSON_EXTRACT",
               sequelize.col("Product.meta"),
-              sequelize.literal(`'$."d11da9f9-3f2e-4536-8236-9671200cca4a"'`)
-            )
+              sequelize.literal(`'$."d11da9f9-3f2e-4536-8236-9671200cca4a"'`),
+            ),
           ),
           Op.like,
-          pattern
+          pattern,
         ),
 
         // Keywords
         sequelize.where(
           sequelize.fn("LOWER", sequelize.col("keywords.keyword")),
           Op.like,
-          pattern
+          pattern,
         ),
 
         // Category names (via keyword → category relation)
         sequelize.where(
           sequelize.fn("LOWER", sequelize.col("keywords.categories.name")),
           Op.like,
-          pattern
+          pattern,
         ),
 
         // Optional: uncomment if you have a real product_code / sku column
@@ -1129,7 +1129,7 @@ exports.getProductsByBrand = async (req, res) => {
       metaDefs.map((m) => {
         const def = m.toJSON();
         return [def.id, def];
-      })
+      }),
     );
 
     // ── Enrich products ─────────────────────────────────────────────────
@@ -1140,12 +1140,12 @@ exports.getProductsByBrand = async (req, res) => {
       const metaObj = parseJsonSafely(
         raw.meta,
         {},
-        `product ${raw.id || raw.productId} meta`
+        `product ${raw.id || raw.productId} meta`,
       );
       const images = parseJsonSafely(
         raw.images,
         [],
-        `product ${raw.id || raw.productId} images`
+        `product ${raw.id || raw.productId} images`,
       );
 
       // Build metaDetails from meta object + definitions
@@ -1262,7 +1262,7 @@ exports.addStock = async (req, res) => {
           userId: userId || null,
           message: finalMessage,
         },
-        { transaction: t }
+        { transaction: t },
       );
 
       return { product, history };
@@ -1336,7 +1336,7 @@ exports.removeStock = async (req, res) => {
           userId: userId || null,
           message: finalMessage,
         },
-        { transaction: t }
+        { transaction: t },
       );
 
       return { product, history };
@@ -1437,7 +1437,7 @@ exports.getLowStockProducts = async (req, res) => {
         productData.metaDetails = Object.keys(productData.meta).map(
           (metaId) => {
             const metaField = productData.product_metas.find(
-              (mf) => mf.id === metaId
+              (mf) => mf.id === metaId,
             );
             return {
               id: metaId,
@@ -1447,7 +1447,7 @@ exports.getLowStockProducts = async (req, res) => {
               fieldType: metaField ? metaField.fieldType : null,
               unit: metaField ? metaField.unit : null,
             };
-          }
+          },
         );
       }
       delete productData.product_metas;
@@ -1499,12 +1499,12 @@ exports.searchProducts = async (req, res) => {
         sequelize.where(
           sequelize.fn("LOWER", sequelize.col("Product.name")),
           Op.like,
-          pattern
+          pattern,
         ),
         sequelize.where(
           sequelize.fn("LOWER", sequelize.col("Product.product_code")),
           Op.like,
-          pattern
+          pattern,
         ),
         // Search inside meta → model code / company code (UUID key)
         sequelize.where(
@@ -1513,11 +1513,11 @@ exports.searchProducts = async (req, res) => {
             sequelize.fn(
               "JSON_EXTRACT",
               sequelize.col("Product.meta"),
-              sequelize.literal("'$.\"d11da9f9-3f2e-4536-8236-9671200cca4a\"'")
-            )
+              sequelize.literal("'$.\"d11da9f9-3f2e-4536-8236-9671200cca4a\"'"),
+            ),
           ),
           Op.like,
-          pattern
+          pattern,
         ),
         // Brand / Category UUID match
         { brandId: { [Op.eq]: searchTerm } },
@@ -1590,7 +1590,7 @@ exports.searchProducts = async (req, res) => {
       const images = parseJsonSafely(
         raw.images,
         [],
-        `product ${raw.productId} images`
+        `product ${raw.productId} images`,
       );
 
       // Build metaDetails safely
@@ -1658,7 +1658,7 @@ exports.getAllProductCodes = async (req, res) => {
         productData.metaDetails = Object.keys(productData.meta).map(
           (metaId) => {
             const metaField = productData.product_metas.find(
-              (mf) => mf.id === metaId
+              (mf) => mf.id === metaId,
             );
             return {
               id: metaId,
@@ -1668,7 +1668,7 @@ exports.getAllProductCodes = async (req, res) => {
               fieldType: metaField ? metaField.fieldType : null,
               unit: metaField ? metaField.unit : null,
             };
-          }
+          },
         );
       }
       delete productData.product_metas;
@@ -1783,7 +1783,7 @@ exports.getProductsByIds = async (req, res) => {
       const meta = parseJsonSafely(
         product.meta,
         null,
-        `product ID ${product.id} meta`
+        `product ID ${product.id} meta`,
       );
       if (meta && typeof meta === "object") {
         Object.keys(meta).forEach((id) => metaIds.add(id));
@@ -1809,12 +1809,12 @@ exports.getProductsByIds = async (req, res) => {
       const metaObj = parseJsonSafely(
         raw.meta,
         {},
-        `product ID ${raw.id} meta`
+        `product ID ${raw.id} meta`,
       );
       const images = parseJsonSafely(
         raw.images,
         [],
-        `product ID ${raw.id} images`
+        `product ID ${raw.id} images`,
       );
 
       // Build enriched metaDetails
@@ -1965,7 +1965,7 @@ exports.batchCreateProducts = async (req, res) => {
             status: "active",
             isFeatured: false,
           },
-          { transaction: t }
+          { transaction: t },
         );
 
         results.push({
@@ -2101,7 +2101,7 @@ exports.createVariant = async (req, res) => {
         meta: meta ? JSON.stringify(meta) : master.meta,
         status: "active",
       },
-      { transaction: t }
+      { transaction: t },
     );
 
     await t.commit();
@@ -2315,7 +2315,7 @@ exports.getTopSellingProducts = async (req, res) => {
           console.warn(
             "Failed to parse quotation products:",
             q.quotationId,
-            e.message
+            e.message,
           );
           return;
         }
@@ -2482,3 +2482,242 @@ exports.getTopSellingProducts = async (req, res) => {
     });
   }
 };
+/**
+ * Reusable helper: Process a batch of products within a transaction
+ * @param {Array} productsBatch - array of product objects from parsed rows
+ * @param {Sequelize.Transaction} t - active transaction
+ * @param {String} [importJobId] - optional: if called from worker, update this job
+ * @returns {Promise<{created, failed, newCategories, newBrands, newVendors}>}
+ */
+async function processProductBatch(productsBatch, t, importJobId = null) {
+  const created = [];
+  const failed = [];
+  const newCategories = new Set();
+  const newBrands = new Set();
+  const newVendors = new Set();
+
+  // ────────────────────────────────────────────────────────────────
+  // 1. Pre-fetch existing entities (case-insensitive)
+  // ────────────────────────────────────────────────────────────────
+  const categoryNameMap = new Map(); // lowerName → categoryId
+  const brandNameMap = new Map();
+  const vendorNameMap = new Map();
+
+  const [existingCats, existingBrands, existingVendors] = await Promise.all([
+    Category.findAll({ attributes: ["categoryId", "name"], transaction: t }),
+    Brand.findAll({ attributes: ["id", "brandName"], transaction: t }),
+    Vendor.findAll({ attributes: ["id", "vendorName"], transaction: t }),
+  ]);
+
+  existingCats.forEach((c) =>
+    categoryNameMap.set(c.name.trim().toLowerCase(), c.categoryId),
+  );
+  existingBrands.forEach((b) =>
+    brandNameMap.set(b.brandName.trim().toLowerCase(), b.id),
+  );
+  existingVendors.forEach((v) =>
+    vendorNameMap.set(v.vendorName.trim().toLowerCase(), v.id),
+  );
+
+  // ────────────────────────────────────────────────────────────────
+  // 2. Create missing categories, brands, vendors
+  // ────────────────────────────────────────────────────────────────
+  for (const p of productsBatch) {
+    const catName = p.categoryName?.trim();
+    if (catName && !categoryNameMap.has(catName.toLowerCase())) {
+      const newCat = await Category.create(
+        {
+          name: catName,
+          slug: catName
+            .toLowerCase()
+            .replace(/\s+/g, "-")
+            .replace(/[^a-z0-9-]/g, ""),
+          // brandId: p.brandId || null, // ← optional: link if available
+        },
+        { transaction: t },
+      );
+      categoryNameMap.set(catName.toLowerCase(), newCat.categoryId);
+      newCategories.add(newCat.name);
+    }
+
+    const brandName = p.brandName?.trim();
+    if (brandName && !brandNameMap.has(brandName.toLowerCase())) {
+      const newBrand = await Brand.create({ brandName }, { transaction: t });
+      brandNameMap.set(brandName.toLowerCase(), newBrand.id);
+      newBrands.add(newBrand.brandName);
+    }
+
+    const vendorName = p.vendorName?.trim();
+    if (vendorName && !vendorNameMap.has(vendorName.toLowerCase())) {
+      const newVendor = await Vendor.create({ vendorName }, { transaction: t });
+      vendorNameMap.set(vendorName.toLowerCase(), newVendor.id);
+      newVendors.add(newVendor.vendorName);
+    }
+  }
+
+  // ────────────────────────────────────────────────────────────────
+  // 3. Create products + keywords
+  // ────────────────────────────────────────────────────────────────
+  for (const [index, p] of productsBatch.entries()) {
+    try {
+      const rowIndex = p.rowIndex || index + 2;
+
+      if (!p.name?.trim() || !p.product_code?.trim()) {
+        throw new Error("name and product_code are required");
+      }
+
+      // Duplicate check
+      const codeExists = await Product.findOne({
+        where: { product_code: p.product_code.trim() },
+        transaction: t,
+      });
+      if (codeExists) {
+        throw new Error(`Product code "${p.product_code}" already exists`);
+      }
+
+      const newProduct = await Product.create(
+        {
+          name: p.name.trim(),
+          product_code: p.product_code.trim(),
+          description: p.description?.trim() || null,
+          quantity: Number(p.quantity) || 0,
+          alert_quantity: p.alert_quantity ? Number(p.alert_quantity) : null,
+          tax: p.tax ? Number(p.tax) : null,
+          isFeatured: !!p.isFeatured,
+          status: Number(p.quantity) > 0 ? "active" : "out_of_stock",
+          images: Array.isArray(p.images) && p.images.length ? p.images : [],
+          meta: p.meta && Object.keys(p.meta).length ? p.meta : null,
+          categoryId: p.categoryName
+            ? categoryNameMap.get(p.categoryName.trim().toLowerCase())
+            : null,
+          brandId: p.brandName
+            ? brandNameMap.get(p.brandName.trim().toLowerCase())
+            : null,
+          vendorId: p.vendorName
+            ? vendorNameMap.get(p.vendorName.trim().toLowerCase())
+            : null,
+        },
+        { transaction: t },
+      );
+
+      // ── Keywords ─────────────────────────────────────────────────────
+      if (Array.isArray(p.keywords) && p.keywords.length > 0) {
+        const keywordIds = [];
+
+        for (const kw of p.keywords) {
+          let keywordRecord = await Keyword.findOne({
+            where: { keyword: kw.trim() },
+            transaction: t,
+          });
+
+          if (!keywordRecord) {
+            keywordRecord = await Keyword.create(
+              { keyword: kw.trim() /* categoryId: optional */ },
+              { transaction: t },
+            );
+          }
+
+          keywordIds.push(keywordRecord.id);
+        }
+
+        await newProduct.setKeywords(keywordIds, { transaction: t });
+      }
+
+      created.push({
+        rowIndex,
+        productId: newProduct.productId,
+        name: newProduct.name,
+        product_code: newProduct.product_code,
+      });
+    } catch (err) {
+      failed.push({
+        rowIndex: p.rowIndex || index + 2,
+        product_code: p.product_code || "[missing]",
+        name: p.name || "[missing]",
+        error: err.message || "Unknown error",
+      });
+    }
+  }
+
+  // ── Optional: Update ImportJob live (only when called from worker) ──
+  if (importJobId) {
+    const job = await ImportJob.findByPk(importJobId, { transaction: t });
+    if (job) {
+      await job.update(
+        {
+          processedRows: job.processedRows + productsBatch.length,
+          successCount: job.successCount + created.length,
+          failedCount: job.failedCount + failed.length,
+          errorLog: [...(job.errorLog || []), ...failed],
+          newCategoriesCount: job.newCategoriesCount + newCategories.size,
+          newBrandsCount: job.newBrandsCount + newBrands.size,
+          newVendorsCount: job.newVendorsCount + newVendors.size,
+        },
+        { transaction: t },
+      );
+    }
+  }
+
+  return {
+    created,
+    failed,
+    newCategories: [...newCategories],
+    newBrands: [...newBrands],
+    newVendors: [...newVendors],
+  };
+}
+
+// ────────────────────────────────────────────────────────────────
+// Original small-batch endpoint (still useful for <300 rows)
+// ────────────────────────────────────────────────────────────────
+exports.bulkImportProducts = async (req, res) => {
+  const { products } = req.body;
+
+  if (!Array.isArray(products) || products.length === 0) {
+    return res
+      .status(400)
+      .json({ success: false, message: "products must be a non-empty array" });
+  }
+
+  if (products.length > 300) {
+    return res
+      .status(400)
+      .json({
+        success: false,
+        message:
+          "Maximum 300 products per request (use chunking or background import)",
+      });
+  }
+
+  const t = await sequelize.transaction();
+
+  try {
+    const result = await processProductBatch(products, t);
+
+    await t.commit();
+
+    return res.status(201).json({
+      success: true,
+      message: `${result.created.length} products created`,
+      created: result.created,
+      failed: result.failed,
+      newCategories: result.newCategories,
+      newBrands: result.newBrands,
+      newVendors: result.newVendors,
+      totalProcessed: products.length,
+      successCount: result.created.length,
+      failedCount: result.failed.length,
+    });
+  } catch (error) {
+    await t.rollback();
+    console.error("Bulk import error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Bulk import failed",
+      error: error.message,
+    });
+  }
+};
+
+// Export the reusable batch function so worker can use it
+exports.processProductBatch = processProductBatch;
