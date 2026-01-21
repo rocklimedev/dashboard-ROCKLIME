@@ -1,73 +1,54 @@
-const { v4: uuidv4 } = require("uuid");
-
+// models/PurchaseOrder.js
+// models/PurchaseOrder.js
 module.exports = (sequelize, DataTypes) => {
   const PurchaseOrder = sequelize.define(
     "PurchaseOrder",
     {
       id: {
         type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
-        defaultValue: () => uuidv4(),
       },
-
       poNumber: {
         type: DataTypes.STRING(20),
-        allowNull: false,
         unique: true,
+        allowNull: false,
       },
-
       vendorId: {
         type: DataTypes.UUID,
         allowNull: false,
-        references: {
-          model: "vendors", // IMPORTANT → use table name, not model import
-          key: "id",
-        },
-        onUpdate: "CASCADE",
-        onDelete: "RESTRICT",
       },
-
       status: {
         type: DataTypes.ENUM("pending", "confirmed", "delivered", "cancelled"),
-        allowNull: false,
         defaultValue: "pending",
       },
-
       orderDate: {
         type: DataTypes.DATE,
-        allowNull: false,
         defaultValue: DataTypes.NOW,
       },
-
-      expectDeliveryDate: {
-        type: DataTypes.DATE,
-        allowNull: true,
-      },
-
+      expectDeliveryDate: DataTypes.DATE,
       totalAmount: {
-        type: DataTypes.DECIMAL(10, 2),
-        allowNull: true,
+        type: DataTypes.DECIMAL(12, 2),
+        defaultValue: 0.0,
       },
-
-      items: {
-        type: DataTypes.JSON,
-        allowNull: false,
-        comment: "Array of { productId, quantity, unitPrice }",
+      mongoItemsId: {
+        type: DataTypes.STRING(24),
+        allowNull: true,
+        unique: true,
       },
     },
     {
       tableName: "purchase_orders",
       timestamps: true,
-      charset: "utf8mb4",
-      collate: "utf8mb4_unicode_ci",
-      engine: "InnoDB",
-    }
+    },
   );
 
-  // ASSOCIATIONS WILL BE ADDED IN setupAssociations()
+  // ─── Define association here ───
   PurchaseOrder.associate = (models) => {
     PurchaseOrder.belongsTo(models.Vendor, {
       foreignKey: "vendorId",
+      as: "vendor", // ← recommended: use alias
+      targetKey: "id",
     });
   };
 

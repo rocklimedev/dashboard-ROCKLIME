@@ -45,6 +45,7 @@ export const baseApi = createApi({
     "Quotations",
     "RolePermission",
     "Roles",
+    "ImportJobs",
     "Search",
     "Signature",
     "Tasks",

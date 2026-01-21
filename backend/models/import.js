@@ -1,6 +1,6 @@
 // models/ImportJob.js
 module.exports = (sequelize, DataTypes) => {
-  return sequelize.define(
+  const ImportJob = sequelize.define(
     "ImportJob",
     {
       id: {
@@ -49,4 +49,16 @@ module.exports = (sequelize, DataTypes) => {
       timestamps: true,
     },
   );
+
+  // Define associations
+  ImportJob.associate = (models) => {
+    // ImportJob belongs to User (one-to-many: one user can have many import jobs)
+    ImportJob.belongsTo(models.User, {
+      foreignKey: "userId",
+      as: "user", // alias for querying (e.g., job.user)
+      onDelete: "SET NULL", // if user is deleted, keep the job but null the userId
+    });
+  };
+
+  return ImportJob;
 };

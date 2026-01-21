@@ -81,13 +81,13 @@ const SiteMapList = () => {
       result = result.filter(
         (s) =>
           s.name?.toLowerCase().includes(term) ||
-          s.siteSizeInBHK?.toLowerCase().includes(term)
+          s.siteSizeInBHK?.toLowerCase().includes(term),
       );
     }
 
     // Create a shallow copy before sorting to avoid mutating frozen array
     return [...result].sort(
-      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
     );
   }, [siteMapsForCustomer, searchTerm]);
   const currentSiteMaps = useMemo(() => {
@@ -274,7 +274,7 @@ View Site Map: ${window.location.origin}/site-map/${siteMap.id}
             <div style={{ textAlign: "center", padding: "60px 20px" }}>
               <HomeOutlined
                 size={64}
-                color="#1890ff"
+                color="#e31e24"
                 style={{ marginBottom: 24 }}
               />
               <Title level={3}>Select a Customer to View Site Maps</Title>

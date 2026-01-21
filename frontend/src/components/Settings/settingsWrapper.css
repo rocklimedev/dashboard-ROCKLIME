@@ -52,13 +52,13 @@
 }
 
 .btn-primary {
-  background-color: #0095f6;
-  border-color: #0095f6;
+  background-color: #e31e24;
+  border-color: #e31e24;
 }
 
 .btn-primary:hover {
-  background-color: #007bff;
-  border-color: #007bff;
+  background-color: #e31e24;
+  border-color: #e31e24;
 }
 
 .btn-danger {
@@ -67,6 +67,6 @@
 }
 
 .btn-danger:hover {
-  background-color: #c82333;
-  border-color: #c82333;
+  background-color: #e31e24;
+  border-color: #e31e24;
 }

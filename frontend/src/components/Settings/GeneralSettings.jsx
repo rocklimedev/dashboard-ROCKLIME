@@ -75,7 +75,7 @@ const GeneralSettings = () => {
       message.success("Verification email sent successfully!");
     } catch (error) {
       message.error(
-        error?.data?.message || "Failed to send verification email"
+        error?.data?.message || "Failed to send verification email",
       );
     }
   };
@@ -93,7 +93,7 @@ const GeneralSettings = () => {
     try {
       await deactivateAccount().unwrap();
       message.success(
-        "Account deactivated. You can reactivate it by logging in again."
+        "Account deactivated. You can reactivate it by logging in again.",
       );
       dispatch(logout());
       navigate("/login");
@@ -121,7 +121,7 @@ const GeneralSettings = () => {
 
   const handleInitiateDelete = () => {
     setConfirmMessage(
-      "Are you sure you want to permanently delete your account? This action cannot be undone."
+      "Are you sure you want to permanently delete your account? This action cannot be undone.",
     );
     setConfirmAction(() => handleDeleteAccount);
     setShowConfirmModal(true);
@@ -158,7 +158,7 @@ const GeneralSettings = () => {
             <div className="d-flex align-items-center justify-content-between flex-wrap border-bottom pb-4 mb-4">
               <Space size={16}>
                 <div className="avatar avatar-lg border bg-light d-flex align-items-center justify-content-center">
-                  <EditOutlined style={{ fontSize: 24 }} />
+                  <EditOutlined style={{ fontSize: 24, color: "#e31e24" }} />
                 </div>
                 <div>
                   <Title level={5} style={{ margin: 0 }}>
@@ -172,6 +172,7 @@ const GeneralSettings = () => {
               </Space>
               <Button
                 type="primary"
+                style={{ background: "#E31E24", color: "#fff" }}
                 onClick={() => navigate(`/u/${user.userId}/edit`)}
               >
                 Edit Profile
@@ -182,7 +183,7 @@ const GeneralSettings = () => {
             <div className="d-flex align-items-center justify-content-between flex-wrap border-bottom pb-4 mb-4">
               <Space size={16}>
                 <div className="avatar avatar-lg border bg-light d-flex align-items-center justify-content-center">
-                  <MailOutlined style={{ fontSize: 24 }} />
+                  <MailOutlined style={{ fontSize: 24, color: "#e31e24" }} />
                 </div>
                 <div>
                   <Title level={5} style={{ margin: 0 }}>
@@ -211,7 +212,7 @@ const GeneralSettings = () => {
             <div className="d-flex align-items-center justify-content-between flex-wrap border-bottom pb-4 mb-4">
               <Space size={16}>
                 <div className="avatar avatar-lg border bg-light d-flex align-items-center justify-content-center">
-                  <EyeOutlined style={{ fontSize: 24 }} />
+                  <EyeOutlined style={{ fontSize: 24, color: "#e31e24" }} />
                 </div>
                 <div>
                   <Title level={5} style={{ margin: 0 }}>
@@ -228,7 +229,11 @@ const GeneralSettings = () => {
                   </Text>
                 </div>
               </Space>
-              <Button type="primary" onClick={() => setShowPasswordModal(true)}>
+              <Button
+                type="primary"
+                style={{ background: "#E31E24", color: "#fff" }}
+                onClick={() => setShowPasswordModal(true)}
+              >
                 Change Password
               </Button>
             </div>
@@ -237,7 +242,9 @@ const GeneralSettings = () => {
             <div className="d-flex align-items-center justify-content-between flex-wrap border-bottom pb-4 mb-4">
               <Space size={16}>
                 <div className="avatar avatar-lg border bg-light d-flex align-items-center justify-content-center">
-                  <UserDeleteOutlined style={{ fontSize: 24 }} />
+                  <UserDeleteOutlined
+                    style={{ fontSize: 24, color: "#e31e24" }}
+                  />
                 </div>
                 <div>
                   <Title level={5} style={{ margin: 0 }}>
@@ -258,7 +265,9 @@ const GeneralSettings = () => {
             <div className="d-flex align-items-center justify-content-between flex-wrap">
               <Space size={16}>
                 <div className="avatar avatar-lg border bg-light d-flex align-items-center justify-content-center">
-                  <UserDeleteOutlined style={{ fontSize: 24 }} />
+                  <UserDeleteOutlined
+                    style={{ fontSize: 24, color: "#e31e24" }}
+                  />
                 </div>
                 <div>
                   <Title level={5} style={{ margin: 0 }}>
@@ -270,7 +279,12 @@ const GeneralSettings = () => {
                   </Text>
                 </div>
               </Space>
-              <Button type="primary" danger onClick={handleInitiateDelete}>
+              <Button
+                type="primary"
+                style={{ background: "#E31E24", color: "#fff" }}
+                danger
+                onClick={handleInitiateDelete}
+              >
                 Delete Account
               </Button>
             </div>

@@ -130,6 +130,7 @@ module.exports = {
   Customer,
   Quotation,
   Invoice,
+  ImportJob,
   Company,
   Order,
   Signature,

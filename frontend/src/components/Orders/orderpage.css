@@ -1,193 +1,4 @@
-/* ==========================================================================
-   DARK MODE – ORDER PAGE
-   ========================================================================== */
-html[data-theme="dark"] {
-  /* Global variables */
-  --bg-primary: #1a1a1a;
-  --bg-card: #2d2d2d;
-  --text-primary: #e0e0e0;
-  --text-secondary: #aaaaaa;
-  --border: #444;
-  --shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-}
 
-/* Page background */
-html[data-theme="dark"] .page-wrapper,
-html[data-theme="dark"] .content,
-html[data-theme="dark"] .container-fluid {
-  background: var(--bg-primary);
-  color: var(--text-primary);
-}
-
-/* Cards */
-html[data-theme="dark"] .ant-card {
-  background: var(--bg-card);
-  border-color: var(--border);
-  box-shadow: var(--shadow);
-}
-html[data-theme="dark"] .ant-card-head {
-  background: #333;
-  border-bottom: 1px solid var(--border);
-  color: var(--text-primary);
-}
-html[data-theme="dark"] .ant-card-head-title {
-  color: var(--text-primary);
-}
-
-/* Table */
-html[data-theme="dark"] .ant-table {
-  background: var(--bg-card);
-  color: var(--text-primary);
-}
-html[data-theme="dark"] .ant-table-thead > tr > th {
-  background: #333;
-  color: #ccc;
-  border-bottom: 1px solid var(--border);
-}
-html[data-theme="dark"] .ant-table-tbody > tr > td {
-  border-bottom: 1px solid var(--border);
-}
-html[data-theme="dark"] .ant-table-tbody > tr:hover > td {
-  background: #383838 !important;
-}
-html[data-theme="dark"] .ant-table-tbody > tr:nth-child(even) > td {
-  background: #2a2a2a;
-}
-
-/* Text */
-html[data-theme="dark"] .ant-typography,
-html[data-theme="dark"] .ant-typography strong,
-html[data-theme="dark"] .ant-typography a {
-  color: var(--text-primary);
-}
-html[data-theme="dark"] .ant-typography-secondary {
-  color: var(--text-secondary);
-}
-
-/* Links */
-
-html[data-theme="dark"] a:hover {
-  color: #ff4d4f;
-}
-
-/* Buttons */
-html[data-theme="dark"] .ant-btn {
-  color: var(--text-primary);
-}
-html[data-theme="dark"] .ant-btn:hover {
-  background: #444;
-  border-color: #e31e24;
-  color: #e31e24;
-}
-html[data-theme="dark"] .ant-btn-primary {
-  background: #e31e24;
-  border-color: #e31e24;
-}
-html[data-theme="dark"] .ant-btn-primary:hover {
-  background: #c71a20;
-  border-color: #c71a20;
-}
-html[data-theme="dark"] .ant-btn-link {
-  color: #e31e24;
-}
-html[data-theme="dark"] .ant-btn-link:hover {
-  color: #ff4d4f;
-}
-
-/* Badges */
-html[data-theme="dark"] .ant-badge-status-text {
-  color: var(--text-primary);
-}
-
-/* Input & TextArea */
-html[data-theme="dark"] .ant-input,
-html[data-theme="dark"] .ant-input-affix-wrapper,
-html[data-theme="dark"] .ant-input-textarea {
-  background: #333;
-  border-color: #555;
-  color: var(--text-primary);
-}
-html[data-theme="dark"] .ant-input::placeholder {
-  color: #888;
-}
-
-/* Upload */
-html[data-theme="dark"] .ant-upload {
-  background: #333;
-  border-color: #555;
-}
-html[data-theme="dark"] .ant-upload-drag {
-  background: #2a2a2a;
-  border-color: #555;
-}
-
-/* Alerts */
-html[data-theme="dark"] .ant-alert {
-  background: #333;
-  border-color: #555;
-  color: var(--text-primary);
-}
-html[data-theme="dark"] .ant-alert-warning {
-  background: #3a2a1a;
-  border-color: #8c5a1a;
-}
-html[data-theme="dark"] .ant-alert-error {
-  background: #3a1a1a;
-  border-color: #8c1a1a;
-}
-
-/* Dropdown Menu */
-html[data-theme="dark"] .ant-dropdown-menu {
-  background: #2d2d2d;
-  border-color: #444;
-}
-html[data-theme="dark"] .ant-dropdown-menu-item {
-  color: var(--text-primary);
-}
-html[data-theme="dark"] .ant-dropdown-menu-item:hover {
-  background: #383838;
-  color: #e31e24;
-}
-
-/* PDF Viewer */
-html[data-theme="dark"] .pdf-header {
-  background: #333;
-  border-color: #555;
-}
-html[data-theme="dark"] .pdf-container {
-  background: #222;
-  border-color: #555;
-}
-html[data-theme="dark"] .react-pdf__Page {
-  background: #222 !important;
-}
-html[data-theme="dark"] .react-pdf__Page canvas {
-  filter: invert(1) hue-rotate(180deg);
-}
-
-/* Comments */
-html[data-theme="dark"] .comments-container {
-  background: var(--bg-card);
-}
-html[data-theme="dark"] .comment-bubble {
-  background: #383838 !important;
-  color: var(--text-primary) !important;
-}
-html[data-theme="dark"] .comment-row--own .comment-bubble {
-  background: #e31e24 !important;
-}
-html[data-theme="dark"] .comment-bubble::before {
-  border-right-color: #383838 !important;
-}
-html[data-theme="dark"] .comment-row--own .comment-bubble::before {
-  border-left-color: #e31e24 !important;
-}
-
-/* Footer sticky form */
-html[data-theme="dark"] .comment-form {
-  background: #2d2d2d;
-  border-top: 1px solid #444;
-}
 .container-fluid {
   max-width: 100%;
   padding: 0 16px;
@@ -276,7 +87,7 @@ html[data-theme="dark"] .comment-form {
 
 .table-footer .total-amount {
   font-size: 16px;
-  color: #1890ff;
+  color: #e31e24;
 }
 
 @media (max-width: 576px) {
@@ -367,7 +178,7 @@ html[data-theme="dark"] .comment-form {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #1890ff;
+  background: #e31e24;
   color: #fff;
   font-size: 1.2rem;
   flex-shrink: 0;
@@ -469,7 +280,7 @@ html[data-theme="dark"] .comment-form {
 }
 
 .comment-row--own .comment-bubble {
-  background: #1890ff;
+  background: #e31e24;
   color: #fff;
 }
 
@@ -479,6 +290,8 @@ html[data-theme="dark"] .comment-form {
   padding: 8px 12px;
   max-width: 100%;
   word-wrap: break-word;
+  color: white;
+  background-color: #e31e24;
 }
 
 .comment-bubble::before {
@@ -497,7 +310,7 @@ html[data-theme="dark"] .comment-form {
 
 .comment-row--own .comment-bubble::before {
   right: -16px;
-  border-left-color: #1890ff;
+  border-left-color: #e31e24;
 }
 
 .comments-loading {

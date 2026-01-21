@@ -54,7 +54,7 @@ const Profile = () => {
 
   const { data: ordersData, isLoading: ordersLoading } = useGetAllOrdersQuery(
     { userId },
-    { skip }
+    { skip },
   );
 
   const { data: purchaseOrdersData, isLoading: posLoading } =
@@ -74,19 +74,19 @@ const Profile = () => {
 
   const myQuotations = useMemo(
     () => quotationsData?.data?.filter((q) => q.createdBy === userId) || [],
-    [quotationsData, userId]
+    [quotationsData, userId],
   );
   const myOrders = useMemo(
     () =>
       ordersData?.orders?.filter(
-        (o) => o.createdBy === userId || o.assignedUserId === userId
+        (o) => o.createdBy === userId || o.assignedUserId === userId,
       ) || [],
-    [ordersData, userId]
+    [ordersData, userId],
   );
   const myPOs = useMemo(
     () =>
       purchaseOrdersData?.data?.filter((po) => po.createdBy === userId) || [],
-    [purchaseOrdersData, userId]
+    [purchaseOrdersData, userId],
   );
 
   const formatDate = (date) =>
@@ -243,6 +243,7 @@ const Profile = () => {
                   <Button
                     type="primary"
                     size="large"
+                    style={{ background: "#E31E24", color: "#fff" }}
                     icon={<EditOutlined />}
                     onClick={() => navigate(`/u/${userId}/edit`)}
                     className="rounded-xl font-medium"

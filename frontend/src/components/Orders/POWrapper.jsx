@@ -68,7 +68,35 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
 
   const purchaseOrders = poData?.purchaseOrders?.data || [];
   const totalCount = poData?.purchaseOrders?.pagination?.total || 0;
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "pending":
+        return "#E6EAED";
+      case "confirmed":
+        return "#E6EAED";
+      case "delivered":
+        return "#E6EAED";
+      case "cancelled":
+        return "#E6EAED";
+      default:
+        return "#E6EAED";
+    }
+  };
 
+  const getStatusTextColor = (status) => {
+    switch (status) {
+      case "pending":
+        return "#E6EAED";
+      case "confirmed":
+        return "#E6EAED";
+      case "delivered":
+        return "#E6EAED";
+      case "cancelled":
+        return "#E6EAED";
+      default:
+        return "#E6EAED";
+    }
+  };
   // ──────────────────────────────────────────────────────
   // Client-side search & sort (still useful when search is sent to server)
   // ──────────────────────────────────────────────────────
@@ -78,27 +106,27 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
     switch (sortBy?.trim()) {
       case "Recently Added":
         return result.sort(
-          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
         );
       case "Ascending":
         return result.sort((a, b) =>
-          (a.poNumber || "").localeCompare(b.poNumber || "")
+          (a.poNumber || "").localeCompare(b.poNumber || ""),
         );
       case "Descending":
         return result.sort((a, b) =>
-          (b.poNumber || "").localeCompare(a.poNumber || "")
+          (b.poNumber || "").localeCompare(a.poNumber || ""),
         );
       case "Order Date Ascending":
         return result.sort(
           (a, b) =>
             new Date(a.orderDate || "9999-12-31") -
-            new Date(b.orderDate || "9999-12-31")
+            new Date(b.orderDate || "9999-12-31"),
         );
       case "Order Date Descending":
         return result.sort(
           (a, b) =>
             new Date(b.orderDate || "9999-12-31") -
-            new Date(a.orderDate || "9999-12-31")
+            new Date(a.orderDate || "9999-12-31"),
         );
       default:
         console.log("Using default sort (no match for:", sortBy, ")");
@@ -149,7 +177,7 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
       message.success("Purchase order deleted successfully");
     } catch (err) {
       message.error(
-        `Failed to delete: ${err.data?.message || "Unknown error"}`
+        `Failed to delete: ${err.data?.message || "Unknown error"}`,
       );
     }
   };
@@ -161,7 +189,7 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
       message.success("Status updated");
     } catch (err) {
       message.error(
-        `Failed to update status: ${err.data?.message || "Unknown error"}`
+        `Failed to update status: ${err.data?.message || "Unknown error"}`,
       );
     }
   };
@@ -318,20 +346,23 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
                             <Link to={`/po/${po.id}`}>{po.poNumber}</Link>
                           </td>
 
-                          {/* Editable Status */}
                           <td>
                             <PermissionGate
                               api="write"
-                              module="Purchase Order Management"
+                              module="purchase_orders"
                             >
                               {editingStatusId === po.id ? (
                                 <Select
-                                  value={status}
-                                  onChange={(v) => handleStatusChange(po.id, v)}
-                                  style={{ width: 120 }}
+                                  value={po.status}
+                                  onChange={(newStatus) =>
+                                    handleStatusChange(po.id, newStatus)
+                                  }
+                                  style={{ width: 140 }}
                                   loading={isUpdatingStatus}
                                   autoFocus
-                                  onBlur={() => setEditingStatusId(null)}
+                                  onBlur={() => setEditingStatusId(null)} // close on outside click / blur
+                                  onPressEnter={() => setEditingStatusId(null)} // optional: close on Enter
+                                  size="small"
                                 >
                                   {statuses.map((s) => (
                                     <Option key={s} value={s}>
@@ -340,38 +371,52 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
                                   ))}
                                 </Select>
                               ) : (
-                                <span
-                                  className="priority-badge"
-                                  style={{
-                                    backgroundColor: "#f2f2f2",
-                                    cursor: "pointer",
-                                    padding: "4px 8px",
-                                    borderRadius: 4,
-                                  }}
+                                <div
+                                  className="d-flex align-items-center gap-2"
+                                  style={{ cursor: "pointer" }}
                                   onClick={() => setEditingStatusId(po.id)}
                                 >
-                                  {status.charAt(0).toUpperCase() +
-                                    status.slice(1)}
-                                  <EditOutlined style={{ marginLeft: 8 }} />
-                                </span>
+                                  <span
+                                    className={`priority-badge status-${po.status}`}
+                                    style={{
+                                      padding: "4px 10px",
+                                      borderRadius: "4px",
+                                      fontSize: "13px",
+                                      fontWeight: 500,
+                                      backgroundColor: getStatusColor(
+                                        po.status,
+                                      ),
+                                    }}
+                                  >
+                                    {po.status
+                                      ? po.status.charAt(0).toUpperCase() +
+                                        po.status.slice(1)
+                                      : "Pending"}
+                                  </span>
+                                  <EditOutlined
+                                    style={{
+                                      color: "#1890ff",
+                                      fontSize: "14px",
+                                    }}
+                                  />
+                                </div>
                               )}
                             </PermissionGate>
 
-                            {/* View-only fallback */}
-                            {editingStatusId !== po.id && (
-                              <PermissionGate
-                                api="view"
-                                module="Purchase Order Management"
-                                fallback={
-                                  <span>
-                                    {status.charAt(0).toUpperCase() +
-                                      status.slice(1)}
-                                  </span>
-                                }
-                              />
-                            )}
+                            {/* View-only fallback for users without write permission */}
+                            <PermissionGate
+                              api="view"
+                              module="purchase_orders"
+                              fallback={
+                                <span className="priority-badge status-pending">
+                                  {po.status
+                                    ? po.status.charAt(0).toUpperCase() +
+                                      po.status.slice(1)
+                                    : "Pending"}
+                                </span>
+                              }
+                            />
                           </td>
-
                           <td>{vendorName}</td>
                           <td>
                             {po.totalAmount ? `Rs. ${po.totalAmount}` : "—"}
@@ -385,16 +430,16 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
                             {po.expectDeliveryDate ? (
                               <span
                                 className={`due-date-link ${dueDateClass}`}
-                                style={{ color: "#e31e24", cursor: "pointer" }}
+                                style={{ cursor: "pointer" }}
                                 onClick={() =>
                                   handleOpenDatesModal(
                                     po.expectDeliveryDate,
-                                    po.followupDates
+                                    po.followupDates,
                                   )
                                 }
                               >
                                 {new Date(
-                                  po.expectDeliveryDate
+                                  po.expectDeliveryDate,
                                 ).toLocaleDateString()}
                               </span>
                             ) : (
