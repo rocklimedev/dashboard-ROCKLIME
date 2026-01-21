@@ -55,13 +55,21 @@ const worker = new Worker(
           header: false,
           trimHeaders: false,
         });
+
         if (parsed.errors.length > 0) {
           throw new Error(`CSV parse error: ${parsed.errors[0].message}`);
         }
-        headers = parsed.data[0] || [];
+
+        if (parsed.data.length < 1) {
+          throw new Error("File has no headers");
+        }
+
+        headers = parsed.data[0].map((h) =>
+          (h || "").toString().trim().replace(/\s+/g, " "),
+        );
         rows = parsed.data
           .slice(1)
-          .filter((r) => r.some((cell) => cell?.toString().trim()));
+          .filter((r) => r.some((cell) => cell?.toString().trim() !== ""));
       } else {
         const workbook = XLSX.read(fileBuffer, { type: "buffer" });
         const sheetName = workbook.SheetNames[0];
@@ -89,7 +97,10 @@ const worker = new Worker(
       });
       throw parseErr;
     }
-
+    console.log("[DEBUG] Headers:", headers);
+    console.log("[DEBUG] First 2 rows:", rows.slice(0, 2));
+    console.log("[DEBUG] Mapping:", importJob.mapping);
+    console.log("[DEBUG] Total rows after filter:", rows.length);
     // ────────────────────────────────────────────────
     // Process in batches
     // ────────────────────────────────────────────────
@@ -101,20 +112,29 @@ const worker = new Worker(
       const batchRows = rows.slice(i, i + BATCH_SIZE);
 
       // Convert raw row arrays → product objects using mapping
+      // Convert raw row arrays → product objects using mapping
       const batchProducts = batchRows.map((row, batchIdx) => {
         const product = {
           rowIndex: i + batchIdx + 2,
         };
 
-        // Apply mapping (colIndex → field name)
+        // Apply mapping — key = column index (string), value = field name
         Object.entries(importJob.mapping).forEach(([colIndexStr, field]) => {
           const colIndex = parseInt(colIndexStr, 10);
-          if (isNaN(colIndex) || colIndex >= row.length) return;
+
+          if (
+            isNaN(colIndex) ||
+            colIndex < 0 ||
+            colIndex >= row.length ||
+            !field
+          ) {
+            return;
+          }
 
           let value = row[colIndex]?.toString().trim() || "";
-
           if (!value) return;
 
+          // Assign to product object
           if (field === "name") product.name = value;
           else if (field === "product_code") product.product_code = value;
           else if (field === "description") product.description = value;
@@ -123,7 +143,6 @@ const worker = new Worker(
           else if (field === "alert_quantity")
             product.alert_quantity = parseFloat(value) || null;
           else if (field === "tax") product.tax = parseFloat(value) || null;
-          else if (field === "status") product.status = value;
           else if (field === "isFeatured")
             product.isFeatured = ["true", "1", "yes"].includes(
               value.toLowerCase(),
@@ -231,7 +250,16 @@ const worker = new Worker(
     maxStalledCount: 3, // Retry stalled job up to 3 times
   },
 );
+console.log("[DEBUG] Worker script loaded");
 
+process.on("uncaughtException", (err) => {
+  console.error("[FATAL CRASH]", err.stack);
+  process.exit(1);
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("[UNHANDLED PROMISE REJECTION]", reason);
+});
 worker.on("completed", (job) => {
   console.log(`[Worker] Job ${job.id} completed successfully`);
 });

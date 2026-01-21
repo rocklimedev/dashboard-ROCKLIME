@@ -1,14 +1,63 @@
 const mongoose = require("mongoose");
 
-const poItemsSchema = new mongoose.Schema({
-  id: { type: String, required: true },
-  items: [
-    {
-      productId: String,
-      quantity: Number,
-      mrp: Number,
+const poItemSchema = new mongoose.Schema(
+  {
+    poId: {
+      type: String,
+      required: true,
+      index: true,
     },
-  ],
-});
+    poNumber: {
+      type: String,
+      required: true,
+      index: true,
+    },
+    vendorId: {
+      type: String,
+      required: true,
+    },
+    items: [
+      {
+        productId: { type: String, required: true },
+        productName: { type: String, required: true, trim: true },
+        productCode: { type: String, trim: true },
+        companyCode: {
+          // ← NEW
+          type: String,
+          trim: true,
+        },
+        imageUrl: {
+          type: String,
+          trim: true,
+          // optional — but recommended to allow empty string or null
+          default: null,
+        },
+        quantity: { type: Number, min: 1, required: true },
+        unitPrice: { type: Number, min: 0, required: true },
+        mrp: { type: Number, min: 0 },
+        discount: { type: Number, default: 0, min: 0 },
+        discountType: {
+          type: String,
+          enum: ["percent", "fixed"],
+          default: "percent",
+        },
+        tax: { type: Number, default: 0, min: 0 },
+        total: { type: Number, required: true, min: 0 },
+      },
+    ],
+    calculatedTotal: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+  },
+  {
+    timestamps: true,
+    collection: "po_items",
+  },
+);
 
-module.exports = mongoose.model("PoItem", poItemsSchema);
+poItemSchema.index({ poId: 1 });
+poItemSchema.index({ poNumber: 1 });
+
+module.exports = mongoose.model("PoItem", poItemSchema);

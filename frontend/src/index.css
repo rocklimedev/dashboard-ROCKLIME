@@ -1881,6 +1881,17 @@ body {
   border-color: #d9d9d9;
   color: #000;
 }
+.ant-pagination .ant-pagination-item-active {
+
+    border-color: #e31e24;
+}
+/* Remove blue focus border for AntD Select */
+.ant-select-focused .ant-select-selector,
+.ant-select-selector:focus,
+.ant-select-selector:active {
+  border-color: #d9d9d9 !important;   /* default gray */
+  box-shadow: none !important;
+}
 
 .cart-button:hover {
   background-color: #e31e24 !important;

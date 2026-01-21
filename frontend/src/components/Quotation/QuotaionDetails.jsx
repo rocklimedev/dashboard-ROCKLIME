@@ -1,6 +1,6 @@
 import React, { useRef, useState, useMemo } from "react";
-import { useParams, Link } from "react-router-dom";
-import { message } from "antd";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { message, Button } from "antd";
 import logo from "../../assets/img/logo-quotation.png";
 
 import {
@@ -23,6 +23,7 @@ const companyId = "401df7ef-f350-4bc4-ba6f-bf36923af252";
 
 const QuotationsDetails = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [activeVersion, setActiveVersion] = useState("current");
   const [exportFormat, setExportFormat] = useState("pdf");
   const [isExporting, setIsExporting] = useState(false);
@@ -98,7 +99,7 @@ const QuotationsDetails = () => {
 
     // Sort: current first, then by version descending
     return list.sort((a, b) =>
-      a.version === "current" ? -1 : b.version - a.version
+      a.version === "current" ? -1 : b.version - a.version,
     );
   }, [quotation, versionsData]);
   const activeVersionData = useMemo(() => {
@@ -121,12 +122,12 @@ const QuotationsDetails = () => {
   // === CUSTOMER & ADDRESS ===
   const { data: customer } = useGetCustomerByIdQuery(
     activeVersionData.quotation?.customerId,
-    { skip: !activeVersionData.quotation?.customerId }
+    { skip: !activeVersionData.quotation?.customerId },
   );
 
   const { data: address } = useGetAddressByIdQuery(
     activeVersionData.quotation?.shipTo,
-    { skip: !activeVersionData.quotation?.shipTo }
+    { skip: !activeVersionData.quotation?.shipTo },
   );
 
   // === PRODUCT DATA ===
@@ -140,7 +141,7 @@ const QuotationsDetails = () => {
   const getUserName = (uid) => {
     if (!uid) return company.name || "CHHABRA MARBLE";
     const user = usersData?.users?.find(
-      (u) => u.userId?.trim() === uid?.trim()
+      (u) => u.userId?.trim() === uid?.trim(),
     );
     return user?.name || company.name || "CHHABRA MARBLE";
   };
@@ -182,7 +183,7 @@ const QuotationsDetails = () => {
   const gstRate = Number(
     activeVersionData.quotation?.gst || // <-- API field
       activeVersionData.quotation?.gst_value || // fallback for UI form
-      0
+      0,
   );
   const includeGst = activeVersionData.quotation?.include_gst ?? true;
 
@@ -198,7 +199,7 @@ const QuotationsDetails = () => {
     productDetailsMap,
     activeVersionData.quotation?.extraDiscount || 0,
     activeVersionData.quotation?.extraDiscountType || "amount",
-    activeVersionData.quotation?.roundOff || 0
+    activeVersionData.quotation?.roundOff || 0,
   );
 
   // === EXPORT HANDLER ===
@@ -245,7 +246,7 @@ const QuotationsDetails = () => {
           id,
           activeVersion,
           fullQuotation,
-          `${baseName}.pdf`
+          `${baseName}.pdf`,
         );
       } else {
         await exportToExcel(
@@ -268,7 +269,7 @@ const QuotationsDetails = () => {
           id,
           activeVersion,
           [], // allBrands if needed
-          `${baseName}.xlsx` // Pass custom filename
+          `${baseName}.xlsx`, // Pass custom filename
         );
       }
 
@@ -343,16 +344,18 @@ const QuotationsDetails = () => {
       <div className="content">
         <div className="row">
           <div className="col-sm-10 mx-auto">
-            <Link
-              to="/quotations/list"
-              className="back-icon d-flex align-items-center fs-12 fw-medium mb-3 d-inline-flex"
+            <Button
+              onClick={() => navigate("/quotations/list")}
+              style={{
+                backgroundColor: "#e31e24",
+                borderColor: "#e31e24",
+                color: "#fff",
+              }}
+              className="d-flex align-items-center fs-12 fw-medium mb-3"
             >
-              <span className="d-flex justify-content-center align-items-center rounded-circle me-2">
-                <i className="fas fa-arrow-left"></i>
-              </span>
+              <i className="fas fa-arrow-left me-2"></i>
               Back to List
-            </Link>
-
+            </Button>
             <div className="card">
               {/* === QUOTATION CONTENT === */}
               <div className="quotation-container" ref={quotationRef}>
@@ -380,7 +383,7 @@ const QuotationsDetails = () => {
                       </td>
                       <td style={{ width: "55%" }}>
                         {getCustomerName(
-                          activeVersionData.quotation?.customerId
+                          activeVersionData.quotation?.customerId,
                         )}
                       </td>
                       <td className="label-cell" style={{ width: "15%" }}>
@@ -388,7 +391,7 @@ const QuotationsDetails = () => {
                       </td>
                       <td style={{ width: "15%" }}>
                         {new Date(
-                          activeVersionData.quotation?.quotation_date
+                          activeVersionData.quotation?.quotation_date,
                         ).toLocaleDateString()}
                       </td>
                     </tr>
@@ -411,7 +414,7 @@ const QuotationsDetails = () => {
                           Version {activeVersion} - Updated by{" "}
                           {getUserName(activeVersionData.updatedBy)} on{" "}
                           {new Date(
-                            activeVersionData.updatedAt
+                            activeVersionData.updatedAt,
                           ).toLocaleString()}
                         </td>
                       </tr>
@@ -441,7 +444,7 @@ const QuotationsDetails = () => {
                     {activeProducts.map((p, i) => {
                       const pd =
                         productsData?.find(
-                          (x) => x.productId === p.productId
+                          (x) => x.productId === p.productId,
                         ) || {};
                       const img =
                         p.imageUrl || // ← Most important: comes from quotation
@@ -536,7 +539,7 @@ const QuotationsDetails = () => {
                     {/* Extra Discount */}
                     {(() => {
                       const extraDisc = parseFloat(
-                        activeVersionData.quotation?.extraDiscount || "0"
+                        activeVersionData.quotation?.extraDiscount || "0",
                       );
                       const extraDiscType =
                         activeVersionData.quotation?.extraDiscountType ||
@@ -647,7 +650,7 @@ const QuotationsDetails = () => {
                               : "") +
                               "₹" +
                               Math.abs(
-                                Number(activeVersionData.quotation?.roundOff)
+                                Number(activeVersionData.quotation?.roundOff),
                               ).toFixed(2)}
                           </strong>
                         </td>
@@ -686,8 +689,8 @@ const QuotationsDetails = () => {
                           {amountInWords(
                             Number(
                               activeVersionData.quotation?.finalAmount ||
-                                finalTotal
-                            )
+                                finalTotal,
+                            ),
                           )}
                         </strong>
                       </td>

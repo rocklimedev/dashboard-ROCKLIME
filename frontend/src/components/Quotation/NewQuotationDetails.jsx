@@ -713,7 +713,11 @@ const NewQuotationsDetails = () => {
                   </Button>
                 </Space>
 
-                <Button icon={<ArrowLeftOutlined />} size="large">
+                <Button
+                  icon={<ArrowLeftOutlined />}
+                  size="large"
+                  style={{ background: "#E31E24", color: "#fff" }}
+                >
                   <Link to="/quotations/list">Back</Link>
                 </Button>
               </Space>

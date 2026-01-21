@@ -12,12 +12,19 @@ import { useGetBrandByIdQuery } from "../../api/brandsApi";
 import { useAddProductToCartMutation } from "../../api/cartApi";
 import { useGetProfileQuery } from "../../api/userApi";
 import JsBarcode from "jsbarcode";
-import { message } from "antd";
-import { Breadcrumb, Button, InputNumber, Spin, Tabs, Menu } from "antd";
+import {
+  message,
+  Breadcrumb,
+  Button,
+  InputNumber,
+  Spin,
+  Tabs,
+  Menu,
+} from "antd";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import { ShoppingCartOutlined } from "@ant-design/icons";
 import ProductCard from "./ProductCard";
-import "./pd.css";
+import styles from "./productdetails.module.css"; // ← CSS Modules
 import noimage from "../../assets/img/default.png";
 import { Helmet } from "react-helmet";
 
@@ -28,177 +35,68 @@ const ProductDetails = () => {
     data: product,
     error: productError,
     isLoading: isProductLoading,
-    refetch: refetchProduct,
+    refetch,
   } = useGetProductByIdQuery(id);
 
-  const { data: categoryData, isLoading: isCategoryLoading } =
-    useGetCategoryByIdQuery(product?.categoryId, {
-      skip: !product?.categoryId,
-    });
-
-  const { data: parentCategoryData, isLoading: isParentCategoryLoading } =
-    useGetParentCategoryByIdQuery(categoryData?.category?.parentCategoryId, {
-      skip: !categoryData?.category?.parentCategoryId,
-    });
-
-  const {
-    data: brandData,
-    isLoading: isBrandLoading,
-    error: brandError,
-  } = useGetBrandByIdQuery(product?.brandId, {
-    skip: !product?.brandId,
-  });
-
-  const {
-    data: recommendedProducts,
-    isLoading: isRecommendedLoading,
-    error: recommendedError,
-  } = useGetAllProductsByCategoryQuery(product?.categoryId, {
+  const { data: categoryData } = useGetCategoryByIdQuery(product?.categoryId, {
     skip: !product?.categoryId,
   });
 
-  const {
-    data: allProductsResponse,
-    isLoading: isAllProductsLoading,
-    error: allProductsError,
-  } = useGetAllProductsQuery({
+  const { data: parentCategoryData } = useGetParentCategoryByIdQuery(
+    categoryData?.category?.parentCategoryId,
+    { skip: !categoryData?.category?.parentCategoryId },
+  );
+
+  const { data: brandData } = useGetBrandByIdQuery(product?.brandId, {
+    skip: !product?.brandId,
+  });
+
+  const { data: recommendedProducts } = useGetAllProductsByCategoryQuery(
+    product?.categoryId,
+    {
+      skip: !product?.categoryId,
+    },
+  );
+
+  const { data: allProductsResponse } = useGetAllProductsQuery(undefined, {
     skip: !!recommendedProducts?.length,
   });
 
-  const allProducts = allProductsResponse?.data || []; // Extract the actual array
+  const allProducts = allProductsResponse?.data || [];
 
-  const { data: user, isLoading: userLoading } = useGetProfileQuery();
+  const { data: user } = useGetProfileQuery();
   const userId = user?.user?.userId;
 
-  const [addProductToCart, { isLoading: isCartLoading }] =
+  const [addToCart, { isLoading: isCartLoading }] =
     useAddProductToCartMutation();
 
-  const [cartLoadingStates, setCartLoadingStates] = useState({});
-  const [barcodeData, setBarcodeData] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
   const barcodeRef = useRef(null);
-
-  /* --------------------------------------------------------------
-     1. IMAGE PARSING – works with array OR string
-     -------------------------------------------------------------- */
-  const safeParseImages = (imageField) => {
-    if (Array.isArray(imageField) && imageField.length) {
-      return imageField.filter((i) => typeof i === "string" && i);
-    }
-    if (typeof imageField === "string" && imageField.trim()) {
+  const [cartLoadingStates, setCartLoadingStates] = useState({});
+  // ── Helpers ────────────────────────────────────────────────
+  const safeParseImages = (images) => {
+    if (Array.isArray(images)) return images.filter(Boolean);
+    if (typeof images === "string") {
       try {
-        const parsed = JSON.parse(imageField);
-        return Array.isArray(parsed) && parsed.length
-          ? parsed.filter((i) => typeof i === "string" && i)
-          : imageField.startsWith("http")
-          ? [imageField]
-          : [noimage];
+        const parsed = JSON.parse(images);
+        return Array.isArray(parsed) ? parsed.filter(Boolean) : [images];
       } catch {
-        return imageField.startsWith("http") ? [imageField] : [noimage];
+        return images.trim() ? [images] : [noimage];
       }
     }
     return [noimage];
   };
 
-  /* --------------------------------------------------------------
-     2. BARCODE
-     -------------------------------------------------------------- */
-  const generateBarcode = (code) => {
-    if (code && barcodeRef.current) {
-      try {
-        JsBarcode(barcodeRef.current, code, {
-          format: "CODE128",
-          lineColor: "#000",
-          width: 2,
-          height: 48,
-          displayValue: true,
-        });
-      } catch {
-        message.error("Failed to generate barcode.");
-      }
-    }
-  };
+  const images = safeParseImages(product?.images || []);
 
-  const handlePrint = () => {
-    if (!barcodeRef.current) {
-      message.error("No barcode available to print.");
-      return;
-    }
-    const svg = barcodeRef.current;
-    const serializer = new XMLSerializer();
-    const svgStr = serializer.serializeToString(svg);
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) {
-      message.error("Unable to open print window.");
-      return;
-    }
-    printWindow.document.write(`
-      <html>
-        <head><title>Print Barcode</title>
-          <style>body{display:flex;align-items:center;justify-content:center;height:100vh;margin:0}</style>
-        </head>
-        <body onload="window.print();window.close();">${svgStr}</body>
-      </html>
-    `);
-    printWindow.document.close();
-  };
+  const sellingPrice = Array.isArray(product?.metaDetails)
+    ? Number(
+        product.metaDetails.find((m) => m.slug === "sellingPrice")?.value || 0,
+      )
+    : 0;
 
-  /* --------------------------------------------------------------
-     3. CART
-     -------------------------------------------------------------- */
-  const handleAddToCart = async (product) => {
-    if (!userId) {
-      message.error("User not logged in!");
-      return;
-    }
-
-    const sellingPriceEntry = Array.isArray(product.metaDetails)
-      ? product.metaDetails.find((m) => m.slug === "sellingPrice")
-      : null;
-    const sellingPrice = sellingPriceEntry
-      ? parseFloat(sellingPriceEntry.value)
-      : null;
-
-    if (!sellingPrice || isNaN(sellingPrice)) {
-      message.error("Invalid product price");
-      return;
-    }
-    if (quantity <= 0 || quantity > product.quantity) {
-      message.error("Invalid quantity");
-      return;
-    }
-
-    const productId = product.productId;
-    setCartLoadingStates((prev) => ({ ...prev, [productId]: true }));
-    try {
-      await addProductToCart({
-        userId,
-        productId,
-        quantity,
-      }).unwrap();
-      setQuantity(1);
-    } catch (error) {
-      message.error(error.data?.message || "Unknown error");
-    } finally {
-      setCartLoadingStates((prev) => ({ ...prev, [productId]: false }));
-    }
-  };
-
-  /* --------------------------------------------------------------
-     4. HELPERS
-     -------------------------------------------------------------- */
-  const handleThumbnailClick = (idx) => setActiveImage(idx);
-
-  const handleQuantityChange = (value) => {
-    if (value >= 1 && value <= (product?.quantity || 1)) setQuantity(value);
-  };
-
-  const getSellingPrice = (metaDetails) =>
-    Array.isArray(metaDetails)
-      ? Number(metaDetails.find((m) => m.slug === "sellingPrice")?.value || 0)
-      : null;
-
+  const mrp = product?.mrp ? Number(product.mrp) : null;
   const getCompanyCode = (metaDetails) =>
     Array.isArray(metaDetails)
       ? metaDetails.find((m) => m.slug?.toLowerCase() === "companycode")
@@ -211,315 +109,294 @@ const ProductDetails = () => {
     categoryData?.category?.name ||
     "Uncategorized";
 
-  /* --------------------------------------------------------------
-     5. EFFECTS
-     -------------------------------------------------------------- */
+  // ── Barcode ────────────────────────────────────────────────
   useEffect(() => {
-    if (product?.product_code) {
-      setBarcodeData(product.product_code);
-      generateBarcode(product.product_code);
+    if (product?.product_code && barcodeRef.current) {
+      try {
+        JsBarcode(barcodeRef.current, product.product_code, {
+          format: "CODE128",
+          width: 2,
+          height: 60,
+          displayValue: true,
+          fontSize: 14,
+        });
+      } catch (err) {
+        message.error("Barcode generation failed");
+      }
     }
-    if (brandError) message.error("Failed to load brand information.");
-    if (allProductsError) {
-      const msg =
-        allProductsError.status === 401 || allProductsError.status === 403
-          ? "Unauthorized to view products."
-          : allProductsError.status === 404
-          ? "No products found."
-          : "Failed to load products.";
-      message.error(msg);
-    }
-  }, [product, brandError, allProductsError]);
+  }, [product?.product_code]);
 
-  /* --------------------------------------------------------------
-     6. LOADING / ERROR
-     -------------------------------------------------------------- */
-  if (
-    isProductLoading ||
-    isCategoryLoading ||
-    isParentCategoryLoading ||
-    isBrandLoading ||
-    userLoading ||
-    isRecommendedLoading ||
-    isAllProductsLoading
-  ) {
+  const handlePrintBarcode = () => {
+    if (!barcodeRef.current) return message.error("No barcode to print");
+    const svg = barcodeRef.current.outerHTML;
+    const win = window.open();
+    win.document.write(`
+      <html>
+        <head><title>Barcode - ${product.name}</title></head>
+        <body style="margin:0;display:flex;align-items:center;justify-content:center;height:100vh;">
+          ${svg}
+        </body>
+      </html>
+    `);
+    win.document.close();
+    win.onload = () => {
+      win.print();
+      win.close();
+    };
+  };
+
+  // ── Cart ───────────────────────────────────────────────────
+  const handleAddToCart = async () => {
+    if (!userId) return message.error("Please login first");
+    if (quantity < 1 || quantity > (product?.quantity || 1)) {
+      return message.error("Invalid quantity");
+    }
+    if (!sellingPrice || isNaN(sellingPrice)) {
+      return message.error("Invalid price");
+    }
+
+    try {
+      await addToCart({
+        userId,
+        productId: product.productId,
+        quantity,
+      }).unwrap();
+      message.success("Added to cart!");
+      setQuantity(1);
+    } catch (err) {
+      message.error(err?.data?.message || "Failed to add to cart");
+    }
+  };
+
+  // ── Related products ───────────────────────────────────────
+  const related = recommendedProducts?.length
+    ? recommendedProducts.filter((p) => p.productId !== product.productId)
+    : allProducts.filter(
+        (p) =>
+          p.productId !== product.productId && p.brandId === product.brandId,
+      );
+
+  const relatedProducts = related.slice(0, 4);
+
+  // ── Loading / Error states ─────────────────────────────────
+  if (isProductLoading) {
     return (
-      <div className="pd-loading">
+      <div className={styles.loadingContainer}>
         <Spin size="large" />
       </div>
     );
   }
 
-  if (productError) {
+  if (productError || !product) {
     return (
-      <div className="pd-root">
-        <div className="pd-error">
-          <p className="pd-error__text">
-            Error: {productError.message || "Failed to load product"}
-          </p>
-          <Button type="primary" onClick={refetchProduct}>
-            Retry
-          </Button>
-        </div>
+      <div className={styles.emptyState}>
+        <h2>Product not found</h2>
+        <Button type="primary" onClick={refetch}>
+          Retry
+        </Button>
       </div>
     );
   }
 
-  if (!product) {
-    return (
-      <div className="pd-root">
-        <div className="pd-empty">
-          <p className="pd-empty__text">Product not found.</p>
-        </div>
-      </div>
-    );
-  }
-
-  /* --------------------------------------------------------------
-     7. DATA PREP
-     -------------------------------------------------------------- */
-  const images = safeParseImages(product.images);
-  const sellingPrice = getSellingPrice(product.metaDetails);
-  const relatedProducts = (
-    recommendedProducts?.length > 0
-      ? recommendedProducts.filter((p) => p.productId !== product.productId)
-      : allProducts.filter(
-          (p) =>
-            p.productId !== product.productId && p.brandId === product.brandId
-        )
-  ).slice(0, 4);
-  /* --------------------------------------------------------------
-     8. RENDER
-     -------------------------------------------------------------- */
   return (
     <div className="page-wrapper">
-      <Helmet>
-        <title>
-          {product.name} - {brandData?.brandName || "N/A"}
-        </title>
-      </Helmet>
       <div className="content">
-        <div className="pd-root">
-          <div className="pd-breadcrumbs">
-            <Breadcrumb
-              items={[
-                { title: <Link to="/">Home</Link> },
-                { title: <Link to="/category-selector">Shop</Link> },
-                { title: <span>{product.name || "N/A"}</span> },
-              ]}
-            />
-          </div>
+        <div className={styles.container}>
+          <Helmet>
+            <title>
+              {product.name}{" "}
+              {brandData?.brandName ? `- ${brandData.brandName}` : ""}
+            </title>
+          </Helmet>
 
-          <main className="pd-main">
-            <section className="pd-visual">
-              <div className="pd-gallery">
-                <div className="pd-gallery__hero" aria-live="polite">
-                  <LazyLoadImage
-                    src={images[activeImage] || noimage}
-                    alt={`Image of ${product.name}`}
-                    effect="blur"
-                    placeholderSrc={noimage}
-                    className="pd-hero-img"
-                    onError={(e) => (e.target.src = noimage)}
-                  />
-                </div>
+          <Breadcrumb className={styles.breadcrumb}>
+            <Breadcrumb.Item>
+              <Link to="/">Home</Link>
+            </Breadcrumb.Item>
+            <Breadcrumb.Item>
+              <Link to="/category-selector">Shop</Link>
+            </Breadcrumb.Item>
+            <Breadcrumb.Item>{product.name}</Breadcrumb.Item>
+          </Breadcrumb>
 
-                <div className="pd-gallery__thumbs" role="list">
+          <div className={styles.mainGrid}>
+            {/* Gallery */}
+            <div className={styles.gallery}>
+              <div className={styles.heroImageWrapper}>
+                <LazyLoadImage
+                  src={images[activeImage] || noimage}
+                  alt={product.name}
+                  effect="blur"
+                  placeholderSrc={noimage}
+                  className={styles.heroImage}
+                  onError={(e) => (e.target.src = noimage)}
+                />
+              </div>
+
+              {images.length > 1 && (
+                <div className={styles.thumbnails}>
                   {images.map((img, idx) => (
                     <button
                       key={idx}
                       type="button"
-                      className={
-                        "pd-thumb" +
-                        (activeImage === idx ? " pd-thumb--active" : "")
-                      }
-                      onClick={() => handleThumbnailClick(idx)}
-                      aria-label={`Show image ${idx + 1}`}
+                      className={`${styles.thumbnailBtn} ${activeImage === idx ? styles.active : ""}`}
+                      onClick={() => setActiveImage(idx)}
+                      aria-label={`View image ${idx + 1}`}
                     >
                       <LazyLoadImage
                         src={img}
                         alt={`Thumbnail ${idx + 1}`}
-                        className="pd-thumb__img"
+                        className={styles.thumbnailImg}
                         onError={(e) => (e.target.src = noimage)}
                       />
                     </button>
                   ))}
                 </div>
+              )}
+            </div>
+
+            {/* Summary */}
+            <div className={styles.summary}>
+              <h1 className={styles.title}>{product.name}</h1>
+
+              <div className={styles.priceContainer}>
+                {mrp && mrp !== sellingPrice && (
+                  <span className={styles.mrp}>₹{mrp.toFixed(2)}</span>
+                )}
+                <span className={styles.currentPrice}>
+                  ₹{sellingPrice.toFixed(2)}
+                </span>
               </div>
 
-              <aside className="pd-summary" aria-labelledby="pd-product-title">
-                <h1 id="pd-product-title" className="pd-title">
-                  {product.name || "N/A"}
-                </h1>
+              <p className={styles.description}>
+                {product.description || "No description provided."}
+              </p>
 
-                <div className="pd-pricing">
-                  {product?.mrp && product.mrp !== sellingPrice && (
-                    <div className="pd-price__mrp">
-                      ₹{Number(product.mrp).toFixed(2)}
-                    </div>
-                  )}
-                  <div className="pd-price__current">
-                    {sellingPrice !== null
-                      ? `₹${sellingPrice.toFixed(2)}`
-                      : "N/A"}
-                  </div>
-                </div>
+              <div className={styles.actionRow}>
+                <span className={styles.quantityLabel}>Quantity:</span>
+                <InputNumber
+                  min={1}
+                  max={product.quantity || 1}
+                  value={quantity}
+                  onChange={(v) => setQuantity(v)}
+                  className={styles.quantityInput}
+                />
+                <Button
+                  type="primary"
+                  style={{ backgroundColor: "#e31e24" }}
+                  icon={<ShoppingCartOutlined />}
+                  size="large"
+                  onClick={handleAddToCart}
+                  loading={isCartLoading}
+                  disabled={product.quantity <= 0 || !sellingPrice}
+                  className={styles.addToCartBtn}
+                >
+                  Add to Cart
+                </Button>
+              </div>
 
-                <p className="pd-description">
-                  {product.description || "No description available"}
-                </p>
-
-                <div className="pd-qty-row">
-                  <label className="pd-qty-label">Quantity</label>
-                  <InputNumber
-                    className="pd-qty-input"
-                    value={quantity}
-                    onChange={handleQuantityChange}
-                    min={1}
-                    max={product.quantity || 1}
-                    controls={true}
-                  />
+              {/* Barcode */}
+              <div className={styles.barcodeSection}>
+                <svg ref={barcodeRef} style={{ width: "100%", height: 80 }} />
+                <div className={styles.barcodeActions}>
                   <Button
-                    type="primary"
-                    icon={<ShoppingCartOutlined />}
-                    onClick={() => handleAddToCart(product)}
-                    disabled={
-                      product.quantity <= 0 ||
-                      isCartLoading ||
-                      !userId ||
-                      sellingPrice === null ||
-                      isNaN(sellingPrice)
-                    }
-                    loading={
-                      isCartLoading || cartLoadingStates[product.productId]
-                    }
+                    onClick={handlePrintBarcode}
+                    disabled={!product.product_code}
                   >
-                    Add to Cart
+                    Print Barcode
                   </Button>
                 </div>
-
-                <div className="pd-barcode">
-                  <svg
-                    ref={barcodeRef}
-                    className="pd-barcode__svg"
-                    aria-hidden={!barcodeData}
-                  />
-                  <div className="pd-barcode__actions">
-                    <Button onClick={handlePrint} disabled={!barcodeData}>
-                      Print Barcode
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="pd-meta">
-                  <div>
-                    <strong>Product Code:</strong>{" "}
-                    {product.product_code || "N/A"}
-                  </div>
-                  <div>
-                    <strong>Brand:</strong> {getBrandsName()}
-                  </div>
-                  <div>
-                    <strong>Category:</strong> {getCategoryName()}
-                  </div>
-                </div>
-              </aside>
-            </section>
-
-            <section className="pd-tabs">
-              <Tabs
-                defaultActiveKey="1"
-                items={[
-                  {
-                    key: "1",
-                    label: "Description",
-                    children: (
-                      <div className="pd-tab-content">
-                        <h3>Description</h3>
-                        <p>
-                          {product.description || "No description available"}
-                        </p>
-                      </div>
-                    ),
-                  },
-                  {
-                    key: "2",
-                    label: "Additional Info",
-                    children: (
-                      <div className="pd-tab-content">
-                        <h3>Additional Information</h3>
-                        <ul className="pd-info-list">
-                          <li>
-                            <span>Product Code:</span>{" "}
-                            {product.product_code || "N/A"}
-                          </li>
-                          <li>
-                            <span>Category:</span> {getCategoryName()}
-                          </li>
-                          <li>
-                            <span>Brand:</span> {getBrandsName()}
-                          </li>
-                          {Array.isArray(product.metaDetails) &&
-                            product.metaDetails.map((meta) => (
-                              <li key={meta.id}>
-                                <span>{meta.title}:</span> {meta.value}{" "}
-                                {meta.unit || ""}
-                              </li>
-                            ))}
-                        </ul>
-                      </div>
-                    ),
-                  },
-                ]}
-              />
-            </section>
-
-            <section className="pd-related">
-              <div className="pd-related__header">
-                <h3>Related Products</h3>
               </div>
 
-              {isRecommendedLoading || isAllProductsLoading ? (
-                <div className="pd-loading">
-                  <Spin size="large" />
+              {/* Meta */}
+              <div className={styles.metaGrid}>
+                <div className={styles.metaLabel}>Product Code</div>
+                <div>{product.product_code || "—"}</div>
+
+                <div className={styles.metaLabel}>Brand</div>
+                <div>{brandData?.brandName || "—"}</div>
+
+                <div className={styles.metaLabel}>Category</div>
+                <div>
+                  {parentCategoryData?.data?.name ||
+                    categoryData?.category?.name ||
+                    "—"}
                 </div>
-              ) : relatedProducts.length > 0 ? (
-                <div className="pd-related__grid">
-                  {relatedProducts.map((recProduct) => (
-                    <div key={recProduct.productId}>
-                      <ProductCard
-                        product={recProduct}
-                        getBrandsName={getBrandsName}
-                        getCategoryName={getCategoryName}
-                        formatPrice={(fallback, metaDetails) => {
-                          if (!Array.isArray(metaDetails)) return "N/A";
-                          const sp = metaDetails.find(
-                            (m) => m.slug === "sellingPrice"
-                          );
-                          const price = sp ? parseFloat(sp.value) : null;
-                          return price != null && !isNaN(price)
-                            ? `₹${price.toFixed(2)}`
-                            : "N/A";
-                        }}
-                        getCompanyCode={getCompanyCode}
-                        handleAddToCart={handleAddToCart}
-                        cartLoadingStates={cartLoadingStates}
-                        menu={(p) => (
-                          <Menu>
-                            <Menu.Item key="view">
-                              <Link to={`/product/${p.productId}`}>View</Link>
-                            </Menu.Item>
-                          </Menu>
-                        )}
-                      />
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p>No related products available.</p>
-              )}
-            </section>
-          </main>
+              </div>
+            </div>
+          </div>
+
+          {/* Tabs */}
+          <Tabs
+            defaultActiveKey="1"
+            items={[
+              {
+                key: "1",
+                label: "Description",
+                children: (
+                  <p>{product.description || "No additional details."}</p>
+                ),
+              },
+              {
+                key: "2",
+                label: "Additional Information",
+                children: (
+                  <ul style={{ listStyle: "none", padding: 0 }}>
+                    {Array.isArray(product.metaDetails) &&
+                      product.metaDetails.map((m) => (
+                        <li key={m.id} style={{ marginBottom: "0.5rem" }}>
+                          <strong>{m.title || m.slug}:</strong> {m.value}{" "}
+                          {m.unit || ""}
+                        </li>
+                      ))}
+                  </ul>
+                ),
+              },
+            ]}
+          />
+
+          {/* Related Products */}
+          <section className={styles.relatedSection}>
+            <h2 className={styles.relatedHeader}>Related Products</h2>
+
+            {relatedProducts.length > 0 ? (
+              <div className={styles.relatedGrid}>
+                {relatedProducts.map((p) => (
+                  <ProductCard
+                    key={p.productId}
+                    product={p}
+                    getBrandsName={getBrandsName}
+                    getCategoryName={getCategoryName}
+                    formatPrice={(fallback, metaDetails) => {
+                      if (!Array.isArray(metaDetails)) return "N/A";
+                      const sp = metaDetails.find(
+                        (m) => m.slug === "sellingPrice",
+                      );
+                      const price = sp ? parseFloat(sp.value) : null;
+                      return price != null && !isNaN(price)
+                        ? `₹${price.toFixed(2)}`
+                        : "N/A";
+                    }}
+                    getCompanyCode={getCompanyCode}
+                    handleAddToCart={handleAddToCart}
+                    cartLoadingStates={cartLoadingStates}
+                    menu={(p) => (
+                      <Menu>
+                        <Menu.Item key="view">
+                          <Link to={`/product/${p.productId}`}>View</Link>
+                        </Menu.Item>
+                      </Menu>
+                    )}
+                    // pass any needed props – adjust according to your ProductCard
+                  />
+                ))}
+              </div>
+            ) : (
+              <p style={{ textAlign: "center", color: "#6b7280" }}>
+                No related products found.
+              </p>
+            )}
+          </section>
         </div>
       </div>
     </div>

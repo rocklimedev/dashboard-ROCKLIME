@@ -27,6 +27,7 @@ const routes = {
   category: require("./routes/category"),
   parentCategory: require("./routes/parentController"),
   attendance: require("./routes/attendance"),
+  import: require("./routes/import"),
   customer: require("./routes/customer"),
   brand: require("./routes/brands"),
   keyword: require("./routes/keyword"),
@@ -100,7 +101,7 @@ app.use(
     contentSecurityPolicy: false, // You can customize later
     frameguard: true,
     hsts: { maxAge: 31536000, includeSubDomains: true },
-  })
+  }),
 );
 app.disable("x-powered-by");
 app.use((req, res, next) => {
@@ -163,6 +164,7 @@ app.use("/api/taskboards", routes.taskBoard);
 app.use("/api/feedback", routes.feedback);
 app.use("/api/cached-permissions", routes.cachedPermission);
 app.use("/api/site-maps", routes.siteMap);
+app.use("/api/imports", routes.import);
 
 // ------------------- Health Check -------------------
 app.get("/health", (req, res) => {
@@ -215,7 +217,7 @@ cron.schedule("0 2 * * *", async () => {
   try {
     const result = await CachedPermission.deleteMany({});
     console.log(
-      `[CRON] Cleared ${result.deletedCount} cached permissions at 2 AM`
+      `[CRON] Cleared ${result.deletedCount} cached permissions at 2 AM`,
     );
   } catch (err) {
     console.error("[CRON] Failed to clear cache:", err);
@@ -257,18 +259,18 @@ cron.schedule("0 1 * * *", async () => {
           avgDuration: Math.round(stats[0].avgDuration || 0),
           errorRate: stats[0].totalRequests
             ? Math.round(
-                (stats[0].errorCount / stats[0].totalRequests) * 10000
+                (stats[0].errorCount / stats[0].totalRequests) * 10000,
               ) / 100
             : 0,
           methodBreakdown: (stats[0].methods || []).reduce(
             (a, m) => ((a[m] = (a[m] || 0) + 1), a),
-            {}
+            {},
           ),
           statusBreakdown: (stats[0].statuses || [])
             .filter(Boolean)
             .reduce((a, s) => ((a[s] = (a[s] || 0) + 1), a), {}),
         },
-        { upsert: true }
+        { upsert: true },
       );
       console.log("[CRON] Daily log stats updated");
     }
@@ -288,7 +290,7 @@ cron.schedule("0 3 * * *", async () => {
     });
 
     console.log(
-      `[CRON] Deleted ${result.deletedCount} old API logs (older than 60 days)`
+      `[CRON] Deleted ${result.deletedCount} old API logs (older than 60 days)`,
     );
   } catch (err) {
     console.error("[CRON] Failed to delete old logs:", err);
@@ -302,17 +304,22 @@ if (process.env.NODE_ENV === "production" || process.env.RENDER) {
   const axios = require("axios");
 
   // Ping ourselves every 10 minutes to keep Render + MySQL awake
-  setInterval(async () => {
-    try {
-      const url =
-        process.env.RENDER_EXTERNAL_URL ||
-        `https://${process.env.RENDER_SERVICE_NAME}.onrender.com`;
-      await axios.get(`${url}/api/health`, { timeout: 10000 });
-      console.log(`[KEEP-ALIVE] Pinged ${url}/api/health → MySQL stays awake`);
-    } catch (err) {
-      console.error("[KEEP-ALIVE] Ping failed:", err.code || err.message);
-    }
-  }, 10 * 60 * 1000); // Every 10 minutes
+  setInterval(
+    async () => {
+      try {
+        const url =
+          process.env.RENDER_EXTERNAL_URL ||
+          `https://${process.env.RENDER_SERVICE_NAME}.onrender.com`;
+        await axios.get(`${url}/api/health`, { timeout: 10000 });
+        console.log(
+          `[KEEP-ALIVE] Pinged ${url}/api/health → MySQL stays awake`,
+        );
+      } catch (err) {
+        console.error("[KEEP-ALIVE] Ping failed:", err.code || err.message);
+      }
+    },
+    10 * 60 * 1000,
+  ); // Every 10 minutes
 }
 // ------------------- Start Server -------------------
 const PORT = keys.port || process.env.PORT || 5000;

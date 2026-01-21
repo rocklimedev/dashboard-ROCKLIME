@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   ArrowLeftOutlined,
@@ -16,10 +16,16 @@ import {
   Spin,
   Typography,
   InputNumber,
+  message,
 } from "antd";
-import { message } from "antd";
 import { debounce } from "lodash";
+import moment from "moment";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+
 import PageHeader from "../Common/PageHeader";
+import AddVendorModal from "../POS-NEW/AddVendorModal";
+
 import {
   useCreatePurchaseOrderMutation,
   useGetPurchaseOrderByIdQuery,
@@ -33,192 +39,157 @@ import {
   useGetVendorsQuery,
   useCreateVendorMutation,
 } from "../../api/vendorApi";
-import moment from "moment";
-import DatePicker from "react-datepicker";
-import AddVendorModal from "../POS-NEW/AddVendorModal";
 
 const { Option } = Select;
 const { Text } = Typography;
+
+// Known meta key for selling price (adjust if needed)
 const SELLING_PRICE_META_KEY = "9ba862ef-f993-4873-95ef-1fef10036aa5";
 
-const getSellingPrice = (product) => {
+const getUnitPrice = (product) => {
   if (!product) return 0;
 
-  // 1. Direct lookup using the known UUID (fastest & most reliable)
-  if (product.meta?.[SELLING_PRICE_META_KEY]) {
-    const val = Number(product.meta[SELLING_PRICE_META_KEY]);
-    if (!isNaN(val) && val > 0) {
-      return val;
-    }
+  // Priority 1: Direct meta lookup
+  const metaPrice = product.meta?.[SELLING_PRICE_META_KEY];
+  if (metaPrice && !isNaN(Number(metaPrice)) && Number(metaPrice) > 0) {
+    return Number(metaPrice);
   }
 
-  // 2. Fallback: scan metaDetails for any numeric value that looks like a price
-  if (product.metaDetails) {
+  // Priority 2: Fallback to any reasonable numeric meta value
+  if (product.metaDetails?.length) {
     for (const m of product.metaDetails) {
       const val = Number(m?.value);
-      if (!isNaN(val) && val > 50) {
-        // reasonable threshold to avoid IDs/numbers like 0,1,20
-        return val;
-      }
+      if (!isNaN(val) && val > 10) return val; // avoid IDs or small numbers
     }
   }
 
-  // 3. Last fallback: any top-level sellingPrice / mrp field
-  return Number(product.sellingPrice || product.mrp || 0);
+  // Priority 3: Direct fields
+  return Number(product.unitPrice || product.mrp || product.sellingPrice || 0);
 };
+
 const AddPurchaseOrder = () => {
   const { id } = useParams();
-  const isEditMode = Boolean(id);
+  const isEditMode = !!id;
   const navigate = useNavigate();
   const [form] = Form.useForm();
 
-  // Queries and Mutations
-  const { data: existingPurchaseOrder, error: fetchError } =
-    useGetPurchaseOrderByIdQuery(id, { skip: !isEditMode });
-  const { data: productsResponse } = useGetAllProductsQuery();
-  const productsData = productsResponse?.data || [];
-  const { data: vendorsData } = useGetVendorsQuery();
-  const [createPurchaseOrder, { isLoading: isCreating }] =
-    useCreatePurchaseOrderMutation();
-  const [updatePurchaseOrder, { isLoading: isUpdating }] =
-    useUpdatePurchaseOrderMutation();
-  const [createVendor, { isLoading: isCreatingVendor }] =
-    useCreateVendorMutation();
-  // ─── Search State (like AddSiteMap) ─────────────────────
-  const [searchTerm, setSearchTerm] = useState("");
-  const { data: searchResult = [], isFetching: searching } =
-    useSearchProductsQuery(searchTerm.trim(), {
-      skip: !searchTerm.trim(),
-    });
-  const vendors = vendorsData || [];
-  const products = productsData || [];
-  const statuses = ["pending", "confirmed", "delivered", "cancelled"];
-  const getProductDisplayName = (p) =>
-    p.name?.trim() || p.product_code?.trim() || "Unknown Product";
-  const getProductId = (p) => p.productId || p.id;
-  const initialFormData = useMemo(
-    () => ({
-      vendorId: "",
-      orderDate: moment(),
-      expectedDeliveryDate: null,
-      items: [],
-      totalAmount: 0,
-      status: "pending",
-    }),
-    []
-  );
+  // API hooks
+  const {
+    data: poData,
+    isLoading: isLoadingPO,
+    error: poError,
+  } = useGetPurchaseOrderByIdQuery(id, { skip: !isEditMode });
 
-  // State
-  const [formData, setFormData] = useState(initialFormData);
-  const [productSearch, setProductSearch] = useState("");
+  const { data: productsRes } = useGetAllProductsQuery();
+  const products = productsRes?.data || [];
+
+  const { data: vendorsRes } = useGetVendorsQuery();
+  const vendors = vendorsRes || [];
+
+  const [createPO, { isLoading: creating }] = useCreatePurchaseOrderMutation();
+  const [updatePO, { isLoading: updating }] = useUpdatePurchaseOrderMutation();
+  const [createVendor, { isLoading: creatingVendor }] =
+    useCreateVendorMutation();
+
+  // Search
+  const [searchTerm, setSearchTerm] = useState("");
+  const { data: searchRes = [], isFetching: isSearching } =
+    useSearchProductsQuery(searchTerm.trim(), { skip: !searchTerm.trim() });
+
+  // Form state
+  const [formValues, setFormValues] = useState({
+    vendorId: "",
+    orderDate: moment(),
+    expectDeliveryDate: null,
+    status: "pending",
+    items: [],
+  });
+
   const [showVendorModal, setShowVendorModal] = useState(false);
-  const [filteredProducts, setFilteredProducts] = useState([]);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
-  const momentToDate = (m) => (m && m.isValid() ? m.toDate() : null);
-  const dateToMoment = (d) => (d ? moment(d) : null);
-
-  // Populate edit mode
+  // ───────────────────────────────────────
+  // Populate form in Edit mode
+  // ───────────────────────────────────────
   useEffect(() => {
-    if (
-      isEditMode &&
-      existingPurchaseOrder &&
-      products.length > 0 &&
-      vendors.length > 0
-    ) {
-      const vendorExists = vendors.some(
-        (vendor) => vendor.id === existingPurchaseOrder.vendorId
+    if (!isEditMode || !poData || !products.length || !vendors.length) return;
+
+    const po = poData;
+
+    const items = (po.items || []).map((item) => {
+      const product = products.find(
+        (p) => p.id === item.productId || p.productId === item.productId,
       );
-      if (!vendorExists) {
-        message.error(
-          "Selected vendor not found. Please select a valid vendor."
-        );
-        setFormData((prev) => ({ ...prev, vendorId: "" }));
-      }
-
-      const items = Array.isArray(existingPurchaseOrder.items)
-        ? existingPurchaseOrder.items
-            .map((item) => {
-              const product = products.find(
-                (p) => p.productId === item.productId
-              );
-              const name = product
-                ? product.name
-                : `Product ${item.productId} (Not Found)`;
-              const sellingPrice =
-                getSellingPrice(product) || item.unitPrice || 0;
-              const quantity = Number(item.quantity) || 1;
-
-              if (sellingPrice <= 0) {
-                message.warning(
-                  `Product ${item.productId} has an invalid price (₹${sellingPrice}).`
-                );
-              }
-
-              return {
-                id: item.productId,
-                productId: item.productId,
-                name,
-                quantity,
-                mrp: sellingPrice,
-                total: quantity * sellingPrice,
-              };
-            })
-            .map((item) => ({
-              ...item,
-              name: item.name || "Unknown Product",
-              mrp: item.mrp > 0 ? item.mrp : 0.01,
-            }))
-        : [];
-
-      const totalAmount = items
-        .reduce((sum, item) => sum + Number(item.total || 0), 0)
-        .toFixed(2);
-
-      const newFormData = {
-        vendorId: vendorExists ? existingPurchaseOrder.vendorId : "",
-        orderDate: existingPurchaseOrder.orderDate
-          ? moment(existingPurchaseOrder.orderDate)
-          : moment(),
-        expectedDeliveryDate: existingPurchaseOrder.expectedDeliveryDate
-          ? moment(existingPurchaseOrder.expectedDeliveryDate)
-          : null,
-        items,
-        totalAmount,
-        status: existingPurchaseOrder.status || "pending",
-      };
-
-      setFormData(newFormData);
-      form.setFieldsValue({
-        vendorId: newFormData.vendorId,
-        orderDate: newFormData.orderDate,
-        expectedDeliveryDate: newFormData.expectedDeliveryDate,
-        status: newFormData.status,
-      });
-    }
-  }, [existingPurchaseOrder, isEditMode, products, vendors, form]);
-
-  // Debounced product search
-
-  const searchOptions = useMemo(() => {
-    const source = searchResult.length > 0 ? searchResult : products;
-
-    return source.map((p) => {
-      const price = getSellingPrice(p) || 0; // ← changed here
+      const unitPrice = Number(item.unitPrice) || getUnitPrice(product) || 0;
+      const quantity = Number(item.quantity) || 1;
 
       return {
-        value: getProductId(p),
+        key: item.productId,
+        productId: item.productId,
+        name: product?.name || `Product ${item.productId} (missing)`,
+        quantity,
+        unitPrice: unitPrice > 0 ? unitPrice : 0.01,
+        total: quantity * unitPrice,
+      };
+    });
+
+    const total = items.reduce((sum, i) => sum + i.total, 0).toFixed(2);
+
+    const newValues = {
+      vendorId: vendors.some((v) => v.id === po.vendorId) ? po.vendorId : "",
+      orderDate: po.orderDate ? moment(po.orderDate) : moment(),
+      expectDeliveryDate: po.expectDeliveryDate
+        ? moment(po.expectDeliveryDate)
+        : null,
+      status: po.status || "pending",
+      items,
+      totalAmount: total,
+    };
+
+    setFormValues(newValues);
+    form.setFieldsValue({
+      vendorId: newValues.vendorId,
+      orderDate: newValues.orderDate,
+      expectDeliveryDate: newValues.expectDeliveryDate,
+      status: newValues.status,
+    });
+
+    if (!newValues.vendorId) {
+      message.warning("The vendor for this PO no longer exists.");
+    }
+  }, [poData, isEditMode, products, vendors, form]);
+
+  // ───────────────────────────────────────
+  // Computed total
+  // ───────────────────────────────────────
+  const totalAmount = useMemo(() => {
+    return formValues.items
+      .reduce((sum, item) => sum + (Number(item.total) || 0), 0)
+      .toFixed(2);
+  }, [formValues.items]);
+
+  // ───────────────────────────────────────
+  // Product search options
+  // ───────────────────────────────────────
+  const searchOptions = useMemo(() => {
+    const source = searchTerm.trim() ? searchRes : products;
+
+    return source.map((p) => {
+      const price = getUnitPrice(p);
+      return {
+        value: p.id || p.productId,
         label: (
           <div
             style={{
               display: "flex",
               justifyContent: "space-between",
-              alignItems: "center",
-              padding: "4px 0",
+              width: "100%",
             }}
           >
             <div>
-              <div style={{ fontWeight: 500 }}>{getProductDisplayName(p)}</div>
+              <div style={{ fontWeight: 500 }}>
+                {p.name || p.product_code || "Unnamed"}
+              </div>
               <Text type="secondary" style={{ fontSize: 12 }}>
                 {p.product_code || "—"}
               </Text>
@@ -230,245 +201,179 @@ const AddPurchaseOrder = () => {
         ),
       };
     });
-  }, [searchResult, products]);
-  // Add product
-  // ─── Add Product ────────────────────────────────────────
-  const addProduct = (productId) => {
-    const prod =
-      searchResult.find((p) => getProductId(p) === productId) ||
-      products.find((p) => getProductId(p) === productId);
+  }, [searchRes, products, searchTerm]);
 
-    if (!prod) {
+  // ───────────────────────────────────────
+  // Add product to list
+  // ───────────────────────────────────────
+  const handleAddProduct = (productId) => {
+    const product =
+      searchRes.find((p) => (p.id || p.productId) === productId) ||
+      products.find((p) => (p.id || p.productId) === productId);
+
+    if (!product) {
       message.error("Product not found");
       return;
     }
 
-    if (formData.items.some((item) => item.productId === productId)) {
-      message.error("Product already added");
+    if (formValues.items.some((i) => i.productId === productId)) {
+      message.warning("This product is already added");
       return;
     }
 
-    const sellingPrice = getSellingPrice(prod) || 0;
-
-    if (sellingPrice <= 0) {
-      message.error(`Product ${prod.name} has invalid MRP (₹${sellingPrice})`);
+    const unitPrice = getUnitPrice(product);
+    if (unitPrice <= 0) {
+      message.error(`Product ${product.name} has no valid price`);
       return;
     }
 
     const newItem = {
-      productId: getProductId(prod),
-      name: getProductDisplayName(prod),
+      key: productId,
+      productId,
+      name: product.name || product.product_code || "Unnamed Product",
       quantity: 1,
-      mrp: sellingPrice,
-      total: sellingPrice,
+      unitPrice,
+      total: unitPrice,
     };
 
-    setFormData((prev) => {
-      const newItems = [...prev.items, newItem];
-      const totalAmount = newItems
-        .reduce((sum, item) => sum + Number(item.total || 0), 0)
-        .toFixed(2);
+    setFormValues((prev) => ({
+      ...prev,
+      items: [...prev.items, newItem],
+    }));
 
-      return {
-        ...prev,
-        items: newItems,
-        totalAmount,
-      };
-    });
-
-    setSearchTerm(""); // clear search after add
+    setSearchTerm("");
   };
 
-  // Remove product
-  const removeProduct = (index) => {
-    setFormData((prev) => {
-      const newItems = prev.items.filter((_, i) => i !== index);
-      const totalAmount = newItems
-        .reduce((sum, item) => sum + Number(item.total || 0), 0)
-        .toFixed(2);
-      return {
-        ...prev,
-        items: newItems,
-        totalAmount,
-      };
-    });
-  };
+  // ───────────────────────────────────────
+  // Update item quantity / price
+  // ───────────────────────────────────────
+  const updateItem = (index, field, value) => {
+    const updated = [...formValues.items];
+    updated[index][field] = value;
 
-  // Update product field
-  const updateProductField = (index, field, value) => {
-    const updatedItems = [...formData.items];
-    updatedItems[index][field] = value;
-
-    if (["quantity", "mrp"].includes(field)) {
-      const quantity = Number(updatedItems[index].quantity) || 1;
-      const mrp = Number(updatedItems[index].mrp) || 0.01;
-      updatedItems[index].total = quantity * mrp;
+    if (field === "quantity" || field === "unitPrice") {
+      const qty = Number(updated[index].quantity) || 1;
+      const price = Number(updated[index].unitPrice) || 0.01;
+      updated[index].total = qty * price;
     }
 
-    const totalAmount = updatedItems
-      .reduce((sum, item) => sum + Number(item.total || 0), 0)
-      .toFixed(2);
-    setFormData({ ...formData, items: updatedItems, totalAmount });
+    setFormValues({ ...formValues, items: updated });
   };
 
-  // Handle vendor change
-  const handleVendorChange = (value) => {
-    setFormData((prev) => ({ ...prev, vendorId: value }));
-    form.setFieldsValue({ vendorId: value });
+  // ───────────────────────────────────────
+  // Remove item
+  // ───────────────────────────────────────
+  const removeItem = (index) => {
+    const updated = formValues.items.filter((_, i) => i !== index);
+    setFormValues({ ...formValues, items: updated });
   };
 
-  // Clear form with confirmation
-  const handleClearForm = () => {
-    setShowClearConfirm(true);
-  };
-
-  const confirmClearForm = () => {
-    setFormData(initialFormData);
-    form.resetFields();
-    setProductSearch("");
-    setFilteredProducts([]);
-    setShowClearConfirm(false);
-  };
-
-  // Submit handler
+  // ───────────────────────────────────────
+  // Submit
+  // ───────────────────────────────────────
   const handleSubmit = async () => {
     try {
       await form.validateFields();
-      if (formData.items.length === 0) {
-        message.error("Please add at least one product.");
-        return;
-      }
-      if (formData.items.some((item) => item.mrp <= 0)) {
-        message.error("All products must have a valid MRP greater than 0.");
-        return;
-      }
-      if (
-        formData.items.some(
-          (item) => !products.some((p) => p.productId === item.productId)
-        )
-      ) {
-        message.error(
-          "Some products are no longer available. Please remove them."
-        );
+
+      if (formValues.items.length === 0) {
+        message.error("Add at least one product");
         return;
       }
 
-      const formattedItems = formData.items.map((item) => ({
-        productId: item.productId,
-        quantity: Number(item.quantity) || 1,
-        mrp: Number(item.mrp) || 0.01,
-      }));
+      if (formValues.items.some((i) => i.unitPrice <= 0)) {
+        message.error("All products must have a price > 0");
+        return;
+      }
 
-      const formattedFormData = {
-        vendorId: formData.vendorId,
-        items: formattedItems,
-        expectedDeliveryDate: formData.expectedDeliveryDate
-          ? formData.expectedDeliveryDate.format("YYYY-MM-DD")
+      const payload = {
+        vendorId: formValues.vendorId,
+        items: formValues.items.map((i) => ({
+          productId: i.productId,
+          quantity: Number(i.quantity),
+          unitPrice: Number(i.unitPrice),
+        })),
+        expectDeliveryDate: formValues.expectDeliveryDate
+          ? formValues.expectDeliveryDate.format("YYYY-MM-DD")
           : null,
-        status: isEditMode ? existingPurchaseOrder?.status : "pending",
       };
 
       if (isEditMode) {
-        await updatePurchaseOrder({ id, ...formattedFormData }).unwrap();
+        await updatePO({ id, ...payload }).unwrap();
+        message.success("Purchase order updated");
       } else {
-        await createPurchaseOrder(formattedFormData).unwrap();
-        setFormData(initialFormData);
+        await createPO(payload).unwrap();
+        message.success("Purchase order created");
+        setFormValues({
+          vendorId: "",
+          orderDate: moment(),
+          expectDeliveryDate: null,
+          status: "pending",
+          items: [],
+        });
         form.resetFields();
-        setProductSearch("");
-        setFilteredProducts([]);
       }
+
       navigate("/po/list");
     } catch (err) {
-      if (err.errorFields) {
-        message.error("Please fill in all required fields correctly.");
-        return;
-      }
-      const errorMessage =
-        err.status === 404
-          ? "Purchase order or vendor not found."
-          : err.status === 400
-          ? `Invalid request: ${
-              err.data?.error || err.data?.message || "Check your input data."
-            }`
-          : err.data?.message || "Failed to process purchase order";
-      message.error(errorMessage);
-
-      if (err.status === 404) {
-        setTimeout(() => navigate("/po/list"), 2000);
-      }
+      message.error(err?.data?.message || "Failed to save purchase order");
     }
   };
 
-  // Error state
-  if (fetchError) {
+  if (isLoadingPO) return <Spin tip="Loading purchase order..." />;
+  if (poError) {
     return (
-      <div className="content">
-        <div className="card">
-          <div className="card-body">
-            <Alert
-              message="Error"
-              description={`Error loading purchase order data: ${
-                fetchError?.data?.message || "Unknown error"
-              }. Redirecting...`}
-              type="error"
-              showIcon
-            />
-          </div>
-        </div>
-      </div>
+      <Alert
+        message="Error"
+        description="Could not load purchase order data"
+        type="error"
+        showIcon
+      />
     );
   }
 
-  // Table columns
-  const columns = [
-    {
-      title: "Product",
-      dataIndex: "name",
-      key: "name",
-    },
+  const tableColumns = [
+    { title: "Product", dataIndex: "name", key: "name" },
     {
       title: "Quantity",
       key: "quantity",
+      width: 120,
       render: (_, record, index) => (
         <InputNumber
           min={1}
           value={record.quantity}
-          onChange={(value) =>
-            updateProductField(index, "quantity", value || 1)
-          }
-          aria-label={`Quantity for ${record.name}`}
+          onChange={(v) => updateItem(index, "quantity", v)}
         />
       ),
     },
     {
-      title: "MRP (₹)",
-      key: "mrp",
+      title: "Unit Price (₹)",
+      key: "unitPrice",
+      width: 140,
       render: (_, record, index) => (
         <InputNumber
           min={0.01}
           step={0.01}
-          value={record.mrp}
-          onChange={(value) => updateProductField(index, "mrp", value || 0.01)}
-          aria-label={`MRP for ${record.name}`}
+          value={record.unitPrice}
+          onChange={(v) => updateItem(index, "unitPrice", v)}
         />
       ),
     },
     {
       title: "Total (₹)",
-      dataIndex: "total",
       key: "total",
-      render: (total) => Number(total || 0).toFixed(2),
+      width: 120,
+      render: (_, r) => Number(r.total || 0).toFixed(2),
     },
     {
-      title: "Action",
+      title: "",
       key: "action",
+      width: 60,
       render: (_, __, index) => (
         <Button
           type="text"
           danger
           icon={<DeleteOutlined />}
-          onClick={() => removeProduct(index)}
-          aria-label={`Remove ${formData.items[index].name}`}
+          onClick={() => removeItem(index)}
         />
       ),
     },
@@ -481,62 +386,45 @@ const AddPurchaseOrder = () => {
           <PageHeader
             title={isEditMode ? "Edit Purchase Order" : "Create Purchase Order"}
             subtitle="Manage purchase order details"
-            exportOptions={{ pdf: false, excel: false }}
           />
+
           <div className="card-body">
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                marginBottom: 24,
-              }}
-            >
+            <div style={{ marginBottom: 24, display: "flex", gap: 12 }}>
               <Link to="/po/list">
-                <Button icon={<ArrowLeftOutlined style={{ marginRight: 8 }} />}>
-                  Back to Purchase Orders
-                </Button>
+                <Button icon={<ArrowLeftOutlined />}>Back</Button>
               </Link>
-              <Button onClick={handleClearForm}>Clear Form</Button>
+              <Button onClick={() => setShowClearConfirm(true)}>Clear</Button>
             </div>
 
             <Form form={form} layout="vertical" onFinish={handleSubmit}>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
+              <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+                {/* Vendor */}
                 <Form.Item
                   label="Vendor"
                   name="vendorId"
-                  rules={[
-                    { required: true, message: "Please select a vendor" },
-                  ]}
+                  rules={[{ required: true, message: "Vendor is required" }]}
                   style={{ flex: 1, minWidth: 300 }}
                 >
-                  <div style={{ display: "flex", alignItems: "center" }}>
+                  <div style={{ display: "flex", gap: 8 }}>
                     <Select
-                      style={{ width: "100%" }}
-                      value={formData.vendorId}
-                      onChange={handleVendorChange}
-                      placeholder="Select a vendor"
+                      style={{ flex: 1 }}
+                      placeholder="Select vendor"
+                      value={formValues.vendorId}
+                      onChange={(v) => {
+                        setFormValues({ ...formValues, vendorId: v });
+                        form.setFieldsValue({ vendorId: v });
+                      }}
                       showSearch
-                      filterOption={(input, option) =>
-                        option.children
-                          .toLowerCase()
-                          .includes(input.toLowerCase())
-                      }
+                      optionFilterProp="children"
                     >
-                      {vendors.length === 0 ? (
-                        <Option value="" disabled>
-                          No vendors available
+                      {vendors.map((v) => (
+                        <Option key={v.id} value={v.id}>
+                          {v.vendorName}
                         </Option>
-                      ) : (
-                        vendors.map((vendor) => (
-                          <Option key={vendor.id} value={vendor.id}>
-                            {vendor.vendorName}
-                          </Option>
-                        ))
-                      )}
+                      ))}
                     </Select>
                     <Button
                       type="primary"
-                      style={{ marginLeft: 8 }}
                       onClick={() => setShowVendorModal(true)}
                     >
                       +
@@ -544,72 +432,75 @@ const AddPurchaseOrder = () => {
                   </div>
                 </Form.Item>
 
+                {/* Order Date */}
                 <Form.Item
                   label="Order Date"
                   name="orderDate"
-                  rules={[
-                    { required: true, message: "Please select an order date" },
-                  ]}
-                  style={{ flex: 1, minWidth: 300 }}
+                  rules={[{ required: true }]}
+                  style={{ flex: 1, minWidth: 220 }}
                 >
                   <DatePicker
-                    selected={momentToDate(formData.orderDate)}
+                    selected={formValues.orderDate?.toDate()}
                     onChange={(date) =>
-                      setFormData({
-                        ...formData,
-                        orderDate: dateToMoment(date),
+                      setFormValues({
+                        ...formValues,
+                        orderDate: date ? moment(date) : null,
                       })
                     }
                     dateFormat="dd/MM/yyyy"
                     className="ant-input"
-                    placeholderText="dd/mm/yyyy"
-                    minDate={new Date(2000, 0, 1)}
-                    maxDate={new Date(2100, 11, 31)}
+                    minDate={new Date(2020, 0, 1)}
                   />
                 </Form.Item>
               </div>
 
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
+              <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+                {/* Expected Delivery */}
                 <Form.Item
-                  label="Expected Delivery Date"
-                  name="expectedDeliveryDate"
-                  style={{ flex: 1, minWidth: 300 }}
+                  label="Expected Delivery"
+                  style={{ flex: 1, minWidth: 220 }}
                 >
                   <DatePicker
-                    selected={momentToDate(formData.expectedDeliveryDate)}
+                    selected={formValues.expectDeliveryDate?.toDate()}
                     onChange={(date) =>
-                      setFormData({
-                        ...formData,
-                        expectedDeliveryDate: dateToMoment(date),
+                      setFormValues({
+                        ...formValues,
+                        expectDeliveryDate: date ? moment(date) : null,
                       })
                     }
                     dateFormat="dd/MM/yyyy"
-                    className="ant-input"
-                    placeholderText="dd/mm/yyyy"
                     minDate={new Date()}
                     isClearable
+                    className="ant-input"
                   />
                 </Form.Item>
 
+                {/* Status (only editable in edit mode) */}
                 <Form.Item
                   label="Status"
                   name="status"
-                  rules={[
-                    { required: true, message: "Please select a status" },
-                  ]}
+                  style={{ flex: 1, minWidth: 180 }}
                 >
-                  <Select placeholder="Select status">
-                    {statuses.map((status) => (
-                      <Option key={status} value={status}>
-                        {status.charAt(0).toUpperCase() + status.slice(1)}
-                      </Option>
-                    ))}
+                  <Select
+                    disabled={!isEditMode}
+                    value={formValues.status}
+                    onChange={(v) =>
+                      setFormValues({ ...formValues, status: v })
+                    }
+                  >
+                    {["pending", "confirmed", "delivered", "cancelled"].map(
+                      (s) => (
+                        <Option key={s} value={s}>
+                          {s.charAt(0).toUpperCase() + s.slice(1)}
+                        </Option>
+                      ),
+                    )}
                   </Select>
                 </Form.Item>
               </div>
 
-              {/* Product Search */}
-              <div style={{ margin: "24px 0" }}>
+              {/* Product Search + Add */}
+              <div style={{ margin: "32px 0 16px" }}>
                 <Select
                   showSearch
                   size="large"
@@ -617,90 +508,94 @@ const AddPurchaseOrder = () => {
                   placeholder="Search product by name or code..."
                   prefix={<SearchOutlined />}
                   value={null}
-                  onSearch={setSearchTerm}
-                  onChange={addProduct}
+                  onSearch={debounce(setSearchTerm, 400)}
+                  onChange={handleAddProduct}
                   filterOption={false}
                   options={searchOptions}
                   notFoundContent={
-                    searching ? (
-                      <Spin size="small" />
-                    ) : searchTerm.trim() ? (
+                    isSearching ? (
+                      <Spin />
+                    ) : searchTerm ? (
                       "No products found"
                     ) : (
-                      "Start typing to search products"
+                      "Type to search..."
                     )
                   }
-                  dropdownStyle={{ maxHeight: 400 }}
+                  dropdownStyle={{ maxHeight: 420 }}
                 />
               </div>
-              {/* Products Table */}
-              <Table
-                columns={columns}
-                dataSource={formData.items}
-                rowKey={(record, index) => record.id ?? `item-${index}`}
-                locale={{ emptyText: "No products added" }}
-                pagination={false}
-              />
-              <Form.Item
-                label="Total Amount (₹)"
-                style={{ flex: 1, minWidth: 300 }}
-              >
-                <InputNumber
-                  style={{ width: "20%" }}
-                  value={formData.totalAmount}
-                  readOnly
-                  aria-readonly="true"
-                />
-              </Form.Item>
 
-              {/* Submit Buttons */}
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  marginTop: 24,
-                }}
-              >
+              {/* Items Table */}
+              <Table
+                columns={tableColumns}
+                dataSource={formValues.items}
+                rowKey="key"
+                pagination={false}
+                locale={{ emptyText: "No products added yet" }}
+              />
+
+              {/* Total */}
+              <div style={{ marginTop: 16, textAlign: "right" }}>
+                <Text strong>Total Amount: </Text>
+                <Text strong style={{ fontSize: 18 }}>
+                  ₹{totalAmount}
+                </Text>
+              </div>
+
+              {/* Actions */}
+              <div style={{ marginTop: 32, textAlign: "right" }}>
                 <Button
-                  style={{ marginRight: 8 }}
+                  style={{ marginRight: 12 }}
                   onClick={() => navigate("/po/list")}
-                  disabled={isCreating || isUpdating}
+                  disabled={creating || updating}
                 >
                   Cancel
                 </Button>
                 <Button
                   type="primary"
                   htmlType="submit"
-                  disabled={isCreating || isUpdating}
+                  loading={creating || updating}
                 >
-                  {isCreating || isUpdating ? "Submitting..." : "Submit"}
+                  {creating || updating
+                    ? "Saving..."
+                    : isEditMode
+                      ? "Update Order"
+                      : "Create Order"}
                 </Button>
               </div>
             </Form>
-
-            {/* Modals */}
-            <AddVendorModal
-              show={showVendorModal}
-              onClose={() => setShowVendorModal(false)}
-              onSave={createVendor}
-              isCreatingVendor={isCreatingVendor}
-            />
-            <Modal
-              title="Confirm Clear Form"
-              open={showClearConfirm}
-              onOk={confirmClearForm}
-              onCancel={() => setShowClearConfirm(false)}
-              okText="Clear"
-              cancelText="Cancel"
-            >
-              <p>
-                Are you sure you want to clear the form? All entered data will
-                be lost.
-              </p>
-            </Modal>
           </div>
         </div>
       </div>
+
+      {/* Modals */}
+      <AddVendorModal
+        show={showVendorModal}
+        onClose={() => setShowVendorModal(false)}
+        onSave={createVendor}
+        isCreatingVendor={creatingVendor}
+      />
+
+      <Modal
+        title="Clear Form?"
+        open={showClearConfirm}
+        onOk={() => {
+          setFormValues({
+            vendorId: "",
+            orderDate: moment(),
+            expectDeliveryDate: null,
+            status: "pending",
+            items: [],
+          });
+          form.resetFields();
+          setShowClearConfirm(false);
+        }}
+        onCancel={() => setShowClearConfirm(false)}
+        okText="Clear"
+        cancelText="Cancel"
+      >
+        <p>All entered data will be lost. Are you sure?</p>
+      </Modal>
     </div>
   );
 };

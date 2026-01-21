@@ -759,66 +759,12 @@ const OrderPage = () => {
             </Row>
             <Row>
               <Col xs={4} md={12} xl={14}>
-                <Card title="Order Activity" className="activity-card">
-                  <ul className="activity-list">
-                    <li>
-                      <Row justify="space-between">
-                        <Col xs={24} sm={12}>
-                          <Text strong>Order Placed</Text>
-                          <div>
-                            <Text type="secondary">
-                              Order successfully placed and awaiting processing.
-                            </Text>
-                          </div>
-                        </Col>
-                        <Col xs={24} sm={12} className="activity-time">
-                          <Text>
-                            {new Date(order.createdAt).toLocaleDateString()}
-                          </Text>
-                          <br />
-                          <Text type="secondary">
-                            {new Date(order.createdAt).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </Text>
-                        </Col>
-                      </Row>
-                    </li>
-                    {order.status === "CREATED" && (
-                      <li className="activity-pending">
-                        <Row justify="space-between">
-                          <Col xs={24} sm={12}>
-                            <Text strong>Payment Confirmed</Text>
-                            <div style={{ display: "none" }}>
-                              <Text type="secondary">
-                                Payment successfully processed.
-                              </Text>
-                            </div>
-                          </Col>
-                          <Col
-                            xs={24}
-                            sm={12}
-                            className="activity-time"
-                            style={{ display: "none" }}
-                          >
-                            <Text>-</Text>
-                            <br />
-                            <Text type="secondary">-</Text>
-                          </Col>
-                        </Row>
-                      </li>
-                    )}
-                  </ul>
-                </Card>
-              </Col>
-
-              <Col xs={4} md={12} xl={14}>
                 <Card
                   title="Billing Address"
                   extra={
                     <Button
                       type="primary"
+                      style={{ borderColor: "#e31e24", color: "#e31e24" }}
                       ghost
                       icon={<EditOutlined />}
                       onClick={() => setIsBillingModalVisible(true)}
@@ -854,6 +800,7 @@ const OrderPage = () => {
                   extra={
                     <Button
                       type="primary"
+                      style={{ borderColor: "#e31e24", color: "#e31e24" }}
                       ghost
                       icon={<EditOutlined />}
                       onClick={() => setIsShippingModalVisible(true)}
@@ -1275,7 +1222,7 @@ const OrderPage = () => {
                 </Form.Item>
                 <Form.Item>
                   <Button
-                    type="primary"
+                    style={{ borderColor: "#e31e24", color: "#e31e24" }}
                     htmlType="submit"
                     disabled={!newComment.trim()}
                   >

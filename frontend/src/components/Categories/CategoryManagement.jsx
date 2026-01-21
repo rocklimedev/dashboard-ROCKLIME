@@ -69,7 +69,7 @@ const CategoryManagement = () => {
 
   // Fetch products with optional category filter
   const { data: prodData } = useGetAllProductCodesQuery(
-    urlCategoryId ? { category: urlCategoryId } : {}
+    urlCategoryId ? { category: urlCategoryId } : {},
   );
 
   const [deleteParent] = useDeleteParentCategoryMutation();
@@ -100,7 +100,7 @@ const CategoryManagement = () => {
     if (urlCategoryId) {
       // Find category node matching the URL param
       const foundCategory = categories.find(
-        (c) => String(c.categoryId) === urlCategoryId
+        (c) => String(c.categoryId) === urlCategoryId,
       );
       if (foundCategory) {
         setSelectedNode({
@@ -170,8 +170,8 @@ const CategoryManagement = () => {
       type === "parent"
         ? item.name
         : type === "category"
-        ? item.name
-        : item.keyword;
+          ? item.name
+          : item.keyword;
 
     const count =
       type === "category"
@@ -252,7 +252,7 @@ const CategoryManagement = () => {
 
   const debouncedSearch = useCallback(
     debounce((value) => setSearchTerm(value), 300),
-    []
+    [],
   );
 
   const handleProductSearch = () => {
@@ -279,8 +279,8 @@ const CategoryManagement = () => {
             url = Array.isArray(parsed)
               ? parsed[0]
               : typeof parsed === "string"
-              ? parsed
-              : null;
+                ? parsed
+                : null;
           } catch {}
         }
         return url ? (
@@ -308,22 +308,22 @@ const CategoryManagement = () => {
   // === Tree Data ===
   const treeData = useMemo(() => {
     const filteredParents = parentCategories.filter((p) =>
-      p.name.toLowerCase().includes(searchTerm.toLowerCase())
+      p.name.toLowerCase().includes(searchTerm.toLowerCase()),
     );
 
     return filteredParents.map((parent) => {
       const childCats = categories.filter(
-        (c) => c.parentCategoryId === parent.id
+        (c) => c.parentCategoryId === parent.id,
       );
       const filteredCats = childCats.filter((c) =>
-        c.name.toLowerCase().includes(searchTerm.toLowerCase())
+        c.name.toLowerCase().includes(searchTerm.toLowerCase()),
       );
 
       const catNodes = filteredCats.map((cat) => {
         const catKeywords = keywords
           .filter((k) => k.categoryId === cat.categoryId)
           .filter((k) =>
-            k.keyword.toLowerCase().includes(searchTerm.toLowerCase())
+            k.keyword.toLowerCase().includes(searchTerm.toLowerCase()),
           );
 
         return {
@@ -537,6 +537,7 @@ const CategoryManagement = () => {
                   <Button
                     type="primary"
                     icon={<PlusOutlined />}
+                    style={{ background: "#E31E24", color: "#fff" }}
                     onClick={() => {
                       setEditingItem(null);
                       setShowParentModal(true);
@@ -546,6 +547,7 @@ const CategoryManagement = () => {
                   </Button>
                   <Button
                     icon={<PlusOutlined />}
+                    style={{ background: "#E31E24", color: "#fff" }}
                     disabled={!selectedNode || selectedNode.type !== "parent"}
                     onClick={() => {
                       setEditingItem(null);
@@ -556,6 +558,7 @@ const CategoryManagement = () => {
                   </Button>
                   <Button
                     icon={<PlusOutlined />}
+                    style={{ background: "#E31E24", color: "#fff" }}
                     disabled={!selectedNode || selectedNode.type !== "category"}
                     onClick={() => {
                       setEditingItem(null);
@@ -638,8 +641,8 @@ const CategoryManagement = () => {
                       ? selectedNode.type === "parent"
                         ? parentMap[selectedNode.id]
                         : selectedNode.type === "category"
-                        ? categoryMap[selectedNode.id]
-                        : selectedNode.data.keyword
+                          ? categoryMap[selectedNode.id]
+                          : selectedNode.data.keyword
                       : "Category Details"}
                     {selectedNode?.type === "category" &&
                       products.length > 0 && (
