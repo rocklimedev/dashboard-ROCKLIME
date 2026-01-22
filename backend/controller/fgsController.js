@@ -1,15 +1,16 @@
 const { Op } = require("sequelize");
 const moment = require("moment");
-const sequelize = require("../config/database"); // MySQL connection
+const sequelize = require("../config/database");
 const { sendNotification } = require("./notificationController");
-const { Product, Vendor, PurchaseOrder, FieldGuidedSheet } = require("../models"); // Sequelize models
-const PoItem = require("../models/poItem"); // Mongoose model
+const { Product, Vendor, FieldGuidedSheet } = require("../models");
+const FgsItem = require("../models/fgsItem"); // NEW Mongoose model
+const { createPurchaseOrder } = require("./purchaseOrderController"); // Import for conversion
 const ADMIN_USER_ID = "2ef0f07a-a275-4fe1-832d-fe9a5d145f60";
 
 // ─────────────────────────────────────────────────────────────
-// Helper: Generate next daily sequential poNumber (unchanged)
+// Helper: Generate next daily sequential fgsNumber
 // ─────────────────────────────────────────────────────────────
-async function generateDailyPONumber(t) {
+async function generateDailyFGSNumber(t) {
   const todayStart = moment().startOf("day").toDate();
   const todayEnd = moment().endOf("day").toDate();
   const prefix = moment().format("DDMMYY");
@@ -20,44 +21,43 @@ async function generateDailyPONumber(t) {
   while (attempt < MAX_ATTEMPTS) {
     attempt++;
 
-    const lastPO = await PurchaseOrder.findOne({
+    const lastFGS = await FieldGuidedSheet.findOne({
       where: {
-        poNumber: { [Op.like]: `PO${prefix}%` },
+        fgsNumber: { [Op.like]: `FGS${prefix}%` },
         createdAt: { [Op.between]: [todayStart, todayEnd] },
       },
-      attributes: ["poNumber"],
-      order: [["poNumber", "DESC"]],
+      attributes: ["fgsNumber"],
+      order: [["fgsNumber", "DESC"]],
       limit: 1,
       transaction: t,
       lock: t.LOCK.UPDATE,
     });
 
     let nextSeq = 101;
-    if (lastPO) {
-      const lastSeqStr = lastPO.poNumber.slice(8);
+    if (lastFGS) {
+      const lastSeqStr = lastFGS.fgsNumber.slice(9);
       const parsed = parseInt(lastSeqStr, 10);
       if (!isNaN(parsed)) nextSeq = parsed + 1;
     }
 
-    const candidate = `PO${prefix}${nextSeq}`;
+    const candidate = `FGS${prefix}${nextSeq}`;
 
-    const conflict = await PurchaseOrder.findOne({
-      where: { poNumber: candidate },
+    const conflict = await FieldGuidedSheet.findOne({
+      where: { fgsNumber: candidate },
       transaction: t,
     });
 
     if (!conflict) return candidate;
 
     console.warn(
-      `PO collision: ${candidate} — retry ${attempt}/${MAX_ATTEMPTS}`,
+      `FGS collision: ${candidate} — retry ${attempt}/${MAX_ATTEMPTS}`,
     );
   }
 
   throw new Error(
-    `Failed to generate unique PO number after ${MAX_ATTEMPTS} attempts`,
+    `Failed to generate unique FGS number after ${MAX_ATTEMPTS} attempts`,
   );
 }
-
 // ─────────────────────────────────────────────────────────────
 // Validate items & calculate total (updated for reactivity: allow partial items update)
 // ─────────────────────────────────────────────────────────────
@@ -136,24 +136,28 @@ async function validateAndCalculateItems(items, transaction, isPartial = false) 
     preparedItems,
   };
 }
+// ─────────────────────────────────────────────────────────────
+// Validate items & calculate total (reuse from PO, or duplicate if needed)
+// For simplicity, assume same validateAndCalculateItems as in PO
+// ─────────────────────────────────────────────────────────────
 
 // ─────────────────────────────────────────────────────────────
-// Helper: Get items from MongoDB (unchanged)
+// Helper: Get items from MongoDB for FGS
 // ─────────────────────────────────────────────────────────────
-async function fetchPoItems(poId) {
-  const doc = await PoItem.findOne({ poId }).lean().exec();
+async function fetchFgsItems(fgsId) {
+  const doc = await FgsItem.findOne({ fgsId }).lean().exec();
   return doc ? doc.items : [];
 }
 
 // ─────────────────────────────────────────────────────────────
-// CREATE Purchase Order (updated: optional fgsId for conversion tracking)
+// CREATE Field Guided Sheet
 // ─────────────────────────────────────────────────────────────
-exports.createPurchaseOrder = async (req, res) => {
+exports.createFieldGuidedSheet = async (req, res) => {
   const t = await sequelize.transaction();
   let mongoDoc = null;
 
   try {
-    const { vendorId, items, expectDeliveryDate, fgsId } = req.body;  // ← NEW: fgsId optional
+    const { vendorId, items, expectDeliveryDate } = req.body;
 
     if (!vendorId || !items || !Array.isArray(items)) {
       return res
@@ -172,14 +176,13 @@ exports.createPurchaseOrder = async (req, res) => {
       t,
     );
 
-    const poNumber = await generateDailyPONumber(t);
+    const fgsNumber = await generateDailyFGSNumber(t);
 
-    const purchaseOrder = await PurchaseOrder.create(
+    const fieldGuidedSheet = await FieldGuidedSheet.create(
       {
-        poNumber,
+        fgsNumber,
         vendorId,
-        fgsId,  // ← NEW
-        status: "pending",
+        status: "draft",
         orderDate: new Date(),
         expectDeliveryDate: expectDeliveryDate
           ? new Date(expectDeliveryDate)
@@ -190,15 +193,15 @@ exports.createPurchaseOrder = async (req, res) => {
     );
 
     // Create items in MongoDB
-    mongoDoc = await PoItem.create({
-      poId: purchaseOrder.id,
-      poNumber: purchaseOrder.poNumber,
-      vendorId: purchaseOrder.vendorId,
+    mongoDoc = await FgsItem.create({
+      fgsId: fieldGuidedSheet.id,
+      fgsNumber: fieldGuidedSheet.fgsNumber,
+      vendorId: fieldGuidedSheet.vendorId,
       items: preparedItems,
       calculatedTotal: totalAmount,
     });
 
-    await purchaseOrder.update(
+    await fieldGuidedSheet.update(
       { mongoItemsId: mongoDoc._id.toString() },
       { transaction: t },
     );
@@ -207,14 +210,14 @@ exports.createPurchaseOrder = async (req, res) => {
 
     await sendNotification({
       userId: ADMIN_USER_ID,
-      title: `New Purchase Order Created #${poNumber}`,
-      message: `PO #${poNumber} for ${vendor.vendorName || "Vendor"} • ₹${totalAmount}`,
+      title: `New Field Guided Sheet Created #${fgsNumber}`,
+      message: `FGS #${fgsNumber} for ${vendor.vendorName || "Vendor"} • ₹${totalAmount}`,
     });
 
     return res.status(201).json({
-      message: "Purchase order created successfully",
-      purchaseOrder: {
-        ...purchaseOrder.toJSON(),
+      message: "Field guided sheet created successfully",
+      fieldGuidedSheet: {
+        ...fieldGuidedSheet.toJSON(),
         items: preparedItems,
       },
     });
@@ -222,34 +225,39 @@ exports.createPurchaseOrder = async (req, res) => {
     await t.rollback();
 
     if (mongoDoc) {
-      await PoItem.deleteOne({ _id: mongoDoc._id }).catch((e) =>
+      await FgsItem.deleteOne({ _id: mongoDoc._id }).catch((e) =>
         console.error("Cleanup failed:", e),
       );
     }
 
-    console.error("Create PO error:", error);
+    console.error("Create FGS error:", error);
     return res.status(500).json({
-      message: "Error creating purchase order",
+      message: "Error creating field guided sheet",
       error: error.message,
     });
   }
 };
 
 // ─────────────────────────────────────────────────────────────
-// UPDATE Purchase Order (updated for new statuses, partial item updates)
+// UPDATE Field Guided Sheet (supports reactive changes, e.g., during negotiation)
 // ─────────────────────────────────────────────────────────────
-exports.updatePurchaseOrder = async (req, res) => {
+exports.updateFieldGuidedSheet = async (req, res) => {
   const t = await sequelize.transaction();
 
   try {
     const { vendorId, items, status, expectDeliveryDate } = req.body;
 
-    const purchaseOrder = await PurchaseOrder.findByPk(req.params.id, {
+    const fieldGuidedSheet = await FieldGuidedSheet.findByPk(req.params.id, {
       transaction: t,
     });
-    if (!purchaseOrder) {
+    if (!fieldGuidedSheet) {
       await t.rollback();
-      return res.status(404).json({ message: "Purchase order not found" });
+      return res.status(404).json({ message: "Field guided sheet not found" });
+    }
+
+    if (fieldGuidedSheet.status === "converted") {
+      await t.rollback();
+      return res.status(400).json({ message: "Cannot update converted FGS" });
     }
 
     const updateData = {};
@@ -266,28 +274,27 @@ exports.updatePurchaseOrder = async (req, res) => {
     }
 
     let newItems = null;
-    let newTotal = purchaseOrder.totalAmount;
+    let newTotal = fieldGuidedSheet.totalAmount;
 
     if (items && Array.isArray(items)) {
       const { totalAmount, preparedItems } = await validateAndCalculateItems(
         items,
         t,
-        true  // ← Allow partial updates
+        true  // Allow partial
       );
       newTotal = totalAmount;
       updateData.totalAmount = totalAmount;
 
-      // For partial updates, merge with existing items
-      const existingDoc = await PoItem.findOne({ poId: purchaseOrder.id });
+      const existingDoc = await FgsItem.findOne({ fgsId: fieldGuidedSheet.id });
       const existingItems = existingDoc ? existingDoc.items : [];
       const itemMap = new Map(existingItems.map(i => [i.productId, i]));
       preparedItems.forEach(newItem => itemMap.set(newItem.productId, newItem));
       const mergedItems = Array.from(itemMap.values());
 
-      await PoItem.findOneAndUpdate(
-        { poId: purchaseOrder.id },
+      await FgsItem.findOneAndUpdate(
+        { fgsId: fieldGuidedSheet.id },
         {
-          vendorId: updateData.vendorId || purchaseOrder.vendorId,
+          vendorId: updateData.vendorId || fieldGuidedSheet.vendorId,
           items: mergedItems,
           calculatedTotal: newTotal,
         },
@@ -297,9 +304,9 @@ exports.updatePurchaseOrder = async (req, res) => {
       newItems = mergedItems;
     }
 
-    await purchaseOrder.update(updateData, { transaction: t });
+    await fieldGuidedSheet.update(updateData, { transaction: t });
 
-    const updatedPo = await PurchaseOrder.findByPk(purchaseOrder.id, {
+    const updatedFgs = await FieldGuidedSheet.findByPk(fieldGuidedSheet.id, {
       include: [
         { model: Vendor, as: "vendor", attributes: ["id", "vendorName"] },
       ],
@@ -310,66 +317,65 @@ exports.updatePurchaseOrder = async (req, res) => {
 
     await sendNotification({
       userId: ADMIN_USER_ID,
-      title: `Purchase Order Updated #${purchaseOrder.poNumber}`,
-      message: `PO #${purchaseOrder.poNumber} updated (${updatedPo.vendor?.vendorName || "Vendor"}).`,
+      title: `Field Guided Sheet Updated #${fieldGuidedSheet.fgsNumber}`,
+      message: `FGS #${fieldGuidedSheet.fgsNumber} updated (${updatedFgs.vendor?.vendorName || "Vendor"}).`,
     });
 
     return res.status(200).json({
-      message: "Purchase order updated successfully",
-      purchaseOrder: {
-        ...updatedPo.toJSON(),
-        items: newItems || (await fetchPoItems(purchaseOrder.id)),
+      message: "Field guided sheet updated successfully",
+      fieldGuidedSheet: {
+        ...updatedFgs.toJSON(),
+        items: newItems || (await fetchFgsItems(fieldGuidedSheet.id)),
       },
     });
   } catch (error) {
     await t.rollback();
     return res.status(400).json({
-      message: "Error updating purchase order",
+      message: "Error updating field guided sheet",
       error: error.message,
     });
   }
 };
 
 // ─────────────────────────────────────────────────────────────
-// GET BY ID
+// GET BY ID for FGS
 // ─────────────────────────────────────────────────────────────
-exports.getPurchaseOrderById = async (req, res) => {
+exports.getFieldGuidedSheetById = async (req, res) => {
   try {
-    const purchaseOrder = await PurchaseOrder.findByPk(req.params.id, {
+    const fieldGuidedSheet = await FieldGuidedSheet.findByPk(req.params.id, {
       include: [
         { model: Vendor, as: "vendor", attributes: ["id", "vendorName"] },
       ],
     });
 
-    if (!purchaseOrder) {
-      return res.status(404).json({ message: "Purchase order not found" });
+    if (!fieldGuidedSheet) {
+      return res.status(404).json({ message: "Field guided sheet not found" });
     }
 
-    const items = await fetchPoItems(purchaseOrder.id);
+    const items = await fetchFgsItems(fieldGuidedSheet.id);
 
     return res.status(200).json({
-      ...purchaseOrder.toJSON(),
+      ...fieldGuidedSheet.toJSON(),
       items,
     });
   } catch (error) {
     return res.status(500).json({
-      message: "Error fetching purchase order",
+      message: "Error fetching field guided sheet",
       error: error.message,
     });
   }
 };
 
 // ─────────────────────────────────────────────────────────────
-// GET ALL (with pagination)
-// Note: fetching items for many records can be slow → consider lazy loading in frontend
+// GET ALL for FGS (with pagination)
 // ─────────────────────────────────────────────────────────────
-exports.getAllPurchaseOrders = async (req, res) => {
+exports.getAllFieldGuidedSheets = async (req, res) => {
   try {
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 20;
     const offset = (page - 1) * limit;
 
-    const { count, rows: purchaseOrders } = await PurchaseOrder.findAndCountAll(
+    const { count, rows: fieldGuidedSheets } = await FieldGuidedSheet.findAndCountAll(
       {
         include: [
           { model: Vendor, as: "vendor", attributes: ["id", "vendorName"] },
@@ -381,16 +387,16 @@ exports.getAllPurchaseOrders = async (req, res) => {
       },
     );
 
-    const poIds = purchaseOrders.map((po) => po.id);
-    const itemDocs = await PoItem.find({ poId: { $in: poIds } }).lean();
+    const fgsIds = fieldGuidedSheets.map((fgs) => fgs.id);
+    const itemDocs = await FgsItem.find({ fgsId: { $in: fgsIds } }).lean();
 
-    const itemsByPo = new Map(
-      itemDocs.map((doc) => [doc.poId, doc.items || []]),
+    const itemsByFgs = new Map(
+      itemDocs.map((doc) => [doc.fgsId, doc.items || []]),
     );
 
-    const result = purchaseOrders.map((po) => ({
-      ...po.toJSON(),
-      items: itemsByPo.get(po.id) || [],
+    const result = fieldGuidedSheets.map((fgs) => ({
+      ...fgs.toJSON(),
+      items: itemsByFgs.get(fgs.id) || [],
     }));
 
     const totalPages = Math.ceil(count / limit);
@@ -400,168 +406,156 @@ exports.getAllPurchaseOrders = async (req, res) => {
       pagination: { total: count, page, limit, totalPages },
     });
   } catch (error) {
-    console.error("getAllPurchaseOrders error:", error);
+    console.error("getAllFieldGuidedSheets error:", error);
     return res.status(500).json({
-      message: "Error fetching purchase orders",
+      message: "Error fetching field guided sheets",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };
 
 // ─────────────────────────────────────────────────────────────
-// DELETE
+// DELETE for FGS
 // ─────────────────────────────────────────────────────────────
-exports.deletePurchaseOrder = async (req, res) => {
+exports.deleteFieldGuidedSheet = async (req, res) => {
   const t = await sequelize.transaction();
 
   try {
-    const purchaseOrder = await PurchaseOrder.findByPk(req.params.id, {
+    const fieldGuidedSheet = await FieldGuidedSheet.findByPk(req.params.id, {
       transaction: t,
     });
-    if (!purchaseOrder) {
+    if (!fieldGuidedSheet) {
       await t.rollback();
-      return res.status(404).json({ message: "Purchase order not found" });
+      return res.status(404).json({ message: "Field guided sheet not found" });
     }
 
-    const vendor = await Vendor.findByPk(purchaseOrder.vendorId, {
+    const vendor = await Vendor.findByPk(fieldGuidedSheet.vendorId, {
       transaction: t,
     });
 
-    await purchaseOrder.destroy({ transaction: t });
+    await fieldGuidedSheet.destroy({ transaction: t });
 
     // Clean up MongoDB
-    await PoItem.deleteOne({ poId: purchaseOrder.id });
+    await FgsItem.deleteOne({ fgsId: fieldGuidedSheet.id });
 
     await t.commit();
 
     await sendNotification({
       userId: ADMIN_USER_ID,
-      title: `Purchase Order Deleted #${purchaseOrder.poNumber}`,
-      message: `PO #${purchaseOrder.poNumber} deleted (${vendor?.vendorName || "Vendor"}).`,
+      title: `Field Guided Sheet Deleted #${fieldGuidedSheet.fgsNumber}`,
+      message: `FGS #${fieldGuidedSheet.fgsNumber} deleted (${vendor?.vendorName || "Vendor"}).`,
     });
 
     return res
       .status(200)
-      .json({ message: "Purchase order deleted successfully" });
+      .json({ message: "Field guided sheet deleted successfully" });
   } catch (error) {
     await t.rollback();
     return res.status(500).json({
-      message: "Error deleting purchase order",
+      message: "Error deleting field guided sheet",
       error: error.message,
     });
   }
 };
 
 // ─────────────────────────────────────────────────────────────
-// CONFIRM (update stock from MongoDB items)
+// CONVERT FGS to PO (key feature)
+// Only if status is "approved"
+// Creates a new PO using FGS data
 // ─────────────────────────────────────────────────────────────
-exports.confirmPurchaseOrder = async (req, res) => {
+exports.convertFgsToPo = async (req, res) => {
   const t = await sequelize.transaction();
 
   try {
-    const purchaseOrder = await PurchaseOrder.findByPk(req.params.id, {
+    const fieldGuidedSheet = await FieldGuidedSheet.findByPk(req.params.id, {
+      include: [
+        { model: Vendor, as: "vendor" },
+      ],
       transaction: t,
     });
 
-    if (!purchaseOrder) {
+    if (!fieldGuidedSheet) {
       await t.rollback();
-      return res.status(404).json({ message: "Purchase order not found" });
+      return res.status(404).json({ message: "Field guided sheet not found" });
     }
 
-    if (purchaseOrder.status !== "pending") {
+    if (fieldGuidedSheet.status !== "approved") {
       await t.rollback();
-      return res.status(400).json({ message: "Purchase order is not pending" });
+      return res.status(400).json({ message: "FGS must be approved to convert" });
     }
 
-    // Get items from MongoDB
-    const items = await fetchPoItems(purchaseOrder.id);
-
-    for (const item of items) {
-      const product = await Product.findByPk(item.productId, {
-        transaction: t,
-      });
-      if (product) {
-        product.quantity = (product.quantity || 0) + item.quantity;
-        await product.save({ transaction: t });
-      }
+    const items = await fetchFgsItems(fieldGuidedSheet.id);
+    if (items.length === 0) {
+      await t.rollback();
+      return res.status(400).json({ message: "No items in FGS" });
     }
 
-    await purchaseOrder.update({ status: "delivered" }, { transaction: t });
+    // Prepare data for PO creation
+    const poData = {
+      vendorId: fieldGuidedSheet.vendorId,
+      items: items.map(item => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        mrp: item.mrp,
+        discount: item.discount,
+        discountType: item.discountType,
+        tax: item.tax,
+      })),
+      expectDeliveryDate: fieldGuidedSheet.expectDeliveryDate,
+      fgsId: fieldGuidedSheet.id,  // Link back
+    };
 
-    const vendor = await Vendor.findByPk(purchaseOrder.vendorId, {
-      transaction: t,
-    });
+    // Simulate req.body for createPurchaseOrder (or call internally)
+    const mockReq = { body: poData };
+    const mockRes = {
+      status: (code) => ({
+        json: (data) => data,
+      }),
+    };
+
+    const poResult = await createPurchaseOrder(mockReq, mockRes);
+
+    if (!poResult || !poResult.purchaseOrder) {
+      throw new Error("Failed to create PO from FGS");
+    }
+
+    // Update FGS status
+    await fieldGuidedSheet.update({ status: "converted" }, { transaction: t });
 
     await t.commit();
 
     await sendNotification({
       userId: ADMIN_USER_ID,
-      title: `Purchase Order Confirmed #${purchaseOrder.poNumber}`,
-      message: `PO #${purchaseOrder.poNumber} confirmed & marked delivered (${vendor?.vendorName || "Vendor"}).`,
+      title: `FGS Converted to PO #${fieldGuidedSheet.fgsNumber}`,
+      message: `FGS #${fieldGuidedSheet.fgsNumber} converted to PO #${poResult.purchaseOrder.poNumber} (${fieldGuidedSheet.vendor?.vendorName || "Vendor"}).`,
     });
 
     return res.status(200).json({
-      message: "Purchase order confirmed and stock updated",
-      purchaseOrder: {
-        ...purchaseOrder.toJSON(),
-        status: "delivered",
-        items,
-      },
+      message: "FGS converted to PO successfully",
+      purchaseOrder: poResult.purchaseOrder,
     });
   } catch (error) {
     await t.rollback();
+    console.error("Convert FGS to PO error:", error);
     return res.status(500).json({
-      message: "Error confirming purchase order",
+      message: "Error converting FGS to PO",
       error: error.message,
     });
   }
 };
 
 // ─────────────────────────────────────────────────────────────
-// GET BY VENDOR
+// UPDATE STATUS ONLY for FGS
 // ─────────────────────────────────────────────────────────────
-exports.getPurchaseOrdersByVendor = async (req, res) => {
-  try {
-    const { vendorId } = req.params;
-
-    const purchaseOrders = await PurchaseOrder.findAll({
-      where: { vendorId },
-      include: [
-        { model: Vendor, as: "vendor", attributes: ["id", "vendorName"] },
-      ],
-      order: [["createdAt", "DESC"]],
-    });
-
-    const poIds = purchaseOrders.map((po) => po.id);
-    const itemDocs = await PoItem.find({ poId: { $in: poIds } }).lean();
-
-    const itemsMap = new Map(itemDocs.map((d) => [d.poId, d.items || []]));
-
-    const result = purchaseOrders.map((po) => ({
-      ...po.toJSON(),
-      items: itemsMap.get(po.id) || [],
-    }));
-
-    return res.status(200).json(result);
-  } catch (error) {
-    return res.status(500).json({
-      message: "Error fetching purchase orders by vendor",
-      error: error.message,
-    });
-  }
-};
-
-// ─────────────────────────────────────────────────────────────
-// UPDATE STATUS ONLY
-// ─────────────────────────────────────────────────────────────
-exports.updatePurchaseOrderStatus = async (req, res) => {
+exports.updateFieldGuidedSheetStatus = async (req, res) => {
   const t = await sequelize.transaction();
 
   try {
     const { id } = req.params;
     const { status } = req.body;
 
-    const validStatuses = ["pending", "confirmed", "delivered", "cancelled"];
+    const validStatuses = ["draft", "negotiating", "approved", "converted", "cancelled"];
     if (!status || !validStatuses.includes(status)) {
       await t.rollback();
       return res.status(400).json({
@@ -569,36 +563,28 @@ exports.updatePurchaseOrderStatus = async (req, res) => {
       });
     }
 
-    const purchaseOrder = await PurchaseOrder.findByPk(id, { transaction: t });
-    if (!purchaseOrder) {
+    const fieldGuidedSheet = await FieldGuidedSheet.findByPk(id, { transaction: t });
+    if (!fieldGuidedSheet) {
       await t.rollback();
-      return res.status(404).json({ message: "Purchase order not found" });
+      return res.status(404).json({ message: "Field guided sheet not found" });
     }
 
-    if (purchaseOrder.status === status) {
+    if (fieldGuidedSheet.status === status) {
       await t.rollback();
       return res
         .status(400)
         .json({ message: "Status already set to this value" });
     }
 
-    if (status === "delivered" && purchaseOrder.status !== "delivered") {
-      const items = await fetchPoItems(purchaseOrder.id);
-      for (const item of items) {
-        const product = await Product.findByPk(item.productId, {
-          transaction: t,
-        });
-        if (product) {
-          product.quantity = (product.quantity || 0) + item.quantity;
-          await product.save({ transaction: t });
-        }
-      }
+    if (status === "converted") {
+      await t.rollback();
+      return res.status(400).json({ message: "Use convert endpoint for conversion" });
     }
 
-    const oldStatus = purchaseOrder.status;
-    await purchaseOrder.update({ status }, { transaction: t });
+    const oldStatus = fieldGuidedSheet.status;
+    await fieldGuidedSheet.update({ status }, { transaction: t });
 
-    const vendor = await Vendor.findByPk(purchaseOrder.vendorId, {
+    const vendor = await Vendor.findByPk(fieldGuidedSheet.vendorId, {
       transaction: t,
     });
 
@@ -606,16 +592,16 @@ exports.updatePurchaseOrderStatus = async (req, res) => {
 
     await sendNotification({
       userId: ADMIN_USER_ID,
-      title: `PO Status Updated #${purchaseOrder.poNumber}`,
-      message: `PO #${purchaseOrder.poNumber} status changed from ${oldStatus} to ${status} (${vendor?.vendorName || "Vendor"}).`,
+      title: `FGS Status Updated #${fieldGuidedSheet.fgsNumber}`,
+      message: `FGS #${fieldGuidedSheet.fgsNumber} status changed from ${oldStatus} to ${status} (${vendor?.vendorName || "Vendor"}).`,
     });
 
     return res.status(200).json({
       message: `Status updated to '${status}'`,
-      purchaseOrder: {
-        ...purchaseOrder.toJSON(),
+      fieldGuidedSheet: {
+        ...fieldGuidedSheet.toJSON(),
         status,
-        items: await fetchPoItems(purchaseOrder.id),
+        items: await fetchFgsItems(fieldGuidedSheet.id),
       },
     });
   } catch (error) {
@@ -626,4 +612,3 @@ exports.updatePurchaseOrderStatus = async (req, res) => {
     });
   }
 };
-

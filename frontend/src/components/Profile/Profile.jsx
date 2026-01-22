@@ -46,7 +46,6 @@ const Profile = () => {
   const user = profile?.user;
   const userId = user?.userId;
 
-  // Skip all user-specific queries until we have userId
   const skip = !userId;
 
   const { data: quotationsData, isLoading: quotationsLoading } =
@@ -115,20 +114,20 @@ const Profile = () => {
         <Row gutter={[16, 16]}>
           {myQuotations.slice(0, 6).map((q) => (
             <Col xs={24} sm={12} key={q.quotationId}>
-              <Card hoverable className="rounded-xl">
+              <Card hoverable className="rounded-xl border border-gray-200">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h4 className="font-medium text-base">
+                    <h4 className="font-medium text-base text-gray-900">
                       {q.document_title}
                     </h4>
                     <p className="text-gray-500 text-sm">
                       Ref: {q.reference_number}
                     </p>
-                    <p className="text-sm mt-2">
+                    <p className="text-gray-600 text-sm mt-2">
                       Due: {formatDate(q.due_date)}
                     </p>
                   </div>
-                  <Tag color="blue" className="text-lg font-bold">
+                  <Tag color="default" className="text-base font-medium">
                     ₹{Number(q.finalAmount).toLocaleString()}
                   </Tag>
                 </div>
@@ -150,10 +149,13 @@ const Profile = () => {
             {
               title: "Order #",
               dataIndex: "orderNo",
-              render: (text) => <strong>{text}</strong>,
+              render: (text) => <strong className="text-gray-900">{text}</strong>,
             },
             { title: "Customer", render: (r) => r.customers?.name || "—" },
-            { title: "Status", render: (r) => <Tag>{r.status}</Tag> },
+            {
+              title: "Status",
+              render: (r) => <Tag color="default">{r.status}</Tag>,
+            },
             {
               title: "Total",
               render: (r) => `₹${Number(r.finalAmount || 0).toFixed(2)}`,
@@ -182,7 +184,7 @@ const Profile = () => {
             {
               title: "Status",
               dataIndex: "status",
-              render: (t) => <Tag>{t}</Tag>,
+              render: (t) => <Tag color="default">{t}</Tag>,
             },
             {
               title: "Amount",
@@ -201,26 +203,26 @@ const Profile = () => {
       <div className="content">
         <div
           style={{
-            background: "#f0f2f5",
+            background: "#f5f5f5", // gray-2
             minHeight: "100vh",
             padding: "24px 16px",
           }}
         >
           <div style={{ maxWidth: 1400, margin: "0 auto" }}>
             {/* Header Hero Section */}
-            <Card className="mb-6 shadow-lg rounded-2xl overflow-hidden border-0">
+            <Card className="mb-6 shadow rounded-2xl border-0 bg-white">
               <div className="grid md:grid-cols-4 gap-6 items-center">
                 <div className="text-center md:text-left">
                   <Avatar
                     size={120}
                     src={user?.avatarUrl || user?.photo_thumbnail}
                     icon={<UserOutlined />}
-                    className="shadow-xl border-4 border-white"
+                    className="shadow border-4 border-white"
                   />
                 </div>
 
                 <div className="md:col-span-2">
-                  <h2 className="text-3xl font-bold text-gray-800">
+                  <h2 className="text-3xl font-bold text-gray-900">
                     {user?.name}
                   </h2>
                   <p className="text-lg text-gray-600">
@@ -230,8 +232,8 @@ const Profile = () => {
                     {user?.roles?.map((role) => (
                       <Tag
                         key={role}
-                        color="purple"
-                        className="text-sm font-medium py-1 px-3"
+                        color="default"
+                        className="text-sm font-medium py-1 px-3 border-gray-300"
                       >
                         {role.replace(/_/g, " ")}
                       </Tag>
@@ -243,7 +245,7 @@ const Profile = () => {
                   <Button
                     type="primary"
                     size="large"
-                    style={{ background: "#E31E24", color: "#fff" }}
+                    style={{ background: "#E31E24", borderColor: "#E31E24" }}
                     icon={<EditOutlined />}
                     onClick={() => navigate(`/u/${userId}/edit`)}
                     className="rounded-xl font-medium"
@@ -253,14 +255,15 @@ const Profile = () => {
                 </div>
               </div>
 
-              <Divider className="my-6" />
+              <Divider className="my-6 border-gray-200" />
 
               <Row gutter={[16, 16]}>
                 <Col xs={12} md={6}>
                   <Statistic
                     title="Total Quotations"
-                    value={myQuotations.length} // This will now work correctly
-                    prefix={<FileTextOutlined />}
+                    value={myQuotations.length}
+                    prefix={<FileTextOutlined className="text-gray-500" />}
+                    valueStyle={{ color: "#262626" }}
                   />
                 </Col>
                 <Col xs={12} md={6}>
@@ -269,23 +272,24 @@ const Profile = () => {
                     value={
                       myOrders.filter((o) => o.status !== "DELIVERED").length
                     }
-                    prefix={<ShoppingCartOutlined />}
-                    valueStyle={{ color: "#52c41a" }}
+                    prefix={<ShoppingCartOutlined className="text-gray-500" />}
+                    valueStyle={{ color: "#262626" }}
                   />
                 </Col>
                 <Col xs={12} md={6}>
                   <Statistic
                     title="Purchase Orders"
                     value={myPOs.length}
-                    prefix={<DollarCircleOutlined />}
-                    valueStyle={{ color: "#fa8c16" }}
+                    prefix={<DollarCircleOutlined className="text-gray-500" />}
+                    valueStyle={{ color: "#262626" }}
                   />
                 </Col>
                 <Col xs={12} md={6}>
                   <Statistic
                     title="Team"
                     value={user?.team || "Individual"}
-                    prefix={<TeamOutlined />}
+                    prefix={<TeamOutlined className="text-gray-500" />}
+                    valueStyle={{ color: "#262626" }}
                   />
                 </Col>
               </Row>
@@ -295,34 +299,34 @@ const Profile = () => {
               <Col xs={24} lg={8}>
                 <Card
                   title="Personal Information"
-                  className="shadow rounded-xl"
+                  className="shadow rounded-xl border border-gray-200 bg-white"
                 >
                   <Space direction="vertical" size="large" className="w-full">
                     <div>
-                      <div className="text-gray-500 text-sm">Email</div>
-                      <div className="font-medium flex items-center gap-2">
-                        <MailOutlined className="text-blue-500" />
+                      <div className="text-gray-600 text-sm">Email</div>
+                      <div className="font-medium flex items-center gap-2 text-gray-900">
+                        <MailOutlined className="text-gray-500" />
                         <a href={`mailto:${user?.email}`}>{user?.email}</a>
                       </div>
                     </div>
                     <div>
-                      <div className="text-gray-500 text-sm">Phone</div>
-                      <div className="font-medium flex items-center gap-2">
-                        <PhoneOutlined className="text-green-500" />
+                      <div className="text-gray-600 text-sm">Phone</div>
+                      <div className="font-medium flex items-center gap-2 text-gray-900">
+                        <PhoneOutlined className="text-gray-500" />
                         {user?.mobileNumber || "Not added"}
                       </div>
                     </div>
                     <div>
-                      <div className="text-gray-500 text-sm">Birthday</div>
-                      <div className="font-medium flex items-center gap-2">
-                        <CalendarOutlined className="text-purple-500" />
+                      <div className="text-gray-600 text-sm">Birthday</div>
+                      <div className="font-medium flex items-center gap-2 text-gray-900">
+                        <CalendarOutlined className="text-gray-500" />
                         {formatDate(user?.dateOfBirth)}
                       </div>
                     </div>
                     <div>
-                      <div className="text-gray-500 text-sm">Joined</div>
-                      <div className="font-medium flex items-center gap-2">
-                        <ClockCircleOutlined className="text-orange-500" />
+                      <div className="text-gray-600 text-sm">Joined</div>
+                      <div className="font-medium flex items-center gap-2 text-gray-900">
+                        <ClockCircleOutlined className="text-gray-500" />
                         {formatDate(user?.createdAt)}
                       </div>
                     </div>
@@ -330,13 +334,14 @@ const Profile = () => {
 
                   <Card
                     title="Primary Address"
-                    className="shadow rounded-xl mt-6"
+                    className="shadow rounded-xl mt-6 border border-gray-200 bg-white"
                     loading={addressesLoading}
                     extra={
                       <Button
                         type="text"
                         icon={<PlusOutlined />}
                         onClick={() => setAddressModalOpen(true)}
+                        className="text-gray-700 hover:text-[#E31E24]"
                       >
                         {myAddresses.length > 0 ? "Manage" : "Add"}
                       </Button>
@@ -344,9 +349,9 @@ const Profile = () => {
                   >
                     {primaryAddress ? (
                       <div className="flex items-start gap-3">
-                        <EnvironmentOutlined className="text-red-500 text-xl mt-1" />
+                        <EnvironmentOutlined className="text-gray-500 text-xl mt-1" />
                         <div>
-                          <div className="font-medium">
+                          <div className="font-medium text-gray-900">
                             {primaryAddress.street}
                           </div>
                           <div className="text-gray-600">
@@ -357,7 +362,7 @@ const Profile = () => {
                             {primaryAddress.country}
                           </div>
                           {primaryAddress.status === "PRIMARY" && (
-                            <Tag color="green" className="mt-2">
+                            <Tag color="default" className="mt-2 border-gray-300">
                               Primary
                             </Tag>
                           )}
@@ -374,7 +379,7 @@ const Profile = () => {
               </Col>
 
               <Col xs={24} lg={16}>
-                <Card className="shadow rounded-xl">
+                <Card className="shadow rounded-xl border border-gray-200 bg-white">
                   <Tabs
                     items={tabItems}
                     size="large"

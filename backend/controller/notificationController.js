@@ -9,16 +9,25 @@ const initSocket = (io) => {
 
 // Send notification to a specific user
 const sendNotification = async ({ userId, title, message }) => {
-  // Verify user exists in Sequelize
-  const user = await User.findOne({ where: { userId } });
-  if (!user) {
-    throw new Error("User not found");
+  let user = null;
+  try {
+    user = await User.findOne({
+      where: { userId },
+      attributes: ["userId", "username"],
+    });
+  } catch (err) {
+    console.error("Failed to lookup user for notification", { userId, err });
   }
 
-  // Save notification in MongoDB
+  // If user not found → log and skip (do NOT throw)
+  if (!user) {
+    console.warn(`Skipping notification to missing user: ${userId}`);
+    return null; // or return some dummy object — but don't throw
+  }
+
+  // Proceed only if user exists
   const notification = await Notification.create({ userId, title, message });
 
-  // Emit notification in real-time via Socket.IO
   if (ioInstance) {
     ioInstance.to(userId).emit("newNotification", {
       ...notification.toObject(),

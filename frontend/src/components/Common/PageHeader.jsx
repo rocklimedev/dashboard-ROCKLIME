@@ -92,12 +92,15 @@ const PageHeader = ({
             <Tooltip
               title={viewToggle.viewMode === "card" ? "List View" : "Card View"}
             >
-              <Switch
-                checkedChildren={<AppstoreOutlined />}
-                unCheckedChildren={<UnorderedListOutlined />}
-                checked={viewToggle.viewMode === "card"}
-                onChange={viewToggle.onViewToggle}
-              />
+          <Switch
+  checkedChildren={<AppstoreOutlined />}
+  unCheckedChildren={<UnorderedListOutlined />}
+  checked={viewToggle.viewMode === "card"}
+  onChange={viewToggle.onViewToggle}
+  style={{
+    backgroundColor: viewToggle.viewMode === "card" ? '#333333' : undefined, 
+  }}
+/>
             </Tooltip>
           </li>
         )}

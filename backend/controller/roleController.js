@@ -215,7 +215,7 @@ const getRoleById = async (req, res) => {
       where: { roleId },
       include: {
         model: Permission,
-        as: "permission",
+        as: "permissions",
       },
     });
 
@@ -225,6 +225,7 @@ const getRoleById = async (req, res) => {
 
     res.status(200).json(role);
   } catch (error) {
+    console.log("Error retrieving role:", error);
     res.status(500).json({ message: "Error retrieving role" });
   }
 };

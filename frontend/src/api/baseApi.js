@@ -34,7 +34,7 @@ export const baseApi = createApi({
     "Invoices",
     "Keyword",
     "Logs",
-    "Notifications",
+    "Notifications", 'FGS', 'FGSList',
     "Orders",
     "Comment",
     "ParentCategory",

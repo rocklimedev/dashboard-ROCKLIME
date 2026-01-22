@@ -56,7 +56,7 @@ import AddAddress from "../Address/AddAddressModal";
 import "./orderpage.css";
 import { SendOutlined } from "@ant-design/icons";
 import { Helmet } from "react-helmet";
-
+import CommentRow from "../Common/CommentRow";
 // PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`;
 
@@ -65,81 +65,6 @@ const { Text, Title } = Typography;
 // ──────────────────────────────────────────────
 // Comment Row Component
 // ──────────────────────────────────────────────
-const CommentRow = ({ comment, onDelete, currentUserId }) => {
-  const isCurrentUser = comment.userId === currentUserId;
-  const userInitial = comment.user?.name?.[0]?.toUpperCase() || "U";
-
-  return (
-    <div
-      className={`comment-row ${isCurrentUser ? "comment-row--own" : ""}`}
-      style={{
-        display: "flex",
-        marginBottom: 12,
-        justifyContent: isCurrentUser ? "flex-end" : "flex-start",
-        padding: "0 8px",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "flex-start",
-          maxWidth: "80%",
-          flexDirection: isCurrentUser ? "row-reverse" : "row",
-        }}
-      >
-        <div className="avatar">{userInitial}</div>
-        <div
-          className="comment-bubble"
-          style={{
-            background: isCurrentUser ? "#1890ff" : "#f0f2f5",
-            color: isCurrentUser ? "#fff" : "#000",
-            borderRadius: 12,
-            padding: "8px 12px",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 4,
-            }}
-          >
-            <Text strong>{comment.user?.name || "Unknown User"}</Text>
-            {isCurrentUser && (
-              <Button
-                type="link"
-                danger
-                style={{
-                  color: isCurrentUser ? "#fff" : "#ff4d4f",
-                  padding: 0,
-                  fontSize: "0.85rem",
-                }}
-                onClick={() => onDelete(comment._id)}
-              >
-                Delete
-              </Button>
-            )}
-          </div>
-          <Text>{comment.comment}</Text>
-          <div>
-            <Text
-              type={isCurrentUser ? "secondary" : "default"}
-              style={{ fontSize: "0.75rem", display: "block", marginTop: 4 }}
-            >
-              {new Date(comment.createdAt).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}{" "}
-              • {new Date(comment.createdAt).toLocaleDateString()}
-            </Text>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 // ──────────────────────────────────────────────
 // Main OrderPage Component
@@ -309,56 +234,61 @@ const OrderPage = () => {
   const { productsData, loading: productsLoading } =
     useProductsData(productInputs);
 
-  const mergedProducts = useMemo(() => {
-    return productInputs.map((op, index) => {
-      const originalProduct = products[index]; // ← This is the raw item from quotation
-      const pd = productsData.find((p) => p.productId === op.productId) || {};
+const mergedProducts = useMemo(() => {
+  return productInputs.map((op, index) => {
+    const originalProduct = products[index];           // ← this is item from quotation
+    const pd = productsData.find((p) => p.productId === op.productId) || {};
 
-      // PRIORITIZE quotation's imageUrl (it's always there and correct)
-      let imageUrl =
-        originalProduct.imageUrl || "https://via.placeholder.com/60";
+    // ── Image priority (unchanged) ──
+    let imageUrl = originalProduct.imageUrl || "https://via.placeholder.com/60";
+    if (!originalProduct.imageUrl && pd.images) {
+      try {
+        const imgs = JSON.parse(pd.images);
+        imageUrl = Array.isArray(imgs) && imgs.length > 0 ? imgs[0] : imageUrl;
+      } catch {}
+    }
 
-      // Fallback to catalog images only if quotation has none
-      if (!originalProduct.imageUrl && pd.images) {
-        try {
-          const imgs = JSON.parse(pd.images);
-          imageUrl =
-            Array.isArray(imgs) && imgs.length > 0 ? imgs[0] : imageUrl;
-        } catch {}
-      }
+// Use companyCode from quotation first — highest priority
+let code = originalProduct.companyCode ?? '';
 
-      let brandName = pd.brandName || "N/A";
-      if (pd.metaDetails) {
-        const brandMeta = pd.metaDetails.find(
-          (m) => m.title === "brandName" || m.title === "brand",
-        );
-        brandName = brandMeta?.value || brandName;
-      }
-      if (/^[0-9a-fA-F-]{36}$/.test(brandName)) brandName = "N/A";
+// Coerce to string and trim safely
+code = String(code).trim();
 
-      const productCode =
-        pd.product_code ||
-        pd.meta?.d11da9f9_3f2e_4536_8236_9671200cca4a ||
-        "N/A";
+if (!code) {
+  // Fallback chain — also coerce each to string + trim
+  code =
+    String(pd.product_code ?? '').trim() ||
+    String(pd.meta?.d11da9f9_3f2e_4536_8236_9671200cca4a ?? '').trim() ||
+    String(originalProduct.sku ?? '').trim() ||
+    "N/A";
+}
+    let brandName = pd.brandName || "N/A";
+    if (pd.metaDetails) {
+      const brandMeta = pd.metaDetails.find(
+        (m) => m.title === "brandName" || m.title === "brand"
+      );
+      brandName = brandMeta?.value || brandName;
+    }
+    if (/^[0-9a-fA-F-]{36}$/.test(brandName)) brandName = "N/A";
 
-      const sellingPrice =
-        pd.metaDetails?.find((m) => m.title === "Selling Price")?.value ||
-        op.price ||
-        0;
+    const sellingPrice =
+      pd.metaDetails?.find((m) => m.title === "Selling Price")?.value ||
+      op.price ||
+      0;
 
-      return {
-        productId: op.productId,
-        price: parseFloat(sellingPrice),
-        total: parseFloat(op.total) || sellingPrice * op.quantity,
-        discount: parseFloat(op.discount) || 0,
-        quantity: op.quantity || 1,
-        name: pd.name || originalProduct.name || "Unnamed Product", // ← also prioritize quotation name
-        brand: brandName,
-        sku: productCode,
-        image: imageUrl, // ← now uses quotation imageUrl first
-      };
-    });
-  }, [productsData, productInputs, products]); // ← add 'products' to deps
+    return {
+      productId: op.productId,
+      price: parseFloat(sellingPrice),
+      total: parseFloat(op.total) || sellingPrice * op.quantity,
+      discount: parseFloat(op.discount) || 0,
+      quantity: op.quantity || 1,
+      name: pd.name || originalProduct.name || "Unnamed Product",
+      brand: brandName,
+      sku: code,                           // ← now contains companyCode (or fallback)
+      image: imageUrl,
+    };
+  });
+}, [productsData, productInputs, products]);
   const comments = useMemo(() => commentData?.comments || [], [commentData]);
   const totalComments = commentData?.totalCount || 0;
 
@@ -458,22 +388,43 @@ const OrderPage = () => {
     }
   };
 
-  const handleAddComment = async () => {
-    if (!newComment.trim()) return message.error("Comment cannot be empty");
-    if (!user.userId) return navigate("/login");
+const handleAddComment = async () => {
+  if (!newComment.trim()) {
+    message.error("Comment cannot be empty");
+    return;
+  }
 
-    try {
-      await addComment({
-        resourceId: id,
-        resourceType: "Order",
-        userId: String(user.userId || "").trim(),
-        comment: newComment,
-      }).unwrap();
-      setNewComment("");
-    } catch (err) {
-      message.error(err?.data?.message || "Failed to add comment");
-    }
-  };
+  if (!user.userId) {
+    navigate("/login");
+    return;
+  }
+
+  try {
+ 
+
+    const result = await addComment({
+      resourceId: id,
+      resourceType: "Order",
+      userId: String(user.userId || "").trim(),
+      comment: newComment,
+    }).unwrap();
+
+
+    setNewComment("");
+    message.success("Comment added");           // ← add this!
+  } catch (err) {
+
+
+    // More precise message
+    const serverMessage =
+      err?.data?.message ||
+      err?.data?.error ||
+      err?.data?.msg ||
+      "Failed to add comment";
+
+    message.error(serverMessage);
+  }
+};
   const handleDeleteComment = async (commentId) => {
     if (!window.confirm("Delete comment?")) return;
     try {

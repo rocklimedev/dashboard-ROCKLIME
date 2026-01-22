@@ -30,6 +30,7 @@ const BrandParentCategoryBrand = require("./brandParentCategoryBrand")(
   sequelize,
   DataTypes,
 );
+const FieldGuidedSheet = require("./fgs")(sequelize, DataTypes);
 const SiteMap = require("./siteMap")(sequelize, DataTypes);
 const InventoryHistory = require("./history")(sequelize, DataTypes);
 const Customer = require("./customers")(sequelize, DataTypes);
@@ -46,6 +47,7 @@ const PurchaseOrder = require("./purchaseorder")(sequelize, DataTypes);
   User,
   Role,
   Permission,
+  FieldGuidedSheet,
   RolePermission,
   Address,
   Company,
@@ -81,6 +83,7 @@ const PurchaseOrder = require("./purchaseorder")(sequelize, DataTypes);
       Address,
       Team,
       TeamMember,
+       FieldGuidedSheet,
       ProductKeyword,
       Product,
       Company,
@@ -115,6 +118,7 @@ module.exports = {
   Permission,
   RolePermission,
   Address,
+   FieldGuidedSheet,
   Team,
   TeamMember,
   ProductKeyword,
