@@ -32,7 +32,7 @@ exports.login = async (req, res) => {
         iat: now,
       },
       process.env.JWT_SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: "7d" },
     );
 
     const refreshToken = jwt.sign(
@@ -43,7 +43,7 @@ exports.login = async (req, res) => {
         roleId: user.roleId,
       },
       process.env.REFRESH_SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: "7d" },
     );
 
     res.cookie("refreshToken", refreshToken, {
@@ -112,7 +112,7 @@ exports.register = async (req, res, next) => {
       process.env.JWT_SECRET,
       {
         expiresIn: "1d",
-      }
+      },
     );
 
     await VerificationToken.create({
@@ -126,7 +126,7 @@ exports.register = async (req, res, next) => {
     // Send verification email
     const emailContent = emails.accountVerificationEmail(
       req.headers.host,
-      verificationToken
+      verificationToken,
     );
     // await emails.sendMail(
     //   newUser.email,
@@ -202,7 +202,7 @@ exports.verifyAccount = async (req, res, next) => {
       user.email,
       emailContent.subject,
       emailContent.text,
-      emailContent.html
+      emailContent.html,
     );
 
     res.status(200).json({
@@ -234,7 +234,7 @@ exports.forgotPassword = async (req, res, next) => {
       process.env.JWT_SECRET,
       {
         expiresIn: "15m",
-      }
+      },
     );
 
     await VerificationToken.create({
@@ -256,7 +256,7 @@ exports.forgotPassword = async (req, res, next) => {
         user.email,
         emailContent.subject,
         emailContent.text,
-        emailContent.html
+        emailContent.html,
       )
       .catch(async (mailError) => {
         if (
@@ -266,14 +266,14 @@ exports.forgotPassword = async (req, res, next) => {
           // Optional: mark user as having invalid email
           await User.update(
             { emailVerified: false, hasBounced: true },
-            { where: { userId: user.userId } }
+            { where: { userId: user.userId } },
           );
 
           // Or even delete the stale user if you're aggressive
           // await User.destroy({ where: { userId: user.userId } });
 
           console.warn(
-            `Hard bounce for ${user.email} - removing/invalidating user`
+            `Hard bounce for ${user.email} - removing/invalidating user`,
           );
         }
         throw mailError; // still fail the request or handle gracefully
@@ -356,7 +356,7 @@ exports.resetPassword = async (req, res, next) => {
       user.email,
       emailContent.subject,
       emailContent.text,
-      emailContent.html
+      emailContent.html,
     );
 
     res.status(200).json({ message: "Password changed successfully" });
@@ -435,7 +435,7 @@ exports.refreshToken = async (req, res) => {
       const newAccessToken = jwt.sign(
         { userId: user.userId, roles: user.roles, roleId: user.roleId },
         process.env.JWT_SECRET,
-        { expiresIn: "1h" }
+        { expiresIn: "1h" },
       );
 
       res.status(200).json({ accessToken: newAccessToken });
@@ -478,7 +478,7 @@ exports.resendVerificationEmail = async (req, res, next) => {
     const verificationToken = jwt.sign(
       { userId: user.userId },
       process.env.JWT_SECRET,
-      { expiresIn: "1d" }
+      { expiresIn: "1d" },
     );
 
     // Save the new verification token
@@ -493,14 +493,14 @@ exports.resendVerificationEmail = async (req, res, next) => {
     // Send the verification email
     const emailContent = emails.accountVerificationEmail(
       req.headers.host,
-      verificationToken
+      verificationToken,
     );
 
     await emails.sendMail(
       user.email,
       emailContent.subject,
       emailContent.text,
-      emailContent.html
+      emailContent.html,
     );
 
     res.status(200).json({ message: "Verification email sent successfully" });
@@ -574,15 +574,6 @@ exports.changePassword = async (req, res, next) => {
     // Update user's password
     user.password = hashedNewPassword;
     await user.save();
-
-    // Optional: Send confirmation email
-    const emailContent = emails.confirmChangePasswordEmail(user.name);
-    await emails.sendMail(
-      user.email,
-      emailContent.subject,
-      emailContent.text,
-      emailContent.html
-    );
 
     res.status(200).json({ message: "Password changed successfully" });
   } catch (err) {
@@ -701,5 +692,49 @@ exports.validateToken = async (req, res) => {
     return res.status(200).json({ message: "Token is valid" });
   } catch (err) {
     return res.status(500).json({ message: "Server error" });
+  }
+};
+// authController.js (or userController.js)
+
+exports.deactivateAccount = async (req, res, next) => {
+  try {
+    // Get user from token (set by auth middleware)
+    const { userId } = req.user; // ← assuming auth middleware sets req.user
+
+    if (!userId) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.status === "inactive") {
+      return res
+        .status(400)
+        .json({ message: "Account is already deactivated" });
+    }
+
+    // Optional: Prevent deactivation for super admin
+    if (user.roles.includes(ROLES.SuperAdmin)) {
+      return res
+        .status(403)
+        .json({ message: "SuperAdmin account cannot be deactivated" });
+    }
+
+    // Soft deactivate
+    user.status = "inactive";
+    await user.save();
+
+    // Optional: You could also invalidate all refresh tokens here
+    // e.g., delete from Redis / DB if you store them
+
+    res.status(200).json({
+      message:
+        "Account deactivated successfully. You can reactivate by logging in again.",
+    });
+  } catch (err) {
+    next(err);
   }
 };

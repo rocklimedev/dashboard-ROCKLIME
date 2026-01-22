@@ -24,6 +24,7 @@ import {
 } from "../../api/userApi";
 import {
   useChangePasswordMutation,
+  useDeactivateAccountMutation,
   useResendVerificationEmailMutation,
 } from "../../api/authApi";
 import { logout } from "../../api/userSlice";
@@ -38,10 +39,11 @@ const GeneralSettings = () => {
   const dispatch = useDispatch();
 
   const [changePassword] = useChangePasswordMutation();
-  const [deactivateAccount] = useInactiveUserMutation();
+
   const [deleteUser] = useDeleteUserMutation();
   const [resendVerificationEmail] = useResendVerificationEmailMutation();
-
+  const [deactivateAccount, { isLoading: isDeactivating }] =
+    useDeactivateAccountMutation();
   const {
     data: profile,
     isLoading: isProfileLoading,
@@ -56,15 +58,33 @@ const GeneralSettings = () => {
 
   // Handlers
   const handlePasswordChange = async (values) => {
+    // Log BEFORE calling the API — so we see it even on failure
+    console.log("→ Sending password change payload:", {
+      password: values.currentPassword,
+      newPassword: values.newPassword,
+    });
+
+    // Optional: also log the form values object itself
+    console.log("Form values received:", values);
+
     try {
       await changePassword({
         password: values.currentPassword,
         newPassword: values.newPassword,
       }).unwrap();
+
       message.success("Password changed successfully!");
       passwordForm.resetFields();
       setShowPasswordModal(false);
     } catch (error) {
+      // Log the full error details — very helpful
+      console.error("Change password failed:", {
+        status: error?.status,
+        data: error?.data,
+        message: error?.data?.message,
+        originalError: error,
+      });
+
       message.error(error?.data?.message || "Failed to change password");
     }
   };
@@ -91,14 +111,21 @@ const GeneralSettings = () => {
 
   const handleDeactivateAccount = async () => {
     try {
-      await deactivateAccount().unwrap();
+      await deactivateAccount().unwrap(); // no body needed
+
       message.success(
-        "Account deactivated. You can reactivate it by logging in again.",
+        "Account deactivated successfully. You can reactivate by logging in again.",
       );
+
+      // Log out the user
       dispatch(logout());
       navigate("/login");
     } catch (error) {
-      message.error(error?.data?.message || "Failed to deactivate account");
+      console.error("Deactivation failed:", error);
+      message.error(
+        error?.data?.message ||
+          "Failed to deactivate account. Please try again.",
+      );
     }
   };
 

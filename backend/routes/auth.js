@@ -12,6 +12,7 @@ const {
   changePassword,
   getAllPermissionsOfLoggedInUser,
   validateToken,
+  deactivateAccount,
 } = require("../controller/authController");
 const checkPermission = require("../middleware/permission");
 const { auth } = require("../middleware/auth"); // Authentication Middleware
@@ -24,17 +25,17 @@ router.get("/verify-account/:token", verifyAccount); // <-- token comes as param
 router.post(
   "/register",
   //checkPermission("write", "register", "auth", "/auth/register"),
-  register
+  register,
 );
 router.post(
   "/login",
   //checkPermission("write", "login", "auth", "/auth/login"),
-  login
+  login,
 );
 router.post(
   "/logout",
   //checkPermission("write", "logout", "auth", "/auth/logout"),
-  logout
+  logout,
 );
 router.post(
   "/forgot-password",
@@ -44,22 +45,23 @@ router.post(
   //   "forgot-password",
   //   "/auth/forgot-password"
   // ),
-  forgotPassword
+  forgotPassword,
 );
 router.post(
   "/reset-password",
   // checkPermission("write", "reset-password", "auth", "/auth/reset-password"),
-  resetPassword
+  resetPassword,
 );
-router.post("/change-password", changePassword);
+router.post("/change-password", auth, changePassword);
 router.post(
   "/refresh-token",
   // checkPermission("write", "refresh-token", "auth", "/auth/refresh-token"),
-  refreshToken
+  refreshToken,
 );
 router.post("/resend-verification", resendVerificationEmail); // New endpoint
 
 router.get("/me/permissions", auth, getAllPermissionsOfLoggedInUser);
-
+// POST /auth/deactivate-account  (or /users/deactivate)
+router.post("/deactivate-account", auth, deactivateAccount);
 router.get("/validate-token", validateToken);
 module.exports = router;
