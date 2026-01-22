@@ -21,6 +21,15 @@ export const authApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: (result, error) => (result ? ["Auth", "Users"] : []),
     }),
+    // api/userApi.js  (or authApi.js)
+
+    deactivateAccount: builder.mutation({
+      query: () => ({
+        url: "/auth/deactivate-account", // or "/users/deactivate" depending on your route
+        method: "POST",
+      }),
+      invalidatesTags: ["Auth", "Users", "Profile"], // force profile refetch
+    }),
     logout: builder.mutation({
       query: () => ({
         url: "/auth/logout",
@@ -119,6 +128,7 @@ export const {
   useValidateTokenQuery,
   useLogoutMutation,
   useForgotPasswordMutation,
+  useDeactivateAccountMutation,
   useResetPasswordMutation,
   useRefreshTokenMutation,
   useVerifyEmailMutation,

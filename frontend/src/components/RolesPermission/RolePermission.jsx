@@ -2,8 +2,11 @@ import React, { useState, useMemo } from "react";
 import { useGetRolesQuery, useDeleteRoleMutation } from "../../api/rolesApi";
 import { useGetAllPermissionsQuery } from "../../api/permissionApi";
 import { useGetAllUsersQuery } from "../../api/userApi";
-import { SearchOutlined, DeleteOutlined } from "@ant-design/icons";
-import { SafetyOutlined } from "@ant-design/icons";
+import {
+  SearchOutlined,
+  DeleteOutlined,
+  SafetyOutlined,
+} from "@ant-design/icons";
 import Avatar from "react-avatar";
 import { Link } from "react-router-dom";
 import AddRoleModal from "./AddRoleModal";
@@ -15,10 +18,8 @@ import PageHeader from "../Common/PageHeader";
 const RolePermission = () => {
   /* ==================== QUERIES ==================== */
   const { data: roles, isError: isRolesError } = useGetRolesQuery();
-
   const { data: permissionsData, isError: isPermissionsError } =
     useGetAllPermissionsQuery();
-
   const { data: users, isError: isUsersError } = useGetAllUsersQuery();
 
   const [deleteRole, { isLoading: isDeleting }] = useDeleteRoleMutation();
@@ -41,83 +42,72 @@ const RolePermission = () => {
     : [];
   const usersList = Array.isArray(users?.users) ? users?.users : [];
 
-  // User count per role
   const roleUserCounts = useMemo(() => {
     const counts = {};
     rolesList.forEach((role) => {
       counts[role.roleId] = usersList.filter(
-        (user) => user.roleId === role.roleId
+        (user) => user.roleId === role.roleId,
       ).length;
     });
     return counts;
   }, [rolesList, usersList]);
 
-  // Grouped roles
   const groupedRoles = useMemo(
     () => ({
       All: rolesList,
       Active: rolesList.filter(
-        (role) => role.status?.toLowerCase() === "active"
+        (role) => role.status?.toLowerCase() === "active",
       ),
       Inactive: rolesList.filter(
-        (role) => role.status?.toLowerCase() === "inactive"
+        (role) => role.status?.toLowerCase() === "inactive",
       ),
     }),
-    [rolesList]
+    [rolesList],
   );
 
-  /* ==================== PERMISSIONS: GROUP BY MODULE + VALID API ONLY ==================== */
   const validModulePermissions = useMemo(() => {
     const grouped = {};
-
     permissions.forEach((perm) => {
       const module = perm.module || "Uncategorized";
       const hasApi =
         perm.api && typeof perm.api === "string" && perm.api.trim() !== "";
-
       if (!hasApi) return;
-
       if (!grouped[module]) grouped[module] = [];
       grouped[module].push(perm);
     });
-
     return Object.fromEntries(
-      Object.entries(grouped).filter(([_, perms]) => perms.length > 0)
+      Object.entries(grouped).filter(([_, perms]) => perms.length > 0),
     );
   }, [permissions]);
 
   const availableModules = Object.keys(validModulePermissions).sort();
 
-  /* ==================== ROLES: FILTER & SORT ==================== */
   const filteredRoles = useMemo(() => {
     let result = groupedRoles[roleStatus] || [];
-
     if (searchTerm.trim()) {
       result = result.filter((role) =>
-        role.roleName?.toLowerCase().includes(searchTerm.toLowerCase())
+        role.roleName?.toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
-
     switch (sortBy) {
       case "Ascending":
         result = [...result].sort((a, b) =>
-          a.roleName.localeCompare(b.roleName)
+          a.roleName.localeCompare(b.roleName),
         );
         break;
       case "Descending":
         result = [...result].sort((a, b) =>
-          b.roleName.localeCompare(a.roleName)
+          b.roleName.localeCompare(a.roleName),
         );
         break;
       case "Recently Added":
         result = [...result].sort(
-          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
         );
         break;
       default:
         break;
     }
-
     return result;
   }, [groupedRoles, roleStatus, searchTerm, sortBy]);
 
@@ -153,7 +143,7 @@ const RolePermission = () => {
       }
     } catch (error) {
       message.error(
-        `Failed to delete role: ${error.data?.message || "Unknown error"}`
+        `Failed to delete role: ${error.data?.message || "Unknown error"}`,
       );
     } finally {
       setShowDeleteModal(false);
@@ -170,23 +160,13 @@ const RolePermission = () => {
     setCurrentPage(1);
   };
 
-  /* ==================== HELPER: Badge Color ==================== */
-  const getApiBadgeColor = (api) => {
-    const method = api?.toLowerCase();
-    if (["get", "view"].includes(method)) return "info";
-    if (["post", "write", "create"].includes(method)) return "success";
-    if (["put", "patch", "edit", "update"].includes(method)) return "warning";
-    if (["delete"].includes(method)) return "danger";
-    return "secondary";
-  };
-
-  /* ==================== ERROR STATE (optional – remove if handled globally) ==================== */
+  /* ==================== ERROR STATE ==================== */
   if (isRolesError || isPermissionsError || isUsersError) {
     return (
       <div className="content">
         <div className="card">
           <div className="card-body">
-            <div className="alert alert-danger" role="alert">
+            <div style={{ color: "#e31e24", fontWeight: 500 }}>
               Error loading data! Please try again later.
             </div>
           </div>
@@ -211,10 +191,10 @@ const RolePermission = () => {
           />
 
           <div className="card-body">
-            {/* ==================== TAB SWITCHER ==================== */}
+            {/* TAB SWITCHER */}
             <div className="d-flex align-items-center mb-4">
               <ul
-                className="nav nav-pills border d-inline-flex p-1 rounded bg-light"
+                className="nav nav-pills border d-inline-flex p-1 rounded"
                 id="pills-tab"
                 role="tablist"
               >
@@ -223,6 +203,11 @@ const RolePermission = () => {
                     className={`nav-link btn btn-sm py-3 d-flex align-items-center justify-content-center ${
                       activeTab === "roles" ? "active" : ""
                     }`}
+                    style={{
+                      color: activeTab === "roles" ? "#e31e24" : "#595959",
+                      borderColor:
+                        activeTab === "roles" ? "#e31e24" : "transparent",
+                    }}
                     onClick={() => {
                       setActiveTab("roles");
                       setSearchTerm("");
@@ -238,6 +223,12 @@ const RolePermission = () => {
                     className={`nav-link btn btn-sm py-3 d-flex align-items-center justify-content-center ${
                       activeTab === "permissions" ? "active" : ""
                     }`}
+                    style={{
+                      color:
+                        activeTab === "permissions" ? "#e31e24" : "#595959",
+                      borderColor:
+                        activeTab === "permissions" ? "#e31e24" : "transparent",
+                    }}
                     onClick={() => {
                       setActiveTab("permissions");
                       setSearchTerm("");
@@ -252,11 +243,9 @@ const RolePermission = () => {
             </div>
 
             <div className="tab-content" id="pills-tabContent">
-              {/* ==================== ROLES TAB ==================== */}
+              {/* ROLES TAB */}
               <div
-                className={`tab-pane fade ${
-                  activeTab === "roles" ? "show active" : ""
-                }`}
+                className={`tab-pane fade ${activeTab === "roles" ? "show active" : ""}`}
                 id="pills-roles"
                 role="tabpanel"
               >
@@ -265,7 +254,7 @@ const RolePermission = () => {
                     <div className="d-flex align-items-center justify-content-between flex-wrap gap-3">
                       <div className="input-icon-start position-relative">
                         <span className="input-icon-addon">
-                          <SearchOutlined />
+                          <SearchOutlined style={{ color: "#595959" }} />
                         </span>
                         <input
                           type="text"
@@ -277,6 +266,7 @@ const RolePermission = () => {
                       </div>
                       <button
                         className="btn btn-outline-secondary"
+                        style={{ color: "#595959", borderColor: "#595959" }}
                         onClick={clearFilters}
                       >
                         Clear Filters
@@ -286,7 +276,7 @@ const RolePermission = () => {
                 </div>
 
                 {paginatedRoles.length === 0 ? (
-                  <p className="text-muted text-center py-4">
+                  <p style={{ color: "#595959" }} className="text-center py-4">
                     No roles match the applied filters.
                   </p>
                 ) : (
@@ -294,22 +284,24 @@ const RolePermission = () => {
                     <table className="table table-hover">
                       <thead>
                         <tr>
-                          <th>Role</th>
-                          <th>Associated Users</th>
-                          <th>Actions</th>
+                          <th style={{ color: "#595959" }}>Role</th>
+                          <th style={{ color: "#595959" }}>Associated Users</th>
+                          <th style={{ color: "#595959" }}>Actions</th>
                         </tr>
                       </thead>
                       <tbody>
                         {paginatedRoles.map((role) => {
                           const roleUsers = usersList.filter(
-                            (u) => u.roleId === role.roleId
+                            (u) => u.roleId === role.roleId,
                           );
                           return (
                             <tr key={role.roleId}>
-                              <td>{role.roleName || "N/A"}</td>
+                              <td style={{ color: "#595959" }}>
+                                {role.roleName || "N/A"}
+                              </td>
                               <td>
                                 {roleUsers.length === 0 ? (
-                                  <span className="text-muted">
+                                  <span style={{ color: "#595959" }}>
                                     No users assigned
                                   </span>
                                 ) : (
@@ -339,8 +331,11 @@ const RolePermission = () => {
                                           className="me-1"
                                         />
                                         <span
+                                          style={{
+                                            color: "#595959",
+                                            maxWidth: "100px",
+                                          }}
                                           className="text-truncate"
-                                          style={{ maxWidth: "100px" }}
                                         >
                                           {user.name ||
                                             user.username ||
@@ -356,13 +351,15 @@ const RolePermission = () => {
                                 <div className="action-buttons d-flex gap-2">
                                   <a
                                     href={`/roles-permission/permissions/${role.roleId}`}
-                                    className="btn btn-icon btn-sm text-primary"
+                                    className="btn btn-icon btn-sm"
+                                    style={{ color: "#e31e24" }}
                                     aria-label={`View permissions for ${role.roleName}`}
                                   >
                                     <SafetyOutlined />
                                   </a>
                                   <button
-                                    className="btn btn-icon btn-sm text-danger"
+                                    className="btn btn-icon btn-sm"
+                                    style={{ color: "#e31e24" }}
                                     onClick={() => handleOpenDeleteModal(role)}
                                     disabled={isDeleting}
                                     aria-label={`Delete ${role.roleName}`}
@@ -391,11 +388,9 @@ const RolePermission = () => {
                 )}
               </div>
 
-              {/* ==================== PERMISSIONS TAB ==================== */}
+              {/* PERMISSIONS TAB */}
               <div
-                className={`tab-pane fade ${
-                  activeTab === "permissions" ? "show active" : ""
-                }`}
+                className={`tab-pane fade ${activeTab === "permissions" ? "show active" : ""}`}
                 id="pills-permissions"
                 role="tabpanel"
               >
@@ -407,7 +402,7 @@ const RolePermission = () => {
                         style={{ maxWidth: "400px" }}
                       >
                         <span className="input-icon-addon">
-                          <SearchOutlined />
+                          <SearchOutlined style={{ color: "#595959" }} />
                         </span>
                         <input
                           type="text"
@@ -419,6 +414,7 @@ const RolePermission = () => {
                       </div>
                       <button
                         className="btn btn-outline-secondary"
+                        style={{ color: "#595959", borderColor: "#595959" }}
                         onClick={clearFilters}
                       >
                         Clear
@@ -428,7 +424,10 @@ const RolePermission = () => {
                 </div>
 
                 {availableModules.length === 0 ? (
-                  <div className="text-center py-5 text-muted">
+                  <div
+                    className="text-center py-5"
+                    style={{ color: "#595959" }}
+                  >
                     <p className="mb-0">
                       No API permissions found in any module.
                     </p>
@@ -436,7 +435,6 @@ const RolePermission = () => {
                 ) : (
                   availableModules.map((module) => {
                     const modulePermissions = validModulePermissions[module];
-
                     const filtered = modulePermissions.filter(
                       (p) =>
                         p.name
@@ -444,7 +442,7 @@ const RolePermission = () => {
                           .includes(searchTerm.toLowerCase()) ||
                         p.route
                           ?.toLowerCase()
-                          .includes(searchTerm.toLowerCase())
+                          .includes(searchTerm.toLowerCase()),
                     );
 
                     if (filtered.length === 0) return null;
@@ -457,40 +455,61 @@ const RolePermission = () => {
                       case "Descending":
                         sorted.sort((a, b) => b.name.localeCompare(a.name));
                         break;
-                      case "Recently Added":
                       default:
                         break;
                     }
 
                     return (
                       <div key={module} className="mb-5">
-                        <h5 className="mb-3 text-primary text-capitalize fw-semibold">
+                        <h5
+                          style={{ color: "#e31e24" }}
+                          className="mb-3 fw-semibold text-capitalize"
+                        >
                           {module.replace(/_/g, " ")} ({sorted.length})
                         </h5>
                         <div className="table-responsive">
                           <table className="table table-hover table-sm align-middle">
-                            <thead className="table-light">
+                            <thead>
                               <tr>
-                                <th style={{ width: "35%" }}>Permission</th>
-                                <th style={{ width: "15%" }}>API</th>
-                                <th style={{ width: "50%" }}>Route</th>
+                                <th style={{ width: "35%", color: "#595959" }}>
+                                  Permission
+                                </th>
+                                <th style={{ width: "15%", color: "#595959" }}>
+                                  API
+                                </th>
+                                <th style={{ width: "50%", color: "#595959" }}>
+                                  Route
+                                </th>
                               </tr>
                             </thead>
                             <tbody>
                               {sorted.map((perm) => (
                                 <tr key={perm.permissionId}>
-                                  <td className="fw-medium">{perm.name}</td>
+                                  <td
+                                    style={{ color: "#595959" }}
+                                    className="fw-medium"
+                                  >
+                                    {perm.name}
+                                  </td>
                                   <td>
                                     <span
-                                      className={`badge bg-${getApiBadgeColor(
-                                        perm.api
-                                      )} text-white`}
+                                      style={{
+                                        backgroundColor: "#e31e24",
+                                        color: "white",
+                                        padding: "4px 8px",
+                                        borderRadius: "4px",
+                                        fontSize: "0.85rem",
+                                        fontWeight: 500,
+                                      }}
                                     >
                                       {perm.api.toUpperCase()}
                                     </span>
                                   </td>
                                   <td>
-                                    <code className="small text-muted">
+                                    <code
+                                      style={{ color: "#595959" }}
+                                      className="small"
+                                    >
                                       {perm.route}
                                     </code>
                                   </td>
@@ -508,7 +527,7 @@ const RolePermission = () => {
           </div>
         </div>
 
-        {/* ==================== MODALS ==================== */}
+        {/* MODALS */}
         <AddRoleModal show={showModal} onClose={handleCloseRoleModal} />
 
         {showDeleteModal && (
