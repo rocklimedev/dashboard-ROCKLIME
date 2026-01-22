@@ -1,9 +1,8 @@
 import React, { useState, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { message } from "antd";
-import { SearchOutlined } from "@ant-design/icons";
-import { EditOutlined, DeleteOutlined, MoreOutlined } from "@ant-design/icons";
-import { Dropdown, Menu, Button, Select, Pagination } from "antd";
+import { SearchOutlined, EditOutlined, DeleteOutlined, MoreOutlined } from "@ant-design/icons";
+import { Dropdown, Menu, Button, Select, Pagination, Tag } from "antd";
 import DeleteModal from "../Common/DeleteModal";
 import PageHeader from "../Common/PageHeader";
 import DatesModal from "./DateModal";
@@ -16,6 +15,12 @@ import {
 } from "../../api/poApi";
 
 const { Option } = Select;
+
+// Color palette (same as FGSWrapper)
+const PRIMARY_RED = "#e31e24";
+const DARK_GRAY = "#333333";
+const LIGHT_GRAY = "#f5f5f5";
+const BORDER_GRAY = "#d9d9d9";
 
 const POWrapper = ({ activeTab, setActiveTab }) => {
   const navigate = useNavigate();
@@ -68,6 +73,7 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
 
   const purchaseOrders = poData?.purchaseOrders?.data || [];
   const totalCount = poData?.purchaseOrders?.pagination?.total || 0;
+
   const getStatusColor = (status) => {
     switch (status) {
       case "pending":
@@ -97,42 +103,29 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
         return "#E6EAED";
     }
   };
+
   // ──────────────────────────────────────────────────────
-  // Client-side search & sort (still useful when search is sent to server)
+  // Client-side sort
   // ──────────────────────────────────────────────────────
   const filteredPOs = useMemo(() => {
-    let result = [...purchaseOrders]; // always copy
+    let result = [...purchaseOrders];
 
     switch (sortBy?.trim()) {
       case "Recently Added":
-        return result.sort(
-          (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
-        );
+        return result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       case "Ascending":
-        return result.sort((a, b) =>
-          (a.poNumber || "").localeCompare(b.poNumber || ""),
-        );
+        return result.sort((a, b) => (a.poNumber || "").localeCompare(b.poNumber || ""));
       case "Descending":
-        return result.sort((a, b) =>
-          (b.poNumber || "").localeCompare(a.poNumber || ""),
-        );
+        return result.sort((a, b) => (b.poNumber || "").localeCompare(a.poNumber || ""));
       case "Order Date Ascending":
-        return result.sort(
-          (a, b) =>
-            new Date(a.orderDate || "9999-12-31") -
-            new Date(b.orderDate || "9999-12-31"),
-        );
+        return result.sort((a, b) => new Date(a.orderDate || "9999-12-31") - new Date(b.orderDate || "9999-12-31"));
       case "Order Date Descending":
-        return result.sort(
-          (a, b) =>
-            new Date(b.orderDate || "9999-12-31") -
-            new Date(a.orderDate || "9999-12-31"),
-        );
+        return result.sort((a, b) => new Date(b.orderDate || "9999-12-31") - new Date(a.orderDate || "9999-12-31"));
       default:
-        console.log("Using default sort (no match for:", sortBy, ")");
         return result;
     }
   }, [purchaseOrders, sortBy]);
+
   // ──────────────────────────────────────────────────────
   // Helpers
   // ──────────────────────────────────────────────────────
@@ -176,9 +169,7 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
       handleModalClose();
       message.success("Purchase order deleted successfully");
     } catch (err) {
-      message.error(
-        `Failed to delete: ${err.data?.message || "Unknown error"}`,
-      );
+      message.error(`Failed to delete: ${err.data?.message || "Unknown error"}`);
     }
   };
 
@@ -188,9 +179,7 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
       setEditingStatusId(null);
       message.success("Status updated");
     } catch (err) {
-      message.error(
-        `Failed to update status: ${err.data?.message || "Unknown error"}`,
-      );
+      message.error(`Failed to update status: ${err.data?.message || "Unknown error"}`);
     }
   };
 
@@ -338,12 +327,29 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
                         : "";
                       const serialNumber =
                         (filters.page - 1) * filters.limit + idx + 1;
+                      const hasFgs = !!po.fgsId;
 
                       return (
                         <tr key={po.id}>
                           <td>{serialNumber}</td>
                           <td>
-                            <Link to={`/po/${po.id}`}>{po.poNumber}</Link>
+                            <div className="d-flex align-items-center gap-2">
+                              <Link to={`/po/${po.id}`}>{po.poNumber}</Link>
+                              {hasFgs && (
+                                <Tag
+                                  color={PRIMARY_RED}
+                                  style={{
+                                    fontSize: "11px",
+                                    padding: "0 6px",
+                                    cursor: "pointer",
+                                    borderRadius: "4px",
+                                  }}
+                                  onClick={() => navigate(`/fgs/${po.fgsId}`)}
+                                >
+                                  FGS
+                                </Tag>
+                              )}
+                            </div>
                           </td>
 
                           <td>
@@ -360,8 +366,8 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
                                   style={{ width: 140 }}
                                   loading={isUpdatingStatus}
                                   autoFocus
-                                  onBlur={() => setEditingStatusId(null)} // close on outside click / blur
-                                  onPressEnter={() => setEditingStatusId(null)} // optional: close on Enter
+                                  onBlur={() => setEditingStatusId(null)}
+                                  onPressEnter={() => setEditingStatusId(null)}
                                   size="small"
                                 >
                                   {statuses.map((s) => (
@@ -383,9 +389,7 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
                                       borderRadius: "4px",
                                       fontSize: "13px",
                                       fontWeight: 500,
-                                      backgroundColor: getStatusColor(
-                                        po.status,
-                                      ),
+                                      backgroundColor: getStatusColor(po.status),
                                     }}
                                   >
                                     {po.status
@@ -395,7 +399,6 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
                                   </span>
                                   <EditOutlined
                                     style={{
-                                      color: "#1890ff",
                                       fontSize: "14px",
                                     }}
                                   />
@@ -403,7 +406,6 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
                               )}
                             </PermissionGate>
 
-                            {/* View-only fallback for users without write permission */}
                             <PermissionGate
                               api="view"
                               module="purchase_orders"
@@ -438,22 +440,16 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
                                   )
                                 }
                               >
-                                {new Date(
-                                  po.expectDeliveryDate,
-                                ).toLocaleDateString()}
+                                {new Date(po.expectDeliveryDate).toLocaleDateString()}
                               </span>
                             ) : (
                               "—"
                             )}
                           </td>
 
-                          {/* Actions */}
                           <td>
                             <div className="d-flex align-items-center gap-2">
-                              <PermissionGate
-                                api="edit"
-                                module="purchase_orders"
-                              >
+                              <PermissionGate api="edit" module="purchase_orders">
                                 <EditOutlined
                                   style={{ cursor: "pointer" }}
                                   onClick={() => handleEditClick(po)}
@@ -461,10 +457,7 @@ const POWrapper = ({ activeTab, setActiveTab }) => {
                                 />
                               </PermissionGate>
 
-                              <PermissionGate
-                                api="delete"
-                                module="purchase_orders"
-                              >
+                              <PermissionGate api="delete" module="purchase_orders">
                                 <Dropdown
                                   overlay={
                                     <Menu>

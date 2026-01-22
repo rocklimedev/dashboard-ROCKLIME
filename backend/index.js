@@ -19,6 +19,7 @@ const routes = {
   auth: require("./routes/auth"),
   user: require("./routes/user"),
   vendor: require("./routes/vendor"),
+  fgs: require("./routes/fgs"),
   order: require("./routes/order"),
   roles: require("./routes/roles"),
   permission: require("./routes/permission"),
@@ -165,7 +166,7 @@ app.use("/api/feedback", routes.feedback);
 app.use("/api/cached-permissions", routes.cachedPermission);
 app.use("/api/site-maps", routes.siteMap);
 app.use("/api/imports", routes.import);
-
+app.use("/api/fgs", routes.fgs)
 // ------------------- Health Check -------------------
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", uptime: process.uptime() });

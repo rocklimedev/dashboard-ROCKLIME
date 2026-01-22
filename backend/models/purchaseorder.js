@@ -1,5 +1,8 @@
-// models/PurchaseOrder.js
-// models/PurchaseOrder.js
+// First, updates to existing models
+
+// models/PurchaseOrder.js (updated)
+// Add fgsId to link back to originating FGS (if any)
+// Add more enum statuses: "partial_delivered", "in_negotiation" (assuming based on context; can adjust)
 module.exports = (sequelize, DataTypes) => {
   const PurchaseOrder = sequelize.define(
     "PurchaseOrder",
@@ -18,8 +21,19 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.UUID,
         allowNull: false,
       },
+      fgsId: {  // ← NEW: Link to originating FGS (optional)
+        type: DataTypes.UUID,
+        allowNull: true,
+      },
       status: {
-        type: DataTypes.ENUM("pending", "confirmed", "delivered", "cancelled"),
+        type: DataTypes.ENUM(
+          "pending",
+          "in_negotiation",  // ← NEW
+          "confirmed",
+          "partial_delivered",  // ← NEW (for limited deliveries)
+          "delivered",
+          "cancelled"
+        ),
         defaultValue: "pending",
       },
       orderDate: {
@@ -48,6 +62,11 @@ module.exports = (sequelize, DataTypes) => {
     PurchaseOrder.belongsTo(models.Vendor, {
       foreignKey: "vendorId",
       as: "vendor", // ← recommended: use alias
+      targetKey: "id",
+    });
+    PurchaseOrder.belongsTo(models.FieldGuidedSheet, {  // ← NEW association
+      foreignKey: "fgsId",
+      as: "fgs",
       targetKey: "id",
     });
   };

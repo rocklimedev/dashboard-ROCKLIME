@@ -599,14 +599,24 @@ const CategoryManagement = () => {
             <div className="right-panel">
               <Card className="product-checker-card">
                 <Space direction="vertical" style={{ width: "100%" }}>
-                  <Search
-                    placeholder="Check Product Code"
-                    enterButton="Check"
-                    value={productSearch}
-                    onChange={(e) => setProductSearch(e.target.value)}
-                    onSearch={handleProductSearch}
-                    style={{ width: 300, maxWidth: "100%" }}
-                  />
+               <Search
+  placeholder="Check Product Code"
+  enterButton={
+    <Button
+      type="primary"
+      style={{
+        background: "#E31E24",      // your brand red from other buttons
+        borderColor: "#E31E24",
+      }}
+    >
+      Check
+    </Button>
+  }
+  value={productSearch}
+  onChange={(e) => setProductSearch(e.target.value)}
+  onSearch={handleProductSearch}
+  style={{ width: 300, maxWidth: "100%" }}
+/>
 
                   {filteredProduct && (
                     <div className="result-box result-success">

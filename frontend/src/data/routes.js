@@ -75,7 +75,9 @@ import SiteMapDetails from "../components/SiteMap/SiteMapDetails";
 import NewSiteMapDetails from "../components/SiteMap/NewSiteMapDetails";
 import BulkProductImport from "../components/Product/BulkProductImport";
 import SearchPage from "../components/Search/Search";
-
+import FGSWrapper from "../components/Orders/FgsWrapper";
+import AddFieldGuidedSheet from "../components/Orders/AddFgs";
+import FGSDetails from "../components/Orders/FGSDetails";
 const masterRoutes = [
   {
     path: "/",
@@ -120,6 +122,13 @@ const masterRoutes = [
     element: <POWrapper />,
     isSidebarActive: true,
   },
+       {
+        path: "/fgs/list",
+        element: <FGSWrapper/>,
+        name: "Field Guided Sheets",
+        icon: <FaFileAlt />,
+        isSidebarActive: true,
+      },
   {
     path: "/customers/list",
     name: "Customers",
@@ -497,6 +506,21 @@ const masterRoutes = [
         icon: <FaShoppingCart />,
         isSidebarActive: false,
       },
+ 
+      {
+        path: "/fgs/add",
+        element: <AddFieldGuidedSheet/>,
+        name: "Add Field Guided Sheet",
+        icon: <FaFileAlt />,
+        isSidebarActive: false,
+      },
+      {
+        path: "/fgs/:id",
+        element: <FGSDetails/>,
+        name: "Field Guided Sheet",
+        icon: <FaFileAlt />,
+        isSidebarActive: false,
+      }
     ],
   },
   {
