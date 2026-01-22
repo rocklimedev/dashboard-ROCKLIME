@@ -6,6 +6,7 @@ const { auth } = require("../middleware/auth");
 const multer = require("multer");
 require("dotenv").config();
 
+router.use(auth);
 // ──────── MULTER CONFIG ────────
 const createUploader = (fieldName) => {
   return multer({
@@ -63,7 +64,7 @@ router.put(
       next();
     });
   },
-  orderController.uploadInvoiceAndLinkOrder
+  orderController.uploadInvoiceAndLinkOrder,
 );
 
 // ── GATEPASS UPLOAD ──
@@ -81,7 +82,7 @@ router.post(
       next();
     });
   },
-  orderController.issueGatePass
+  orderController.issueGatePass,
 );
 
 router.get("/count", orderController.countOrders);

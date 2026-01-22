@@ -2,26 +2,27 @@ const express = require("express");
 const router = express.Router();
 const companyController = require("../controller/companyController");
 const checkPermission = require("../middleware/permission");
-
+const { auth } = require("../middleware/auth");
+router.use(auth);
 // Only Admin and SuperAdmin can create a company
 router.post(
   "/",
   // checkPermission("write", "create_company", "companies", "/companies"),
-  companyController.createCompany
+  companyController.createCompany,
 );
 
 // All users can view companies
 router.get(
   "/",
   //  checkPermission("view", "get_all_companies", "companies", "/companies"),
-  companyController.getAllCompanies
+  companyController.getAllCompanies,
 );
 
 // All users can view a specific company
 router.get(
   "/:id",
   //checkPermission("view", "get_company_by_id", "companies", "/companies/:id"),
-  companyController.getCompanyById
+  companyController.getCompanyById,
 );
 
 // Only Admin, SuperAdmin, and Accounts can view child companies
@@ -33,21 +34,21 @@ router.get(
   //   "companies",
   //   "/companies/parent/:parentId"
   // ),
-  companyController.getChildCompanies
+  companyController.getChildCompanies,
 );
 
 // Only Admin and SuperAdmin can edit a company
 router.put(
   "/:id",
   //checkPermission("edit", "update_company", "companies", "/companies/:id"),
-  companyController.updateCompany
+  companyController.updateCompany,
 );
 
 // Only SuperAdmin can delete a company
 router.delete(
   "/:id",
   // checkPermission("delete", "delete_company", "companies", "/companies/:id"),
-  companyController.deleteCompany
+  companyController.deleteCompany,
 );
 
 module.exports = router;

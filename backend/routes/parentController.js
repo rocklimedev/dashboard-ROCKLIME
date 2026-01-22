@@ -2,7 +2,8 @@ const express = require("express");
 const router = express.Router();
 const parentCategoryController = require("../controller/parentCategoryController");
 const checkPermission = require("../middleware/permission");
-
+const { auth } = require("../middleware/auth");
+router.use(auth);
 // Create a parent category - Only Admin and SuperAdmin can create
 router.post(
   "/",
@@ -12,7 +13,7 @@ router.post(
   //   "parentcategories",
   //   "/parent-categories"
   // ),
-  parentCategoryController.createParentCategory
+  parentCategoryController.createParentCategory,
 );
 
 // Get all parent categories - Accessible by Sales, Admin, and SuperAdmin
@@ -24,7 +25,7 @@ router.get(
   //   "parentcategories",
   //   "/parent-categories"
   // ),
-  parentCategoryController.getAllParentCategories
+  parentCategoryController.getAllParentCategories,
 );
 
 // Get a parent category by ID - Accessible by Sales, Admin, and SuperAdmin
@@ -36,7 +37,7 @@ router.get(
   //   "parentcategories",
   //   "/parent-categories/:id"
   // ),
-  parentCategoryController.getParentCategoryById
+  parentCategoryController.getParentCategoryById,
 );
 
 // edit a parent category - Only Admin and SuperAdmin can edit
@@ -48,7 +49,7 @@ router.put(
   //   "parentcategories",
   //   "/parent-categories/:id"
   // ),
-  parentCategoryController.updateParentCategory
+  parentCategoryController.updateParentCategory,
 );
 
 // Delete a parent category - Only SuperAdmin can delete
@@ -60,14 +61,14 @@ router.delete(
   //   "parentcategories",
   //   "/parent-categories/:id"
   // ),
-  parentCategoryController.deleteParentCategory
+  parentCategoryController.deleteParentCategory,
 );
 
 // ...
 router.get(
   "/:id/with-brands",
   // checkPermission("view", "get_parent_category_with_brands", "parentcategories", "/parent-categories/:id/with-brands"),
-  parentCategoryController.getParentCategoryWithBrandsAndCounts
+  parentCategoryController.getParentCategoryWithBrandsAndCounts,
 );
 
 module.exports = router;

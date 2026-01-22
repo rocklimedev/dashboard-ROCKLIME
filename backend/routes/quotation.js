@@ -4,19 +4,20 @@ const quotationController = require("../controller/quotationController");
 const { auth } = require("../middleware/auth"); // Authentication middleware
 const checkPermission = require("../middleware/permission"); // Permission middleware
 
+router.use(auth);
 // ✅ Create a new quotation (Only Admins & Managers)
 router.post(
   "/add",
   auth,
   //checkPermission("write", "create_quotation", "quotations", "/quotations/add"),
-  quotationController.createQuotation
+  quotationController.createQuotation,
 );
 
 // ✅ Get all quotations (Admins, Managers & Sales Team)
 router.get(
   "/",
   // checkPermission("view", "get_all_quotations", "quotations", "/quotations"),
-  quotationController.getAllQuotations
+  quotationController.getAllQuotations,
 );
 
 // ✅ Get a single quotation by ID (Admins, Managers & Sales Team)
@@ -29,7 +30,7 @@ router.get(
   //   "quotations",
   //   "/quotations/:id"
   // ),
-  quotationController.getQuotationById
+  quotationController.getQuotationById,
 );
 
 // ✅ edit a quotation by ID (Only Admins & Managers)
@@ -37,7 +38,7 @@ router.put(
   "/:id",
   auth,
   // checkPermission("edit", "update_quotation", "quotations", "/quotations/:id"),
-  quotationController.updateQuotation
+  quotationController.updateQuotation,
 );
 
 // ✅ Delete a quotation by ID (Only Admins)
@@ -50,7 +51,7 @@ router.delete(
   //   "quotations",
   //   "/quotations/:id"
   // ),
-  quotationController.deleteQuotation
+  quotationController.deleteQuotation,
 );
 
 // ✅ Export a quotation by ID (Admins, Managers & Sales Team)
@@ -58,7 +59,7 @@ router.post(
   "/export/:id/:version?",
   auth,
   // checkPermission("export", "export_quotation", "quotations", "/quotations/export/:id"),
-  quotationController.exportQuotation
+  quotationController.exportQuotation,
 );
 router.post(
   "/clone/:id",
@@ -68,14 +69,14 @@ router.post(
   //   "quotations",
   //   "/quotations/clone/:id"
   // ),
-  quotationController.cloneQuotation
+  quotationController.cloneQuotation,
 );
 
 // New routes for versioning
 router.get("/:id/versions/:version?", quotationController.getQuotationVersions);
 router.post(
   "/:id/restore/:version",
-  quotationController.restoreQuotationVersion
+  quotationController.restoreQuotationVersion,
 );
 
 module.exports = router;

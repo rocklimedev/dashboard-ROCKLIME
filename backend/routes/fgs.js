@@ -2,7 +2,8 @@
 
 const express = require('express');
 const router = express.Router();
-
+const { auth } = require("../middleware/auth");
+router.use(auth);   
 const fieldGuidedSheetController = require('../controller/fgsController');
 
 // Optional: Add middleware for authentication / authorization if needed

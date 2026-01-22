@@ -3,6 +3,7 @@ const router = require("express").Router();
 const siteMapController = require("../controller/siteMapController");
 const { auth } = require("../middleware/auth");
 
+router.use(auth);
 router.post("/", siteMapController.createSiteMap);
 // CORRECT — matches your RTK Query
 router.get("/", siteMapController.getSiteMapsByCustomer);
@@ -12,7 +13,7 @@ router.delete("/:id", siteMapController.deleteSiteMap);
 
 router.post(
   "/:id/generate-quotation",
-  siteMapController.generateQuotationFromSiteMap
+  siteMapController.generateQuotationFromSiteMap,
 );
 router.post("/attach", siteMapController.attachToQuotation);
 router.post("/detach", siteMapController.detachFromQuotation);

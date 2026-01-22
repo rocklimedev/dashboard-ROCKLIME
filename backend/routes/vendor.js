@@ -11,24 +11,25 @@ const {
 } = require("../controller/vendorController");
 const checkPermission = require("../middleware/permission");
 
+router.use(auth);
 // ✅ Admin-only Routes
 router.post(
   "/",
   auth,
   // checkPermission("write", "create_vendor", "vendors", "/vendors"),
-  createVendor
+  createVendor,
 ); // Create a new vendor
 router.put(
   "/:id",
   auth,
   // checkPermission("edit", "update_vendor", "vendors", "/vendors/:id"),
-  updateVendor
+  updateVendor,
 ); // edit a vendor
 router.delete(
   "/:id",
   auth,
   //checkPermission("delete", "delete_vendor", "vendors", "/vendors/:id"),
-  deleteVendor
+  deleteVendor,
 ); // Delete a vendor
 
 // ✅ Admin & Moderator Routes
@@ -36,13 +37,13 @@ router.get(
   "/",
   auth,
   // checkPermission("view", "get_vendors", "vendors", "/vendors"),
-  getVendors
+  getVendors,
 ); // Get all vendors
 router.get(
   "/:id",
   auth,
   // checkPermission("view", "get_vendor_by_id", "vendors", "/vendors/:id"),
-  getVendorById
+  getVendorById,
 ); // Get vendor by ID
 // routes/vendorRoutes.js
 router.get("/check-vendor-id/:vendorId", auth, checkVendorId);

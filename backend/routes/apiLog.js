@@ -3,7 +3,8 @@ const express = require("express");
 const router = express.Router();
 const ApiLog = require("../models/apiLog");
 const { User } = require("../models/users"); // Sequelize MySQL User
-
+const { auth } = require("../middleware/auth");
+router.use(auth);
 // Helper: Build MongoDB query from request
 const buildQuery = (queryParams) => {
   const { method, route, status, userId, search, startDate, endDate } =
@@ -88,7 +89,7 @@ router.get("/", async (req, res, next) => {
             name: u.name || u.username || "Unknown",
             email: u.email,
           },
-        ])
+        ]),
       );
     }
 
@@ -142,7 +143,7 @@ router.get("/stats", async (req, res) => {
       const avgDuration =
         dailyStats.reduce(
           (sum, s) => sum + s.avgDuration * s.totalRequests,
-          0
+          0,
         ) / total || 0;
 
       res.json({
@@ -151,23 +152,23 @@ router.get("/stats", async (req, res) => {
         errorRate:
           dailyStats.reduce(
             (sum, s) => sum + s.errorRate * s.totalRequests,
-            0
+            0,
           ) / total || 0,
         methodBreakdown: Object.keys(
-          dailyStats[0]?.methodBreakdown || {}
+          dailyStats[0]?.methodBreakdown || {},
         ).reduce((acc, k) => {
           acc[k] = dailyStats.reduce(
             (sum, s) => sum + (s.methodBreakdown[k] || 0),
-            0
+            0,
           );
           return acc;
         }, {}),
         statusBreakdown: Object.keys(
-          dailyStats[0]?.statusBreakdown || {}
+          dailyStats[0]?.statusBreakdown || {},
         ).reduce((acc, k) => {
           acc[k] = dailyStats.reduce(
             (sum, s) => sum + (s.statusBreakdown[k] || 0),
-            0
+            0,
           );
           return acc;
         }, {}),
