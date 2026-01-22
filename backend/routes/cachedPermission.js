@@ -4,7 +4,8 @@ const {
   getAllCachedPermissions,
   getCachedPermissionByRole,
 } = require("../controller/cachedPermissionController");
-
+const { auth } = require("../middleware/auth");
+router.use(auth);
 router.get("/", getAllCachedPermissions);
 router.get("/:roleId", getCachedPermissionByRole);
 

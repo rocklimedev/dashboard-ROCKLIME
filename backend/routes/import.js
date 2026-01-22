@@ -3,7 +3,8 @@ const express = require("express");
 const router = express.Router();
 const importController = require("../controller/importController");
 const multer = require("multer");
-
+const { auth } = require("../middleware/auth");
+router.use(auth);
 // Multer setup for file upload (in-memory for simplicity, or disk if preferred)
 const upload = multer({
   storage: multer.memoryStorage(),

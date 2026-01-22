@@ -16,12 +16,13 @@ const {
 const { auth } = require("../middleware/auth"); // Authentication middleware
 const checkPermission = require("../middleware/permission"); // Permission middleware
 
+router.use(auth);
 // ✅ Create a new role (Only Admins)
 router.post(
   "/",
   auth,
   // checkPermission("write", "create_role", "roles", "/roles"),
-  createRole
+  createRole,
 );
 
 // ✅ Get all roles (Only Admins & Managers)
@@ -29,7 +30,7 @@ router.get(
   "/",
   auth,
   //  checkPermission("view", "get_all_roles", "roles", "/roles"),
-  getAllRoles
+  getAllRoles,
 );
 
 // ✅ edit role permissions (Only Admins)
@@ -37,7 +38,7 @@ router.put(
   "/:roleId",
   auth,
   // checkPermission("edit", "update_role_permissions", "roles", "/roles/:roleId"),
-  updateRolePermissions
+  updateRolePermissions,
 );
 
 // ✅ Delete a role (Only Admins)
@@ -45,7 +46,7 @@ router.delete(
   "/:roleId",
   auth,
   // checkPermission("delete", "delete_role", "roles", "/roles/:roleId"),
-  deleteRole
+  deleteRole,
 );
 
 // ✅ Assign permissions to a role (Only Admins)
@@ -58,7 +59,7 @@ router.post(
   //   "roles",
   //   "/roles/:roleId/permissions"
   // ),
-  assignPermissionsToRole
+  assignPermissionsToRole,
 );
 router.delete(
   "/:roleId/permissions",
@@ -69,26 +70,26 @@ router.delete(
   //   "roles",
   //   "/roles/:roleId/permissions"
   // ),
-  removePermissionFromRole
+  removePermissionFromRole,
 );
 router.post(
   "/assign-role",
   // checkPermission("write", "assign_role", "roles", "/roles/assign-role"),
-  assignRole
+  assignRole,
 );
 router.get(
   "/:roleId",
   // checkPermission("view", "get_role_by_id", "roles", "/roles/:roleId"),
-  getRoleById
+  getRoleById,
 );
 router.get(
   "/:roleId",
   //checkPermission("view", "get_role_permissions", "roles", "/roles/:roleId"),
-  getRolePermissions
+  getRolePermissions,
 );
 router.get(
   "/recent",
   // checkPermission("view", "get_recent_role_to_give", "roles", "/roles/recent"),
-  getRecentRoleToGive
+  getRecentRoleToGive,
 );
 module.exports = router;

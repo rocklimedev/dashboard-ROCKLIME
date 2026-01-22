@@ -4,7 +4,8 @@ const productController = require("../controller/productController");
 const checkPermission = require("../middleware/permission");
 const multer = require("multer");
 const path = require("path");
-
+const { auth } = require("../middleware/auth");
+router.use(auth);
 // Multer config: accept up to 5 images, max 5MB each
 const productUpload = multer({
   storage: multer.memoryStorage(),

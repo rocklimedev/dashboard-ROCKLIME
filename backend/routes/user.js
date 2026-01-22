@@ -4,6 +4,7 @@ const { auth } = require("../middleware/auth"); // Authentication Middleware
 const userController = require("../controller/userController");
 const checkPermission = require("../middleware/permission");
 const multer = require("multer");
+router.use(auth);
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
@@ -23,13 +24,13 @@ router.get(
   "/me",
   auth,
   // checkPermission("view", "get_profile", "users", "/users/me"),
-  userController.getProfile
+  userController.getProfile,
 ); // Get logged-in user's profile
 router.put(
   "/",
   auth,
   //checkPermission("edit", "update_profile", "users", "/users"),
-  userController.updateProfile
+  userController.updateProfile,
 ); // edit logged-in user's profile
 
 // ✅ Admin-Only Routes
@@ -38,38 +39,38 @@ router.get(
   auth,
   // checkPermission("view", "get_all_users", "users", "/users"),
   //role([ROLES.Admin]),
-  userController.getAllUsers
+  userController.getAllUsers,
 ); // View all users
 router.post(
   "/add",
   auth,
   //checkPermission("write", "create_user", "users", "/users/add"),
-  userController.createUser
+  userController.createUser,
 ); // Add a new user
 router.delete(
   "/:userId",
   auth,
   //  checkPermission("delete", "delete_user", "users", "/users/:userId"),
-  userController.deleteUser
+  userController.deleteUser,
 ); // Delete a user
 router.put(
   "/:userId",
   auth,
   //checkPermission("edit", "update_user", "users", "/users/:userId"),
-  userController.updateUser
+  userController.updateUser,
 );
 // ✅ Admin & Moderator Routes
 router.get(
   "/search",
   auth,
   // checkPermission("view", "search_user", "users", "/users/search"),
-  userController.searchUser
+  userController.searchUser,
 );
 router.get(
   "/:userId",
   auth,
   //checkPermission("view", "get_user_by_id", "users", "/users/:userId"),
-  userController.getUserById
+  userController.getUserById,
 );
 
 // ✅ Public Reporting Route (Any Logged-in User)
@@ -77,12 +78,12 @@ router.post(
   "/report/:userId",
   auth,
   //checkPermission("post", "report_user", "users", "/users/report/:userId"),
-  userController.reportUser
+  userController.reportUser,
 );
 router.put(
   "/assign-role/:userId",
   //checkPermission("edit", "assign_role", "users", "/users/assign-role/:userId"),
-  userController.assignRole
+  userController.assignRole,
 );
 router.put(
   "/:userId",
@@ -93,13 +94,13 @@ router.put(
   //   "users",
   //   "/users/:userId"
   // ),
-  userController.changeStatusToInactive
+  userController.changeStatusToInactive,
 );
 router.patch("/:userId/status", auth, userController.updateStatus);
 router.post(
   "/photo",
   auth,
   upload.single("photo"), // 'photo' is the field name in FormData
-  userController.uploadUserPhoto
+  userController.uploadUserPhoto,
 );
 module.exports = router;

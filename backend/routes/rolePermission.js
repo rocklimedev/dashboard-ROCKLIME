@@ -9,6 +9,8 @@ const {
   getAllRolePermissions,
 } = require("../controller/rolePermissionController");
 const checkPermission = require("../middleware/permission");
+const { auth } = require("../middleware/auth");
+router.use(auth);
 router.post(
   "/assign-permission",
   // checkPermission(
@@ -17,7 +19,7 @@ router.post(
   //   "rolepermissions",
   //   "/role-permissions/assign-permission"
   // ),
-  assignPermissionToRole
+  assignPermissionToRole,
 );
 router.post(
   "/remove-permission",
@@ -27,7 +29,7 @@ router.post(
   //   "rolepermissions",
   //   "/role-permissions/remove-permission"
   // ),
-  removePermissionFromRole
+  removePermissionFromRole,
 );
 router.get(
   "/:roleId/permissions",
@@ -37,7 +39,7 @@ router.get(
   //   "rolepermissions",
   //   "/role-permissions/:roleId/permissions"
   // ),
-  getAllRolePermissionsByRoleId
+  getAllRolePermissionsByRoleId,
 );
 router.get(
   "/:roleId/permission/:permissionId",
@@ -47,7 +49,7 @@ router.get(
   //   "rolepermissions",
   //   "/role-permissions/:roleId/permission/:permissionId"
   // ),
-  getRolePermissionByRoleIdAndPermissionId
+  getRolePermissionByRoleIdAndPermissionId,
 );
 router.get(
   "/",
@@ -57,7 +59,7 @@ router.get(
   //   "role_permissions",
   //   "/role-permissions/"
   // ),
-  getAllRolePermissions
+  getAllRolePermissions,
 );
 
 module.exports = router;

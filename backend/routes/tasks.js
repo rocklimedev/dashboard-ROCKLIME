@@ -2,7 +2,8 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 const taskController = require("../controller/taskController");
-
+const { auth } = require("../middleware/auth");
+router.use(auth);
 // Configure multer for file uploads
 const upload = multer({
   storage: multer.memoryStorage(), // Store files in memory for FTP upload
@@ -28,7 +29,7 @@ router.put("/:id/watchers", taskController.manageWatcher);
 router.post(
   "/:id/attachments",
   upload.single("file"),
-  taskController.addAttachment
+  taskController.addAttachment,
 );
 
 // Get task statistics
@@ -37,7 +38,7 @@ router.get("/stats", taskController.getTaskStats);
 // Get tasks by linked resource
 router.get(
   "/resource/:resourceType/:resourceId",
-  taskController.getTasksByResource
+  taskController.getTasksByResource,
 );
 
 // Bulk update tasks

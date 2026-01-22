@@ -2,7 +2,8 @@
 const express = require("express");
 const router = express.Router();
 const purchaseOrderController = require("../controller/purchaseOrderController");
-
+const { auth } = require("../middleware/auth");
+router.use(auth);
 // Create a new purchase order
 router.post("/", purchaseOrderController.createPurchaseOrder);
 
@@ -24,7 +25,7 @@ router.put("/:id/confirm", purchaseOrderController.confirmPurchaseOrder);
 // Get purchase orders by vendor
 router.get(
   "/vendor/:vendorId",
-  purchaseOrderController.getPurchaseOrdersByVendor
+  purchaseOrderController.getPurchaseOrdersByVendor,
 );
 // ✅ New route to update purchase order status
 router.patch("/:id/status", purchaseOrderController.updatePurchaseOrderStatus);
