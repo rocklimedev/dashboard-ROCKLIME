@@ -3,7 +3,7 @@ const router = require("express").Router();
 const siteMapController = require("../controller/siteMapController");
 const { auth } = require("../middleware/auth");
 
-router.use(auth);
+// router.use(auth);
 router.post("/", siteMapController.createSiteMap);
 // CORRECT — matches your RTK Query
 router.get("/", siteMapController.getSiteMapsByCustomer);

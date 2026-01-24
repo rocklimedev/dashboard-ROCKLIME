@@ -1,16 +1,23 @@
+// src/pages/site-map/NewSiteMapDetails.jsx
+
 import React, { useRef, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
-import { message, Button, Spin } from "antd";
+import { message, Button, Spin, Typography, Space } from "antd";
+import { ArrowLeftOutlined, FilePdfOutlined } from "@ant-design/icons";
+import { Helmet } from "react-helmet";
 import { useGetSiteMapByIdQuery } from "../../api/siteMapApi";
-import logo from "../../assets/img/logo-quotation.png";
 import { exportToPDF } from "./hooks/exportSiteMapPDF";
 import styles from "./newsitemap.module.css";
 import useProductsData from "../../data/useProductdata";
-import coverImage from "../../assets/img/quotation_first_page.jpeg";
+import logo from "../../assets/img/logo.png";
+import bathroomSketch from "../../assets/img/sitemap_cover.jpg";
 
-// Indian Number to Words (unchanged)
+const { Title, Text } = Typography;
+
+// ────────────────────────────────────────────────
+// Number to Words (unchanged)
+// ────────────────────────────────────────────────
 const NumberToWords = (num) => {
-  // ... your existing function (keep as-is)
   if (!num || num === 0) return "Zero Rupees Only";
   const ones = [
     "",
@@ -46,10 +53,12 @@ const NumberToWords = (num) => {
     "Eighty",
     "Ninety",
   ];
+
   const belowHundred = (n) =>
     n < 20
       ? ones[n]
       : tens[Math.floor(n / 10)] + (n % 10 ? " " + ones[n % 10] : "");
+
   let str = "";
   if (Math.floor(num / 10000000) > 0) {
     str += NumberToWords(Math.floor(num / 10000000)) + "Crore ";
@@ -71,37 +80,24 @@ const NumberToWords = (num) => {
   return (str.trim() || "Zero") + " Rupees Only";
 };
 
-// Smart area classification
+// ────────────────────────────────────────────────
+// Category + Display helpers (unchanged)
+// ────────────────────────────────────────────────
 const getAreaCategory = (name = "") => {
   const n = name.toLowerCase();
-  if (
-    /shower|head|rain|overhead|ceiling|hand ?shower|divertor|hose|rain shower/i.test(
-      n
-    )
-  )
+  if (/shower|rain|head|overhead|hand ?shower|divertor/i.test(n))
     return "shower";
-  if (
-    /basin|mixer|faucet|pillar cock|tap|towel|ring|holder|waste|bottle trap/i.test(
-      n
-    )
-  )
-    return "basin";
-  if (
-    /wc|toilet|flush|health faucet|jet spray|european wc|cistern|urinal/i.test(
-      n
-    )
-  )
-    return "wc";
-  return "basin"; // fallback
+  if (/basin|mixer|faucet|tap|towel|vanity/i.test(n)) return "basin";
+  if (/wc|toilet|flush|health ?faucet|jet ?spray/i.test(n)) return "wc";
+  return "other";
 };
 
-// Extract product display data
 const getDisplayData = (item, fullProduct) => {
   if (!fullProduct) {
     return {
-      name: item.name || "Unknown",
+      name: item.name || "—",
       code: "N/A",
-      price: item.price || 0,
+      price: Number(item.price) || 0,
       image: item.imageUrl || "/placeholder.jpg",
     };
   }
@@ -112,12 +108,13 @@ const getDisplayData = (item, fullProduct) => {
     fullProduct.product_code ||
     "N/A";
 
-  const price = Number(
+  const rawPrice =
     fullProduct.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"] ||
-      fullProduct.metaDetails?.find((m) => m.slug === "sellingPrice")?.value ||
-      fullProduct.price ||
-      0
-  );
+    fullProduct.metaDetails?.find((m) => m.slug === "sellingPrice")?.value ||
+    fullProduct.price;
+
+  const price = Number(rawPrice);
+  const safePrice = Number.isFinite(price) ? price : 0;
 
   const image =
     fullProduct.images?.[0]?.url ||
@@ -125,17 +122,20 @@ const getDisplayData = (item, fullProduct) => {
     item.imageUrl ||
     "/placeholder.jpg";
 
-  return { name: fullProduct.name || item.name, code, price, image };
+  return {
+    name: fullProduct.name || item.name || "—",
+    code,
+    price: safePrice,
+    image,
+  };
 };
 
-// Image with fallback
 const ImageWithFallback = ({ src, alt, ...props }) => {
   const [imgSrc, setImgSrc] = React.useState(src);
   React.useEffect(() => setImgSrc(src), [src]);
-
   return (
     <img
-      src={imgSrc || "/placeholder.jpg"}
+      src={imgSrc}
       alt={alt}
       loading="lazy"
       onError={() =>
@@ -146,23 +146,27 @@ const ImageWithFallback = ({ src, alt, ...props }) => {
   );
 };
 
+// ────────────────────────────────────────────────
+// Main Component – Single render + media queries
+// ────────────────────────────────────────────────
 const NewSiteMapDetails = () => {
   const { id } = useParams();
-  const siteMapRef = useRef(null);
+  const printContainerRef = useRef(null);
+
   const { data: response, isLoading: loadingSiteMap } =
     useGetSiteMapByIdQuery(id);
-
   const siteMap = response?.data || null;
   const customer = siteMap?.Customer || {};
 
   const { productsData, loading: loadingProducts } = useProductsData(
-    siteMap?.items || []
+    siteMap?.items || [],
   );
 
-  // Maps
   const productMap = useMemo(() => {
     const map = {};
-    productsData.forEach((p) => p.productId && (map[p.productId] = p));
+    productsData.forEach((p) => {
+      if (p.productId) map[p.productId] = p;
+    });
     return map;
   }, [productsData]);
 
@@ -174,165 +178,122 @@ const NewSiteMapDetails = () => {
     return map;
   }, [siteMap?.floorDetails]);
 
-  const roomMap = useMemo(() => {
+  const roomNameMap = useMemo(() => {
     const map = {};
     siteMap?.floorDetails?.forEach((floor) => {
-      floor.rooms?.forEach((room) => {
-        map[room.room_id] = room.room_name || "Common Area";
+      floor.rooms?.forEach((r) => {
+        map[r.room_id] = r.room_name || "Area";
       });
     });
     return map;
   }, [siteMap?.floorDetails]);
 
-  const { pages, grandTotal, floorTotals, allConcealedItems } = useMemo(() => {
-    if (!siteMap?.items?.length) {
-      return {
-        pages: [],
-        grandTotal: 0,
-        floorTotals: {},
-        allConcealedItems: [],
-      };
-    }
+  const { pages, grandTotal, floorTotals } = useMemo(() => {
+    if (!siteMap?.items?.length)
+      return { pages: [], grandTotal: 0, floorTotals: {} };
 
     const floorData = {};
-    const allConcealedItems = []; // ← collect all concealed here
     let grandTotal = 0;
+    const floorTotals = {};
 
     siteMap.items.forEach((item) => {
       const floorNum = item.floor_number || 1;
       const floorName = floorNameMap[floorNum] || `Floor ${floorNum}`;
-      const roomId = item.room_id;
-      const roomName = roomMap[roomId] || "Common Area";
+      const roomName = roomNameMap[item.room_id] || "Common Area";
 
       if (!floorData[floorNum]) {
-        floorData[floorNum] = {
-          name: floorName,
-          rooms: new Set(),
-          roomItems: {}, // only visible items
-          total: 0,
-        };
+        floorData[floorNum] = { name: floorName, rooms: {}, total: 0 };
       }
 
       const floor = floorData[floorNum];
-      floor.rooms.add(roomName);
+      if (!floor.rooms[roomName]) floor.rooms[roomName] = [];
 
-      const fullProduct = productMap[item.productId];
-      const display = getDisplayData(item, fullProduct);
-      const qty = item.quantity || 1;
-      const itemTotal = display.price * qty;
+      const full = productMap[item.productId];
+      const disp = getDisplayData(item, full);
 
-      const baseItem = {
+      const enriched = {
         ...item,
-        displayName: display.name,
-        displayCode: display.code,
-        displayPrice: display.price,
-        displayImage: display.image,
-        quantity: qty,
-        roomName,
-        floorName, // ← useful for concealed page
+        displayName: disp.name,
+        displayCode: disp.code,
+        displayPrice: disp.price,
+        displayImage: disp.image,
+        quantity: item.quantity || 1,
+        category: getAreaCategory(disp.name || item.name),
       };
 
-      // Separate concealed items
-      if (item.productType === "Concealed Works" || item.isConcealed) {
-        allConcealedItems.push(baseItem);
-      } else {
-        // Normal visible fittings
-        const area = getAreaCategory(display.name || item.name);
-        if (!floor.roomItems[roomName]) {
-          floor.roomItems[roomName] = { shower: [], basin: [], wc: [] };
-        }
-        floor.roomItems[roomName][area].push(baseItem);
-      }
-
-      // Always add to floor total (visible or concealed)
-      floor.total += itemTotal;
-      grandTotal += itemTotal;
+      floor.rooms[roomName].push(enriched);
+      floor.total += disp.price * enriched.quantity;
+      grandTotal += disp.price * enriched.quantity;
     });
 
     const pages = [];
-    const floorTotals = {};
 
-    // Build normal floor pages (only visible items)
     Object.keys(floorData)
       .sort((a, b) => Number(a) - Number(b))
       .forEach((floorNum) => {
         const floor = floorData[floorNum];
         floorTotals[floor.name] = floor.total;
 
-        const roomNames = Array.from(floor.rooms);
+        Object.entries(floor.rooms).forEach(([roomName, items]) => {
+          items.sort((a, b) => {
+            const order = { shower: 1, basin: 2, wc: 3, other: 4 };
+            return (order[a.category] || 5) - (order[b.category] || 5);
+          });
 
-        const columns = [
-          { title: "", items: [] },
-          { title: "", items: [] },
-          { title: "", items: [] },
-        ];
-
-        roomNames.forEach((roomName, idx) => {
-          const colIdx = idx % 3;
-          columns[colIdx].title = roomName.toUpperCase();
-
-          const roomProducts = floor.roomItems[roomName] || {
-            shower: [],
-            basin: [],
-            wc: [],
-          };
-          const all = [
-            ...roomProducts.shower,
-            ...roomProducts.basin,
-            ...roomProducts.wc,
-          ].map((it) => ({ ...it, columnRoom: columns[colIdx].title }));
-
-          columns[colIdx].items.push(...all);
-        });
-
-        columns.forEach((col) => {
-          if (!col.title) col.title = "NOT APPLICABLE";
-        });
-
-        const allVisible = columns.flatMap((c) => c.items);
-        const ITEMS_PER_PAGE = 15;
-        const chunks = [];
-        for (let i = 0; i < allVisible.length; i += ITEMS_PER_PAGE) {
-          chunks.push(allVisible.slice(i, i + ITEMS_PER_PAGE));
-        }
-
-        chunks.forEach((chunk, idx) => {
-          const pageNum = idx + 1;
-          const pageColumns = columns.map((col) => ({
-            title: col.title,
-            items: chunk.filter((it) => it.columnRoom === col.title),
+          const callouts = items.map((it, idx) => ({
+            ...it,
+            calloutNumber: idx + 1,
           }));
 
           pages.push({
-            title: `SITE MAP - ${floor.name.toUpperCase()}`,
-            pageInfo:
-              chunks.length > 1 ? `Page ${pageNum} of ${chunks.length}` : null,
-            columns: pageColumns,
-            floorTotal: floor.total,
-            pageKey: `floor_${floorNum}_page_${pageNum}`,
+            type: "room",
+            floorName: floor.name,
+            roomName,
+            callouts,
+            roomTotal: items.reduce(
+              (sum, i) => sum + i.displayPrice * i.quantity,
+              0,
+            ),
+            pageKey: `room_${floorNum}_${roomName.replace(/\s+/g, "_")}`,
           });
         });
       });
 
-    // ONE single concealed page at the end
-    if (allConcealedItems.length > 0) {
+    const allConcealed = siteMap.items
+      .filter((i) => i.isConcealed || i.productType === "Concealed Works")
+      .map((i) => {
+        const disp = getDisplayData(i, productMap[i.productId]);
+        return { ...i, ...disp, quantity: i.quantity || 1 };
+      });
+
+    if (allConcealed.length > 0) {
       pages.push({
-        title: "CONCEALED WORKS - COMPLETE PROJECT",
-        isConcealedPage: true,
-        concealedItems: allConcealedItems,
-        pageKey: "all_concealed_works",
+        type: "concealed",
+        title: "CONCEALED WORKS – ENTIRE PROJECT",
+        items: allConcealed,
+        pageKey: "concealed_all",
       });
     }
 
-    return { pages, grandTotal, floorTotals, allConcealedItems };
-  }, [siteMap?.items, productMap, floorNameMap, roomMap]);
+    return { pages, grandTotal, floorTotals };
+  }, [siteMap?.items, productMap, floorNameMap, roomNameMap]);
+
+  const getBaseIllustration = () => bathroomSketch;
+
   const handleExportPDF = async () => {
-    if (!siteMapRef.current) return message.error("Content not ready");
+    if (!printContainerRef.current) {
+      message.error("Content not ready for export");
+      return;
+    }
     try {
-      await exportToPDF(siteMapRef, siteMap);
-      message.success("Site Map PDF exported successfully!");
-    } catch (e) {
-      console.error(e);
+      const safeTitle = (siteMap?.title || "Site-Map").replace(
+        /[\\/:*?"<>|]/g,
+        "_",
+      );
+      await exportToPDF(printContainerRef, siteMap, `${safeTitle}.pdf`);
+      message.success("Site Map exported successfully!");
+    } catch (err) {
+      console.error(err);
       message.error("Export failed");
     }
   };
@@ -341,306 +302,257 @@ const NewSiteMapDetails = () => {
     return (
       <div className="text-center py-5">
         <Spin size="large" />
-        <p className="mt-3">Loading site map...</p>
+        <p className="mt-3">Preparing site map...</p>
       </div>
     );
   }
 
-  if (!siteMap)
+  if (!siteMap) {
     return <div className="text-center py-5">Site map not found</div>;
+  }
+
+  const pageTitle = siteMap?.title
+    ? `Site Map - ${siteMap.title}`
+    : `Site Map - ${id}`;
 
   return (
-    <div className="page-wrapper">
-      <div className="content">
-        <div className="row">
-          <div className="col-lg-10 mx-auto">
-            <Link to="/site-map/list" className={styles.backButton}>
-              Back
-            </Link>
-
-            <div className="card mt-3">
-              <div className="card-body">
-                <div className="text-end mb-4">
-                  <Button type="primary" size="large" onClick={handleExportPDF}>
-                    Export SiteMap PDF
-                  </Button>
-                </div>
-
-                <div ref={siteMapRef} className={styles.printArea}>
-                  {/* COVER PAGE */}
-                  <div className={`${styles.coverPage} quotation-page-print`}>
-                    <div className={styles.logoCenter}>
-                      <img src={logo} alt="Logo" className={styles.mainLogo} />
-                      <h1 className={styles.mockupBig}>SITE MAP</h1>
-                      <p>
-                        <strong>M/s :</strong>{" "}
-                        {customer.name || "________________________"}
-                      </p>
-                      <p>
-                        <strong>Address :</strong>{" "}
-                        {customer.address || "________________________"}
-                      </p>
-                      {siteMap.siteSizeInBHK && (
-                        <p>
-                          <strong>Project :</strong> {siteMap.siteSizeInBHK} BHK
-                        </p>
-                      )}
-                    </div>
-                    <div className={styles.coverFooter}>
-                      <div className={styles.redLineLong}></div>
-                      <div className={styles.brandLogos}>
-                        <img src={logo} alt="Logo" />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* FLOOR PAGES - 3 COLUMN LAYOUT PRESERVED */}
-                  {pages.map((page) => (
-                    <div
-                      key={page.pageKey}
-                      className={`${styles.mockupPage} quotation-page-print`}
-                    >
-                      {/* ============ NORMAL FLOOR PAGES (3-column) ============ */}
-                      {!page.isConcealedPage ? (
-                        <>
-                          <header className={styles.header}>
-                            <h1 className={styles.title}>{page.title}</h1>
-                            {page.pageInfo && (
-                              <div className={styles.pageInfo}>
-                                {page.pageInfo}
-                              </div>
-                            )}
-                            <div className={styles.redLineShort}></div>
-                          </header>
-
-                          <div className={styles.labelsRow}>
-                            {page.columns.map((col, i) => (
-                              <div
-                                key={i}
-                                className={
-                                  col.title.includes("NOT APPLICABLE")
-                                    ? styles.labelEmpty
-                                    : styles.labelShower
-                                }
-                                style={{
-                                  fontWeight: 700,
-                                  color: col.title.includes("NOT")
-                                    ? "#999"
-                                    : "#d4380d",
-                                }}
-                              >
-                                {col.title}
-                              </div>
-                            ))}
-                          </div>
-
-                          <div className={styles.grid}>
-                            {page.columns.map((col, colIdx) => (
-                              <div key={colIdx} className={styles.column}>
-                                {col.items.map((item) => (
-                                  <div
-                                    key={item.productId + item.roomName}
-                                    className={styles.productCard}
-                                  >
-                                    <ImageWithFallback
-                                      src={item.displayImage}
-                                      alt={item.displayName}
-                                      style={{
-                                        width: "100%",
-                                        height: "90px",
-                                        objectFit: "contain",
-                                      }}
-                                    />
-                                    <p className={styles.code}>
-                                      Code: {item.displayCode} ₹
-                                      {item.displayPrice.toLocaleString(
-                                        "en-IN"
-                                      )}
-                                      {item.quantity > 1 &&
-                                        ` × ${item.quantity}`}
-                                    </p>
-                                    <p className={styles.name}>
-                                      {item.displayName}
-                                    </p>
-                                  </div>
-                                ))}
-                                {col.items.length === 0 &&
-                                  col.title !== "NOT APPLICABLE" && (
-                                    <div className={styles.emptyColumnNote}>
-                                      No fittings selected
-                                    </div>
-                                  )}
-                              </div>
-                            ))}
-                          </div>
-                        </>
-                      ) : (
-                        /* ============ SINGLE CONCEALED WORKS PAGE – CARD STYLE ============ */
-                        <>
-                          <header className={styles.header}>
-                            <h1 className={styles.title}>CONCEALED WORKS</h1>
-                            <div className={styles.redLineShort}></div>
-                          </header>
-
-                          <div style={{ padding: "20px 40px" }}>
-                            <h2
-                              style={{
-                                textAlign: "center",
-                                color: "#d4380d",
-                                fontSize: "28px",
-                                margin: "20px 0 40px",
-                                fontWeight: 600,
-                              }}
-                            >
-                              CONCEALED WORKS – COMPLETE PROJECT
-                            </h2>
-
-                            <div
-                              style={{
-                                display: "grid",
-                                gridTemplateColumns:
-                                  "repeat(auto-fill, minmax(280px, 1fr))",
-                                gap: "20px",
-                                justifyItems: "center",
-                              }}
-                            >
-                              {page.concealedItems.map((item, idx) => (
-                                <div
-                                  key={idx}
-                                  className={styles.productCard}
-                                  style={{ width: "100%", maxWidth: "320px" }}
-                                >
-                                  <ImageWithFallback
-                                    src={
-                                      item.displayImage || "/placeholder.jpg"
-                                    }
-                                    alt={item.displayName}
-                                    style={{
-                                      width: "100%",
-                                      height: "110px",
-                                      objectFit: "contain",
-                                    }}
-                                  />
-                                  <p className={styles.code}>
-                                    Code: {item.displayCode} ₹
-                                    {item.displayPrice.toLocaleString("en-IN")}
-                                    {item.quantity > 1 && ` × ${item.quantity}`}
-                                  </p>
-                                  <p
-                                    className={styles.name}
-                                    style={{ fontWeight: 600 }}
-                                  >
-                                    {item.displayName}
-                                  </p>
-                                  <div
-                                    style={{
-                                      fontSize: "13px",
-                                      color: "#666",
-                                      marginTop: "8px",
-                                      lineHeight: "1.4",
-                                    }}
-                                  >
-                                    <strong>Floor:</strong> {item.floorName}{" "}
-                                    <br />
-                                    <strong>Room:</strong> {item.roomName}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-
-                            {page.concealedItems.length === 0 && (
-                              <p
-                                style={{
-                                  textAlign: "center",
-                                  color: "#999",
-                                  fontSize: "18px",
-                                  marginTop: "50px",
-                                }}
-                              >
-                                No concealed works in this project
-                              </p>
-                            )}
-                          </div>
-                        </>
-                      )}
-
-                      {/* Footer on every page */}
-                      <footer className={styles.footer}>
-                        <div className={styles.redLineLong}></div>
-                        <div className={styles.brandLogos}>
-                          <img
-                            src={logo}
-                            alt="Logo"
-                            className={styles.mainLogo}
-                          />
-                        </div>
-                      </footer>
-                    </div>
-                  ))}
-                  {/* SUMMARY PAGE */}
-                  <div
-                    className={`${styles.thankYouPage} quotation-page-print`}
-                  >
-                    <h1>Summary</h1>
-                    <div className={styles.summary}>
-                      <table>
-                        <thead>
-                          <tr>
-                            <th>PARTICULARS</th>
-                            <th>AMOUNT (₹)</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {Object.entries(floorTotals).map(([name, amt]) => (
-                            <tr key={name}>
-                              <td>{name.toUpperCase()}</td>
-                              <td>{amt.toLocaleString("en-IN")}</td>
-                            </tr>
-                          ))}
-                          <tr className={styles.grandTotalRow}>
-                            <td>
-                              <strong>GRAND TOTAL</strong>
-                            </td>
-                            <td>
-                              <strong>
-                                ₹ {grandTotal.toLocaleString("en-IN")}
-                              </strong>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                      <p className={styles.inWords}>
-                        <strong>Amount in Words:</strong>{" "}
-                        {NumberToWords(grandTotal)}
-                      </p>
-                    </div>
-                    <footer className={styles.footer}>
-                      <div className={styles.redLineLong}></div>
-                      <div className={styles.brandLogos}>
-                        <img src={logo} alt="Logo" />
-                      </div>
-                    </footer>
-                  </div>
-
-                  {/* THANK YOU PAGE */}
-                  <div
-                    className={`${styles.thankYouPage} quotation-page-print`}
-                  >
-                    <h1>THANK YOU</h1>
-                    <footer className={styles.footer}>
-                      <div className={styles.redLineLong}></div>
-                      <div className={styles.brandLogos}>
-                        <img src={logo} alt="Logo" />
-                      </div>
-                    </footer>
-                  </div>
-                </div>
+    <>
+      <Helmet>
+        <title>{pageTitle}</title>
+      </Helmet>
+      <div className="page-wrapper">
+        <div className="content">
+          {/* ─── Screen-only top bar ─── */}
+          <div className={styles.screenHeader}>
+            <div className={styles.headerInner}>
+              <div>
+                <Title level={2} style={{ margin: 0, color: "#c8102e" }}>
+                  Site Map
+                </Title>
+                <Text type="secondary">
+                  {customer.name || "Client"} •{" "}
+                  {siteMap.siteSizeInBHK || "— sq.ft."} • {id}
+                </Text>
               </div>
+
+              <Space size="middle">
+                <Button
+                  type="primary"
+                  icon={<FilePdfOutlined />}
+                  onClick={handleExportPDF}
+                  style={{ background: "#c8102e", borderColor: "#c8102e" }}
+                >
+                  Export to PDF
+                </Button>
+                <Button icon={<ArrowLeftOutlined />}>
+                  <Link to="/site-map/list">Back to List</Link>
+                </Button>
+              </Space>
+            </div>
+          </div>
+
+          {/* ─── The ONLY place where quotation pages are rendered ─── */}
+          <div ref={printContainerRef} className={styles.printContainer}>
+            {pages.map((page) => (
+              <div
+                key={page.pageKey}
+                className={`${styles.quotationPage} quotation-page-print`} // ← add this
+              >
+                {/* ─── Centered logo at top of EVERY page ─── */}
+                <div className={styles.logoContainer}>
+                  <img
+                    src={logo}
+                    alt="Chhabra Marble Logo"
+                    className={styles.centeredLogo}
+                  />
+                </div>
+                {page.type === "room" ? (
+                  <>
+                    <div className={styles.roomHeader}>
+                      <div className={styles.customerInfo}>
+                        <strong style={{ color: "#c8102e" }}>
+                          Mr. {customer.name || "Ajay Chhabra"}
+                        </strong>
+                        <br />
+                        {customer.address ||
+                          "487/65, National Market, Peera Garhi, Delhi, 110087"}
+                        <br />
+                        <span style={{ color: "#c8102e" }}>
+                          {siteMap.siteSizeInBHK || "2000 sq.ft."}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className={styles.illustrationContainer}>
+                      <img
+                        src={getBaseIllustration()}
+                        alt={`${page.roomName} layout sketch`}
+                        className={styles.mainIllustration}
+                      />
+
+                      {page.callouts.map((item, idx) => {
+                        // Different default positions for screen vs print (CSS will override)
+                        let pos = { top: "50%", left: "50%" };
+                        if (item.category === "wc" && "toliet")
+                          pos = { top: "63%", left: "5%" };
+                        if (item.category === "basin")
+                          pos = { top: "35%", left: "32%" };
+                        if (item.category === "shower")
+                          pos = { top: "50%", left: "82%" };
+
+                        const offsetTop = idx * 5.5;
+                        const offsetLeft = idx * 4.5;
+
+                        return (
+                          <div
+                            key={`dot-${item.productId || idx}`}
+                            className={styles.redDot}
+                            style={{
+                              top: `calc(${pos.top} + ${offsetTop}%)`,
+                              left: `calc(${pos.left} + ${offsetLeft}%)`,
+                            }}
+                          />
+                        );
+                      })}
+                    </div>
+
+                    <div className={styles.productGrid}>
+                      <h1 className={styles.roomTitle}>
+                        {page.floorName.toUpperCase()} –{" "}
+                        {page.roomName.toUpperCase()}
+                      </h1>
+
+                      <div className={styles.productTableContainer}>
+                        <table className={styles.productTable}>
+                          <tbody>
+                            {Array(Math.ceil(page.callouts.length / 4))
+                              .fill()
+                              .map((_, rowIndex) => (
+                                <tr key={rowIndex}>
+                                  {Array(4)
+                                    .fill()
+                                    .map((_, colIndex) => {
+                                      const idx = rowIndex * 4 + colIndex;
+                                      const item = page.callouts[idx];
+                                      if (!item)
+                                        return (
+                                          <td
+                                            key={colIndex}
+                                            className={styles.emptyCell}
+                                          />
+                                        );
+                                      return (
+                                        <td
+                                          key={colIndex}
+                                          className={styles.productCell}
+                                        >
+                                          <div
+                                            className={styles.cellIconWrapper}
+                                          >
+                                            <ImageWithFallback
+                                              src={item.displayImage}
+                                              alt={item.displayName}
+                                              className={styles.cellIcon}
+                                            />
+                                          </div>
+                                          <div className={styles.cellText}>
+                                            <div className={styles.cellName}>
+                                              {item.displayName}
+                                              {item.quantity > 1 &&
+                                                ` × ${item.quantity}`}
+                                            </div>
+                                            <div
+                                              className={styles.cellCodePrice}
+                                            >
+                                              {item.displayCode || "N/A"} ₹
+                                              {item.displayPrice.toLocaleString(
+                                                "en-IN",
+                                              )}
+                                            </div>
+                                          </div>
+                                        </td>
+                                      );
+                                    })}
+                                </tr>
+                              ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    <div className={styles.roomTotal}>
+                      <strong>
+                        Room Total: ₹
+                        {Number(page.roomTotal).toLocaleString("en-IN") || 0}
+                      </strong>
+                    </div>
+                  </>
+                ) : (
+                  <div className={styles.concealedSection}>
+                    <h1 className={styles.title}>{page.title}</h1>
+                    <div className={styles.concealedGrid}>
+                      {page.items.map((item, i) => (
+                        <div key={i} className={styles.concealedItem}>
+                          <ImageWithFallback
+                            src={item.displayImage}
+                            alt={item.displayName}
+                          />
+                          <div>
+                            <strong>{item.displayName}</strong>
+                            <br />
+                            Code: {item.displayCode} • ₹
+                            {Number(item.displayPrice).toLocaleString(
+                              "en-IN",
+                            ) || 0}
+                            {item.quantity > 1 && ` × ${item.quantity}`}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {/* Summary Page */}
+            <div
+              className={`${styles.quotationPage} ${styles.summaryPage} quotation-page-print`}
+            >
+              <h1 className={styles.projectSummaryTitle}>PROJECT SUMMARY</h1>
+              <table className={styles.summaryTable}>
+                <thead>
+                  <tr>
+                    <th>Floor / Area</th>
+                    <th>Amount (₹)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(floorTotals).map(([name, amt]) => (
+                    <tr key={name}>
+                      <td>{name}</td>
+                      <td>{Number(amt).toLocaleString("en-IN") || 0}</td>
+                    </tr>
+                  ))}
+                  <tr className={styles.grandTotal}>
+                    <td>
+                      <strong>GRAND TOTAL</strong>
+                    </td>
+                    <td>
+                      <strong>
+                        ₹ {Number(grandTotal).toLocaleString("en-IN") || 0}
+                      </strong>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <p className={styles.inWords}>
+                <strong>In Words:</strong> {NumberToWords(grandTotal)}
+              </p>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

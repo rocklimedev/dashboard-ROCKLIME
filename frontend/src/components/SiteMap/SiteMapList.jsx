@@ -43,7 +43,7 @@ const SiteMapList = () => {
   const navigate = useNavigate();
 
   // RTK Queries
-  const { data: customersData } = useGetCustomersQuery();
+  const { data: customersData } = useGetCustomersQuery({ limit: 200 }); // or 500
   const {
     data: siteMapsData,
     isLoading,
