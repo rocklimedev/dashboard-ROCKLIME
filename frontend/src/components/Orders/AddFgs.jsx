@@ -22,7 +22,7 @@ import { debounce } from "lodash";
 import moment from "moment";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-
+import { useGetProfileQuery } from "../../api/userApi";
 import PageHeader from "../Common/PageHeader";
 import AddVendorModal from "../POS-NEW/AddVendorModal"; // reuse same modal
 
@@ -64,7 +64,7 @@ const getUnitPrice = (product) => {
   return Number(product.unitPrice || product.mrp || product.sellingPrice || 0);
 };
 
-const AddFieldGuidedSheet = () => {
+const AddFieldgeneratedSheet = () => {
   const { id } = useParams();
   const isEditMode = !!id;
   const navigate = useNavigate();
@@ -82,10 +82,12 @@ const AddFieldGuidedSheet = () => {
 
   const { data: vendorsRes } = useGetVendorsQuery();
   const vendors = vendorsRes || [];
-
+  // Add this near your other hooks
+  const { data: profile, isLoading: isLoadingProfile } = useGetProfileQuery();
   const [createFGS, { isLoading: creating }] = useCreateFGSMutation();
   const [updateFGS, { isLoading: updating }] = useUpdateFGSMutation();
-  const [createVendor, { isLoading: creatingVendor }] = useCreateVendorMutation();
+  const [createVendor, { isLoading: creatingVendor }] =
+    useCreateVendorMutation();
 
   // Search
   const [searchTerm, setSearchTerm] = useState("");
@@ -114,7 +116,7 @@ const AddFieldGuidedSheet = () => {
 
     const items = (fgs.items || []).map((item) => {
       const product = products.find(
-        (p) => p.id === item.productId || p.productId === item.productId
+        (p) => p.id === item.productId || p.productId === item.productId,
       );
       const unitPrice = Number(item.unitPrice) || getUnitPrice(product) || 0;
       const quantity = Number(item.quantity) || 1;
@@ -281,6 +283,16 @@ const AddFieldGuidedSheet = () => {
         return;
       }
 
+      // Get current user ID from profile
+      const currentUserId = profile?.user?.userId || "nill"; // or profile?.id — adjust based on actual response
+      console.log(currentUserId);
+      if (!currentUserId) {
+        message.error(
+          "Cannot save: user profile not loaded. Please try again.",
+        );
+        return;
+      }
+
       const payload = {
         vendorId: formValues.vendorId,
         items: formValues.items.map((i) => ({
@@ -292,13 +304,17 @@ const AddFieldGuidedSheet = () => {
           ? formValues.expectDeliveryDate.format("YYYY-MM-DD")
           : null,
       };
-
+      console.log(payload);
       if (isEditMode) {
+        // For update, you can choose to send userId (updatedBy) or not
+        // Most teams send it so backend knows who last modified
         await updateFGS({ id, ...payload }).unwrap();
         message.success("Field Guided Sheet updated");
       } else {
         await createFGS(payload).unwrap();
         message.success("Field Guided Sheet created");
+
+        // Reset form
         setFormValues({
           vendorId: "",
           orderDate: moment(),
@@ -309,18 +325,18 @@ const AddFieldGuidedSheet = () => {
         form.resetFields();
       }
 
-      navigate("/fgs/list"); // ← adjust to your FGS list route
+      navigate("/purchase-manager?fgs=1");
     } catch (err) {
       message.error(err?.data?.message || "Failed to save Field Guided Sheet");
     }
   };
 
-  if (isLoadingFGS) return <Spin tip="Loading Field Guided Sheet..." />;
+  if (isLoadingFGS) return <Spin tip="Loading Field generated Sheet..." />;
   if (fgsError) {
     return (
       <Alert
         message="Error"
-        description="Could not load Field Guided Sheet data"
+        description="Could not load Field generated Sheet data"
         type="error"
         showIcon
       />
@@ -380,13 +396,17 @@ const AddFieldGuidedSheet = () => {
       <div className="content">
         <div className="card">
           <PageHeader
-            title={isEditMode ? "Edit Field Guided Sheet" : "Create Field Guided Sheet"}
+            title={
+              isEditMode
+                ? "Edit Field generated Sheet"
+                : "Create Field generated Sheet"
+            }
             subtitle="Temporary / negotiable purchase draft"
           />
 
           <div className="card-body">
             <div style={{ marginBottom: 24, display: "flex", gap: 12 }}>
-              <Link to="/fgs/list">
+              <Link to="/purchase-manager?fgs=1">
                 <Button icon={<ArrowLeftOutlined />}>Back</Button>
               </Link>
               <Button onClick={() => setShowClearConfirm(true)}>Clear</Button>
@@ -480,15 +500,21 @@ const AddFieldGuidedSheet = () => {
                   <Select
                     disabled={!isEditMode} // allow changing only in edit mode (or remove this)
                     value={formValues.status}
-                    onChange={(v) => setFormValues({ ...formValues, status: v })}
+                    onChange={(v) =>
+                      setFormValues({ ...formValues, status: v })
+                    }
                   >
-                    {["draft", "negotiating", "approved", "converted", "cancelled"].map(
-                      (s) => (
-                        <Option key={s} value={s}>
-                          {s.charAt(0).toUpperCase() + s.slice(1)}
-                        </Option>
-                      )
-                    )}
+                    {[
+                      "draft",
+                      "negotiating",
+                      "approved",
+                      "converted",
+                      "cancelled",
+                    ].map((s) => (
+                      <Option key={s} value={s}>
+                        {s.charAt(0).toUpperCase() + s.slice(1)}
+                      </Option>
+                    ))}
                   </Select>
                 </Form.Item>
               </div>
@@ -540,7 +566,7 @@ const AddFieldGuidedSheet = () => {
               <div style={{ marginTop: 32, textAlign: "right" }}>
                 <Button
                   style={{ marginRight: 12 }}
-                  onClick={() => navigate("/fgs/list")}
+                  onClick={() => navigate("/purchase-manager?fgs=1")}
                   disabled={creating || updating}
                 >
                   Cancel
@@ -553,8 +579,8 @@ const AddFieldGuidedSheet = () => {
                   {creating || updating
                     ? "Saving..."
                     : isEditMode
-                    ? "Update FGS"
-                    : "Create FGS"}
+                      ? "Update FGS"
+                      : "Create FGS"}
                 </Button>
               </div>
             </Form>
@@ -594,4 +620,4 @@ const AddFieldGuidedSheet = () => {
   );
 };
 
-export default AddFieldGuidedSheet;
+export default AddFieldgeneratedSheet;

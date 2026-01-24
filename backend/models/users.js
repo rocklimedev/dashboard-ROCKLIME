@@ -95,7 +95,7 @@ module.exports = (sequelize, DataTypes) => {
         set(value) {
           this.setDataValue(
             "roles",
-            Array.isArray(value) ? value.join(",") : value
+            Array.isArray(value) ? value.join(",") : value,
           );
         },
       },
@@ -130,7 +130,7 @@ module.exports = (sequelize, DataTypes) => {
     {
       tableName: "users",
       timestamps: true,
-    }
+    },
   );
 
   // Lifecycle hooks
@@ -154,7 +154,15 @@ module.exports = (sequelize, DataTypes) => {
   User.associate = (models) => {
     // Role
     User.belongsTo(models.Role, { foreignKey: "roleId", as: "role" });
+    User.hasMany(models.PurchaseOrder, {
+      foreignKey: "userId",
+      as: "purchaseOrders",
+    });
 
+    User.hasMany(models.FieldGuidedSheet, {
+      foreignKey: "userId",
+      as: "fieldGuidedSheets",
+    });
     // Address
     User.hasOne(models.Address, {
       foreignKey: "userId",

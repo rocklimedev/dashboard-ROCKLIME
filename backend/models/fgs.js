@@ -1,4 +1,3 @@
-
 // ─────────────────────────────────────────────────────────────
 // NEW Model: models/FieldGuidedSheet.js
 // Similar to PurchaseOrder, but for temporary/draft/negotiable sheets
@@ -21,8 +20,19 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.UUID,
         allowNull: false,
       },
+      userId: {
+        // ← NEW
+        type: DataTypes.UUID,
+        allowNull: true,
+      },
       status: {
-        type: DataTypes.ENUM("draft", "negotiating", "approved", "converted", "cancelled"),
+        type: DataTypes.ENUM(
+          "draft",
+          "negotiating",
+          "approved",
+          "converted",
+          "cancelled",
+        ),
         defaultValue: "draft",
       },
       orderDate: {
@@ -50,9 +60,15 @@ module.exports = (sequelize, DataTypes) => {
     FieldGuidedSheet.belongsTo(models.Vendor, {
       foreignKey: "vendorId",
       as: "vendor",
-      targetKey: "id",
     });
-    FieldGuidedSheet.hasOne(models.PurchaseOrder, {  // ← Optional: for linking converted PO
+
+    FieldGuidedSheet.belongsTo(models.User, {
+      // ← NEW
+      foreignKey: "userId",
+      as: "createdBy",
+    });
+
+    FieldGuidedSheet.hasOne(models.PurchaseOrder, {
       foreignKey: "fgsId",
       as: "purchaseOrder",
     });

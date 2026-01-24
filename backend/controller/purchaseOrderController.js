@@ -1,21 +1,38 @@
+// controllers/purchaseOrderController.js
+
 const { Op } = require("sequelize");
 const moment = require("moment");
-const sequelize = require("../config/database"); // MySQL connection
+const sequelize = require("../config/database");
 const { sendNotification } = require("./notificationController");
-const { Product, Vendor, PurchaseOrder, FieldGuidedSheet } = require("../models"); // Sequelize models
+const { Product, Vendor, PurchaseOrder } = require("../models");
 const PoItem = require("../models/poItem"); // Mongoose model
-const ADMIN_USER_ID = "2ef0f07a-a275-4fe1-832d-fe9a5d145f60";
+
+// Preferably move to .env
+const ADMIN_USER_ID =
+  process.env.ADMIN_USER_ID || "2ef0f07a-a275-4fe1-832d-fe9a5d145f60";
+
+const PO_STATUSES = {
+  PENDING: "pending",
+  IN_NEGOTIATION: "in_negotiation",
+  CONFIRMED: "confirmed",
+  PARTIAL_DELIVERED: "partial_delivered",
+  DELIVERED: "delivered",
+  CANCELLED: "cancelled",
+};
+
+const VALID_PO_STATUSES = Object.values(PO_STATUSES);
 
 // ─────────────────────────────────────────────────────────────
-// Helper: Generate next daily sequential poNumber (unchanged)
+// Helpers
 // ─────────────────────────────────────────────────────────────
+
 async function generateDailyPONumber(t) {
   const todayStart = moment().startOf("day").toDate();
   const todayEnd = moment().endOf("day").toDate();
   const prefix = moment().format("DDMMYY");
 
   let attempt = 0;
-  const MAX_ATTEMPTS = 15;
+  const MAX_ATTEMPTS = 20;
 
   while (attempt < MAX_ATTEMPTS) {
     attempt++;
@@ -34,8 +51,8 @@ async function generateDailyPONumber(t) {
 
     let nextSeq = 101;
     if (lastPO) {
-      const lastSeqStr = lastPO.poNumber.slice(8);
-      const parsed = parseInt(lastSeqStr, 10);
+      const lastSeq = lastPO.poNumber.slice(8);
+      const parsed = parseInt(lastSeq, 10);
       if (!isNaN(parsed)) nextSeq = parsed + 1;
     }
 
@@ -49,7 +66,7 @@ async function generateDailyPONumber(t) {
     if (!conflict) return candidate;
 
     console.warn(
-      `PO collision: ${candidate} — retry ${attempt}/${MAX_ATTEMPTS}`,
+      `PO number collision: ${candidate} — attempt ${attempt}/${MAX_ATTEMPTS}`,
     );
   }
 
@@ -58,114 +75,90 @@ async function generateDailyPONumber(t) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// Validate items & calculate total (updated for reactivity: allow partial items update)
-// ─────────────────────────────────────────────────────────────
-async function validateAndCalculateItems(items, transaction, isPartial = false) {
-  if (!Array.isArray(items) || (!isPartial && items.length === 0)) {
-    throw new Error("Items array is required and cannot be empty unless partial update");
+async function validateAndCalculateItems(items, transaction) {
+  if (!Array.isArray(items) || items.length === 0) {
+    throw new Error("Items must be a non-empty array");
   }
 
-  let totalAmount = 0;
-  const preparedItems = [];
+  let total = 0;
+  const prepared = [];
 
   for (const item of items) {
-    if (!item.productId) {
-      throw new Error("Product ID required for every item");
-    }
+    if (!item.productId) throw new Error("Every item must have productId");
 
     const product = await Product.findByPk(item.productId, { transaction });
-    if (!product) {
-      throw new Error(`Product not found: ${item.productId}`);
-    }
+    if (!product) throw new Error(`Product not found: ${item.productId}`);
 
-    const quantity = Number(item.quantity);
-    if (quantity <= 0 || isNaN(quantity)) {
-      throw new Error(`Invalid quantity for product ${item.productId}`);
-    }
+    const qty = Number(item.quantity);
+    if (qty <= 0 || isNaN(qty))
+      throw new Error(`Invalid quantity: ${item.productId}`);
 
-    const unitPrice = Number(item.unitPrice ?? item.mrp ?? 0);
-    if (unitPrice <= 0 || isNaN(unitPrice)) {
-      throw new Error(`Invalid unit price for product ${item.productId}`);
-    }
+    const price = Number(item.unitPrice ?? item.mrp ?? 0);
+    if (price <= 0 || isNaN(price))
+      throw new Error(`Invalid unit price: ${item.productId}`);
 
-    const lineTotal = quantity * unitPrice;
-    totalAmount += lineTotal;
+    const lineTotal = qty * price;
+    total += lineTotal;
 
     let imageUrl = null;
-
     if (product.images) {
       if (Array.isArray(product.images) && product.images.length > 0) {
         imageUrl = product.images[0];
-      } else if (
-        typeof product.images === "string" &&
-        product.images.trim() !== ""
-      ) {
+      } else if (typeof product.images === "string" && product.images.trim()) {
         try {
           const parsed = JSON.parse(product.images);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            imageUrl = parsed[0];
-          }
-        } catch (err) {
-          console.warn(
-            `Product ${product.productId} has invalid stringified images: ${product.images.substring(0, 100)}...`,
-          );
-        }
+          if (Array.isArray(parsed) && parsed.length > 0) imageUrl = parsed[0];
+        } catch {}
       }
     }
 
-    preparedItems.push({
+    prepared.push({
       productId: item.productId,
-      productName: product.name || "Unnamed Product",
+      productName: product.name || "Unnamed",
       companyCode:
         product.meta?.["d11da9f9-3f2e-4536-8236-9671200cca4a"] || null,
       productCode: product.product_code || product.code || "",
       imageUrl,
-      quantity,
-      unitPrice,
-      mrp: item.mrp || product.mrp || unitPrice,
-      discount: item.discount || 0,
+      quantity: qty,
+      unitPrice: price,
+      mrp: Number(item.mrp ?? product.mrp ?? price),
+      discount: Number(item.discount ?? 0),
       discountType: item.discountType || "percent",
-      tax: item.tax || 0,
+      tax: Number(item.tax ?? 0),
       total: lineTotal,
     });
   }
 
   return {
-    totalAmount: Number(totalAmount.toFixed(2)),
-    preparedItems,
+    totalAmount: Number(total.toFixed(2)),
+    preparedItems: prepared,
   };
 }
 
-// ─────────────────────────────────────────────────────────────
-// Helper: Get items from MongoDB (unchanged)
-// ─────────────────────────────────────────────────────────────
 async function fetchPoItems(poId) {
   const doc = await PoItem.findOne({ poId }).lean().exec();
-  return doc ? doc.items : [];
+  return doc?.items || [];
 }
 
 // ─────────────────────────────────────────────────────────────
-// CREATE Purchase Order (updated: optional fgsId for conversion tracking)
+// CREATE Purchase Order
 // ─────────────────────────────────────────────────────────────
 exports.createPurchaseOrder = async (req, res) => {
   const t = await sequelize.transaction();
   let mongoDoc = null;
 
   try {
-    const { vendorId, items, expectDeliveryDate, fgsId } = req.body;  // ← NEW: fgsId optional
+    const { vendorId, items, expectDeliveryDate, fgsId } = req.body;
+    const userId = req.user?.id || null; // ← from auth middleware
 
-    if (!vendorId || !items || !Array.isArray(items)) {
+    if (!vendorId || !Array.isArray(items) || items.length === 0) {
       return res
         .status(400)
-        .json({ message: "vendorId and items array are required" });
+        .json({ message: "vendorId and non-empty items array required" });
     }
 
     const vendor = await Vendor.findByPk(vendorId, { transaction: t });
-    if (!vendor) {
-      await t.rollback();
-      return res.status(404).json({ message: "Vendor not found" });
-    }
+    if (!vendor) throw new Error("Vendor not found");
 
     const { totalAmount, preparedItems } = await validateAndCalculateItems(
       items,
@@ -174,12 +167,13 @@ exports.createPurchaseOrder = async (req, res) => {
 
     const poNumber = await generateDailyPONumber(t);
 
-    const purchaseOrder = await PurchaseOrder.create(
+    const po = await PurchaseOrder.create(
       {
         poNumber,
         vendorId,
-        fgsId,  // ← NEW
-        status: "pending",
+        userId,
+        fgsId: fgsId || null,
+        status: PO_STATUSES.PENDING,
         orderDate: new Date(),
         expectDeliveryDate: expectDeliveryDate
           ? new Date(expectDeliveryDate)
@@ -189,16 +183,15 @@ exports.createPurchaseOrder = async (req, res) => {
       { transaction: t },
     );
 
-    // Create items in MongoDB
     mongoDoc = await PoItem.create({
-      poId: purchaseOrder.id,
-      poNumber: purchaseOrder.poNumber,
-      vendorId: purchaseOrder.vendorId,
+      poId: po.id,
+      poNumber: po.poNumber,
+      vendorId: po.vendorId,
       items: preparedItems,
       calculatedTotal: totalAmount,
     });
 
-    await purchaseOrder.update(
+    await po.update(
       { mongoItemsId: mongoDoc._id.toString() },
       { transaction: t },
     );
@@ -207,99 +200,90 @@ exports.createPurchaseOrder = async (req, res) => {
 
     await sendNotification({
       userId: ADMIN_USER_ID,
-      title: `New Purchase Order Created #${poNumber}`,
-      message: `PO #${poNumber} for ${vendor.vendorName || "Vendor"} • ₹${totalAmount}`,
+      title: `New PO Created — ${poNumber}`,
+      message: `${vendor.vendorName || "Vendor"} • ₹${totalAmount} • ${fgsId ? "from FGS" : "direct"}`,
     });
 
     return res.status(201).json({
-      message: "Purchase order created successfully",
-      purchaseOrder: {
-        ...purchaseOrder.toJSON(),
-        items: preparedItems,
-      },
+      message: "Purchase Order created",
+      purchaseOrder: { ...po.toJSON(), items: preparedItems },
     });
-  } catch (error) {
+  } catch (err) {
     await t.rollback();
-
-    if (mongoDoc) {
+    if (mongoDoc?._id) {
       await PoItem.deleteOne({ _id: mongoDoc._id }).catch((e) =>
-        console.error("Cleanup failed:", e),
+        console.error("Orphaned Mongo cleanup failed:", mongoDoc._id, e),
       );
     }
-
-    console.error("Create PO error:", error);
     return res.status(500).json({
-      message: "Error creating purchase order",
-      error: error.message,
+      message: "Failed to create Purchase Order",
+      error: err.message,
     });
   }
 };
 
 // ─────────────────────────────────────────────────────────────
-// UPDATE Purchase Order (updated for new statuses, partial item updates)
+// UPDATE Purchase Order (items = full replacement)
 // ─────────────────────────────────────────────────────────────
 exports.updatePurchaseOrder = async (req, res) => {
   const t = await sequelize.transaction();
 
   try {
     const { vendorId, items, status, expectDeliveryDate } = req.body;
+    const { id } = req.params;
 
-    const purchaseOrder = await PurchaseOrder.findByPk(req.params.id, {
-      transaction: t,
-    });
-    if (!purchaseOrder) {
-      await t.rollback();
-      return res.status(404).json({ message: "Purchase order not found" });
+    const po = await PurchaseOrder.findByPk(id, { transaction: t });
+    if (!po) throw new Error("Purchase order not found");
+
+    if ([PO_STATUSES.DELIVERED, PO_STATUSES.CANCELLED].includes(po.status)) {
+      throw new Error("Cannot modify delivered or cancelled Purchase Order");
     }
 
     const updateData = {};
 
     if (vendorId) {
-      const vendorCheck = await Vendor.findByPk(vendorId, { transaction: t });
-      if (!vendorCheck) throw new Error("Vendor not found");
+      const v = await Vendor.findByPk(vendorId, { transaction: t });
+      if (!v) throw new Error("Vendor not found");
       updateData.vendorId = vendorId;
     }
 
-    if (status) updateData.status = status;
-    if (expectDeliveryDate !== undefined) {
-      updateData.expectDeliveryDate = expectDeliveryDate || null;
+    if (status) {
+      if (!VALID_PO_STATUSES.includes(status))
+        throw new Error("Invalid status");
+      updateData.status = status;
     }
 
-    let newItems = null;
-    let newTotal = purchaseOrder.totalAmount;
+    if (expectDeliveryDate !== undefined) {
+      updateData.expectDeliveryDate = expectDeliveryDate
+        ? new Date(expectDeliveryDate)
+        : null;
+    }
 
-    if (items && Array.isArray(items)) {
+    let returnedItems = null;
+
+    if (Array.isArray(items) && items.length > 0) {
       const { totalAmount, preparedItems } = await validateAndCalculateItems(
         items,
         t,
-        true  // ← Allow partial updates
       );
-      newTotal = totalAmount;
       updateData.totalAmount = totalAmount;
 
-      // For partial updates, merge with existing items
-      const existingDoc = await PoItem.findOne({ poId: purchaseOrder.id });
-      const existingItems = existingDoc ? existingDoc.items : [];
-      const itemMap = new Map(existingItems.map(i => [i.productId, i]));
-      preparedItems.forEach(newItem => itemMap.set(newItem.productId, newItem));
-      const mergedItems = Array.from(itemMap.values());
-
       await PoItem.findOneAndUpdate(
-        { poId: purchaseOrder.id },
+        { poId: po.id },
         {
-          vendorId: updateData.vendorId || purchaseOrder.vendorId,
-          items: mergedItems,
-          calculatedTotal: newTotal,
+          vendorId: updateData.vendorId || po.vendorId,
+          items: preparedItems,
+          calculatedTotal: totalAmount,
         },
-        { upsert: true, new: true },
+        { upsert: true },
       );
 
-      newItems = mergedItems;
+      returnedItems = preparedItems;
     }
 
-    await purchaseOrder.update(updateData, { transaction: t });
+    await po.update(updateData, { transaction: t });
 
-    const updatedPo = await PurchaseOrder.findByPk(purchaseOrder.id, {
+    const updated = await PurchaseOrder.findByPk(id, {
       include: [
         { model: Vendor, as: "vendor", attributes: ["id", "vendorName"] },
       ],
@@ -310,101 +294,90 @@ exports.updatePurchaseOrder = async (req, res) => {
 
     await sendNotification({
       userId: ADMIN_USER_ID,
-      title: `Purchase Order Updated #${purchaseOrder.poNumber}`,
-      message: `PO #${purchaseOrder.poNumber} updated (${updatedPo.vendor?.vendorName || "Vendor"}).`,
+      title: `PO Updated — ${po.poNumber}`,
+      message: `Status: ${updated.status} • ${updated.vendor?.vendorName || "?"} • ₹${updated.totalAmount}`,
     });
 
-    return res.status(200).json({
-      message: "Purchase order updated successfully",
+    return res.json({
+      message: "Purchase Order updated",
       purchaseOrder: {
-        ...updatedPo.toJSON(),
-        items: newItems || (await fetchPoItems(purchaseOrder.id)),
+        ...updated.toJSON(),
+        items: returnedItems || (await fetchPoItems(id)),
       },
     });
-  } catch (error) {
+  } catch (err) {
     await t.rollback();
-    return res.status(400).json({
-      message: "Error updating purchase order",
-      error: error.message,
-    });
+    const code = err.message.includes("not found") ? 404 : 400;
+    return res
+      .status(code)
+      .json({ message: "Update failed", error: err.message });
   }
 };
 
 // ─────────────────────────────────────────────────────────────
-// GET BY ID
+// GET ONE
 // ─────────────────────────────────────────────────────────────
 exports.getPurchaseOrderById = async (req, res) => {
   try {
-    const purchaseOrder = await PurchaseOrder.findByPk(req.params.id, {
+    const po = await PurchaseOrder.findByPk(req.params.id, {
       include: [
         { model: Vendor, as: "vendor", attributes: ["id", "vendorName"] },
       ],
     });
 
-    if (!purchaseOrder) {
+    if (!po)
       return res.status(404).json({ message: "Purchase order not found" });
-    }
 
-    const items = await fetchPoItems(purchaseOrder.id);
+    const items = await fetchPoItems(po.id);
 
-    return res.status(200).json({
-      ...purchaseOrder.toJSON(),
-      items,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      message: "Error fetching purchase order",
-      error: error.message,
-    });
+    return res.json({ ...po.toJSON(), items });
+  } catch (err) {
+    return res
+      .status(500)
+      .json({ message: "Error fetching PO", error: err.message });
   }
 };
 
 // ─────────────────────────────────────────────────────────────
-// GET ALL (with pagination)
-// Note: fetching items for many records can be slow → consider lazy loading in frontend
+// GET ALL (paginated)
 // ─────────────────────────────────────────────────────────────
 exports.getAllPurchaseOrders = async (req, res) => {
   try {
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 20;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(5, parseInt(req.query.limit) || 20));
     const offset = (page - 1) * limit;
 
-    const { count, rows: purchaseOrders } = await PurchaseOrder.findAndCountAll(
-      {
-        include: [
-          { model: Vendor, as: "vendor", attributes: ["id", "vendorName"] },
-        ],
-        order: [["createdAt", "DESC"]],
-        offset,
-        limit,
-        subQuery: false,
-      },
-    );
+    const { count, rows } = await PurchaseOrder.findAndCountAll({
+      include: [
+        { model: Vendor, as: "vendor", attributes: ["id", "vendorName"] },
+      ],
+      order: [["createdAt", "DESC"]],
+      limit,
+      offset,
+      subQuery: false,
+    });
 
-    const poIds = purchaseOrders.map((po) => po.id);
-    const itemDocs = await PoItem.find({ poId: { $in: poIds } }).lean();
+    const poIds = rows.map((r) => r.id);
+    const mongoDocs = await PoItem.find({ poId: { $in: poIds } }).lean();
 
-    const itemsByPo = new Map(
-      itemDocs.map((doc) => [doc.poId, doc.items || []]),
-    );
+    const itemsMap = new Map(mongoDocs.map((d) => [d.poId, d.items || []]));
 
-    const result = purchaseOrders.map((po) => ({
+    const result = rows.map((po) => ({
       ...po.toJSON(),
-      items: itemsByPo.get(po.id) || [],
+      items: itemsMap.get(po.id) || [],
     }));
 
-    const totalPages = Math.ceil(count / limit);
-
-    return res.status(200).json({
+    return res.json({
       data: result,
-      pagination: { total: count, page, limit, totalPages },
+      pagination: {
+        total: count,
+        page,
+        limit,
+        totalPages: Math.ceil(count / limit),
+      },
     });
-  } catch (error) {
-    console.error("getAllPurchaseOrders error:", error);
-    return res.status(500).json({
-      message: "Error fetching purchase orders",
-      error: process.env.NODE_ENV === "development" ? error.message : undefined,
-    });
+  } catch (err) {
+    return res.status(500).json({ message: "Error listing Purchase Orders" });
   }
 };
 
@@ -415,108 +388,150 @@ exports.deletePurchaseOrder = async (req, res) => {
   const t = await sequelize.transaction();
 
   try {
-    const purchaseOrder = await PurchaseOrder.findByPk(req.params.id, {
-      transaction: t,
-    });
-    if (!purchaseOrder) {
-      await t.rollback();
-      return res.status(404).json({ message: "Purchase order not found" });
-    }
-
-    const vendor = await Vendor.findByPk(purchaseOrder.vendorId, {
+    const po = await PurchaseOrder.findByPk(req.params.id, {
+      include: [{ model: Vendor, as: "vendor" }],
       transaction: t,
     });
 
-    await purchaseOrder.destroy({ transaction: t });
+    if (!po) throw new Error("Not found");
 
-    // Clean up MongoDB
-    await PoItem.deleteOne({ poId: purchaseOrder.id });
+    await po.destroy({ transaction: t });
+    await PoItem.deleteOne({ poId: po.id });
 
     await t.commit();
 
     await sendNotification({
       userId: ADMIN_USER_ID,
-      title: `Purchase Order Deleted #${purchaseOrder.poNumber}`,
-      message: `PO #${purchaseOrder.poNumber} deleted (${vendor?.vendorName || "Vendor"}).`,
+      title: `PO Deleted — ${po.poNumber}`,
+      message: `${po.vendor?.vendorName || "Vendor"} • ${po.totalAmount}`,
     });
 
-    return res
-      .status(200)
-      .json({ message: "Purchase order deleted successfully" });
-  } catch (error) {
+    return res.json({ message: "Purchase Order deleted successfully" });
+  } catch (err) {
     await t.rollback();
-    return res.status(500).json({
-      message: "Error deleting purchase order",
-      error: error.message,
-    });
+    const code = err.message.includes("not found") ? 404 : 500;
+    return res
+      .status(code)
+      .json({ message: "Delete failed", error: err.message });
   }
 };
 
 // ─────────────────────────────────────────────────────────────
-// CONFIRM (update stock from MongoDB items)
+// CONFIRM & UPDATE STOCK
 // ─────────────────────────────────────────────────────────────
 exports.confirmPurchaseOrder = async (req, res) => {
   const t = await sequelize.transaction();
 
   try {
-    const purchaseOrder = await PurchaseOrder.findByPk(req.params.id, {
-      transaction: t,
-    });
+    const po = await PurchaseOrder.findByPk(req.params.id, { transaction: t });
+    if (!po) throw new Error("Purchase order not found");
 
-    if (!purchaseOrder) {
-      await t.rollback();
-      return res.status(404).json({ message: "Purchase order not found" });
+    if (
+      po.status !== PO_STATUSES.PENDING &&
+      po.status !== PO_STATUSES.CONFIRMED
+    ) {
+      throw new Error("Can only confirm pending or confirmed orders");
     }
 
-    if (purchaseOrder.status !== "pending") {
-      await t.rollback();
-      return res.status(400).json({ message: "Purchase order is not pending" });
-    }
-
-    // Get items from MongoDB
-    const items = await fetchPoItems(purchaseOrder.id);
+    const items = await fetchPoItems(po.id);
+    if (items.length === 0) throw new Error("No items in PO");
 
     for (const item of items) {
       const product = await Product.findByPk(item.productId, {
         transaction: t,
       });
       if (product) {
-        product.quantity = (product.quantity || 0) + item.quantity;
+        product.quantity = Number(product.quantity || 0) + item.quantity;
         await product.save({ transaction: t });
       }
     }
 
-    await purchaseOrder.update({ status: "delivered" }, { transaction: t });
+    await po.update({ status: PO_STATUSES.DELIVERED }, { transaction: t });
 
-    const vendor = await Vendor.findByPk(purchaseOrder.vendorId, {
-      transaction: t,
-    });
+    const vendor = await Vendor.findByPk(po.vendorId, { transaction: t });
 
     await t.commit();
 
     await sendNotification({
       userId: ADMIN_USER_ID,
-      title: `Purchase Order Confirmed #${purchaseOrder.poNumber}`,
-      message: `PO #${purchaseOrder.poNumber} confirmed & marked delivered (${vendor?.vendorName || "Vendor"}).`,
+      title: `PO Confirmed & Delivered — ${po.poNumber}`,
+      message: `${vendor?.vendorName || "?"} • ₹${po.totalAmount}`,
     });
 
-    return res.status(200).json({
-      message: "Purchase order confirmed and stock updated",
-      purchaseOrder: {
-        ...purchaseOrder.toJSON(),
-        status: "delivered",
-        items,
-      },
+    return res.json({
+      message: "Purchase Order confirmed and stock updated",
+      purchaseOrder: { ...po.toJSON(), status: PO_STATUSES.DELIVERED },
     });
-  } catch (error) {
+  } catch (err) {
     await t.rollback();
-    return res.status(500).json({
-      message: "Error confirming purchase order",
-      error: error.message,
-    });
+    return res
+      .status(400)
+      .json({ message: "Confirmation failed", error: err.message });
   }
 };
 
+// ─────────────────────────────────────────────────────────────
+// UPDATE STATUS ONLY
+// ─────────────────────────────────────────────────────────────
+exports.updatePurchaseOrderStatus = async (req, res) => {
+  const t = await sequelize.transaction();
+
+  try {
+    const { status } = req.body;
+    const { id } = req.params;
+
+    if (!status || !VALID_PO_STATUSES.includes(status)) {
+      throw new Error(
+        `Invalid status. Allowed: ${VALID_PO_STATUSES.join(", ")}`,
+      );
+    }
+
+    const po = await PurchaseOrder.findByPk(id, { transaction: t });
+    if (!po) throw new Error("Purchase order not found");
+
+    if (po.status === status) throw new Error("Status already set");
+
+    // Auto-update stock when moving to delivered
+    if (
+      status === PO_STATUSES.DELIVERED &&
+      po.status !== PO_STATUSES.DELIVERED
+    ) {
+      const items = await fetchPoItems(po.id);
+      for (const item of items) {
+        const product = await Product.findByPk(item.productId, {
+          transaction: t,
+        });
+        if (product) {
+          product.quantity = Number(product.quantity || 0) + item.quantity;
+          await product.save({ transaction: t });
+        }
+      }
+    }
+
+    const oldStatus = po.status;
+    await po.update({ status }, { transaction: t });
+
+    const vendor = await Vendor.findByPk(po.vendorId, { transaction: t });
+
+    await t.commit();
+
+    await sendNotification({
+      userId: ADMIN_USER_ID,
+      title: `PO Status Changed — ${po.poNumber}`,
+      message: `${oldStatus} → ${status} • ${vendor?.vendorName || "?"}`,
+    });
+
+    return res.json({
+      message: `Status updated to ${status}`,
+      purchaseOrder: { ...po.toJSON(), status },
+    });
+  } catch (err) {
+    await t.rollback();
+    return res
+      .status(400)
+      .json({ message: "Status update failed", error: err.message });
+  }
+};
 // ─────────────────────────────────────────────────────────────
 // GET BY VENDOR
 // ─────────────────────────────────────────────────────────────
@@ -550,80 +565,75 @@ exports.getPurchaseOrdersByVendor = async (req, res) => {
     });
   }
 };
-
-// ─────────────────────────────────────────────────────────────
-// UPDATE STATUS ONLY
-// ─────────────────────────────────────────────────────────────
-exports.updatePurchaseOrderStatus = async (req, res) => {
-  const t = await sequelize.transaction();
+// Utility to create PO from data (used by FGS conversion + maybe others)
+exports.createPurchaseOrderFromData = async (data, transaction = null) => {
+  const t = transaction || (await sequelize.transaction());
+  let mongoDoc = null;
+  let shouldCommit = !transaction;
 
   try {
-    const { id } = req.params;
-    const { status } = req.body;
+    const { vendorId, items, expectDeliveryDate, fgsId, createdBy } = data;
 
-    const validStatuses = ["pending", "confirmed", "delivered", "cancelled"];
-    if (!status || !validStatuses.includes(status)) {
-      await t.rollback();
-      return res.status(400).json({
-        message: `Invalid status. Allowed: ${validStatuses.join(", ")}`,
-      });
+    if (!vendorId || !Array.isArray(items) || items.length === 0) {
+      throw new Error("vendorId and non-empty items array required");
     }
 
-    const purchaseOrder = await PurchaseOrder.findByPk(id, { transaction: t });
-    if (!purchaseOrder) {
-      await t.rollback();
-      return res.status(404).json({ message: "Purchase order not found" });
-    }
+    const vendor = await Vendor.findByPk(vendorId, { transaction: t });
+    if (!vendor) throw new Error("Vendor not found");
 
-    if (purchaseOrder.status === status) {
-      await t.rollback();
-      return res
-        .status(400)
-        .json({ message: "Status already set to this value" });
-    }
+    const { totalAmount, preparedItems } = await validateAndCalculateItems(
+      items,
+      t,
+    );
 
-    if (status === "delivered" && purchaseOrder.status !== "delivered") {
-      const items = await fetchPoItems(purchaseOrder.id);
-      for (const item of items) {
-        const product = await Product.findByPk(item.productId, {
-          transaction: t,
-        });
-        if (product) {
-          product.quantity = (product.quantity || 0) + item.quantity;
-          await product.save({ transaction: t });
-        }
-      }
-    }
+    const poNumber = await generateDailyPONumber(t);
 
-    const oldStatus = purchaseOrder.status;
-    await purchaseOrder.update({ status }, { transaction: t });
-
-    const vendor = await Vendor.findByPk(purchaseOrder.vendorId, {
-      transaction: t,
-    });
-
-    await t.commit();
-
-    await sendNotification({
-      userId: ADMIN_USER_ID,
-      title: `PO Status Updated #${purchaseOrder.poNumber}`,
-      message: `PO #${purchaseOrder.poNumber} status changed from ${oldStatus} to ${status} (${vendor?.vendorName || "Vendor"}).`,
-    });
-
-    return res.status(200).json({
-      message: `Status updated to '${status}'`,
-      purchaseOrder: {
-        ...purchaseOrder.toJSON(),
-        status,
-        items: await fetchPoItems(purchaseOrder.id),
+    const po = await PurchaseOrder.create(
+      {
+        poNumber,
+        vendorId,
+        userId: createdBy || null,
+        fgsId: fgsId || null,
+        status: PO_STATUSES.PENDING,
+        orderDate: new Date(),
+        expectDeliveryDate: expectDeliveryDate
+          ? new Date(expectDeliveryDate)
+          : null,
+        totalAmount,
       },
+      { transaction: t },
+    );
+
+    // Fixed: no second argument / no fake session
+    mongoDoc = await PoItem.create({
+      poId: po.id,
+      poNumber: po.poNumber,
+      vendorId: po.vendorId,
+      items: preparedItems,
+      calculatedTotal: totalAmount,
     });
-  } catch (error) {
-    await t.rollback();
-    return res.status(500).json({
-      message: "Error updating status",
-      error: error.message,
-    });
+
+    await po.update(
+      { mongoItemsId: mongoDoc._id.toString() },
+      { transaction: t },
+    );
+
+    if (shouldCommit) {
+      await t.commit();
+    }
+
+    return {
+      purchaseOrder: { ...po.toJSON(), items: preparedItems },
+      poNumber: po.poNumber,
+    };
+  } catch (err) {
+    if (shouldCommit) await t.rollback();
+
+    if (mongoDoc?._id) {
+      await PoItem.deleteOne({ _id: mongoDoc._id }).catch(console.error);
+    }
+
+    throw err;
   }
 };
-
+module.exports = exports;

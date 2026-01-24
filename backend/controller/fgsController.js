@@ -1,22 +1,38 @@
+// controllers/fieldGuidedSheetController.js
+
 const { Op } = require("sequelize");
 const moment = require("moment");
 const sequelize = require("../config/database");
 const { sendNotification } = require("./notificationController");
 const { Product, Vendor, FieldGuidedSheet } = require("../models");
-const FgsItem = require("../models/fgsItem"); // NEW Mongoose model
-const { createPurchaseOrder } = require("./purchaseOrderController"); // Import for conversion
-const ADMIN_USER_ID = "2ef0f07a-a275-4fe1-832d-fe9a5d145f60";
+const FgsItem = require("../models/fgsItem"); // Mongoose model
+const { createPurchaseOrderFromData } = require("./purchaseOrderController"); // ← Assume this exists or create it
+
+// Move to env or config in production
+const ADMIN_USER_ID =
+  process.env.ADMIN_USER_ID || "2ef0f07a-a275-4fe1-832d-fe9a5d145f60";
+
+const FGS_STATUSES = {
+  DRAFT: "draft",
+  NEGOTIATING: "negotiating",
+  APPROVED: "approved",
+  CONVERTED: "converted",
+  CANCELLED: "cancelled",
+};
+
+const VALID_FGS_STATUSES = Object.values(FGS_STATUSES);
 
 // ─────────────────────────────────────────────────────────────
-// Helper: Generate next daily sequential fgsNumber
+// Helpers
 // ─────────────────────────────────────────────────────────────
+
 async function generateDailyFGSNumber(t) {
   const todayStart = moment().startOf("day").toDate();
   const todayEnd = moment().endOf("day").toDate();
   const prefix = moment().format("DDMMYY");
 
   let attempt = 0;
-  const MAX_ATTEMPTS = 15;
+  const MAX_ATTEMPTS = 20;
 
   while (attempt < MAX_ATTEMPTS) {
     attempt++;
@@ -35,8 +51,8 @@ async function generateDailyFGSNumber(t) {
 
     let nextSeq = 101;
     if (lastFGS) {
-      const lastSeqStr = lastFGS.fgsNumber.slice(9);
-      const parsed = parseInt(lastSeqStr, 10);
+      const lastSeq = lastFGS.fgsNumber.slice(9);
+      const parsed = parseInt(lastSeq, 10);
       if (!isNaN(parsed)) nextSeq = parsed + 1;
     }
 
@@ -50,7 +66,7 @@ async function generateDailyFGSNumber(t) {
     if (!conflict) return candidate;
 
     console.warn(
-      `FGS collision: ${candidate} — retry ${attempt}/${MAX_ATTEMPTS}`,
+      `FGS number collision: ${candidate} — attempt ${attempt}/${MAX_ATTEMPTS}`,
     );
   }
 
@@ -58,118 +74,94 @@ async function generateDailyFGSNumber(t) {
     `Failed to generate unique FGS number after ${MAX_ATTEMPTS} attempts`,
   );
 }
-// ─────────────────────────────────────────────────────────────
-// Validate items & calculate total (updated for reactivity: allow partial items update)
-// ─────────────────────────────────────────────────────────────
-async function validateAndCalculateItems(items, transaction, isPartial = false) {
-  if (!Array.isArray(items) || (!isPartial && items.length === 0)) {
-    throw new Error("Items array is required and cannot be empty unless partial update");
+
+async function validateAndCalculateItems(items, transaction) {
+  if (!Array.isArray(items) || items.length === 0) {
+    throw new Error("Items must be a non-empty array");
   }
 
-  let totalAmount = 0;
-  const preparedItems = [];
+  let total = 0;
+  const prepared = [];
 
   for (const item of items) {
-    if (!item.productId) {
-      throw new Error("Product ID required for every item");
-    }
+    if (!item.productId) throw new Error("Every item must have productId");
 
     const product = await Product.findByPk(item.productId, { transaction });
-    if (!product) {
-      throw new Error(`Product not found: ${item.productId}`);
-    }
+    if (!product) throw new Error(`Product not found: ${item.productId}`);
 
-    const quantity = Number(item.quantity);
-    if (quantity <= 0 || isNaN(quantity)) {
-      throw new Error(`Invalid quantity for product ${item.productId}`);
-    }
+    const qty = Number(item.quantity);
+    if (qty <= 0 || isNaN(qty))
+      throw new Error(`Invalid quantity: ${item.productId}`);
 
-    const unitPrice = Number(item.unitPrice ?? item.mrp ?? 0);
-    if (unitPrice <= 0 || isNaN(unitPrice)) {
-      throw new Error(`Invalid unit price for product ${item.productId}`);
-    }
+    const price = Number(item.unitPrice ?? item.mrp ?? 0);
+    if (price <= 0 || isNaN(price))
+      throw new Error(`Invalid unit price: ${item.productId}`);
 
-    const lineTotal = quantity * unitPrice;
-    totalAmount += lineTotal;
+    const lineTotal = qty * price;
+    total += lineTotal;
 
     let imageUrl = null;
-
     if (product.images) {
       if (Array.isArray(product.images) && product.images.length > 0) {
         imageUrl = product.images[0];
-      } else if (
-        typeof product.images === "string" &&
-        product.images.trim() !== ""
-      ) {
+      } else if (typeof product.images === "string" && product.images.trim()) {
         try {
           const parsed = JSON.parse(product.images);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            imageUrl = parsed[0];
-          }
-        } catch (err) {
-          console.warn(
-            `Product ${product.productId} has invalid stringified images: ${product.images.substring(0, 100)}...`,
-          );
+          if (Array.isArray(parsed) && parsed.length > 0) imageUrl = parsed[0];
+        } catch {
+          // silent fail
         }
       }
     }
 
-    preparedItems.push({
+    prepared.push({
       productId: item.productId,
-      productName: product.name || "Unnamed Product",
+      productName: product.name || "Unnamed",
       companyCode:
         product.meta?.["d11da9f9-3f2e-4536-8236-9671200cca4a"] || null,
       productCode: product.product_code || product.code || "",
       imageUrl,
-      quantity,
-      unitPrice,
-      mrp: item.mrp || product.mrp || unitPrice,
-      discount: item.discount || 0,
+      quantity: qty,
+      unitPrice: price,
+      mrp: Number(item.mrp ?? product.mrp ?? price),
+      discount: Number(item.discount ?? 0),
       discountType: item.discountType || "percent",
-      tax: item.tax || 0,
+      tax: Number(item.tax ?? 0),
       total: lineTotal,
     });
   }
 
   return {
-    totalAmount: Number(totalAmount.toFixed(2)),
-    preparedItems,
+    totalAmount: Number(total.toFixed(2)),
+    preparedItems: prepared,
   };
 }
-// ─────────────────────────────────────────────────────────────
-// Validate items & calculate total (reuse from PO, or duplicate if needed)
-// For simplicity, assume same validateAndCalculateItems as in PO
-// ─────────────────────────────────────────────────────────────
 
-// ─────────────────────────────────────────────────────────────
-// Helper: Get items from MongoDB for FGS
-// ─────────────────────────────────────────────────────────────
 async function fetchFgsItems(fgsId) {
   const doc = await FgsItem.findOne({ fgsId }).lean().exec();
-  return doc ? doc.items : [];
+  return doc?.items || [];
 }
 
 // ─────────────────────────────────────────────────────────────
-// CREATE Field Guided Sheet
+// CREATE
 // ─────────────────────────────────────────────────────────────
 exports.createFieldGuidedSheet = async (req, res) => {
   const t = await sequelize.transaction();
   let mongoDoc = null;
-
+  console.log("Request body:", req.body);
+  console.log("Authenticated user:", req.user);
   try {
     const { vendorId, items, expectDeliveryDate } = req.body;
+    const userId = req.user?.userId || null; // ← from auth middleware
 
-    if (!vendorId || !items || !Array.isArray(items)) {
+    if (!vendorId || !Array.isArray(items) || items.length === 0) {
       return res
         .status(400)
-        .json({ message: "vendorId and items array are required" });
+        .json({ message: "vendorId and non-empty items array required" });
     }
 
     const vendor = await Vendor.findByPk(vendorId, { transaction: t });
-    if (!vendor) {
-      await t.rollback();
-      return res.status(404).json({ message: "Vendor not found" });
-    }
+    if (!vendor) throw new Error("Vendor not found");
 
     const { totalAmount, preparedItems } = await validateAndCalculateItems(
       items,
@@ -178,11 +170,12 @@ exports.createFieldGuidedSheet = async (req, res) => {
 
     const fgsNumber = await generateDailyFGSNumber(t);
 
-    const fieldGuidedSheet = await FieldGuidedSheet.create(
+    const fgs = await FieldGuidedSheet.create(
       {
         fgsNumber,
         vendorId,
-        status: "draft",
+        userId,
+        status: FGS_STATUSES.DRAFT,
         orderDate: new Date(),
         expectDeliveryDate: expectDeliveryDate
           ? new Date(expectDeliveryDate)
@@ -192,16 +185,15 @@ exports.createFieldGuidedSheet = async (req, res) => {
       { transaction: t },
     );
 
-    // Create items in MongoDB
     mongoDoc = await FgsItem.create({
-      fgsId: fieldGuidedSheet.id,
-      fgsNumber: fieldGuidedSheet.fgsNumber,
-      vendorId: fieldGuidedSheet.vendorId,
+      fgsId: fgs.id,
+      fgsNumber: fgs.fgsNumber,
+      vendorId: fgs.vendorId,
       items: preparedItems,
       calculatedTotal: totalAmount,
     });
 
-    await fieldGuidedSheet.update(
+    await fgs.update(
       { mongoItemsId: mongoDoc._id.toString() },
       { transaction: t },
     );
@@ -210,103 +202,96 @@ exports.createFieldGuidedSheet = async (req, res) => {
 
     await sendNotification({
       userId: ADMIN_USER_ID,
-      title: `New Field Guided Sheet Created #${fgsNumber}`,
-      message: `FGS #${fgsNumber} for ${vendor.vendorName || "Vendor"} • ₹${totalAmount}`,
+      title: `New FGS Created — ${fgsNumber}`,
+      message: `${vendor.vendorName || "Vendor"} • ₹${totalAmount} • Created by ${req.user?.name || "user"}`,
     });
 
     return res.status(201).json({
-      message: "Field guided sheet created successfully",
-      fieldGuidedSheet: {
-        ...fieldGuidedSheet.toJSON(),
-        items: preparedItems,
-      },
+      message: "Field Guided Sheet created",
+      fieldGuidedSheet: { ...fgs.toJSON(), items: preparedItems },
     });
-  } catch (error) {
+  } catch (err) {
     await t.rollback();
 
-    if (mongoDoc) {
+    if (mongoDoc?._id) {
       await FgsItem.deleteOne({ _id: mongoDoc._id }).catch((e) =>
-        console.error("Cleanup failed:", e),
+        console.error("Orphaned Mongo cleanup failed:", mongoDoc._id, e),
       );
     }
 
-    console.error("Create FGS error:", error);
+    console.error("FGS create error:", err);
     return res.status(500).json({
-      message: "Error creating field guided sheet",
-      error: error.message,
+      message: "Failed to create Field Guided Sheet",
+      error: err.message,
     });
   }
 };
 
 // ─────────────────────────────────────────────────────────────
-// UPDATE Field Guided Sheet (supports reactive changes, e.g., during negotiation)
+// UPDATE (items = full replacement)
 // ─────────────────────────────────────────────────────────────
 exports.updateFieldGuidedSheet = async (req, res) => {
   const t = await sequelize.transaction();
 
   try {
     const { vendorId, items, status, expectDeliveryDate } = req.body;
+    const { id } = req.params;
 
-    const fieldGuidedSheet = await FieldGuidedSheet.findByPk(req.params.id, {
-      transaction: t,
-    });
-    if (!fieldGuidedSheet) {
-      await t.rollback();
-      return res.status(404).json({ message: "Field guided sheet not found" });
-    }
+    const fgs = await FieldGuidedSheet.findByPk(id, { transaction: t });
+    if (!fgs) throw new Error("Field guided sheet not found");
 
-    if (fieldGuidedSheet.status === "converted") {
-      await t.rollback();
-      return res.status(400).json({ message: "Cannot update converted FGS" });
+    if (fgs.status === FGS_STATUSES.CONVERTED) {
+      throw new Error("Cannot modify converted Field Guided Sheet");
     }
 
     const updateData = {};
 
     if (vendorId) {
-      const vendorCheck = await Vendor.findByPk(vendorId, { transaction: t });
-      if (!vendorCheck) throw new Error("Vendor not found");
+      const v = await Vendor.findByPk(vendorId, { transaction: t });
+      if (!v) throw new Error("Vendor not found");
       updateData.vendorId = vendorId;
     }
 
-    if (status) updateData.status = status;
-    if (expectDeliveryDate !== undefined) {
-      updateData.expectDeliveryDate = expectDeliveryDate || null;
+    if (status) {
+      if (!VALID_FGS_STATUSES.includes(status))
+        throw new Error("Invalid status");
+      if (status === FGS_STATUSES.CONVERTED) {
+        throw new Error("Use /convert endpoint to convert to PO");
+      }
+      updateData.status = status;
     }
 
-    let newItems = null;
-    let newTotal = fieldGuidedSheet.totalAmount;
+    if (expectDeliveryDate !== undefined) {
+      updateData.expectDeliveryDate = expectDeliveryDate
+        ? new Date(expectDeliveryDate)
+        : null;
+    }
 
-    if (items && Array.isArray(items)) {
+    let returnedItems = null;
+
+    if (Array.isArray(items) && items.length > 0) {
       const { totalAmount, preparedItems } = await validateAndCalculateItems(
         items,
         t,
-        true  // Allow partial
       );
-      newTotal = totalAmount;
       updateData.totalAmount = totalAmount;
 
-      const existingDoc = await FgsItem.findOne({ fgsId: fieldGuidedSheet.id });
-      const existingItems = existingDoc ? existingDoc.items : [];
-      const itemMap = new Map(existingItems.map(i => [i.productId, i]));
-      preparedItems.forEach(newItem => itemMap.set(newItem.productId, newItem));
-      const mergedItems = Array.from(itemMap.values());
-
       await FgsItem.findOneAndUpdate(
-        { fgsId: fieldGuidedSheet.id },
+        { fgsId: fgs.id },
         {
-          vendorId: updateData.vendorId || fieldGuidedSheet.vendorId,
-          items: mergedItems,
-          calculatedTotal: newTotal,
+          vendorId: updateData.vendorId || fgs.vendorId,
+          items: preparedItems,
+          calculatedTotal: totalAmount,
         },
         { upsert: true, new: true },
       );
 
-      newItems = mergedItems;
+      returnedItems = preparedItems;
     }
 
-    await fieldGuidedSheet.update(updateData, { transaction: t });
+    await fgs.update(updateData, { transaction: t });
 
-    const updatedFgs = await FieldGuidedSheet.findByPk(fieldGuidedSheet.id, {
+    const updated = await FieldGuidedSheet.findByPk(id, {
       include: [
         { model: Vendor, as: "vendor", attributes: ["id", "vendorName"] },
       ],
@@ -317,298 +302,249 @@ exports.updateFieldGuidedSheet = async (req, res) => {
 
     await sendNotification({
       userId: ADMIN_USER_ID,
-      title: `Field Guided Sheet Updated #${fieldGuidedSheet.fgsNumber}`,
-      message: `FGS #${fieldGuidedSheet.fgsNumber} updated (${updatedFgs.vendor?.vendorName || "Vendor"}).`,
+      title: `FGS Updated — ${fgs.fgsNumber}`,
+      message: `Status: ${updated.status} • ${updated.vendor?.vendorName || "?"} • ₹${updated.totalAmount}`,
     });
 
-    return res.status(200).json({
-      message: "Field guided sheet updated successfully",
+    return res.json({
+      message: "Field Guided Sheet updated",
       fieldGuidedSheet: {
-        ...updatedFgs.toJSON(),
-        items: newItems || (await fetchFgsItems(fieldGuidedSheet.id)),
+        ...updated.toJSON(),
+        items: returnedItems || (await fetchFgsItems(id)),
       },
     });
-  } catch (error) {
+  } catch (err) {
     await t.rollback();
-    return res.status(400).json({
-      message: "Error updating field guided sheet",
-      error: error.message,
+    const statusCode = err.message.includes("not found") ? 404 : 400;
+    return res.status(statusCode).json({
+      message: "Update failed",
+      error: err.message,
     });
   }
 };
 
 // ─────────────────────────────────────────────────────────────
-// GET BY ID for FGS
+// GET ONE
 // ─────────────────────────────────────────────────────────────
 exports.getFieldGuidedSheetById = async (req, res) => {
   try {
-    const fieldGuidedSheet = await FieldGuidedSheet.findByPk(req.params.id, {
+    const fgs = await FieldGuidedSheet.findByPk(req.params.id, {
       include: [
         { model: Vendor, as: "vendor", attributes: ["id", "vendorName"] },
       ],
     });
 
-    if (!fieldGuidedSheet) {
+    if (!fgs) {
       return res.status(404).json({ message: "Field guided sheet not found" });
     }
 
-    const items = await fetchFgsItems(fieldGuidedSheet.id);
+    const items = await fetchFgsItems(fgs.id);
 
-    return res.status(200).json({
-      ...fieldGuidedSheet.toJSON(),
-      items,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      message: "Error fetching field guided sheet",
-      error: error.message,
-    });
+    return res.json({ ...fgs.toJSON(), items });
+  } catch (err) {
+    console.error("Get FGS error:", err);
+    return res
+      .status(500)
+      .json({ message: "Error fetching FGS", error: err.message });
   }
 };
 
 // ─────────────────────────────────────────────────────────────
-// GET ALL for FGS (with pagination)
+// GET ALL (with basic pagination)
 // ─────────────────────────────────────────────────────────────
 exports.getAllFieldGuidedSheets = async (req, res) => {
   try {
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 20;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(5, parseInt(req.query.limit) || 20));
     const offset = (page - 1) * limit;
 
-    const { count, rows: fieldGuidedSheets } = await FieldGuidedSheet.findAndCountAll(
-      {
-        include: [
-          { model: Vendor, as: "vendor", attributes: ["id", "vendorName"] },
-        ],
-        order: [["createdAt", "DESC"]],
-        offset,
-        limit,
-        subQuery: false,
-      },
-    );
+    const { count, rows } = await FieldGuidedSheet.findAndCountAll({
+      include: [
+        { model: Vendor, as: "vendor", attributes: ["id", "vendorName"] },
+      ],
+      order: [["createdAt", "DESC"]],
+      limit,
+      offset,
+      subQuery: false,
+    });
 
-    const fgsIds = fieldGuidedSheets.map((fgs) => fgs.id);
-    const itemDocs = await FgsItem.find({ fgsId: { $in: fgsIds } }).lean();
+    const fgsIds = rows.map((r) => r.id);
+    const mongoDocs = await FgsItem.find({ fgsId: { $in: fgsIds } }).lean();
 
-    const itemsByFgs = new Map(
-      itemDocs.map((doc) => [doc.fgsId, doc.items || []]),
-    );
+    const itemsMap = new Map(mongoDocs.map((d) => [d.fgsId, d.items || []]));
 
-    const result = fieldGuidedSheets.map((fgs) => ({
+    const result = rows.map((fgs) => ({
       ...fgs.toJSON(),
-      items: itemsByFgs.get(fgs.id) || [],
+      items: itemsMap.get(fgs.id) || [],
     }));
 
-    const totalPages = Math.ceil(count / limit);
-
-    return res.status(200).json({
+    return res.json({
       data: result,
-      pagination: { total: count, page, limit, totalPages },
+      pagination: {
+        total: count,
+        page,
+        limit,
+        totalPages: Math.ceil(count / limit),
+      },
     });
-  } catch (error) {
-    console.error("getAllFieldGuidedSheets error:", error);
-    return res.status(500).json({
-      message: "Error fetching field guided sheets",
-      error: process.env.NODE_ENV === "development" ? error.message : undefined,
-    });
+  } catch (err) {
+    console.error("List FGS error:", err);
+    return res
+      .status(500)
+      .json({ message: "Error listing Field Guided Sheets" });
   }
 };
 
 // ─────────────────────────────────────────────────────────────
-// DELETE for FGS
+// DELETE
 // ─────────────────────────────────────────────────────────────
 exports.deleteFieldGuidedSheet = async (req, res) => {
   const t = await sequelize.transaction();
 
   try {
-    const fieldGuidedSheet = await FieldGuidedSheet.findByPk(req.params.id, {
-      transaction: t,
-    });
-    if (!fieldGuidedSheet) {
-      await t.rollback();
-      return res.status(404).json({ message: "Field guided sheet not found" });
-    }
-
-    const vendor = await Vendor.findByPk(fieldGuidedSheet.vendorId, {
+    const fgs = await FieldGuidedSheet.findByPk(req.params.id, {
+      include: [{ model: Vendor, as: "vendor" }],
       transaction: t,
     });
 
-    await fieldGuidedSheet.destroy({ transaction: t });
+    if (!fgs) throw new Error("Not found");
 
-    // Clean up MongoDB
-    await FgsItem.deleteOne({ fgsId: fieldGuidedSheet.id });
+    await fgs.destroy({ transaction: t });
+    await FgsItem.deleteOne({ fgsId: fgs.id });
 
     await t.commit();
 
     await sendNotification({
       userId: ADMIN_USER_ID,
-      title: `Field Guided Sheet Deleted #${fieldGuidedSheet.fgsNumber}`,
-      message: `FGS #${fieldGuidedSheet.fgsNumber} deleted (${vendor?.vendorName || "Vendor"}).`,
+      title: `FGS Deleted — ${fgs.fgsNumber}`,
+      message: `${fgs.vendor?.vendorName || "Vendor"} • ${fgs.totalAmount}`,
     });
 
-    return res
-      .status(200)
-      .json({ message: "Field guided sheet deleted successfully" });
-  } catch (error) {
+    return res.json({ message: "Field Guided Sheet deleted successfully" });
+  } catch (err) {
     await t.rollback();
-    return res.status(500).json({
-      message: "Error deleting field guided sheet",
-      error: error.message,
-    });
+    const code = err.message.includes("not found") ? 404 : 500;
+    return res
+      .status(code)
+      .json({ message: "Delete failed", error: err.message });
   }
 };
 
 // ─────────────────────────────────────────────────────────────
-// CONVERT FGS to PO (key feature)
-// Only if status is "approved"
-// Creates a new PO using FGS data
+// CONVERT TO PURCHASE ORDER
 // ─────────────────────────────────────────────────────────────
 exports.convertFgsToPo = async (req, res) => {
   const t = await sequelize.transaction();
 
   try {
-    const fieldGuidedSheet = await FieldGuidedSheet.findByPk(req.params.id, {
-      include: [
-        { model: Vendor, as: "vendor" },
-      ],
+    const fgs = await FieldGuidedSheet.findByPk(req.params.id, {
+      include: [{ model: Vendor, as: "vendor" }],
       transaction: t,
     });
 
-    if (!fieldGuidedSheet) {
-      await t.rollback();
-      return res.status(404).json({ message: "Field guided sheet not found" });
+    if (!fgs) throw new Error("Field guided sheet not found");
+    if (fgs.status !== FGS_STATUSES.APPROVED) {
+      throw new Error("Only approved FGS can be converted to PO");
     }
 
-    if (fieldGuidedSheet.status !== "approved") {
-      await t.rollback();
-      return res.status(400).json({ message: "FGS must be approved to convert" });
-    }
+    const items = await fetchFgsItems(fgs.id);
+    if (items.length === 0) throw new Error("No items found in FGS");
 
-    const items = await fetchFgsItems(fieldGuidedSheet.id);
-    if (items.length === 0) {
-      await t.rollback();
-      return res.status(400).json({ message: "No items in FGS" });
-    }
-
-    // Prepare data for PO creation
+    // Prepare data for PO creation (assume createPurchaseOrderFromData exists)
     const poData = {
-      vendorId: fieldGuidedSheet.vendorId,
-      items: items.map(item => ({
-        productId: item.productId,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        mrp: item.mrp,
-        discount: item.discount,
-        discountType: item.discountType,
-        tax: item.tax,
+      vendorId: fgs.vendorId,
+      items: items.map((i) => ({
+        productId: i.productId,
+        quantity: i.quantity,
+        unitPrice: i.unitPrice,
+        mrp: i.mrp,
+        discount: i.discount,
+        discountType: i.discountType,
+        tax: i.tax,
       })),
-      expectDeliveryDate: fieldGuidedSheet.expectDeliveryDate,
-      fgsId: fieldGuidedSheet.id,  // Link back
+      expectDeliveryDate: fgs.expectDeliveryDate,
+      fgsId: fgs.id,
+      createdBy: req.user?.id,
     };
 
-    // Simulate req.body for createPurchaseOrder (or call internally)
-    const mockReq = { body: poData };
-    const mockRes = {
-      status: (code) => ({
-        json: (data) => data,
-      }),
-    };
+    const poResult = await createPurchaseOrderFromData(poData, t);
 
-    const poResult = await createPurchaseOrder(mockReq, mockRes);
-
-    if (!poResult || !poResult.purchaseOrder) {
-      throw new Error("Failed to create PO from FGS");
+    if (!poResult?.purchaseOrder) {
+      throw new Error("Failed to create Purchase Order");
     }
 
-    // Update FGS status
-    await fieldGuidedSheet.update({ status: "converted" }, { transaction: t });
+    await fgs.update({ status: FGS_STATUSES.CONVERTED }, { transaction: t });
 
     await t.commit();
 
     await sendNotification({
       userId: ADMIN_USER_ID,
-      title: `FGS Converted to PO #${fieldGuidedSheet.fgsNumber}`,
-      message: `FGS #${fieldGuidedSheet.fgsNumber} converted to PO #${poResult.purchaseOrder.poNumber} (${fieldGuidedSheet.vendor?.vendorName || "Vendor"}).`,
+      title: `FGS → PO  ${fgs.fgsNumber} → ${poResult.purchaseOrder.poNumber}`,
+      message: `Converted • ${fgs.vendor?.vendorName || "?"} • ₹${fgs.totalAmount}`,
     });
 
-    return res.status(200).json({
-      message: "FGS converted to PO successfully",
+    return res.json({
+      message: "Successfully converted to Purchase Order",
       purchaseOrder: poResult.purchaseOrder,
     });
-  } catch (error) {
+  } catch (err) {
     await t.rollback();
-    console.error("Convert FGS to PO error:", error);
-    return res.status(500).json({
-      message: "Error converting FGS to PO",
-      error: error.message,
+    return res.status(400).json({
+      message: "Conversion failed",
+      error: err.message,
     });
   }
 };
 
 // ─────────────────────────────────────────────────────────────
-// UPDATE STATUS ONLY for FGS
+// UPDATE STATUS ONLY
 // ─────────────────────────────────────────────────────────────
 exports.updateFieldGuidedSheetStatus = async (req, res) => {
   const t = await sequelize.transaction();
 
   try {
-    const { id } = req.params;
     const { status } = req.body;
+    const { id } = req.params;
 
-    const validStatuses = ["draft", "negotiating", "approved", "converted", "cancelled"];
-    if (!status || !validStatuses.includes(status)) {
-      await t.rollback();
-      return res.status(400).json({
-        message: `Invalid status. Allowed: ${validStatuses.join(", ")}`,
-      });
+    if (!status || !VALID_FGS_STATUSES.includes(status)) {
+      throw new Error(
+        `Invalid status. Allowed: ${VALID_FGS_STATUSES.join(", ")}`,
+      );
     }
 
-    const fieldGuidedSheet = await FieldGuidedSheet.findByPk(id, { transaction: t });
-    if (!fieldGuidedSheet) {
-      await t.rollback();
-      return res.status(404).json({ message: "Field guided sheet not found" });
+    const fgs = await FieldGuidedSheet.findByPk(id, { transaction: t });
+    if (!fgs) throw new Error("Not found");
+
+    if (fgs.status === status) {
+      throw new Error("Status is already set to this value");
     }
 
-    if (fieldGuidedSheet.status === status) {
-      await t.rollback();
-      return res
-        .status(400)
-        .json({ message: "Status already set to this value" });
+    if (status === FGS_STATUSES.CONVERTED) {
+      throw new Error("Use /convert endpoint to convert to PO");
     }
 
-    if (status === "converted") {
-      await t.rollback();
-      return res.status(400).json({ message: "Use convert endpoint for conversion" });
-    }
+    await fgs.update({ status }, { transaction: t });
 
-    const oldStatus = fieldGuidedSheet.status;
-    await fieldGuidedSheet.update({ status }, { transaction: t });
-
-    const vendor = await Vendor.findByPk(fieldGuidedSheet.vendorId, {
-      transaction: t,
-    });
+    const vendor = await Vendor.findByPk(fgs.vendorId, { transaction: t });
 
     await t.commit();
 
     await sendNotification({
       userId: ADMIN_USER_ID,
-      title: `FGS Status Updated #${fieldGuidedSheet.fgsNumber}`,
-      message: `FGS #${fieldGuidedSheet.fgsNumber} status changed from ${oldStatus} to ${status} (${vendor?.vendorName || "Vendor"}).`,
+      title: `FGS Status Changed — ${fgs.fgsNumber}`,
+      message: `${fgs.status} → ${status} • ${vendor?.vendorName || "?"}`,
     });
 
-    return res.status(200).json({
-      message: `Status updated to '${status}'`,
-      fieldGuidedSheet: {
-        ...fieldGuidedSheet.toJSON(),
-        status,
-        items: await fetchFgsItems(fieldGuidedSheet.id),
-      },
+    return res.json({
+      message: `Status updated to ${status}`,
+      fieldGuidedSheet: { ...fgs.toJSON(), status },
     });
-  } catch (error) {
+  } catch (err) {
     await t.rollback();
-    return res.status(500).json({
-      message: "Error updating status",
-      error: error.message,
-    });
+    return res
+      .status(400)
+      .json({ message: "Status update failed", error: err.message });
   }
 };
+
+module.exports = exports;

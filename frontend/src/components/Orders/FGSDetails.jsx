@@ -9,14 +9,10 @@ import ExcelJS from "exceljs";
 import { LeftOutlined, PrinterOutlined } from "@ant-design/icons";
 import { Helmet } from "react-helmet";
 import "./fgs.css"; // You can reuse po.css or create a copy named fgs.css
-import noimage from "../../assets/img/noimg.jpg"
+import noimage from "../../assets/img/noimg.jpg";
 const FGSDetails = () => {
   const { id } = useParams();
-  const {
-    data: fieldGuidedSheet,
-    isLoading,
-    error,
-  } = useGetFGSByIdQuery(id);
+  const { data: fieldGuidedSheet, isLoading, error } = useGetFGSByIdQuery(id);
 
   const [isExporting, setIsExporting] = useState(false);
   const fgsRef = useRef(null);
@@ -26,7 +22,7 @@ const FGSDetails = () => {
     return (
       <div className="page-wrapper">
         <div className="content text-center">
-          <p>Loading Field Guided Sheet details...</p>
+          <p>Loading Field Generated Sheet details...</p>
         </div>
       </div>
     );
@@ -37,7 +33,7 @@ const FGSDetails = () => {
       <div className="page-wrapper">
         <div className="content text-center">
           <p className="text-danger">
-            {error?.data?.message || "Field Guided Sheet not found"}
+            {error?.data?.message || "Field Generated Sheet not found"}
           </p>
         </div>
       </div>
@@ -58,7 +54,7 @@ const FGSDetails = () => {
     try {
       if (exportFormat === "pdf") {
         if (!fgsRef.current) {
-          message.error("Field Guided Sheet content not found.");
+          message.error("Field Generated Sheet content not found.");
           return;
         }
         const canvas = await html2canvas(fgsRef.current, {
@@ -85,19 +81,19 @@ const FGSDetails = () => {
           pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
           heightLeft -= pageHeight - 20;
         }
-        pdf.save(`FieldGuidedSheet_${fgsNumber || id}.pdf`);
+        pdf.save(`FieldGeneratedSheet_${fgsNumber || id}.pdf`);
       } else if (exportFormat === "excel") {
         const workbook = new ExcelJS.Workbook();
-        const worksheet = workbook.addWorksheet("Field Guided Sheet");
+        const worksheet = workbook.addWorksheet("Field Generated Sheet");
 
         worksheet.columns = [
-          { width: 8 },     // S.No
-          { width: 15 },    // Image placeholder
-          { width: 35 },    // Product Name
-          { width: 18 },    // Product Code / Company Code
-          { width: 12 },    // Unit Price
-          { width: 10 },    // Quantity
-          { width: 14 },    // Total
+          { width: 8 }, // S.No
+          { width: 15 }, // Image placeholder
+          { width: 35 }, // Product Name
+          { width: 18 }, // Product Code / Company Code
+          { width: 12 }, // Unit Price
+          { width: 10 }, // Quantity
+          { width: 14 }, // Total
         ];
 
         // Logo & Title (same structure)
@@ -105,7 +101,7 @@ const FGSDetails = () => {
         worksheet.getCell("A1").value = " ";
 
         worksheet.mergeCells("B2:D2");
-        worksheet.getCell("B2").value = "Field Guided Sheet";
+        worksheet.getCell("B2").value = "Field Generated Sheet";
         worksheet.getCell("B2").font = { bold: true, size: 16 };
         worksheet.getCell("B2").alignment = { horizontal: "center" };
 
@@ -118,7 +114,9 @@ const FGSDetails = () => {
         worksheet.mergeCells("B4:D4");
 
         worksheet.getCell("E4").value = "Order Date";
-        worksheet.getCell("F4").value = new Date(orderDate).toLocaleDateString();
+        worksheet.getCell("F4").value = new Date(
+          orderDate,
+        ).toLocaleDateString();
 
         worksheet.getCell("A5").value = "Expected Delivery";
         worksheet.getCell("B5").value = expectDeliveryDate
@@ -169,7 +167,7 @@ const FGSDetails = () => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `FieldGuidedSheet_${fgsNumber || id}.xlsx`;
+        a.download = `FieldGeneratedSheet_${fgsNumber || id}.xlsx`;
         a.click();
         window.URL.revokeObjectURL(url);
       }
@@ -183,7 +181,7 @@ const FGSDetails = () => {
   return (
     <div className="page-wrapper">
       <Helmet>
-        <title>{fgsNumber || "Field Guided Sheet Details"}</title>
+        <title>{fgsNumber || "Field Generated Sheet Details"}</title>
       </Helmet>
 
       <div className="content">
@@ -196,11 +194,13 @@ const FGSDetails = () => {
               <span className="d-flex justify-content-center align-items-center rounded-circle me-2">
                 <LeftOutlined />
               </span>
-              Back to Field Guided Sheets
+              Back to Field Generated Sheets
             </Link>
 
             <div className="card">
-              <div className="po-container" ref={fgsRef}> {/* reused class; rename to fgs-container if needed */}
+              <div className="po-container" ref={fgsRef}>
+                {" "}
+                {/* reused class; rename to fgs-container if needed */}
                 <table className="po-table full-width">
                   <tbody>
                     <tr>
@@ -214,12 +214,11 @@ const FGSDetails = () => {
                     </tr>
                     <tr>
                       <td></td>
-                      <td className="title-cell">Field Guided Sheet</td>
+                      <td className="title-cell">Field Generated Sheet</td>
                       <td className="brand-cell">{fgsNumber}</td>
                     </tr>
                   </tbody>
                 </table>
-
                 <table className="po-table full-width">
                   <tbody>
                     <tr>
@@ -242,7 +241,9 @@ const FGSDetails = () => {
                       <td className="label-cell">Expected Delivery</td>
                       <td style={{ width: "55%" }}>
                         {expectDeliveryDate
-                          ? new Date(expectDeliveryDate).toLocaleDateString("en-IN")
+                          ? new Date(expectDeliveryDate).toLocaleDateString(
+                              "en-IN",
+                            )
                           : "N/A"}
                       </td>
                       <td></td>
@@ -250,7 +251,6 @@ const FGSDetails = () => {
                     </tr>
                   </tbody>
                 </table>
-
                 <table className="po-table full-width">
                   <thead>
                     <tr>
@@ -281,7 +281,7 @@ const FGSDetails = () => {
                                   border: "1px solid #eee",
                                 }}
                                 onError={(e) => {
-                                  e.currentTarget.src = {noimage};
+                                  e.currentTarget.src = { noimage };
                                   e.currentTarget.alt = "Image failed to load";
                                 }}
                               />
@@ -290,9 +290,12 @@ const FGSDetails = () => {
                             )}
                           </td>
                           <td>{item.productName || "N/A"}</td>
-                          <td>{item.companyCode || item.productCode || "N/A"}</td>
                           <td>
-                            ₹{Number(item.unitPrice || item.mrp || 0).toFixed(2)}
+                            {item.companyCode || item.productCode || "N/A"}
+                          </td>
+                          <td>
+                            ₹
+                            {Number(item.unitPrice || item.mrp || 0).toFixed(2)}
                           </td>
                           <td>{item.quantity || 0}</td>
                           <td>₹{Number(item.total || 0).toFixed(2)}</td>
@@ -301,13 +304,12 @@ const FGSDetails = () => {
                     ) : (
                       <tr>
                         <td colSpan="7" className="text-center">
-                          No products in this Field Guided Sheet
+                          No products in this Field Generated Sheet
                         </td>
                       </tr>
                     )}
                   </tbody>
                 </table>
-
                 <table className="po-table full-width bordered">
                   <tbody>
                     <tr>
@@ -339,7 +341,9 @@ const FGSDetails = () => {
                   disabled={isExporting}
                 >
                   <PrinterOutlined />
-                  {isExporting ? "Exporting..." : "Export Field Guided Sheet"}
+                  {isExporting
+                    ? "Exporting..."
+                    : "Export Field Generated Sheet"}
                 </button>
               </div>
             </div>

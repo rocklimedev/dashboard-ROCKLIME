@@ -21,18 +21,23 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.UUID,
         allowNull: false,
       },
-      fgsId: {  // ← NEW: Link to originating FGS (optional)
+      userId: {
+        // ← NEW
+        type: DataTypes.UUID,
+        allowNull: true,
+      },
+      fgsId: {
         type: DataTypes.UUID,
         allowNull: true,
       },
       status: {
         type: DataTypes.ENUM(
           "pending",
-          "in_negotiation",  // ← NEW
+          "in_negotiation",
           "confirmed",
-          "partial_delivered",  // ← NEW (for limited deliveries)
+          "partial_delivered",
           "delivered",
-          "cancelled"
+          "cancelled",
         ),
         defaultValue: "pending",
       },
@@ -57,17 +62,21 @@ module.exports = (sequelize, DataTypes) => {
     },
   );
 
-  // ─── Define association here ───
   PurchaseOrder.associate = (models) => {
     PurchaseOrder.belongsTo(models.Vendor, {
       foreignKey: "vendorId",
-      as: "vendor", // ← recommended: use alias
-      targetKey: "id",
+      as: "vendor",
     });
-    PurchaseOrder.belongsTo(models.FieldGuidedSheet, {  // ← NEW association
+
+    PurchaseOrder.belongsTo(models.FieldGuidedSheet, {
       foreignKey: "fgsId",
       as: "fgs",
-      targetKey: "id",
+    });
+
+    PurchaseOrder.belongsTo(models.User, {
+      // ← NEW
+      foreignKey: "userId",
+      as: "createdBy",
     });
   };
 
