@@ -11,6 +11,7 @@ import {
   Menu,
   Spin,
   Pagination,
+  Select,
 } from "antd";
 import {
   SearchOutlined,
@@ -49,8 +50,16 @@ import { debounce } from "lodash"; // Make sure lodash is installed: npm install
 const META_KEYS = {
   SELLING_PRICE: "9ba862ef-f993-4873-95ef-1fef10036aa5",
   MODEL_CODE: "d11da9f9-3f2e-4536-8236-9671200cca4a",
+  SIZE_FEET: "7e2b4efb-4ff2-4e4d-9b08-82559a7e3cd0", // ← Add this line
 };
-
+// Brands that use the sizeFeet meta field and should show the size filter
+const BRANDS_WITH_SIZE_FILTER = [
+  "50105657-7686-11f0-9e84-52540021303b", // SGT
+  "500b10a7-7686-11f0-9e84-52540021303b", // SHIV CERAMIC
+  "50106480-7686-11f0-9e84-52540021303b", // JTC
+  "50107b22-7686-11f0-9e84-52540021303b", // UW
+  "987bb747-773d-11f0-9e84-52540021303b", // SUBWAY
+];
 const ProductsList = () => {
   const { id, bpcId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -72,7 +81,15 @@ const ProductsList = () => {
   const isBrandView = !!id && !bpcId;
   const isBpcView = !!bpcId;
   const isCategoryView = !!id && !isBrandView && !isBpcView;
-
+  // ── Read state from URL ───────────────────────────────
+  const urlSizes = searchParams.getAll("size"); // supports multiple ?size=2x2&size=4x2
+  const [selectedSizes, setSelectedSizes] = useState(urlSizes);
+  const showSizeFilter =
+    isBrandView && id && BRANDS_WITH_SIZE_FILTER.includes(id);
+  // Sync when URL changes (back/forward navigation)
+  useEffect(() => {
+    setSelectedSizes(searchParams.getAll("size"));
+  }, [searchParams]);
   // ── Debounced search update ───────────────────────────
   const debouncedUpdateSearch = useMemo(
     () =>
@@ -90,7 +107,19 @@ const ProductsList = () => {
       }, 400),
     [setSearchParams],
   );
-
+  const COMMON_SIZES_FEET = [
+    "12''X12''",
+    "12''X18''",
+    "12''X24''",
+    "12''x8''",
+    "16''X16''",
+    "24''X24''",
+    "24''X48''",
+    "24''x72''",
+    "24X48",
+    "32''x64''",
+    "32''x96''",
+  ];
   // Sync local search when URL search changes (browser back/forward, reset, etc.)
   useEffect(() => {
     setLocalSearch(urlSearch);
@@ -219,7 +248,13 @@ const ProductsList = () => {
         return price !== null && price >= min && price <= max;
       });
     }
-
+    // Size filter – only apply when the filter is visible (and thus selectedSizes may have values)
+    if (showSizeFilter && selectedSizes.length > 0) {
+      result = result.filter((product) => {
+        const sizeValue = (product?.meta?.[META_KEYS.SIZE_FEET] || "").trim();
+        return selectedSizes.includes(sizeValue);
+      });
+    }
     // Sorting
     if (sortField && sortOrder) {
       result = result.sort((a, b) => {
@@ -250,7 +285,15 @@ const ProductsList = () => {
     }
 
     return result;
-  }, [products, priceMin, priceMax, sortField, sortOrder]);
+  }, [
+    products,
+    priceMin,
+    priceMax,
+    sortField,
+    sortOrder,
+    showSizeFilter, // ← add
+    selectedSizes,
+  ]);
 
   // ── URL Param Helpers ──────────────────────────────────
   const updateSearchParams = (updates) => {
@@ -584,12 +627,43 @@ const ProductsList = () => {
               />
             </Form.Item>
 
+            {showSizeFilter && (
+              <Form.Item label="Size (inches/feet)">
+                <Select
+                  mode="multiple"
+                  allowClear
+                  showSearch
+                  placeholder="Select size(s)"
+                  value={selectedSizes}
+                  onChange={(values) => {
+                    setSelectedSizes(values);
+                    setSearchParams((prev) => {
+                      const next = new URLSearchParams(prev);
+                      next.delete("size");
+                      values.forEach((v) => next.append("size", v));
+                      next.set("page", "1");
+                      return next;
+                    });
+                  }}
+                  style={{ minWidth: 240 }}
+                  filterOption={(input, option) =>
+                    (option?.label ?? "")
+                      .toLowerCase()
+                      .includes(input.toLowerCase())
+                  }
+                  options={COMMON_SIZES_FEET.map((size) => ({
+                    label: size,
+                    value: size,
+                  }))}
+                />
+              </Form.Item>
+            )}
+
             <Form.Item>
               <Button onClick={resetFilters}>Reset</Button>
             </Form.Item>
           </Form>
         </div>
-
         {isLoading ? (
           <div className="text-center py-5">
             <Spin size="large" />

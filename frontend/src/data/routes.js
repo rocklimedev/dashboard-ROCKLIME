@@ -79,6 +79,8 @@ import FGSWrapper from "../components/Orders/FgsWrapper";
 import AddFieldGuidedSheet from "../components/Orders/AddFgs";
 import FGSDetails from "../components/Orders/FGSDetails";
 import PurchaseManagement from "../components/Orders/PurchaseManagement";
+import JobList from "../components/Jobs/JobsList";
+import JobDetails from "../components/Jobs/JobDetails";
 const masterRoutes = [
   {
     path: "/",
@@ -131,6 +133,13 @@ const masterRoutes = [
     icon: <FaUsers />,
     isSidebarActive: true,
     element: <CustomerList />,
+  },
+  {
+    path: "/jobs/list",
+    element: <JobList />,
+    name: "Jobs",
+    icon: <FaBell />,
+    isSidebarActive: true,
   },
   {
     path: "/tasks",
@@ -522,6 +531,14 @@ const masterRoutes = [
         element: <AddFieldGuidedSheet />,
         name: "Edit FGS",
         icon: <FaFileAlt />,
+        isSidebarActive: false,
+      },
+
+      {
+        path: "/job/:jobId",
+        element: <JobDetails />,
+        name: "Job Details",
+        icon: <FaBell />,
         isSidebarActive: false,
       },
     ],

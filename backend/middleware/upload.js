@@ -1,22 +1,26 @@
-// utils/ftpUpload.js  (or middleware/upload.js – whatever file has uploadToFtp)
+// middleware/upload.js (or utils/ftpUpload.js)
 const ftp = require("basic-ftp");
+const { Readable, Writable } = require("stream");
 const { v4: uuidv4 } = require("uuid");
 const path = require("path");
-const fs = require("fs").promises; // for temp file handling if needed
 require("dotenv").config();
 
-function bufferToStream(buffer) {
-  const { Readable } = require("stream");
-  const stream = new Readable();
-  stream.push(buffer);
-  stream.push(null);
-  return stream;
+// Helper: Create a writable stream that collects data into a Buffer
+function createBufferWritable() {
+  const chunks = [];
+  const writable = new Writable({
+    write(chunk, encoding, callback) {
+      chunks.push(Buffer.from(chunk));
+      callback();
+    },
+  });
+
+  writable.getBuffer = () => Buffer.concat(chunks);
+  return writable;
 }
 
-/**
- * Upload a Buffer to FTP and return the public URL.
- */
 async function uploadToFtp(buffer, originalName, options = {}) {
+  // Your existing upload code is fine (uses uploadFrom with stream) → no change needed
   const ext = path.extname(originalName);
   const uniqueName = `${uuidv4()}${ext}`;
 
@@ -30,7 +34,7 @@ async function uploadToFtp(buffer, originalName, options = {}) {
       user: process.env.FTP_USER,
       password: process.env.FTP_PASSWORD,
       secure: process.env.FTP_SECURE === "true",
-      timeout: 0, // prevent control socket timeout
+      timeout: 0,
       ...options,
     });
 
@@ -47,21 +51,23 @@ async function uploadToFtp(buffer, originalName, options = {}) {
   }
 }
 
-/**
- * Download file from FTP path and return Buffer
- * @param {string} ftpPath - full FTP path or public URL
- * @returns {Promise<Buffer>}
- */
+function bufferToStream(buffer) {
+  const stream = new Readable();
+  stream.push(buffer);
+  stream.push(null);
+  return stream;
+}
+
 async function downloadFromFtp(ftpPath) {
   const client = new ftp.Client();
   client.ftp.verbose = process.env.NODE_ENV === "development";
 
   try {
-    // If ftpPath is a full URL like https://static.cmtradingco.com/..., extract the path
+    // Extract remote path from URL if needed
     let remotePath = ftpPath;
     if (ftpPath.startsWith("http")) {
       const url = new URL(ftpPath);
-      remotePath = url.pathname; // e.g. /product_images/abc123.xlsx
+      remotePath = url.pathname;
     }
 
     await client.access({
@@ -70,16 +76,18 @@ async function downloadFromFtp(ftpPath) {
       user: process.env.FTP_USER,
       password: process.env.FTP_PASSWORD,
       secure: process.env.FTP_SECURE === "true",
-      timeout: 0, // important for larger files
+      timeout: 0,
     });
 
-    // Download to memory (Buffer)
-    const buffer = await client.downloadToBuffer(remotePath);
+    // Use a writable that collects into Buffer
+    const bufferWritable = createBufferWritable();
 
-    return buffer;
+    await client.downloadTo(bufferWritable, remotePath);
+
+    return bufferWritable.getBuffer();
   } catch (err) {
     console.error("FTP download error:", err);
-    throw err;
+    throw new Error(`Failed to download file from FTP: ${err.message}`);
   } finally {
     client.close();
   }
@@ -87,5 +95,5 @@ async function downloadFromFtp(ftpPath) {
 
 module.exports = {
   uploadToFtp,
-  downloadFromFtp, // ← now exported
+  downloadFromFtp,
 };
