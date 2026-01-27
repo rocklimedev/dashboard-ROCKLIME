@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   Table,
   Tabs,
@@ -9,14 +9,13 @@ import {
   Space,
   Typography,
   message,
-  Modal,
-  Tag,
   Empty,
   Form,
   Row,
   Col,
   Grid,
-  Pagination, // ← Added
+  Pagination,
+  Tag,
 } from "antd";
 import {
   SearchOutlined,
@@ -43,41 +42,26 @@ const { Text } = Typography;
 
 const InventoryWrapper = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(50); // Match backend default if possible
+  // Read initial tab from URL, default to "all"
+  const queryParams = new URLSearchParams(location.search);
+  const urlTab = queryParams.get("tab");
+  const validTabs = ["all", "in-stock", "low-stock", "out-of-stock"];
+  const initialTab = validTabs.includes(urlTab) ? urlTab : "all";
 
-  // Pass pagination (and optionally search) to the query
-  const {
-    data: response,
-    error,
-    isLoading,
-    isFetching,
-  } = useGetAllProductsQuery({
-    page: currentPage,
-    limit: pageSize,
-    // search: search || undefined, // ← Uncomment if backend supports server-side search
+  // States
+  const [activeTab, setActiveTab] = useState(initialTab);
+  const [currentPage, setCurrentPage] = useState(() => {
+    const page = Number(queryParams.get("page"));
+    return page >= 1 ? page : 1;
+  });
+  const [pageSize, setPageSize] = useState(() => {
+    const limit = Number(queryParams.get("limit"));
+    return [10, 25, 50, 100].includes(limit) ? limit : 50;
   });
 
-  const [addStock] = useAddStockMutation();
-  const [removeStock] = useRemoveStockMutation();
-
-  const products = useMemo(
-    () => (Array.isArray(response?.data) ? response?.data : []),
-    [response?.data]
-  );
-
-  const pagination = response?.pagination || {
-    total: 0,
-    page: 1,
-    limit: 50,
-    totalPages: 0,
-  };
-
-  // UI States
-  const [activeTab, setActiveTab] = useState("all");
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(queryParams.get("search") || "");
   const [lowStockThreshold, setLowStockThreshold] = useState(10);
   const [maxStockFilter, setMaxStockFilter] = useState(null);
   const [priceRange, setPriceRange] = useState([null, null]);
@@ -95,6 +79,70 @@ const InventoryWrapper = () => {
   const screens = Grid.useBreakpoint();
   const isMobile = !screens.md;
 
+  // RTK Query
+  const {
+    data: response,
+    error,
+    isLoading,
+    isFetching,
+  } = useGetAllProductsQuery({
+    page: currentPage,
+    limit: pageSize,
+    search: search.trim() || undefined, // optional: enable server-side search if backend supports it
+  });
+
+  const [addStock] = useAddStockMutation();
+  const [removeStock] = useRemoveStockMutation();
+
+  const products = useMemo(
+    () => (Array.isArray(response?.data) ? response.data : []),
+    [response?.data],
+  );
+
+  const paginationInfo = response?.pagination || {
+    total: 0,
+    page: 1,
+    limit: 50,
+    totalPages: 0,
+  };
+
+  // Auto-switch to low-stock tab if coming from dashboard with ?low_stock
+  useEffect(() => {
+    if (queryParams.has("low_stock") && activeTab === "all") {
+      setActiveTab("low-stock");
+      // Clean up the flag (replace history)
+      const newParams = new URLSearchParams(location.search);
+      newParams.delete("low_stock");
+      newParams.set("tab", "low-stock");
+      navigate(`${location.pathname}?${newParams.toString()}`, {
+        replace: true,
+      });
+    }
+  }, [location.search, activeTab, navigate]);
+
+  // Update URL when tab, page, limit, or search changes
+  useEffect(() => {
+    const params = new URLSearchParams();
+
+    if (activeTab !== "all") params.set("tab", activeTab);
+    if (currentPage > 1) params.set("page", currentPage);
+    if (pageSize !== 50) params.set("limit", pageSize);
+    if (search.trim()) params.set("search", search.trim());
+
+    const searchString = params.toString();
+    const newSearch = searchString ? `?${searchString}` : "";
+
+    if (newSearch !== location.search) {
+      navigate(`${location.pathname}${newSearch}`, { replace: true });
+    }
+  }, [activeTab, currentPage, pageSize, search, navigate, location.pathname]);
+
+  // Reset page when tab changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab]);
+
+  // Image parsing
   const parseImages = (images) => {
     try {
       if (typeof images === "string") {
@@ -107,71 +155,50 @@ const InventoryWrapper = () => {
     }
   };
 
+  // Company code helper
   const getCompanyCode = (metaDetails) => {
-    if (!Array.isArray(metaDetails) || metaDetails.length === 0) {
-      return "N/A";
-    }
-
-    // Try to find a likely company/product code entry
-    // Most reliable in your current data → last item
+    if (!Array.isArray(metaDetails) || metaDetails.length === 0) return "N/A";
     const lastEntry = metaDetails[metaDetails.length - 1];
     if (
       lastEntry?.value &&
       typeof lastEntry.value === "string" &&
-      lastEntry.value.trim() !== ""
+      lastEntry.value.trim()
     ) {
       return lastEntry.value.trim();
     }
-
-    // Fallback: search for any reasonable-looking code-like value
     const codeLike = metaDetails.find(
       (d) =>
         d.value &&
         typeof d.value === "string" &&
-        d.value.match(/^[A-Za-z0-9]{6,12}$/) // e.g. 33965000, 23200000, FFAS9127-...
+        d.value.match(/^[A-Za-z0-9]{6,12}$/),
     );
-
     return codeLike ? String(codeLike.value).trim() : "N/A";
   };
 
+  // Selling price helper
   const getSellingPrice = (metaDetails) => {
     if (!Array.isArray(metaDetails) || metaDetails.length === 0) return null;
-
-    // Strategy 1: look for numeric-looking value that is not UUID / code
     for (const d of metaDetails) {
       const val = String(d.value || "").trim();
       if (!val) continue;
-
-      // Skip UUIDs and short alphanumeric codes
-      if (val.match(/^[0-9a-f-]{30,}/i)) continue; // UUID-like
-      if (val.match(/^[A-Za-z0-9]{8,12}$/) && !val.includes(".")) continue; // codes like 33965000
-
-      // Looks like money (has digits, maybe decimal)
+      if (val.match(/^[0-9a-f-]{30,}/i)) continue;
+      if (val.match(/^[A-Za-z0-9]{8,12}$/) && !val.includes(".")) continue;
       if (val.match(/^\d+(?:\.\d+)?$/)) {
         const num = Number(val);
-        if (!isNaN(num) && num > 10) {
-          // avoid very small numbers that might be tax %
-          return num;
-        }
+        if (!isNaN(num) && num > 10) return num;
       }
     }
-
-    // Strategy 2: fallback → last numeric-ish entry
     for (let i = metaDetails.length - 1; i >= 0; i--) {
       const val = String(metaDetails[i].value || "").trim();
       const num = Number(val);
-      if (!isNaN(num) && num > 50) {
-        // reasonable price threshold
-        return num;
-      }
+      if (!isNaN(num) && num > 50) return num;
     }
-
     return null;
   };
 
-  // Client-side filtering (only on current page data)
+  // Filtering
   const filteredProducts = useMemo(() => {
-    const term = search.toLowerCase();
+    const term = search.toLowerCase().trim();
     return products.filter((p) => {
       const matchesSearch =
         !term ||
@@ -191,107 +218,37 @@ const InventoryWrapper = () => {
     });
   }, [products, search, maxStockFilter, priceRange]);
 
-  // Tab-based filtering
   const tabFilteredProducts = useMemo(() => {
     if (activeTab === "in-stock")
       return filteredProducts.filter((p) => p.quantity > 0);
     if (activeTab === "low-stock")
       return filteredProducts.filter(
-        (p) => p.quantity > 0 && p.quantity <= lowStockThreshold
+        (p) => p.quantity > 0 && p.quantity <= lowStockThreshold,
       );
     if (activeTab === "out-of-stock")
       return filteredProducts.filter((p) => p.quantity === 0);
-    return filteredProducts; // "all"
+    return filteredProducts;
   }, [filteredProducts, activeTab, lowStockThreshold]);
 
-  // Approximate counts (based on current page only)
   const counts = useMemo(() => {
     return {
-      all: pagination.total,
+      all: paginationInfo.total,
       inStock: products.filter((p) => p.quantity > 0).length,
       lowStock: products.filter(
-        (p) => p.quantity > 0 && p.quantity <= lowStockThreshold
+        (p) => p.quantity > 0 && p.quantity <= lowStockThreshold,
       ).length,
       outStock: products.filter((p) => p.quantity === 0).length,
     };
-  }, [products, pagination.total, lowStockThreshold]);
+  }, [products, paginationInfo.total, lowStockThreshold]);
 
-  // Report handlers
-  const generateCustomReport = (format) => {
-    const selectedData = products.filter((p) =>
-      selectedReportProducts.includes(p.productId)
-    );
-    const reportData = selectedData.map((p) => ({
-      Name: p.name || "Unnamed Product",
-      "Product Code": p.product_code || "—",
-      "Company Code": getCompanyCode(p.metaDetails),
-      "Selling Price": getSellingPrice(p.metaDetails)
-        ? `₹${getSellingPrice(p.metaDetails).toLocaleString("en-IN")}`
-        : "—",
-      Stock: p.quantity,
-      Status:
-        p.quantity === 0
-          ? "Out of Stock"
-          : p.quantity <= lowStockThreshold
-          ? "Low Stock"
-          : "In Stock",
-    }));
-    const title = `Custom Inventory Report - ${new Date().toLocaleDateString(
-      "en-IN"
-    )}`;
-    format === "pdf"
-      ? generatePDF(reportData, title)
-      : generateExcel(reportData, title);
-    setReportModalOpen(false);
-    setSelectedReportProducts([]);
-    message.success("Report generated successfully!");
+  // Handlers
+  const handleTabChange = (key) => {
+    setActiveTab(key);
   };
 
-  const generateMonthlyReport = () => {
-    setGeneratingMonthly(true);
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const monthName = now.toLocaleString("default", {
-      month: "long",
-      year: "numeric",
-    });
-
-    const updatedThisMonth = products.filter((p) => {
-      if (!p.updatedAt) return false;
-      return new Date(p.updatedAt) >= startOfMonth;
-    });
-
-    if (updatedThisMonth.length === 0) {
-      message.info("No products updated this month");
-      setGeneratingMonthly(false);
-      return;
-    }
-
-    const reportData = updatedThisMonth.map((p) => ({
-      Name: p.name || "Unnamed Product",
-      "Product Code": p.product_code || "—",
-      "Company Code": getCompanyCode(p.metaDetails),
-      "Selling Price": getSellingPrice(p.metaDetails)
-        ? `₹${getSellingPrice(p.metaDetails).toLocaleString("en-IN")}`
-        : "—",
-      Stock: p.quantity,
-      Status:
-        p.quantity === 0
-          ? "Out of Stock"
-          : p.quantity <= lowStockThreshold
-          ? "Low Stock"
-          : "In Stock",
-      "Last Updated": new Date(p.updatedAt).toLocaleDateString("en-IN"),
-    }));
-
-    generatePDF(
-      reportData,
-      `Monthly Report - ${monthName} (${updatedThisMonth.length} updated)`
-    );
-    setGeneratingMonthly(false);
-    message.success(
-      `Monthly report generated – ${updatedThisMonth.length} products`
-    );
+  const handlePageChange = (page, size) => {
+    setCurrentPage(page);
+    setPageSize(size);
   };
 
   const openStockModal = (product, action) => {
@@ -329,6 +286,83 @@ const InventoryWrapper = () => {
     }
   };
 
+  const generateCustomReport = (format) => {
+    const selectedData = products.filter((p) =>
+      selectedReportProducts.includes(p.productId),
+    );
+    const reportData = selectedData.map((p) => ({
+      Name: p.name || "Unnamed Product",
+      "Product Code": p.product_code || "—",
+      "Company Code": getCompanyCode(p.metaDetails),
+      "Selling Price": getSellingPrice(p.metaDetails)
+        ? `₹${getSellingPrice(p.metaDetails).toLocaleString("en-IN")}`
+        : "—",
+      Stock: p.quantity,
+      Status:
+        p.quantity === 0
+          ? "Out of Stock"
+          : p.quantity <= lowStockThreshold
+            ? "Low Stock"
+            : "In Stock",
+    }));
+    const title = `Custom Inventory Report - ${new Date().toLocaleDateString("en-IN")}`;
+    if (format === "pdf") {
+      generatePDF(reportData, title);
+    } else {
+      generateExcel(reportData, title);
+    }
+    setReportModalOpen(false);
+    setSelectedReportProducts([]);
+    message.success("Report generated successfully!");
+  };
+
+  const generateMonthlyReport = () => {
+    setGeneratingMonthly(true);
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthName = now.toLocaleString("default", {
+      month: "long",
+      year: "numeric",
+    });
+
+    const updatedThisMonth = products.filter((p) => {
+      if (!p.updatedAt) return false;
+      return new Date(p.updatedAt) >= startOfMonth;
+    });
+
+    if (updatedThisMonth.length === 0) {
+      message.info("No products updated this month");
+      setGeneratingMonthly(false);
+      return;
+    }
+
+    const reportData = updatedThisMonth.map((p) => ({
+      Name: p.name || "Unnamed Product",
+      "Product Code": p.product_code || "—",
+      "Company Code": getCompanyCode(p.metaDetails),
+      "Selling Price": getSellingPrice(p.metaDetails)
+        ? `₹${getSellingPrice(p.metaDetails).toLocaleString("en-IN")}`
+        : "—",
+      Stock: p.quantity,
+      Status:
+        p.quantity === 0
+          ? "Out of Stock"
+          : p.quantity <= lowStockThreshold
+            ? "Low Stock"
+            : "In Stock",
+      "Last Updated": new Date(p.updatedAt).toLocaleDateString("en-IN"),
+    }));
+
+    generatePDF(
+      reportData,
+      `Monthly Report - ${monthName} (${updatedThisMonth.length} updated)`,
+    );
+    setGeneratingMonthly(false);
+    message.success(
+      `Monthly report generated – ${updatedThisMonth.length} products`,
+    );
+  };
+
   const columns = [
     {
       title: "Image",
@@ -362,11 +396,9 @@ const InventoryWrapper = () => {
                 {record.product_code}
               </Text>
             )}
-
             {record.product_code &&
               getCompanyCode(record.metaDetails) !== "N/A" &&
               " • "}
-
             <Text code className="black-code">
               {getCompanyCode(record.metaDetails)}
             </Text>
@@ -377,7 +409,7 @@ const InventoryWrapper = () => {
     {
       title: "Price",
       dataIndex: "metaDetails",
-      responsive: ["md"], // Hide on mobile
+      responsive: ["md"],
       render: (meta) => {
         const price = getSellingPrice(meta);
         return price != null ? (
@@ -427,12 +459,6 @@ const InventoryWrapper = () => {
     },
   ];
 
-  // Handle page change
-  const handlePageChange = (page, size) => {
-    setCurrentPage(page);
-    setPageSize(size);
-  };
-
   if (isLoading) return <div>Loading products...</div>;
   if (error) return <Empty description="Failed to load products" />;
 
@@ -464,7 +490,6 @@ const InventoryWrapper = () => {
                 wrap
                 style={{ width: "100%", justifyContent: "flex-end" }}
               >
-                {/* Price Filter */}
                 <Space size="small">
                   <Text>Price:</Text>
                   <InputNumber
@@ -488,7 +513,6 @@ const InventoryWrapper = () => {
                   </Button>
                 </Space>
 
-                {/* Max Stock */}
                 <Space size="small">
                   <Text>Max ≤</Text>
                   <InputNumber
@@ -501,7 +525,6 @@ const InventoryWrapper = () => {
                   </Button>
                 </Space>
 
-                {/* Low Stock Threshold */}
                 <Space size="small">
                   <Text>Low alert:</Text>
                   <InputNumber
@@ -515,7 +538,6 @@ const InventoryWrapper = () => {
             </Col>
           </Row>
 
-          {/* Action Buttons - Right aligned, stack on mobile */}
           <div
             style={{ marginTop: 16, textAlign: isMobile ? "left" : "right" }}
           >
@@ -553,7 +575,7 @@ const InventoryWrapper = () => {
 
         <Tabs
           activeKey={activeTab}
-          onChange={setActiveTab}
+          onChange={handleTabChange}
           tabBarGutter={isMobile ? 10 : 30}
           size={isMobile ? "small" : "middle"}
         >
@@ -578,12 +600,11 @@ const InventoryWrapper = () => {
               />
             </div>
 
-            {/* Pagination Controls */}
             <div style={{ marginTop: 24, textAlign: "right" }}>
               <Pagination
                 current={currentPage}
                 pageSize={pageSize}
-                total={pagination.total}
+                total={paginationInfo.total}
                 onChange={handlePageChange}
                 onShowSizeChange={handlePageChange}
                 showSizeChanger
@@ -597,7 +618,6 @@ const InventoryWrapper = () => {
         )}
       </div>
 
-      {/* Modals remain unchanged */}
       <ReportBuilderModal
         open={reportModalOpen}
         onClose={() => setReportModalOpen(false)}

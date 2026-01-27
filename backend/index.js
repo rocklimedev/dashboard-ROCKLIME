@@ -36,6 +36,7 @@ const routes = {
   brandParent: require("./routes/brandParentCategory"),
   rolePermission: require("./routes/rolePermission"),
   search: require("./routes/search"),
+  jobs: require("./routes/jobs"),
   contact: require("./routes/contact"),
   cart: require("./routes/cart"),
   company: require("./routes/company"),
@@ -166,7 +167,8 @@ app.use("/api/feedback", routes.feedback);
 app.use("/api/cached-permissions", routes.cachedPermission);
 app.use("/api/site-maps", routes.siteMap);
 app.use("/api/imports", routes.import);
-app.use("/api/fgs", routes.fgs)
+app.use("/api/fgs", routes.fgs);
+app.use("/api/jobs", routes.jobs);
 // ------------------- Health Check -------------------
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", uptime: process.uptime() });

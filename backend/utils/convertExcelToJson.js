@@ -3,7 +3,10 @@ const path = require("path");
 const excelToJson = require("convert-excel-to-json");
 
 // === CONFIG ===
-const inputFilePath = path.join(__dirname, "./OnePager_Colston (2).xlsx");
+const inputFilePath = path.join(
+  __dirname,
+  "../seeder/data/20-1-26 TILE STOCK.xlsx",
+);
 const outputFolder = path.join(__dirname, "json-outputs");
 const outputFile = path.join(outputFolder, "all_sheets_data.json");
 
@@ -31,7 +34,7 @@ Object.keys(result).forEach((sheetName) => {
 
   // Remove empty rows (rows where all values are empty)
   const cleanedData = rows.filter((row) =>
-    Object.values(row).some((v) => v && String(v).trim() !== "")
+    Object.values(row).some((v) => v && String(v).trim() !== ""),
   );
 
   finalOutput[sheetName] = cleanedData;
@@ -39,7 +42,7 @@ Object.keys(result).forEach((sheetName) => {
   console.log(`Processed ${cleanedData.length} rows from sheet: ${sheetName}`);
   console.log(
     `Columns found in ${sheetName}:`,
-    Object.keys(cleanedData[0] || {})
+    Object.keys(cleanedData[0] || {}),
   );
 });
 

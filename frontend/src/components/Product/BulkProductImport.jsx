@@ -14,22 +14,29 @@ import {
   Progress,
   Typography,
   Alert,
-  Empty,
+  Result,
+  Divider,
   Select,
 } from "antd";
-import { UploadOutlined, DownloadOutlined } from "@ant-design/icons";
+import {
+  UploadOutlined,
+  DownloadOutlined,
+  PlusOutlined,
+  FileExcelOutlined,
+} from "@ant-design/icons";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
 import {
   useStartBulkImportMutation,
-  useGetImportStatusQuery,
-} from "../../api/importApi";
+  useGetJobStatusQuery,
+} from "../../api/jobsApi"; // Adjust path to your jobApi
 
 const { Step } = Steps;
 const { Option } = Select;
 const { Title, Text } = Typography;
 
 const BulkProductImport = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [file, setFile] = useState(null);
   const [headers, setHeaders] = useState([]);
@@ -40,14 +47,62 @@ const BulkProductImport = () => {
   const [startBulkImport, { isLoading: isStarting }] =
     useStartBulkImportMutation();
 
-  const { data: status, isFetching: isPolling } = useGetImportStatusQuery(
+  const { data: jobStatus, isFetching: isPolling } = useGetJobStatusQuery(
     jobId,
     {
       skip: !jobId,
-      pollingInterval: 4000,
+      pollingInterval: 5000, // Poll every 5 seconds
     },
   );
 
+  // ── Time estimation ───────────────────────────────────────────────────────
+  const [startTime, setStartTime] = useState(null);
+  const [processedHistory, setProcessedHistory] = useState([]); // [{time, processedRows}]
+
+  useEffect(() => {
+    if (
+      jobStatus?.progress?.processedRows > 0 &&
+      jobStatus?.status === "processing"
+    ) {
+      const now = Date.now();
+      setProcessedHistory((prev) => [
+        ...prev.slice(-9), // keep last 10 samples
+        { time: now, processed: jobStatus.progress.processedRows },
+      ]);
+
+      if (!startTime) setStartTime(now);
+    }
+  }, [jobStatus, startTime]);
+
+  const estimatedTimeLeft = useMemo(() => {
+    if (
+      !jobStatus?.progress?.totalRows ||
+      jobStatus.progress.processedRows >= jobStatus.progress.totalRows
+    ) {
+      return null;
+    }
+
+    if (processedHistory.length < 3) return "Calculating...";
+
+    const latest = processedHistory[processedHistory.length - 1];
+    const earliest = processedHistory[0];
+
+    const timeDiffSec = (latest.time - earliest.time) / 1000;
+    const rowsDiff = latest.processed - earliest.processed;
+
+    if (rowsDiff <= 0 || timeDiffSec <= 0) return "Calculating...";
+
+    const rowsPerSec = rowsDiff / timeDiffSec;
+    const remainingRows =
+      jobStatus.progress.totalRows - jobStatus.progress.processedRows;
+    const secondsLeft = remainingRows / rowsPerSec;
+
+    if (secondsLeft < 60) return `${Math.round(secondsLeft)} seconds`;
+    if (secondsLeft < 3600) return `${Math.round(secondsLeft / 60)} minutes`;
+    return `${Math.round(secondsLeft / 3600)} hours +`;
+  }, [processedHistory, jobStatus]);
+
+  // ── Field mapping options ────────────────────────────────────────────────
   const fieldOptions = useMemo(
     () => [
       { value: "name", label: "Product Name *", required: true },
@@ -57,11 +112,11 @@ const BulkProductImport = () => {
       { value: "alert_quantity", label: "Low Stock Alert Qty" },
       { value: "tax", label: "Tax %" },
       { value: "isFeatured", label: "Featured (true/false)" },
-      { value: "category", label: "Category (name)" },
-      { value: "brand", label: "Brand (name)" },
-      { value: "vendor", label: "Vendor (name)" },
+      { value: "category", label: "Category Name" },
+      { value: "brand", label: "Brand Name" },
+      { value: "vendor", label: "Vendor Name" },
       { value: "keywords", label: "Keywords (comma separated)" },
-      { value: "images", label: "Images (comma separated URLs)" },
+      { value: "images", label: "Image URLs (comma separated)" },
       { value: "meta_barcode", label: "Barcode" },
       { value: "meta_sellingPrice", label: "Selling Price" },
       { value: "meta_mrp", label: "MRP" },
@@ -70,30 +125,27 @@ const BulkProductImport = () => {
     [],
   );
 
-  const requiredFields = useMemo(
-    () => fieldOptions.filter((f) => f.required).map((f) => f.value),
-    [fieldOptions],
+  const requiredFields = fieldOptions
+    .filter((f) => f.required)
+    .map((f) => f.value);
+  const isMappingValid = requiredFields.every((field) =>
+    Object.values(mapping).includes(field),
   );
 
-  const isMappingValid = useMemo(() => {
-    return requiredFields.every((field) =>
-      Object.values(mapping).includes(field),
-    );
-  }, [mapping, requiredFields]);
-
+  // ── File upload & parse ──────────────────────────────────────────────────
   const handleFileUpload = (uploadedFile) => {
-    const isCsv = uploadedFile.name.endsWith(".csv");
+    const isCsv = uploadedFile.name.toLowerCase().endsWith(".csv");
     const isExcel = /\.(xlsx|xls)$/.test(uploadedFile.name);
 
     if (!isCsv && !isExcel) {
-      message.error("Only CSV or Excel files allowed");
+      message.error("Only CSV or Excel files are allowed");
       return false;
     }
 
     setFile(uploadedFile);
     setHeaders([]);
     setMapping({});
-    setCurrentStep(0);
+    setCurrentStep(1);
 
     const reader = new FileReader();
 
@@ -103,16 +155,12 @@ const BulkProductImport = () => {
 
         if (isCsv) {
           const result = Papa.parse(e.target.result, { skipEmptyLines: true });
-          if (result.data.length > 0) {
-            parsedHeaders = result.data[0];
-          }
+          if (result.data.length > 0) parsedHeaders = result.data[0];
         } else {
           const workbook = XLSX.read(e.target.result, { type: "array" });
           const sheet = workbook.Sheets[workbook.SheetNames[0]];
           const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-          if (json.length > 0) {
-            parsedHeaders = json[0];
-          }
+          if (json.length > 0) parsedHeaders = json[0];
         }
 
         const cleanHeaders = parsedHeaders
@@ -120,11 +168,10 @@ const BulkProductImport = () => {
           .filter(Boolean);
 
         setHeaders(cleanHeaders);
-        setCurrentStep(1);
-        message.success("File loaded. Now map columns.");
+        message.success("File loaded successfully. Now map columns.");
       } catch (err) {
-        message.error("Failed to read file");
-        console.error("File parse error:", err);
+        message.error("Failed to parse file");
+        console.error(err);
       }
     };
 
@@ -134,104 +181,65 @@ const BulkProductImport = () => {
     return false;
   };
 
+  // ── Start import ─────────────────────────────────────────────────────────
   const handleStartImport = async () => {
-    if (!file) return;
-
     if (!isMappingValid) {
-      message.warning("Please map both Product Name and Product Code fields");
+      message.warning(
+        "Please map at least Product Name and Product Code fields",
+      );
       return;
     }
-
-    // ── Debug: see what is actually being sent to backend ───────────────────
-    console.log("=== Starting import ===");
-    console.log("File:", file.name);
-    console.log("Mapping object:", mapping);
-    console.log("Mapped fields:", Object.values(mapping));
-    console.log(
-      "Required fields present?",
-      requiredFields.every((f) => Object.values(mapping).includes(f)),
-    );
-    // ───────────────────────────────────────────────────────────────────────
 
     setImporting(true);
 
     try {
       const result = await startBulkImport({ file, mapping }).unwrap();
-      message.success("Import job queued! Tracking progress...");
+      message.success("Import job started in the background!");
       setJobId(result.jobId);
       setCurrentStep(2);
+      setStartTime(Date.now());
+      setProcessedHistory([]);
     } catch (err) {
-      console.error("Start import failed:", err);
-      message.error(err?.data?.message || "Failed to start import");
+      message.error(err?.data?.message || "Failed to queue import job");
     } finally {
       setImporting(false);
     }
   };
 
-  useEffect(() => {
-    if (status?.status === "completed") {
-      Modal.success({
-        title: "Import Completed",
-        content: (
-          <Space direction="vertical" style={{ width: "100%" }}>
-            <Alert
-              message="Success"
-              description={
-                <div>
-                  <p>
-                    <strong>Total rows:</strong> {status.totalRows}
-                  </p>
-                  <p>
-                    <strong>Processed:</strong> {status.processedRows}
-                  </p>
-                  <p>
-                    <strong>Success:</strong> {status.successCount}
-                  </p>
-                  <p>
-                    <strong>Failed:</strong> {status.failedCount}
-                  </p>
-                  <p>
-                    <strong>New Categories:</strong> {status.newCategories || 0}
-                  </p>
-                  <p>
-                    <strong>New Brands:</strong> {status.newBrands || 0}
-                  </p>
-                  <p>
-                    <strong>New Vendors:</strong> {status.newVendors || 0}
-                  </p>
-                </div>
-              }
-              type="success"
-              showIcon
-            />
-
-            {status.failedCount > 0 && status.errorLog?.length > 0 && (
-              <>
-                <Title level={5}>Failed Rows</Title>
-                <Table
-                  size="small"
-                  dataSource={status.errorLog}
-                  columns={[
-                    { title: "Row", dataIndex: "rowIndex", width: 80 },
-                    { title: "Code", dataIndex: "product_code", width: 140 },
-                    { title: "Error", dataIndex: "error" },
-                  ]}
-                  pagination={{ pageSize: 5 }}
-                  scroll={{ x: true }}
-                />
-              </>
-            )}
-          </Space>
-        ),
-        width: 800,
+  // ── Modal close handling ─────────────────────────────────────────────────
+  const handleModalClose = () => {
+    if (jobId && jobStatus?.status === "processing") {
+      Modal.confirm({
+        title: "Job is still running",
+        content:
+          "The import will continue in the background even if you close this window. " +
+          "You can check progress anytime in the Jobs list.",
+        okText: "Close Anyway",
+        cancelText: "Stay Here",
+        onOk: () => {
+          resetImport();
+          setIsModalOpen(false);
+        },
       });
-    } else if (status?.status === "failed") {
-      message.error("Import failed – check server logs");
+    } else {
+      resetImport();
+      setIsModalOpen(false);
     }
-  }, [status]);
+  };
 
+  const resetImport = () => {
+    setCurrentStep(0);
+    setFile(null);
+    setHeaders([]);
+    setMapping({});
+    setJobId(null);
+    setStartTime(null);
+    setProcessedHistory([]);
+  };
+
+  // ── Template download ────────────────────────────────────────────────────
   const downloadTemplate = () => {
-    const template = [
+    const templateData = [
       [
         "name",
         "product_code",
@@ -240,200 +248,270 @@ const BulkProductImport = () => {
         "category",
         "brand",
         "vendor",
-        "images",
         "keywords",
+        "images",
         "meta_barcode",
         "meta_sellingPrice",
+        "meta_mrp",
+        "meta_purchasePrice",
       ],
     ];
-    const ws = XLSX.utils.aoa_to_sheet(template);
+
+    const ws = XLSX.utils.aoa_to_sheet(templateData);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Template");
-    XLSX.writeFile(wb, "bulk-import-template.xlsx");
+    XLSX.utils.book_append_sheet(wb, ws, "Products Template");
+    XLSX.writeFile(wb, "bulk-product-import-template.xlsx");
   };
 
   return (
     <div className="page-wrapper">
-      <div className="content">
-        <Space align="center" style={{ marginBottom: 24 }}>
-          <Title level={3}>Bulk Product Import (Background Job)</Title>
-          <Button
-            icon={<DownloadOutlined />}
-            onClick={downloadTemplate}
-            type="link"
-          >
-            Download Template
-          </Button>
-        </Space>
-
-        <Steps current={currentStep} style={{ marginBottom: 32 }}>
-          <Step title="Upload File" />
-          <Step title="Map Columns" />
-          <Step title="Import & Track" />
-        </Steps>
-
-        {currentStep === 0 && (
-          <Card>
-            <Upload.Dragger
-              accept=".csv,.xlsx,.xls"
-              beforeUpload={handleFileUpload}
-              fileList={
-                file ? [{ ...file, status: "done", name: file.name }] : []
-              }
-              onRemove={() => {
-                setFile(null);
-                setCurrentStep(0);
-              }}
+      <div className="content container-fluid">
+        <Card>
+          <Space align="center" style={{ marginBottom: 24 }}>
+            <Title level={3} style={{ margin: 0 }}>
+              Bulk Product Import
+            </Title>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => setIsModalOpen(true)}
             >
-              <p className="ant-upload-drag-icon">
-                <UploadOutlined />
-              </p>
-              <p>Click or drag CSV / Excel file here</p>
-              <p className="ant-upload-hint">Max ~50 MB recommended</p>
-            </Upload.Dragger>
-          </Card>
-        )}
+              Start New Import
+            </Button>
+            <Button
+              icon={<FileExcelOutlined />}
+              onClick={downloadTemplate}
+              type="default"
+            >
+              Download Template
+            </Button>
+          </Space>
 
-        {currentStep === 1 && (
-          <Card title="2. Map File Columns to Product Fields">
-            {!isMappingValid && (
-              <Alert
-                message="Required fields"
-                description="You must map at least 'Product Name' and 'Product Code' to continue."
-                type="warning"
-                showIcon
-                style={{ marginBottom: 16 }}
-              />
-            )}
+          <Alert
+            message="All imports run in the background"
+            description="You can close this page or navigate away — the job will continue on the server. Check status in the Background Jobs list anytime."
+            type="info"
+            showIcon
+            style={{ marginBottom: 24 }}
+          />
+        </Card>
 
-            <Table
-              size="small"
-              pagination={false}
-              dataSource={headers.map((h, i) => ({ key: i, header: h }))}
-              columns={[
-                {
-                  title: "Column in File",
-                  dataIndex: "header",
-                  render: (text) => <Tag color="blue">{text || "(empty)"}</Tag>,
-                },
-                {
-                  title: "Map to Field",
-                  render: (_, { header }) => (
-                    <Select
-                      style={{ width: 280 }}
-                      placeholder="Select field"
-                      allowClear
-                      value={mapping[String(headers.indexOf(header))]}
-                      onChange={(val) =>
-                        setMapping((prev) => {
-                          const index = headers.indexOf(header);
-                          if (index === -1) return prev;
-                          if (val === undefined) {
-                            const { [String(index)]: _, ...rest } = prev;
-                            return rest;
-                          }
-                          return { ...prev, [String(index)]: val };
-                        })
-                      }
-                    >
-                      {fieldOptions.map((opt) => (
-                        <Option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </Option>
-                      ))}
-                    </Select>
-                  ),
-                },
-              ]}
-            />
+        {/* Main modal wizard */}
+        <Modal
+          title="Bulk Product Import"
+          open={isModalOpen}
+          onCancel={handleModalClose}
+          footer={null}
+          width={1000}
+          destroyOnClose
+        >
+          <Steps current={currentStep} style={{ margin: "32px 0" }}>
+            <Step title="Upload File" />
+            <Step title="Map Columns" />
+            <Step title="Import Progress" />
+          </Steps>
 
-            <div style={{ marginTop: 24, textAlign: "right" }}>
-              <Button
-                type="primary"
-                onClick={handleStartImport}
-                loading={isStarting || importing}
-                disabled={!file || !isMappingValid || isStarting}
+          {currentStep === 0 && (
+            <Card>
+              <Upload.Dragger
+                accept=".csv,.xlsx,.xls"
+                beforeUpload={handleFileUpload}
+                fileList={
+                  file ? [{ ...file, status: "done", name: file.name }] : []
+                }
+                onRemove={() => setFile(null)}
               >
-                Start Background Import
-              </Button>
-            </div>
-          </Card>
-        )}
+                <p className="ant-upload-drag-icon">
+                  <UploadOutlined />
+                </p>
+                <p>Click or drag CSV / Excel file here</p>
+                <p className="ant-upload-hint">
+                  Max file size ~50 MB recommended
+                </p>
+              </Upload.Dragger>
+            </Card>
+          )}
 
-        {currentStep === 2 && (
-          <Card title="Import Progress">
-            {jobId && status ? (
-              <Space direction="vertical" style={{ width: "100%" }}>
+          {currentStep === 1 && (
+            <Card title="Map File Columns to Product Fields">
+              {!isMappingValid && (
                 <Alert
-                  message={`Job ID: ${jobId} — ${status.status.toUpperCase()}`}
-                  type={
-                    status.status === "completed"
-                      ? "success"
-                      : status.status === "failed"
-                        ? "error"
-                        : "info"
-                  }
+                  message="Required mapping"
+                  description="You must map at least 'Product Name' and 'Product Code' fields."
+                  type="warning"
                   showIcon
+                  style={{ marginBottom: 16 }}
                 />
+              )}
 
-                <Progress
-                  percent={
-                    status.totalRows
-                      ? Math.round(
-                          (status.processedRows / status.totalRows) * 100,
-                        )
-                      : 0
-                  }
-                  status="active"
-                />
+              <Table
+                size="small"
+                pagination={false}
+                dataSource={headers.map((h, i) => ({ key: i, header: h }))}
+                columns={[
+                  {
+                    title: "Column in File",
+                    dataIndex: "header",
+                    render: (text) => (
+                      <Tag color="blue">{text || "(empty)"}</Tag>
+                    ),
+                  },
+                  {
+                    title: "Map to Field",
+                    render: (_, { header }) => {
+                      const colIndex = headers.indexOf(header);
+                      return (
+                        <Select
+                          style={{ width: 300 }}
+                          placeholder="Choose field"
+                          allowClear
+                          value={mapping[colIndex]}
+                          onChange={(val) => {
+                            setMapping((prev) => {
+                              if (val === undefined) {
+                                const { [colIndex]: _, ...rest } = prev;
+                                return rest;
+                              }
+                              return { ...prev, [colIndex]: val };
+                            });
+                          }}
+                        >
+                          {fieldOptions.map((opt) => (
+                            <Option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </Option>
+                          ))}
+                        </Select>
+                      );
+                    },
+                  },
+                ]}
+              />
 
-                <p>
-                  <strong>Progress:</strong> {status.processedRows} /{" "}
-                  {status.totalRows || "?"}
-                </p>
-                <p>
-                  <strong>Success:</strong> {status.successCount} |{" "}
-                  <strong>Failed:</strong> {status.failedCount}
-                </p>
-                <p>
-                  New Categories: {status.newCategories || 0} | Brands:{" "}
-                  {status.newBrands || 0} | Vendors: {status.newVendors || 0}
-                </p>
+              <Divider />
 
-                {status.failedCount > 0 && status.errorLog?.length > 0 && (
-                  <>
-                    <Title level={5}>Failed Rows</Title>
-                    <Table
-                      size="small"
-                      dataSource={status.errorLog}
-                      columns={[
-                        { title: "Row", dataIndex: "rowIndex", width: 80 },
-                        {
-                          title: "Code",
-                          dataIndex: "product_code",
-                          width: 140,
-                        },
-                        { title: "Error", dataIndex: "error" },
-                      ]}
-                      pagination={{ pageSize: 5 }}
-                      scroll={{ x: true }}
-                    />
-                  </>
-                )}
-              </Space>
-            ) : (
-              <div style={{ textAlign: "center", padding: "60px 0" }}>
-                <Spin tip="Queuing job..." />
+              <div style={{ textAlign: "right" }}>
+                <Button
+                  type="primary"
+                  onClick={handleStartImport}
+                  loading={isStarting || importing}
+                  disabled={!file || !isMappingValid || isStarting}
+                >
+                  Start Background Import
+                </Button>
               </div>
-            )}
-          </Card>
-        )}
+            </Card>
+          )}
 
-        {(isStarting || isPolling) && (
-          <div style={{ textAlign: "center", marginTop: 32 }}>
-            <Spin tip="Processing..." />
-          </div>
-        )}
+          {currentStep === 2 && jobId && (
+            <Card title={`Job #${jobId.slice(0, 8)}...`}>
+              {jobStatus ? (
+                <Space direction="vertical" style={{ width: "100%" }}>
+                  <Alert
+                    message={`Status: ${jobStatus.status.toUpperCase()}`}
+                    type={
+                      jobStatus.status === "completed"
+                        ? "success"
+                        : jobStatus.status === "failed"
+                          ? "error"
+                          : jobStatus.status === "cancelled"
+                            ? "warning"
+                            : "info"
+                    }
+                    showIcon
+                  />
+
+                  <Progress
+                    percent={
+                      jobStatus.progress?.totalRows
+                        ? Math.round(
+                            (jobStatus.progress.processedRows /
+                              jobStatus.progress.totalRows) *
+                              100,
+                          )
+                        : 0
+                    }
+                    status={
+                      jobStatus.progress?.failedCount > 0
+                        ? "exception"
+                        : "active"
+                    }
+                  />
+
+                  <Text strong>
+                    Progress: {jobStatus.progress?.processedRows || 0} /{" "}
+                    {jobStatus.progress?.totalRows || "?"} rows
+                  </Text>
+
+                  {jobStatus.status === "processing" && (
+                    <Text type="secondary">
+                      Estimated time remaining:{" "}
+                      <strong>{estimatedTimeLeft}</strong>
+                    </Text>
+                  )}
+
+                  <Text>
+                    Success:{" "}
+                    <strong>{jobStatus.progress?.successCount || 0}</strong> |
+                    Failed:{" "}
+                    <strong>{jobStatus.progress?.failedCount || 0}</strong>
+                  </Text>
+
+                  <Text>
+                    New Categories: {jobStatus.results?.newCategoriesCount || 0}{" "}
+                    | Brands: {jobStatus.results?.newBrandsCount || 0} |
+                    Vendors: {jobStatus.results?.newVendorsCount || 0}
+                  </Text>
+
+                  {jobStatus.errorLog?.length > 0 && (
+                    <>
+                      <Title level={5}>Failed Rows / Errors</Title>
+                      <Table
+                        size="small"
+                        dataSource={jobStatus.errorLog}
+                        columns={[
+                          { title: "Row", dataIndex: "row", width: 80 },
+                          { title: "Error", dataIndex: "error" },
+                        ]}
+                        pagination={{ pageSize: 5 }}
+                        scroll={{ x: true }}
+                      />
+                    </>
+                  )}
+
+                  {jobStatus.status === "completed" && (
+                    <Result
+                      status="success"
+                      title="Import Completed Successfully"
+                      subTitle="All done! You can close this window."
+                    />
+                  )}
+
+                  {jobStatus.status === "processing" && (
+                    <Alert
+                      message="Background Processing"
+                      description={
+                        <>
+                          This job is running on the server. You can safely
+                          close this modal or navigate away.
+                          <br />
+                          Check progress anytime in the{" "}
+                          <strong>Background Jobs</strong> section.
+                        </>
+                      }
+                      type="info"
+                      showIcon
+                    />
+                  )}
+                </Space>
+              ) : (
+                <div style={{ textAlign: "center", padding: "80px 0" }}>
+                  <Spin tip="Initializing job..." size="large" />
+                </div>
+              )}
+            </Card>
+          )}
+        </Modal>
       </div>
     </div>
   );

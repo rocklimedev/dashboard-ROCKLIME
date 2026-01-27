@@ -1,12 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { message } from "antd";
 import StockModal from "../Common/StockModal";
-import DataTablePagination from "../Common/DataTablePagination";
-import {
-  useClockInMutation,
-  useClockOutMutation,
-  useGetAttendanceQuery,
-} from "../../api/attendanceApi";
 import {
   useGetAllProductsQuery,
   useGetTopSellingProductsQuery,
@@ -65,7 +59,7 @@ const PageWrapper = () => {
 
   const { data: ordersResponse, refetch: refetchOrders } = useGetAllOrdersQuery(
     undefined,
-    { pollingInterval: 30000 }
+    { pollingInterval: 30000 },
   );
   const orders = ordersResponse?.data || [];
 
@@ -100,7 +94,7 @@ const PageWrapper = () => {
     if (!userId) return message.error("User not logged in!");
 
     const priceEntry = product.metaDetails?.find(
-      (d) => d.id === SELLING_PRICE_META_ID
+      (d) => d.id === SELLING_PRICE_META_ID,
     );
     const price = priceEntry ? parseFloat(priceEntry.value) : null;
     if (!price || isNaN(price)) return message.error("Invalid price");
@@ -127,14 +121,13 @@ const PageWrapper = () => {
   /* ------------------------------------------------------------------ */
   const lowStockProducts = useMemo(
     () => products.filter((p) => p.quantity < (p.alert_quantity || 20)),
-    [products]
+    [products],
   );
 
-  const paginatedLowStock = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return lowStockProducts.slice(start, start + itemsPerPage);
-  }, [lowStockProducts, currentPage]);
-
+  const displayedLowStock = useMemo(
+    () => lowStockProducts.slice(0, 10),
+    [lowStockProducts],
+  );
   /* ------------------------------------------------------------------ */
   /*  STATUS UPDATE                                                     */
   /* ------------------------------------------------------------------ */
@@ -153,16 +146,11 @@ const PageWrapper = () => {
   /* ------------------------------------------------------------------ */
   /*  COUNTS & LATEST                                                   */
   /* ------------------------------------------------------------------ */
-  const orderCount = orders.length;
+
   const quotationCount = quotations.length;
   const productCount = products.length;
-  const invoiceCount = invoiceData?.data?.length || 0;
 
   const lastFiveQuotations = [...quotations]
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-    .slice(0, 5);
-
-  const lastFiveOrders = [...orders]
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .slice(0, 5);
 
@@ -247,8 +235,8 @@ const PageWrapper = () => {
                                   o.priority === "high"
                                     ? "text-danger"
                                     : o.priority === "medium"
-                                    ? "text-warning"
-                                    : "text-success"
+                                      ? "text-warning"
+                                      : "text-success"
                                 }`}
                               >
                                 ({o.priority.toUpperCase()})
@@ -270,7 +258,7 @@ const PageWrapper = () => {
                                   day: "2-digit",
                                   month: "short",
                                   year: "numeric",
-                                }
+                                },
                               )}
                             </span>
                           </div>
@@ -394,7 +382,7 @@ const PageWrapper = () => {
                                 {
                                   day: "2-digit",
                                   month: "short",
-                                }
+                                },
                               )}
                             </span>
                           </div>
@@ -403,7 +391,7 @@ const PageWrapper = () => {
                           <div className="amount">
                             ₹
                             {parseFloat(q.finalAmount || 0).toLocaleString(
-                              "en-IN"
+                              "en-IN",
                             )}
                           </div>
                           <span className="ms-2 info-text">
@@ -426,32 +414,47 @@ const PageWrapper = () => {
             {/* Low Stock */}
             {lowStockProducts.length > 0 && (
               <div className="card shadow-sm rounded-3">
-                <div className="card-header bg-light fw-semibold low-stock-header">
-                  <span>LOW IN STOCK</span>
-                  <span className="low-stock-count">
-                    {lowStockProducts.length} of {products.length} remaining
-                  </span>
+                <div className="card-header bg-light fw-semibold low-stock-header d-flex justify-content-between align-items-center">
+                  <div>
+                    <span>LOW IN STOCK</span>
+                    <span className="low-stock-count ms-2">
+                      {lowStockProducts.length} of {products.length} remaining
+                    </span>
+                  </div>
+                  {lowStockProducts.length > 10 && (
+                    <button
+                      className="btn btn-sm btn-outline-primary"
+                      onClick={() =>
+                        (window.location.href = "/inventory/list?tab=low-stock")
+                      }
+                    >
+                      View All
+                    </button>
+                  )}
                 </div>
                 <div className="card-body p-0">
                   <ul className="list-unstyled m-0">
-                    {paginatedLowStock.map((p) => (
+                    {displayedLowStock.map((p) => (
                       <li
                         key={p.productId}
                         onClick={() => handleProductClick(p)}
-                        className="low-stock-item"
+                        className="low-stock-item d-flex justify-content-between align-items-center px-3 py-2"
+                        style={{ cursor: "pointer" }}
                       >
-                        <span className="fw-semibold">{p.name}</span>
-                        <span className="low-stock-qty">Qty: {p.quantity}</span>
+                        <div className="d-flex flex-column">
+                          <span className="fw-semibold">{p.name}</span>
+                        </div>
+                        <span className="low-stock-qty fw-bold text-danger">
+                          Qty: {p.quantity}
+                        </span>
                       </li>
                     ))}
                   </ul>
-                  {lowStockProducts.length > itemsPerPage && (
-                    <DataTablePagination
-                      currentPage={currentPage}
-                      totalItems={lowStockProducts.length}
-                      itemsPerPage={itemsPerPage}
-                      onPageChange={setCurrentPage}
-                    />
+
+                  {lowStockProducts.length === 0 && (
+                    <p className="text-center text-muted py-3">
+                      No low stock items
+                    </p>
                   )}
                 </div>
               </div>
@@ -582,7 +585,7 @@ const PageWrapper = () => {
                                   {
                                     day: "2-digit",
                                     month: "short",
-                                  }
+                                  },
                                 )}
                               </div>
                             </div>
