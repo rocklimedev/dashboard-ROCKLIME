@@ -23,22 +23,30 @@ export const jobApi = baseApi.injectEndpoints({
       // Optional: you can add invalidatesTags if needed (rare for preview)
     }),
 
+    // src/api/jobsApi.js  (or wherever the api slice is)
+
     startBulkImport: builder.mutation({
-      query: ({ file, mapping }) => {
+      query: ({ file, mapping, selectedBrandId }) => {
         const formData = new FormData();
+
+        // File
         formData.append("file", file);
-        // mapping is usually a JS object → convert to JSON string
-        if (mapping) {
-          formData.append("mapping", JSON.stringify(mapping));
-        }
+
+        // Mapping — must be stringified if backend expects JSON
+        formData.append("mapping", JSON.stringify(mapping));
+
+        // Critical: send selectedBrandId as string (or number)
+        formData.append("selectedBrandId", selectedBrandId);
 
         return {
-          url: "/jobs/bulk-import/start",
+          url: "/jobs/bulk-import/start", // ← your actual endpoint path
           method: "POST",
           body: formData,
+          // IMPORTANT: do NOT set Content-Type header manually
+          // browser will set multipart/form-data + boundary
         };
       },
-      invalidatesTags: ["Jobs"], // so list of jobs refreshes
+      invalidatesTags: ["Jobs"], // optional
     }),
 
     // ───────────────────────────────────────────────

@@ -217,7 +217,7 @@ const JobDetails = () => {
               </Button>
               <Button
                 icon={<ArrowLeftOutlined />}
-                onClick={() => navigate("/jobs")}
+                onClick={() => navigate("/jobs/list")}
               >
                 Back to List
               </Button>

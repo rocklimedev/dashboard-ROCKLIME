@@ -9,78 +9,128 @@ const Papa = require("papaparse");
 const XLSX = require("xlsx");
 
 // POST /api/jobs/bulk-import/start
-exports.startBulkImport = async (req, res) => {
-  try {
-    // ────────────────────────────── DEBUG LOGGING ──────────────────────────────
-    console.log("=== startBulkImport called ===");
-    console.log("req.files present?", !!req.files);
-    console.log("req.files.file?", !!req.files?.file?.[0]);
-    console.log("req.body keys:", Object.keys(req.body || {}));
-    console.log("req.body full:", req.body);
 
-    if (!req.files?.file?.[0]) {
-      return res.status(400).json({ message: "No file uploaded" });
+exports.startBulkImport = async (req, res) => {
+  console.log("┌──────────────────────────────────────────────┐");
+  console.log("│          startBulkImport - DEBUG LOG         │");
+  console.log("└──────────────────────────────────────────────┘");
+  console.log("Request received at:", new Date().toISOString());
+  console.log(
+    "User:",
+    req.user?.id || "anonymous",
+    "Role:",
+    req.user?.role || "none",
+  );
+  console.log("Content-Type:", req.headers["content-type"]);
+  console.log("Has files?", !!req.files);
+  console.log("File present?", !!req.files?.file?.[0]);
+  console.log("req.body keys:", Object.keys(req.body || {}));
+  console.log("req.body:", JSON.stringify(req.body, null, 2));
+
+  try {
+    // 1. Validate file upload
+    if (!req.files || !req.files.file || !req.files.file[0]) {
+      return res.status(400).json({
+        success: false,
+        message: "No file uploaded. Please attach a file field named 'file'.",
+        received: {
+          hasFiles: !!req.files,
+          fileKeys: req.files ? Object.keys(req.files) : [],
+        },
+      });
     }
 
     const file = req.files.file[0];
 
-    // Get raw mapping string
-    const rawMapping = req.body?.mapping;
-    console.log("raw req.body.mapping:", rawMapping);
-    console.log("typeof rawMapping:", typeof rawMapping);
-
+    // 2. Get and parse mapping
+    const rawMapping = req.body.mapping;
     let mapping = {};
 
-    if (typeof rawMapping === "string" && rawMapping.trim() !== "") {
+    if (rawMapping) {
       try {
         mapping = JSON.parse(rawMapping);
-        console.log("Successfully parsed mapping:", mapping);
-        console.log("Mapping values:", Object.values(mapping));
+        if (typeof mapping !== "object" || mapping === null) {
+          throw new Error("Mapping must be a valid JSON object");
+        }
+        console.log("Parsed mapping:", mapping);
       } catch (parseErr) {
-        console.error("JSON parse error on mapping:", parseErr.message);
+        console.error("Mapping parse error:", parseErr.message);
         return res.status(400).json({
-          message: "Invalid mapping JSON format",
+          success: false,
+          message: "Invalid mapping format – must be valid JSON object",
           error: parseErr.message,
+          receivedMapping: rawMapping,
         });
       }
     } else {
-      console.warn("No valid mapping string received in req.body");
+      console.warn("No mapping provided in request body");
     }
 
-    // Validation: check values (works with index-based mapping)
+    // 3. Validate required field mappings
     const mappedFields = Object.values(mapping);
     const hasName = mappedFields.includes("name");
     const hasCode = mappedFields.includes("product_code");
 
-    console.log("hasName:", hasName, "hasCode:", hasCode);
-
     if (!hasName || !hasCode) {
       return res.status(400).json({
-        message: 'Must map at least "name" and "product_code" fields',
-        receivedMapping: mapping, // helpful for debugging
+        success: false,
+        message: 'You must map at least "name" and "product_code" fields',
+        required: ["name", "product_code"],
+        receivedMappings: mappedFields,
       });
     }
 
-    // Log which columns were mapped to required fields
-    const nameColumn = Object.keys(mapping).find((k) => mapping[k] === "name");
-    const codeColumn = Object.keys(mapping).find(
-      (k) => mapping[k] === "product_code",
-    );
+    // 4. Get selectedBrandId (now treated as UUID string)
+    const selectedBrandId = req.body.selectedBrandId?.trim();
 
-    console.log(`[startBulkImport] name mapped to column index: ${nameColumn}`);
+    if (!selectedBrandId) {
+      return res.status(400).json({
+        success: false,
+        message: "selectedBrandId is required for all bulk imports",
+        note: "It should be sent as form field 'selectedBrandId' (UUID string expected)",
+        receivedBodyKeys: Object.keys(req.body || {}),
+        receivedValue: req.body.selectedBrandId,
+      });
+    }
+
+    // Optional: basic UUID format validation (recommended)
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(selectedBrandId)) {
+      return res.status(400).json({
+        success: false,
+        message: "selectedBrandId appears to be an invalid UUID format",
+        received: selectedBrandId,
+        expectedFormat: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+      });
+    }
+
     console.log(
-      `[startBulkImport] product_code mapped to column index: ${codeColumn}`,
+      `[startBulkImport] Using selectedBrandId (UUID): ${selectedBrandId}`,
     );
 
-    // ────────────────────────────── NORMAL FLOW ──────────────────────────────
-    const ftpPath = await uploadToFtp(file.buffer, file.originalname);
+    // 5. Upload file to FTP / storage
+    let ftpPath;
+    try {
+      ftpPath = await uploadToFtp(file.buffer, file.originalname);
+      console.log("File uploaded to FTP:", ftpPath);
+    } catch (uploadErr) {
+      console.error("FTP upload failed:", uploadErr);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to store uploaded file",
+        error: uploadErr.message,
+      });
+    }
 
+    // 6. Create job record
     const jobRecord = await Job.create({
       type: "bulk-import",
       params: {
         filePath: ftpPath,
         originalFileName: file.originalname,
-        mapping, // index → field mapping
+        mapping, // column index → field name
+        selectedBrandId, // stored as string (UUID)
       },
       status: "pending",
       progress: {
@@ -97,6 +147,9 @@ exports.startBulkImport = async (req, res) => {
       userId: req.user?.id || null,
     });
 
+    console.log(`Job created with ID: ${jobRecord.id}`);
+
+    // 7. Queue the job
     await jobsQueue.add(
       "process-job",
       { jobId: jobRecord.id },
@@ -108,17 +161,28 @@ exports.startBulkImport = async (req, res) => {
       },
     );
 
+    console.log(`Job ${jobRecord.id} queued successfully`);
+
+    // 8. Success response
     return res.status(202).json({
-      message: "Bulk import job queued",
+      success: true,
+      message: "Bulk import job queued successfully – processing in background",
       jobId: jobRecord.id,
       status: "pending",
+      fileName: file.originalname,
+      brandId: selectedBrandId,
     });
   } catch (err) {
-    console.error("Start import error:", err);
-    return res.status(500).json({ message: "Failed to queue import" });
+    console.error("startBulkImport failed:", err.message);
+    console.error(err.stack);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to start bulk import job",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
+    });
   }
 };
-
 // GET /api/jobs/:jobId/status
 exports.getJobStatus = async (req, res) => {
   try {
@@ -639,4 +703,3 @@ exports.downloadSuccessfulEntries = async (req, res) => {
     res.status(500).json({ message: "Failed to download file" });
   }
 };
-// Add more start methods for other job types as needed...

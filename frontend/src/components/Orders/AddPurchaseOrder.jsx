@@ -313,7 +313,7 @@ const AddPurchaseOrder = () => {
         form.resetFields();
       }
 
-      navigate("/po/list");
+      navigate("/purchase-manager");
     } catch (err) {
       message.error(err?.data?.message || "Failed to save purchase order");
     }
@@ -390,7 +390,7 @@ const AddPurchaseOrder = () => {
 
           <div className="card-body">
             <div style={{ marginBottom: 24, display: "flex", gap: 12 }}>
-              <Link to="/po/list">
+              <Link to="/purchase-manager">
                 <Button icon={<ArrowLeftOutlined />}>Back</Button>
               </Link>
               <Button onClick={() => setShowClearConfirm(true)}>Clear</Button>
@@ -546,7 +546,7 @@ const AddPurchaseOrder = () => {
               <div style={{ marginTop: 32, textAlign: "right" }}>
                 <Button
                   style={{ marginRight: 12 }}
-                  onClick={() => navigate("/po/list")}
+                  onClick={() => navigate("/purchase-manager")}
                   disabled={creating || updating}
                 >
                   Cancel

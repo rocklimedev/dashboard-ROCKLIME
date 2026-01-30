@@ -37,13 +37,13 @@ const OrderWrapper = () => {
   const permissions = auth?.permissions || [];
 
   const canEditOrder = permissions.some(
-    (p) => p.action === "edit" && p.module === "orders"
+    (p) => p.action === "edit" && p.module === "orders",
   );
   const canDeleteOrder = permissions.some(
-    (p) => p.action === "delete" && p.module === "orders"
+    (p) => p.action === "delete" && p.module === "orders",
   );
   const canUpdateOrderStatus = permissions.some(
-    (p) => p.action === "write" && p.module === "orders"
+    (p) => p.action === "write" && p.module === "orders",
   );
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -255,7 +255,8 @@ const OrderWrapper = () => {
 
           <div className="card-body">
             <div className="row mb-4 align-items-center g-3">
-              <div className="col-lg-6">
+              {/* Search – left side, takes what it needs */}
+              <div className="col-12 col-md-7 col-lg-6 col-xl-5">
                 <Input
                   prefix={<SearchOutlined />}
                   placeholder="Search order no, customer, quotation..."
@@ -263,20 +264,20 @@ const OrderWrapper = () => {
                   onChange={(e) => setSearchTerm(e.target.value)}
                   allowClear
                   size="large"
-                  style={{ width: 500 }}
+                  style={{ width: "100%" }}
                 />
               </div>
 
-              <div className="col-lg-6">
-                <div className="d-flex gap-3 flex-wrap">
+              {/* Filters – right side, takes remaining space */}
+              <div className="col-12 col-md-5 col-lg-6 col-xl-7">
+                <div className="d-flex gap-3 flex-wrap justify-content-md-end">
+                  {/* All Selects + Clear button here – same as above */}
                   <Select
                     value={committedFilters.status}
-                    onChange={handleStatusChange}
-                    placeholder="All Statuses"
-                    allowClear
-                    style={{ width: 180 }}
+                    style={{ width: 170 }}
                     size="large"
                   >
+                    {" "}
                     {[
                       "PREPARING",
                       "CHECKING",
@@ -294,26 +295,18 @@ const OrderWrapper = () => {
                       </Option>
                     ))}
                   </Select>
-
                   <Select
                     value={committedFilters.priority}
-                    onChange={handlePriorityChange}
-                    placeholder="Priority"
-                    allowClear
-                    style={{ width: 140 }}
+                    style={{ width: 130 }}
                     size="large"
                   >
+                    {" "}
                     <Option value="high">High</Option>
                     <Option value="medium">Medium</Option>
                     <Option value="low">Low</Option>
                   </Select>
-
-                  <Select
-                    value={sortBy}
-                    onChange={handleSortChange}
-                    style={{ width: 200 }}
-                    size="large"
-                  >
+                  <Select value={sortBy} style={{ width: 190 }} size="large">
+                    {" "}
                     <Option value="Recently Added">Recently Added</Option>
                     <Option value="Due Date Ascending">
                       Due Date (Soonest)
@@ -322,10 +315,7 @@ const OrderWrapper = () => {
                       Due Date (Latest)
                     </Option>
                   </Select>
-
-                  <Button onClick={handleClearFilters} size="large">
-                    Clear
-                  </Button>
+                  <Button size="large">Clear</Button>
                 </div>
               </div>
             </div>
@@ -486,8 +476,8 @@ const OrderWrapper = () => {
                                   order.priority === "high"
                                     ? "danger"
                                     : order.priority === "low"
-                                    ? "info"
-                                    : "warning"
+                                      ? "info"
+                                      : "warning"
                                 }`}
                               >
                                 {order.priority || "Medium"}
@@ -515,7 +505,7 @@ const OrderWrapper = () => {
                                   onClick={() =>
                                     handleOpenDatesModal(
                                       order.dueDate,
-                                      order.followupDates
+                                      order.followupDates,
                                     )
                                   }
                                 >
@@ -587,7 +577,7 @@ const OrderWrapper = () => {
                       –
                       {Math.min(
                         committedFilters.page * committedFilters.limit,
-                        pagination.total
+                        pagination.total,
                       )}{" "}
                       of {pagination.total} orders
                     </div>

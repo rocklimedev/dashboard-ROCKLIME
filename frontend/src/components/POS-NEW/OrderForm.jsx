@@ -1,10 +1,10 @@
+// src/components/Orders/OrderForm.jsx
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Card,
   Button,
   Select,
   Input,
-  Alert,
   Row,
   Col,
   Empty,
@@ -14,6 +14,7 @@ import {
   Divider,
   InputNumber,
   Collapse,
+  message,
 } from "antd";
 import {
   UserAddOutlined,
@@ -25,7 +26,6 @@ import {
 import styled from "styled-components";
 import OrderTotal from "./OrderTotal";
 import moment from "moment";
-import { message } from "antd";
 import { debounce } from "lodash";
 import { useCreateAddressMutation } from "../../api/addressApi";
 import { useGetAllOrdersQuery } from "../../api/orderApi";
@@ -47,12 +47,14 @@ const CompactCard = styled(Card)`
     padding: 12px 16px;
   }
 `;
+
 const TightRow = styled(Row)`
   margin-bottom: 8px;
   .ant-col {
     padding: 0 4px;
   }
 `;
+
 const MiniSelect = styled(Select)`
   width: 100%;
   .ant-select-selector {
@@ -60,9 +62,11 @@ const MiniSelect = styled(Select)`
     height: 28px;
   }
 `;
+
 const MiniInput = styled(Input)`
   height: 28px;
 `;
+
 const MiniNumber = styled(InputNumber)`
   width: 100%;
   height: 28px;
@@ -70,6 +74,7 @@ const MiniNumber = styled(InputNumber)`
     height: 26px;
   }
 `;
+
 const MiniDate = styled(DatePicker)`
   width: 100%;
   height: 28px;
@@ -88,6 +93,7 @@ const MiniDate = styled(DatePicker)`
     box-shadow: 0 0 0 2px rgba(245, 34, 45, 0.2);
   }
 `;
+
 const CheckoutBtn = styled(Button)`
   height: 36px;
   font-weight: 600;
@@ -156,63 +162,59 @@ const OrderForm = ({
 
   /* ────── Local State ────── */
   const [assignmentType, setAssignmentType] = useState(
-    orderData?.assignedTeamId
-      ? "team"
-      : orderData?.assignedUserId || orderData?.secondaryUserId
-      ? "users"
-      : "team"
+    orderData?.assignedTeamId ? "team" : "users",
   );
   const [sourceType, setSourceType] = useState("");
   const [isCreatingAddress, setIsCreatingAddress] = useState(false);
   const [gst, setGst] = useState(orderData.gst ?? 18);
   const [extraDiscount, setExtraDiscount] = useState(
-    orderData.extraDiscount ?? 0
+    orderData.extraDiscount ?? 0,
   );
   const [extraDiscountType, setExtraDiscountType] = useState(
-    orderData.extraDiscountType ?? "fixed"
+    orderData.extraDiscountType ?? "fixed",
   );
   const [customerSearch, setCustomerSearch] = useState("");
   const [errors, setErrors] = useState({});
   const [sourceModalVisible, setSourceModalVisible] = useState(false);
+
   /* ────── RTK ────── */
   const [createAddress] = useCreateAddressMutation();
   const { data: allOrdersData, isLoading: ordersLoading } =
     useGetAllOrdersQuery();
   const orders = useMemo(() => allOrdersData?.orders ?? [], [allOrdersData]);
-  const handleAddSourceCustomer = () => {
-    setSourceModalVisible(true);
-  };
 
-  const handleSourceCustomerAdded = () => {
-    setSourceModalVisible(false);
-  };
+  const handleAddSourceCustomer = () => setSourceModalVisible(true);
+  const handleSourceCustomerAdded = () => setSourceModalVisible(false);
+
   /* ────── Memos ────── */
   const filteredAddresses = useMemo(
     () =>
       selectedCustomer
         ? addresses.filter((a) => a.customerId === selectedCustomer)
         : [],
-    [addresses, selectedCustomer]
+    [addresses, selectedCustomer],
   );
+
   const defaultAddress = useMemo(
     () =>
       customers.find((c) => c.customerId === selectedCustomer)?.address ?? null,
-    [customers, selectedCustomer]
+    [customers, selectedCustomer],
   );
+
   const sourceCustomers = useMemo(
     () =>
       sourceType
         ? customers.filter(
-            (c) => c.customerType?.toLowerCase() === sourceType.toLowerCase()
+            (c) => c.customerType?.toLowerCase() === sourceType.toLowerCase(),
           )
         : [],
-    [customers, sourceType]
+    [customers, sourceType],
   );
 
   /* ────── Debounced Search ────── */
   const debouncedSearch = useCallback(
     debounce((v) => setCustomerSearch(v), 300),
-    []
+    [],
   );
 
   /* ────── Auto-fill dueDate ────── */
@@ -247,7 +249,7 @@ const OrderForm = ({
         (a.postalCode || a.zip) ===
           (defaultAddress.postalCode || defaultAddress.zip) &&
         (a.country || "india").toLowerCase() ===
-          (defaultAddress.country || "india").toLowerCase()
+          (defaultAddress.country || "india").toLowerCase(),
     );
 
     if (match) {
@@ -267,7 +269,7 @@ const OrderForm = ({
           country: defaultAddress.country ?? "India",
           status: "BILLING",
         }).unwrap();
-        handleOrderChange("shipTo", res.data.addressId);
+        handleOrderChange("shipTo", res.addressId);
       } catch (e) {
         message.error(e?.data?.message ?? "Failed to create address");
       } finally {
@@ -285,6 +287,7 @@ const OrderForm = ({
     createAddress,
     handleOrderChange,
   ]);
+
   const safeShipping = Number(shipping) || 0;
 
   /* ────── Extra Discount & GST Calc ────── */
@@ -298,15 +301,16 @@ const OrderForm = ({
 
   const gstBase = (base - Number(extraDiscAmt)).toFixed(2);
   const gstAmt = ((Number(gstBase) * gst) / 100).toFixed(2);
+
   const availableSecondaryUsers = useMemo(() => {
     if (!orderData?.assignedUserId) return users;
     return users.filter((u) => u.userId !== orderData.assignedUserId);
   }, [users, orderData?.assignedUserId]);
+
   /* ────── Validation Helpers ────── */
   const validateField = useCallback(
     (field) => {
       const err = {};
-
       switch (field) {
         case "customer":
           if (!selectedCustomer) err.customer = "Customer is required";
@@ -339,13 +343,18 @@ const OrderForm = ({
           }
           break;
       }
-
       return err;
     },
-    [selectedCustomer, useBillingAddress, orderData, assignmentType, sourceType]
+    [
+      selectedCustomer,
+      useBillingAddress,
+      orderData,
+      assignmentType,
+      sourceType,
+    ],
   );
 
-  /* ────── Force Extra Discount to Fixed Amount ────── */
+  /* ────── Force Extra Discount to Fixed ────── */
   useEffect(() => {
     if (extraDiscountType !== "fixed") {
       setExtraDiscountType("fixed");
@@ -359,7 +368,7 @@ const OrderForm = ({
     ["customer", "shipping", "dueDate", "assignment", "source"].forEach(
       (field) => {
         Object.assign(newErrors, validateField(field));
-      }
+      },
     );
     setErrors(newErrors);
   }, [
@@ -389,11 +398,13 @@ const OrderForm = ({
       ...(orderData.followupDates || []),
       null,
     ]);
+
   const rmFollow = (i) =>
     handleOrderChange(
       "followupDates",
-      (orderData.followupDates || []).filter((_, x) => x !== i)
+      (orderData.followupDates || []).filter((_, x) => x !== i),
     );
+
   const setFollow = (i, d) => {
     const arr = [...(orderData.followupDates || [])];
     arr[i] = d ? moment(d).format("YYYY-MM-DD") : null;
@@ -422,7 +433,7 @@ const OrderForm = ({
 
   return (
     <Row gutter={12}>
-      {/* ────── LEFT – FORM ────── */}
+      {/* LEFT – FORM */}
       <Col xs={24} md={16}>
         <CompactCard title={<Title level={5}>Checkout</Title>}>
           <Collapse defaultActiveKey={["1", "2", "3", "4", "5"]} ghost>
@@ -442,6 +453,7 @@ const OrderForm = ({
                   </MiniSelect>
                 </Col>
               </TightRow>
+
               <TightRow gutter={8}>
                 <Col span={8}>
                   <Text strong>
@@ -468,7 +480,7 @@ const OrderForm = ({
                         ? customers.filter((c) =>
                             c.name
                               .toLowerCase()
-                              .includes(customerSearch.toLowerCase())
+                              .includes(customerSearch.toLowerCase()),
                           )
                         : customers
                       ).map((c) => (
@@ -499,7 +511,7 @@ const OrderForm = ({
                   </Text>
                 </Col>
                 <Col span={16}>
-                  <Space.Compact block>
+                  <Space style={{ width: "100%", display: "flex", gap: 8 }}>
                     <MiniSelect
                       value={
                         useBillingAddress ? "sameAsBilling" : orderData?.shipTo
@@ -508,16 +520,33 @@ const OrderForm = ({
                       loading={addressesLoading || isCreatingAddress}
                       disabled={!selectedCustomer}
                       status={hasError("shipping") ? "error" : ""}
+                      // ────── Address visibility fixes ──────
+                      optionLabelProp="title"
+                      popupMatchSelectWidth={340}
+                      dropdownMatchSelectWidth={false}
                     >
                       {defaultAddress && (
-                        <Option value="sameAsBilling">Same as Billing</Option>
+                        <Option
+                          value="sameAsBilling"
+                          title={`Same as Billing: ${defaultAddress.street}, ${defaultAddress.city}, ${defaultAddress.state || ""} ${defaultAddress.postalCode || ""}`}
+                        >
+                          Same as Billing ({defaultAddress.city || "—"})
+                        </Option>
                       )}
+
                       {filteredAddresses.map((a) => (
-                        <Option key={a.addressId} value={a.addressId}>
-                          {`${a.street}, ${a.city} (${a.status})`}
+                        <Option
+                          key={a.addressId}
+                          value={a.addressId}
+                          title={`${a.street}, ${a.city}, ${a.state || ""} ${a.postalCode || ""} (${a.status})`}
+                        >
+                          {a.street?.slice(0, 28)}
+                          {a.street?.length > 28 ? "..." : ""}, {a.city} (
+                          {a.status})
                         </Option>
                       ))}
                     </MiniSelect>
+
                     {hasError("shipping") && (
                       <Text
                         type="danger"
@@ -526,14 +555,16 @@ const OrderForm = ({
                         {getError("shipping")}
                       </Text>
                     )}
+
                     <Button
                       type="primary"
                       onClick={handleAddAddress}
                       disabled={!selectedCustomer}
+                      style={{ minWidth: 40 }}
                     >
                       +
                     </Button>
-                  </Space.Compact>
+                  </Space>
                 </Col>
               </TightRow>
             </Panel>
@@ -614,12 +645,12 @@ const OrderForm = ({
                 <Col span={16}>
                   <MiniDate
                     selected={momentToDate(
-                      orderData?.dueDate ? moment(orderData.dueDate) : null
+                      orderData?.dueDate ? moment(orderData.dueDate) : null,
                     )}
                     onChange={(d) =>
                       handleOrderChange(
                         "dueDate",
-                        d ? moment(d).format("YYYY-MM-DD") : ""
+                        d ? moment(d).format("YYYY-MM-DD") : "",
                       )
                     }
                     minDate={new Date()}
@@ -777,6 +808,7 @@ const OrderForm = ({
                       )}
                     </Col>
                   </TightRow>
+
                   <TightRow gutter={8}>
                     <Col span={8}>
                       <Text strong>Secondary</Text>
@@ -838,6 +870,7 @@ const OrderForm = ({
                   </MiniSelect>
                 </Col>
               </TightRow>
+
               <TightRow gutter={8}>
                 <Col span={8}>
                   <Text strong>GST %</Text>
@@ -856,6 +889,7 @@ const OrderForm = ({
                   />
                 </Col>
               </TightRow>
+
               {/* Extra Discount – Fixed Amount Only */}
               <TightRow gutter={8} align="middle">
                 <Col span={8}>
@@ -885,6 +919,7 @@ const OrderForm = ({
                   </Text>
                 </Col>
               </TightRow>
+
               <TightRow gutter={8}>
                 <Col span={8}>
                   <Text strong>Description</Text>
@@ -905,7 +940,7 @@ const OrderForm = ({
         </CompactCard>
       </Col>
 
-      {/* ────── RIGHT – SUMMARY ────── */}
+      {/* RIGHT – SUMMARY */}
       <Col xs={24} md={8}>
         <CompactCard title={<Text strong>Summary</Text>}>
           <OrderTotal
@@ -942,6 +977,7 @@ const OrderForm = ({
           </Button>
         </CompactCard>
       </Col>
+
       <AddCustomerModal
         visible={sourceModalVisible}
         onClose={() => setSourceModalVisible(false)}
