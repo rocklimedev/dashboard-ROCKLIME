@@ -12,6 +12,8 @@ import {
   Space,
   Divider,
   Collapse,
+  Spin,
+  message,
 } from "antd";
 import {
   UserAddOutlined,
@@ -20,11 +22,9 @@ import {
   DeleteOutlined,
   PlusOutlined,
 } from "@ant-design/icons";
-import { InfoCircleOutlined } from "@ant-design/icons";
 import styled from "styled-components";
 import OrderTotal from "./OrderTotal";
-import { message } from "antd";
-import { useCreateAddressMutation } from "../../api/addressApi";
+import { useGetCustomersQuery } from "../../api/customerApi";
 import moment from "moment";
 import DatePicker from "react-datepicker";
 import { useAuth } from "../../context/AuthContext";
@@ -32,10 +32,9 @@ import "react-datepicker/dist/react-datepicker.css";
 
 const RESTRICTED_ROLES = ["SUPER_ADMIN", "DEVELOPER", "ADMIN"];
 const { Text, Title } = Typography;
-const { Option } = Select;
 const { Panel } = Collapse;
-
-/* ────────────────────── Styled ────────────────────── */
+const { Option } = Select;
+/* ────────────────────── Styled Components ────────────────────── */
 const CompactCard = styled(Card)`
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -43,12 +42,14 @@ const CompactCard = styled(Card)`
     padding: 12px 16px;
   }
 `;
+
 const TightRow = styled(Row)`
   margin-bottom: 6px;
   .ant-col {
     padding: 0 4px;
   }
 `;
+
 const MiniSelect = styled(Select)`
   width: 100%;
   .ant-select-selector {
@@ -56,6 +57,7 @@ const MiniSelect = styled(Select)`
     height: 28px;
   }
 `;
+
 const MiniNumber = styled(InputNumber)`
   width: 100%;
   height: 28px;
@@ -63,6 +65,7 @@ const MiniNumber = styled(InputNumber)`
     height: 26px;
   }
 `;
+
 const MiniDate = styled(DatePicker)`
   width: 100%;
   height: 28px;
@@ -71,6 +74,7 @@ const MiniDate = styled(DatePicker)`
     height: 28px;
   }
 `;
+
 const CheckoutBtn = styled(Button)`
   height: 36px;
   font-weight: 600;
@@ -93,13 +97,9 @@ const QuotationForm = ({
   handleQuotationChange,
   selectedCustomer,
   setSelectedCustomer,
-  customers,
-  customersLoading,
-  customersError,
   addresses,
   addressesLoading,
   addressesError,
-  error,
   quotationNumber,
   documentType,
   setDocumentType,
@@ -108,12 +108,9 @@ const QuotationForm = ({
   shipping,
   tax,
   discount,
-  extraDiscount, // <-- per‑item total discount
-  itemDiscounts,
-  itemTaxes,
+  extraDiscount,
   gst,
   setGst,
-  onShippingChange,
   billingAddressId,
   handleAddCustomer,
   handleAddAddress,
@@ -122,7 +119,7 @@ const QuotationForm = ({
   useBillingAddress,
   setBillingAddressId,
   setUseBillingAddress,
-  previewVisible, // ← ADD THIS
+  previewVisible,
   setPreviewVisible,
 }) => {
   const { auth } = useAuth();
@@ -130,13 +127,78 @@ const QuotationForm = ({
     auth?.role && RESTRICTED_ROLES.includes(auth.role);
 
   const [isCreatingAddress, setIsCreatingAddress] = useState(false);
-  const [createAddress] = useCreateAddressMutation();
-  const [isAddressResolved, setIsAddressResolved] = useState(false);
 
-  /* ────── Customer / Address memos ────── */
+  // ────────────────────────────────────────────────
+  //           PAGINATED CUSTOMER SELECT LOGIC
+  // ────────────────────────────────────────────────
+  const [customerSearch, setCustomerSearch] = useState("");
+  const [customerPage, setCustomerPage] = useState(1);
+  const [accumulatedCustomers, setAccumulatedCustomers] = useState([]);
+  const [hasMore, setHasMore] = useState(true);
+
+  const { data: pageData, isFetching: isPageFetching } = useGetCustomersQuery(
+    {
+      page: customerPage,
+      limit: 30,
+      search: customerSearch.trim() || undefined,
+    },
+    { skip: !hasMore },
+  );
+
+  useEffect(() => {
+    if (!pageData?.data) return;
+
+    setAccumulatedCustomers((prev) => {
+      const newCustomers = pageData.data.filter(
+        (newCust) => !prev.some((old) => old.customerId === newCust.customerId),
+      );
+      return [...prev, ...newCustomers];
+    });
+
+    const pagination = pageData.pagination;
+    if (
+      pageData.data.length < 30 ||
+      (pagination && pagination.page >= pagination.totalPages)
+    ) {
+      setHasMore(false);
+    }
+  }, [pageData]);
+
+  useEffect(() => {
+    setAccumulatedCustomers([]);
+    setCustomerPage(1);
+    setHasMore(true);
+  }, [customerSearch]);
+
+  const customerOptions = useMemo(() => {
+    return accumulatedCustomers.map((cust) => ({
+      value: cust.customerId,
+      label: (
+        <div style={{ lineHeight: 1.3 }}>
+          <strong>{cust.name || "Unnamed Customer"}</strong>
+          {cust.mobileNumber && (
+            <span style={{ marginLeft: 8, color: "#555", fontSize: "0.9em" }}>
+              {cust.mobileNumber}
+            </span>
+          )}
+          {cust.companyName && (
+            <div style={{ fontSize: "0.85em", color: "#777", marginTop: 2 }}>
+              {cust.companyName}
+            </div>
+          )}
+        </div>
+      ),
+      // This controls what is displayed in the input box after selection
+      title: `${cust.name || "Unnamed"}${cust.mobileNumber ? ` • ${cust.mobileNumber}` : ""}`,
+      searchText:
+        `${cust.name || ""} ${cust.mobileNumber || ""} ${cust.email || ""} ${cust.companyName || ""}`.toLowerCase(),
+    }));
+  }, [accumulatedCustomers]);
+
+  /* ────── Address-related memos ────── */
   const selectedCustomerData = useMemo(
-    () => customers.find((c) => c.customerId === selectedCustomer),
-    [customers, selectedCustomer],
+    () => accumulatedCustomers.find((c) => c.customerId === selectedCustomer),
+    [accumulatedCustomers, selectedCustomer],
   );
 
   const defaultAddress = useMemo(() => {
@@ -197,9 +259,7 @@ const QuotationForm = ({
     quotationData.shipTo,
   ]);
 
-  /* ────── GLOBAL DISCOUNT (extraDiscount) ────── */
-
-  /* ────── GST & Auto‑Round‑Off ────── */
+  /* ────── Totals calculation ────── */
   const amountBeforeGst = useMemo(
     () => subTotal + tax + shipping - discount - extraDiscount,
     [subTotal, tax, shipping, discount, extraDiscount],
@@ -223,104 +283,41 @@ const QuotationForm = ({
     return (100 - paise) / 100;
   }, [totalBeforeRoundOff]);
 
-  const finalRoundedTotal = useMemo(
-    () => Math.round(totalBeforeRoundOff + autoRoundOff),
-    [totalBeforeRoundOff, autoRoundOff],
-  );
-  /* ────── Force GST to 0 ────── */
+  /* ────── Effects ────── */
   useEffect(() => {
     setGst(0);
   }, [setGst]);
-  /* ────── Address Sync (same‑as‑billing) ────── */
-  useEffect(() => {
-    if (!useBillingAddress || !defaultAddress || !selectedCustomer) {
-      setIsAddressResolved(false);
-      return;
-    }
 
-    if (!defaultAddress.city || !defaultAddress.state) {
-      message.error("Customer's billing address is incomplete");
-      setUseBillingAddress(false);
-      setBillingAddressId(null);
-      setIsAddressResolved(false);
-      return;
-    }
-
-    const match = filteredAddresses.find(
-      (a) =>
-        normalize(a.street) === normalize(defaultAddress.street) &&
-        normalize(a.city) === normalize(defaultAddress.city) &&
-        normalize(a.state) === normalize(defaultAddress.state) &&
-        normalize(a.postalCode || a.zip) ===
-          normalize(defaultAddress.postalCode || defaultAddress.zip) &&
-        normalize(a.country || "india") ===
-          normalize(defaultAddress.country || "india"),
-    );
-
-    const finalize = (addressId) => {
-      setBillingAddressId(addressId);
-      handleQuotationChange("shipTo", addressId);
-      setIsAddressResolved(true);
-    };
-
-    if (match) {
-      finalize(match.addressId);
-    } else {
-      const create = async () => {
-        setIsCreatingAddress(true);
-        try {
-          const payload = {
-            customerId: selectedCustomer,
-            street: defaultAddress.street || "",
-            city: defaultAddress.city,
-            state: defaultAddress.state,
-            postalCode: defaultAddress.postalCode,
-            country: defaultAddress.country,
-            status: "BILLING",
-          };
-          const res = await createAddress(payload).unwrap();
-          finalize(res.addressId);
-        } catch (e) {
-          message.error("Failed to create address. Check required fields.");
-          setBillingAddressId(null);
-          setIsAddressResolved(false);
-        } finally {
-          setIsCreatingAddress(false);
-        }
-      };
-      create();
-    }
-  }, [
-    useBillingAddress,
-    defaultAddress,
-    filteredAddresses,
-    selectedCustomer,
-    createAddress,
-    handleQuotationChange,
-  ]);
-  /* ────── Force Global Discount to Fixed Amount ────── */
   useEffect(() => {
     if (quotationData.discountType !== "fixed") {
       handleQuotationChange("discountType", "fixed");
     }
   }, [quotationData.discountType, handleQuotationChange]);
-  /* ────── Follow‑up dates ────── */
-  const handleFollowup = (i, d) => {
-    const arr = [...quotationData.followupDates];
-    arr[i] = d ? moment(d).format("YYYY-MM-DD") : "";
-    if (d && quotationData.dueDate && moment(d).isAfter(quotationData.dueDate))
-      message.warning("Follow‑up cannot be after due date");
-    handleQuotationChange("followupDates", arr);
+
+  /* ────── Follow-up dates handlers ────── */
+  const handleFollowup = (index, date) => {
+    const dates = [...quotationData.followupDates];
+    dates[index] = date ? moment(date).format("YYYY-MM-DD") : "";
+    if (
+      date &&
+      quotationData.dueDate &&
+      moment(date).isAfter(quotationData.dueDate)
+    ) {
+      message.warning("Follow-up date cannot be after due date");
+    }
+    handleQuotationChange("followupDates", dates);
   };
-  const addFollow = () =>
+
+  const addFollowup = () =>
     handleQuotationChange("followupDates", [
       ...quotationData.followupDates,
       "",
     ]);
-  const rmFollow = (i) =>
+
+  const removeFollowup = (index) =>
     handleQuotationChange(
       "followupDates",
-      quotationData.followupDates.filter((_, x) => x !== i),
+      quotationData.followupDates.filter((_, i) => i !== index),
     );
 
   /* ────── Render ────── */
@@ -328,7 +325,7 @@ const QuotationForm = ({
     return (
       <CompactCard>
         <Empty
-          description="Cart empty"
+          description="Cart is empty"
           image={<DeleteOutlined style={{ fontSize: 48 }} />}
         />
         <Button
@@ -345,15 +342,15 @@ const QuotationForm = ({
 
   return (
     <Row gutter={12}>
-      {/* LEFT – FORM */}
+      {/* Left Column - Form */}
       <Col xs={24} md={16}>
         <CompactCard title={<Title level={5}>Quotation Checkout</Title>}>
-          <Collapse defaultActiveKey={["1", "2", "3"]} ghost>
-            {/* 1. Customer & Document */}
+          <Collapse defaultActiveKey={["1", "3"]} ghost>
+            {/* Customer & Document Panel */}
             <Panel header="Customer & Document" key="1">
               <TightRow gutter={8}>
                 <Col span={8}>
-                  <Text strong>Doc Type</Text>
+                  <Text strong>Document Type</Text>
                 </Col>
                 <Col span={16}>
                   <MiniSelect value={documentType} onChange={setDocumentType}>
@@ -373,25 +370,69 @@ const QuotationForm = ({
                   </Text>
                 </Col>
                 <Col span={16}>
-                  <Space.Compact block>
-                    <MiniSelect
+                  <Space.Compact style={{ width: "100%" }}>
+                    <Select
+                      showSearch
+                      placeholder="Search by name, phone, email, company..."
                       value={selectedCustomer}
-                      onChange={(v) => {
-                        setSelectedCustomer(v);
-                        setQuotationData((p) => ({ ...p, shipTo: null }));
+                      onChange={(value) => {
+                        setSelectedCustomer(value);
+                        setQuotationData((prev) => ({ ...prev, shipTo: null }));
                         setUseBillingAddress(false);
                       }}
-                      loading={customersLoading}
-                    >
-                      {customers.map((c) => (
-                        <Option key={c.customerId} value={c.customerId}>
-                          {c.name}
-                        </Option>
-                      ))}
-                    </MiniSelect>
-                    <Button type="primary" onClick={handleAddCustomer}>
-                      +
-                    </Button>
+                      onSearch={setCustomerSearch}
+                      filterOption={(input, option) =>
+                        option?.searchText?.includes(input.toLowerCase())
+                      }
+                      onPopupScroll={(e) => {
+                        const target = e.target;
+                        if (
+                          target.scrollTop + target.offsetHeight >=
+                            target.scrollHeight - 60 &&
+                          !isPageFetching &&
+                          hasMore
+                        ) {
+                          setCustomerPage((prev) => prev + 1);
+                        }
+                      }}
+                      options={customerOptions}
+                      loading={isPageFetching && customerPage === 1}
+                      notFoundContent={
+                        isPageFetching ? (
+                          <Spin size="small" tip="Loading customers..." />
+                        ) : (
+                          "No customers found"
+                        )
+                      }
+                      dropdownRender={(menu) => (
+                        <>
+                          {menu}
+                          {hasMore && isPageFetching && (
+                            <div
+                              style={{
+                                textAlign: "center",
+                                padding: "12px 0",
+                                color: "#888",
+                              }}
+                            >
+                              <Spin size="small" /> Loading more customers...
+                            </div>
+                          )}
+                        </>
+                      )}
+                      style={{ flex: 1 }}
+                      allowClear
+                      clearIcon={
+                        <DeleteOutlined style={{ color: "#ff4d4f" }} />
+                      }
+                      optionLabelProp="title" // ← This ensures name (+ phone) is shown after selection
+                    />
+                    <Button
+                      type="primary"
+                      icon={<PlusOutlined />}
+                      onClick={handleAddCustomer}
+                      style={{ minWidth: 40 }}
+                    />
                   </Space.Compact>
                 </Col>
               </TightRow>
@@ -401,7 +442,7 @@ const QuotationForm = ({
                   <Text strong>Address</Text>
                 </Col>
                 <Col span={16}>
-                  <Space.Compact block>
+                  <Space.Compact>
                     <MiniSelect
                       value={dropdownValue}
                       onChange={(v) => {
@@ -415,25 +456,42 @@ const QuotationForm = ({
                       }}
                       loading={addressesLoading || isCreatingAddress}
                       disabled={!selectedCustomer}
+                      // ────── NEW ──────
+                      optionLabelProp="title" // Use short title when selected
+                      maxTagCount={1} // Optional: if multiple in future
+                      showSearch={false} // Usually not needed for address
+                      dropdownMatchSelectWidth={false} // Prevent dropdown from being too narrow
+                      popupMatchSelectWidth={300} // Make dropdown wider so full text visible
+                      // ────── END NEW ──────
                     >
+                      {/* Options with title + label */}
                       {defaultAddress && !hasBillingAddress && (
                         <Option
                           value="sameAsBilling"
                           disabled={isCreatingAddress}
+                          title="Use customer's default billing address"
                         >
-                          Same as Billing – {defaultAddress.street},{" "}
-                          {defaultAddress.city}
-                          {isCreatingAddress && " (creating...)"}
+                          Same as Billing –{" "}
+                          {defaultAddress.street?.slice(0, 40)}...
                         </Option>
                       )}
+
                       {isCreatingAddress && (
                         <Option value="creating" disabled>
                           Creating billing address...
                         </Option>
                       )}
+
                       {filteredAddresses.map((a) => (
-                        <Option key={a.addressId} value={a.addressId}>
-                          {`${a.street}, ${a.city} (${a.status})`}
+                        <Option
+                          key={a.addressId}
+                          value={a.addressId}
+                          // ────── IMPORTANT: short display + full tooltip ──────
+                          title={`${a.street}, ${a.city}, ${a.state || ""} ${a.postalCode || ""} (${a.status})`}
+                        >
+                          {a.street?.slice(0, 35)}
+                          {a.street?.length > 35 ? "..." : ""}, {a.city} (
+                          {a.status})
                         </Option>
                       ))}
                     </MiniSelect>
@@ -449,7 +507,7 @@ const QuotationForm = ({
               </TightRow>
             </Panel>
 
-            {/* 3. Dates & Discount */}
+            {/* Dates & Discount Panel */}
             <Panel header="Dates & Discount" key="3">
               <TightRow gutter={8}>
                 <Col span={8}>
@@ -479,60 +537,48 @@ const QuotationForm = ({
 
               <TightRow gutter={8}>
                 <Col span={8}>
-                  <Text strong>Follow‑ups</Text>
+                  <Text strong>Follow-ups</Text>
                 </Col>
                 <Col span={16}>
                   {quotationData.followupDates.map((d, i) => (
-                    <Space key={i} style={{ width: "100%", marginBottom: 4 }}>
+                    <Space key={i} style={{ width: "100%", marginBottom: 8 }}>
                       <MiniDate
-                        selected={momentToDate(
-                          quotationData.dueDate
-                            ? moment(quotationData.dueDate)
-                            : null,
-                        )}
-                        onChange={(d) =>
-                          handleQuotationChange(
-                            "dueDate",
-                            d ? moment(d).format("YYYY-MM-DD") : "",
-                          )
-                        }
+                        selected={momentToDate(d ? moment(d) : null)}
+                        onChange={(date) => handleFollowup(i, date)}
                         minDate={new Date()}
                         dateFormat="dd/MM/yyyy"
                         placeholderText="DD/MM/YYYY"
-                        onKeyDown={(e) => e.preventDefault()} // 🔥 BLOCK typing
                       />
-
                       <Button
                         danger
                         size="small"
                         icon={<DeleteOutlined />}
-                        onClick={() => rmFollow(i)}
+                        onClick={() => removeFollowup(i)}
                       />
                     </Space>
                   ))}
                   <Button
                     size="small"
                     icon={<PlusOutlined />}
-                    onClick={addFollow}
+                    onClick={addFollowup}
                   >
-                    Add
+                    Add Follow-up
                   </Button>
                 </Col>
               </TightRow>
 
-              {/* GLOBAL DISCOUNT – Fixed Amount Only */}
-              <TightRow gutter={16} align="middle" style={{ marginBottom: 16 }}>
+              <TightRow gutter={16} align="middle" style={{ marginTop: 16 }}>
                 <Col span={8}>
                   <Text strong>Global Discount</Text>
                 </Col>
                 <Col span={16}>
-                  <Space.Compact block>
+                  <Space.Compact style={{ width: "100%" }}>
                     <InputNumber
                       value={quotationData.discountAmount || ""}
-                      onChange={(value) =>
+                      onChange={(val) =>
                         handleQuotationChange(
                           "discountAmount",
-                          value === null ? "" : value.toString(),
+                          val === null ? "" : val.toString(),
                         )
                       }
                       placeholder="500"
@@ -546,7 +592,8 @@ const QuotationForm = ({
                     type="secondary"
                     style={{ fontSize: 11, display: "block", marginTop: 4 }}
                   >
-                    Fixed amount discount applied after subtotal, tax & shipping
+                    Fixed amount discount (applied after subtotal, tax &
+                    shipping)
                   </Text>
                 </Col>
               </TightRow>
@@ -555,13 +602,13 @@ const QuotationForm = ({
         </CompactCard>
       </Col>
 
-      {/* RIGHT – SUMMARY */}
+      {/* Right Column - Summary */}
       <Col xs={24} md={8}>
         <CompactCard
           title={<Text strong>Summary</Text>}
           style={{ position: "sticky", top: 16 }}
         >
-          <Text strong>#{quotationNumber}</Text>
+          <Text strong>#{quotationNumber || "New"}</Text>
           <Divider style={{ margin: "8px 0" }} />
 
           <OrderTotal
@@ -576,7 +623,6 @@ const QuotationForm = ({
 
           <Divider style={{ margin: "8px 0" }} />
 
-          {/* PREVIEW BUTTON */}
           <Button
             type="default"
             size="large"
@@ -594,26 +640,22 @@ const QuotationForm = ({
 
           <CheckoutBtn
             block
-            style={{
-              marginBottom: 8,
-              background: "#aa0f1f",
-              color: "white",
-              border: "none",
-            }}
+            style={{ marginBottom: 8 }}
             icon={<CheckCircleOutlined />}
             onClick={() => {
-              if (!selectedCustomer) return message.error("Select customer");
+              if (!selectedCustomer)
+                return message.error("Please select a customer");
               if (!quotationData.dueDate)
-                return message.error("Select due date");
+                return message.error("Please select due date");
 
               const hasValidShipping =
                 quotationData.shipTo ||
-                (useBillingAddress &&
-                  (billingAddressId || isCreatingAddress) &&
-                  isAddressResolved);
+                (useBillingAddress && (billingAddressId || isCreatingAddress));
 
               if (!hasValidShipping)
-                return message.error("Select or create shipping address");
+                return message.error(
+                  "Please select or create shipping address",
+                );
 
               handleCreateDocument();
             }}
@@ -621,12 +663,8 @@ const QuotationForm = ({
             Create {documentType}
           </CheckoutBtn>
 
-          <Button
-            block
-            style={{ marginTop: 4 }}
-            onClick={() => setActiveTab("cart")}
-          >
-            Back
+          <Button block onClick={() => setActiveTab("cart")}>
+            Back to Cart
           </Button>
         </CompactCard>
       </Col>

@@ -234,61 +234,63 @@ const OrderPage = () => {
   const { productsData, loading: productsLoading } =
     useProductsData(productInputs);
 
-const mergedProducts = useMemo(() => {
-  return productInputs.map((op, index) => {
-    const originalProduct = products[index];           // ← this is item from quotation
-    const pd = productsData.find((p) => p.productId === op.productId) || {};
+  const mergedProducts = useMemo(() => {
+    return productInputs.map((op, index) => {
+      const originalProduct = products[index]; // ← this is item from quotation
+      const pd = productsData.find((p) => p.productId === op.productId) || {};
 
-    // ── Image priority (unchanged) ──
-    let imageUrl = originalProduct.imageUrl || "https://via.placeholder.com/60";
-    if (!originalProduct.imageUrl && pd.images) {
-      try {
-        const imgs = JSON.parse(pd.images);
-        imageUrl = Array.isArray(imgs) && imgs.length > 0 ? imgs[0] : imageUrl;
-      } catch {}
-    }
+      // ── Image priority (unchanged) ──
+      let imageUrl =
+        originalProduct.imageUrl || "https://via.placeholder.com/60";
+      if (!originalProduct.imageUrl && pd.images) {
+        try {
+          const imgs = JSON.parse(pd.images);
+          imageUrl =
+            Array.isArray(imgs) && imgs.length > 0 ? imgs[0] : imageUrl;
+        } catch {}
+      }
 
-// Use companyCode from quotation first — highest priority
-let code = originalProduct.companyCode ?? '';
+      // Use companyCode from quotation first — highest priority
+      let code = originalProduct.companyCode ?? "";
 
-// Coerce to string and trim safely
-code = String(code).trim();
+      // Coerce to string and trim safely
+      code = String(code).trim();
 
-if (!code) {
-  // Fallback chain — also coerce each to string + trim
-  code =
-    String(pd.product_code ?? '').trim() ||
-    String(pd.meta?.d11da9f9_3f2e_4536_8236_9671200cca4a ?? '').trim() ||
-    String(originalProduct.sku ?? '').trim() ||
-    "N/A";
-}
-    let brandName = pd.brandName || "N/A";
-    if (pd.metaDetails) {
-      const brandMeta = pd.metaDetails.find(
-        (m) => m.title === "brandName" || m.title === "brand"
-      );
-      brandName = brandMeta?.value || brandName;
-    }
-    if (/^[0-9a-fA-F-]{36}$/.test(brandName)) brandName = "N/A";
+      if (!code) {
+        // Fallback chain — also coerce each to string + trim
+        code =
+          String(pd.product_code ?? "").trim() ||
+          String(pd.meta?.d11da9f9_3f2e_4536_8236_9671200cca4a ?? "").trim() ||
+          String(originalProduct.sku ?? "").trim() ||
+          "N/A";
+      }
+      let brandName = pd.brandName || "N/A";
+      if (pd.metaDetails) {
+        const brandMeta = pd.metaDetails.find(
+          (m) => m.title === "brandName" || m.title === "brand",
+        );
+        brandName = brandMeta?.value || brandName;
+      }
+      if (/^[0-9a-fA-F-]{36}$/.test(brandName)) brandName = "N/A";
 
-    const sellingPrice =
-      pd.metaDetails?.find((m) => m.title === "Selling Price")?.value ||
-      op.price ||
-      0;
+      const sellingPrice =
+        pd.metaDetails?.find((m) => m.title === "Selling Price")?.value ||
+        op.price ||
+        0;
 
-    return {
-      productId: op.productId,
-      price: parseFloat(sellingPrice),
-      total: parseFloat(op.total) || sellingPrice * op.quantity,
-      discount: parseFloat(op.discount) || 0,
-      quantity: op.quantity || 1,
-      name: pd.name || originalProduct.name || "Unnamed Product",
-      brand: brandName,
-      sku: code,                           // ← now contains companyCode (or fallback)
-      image: imageUrl,
-    };
-  });
-}, [productsData, productInputs, products]);
+      return {
+        productId: op.productId,
+        price: parseFloat(sellingPrice),
+        total: parseFloat(op.total) || sellingPrice * op.quantity,
+        discount: parseFloat(op.discount) || 0,
+        quantity: op.quantity || 1,
+        name: pd.name || originalProduct.name || "Unnamed Product",
+        brand: brandName,
+        sku: code, // ← now contains companyCode (or fallback)
+        image: imageUrl,
+      };
+    });
+  }, [productsData, productInputs, products]);
   const comments = useMemo(() => commentData?.comments || [], [commentData]);
   const totalComments = commentData?.totalCount || 0;
 
@@ -388,43 +390,38 @@ if (!code) {
     }
   };
 
-const handleAddComment = async () => {
-  if (!newComment.trim()) {
-    message.error("Comment cannot be empty");
-    return;
-  }
+  const handleAddComment = async () => {
+    if (!newComment.trim()) {
+      message.error("Comment cannot be empty");
+      return;
+    }
 
-  if (!user.userId) {
-    navigate("/login");
-    return;
-  }
+    if (!user.userId) {
+      navigate("/login");
+      return;
+    }
 
-  try {
- 
+    try {
+      const result = await addComment({
+        resourceId: id,
+        resourceType: "Order",
+        userId: String(user.userId || "").trim(),
+        comment: newComment,
+      }).unwrap();
 
-    const result = await addComment({
-      resourceId: id,
-      resourceType: "Order",
-      userId: String(user.userId || "").trim(),
-      comment: newComment,
-    }).unwrap();
+      setNewComment("");
+      message.success("Comment added"); // ← add this!
+    } catch (err) {
+      // More precise message
+      const serverMessage =
+        err?.data?.message ||
+        err?.data?.error ||
+        err?.data?.msg ||
+        "Failed to add comment";
 
-
-    setNewComment("");
-    message.success("Comment added");           // ← add this!
-  } catch (err) {
-
-
-    // More precise message
-    const serverMessage =
-      err?.data?.message ||
-      err?.data?.error ||
-      err?.data?.msg ||
-      "Failed to add comment";
-
-    message.error(serverMessage);
-  }
-};
+      message.error(serverMessage);
+    }
+  };
   const handleDeleteComment = async (commentId) => {
     if (!window.confirm("Delete comment?")) return;
     try {

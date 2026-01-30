@@ -1,54 +1,41 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
+import { Modal, Form, Input, Button, Row, Col, message } from "antd";
 import {
   useCreateBrandMutation,
   useUpdateBrandMutation,
   useGetAllBrandsQuery,
 } from "../../api/brandsApi";
-import { message } from "antd";
+
 const AddBrand = ({ onClose, existingBrand }) => {
-  const [formData, setFormData] = useState({
-    id: null,
-    brandName: "",
-    brandSlug: "",
-  });
+  const [form] = Form.useForm();
 
   const { data: allBrands = [] } = useGetAllBrandsQuery();
-  const [createBrand] = useCreateBrandMutation();
-  const [updateBrand] = useUpdateBrandMutation();
+  const [createBrand, { isLoading: isCreating }] = useCreateBrandMutation();
+  const [updateBrand, { isLoading: isUpdating }] = useUpdateBrandMutation();
 
+  const isLoading = isCreating || isUpdating;
+
+  // Initialize form values when existingBrand changes
   useEffect(() => {
     if (existingBrand) {
-      setFormData({
-        id: existingBrand.id || null,
+      form.setFieldsValue({
+        id: existingBrand.id,
         brandName: existingBrand.brandName || "",
         brandSlug: existingBrand.brandSlug || "",
       });
     } else {
-      setFormData({ id: null, brandName: "", brandSlug: "" });
+      form.resetFields();
     }
-  }, [existingBrand]);
+  }, [existingBrand, form]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
-  };
+  const handleSubmit = async (values) => {
+    const { brandName, brandSlug, id } = values;
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const { brandName, brandSlug, id } = formData;
-
-    if (!brandName || !brandSlug) {
-      message.error("Please fill in all fields.");
-      return;
-    }
-
+    // Check for duplicate slug (case-insensitive)
     const isDuplicate = allBrands.some(
       (brand) =>
-        brand.brandSlug.toLowerCase() === brandSlug.toLowerCase() &&
-        brand.id !== id
+        brand.brandSlug?.toLowerCase() === brandSlug.toLowerCase() &&
+        brand.id !== id,
     );
 
     if (isDuplicate) {
@@ -58,78 +45,101 @@ const AddBrand = ({ onClose, existingBrand }) => {
 
     try {
       if (id) {
-        await updateBrand(formData).unwrap();
+        await updateBrand({ id, brandName, brandSlug }).unwrap();
+        message.success("Brand updated successfully!");
       } else {
-        await createBrand(formData).unwrap();
+        await createBrand({ brandName, brandSlug }).unwrap();
+        message.success("Brand created successfully!");
       }
 
-      setTimeout(() => {
-        onClose();
-      }, 2000);
+      onClose();
     } catch (err) {
-      message.error(err?.data?.message || "Failed to submit brand. Try again.");
+      message.error(
+        err?.data?.message || "Failed to save brand. Please try again.",
+      );
     }
   };
 
+  const title = Form.useWatch("id", form) ? "Edit Brand" : "Add Brand";
+
   return (
-    <div className="modal fade show" style={{ display: "block" }}>
-      <div className="modal-dialog modal-dialog-centered">
-        <div className="modal-content">
-          <div className="modal-header">
-            <h4 className="modal-title">
-              {formData.id ? "Edit Brand" : "Add Brand"}
-            </h4>
-            <button type="button" className="close" onClick={onClose}>
-              <span>&times;</span>
-            </button>
-          </div>
-          <form onSubmit={handleSubmit}>
-            <div className="modal-body">
-              <div className="row">
-                <div className="col-lg-6 mb-3">
-                  <label className="form-label">
-                    Brand Name<span className="text-danger ms-1">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="brandName"
-                    className="form-control"
-                    value={formData.brandName}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div className="col-lg-6 mb-3">
-                  <label className="form-label">
-                    Brand Slug<span className="text-danger ms-1">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="brandSlug"
-                    className="form-control"
-                    value={formData.brandSlug}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={onClose}
-              >
-                Cancel
-              </button>
-              <button type="submit" className="btn btn-primary">
-                {formData.id ? "Update Brand" : "Add Brand"}
-              </button>
-            </div>
-          </form>
+    <Modal
+      title={title}
+      open={true} // controlled by parent visibility
+      onCancel={onClose}
+      footer={null} // we use custom footer below
+      maskClosable={false} // prevent closing by clicking backdrop (optional)
+      width={600}
+    >
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={handleSubmit}
+        initialValues={{
+          brandName: "",
+          brandSlug: "",
+        }}
+      >
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item
+              name="brandName"
+              label={
+                <>
+                  Brand Name <span style={{ color: "#ff4d4f" }}>*</span>
+                </>
+              }
+              rules={[
+                { required: true, message: "Please enter brand name" },
+                { max: 100, message: "Name cannot exceed 100 characters" },
+              ]}
+            >
+              <Input placeholder="e.g. Nike" />
+            </Form.Item>
+          </Col>
+
+          <Col span={12}>
+            <Form.Item
+              name="brandSlug"
+              label={
+                <>
+                  Brand Slug <span style={{ color: "#ff4d4f" }}>*</span>
+                </>
+              }
+              rules={[
+                { required: true, message: "Please enter brand slug" },
+                {
+                  pattern: /^[a-z0-9-]+$/,
+                  message:
+                    "Slug can only contain lowercase letters, numbers, and hyphens",
+                },
+              ]}
+              tooltip="Used in URLs — keep it short, unique and URL-friendly"
+            >
+              <Input placeholder="e.g. nike" />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        {/* Hidden field for id */}
+        <Form.Item name="id" hidden>
+          <Input type="hidden" />
+        </Form.Item>
+
+        <div style={{ textAlign: "right", marginTop: 24 }}>
+          <Button
+            style={{ marginRight: 12 }}
+            onClick={onClose}
+            disabled={isLoading}
+          >
+            Cancel
+          </Button>
+          <Button type="primary" htmlType="submit" loading={isLoading}>
+            {Form.useWatch("id", form) ? "Update Brand" : "Add Brand"}
+          </Button>
         </div>
-      </div>
-    </div>
+      </Form>
+    </Modal>
   );
 };
 

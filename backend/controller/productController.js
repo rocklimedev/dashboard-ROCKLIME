@@ -1,6 +1,6 @@
 const { Op } = require("sequelize");
 const sequelize = require("../config/database");
-
+const slugify = require("slugify"); // npm install slugify — highly recommended
 const {
   Product,
   ProductMeta,
@@ -740,11 +740,34 @@ exports.getProductById = async (req, res) => {
     if (!product) return res.status(404).json({ message: "Product not found" });
 
     const raw = product.toJSON();
-    const metaObj = raw.meta
-      ? typeof raw.meta === "string"
-        ? JSON.parse(raw.meta)
-        : raw.meta
-      : {};
+
+    // ── Safe JSON parse helper ────────────────────────────────────────
+    const safeJsonParse = (value, fallback = []) => {
+      if (value == null) return fallback;
+      if (typeof value !== "string") return value; // already object/array
+
+      const trimmed = value.trim();
+      if (trimmed === "" || trimmed === "null" || trimmed === "undefined") {
+        return fallback;
+      }
+
+      try {
+        const parsed = JSON.parse(trimmed);
+        return Array.isArray(parsed) ? parsed : [parsed]; // normalize to array
+      } catch (err) {
+        console.warn(`[getProductById] Failed to parse JSON field:`, {
+          field: "images or meta",
+          rawValue:
+            trimmed.substring(0, 100) + (trimmed.length > 100 ? "..." : ""),
+          error: err.message,
+        });
+        return fallback;
+      }
+    };
+
+    // ── Parse fields safely ────────────────────────────────────────────
+    const images = safeJsonParse(raw.images, []);
+    const metaObj = safeJsonParse(raw.meta, {});
     const metaIds = Object.keys(metaObj);
 
     const metaDefs = metaIds.length
@@ -778,7 +801,7 @@ exports.getProductById = async (req, res) => {
 
     res.json({
       ...raw,
-      images: raw.images ? JSON.parse(raw.images) : [],
+      images,
       meta: metaObj,
       metaDetails,
       keywords,
@@ -2482,156 +2505,187 @@ exports.getTopSellingProducts = async (req, res) => {
     });
   }
 };
+
 /**
- * Reusable helper: Process a batch of products within a transaction
- * @param {Array} productsBatch - array of product objects from parsed rows
+ * Process a batch of products in a transaction
+ * @param {Array<Object>} productsBatch - parsed rows with {name, product_code, categoryName, brandName?, vendorName?, ...}
  * @param {Sequelize.Transaction} t - active transaction
- * @param {String} [importJobId] - optional: if called from worker, update this job
- * @returns {Promise<{created, failed, newCategories, newBrands, newVendors}>}
+ * @param {Object} options
+ * @param {string} [options.importJobId] - Job.id to update progress
+ * @param {number} [options.selectedBrandId] - REQUIRED: global brand for this import
+ * @returns {Promise<{created: Array, failed: Array, newCategories: number, newBrands: number, newVendors: number}>}
  */
-async function processProductBatch(productsBatch, t, importJobId = null) {
+// ───────────────────────────────────────────────
+//   BULK IMPORT BATCH PROCESSOR (moved here so worker can use it)
+// ───────────────────────────────────────────────
+
+async function processProductBatch(productsBatch, t, options = {}) {
+  const { importJobId, selectedBrandId } = options;
+
+  if (!selectedBrandId) {
+    throw new Error("selectedBrandId is required for bulk import");
+  }
+
   const created = [];
   const failed = [];
   const newCategories = new Set();
-  const newBrands = new Set();
   const newVendors = new Set();
 
-  // ────────────────────────────────────────────────────────────────
-  // 1. Pre-fetch existing entities (case-insensitive)
-  // ────────────────────────────────────────────────────────────────
-  const categoryNameMap = new Map(); // lowerName → categoryId
-  const brandNameMap = new Map();
-  const vendorNameMap = new Map();
+  // 1. Pre-fetch existing categories, vendors, brand
+  const categoryNames = [
+    ...new Set(
+      productsBatch.map((p) => p.categoryName?.trim()).filter(Boolean),
+    ),
+  ];
 
-  const [existingCats, existingBrands, existingVendors] = await Promise.all([
-    Category.findAll({ attributes: ["categoryId", "name"], transaction: t }),
-    Brand.findAll({ attributes: ["id", "brandName"], transaction: t }),
-    Vendor.findAll({ attributes: ["id", "vendorName"], transaction: t }),
-  ]);
+  const vendorNames = [
+    ...new Set(
+      productsBatch
+        .map((p) => p.vendorName?.trim() || "Unknown")
+        .filter(Boolean),
+    ),
+  ];
 
-  existingCats.forEach((c) =>
-    categoryNameMap.set(c.name.trim().toLowerCase(), c.categoryId),
+  const [existingCategories, existingVendors, selectedBrand] =
+    await Promise.all([
+      Category.findAll({
+        where: { name: categoryNames },
+        attributes: ["id", "name", "slug"],
+        transaction: t,
+      }),
+      Vendor.findAll({
+        where: { name: vendorNames },
+        attributes: ["id", "name"],
+        transaction: t,
+      }),
+      Brand.findByPk(selectedBrandId, {
+        attributes: ["id", "name"],
+        transaction: t,
+      }),
+    ]);
+
+  if (!selectedBrand) {
+    throw new Error(`Selected brand ID ${selectedBrandId} not found`);
+  }
+
+  const categoryMap = new Map(
+    existingCategories.map((c) => [c.name.trim().toLowerCase(), c]),
   );
-  existingBrands.forEach((b) =>
-    brandNameMap.set(b.brandName.trim().toLowerCase(), b.id),
-  );
-  existingVendors.forEach((v) =>
-    vendorNameMap.set(v.vendorName.trim().toLowerCase(), v.id),
+  const vendorMap = new Map(
+    existingVendors.map((v) => [v.name.trim().toLowerCase(), v]),
   );
 
-  // ────────────────────────────────────────────────────────────────
-  // 2. Create missing categories, brands, vendors
-  // ────────────────────────────────────────────────────────────────
+  // 2. Create missing categories & vendors
   for (const p of productsBatch) {
-    const catName = p.categoryName?.trim();
-    if (catName && !categoryNameMap.has(catName.toLowerCase())) {
-      const newCat = await Category.create(
-        {
+    const catName = p.categoryName?.trim() || "Uncategorized";
+    const catKey = catName.toLowerCase();
+
+    if (!categoryMap.has(catKey)) {
+      const slug = generateSlug(catName); // using your generateSlug
+      const [newCat] = await Category.findOrCreate({
+        where: { name: catName },
+        defaults: {
           name: catName,
-          slug: catName
-            .toLowerCase()
-            .replace(/\s+/g, "-")
-            .replace(/[^a-z0-9-]/g, ""),
-          // brandId: p.brandId || null, // ← optional: link if available
+          slug,
+          brandId: selectedBrand.id,
         },
-        { transaction: t },
-      );
-      categoryNameMap.set(catName.toLowerCase(), newCat.categoryId);
-      newCategories.add(newCat.name);
+        transaction: t,
+      });
+      categoryMap.set(catKey, newCat);
+      newCategories.add(catName);
     }
 
-    const brandName = p.brandName?.trim();
-    if (brandName && !brandNameMap.has(brandName.toLowerCase())) {
-      const newBrand = await Brand.create({ brandName }, { transaction: t });
-      brandNameMap.set(brandName.toLowerCase(), newBrand.id);
-      newBrands.add(newBrand.brandName);
-    }
+    const venName = p.vendorName?.trim() || "Unknown";
+    const venKey = venName.toLowerCase();
 
-    const vendorName = p.vendorName?.trim();
-    if (vendorName && !vendorNameMap.has(vendorName.toLowerCase())) {
-      const newVendor = await Vendor.create({ vendorName }, { transaction: t });
-      vendorNameMap.set(vendorName.toLowerCase(), newVendor.id);
-      newVendors.add(newVendor.vendorName);
+    if (!vendorMap.has(venKey)) {
+      const [newVen] = await Vendor.findOrCreate({
+        where: { name: venName },
+        defaults: { name: venName },
+        transaction: t,
+      });
+      vendorMap.set(venKey, newVen);
+      newVendors.add(venName);
     }
   }
 
-  // ────────────────────────────────────────────────────────────────
-  // 3. Create products + keywords
-  // ────────────────────────────────────────────────────────────────
+  // 3. Create products
   for (const [index, p] of productsBatch.entries()) {
-    try {
-      const rowIndex = p.rowIndex || index + 2;
+    const rowIndex = p.rowIndex || index + 2;
 
+    try {
       if (!p.name?.trim() || !p.product_code?.trim()) {
-        throw new Error("name and product_code are required");
+        throw new Error("Product name and code are required");
       }
 
       // Duplicate check
-      const codeExists = await Product.findOne({
+      const existing = await Product.findOne({
         where: { product_code: p.product_code.trim() },
         transaction: t,
       });
-      if (codeExists) {
+      if (existing) {
         throw new Error(`Product code "${p.product_code}" already exists`);
       }
 
-      const newProduct = await Product.create(
-        {
-          name: p.name.trim(),
-          product_code: p.product_code.trim(),
-          description: p.description?.trim() || null,
-          quantity: Number(p.quantity) || 0,
-          alert_quantity: p.alert_quantity ? Number(p.alert_quantity) : null,
-          tax: p.tax ? Number(p.tax) : null,
-          isFeatured: !!p.isFeatured,
-          status: Number(p.quantity) > 0 ? "active" : "out_of_stock",
-          images: Array.isArray(p.images) && p.images.length ? p.images : [],
-          meta: p.meta && Object.keys(p.meta).length ? p.meta : null,
-          categoryId: p.categoryName
-            ? categoryNameMap.get(p.categoryName.trim().toLowerCase())
-            : null,
-          brandId: p.brandName
-            ? brandNameMap.get(p.brandName.trim().toLowerCase())
-            : null,
-          vendorId: p.vendorName
-            ? vendorNameMap.get(p.vendorName.trim().toLowerCase())
-            : null,
-        },
-        { transaction: t },
+      const category = categoryMap.get(
+        (p.categoryName?.trim() || "Uncategorized").toLowerCase(),
+      );
+      const vendor = vendorMap.get(
+        (p.vendorName?.trim() || "Unknown").toLowerCase(),
       );
 
-      // ── Keywords ─────────────────────────────────────────────────────
+      const productData = {
+        name: p.name.trim(),
+        product_code: p.product_code.trim(),
+        description: p.description?.trim() || null,
+        quantity: Number(p.quantity) || 0,
+        alert_quantity: p.alert_quantity ? Number(p.alert_quantity) : null,
+        tax: p.tax ? Number(p.tax) : null,
+        isFeatured: !!p.isFeatured,
+        status: Number(p.quantity) > 0 ? "active" : "out_of_stock",
+        images: Array.isArray(p.images) ? p.images : [],
+        meta: p.meta || null,
+        categoryId: category?.id || null,
+        brandId: selectedBrand.id,
+        vendorId: vendor?.id || null,
+      };
+
+      const newProduct = await Product.create(productData, { transaction: t });
+
+      // Keywords (many-to-many)
       if (Array.isArray(p.keywords) && p.keywords.length > 0) {
-        const keywordIds = [];
+        const keywords = p.keywords.map((k) => k.trim()).filter(Boolean);
+        const keywordRecords = await Promise.all(
+          keywords.map(async (kw) => {
+            let record = await Keyword.findOne({
+              where: { keyword: kw },
+              transaction: t,
+            });
+            if (!record) {
+              record = await Keyword.create(
+                { keyword: kw },
+                { transaction: t },
+              );
+            }
+            return record;
+          }),
+        );
 
-        for (const kw of p.keywords) {
-          let keywordRecord = await Keyword.findOne({
-            where: { keyword: kw.trim() },
-            transaction: t,
-          });
-
-          if (!keywordRecord) {
-            keywordRecord = await Keyword.create(
-              { keyword: kw.trim() /* categoryId: optional */ },
-              { transaction: t },
-            );
-          }
-
-          keywordIds.push(keywordRecord.id);
-        }
-
-        await newProduct.setKeywords(keywordIds, { transaction: t });
+        await newProduct.setKeywords(
+          keywordRecords.map((k) => k.id),
+          { transaction: t },
+        );
       }
 
       created.push({
         rowIndex,
-        productId: newProduct.productId,
+        productId: newProduct.id,
         name: newProduct.name,
         product_code: newProduct.product_code,
       });
     } catch (err) {
       failed.push({
-        rowIndex: p.rowIndex || index + 2,
+        rowIndex,
         product_code: p.product_code || "[missing]",
         name: p.name || "[missing]",
         error: err.message || "Unknown error",
@@ -2639,19 +2693,35 @@ async function processProductBatch(productsBatch, t, importJobId = null) {
     }
   }
 
-  // ── Optional: Update ImportJob live (only when called from worker) ──
+  // 4. Update job progress in transaction
   if (importJobId) {
-    const job = await ImportJob.findByPk(importJobId, { transaction: t });
+    const job = await Job.findByPk(importJobId, { transaction: t });
     if (job) {
       await job.update(
         {
-          processedRows: job.processedRows + productsBatch.length,
-          successCount: job.successCount + created.length,
-          failedCount: job.failedCount + failed.length,
-          errorLog: [...(job.errorLog || []), ...failed],
-          newCategoriesCount: job.newCategoriesCount + newCategories.size,
-          newBrandsCount: job.newBrandsCount + newBrands.size,
-          newVendorsCount: job.newVendorsCount + newVendors.size,
+          progress: {
+            ...job.progress,
+            processedRows:
+              (job.progress?.processedRows || 0) + productsBatch.length,
+            successCount: (job.progress?.successCount || 0) + created.length,
+            failedCount: (job.progress?.failedCount || 0) + failed.length,
+          },
+          results: {
+            ...job.results,
+            newCategoriesCount:
+              (job.results?.newCategoriesCount || 0) + newCategories.size,
+            newVendorsCount:
+              (job.results?.newVendorsCount || 0) + newVendors.size,
+          },
+          errorLog: [
+            ...(job.errorLog || []),
+            ...failed.map((f) => ({
+              timestamp: new Date().toISOString(),
+              row: f.rowIndex,
+              message: f.error,
+              data: { product_code: f.product_code, name: f.name },
+            })),
+          ],
         },
         { transaction: t },
       );
@@ -2661,12 +2731,11 @@ async function processProductBatch(productsBatch, t, importJobId = null) {
   return {
     created,
     failed,
-    newCategories: [...newCategories],
-    newBrands: [...newBrands],
-    newVendors: [...newVendors],
+    newCategories: newCategories.size,
+    newBrands: 0,
+    newVendors: newVendors.size,
   };
 }
-
 // ────────────────────────────────────────────────────────────────
 // Original small-batch endpoint (still useful for <300 rows)
 // ────────────────────────────────────────────────────────────────
@@ -2680,13 +2749,11 @@ exports.bulkImportProducts = async (req, res) => {
   }
 
   if (products.length > 300) {
-    return res
-      .status(400)
-      .json({
-        success: false,
-        message:
-          "Maximum 300 products per request (use chunking or background import)",
-      });
+    return res.status(400).json({
+      success: false,
+      message:
+        "Maximum 300 products per request (use chunking or background import)",
+    });
   }
 
   const t = await sequelize.transaction();

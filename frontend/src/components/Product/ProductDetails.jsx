@@ -169,15 +169,22 @@ const ProductDetails = () => {
   };
 
   // ── Related products ───────────────────────────────────────
-  const related = recommendedProducts?.length
-    ? recommendedProducts.filter((p) => p.productId !== product.productId)
-    : allProducts.filter(
-        (p) =>
-          p.productId !== product.productId && p.brandId === product.brandId,
-      );
+  const relatedProducts = React.useMemo(() => {
+    if (!product?.productId) return []; // ← early return if product not loaded
 
-  const relatedProducts = related.slice(0, 4);
+    let candidates = [];
 
+    if (recommendedProducts?.length > 0) {
+      candidates = recommendedProducts;
+    } else if (allProducts?.length > 0) {
+      candidates = allProducts;
+    }
+
+    return candidates
+      .filter((p) => p?.productId && p.productId !== product.productId) // ← safe check
+      .filter((p) => !product.brandId || p.brandId === product.brandId) // optional brand filter
+      .slice(0, 4);
+  }, [product, recommendedProducts, allProducts]);
   // ── Loading / Error states ─────────────────────────────────
   if (isProductLoading) {
     return (
@@ -387,7 +394,6 @@ const ProductDetails = () => {
                         </Menu.Item>
                       </Menu>
                     )}
-                    // pass any needed props – adjust according to your ProductCard
                   />
                 ))}
               </div>

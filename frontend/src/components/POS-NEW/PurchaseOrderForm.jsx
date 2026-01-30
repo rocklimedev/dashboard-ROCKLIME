@@ -14,6 +14,7 @@ import {
   Collapse,
   Space,
   Divider,
+  Image,
 } from "antd";
 import {
   CheckCircleOutlined,
@@ -28,7 +29,10 @@ const { Text, Title } = Typography;
 const { Option } = Select;
 const { Panel } = Collapse;
 
-// === Styled ===
+// ─────────────────────────────────────────────────────────────
+// Styled Components
+// ─────────────────────────────────────────────────────────────
+
 const CompactCard = styled(Card)`
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -36,12 +40,14 @@ const CompactCard = styled(Card)`
     padding: 12px 16px;
   }
 `;
+
 const TightRow = styled(Row)`
   margin-bottom: 6px;
   .ant-col {
     padding: 0 4px;
   }
 `;
+
 const MiniSelect = styled(Select)`
   width: 100%;
   .ant-select-selector {
@@ -49,6 +55,7 @@ const MiniSelect = styled(Select)`
     height: 28px;
   }
 `;
+
 const MiniNumber = styled(InputNumber)`
   width: 100%;
   height: 28px;
@@ -56,6 +63,7 @@ const MiniNumber = styled(InputNumber)`
     height: 26px;
   }
 `;
+
 const MiniDate = styled(DatePicker)`
   width: 100%;
   height: 28px;
@@ -63,6 +71,7 @@ const MiniDate = styled(DatePicker)`
     height: 28px;
   }
 `;
+
 const CheckoutBtn = styled(Button)`
   height: 36px;
   font-weight: 600;
@@ -73,6 +82,7 @@ const CheckoutBtn = styled(Button)`
     border-color: #ff4d4f;
   }
 `;
+
 const CompactTable = styled(Table)`
   .ant-table-tbody > tr > td {
     padding: 6px 8px;
@@ -83,7 +93,10 @@ const CompactTable = styled(Table)`
   }
 `;
 
-// === Main Component ===
+// ─────────────────────────────────────────────────────────────
+// Main Component
+// ─────────────────────────────────────────────────────────────
+
 const PurchaseOrderForm = ({
   purchaseOrderData,
   setPurchaseOrderData,
@@ -101,7 +114,6 @@ const PurchaseOrderForm = ({
   updatePurchaseOrderProductField,
   handlePurchaseOrderChange,
   purchaseOrderTotal,
-  purchaseOrderNumber,
   documentType,
   setDocumentType,
   cartItems,
@@ -109,102 +121,191 @@ const PurchaseOrderForm = ({
   handleCreateDocument,
   setShowAddVendorModal,
 }) => {
-  // === Recompute Row & Grand Total ===
-  const updateTotal = (index, qty) => {
-    const items = [...purchaseOrderData.items];
-    const item = items[index];
-    if (item) {
-      item.quantity = qty || 1;
-      item.total = item.quantity * item.mrp;
-      setPurchaseOrderData((p) => ({
-        ...p,
-        items,
-        totalAmount: items.reduce((s, i) => s + i.total, 0).toFixed(2),
-      }));
-    }
+  // ─────────────────────────────────────────────────────────────
+  // Helpers
+  // ─────────────────────────────────────────────────────────────
+
+  const updateItem = (index, field, value) => {
+    setPurchaseOrderData((prev) => {
+      const items = [...prev.items];
+      items[index] = { ...items[index], [field]: value };
+
+      // Recalculate line total (client-side preview only)
+      if (["quantity", "unitPrice", "tax"].includes(field)) {
+        const q = Number(items[index].quantity) || 1;
+        const p = Number(items[index].unitPrice) || 0.01;
+        const t = Number(items[index].tax) || 0;
+        items[index].total = q * p * (1 + t / 100);
+      }
+
+      const totalAmount = items
+        .reduce((sum, item) => sum + (item.total || 0), 0)
+        .toFixed(2);
+
+      return { ...prev, items, totalAmount };
+    });
   };
 
   const removeAndUpdate = (index) => {
-    const newItems = purchaseOrderData.items.filter((_, i) => i !== index);
-    setPurchaseOrderData((p) => ({
-      ...p,
-      items: newItems,
-      totalAmount: newItems.reduce((s, i) => s + i.total, 0).toFixed(2),
-    }));
+    setPurchaseOrderData((prev) => {
+      const newItems = prev.items.filter((_, i) => i !== index);
+      const totalAmount = newItems
+        .reduce((sum, item) => sum + (item.total || 0), 0)
+        .toFixed(2);
+
+      return { ...prev, items: newItems, totalAmount };
+    });
   };
 
-  // === Table Columns (Compact) ===
+  // ─────────────────────────────────────────────────────────────
+  // Table Columns
+  // ─────────────────────────────────────────────────────────────
+
   const columns = [
-    { title: "Product", dataIndex: "name", key: "name", width: 140 },
+    {
+      title: "Product",
+      dataIndex: "name",
+      key: "name",
+      width: 180,
+      render: (_, record) => (
+        <Space>
+          {record.imageUrl && (
+            <Image
+              src={record.imageUrl}
+              alt={record.name}
+              width={40}
+              height={40}
+              preview={false}
+              fallback="/placeholder-product.png"
+            />
+          )}
+          {record.name}
+        </Space>
+      ),
+    },
     {
       title: "Qty",
       key: "quantity",
-      width: 70,
-      render: (_, r, i) => (
+      width: 80,
+      render: (_, record, index) => (
         <MiniNumber
           min={1}
-          value={r.quantity}
-          onChange={(v) => updateTotal(i, v)}
+          value={record.quantity}
+          onChange={(v) => updateItem(index, "quantity", v)}
         />
       ),
     },
     {
-      title: "MRP (₹)",
-      key: "mrp",
-      width: 80,
-      render: (_, r) => (
-        <MiniNumber disabled value={Number(r.mrp).toFixed(2)} />
+      title: "Unit Price (₹)",
+      key: "unitPrice",
+      width: 110,
+      render: (_, record, index) => (
+        <MiniNumber
+          min={0.01}
+          step={0.01}
+          precision={2}
+          value={record.unitPrice}
+          onChange={(v) => updateItem(index, "unitPrice", v)}
+        />
       ),
     },
     {
-      title: "Total (₹)",
+      title: "Tax %",
+      key: "tax",
+      width: 90,
+      render: (_, record, index) => (
+        <MiniNumber
+          min={0}
+          max={100}
+          step={0.1}
+          precision={1}
+          value={record.tax ?? 0}
+          onChange={(v) => updateItem(index, "tax", v)}
+        />
+      ),
+    },
+    {
+      title: "Line Total (₹)",
       key: "total",
-      width: 80,
-      render: (_, r) => Number(r.total).toFixed(2),
+      width: 110,
+      render: (_, record) =>
+        (
+          record.quantity *
+          record.unitPrice *
+          (1 + (record.tax || 0) / 100)
+        ).toFixed(2),
     },
     {
       title: "",
       key: "action",
-      width: 40,
-      render: (_, __, i) => (
+      width: 50,
+      render: (_, __, index) => (
         <Button
           type="text"
           danger
           size="small"
           icon={<DeleteOutlined />}
-          onClick={() => removeAndUpdate(i)}
+          onClick={() => removeAndUpdate(index)}
         />
       ),
     },
   ];
 
-  // === Add Product from Search ===
+  // ─────────────────────────────────────────────────────────────
+  // Add Product from Search
+  // ─────────────────────────────────────────────────────────────
+
   const handleAddProduct = (productId) => {
     const product = filteredProducts.find((p) => p.productId === productId);
     if (!product) return;
+
+    // Prevent duplicates
+    if (purchaseOrderData.items.some((item) => item.productId === productId)) {
+      return;
+    }
+
+    const unitPrice = Number(product.price ?? product.mrp ?? 0.01);
+    if (unitPrice <= 0) {
+      return;
+    }
+
+    const quantity = 1;
+    const tax = 0; // default
+    const total = quantity * unitPrice * (1 + tax / 100);
+
     const newItem = {
-      id: product.productId,
       productId: product.productId,
-      name: product.name,
-      quantity: 1,
-      mrp: product.price ?? 0.01,
-      total: 1 * (product.price ?? 0.01),
+      name: product.name || "Unnamed Product",
+      unitPrice,
+      quantity,
+      tax,
+      total,
+      imageUrl: product.images?.[0] || null,
+      productCode: product.product_code || product.code || "",
     };
-    setPurchaseOrderData((p) => ({
-      ...p,
-      items: [...p.items, newItem],
-      totalAmount: (
-        p.items.reduce((s, i) => s + i.total, 0) + newItem.total
-      ).toFixed(2),
-    }));
+
+    setPurchaseOrderData((prev) => {
+      const newItems = [...prev.items, newItem];
+      const totalAmount = newItems
+        .reduce((sum, item) => sum + (item.total || 0), 0)
+        .toFixed(2);
+
+      return { ...prev, items: newItems, totalAmount };
+    });
+
+    // Clear search
+    debouncedSearch("");
   };
 
-  // === Empty State ===
+  // ─────────────────────────────────────────────────────────────
+  // Empty State
+  // ─────────────────────────────────────────────────────────────
+
   if (!cartItems.length && !purchaseOrderData.items.length) {
     return (
       <CompactCard>
         <Empty
-          description="No products"
+          description="No products selected for Purchase Order"
           image={<DeleteOutlined style={{ fontSize: 48 }} />}
         />
         <Button
@@ -219,29 +320,18 @@ const PurchaseOrderForm = ({
     );
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // Render
+  // ─────────────────────────────────────────────────────────────
+
   return (
     <Row gutter={12}>
       {/* LEFT: FORM */}
       <Col xs={24} md={16}>
-        <CompactCard title={<Title level={5}>Purchase Order</Title>}>
+        <CompactCard title={<Title level={5}>Create Purchase Order</Title>}>
           <Collapse defaultActiveKey={["1", "2"]} ghost>
-            {/* 1. Vendor & Document */}
-            <Panel header="Vendor & Document" key="1">
-              <TightRow gutter={8}>
-                <Col span={8}>
-                  <Text strong>Doc Type</Text>
-                </Col>
-                <Col span={16}>
-                  <MiniSelect value={documentType} onChange={setDocumentType}>
-                    {["Quotation", "Order", "Purchase Order"].map((v) => (
-                      <Option key={v} value={v}>
-                        {v}
-                      </Option>
-                    ))}
-                  </MiniSelect>
-                </Col>
-              </TightRow>
-
+            {/* Vendor & Document */}
+            <Panel header="Vendor & Basic Info" key="1">
               <TightRow gutter={8}>
                 <Col span={8}>
                   <Text strong>
@@ -249,14 +339,17 @@ const PurchaseOrderForm = ({
                   </Text>
                 </Col>
                 <Col span={16}>
-                  <Space.Compact block>
+                  <Space.Compact block style={{ width: "100%" }}>
                     <MiniSelect
                       value={selectedVendor}
                       onChange={setSelectedVendor}
                       loading={isVendorsLoading}
                       showSearch
-                      filterOption={(i, o) =>
-                        o.children.toLowerCase().includes(i.toLowerCase())
+                      placeholder="Select vendor"
+                      filterOption={(input, option) =>
+                        option.children
+                          .toLowerCase()
+                          .includes(input.toLowerCase())
                       }
                     >
                       {vendors.map((v) => (
@@ -267,6 +360,7 @@ const PurchaseOrderForm = ({
                     </MiniSelect>
                     <Button
                       type="primary"
+                      size="small"
                       onClick={() => setShowAddVendorModal(true)}
                     >
                       +
@@ -274,26 +368,66 @@ const PurchaseOrderForm = ({
                   </Space.Compact>
                 </Col>
               </TightRow>
+
+              <TightRow gutter={8} style={{ marginTop: 12 }}>
+                <Col span={8}>
+                  <Text strong>Order Date</Text>
+                </Col>
+                <Col span={16}>
+                  <MiniDate
+                    value={moment(purchaseOrderData.orderDate || new Date())}
+                    disabled
+                  />
+                </Col>
+              </TightRow>
+
+              <TightRow gutter={8} style={{ marginTop: 12 }}>
+                <Col span={8}>
+                  <Text strong>Expected Delivery</Text>
+                </Col>
+                <Col span={16}>
+                  <MiniDate
+                    value={
+                      purchaseOrderData.expectDeliveryDate
+                        ? moment(purchaseOrderData.expectDeliveryDate)
+                        : null
+                    }
+                    onChange={(date) =>
+                      handlePurchaseOrderChange(
+                        "expectDeliveryDate",
+                        date ? date.format("YYYY-MM-DD") : null,
+                      )
+                    }
+                    disabledDate={(current) =>
+                      current && current < moment().startOf("day")
+                    }
+                  />
+                </Col>
+              </TightRow>
             </Panel>
 
-            {/* 2. Products */}
+            {/* Products */}
             <Panel header="Products" key="2">
-              <TightRow gutter={8} style={{ marginBottom: 8 }}>
+              <TightRow gutter={8} style={{ marginBottom: 12 }}>
                 <Col span={24}>
                   <MiniSelect
                     showSearch
-                    placeholder="Search product..."
+                    placeholder="Search and add product..."
                     onSearch={debouncedSearch}
                     onChange={handleAddProduct}
                     loading={isProductsLoading}
                     filterOption={false}
                     notFoundContent={
-                      isProductsLoading ? <Spin size="small" /> : "No products"
+                      isProductsLoading ? (
+                        <Spin size="small" />
+                      ) : (
+                        "No matching products"
+                      )
                     }
                   >
                     {filteredProducts.map((p) => (
                       <Option key={p.productId} value={p.productId}>
-                        {p.name} ({p.product_code || "N/A"})
+                        {p.name} {p.product_code ? `(${p.product_code})` : ""}
                       </Option>
                     ))}
                   </MiniSelect>
@@ -303,78 +437,17 @@ const PurchaseOrderForm = ({
               <CompactTable
                 columns={columns}
                 dataSource={purchaseOrderData.items}
-                rowKey={(_, i) => `item-${i}`}
+                rowKey={(record, index) => `po-item-${index}`}
                 pagination={false}
-                locale={{ emptyText: "No items" }}
+                locale={{ emptyText: "No items added yet" }}
                 size="small"
               />
-            </Panel>
 
-            {/* 3. Dates & Status */}
-            <Panel header="Dates & Status" key="3">
-              <TightRow gutter={8}>
-                <Col span={8}>
-                  <Text strong>Order Date</Text>
-                </Col>
-                <Col span={16}>
-                  <MiniDate
-                    selected={
-                      purchaseOrderData.orderDate
-                        ? moment(purchaseOrderData.orderDate).toDate()
-                        : null
-                    }
-                    onChange={(d) =>
-                      handlePurchaseOrderChange(
-                        "orderDate",
-                        d ? moment(d).format("YYYY-MM-DD") : null
-                      )
-                    }
-                  />
-                </Col>
-              </TightRow>
-
-              <TightRow gutter={8}>
-                <Col span={8}>
-                  <Text strong>Expected Delivery</Text>
-                </Col>
-                <Col span={16}>
-                  <MiniDate
-                    selected={
-                      purchaseOrderData.expectedDeliveryDate
-                        ? moment(
-                            purchaseOrderData.expectedDeliveryDate
-                          ).toDate()
-                        : null
-                    }
-                    onChange={(d) =>
-                      handlePurchaseOrderChange(
-                        "expectedDeliveryDate",
-                        d ? moment(d).format("YYYY-MM-DD") : null
-                      )
-                    }
-                  />
-                </Col>
-              </TightRow>
-
-              <TightRow gutter={8}>
-                <Col span={8}>
-                  <Text strong>Status</Text>
-                </Col>
-                <Col span={16}>
-                  <MiniSelect
-                    value={purchaseOrderData.status}
-                    onChange={(v) => handlePurchaseOrderChange("status", v)}
-                  >
-                    {["pending", "confirmed", "delivered", "cancelled"].map(
-                      (s) => (
-                        <Option key={s} value={s}>
-                          {s.charAt(0).toUpperCase() + s.slice(1)}
-                        </Option>
-                      )
-                    )}
-                  </MiniSelect>
-                </Col>
-              </TightRow>
+              {purchaseOrderData.items.length > 0 && (
+                <div style={{ marginTop: 12, textAlign: "right" }}>
+                  <Text strong>Total: ₹{purchaseOrderTotal}</Text>
+                </div>
+              )}
             </Panel>
           </Collapse>
         </CompactCard>
@@ -383,31 +456,51 @@ const PurchaseOrderForm = ({
       {/* RIGHT: SUMMARY */}
       <Col xs={24} md={8}>
         <CompactCard
-          title={<Text strong>Summary</Text>}
+          title={<Text strong>Order Summary</Text>}
           style={{ position: "sticky", top: 16 }}
         >
-          <Text strong>PO #: {purchaseOrderNumber}</Text>
-          <Divider style={{ margin: "8px 0" }} />
-          <Text strong>Total: ₹{purchaseOrderTotal}</Text>
-          <Divider style={{ margin: "8px 0" }} />
-          <CheckoutBtn
-            block
-            icon={<CheckCircleOutlined />}
-            onClick={handleCreateDocument}
-            disabled={
-              !selectedVendor ||
-              (!cartItems.length && !purchaseOrderData.items.length)
-            }
-          >
-            Create PO
-          </CheckoutBtn>
-          <Button
-            block
-            style={{ marginTop: 4 }}
-            onClick={() => setActiveTab("cart")}
-          >
-            Back
-          </Button>
+          <Space direction="vertical" style={{ width: "100%" }}>
+            <div>
+              <Text type="secondary">Vendor</Text>
+              <div>
+                {vendors.find((v) => v.id === selectedVendor)?.vendorName ||
+                  "Not selected"}
+              </div>
+            </div>
+
+            <Divider style={{ margin: "12px 0" }} />
+
+            <div>
+              <Text type="secondary">Items</Text>
+              <div>{purchaseOrderData.items.length}</div>
+            </div>
+
+            <div>
+              <Text type="secondary">Grand Total</Text>
+              <div style={{ fontSize: 18, fontWeight: 600 }}>
+                ₹{purchaseOrderTotal}
+              </div>
+            </div>
+
+            <Divider style={{ margin: "12px 0" }} />
+
+            <CheckoutBtn
+              block
+              icon={<CheckCircleOutlined />}
+              onClick={handleCreateDocument}
+              disabled={
+                !selectedVendor ||
+                purchaseOrderData.items.length === 0 ||
+                purchaseOrderData.items.some((item) => item.unitPrice <= 0)
+              }
+            >
+              Create Purchase Order
+            </CheckoutBtn>
+
+            <Button block onClick={() => setActiveTab("cart")}>
+              Back to Cart
+            </Button>
+          </Space>
         </CompactCard>
       </Col>
     </Row>

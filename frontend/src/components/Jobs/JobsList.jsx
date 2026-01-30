@@ -1,5 +1,6 @@
 // src/components/JobList.jsx
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   useGetAllJobsQuery,
   useCancelJobMutation,
@@ -30,6 +31,7 @@ import {
   ClockCircleOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
+  PlusOutlined,
   WarningOutlined,
 } from "@ant-design/icons";
 
@@ -57,7 +59,7 @@ const JobList = () => {
   const [pageSize, setPageSize] = useState(10);
   const [statusFilter, setStatusFilter] = useState(undefined);
   const [typeFilter, setTypeFilter] = useState(undefined);
-
+  const navigate = useNavigate();
   const {
     data: jobsData,
     isLoading,
@@ -287,6 +289,13 @@ const JobList = () => {
             </Col>
             <Col>
               <Space>
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={() => navigate("/job/add")} // already at step 0
+                >
+                  Create Job
+                </Button>
                 <Button
                   icon={<ReloadOutlined />}
                   onClick={() => refetch()}

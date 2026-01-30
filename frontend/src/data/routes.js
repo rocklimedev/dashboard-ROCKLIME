@@ -505,7 +505,7 @@ const masterRoutes = [
         requiredPermission: { api: "edit", module: "customers" },
       },
       {
-        path: "/product/bulk-product",
+        path: "/job/add",
         element: <BulkProductImport />,
         name: "Bulk Product",
         icon: <FaShoppingCart />,

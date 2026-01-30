@@ -142,13 +142,13 @@ const NewCart = ({ onConvertToOrder }) => {
 
   // ────────────────────── QUERIES ──────────────────────
   const { data: cartData } = useGetCartQuery(userId, { skip: !userId });
-  const { data: customerData } = useGetCustomersQuery();
+  const { data: customerData } = useGetCustomersQuery({ limit: 500 });
   const { data: allOrdersData } = useGetAllOrdersQuery();
   const { data: teamsData, refetch: refetchTeams } = useGetAllTeamsQuery();
   const { data: addressesData, refetch: refetchAddresses } =
     useGetAllAddressesQuery(
       { customerId: selectedCustomer },
-      { skip: !selectedCustomer }
+      { skip: !selectedCustomer },
     );
   const { data: productsData } = useGetAllProductsQuery();
   const { data: vendorsData } = useGetVendorsQuery();
@@ -168,27 +168,34 @@ const NewCart = ({ onConvertToOrder }) => {
   // ────────────────────── MEMOIZED VALUES ──────────────────────
   const addresses = useMemo(
     () => (Array.isArray(addressesData) ? addressesData : []),
-    [addressesData]
+    [addressesData],
   );
   const orders = useMemo(
     () => (Array.isArray(allOrdersData?.orders) ? allOrdersData.orders : []),
-    [allOrdersData]
+    [allOrdersData],
   );
   const teams = useMemo(
     () => (Array.isArray(teamsData?.teams) ? teamsData.teams : []),
-    [teamsData]
+    [teamsData],
   );
   const vendors = useMemo(() => vendorsData || [], [vendorsData]);
-  const products = useMemo(() => productsData || [], [productsData]);
+  const products = useMemo(() => {
+    if (!productsData) return [];
+    if (Array.isArray(productsData)) return productsData;
+    if (Array.isArray(productsData?.data)) return productsData.data;
+    if (Array.isArray(productsData?.products)) return productsData.products;
+    console.warn("useGetAllProductsQuery returned non-array:", productsData);
+    return [];
+  }, [productsData]);
   const customers = customerData?.data || [];
   const customerList = useMemo(
     () => (Array.isArray(customers) ? customers : []),
-    [customers]
+    [customers],
   );
 
   const cartItems = useMemo(
     () => (Array.isArray(cartData?.cart?.items) ? cartData.cart.items : []),
-    [cartData]
+    [cartData],
   );
 
   const { productsData: cartProductsData, errors: productErrors } =
@@ -196,11 +203,11 @@ const NewCart = ({ onConvertToOrder }) => {
 
   const userIds = useMemo(
     () => [...new Set(addresses.map((a) => a.userId).filter(Boolean))],
-    [addresses]
+    [addresses],
   );
   const customerIds = useMemo(
     () => [...new Set(addresses.map((a) => a.customerId).filter(Boolean))],
-    [addresses]
+    [addresses],
   );
   const { userMap, customerMap, userQueries, customerQueries } =
     useUserAndCustomerData(userIds, customerIds);
@@ -208,11 +215,11 @@ const NewCart = ({ onConvertToOrder }) => {
   // ────────────────────── TOTALS & CALCULATIONS ──────────────────────
   const totalItems = useMemo(
     () => cartItems.reduce((a, i) => a + (i.quantity || 0), 0),
-    [cartItems]
+    [cartItems],
   );
   const subTotal = useMemo(
     () => cartItems.reduce((a, i) => a + (i.price || 0) * (i.quantity || 0), 0),
-    [cartItems]
+    [cartItems],
   );
 
   const totalDiscount = useMemo(() => {
@@ -361,9 +368,9 @@ const NewCart = ({ onConvertToOrder }) => {
       dispatch(
         cartApi.util.updateQueryData("getCart", userId, (draft) => {
           draft.cart.items = draft.cart.items.filter(
-            (i) => i.productId !== productId
+            (i) => i.productId !== productId,
           );
-        })
+        }),
       );
 
       // Clean local state
@@ -389,13 +396,13 @@ const NewCart = ({ onConvertToOrder }) => {
         dispatch(
           cartApi.util.updateQueryData("getCart", userId, () => ({
             cart: { items: cartItems },
-          }))
+          })),
         );
       } finally {
         setUpdatingItems((p) => ({ ...p, [productId]: false }));
       }
     },
-    [userId, cartItems, dispatch, removeFromCart]
+    [userId, cartItems, dispatch, removeFromCart],
   );
 
   const handleUpdateQuantity = useCallback(
@@ -414,7 +421,7 @@ const NewCart = ({ onConvertToOrder }) => {
         setUpdatingItems((p) => ({ ...p, [productId]: false }));
       }
     },
-    [userId, updateCart]
+    [userId, updateCart],
   );
 
   const handleTeamAdded = (showModal) => {
@@ -432,10 +439,10 @@ const NewCart = ({ onConvertToOrder }) => {
         .reduce(
           (sum, item) =>
             sum + Number(item.total || 0) * (1 + (item.tax || 0) / 100),
-          0
+          0,
         )
         .toFixed(2),
-    [purchaseOrderData.items]
+    [purchaseOrderData.items],
   );
 
   const debouncedSearch = useCallback(
@@ -447,7 +454,7 @@ const NewCart = ({ onConvertToOrder }) => {
             (p) =>
               p.productId &&
               (p.name?.toLowerCase().includes(value.toLowerCase()) ||
-                p.product_code?.toLowerCase().includes(value.toLowerCase()))
+                p.product_code?.toLowerCase().includes(value.toLowerCase())),
           )
           .slice(0, 5);
         setFilteredProducts(filtered);
@@ -455,7 +462,7 @@ const NewCart = ({ onConvertToOrder }) => {
         setFilteredProducts([]);
       }
     }, 300),
-    [products]
+    [products],
   );
 
   // ────────────────────── CREATE DOCUMENT (main handler) ──────────────────────
@@ -466,50 +473,55 @@ const NewCart = ({ onConvertToOrder }) => {
         return message.error("Please add at least one product.");
       if (purchaseOrderData.items.some((item) => item.mrp <= 0))
         return message.error(
-          "All products must have a valid MRP greater than 0."
+          "All products must have a valid MRP greater than 0.",
         );
       if (
         purchaseOrderData.items.some(
-          (item) => !products.some((p) => p.productId === item.productId)
+          (item) => !products.some((p) => p.productId === item.productId),
         )
       )
         return message.error(
-          "Some products are no longer available. Please remove them."
+          "Some products are no longer available. Please remove them.",
         );
-
       const formattedItems = purchaseOrderData.items.map((item) => ({
         productId: item.productId,
         quantity: Number(item.quantity) || 1,
-        mrp: Number(item.mrp) || 0.01,
+        unitPrice: Number(item.unitPrice) || Number(item.mrp) || 0.01, // ← prefer unitPrice
+        mrp: Number(item.mrp) || Number(item.unitPrice) || 0.01, // fallback
         tax: Number(item.tax) || 0,
+        discount: Number(item.discount) || 0, // if you add discount field
+        discountType: item.discountType || "percent",
       }));
 
-      const formattedFormData = {
+      const payload = {
         vendorId: selectedVendor,
         items: formattedItems,
-        expectedDeliveryDate: purchaseOrderData.expectedDeliveryDate
-          ? moment(purchaseOrderData.expectedDeliveryDate).format("YYYY-MM-DD")
+        expectDeliveryDate: purchaseOrderData.expectDeliveryDate // ← fixed spelling
+          ? moment(purchaseOrderData.expectDeliveryDate).format("YYYY-MM-DD")
           : null,
-        status: purchaseOrderData.status || "pending",
+        // status: do NOT send on create — backend forces "pending"
+        // fgsId: if you support FieldGuidedSheet conversion later
       };
 
       try {
-        const result = await createPurchaseOrder(formattedFormData).unwrap();
+        const result = await createPurchaseOrder(payload).unwrap();
         message.success(
-          `Purchase Order ${result.purchaseOrder.poNumber} created!`
+          `Purchase Order ${result.purchaseOrder.poNumber} created!`,
         );
         await handleClearCart();
         resetForm();
-        navigate("/po/list");
+        navigate("/purchase-manager");
       } catch (err) {
         const errorMessage =
           err.status === 404
             ? "Vendor not found."
             : err.status === 400
-            ? `Invalid request: ${
-                err.data?.error || err.data?.message || "Check your input data."
-              }`
-            : err.data?.message || "Failed to create purchase order";
+              ? `Invalid request: ${
+                  err.data?.error ||
+                  err.data?.message ||
+                  "Check your input data."
+                }`
+              : err.data?.message || "Failed to create purchase order";
         message.error(errorMessage);
       }
       return;
@@ -540,7 +552,7 @@ const NewCart = ({ onConvertToOrder }) => {
       }
       if (
         moment(quotationData.dueDate).isBefore(
-          moment(quotationData.quotationDate)
+          moment(quotationData.quotationDate),
         )
       ) {
         return message.error("Due date must be after quotation date.");
@@ -557,11 +569,11 @@ const NewCart = ({ onConvertToOrder }) => {
           typeof item.quantity === "number" &&
           item.quantity > 0 &&
           typeof item.price === "number" &&
-          item.price >= 0
+          item.price >= 0,
       )
     ) {
       return message.error(
-        "Invalid cart items. Ensure all items have valid productId, quantity, and price."
+        "Invalid cart items. Ensure all items have valid productId, quantity, and price.",
       );
     }
 
@@ -573,7 +585,7 @@ const NewCart = ({ onConvertToOrder }) => {
       documentType === "Order"
     ) {
       const selectedCustomerData = customerList.find(
-        (customer) => customer.customerId === selectedCustomer
+        (customer) => customer.customerId === selectedCustomer,
       );
       const defaultAddress = selectedCustomerData?.address;
       if (defaultAddress) {
@@ -593,7 +605,7 @@ const NewCart = ({ onConvertToOrder }) => {
           await refetchAddresses();
         } catch (err) {
           message.error(
-            `Failed to create address: ${err.data?.message || "Unknown error"}`
+            `Failed to create address: ${err.data?.message || "Unknown error"}`,
           );
           return;
         }
@@ -609,18 +621,18 @@ const NewCart = ({ onConvertToOrder }) => {
     }
 
     const selectedCustomerData = customerList.find(
-      (customer) => customer.customerId === selectedCustomer
+      (customer) => customer.customerId === selectedCustomer,
     );
     if (!selectedCustomerData)
       return message.error("Selected customer not found.");
 
     if (documentType === "Order" && orderData.shipTo) {
       const selectedAddress = addresses.find(
-        (addr) => addr.addressId === orderData.shipTo
+        (addr) => addr.addressId === orderData.shipTo,
       );
       if (selectedAddress && selectedAddress.customerId !== selectedCustomer) {
         return message.error(
-          "Selected address does not belong to the chosen customer."
+          "Selected address does not belong to the chosen customer.",
         );
       }
     }
@@ -678,7 +690,7 @@ const NewCart = ({ onConvertToOrder }) => {
       try {
         const result = await createQuotation(quotationPayload).unwrap();
         message.success(
-          `Quotation ${result.quotation.reference_number} created!`
+          `Quotation ${result.quotation.reference_number} created!`,
         );
         await handleClearCart();
         resetForm();
@@ -724,7 +736,7 @@ const NewCart = ({ onConvertToOrder }) => {
 
         dueDate: orderData.dueDate,
         followupDates: orderData.followupDates.filter(
-          (date) => date && moment(date).isValid()
+          (date) => date && moment(date).isValid(),
         ),
         source: orderData.source || null,
         priority: orderData.priority || "medium",
@@ -769,14 +781,14 @@ const NewCart = ({ onConvertToOrder }) => {
           error?.status === 400
             ? `Bad Request: ${error.data?.message || "Invalid data provided."}`
             : error?.status === 404
-            ? `Not Found: ${error.data?.message || "Resource not found."}`
-            : error?.status === 500
-            ? `Server error: ${
-                error.data?.message || "Please try again later."
-              }`
-            : `Something went wrong: ${
-                error.data?.message || "Please try again."
-              }`;
+              ? `Not Found: ${error.data?.message || "Resource not found."}`
+              : error?.status === 500
+                ? `Server error: ${
+                    error.data?.message || "Please try again later."
+                  }`
+                : `Something went wrong: ${
+                    error.data?.message || "Please try again."
+                  }`;
 
         message.error(errorMessage);
       }
@@ -925,17 +937,17 @@ const NewCart = ({ onConvertToOrder }) => {
                 debouncedSearch={debouncedSearch}
                 addPurchaseOrderProduct={(productId) => {
                   const product = products.find(
-                    (p) => p.productId === productId
+                    (p) => p.productId === productId,
                   );
                   if (
                     !product ||
                     purchaseOrderData.items.some(
-                      (i) => i.productId === productId
+                      (i) => i.productId === productId,
                     ) ||
                     cartItems.some((i) => i.productId === productId)
                   ) {
                     message.error(
-                      product ? "Product already added." : "Product not found."
+                      product ? "Product already added." : "Product not found.",
                     );
                     return;
                   }
