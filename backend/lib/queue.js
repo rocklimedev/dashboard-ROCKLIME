@@ -3,7 +3,7 @@ const IORedis = require("ioredis");
 const { Queue, Worker, QueueEvents } = require("bullmq");
 
 const connection = new IORedis({
-  host: "127.0.0.1",
+  host: process.env.REDIS_HOST,
   port: 6379,
   family: 4,
   connectTimeout: 10000,
