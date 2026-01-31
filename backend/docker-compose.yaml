@@ -1,5 +1,5 @@
 services:
-  backend:
+  backend: # ← changed from app
     build:
       context: .
       dockerfile: Dockerfile
@@ -10,7 +10,7 @@ services:
       - "4000:4000"
     environment:
       - NODE_ENV=production
-      - REDIS_HOST=redis # ← now points to the redis service name
+      - REDIS_HOST=redis
       - REDIS_PORT=6379
     volumes:
       - ./.env:/app/.env:ro
@@ -18,16 +18,16 @@ services:
     networks:
       - app-network
     depends_on:
-      - redis # ← ensures redis starts first
+      - redis
 
   redis:
-    image: redis:7-alpine # lightweight, official Redis image
+    image: redis:7-alpine
     container_name: cmtrading-redis
     restart: unless-stopped
     networks:
       - app-network
     volumes:
-      - redis-data:/data # persist data across restarts
+      - redis-data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -36,7 +36,7 @@ services:
 
 volumes:
   uploads:
-  redis-data: # new volume for Redis persistence
+  redis-data:
 
 networks:
   app-network:
