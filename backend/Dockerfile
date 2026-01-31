@@ -1,20 +1,15 @@
-# Use official Node.js LTS
 FROM node:20-alpine
 
-# Set working directory
-WORKDIR /app
+WORKDIR /usr/src/app
 
-# Copy package files
-COPY package*.json ./
+# 1. Copy package files FIRST
+COPY package.json package-lock.json* ./
 
-# Install all dependencies
-RUN npm install
+# 2. Install deps (this persists node_modules)
+RUN npm ci --omit=dev
 
-# Copy source code
+# 3. Copy rest of app
 COPY . .
 
-# Expose port
 EXPOSE 4000
-
-# Start the app
-CMD ["node", "index.js"]
+CMD ["npm", "start"]
