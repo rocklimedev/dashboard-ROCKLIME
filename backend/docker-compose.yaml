@@ -7,30 +7,28 @@ services:
     container_name: cmtrading-api
     restart: unless-stopped
     ports:
-      - "4000:4000" # ← your app port
+      - "4000:4000"
     environment:
       - NODE_ENV=production
-      - REDIS_HOST=redis # ← Add or override this (most important!)
-      - REDIS_PORT=6379 # optional, default is 6379 anyway
+      - REDIS_HOST=redis # ← now points to the redis service name
+      - REDIS_PORT=6379
     volumes:
       - ./.env:/app/.env:ro
       - uploads:/app/uploads
     networks:
       - app-network
-    depends_on: # ← Optional but good: wait for Redis to be healthy
-      - redis
+    depends_on:
+      - redis # ← ensures redis starts first
 
   redis:
-    image: redis:7-alpine # lightweight official image
+    image: redis:7-alpine # lightweight, official Redis image
     container_name: cmtrading-redis
     restart: unless-stopped
-    ports:
-      - "6379:6379" # ← Optional: only if you want to connect from host machine (e.g. redis-cli locally)
-    volumes:
-      - redis-data:/data # persist data if needed
     networks:
       - app-network
-    healthcheck: # good practice
+    volumes:
+      - redis-data:/data # persist data across restarts
+    healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
