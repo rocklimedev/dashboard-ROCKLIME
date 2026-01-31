@@ -1,42 +1,23 @@
 services:
-  backend: # ← changed from app
+  backend:
     build:
       context: .
       dockerfile: Dockerfile
-    image: ghcr.io/rocklimedev/dashboard-rocklime-backend:latest
+    image: ghcr.io/rocklimedev/dashboard-rocklime-backend:latest # ← lowercase + -backend
     container_name: cmtrading-api
     restart: unless-stopped
     ports:
       - "4000:4000"
     environment:
       - NODE_ENV=production
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
     volumes:
       - ./.env:/app/.env:ro
       - uploads:/app/uploads
     networks:
       - app-network
-    depends_on:
-      - redis
-
-  redis:
-    image: redis:7-alpine
-    container_name: cmtrading-redis
-    restart: unless-stopped
-    networks:
-      - app-network
-    volumes:
-      - redis-data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
 volumes:
   uploads:
-  redis-data:
 
 networks:
   app-network:

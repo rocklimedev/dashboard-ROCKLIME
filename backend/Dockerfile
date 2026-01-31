@@ -6,7 +6,7 @@ WORKDIR /usr/src/app
 COPY package.json package-lock.json* ./
 
 # 2. Install deps (this persists node_modules)
-RUN npm ci --omit=dev
+RUN npm ci 
 
 # 3. Copy rest of app
 COPY . .
