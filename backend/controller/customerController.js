@@ -34,7 +34,7 @@ exports.getInvoicesByCustomerId = async (req, res) => {
 // Create a new customer
 exports.createCustomer = async (req, res) => {
   try {
-    const requiredFields = ["name", "email"]; // phone2, customerType, gstNumber optional
+    const requiredFields = ["name"]; // phone2, customerType, gstNumber optional
 
     for (const field of requiredFields) {
       if (!req.body[field]) {
@@ -60,7 +60,7 @@ exports.createCustomer = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: `Invalid customerType. Must be one of: ${allowedTypes.join(
-          ", "
+          ", ",
         )}`,
       });
     }
@@ -198,7 +198,7 @@ exports.updateCustomer = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: `Invalid customerType. Must be one of: ${allowedTypes.join(
-          ", "
+          ", ",
         )}`,
       });
     }
@@ -220,7 +220,7 @@ exports.updateCustomer = async (req, res) => {
     await sendNotification({
       userId: ADMIN_USER_ID,
       title: "Customer Updated",
-      message: `Customer "${customer.name}" (${customer.email}) has been updated.`,
+      message: `Customer "${customer.name}" has been updated.`,
     });
 
     res.status(200).json({
