@@ -27,7 +27,7 @@ module.exports = (sequelize, DataTypes) => {
       },
       mobileNumber: {
         type: DataTypes.STRING(20),
-        allowNull: false,
+        allowNull: true, // <-- changed from false to true
         validate: {
           len: [10, 15],
         },
@@ -46,7 +46,7 @@ module.exports = (sequelize, DataTypes) => {
           "Architect",
           "Interior",
           "Builder",
-          "Contractor"
+          "Contractor",
         ),
         allowNull: true,
         defaultValue: "Retail",
@@ -83,7 +83,7 @@ module.exports = (sequelize, DataTypes) => {
         { fields: ["customerType"] },
         { fields: ["gstNumber"] },
       ],
-    }
+    },
   );
 
   // -----------------------

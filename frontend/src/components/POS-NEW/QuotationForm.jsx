@@ -629,7 +629,7 @@ const QuotationForm = ({
             block
             style={{
               marginBottom: 8,
-              background: "#aa0f1f",
+              background: "#e31e24",
               color: "white",
               border: "none",
             }}
@@ -640,7 +640,7 @@ const QuotationForm = ({
 
           <CheckoutBtn
             block
-            style={{ marginBottom: 8 }}
+            style={{ color: "white", marginBottom: 8 }}
             icon={<CheckCircleOutlined />}
             onClick={() => {
               if (!selectedCustomer)

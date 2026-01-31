@@ -1,15 +1,13 @@
-import React, { useState, useEffect, useCallback } from "react";
+// src/components/AddCustomerModal.jsx
+import React, { useState, useEffect } from "react";
 import { useDispatch } from "react-redux";
 import {
   useCreateCustomerMutation,
   useUpdateCustomerMutation,
-  useGetInvoicesByCustomerIdQuery,
-  customerApi as api,
+  useGetCustomersQuery,
 } from "../../api/customerApi";
-import { useGetCustomersQuery } from "../../api/customerApi";
 import { useGetVendorsQuery } from "../../api/vendorApi";
 import { message } from "antd";
-import { useNavigate } from "react-router-dom";
 import {
   Form,
   Input,
@@ -26,142 +24,111 @@ import {
 const { TabPane } = Tabs;
 const { Option } = Select;
 
-// JSON data for Indian states
-const indiaStates = {
-  name: "India",
-  states: [
-    "Andaman and Nicobar Islands",
-    "Andhra Pradesh",
-    "Arunachal Pradesh",
-    "Assam",
-    "Bihar",
-    "Chandigarh",
-    "Chhattisgarh",
-    "Dadra and Nagar Haveli and Daman and Diu",
-    "Delhi",
-    "Goa",
-    "Gujarat",
-    "Haryana",
-    "Himachal Pradesh",
-    "Jammu and Kashmir",
-    "Jharkhand",
-    "Karnataka",
-    "Kerala",
-    "Ladakh",
-    "Lakshadweep",
-    "Madhya Pradesh",
-    "Maharashtra",
-    "Manipur",
-    "Meghalaya",
-    "Mizoram",
-    "Nagaland",
-    "Odisha",
-    "Puducherry",
-    "Punjab",
-    "Rajasthan",
-    "Sikkim",
-    "Tamil Nadu",
-    "Telangana",
-    "Tripura",
-    "Uttar Pradesh",
-    "Uttarakhand",
-    "West Bengal",
-  ],
-};
+// List of Indian states
+const indiaStates = [
+  "Andaman and Nicobar Islands",
+  "Andhra Pradesh",
+  "Arunachal Pradesh",
+  "Assam",
+  "Bihar",
+  "Chandigarh",
+  "Chhattisgarh",
+  "Dadra and Nagar Haveli and Daman and Diu",
+  "Delhi",
+  "Goa",
+  "Gujarat",
+  "Haryana",
+  "Himachal Pradesh",
+  "Jammu and Kashmir",
+  "Jharkhand",
+  "Karnataka",
+  "Kerala",
+  "Ladakh",
+  "Lakshadweep",
+  "Madhya Pradesh",
+  "Maharashtra",
+  "Manipur",
+  "Meghalaya",
+  "Mizoram",
+  "Nagaland",
+  "Odisha",
+  "Puducherry",
+  "Punjab",
+  "Rajasthan",
+  "Sikkim",
+  "Tamil Nadu",
+  "Telangana",
+  "Tripura",
+  "Uttar Pradesh",
+  "Uttarakhand",
+  "West Bengal",
+];
 
 const AddCustomerModal = ({ visible, onClose, customer }) => {
   const dispatch = useDispatch();
-  const navigate = useNavigate();
+  const [form] = Form.useForm();
   const existingCustomer = customer || null;
 
-  const [form] = Form.useForm();
   const [formData, setFormData] = useState({
     name: "",
     companyName: "",
-    customerType: "",
+    customerType: "Retail",
     email: "",
     mobileNumber: "",
     phone2: "",
+    gstNumber: "",
     address: { street: "", city: "", state: "", zip: "" },
     isVendor: "false",
-    totalAmount: "0.00",
-    paidAmount: "0.00",
-    balance: "0.00",
-    dueDate: "",
-    paymentMode: "",
-    invoiceStatus: "Draft",
-    invoices: [],
-    quotations: [],
     vendorId: "",
-    gstNumber: "",
   });
 
   const [createCustomer, { isLoading: isCreating, error: createError }] =
     useCreateCustomerMutation();
   const [updateCustomer, { isLoading: isEditing, error: editError }] =
     useUpdateCustomerMutation();
+
   const { data: allCustomersData, isLoading: isCustomersLoading } =
-    useGetCustomersQuery();
-  const {
-    data: invoices,
-    isLoading: isInvoicesLoading,
-    error: invoicesError,
-    refetch,
-  } = useGetInvoicesByCustomerIdQuery(existingCustomer?.customerId, {
-    skip: !existingCustomer?.customerId,
-  });
-  const {
-    data: vendors,
-    isLoading: isVendorsLoading,
-    error: vendorsError,
-  } = useGetVendorsQuery();
+    useGetCustomersQuery(undefined, { skip: !visible });
 
-  const getInvoiceData = useCallback(() => {
-    if (!invoices?.data?.length) return { totalAmount: 0, dueDate: null };
+  const { data: vendorsData, isLoading: isVendorsLoading } = useGetVendorsQuery(
+    undefined,
+    { skip: formData.isVendor !== "true" },
+  );
 
-    const total = invoices.data.reduce((sum, invoice) => {
-      const payableAmount = parseFloat(invoice.amount || 0);
-      return sum + (isNaN(payableAmount) ? 0 : payableAmount);
-    }, 0);
+  const vendors = vendorsData?.data || [];
 
-    const dueDate =
-      invoices.data.sort(
-        (a, b) => new Date(b.dueDate) - new Date(a.dueDate)
-      )?.[0]?.dueDate || null;
-
-    return { totalAmount: total, dueDate };
-  }, [invoices]);
-
+  // Duplicate check only when email or mobile is filled
   useEffect(() => {
     if (!existingCustomer && allCustomersData?.data?.length > 0) {
-      const isDuplicate = allCustomersData.data.some(
-        (cust) =>
-          cust.email === formData.email.trim() ||
-          cust.mobileNumber === formData.mobileNumber.trim()
-      );
+      const email = (form.getFieldValue("email") || "").trim();
+      const mobile = (form.getFieldValue("mobileNumber") || "").trim();
+
+      if (!email && !mobile) return;
+
+      const isDuplicate = allCustomersData.data.some((cust) => {
+        const cEmail = (cust.email || "").trim();
+        const cMobile = (cust.mobileNumber || "").trim();
+
+        return (email && email === cEmail) || (mobile && mobile === cMobile);
+      });
 
       if (isDuplicate) {
         message.error(
-          "Customer with same email or mobile number already exists."
+          "Another customer already exists with this email or mobile number.",
         );
       }
     }
-  }, [
-    existingCustomer,
-    allCustomersData,
-    formData.email,
-    formData.mobileNumber,
-  ]);
+  }, [form, existingCustomer, allCustomersData]);
 
+  // Populate form when editing
   useEffect(() => {
-    if (existingCustomer && invoices) {
-      const { totalAmount, dueDate } = getInvoiceData();
-      const paid = parseFloat(existingCustomer.paidAmount || 0);
-      const balance = totalAmount - paid;
-
-      const updatedFormData = {
-        ...existingCustomer,
-        customerType: existingCustomer.customerType || "",
+    if (existingCustomer) {
+      const initial = {
+        name: existingCustomer.name || "",
+        companyName: existingCustomer.companyName || "",
+        customerType: existingCustomer.customerType || "Retail",
+        email: existingCustomer.email || "",
+        mobileNumber: existingCustomer.mobileNumber || "",
         phone2: existingCustomer.phone2 || "",
         gstNumber: existingCustomer.gstNumber || "",
         address: existingCustomer.address || {
@@ -170,123 +137,83 @@ const AddCustomerModal = ({ visible, onClose, customer }) => {
           state: "",
           zip: "",
         },
-        totalAmount: totalAmount.toFixed(2),
-        paidAmount: paid.toFixed(2),
-        balance: balance < 0 ? "0.00" : balance.toFixed(2),
-        dueDate: dueDate || existingCustomer.dueDate || null,
-        invoices: existingCustomer.invoices || [],
-        quotations: existingCustomer.quotations || [],
+        isVendor: existingCustomer.isVendor ? "true" : "false",
         vendorId: existingCustomer.vendorId || "",
       };
 
-      setFormData(updatedFormData);
-      form.setFieldsValue(updatedFormData);
-    }
-  }, [existingCustomer, invoices, getInvoiceData, form]);
-
-  useEffect(() => {
-    if (existingCustomer) {
-      const total = parseFloat(formData.totalAmount || 0);
-      const paid = parseFloat(formData.paidAmount || 0);
-      const balance = total - paid;
-
-      setFormData((prev) => ({
-        ...prev,
-        balance: balance < 0 ? "0.00" : balance.toFixed(2),
-      }));
-      form.setFieldsValue({
-        balance: balance < 0 ? "0.00" : balance.toFixed(2),
+      setFormData(initial);
+      form.setFieldsValue(initial);
+    } else {
+      form.resetFields();
+      setFormData({
+        name: "",
+        companyName: "",
+        customerType: "Retail",
+        email: "",
+        mobileNumber: "",
+        phone2: "",
+        gstNumber: "",
+        address: { street: "", city: "", state: "", zip: "" },
+        isVendor: "false",
+        vendorId: "",
       });
     }
-  }, [existingCustomer, formData.totalAmount, formData.paidAmount, form]);
+  }, [existingCustomer, form]);
 
-  const handleChange = (changedValues) => {
-    if (changedValues.paidAmount && existingCustomer) {
-      if (
-        changedValues.paidAmount === "" ||
-        parseFloat(changedValues.paidAmount) < 0
-      )
-        return;
-
-      const total = parseFloat(formData.totalAmount || 0);
-      const paid = parseFloat(changedValues.paidAmount || 0);
-      if (paid > total) {
-        message.error("Paid Amount cannot exceed Total Amount");
-        return;
+  const handleValuesChange = (changedValues) => {
+    if ("isVendor" in changedValues) {
+      if (changedValues.isVendor === "false") {
+        form.setFieldsValue({ vendorId: "" });
       }
     }
-
-    if (changedValues.isVendor === "false") {
-      setFormData((prev) => ({ ...prev, isVendor: "false", vendorId: "" }));
-      form.setFieldsValue({ vendorId: "" });
-    } else {
-      setFormData((prev) => ({ ...prev, ...changedValues }));
-    }
+    setFormData((prev) => ({ ...prev, ...changedValues }));
   };
 
-  const handleJsonChange = (field, index, key, value) => {
-    setFormData((prev) => {
-      const updatedArray = [...prev[field]];
-      updatedArray[index] = { ...updatedArray[index], [key]: value };
-      return { ...prev, [field]: updatedArray };
-    });
-  };
-
-  const addJsonEntry = (field) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: [
-        ...prev[field],
-        field === "invoices"
-          ? { invoiceNo: "", amount: "0.00", dueDate: "" }
-          : { quotationNo: "", amount: "0.00", date: "" },
-      ],
-    }));
-  };
-
-  const removeJsonEntry = (field, index) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: prev[field].filter((_, i) => i !== index),
-    }));
+  const hasAddressContent = (addr) => {
+    if (!addr) return false;
+    return (
+      (addr.street || "").trim() ||
+      (addr.city || "").trim() ||
+      (addr.state || "").trim() ||
+      (addr.zip || "").trim()
+    );
   };
 
   const handleSubmit = async (values) => {
     try {
+      // Final duplicate check before submit (in case useEffect didn't catch it)
       if (!existingCustomer && allCustomersData?.data?.length > 0) {
-        const isDuplicate = allCustomersData.data.some(
-          (cust) =>
-            cust.email === values.email.trim() ||
-            cust.mobileNumber === values.mobileNumber.trim()
-        );
+        const email = (values.email || "").trim();
+        const mobile = (values.mobileNumber || "").trim();
 
-        if (isDuplicate) {
-          message.error(
-            "Customer with same email or mobile number already exists."
-          );
-          return;
+        if (email || mobile) {
+          const isDuplicate = allCustomersData.data.some((cust) => {
+            const cEmail = (cust.email || "").trim();
+            const cMobile = (cust.mobileNumber || "").trim();
+            return (
+              (email && email === cEmail) || (mobile && mobile === cMobile)
+            );
+          });
+
+          if (isDuplicate) {
+            message.error(
+              "Customer with same email or mobile number already exists.",
+            );
+            return;
+          }
         }
       }
 
       const payload = {
-        ...values,
+        name: values.name?.trim(),
+        companyName: values.companyName?.trim() || null,
         customerType: values.customerType || null,
-        phone2: values.phone2 || null,
-        gstNumber: values.gstNumber || null,
+        email: values.email?.trim() || null,
+        mobileNumber: values.mobileNumber?.trim() || null,
+        phone2: values.phone2?.trim() || null,
+        gstNumber: values.gstNumber?.trim() || null,
+        address: hasAddressContent(values.address) ? values.address : null,
         isVendor: values.isVendor === "true",
-        totalAmount: existingCustomer ? parseFloat(values.totalAmount) || 0 : 0,
-        paidAmount: existingCustomer ? parseFloat(values.paidAmount) || 0 : 0,
-        balance: existingCustomer ? parseFloat(values.balance) || 0 : 0,
-        address:
-          values.address.street ||
-          values.address.city ||
-          values.address.state ||
-          values.address.zip
-            ? values.address
-            : null,
-        invoices: null,
-        quotations: null,
-        dueDate: values.dueDate || null,
         vendorId:
           values.isVendor === "true" && values.vendorId?.trim()
             ? values.vendorId
@@ -298,90 +225,63 @@ const AddCustomerModal = ({ visible, onClose, customer }) => {
           id: existingCustomer.customerId,
           ...payload,
         }).unwrap();
-        dispatch(
-          api.util.invalidateTags([
-            { type: "Customer", id: existingCustomer.customerId },
-          ])
-        );
+        message.success("Customer updated successfully");
       } else {
         await createCustomer(payload).unwrap();
-        dispatch(api.util.invalidateTags(["Customer"]));
+        message.success("Customer created successfully");
       }
 
-      onClose(); // Close the modal
+      onClose();
     } catch (err) {
-      message.error(err?.data?.message || "Failed to process request.");
+      message.error(err?.data?.message || "Failed to save customer");
     }
   };
 
   const handleCancel = () => {
     form.resetFields();
-    onClose(); // Close the modal
+    onClose();
   };
 
   return (
     <Modal
-      title={existingCustomer ? "Edit Customer" : "Add Customer"}
-      visible={visible}
+      title={existingCustomer ? "Edit Customer" : "Add New Customer"}
+      open={visible}
       onCancel={handleCancel}
       footer={null}
-      width={800}
+      width={820}
       destroyOnClose
     >
-      <div style={{ padding: "16px" }}>
-        {isInvoicesLoading && existingCustomer && (
-          <Spin tip="Loading invoice data..." />
-        )}
-        {invoicesError && existingCustomer && (
-          <Alert
-            message="Error"
-            description={
-              invoicesError?.data?.message || "Failed to load invoices"
-            }
-            type="error"
-            showIcon
-            style={{ marginBottom: 16 }}
-          />
-        )}
-        {isVendorsLoading && formData.isVendor === "true" && (
-          <Spin tip="Loading vendors..." />
-        )}
-        {vendorsError && formData.isVendor === "true" && (
-          <Alert
-            message="Error"
-            description={
-              vendorsError?.data?.message || "Failed to load vendors"
-            }
-            type="error"
-            showIcon
-            style={{ marginBottom: 16 }}
-          />
-        )}
+      <div style={{ padding: "0 8px" }}>
+        {(isCustomersLoading || isVendorsLoading) && <Spin tip="Loading..." />}
 
         <Form
           form={form}
           layout="vertical"
           onFinish={handleSubmit}
-          onValuesChange={handleChange}
-          initialValues={formData}
+          onValuesChange={handleValuesChange}
+          preserve={false}
         >
           <Tabs defaultActiveKey="general">
             <TabPane tab="General" key="general">
-              <Row gutter={16}>
+              <Row gutter={[16, 8]}>
                 <Col lg={12} xs={24}>
                   <Form.Item
                     label="Name"
                     name="name"
-                    rules={[{ required: true, message: "Please enter name" }]}
+                    rules={[
+                      { required: true, message: "Customer name is required" },
+                    ]}
                   >
-                    <Input />
+                    <Input
+                      placeholder="Full name or business name"
+                      allowClear
+                    />
                   </Form.Item>
                 </Col>
 
                 <Col lg={12} xs={24}>
                   <Form.Item label="Customer Type" name="customerType">
-                    <Select placeholder="Select Type">
-                      <Option value="">Select Type</Option>
+                    <Select allowClear placeholder="Select customer type">
                       <Option value="Retail">Retail</Option>
                       <Option value="Architect">Architect</Option>
                       <Option value="Interior">Interior</Option>
@@ -393,7 +293,10 @@ const AddCustomerModal = ({ visible, onClose, customer }) => {
 
                 <Col lg={12} xs={24}>
                   <Form.Item label="Company Name" name="companyName">
-                    <Input />
+                    <Input
+                      placeholder="Company / Firm name (optional)"
+                      allowClear
+                    />
                   </Form.Item>
                 </Col>
 
@@ -402,78 +305,79 @@ const AddCustomerModal = ({ visible, onClose, customer }) => {
                     label="Email"
                     name="email"
                     rules={[
-                      { required: true, message: "Please enter email" },
                       { type: "email", message: "Please enter a valid email" },
                     ]}
                   >
-                    <Input />
+                    <Input
+                      placeholder="example@domain.com (optional)"
+                      allowClear
+                    />
                   </Form.Item>
                 </Col>
 
-                {/* === MOBILE NUMBER (Required, 10 digits) === */}
                 <Col lg={12} xs={24}>
                   <Form.Item
-                    label="Phone"
+                    label="Mobile Number"
                     name="mobileNumber"
                     rules={[
-                      { required: true, message: "Please enter phone number" },
                       {
-                        pattern: /^\d{10}$/,
-                        message: "Phone must be exactly 10 digits",
-                      },
-                      {
-                        validator: (_, value) =>
-                          value && !/^\d+$/.test(value)
-                            ? Promise.reject("Only digits allowed")
-                            : Promise.resolve(),
+                        validator: (_, value) => {
+                          if (!value) return Promise.resolve();
+                          if (!/^\d{10}$/.test(value)) {
+                            return Promise.reject("Must be exactly 10 digits");
+                          }
+                          return Promise.resolve();
+                        },
                       },
                     ]}
                   >
                     <Input
                       maxLength={10}
-                      placeholder="e.g. 9876543210"
-                      onKeyPress={(e) => {
-                        if (!/[0-9]/.test(e.key)) e.preventDefault();
-                      }}
+                      placeholder="9876543210 (optional)"
+                      allowClear
+                      onKeyPress={(e) =>
+                        !/[0-9]/.test(e.key) && e.preventDefault()
+                      }
                       onBlur={(e) => {
-                        const clean = e.target.value
+                        const cleaned = e.target.value
                           .replace(/\D/g, "")
                           .slice(0, 10);
-                        form.setFieldsValue({ mobileNumber: clean });
+                        form.setFieldsValue({
+                          mobileNumber: cleaned || undefined,
+                        });
                       }}
                     />
                   </Form.Item>
                 </Col>
 
-                {/* === PHONE 2 (Optional, but 10 digits if filled) === */}
                 <Col lg={12} xs={24}>
                   <Form.Item
-                    label="Optional Mobile Number"
+                    label="Alternate Mobile"
                     name="phone2"
                     rules={[
                       {
-                        pattern: /^\d{10}$/,
-                        message: "Phone 2 must be exactly 10 digits",
-                      },
-                      {
-                        validator: (_, value) =>
-                          value && !/^\d+$/.test(value)
-                            ? Promise.reject("Only digits allowed")
-                            : Promise.resolve(),
+                        validator: (_, value) => {
+                          if (!value) return Promise.resolve();
+                          if (!/^\d{10}$/.test(value)) {
+                            return Promise.reject("Must be exactly 10 digits");
+                          }
+                          return Promise.resolve();
+                        },
                       },
                     ]}
                   >
                     <Input
                       maxLength={10}
-                      placeholder="e.g. 9123456789"
-                      onKeyPress={(e) => {
-                        if (!/[0-9]/.test(e.key)) e.preventDefault();
-                      }}
+                      placeholder="9123456789 (optional)"
+                      allowClear
+                      onKeyPress={(e) =>
+                        !/[0-9]/.test(e.key) && e.preventDefault()
+                      }
                       onBlur={(e) => {
-                        const clean = e.target.value
+                        const cleaned = e.target.value
                           .replace(/\D/g, "")
                           .slice(0, 10);
-                        form.setFieldsValue({ phone2: clean });
+                        form.setFieldsValue({ phone2: cleaned || undefined });
                       }}
                     />
                   </Form.Item>
@@ -481,42 +385,40 @@ const AddCustomerModal = ({ visible, onClose, customer }) => {
 
                 <Col lg={12} xs={24}>
                   <Form.Item label="GST Number" name="gstNumber">
-                    <Input placeholder="Enter GST Number" />
+                    <Input
+                      placeholder="22AAAAA0000A1Z5 (optional)"
+                      allowClear
+                    />
                   </Form.Item>
                 </Col>
 
-                <Col lg={24} xs={24}>
+                <Col span={24}>
                   <Form.Item label="Address">
-                    <Row gutter={16}>
+                    <Row gutter={12}>
                       <Col lg={12} xs={24}>
                         <Form.Item name={["address", "street"]} noStyle>
-                          <Input placeholder="Street" />
+                          <Input placeholder="Street / Area" allowClear />
                         </Form.Item>
                       </Col>
                       <Col lg={12} xs={24}>
                         <Form.Item name={["address", "city"]} noStyle>
-                          <Input placeholder="City" />
+                          <Input placeholder="City" allowClear />
                         </Form.Item>
                       </Col>
                       <Col lg={12} xs={24}>
                         <Form.Item name={["address", "state"]} noStyle>
                           <Select
-                            placeholder="Select or search state"
                             showSearch
+                            placeholder="State"
                             optionFilterProp="children"
                             filterOption={(input, option) =>
                               option.children
                                 .toLowerCase()
                                 .includes(input.toLowerCase())
                             }
-                            filterSort={(optionA, optionB) =>
-                              optionA.children
-                                .toLowerCase()
-                                .localeCompare(optionB.children.toLowerCase())
-                            }
+                            allowClear
                           >
-                            <Option value="">Select State</Option>
-                            {indiaStates.states.map((state) => (
+                            {indiaStates.map((state) => (
                               <Option key={state} value={state}>
                                 {state}
                               </Option>
@@ -526,7 +428,7 @@ const AddCustomerModal = ({ visible, onClose, customer }) => {
                       </Col>
                       <Col lg={12} xs={24}>
                         <Form.Item name={["address", "zip"]} noStyle>
-                          <Input placeholder="ZIP Code" />
+                          <Input placeholder="PIN / ZIP Code" allowClear />
                         </Form.Item>
                       </Col>
                     </Row>
@@ -536,15 +438,8 @@ const AddCustomerModal = ({ visible, onClose, customer }) => {
             </TabPane>
           </Tabs>
 
-          {/* Submit Buttons */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "flex-end",
-              marginTop: 24,
-            }}
-          >
-            <Button onClick={handleCancel} style={{ marginRight: 8 }}>
+          <div style={{ textAlign: "right", marginTop: 32 }}>
+            <Button onClick={handleCancel} style={{ marginRight: 12 }}>
               Cancel
             </Button>
             <Button
@@ -552,25 +447,27 @@ const AddCustomerModal = ({ visible, onClose, customer }) => {
               htmlType="submit"
               loading={isCreating || isEditing}
               disabled={
-                isCreating || isEditing || isInvoicesLoading || isVendorsLoading
+                isCreating ||
+                isEditing ||
+                isCustomersLoading ||
+                isVendorsLoading
               }
             >
               {isCreating || isEditing
-                ? "Processing..."
+                ? "Saving..."
                 : existingCustomer
-                ? "Update Customer"
-                : "Add Customer"}
+                  ? "Update Customer"
+                  : "Create Customer"}
             </Button>
           </div>
 
-          {/* Error Alert */}
           {(createError || editError) && (
             <Alert
               message="Error"
               description={
                 createError?.data?.message ||
                 editError?.data?.message ||
-                "Error processing request"
+                "Something went wrong. Please try again."
               }
               type="error"
               showIcon
