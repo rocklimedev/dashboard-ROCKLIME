@@ -719,7 +719,7 @@ const PurchaseManagement = () => {
       <div className="content">
         <div className="card">
           <PageHeader
-            title="Purchase Management"
+            title="Purchase Order"
             subtitle="Manage Purchase Orders & Field Generated Sheets"
             onAdd={() =>
               activeTab === "po" ? handleOpenAddPO() : handleOpenAddFGS()

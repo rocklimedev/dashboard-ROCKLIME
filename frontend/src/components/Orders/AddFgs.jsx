@@ -24,13 +24,13 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useGetProfileQuery } from "../../api/userApi";
 import PageHeader from "../Common/PageHeader";
-import AddVendorModal from "../POS-NEW/AddVendorModal"; // reuse same modal
+import AddVendorModal from "../POS-NEW/AddVendorModal";
 
 import {
   useCreateFGSMutation,
   useGetFGSByIdQuery,
   useUpdateFGSMutation,
-} from "../../api/fgsApi"; // ← your fgsApi path
+} from "../../api/fgsApi";
 import {
   useGetAllProductsQuery,
   useSearchProductsQuery,
@@ -82,8 +82,9 @@ const AddFieldgeneratedSheet = () => {
 
   const { data: vendorsRes } = useGetVendorsQuery();
   const vendors = vendorsRes || [];
-  // Add this near your other hooks
+
   const { data: profile, isLoading: isLoadingProfile } = useGetProfileQuery();
+
   const [createFGS, { isLoading: creating }] = useCreateFGSMutation();
   const [updateFGS, { isLoading: updating }] = useUpdateFGSMutation();
   const [createVendor, { isLoading: creatingVendor }] =
@@ -94,7 +95,7 @@ const AddFieldgeneratedSheet = () => {
   const { data: searchRes = [], isFetching: isSearching } =
     useSearchProductsQuery(searchTerm.trim(), { skip: !searchTerm.trim() });
 
-  // Form state
+  // Form state - default orderDate to current date
   const [formValues, setFormValues] = useState({
     vendorId: "",
     orderDate: moment(),
@@ -167,7 +168,7 @@ const AddFieldgeneratedSheet = () => {
   }, [formValues.items]);
 
   // ───────────────────────────────────────
-  // Product search options (same as PO)
+  // Product search options
   // ───────────────────────────────────────
   const searchOptions = useMemo(() => {
     const source = searchTerm.trim() ? searchRes : products;
@@ -283,10 +284,10 @@ const AddFieldgeneratedSheet = () => {
         return;
       }
 
-      // Get current user ID from profile
-      const currentUserId = profile?.user?.userId || "nill"; // or profile?.id — adjust based on actual response
+      const currentUserId = profile?.user?.userId || "nill";
       console.log(currentUserId);
-      if (!currentUserId) {
+
+      if (!currentUserId || currentUserId === "nill") {
         message.error(
           "Cannot save: user profile not loaded. Please try again.",
         );
@@ -304,17 +305,16 @@ const AddFieldgeneratedSheet = () => {
           ? formValues.expectDeliveryDate.format("YYYY-MM-DD")
           : null,
       };
+
       console.log(payload);
+
       if (isEditMode) {
-        // For update, you can choose to send userId (updatedBy) or not
-        // Most teams send it so backend knows who last modified
         await updateFGS({ id, ...payload }).unwrap();
         message.success("Field Guided Sheet updated");
       } else {
         await createFGS(payload).unwrap();
         message.success("Field Guided Sheet created");
 
-        // Reset form
         setFormValues({
           vendorId: "",
           orderDate: moment(),
@@ -398,8 +398,8 @@ const AddFieldgeneratedSheet = () => {
           <PageHeader
             title={
               isEditMode
-                ? "Edit Field generated Sheet"
-                : "Create Field generated Sheet"
+                ? "Edit Field Generated Sheet"
+                : "Create Field Generated Sheet"
             }
             subtitle="Temporary / negotiable purchase draft"
           />
@@ -416,7 +416,11 @@ const AddFieldgeneratedSheet = () => {
               <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
                 {/* Vendor */}
                 <Form.Item
-                  label="Vendor"
+                  label={
+                    <>
+                      Vendor <span className="required-star">*</span>
+                    </>
+                  }
                   name="vendorId"
                   rules={[{ required: true, message: "Vendor is required" }]}
                   style={{ flex: 1, minWidth: 300 }}
@@ -448,11 +452,17 @@ const AddFieldgeneratedSheet = () => {
                   </div>
                 </Form.Item>
 
-                {/* Order Date */}
+                {/* Order Date - restricted to today and future */}
                 <Form.Item
-                  label="Order Date"
+                  label={
+                    <>
+                      Order Date <span className="required-star">*</span>
+                    </>
+                  }
                   name="orderDate"
-                  rules={[{ required: true }]}
+                  rules={[
+                    { required: true, message: "Order date is required" },
+                  ]}
                   style={{ flex: 1, minWidth: 220 }}
                 >
                   <DatePicker
@@ -460,12 +470,16 @@ const AddFieldgeneratedSheet = () => {
                     onChange={(date) =>
                       setFormValues({
                         ...formValues,
-                        orderDate: date ? moment(date) : null,
+                        orderDate: date ? moment(date) : moment(),
                       })
                     }
                     dateFormat="dd/MM/yyyy"
                     className="ant-input"
-                    minDate={new Date(2020, 0, 1)}
+                    minDate={new Date()} // ← Prevents selecting past dates
+                    maxDate={new Date(2030, 11, 31)} // optional: reasonable future limit
+                    showMonthDropdown
+                    showYearDropdown
+                    dropdownMode="select"
                   />
                 </Form.Item>
               </div>
@@ -498,7 +512,7 @@ const AddFieldgeneratedSheet = () => {
                   style={{ flex: 1, minWidth: 180 }}
                 >
                   <Select
-                    disabled={!isEditMode} // allow changing only in edit mode (or remove this)
+                    disabled={!isEditMode}
                     value={formValues.status}
                     onChange={(v) =>
                       setFormValues({ ...formValues, status: v })

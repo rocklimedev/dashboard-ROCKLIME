@@ -149,7 +149,7 @@ exports.createPurchaseOrder = async (req, res) => {
 
   try {
     const { vendorId, items, expectDeliveryDate, fgsId } = req.body;
-    const userId = req.user?.id || null; // ← from auth middleware
+    const userId = req.user?.userId || null; // ← from auth middleware
 
     if (!vendorId || !Array.isArray(items) || items.length === 0) {
       return res

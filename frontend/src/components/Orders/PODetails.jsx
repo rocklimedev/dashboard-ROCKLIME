@@ -193,7 +193,7 @@ const PODetails = () => {
         <div className="row">
           <div className="col-sm-10 mx-auto">
             <Link
-              to="/po/list"
+              to="/purchase-manager"
               className="back-icon d-flex align-items-center fs-12 fw-medium mb-3 d-inline-flex"
             >
               <span className="d-flex justify-content-center align-items-center rounded-circle me-2">

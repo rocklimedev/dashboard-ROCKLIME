@@ -99,7 +99,7 @@ const AddPurchaseOrder = () => {
   // Form state
   const [formValues, setFormValues] = useState({
     vendorId: "",
-    orderDate: moment(),
+    orderDate: moment(), // Default to current date/time
     expectDeliveryDate: null,
     status: "pending",
     items: [],
@@ -400,8 +400,13 @@ const AddPurchaseOrder = () => {
               <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
                 {/* Vendor */}
                 <Form.Item
-                  label="Vendor"
+                  label={
+                    <>
+                      Vendor <span className="required-star">*</span>
+                    </>
+                  }
                   name="vendorId"
+                  required
                   rules={[{ required: true, message: "Vendor is required" }]}
                   style={{ flex: 1, minWidth: 300 }}
                 >
@@ -432,11 +437,17 @@ const AddPurchaseOrder = () => {
                   </div>
                 </Form.Item>
 
-                {/* Order Date */}
+                {/* Order Date - restricted to today and future */}
                 <Form.Item
-                  label="Order Date"
+                  label={
+                    <>
+                      Order Date <span className="required-star">*</span>
+                    </>
+                  }
                   name="orderDate"
-                  rules={[{ required: true }]}
+                  rules={[
+                    { required: true, message: "Order date is required" },
+                  ]}
                   style={{ flex: 1, minWidth: 220 }}
                 >
                   <DatePicker
@@ -444,12 +455,16 @@ const AddPurchaseOrder = () => {
                     onChange={(date) =>
                       setFormValues({
                         ...formValues,
-                        orderDate: date ? moment(date) : null,
+                        orderDate: date ? moment(date) : moment(),
                       })
                     }
                     dateFormat="dd/MM/yyyy"
                     className="ant-input"
-                    minDate={new Date(2020, 0, 1)}
+                    minDate={new Date()} // ← Prevents past dates
+                    maxDate={new Date(2030, 11, 31)} // optional reasonable future limit
+                    showMonthDropdown
+                    showYearDropdown
+                    dropdownMode="select"
                   />
                 </Form.Item>
               </div>
