@@ -1,24 +1,25 @@
 // models/InventoryHistory.js
-const { v7: uuidv7 } = require("uuid"); // Only imported when needed
+const { v7: uuidv7 } = require("uuid");
 
 module.exports = (sequelize, DataTypes) => {
   const InventoryHistory = sequelize.define(
     "InventoryHistory",
     {
       id: {
-        type: DataTypes.CHAR(36), // UUID as string (supports v4 & v7)
+        type: DataTypes.CHAR(36),
         primaryKey: true,
         allowNull: false,
-        comment: "UUID v7 - time-ordered, distributed-safe, sortable by time",
+        comment: "UUID v7 – time-ordered, distributed-safe, sortable by time",
       },
       productId: {
         type: DataTypes.CHAR(36),
         allowNull: false,
+        comment: "Reference to Product.id (UUID)",
       },
       change: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        comment: "Positive = stock in, Negative = stock out",
+        comment: "Positive = stock added, Negative = stock removed",
       },
       quantityAfter: {
         type: DataTypes.INTEGER,
@@ -32,21 +33,24 @@ module.exports = (sequelize, DataTypes) => {
           "sale",
           "return",
           "adjustment",
-          "correction"
+          "correction",
         ),
         allowNull: false,
       },
       orderNo: {
         type: DataTypes.STRING(50),
         allowNull: true,
+        comment: "Optional reference to order number",
       },
       userId: {
         type: DataTypes.CHAR(36),
         allowNull: true,
+        comment: "Optional reference to User.id (UUID)",
       },
       message: {
         type: DataTypes.TEXT,
         allowNull: true,
+        comment: "Human-readable description of the stock change",
       },
     },
     {
@@ -54,7 +58,8 @@ module.exports = (sequelize, DataTypes) => {
       timestamps: true,
       createdAt: "createdAt",
       updatedAt: "updatedAt",
-      paranoid: false,
+      paranoid: false, // soft deletes not needed for history
+
       indexes: [
         {
           name: "idx_product_created",
@@ -77,22 +82,43 @@ module.exports = (sequelize, DataTypes) => {
           fields: ["orderNo"],
         },
       ],
+
       hooks: {
-        beforeCreate: (record) => {
-          if (!record.id) {
-            record.id = uuidv7(); // Real time-ordered UUID v7
+        // This runs BEFORE validation → prevents notNull violation
+        beforeValidate: (instance) => {
+          if (!instance.id) {
+            instance.id = uuidv7();
           }
         },
-        beforeBulkCreate: (records) => {
-          records.forEach((record) => {
-            if (!record.id) {
-              record.id = uuidv7();
+
+        // Handle bulk creation safely
+        beforeBulkCreate: (instances) => {
+          instances.forEach((instance) => {
+            if (!instance.id) {
+              instance.id = uuidv7();
             }
           });
         },
+
+        // Optional: you can keep beforeCreate for other logic if needed later
+        // beforeCreate: (instance) => { ... }
       },
-    }
+    },
   );
+
+  // Optional: associations (add if you use them elsewhere)
+  InventoryHistory.associate = (models) => {
+    InventoryHistory.belongsTo(models.Product, {
+      foreignKey: "productId",
+      as: "product",
+    });
+
+    InventoryHistory.belongsTo(models.User, {
+      foreignKey: "userId",
+      as: "user",
+      constraints: false, // allow null userId
+    });
+  };
 
   return InventoryHistory;
 };

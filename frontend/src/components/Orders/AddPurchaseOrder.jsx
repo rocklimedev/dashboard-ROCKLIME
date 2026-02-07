@@ -384,6 +384,7 @@ const AddPurchaseOrder = () => {
       <div className="content">
         <div className="card">
           <PageHeader
+            exportOptions={{ pdf: false, excel: false }}
             title={isEditMode ? "Edit Purchase Order" : "Create Purchase Order"}
             subtitle="Manage purchase order details"
           />
