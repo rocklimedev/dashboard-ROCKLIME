@@ -36,6 +36,14 @@ const quotationVersionSchema = new mongoose.Schema(
         discountType: { type: String, default: "fixed" },
         tax: Number,
         total: Number,
+        // ──── NEW FIELDS ────
+        isOptionFor: { type: String, default: null },
+        optionType: {
+          type: String,
+          enum: ["variant", "upgrade", "addon", null],
+          default: null,
+        },
+        groupId: { type: String, default: null },
       },
     ],
     updatedBy: {
@@ -50,7 +58,7 @@ const quotationVersionSchema = new mongoose.Schema(
   },
   {
     timestamps: false,
-  }
+  },
 );
 
 // Keep the unique index
@@ -58,7 +66,7 @@ quotationVersionSchema.index({ quotationId: 1, version: 1 }, { unique: true });
 
 const QuotationVersion = mongoose.model(
   "QuotationVersion",
-  quotationVersionSchema
+  quotationVersionSchema,
 );
 
 module.exports = QuotationVersion;

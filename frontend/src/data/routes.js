@@ -134,13 +134,7 @@ const masterRoutes = [
     isSidebarActive: true,
     element: <CustomerList />,
   },
-  {
-    path: "/jobs/list",
-    element: <JobList />,
-    name: "Jobs",
-    icon: <FaBell />,
-    isSidebarActive: true,
-  },
+
   {
     path: "/tasks",
     name: "Tasks",
@@ -175,13 +169,7 @@ const masterRoutes = [
         isSidebarActive: true,
         element: <UserList />,
       },
-      {
-        path: "/orders/teams",
-        name: "Teams",
-        icon: <FaUsers />,
-        element: <TeamsList />,
-        isSidebarActive: true,
-      },
+
       {
         path: "/user/add",
         name: "Create User",
@@ -297,6 +285,20 @@ const masterRoutes = [
         isSidebarActive: false,
         element: <AddPurchaseOrder />,
         requiredPermission: { api: "edit", module: "purchase_orders" },
+      },
+      {
+        path: "/jobs/list",
+        element: <JobList />,
+        name: "Jobs",
+        icon: <FaBell />,
+        isSidebarActive: false,
+      },
+      {
+        path: "/orders/teams",
+        name: "Teams",
+        icon: <FaUsers />,
+        element: <TeamsList />,
+        isSidebarActive: false,
       },
       {
         path: "/product/add",

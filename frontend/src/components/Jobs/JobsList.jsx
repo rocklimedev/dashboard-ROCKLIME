@@ -126,18 +126,6 @@ const JobList = () => {
 
   const columns = [
     {
-      title: "ID",
-      dataIndex: "id",
-      key: "id",
-      ellipsis: true,
-      width: 180,
-      render: (text) => (
-        <Text copyable ellipsis={{ tooltip: text }}>
-          {text}
-        </Text>
-      ),
-    },
-    {
       title: "Type",
       dataIndex: "type",
       key: "type",

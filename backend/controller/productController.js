@@ -547,7 +547,9 @@ exports.getAllProducts = async (req, res) => {
               sequelize.fn(
                 "JSON_EXTRACT",
                 sequelize.col("Product.meta"),
-                sequelize.literal("'$.d11da9f9-3f2e-4536-8236-9671200cca4a'"), // ← literal string + single quotes
+                // ── This is the corrected version ────────────────────────────────
+                sequelize.literal(`'$."d11da9f9-3f2e-4536-8236-9671200cca4a"'`),
+                // ─────────────────────────────────────────────────────────────────
               ),
             ),
             Op.like,

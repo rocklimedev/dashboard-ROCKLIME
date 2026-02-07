@@ -27,6 +27,15 @@ const quotationItemsSchema = new mongoose.Schema({
       },
       tax: Number,
       total: Number,
+
+      // ──── NEW FIELDS ────
+      isOptionFor: { type: String, default: null },
+      optionType: {
+        type: String,
+        enum: ["variant", "upgrade", "addon", null],
+        default: null,
+      },
+      groupId: { type: String, default: null },
     },
   ],
 });

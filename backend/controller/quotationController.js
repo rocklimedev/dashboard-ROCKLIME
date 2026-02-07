@@ -6,87 +6,94 @@ const sequelize = require("../config/database");
 const { sendNotification } = require("./notificationController");
 const { Product, Quotation } = require("../models");
 const { Op } = require("sequelize");
-
+function generateGroupId() {
+  return "grp-" + uuidv4().slice(0, 8); // short & readable: grp-a1b2c3d4
+}
 // ---------------------------------------------------------------------
 // Helper: Calculate totals (unchanged)
 // ---------------------------------------------------------------------
 const calculateTotals = (
-  products,
+  items = [],
   extraDiscount = 0,
   extraDiscountType = "percent",
   shippingAmount = 0,
-  gst = 0
+  gst = 0,
 ) => {
-  let subTotalBeforeDiscount = 0;
+  // Only non-optional (main) items contribute to final amount
+  const mainItems = items.filter((item) => !item.isOptionFor);
+
+  let subTotal = 0;
   let totalItemDiscount = 0;
-  let taxableAmountTotal = 0;
+  let taxableAmount = 0;
   let itemTaxTotal = 0;
 
-  products.forEach((p) => {
+  mainItems.forEach((p) => {
     const price = Number(p.price) || 0;
     const qty = Number(p.quantity) || 1;
     const discount = Number(p.discount) || 0;
     const discountType = p.discountType || "percent";
     const taxRate = Number(p.tax) || 0;
 
-    const originalLineTotal = price * qty;
-    subTotalBeforeDiscount += originalLineTotal;
+    const lineGross = price * qty;
+    const discountAmount =
+      discountType === "percent"
+        ? lineGross * (discount / 100)
+        : discount * qty;
 
-    let lineTotalAfterDiscount;
-    let discountAmount;
+    const lineAfterDiscount = lineGross - discountAmount;
+    const taxAmount = lineAfterDiscount * (taxRate / 100);
 
-    if (discountType === "percent") {
-      discountAmount = originalLineTotal * (discount / 100);
-      lineTotalAfterDiscount = originalLineTotal - discountAmount;
-    } else {
-      discountAmount = discount * qty;
-      lineTotalAfterDiscount = originalLineTotal - discountAmount;
-    }
-
+    subTotal += lineGross;
     totalItemDiscount += discountAmount;
-    taxableAmountTotal += lineTotalAfterDiscount;
-
-    const taxAmount =
-      taxRate > 0 ? (lineTotalAfterDiscount * taxRate) / 100 : 0;
+    taxableAmount += lineAfterDiscount;
     itemTaxTotal += taxAmount;
   });
 
   const baseForExtraDiscount =
-    taxableAmountTotal + itemTaxTotal + Number(shippingAmount || 0);
+    taxableAmount + itemTaxTotal + Number(shippingAmount || 0);
 
   const extraDiscountAmount =
     extraDiscountType === "percent"
-      ? parseFloat(((baseForExtraDiscount * extraDiscount) / 100).toFixed(2))
-      : parseFloat(extraDiscount.toFixed(2));
+      ? (baseForExtraDiscount * Number(extraDiscount)) / 100
+      : Number(extraDiscount);
 
-  const amountBeforeGstRaw = baseForExtraDiscount - extraDiscountAmount;
-  const amountBeforeGst = parseFloat(amountBeforeGstRaw.toFixed(2));
+  const amountBeforeGst = baseForExtraDiscount - extraDiscountAmount;
 
+  // Your original paise-based rounding
   const rupees = Math.floor(amountBeforeGst);
   const paise = Math.round((amountBeforeGst - rupees) * 100);
-
   let roundOff = 0;
   if (paise > 0 && paise <= 50) {
-    roundOff = parseFloat((-paise / 100).toFixed(2));
+    roundOff = -paise / 100;
   } else if (paise > 50) {
-    roundOff = parseFloat(((100 - paise) / 100).toFixed(2));
+    roundOff = (100 - paise) / 100;
   }
 
-  const roundedAmount = parseFloat((amountBeforeGst + roundOff).toFixed(2));
-  const gstAmount =
-    gst > 0 ? parseFloat(((roundedAmount * gst) / 100).toFixed(2)) : 0;
-  const finalAmount = parseFloat((roundedAmount + gstAmount).toFixed(2));
+  const roundedAmount = amountBeforeGst + roundOff;
+  const gstAmount = roundedAmount * (Number(gst || 0) / 100);
+  const finalAmount = roundedAmount + gstAmount;
+
+  // Optional items (for display/reference only)
+  const optionalItems = items.filter((item) => !!item.isOptionFor);
+  let optionalPotential = 0;
+  optionalItems.forEach((p) => {
+    optionalPotential += (Number(p.price) || 0) * (Number(p.quantity) || 1);
+  });
 
   return {
-    subTotal: parseFloat(subTotalBeforeDiscount.toFixed(2)),
-    totalItemDiscount: parseFloat(totalItemDiscount.toFixed(2)),
-    itemTax: parseFloat(itemTaxTotal.toFixed(2)),
-    extraDiscountAmount,
-    amountBeforeGst,
-    roundOff,
-    roundedAmount,
-    gstAmount,
-    finalAmount,
+    subTotal: Number(subTotal.toFixed(2)),
+    totalItemDiscount: Number(totalItemDiscount.toFixed(2)),
+    itemTax: Number(itemTaxTotal.toFixed(2)),
+    extraDiscountAmount: Number(extraDiscountAmount.toFixed(2)),
+    shippingAmount: Number(shippingAmount || 0),
+    amountBeforeGst: Number(amountBeforeGst.toFixed(2)),
+    roundOff: Number(roundOff.toFixed(2)),
+    gstAmount: Number(gstAmount.toFixed(2)),
+    finalAmount: Number(finalAmount.toFixed(2)),
+
+    // Informational only
+    optionalItemsCount: optionalItems.length,
+    optionalPotentialTotal: Number(optionalPotential.toFixed(2)),
   };
 };
 
@@ -148,43 +155,40 @@ async function generateQuotationNumber(t) {
     }
 
     console.warn(
-      `Collision detected: ${candidate} — retrying (${attempt}/${MAX_ATTEMPTS})`
+      `Collision detected: ${candidate} — retrying (${attempt}/${MAX_ATTEMPTS})`,
     );
   }
 
   throw new Error(
-    `Could not generate unique quotation number after ${MAX_ATTEMPTS} attempts`
+    `Could not generate unique quotation number after ${MAX_ATTEMPTS} attempts`,
   );
 }
-// ---------------------------------------------------------------------
-// CREATE QUOTATION – WITH SERVER-GENERATED reference_number
-// ---------------------------------------------------------------------
+// ─────────────────────────────────────────────
+// CREATE QUOTATION
+// ─────────────────────────────────────────────
 exports.createQuotation = async (req, res) => {
   const t = await sequelize.transaction();
-  let mongoItem;
 
   try {
     let {
-      products,
+      products: incomingProducts,
       extraDiscount = 0,
       extraDiscountType = "percent",
       shippingAmount = 0,
       gst = 0,
-      // IGNORE client-provided reference_number if sent
       ...quotationData
     } = req.body;
 
-    // 1. Safe parsing
-    if (typeof products === "string") {
+    // Parse if string
+    if (typeof incomingProducts === "string") {
       try {
-        products = JSON.parse(products);
+        incomingProducts = JSON.parse(incomingProducts);
       } catch {
         return res.status(400).json({ error: "Invalid products JSON" });
       }
     }
 
-    // 2. Validation
-    if (!Array.isArray(products) || products.length === 0) {
+    if (!Array.isArray(incomingProducts) || incomingProducts.length === 0) {
       return res
         .status(400)
         .json({ error: "At least one product is required" });
@@ -193,9 +197,221 @@ exports.createQuotation = async (req, res) => {
       return res.status(400).json({ error: "Customer ID is required" });
     }
 
-    // 3. Fetch product details
+    // Fetch product details
     const productIds = [
-      ...new Set(products.map((p) => p.productId || p.id).filter(Boolean)),
+      ...new Set(
+        incomingProducts.map((p) => p.productId || p.id).filter(Boolean),
+      ),
+    ];
+
+    const productMap = {};
+    if (productIds.length > 0) {
+      const dbProducts = await Product.findAll({
+        where: { productId: productIds },
+        attributes: [
+          "productId",
+          "name",
+          "images",
+          "product_code",
+          "meta",
+          "tax",
+          "discountType",
+        ],
+        transaction: t,
+      });
+
+      dbProducts.forEach((p) => {
+        let imageUrl = null;
+        if (p.images) {
+          try {
+            const imgs = JSON.parse(p.images);
+            if (Array.isArray(imgs) && imgs.length) imageUrl = imgs[0];
+          } catch {}
+        }
+        productMap[p.productId] = {
+          name: p.name?.trim() || "Unnamed Product",
+          imageUrl,
+          productCode: p.product_code || null,
+          companyCode: p.meta?.["d11da9f9-3f2e-4536-8236-9671200cca4a"] || null,
+          tax: p.tax || 0,
+          discountType: p.discountType || "percent",
+        };
+      });
+    }
+
+    // Enrich products & assign groups
+    const enrichedProducts = incomingProducts.map((p) => {
+      const id = p.productId || p.id;
+      const db = productMap[id] || {};
+
+      const price = Number(p.price || 0);
+      const qty = Number(p.quantity) || 1;
+      const discount = Number(p.discount || 0);
+      const discountType = p.discountType || db.discountType || "percent";
+
+      const isOption = !!p.isOptionFor;
+      const groupId = p.groupId || (isOption ? null : generateGroupId());
+
+      let lineTotalAfterDiscount =
+        discountType === "percent"
+          ? price * qty * (1 - discount / 100)
+          : (price - discount) * qty;
+
+      return {
+        productId: id,
+        name: p.name || db.name || "Unknown Product",
+        imageUrl: p.imageUrl || db.imageUrl || null,
+        productCode: p.productCode || db.productCode || null,
+        companyCode: p.companyCode || db.companyCode || null,
+        quantity: qty,
+        price: Number(price.toFixed(2)),
+        discount: Number(discount.toFixed(2)),
+        discountType,
+        tax: Number(p.tax || db.tax || 0),
+        total: Number(lineTotalAfterDiscount.toFixed(2)),
+        isOptionFor: isOption ? p.isOptionFor : null,
+        optionType: p.optionType || null,
+        groupId: groupId || null,
+      };
+    });
+
+    const totals = calculateTotals(
+      enrichedProducts,
+      Number(extraDiscount),
+      extraDiscountType,
+      Number(shippingAmount),
+      Number(gst),
+    );
+
+    const reference_number = await generateQuotationNumber(t);
+
+    const quotation = await Quotation.create(
+      {
+        ...quotationData,
+        reference_number,
+        products: enrichedProducts,
+        extraDiscount: Number(extraDiscount) || 0,
+        extraDiscountType: extraDiscountType || "percent",
+        discountAmount: totals.extraDiscountAmount,
+        shippingAmount: Number(shippingAmount) || 0,
+        gst: Number(gst) || 0,
+        gstAmount: totals.gstAmount,
+        roundOff: totals.roundOff,
+        finalAmount: totals.finalAmount,
+      },
+      { transaction: t },
+    );
+
+    // When saving to QuotationItem
+    await QuotationItem.create({
+      quotationId: quotation.quotationId,
+      items: enrichedProducts.map((item) => ({
+        productId: item.productId,
+        name: item.name,
+        imageUrl: item.imageUrl,
+        quantity: item.quantity,
+        price: item.price,
+        discount: item.discount,
+        discountType: item.discountType,
+        tax: item.tax,
+        total: item.total,
+        // These were missing!
+        isOptionFor: item.isOptionFor || null,
+        optionType: item.optionType || null,
+        groupId: item.groupId || null,
+        // optional: companyCode, productCode if you want them
+      })),
+    });
+
+    await t.commit();
+
+    return res.status(201).json({
+      message: "Quotation created successfully",
+      quotation: {
+        ...quotation.toJSON(),
+        finalAmount: totals.finalAmount,
+      },
+      calculated: totals,
+    });
+  } catch (error) {
+    await t.rollback();
+    console.error("Create Quotation Error:", error);
+    return res.status(500).json({
+      error: "Failed to create quotation",
+      details: error.message,
+    });
+  }
+};
+
+// ─────────────────────────────────────────────
+// UPDATE QUOTATION
+// ─────────────────────────────────────────────
+exports.updateQuotation = async (req, res) => {
+  const t = await sequelize.transaction();
+
+  try {
+    const { id } = req.params;
+    let {
+      products: incomingProducts,
+      followupDates = [],
+      extraDiscount = 0,
+      extraDiscountType = "percent",
+      shippingAmount = 0,
+      gst = 0,
+      roundOff = 0,
+      ...quotationData
+    } = req.body;
+
+    if (!id) {
+      await t.rollback();
+      return res.status(400).json({ message: "Quotation ID is required" });
+    }
+
+    const currentQuotation = await Quotation.findOne({
+      where: { quotationId: id },
+      transaction: t,
+    });
+
+    if (!currentQuotation) {
+      await t.rollback();
+      return res.status(404).json({ message: "Quotation not found" });
+    }
+
+    // Save version (non-blocking on failure)
+    const latestVersion = await QuotationVersion.findOne({
+      quotationId: id,
+    }).sort({ version: -1 });
+
+    let newVersionNumber = latestVersion ? latestVersion.version + 1 : 1;
+
+    const currentMongoItems = await QuotationItem.findOne({ quotationId: id });
+
+    try {
+      await QuotationVersion.create({
+        quotationId: id,
+        version: newVersionNumber,
+        quotationData: currentQuotation.toJSON(),
+        quotationItems: currentMongoItems?.items || [],
+        updatedBy: req.user?.userId || "unknown",
+        updatedAt: new Date(),
+      });
+    } catch (verErr) {
+      console.warn("Version save failed (non-critical):", verErr.message);
+      // continue anyway
+    }
+
+    if (!Array.isArray(incomingProducts) || incomingProducts.length === 0) {
+      await t.rollback();
+      return res
+        .status(400)
+        .json({ error: "At least one product is required" });
+    }
+
+    // Fetch product details (same as create)
+    const productIds = [
+      ...new Set(
+        incomingProducts.map((p) => p.productId || p.id).filter(Boolean),
+      ),
     ];
     const productMap = {};
 
@@ -233,8 +449,8 @@ exports.createQuotation = async (req, res) => {
       });
     }
 
-    // 4. Enrich products
-    const enrichedProducts = products.map((p) => {
+    // Enrich incoming products
+    const enrichedProducts = incomingProducts.map((p) => {
       const id = p.productId || p.id;
       const db = productMap[id] || {};
 
@@ -243,283 +459,8 @@ exports.createQuotation = async (req, res) => {
       const discount = Number(p.discount || 0);
       const discountType = p.discountType || db.discountType || "percent";
 
-      let lineTotalAfterDiscount;
-      if (discountType === "percent") {
-        lineTotalAfterDiscount = price * qty * (1 - discount / 100);
-      } else {
-        lineTotalAfterDiscount = (price - discount) * qty;
-      }
-
-      return {
-        productId: id,
-        name: p.name || db.name || "Unknown Product",
-        imageUrl: p.imageUrl || db.imageUrl || null,
-        productCode: p.productCode || db.productCode || null,
-        companyCode: p.companyCode || db.companyCode || null,
-        quantity: qty,
-        price: parseFloat(price.toFixed(2)),
-        discount: parseFloat(discount.toFixed(2)),
-        discountType,
-        tax: Number(p.tax || db.tax || 0),
-        total: parseFloat(lineTotalAfterDiscount.toFixed(2)),
-      };
-    });
-
-    // 5. Server-side calculation
-    const {
-      subTotal,
-      totalItemDiscount,
-      itemTax,
-      extraDiscountAmount,
-      roundOff,
-      gstAmount,
-      finalAmount,
-    } = calculateTotals(
-      enrichedProducts,
-      Number(extraDiscount),
-      extraDiscountType,
-      Number(shippingAmount),
-      Number(gst)
-    );
-
-    // 6. Generate unique daily sequential reference_number
-    const reference_number = await generateQuotationNumber(t);
-
-    // 7. Save to MySQL
-    const quotation = await Quotation.create(
-      {
-        ...quotationData,
-        reference_number, // ← generated here
-        products: enrichedProducts,
-        extraDiscount: Number(extraDiscount) || 0,
-        extraDiscountType: extraDiscountType || "percent",
-        discountAmount: parseFloat(extraDiscountAmount.toFixed(2)),
-        shippingAmount: Number(shippingAmount) || 0,
-        gst: Number(gst) || 0,
-        gstAmount: parseFloat(gstAmount.toFixed(2)),
-        roundOff: parseFloat(roundOff.toFixed(2)),
-        finalAmount: parseFloat(finalAmount.toFixed(2)),
-        subTotal: parseFloat(subTotal.toFixed(2)),
-      },
-      { transaction: t }
-    );
-
-    // 8. Save items to MongoDB
-    await QuotationItem.create({
-      quotationId: quotation.quotationId,
-      items: enrichedProducts.map((p) => ({
-        productId: p.productId,
-        name: p.name,
-        imageUrl: p.imageUrl,
-        quantity: p.quantity,
-        price: p.price,
-        discount: p.discount,
-        discountType: p.discountType,
-        tax: p.tax,
-        total: p.total,
-      })),
-    }); // Note: MongoDB session if using transactions there too
-
-    await t.commit();
-
-    return res.status(201).json({
-      message: "Quotation created successfully",
-      quotation: {
-        ...quotation.toJSON(),
-        reference_number,
-        finalAmount: parseFloat(finalAmount.toFixed(2)),
-      },
-      calculated: {
-        subTotal,
-        totalItemDiscount,
-        itemTax,
-        extraDiscountAmount,
-        shippingAmount,
-        gstAmount,
-        roundOff,
-        finalAmount,
-      },
-    });
-  } catch (error) {
-    if (t) await t.rollback();
-    if (mongoItem) {
-      await QuotationItem.deleteOne({ _id: mongoItem._id }).catch(() => {});
-    }
-
-    console.error("Create Quotation Error:", error);
-    return res.status(500).json({
-      error: "Failed to create quotation",
-      details: error.message,
-    });
-  }
-};
-// ========== UPDATE FUNCTION ==========
-exports.updateQuotation = async (req, res) => {
-  const t = await sequelize.transaction();
-
-  try {
-    const { id } = req.params;
-    const {
-      products: incomingProducts,
-      followupDates = [],
-      extraDiscount = 0,
-      extraDiscountType = "percent",
-      shippingAmount = 0,
-      gst = 0,
-      roundOff = 0,
-      ...quotationData
-    } = req.body;
-
-    if (!id) {
-      await t.rollback();
-      return res.status(400).json({ message: "Quotation ID is required" });
-    }
-
-    // 1. Fetch current quotation (PostgreSQL)
-    const currentQuotation = await Quotation.findOne({
-      where: { quotationId: id },
-      transaction: t,
-    });
-
-    if (!currentQuotation) {
-      await t.rollback();
-      return res.status(404).json({ message: "Quotation not found" });
-    }
-
-    // 2. Fetch current items from MongoDB
-    const currentMongoItems = await QuotationItem.findOne({ quotationId: id });
-
-    // 3. Determine next version number (safe)
-    const latestVersion = await QuotationVersion.findOne(
-      { quotationId: id },
-      { version: 1 },
-      { sort: { version: -1 } } // This is now correct!
-    )
-      .lean()
-      .exec(); // Optional but good practice
-
-    let newVersionNumber = latestVersion ? latestVersion.version + 1 : 1;
-
-    // 4. SAVE VERSION — WITH AUTOMATIC CONFLICT RESOLUTION
-    const saveVersion = async (attempt = 1) => {
-      try {
-        await QuotationVersion.create({
-          quotationId: id,
-          version: newVersionNumber,
-          quotationData: currentQuotation.toJSON(),
-          quotationItems: currentMongoItems?.items || [],
-          updatedBy: req.user?.userId || "unknown",
-          updatedAt: new Date(),
-        });
-        console.log(`Version ${newVersionNumber} saved successfully`);
-        return true;
-      } catch (err) {
-        if (err.code === 11000 && attempt <= 10) {
-          console.warn(
-            `Version conflict on ${newVersionNumber}, retrying with ${
-              newVersionNumber + 1
-            }...`
-          );
-          newVersionNumber += 1; // increment globally
-          return await saveVersion(attempt + 1);
-        } else {
-          console.error("Failed to save version after retries:", err.message);
-          return false; // non-blocking
-        }
-      }
-    };
-
-    await saveVersion(); // fire and forget (safe)
-
-    // 5. Validate products
-    const products = Array.isArray(incomingProducts) ? incomingProducts : [];
-    if (products.length === 0) {
-      await t.rollback();
-      return res
-        .status(400)
-        .json({ error: "At least one product is required" });
-    }
-
-    // 6. Build product name/image map
-    const productIds = [
-      ...new Set(products.map((p) => p.productId || p.id).filter(Boolean)),
-    ];
-    const productMap = {};
-
-    if (productIds.length > 0) {
-      const dbProducts = await Product.findAll({
-        where: { productId: productIds },
-        attributes: [
-          "productId",
-          "name",
-          "images",
-          "product_code",
-          "meta",
-          "tax",
-          "discountType",
-        ],
-        transaction: t,
-      });
-
-      dbProducts.forEach((p) => {
-        let imageUrl = null;
-        if (p.images) {
-          try {
-            const imgs = JSON.parse(p.images);
-            if (Array.isArray(imgs) && imgs.length > 0) imageUrl = imgs[0];
-          } catch {}
-        }
-        productMap[p.productId] = {
-          name: p.name?.trim() || "Unnamed Product",
-          imageUrl,
-          productCode: p.product_code || null,
-          companyCode: p.meta?.["d11da9f9-3f2e-4536-8236-9671200cca4a"] || null,
-          tax: p.tax || 0,
-          discountType: p.discountType || "percent",
-        };
-      });
-    }
-
-    // 7. Server-side total calculation (source of truth)
-    const totals = calculateTotals(
-      products,
-      Number(extraDiscount),
-      extraDiscountType,
-      Number(shippingAmount),
-      Number(gst)
-    );
-
-    const finalAmount = parseFloat(
-      (totals.finalAmount + Number(roundOff || 0)).toFixed(2)
-    );
-
-    // 8. Update PostgreSQL record
-    await Quotation.update(
-      {
-        ...quotationData,
-        products,
-        extraDiscount: Number(extraDiscount) || null,
-        extraDiscountType,
-        discountAmount:
-          totals.extraDiscountAmount > 0 ? totals.extraDiscountAmount : null,
-        shippingAmount: Number(shippingAmount) || null,
-        gst: Number(gst) || null,
-        gstAmount: totals.gstAmount > 0 ? totals.gstAmount : null,
-        roundOff: Number(roundOff) || 0,
-        finalAmount,
-        followupDates: followupDates.length > 0 ? followupDates : null,
-      },
-      { where: { quotationId: id }, transaction: t }
-    );
-
-    // 9. Update MongoDB items
-    // In updateQuotation – mongoItems block
-    const mongoItems = products.map((p) => {
-      const fallback = productMap[p.productId || p.id] || {};
-      const qty = Number(p.quantity) || 1;
-      const price = Number(p.price) || 0;
-      const discount = Number(p.discount) || 0;
-      const discountType = p.discountType || fallback.discountType || "percent";
+      const isOption = !!p.isOptionFor;
+      const groupId = p.groupId || (isOption ? null : generateGroupId());
 
       let total = p.total ? Number(p.total) : 0;
       if (!total) {
@@ -530,25 +471,55 @@ exports.updateQuotation = async (req, res) => {
       }
 
       return {
-        productId: p.productId || p.id,
-        name: p.name || fallback.name || "Unknown Product",
-        imageUrl: p.imageUrl || fallback.imageUrl || null,
-        productCode: p.productCode || fallback.productCode || null, // ← NEW
-        companyCode: p.companyCode || fallback.companyCode || null, // ← NEW
+        productId: id,
+        name: p.name || db.name || "Unknown Product",
+        imageUrl: p.imageUrl || db.imageUrl || null,
+        productCode: p.productCode || db.productCode || null,
+        companyCode: p.companyCode || db.companyCode || null,
         quantity: qty,
-        price: parseFloat(price.toFixed(2)),
-        discount: parseFloat(discount.toFixed(2)),
+        price: Number(price.toFixed(2)),
+        discount: Number(discount.toFixed(2)),
         discountType,
-        tax: Number(p.tax || fallback.tax || 0),
-        total: parseFloat(total.toFixed(2)),
+        tax: Number(p.tax || db.tax || 0),
+        total: Number(total.toFixed(2)),
+        isOptionFor: isOption ? p.isOptionFor : null,
+        optionType: p.optionType || null,
+        groupId: groupId || null,
       };
     });
 
-    if (mongoItems.length > 0) {
+    const totals = calculateTotals(
+      enrichedProducts,
+      Number(extraDiscount),
+      extraDiscountType,
+      Number(shippingAmount),
+      Number(gst),
+    );
+
+    // Update main record
+    await Quotation.update(
+      {
+        ...quotationData,
+        products: enrichedProducts,
+        extraDiscount: Number(extraDiscount) || 0,
+        extraDiscountType,
+        discountAmount: totals.extraDiscountAmount,
+        shippingAmount: Number(shippingAmount) || 0,
+        gst: Number(gst) || 0,
+        gstAmount: totals.gstAmount,
+        roundOff: totals.roundOff,
+        finalAmount: totals.finalAmount,
+        followupDates: followupDates.length > 0 ? followupDates : null,
+      },
+      { where: { quotationId: id }, transaction: t },
+    );
+
+    // Update MongoDB items
+    if (enrichedProducts.length > 0) {
       await QuotationItem.updateOne(
         { quotationId: id },
-        { $set: { items: mongoItems } },
-        { upsert: true }
+        { $set: { items: enrichedProducts } },
+        { upsert: true },
       );
     } else {
       await QuotationItem.deleteOne({ quotationId: id });
@@ -556,23 +527,22 @@ exports.updateQuotation = async (req, res) => {
 
     await t.commit();
 
-    // Optional notification
-    // await sendNotification({ ... });
-
     return res.status(200).json({
       message: "Quotation updated successfully",
       version: newVersionNumber,
-      finalAmount,
+      finalAmount: totals.finalAmount,
+      calculated: totals,
     });
   } catch (error) {
     await t.rollback();
-    console.error("updateQuotation failed:", error);
+    console.error("Update Quotation Error:", error);
     return res.status(500).json({
       error: "Failed to update quotation",
       details: error.message,
     });
   }
 };
+
 // EXPORT TO EXCEL – includes shippingAmount
 exports.exportQuotation = async (req, res) => {
   try {
@@ -614,7 +584,7 @@ exports.exportQuotation = async (req, res) => {
       quotation.extraDiscount || 0,
       quotation.extraDiscountType,
       quotation.shippingAmount || 0,
-      quotation.gst || 0
+      quotation.gst || 0,
     );
 
     const finalTotal =
@@ -765,13 +735,13 @@ exports.exportQuotation = async (req, res) => {
 
     res.setHeader(
       "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     );
     res.setHeader(
       "Content-Disposition",
       `attachment; filename=quotation_${id}${
         version ? `_v${version}` : ""
-      }.xlsx`
+      }.xlsx`,
     );
     res.send(buffer);
   } catch (error) {
@@ -839,7 +809,7 @@ exports.cloneQuotation = async (req, res) => {
   }
 };
 
-// RESTORE VERSION – already covered by QuotationVersion data
+// RESTORE VERSION
 exports.restoreQuotationVersion = async (req, res) => {
   const t = await sequelize.transaction();
   try {
@@ -856,14 +826,14 @@ exports.restoreQuotationVersion = async (req, res) => {
 
     await Quotation.update(
       { ...versionData.quotationData },
-      { where: { quotationId: id }, transaction: t }
+      { where: { quotationId: id }, transaction: t },
     );
 
     if (versionData.quotationItems?.length > 0) {
       await QuotationItem.updateOne(
         { quotationId: id },
         { $set: { items: versionData.quotationItems } },
-        { upsert: true }
+        { upsert: true },
       );
     } else {
       await QuotationItem.deleteOne({ quotationId: id });
@@ -888,22 +858,46 @@ exports.restoreQuotationVersion = async (req, res) => {
   }
 };
 
-/* ------------------------------------------------------------------ */
-/* The rest of your controller (getById, getAll, delete, getVersions) */
-/* remains unchanged – they already return the new fields via the model */
-/* ------------------------------------------------------------------ */
 // Get a single quotation by ID with items
 exports.getQuotationById = async (req, res) => {
   try {
     const quotation = await Quotation.findByPk(req.params.id);
-    if (!quotation)
+    if (!quotation) {
       return res.status(404).json({ message: "Quotation not found" });
+    }
 
-    const items = await QuotationItem.findOne({ quotationId: req.params.id });
+    const mongoDoc = await QuotationItem.findOne({
+      quotationId: req.params.id,
+    });
+    const items = mongoDoc?.items || [];
+
+    // Group for frontend convenience
+    const grouped = {};
+    items.forEach((item) => {
+      const gid = item.groupId || "ungrouped";
+      if (!grouped[gid]) grouped[gid] = { main: null, options: [] };
+      if (!item.isOptionFor) {
+        grouped[gid].main = item;
+      } else {
+        grouped[gid].options.push(item);
+      }
+    });
+
+    const groupedItems = Object.values(grouped);
+
+    const calculated = calculateTotals(
+      items,
+      quotation.extraDiscount,
+      quotation.extraDiscountType,
+      quotation.shippingAmount,
+      quotation.gst,
+    );
 
     res.status(200).json({
       ...quotation.toJSON(),
-      items: items?.items || [],
+      items,
+      groupedItems,
+      calculated,
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
