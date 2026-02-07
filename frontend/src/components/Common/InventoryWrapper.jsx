@@ -61,7 +61,9 @@ const InventoryWrapper = () => {
     return [10, 25, 50, 100].includes(limit) ? limit : 50;
   });
 
-  const [search, setSearch] = useState(queryParams.get("search") || "");
+  // Search initializes from URL once, then becomes local-only (no URL sync)
+  const [search, setSearch] = useState(() => queryParams.get("search") || "");
+
   const [lowStockThreshold, setLowStockThreshold] = useState(10);
   const [maxStockFilter, setMaxStockFilter] = useState(null);
   const [priceRange, setPriceRange] = useState([null, null]);
@@ -88,7 +90,7 @@ const InventoryWrapper = () => {
   } = useGetAllProductsQuery({
     page: currentPage,
     limit: pageSize,
-    search: search.trim() || undefined, // optional: enable server-side search if backend supports it
+    search: search.trim() || undefined, // optional: already sent to backend if supported
   });
 
   const [addStock] = useAddStockMutation();
@@ -110,7 +112,6 @@ const InventoryWrapper = () => {
   useEffect(() => {
     if (queryParams.has("low_stock") && activeTab === "all") {
       setActiveTab("low-stock");
-      // Clean up the flag (replace history)
       const newParams = new URLSearchParams(location.search);
       newParams.delete("low_stock");
       newParams.set("tab", "low-stock");
@@ -120,14 +121,14 @@ const InventoryWrapper = () => {
     }
   }, [location.search, activeTab, navigate]);
 
-  // Update URL when tab, page, limit, or search changes
+  // Update URL when tab, page, or limit changes — but NOT when search changes
   useEffect(() => {
     const params = new URLSearchParams();
 
     if (activeTab !== "all") params.set("tab", activeTab);
     if (currentPage > 1) params.set("page", currentPage);
     if (pageSize !== 50) params.set("limit", pageSize);
-    if (search.trim()) params.set("search", search.trim());
+    // IMPORTANT: search is intentionally NOT added here anymore
 
     const searchString = params.toString();
     const newSearch = searchString ? `?${searchString}` : "";
@@ -135,7 +136,7 @@ const InventoryWrapper = () => {
     if (newSearch !== location.search) {
       navigate(`${location.pathname}${newSearch}`, { replace: true });
     }
-  }, [activeTab, currentPage, pageSize, search, navigate, location.pathname]);
+  }, [activeTab, currentPage, pageSize, navigate, location.pathname]);
 
   // Reset page when tab changes
   useEffect(() => {
@@ -196,7 +197,7 @@ const InventoryWrapper = () => {
     return null;
   };
 
-  // Filtering
+  // Filtering (client-side)
   const filteredProducts = useMemo(() => {
     const term = search.toLowerCase().trim();
     return products.filter((p) => {

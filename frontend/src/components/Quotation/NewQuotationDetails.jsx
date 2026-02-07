@@ -23,7 +23,7 @@ import useProductsData from "../../data/useProductdata";
 import { useGetAllBrandsQuery } from "../../api/brandsApi";
 
 import { exportToPDF, exportToExcel } from "./hooks/exportHelpers";
-import { amountInWords } from "./hooks/calcHelpers"; // We still need this for words
+import { amountInWords } from "./hooks/calcHelpers";
 
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
@@ -35,7 +35,7 @@ const NewQuotationsDetails = () => {
   const [isExporting, setIsExporting] = useState(false);
   const quotationRef = useRef(null);
 
-  // FETCH QUOTATION & VERSIONS
+  // ── Data Fetching ───────────────────────────────────────────────────────
   const {
     data: quotation,
     isLoading: qLoading,
@@ -46,7 +46,6 @@ const NewQuotationsDetails = () => {
     useGetQuotationVersionsQuery(id);
   const { data: brandsData } = useGetAllBrandsQuery();
 
-  // SAFE PARSE PRODUCTS / ITEMS
   const safeParse = (data) => {
     if (!data) return [];
     if (Array.isArray(data)) return data;
@@ -60,7 +59,7 @@ const NewQuotationsDetails = () => {
     return [];
   };
 
-  // VERSIONS LOGIC
+  // ── Versions Logic ──────────────────────────────────────────────────────
   const versions = useMemo(() => {
     const list = Array.isArray(versionsData) ? [...versionsData] : [];
     if (quotation) {
@@ -87,12 +86,30 @@ const NewQuotationsDetails = () => {
     };
   }, [activeVersion, versions, quotation]);
 
-  const activeProducts = activeVersionData.products || [];
+  // ── Correct separation: use quotation.products (which has isOptionFor) ──
+  const classificationSource =
+    quotation?.products || activeVersionData.products || [];
+
+  const mainProducts = useMemo(
+    () =>
+      classificationSource.filter(
+        (p) => p.isOptionFor === null || p.isOptionFor === undefined,
+      ),
+    [classificationSource],
+  );
+
+  const optionalProducts = useMemo(
+    () =>
+      classificationSource.filter(
+        (p) => p.isOptionFor !== null && p.isOptionFor !== undefined,
+      ),
+    [classificationSource],
+  );
 
   const { productsData, loading: prodLoading } =
-    useProductsData(activeProducts);
+    useProductsData(classificationSource);
 
-  // Customer & Address
+  // ── Customer & Address ──────────────────────────────────────────────────
   let customerId = activeVersionData.quotation?.customerId;
   let shipToId = activeVersionData.quotation?.shipTo;
 
@@ -117,17 +134,15 @@ const NewQuotationsDetails = () => {
     customer?.mobileNumber || customer?.phone || "XXXXXXXXXX";
 
   const customerAddress = address
-    ? `${address.street || ""}, ${address.city || ""}, ${
-        address.state || ""
-      } - ${address.postalCode || ""}`
+    ? `${address.street || ""}, ${address.city || ""}, ${address.state || ""} - ${address.postalCode || ""}`
         .replace(/^,\s*|,*\s*$/g, "")
         .trim()
     : "--";
 
-  // BRAND NAMES
+  // ── Brand Names (only main products) ────────────────────────────────────
   const brandNames = useMemo(() => {
     const set = new Set();
-    activeProducts.forEach((p) => {
+    mainProducts.forEach((p) => {
       const pd = productsData?.find((x) => x.productId === p.productId) || {};
       let brand =
         pd.brandName ||
@@ -138,9 +153,9 @@ const NewQuotationsDetails = () => {
       if (brand && brand !== "N/A") set.add(brand.trim());
     });
     return set.size ? [...set].join(" / ") : "GROHE / AMERICAN STANDARD";
-  }, [activeProducts, productsData, brandsData]);
+  }, [mainProducts, productsData, brandsData]);
 
-  // ── BACKEND-DRIVEN VALUES (preferred over recalculation) ────────────────
+  // ── Calculations ── only from main products + backend values ────────────
   const backendFinalAmount = Number(quotation?.finalAmount ?? 0);
   const backendRoundOff = Number(quotation?.roundOff ?? 0);
   const backendExtraDiscount = Number(quotation?.extraDiscount ?? 0);
@@ -148,20 +163,18 @@ const NewQuotationsDetails = () => {
     quotation?.extraDiscountType ?? "fixed"
   ).toLowerCase();
 
-  // Fallback subtotal: sum of line totals from items/products
   const displaySubtotal = useMemo(() => {
-    return activeProducts.reduce((sum, p) => {
+    return mainProducts.reduce((sum, p) => {
       const item =
         quotation?.items?.find((i) => i.productId === p.productId) ||
         quotation?.products?.find((i) => i.productId === p.productId) ||
         p;
       return sum + Number(item?.total ?? 0);
     }, 0);
-  }, [activeProducts, quotation]);
+  }, [mainProducts, quotation]);
 
-  // Optional: display product-level discount (for transparency only)
   const displayProductDiscount = useMemo(() => {
-    return activeProducts.reduce((sum, p) => {
+    return mainProducts.reduce((sum, p) => {
       const item =
         quotation?.items?.find((i) => i.productId === p.productId) ||
         quotation?.products?.find((i) => i.productId === p.productId) ||
@@ -170,7 +183,7 @@ const NewQuotationsDetails = () => {
       const discounted = Number(item?.total ?? 0);
       return sum + (orig - discounted);
     }, 0);
-  }, [activeProducts, quotation]);
+  }, [mainProducts, quotation]);
 
   const finalAmountInWords = amountInWords(Math.round(backendFinalAmount));
 
@@ -182,7 +195,7 @@ const NewQuotationsDetails = () => {
     return `${title.trim()} - ${ref}`;
   }, [quotation, id]);
 
-  // EXPORT HANDLER (unchanged)
+  // ── Export Handler ──────────────────────────────────────────────────────
   const handleExport = async () => {
     if (!quotationRef.current) return;
     setIsExporting(true);
@@ -206,7 +219,7 @@ const NewQuotationsDetails = () => {
         );
       } else {
         await exportToExcel(
-          activeProducts,
+          mainProducts,
           productsData,
           brandNames,
           activeVersionData.quotation,
@@ -220,7 +233,7 @@ const NewQuotationsDetails = () => {
           },
           id,
           activeVersion,
-          [],
+          optionalProducts, // pass separately if exportToExcel supports it
           `${fileName}.xlsx`,
         );
       }
@@ -233,7 +246,7 @@ const NewQuotationsDetails = () => {
     }
   };
 
-  // LOADING / ERROR STATES
+  // ── Loading / Error States ──────────────────────────────────────────────
   if (qLoading || vLoading || prodLoading || custLoading || addrLoading) {
     return (
       <Spin
@@ -248,8 +261,11 @@ const NewQuotationsDetails = () => {
     return <Alert message="Quotation not found" type="error" showIcon />;
   }
 
+  // ── Page Rendering Logic ────────────────────────────────────────────────
   const renderPages = () => {
     const pages = [];
+    const MAX_PRODUCTS_NORMAL = 10;
+    const MAX_PRODUCTS_WITH_SUMMARY = 8;
 
     // PAGE 1: COVER
     pages.push(
@@ -300,31 +316,29 @@ const NewQuotationsDetails = () => {
       </div>,
     );
 
-    // ── PRODUCT + SUMMARY PAGES ────────────────────────────────────────
-    const MAX_PRODUCTS_NORMAL = 10;
-    const MAX_PRODUCTS_WITH_SUMMARY = 8;
-
-    let remaining = [...activeProducts];
+    // ── MAIN PRODUCTS PAGES ───────────────────────────────────────────────
+    let remainingMain = [...mainProducts];
     let globalSno = 0;
 
-    while (remaining.length > 0) {
-      const isVeryLastChunk = remaining.length <= MAX_PRODUCTS_WITH_SUMMARY;
-      const canFitSummaryHere = isVeryLastChunk;
+    while (remainingMain.length > 0) {
+      const isVeryLastChunk = remainingMain.length <= MAX_PRODUCTS_WITH_SUMMARY;
+      const canFitSummaryHere =
+        isVeryLastChunk && optionalProducts.length === 0;
 
       let itemsThisPage;
       let showSummaryThisPage = false;
 
       if (canFitSummaryHere) {
-        itemsThisPage = remaining;
+        itemsThisPage = remainingMain;
         showSummaryThisPage = true;
       } else {
-        itemsThisPage = remaining.slice(0, MAX_PRODUCTS_NORMAL);
+        itemsThisPage = remainingMain.slice(0, MAX_PRODUCTS_NORMAL);
         showSummaryThisPage = false;
       }
 
       pages.push(
         <div
-          key={`content-page-${globalSno}`}
+          key={`main-page-${globalSno}`}
           className={`${styles.productPage} page`}
         >
           <div className={styles.pageTopHeader}>
@@ -367,7 +381,7 @@ const NewQuotationsDetails = () => {
               </tr>
             </thead>
             <tbody>
-              {itemsThisPage.map((p, idx) => {
+              {itemsThisPage.map((p) => {
                 const pd =
                   productsData?.find((x) => x.productId === p.productId) || {};
 
@@ -399,7 +413,6 @@ const NewQuotationsDetails = () => {
                 const qty = Number(matchingItem?.quantity ?? p.quantity ?? 1);
                 const lineTotal = Number(matchingItem?.total ?? 0);
 
-                // Display discount as stored
                 const discValue = Number(matchingItem?.discount ?? 0);
                 const discType = (
                   matchingItem?.discountType ?? "percent"
@@ -505,101 +518,258 @@ const NewQuotationsDetails = () => {
         </div>,
       );
 
-      remaining = remaining.slice(itemsThisPage.length);
-
-      // Summary-only page if needed
-      if (remaining.length === 0 && !showSummaryThisPage) {
-        pages.push(
-          <div key="summary-only" className={`${styles.productPage} page`}>
-            <div className={styles.pageTopHeader}>
-              <div>
-                <div className={styles.clientName}>{customerName}</div>
-                <div className={styles.clientAddress}>{customerAddress}</div>
-              </div>
-              <div className={styles.pageDate}>
-                {new Date(
-                  quotation.quotation_date || Date.now(),
-                ).toLocaleDateString("en-IN", {
-                  day: "2-digit",
-                  month: "short",
-                  year: "numeric",
-                })}
-              </div>
+      remainingMain = remainingMain.slice(itemsThisPage.length);
+    }
+    // ── OPTIONAL ITEMS PAGE ─────────────────────────────────────────────────
+    if (optionalProducts.length > 0) {
+      pages.push(
+        <div key="optional-page" className={`${styles.productPage} page`}>
+          <div className={styles.pageTopHeader}>
+            <div>
+              <div className={styles.clientName}>{customerName}</div>
+              <div className={styles.clientAddress}>{customerAddress}</div>
             </div>
-
-            <div
-              style={{
-                textAlign: "center",
-                margin: "40px 0 60px",
-                fontSize: "24px",
-                fontWeight: "bold",
-                color: "#E31E24",
-              }}
-            >
-              Quotation Summary
+            <div className={styles.pageDate}>
+              {new Date(
+                quotation.quotation_date || Date.now(),
+              ).toLocaleDateString("en-IN", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })}
             </div>
+          </div>
 
-            <div className={styles.finalSummaryWrapper}>
-              <div className={styles.finalSummarySection}>
-                <div className={styles.summaryLeft}>
-                  <div className={styles.summaryRow}>
-                    <span>Subtotal</span>
-                    <span>₹{displaySubtotal.toLocaleString("en-IN")}</span>
-                  </div>
+          <div
+            style={{
+              textAlign: "center",
+              fontSize: "26px",
+              fontWeight: "bold",
+              color: "#E31E24",
+              margin: "40px 0 20px",
+            }}
+          >
+            Optional / Suggested Accessories
+          </div>
 
-                  {displayProductDiscount > 0 && (
-                    <div className={styles.summaryRow}>
-                      <span>Total Discount</span>
-                      <span>
-                        -₹
-                        {Math.round(displayProductDiscount).toLocaleString(
-                          "en-IN",
-                        )}
-                      </span>
-                    </div>
-                  )}
+          <div
+            style={{
+              textAlign: "center",
+              fontStyle: "italic",
+              color: "#555",
+              marginBottom: "32px",
+              fontSize: "15px",
+            }}
+          >
+            These items are **not included** in the quoted total.
+            <br />
+            They are recommended add-ons or compatible variants.
+          </div>
 
-                  {backendExtraDiscount > 0 && (
-                    <div className={styles.summaryRow}>
-                      <span>Extra Discount</span>
-                      <span>
-                        -₹
-                        {Math.round(backendExtraDiscount).toLocaleString(
-                          "en-IN",
-                        )}
-                      </span>
-                    </div>
-                  )}
+          <table className={styles.productTable}>
+            <colgroup>
+              <col className={styles.sno} />
+              <col className={styles.name} />
+              <col className={styles.code} />
+              <col className={styles.image} />
+              <col className={styles.unit} />
+              <col className={styles.mrp} />
+              <col className={styles.discount} />
+              <col className={styles.total} />
+            </colgroup>
+            <thead>
+              <tr>
+                <th>S.No</th>
+                <th>Product Name</th>
+                <th>Code</th>
+                <th>Product Image</th>
+                <th>Unit</th>
+                <th>MRP</th>
+                <th>Discount</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {optionalProducts.map((p, idx) => {
+                const pd =
+                  productsData?.find((x) => x.productId === p.productId) || {};
 
-                  <div className={styles.summaryRow}>
-                    <span>Taxable Value</span>
-                    <span>₹{displaySubtotal.toLocaleString("en-IN")}</span>
-                  </div>
+                const matchingItem =
+                  quotation?.items?.find(
+                    (it) => it.productId === p.productId,
+                  ) ||
+                  quotation?.products?.find(
+                    (it) => it.productId === p.productId,
+                  ) ||
+                  p;
+
+                const code =
+                  matchingItem?.companyCode ||
+                  p.companyCode ||
+                  p.productCode ||
+                  matchingItem?.productCode ||
+                  pd.companyCode ||
+                  "—";
+
+                const img =
+                  p.imageUrl ||
+                  matchingItem?.imageUrl ||
+                  pd.images?.[0] ||
+                  pd.imageUrl ||
+                  "";
+
+                const mrp = Number(matchingItem?.price ?? p.price ?? 0);
+                const qty = Number(matchingItem?.quantity ?? p.quantity ?? 1);
+                const lineTotal = Number(matchingItem?.total ?? p.total ?? 0);
+
+                const discValue = Number(matchingItem?.discount ?? 0);
+                const discType = (
+                  matchingItem?.discountType ?? "percent"
+                ).toLowerCase();
+                let displayDiscount = "—";
+                if (discValue > 0) {
+                  displayDiscount =
+                    discType === "percent"
+                      ? `${discValue}%`
+                      : `₹${discValue.toFixed(0)}`;
+                }
+
+                return (
+                  <tr key={p.productId || `opt-${idx}`}>
+                    <td className={styles.snoCell}>{idx + 1}.</td>
+                    <td className={styles.prodNameCell}>
+                      {p.name || matchingItem?.name || pd.name || "—"}
+                    </td>
+                    <td>{code}</td>
+                    <td>
+                      {img ? (
+                        <img
+                          src={img}
+                          alt={p.name}
+                          className={styles.prodImg}
+                        />
+                      ) : null}
+                    </td>
+                    <td>{qty}</td>
+                    <td>₹{mrp.toLocaleString("en-IN")}</td>
+                    <td className={styles.discountCell}>{displayDiscount}</td>
+                    <td className={styles.totalCell}>
+                      ₹{lineTotal.toLocaleString("en-IN")}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+
+          <div
+            style={{
+              textAlign: "right",
+              marginTop: "32px",
+              fontWeight: "bold",
+              fontSize: "16px",
+            }}
+          >
+            Total Value of Optional Items:{" "}
+            <span style={{ color: "#E31E24" }}>
+              ₹
+              {optionalProducts
+                .reduce((sum, p) => sum + Number(p.total || 0), 0)
+                .toLocaleString("en-IN")}
+            </span>
+          </div>
+        </div>,
+      );
+    }
+
+    // ── MAIN SUMMARY (if optional items exist) ──────────────────────────────
+    if (mainProducts.length > 0 && optionalProducts.length > 0) {
+      pages.push(
+        <div key="summary-only" className={`${styles.productPage} page`}>
+          <div className={styles.pageTopHeader}>
+            <div>
+              <div className={styles.clientName}>{customerName}</div>
+              <div className={styles.clientAddress}>{customerAddress}</div>
+            </div>
+            <div className={styles.pageDate}>
+              {new Date(
+                quotation.quotation_date || Date.now(),
+              ).toLocaleDateString("en-IN", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })}
+            </div>
+          </div>
+
+          <div
+            style={{
+              textAlign: "center",
+              margin: "40px 0 60px",
+              fontSize: "24px",
+              fontWeight: "bold",
+              color: "#E31E24",
+            }}
+          >
+            Quotation Summary
+          </div>
+
+          <div className={styles.finalSummaryWrapper}>
+            <div className={styles.finalSummarySection}>
+              <div className={styles.summaryLeft}>
+                <div className={styles.summaryRow}>
+                  <span>Subtotal</span>
+                  <span>₹{displaySubtotal.toLocaleString("en-IN")}</span>
                 </div>
 
-                <div className={styles.summaryRight}>
-                  <div className={styles.totalAmount}>
-                    <strong>Total Amount:</strong>
-                    <strong>
-                      {" "}
-                      ₹{backendFinalAmount.toLocaleString("en-IN")}
-                    </strong>
+                {displayProductDiscount > 0 && (
+                  <div className={styles.summaryRow}>
+                    <span>Total Discount</span>
+                    <span>
+                      -₹
+                      {Math.round(displayProductDiscount).toLocaleString(
+                        "en-IN",
+                      )}
+                    </span>
                   </div>
-                  <div className={styles.amountInWords}>
-                    {finalAmountInWords}
+                )}
+
+                {backendExtraDiscount > 0 && (
+                  <div className={styles.summaryRow}>
+                    <span>Extra Discount</span>
+                    <span>
+                      -₹
+                      {Math.round(backendExtraDiscount).toLocaleString("en-IN")}
+                    </span>
                   </div>
-                  {backendRoundOff !== 0 && (
-                    <div className={styles.roundOffNote}>
-                      (Round off: {backendRoundOff >= 0 ? "+" : "-"}₹
-                      {Math.abs(backendRoundOff).toFixed(2)})
-                    </div>
-                  )}
+                )}
+
+                <div className={styles.summaryRow}>
+                  <span>Taxable Value</span>
+                  <span>₹{displaySubtotal.toLocaleString("en-IN")}</span>
                 </div>
               </div>
+
+              <div className={styles.summaryRight}>
+                <div className={styles.totalAmount}>
+                  <strong>Total Amount:</strong>
+                  <strong>
+                    {" "}
+                    ₹{backendFinalAmount.toLocaleString("en-IN")}
+                  </strong>
+                </div>
+                <div className={styles.amountInWords}>{finalAmountInWords}</div>
+                {backendRoundOff !== 0 && (
+                  <div className={styles.roundOffNote}>
+                    (Round off: {backendRoundOff >= 0 ? "+" : "-"}₹
+                    {Math.abs(backendRoundOff).toFixed(2)})
+                  </div>
+                )}
+              </div>
             </div>
-          </div>,
-        );
-      }
+          </div>
+        </div>,
+      );
     }
 
     return pages;

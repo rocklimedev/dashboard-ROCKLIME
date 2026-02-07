@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
+// src/components/Quotation/AddQuotation.jsx
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   message,
@@ -9,24 +10,28 @@ import {
   Space,
   Button,
   Modal,
-  List,
   Typography,
   Form,
   Card,
   Row,
-  Spin,
   Col,
+  Spin,
+  Divider,
+  Statistic,
+  Tag,
 } from "antd";
 import {
-  SearchOutlined,
-  ArrowLeftOutlined as ArrowLeftOutlined,
+  ArrowLeftOutlined,
   PlusOutlined,
   DeleteOutlined,
+  SaveOutlined,
+  SearchOutlined,
 } from "@ant-design/icons";
 import { debounce } from "lodash";
 import { format, isAfter, isBefore, startOfDay } from "date-fns";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { v4 as uuidv4 } from "uuid";
 
 import PageHeader from "../Common/PageHeader";
 import {
@@ -34,9 +39,8 @@ import {
   useGetQuotationByIdQuery,
   useUpdateQuotationMutation,
   useGetQuotationVersionsQuery,
-  useRestoreQuotationVersionMutation,
 } from "../../api/quotationApi";
-import { useGetAllProductsQuery } from "../../api/productApi";
+import { useSearchProductsQuery } from "../../api/productApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
 import { useGetAllAddressesQuery } from "../../api/addressApi";
 import { useGetProfileQuery } from "../../api/userApi";
@@ -50,43 +54,46 @@ const AddQuotation = () => {
   const isEditMode = Boolean(id);
   const navigate = useNavigate();
 
-  /* ────────────────────── QUERIES ────────────────────── */
-  const { data: existingQuotation } = useGetQuotationByIdQuery(id, {
+  // ── API Hooks ─────────────────────────────────────────────────────
+  const { data: existingQuotation, isLoading: loadingQuotation } =
+    useGetQuotationByIdQuery(id, { skip: !isEditMode });
+
+  const { data: versionsData = [] } = useGetQuotationVersionsQuery(id, {
     skip: !isEditMode,
   });
 
-  const { data: versionsData = [], refetch: refetchVersions } =
-    useGetQuotationVersionsQuery(id, { skip: !isEditMode });
-
   const { data: userData } = useGetProfileQuery();
-  const { data: customersData } = useGetCustomersQuery();
+  const { data: customersData } = useGetCustomersQuery({ limit: 500 });
   const { data: addressesData, refetch: refetchAddresses } =
     useGetAllAddressesQuery();
-  const { data: productsData } = useGetAllProductsQuery();
 
   const [createQuotation, { isLoading: isCreating }] =
     useCreateQuotationMutation();
   const [updateQuotation, { isLoading: isUpdating }] =
     useUpdateQuotationMutation();
-  const [restoreVersion, { isLoading: isRestoring }] =
-    useRestoreQuotationVersionMutation();
 
-  /* ────────────────────── DATA ────────────────────── */
-  const userId = userData?.user?.userId || "nill";
-  const customers = customersData?.data || [];
-  const addresses = Array.isArray(addressesData) ? addressesData : [];
-  const products = productsData?.data || [];
-  const versions = versionsData || [];
+  // ── Product Search ────────────────────────────────────────────────
+  const [searchTerm, setSearchTerm] = useState("");
+  const { data: searchResult = [], isFetching: isSearching } =
+    useSearchProductsQuery(searchTerm.trim(), {
+      skip: searchTerm.trim().length < 2,
+    });
 
-  /* ────────────────────── STATE ────────────────────── */
+  const debouncedSearch = useCallback(
+    debounce((value) => setSearchTerm(value.trim()), 400),
+    [],
+  );
+
+  // ── State ─────────────────────────────────────────────────────────
+  const userId = userData?.user?.userId || "system";
+
   const initialFormData = {
     document_title: "",
     quotation_date: null,
     due_date: null,
-    reference_number: "",
-    gst: null,
-    shippingAmount: 0.0,
-    extraDiscount: null,
+    gst: 18,
+    shippingAmount: 0,
+    extraDiscount: 0,
     extraDiscountType: "fixed",
     signature_name: "",
     signature_image: "",
@@ -98,166 +105,260 @@ const AddQuotation = () => {
   };
 
   const [formData, setFormData] = useState(initialFormData);
-  const [productSearch, setProductSearch] = useState("");
-  const [filteredProducts, setFilteredProducts] = useState([]);
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [showVersionsModal, setShowVersionsModal] = useState(false);
 
-  const [form] = Form.useForm();
+  // Option modal state
+  const [showAddOptionModal, setShowAddOptionModal] = useState(false);
+  const [selectedParentId, setSelectedParentId] = useState(null);
+  const [optionType, setOptionType] = useState("addon");
 
-  /* ────────────────────── HELPERS ────────────────────── */
-  const safeJsonParse = (str, fallback = []) => {
-    if (!str) return fallback;
-    if (Array.isArray(str)) return str;
-    if (typeof str !== "string") return fallback;
+  // ── Helpers ───────────────────────────────────────────────────────
+  const safeNum = (val, fallback = 0) =>
+    Number.isFinite(Number(val)) ? Number(val) : fallback;
+
+  const safeJsonParse = (value, fallback = []) => {
+    if (Array.isArray(value)) return value;
+    if (!value) return fallback;
     try {
-      const parsed = JSON.parse(str);
+      const parsed = JSON.parse(value);
       return Array.isArray(parsed) ? parsed : fallback;
     } catch {
       return fallback;
     }
   };
 
-  /* ────────────────────── EFFECTS ────────────────────── */
+  // ── Load existing quotation ───────────────────────────────────────
   useEffect(() => {
-    if (isEditMode && existingQuotation) {
-      const parsedProducts = safeJsonParse(existingQuotation.products, []);
-      const parsedFollowup = safeJsonParse(existingQuotation.followupDates, []);
+    if (!isEditMode || !existingQuotation) return;
 
-      const mapped = parsedProducts.map((p) => {
-        const prod = products.find(
-          (pr) => (pr.id || pr.productId) === p.productId
-        );
+    const parsedProducts = safeJsonParse(existingQuotation.products, []);
 
-        return {
-          id: p.productId,
-          productId: p.productId,
-          name: prod?.name || p.name || "Unknown",
-          qty: Number(p.quantity) || 1,
+    const mappedProducts = parsedProducts.map((p) => ({
+      productId: p.productId,
+      name: p.name || "Unknown",
+      qty: safeNum(p.quantity ?? p.qty, 1),
+      sellingPrice: safeNum(p.price ?? p.sellingPrice, 0),
+      discount: safeNum(p.discount, 0),
+      discountType: p.discountType || "fixed",
+      tax: safeNum(p.tax, 0),
+      isOptionFor: p.isOptionFor || null,
+      optionType: p.optionType || null,
+      groupId: p.groupId || null,
+    }));
 
-          // OPTION B – use saved historical price
-          sellingPrice: Number(p.price || p.sellingPrice || 0),
+    setFormData({
+      ...initialFormData,
+      quotationId: id,
+      document_title: existingQuotation.document_title || "",
+      quotation_date: existingQuotation.quotation_date
+        ? new Date(existingQuotation.quotation_date)
+        : null,
+      due_date: existingQuotation.due_date
+        ? new Date(existingQuotation.due_date)
+        : null,
+      gst: safeNum(existingQuotation.gst, 18),
+      shippingAmount: safeNum(existingQuotation.shippingAmount, 0),
+      extraDiscount: safeNum(existingQuotation.extraDiscount, 0),
+      extraDiscountType: existingQuotation.extraDiscountType || "fixed",
+      signature_name: existingQuotation.signature_name || "",
+      signature_image: existingQuotation.signature_image || "",
+      customerId: existingQuotation.customerId || "",
+      shipTo: existingQuotation.shipTo || "",
+      createdBy: userId,
+      products: mappedProducts,
+      followupDates: safeJsonParse(existingQuotation.followupDates, [])
+        .map((d) => (d ? new Date(d) : null))
+        .filter(Boolean),
+    });
+  }, [isEditMode, existingQuotation, userId]);
 
-          discount: Number(p.discount) || 0,
-          discountType: p.discountType || "fixed",
-          tax: Number(p.tax) || 0,
-          total: null,
-        };
-      });
+  // ── Memoized data ─────────────────────────────────────────────────
+  const { mainProducts, groupedItems } = useMemo(() => {
+    const main = [];
+    const groups = {};
 
-      setFormData({
-        ...initialFormData,
-        quotationId: id,
-        document_title: existingQuotation.document_title || "",
-        quotation_date: existingQuotation.quotation_date
-          ? new Date(existingQuotation.quotation_date)
-          : null,
-        due_date: existingQuotation.due_date
-          ? new Date(existingQuotation.due_date)
-          : null,
-        reference_number: existingQuotation.reference_number || "",
-        gst: existingQuotation.gst ?? null,
-        shippingAmount: existingQuotation.shippingAmount ?? 0.0,
-        extraDiscount: existingQuotation.extraDiscount ?? null,
-        extraDiscountType: existingQuotation.extraDiscountType || "fixed",
-        discountAmount: existingQuotation.discountAmount ?? 0.0,
-        roundOff: existingQuotation.roundOff ?? 0.0,
-        finalAmount: existingQuotation.finalAmount ?? 0.0,
-        signature_name: existingQuotation.signature_name || "",
-        signature_image: existingQuotation.signature_image || "",
-        customerId: existingQuotation.customerId || "",
-        shipTo: existingQuotation.shipTo || "",
-        createdBy: userId,
-        products: mapped,
-        followupDates: parsedFollowup
-          .map((d) => (d ? new Date(d) : null))
-          .filter(Boolean),
-      });
-    }
-  }, [existingQuotation, isEditMode, products, userId]);
-  const debouncedSearch = useCallback(
-    debounce((val) => {
-      if (!val) {
-        setFilteredProducts([]);
-        return;
+    formData.products.forEach((p) => {
+      const gid = p.groupId || "ungrouped";
+      if (!groups[gid]) groups[gid] = { main: null, options: [] };
+
+      if (!p.isOptionFor) {
+        main.push(p);
+        groups[gid].main = p;
+      } else {
+        groups[gid].options.push(p);
       }
-      const term = val.toLowerCase().trim();
-      const filtered = products
-        .filter((p) => {
-          const name = p.name?.toLowerCase().includes(term);
-          const code = p.product_code?.toLowerCase().includes(term);
-          const companyCode =
-            p.meta?.["d11da9f9-3f2e-4536-8236-9671200cca4a"] ||
-            p.metaDetails?.find((m) => m.slug === "companyCode")?.value ||
-            "";
-          const cc = String(companyCode).toLowerCase().includes(term);
-          return name || code || cc;
-        })
-        .slice(0, 8);
-      setFilteredProducts(filtered);
-    }, 300),
-    [products]
-  );
-
-  /* ────────────────────── PRODUCT HANDLERS ────────────────────── */
-  const addProduct = (productId) => {
-    if (!productId) return;
-
-    const prod = products.find((p) => (p.id || p.productId) === productId);
-    if (!prod) {
-      message.warning("Product not found – possibly still loading");
-      return;
-    }
-
-    const price =
-      Number(prod.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"]) || 0;
-
-    setFormData((prev) => {
-      // Optional: prevent duplicate addition
-      if (prev.products.some((item) => item.productId === productId)) {
-        message.info("Product already added");
-        return prev;
-      }
-
-      return {
-        ...prev,
-        products: [
-          ...prev.products,
-          {
-            id: prod.id || prod.productId,
-            productId: prod.id || prod.productId,
-            name: prod.name || "Unknown",
-            qty: 1,
-            sellingPrice: price,
-            discount: 0,
-            discountType: "fixed",
-            tax: 0,
-            total: price,
-          },
-        ],
-      };
     });
 
-    setProductSearch("");
-    setFilteredProducts([]);
-  };
+    return {
+      mainProducts: main,
+      groupedItems: Object.values(groups),
+    };
+  }, [formData.products]);
 
-  const removeProduct = (idx) => {
+  // ── Calculations (only main items affect final amount) ────────────
+  const calculations = useMemo(() => {
+    let mainSubtotal = 0;
+    let mainLineDiscount = 0;
+
+    mainProducts.forEach((p) => {
+      const qty = safeNum(p.qty, 1);
+      const price = safeNum(p.sellingPrice, 0);
+      const disc = safeNum(p.discount, 0);
+      const discType = p.discountType || "fixed";
+
+      const lineDisc =
+        discType === "percent" ? (price * qty * disc) / 100 : disc * qty;
+      const lineNet = price * qty - lineDisc;
+
+      mainSubtotal += lineNet;
+      mainLineDiscount += lineDisc;
+    });
+
+    let optionalPotential = 0;
+    formData.products.forEach((p) => {
+      if (p.isOptionFor) {
+        optionalPotential += safeNum(p.sellingPrice, 0) * safeNum(p.qty, 1);
+      }
+    });
+
+    const extraDiscValue = safeNum(formData.extraDiscount, 0);
+    const extraDiscAmt =
+      formData.extraDiscountType === "percent"
+        ? (mainSubtotal * extraDiscValue) / 100
+        : extraDiscValue;
+
+    const afterExtra = mainSubtotal - extraDiscAmt;
+    const gstRate = safeNum(formData.gst, 0);
+    const gstAmt = afterExtra * (gstRate / 100);
+    const shipping = safeNum(formData.shippingAmount, 0);
+    const totalBeforeRound = afterExtra + gstAmt + shipping;
+
+    const rounded = Math.round(totalBeforeRound);
+    const roundOff = rounded - totalBeforeRound;
+
+    return {
+      mainSubtotal: Number(mainSubtotal.toFixed(2)),
+      mainLineDiscount: Number(mainLineDiscount.toFixed(2)),
+      extraDiscAmt: Number(extraDiscAmt.toFixed(2)),
+      gstAmt: Number(gstAmt.toFixed(2)),
+      shipping,
+      roundOff: Number(roundOff.toFixed(2)),
+      finalAmount: Number(rounded.toFixed(0)),
+      optionalPotential: Number(optionalPotential.toFixed(2)),
+    };
+  }, [
+    mainProducts,
+    formData.products,
+    formData.gst,
+    formData.shippingAmount,
+    formData.extraDiscount,
+    formData.extraDiscountType,
+  ]);
+
+  // ── Product Handlers ──────────────────────────────────────────────
+  const addProduct = (productId) => {
+    const prod = searchResult.find((p) => (p.id || p.productId) === productId);
+    if (!prod) return message.warning("Product not found");
+
+    if (formData.products.some((item) => item.productId === productId)) {
+      return message.info("Product already added");
+    }
+
+    const price = safeNum(
+      prod.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"],
+      0,
+    );
+
+    const newGroupId = `grp-${uuidv4().slice(0, 8)}`;
+
     setFormData((prev) => ({
       ...prev,
-      products: prev.products.filter((_, i) => i !== idx),
+      products: [
+        ...prev.products,
+        {
+          productId: prod.id || prod.productId,
+          name: prod.name || "Unknown",
+          qty: 1,
+          sellingPrice: price,
+          discount: 0,
+          discountType: "fixed",
+          tax: 0,
+          isOptionFor: null,
+          optionType: null,
+          groupId: newGroupId,
+        },
+      ],
+    }));
+
+    setSearchTerm("");
+  };
+
+  const addOption = (productId) => {
+    if (!selectedParentId) return message.error("Select a main product first");
+
+    const prod = searchResult.find((p) => (p.id || p.productId) === productId);
+    if (!prod) return message.warning("Product not found");
+
+    const parent = formData.products.find(
+      (p) => p.productId === selectedParentId && !p.isOptionFor,
+    );
+
+    if (!parent) return message.error("Parent product not found");
+
+    const price = safeNum(
+      prod.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"],
+      0,
+    );
+
+    setFormData((prev) => ({
+      ...prev,
+      products: [
+        ...prev.products,
+        {
+          productId: prod.id || prod.productId,
+          name: prod.name || "Unknown",
+          qty: 1,
+          sellingPrice: price,
+          discount: 0,
+          discountType: "fixed",
+          tax: 0,
+          isOptionFor: selectedParentId,
+          optionType,
+          groupId: parent.groupId,
+        },
+      ],
+    }));
+
+    setShowAddOptionModal(false);
+    setSearchTerm("");
+    message.success(`Added ${optionType}`);
+  };
+
+  const removeProduct = (productId) => {
+    setFormData((prev) => {
+      const product = prev.products.find((p) => p.productId === productId);
+      let updated = prev.products.filter((p) => p.productId !== productId);
+
+      // Remove options if this was a main product
+      if (product && !product.isOptionFor) {
+        updated = updated.filter((p) => p.isOptionFor !== productId);
+      }
+
+      return { ...prev, products: updated };
+    });
+  };
+
+  const updateProductField = (productId, field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      products: prev.products.map((p) =>
+        p.productId === productId ? { ...p, [field]: value } : p,
+      ),
     }));
   };
 
-  const updateProduct = (idx, field, value) => {
-    setFormData((prev) => {
-      const copy = [...prev.products];
-      copy[idx] = { ...copy[idx], [field]: value };
-      return { ...prev, products: copy };
-    });
-  };
-
-  /* ────────────────────── FOLLOW-UP DATES ────────────────────── */
+  // ── Follow-up dates handlers ──────────────────────────────────────
   const addFollowup = () => {
     setFormData((prev) => ({
       ...prev,
@@ -265,33 +366,53 @@ const AddQuotation = () => {
     }));
   };
 
-  const removeFollowup = (i) => {
+  const removeFollowup = (index) => {
     setFormData((prev) => ({
       ...prev,
-      followupDates: prev.followupDates.filter((_, idx) => idx !== i),
+      followupDates: prev.followupDates.filter((_, i) => i !== index),
     }));
   };
 
-  const changeFollowup = (i, date) => {
+  const changeFollowup = (index, date) => {
     setFormData((prev) => {
-      const copy = [...prev.followupDates];
-      copy[i] = date;
-      return { ...prev, followupDates: copy };
+      const dates = [...prev.followupDates];
+      dates[index] = date;
+      return { ...prev, followupDates: dates };
     });
-
-    if (date && formData.due_date && isAfter(date, formData.due_date)) {
-      message.warning("Timeline date cannot be after due date");
-    }
-    if (date && isBefore(date, startOfDay(new Date()))) {
-      message.warning("Timeline date cannot be in the past");
-    }
   };
 
-  /* ────────────────────── SUBMIT ────────────────────── */
+  // ── Submit Handler ────────────────────────────────────────────────
   const handleSubmit = async () => {
-    if (!formData.customerId) return message.error("Select a customer");
-    if (!formData.products.length)
+    if (!formData.customerId) return message.error("Please select customer");
+    if (formData.products.length === 0)
       return message.error("Add at least one product");
+
+    const payloadProducts = formData.products.map((p) => {
+      const qty = safeNum(p.qty, 1);
+      const price = safeNum(p.sellingPrice, 0);
+      const disc = safeNum(p.discount, 0);
+      const discType = p.discountType || "fixed";
+      const tax = safeNum(p.tax, 0);
+
+      const discAmt =
+        discType === "percent" ? (price * qty * disc) / 100 : disc * qty;
+      const taxable = price * qty - discAmt;
+      const lineTotal = taxable * (1 + tax / 100);
+
+      return {
+        productId: p.productId,
+        name: p.name,
+        price: Number(price.toFixed(2)),
+        quantity: qty,
+        discount: Number(disc.toFixed(2)),
+        discountType: discType,
+        tax: Number(tax.toFixed(2)),
+        total: Number(lineTotal.toFixed(2)),
+        isOptionFor: p.isOptionFor || null,
+        optionType: p.optionType || null,
+        groupId: p.groupId || null,
+      };
+    });
 
     const payload = {
       ...formData,
@@ -301,64 +422,13 @@ const AddQuotation = () => {
       due_date: formData.due_date
         ? format(formData.due_date, "yyyy-MM-dd")
         : null,
-      gst: formData.gst ?? 0,
-      shippingAmount: Number(formData.shippingAmount) || 0,
-      extraDiscount: Number(formData.extraDiscount) || 0,
+      gst: safeNum(formData.gst),
+      shippingAmount: safeNum(formData.shippingAmount),
+      extraDiscount: safeNum(formData.extraDiscount),
       extraDiscountType: formData.extraDiscountType || "fixed",
-
-      products: formData.products.map((p) => {
-        const prod = products.find(
-          (pr) => (pr.id || pr.productId) === p.productId
-        );
-
-        // Extract first image
-        let imageUrl = null;
-        if (prod?.images) {
-          if (typeof prod.images === "string") {
-            if (
-              prod.images.trim().startsWith("[") ||
-              prod.images.trim().startsWith("{")
-            ) {
-              try {
-                imageUrl = JSON.parse(prod.images)[0];
-              } catch {
-                imageUrl = prod.images.trim();
-              }
-            } else {
-              imageUrl = prod.images.trim();
-            }
-          } else if (Array.isArray(prod.images)) {
-            imageUrl = prod.images[0];
-          }
-        }
-
-        const price = Number(p.sellingPrice) || 0;
-        const qty = Number(p.qty) || 1;
-        const discount = Number(p.discount) || 0;
-        const discountType = p.discountType || "fixed";
-        const taxRate = Number(p.tax) || 0;
-
-        const discountAmt =
-          discountType === "percent"
-            ? (price * qty * discount) / 100
-            : discount;
-
-        const taxable = price * qty - discountAmt;
-        const lineTotal = taxable * (1 + taxRate / 100);
-
-        return {
-          productId: p.productId,
-          name: p.name,
-          price: Number(p.sellingPrice || 0).toFixed(2),
-          quantity: qty,
-          discount,
-          discountType,
-          tax: taxRate,
-          total: parseFloat(lineTotal.toFixed(2)),
-          imageUrl,
-        };
-      }),
-
+      roundOff: calculations.roundOff,
+      finalAmount: calculations.finalAmount,
+      products: payloadProducts,
       followupDates: formData.followupDates
         .filter(Boolean)
         .map((d) => format(d, "yyyy-MM-dd")),
@@ -368,186 +438,190 @@ const AddQuotation = () => {
     try {
       if (isEditMode) {
         await updateQuotation({ id, updatedQuotation: payload }).unwrap();
+        message.success("Quotation updated successfully");
       } else {
         await createQuotation(payload).unwrap();
-        setFormData({ ...initialFormData, createdBy: userId });
+        message.success("Quotation created successfully");
+        setFormData(initialFormData);
       }
-      message.success("Quotation saved");
       navigate("/quotations/list");
-    } catch (e) {
-      message.error(e.data?.message || "Failed to save");
+    } catch (err) {
+      message.error(err?.data?.message || "Failed to save quotation");
     }
   };
 
-  /* ────────────────────── TABLE COLUMNS ────────────────────── */
+  // ── Table Columns ─────────────────────────────────────────────────
   const columns = [
-    { title: "Product", dataIndex: "name", key: "name", width: 180 },
+    {
+      title: "Type",
+      width: 120,
+      render: (_, record) => {
+        if (!record.isOptionFor) return <Tag color="blue">Main</Tag>;
+
+        const colors = {
+          variant: "purple",
+          upgrade: "geekblue",
+          addon: "green",
+        };
+
+        return (
+          <Tag color={colors[record.optionType] || "default"}>
+            {record.optionType || "Option"}
+          </Tag>
+        );
+      },
+    },
+    {
+      title: "Product / Option",
+      dataIndex: "name",
+      key: "name",
+      render: (text, record) => {
+        const indent = record.isOptionFor ? 32 : 0;
+        return (
+          <div style={{ paddingLeft: indent }}>
+            {record.isOptionFor && (
+              <Text type="secondary" style={{ marginRight: 8 }}>
+                ↳
+              </Text>
+            )}
+            {text}
+          </div>
+        );
+      },
+    },
     {
       title: "Qty",
-      key: "qty",
-      width: 80,
-      render: (_, __, idx) => (
+      width: 90,
+      render: (_, record) => (
         <InputNumber
           min={1}
-          size="small"
-          value={formData.products[idx].qty}
-          onChange={(v) => updateProduct(idx, "qty", v)}
+          value={record.qty}
+          onChange={(v) => updateProductField(record.productId, "qty", v)}
         />
       ),
     },
     {
       title: "Price (₹)",
-      dataIndex: "sellingPrice",
-      key: "price",
-      width: 100,
-      render: (v) => Number(v).toFixed(2),
-    },
-    {
-      title: "Disc (₹)",
-      key: "discount",
-      width: 140,
-      render: (_, __, idx) => {
-        const prod = formData.products[idx];
-        return (
-          <Space.Compact style={{ width: "100%" }}>
-            <InputNumber
-              min={0}
-              size="small"
-              value={prod.discount}
-              onChange={(v) => updateProduct(idx, "discount", v)}
-              style={{ width: 80 }}
-            />
-            <Select
-              size="small"
-              value={prod.discountType || "fixed"}
-              onChange={(v) => updateProduct(idx, "discountType", v)}
-              style={{ width: 60 }}
-            >
-              <Option value="fixed">₹</Option>
-              <Option value="percent">%</Option>
-            </Select>
-          </Space.Compact>
-        );
-      },
-    },
-    {
-      title: "Effective Disc (₹)",
-      key: "effectiveDisc",
       width: 110,
-      render: (_, __, idx) => {
-        const p = formData.products[idx];
-        const qty = Number(p.qty) || 1;
-        const price = Number(p.sellingPrice) || 0;
-        const discRaw = Number(p.discount) || 0;
-        const disc =
-          p.discountType === "percent"
-            ? (qty * price * discRaw) / 100
-            : discRaw;
-        return Number(disc).toFixed(2);
-      },
+      render: (_, r) => safeNum(r.sellingPrice, 0).toFixed(2),
     },
     {
-      title: "Tax (%)",
-      key: "tax",
-      width: 80,
-      render: (_, __, idx) => (
+      title: "Disc",
+      width: 160,
+      render: (_, r) => (
+        <Space.Compact>
+          <InputNumber
+            min={0}
+            value={r.discount}
+            onChange={(v) => updateProductField(r.productId, "discount", v)}
+            style={{ width: 90 }}
+          />
+          <Select
+            value={r.discountType || "fixed"}
+            onChange={(v) => updateProductField(r.productId, "discountType", v)}
+            style={{ width: 70 }}
+          >
+            <Option value="fixed">₹</Option>
+            <Option value="percent">%</Option>
+          </Select>
+        </Space.Compact>
+      ),
+    },
+    {
+      title: "Tax %",
+      width: 90,
+      render: (_, r) => (
         <InputNumber
           min={0}
-          size="small"
-          value={formData.products[idx].tax}
-          onChange={(v) => updateProduct(idx, "tax", v)}
+          max={100}
+          value={r.tax}
+          onChange={(v) => updateProductField(r.productId, "tax", v)}
         />
       ),
     },
     {
-      title: "Line Total (₹)",
-      key: "total",
-      render: (_, __, idx) => {
-        const p = formData.products[idx];
-        const qty = Number(p.qty) || 1;
-        const price = Number(p.sellingPrice) || 0;
-        const discRaw = Number(p.discount) || 0;
-        const discType = p.discountType || "fixed";
-        const taxRate = Number(p.tax) || 0;
+      title: "Line Total",
+      render: (_, r) => {
+        const qty = safeNum(r.qty, 1);
+        const price = safeNum(r.sellingPrice, 0);
+        const disc = safeNum(r.discount, 0);
+        const discType = r.discountType || "fixed";
+        const tax = safeNum(r.tax, 0);
 
-        const discountAmt =
-          discType === "percent" ? (price * qty * discRaw) / 100 : discRaw;
+        const discAmt =
+          discType === "percent" ? (price * qty * disc) / 100 : disc * qty;
+        const taxable = price * qty - discAmt;
+        const lineTotal = taxable * (1 + tax / 100);
 
-        const taxable = price * qty - discountAmt;
-        const total = taxable * (1 + taxRate / 100);
-
-        return total.toFixed(2);
+        return lineTotal.toFixed(2);
       },
     },
     {
       title: "",
-      key: "action",
-      width: 50,
-      render: (_, __, idx) => (
+      width: 60,
+      render: (_, r) => (
         <Button
           danger
           size="small"
           icon={<DeleteOutlined />}
-          onClick={() => removeProduct(idx)}
+          onClick={() => removeProduct(r.productId)}
         />
       ),
     },
   ];
 
-  /* ────────────────────── RENDER ────────────────────── */
+  if (loadingQuotation) {
+    return (
+      <Spin
+        tip="Loading quotation..."
+        size="large"
+        style={{ margin: "120px auto", display: "block" }}
+      />
+    );
+  }
+
   return (
     <div className="page-wrapper">
       <div className="content">
         <PageHeader
           title={isEditMode ? "Edit Quotation" : "Create Quotation"}
-          subtitle="Fill the details below"
-          exportOptions={{ pdf: false, excel: false }}
+          subtitle="Fill in all quotation details"
         />
 
-        <Space style={{ marginBottom: 16 }}>
+        <Space style={{ marginBottom: 24 }}>
           <Button
             icon={<ArrowLeftOutlined />}
             onClick={() => navigate("/quotations/list")}
           >
             Back
           </Button>
-          {isEditMode && (
-            <Button
-              onClick={() => {
-                refetchVersions();
-                setShowVersionsModal(true);
-              }}
-            >
-              View Versions ({versions.length})
+          {isEditMode && versionsData.length > 0 && (
+            <Button onClick={() => setShowVersionsModal(true)}>
+              Versions ({versionsData.length})
             </Button>
           )}
-          <Button
-            onClick={() =>
-              setFormData({ ...initialFormData, createdBy: userId })
-            }
-          >
-            Clear
-          </Button>
         </Space>
 
-        <Form form={form} layout="vertical">
+        <Form layout="vertical">
           {/* Customer & Shipping */}
-          <Card title="Customer & Shipping" style={{ marginBottom: 16 }}>
+          <Card title="Customer & Shipping" style={{ marginBottom: 24 }}>
             <Row gutter={16}>
               <Col xs={24} md={12}>
                 <Form.Item label="Customer *" required>
                   <Select
                     showSearch
-                    placeholder="Select customer"
                     value={formData.customerId}
                     onChange={(v) =>
                       setFormData({ ...formData, customerId: v, shipTo: "" })
                     }
-                    filterOption={(input, opt) =>
-                      opt.children.toLowerCase().includes(input.toLowerCase())
+                    placeholder="Select customer"
+                    filterOption={(input, option) =>
+                      option.children
+                        .toLowerCase()
+                        .includes(input.toLowerCase())
                     }
                   >
-                    {customers.map((c) => (
+                    {(customersData?.data || []).map((c) => (
                       <Option key={c.customerId} value={c.customerId}>
                         {c.name}
                       </Option>
@@ -560,13 +634,13 @@ const AddQuotation = () => {
                 <Form.Item label="Shipping Address">
                   <Space.Compact style={{ width: "100%" }}>
                     <Select
-                      placeholder="Select address"
+                      placeholder="Select or add address"
                       value={formData.shipTo}
                       onChange={(v) => setFormData({ ...formData, shipTo: v })}
                       disabled={!formData.customerId}
                       style={{ flex: 1 }}
                     >
-                      {addresses
+                      {(addressesData || [])
                         .filter((a) => a.customerId === formData.customerId)
                         .map((a) => (
                           <Option key={a.addressId} value={a.addressId}>
@@ -587,10 +661,10 @@ const AddQuotation = () => {
           </Card>
 
           {/* Quotation Details */}
-          <Card title="Quotation Details" style={{ marginBottom: 16 }}>
+          <Card title="Quotation Details" style={{ marginBottom: 24 }}>
             <Row gutter={16}>
               <Col xs={24} md={12}>
-                <Form.Item label="Title" required>
+                <Form.Item label="Title *" required>
                   <Input
                     value={formData.document_title}
                     onChange={(e) =>
@@ -599,53 +673,46 @@ const AddQuotation = () => {
                         document_title: e.target.value,
                       })
                     }
+                    placeholder="e.g. Bathroom Fittings Quotation"
                   />
                 </Form.Item>
               </Col>
               <Col xs={24} md={12}>
-                <Form.Item label="Quotation Number #">
-                  <Input
-                    value={formData.reference_number}
-                    readOnly
-                    style={{ color: "#000", backgroundColor: "#f5f5f5" }}
-                  />
+                <Form.Item label="Quotation Number">
+                  <Input value="Auto-generated" disabled />
                 </Form.Item>
               </Col>
             </Row>
 
             <Row gutter={16}>
-              <Col xs={24} md={12}>
-                <Form.Item label="Quotation Date" required>
+              <Col xs={24} md={8}>
+                <Form.Item label="Quotation Date *" required>
                   <DatePicker
                     selected={formData.quotation_date}
-                    onChange={(date) =>
-                      setFormData({ ...formData, quotation_date: date })
+                    onChange={(d) =>
+                      setFormData({ ...formData, quotation_date: d })
                     }
                     dateFormat="dd/MM/yyyy"
                     className="ant-input"
-                    placeholderText="Select date"
                     wrapperClassName="full-width"
                   />
                 </Form.Item>
               </Col>
-              <Col xs={24} md={12}>
-                <Form.Item label="Due Date" required>
+              <Col xs={24} md={8}>
+                <Form.Item label="Due Date *" required>
                   <DatePicker
                     selected={formData.due_date}
-                    onChange={(date) =>
-                      setFormData({ ...formData, due_date: date })
-                    }
+                    onChange={(d) => setFormData({ ...formData, due_date: d })}
                     dateFormat="dd/MM/yyyy"
+                    minDate={formData.quotation_date}
                     className="ant-input"
-                    placeholderText="Select date"
-                    minDate={formData.quotation_date || new Date()}
                     wrapperClassName="full-width"
                   />
                 </Form.Item>
               </Col>
             </Row>
 
-            <Form.Item label="Timeline Dates">
+            <Form.Item label="Follow-up Dates">
               <Space direction="vertical" style={{ width: "100%" }}>
                 {formData.followupDates.map((date, i) => (
                   <Space key={i} align="center">
@@ -653,11 +720,8 @@ const AddQuotation = () => {
                       selected={date}
                       onChange={(d) => changeFollowup(i, d)}
                       dateFormat="dd/MM/yyyy"
-                      className="ant-input"
-                      placeholderText="Select timeline date"
                       minDate={new Date()}
-                      maxDate={formData.due_date || undefined}
-                      style={{ width: 180 }}
+                      maxDate={formData.due_date}
                     />
                     <Button
                       danger
@@ -667,124 +731,145 @@ const AddQuotation = () => {
                     />
                   </Space>
                 ))}
-                <Button type="dashed" block onClick={addFollowup}>
-                  <PlusOutlined /> Add Timeline Date
+                <Button
+                  type="dashed"
+                  block
+                  icon={<PlusOutlined />}
+                  onClick={addFollowup}
+                >
+                  Add Follow-up Date
                 </Button>
               </Space>
             </Form.Item>
           </Card>
 
-          {/* Products */}
+          {/* Products & Options */}
           <Card
-            title="Products"
-            style={{ marginBottom: 16 }}
+            title="Products & Options"
+            style={{ marginBottom: 24 }}
             extra={
-              <Select
-                showSearch
-                placeholder="Search product by name, code or company code..."
-                onSearch={debouncedSearch}
-                onChange={addProduct}
-                value={productSearch || undefined}
-                style={{ width: 340 }}
-                filterOption={false} // we handle filtering manually
-                notFoundContent={
-                  productSearch ? (
-                    filteredProducts.length === 0 ? (
-                      products.length === 0 ? (
-                        <span>
-                          <Spin size="small" /> Loading products...
-                        </span>
-                      ) : (
-                        "No matching products"
-                      )
-                    ) : null
-                  ) : (
-                    "Start typing to search"
-                  )
-                }
-                dropdownRender={(menu) => (
-                  <>
-                    {menu}
-                    {products.length === 0 && productSearch && (
-                      <div
-                        style={{
-                          padding: "8px",
-                          textAlign: "center",
-                          color: "#888",
-                        }}
+              <Space>
+                <Select
+                  showSearch
+                  prefix={<SearchOutlined />}
+                  placeholder="Add main product..."
+                  value={null}
+                  onSearch={debouncedSearch}
+                  onChange={addProduct}
+                  filterOption={false}
+                  notFoundContent={
+                    isSearching ? (
+                      <Spin size="small" />
+                    ) : searchTerm ? (
+                      "No products found"
+                    ) : (
+                      "Search products"
+                    )
+                  }
+                  style={{ width: 380 }}
+                >
+                  {searchResult.map((p) => {
+                    const price = safeNum(
+                      p.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"],
+                      0,
+                    );
+                    return (
+                      <Option
+                        key={p.id || p.productId}
+                        value={p.id || p.productId}
                       >
-                        <Spin size="small" /> Fetching products...
-                      </div>
-                    )}
-                  </>
-                )}
-                loading={products.length === 0} // optional visual cue
-              >
-                {filteredProducts.map((p) => {
-                  const price = Number(
-                    p.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"] || 0
-                  );
-                  return (
-                    <Option
-                      key={p.id || p.productId}
-                      value={p.id || p.productId}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <span>
-                          <strong>{p.name}</strong> ({p.product_code || "—"})
-                        </span>
-                        <span style={{ color: "#52c41a" }}>
-                          ₹{price.toFixed(2)}
-                        </span>
-                      </div>
-                      {p.meta?.["d11da9f9-3f2e-4536-8236-9671200cca4a"] && (
-                        <div style={{ fontSize: "0.9em", color: "#888" }}>
-                          Company:{" "}
-                          {p.meta["d11da9f9-3f2e-4536-8236-9671200cca4a"]}
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                          }}
+                        >
+                          <div>
+                            <strong>{p.name}</strong>
+                            <div style={{ fontSize: "0.9em", color: "#666" }}>
+                              {p.product_code || "—"}
+                            </div>
+                          </div>
+                          <div style={{ color: "#52c41a" }}>
+                            ₹{price.toFixed(2)}
+                          </div>
                         </div>
-                      )}
-                    </Option>
-                  );
-                })}
-              </Select>
+                      </Option>
+                    );
+                  })}
+                </Select>
+
+                {mainProducts.length > 0 && (
+                  <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={() => setShowAddOptionModal(true)}
+                  >
+                    Add Option
+                  </Button>
+                )}
+              </Space>
             }
           >
             <Table
               columns={columns}
               dataSource={formData.products}
-              rowKey={(record) => record.productId || record.id}
+              rowKey={(record) => record.productId}
               pagination={false}
-              scroll={{ y: 300 }} // slightly taller is usually better
-              locale={{
-                emptyText:
-                  products.length === 0 ? (
-                    <span>
-                      <Spin /> Loading products...
-                    </span>
-                  ) : (
-                    "No products added – search & select above"
-                  ),
-              }}
+              scroll={{ y: 400 }}
+              locale={{ emptyText: "No products added yet" }}
             />
           </Card>
-          {/* Financials */}
-          <Card title="Financials" style={{ marginBottom: 16 }}>
-            <Row gutter={16}>
+
+          {/* Financial Summary */}
+          <Card title="Financial Summary" style={{ marginBottom: 32 }}>
+            <Row gutter={[16, 16]}>
+              <Col xs={24} sm={6}>
+                <Statistic
+                  title="Main Subtotal"
+                  value={calculations.mainSubtotal}
+                  precision={2}
+                  prefix="₹"
+                />
+              </Col>
+              <Col xs={24} sm={6}>
+                <Statistic
+                  title="Line Discounts"
+                  value={-calculations.mainLineDiscount}
+                  precision={2}
+                  prefix="₹"
+                  valueStyle={{ color: "#f5222d" }}
+                />
+              </Col>
+              <Col xs={24} sm={6}>
+                <Statistic
+                  title="Extra Discount"
+                  value={-calculations.extraDiscAmt}
+                  precision={2}
+                  prefix="₹"
+                  valueStyle={{ color: "#fa8c16" }}
+                />
+              </Col>
+              <Col xs={24} sm={6}>
+                <Statistic
+                  title="GST"
+                  value={calculations.gstAmt}
+                  precision={2}
+                  prefix="₹"
+                />
+              </Col>
+
+              <Divider />
+
               <Col xs={24} sm={8}>
-                <Form.Item label="GST (%)">
+                <Form.Item label="GST Rate (%)">
                   <InputNumber
                     min={0}
                     max={100}
-                    step={0.01}
-                    precision={2}
-                    style={{ width: "100%" }}
+                    step={0.1}
                     value={formData.gst}
                     onChange={(v) => setFormData({ ...formData, gst: v })}
+                    style={{ width: "100%" }}
                     addonAfter="%"
                   />
                 </Form.Item>
@@ -793,13 +878,11 @@ const AddQuotation = () => {
                 <Form.Item label="Shipping">
                   <InputNumber
                     min={0}
-                    step={0.01}
-                    precision={2}
-                    style={{ width: "100%" }}
                     value={formData.shippingAmount}
                     onChange={(v) =>
                       setFormData({ ...formData, shippingAmount: v })
                     }
+                    style={{ width: "100%" }}
                     addonBefore="₹"
                   />
                 </Form.Item>
@@ -807,59 +890,44 @@ const AddQuotation = () => {
               <Col xs={24} sm={8}>
                 <Form.Item label="Round Off">
                   <InputNumber
-                    readOnly
-                    style={{ width: "100%", backgroundColor: "#f5f5f5" }}
-                    value={formData.roundOff}
-                    addonBefore="₹"
-                    formatter={(v) => (v >= 0 ? `+${v}` : `${v}`)}
-                  />
-                </Form.Item>
-              </Col>
-            </Row>
-
-            <Row gutter={16} style={{ marginTop: 16 }}>
-              <Col xs={24} sm={4}>
-                <Form.Item label="Extra Discount">
-                  <Space.Compact style={{ width: "100%" }}>
-                    <InputNumber
-                      min={0}
-                      step={0.01}
-                      precision={2}
-                      style={{ width: "70%" }}
-                      value={formData.extraDiscount}
-                      onChange={(v) =>
-                        setFormData({ ...formData, extraDiscount: v })
-                      }
-                    />
-                    <Select
-                      style={{ width: "30%" }}
-                      value={formData.extraDiscountType}
-                      onChange={(v) =>
-                        setFormData({ ...formData, extraDiscountType: v })
-                      }
-                    >
-                      <Option value="fixed">₹ Fixed</Option>
-                      <Option value="percent">% Percent</Option>
-                    </Select>
-                  </Space.Compact>
-                </Form.Item>
-              </Col>
-
-              <Col xs={24} sm={8} offset={12}>
-                <Form.Item label="Final Amount (₹)">
-                  <InputNumber
                     disabled
+                    value={calculations.roundOff}
                     style={{ width: "100%" }}
-                    value={formData.finalAmount}
-                    formatter={(value) => `₹ ${value}`}
                   />
                 </Form.Item>
               </Col>
+
+              <Col xs={24}>
+                <Statistic
+                  title="FINAL AMOUNT (Main items only)"
+                  value={calculations.finalAmount}
+                  precision={0}
+                  prefix="₹"
+                  valueStyle={{
+                    color: "#1890ff",
+                    fontSize: 36,
+                    fontWeight: "bold",
+                  }}
+                />
+              </Col>
+
+              {calculations.optionalPotential > 0 && (
+                <Col xs={24}>
+                  <Statistic
+                    title="Optional Items Potential"
+                    value={calculations.optionalPotential}
+                    precision={2}
+                    prefix="₹"
+                    valueStyle={{ color: "#722ed1" }}
+                  />
+                  <Text type="secondary">(not included in final amount)</Text>
+                </Col>
+              )}
             </Row>
           </Card>
 
           {/* Signature */}
-          <Card title="Signature">
+          <Card title="Authorized Signature" style={{ marginBottom: 32 }}>
             <Row gutter={16}>
               <Col xs={24} md={12}>
                 <Form.Item label="Name">
@@ -875,7 +943,7 @@ const AddQuotation = () => {
                 </Form.Item>
               </Col>
               <Col xs={24} md={12}>
-                <Form.Item label="Image URL">
+                <Form.Item label="Signature Image URL">
                   <Input
                     value={formData.signature_image}
                     onChange={(e) =>
@@ -890,25 +958,34 @@ const AddQuotation = () => {
             </Row>
           </Card>
 
-          <Space style={{ marginTop: 24, float: "right" }}>
-            <Button onClick={() => navigate("/quotations/list")}>Cancel</Button>
-            <Button
-              type="primary"
-              onClick={handleSubmit}
-              loading={isCreating || isUpdating}
-              disabled={!formData.customerId || !formData.products.length}
-            >
-              {isEditMode ? "Update" : "Create"} Quotation
-            </Button>
-          </Space>
+          {/* Actions */}
+          <div style={{ textAlign: "right", marginTop: 40 }}>
+            <Space size="large">
+              <Button size="large" onClick={() => navigate("/quotations/list")}>
+                Cancel
+              </Button>
+              <Button
+                type="primary"
+                icon={<SaveOutlined />}
+                size="large"
+                loading={isCreating || isUpdating}
+                onClick={handleSubmit}
+                disabled={
+                  !formData.customerId || formData.products.length === 0
+                }
+              >
+                {isEditMode ? "Update Quotation" : "Create Quotation"}
+              </Button>
+            </Space>
+          </div>
         </Form>
 
-        {/* Address Modal */}
+        {/* Modals */}
         {showAddressModal && (
           <AddAddress
             onClose={() => setShowAddressModal(false)}
-            onSave={(addressId) => {
-              setFormData((prev) => ({ ...prev, shipTo: addressId }));
+            onSave={(addrId) => {
+              setFormData((prev) => ({ ...prev, shipTo: addrId }));
               setShowAddressModal(false);
               refetchAddresses();
             }}
@@ -916,92 +993,110 @@ const AddQuotation = () => {
           />
         )}
 
-        {/* Version History Modal */}
         <Modal
-          title="Version History"
-          open={showVersionsModal}
-          onCancel={() => setShowVersionsModal(false)}
+          title="Add Option / Variant / Upgrade"
+          open={showAddOptionModal}
+          onCancel={() => setShowAddOptionModal(false)}
           footer={null}
-          width={800}
+          width={600}
         >
-          {versions.length === 0 ? (
-            <Text type="secondary">No versions found</Text>
-          ) : (
-            <List
-              dataSource={versions}
-              renderItem={(v) => (
-                <List.Item
-                  actions={[
-                    <Button
-                      type="primary"
-                      size="small"
-                      onClick={() => {
-                        Modal.confirm({
-                          title: "Restore Version?",
-                          content: `Restore to version ${v.version}? This will overwrite current quotation.`,
-                          onOk: () =>
-                            restoreVersion({ id, version: v.version }),
-                        });
-                      }}
-                      loading={isRestoring}
-                    >
-                      Restore
-                    </Button>,
-                  ]}
-                >
-                  <List.Item.Meta
-                    title={<strong>Version {v.version}</strong>}
-                    description={
-                      <>
-                        <Text>
-                          By: <strong>{v.updatedBy || "System"}</strong>
-                        </Text>
-                        <br />
-                        <Text type="secondary">
-                          {new Date(v.updatedAt).toLocaleString()}
-                        </Text>
-                        <br />
-                        <Text>Items: {v.quotationItems?.length || 0}</Text>
-                        <br />
-                        <Text strong type="success">
-                          ₹
-                          {Number(v.quotationData?.finalAmount || 0).toFixed(2)}
-                        </Text>
-                      </>
-                    }
-                  />
-                </List.Item>
-              )}
-            />
-          )}
-        </Modal>
+          <Space direction="vertical" style={{ width: "100%" }} size="large">
+            <div>
+              <label style={{ display: "block", marginBottom: 8 }}>
+                Select parent product:
+              </label>
+              <Select
+                value={selectedParentId}
+                onChange={setSelectedParentId}
+                style={{ width: "100%" }}
+                placeholder="Choose main product"
+              >
+                {mainProducts.map((p) => (
+                  <Option key={p.productId} value={p.productId}>
+                    {p.name} — ₹{safeNum(p.sellingPrice, 0).toFixed(2)}
+                  </Option>
+                ))}
+              </Select>
+            </div>
 
-        {/* AntD-like styling for react-datepicker */}
-        <style jsx>{`
-          .full-width > div {
-            width: 100% !important;
-          }
-          .react-datepicker-wrapper,
-          .react-datepicker__input-container {
-            width: 100%;
-          }
-          .react-datepicker__input-container input {
-            width: 100%;
-            height: 32px;
-            padding: 4px 11px;
-            font-size: 14px;
-            line-height: 1.5715;
-            border: 1px solid #d9d9d9;
-            border-radius: 6px;
-            transition: all 0.2s;
-          }
-          .react-datepicker__input-container input:focus {
-            border-color: #40a9ff;
-            outline: 0;
-            box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
-          }
-        `}</style>
+            <div>
+              <label style={{ display: "block", marginBottom: 8 }}>
+                Option type:
+              </label>
+              <Select
+                value={optionType}
+                onChange={setOptionType}
+                style={{ width: "100%" }}
+              >
+                <Option value="addon">Add-on (adds to total)</Option>
+                <Option value="upgrade">Upgrade (extra cost)</Option>
+                <Option value="variant">Variant (alternative)</Option>
+              </Select>
+            </div>
+
+            <div>
+              <label style={{ display: "block", marginBottom: 8 }}>
+                Search product:
+              </label>
+              <Select
+                showSearch
+                prefix={<SearchOutlined />}
+                placeholder={`Search ${optionType}...`}
+                onSearch={debouncedSearch}
+                onChange={addOption}
+                filterOption={false}
+                notFoundContent={
+                  isSearching ? (
+                    <Spin size="small" />
+                  ) : searchTerm ? (
+                    "No results"
+                  ) : (
+                    "Type to search"
+                  )
+                }
+                style={{ width: "100%" }}
+              >
+                {searchResult.map((p) => {
+                  const price = safeNum(
+                    p.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"],
+                    0,
+                  );
+                  return (
+                    <Option
+                      key={p.id || p.productId}
+                      value={p.id || p.productId}
+                    >
+                      {p.name} — ₹{price.toFixed(2)}
+                    </Option>
+                  );
+                })}
+              </Select>
+            </div>
+          </Space>
+        </Modal>
       </div>
+
+      {/* DatePicker Styles */}
+      <style jsx>{`
+        .full-width > div {
+          width: 100% !important;
+        }
+        .react-datepicker-wrapper,
+        .react-datepicker__input-container {
+          width: 100%;
+        }
+        .react-datepicker__input-container input {
+          width: 100%;
+          height: 32px;
+          padding: 4px 11px;
+          border: 1px solid #d9d9d9;
+          border-radius: 6px;
+        }
+        .react-datepicker__input-container input:focus {
+          border-color: #40a9ff;
+          box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+        }
+      `}</style>
     </div>
   );
 };

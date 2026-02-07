@@ -80,7 +80,7 @@ const AddSiteMap = () => {
 
   // ─── API ────────────────────────────────────────────────
   const { data: customersData, isLoading: customersLoading } =
-    useGetCustomersQuery();
+    useGetCustomersQuery({ limit: 500 });
   const { data: productsResponse, isLoading: productsLoading } =
     useGetAllProductsQuery();
   const { data: existingData, isLoading: fetchingExisting } =
@@ -265,7 +265,7 @@ const AddSiteMap = () => {
     if (!prod) return message.error("Product not found");
 
     const price = Number(
-      prod.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"] || 0
+      prod.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"] || 0,
     );
 
     const item = {
@@ -288,12 +288,12 @@ const AddSiteMap = () => {
     if (!selectedConcealedProduct || !selectedFloor) return;
 
     const prod = products.find(
-      (p) => getProductId(p) === selectedConcealedProduct
+      (p) => getProductId(p) === selectedConcealedProduct,
     );
     if (!prod) return message.error("Product not found");
 
     const price = Number(
-      prod.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"] || 0
+      prod.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"] || 0,
     );
 
     const item = {
@@ -471,7 +471,7 @@ const AddSiteMap = () => {
                   <Tag color="processing">
                     {
                       formData.items.filter(
-                        (i) => !i.isConcealed && !i.floor_number
+                        (i) => !i.isConcealed && !i.floor_number,
                       ).length
                     }{" "}
                     items
@@ -484,7 +484,7 @@ const AddSiteMap = () => {
                   size="middle"
                   pagination={false}
                   dataSource={formData.items.filter(
-                    (i) => !i.isConcealed && !i.floor_number
+                    (i) => !i.isConcealed && !i.floor_number,
                   )}
                   rowKey={(r, idx) => `unassigned-${idx}`}
                   columns={[
@@ -543,18 +543,19 @@ const AddSiteMap = () => {
 
             <Collapse
               defaultActiveKey={formData.floorDetails.map(
-                (f) => f.floor_number
+                (f) => f.floor_number,
               )}
               accordion
               ghost
             >
               {formData.floorDetails.map((floor) => {
                 const floorItems = formData.items.filter(
-                  (i) => i.floor_number === floor.floor_number && !i.isConcealed
+                  (i) =>
+                    i.floor_number === floor.floor_number && !i.isConcealed,
                 );
                 const total = floorItems.reduce(
                   (s, i) => s + i.quantity * i.price,
-                  0
+                  0,
                 );
 
                 return (
@@ -605,11 +606,11 @@ const AddSiteMap = () => {
                       ) : (
                         floor.rooms.map((room) => {
                           const roomItems = floorItems.filter(
-                            (i) => i.room_id === room.room_id
+                            (i) => i.room_id === room.room_id,
                           );
                           const roomTotal = roomItems.reduce(
                             (s, i) => s + i.quantity * i.price,
-                            0
+                            0,
                           );
 
                           return (
@@ -647,7 +648,7 @@ const AddSiteMap = () => {
                                       onClick={() => {
                                         if (
                                           window.confirm(
-                                            "Delete room and all assigned items?"
+                                            "Delete room and all assigned items?",
                                           )
                                         ) {
                                           setFormData((p) => ({
@@ -661,10 +662,10 @@ const AddSiteMap = () => {
                                                       rooms: f.rooms.filter(
                                                         (r) =>
                                                           r.room_id !==
-                                                          room.room_id
+                                                          room.room_id,
                                                       ),
                                                     }
-                                                  : f
+                                                  : f,
                                             ),
                                             items: p.items.filter(
                                               (i) =>
@@ -672,7 +673,7 @@ const AddSiteMap = () => {
                                                   i.floor_number ===
                                                     floor.floor_number &&
                                                   i.room_id === room.room_id
-                                                )
+                                                ),
                                             ),
                                           }));
                                         }
@@ -693,7 +694,7 @@ const AddSiteMap = () => {
                                     addVisibleProduct(
                                       floor.floor_number,
                                       room.room_id,
-                                      val
+                                      val,
                                     );
                                   }}
                                   filterOption={false}
@@ -735,7 +736,7 @@ const AddSiteMap = () => {
                                           onChange={(v) =>
                                             updateQuantity(
                                               formData.items.indexOf(r),
-                                              v
+                                              v,
                                             )
                                           }
                                         />
@@ -759,7 +760,7 @@ const AddSiteMap = () => {
                                           icon={<DeleteOutlined />}
                                           onClick={() =>
                                             removeItem(
-                                              formData.items.indexOf(r)
+                                              formData.items.indexOf(r),
                                             )
                                           }
                                         />
@@ -913,7 +914,7 @@ const AddSiteMap = () => {
             <Collapse accordion ghost>
               {formData.floorDetails.map((floor) => {
                 const concealed = formData.items.filter(
-                  (i) => i.isConcealed && i.floor_number === floor.floor_number
+                  (i) => i.isConcealed && i.floor_number === floor.floor_number,
                 );
                 if (concealed.length === 0) return null;
 
@@ -926,7 +927,7 @@ const AddSiteMap = () => {
 
                 const floorTotal = concealed.reduce(
                   (s, i) => s + i.quantity * i.price,
-                  0
+                  0,
                 );
 
                 return (
@@ -965,7 +966,7 @@ const AddSiteMap = () => {
                             : null;
                         const total = items.reduce(
                           (s, i) => s + i.quantity * i.price,
-                          0
+                          0,
                         );
 
                         return (
@@ -1006,7 +1007,7 @@ const AddSiteMap = () => {
                                       onChange={(v) =>
                                         updateQuantity(
                                           formData.items.indexOf(r),
-                                          v
+                                          v,
                                         )
                                       }
                                     />
@@ -1017,7 +1018,7 @@ const AddSiteMap = () => {
                                   width: 140,
                                   render: (_, r) =>
                                     `₹${(r.quantity * r.price).toLocaleString(
-                                      "en-IN"
+                                      "en-IN",
                                     )}`,
                                 },
                                 {
@@ -1171,12 +1172,12 @@ const AddSiteMap = () => {
                   rooms: [...f.rooms],
                 }));
                 const floorIdx = floors.findIndex(
-                  (f) => f.floor_number === roomModal.floor.floor_number
+                  (f) => f.floor_number === roomModal.floor.floor_number,
                 );
 
                 if (roomModal.room) {
                   const roomIdx = floors[floorIdx].rooms.findIndex(
-                    (r) => r.room_id === roomModal.room.room_id
+                    (r) => r.room_id === roomModal.room.room_id,
                   );
                   floors[floorIdx].rooms[roomIdx] = {
                     ...floors[floorIdx].rooms[roomIdx],
