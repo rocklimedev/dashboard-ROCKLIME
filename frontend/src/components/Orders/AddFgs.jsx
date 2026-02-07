@@ -396,6 +396,7 @@ const AddFieldgeneratedSheet = () => {
       <div className="content">
         <div className="card">
           <PageHeader
+            exportOptions={{ pdf: false, excel: false }}
             title={
               isEditMode
                 ? "Edit Field Generated Sheet"

@@ -584,6 +584,7 @@ const AddQuotation = () => {
     <div className="page-wrapper">
       <div className="content">
         <PageHeader
+          exportOptions={{ pdf: false, excel: false }}
           title={isEditMode ? "Edit Quotation" : "Create Quotation"}
           subtitle="Fill in all quotation details"
         />
