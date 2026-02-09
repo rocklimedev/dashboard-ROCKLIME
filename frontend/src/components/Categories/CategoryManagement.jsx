@@ -331,7 +331,6 @@ const CategoryManagement = () => {
             <div className="tree-node">{renderTreeTitle(cat, "category")}</div>
           ),
           key: `cat-${cat.categoryId}`,
-          icon: <FolderOutlined />,
           children: catKeywords.map((kw) => ({
             title: (
               <div className="tree-node">{renderTreeTitle(kw, "keyword")}</div>
@@ -350,7 +349,6 @@ const CategoryManagement = () => {
           <div className="tree-node">{renderTreeTitle(parent, "parent")}</div>
         ),
         key: `parent-${parent.id}`,
-        icon: <FolderOutlined style={{ color: "#333333" }} />,
         children: catNodes,
         data: parent,
         type: "parent",
@@ -599,24 +597,24 @@ const CategoryManagement = () => {
             <div className="right-panel">
               <Card className="product-checker-card">
                 <Space direction="vertical" style={{ width: "100%" }}>
-               <Search
-  placeholder="Check Product Code"
-  enterButton={
-    <Button
-      type="primary"
-      style={{
-        background: "#E31E24",      // your brand red from other buttons
-        borderColor: "#E31E24",
-      }}
-    >
-      Check
-    </Button>
-  }
-  value={productSearch}
-  onChange={(e) => setProductSearch(e.target.value)}
-  onSearch={handleProductSearch}
-  style={{ width: 300, maxWidth: "100%" }}
-/>
+                  <Search
+                    placeholder="Check Product Code"
+                    enterButton={
+                      <Button
+                        type="primary"
+                        style={{
+                          background: "#E31E24", // your brand red from other buttons
+                          borderColor: "#E31E24",
+                        }}
+                      >
+                        Check
+                      </Button>
+                    }
+                    value={productSearch}
+                    onChange={(e) => setProductSearch(e.target.value)}
+                    onSearch={handleProductSearch}
+                    style={{ width: 300, maxWidth: "100%" }}
+                  />
 
                   {filteredProduct && (
                     <div className="result-box result-success">

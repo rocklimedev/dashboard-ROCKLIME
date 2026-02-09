@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Alert, Tabs, Modal, Button, Typography } from "antd";
+import { Alert, Tabs, Modal, Button, Typography, Segmented } from "antd";
 import { ShoppingCartOutlined, CheckCircleOutlined } from "@ant-design/icons";
 import {
   useGetCustomersQuery,
@@ -50,6 +50,7 @@ import AddNewTeam from "../Orders/AddNewTeam";
 import { useGetAllUsersQuery } from "../../api/userApi";
 import AddCustomerModal from "../Customers/AddCustomerModal";
 import PreviewQuotation from "../Quotation/PreviewQuotation";
+import { useAuth } from "../../context/AuthContext";
 
 const { TabPane } = Tabs;
 const { Text } = Typography;
@@ -63,9 +64,14 @@ const PageWrapper = styled.div`
   }
 `;
 
+const RESTRICTED_ROLES = ["SUPER_ADMIN", "DEVELOPER", "ADMIN"];
+
 const NewCart = ({ onConvertToOrder }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { auth } = useAuth();
+  const canCreatePurchaseOrder =
+    auth?.role && RESTRICTED_ROLES.includes(auth.role);
 
   // ────────────────────── PROFILE & USER ──────────────────────
   const { data: profileData } = useGetProfileQuery();
@@ -112,7 +118,7 @@ const NewCart = ({ onConvertToOrder }) => {
     priority: "medium",
     description: "",
     invoiceLink: null,
-    orderNo: "", // ← No longer pre-filled — backend assigns
+    orderNo: "",
     quotationId: "",
     masterPipelineNo: "",
     previousOrderNo: "",
@@ -137,7 +143,7 @@ const NewCart = ({ onConvertToOrder }) => {
   const [productSearch, setProductSearch] = useState("");
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [shipping, setShipping] = useState(0);
-  const [gst, setGst] = useState(0); // GST is now always 0
+  const [gst, setGst] = useState(0);
   const [billingAddressId, setBillingAddressId] = useState(null);
 
   // ────────────────────── QUERIES ──────────────────────
@@ -187,19 +193,30 @@ const NewCart = ({ onConvertToOrder }) => {
     console.warn("useGetAllProductsQuery returned non-array:", productsData);
     return [];
   }, [productsData]);
+
   const customers = customerData?.data || [];
   const customerList = useMemo(
     () => (Array.isArray(customers) ? customers : []),
     [customers],
   );
 
-  const cartItems = useMemo(
+  // ── Cart items separation ──
+  const allCartItems = useMemo(
     () => (Array.isArray(cartData?.cart?.items) ? cartData.cart.items : []),
     [cartData],
   );
 
+  // Only main (non-optional) items – used for financial calculations
+  const calculationCartItems = useMemo(
+    () => allCartItems.filter((i) => !i.isOption),
+    [allCartItems],
+  );
+
+  // Full list for UI rendering (main + optional)
+  const displayCartItems = allCartItems;
+
   const { productsData: cartProductsData, errors: productErrors } =
-    useProductsData(cartItems);
+    useProductsData(calculationCartItems);
 
   const userIds = useMemo(
     () => [...new Set(addresses.map((a) => a.userId).filter(Boolean))],
@@ -214,16 +231,21 @@ const NewCart = ({ onConvertToOrder }) => {
 
   // ────────────────────── TOTALS & CALCULATIONS ──────────────────────
   const totalItems = useMemo(
-    () => cartItems.reduce((a, i) => a + (i.quantity || 0), 0),
-    [cartItems],
+    () => allCartItems.reduce((a, i) => a + (i.quantity || 0), 0),
+    [allCartItems],
   );
+
   const subTotal = useMemo(
-    () => cartItems.reduce((a, i) => a + (i.price || 0) * (i.quantity || 0), 0),
-    [cartItems],
+    () =>
+      calculationCartItems.reduce(
+        (a, i) => a + (i.price || 0) * (i.quantity || 0),
+        0,
+      ),
+    [calculationCartItems],
   );
 
   const totalDiscount = useMemo(() => {
-    return cartItems.reduce((sum, item) => {
+    return calculationCartItems.reduce((sum, item) => {
       const subtotal = (item.price || 0) * (item.quantity || 1);
       const discVal = Number(itemDiscounts[item.productId]) || 0;
       const type = itemDiscountTypes[item.productId] || "percent";
@@ -233,10 +255,10 @@ const NewCart = ({ onConvertToOrder }) => {
           : discVal * (item.quantity || 1);
       return sum + disc;
     }, 0);
-  }, [cartItems, itemDiscounts, itemDiscountTypes]);
+  }, [calculationCartItems, itemDiscounts, itemDiscountTypes]);
 
   const tax = useMemo(() => {
-    return cartItems.reduce((acc, item) => {
+    return calculationCartItems.reduce((acc, item) => {
       const price = item.price || 0;
       const qty = item.quantity || 1;
       const subtotal = price * qty;
@@ -248,7 +270,7 @@ const NewCart = ({ onConvertToOrder }) => {
       const itemTax = parseFloat(itemTaxes[item.productId]) || 0;
       return acc + (taxable * itemTax) / 100;
     }, 0);
-  }, [cartItems, itemDiscounts, itemDiscountTypes, itemTaxes]);
+  }, [calculationCartItems, itemDiscounts, itemDiscountTypes, itemTaxes]);
 
   const extraDiscount = useMemo(() => {
     const amount = parseFloat(quotationData.discountAmount) || 0;
@@ -282,23 +304,61 @@ const NewCart = ({ onConvertToOrder }) => {
     gst > 0 ? parseFloat(((roundedAmount * gst) / 100).toFixed(2)) : 0;
   const totalAmount = parseFloat((roundedAmount + gstAmount).toFixed(2));
 
+  const handleMakeOption = (productId, optionType, parentProductId = null) => {
+    if (!userId) {
+      message.error("User not logged in");
+      return;
+    }
+
+    dispatch(
+      cartApi.util.updateQueryData("getCart", userId, (draft) => {
+        const item = draft.cart.items.find((i) => i.productId === productId);
+        if (item) {
+          if (optionType === null) {
+            item.isOption = false;
+            item.optionType = null;
+            item.parentProductId = null;
+            item.selected = true;
+          } else {
+            item.isOption = true;
+            item.optionType = optionType;
+            item.parentProductId = parentProductId || null;
+            item.selected = true;
+          }
+        }
+      }),
+    );
+
+    message.info(
+      optionType
+        ? `Item marked as ${optionType}${parentProductId ? ` for ${getParentName(parentProductId)}` : ""}`
+        : "Item reset to main product",
+    );
+  };
+
+  const getParentName = (parentProductId) => {
+    if (!parentProductId) return "Unknown";
+    const parentItem = allCartItems.find(
+      (i) => i.productId === parentProductId,
+    );
+    return parentItem?.name || "Deleted/Unknown product";
+  };
+
   // ────────────────────── EFFECTS ──────────────────────
-  // Sync discount types for newly added items
   useEffect(() => {
-    const missing = cartItems
+    const missing = calculationCartItems
       .filter((it) => !(it.productId in itemDiscountTypes))
       .reduce((acc, it) => ({ ...acc, [it.productId]: "percent" }), {});
     if (Object.keys(missing).length) {
       setItemDiscountTypes((prev) => ({ ...prev, ...missing }));
     }
-  }, [cartItems]);
+  }, [calculationCartItems]);
 
-  // Purchase order sync
   useEffect(() => {
     if (documentType === "Purchase Order") {
       setPurchaseOrderData((prev) => ({
         ...prev,
-        items: cartItems.map((item) => ({
+        items: calculationCartItems.map((item) => ({
           id: item.productId,
           productId: item.productId,
           name: item.name || "Unknown",
@@ -309,9 +369,8 @@ const NewCart = ({ onConvertToOrder }) => {
         })),
       }));
     }
-  }, [cartItems, itemTaxes, documentType]);
+  }, [calculationCartItems, itemTaxes, documentType]);
 
-  // Auto-fill customer name
   useEffect(() => {
     if (selectedCustomer) {
       const cust = customerList.find((c) => c.customerId === selectedCustomer);
@@ -325,7 +384,6 @@ const NewCart = ({ onConvertToOrder }) => {
     }
   }, [selectedCustomer, customerList]);
 
-  // Sync extra discount between Order & Quotation forms
   useEffect(() => {
     if (documentType === "Order") {
       setQuotationData((prev) => ({
@@ -338,10 +396,13 @@ const NewCart = ({ onConvertToOrder }) => {
 
   // ────────────────────── HANDLERS ──────────────────────
   const handleShippingChange = useCallback((v) => setShipping(v), []);
+
   const handleDiscountChange = (productId, value) =>
     setItemDiscounts((p) => ({ ...p, [productId]: value >= 0 ? value : 0 }));
+
   const handleDiscountTypeChange = (productId, type) =>
     setItemDiscountTypes((p) => ({ ...p, [productId]: type }));
+
   const handleTaxChange = (productId, value) =>
     setItemTaxes((p) => ({ ...p, [productId]: value >= 0 ? value : 0 }));
 
@@ -364,7 +425,6 @@ const NewCart = ({ onConvertToOrder }) => {
 
       if (!userId) return message.error("User not logged in!");
 
-      // Optimistic UI
       dispatch(
         cartApi.util.updateQueryData("getCart", userId, (draft) => {
           draft.cart.items = draft.cart.items.filter(
@@ -373,7 +433,6 @@ const NewCart = ({ onConvertToOrder }) => {
         }),
       );
 
-      // Clean local state
       setItemDiscounts((p) => {
         const { [productId]: _, ...rest } = p;
         return rest;
@@ -395,14 +454,14 @@ const NewCart = ({ onConvertToOrder }) => {
         message.error(err?.data?.message || "Failed");
         dispatch(
           cartApi.util.updateQueryData("getCart", userId, () => ({
-            cart: { items: cartItems },
+            cart: { items: allCartItems },
           })),
         );
       } finally {
         setUpdatingItems((p) => ({ ...p, [productId]: false }));
       }
     },
-    [userId, cartItems, dispatch, removeFromCart],
+    [userId, allCartItems, dispatch, removeFromCart],
   );
 
   const handleUpdateQuantity = useCallback(
@@ -465,11 +524,14 @@ const NewCart = ({ onConvertToOrder }) => {
     [products],
   );
 
-  // ────────────────────── CREATE DOCUMENT (main handler) ──────────────────────
+  // ────────────────────── CREATE DOCUMENT ──────────────────────
   const handleCreateDocument = async () => {
     if (documentType === "Purchase Order") {
       if (!selectedVendor) return message.error("Please select a vendor.");
-      if (cartItems.length === 0 && purchaseOrderData.items.length === 0)
+      if (
+        calculationCartItems.length === 0 &&
+        purchaseOrderData.items.length === 0
+      )
         return message.error("Please add at least one product.");
       if (purchaseOrderData.items.some((item) => item.mrp <= 0))
         return message.error(
@@ -483,24 +545,23 @@ const NewCart = ({ onConvertToOrder }) => {
         return message.error(
           "Some products are no longer available. Please remove them.",
         );
+
       const formattedItems = purchaseOrderData.items.map((item) => ({
         productId: item.productId,
         quantity: Number(item.quantity) || 1,
-        unitPrice: Number(item.unitPrice) || Number(item.mrp) || 0.01, // ← prefer unitPrice
-        mrp: Number(item.mrp) || Number(item.unitPrice) || 0.01, // fallback
+        unitPrice: Number(item.unitPrice) || Number(item.mrp) || 0.01,
+        mrp: Number(item.mrp) || Number(item.unitPrice) || 0.01,
         tax: Number(item.tax) || 0,
-        discount: Number(item.discount) || 0, // if you add discount field
+        discount: Number(item.discount) || 0,
         discountType: item.discountType || "percent",
       }));
 
       const payload = {
         vendorId: selectedVendor,
         items: formattedItems,
-        expectDeliveryDate: purchaseOrderData.expectDeliveryDate // ← fixed spelling
-          ? moment(purchaseOrderData.expectDeliveryDate).format("YYYY-MM-DD")
+        expectDeliveryDate: purchaseOrderData.expectedDeliveryDate
+          ? moment(purchaseOrderData.expectedDeliveryDate).format("YYYY-MM-DD")
           : null,
-        // status: do NOT send on create — backend forces "pending"
-        // fgsId: if you support FieldGuidedSheet conversion later
       };
 
       try {
@@ -516,11 +577,7 @@ const NewCart = ({ onConvertToOrder }) => {
           err.status === 404
             ? "Vendor not found."
             : err.status === 400
-              ? `Invalid request: ${
-                  err.data?.error ||
-                  err.data?.message ||
-                  "Check your input data."
-                }`
+              ? `Invalid request: ${err.data?.error || err.data?.message || "Check your input data."}`
               : err.data?.message || "Failed to create purchase order";
         message.error(errorMessage);
       }
@@ -529,7 +586,7 @@ const NewCart = ({ onConvertToOrder }) => {
 
     if (!selectedCustomer) return message.error("Please select a customer.");
     if (!userId) return message.error("User not logged in!");
-    if (cartItems.length === 0)
+    if (calculationCartItems.length === 0)
       return message.error("Cart is empty. Add items to proceed.");
 
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
@@ -563,7 +620,7 @@ const NewCart = ({ onConvertToOrder }) => {
       return message.error("Invalid total amount.");
 
     if (
-      !cartItems.every(
+      !calculationCartItems.every(
         (item) =>
           item.productId &&
           typeof item.quantity === "number" &&
@@ -585,7 +642,7 @@ const NewCart = ({ onConvertToOrder }) => {
       documentType === "Order"
     ) {
       const selectedCustomerData = customerList.find(
-        (customer) => customer.customerId === selectedCustomer,
+        (c) => c.customerId === selectedCustomer,
       );
       const defaultAddress = selectedCustomerData?.address;
       if (defaultAddress) {
@@ -621,7 +678,7 @@ const NewCart = ({ onConvertToOrder }) => {
     }
 
     const selectedCustomerData = customerList.find(
-      (customer) => customer.customerId === selectedCustomer,
+      (c) => c.customerId === selectedCustomer,
     );
     if (!selectedCustomerData)
       return message.error("Selected customer not found.");
@@ -643,28 +700,23 @@ const NewCart = ({ onConvertToOrder }) => {
         document_title: `Quotation for ${selectedCustomerData.name}`,
         quotation_date: quotationData.quotationDate,
         due_date: quotationData.dueDate,
-        // reference_number → removed (backend assigns)
-
         extraDiscount: parseFloat(quotationData.discountAmount) || 0,
         extraDiscountType: quotationData.discountType || "percent",
-
         shippingAmount: Number(shipping),
         gst: gst,
-
         finalAmount: totalAmount,
 
-        products: cartItems.map((item) => {
+        // ONLY FOR QUOTATION: Send ALL items (main + optional/add-ons)
+        products: allCartItems.map((item) => {
           const price = Number(item.price) || 0;
           const quantity = Number(item.quantity) || 1;
           const rawDiscount = Number(itemDiscounts[item.productId]) || 0;
           const discountType = itemDiscountTypes[item.productId] || "percent";
 
-          let lineTotalAfterDiscount;
-          if (discountType === "percent") {
-            lineTotalAfterDiscount = price * quantity * (1 - rawDiscount / 100);
-          } else {
-            lineTotalAfterDiscount = (price - rawDiscount) * quantity;
-          }
+          let lineTotalAfterDiscount =
+            discountType === "percent"
+              ? price * quantity * (1 - rawDiscount / 100)
+              : (price - rawDiscount) * quantity;
 
           return {
             productId: item.productId,
@@ -675,11 +727,15 @@ const NewCart = ({ onConvertToOrder }) => {
             discountType,
             tax: Number(itemTaxes[item.productId]) || 0,
             total: parseFloat(lineTotalAfterDiscount.toFixed(2)),
+
+            // These fields will be saved in DB & shown in preview/PDF
+            isOptionFor: item.parentProductId || null,
+            optionType: item.optionType || null,
+            groupId: item.groupId || null,
           };
         }),
 
         followupDates: quotationData.followupDates.filter(Boolean),
-
         customerId: selectedCustomerData.customerId,
         shipTo: quotationData.shipTo || null,
         createdBy: userId,
@@ -699,8 +755,6 @@ const NewCart = ({ onConvertToOrder }) => {
         message.error(e?.data?.message || "Failed to create quotation");
       }
     } else if (documentType === "Order") {
-      // orderNo removed from payload — backend assigns
-
       if (!validateFollowupDates()) {
         return message.error("Follow-up dates cannot be after the due date.");
       }
@@ -719,8 +773,6 @@ const NewCart = ({ onConvertToOrder }) => {
 
       const orderPayload = {
         id: uuidv4(),
-        // orderNo removed — backend generates
-
         createdFor: selectedCustomerData.customerId,
         createdBy: userId,
         assignedTeamId: orderData.assignedTeamId || null,
@@ -730,10 +782,9 @@ const NewCart = ({ onConvertToOrder }) => {
         status: orderData.status || "PREPARING",
         gst: gst,
         gstValue: Number(gstAmount),
-        extraDiscount: parseFloat(quotationData.discountAmount || 0),
+        extraDiscount: parseFloat(quotationData.discountAmount) || 0,
         extraDiscountType: quotationData.discountType || "percent",
         extraDiscountValue: Number(extraDiscountValue.toFixed(2)),
-
         dueDate: orderData.dueDate,
         followupDates: orderData.followupDates.filter(
           (date) => date && moment(date).isValid(),
@@ -746,7 +797,7 @@ const NewCart = ({ onConvertToOrder }) => {
         masterPipelineNo: orderData.masterPipelineNo || null,
         previousOrderNo: orderData.previousOrderNo || null,
         shipTo: orderData.shipTo || null,
-        products: cartItems.map((item) => {
+        products: calculationCartItems.map((item) => {
           const price = parseFloat(item.price) || 0;
           const quantity = parseInt(item.quantity, 10) || 1;
 
@@ -783,13 +834,8 @@ const NewCart = ({ onConvertToOrder }) => {
             : error?.status === 404
               ? `Not Found: ${error.data?.message || "Resource not found."}`
               : error?.status === 500
-                ? `Server error: ${
-                    error.data?.message || "Please try again later."
-                  }`
-                : `Something went wrong: ${
-                    error.data?.message || "Please try again."
-                  }`;
-
+                ? `Server error: ${error.data?.message || "Please try again later."}`
+                : `Something went wrong: ${error.data?.message || "Please try again."}`;
         message.error(errorMessage);
       }
     }
@@ -882,7 +928,33 @@ const NewCart = ({ onConvertToOrder }) => {
   return (
     <div className="page-wrapper">
       <div className="content">
-        <Tabs activeKey={activeTab} onChange={setActiveTab} type="card">
+        <Tabs
+          activeKey={activeTab}
+          onChange={setActiveTab}
+          type="card"
+          tabBarExtraContent={
+            <div
+              style={{
+                paddingRight: 16,
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+              }}
+            >
+              <Segmented
+                value={documentType}
+                onChange={setDocumentType}
+                options={[
+                  { label: "Quotation", value: "Quotation" },
+                  { label: "Order", value: "Order" },
+                  ...(canCreatePurchaseOrder
+                    ? [{ label: "Purchase Order", value: "Purchase Order" }]
+                    : []),
+                ]}
+              />
+            </div>
+          }
+        >
           <TabPane
             tab={
               <span>
@@ -892,7 +964,7 @@ const NewCart = ({ onConvertToOrder }) => {
             key="cart"
           >
             <CartTab
-              cartItems={cartItems}
+              cartItems={displayCartItems}
               cartProductsData={cartProductsData}
               totalItems={totalItems}
               shipping={shipping}
@@ -913,6 +985,10 @@ const NewCart = ({ onConvertToOrder }) => {
               setShowClearCartModal={setShowClearCartModal}
               setActiveTab={setActiveTab}
               onShippingChange={handleShippingChange}
+              handleMakeOption={handleMakeOption}
+              getParentName={getParentName}
+              documentType={documentType}
+              setDocumentType={setDocumentType}
             />
           </TabPane>
 
@@ -944,7 +1020,7 @@ const NewCart = ({ onConvertToOrder }) => {
                     purchaseOrderData.items.some(
                       (i) => i.productId === productId,
                     ) ||
-                    cartItems.some((i) => i.productId === productId)
+                    allCartItems.some((i) => i.productId === productId)
                   ) {
                     message.error(
                       product ? "Product already added." : "Product not found.",
@@ -1009,16 +1085,12 @@ const NewCart = ({ onConvertToOrder }) => {
                   });
                 }}
                 handlePurchaseOrderChange={(key, value) =>
-                  setPurchaseOrderData((prev) => ({
-                    ...prev,
-                    [key]: value,
-                  }))
+                  setPurchaseOrderData((prev) => ({ ...prev, [key]: value }))
                 }
                 purchaseOrderTotal={purchaseOrderTotal}
-                // purchaseOrderNumber removed — backend assigns
                 documentType={documentType}
                 setDocumentType={setDocumentType}
-                cartItems={cartItems}
+                cartItems={displayCartItems}
                 setActiveTab={setActiveTab}
                 handleCreateDocument={handleCreateDocument}
                 setShowAddVendorModal={setShowAddVendorModal}
@@ -1042,10 +1114,9 @@ const NewCart = ({ onConvertToOrder }) => {
                 customerQueries={customerQueries}
                 teams={teams}
                 users={users}
-                // orderNumber removed — backend assigns
                 documentType={documentType}
                 setDocumentType={setDocumentType}
-                cartItems={cartItems}
+                cartItems={displayCartItems}
                 totalAmount={totalAmount}
                 tax={tax}
                 totalDiscount={totalDiscount}
@@ -1075,10 +1146,9 @@ const NewCart = ({ onConvertToOrder }) => {
                 customerMap={customerMap}
                 userQueries={userQueries}
                 customerQueries={customerQueries}
-                // quotationNumber removed — backend assigns
                 documentType={documentType}
                 setDocumentType={setDocumentType}
-                cartItems={cartItems}
+                cartItems={displayCartItems}
                 totalAmount={totalAmount}
                 gst={gst}
                 gstAmount={gstAmount}
@@ -1154,18 +1224,14 @@ const NewCart = ({ onConvertToOrder }) => {
             onSave={() => {}}
           />
         )}
-
         <PreviewQuotation
           visible={previewVisible}
           onClose={() => setPreviewVisible(false)}
-          cartItems={cartItems}
+          cartItems={calculationCartItems} // ← only main items
           productsData={cartProductsData}
           customer={customerList.find((c) => c.customerId === selectedCustomer)}
           address={addresses.find((a) => a.addressId === quotationData.shipTo)}
-          quotationData={{
-            ...quotationData,
-            // reference_number removed — can show placeholder or omit
-          }}
+          quotationData={{ ...quotationData }}
           itemDiscounts={itemDiscounts}
           itemDiscountTypes={itemDiscountTypes}
           itemTaxes={itemTaxes}

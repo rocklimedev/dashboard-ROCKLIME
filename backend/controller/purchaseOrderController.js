@@ -4,7 +4,7 @@ const { Op } = require("sequelize");
 const moment = require("moment");
 const sequelize = require("../config/database");
 const { sendNotification } = require("./notificationController");
-const { Product, Vendor, PurchaseOrder } = require("../models");
+const { Product, Vendor, PurchaseOrder, User } = require("../models");
 const PoItem = require("../models/poItem"); // Mongoose model
 
 // Preferably move to .env
@@ -322,22 +322,39 @@ exports.getPurchaseOrderById = async (req, res) => {
     const po = await PurchaseOrder.findByPk(req.params.id, {
       include: [
         { model: Vendor, as: "vendor", attributes: ["id", "vendorName"] },
+        {
+          model: User,
+          as: "createdBy", // ← change from "creator" to "createdBy"
+          attributes: ["userId", "name", "email", "username"],
+        },
       ],
     });
 
     if (!po)
       return res.status(404).json({ message: "Purchase order not found" });
+    // Temporary test route or console
 
+    console.log(po?.toJSON()?.createdBy);
     const items = await fetchPoItems(po.id);
 
-    return res.json({ ...po.toJSON(), items });
+    return res.json({
+      ...po.toJSON(),
+      items,
+      createdBy: po.createdBy
+        ? {
+            userId: po.createdBy.userId,
+            name: po.createdBy.name,
+            email: po.createdBy.email,
+            username: po.createdBy.username,
+          }
+        : null,
+    });
   } catch (err) {
     return res
       .status(500)
       .json({ message: "Error fetching PO", error: err.message });
   }
 };
-
 // ─────────────────────────────────────────────────────────────
 // GET ALL (paginated)
 // ─────────────────────────────────────────────────────────────
@@ -350,6 +367,11 @@ exports.getAllPurchaseOrders = async (req, res) => {
     const { count, rows } = await PurchaseOrder.findAndCountAll({
       include: [
         { model: Vendor, as: "vendor", attributes: ["id", "vendorName"] },
+        {
+          model: User,
+          as: "createdBy", // ← add this
+          attributes: ["userId", "name", "email", "username"],
+        },
       ],
       order: [["createdAt", "DESC"]],
       limit,
@@ -365,6 +387,14 @@ exports.getAllPurchaseOrders = async (req, res) => {
     const result = rows.map((po) => ({
       ...po.toJSON(),
       items: itemsMap.get(po.id) || [],
+      createdBy: po.createdBy
+        ? {
+            userId: po.createdBy.userId,
+            name: po.createdBy.name,
+            email: po.createdBy.email,
+            username: po.createdBy.username,
+          }
+        : null,
     }));
 
     return res.json({
@@ -377,7 +407,16 @@ exports.getAllPurchaseOrders = async (req, res) => {
       },
     });
   } catch (err) {
-    return res.status(500).json({ message: "Error listing Purchase Orders" });
+    console.error("Error in getAllPurchaseOrders:", {
+      message: err.message,
+      stack: err.stack,
+      name: err.name,
+    });
+    return res.status(500).json({
+      message: "Error listing Purchase Orders",
+      error: err.message, // ← send it to frontend during dev
+      // remove this line in production
+    });
   }
 };
 

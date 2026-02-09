@@ -74,8 +74,8 @@ module.exports = (sequelize, DataTypes) => {
     });
 
     PurchaseOrder.belongsTo(models.User, {
-      // ← NEW
-      foreignKey: "userId",
+      foreignKey: "userId", // source key (in PurchaseOrder)
+      targetKey: "userId", // ← ADD THIS: target key in User model
       as: "createdBy",
     });
   };

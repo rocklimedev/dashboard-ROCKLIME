@@ -14,6 +14,7 @@ import {
   Collapse,
   Spin,
   message,
+  Alert,
 } from "antd";
 import {
   UserAddOutlined,
@@ -34,6 +35,7 @@ const RESTRICTED_ROLES = ["SUPER_ADMIN", "DEVELOPER", "ADMIN"];
 const { Text, Title } = Typography;
 const { Panel } = Collapse;
 const { Option } = Select;
+
 /* ────────────────────── Styled Components ────────────────────── */
 const CompactCard = styled(Card)`
   border-radius: 8px;
@@ -44,42 +46,44 @@ const CompactCard = styled(Card)`
 `;
 
 const TightRow = styled(Row)`
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   .ant-col {
-    padding: 0 4px;
+    padding: 0 6px;
   }
 `;
 
 const MiniSelect = styled(Select)`
   width: 100%;
   .ant-select-selector {
-    padding: 0 6px;
-    height: 28px;
+    padding: 0 8px;
+    height: 30px;
   }
 `;
 
 const MiniNumber = styled(InputNumber)`
   width: 100%;
-  height: 28px;
+  height: 30px;
   .ant-input-number-input {
-    height: 26px;
+    height: 28px;
   }
 `;
 
 const MiniDate = styled(DatePicker)`
   width: 100%;
-  height: 28px;
+  height: 30px;
   .react-datepicker-wrapper,
   input {
-    height: 28px;
+    height: 30px;
+    padding: 4px 8px;
   }
 `;
 
 const CheckoutBtn = styled(Button)`
-  height: 36px;
+  height: 40px;
   font-weight: 600;
   background: #e31e24;
   border-color: #e31e24;
+  color: white;
   &:hover {
     background: #ff4d4f;
     border-color: #ff4d4f;
@@ -88,7 +92,6 @@ const CheckoutBtn = styled(Button)`
 
 /* ────────────────────── Helpers ────────────────────── */
 const momentToDate = (m) => (m ? m.toDate() : null);
-const normalize = (s) => (s ? s.trim().toLowerCase() : "");
 
 /* ────────────────────── Main Component ────────────────────── */
 const QuotationForm = ({
@@ -100,15 +103,14 @@ const QuotationForm = ({
   addresses,
   addressesLoading,
   addressesError,
-  quotationNumber,
   documentType,
   setDocumentType,
-  cartItems,
+  cartItems, // full list (main + optional)
   subTotal,
   shipping,
   tax,
-  discount,
-  extraDiscount,
+  discount, // item-level discount total
+  extraDiscount, // global discount
   gst,
   setGst,
   billingAddressId,
@@ -188,14 +190,13 @@ const QuotationForm = ({
           )}
         </div>
       ),
-      // This controls what is displayed in the input box after selection
       title: `${cust.name || "Unnamed"}${cust.mobileNumber ? ` • ${cust.mobileNumber}` : ""}`,
       searchText:
         `${cust.name || ""} ${cust.mobileNumber || ""} ${cust.email || ""} ${cust.companyName || ""}`.toLowerCase(),
     }));
   }, [accumulatedCustomers]);
 
-  /* ────── Address-related memos ────── */
+  // ────── Address logic ──────
   const selectedCustomerData = useMemo(
     () => accumulatedCustomers.find((c) => c.customerId === selectedCustomer),
     [accumulatedCustomers, selectedCustomer],
@@ -259,42 +260,7 @@ const QuotationForm = ({
     quotationData.shipTo,
   ]);
 
-  /* ────── Totals calculation ────── */
-  const amountBeforeGst = useMemo(
-    () => subTotal + tax + shipping - discount - extraDiscount,
-    [subTotal, tax, shipping, discount, extraDiscount],
-  );
-
-  const gstAmount = useMemo(() => {
-    if (!gst || gst <= 0) return 0;
-    return parseFloat(((amountBeforeGst * gst) / 100).toFixed(2));
-  }, [amountBeforeGst, gst]);
-
-  const totalBeforeRoundOff = useMemo(
-    () => amountBeforeGst + gstAmount,
-    [amountBeforeGst, gstAmount],
-  );
-
-  const autoRoundOff = useMemo(() => {
-    const rupees = Math.floor(totalBeforeRoundOff);
-    const paise = Math.round((totalBeforeRoundOff - rupees) * 100);
-    if (paise === 0) return 0;
-    if (paise <= 50) return -(paise / 100);
-    return (100 - paise) / 100;
-  }, [totalBeforeRoundOff]);
-
-  /* ────── Effects ────── */
-  useEffect(() => {
-    setGst(0);
-  }, [setGst]);
-
-  useEffect(() => {
-    if (quotationData.discountType !== "fixed") {
-      handleQuotationChange("discountType", "fixed");
-    }
-  }, [quotationData.discountType, handleQuotationChange]);
-
-  /* ────── Follow-up dates handlers ────── */
+  // ────── Follow-up dates handlers ──────
   const handleFollowup = (index, date) => {
     const dates = [...quotationData.followupDates];
     dates[index] = date ? moment(date).format("YYYY-MM-DD") : "";
@@ -341,28 +307,13 @@ const QuotationForm = ({
   }
 
   return (
-    <Row gutter={12}>
+    <Row gutter={[16, 16]}>
       {/* Left Column - Form */}
       <Col xs={24} md={16}>
-        <CompactCard title={<Title level={5}>Quotation Checkout</Title>}>
-          <Collapse defaultActiveKey={["1", "3"]} ghost>
-            {/* Customer & Document Panel */}
-            <Panel header="Customer & Document" key="1">
-              <TightRow gutter={8}>
-                <Col span={8}>
-                  <Text strong>Document Type</Text>
-                </Col>
-                <Col span={16}>
-                  <MiniSelect value={documentType} onChange={setDocumentType}>
-                    <Option value="Quotation">Quotation</Option>
-                    <Option value="Order">Order</Option>
-                    {canCreatePurchaseOrder && (
-                      <Option value="Purchase Order">Purchase Order</Option>
-                    )}
-                  </MiniSelect>
-                </Col>
-              </TightRow>
-
+        <CompactCard title={<Title level={5}>Quotation Details</Title>}>
+          <Collapse defaultActiveKey={["1", "2", "3"]} ghost>
+            {/* Customer Panel */}
+            <Panel header="Customer & Address" key="1">
               <TightRow gutter={8}>
                 <Col span={8}>
                   <Text strong>
@@ -379,6 +330,7 @@ const QuotationForm = ({
                         setSelectedCustomer(value);
                         setQuotationData((prev) => ({ ...prev, shipTo: null }));
                         setUseBillingAddress(false);
+                        setBillingAddressId(null);
                       }}
                       onSearch={setCustomerSearch}
                       filterOption={(input, option) =>
@@ -415,17 +367,14 @@ const QuotationForm = ({
                                 color: "#888",
                               }}
                             >
-                              <Spin size="small" /> Loading more customers...
+                              <Spin size="small" /> Loading more...
                             </div>
                           )}
                         </>
                       )}
                       style={{ flex: 1 }}
                       allowClear
-                      clearIcon={
-                        <DeleteOutlined style={{ color: "#ff4d4f" }} />
-                      }
-                      optionLabelProp="title" // ← This ensures name (+ phone) is shown after selection
+                      optionLabelProp="title"
                     />
                     <Button
                       type="primary"
@@ -439,15 +388,16 @@ const QuotationForm = ({
 
               <TightRow gutter={8}>
                 <Col span={8}>
-                  <Text strong>Address</Text>
+                  <Text strong>Shipping Address</Text>
                 </Col>
                 <Col span={16}>
-                  <Space.Compact>
+                  <Space.Compact style={{ width: "100%" }}>
                     <MiniSelect
                       value={dropdownValue}
                       onChange={(v) => {
                         if (v === "sameAsBilling" || v === "creating") {
                           setUseBillingAddress(true);
+                          setBillingAddressId(null);
                         } else {
                           setUseBillingAddress(false);
                           setBillingAddressId(null);
@@ -456,20 +406,15 @@ const QuotationForm = ({
                       }}
                       loading={addressesLoading || isCreatingAddress}
                       disabled={!selectedCustomer}
-                      // ────── NEW ──────
-                      optionLabelProp="title" // Use short title when selected
-                      maxTagCount={1} // Optional: if multiple in future
-                      showSearch={false} // Usually not needed for address
-                      dropdownMatchSelectWidth={false} // Prevent dropdown from being too narrow
-                      popupMatchSelectWidth={300} // Make dropdown wider so full text visible
-                      // ────── END NEW ──────
+                      optionLabelProp="title"
+                      dropdownMatchSelectWidth={false}
+                      popupMatchSelectWidth={320}
                     >
-                      {/* Options with title + label */}
                       {defaultAddress && !hasBillingAddress && (
                         <Option
                           value="sameAsBilling"
                           disabled={isCreatingAddress}
-                          title="Use customer's default billing address"
+                          title="Use default billing address as shipping"
                         >
                           Same as Billing –{" "}
                           {defaultAddress.street?.slice(0, 40)}...
@@ -478,7 +423,7 @@ const QuotationForm = ({
 
                       {isCreatingAddress && (
                         <Option value="creating" disabled>
-                          Creating billing address...
+                          Creating new address...
                         </Option>
                       )}
 
@@ -486,7 +431,6 @@ const QuotationForm = ({
                         <Option
                           key={a.addressId}
                           value={a.addressId}
-                          // ────── IMPORTANT: short display + full tooltip ──────
                           title={`${a.street}, ${a.city}, ${a.state || ""} ${a.postalCode || ""} (${a.status})`}
                         >
                           {a.street?.slice(0, 35)}
@@ -495,10 +439,12 @@ const QuotationForm = ({
                         </Option>
                       ))}
                     </MiniSelect>
+
                     <Button
                       type="primary"
                       onClick={handleAddAddress}
                       disabled={!selectedCustomer}
+                      style={{ minWidth: 40 }}
                     >
                       +
                     </Button>
@@ -507,8 +453,8 @@ const QuotationForm = ({
               </TightRow>
             </Panel>
 
-            {/* Dates & Discount Panel */}
-            <Panel header="Dates & Discount" key="3">
+            {/* Dates & Follow-ups */}
+            <Panel header="Dates & Follow-ups" key="2">
               <TightRow gutter={8}>
                 <Col span={8}>
                   <Text strong>
@@ -566,73 +512,75 @@ const QuotationForm = ({
                   </Button>
                 </Col>
               </TightRow>
+            </Panel>
 
-              <TightRow gutter={16} align="middle" style={{ marginTop: 16 }}>
+            {/* Global Discount */}
+            <Panel header="Discount & Notes" key="3">
+              <TightRow gutter={16} align="middle">
                 <Col span={8}>
                   <Text strong>Global Discount</Text>
                 </Col>
                 <Col span={16}>
-                  <Space.Compact style={{ width: "100%" }}>
-                    <InputNumber
-                      value={quotationData.discountAmount || ""}
-                      onChange={(val) =>
-                        handleQuotationChange(
-                          "discountAmount",
-                          val === null ? "" : val.toString(),
-                        )
-                      }
-                      placeholder="500"
-                      min={0}
-                      precision={2}
-                      addonBefore="₹"
-                      style={{ width: "100%" }}
-                    />
-                  </Space.Compact>
+                  <MiniNumber
+                    value={quotationData.discountAmount || ""}
+                    onChange={(val) =>
+                      handleQuotationChange(
+                        "discountAmount",
+                        val === null ? "" : val.toString(),
+                      )
+                    }
+                    placeholder="500"
+                    min={0}
+                    precision={2}
+                    addonBefore="₹"
+                  />
                   <Text
                     type="secondary"
-                    style={{ fontSize: 11, display: "block", marginTop: 4 }}
+                    style={{ fontSize: 12, display: "block", marginTop: 4 }}
                   >
-                    Fixed amount discount (applied after subtotal, tax &
-                    shipping)
+                    Fixed amount applied after subtotal, tax & shipping
                   </Text>
                 </Col>
               </TightRow>
             </Panel>
           </Collapse>
+
+          {/* Hint about optional items */}
+          {cartItems.some((item) => item.isOption) && (
+            <Alert
+              message="Note"
+              description="Optional / add-on items are visible in cart but excluded from totals unless explicitly selected."
+              type="info"
+              showIcon
+              style={{ marginTop: 16 }}
+            />
+          )}
         </CompactCard>
       </Col>
 
       {/* Right Column - Summary */}
       <Col xs={24} md={8}>
         <CompactCard
-          title={<Text strong>Summary</Text>}
+          title={<Text strong>Order Summary</Text>}
           style={{ position: "sticky", top: 16 }}
         >
-          <Text strong>#{quotationNumber || "New"}</Text>
-          <Divider style={{ margin: "8px 0" }} />
-
           <OrderTotal
             subTotal={subTotal}
-            discount={discount}
-            extraDiscount={extraDiscount}
+            discount={discount} // item-level discounts total
+            extraDiscount={extraDiscount} // global discount
             tax={tax}
-            gst={gst}
-            gstAmount={gstAmount}
-            roundOff={autoRoundOff}
+            shipping={shipping}
+            roundOff={0} // let OrderTotal handle auto-round
+            autoRound={true}
           />
 
-          <Divider style={{ margin: "8px 0" }} />
+          <Divider style={{ margin: "12px 0" }} />
 
           <Button
             type="default"
             size="large"
             block
-            style={{
-              marginBottom: 8,
-              background: "#e31e24",
-              color: "white",
-              border: "none",
-            }}
+            style={{ marginBottom: 12 }}
             onClick={() => setPreviewVisible(true)}
           >
             Preview Quotation
@@ -640,7 +588,7 @@ const QuotationForm = ({
 
           <CheckoutBtn
             block
-            style={{ color: "white", marginBottom: 8 }}
+            size="large"
             icon={<CheckCircleOutlined />}
             onClick={() => {
               if (!selectedCustomer)
@@ -663,7 +611,11 @@ const QuotationForm = ({
             Create {documentType}
           </CheckoutBtn>
 
-          <Button block onClick={() => setActiveTab("cart")}>
+          <Button
+            block
+            style={{ marginTop: 8 }}
+            onClick={() => setActiveTab("cart")}
+          >
             Back to Cart
           </Button>
         </CompactCard>

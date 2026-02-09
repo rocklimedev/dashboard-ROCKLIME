@@ -438,22 +438,7 @@ const OrderForm = ({
         <CompactCard title={<Title level={5}>Checkout</Title>}>
           <Collapse defaultActiveKey={["1", "2", "3", "4", "5"]} ghost>
             {/* 1. Document & Customer */}
-            <Panel header="Document & Customer" key="1">
-              <TightRow gutter={8}>
-                <Col span={8}>
-                  <Text strong>Doc Type</Text>
-                </Col>
-                <Col span={16}>
-                  <MiniSelect value={documentType} onChange={setDocumentType}>
-                    <Option value="Quotation">Quotation</Option>
-                    <Option value="Order">Order</Option>
-                    {canCreatePurchaseOrder && (
-                      <Option value="Purchase Order">Purchase Order</Option>
-                    )}
-                  </MiniSelect>
-                </Col>
-              </TightRow>
-
+            <Panel header="Customer" key="1">
               <TightRow gutter={8}>
                 <Col span={8}>
                   <Text strong>

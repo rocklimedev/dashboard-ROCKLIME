@@ -9,19 +9,18 @@ import {
   Row,
   Col,
   Empty,
-  InputNumber,
-  Select,
 } from "antd";
-import { ArrowLeftOutlined, ShoppingCartOutlined } from "@ant-design/icons";
-import { LazyLoadImage } from "react-lazy-load-image-component";
-import { DeleteOutlined, DeleteFilled } from "@ant-design/icons";
+import {
+  ArrowLeftOutlined,
+  ShoppingCartOutlined,
+  DeleteOutlined,
+} from "@ant-design/icons";
 import styled from "styled-components";
 import OrderTotal from "./OrderTotal";
 import { CheckCircleOutlined } from "@ant-design/icons";
-import { useGetProductByIdQuery } from "../../api/productApi";
 import CartItemRow from "./CartItemRow";
-const { Title, Text } = Typography;
-const { Option } = Select;
+
+const { Title } = Typography;
 
 /* ────────────────────── Styled Components ────────────────────── */
 const CartItemsCard = styled(Card)`
@@ -29,80 +28,58 @@ const CartItemsCard = styled(Card)`
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   margin-bottom: 16px;
 `;
+
 const CartHeader = styled.div`
   width: 100%;
 `;
-const CartItem = styled.div`
-  padding: 12px 0;
-  transition: background-color 0.2s ease;
 
-  &:hover {
-    background: #ffebee; /* very light red – subtle & professional */
-    /* Alternatives if you want stronger: */
-    /* background: #ffcccc;       medium light red */
-    /* background: #fecdd3;       tailwind-like red-100 */
-  }
-`;
-const CartItemImage = styled(LazyLoadImage)`
-  border-radius: 4px;
-  object-fit: cover;
-  width: 60px;
-  height: 60px;
-  @media (min-width: 768px) {
-    width: 80px;
-    height: 80px;
-  }
-`;
-const QuantityButton = styled(Button)`
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
-const RemoveButton = styled(Button)`
-  margin-left: 8px;
-`;
 const CartSummaryCard = styled(Card)`
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   position: sticky;
   top: 16px;
 `;
+
 const CheckoutButton = styled(Button)`
   background: #e31e24;
   border-color: #e31e24;
-  color: white; /* ensure text is always visible */
+  color: white;
 
   &:hover,
   &:focus {
-    background: #c41e1e; /* darker red – feels "pressed/engaged" */
+    background: #c41e1e;
     border-color: #c41e1e;
     color: white;
   }
 
   &:active {
-    background: #a71a1a; /* even darker when clicked */
+    background: #a71a1a;
     border-color: #a71a1a;
   }
 `;
+
 const EmptyCartWrapper = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 20px 0;
 `;
-/* ────────────────────── End Styled ────────────────────── */
 
+const OptionGroupWrapper = styled.div`
+  margin-left: 40px;
+  opacity: 0.92;
+  border-left: 2px solid #ff4d4f;
+  padding-left: 12px;
+`;
+
+/* ────────────────────── Component ────────────────────── */
 const CartTab = ({
   cartItems,
-  cartProductsData,
   totalItems,
   shipping,
   discount,
   roundOff,
   subTotal,
-  quotationData,
   itemDiscounts,
   itemDiscountTypes,
   itemTaxes,
@@ -115,8 +92,13 @@ const CartTab = ({
   setShowClearCartModal,
   setActiveTab,
   onShippingChange,
+  handleMakeOption,
+  getParentName,
+  documentType,
 }) => {
-  /* ────── Helper: line-item total (price × qty – discount + tax) ────── */
+  const isQuotationMode = documentType === "Quotation";
+
+  // Define lineTotal function
   const lineTotal = (item) => {
     const price = item.price || 0;
     const qty = item.quantity || 1;
@@ -134,43 +116,123 @@ const CartTab = ({
     return (subtotal - disc + tax).toFixed(2);
   };
 
-  /* ────── Global totals (used in OrderTotal) ────── */
-  const totalTax = cartItems.reduce((sum, it) => {
-    const subtotal = (it.price || 0) * (it.quantity || 1);
-    const taxPct = Number(itemTaxes[it.productId]) || 0;
-    return sum + (subtotal * taxPct) / 100;
-  }, 0);
+  // ────── Group items: main + their options ──────
+  const groupedItems = React.useMemo(() => {
+    const mains = cartItems.filter((item) => !item.isOption);
+    const options = cartItems.filter((item) => item.isOption);
 
-  const totalDiscount = cartItems.reduce((sum, it) => {
-    const subtotal = (it.price || 0) * (it.quantity || 1);
-    const discVal = Number(itemDiscounts[it.productId]) || 0;
-    const disc =
-      itemDiscountTypes[it.productId] === "percent"
-        ? (subtotal * discVal) / 100
-        : discVal * (it.quantity || 1);
-    return sum + disc;
-  }, 0);
+    const grouped = mains.map((main) => ({
+      main,
+      options: options.filter((opt) => opt.parentProductId === main.productId),
+    }));
 
-  /* ────── Safe image parser – works with array OR string ────── */
-  const getFirstImage = (product) => {
-    if (!product?.images) return null;
-    if (Array.isArray(product.images) && product.images.length > 0) {
-      return product.images[0];
+    const ungroupedOptions = options.filter((opt) => !opt.parentProductId);
+
+    return { grouped, ungroupedOptions };
+  }, [cartItems]);
+
+  const renderCartContent = () => {
+    if (cartItems.length === 0) {
+      return (
+        <EmptyCartWrapper>
+          <Empty
+            description="Your cart is empty"
+            image={<DeleteOutlined style={{ fontSize: 64 }} />}
+          />
+          <Button
+            type="primary"
+            icon={<ArrowLeftOutlined />}
+            href="/category-selector"
+            style={{ marginTop: 16 }}
+          >
+            Continue Shopping
+          </Button>
+        </EmptyCartWrapper>
+      );
     }
-    if (typeof product.images === "string") {
-      try {
-        const parsed = JSON.parse(product.images);
-        return Array.isArray(parsed) && parsed.length > 0 ? parsed[0] : null;
-      } catch {
-        return null;
-      }
-    }
-    return null;
+
+    return (
+      <>
+        {/* Main items + their attached options */}
+        {groupedItems.grouped.map(({ main, options }) => (
+          <React.Fragment key={main.productId}>
+            <CartItemRow
+              item={main}
+              itemDiscounts={itemDiscounts}
+              itemDiscountTypes={itemDiscountTypes}
+              itemTaxes={itemTaxes}
+              updatingItems={updatingItems}
+              handleUpdateQuantity={handleUpdateQuantity}
+              handleRemoveItem={handleRemoveItem}
+              handleDiscountChange={handleDiscountChange}
+              handleDiscountTypeChange={handleDiscountTypeChange}
+              handleTaxChange={handleTaxChange}
+              handleMakeOption={handleMakeOption}
+              getParentName={getParentName}
+              documentType={documentType}
+              cartItems={cartItems}
+              lineTotal={lineTotal} // ← FIXED: added here
+            />
+
+            {options.map((opt) => (
+              <OptionGroupWrapper key={opt.productId}>
+                <CartItemRow
+                  item={opt}
+                  itemDiscounts={itemDiscounts}
+                  itemDiscountTypes={itemDiscountTypes}
+                  itemTaxes={itemTaxes}
+                  updatingItems={updatingItems}
+                  handleUpdateQuantity={handleUpdateQuantity}
+                  handleRemoveItem={handleRemoveItem}
+                  handleDiscountChange={handleDiscountChange}
+                  handleDiscountTypeChange={handleDiscountTypeChange}
+                  handleTaxChange={handleTaxChange}
+                  handleMakeOption={handleMakeOption}
+                  getParentName={getParentName}
+                  documentType={documentType}
+                  cartItems={cartItems}
+                  lineTotal={lineTotal} // ← FIXED: added here
+                />
+              </OptionGroupWrapper>
+            ))}
+          </React.Fragment>
+        ))}
+
+        {/* Ungrouped optional items */}
+        {groupedItems.ungroupedOptions.length > 0 && isQuotationMode && (
+          <>
+            <Divider orientation="left" plain>
+              Ungrouped Optional Items
+            </Divider>
+            {groupedItems.ungroupedOptions.map((opt) => (
+              <CartItemRow
+                key={opt.productId}
+                item={opt}
+                itemDiscounts={itemDiscounts}
+                itemDiscountTypes={itemDiscountTypes}
+                itemTaxes={itemTaxes}
+                updatingItems={updatingItems}
+                handleUpdateQuantity={handleUpdateQuantity}
+                handleRemoveItem={handleRemoveItem}
+                handleDiscountChange={handleDiscountChange}
+                handleDiscountTypeChange={handleDiscountTypeChange}
+                handleTaxChange={handleTaxChange}
+                handleMakeOption={handleMakeOption}
+                getParentName={getParentName}
+                documentType={documentType}
+                cartItems={cartItems}
+                lineTotal={lineTotal} // ← already had it, kept for consistency
+              />
+            ))}
+          </>
+        )}
+      </>
+    );
   };
 
   return (
     <Row gutter={[16, 16]}>
-      {/* ────── LEFT – CART ITEMS ────── */}
+      {/* LEFT – CART ITEMS */}
       <Col xs={24} md={16} lg={16}>
         <CartItemsCard>
           <CartHeader>
@@ -190,42 +252,11 @@ const CartTab = ({
             <Divider />
           </CartHeader>
 
-          {cartItems.length === 0 ? (
-            <EmptyCartWrapper>
-              <Empty
-                description="Your cart is empty"
-                image={<DeleteOutlined style={{ fontSize: 64 }} />}
-              />
-              <Button
-                type="primary"
-                icon={<ArrowLeftOutlined />}
-                href="/category-selector"
-                style={{ marginTop: 16 }}
-              >
-                Continue Shopping
-              </Button>
-            </EmptyCartWrapper>
-          ) : (
-            cartItems.map((item) => (
-              <CartItemRow
-                key={item.productId}
-                item={item}
-                itemDiscounts={itemDiscounts}
-                itemDiscountTypes={itemDiscountTypes}
-                itemTaxes={itemTaxes}
-                updatingItems={updatingItems}
-                handleUpdateQuantity={handleUpdateQuantity}
-                handleRemoveItem={handleRemoveItem}
-                handleDiscountChange={handleDiscountChange}
-                handleDiscountTypeChange={handleDiscountTypeChange}
-                lineTotal={lineTotal}
-              />
-            ))
-          )}
+          {renderCartContent()}
         </CartItemsCard>
       </Col>
 
-      {/* ────── RIGHT – ORDER SUMMARY ────── */}
+      {/* RIGHT – ORDER SUMMARY */}
       <Col xs={24} md={8} lg={8}>
         <CartSummaryCard>
           <Title level={4} style={{ fontSize: "16px" }}>
@@ -234,13 +265,14 @@ const CartTab = ({
           <Divider />
           <OrderTotal
             shipping={shipping}
-            tax={totalTax}
-            discount={totalDiscount}
+            tax={0} // ← you can replace with real tax calculation later
+            discount={discount}
             roundOff={roundOff}
             subTotal={subTotal}
             onShippingChange={onShippingChange}
           />
           <Divider />
+
           <CheckoutButton
             type="primary"
             icon={<CheckCircleOutlined />}
@@ -251,6 +283,7 @@ const CartTab = ({
           >
             Proceed to Checkout
           </CheckoutButton>
+
           <Button
             type="default"
             href="/category-selector"
