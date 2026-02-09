@@ -308,8 +308,7 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
       title={
         <div>
           <Title level={4} style={{ margin: 0 }}>
-            Quotation #{q.reference_number}{" "}
-            <Text type="secondary">{q.document_title}</Text>
+            #{q.reference_number} {q.document_title}
           </Title>
         </div>
       }

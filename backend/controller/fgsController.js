@@ -4,7 +4,7 @@ const { Op } = require("sequelize");
 const moment = require("moment");
 const sequelize = require("../config/database");
 const { sendNotification } = require("./notificationController");
-const { Product, Vendor, FieldGuidedSheet } = require("../models");
+const { Product, Vendor, FieldGuidedSheet, User } = require("../models");
 const FgsItem = require("../models/fgsItem"); // Mongoose model
 const { createPurchaseOrderFromData } = require("./purchaseOrderController"); // ← Assume this exists or create it
 
@@ -331,6 +331,11 @@ exports.getFieldGuidedSheetById = async (req, res) => {
     const fgs = await FieldGuidedSheet.findByPk(req.params.id, {
       include: [
         { model: Vendor, as: "vendor", attributes: ["id", "vendorName"] },
+        {
+          model: User,
+          as: "createdBy",
+          attributes: ["userId", "name", "email", "username"],
+        },
       ],
     });
 
@@ -340,7 +345,21 @@ exports.getFieldGuidedSheetById = async (req, res) => {
 
     const items = await fetchFgsItems(fgs.id);
 
-    return res.json({ ...fgs.toJSON(), items });
+    // Optional: make createdBy shape consistent with PO
+    const createdBy = fgs.createdBy
+      ? {
+          userId: fgs.createdBy.userId,
+          name: fgs.createdBy.name,
+          email: fgs.createdBy.email,
+          username: fgs.createdBy.username,
+        }
+      : null;
+
+    return res.json({
+      ...fgs.toJSON(),
+      items,
+      createdBy, // ← add this explicitly if you want same shape as PO
+    });
   } catch (err) {
     console.error("Get FGS error:", err);
     return res
@@ -348,7 +367,6 @@ exports.getFieldGuidedSheetById = async (req, res) => {
       .json({ message: "Error fetching FGS", error: err.message });
   }
 };
-
 // ─────────────────────────────────────────────────────────────
 // GET ALL (with basic pagination)
 // ─────────────────────────────────────────────────────────────
@@ -361,6 +379,11 @@ exports.getAllFieldGuidedSheets = async (req, res) => {
     const { count, rows } = await FieldGuidedSheet.findAndCountAll({
       include: [
         { model: Vendor, as: "vendor", attributes: ["id", "vendorName"] },
+        {
+          model: User,
+          as: "createdBy",
+          attributes: ["userId", "name", "email", "username"],
+        },
       ],
       order: [["createdAt", "DESC"]],
       limit,
@@ -373,10 +396,22 @@ exports.getAllFieldGuidedSheets = async (req, res) => {
 
     const itemsMap = new Map(mongoDocs.map((d) => [d.fgsId, d.items || []]));
 
-    const result = rows.map((fgs) => ({
-      ...fgs.toJSON(),
-      items: itemsMap.get(fgs.id) || [],
-    }));
+    const result = rows.map((fgs) => {
+      const createdBy = fgs.createdBy
+        ? {
+            userId: fgs.createdBy.userId,
+            name: fgs.createdBy.name,
+            email: fgs.createdBy.email,
+            username: fgs.createdBy.username,
+          }
+        : null;
+
+      return {
+        ...fgs.toJSON(),
+        items: itemsMap.get(fgs.id) || [],
+        createdBy, // ← consistent shape
+      };
+    });
 
     return res.json({
       data: result,

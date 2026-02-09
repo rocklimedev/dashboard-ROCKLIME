@@ -1,6 +1,6 @@
 // src/components/Quotation/PreviewQuotation.jsx
 import React, { useRef, useMemo } from "react";
-import { Modal, Button, Typography } from "antd";
+import { Modal, Button, Typography, Tag } from "antd";
 import { FilePdfFilled, CloseOutlined } from "@ant-design/icons";
 
 import logo from "../../assets/img/logo-quotation.png";
@@ -11,36 +11,34 @@ import { exportToPDF } from "./hooks/exportHelpers";
 import { calcTotals, amountInWords } from "./hooks/calcHelpers";
 import styles from "./quotationnew.module.css";
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 const formatINR = (value) => {
   const num = Number(value);
-  return isNaN(num) ? "—" : `₹${num.toLocaleString("en-IN")}`;
+  return isNaN(num)
+    ? "—"
+    : `₹${num.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
 const PreviewQuotation = ({
   visible,
   onClose,
-  cartItems = [],
+  cartItems = [], // now only main items (from parent)
   productsData = [],
   customer = {},
   address = {},
   quotationData = {},
-  gstRate = 18,
-  includeGst = true,
+  gstRate = 0, // usually 0 or passed from parent
+  includeGst = false,
   itemDiscounts = {},
   itemDiscountTypes = {},
 }) => {
   const previewRef = useRef(null);
 
-  // ────────────────────────────────────────────────────────────────
-  // Normalize field names (bridge between form names and calc logic)
-  // This is the ONLY change needed — everything else remains identical
-  // ────────────────────────────────────────────────────────────────
+  // Normalize quotation data (bridge between form & calculation)
   const normalizedQuotation = useMemo(
     () => ({
       ...quotationData,
-      // Prefer extraDiscount if it exists (future-proof), else use discountAmount from form
       extraDiscount:
         quotationData.extraDiscount ?? quotationData.discountAmount ?? 0,
       extraDiscountType: (
@@ -51,16 +49,14 @@ const PreviewQuotation = ({
         .toLowerCase()
         .trim(),
     }),
-    [quotationData]
+    [quotationData],
   );
 
   const customerName = customer?.name || "Dear Client";
   const customerPhone = customer?.mobileNumber || customer?.phone || "—";
   const customerAddress =
-    address && (address.street || address.city)
-      ? `${address.street || ""}, ${address.city || ""}, ${
-          address.state || ""
-        } - ${address.pincode || address.postalCode || address.zip || ""}`
+    address?.street || address?.city
+      ? `${address.street || ""}, ${address.city || ""}, ${address.state || ""} - ${address.pincode || address.postalCode || address.zip || ""}`
           .replace(/^,\s*|,*\s*$/g, "")
           .trim()
       : "—";
@@ -79,12 +75,12 @@ const PreviewQuotation = ({
   }, [cartItems, productsData]);
 
   // ────────────────────────────────────────────────────────────────
-  // Totals calculation – using normalized quotation data
+  // Totals – using only main items (cartItems already filtered)
   // ────────────────────────────────────────────────────────────────
   const {
-    subtotal = 0, // gross subtotal (before discounts)
-    totalProductDiscount = 0, // sum of all item-level discounts
-    extraDiscountAmt = 0, // global/quotation discount amount
+    subtotal = 0, // gross before any discount
+    totalProductDiscount = 0, // item-level discounts sum
+    extraDiscountAmt = 0, // global discount amount
     taxableValue: amountAfterDiscount = 0,
     roundOffApplied = 0,
     total: finalTotal = 0,
@@ -97,42 +93,25 @@ const PreviewQuotation = ({
       return map;
     }, {});
 
-    // Use normalized values
     let extraDiscValue = Number(normalizedQuotation.extraDiscount ?? 0);
     let extraDiscType = normalizedQuotation.extraDiscountType;
 
-    // Normalize discount type (same as your original logic)
+    // Normalize type
     if (["fixed", "amount", "rs", "rupees", "₹"].includes(extraDiscType)) {
       extraDiscType = "amount";
     } else {
       extraDiscType = "percent";
     }
 
-    const result = calcTotals(
+    return calcTotals(
       cartItems,
       priceMap,
       extraDiscValue,
       extraDiscType,
       Number(quotationData?.roundOff) || 0,
       itemDiscounts,
-      itemDiscountTypes
+      itemDiscountTypes,
     );
-
-    // Debug log (you can remove this in production)
-    console.log("[PreviewQuotation] Totals (with global discount fix):", {
-      grossSubtotal: result.subtotal,
-      productDiscount: result.totalProductDiscount,
-      extraDiscount: result.extraDiscountAmt,
-      taxableValue: result.taxableValue,
-      roundOffApplied: result.roundOffApplied,
-      finalTotal: result.total,
-      extraDiscInput: extraDiscValue,
-      extraDiscTypeUsed: extraDiscType,
-      originalQuotationKeys: Object.keys(quotationData),
-      normalizedExtraDiscount: normalizedQuotation.extraDiscount,
-    });
-
-    return result;
   }, [
     cartItems,
     normalizedQuotation,
@@ -154,7 +133,7 @@ const PreviewQuotation = ({
       "preview",
       "current",
       quotationData,
-      `${safeTitle}_Preview.pdf`
+      `${safeTitle}_Preview.pdf`,
     );
   };
 
@@ -171,7 +150,7 @@ const PreviewQuotation = ({
             {customerName.toUpperCase()}
           </div>
         </div>
-      </div>
+      </div>,
     );
 
     // Page 2: Letterhead
@@ -208,7 +187,7 @@ const PreviewQuotation = ({
             www.cmtradingco.com
           </div>
         </div>
-      </div>
+      </div>,
     );
 
     // Product Pages
@@ -283,6 +262,14 @@ const PreviewQuotation = ({
                     <td className={styles.snoCell}>{i + idx + 1}.</td>
                     <td className={styles.prodNameCell}>
                       {p.name || pd.name || "—"}
+                      {p.isOption && (
+                        <Tag
+                          color="orange"
+                          style={{ marginLeft: 8, fontSize: "0.8em" }}
+                        >
+                          {p.optionType || "Optional"}
+                        </Tag>
+                      )}
                     </td>
                     <td>{code}</td>
                     <td>
@@ -312,13 +299,11 @@ const PreviewQuotation = ({
             <div className={styles.finalSummaryWrapper}>
               <div className={styles.finalSummarySection}>
                 <div className={styles.summaryLeft}>
-                  {/* Gross Subtotal */}
                   <div className={styles.summaryRow}>
                     <span>Subtotal</span>
                     <span>{formatINR(subtotal)}</span>
                   </div>
 
-                  {/* Item-level discount */}
                   {totalProductDiscount > 0 && (
                     <div className={styles.summaryRow}>
                       <span>Product Discount</span>
@@ -328,7 +313,6 @@ const PreviewQuotation = ({
                     </div>
                   )}
 
-                  {/* Global / Extra discount – now using normalized value */}
                   {extraDiscountAmt > 0 && (
                     <div className={styles.summaryRow}>
                       <span>
@@ -344,13 +328,11 @@ const PreviewQuotation = ({
                     </div>
                   )}
 
-                  {/* Taxable Value */}
                   <div className={styles.summaryRow}>
                     <span>Taxable Value</span>
                     <span>{formatINR(amountAfterDiscount)}</span>
                   </div>
 
-                  {/* Round Off */}
                   <div className={styles.summaryRow}>
                     <span>Round Off</span>
                     <span>
@@ -372,9 +354,26 @@ const PreviewQuotation = ({
                   </div>
                 </div>
               </div>
+
+              {/* Optional: hint if there are optional items not included */}
+              {cartItems.some((item) => item.isOption) && (
+                <div
+                  style={{
+                    marginTop: 16,
+                    fontSize: 13,
+                    color: "#555",
+                    textAlign: "center",
+                  }}
+                >
+                  <em>
+                    Note: Optional / add-on items are listed but excluded from
+                    the final total.
+                  </em>
+                </div>
+              )}
             </div>
           )}
-        </div>
+        </div>,
       );
     }
 
@@ -398,6 +397,14 @@ const PreviewQuotation = ({
         <Button key="close" onClick={onClose} icon={<CloseOutlined />}>
           Close
         </Button>,
+        <Button
+          key="pdf"
+          type="primary"
+          icon={<FilePdfFilled />}
+          onClick={handleExportPDF}
+        >
+          Export PDF
+        </Button>,
       ]}
     >
       <div
@@ -412,6 +419,7 @@ const PreviewQuotation = ({
           padding: "40px 20px",
           background: "#f5f5f5",
           minHeight: "80vh",
+          overflowY: "auto",
         }}
       >
         <div className={styles.printArea}>{renderPages()}</div>

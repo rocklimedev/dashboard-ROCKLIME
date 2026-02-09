@@ -52,6 +52,12 @@ const RED_SOFT = "#ef9a9a";
 // ─────────────────────────────────────────────────────────────
 // PO Row Component
 // ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+// PO Row Component (Fully Corrected Version)
+// ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+// PO Row Component (Fixed - Hooks Rules Compliant)
+// ─────────────────────────────────────────────────────────────
 const PORow = ({
   po,
   idx,
@@ -64,22 +70,19 @@ const PORow = ({
   handlePOStatusChange,
   isUpdatingPOStatus,
   handleOpenDatesModal,
-  poStatuses, // ← added as prop
-  isDueDateClose, // ← added as prop
+  poStatuses,
+  isDueDateClose,
 }) => {
   const navigate = useNavigate();
-  const { data: user, isLoading: isUserLoading } = useGetUserByIdQuery(
-    po.userId,
-  );
 
-  const createdByDisplay = isUserLoading ? (
-    <Spin size="small" />
-  ) : user ? (
-    user.name || user.email || user.username || "—"
-  ) : po.userId ? (
-    "User not found"
-  ) : (
+  // ── Created By – now simple & direct ─────────────────────────
+  const createdByDisplay = po?.createdBy ? (
+    po?.createdBy?.name ||
+    po?.createdBy?.email ||
+    po?.createdBy?.username ||
     "—"
+  ) : (
+    <span style={{ color: "#999", fontStyle: "italic" }}>-</span>
   );
 
   const serial = (filters.page - 1) * filters.limit + idx + 1;
@@ -89,6 +92,7 @@ const PORow = ({
   return (
     <tr key={po.id}>
       <td>{serial}</td>
+
       <td>
         <div className="d-flex align-items-center gap-2">
           <Link to={`/po/${po.id}`}>{po.poNumber}</Link>
@@ -103,6 +107,7 @@ const PORow = ({
           )}
         </div>
       </td>
+
       <td>
         <PermissionGate api="write" module="purchase_orders">
           {editingPOStatusId === po.id ? (
@@ -125,6 +130,7 @@ const PORow = ({
             <div
               className="d-flex align-items-center gap-2 pointer"
               onClick={() => setEditingPOStatusId(po.id)}
+              style={{ userSelect: "none" }}
             >
               <span
                 className={`priority-badge status-${status}`}
@@ -144,35 +150,59 @@ const PORow = ({
           )}
         </PermissionGate>
       </td>
+
       <td>{vendorName}</td>
-      <td>{po.totalAmount ? `Rs. ${po.totalAmount}` : "—"}</td>
+
       <td>
-        {po.orderDate ? new Date(po.orderDate).toLocaleDateString() : "—"}
+        {po.totalAmount
+          ? `Rs. ${Number(po.totalAmount).toLocaleString("en-IN")}`
+          : "—"}
       </td>
+
+      <td>
+        {po.orderDate
+          ? new Date(po.orderDate).toLocaleDateString("en-IN", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })
+          : "—"}
+      </td>
+
       <td>
         {po.expectDeliveryDate ? (
           <span
             className={`due-date-link ${isDueDateClose(po.expectDeliveryDate) ? "due-date-close" : ""}`}
-            style={{ cursor: "pointer" }}
+            style={{ cursor: "pointer", textDecoration: "underline" }}
             onClick={() =>
-              handleOpenDatesModal(po.expectDeliveryDate, po.followupDates)
+              handleOpenDatesModal(
+                po.expectDeliveryDate,
+                po.followupDates || [],
+              )
             }
           >
-            {new Date(po.expectDeliveryDate).toLocaleDateString()}
+            {new Date(po.expectDeliveryDate).toLocaleDateString("en-IN", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })}
           </span>
         ) : (
           "—"
         )}
       </td>
+
       <td>{createdByDisplay}</td>
+
       <td>
-        <div className="d-flex gap-2">
+        <div className="d-flex gap-2 align-items-center">
           <PermissionGate api="edit" module="purchase_orders">
             <EditOutlined
-              style={{ cursor: "pointer" }}
+              style={{ cursor: "pointer", fontSize: "16px" }}
               onClick={() => handleEditPO(po)}
             />
           </PermissionGate>
+
           <PermissionGate api="delete" module="purchase_orders">
             <Dropdown
               overlay={
@@ -188,6 +218,7 @@ const PORow = ({
                 </Menu>
               }
               trigger={["click"]}
+              placement="bottomRight"
             >
               <Button type="text" icon={<MoreOutlined />} />
             </Dropdown>
@@ -213,22 +244,15 @@ const FGSRow = ({
   setEditingFGSStatusId,
   handleFGSStatusChange,
   isUpdatingFGSStatus,
-  fgsStatuses, // ← added as prop
-  getFGSStatusBg, // ← added as prop
-  getFGSStatusColor, // ← added as prop
+  fgsStatuses,
+  getFGSStatusBg,
+  getFGSStatusColor,
 }) => {
-  const { data: user, isLoading: isUserLoading } = useGetUserByIdQuery(
-    fgs.userId,
-  );
-
-  const createdByDisplay = isUserLoading ? (
-    <Spin size="small" />
-  ) : user ? (
-    user.name || user.email || user.username || "—"
-  ) : fgs.userId ? (
-    "User not found"
+  // ── No more useGetUserByIdQuery ────────────────────────────────
+  const createdByDisplay = fgs?.createdBy ? (
+    fgs.createdBy.name || fgs.createdBy.email || fgs.createdBy.username || "—"
   ) : (
-    "—"
+    <span style={{ color: "#999", fontStyle: "italic" }}>—</span>
   );
 
   const serial = (filters.page - 1) * filters.limit + idx + 1;
@@ -293,7 +317,7 @@ const FGSRow = ({
           ? new Date(fgs.expectDeliveryDate).toLocaleDateString()
           : "—"}
       </td>
-      <td>{createdByDisplay}</td>
+      <td>{createdByDisplay}</td> {/* ← now uses backend-populated data */}
       <td>
         <div className="d-flex gap-2">
           <PermissionGate api="edit" module="field_guided_sheets">
@@ -335,7 +359,6 @@ const FGSRow = ({
     </tr>
   );
 };
-
 const PurchaseManagement = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -385,12 +408,13 @@ const PurchaseManagement = () => {
     },
     { skip: activeTab !== "po" },
   );
-
+  console.log(poData);
   const [deletePurchaseOrder] = useDeletePurchaseOrderMutation();
   const [updatePurchaseOrderStatus, { isLoading: isUpdatingPOStatus }] =
     useUpdatePurchaseOrderStatusMutation();
 
   const purchaseOrders = poData?.purchaseOrders?.data || [];
+
   const poTotal = poData?.purchaseOrders?.pagination?.total || 0;
 
   // ─── FGS Queries ─────────────────────────────────────

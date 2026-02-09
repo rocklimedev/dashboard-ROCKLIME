@@ -1,724 +1,1272 @@
-// src/pages/quotations/NewQuotationsDetails.jsx
-import React, { useRef, useState, useMemo } from "react";
-import { useParams, Link } from "react-router-dom";
-import { message, Button, Space, Typography, Spin, Alert, Tabs } from "antd";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
-  ArrowLeftOutlined,
-  FilePdfFilled,
-  FileExcelFilled,
-} from "@ant-design/icons";
-import { Helmet } from "react-helmet";
-
-import logo from "../../assets/img/logo-quotation.png";
-import styles from "./quotationnew.module.css";
-import coverImage from "../../assets/img/quotation_first_page.jpeg";
-import quotationBgImage from "../../assets/img/quotation_letterhead.jpeg";
+  Alert,
+  Tabs,
+  Modal,
+  Button,
+  Typography,
+  Select,
+  Segmented,
+} from "antd";
+import { ShoppingCartOutlined, CheckCircleOutlined } from "@ant-design/icons";
 import {
-  useGetQuotationByIdQuery,
-  useGetQuotationVersionsQuery,
-} from "../../api/quotationApi";
-import { useGetCustomerByIdQuery } from "../../api/customerApi";
-import { useGetAddressByIdQuery } from "../../api/addressApi";
+  useGetCustomersQuery,
+  useCreateCustomerMutation,
+  customerApi,
+} from "../../api/customerApi";
+import {
+  useGetCartQuery,
+  useUpdateCartMutation,
+  useClearCartMutation,
+  useRemoveFromCartMutation,
+  cartApi,
+} from "../../api/cartApi";
+import { useGetProfileQuery } from "../../api/userApi";
+import { useCreateQuotationMutation } from "../../api/quotationApi";
+import {
+  useCreateOrderMutation,
+  useGetAllOrdersQuery,
+} from "../../api/orderApi";
+import {
+  useGetAllAddressesQuery,
+  useCreateAddressMutation,
+} from "../../api/addressApi";
+import { useGetAllTeamsQuery } from "../../api/teamApi";
+import {
+  useGetVendorsQuery,
+  useCreateVendorMutation,
+} from "../../api/vendorApi";
+import { useCreatePurchaseOrderMutation } from "../../api/poApi";
+import { useGetAllProductsQuery } from "../../api/productApi";
+import { message } from "antd";
+import { v4 as uuidv4 } from "uuid";
+import { useDispatch } from "react-redux";
+import useUserAndCustomerData from "../../data/useUserAndCustomerData";
 import useProductsData from "../../data/useProductdata";
-import { useGetAllBrandsQuery } from "../../api/brandsApi";
-
-import { exportToPDF, exportToExcel } from "./hooks/exportHelpers";
-import { amountInWords } from "./hooks/calcHelpers"; // We still need this for words
-
-const { Title, Text } = Typography;
+import { debounce } from "lodash";
+import moment from "moment";
+import styled from "styled-components";
+import PropTypes from "prop-types";
+import CartTab from "./Cart";
+import QuotationForm from "./QuotationForm";
+import OrderForm from "./OrderForm";
+import PurchaseOrderForm from "./PurchaseOrderForm";
+import AddAddress from "../Address/AddAddressModal";
+import AddVendorModal from "./AddVendorModal";
+import AddNewTeam from "../Orders/AddNewTeam";
+import { useGetAllUsersQuery } from "../../api/userApi";
+import AddCustomerModal from "../Customers/AddCustomerModal";
+import PreviewQuotation from "../Quotation/PreviewQuotation";
+import { useAuth } from "../../context/AuthContext";
 const { TabPane } = Tabs;
+const { Text } = Typography;
+const { Option } = Select;
+const PageWrapper = styled.div`
+  padding: 16px;
+  background-color: #f5f5f5;
+  min-height: 100vh;
+  @media (min-width: 768px) {
+    padding: 24px;
+  }
+`;
+const RESTRICTED_ROLES = ["SUPER_ADMIN", "DEVELOPER", "ADMIN"];
+const NewCart = ({ onConvertToOrder }) => {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { auth } = useAuth();
+  const canCreatePurchaseOrder =
+    auth?.role && RESTRICTED_ROLES.includes(auth.role);
 
-const NewQuotationsDetails = () => {
-  const { id } = useParams();
-  const [activeVersion, setActiveVersion] = useState("current");
-  const [exportFormat, setExportFormat] = useState("pdf");
-  const [isExporting, setIsExporting] = useState(false);
-  const quotationRef = useRef(null);
+  // ────────────────────── PROFILE & USER ──────────────────────
+  const { data: profileData } = useGetProfileQuery();
+  const { data: usersData } = useGetAllUsersQuery();
+  const users = Array.isArray(usersData?.users) ? usersData.users : [];
+  const user = profileData?.user || {};
+  const userId = user.userId;
 
-  // FETCH QUOTATION & VERSIONS
-  const {
-    data: quotation,
-    isLoading: qLoading,
-    error: qError,
-  } = useGetQuotationByIdQuery(id);
+  // ────────────────────── STATE ──────────────────────
+  const [activeTab, setActiveTab] = useState("cart");
+  const [selectedCustomer, setSelectedCustomer] = useState("");
+  const [selectedVendor, setSelectedVendor] = useState("");
+  const [showClearCartModal, setShowClearCartModal] = useState(false);
+  const [showAddAddressModal, setShowAddAddressModal] = useState(false);
+  const [showAddVendorModal, setShowAddVendorModal] = useState(false);
+  const [showAddTeamModal, setShowAddTeamModal] = useState(false);
+  const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
+  const [documentType, setDocumentType] = useState("Quotation");
+  const [useBillingAddress, setUseBillingAddress] = useState(false);
 
-  const { data: versionsData, isLoading: vLoading } =
-    useGetQuotationVersionsQuery(id);
-  const { data: brandsData } = useGetAllBrandsQuery();
+  // Form data
+  const [quotationData, setQuotationData] = useState({
+    quotationDate: new Date().toISOString().split("T")[0],
+    dueDate: "",
+    billTo: "",
+    shipTo: null,
+    signatureName: "CM TRADING CO",
+    discountType: "fixed",
+    discountAmount: "",
+    followupDates: [],
+  });
 
-  // SAFE PARSE PRODUCTS / ITEMS
-  const safeParse = (data) => {
-    if (!data) return [];
-    if (Array.isArray(data)) return data;
-    if (typeof data === "string") {
-      try {
-        return JSON.parse(data);
-      } catch {
-        return [];
-      }
-    }
+  const [orderData, setOrderData] = useState({
+    createdFor: "",
+    createdBy: userId || "",
+    assignedTeamId: "",
+    assignedUserId: "",
+    secondaryUserId: "",
+    pipeline: "",
+    status: "PREPARING",
+    dueDate: moment().add(1, "days").format("YYYY-MM-DD"),
+    followupDates: [],
+    source: "",
+    priority: "medium",
+    description: "",
+    invoiceLink: null,
+    orderNo: "", // ← No longer pre-filled — backend assigns
+    quotationId: "",
+    masterPipelineNo: "",
+    previousOrderNo: "",
+    shipTo: "",
+  });
+
+  const [purchaseOrderData, setPurchaseOrderData] = useState({
+    vendorId: "",
+    orderDate: moment().format("YYYY-MM-DD"),
+    expectedDeliveryDate: null,
+    items: [],
+    totalAmount: 0,
+    status: "pending",
+  });
+
+  // Per-item overrides
+  const [itemDiscounts, setItemDiscounts] = useState({});
+  const [itemTaxes, setItemTaxes] = useState({});
+  const [itemDiscountTypes, setItemDiscountTypes] = useState({});
+  const [previewVisible, setPreviewVisible] = useState(false);
+  const [updatingItems, setUpdatingItems] = useState({});
+  const [productSearch, setProductSearch] = useState("");
+  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [shipping, setShipping] = useState(0);
+  const [gst, setGst] = useState(0); // GST is now always 0
+  const [billingAddressId, setBillingAddressId] = useState(null);
+
+  // ────────────────────── QUERIES ──────────────────────
+  const { data: cartData } = useGetCartQuery(userId, { skip: !userId });
+  const { data: customerData } = useGetCustomersQuery({ limit: 500 });
+  const { data: allOrdersData } = useGetAllOrdersQuery();
+  const { data: teamsData, refetch: refetchTeams } = useGetAllTeamsQuery();
+  const { data: addressesData, refetch: refetchAddresses } =
+    useGetAllAddressesQuery(
+      { customerId: selectedCustomer },
+      { skip: !selectedCustomer },
+    );
+  const { data: productsData } = useGetAllProductsQuery();
+  const { data: vendorsData } = useGetVendorsQuery();
+
+  // Mutations
+  const [updateCart] = useUpdateCartMutation();
+  const [clearCart] = useClearCartMutation();
+  const [removeFromCart] = useRemoveFromCartMutation();
+  const [createQuotation] = useCreateQuotationMutation();
+  const [createOrder] = useCreateOrderMutation();
+  const [createPurchaseOrder] = useCreatePurchaseOrderMutation();
+  const [createVendor, { isLoading: isCreatingVendor }] =
+    useCreateVendorMutation();
+  const [createAddress] = useCreateAddressMutation();
+  const [createCustomer] = useCreateCustomerMutation();
+
+  // ────────────────────── MEMOIZED VALUES ──────────────────────
+  const addresses = useMemo(
+    () => (Array.isArray(addressesData) ? addressesData : []),
+    [addressesData],
+  );
+  const orders = useMemo(
+    () => (Array.isArray(allOrdersData?.orders) ? allOrdersData.orders : []),
+    [allOrdersData],
+  );
+  const teams = useMemo(
+    () => (Array.isArray(teamsData?.teams) ? teamsData.teams : []),
+    [teamsData],
+  );
+  const vendors = useMemo(() => vendorsData || [], [vendorsData]);
+  const products = useMemo(() => {
+    if (!productsData) return [];
+    if (Array.isArray(productsData)) return productsData;
+    if (Array.isArray(productsData?.data)) return productsData.data;
+    if (Array.isArray(productsData?.products)) return productsData.products;
+    console.warn("useGetAllProductsQuery returned non-array:", productsData);
     return [];
+  }, [productsData]);
+  const customers = customerData?.data || [];
+  const customerList = useMemo(
+    () => (Array.isArray(customers) ? customers : []),
+    [customers],
+  );
+
+  const allCartItems = useMemo(
+    () => (Array.isArray(cartData?.cart?.items) ? cartData.cart.items : []),
+    [cartData],
+  );
+  const cartItems = useMemo(
+    () => allCartItems.filter((i) => !i.isOption),
+    [allCartItems],
+  ); // ← only mains for totals
+  const { productsData: cartProductsData, errors: productErrors } =
+    useProductsData(cartItems);
+
+  const userIds = useMemo(
+    () => [...new Set(addresses.map((a) => a.userId).filter(Boolean))],
+    [addresses],
+  );
+  const customerIds = useMemo(
+    () => [...new Set(addresses.map((a) => a.customerId).filter(Boolean))],
+    [addresses],
+  );
+  const { userMap, customerMap, userQueries, customerQueries } =
+    useUserAndCustomerData(userIds, customerIds);
+
+  // ────────────────────── TOTALS & CALCULATIONS ──────────────────────
+  const totalItems = useMemo(
+    () => allCartItems.reduce((a, i) => a + (i.quantity || 0), 0),
+    [allCartItems],
+  ); // show count of all items
+  const subTotal = useMemo(
+    () => cartItems.reduce((a, i) => a + (i.price || 0) * (i.quantity || 0), 0),
+    [cartItems],
+  );
+
+  const totalDiscount = useMemo(() => {
+    return cartItems.reduce((sum, item) => {
+      const subtotal = (item.price || 0) * (item.quantity || 1);
+      const discVal = Number(itemDiscounts[item.productId]) || 0;
+      const type = itemDiscountTypes[item.productId] || "percent";
+      const disc =
+        type === "percent"
+          ? (subtotal * discVal) / 100
+          : discVal * (item.quantity || 1);
+      return sum + disc;
+    }, 0);
+  }, [cartItems, itemDiscounts, itemDiscountTypes]);
+
+  const tax = useMemo(() => {
+    return cartItems.reduce((acc, item) => {
+      const price = item.price || 0;
+      const qty = item.quantity || 1;
+      const subtotal = price * qty;
+      const discVal = Number(itemDiscounts[item.productId]) || 0;
+      const type = itemDiscountTypes[item.productId] || "percent";
+      const discAmt =
+        type === "percent" ? (subtotal * discVal) / 100 : discVal * qty;
+      const taxable = subtotal - discAmt;
+      const itemTax = parseFloat(itemTaxes[item.productId]) || 0;
+      return acc + (taxable * itemTax) / 100;
+    }, 0);
+  }, [cartItems, itemDiscounts, itemDiscountTypes, itemTaxes]);
+
+  const extraDiscount = useMemo(() => {
+    const amount = parseFloat(quotationData.discountAmount) || 0;
+    if (!amount) return 0;
+    const base = subTotal - totalDiscount + tax + shipping;
+    return quotationData.discountType === "percent"
+      ? parseFloat(((base * amount) / 100).toFixed(2))
+      : parseFloat(amount.toFixed(2));
+  }, [
+    quotationData.discountAmount,
+    quotationData.discountType,
+    subTotal,
+    totalDiscount,
+    tax,
+    shipping,
+  ]);
+
+  const amountBeforeGstRaw =
+    subTotal - totalDiscount + tax + shipping - extraDiscount;
+  const amountBeforeGst = parseFloat(amountBeforeGstRaw.toFixed(2));
+
+  const rupees = Math.floor(amountBeforeGst);
+  const paise = Math.round((amountBeforeGst - rupees) * 100);
+  let roundOff = 0;
+  if (paise > 0 && paise <= 50)
+    roundOff = parseFloat((-paise / 100).toFixed(2));
+  else if (paise > 50) roundOff = parseFloat(((100 - paise) / 100).toFixed(2));
+
+  const roundedAmount = parseFloat((amountBeforeGst + roundOff).toFixed(2));
+  const gstAmount =
+    gst > 0 ? parseFloat(((roundedAmount * gst) / 100).toFixed(2)) : 0;
+  const totalAmount = parseFloat((roundedAmount + gstAmount).toFixed(2));
+  const handleMakeOption = (productId, optionType, parentProductId = null) => {
+    if (!userId) {
+      message.error("User not logged in");
+      return;
+    }
+
+    dispatch(
+      cartApi.util.updateQueryData("getCart", userId, (draft) => {
+        const item = draft.cart.items.find((i) => i.productId === productId);
+        if (item) {
+          if (optionType === null) {
+            // Reset to main item
+            item.isOption = false;
+            item.optionType = null;
+            item.parentProductId = null;
+            item.selected = true;
+          } else {
+            // Mark as option
+            item.isOption = true;
+            item.optionType = optionType;
+            item.parentProductId = parentProductId || null; // ← can be set later
+            item.selected = true;
+          }
+        }
+      }),
+    );
+
+    message.info(
+      optionType
+        ? `Item marked as ${optionType}${parentProductId ? ` for ${getParentName(parentProductId)}` : ""}`
+        : "Item reset to main product",
+    );
   };
 
-  // VERSIONS LOGIC
-  const versions = useMemo(() => {
-    const list = Array.isArray(versionsData) ? [...versionsData] : [];
-    if (quotation) {
-      list.unshift({
-        version: "current",
-        quotationData: quotation,
-        quotationItems: safeParse(quotation.items || quotation.products),
-        updatedAt: quotation.updatedAt || new Date(),
-        updatedBy: quotation.createdBy,
-      });
+  // 2. Helper to get parent name (used in display)
+  const getParentName = (parentProductId) => {
+    if (!parentProductId) return "Unknown";
+    const parentItem = cartItems.find((i) => i.productId === parentProductId);
+    return parentItem?.name || "Deleted/Unknown product";
+  };
+  // ────────────────────── EFFECTS ──────────────────────
+  // Sync discount types for newly added items
+  useEffect(() => {
+    const missing = cartItems
+      .filter((it) => !(it.productId in itemDiscountTypes))
+      .reduce((acc, it) => ({ ...acc, [it.productId]: "percent" }), {});
+    if (Object.keys(missing).length) {
+      setItemDiscountTypes((prev) => ({ ...prev, ...missing }));
     }
-    return list.sort((a, b) =>
-      a.version === "current" ? -1 : b.version - a.version,
-    );
-  }, [quotation, versionsData]);
+  }, [cartItems]);
 
-  const activeVersionData = useMemo(() => {
-    const v =
-      versions.find((x) => x.version === activeVersion) || versions[0] || {};
-    return {
-      quotation: v.quotationData || quotation || {},
-      products: v.quotationItems || [],
-      updatedAt: v.updatedAt,
-    };
-  }, [activeVersion, versions, quotation]);
+  // Purchase order sync
+  useEffect(() => {
+    if (documentType === "Purchase Order") {
+      setPurchaseOrderData((prev) => ({
+        ...prev,
+        items: cartItems.map((item) => ({
+          id: item.productId,
+          productId: item.productId,
+          name: item.name || "Unknown",
+          quantity: item.quantity || 1,
+          mrp: item.price || 0.01,
+          total: (item.quantity || 1) * (item.price || 0.01),
+          tax: itemTaxes[item.productId] || 0,
+        })),
+      }));
+    }
+  }, [cartItems, itemTaxes, documentType]);
 
-  const activeProducts = activeVersionData.products || [];
+  // Auto-fill customer name
+  useEffect(() => {
+    if (selectedCustomer) {
+      const cust = customerList.find((c) => c.customerId === selectedCustomer);
+      if (cust) {
+        setQuotationData((prev) => ({
+          ...prev,
+          billTo: cust.name || prev.billTo,
+        }));
+        setOrderData((prev) => ({ ...prev, createdFor: cust.customerId }));
+      }
+    }
+  }, [selectedCustomer, customerList]);
 
-  const { productsData, loading: prodLoading } =
-    useProductsData(activeProducts);
+  // Sync extra discount between Order & Quotation forms
+  useEffect(() => {
+    if (documentType === "Order") {
+      setQuotationData((prev) => ({
+        ...prev,
+        discountType: orderData.extraDiscountType || "percent",
+        discountAmount: orderData.extraDiscount?.toString() || "",
+      }));
+    }
+  }, [documentType, orderData.extraDiscountType, orderData.extraDiscount]);
 
-  // Customer & Address
-  let customerId = activeVersionData.quotation?.customerId;
-  let shipToId = activeVersionData.quotation?.shipTo;
+  // ────────────────────── HANDLERS ──────────────────────
+  const handleShippingChange = useCallback((v) => setShipping(v), []);
+  const handleDiscountChange = (productId, value) =>
+    setItemDiscounts((p) => ({ ...p, [productId]: value >= 0 ? value : 0 }));
+  const handleDiscountTypeChange = (productId, type) =>
+    setItemDiscountTypes((p) => ({ ...p, [productId]: type }));
+  const handleTaxChange = (productId, value) =>
+    setItemTaxes((p) => ({ ...p, [productId]: value >= 0 ? value : 0 }));
 
-  if (!customerId && quotation?.customerId) customerId = quotation.customerId;
-  if (!shipToId && quotation?.shipTo) shipToId = quotation.shipTo;
-
-  const {
-    data: customerResponse,
-    isFetching: custLoading,
-    error: custError,
-  } = useGetCustomerByIdQuery(customerId, { skip: !customerId });
-
-  const customer = customerResponse?.data || {};
-
-  const { data: addressResponse, isFetching: addrLoading } =
-    useGetAddressByIdQuery(shipToId, { skip: !shipToId });
-
-  const address = addressResponse;
-
-  const customerName = customer?.name || "Dear Client";
-  const customerPhone =
-    customer?.mobileNumber || customer?.phone || "XXXXXXXXXX";
-
-  const customerAddress = address
-    ? `${address.street || ""}, ${address.city || ""}, ${
-        address.state || ""
-      } - ${address.postalCode || ""}`
-        .replace(/^,\s*|,*\s*$/g, "")
-        .trim()
-    : "--";
-
-  // BRAND NAMES
-  const brandNames = useMemo(() => {
-    const set = new Set();
-    activeProducts.forEach((p) => {
-      const pd = productsData?.find((x) => x.productId === p.productId) || {};
-      let brand =
-        pd.brandName ||
-        pd.metaDetails?.find((m) => m.title?.toLowerCase().includes("brand"))
-          ?.value ||
-        brandsData?.find((b) => b.id === pd.brandId)?.brandName;
-
-      if (brand && brand !== "N/A") set.add(brand.trim());
-    });
-    return set.size ? [...set].join(" / ") : "GROHE / AMERICAN STANDARD";
-  }, [activeProducts, productsData, brandsData]);
-
-  // ── BACKEND-DRIVEN VALUES (preferred over recalculation) ────────────────
-  const backendFinalAmount = Number(quotation?.finalAmount ?? 0);
-  const backendRoundOff = Number(quotation?.roundOff ?? 0);
-  const backendExtraDiscount = Number(quotation?.extraDiscount ?? 0);
-  const backendExtraDiscountType = (
-    quotation?.extraDiscountType ?? "fixed"
-  ).toLowerCase();
-
-  // Fallback subtotal: sum of line totals from items/products
-  const displaySubtotal = useMemo(() => {
-    return activeProducts.reduce((sum, p) => {
-      const item =
-        quotation?.items?.find((i) => i.productId === p.productId) ||
-        quotation?.products?.find((i) => i.productId === p.productId) ||
-        p;
-      return sum + Number(item?.total ?? 0);
-    }, 0);
-  }, [activeProducts, quotation]);
-
-  // Optional: display product-level discount (for transparency only)
-  const displayProductDiscount = useMemo(() => {
-    return activeProducts.reduce((sum, p) => {
-      const item =
-        quotation?.items?.find((i) => i.productId === p.productId) ||
-        quotation?.products?.find((i) => i.productId === p.productId) ||
-        p;
-      const orig = Number(item?.price ?? 0) * Number(item?.quantity ?? 1);
-      const discounted = Number(item?.total ?? 0);
-      return sum + (orig - discounted);
-    }, 0);
-  }, [activeProducts, quotation]);
-
-  const finalAmountInWords = amountInWords(Math.round(backendFinalAmount));
-
-  const pageTitle = useMemo(() => {
-    if (!quotation) return "Loading Quotation...";
-    const title =
-      quotation.document_title || quotation.quotation_title || "Quotation";
-    const ref = quotation.reference_number || id || "QID";
-    return `${title.trim()} - ${ref}`;
-  }, [quotation, id]);
-
-  // EXPORT HANDLER (unchanged)
-  const handleExport = async () => {
-    if (!quotationRef.current) return;
-    setIsExporting(true);
+  const handleClearCart = async () => {
+    if (!userId) return message.error("User not logged in!");
     try {
-      const safeTitle = (quotation?.document_title || "Quotation")
-        .replace(/[\\/:*?"<>|]/g, "_")
-        .replace(/\s+/g, "_")
-        .substring(0, 50);
-
-      const versionLabel =
-        activeVersion === "current" ? "Latest" : activeVersion;
-      const fileName = `${safeTitle}_V${versionLabel}`;
-
-      if (exportFormat === "pdf") {
-        await exportToPDF(
-          quotationRef,
-          id,
-          activeVersion,
-          activeVersionData.quotation,
-          `${fileName}.pdf`,
-        );
-      } else {
-        await exportToExcel(
-          activeProducts,
-          productsData,
-          brandNames,
-          activeVersionData.quotation,
-          customerAddress,
-          logo,
-          {
-            bankName: "IDFC FIRST BANK",
-            accountNumber: "10179373657",
-            ifscCode: "IDFB0020149",
-            branch: "BHERA ENCLAVE PASCHIM VIHAR",
-          },
-          id,
-          activeVersion,
-          [],
-          `${fileName}.xlsx`,
-        );
-      }
-      message.success(`${exportFormat.toUpperCase()} exported successfully!`);
-    } catch (err) {
-      message.error("Export failed");
-      console.error(err);
-    } finally {
-      setIsExporting(false);
+      await clearCart({ userId }).unwrap();
+      resetForm();
+      setShowClearCartModal(false);
+      setActiveTab("cart");
+    } catch (e) {
+      message.error(e.data?.message || "Failed to clear cart");
     }
   };
 
-  // LOADING / ERROR STATES
-  if (qLoading || vLoading || prodLoading || custLoading || addrLoading) {
-    return (
-      <Spin
-        tip="Loading Quotation Details..."
-        size="large"
-        style={{ marginTop: 100 }}
-      />
-    );
-  }
+  const handleRemoveItem = useCallback(
+    async (e, productId) => {
+      e?.preventDefault?.();
+      e?.stopPropagation?.();
 
-  if (qError || !quotation) {
-    return <Alert message="Quotation not found" type="error" showIcon />;
-  }
+      if (!userId) return message.error("User not logged in!");
 
-  const renderPages = () => {
-    const pages = [];
-
-    // PAGE 1: COVER
-    pages.push(
-      <div key="cover" className={`${styles.coverPage} page`}>
-        <img src={coverImage} alt="Cover" className={styles.coverBg} />
-        <div className={styles.coverContent}>
-          <div className={styles.dynamicCustomerName}>
-            {customerName.toUpperCase()}
-          </div>
-        </div>
-      </div>,
-    );
-
-    // PAGE 2: LETTERHEAD
-    pages.push(
-      <div key="letterhead" className={`${styles.letterheadPage} page`}>
-        <img
-          src={quotationBgImage}
-          alt="Quotation Background"
-          className={styles.letterheadBg}
-        />
-
-        <div className={styles.letterheadContent}>
-          <div className={`${styles.clientField} ${styles.clientNameField}`}>
-            {customerName}
-          </div>
-          <div className={`${styles.clientField} ${styles.contactField}`}>
-            {customerPhone}
-          </div>
-          <div className={`${styles.clientField} ${styles.addressField}`}>
-            {customerAddress}
-          </div>
-          <div className={`${styles.clientField} ${styles.quotationNoField}`}>
-            {quotation.reference_number || "—"}
-          </div>
-        </div>
-
-        <div className={styles.letterheadFooter}>
-          <img src={logo} alt="Logo" />
-          <div>
-            487/65, National Market, Peera Garhi, Delhi, 110087
-            <br />
-            0991180605
-            <br />
-            www.cmtradingco.com
-          </div>
-        </div>
-      </div>,
-    );
-
-    // ── PRODUCT + SUMMARY PAGES ────────────────────────────────────────
-    const MAX_PRODUCTS_NORMAL = 10;
-    const MAX_PRODUCTS_WITH_SUMMARY = 8;
-
-    let remaining = [...activeProducts];
-    let globalSno = 0;
-
-    while (remaining.length > 0) {
-      const isVeryLastChunk = remaining.length <= MAX_PRODUCTS_WITH_SUMMARY;
-      const canFitSummaryHere = isVeryLastChunk;
-
-      let itemsThisPage;
-      let showSummaryThisPage = false;
-
-      if (canFitSummaryHere) {
-        itemsThisPage = remaining;
-        showSummaryThisPage = true;
-      } else {
-        itemsThisPage = remaining.slice(0, MAX_PRODUCTS_NORMAL);
-        showSummaryThisPage = false;
-      }
-
-      pages.push(
-        <div
-          key={`content-page-${globalSno}`}
-          className={`${styles.productPage} page`}
-        >
-          <div className={styles.pageTopHeader}>
-            <div>
-              <div className={styles.clientName}>{customerName}</div>
-              <div className={styles.clientAddress}>{customerAddress}</div>
-            </div>
-            <div className={styles.pageDate}>
-              {new Date(
-                quotation.quotation_date || Date.now(),
-              ).toLocaleDateString("en-IN", {
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
-              })}
-            </div>
-          </div>
-
-          <table className={styles.productTable}>
-            <colgroup>
-              <col className={styles.sno} />
-              <col className={styles.name} />
-              <col className={styles.code} />
-              <col className={styles.image} />
-              <col className={styles.unit} />
-              <col className={styles.mrp} />
-              <col className={styles.discount} />
-              <col className={styles.total} />
-            </colgroup>
-            <thead>
-              <tr>
-                <th>S.No</th>
-                <th>Product Name</th>
-                <th>Code</th>
-                <th>Product Image</th>
-                <th>Unit</th>
-                <th>MRP</th>
-                <th>Discount</th>
-                <th>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {itemsThisPage.map((p, idx) => {
-                const pd =
-                  productsData?.find((x) => x.productId === p.productId) || {};
-
-                const matchingItem =
-                  quotation?.items?.find(
-                    (it) => it.productId === p.productId,
-                  ) ||
-                  quotation?.products?.find(
-                    (it) => it.productId === p.productId,
-                  ) ||
-                  p;
-
-                const code =
-                  matchingItem?.companyCode ||
-                  p.companyCode ||
-                  p.productCode ||
-                  matchingItem?.productCode ||
-                  pd.companyCode ||
-                  "—";
-
-                const img =
-                  p.imageUrl ||
-                  matchingItem?.imageUrl ||
-                  pd.images?.[0] ||
-                  pd.imageUrl ||
-                  "";
-
-                const mrp = Number(matchingItem?.price ?? p.price ?? 0);
-                const qty = Number(matchingItem?.quantity ?? p.quantity ?? 1);
-                const lineTotal = Number(matchingItem?.total ?? 0);
-
-                // Display discount as stored
-                const discValue = Number(matchingItem?.discount ?? 0);
-                const discType = (
-                  matchingItem?.discountType ?? "percent"
-                ).toLowerCase();
-                let displayDiscount = "—";
-                if (discValue > 0) {
-                  displayDiscount =
-                    discType === "percent"
-                      ? `${discValue}%`
-                      : `₹${discValue.toFixed(0)}`;
-                }
-
-                globalSno++;
-
-                return (
-                  <tr key={p.productId || globalSno}>
-                    <td className={styles.snoCell}>{globalSno}.</td>
-                    <td className={styles.prodNameCell}>
-                      {p.name || matchingItem?.name || pd.name || "—"}
-                    </td>
-                    <td>{code}</td>
-                    <td>
-                      {img ? (
-                        <img
-                          src={img}
-                          alt={p.name}
-                          className={styles.prodImg}
-                        />
-                      ) : null}
-                    </td>
-                    <td>{qty}</td>
-                    <td>₹{mrp.toLocaleString("en-IN")}</td>
-                    <td className={styles.discountCell}>{displayDiscount}</td>
-                    <td className={styles.totalCell}>
-                      ₹{lineTotal.toLocaleString("en-IN")}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-
-          {showSummaryThisPage && (
-            <div className={styles.finalSummaryWrapper}>
-              <div className={styles.finalSummarySection}>
-                <div className={styles.summaryLeft}>
-                  <div className={styles.summaryRow}>
-                    <span>Subtotal</span>
-                    <span>₹{displaySubtotal.toLocaleString("en-IN")}</span>
-                  </div>
-
-                  {displayProductDiscount > 0 && (
-                    <div className={styles.summaryRow}>
-                      <span>Total Discount</span>
-                      <span>
-                        -₹
-                        {Math.round(displayProductDiscount).toLocaleString(
-                          "en-IN",
-                        )}
-                      </span>
-                    </div>
-                  )}
-
-                  {backendExtraDiscount > 0 && (
-                    <div className={styles.summaryRow}>
-                      <span>Extra Discount</span>
-                      <span>
-                        -₹
-                        {Math.round(backendExtraDiscount).toLocaleString(
-                          "en-IN",
-                        )}
-                      </span>
-                    </div>
-                  )}
-
-                  <div className={styles.summaryRow}>
-                    <span>Taxable Value</span>
-                    <span>₹{displaySubtotal.toLocaleString("en-IN")}</span>
-                  </div>
-                </div>
-
-                <div className={styles.summaryRight}>
-                  <div className={styles.totalAmount}>
-                    <strong>Total Amount:</strong>
-                    <strong>
-                      {" "}
-                      ₹{backendFinalAmount.toLocaleString("en-IN")}
-                    </strong>
-                  </div>
-                  <div className={styles.amountInWords}>
-                    {finalAmountInWords}
-                  </div>
-                  {backendRoundOff !== 0 && (
-                    <div className={styles.roundOffNote}>
-                      (Round off: {backendRoundOff >= 0 ? "+" : "-"}₹
-                      {Math.abs(backendRoundOff).toFixed(2)})
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>,
+      // Optimistic UI
+      dispatch(
+        cartApi.util.updateQueryData("getCart", userId, (draft) => {
+          draft.cart.items = draft.cart.items.filter(
+            (i) => i.productId !== productId,
+          );
+        }),
       );
 
-      remaining = remaining.slice(itemsThisPage.length);
+      // Clean local state
+      setItemDiscounts((p) => {
+        const { [productId]: _, ...rest } = p;
+        return rest;
+      });
+      setItemTaxes((p) => {
+        const { [productId]: _, ...rest } = p;
+        return rest;
+      });
+      setItemDiscountTypes((p) => {
+        const { [productId]: _, ...rest } = p;
+        return rest;
+      });
 
-      // Summary-only page if needed
-      if (remaining.length === 0 && !showSummaryThisPage) {
-        pages.push(
-          <div key="summary-only" className={`${styles.productPage} page`}>
-            <div className={styles.pageTopHeader}>
-              <div>
-                <div className={styles.clientName}>{customerName}</div>
-                <div className={styles.clientAddress}>{customerAddress}</div>
-              </div>
-              <div className={styles.pageDate}>
-                {new Date(
-                  quotation.quotation_date || Date.now(),
-                ).toLocaleDateString("en-IN", {
-                  day: "2-digit",
-                  month: "short",
-                  year: "numeric",
-                })}
-              </div>
-            </div>
+      setUpdatingItems((p) => ({ ...p, [productId]: true }));
 
-            <div
-              style={{
-                textAlign: "center",
-                margin: "40px 0 60px",
-                fontSize: "24px",
-                fontWeight: "bold",
-                color: "#E31E24",
-              }}
-            >
-              Quotation Summary
-            </div>
+      try {
+        await removeFromCart({ userId, productId }).unwrap();
+      } catch (err) {
+        message.error(err?.data?.message || "Failed");
+        dispatch(
+          cartApi.util.updateQueryData("getCart", userId, () => ({
+            cart: { items: cartItems },
+          })),
+        );
+      } finally {
+        setUpdatingItems((p) => ({ ...p, [productId]: false }));
+      }
+    },
+    [userId, cartItems, dispatch, removeFromCart],
+  );
 
-            <div className={styles.finalSummaryWrapper}>
-              <div className={styles.finalSummarySection}>
-                <div className={styles.summaryLeft}>
-                  <div className={styles.summaryRow}>
-                    <span>Subtotal</span>
-                    <span>₹{displaySubtotal.toLocaleString("en-IN")}</span>
-                  </div>
+  const handleUpdateQuantity = useCallback(
+    async (productId, newQty) => {
+      if (!userId || newQty < 1) return;
+      setUpdatingItems((p) => ({ ...p, [productId]: true }));
+      try {
+        await updateCart({
+          userId,
+          productId,
+          quantity: Number(newQty),
+        }).unwrap();
+      } catch (err) {
+        message.error(err?.data?.message || "Failed");
+      } finally {
+        setUpdatingItems((p) => ({ ...p, [productId]: false }));
+      }
+    },
+    [userId, updateCart],
+  );
 
-                  {displayProductDiscount > 0 && (
-                    <div className={styles.summaryRow}>
-                      <span>Total Discount</span>
-                      <span>
-                        -₹
-                        {Math.round(displayProductDiscount).toLocaleString(
-                          "en-IN",
-                        )}
-                      </span>
-                    </div>
-                  )}
+  const handleTeamAdded = (showModal) => {
+    setShowAddTeamModal(showModal);
+    if (!showModal) refetchTeams();
+  };
 
-                  {backendExtraDiscount > 0 && (
-                    <div className={styles.summaryRow}>
-                      <span>Extra Discount</span>
-                      <span>
-                        -₹
-                        {Math.round(backendExtraDiscount).toLocaleString(
-                          "en-IN",
-                        )}
-                      </span>
-                    </div>
-                  )}
+  const handleQuotationChange = useCallback((key, value) => {
+    setQuotationData((prev) => ({ ...prev, [key]: value }));
+  }, []);
 
-                  <div className={styles.summaryRow}>
-                    <span>Taxable Value</span>
-                    <span>₹{displaySubtotal.toLocaleString("en-IN")}</span>
-                  </div>
-                </div>
+  const purchaseOrderTotal = useMemo(
+    () =>
+      purchaseOrderData.items
+        .reduce(
+          (sum, item) =>
+            sum + Number(item.total || 0) * (1 + (item.tax || 0) / 100),
+          0,
+        )
+        .toFixed(2),
+    [purchaseOrderData.items],
+  );
 
-                <div className={styles.summaryRight}>
-                  <div className={styles.totalAmount}>
-                    <strong>Total Amount:</strong>
-                    <strong>
-                      {" "}
-                      ₹{backendFinalAmount.toLocaleString("en-IN")}
-                    </strong>
-                  </div>
-                  <div className={styles.amountInWords}>
-                    {finalAmountInWords}
-                  </div>
-                  {backendRoundOff !== 0 && (
-                    <div className={styles.roundOffNote}>
-                      (Round off: {backendRoundOff >= 0 ? "+" : "-"}₹
-                      {Math.abs(backendRoundOff).toFixed(2)})
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>,
+  const debouncedSearch = useCallback(
+    debounce((value) => {
+      setProductSearch(value);
+      if (value) {
+        const filtered = products
+          .filter(
+            (p) =>
+              p.productId &&
+              (p.name?.toLowerCase().includes(value.toLowerCase()) ||
+                p.product_code?.toLowerCase().includes(value.toLowerCase())),
+          )
+          .slice(0, 5);
+        setFilteredProducts(filtered);
+      } else {
+        setFilteredProducts([]);
+      }
+    }, 300),
+    [products],
+  );
+
+  // ────────────────────── CREATE DOCUMENT (main handler) ──────────────────────
+  const handleCreateDocument = async () => {
+    if (documentType === "Purchase Order") {
+      if (!selectedVendor) return message.error("Please select a vendor.");
+      if (cartItems.length === 0 && purchaseOrderData.items.length === 0)
+        return message.error("Please add at least one product.");
+      if (purchaseOrderData.items.some((item) => item.mrp <= 0))
+        return message.error(
+          "All products must have a valid MRP greater than 0.",
+        );
+      if (
+        purchaseOrderData.items.some(
+          (item) => !products.some((p) => p.productId === item.productId),
+        )
+      )
+        return message.error(
+          "Some products are no longer available. Please remove them.",
+        );
+      const formattedItems = purchaseOrderData.items.map((item) => ({
+        productId: item.productId,
+        quantity: Number(item.quantity) || 1,
+        unitPrice: Number(item.unitPrice) || Number(item.mrp) || 0.01, // ← prefer unitPrice
+        mrp: Number(item.mrp) || Number(item.unitPrice) || 0.01, // fallback
+        tax: Number(item.tax) || 0,
+        discount: Number(item.discount) || 0, // if you add discount field
+        discountType: item.discountType || "percent",
+      }));
+
+      const payload = {
+        vendorId: selectedVendor,
+        items: formattedItems,
+        expectDeliveryDate: purchaseOrderData.expectDeliveryDate // ← fixed spelling
+          ? moment(purchaseOrderData.expectDeliveryDate).format("YYYY-MM-DD")
+          : null,
+        // status: do NOT send on create — backend forces "pending"
+        // fgsId: if you support FieldGuidedSheet conversion later
+      };
+
+      try {
+        const result = await createPurchaseOrder(payload).unwrap();
+        message.success(
+          `Purchase Order ${result.purchaseOrder.poNumber} created!`,
+        );
+        await handleClearCart();
+        resetForm();
+        navigate("/purchase-manager");
+      } catch (err) {
+        const errorMessage =
+          err.status === 404
+            ? "Vendor not found."
+            : err.status === 400
+              ? `Invalid request: ${
+                  err.data?.error ||
+                  err.data?.message ||
+                  "Check your input data."
+                }`
+              : err.data?.message || "Failed to create purchase order";
+        message.error(errorMessage);
+      }
+      return;
+    }
+
+    if (!selectedCustomer) return message.error("Please select a customer.");
+    if (!userId) return message.error("User not logged in!");
+    if (cartItems.length === 0)
+      return message.error("Cart is empty. Add items to proceed.");
+
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (documentType === "Order") {
+      if (!orderData.dueDate || !dateRegex.test(orderData.dueDate)) {
+        return message.error("Invalid due date format. Use YYYY-MM-DD.");
+      }
+      if (moment(orderData.dueDate).isBefore(moment().startOf("day"))) {
+        return message.error("Due date cannot be in the past.");
+      }
+    } else {
+      if (
+        !quotationData.quotationDate ||
+        !dateRegex.test(quotationData.quotationDate)
+      ) {
+        return message.error("Invalid quotation date format. Use YYYY-MM-DD.");
+      }
+      if (!quotationData.dueDate || !dateRegex.test(quotationData.dueDate)) {
+        return message.error("Invalid due date format. Use YYYY-MM-DD.");
+      }
+      if (
+        moment(quotationData.dueDate).isBefore(
+          moment(quotationData.quotationDate),
+        )
+      ) {
+        return message.error("Due date must be after quotation date.");
+      }
+    }
+
+    if (isNaN(totalAmount) || totalAmount <= 0)
+      return message.error("Invalid total amount.");
+
+    if (
+      !cartItems.every(
+        (item) =>
+          item.productId &&
+          typeof item.quantity === "number" &&
+          item.quantity > 0 &&
+          typeof item.price === "number" &&
+          item.price >= 0,
+      )
+    ) {
+      return message.error(
+        "Invalid cart items. Ensure all items have valid productId, quantity, and price.",
+      );
+    }
+
+    // Auto-create address if needed
+    if (
+      useBillingAddress &&
+      !orderData.shipTo &&
+      selectedCustomer &&
+      documentType === "Order"
+    ) {
+      const selectedCustomerData = customerList.find(
+        (customer) => customer.customerId === selectedCustomer,
+      );
+      const defaultAddress = selectedCustomerData?.address;
+      if (defaultAddress) {
+        try {
+          const newAddress = {
+            customerId: selectedCustomer,
+            addressDetails: {
+              street: defaultAddress.street,
+              city: defaultAddress.city,
+              state: defaultAddress.state,
+              postalCode: defaultAddress.zip || defaultAddress.postalCode,
+              country: defaultAddress.country || "India",
+            },
+          };
+          const result = await createAddress(newAddress).unwrap();
+          setOrderData((prev) => ({ ...prev, shipTo: result.addressId }));
+          await refetchAddresses();
+        } catch (err) {
+          message.error(
+            `Failed to create address: ${err.data?.message || "Unknown error"}`,
+          );
+          return;
+        }
+      }
+    }
+
+    if (
+      documentType === "Order" &&
+      orderData.shipTo &&
+      !addresses.find((addr) => addr.addressId === orderData.shipTo)
+    ) {
+      return message.error("Invalid shipping address selected.");
+    }
+
+    const selectedCustomerData = customerList.find(
+      (customer) => customer.customerId === selectedCustomer,
+    );
+    if (!selectedCustomerData)
+      return message.error("Selected customer not found.");
+
+    if (documentType === "Order" && orderData.shipTo) {
+      const selectedAddress = addresses.find(
+        (addr) => addr.addressId === orderData.shipTo,
+      );
+      if (selectedAddress && selectedAddress.customerId !== selectedCustomer) {
+        return message.error(
+          "Selected address does not belong to the chosen customer.",
         );
       }
     }
 
-    return pages;
+    if (documentType === "Quotation") {
+      const quotationPayload = {
+        quotationId: uuidv4(),
+        document_title: `Quotation for ${selectedCustomerData.name}`,
+        quotation_date: quotationData.quotationDate,
+        due_date: quotationData.dueDate,
+        // reference_number → removed (backend assigns)
+
+        extraDiscount: parseFloat(quotationData.discountAmount) || 0,
+        extraDiscountType: quotationData.discountType || "percent",
+
+        shippingAmount: Number(shipping),
+        gst: gst,
+
+        finalAmount: totalAmount,
+
+        products: cartItems.map((item) => {
+          const price = Number(item.price) || 0;
+          const quantity = Number(item.quantity) || 1;
+          const rawDiscount = Number(itemDiscounts[item.productId]) || 0;
+          const discountType = itemDiscountTypes[item.productId] || "percent";
+
+          let lineTotalAfterDiscount;
+          if (discountType === "percent") {
+            lineTotalAfterDiscount = price * quantity * (1 - rawDiscount / 100);
+          } else {
+            lineTotalAfterDiscount = (price - rawDiscount) * quantity;
+          }
+
+          return {
+            productId: item.productId,
+            name: item.name || "Unknown Product",
+            price: Number(price.toFixed(2)),
+            quantity,
+            discount: Number(rawDiscount.toFixed(2)),
+            discountType,
+            tax: Number(itemTaxes[item.productId]) || 0,
+            total: parseFloat(lineTotalAfterDiscount.toFixed(2)),
+          };
+        }),
+
+        followupDates: quotationData.followupDates.filter(Boolean),
+
+        customerId: selectedCustomerData.customerId,
+        shipTo: quotationData.shipTo || null,
+        createdBy: userId,
+        signature_name: quotationData.signatureName || "CM TRADING CO",
+        signature_image: "",
+      };
+
+      try {
+        const result = await createQuotation(quotationPayload).unwrap();
+        message.success(
+          `Quotation ${result.quotation.reference_number} created!`,
+        );
+        await handleClearCart();
+        resetForm();
+        navigate("/quotations/list");
+      } catch (e) {
+        message.error(e?.data?.message || "Failed to create quotation");
+      }
+    } else if (documentType === "Order") {
+      // orderNo removed from payload — backend assigns
+
+      if (!validateFollowupDates()) {
+        return message.error("Follow-up dates cannot be after the due date.");
+      }
+
+      const taxableBase = subTotal - totalDiscount + tax;
+      const afterTax = taxableBase + shipping;
+
+      const extraDiscountValue =
+        quotationData.discountType === "percent"
+          ? (afterTax * parseFloat(quotationData.discountAmount || 0)) / 100
+          : parseFloat(quotationData.discountAmount || 0);
+
+      const amountForGst =
+        subTotal + shipping + tax - totalDiscount - extraDiscountValue;
+      const gstAmount = Math.round((amountForGst * gst) / 100);
+
+      const orderPayload = {
+        id: uuidv4(),
+        // orderNo removed — backend generates
+
+        createdFor: selectedCustomerData.customerId,
+        createdBy: userId,
+        assignedTeamId: orderData.assignedTeamId || null,
+        assignedUserId: orderData.assignedUserId || null,
+        secondaryUserId: orderData.secondaryUserId || null,
+        pipeline: orderData.pipeline || null,
+        status: orderData.status || "PREPARING",
+        gst: gst,
+        gstValue: Number(gstAmount),
+        extraDiscount: parseFloat(quotationData.discountAmount || 0),
+        extraDiscountType: quotationData.discountType || "percent",
+        extraDiscountValue: Number(extraDiscountValue.toFixed(2)),
+
+        dueDate: orderData.dueDate,
+        followupDates: orderData.followupDates.filter(
+          (date) => date && moment(date).isValid(),
+        ),
+        source: orderData.source || null,
+        priority: orderData.priority || "medium",
+        description: orderData.description || null,
+        invoiceLink: null,
+        quotationId: orderData.quotationId || null,
+        masterPipelineNo: orderData.masterPipelineNo || null,
+        previousOrderNo: orderData.previousOrderNo || null,
+        shipTo: orderData.shipTo || null,
+        products: cartItems.map((item) => {
+          const price = parseFloat(item.price) || 0;
+          const quantity = parseInt(item.quantity, 10) || 1;
+
+          const rawDiscount = Number(itemDiscounts[item.productId]) || 0;
+          const discountType = itemDiscountTypes[item.productId] || "percent";
+
+          const unitPriceAfterDiscount =
+            discountType === "percent"
+              ? price * (1 - rawDiscount / 100)
+              : price - rawDiscount;
+
+          const total = Number((unitPriceAfterDiscount * quantity).toFixed(2));
+
+          return {
+            id: item.productId,
+            price: Number(price.toFixed(2)),
+            discount: Number(rawDiscount.toFixed(2)),
+            total,
+            quantity,
+          };
+        }),
+      };
+
+      try {
+        const result = await createOrder(orderPayload).unwrap();
+        message.success(`Order ${result.orderNo} created!`);
+        await handleClearCart();
+        resetForm();
+        navigate("/orders/list");
+      } catch (error) {
+        const errorMessage =
+          error?.status === 400
+            ? `Bad Request: ${error.data?.message || "Invalid data provided."}`
+            : error?.status === 404
+              ? `Not Found: ${error.data?.message || "Resource not found."}`
+              : error?.status === 500
+                ? `Server error: ${
+                    error.data?.message || "Please try again later."
+                  }`
+                : `Something went wrong: ${
+                    error.data?.message || "Please try again."
+                  }`;
+
+        message.error(errorMessage);
+      }
+    }
   };
 
+  const resetForm = () => {
+    setQuotationData({
+      quotationDate: new Date().toISOString().split("T")[0],
+      dueDate: "",
+      billTo: "",
+      shipTo: null,
+      signatureName: "CM TRADING CO",
+      discountType: "fixed",
+      discountAmount: "",
+      followupDates: [],
+    });
+    setOrderData((prev) => ({
+      ...prev,
+      createdFor: "",
+      assignedTeamId: "",
+      assignedUserId: "",
+      secondaryUserId: "",
+      pipeline: "",
+      dueDate: moment().add(1, "days").format("YYYY-MM-DD"),
+      followupDates: [],
+      source: "",
+      priority: "medium",
+      description: "",
+      orderNo: "",
+      shipTo: null,
+    }));
+    setPurchaseOrderData({
+      vendorId: "",
+      orderDate: moment().format("YYYY-MM-DD"),
+      expectedDeliveryDate: null,
+      items: [],
+      totalAmount: 0,
+      status: "pending",
+    });
+    setSelectedCustomer("");
+    setSelectedVendor("");
+    setItemDiscounts({});
+    setItemTaxes({});
+    setItemDiscountTypes({});
+    setDocumentType("Quotation");
+    setActiveTab("cart");
+    setProductSearch("");
+    setFilteredProducts([]);
+    setUseBillingAddress(false);
+  };
+
+  const validateFollowupDates = () => {
+    if (!orderData.dueDate || orderData.followupDates.length === 0) return true;
+    const dueDate = moment(orderData.dueDate);
+    return orderData.followupDates.every((date) => {
+      if (!date || new Date(date).toString() === "Invalid Date") return true;
+      return moment(date).isSameOrBefore(dueDate, "day");
+    });
+  };
+
+  const handleAddCustomer = () => setShowAddCustomerModal(true);
+
+  const handleCustomerSave = async (newCustomer) => {
+    try {
+      await createCustomer(newCustomer).unwrap();
+      dispatch(customerApi.util.invalidateTags(["Customer"]));
+      setSelectedCustomer(newCustomer.customerId || "");
+      setShowAddCustomerModal(false);
+    } catch (err) {
+      message.error(err?.data?.message || "Failed to create customer.");
+    }
+  };
+
+  const handleAddAddress = () => setShowAddAddressModal(true);
+
+  // ────────────────────── RENDER ──────────────────────
+  if (productErrors.length > 0) {
+    return (
+      <PageWrapper>
+        <Alert
+          message="Error loading cart products"
+          description={productErrors.map((e) => e.error).join(", ")}
+          type="error"
+          showIcon
+        />
+      </PageWrapper>
+    );
+  }
+
   return (
-    <>
-      <Helmet>
-        <title>{pageTitle}</title>
-      </Helmet>
-      <div className="page-wrapper">
-        <div className="content">
-          {/* TOP BAR */}
-          <div
-            style={{
-              padding: "24px 40px",
-              background: "#fff",
-              boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
-            }}
-          >
+    <div className="page-wrapper">
+      <div className="content">
+        <Tabs
+          activeKey={activeTab}
+          onChange={setActiveTab}
+          type="card"
+          tabBarExtraContent={
             <div
               style={{
-                maxWidth: 1400,
-                margin: "0 auto",
+                paddingRight: 16,
                 display: "flex",
-                justifyContent: "space-between",
                 alignItems: "center",
+                gap: 12,
               }}
             >
-              <div>
-                <Title level={2} style={{ margin: 0, color: "#E31E24" }}>
-                  {quotation.document_title || "Quotation"}
-                </Title>
-                <Text type="secondary">
-                  {quotation.reference_number} • {customerName} • {brandNames}
-                </Text>
-              </div>
-
-              <Space size="large">
-                <div className="version-tabs">
-                  <Tabs
-                    activeKey={activeVersion}
-                    onChange={setActiveVersion}
-                    type="card"
-                  >
-                    {versions.map((v) => (
-                      <TabPane
-                        tab={
-                          v.version === "current"
-                            ? "Current Version"
-                            : `Version ${v.version}`
-                        }
-                        key={v.version}
-                      />
-                    ))}
-                  </Tabs>
-                </div>
-
-                <Space>
-                  <select
-                    value={exportFormat}
-                    onChange={(e) => setExportFormat(e.target.value)}
-                    style={{ padding: "8px 16px", borderRadius: 6 }}
-                    disabled={isExporting}
-                  >
-                    <option value="pdf">Export as PDF</option>
-                    <option value="excel">Export as Excel</option>
-                  </select>
-                  <Button
-                    type="primary"
-                    size="large"
-                    loading={isExporting}
-                    onClick={handleExport}
-                    icon={
-                      exportFormat === "pdf" ? (
-                        <FilePdfFilled />
-                      ) : (
-                        <FileExcelFilled />
-                      )
-                    }
-                    style={{ background: "#E31E24", border: "none" }}
-                  >
-                    {isExporting ? "Exporting..." : "Export Quotation"}
-                  </Button>
-                </Space>
-
-                <Button
-                  icon={<ArrowLeftOutlined />}
-                  size="large"
-                  style={{ background: "#E31E24", color: "#fff" }}
-                >
-                  <Link to="/quotations/list">Back</Link>
-                </Button>
-              </Space>
+              <Segmented
+                value={documentType}
+                onChange={setDocumentType}
+                options={[
+                  { label: "Quotation", value: "Quotation" },
+                  { label: "Order", value: "Order" },
+                  ...(canCreatePurchaseOrder
+                    ? [{ label: "Purchase Order", value: "Purchase Order" }]
+                    : []),
+                ]}
+              />
             </div>
-          </div>
-
-          {/* HIDDEN PRINT REF */}
-          <div
-            ref={quotationRef}
-            style={{ position: "absolute", left: "-9999px", top: 0 }}
+          }
+        >
+          <TabPane
+            tab={
+              <span>
+                <ShoppingCartOutlined /> Cart ({totalItems})
+              </span>
+            }
+            key="cart"
           >
-            <div className={styles.printArea}>{renderPages()}</div>
-          </div>
+            <CartTab
+              cartItems={cartItems}
+              cartProductsData={cartProductsData}
+              totalItems={totalItems}
+              shipping={shipping}
+              tax={tax}
+              discount={totalDiscount}
+              roundOff={roundOff}
+              subTotal={subTotal}
+              quotationData={quotationData}
+              itemDiscounts={itemDiscounts}
+              itemDiscountTypes={itemDiscountTypes}
+              itemTaxes={itemTaxes}
+              updatingItems={updatingItems}
+              handleUpdateQuantity={handleUpdateQuantity}
+              handleRemoveItem={handleRemoveItem}
+              handleDiscountChange={handleDiscountChange}
+              handleDiscountTypeChange={handleDiscountTypeChange}
+              handleTaxChange={handleTaxChange}
+              setShowClearCartModal={setShowClearCartModal}
+              setActiveTab={setActiveTab}
+              onShippingChange={handleShippingChange}
+              // ── NEW ──
+              handleMakeOption={handleMakeOption}
+              getParentName={getParentName}
+              documentType={documentType}
+              setDocumentType={setDocumentType}
+            />
+          </TabPane>
 
-          {/* ON-SCREEN PREVIEW */}
-          <div
-            style={{
-              padding: "40px 20px",
-              background: "#f5f5f5",
-              minHeight: "100vh",
+          <TabPane
+            tab={
+              <span>
+                <CheckCircleOutlined /> Checkout
+              </span>
+            }
+            key="checkout"
+          >
+            {documentType === "Purchase Order" ? (
+              <PurchaseOrderForm
+                purchaseOrderData={purchaseOrderData}
+                setPurchaseOrderData={setPurchaseOrderData}
+                selectedVendor={selectedVendor}
+                setSelectedVendor={setSelectedVendor}
+                vendors={vendors}
+                products={products}
+                productSearch={productSearch}
+                filteredProducts={filteredProducts}
+                debouncedSearch={debouncedSearch}
+                addPurchaseOrderProduct={(productId) => {
+                  const product = products.find(
+                    (p) => p.productId === productId,
+                  );
+                  if (
+                    !product ||
+                    purchaseOrderData.items.some(
+                      (i) => i.productId === productId,
+                    ) ||
+                    cartItems.some((i) => i.productId === productId)
+                  ) {
+                    message.error(
+                      product ? "Product already added." : "Product not found.",
+                    );
+                    return;
+                  }
+                  const sellingPrice =
+                    product.metaDetails?.find((m) => m.slug === "sellingPrice")
+                      ?.value || 0;
+                  if (sellingPrice <= 0) {
+                    message.error(`Invalid MRP for ${product.name}`);
+                    return;
+                  }
+                  const quantity = 1;
+                  const total = quantity * sellingPrice;
+                  setPurchaseOrderData((prev) => {
+                    const newItems = [
+                      ...prev.items,
+                      {
+                        id: product.productId,
+                        productId: product.productId,
+                        name: product.name,
+                        quantity,
+                        mrp: sellingPrice,
+                        total,
+                        tax: 0,
+                      },
+                    ];
+                    const totalAmount = newItems
+                      .reduce((s, i) => s + i.total * (1 + i.tax / 100), 0)
+                      .toFixed(2);
+                    return { ...prev, items: newItems, totalAmount };
+                  });
+                  setProductSearch("");
+                  setFilteredProducts([]);
+                }}
+                removePurchaseOrderProduct={(index) => {
+                  setPurchaseOrderData((prev) => {
+                    const newItems = prev.items.filter((_, i) => i !== index);
+                    const totalAmount = newItems
+                      .reduce((s, i) => s + i.total * (1 + i.tax / 100), 0)
+                      .toFixed(2);
+                    return { ...prev, items: newItems, totalAmount };
+                  });
+                }}
+                updatePurchaseOrderProductField={(index, field, value) => {
+                  const items = [...purchaseOrderData.items];
+                  items[index][field] = value;
+                  if (["quantity", "mrp", "tax"].includes(field)) {
+                    const q = Number(items[index].quantity) || 1;
+                    const m = Number(items[index].mrp) || 0.01;
+                    const t = Number(items[index].tax) || 0;
+                    items[index].total = q * m * (1 + t / 100);
+                  }
+                  const totalAmount = items
+                    .reduce((s, i) => s + i.total * (1 + i.tax / 100), 0)
+                    .toFixed(2);
+                  setPurchaseOrderData({
+                    ...purchaseOrderData,
+                    items,
+                    totalAmount,
+                  });
+                }}
+                handlePurchaseOrderChange={(key, value) =>
+                  setPurchaseOrderData((prev) => ({
+                    ...prev,
+                    [key]: value,
+                  }))
+                }
+                purchaseOrderTotal={purchaseOrderTotal}
+                // purchaseOrderNumber removed — backend assigns
+                documentType={documentType}
+                setDocumentType={setDocumentType}
+                cartItems={cartItems}
+                setActiveTab={setActiveTab}
+                handleCreateDocument={handleCreateDocument}
+                setShowAddVendorModal={setShowAddVendorModal}
+              />
+            ) : documentType === "Order" ? (
+              <OrderForm
+                orderData={orderData}
+                setOrderData={setOrderData}
+                handleOrderChange={(key, value) =>
+                  setOrderData((prev) => ({ ...prev, [key]: value }))
+                }
+                selectedCustomer={selectedCustomer}
+                setSelectedCustomer={setSelectedCustomer}
+                customers={customerList}
+                shipping={shipping}
+                onShippingChange={handleShippingChange}
+                addresses={addresses}
+                userMap={userMap}
+                customerMap={customerMap}
+                userQueries={userQueries}
+                customerQueries={customerQueries}
+                teams={teams}
+                users={users}
+                // orderNumber removed — backend assigns
+                documentType={documentType}
+                setDocumentType={setDocumentType}
+                cartItems={cartItems}
+                totalAmount={totalAmount}
+                tax={tax}
+                totalDiscount={totalDiscount}
+                extraDiscount={orderData.extraDiscount}
+                extraDiscountType={orderData.extraDiscountType}
+                roundOff={roundOff}
+                subTotal={subTotal}
+                handleAddCustomer={handleAddCustomer}
+                handleAddAddress={handleAddAddress}
+                setActiveTab={setActiveTab}
+                handleCreateDocument={handleCreateDocument}
+                handleTeamAdded={handleTeamAdded}
+                useBillingAddress={useBillingAddress}
+                setUseBillingAddress={setUseBillingAddress}
+              />
+            ) : (
+              <QuotationForm
+                quotationData={quotationData}
+                setQuotationData={setQuotationData}
+                handleQuotationChange={handleQuotationChange}
+                selectedCustomer={selectedCustomer}
+                onShippingChange={handleShippingChange}
+                setSelectedCustomer={setSelectedCustomer}
+                customers={customerList}
+                addresses={addresses}
+                userMap={userMap}
+                customerMap={customerMap}
+                userQueries={userQueries}
+                customerQueries={customerQueries}
+                // quotationNumber removed — backend assigns
+                documentType={documentType}
+                setDocumentType={setDocumentType}
+                cartItems={cartItems}
+                totalAmount={totalAmount}
+                gst={gst}
+                gstAmount={gstAmount}
+                setGst={setGst}
+                shipping={shipping}
+                tax={tax}
+                discount={totalDiscount}
+                extraDiscount={extraDiscount}
+                roundOff={roundOff}
+                subTotal={subTotal}
+                handleAddCustomer={handleAddCustomer}
+                handleAddAddress={handleAddAddress}
+                setActiveTab={setActiveTab}
+                handleCreateDocument={handleCreateDocument}
+                useBillingAddress={useBillingAddress}
+                setBillingAddressId={setBillingAddressId}
+                setUseBillingAddress={setUseBillingAddress}
+                itemDiscounts={itemDiscounts}
+                itemTaxes={itemTaxes}
+                previewVisible={previewVisible}
+                setPreviewVisible={setPreviewVisible}
+              />
+            )}
+          </TabPane>
+        </Tabs>
+
+        {/* Modals */}
+        <Modal
+          title="Confirm Clear Cart"
+          open={showClearCartModal}
+          onOk={handleClearCart}
+          onCancel={() => setShowClearCartModal(false)}
+          okText="Clear"
+          okButtonProps={{ danger: true }}
+        >
+          <Text>Are you sure you want to clear all items from your cart?</Text>
+        </Modal>
+
+        {showAddAddressModal && (
+          <AddAddress
+            visible={true}
+            onClose={() => setShowAddAddressModal(false)}
+            onSave={(addressId) => {
+              console.log("New address created:", addressId);
+              if (documentType === "Order") {
+                setOrderData((prev) => ({ ...prev, shipTo: addressId }));
+              }
+              setShowAddAddressModal(false);
             }}
-          >
-            <div className={styles.printArea}>{renderPages()}</div>
-          </div>
-        </div>
+            selectedCustomer={selectedCustomer}
+          />
+        )}
+
+        <AddVendorModal
+          show={showAddVendorModal}
+          onClose={() => setShowAddVendorModal(false)}
+          onSave={createVendor}
+          isCreatingVendor={isCreatingVendor}
+        />
+
+        {showAddTeamModal && (
+          <AddNewTeam
+            onClose={() => setShowAddTeamModal(false)}
+            visible={showAddTeamModal}
+          />
+        )}
+
+        {showAddCustomerModal && (
+          <AddCustomerModal
+            visible={showAddCustomerModal}
+            onClose={() => setShowAddCustomerModal(false)}
+            customer={null}
+            onSave={() => {}}
+          />
+        )}
+
+        <PreviewQuotation
+          visible={previewVisible}
+          onClose={() => setPreviewVisible(false)}
+          cartItems={cartItems}
+          productsData={cartProductsData}
+          customer={customerList.find((c) => c.customerId === selectedCustomer)}
+          address={addresses.find((a) => a.addressId === quotationData.shipTo)}
+          quotationData={{
+            ...quotationData,
+            // reference_number removed — can show placeholder or omit
+          }}
+          itemDiscounts={itemDiscounts}
+          itemDiscountTypes={itemDiscountTypes}
+          itemTaxes={itemTaxes}
+          gstRate={gst}
+          includeGst
+        />
       </div>
-    </>
+    </div>
   );
 };
 
-export default NewQuotationsDetails;
+NewCart.propTypes = {
+  onConvertToOrder: PropTypes.func,
+};
+
+NewCart.defaultProps = {
+  onConvertToOrder: () => {},
+};
+
+export default NewCart;
