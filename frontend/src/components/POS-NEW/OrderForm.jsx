@@ -855,7 +855,7 @@ const OrderForm = ({
                   </MiniSelect>
                 </Col>
               </TightRow>
-
+{/* 
               <TightRow gutter={8}>
                 <Col span={8}>
                   <Text strong>GST %</Text>
@@ -873,7 +873,7 @@ const OrderForm = ({
                     disabled
                   />
                 </Col>
-              </TightRow>
+              </TightRow> */}
 
               {/* Extra Discount – Fixed Amount Only */}
               <TightRow gutter={8} align="middle">

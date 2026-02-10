@@ -17,40 +17,54 @@ const calculateTotals = (
   extraDiscount = 0,
   extraDiscountType = "percent",
   shippingAmount = 0,
-  gst = 0,
+  gst = 0, // ← this is usually the output GST rate shown to customer
 ) => {
-  // Only non-optional (main) items contribute to final amount
+  // Only main (non-optional) items contribute to totals
   const mainItems = items.filter((item) => !item.isOptionFor);
 
-  let subTotal = 0;
+  let subTotal = 0; // sum of (price × qty) before any discount
   let totalItemDiscount = 0;
-  let taxableAmount = 0;
-  let itemTaxTotal = 0;
+  let taxableAmount = 0; // after item-level discount, before extra disc & shipping
+  let itemTaxTotal = 0; // ← will stay 0 when prices are GST inclusive
 
   mainItems.forEach((p) => {
-    const price = Number(p.price) || 0;
+    const price = Number(p.price) || 0; // ← GST-inclusive price
     const qty = Number(p.quantity) || 1;
     const discount = Number(p.discount) || 0;
     const discountType = p.discountType || "percent";
-    const taxRate = Number(p.tax) || 0;
+
+    // We do NOT use p.tax here anymore for calculation
+    // (because price already contains tax)
 
     const lineGross = price * qty;
+
     const discountAmount =
       discountType === "percent"
         ? lineGross * (discount / 100)
-        : discount * qty;
+        : discount * qty; // absolute discount per unit × qty
 
     const lineAfterDiscount = lineGross - discountAmount;
-    const taxAmount = lineAfterDiscount * (taxRate / 100);
+
+    // ────────────────────────────────────────
+    // Most important change:
+    // itemTaxTotal += ...   →   comment out or set to 0
+    // ────────────────────────────────────────
+    // const taxRate = Number(p.tax) || 0;
+    // const taxAmount = lineAfterDiscount * (taxRate / 100);
+    // itemTaxTotal += taxAmount;
+
+    // Instead:
+    const taxAmount = 0; // ← explicit
+    itemTaxTotal += taxAmount;
 
     subTotal += lineGross;
     totalItemDiscount += discountAmount;
     taxableAmount += lineAfterDiscount;
-    itemTaxTotal += taxAmount;
   });
 
-  const baseForExtraDiscount =
-    taxableAmount + itemTaxTotal + Number(shippingAmount || 0);
+  // Base for extra discount = discounted items + shipping
+  // (GST already inside price, so no item tax to add)
+  const baseForExtraDiscount = taxableAmount + Number(shippingAmount || 0);
 
   const extraDiscountAmount =
     extraDiscountType === "percent"
@@ -59,7 +73,7 @@ const calculateTotals = (
 
   const amountBeforeGst = baseForExtraDiscount - extraDiscountAmount;
 
-  // Your original paise-based rounding
+  // Your paise rounding logic (unchanged)
   const rupees = Math.floor(amountBeforeGst);
   const paise = Math.round((amountBeforeGst - rupees) * 100);
   let roundOff = 0;
@@ -70,10 +84,17 @@ const calculateTotals = (
   }
 
   const roundedAmount = amountBeforeGst + roundOff;
+
+  // GST is usually **shown separately** even if price is inclusive
+  // Most common approach in India (B2B + many B2C):
   const gstAmount = roundedAmount * (Number(gst || 0) / 100);
+
+  // If you want to be very strict (price is inclusive → no extra GST):
+  // const gstAmount = 0;
+
   const finalAmount = roundedAmount + gstAmount;
 
-  // Optional items (for display/reference only)
+  // Optional items (display only)
   const optionalItems = items.filter((item) => !!item.isOptionFor);
   let optionalPotential = 0;
   optionalItems.forEach((p) => {
@@ -83,7 +104,7 @@ const calculateTotals = (
   return {
     subTotal: Number(subTotal.toFixed(2)),
     totalItemDiscount: Number(totalItemDiscount.toFixed(2)),
-    itemTax: Number(itemTaxTotal.toFixed(2)),
+    itemTax: Number(itemTaxTotal.toFixed(2)), // ← will be 0
     extraDiscountAmount: Number(extraDiscountAmount.toFixed(2)),
     shippingAmount: Number(shippingAmount || 0),
     amountBeforeGst: Number(amountBeforeGst.toFixed(2)),
@@ -91,12 +112,10 @@ const calculateTotals = (
     gstAmount: Number(gstAmount.toFixed(2)),
     finalAmount: Number(finalAmount.toFixed(2)),
 
-    // Informational only
     optionalItemsCount: optionalItems.length,
     optionalPotentialTotal: Number(optionalPotential.toFixed(2)),
   };
 };
-
 // ---------------------------------------------------------------------
 // Helper: Generate next daily sequential reference_number (QUO + DDMMYY + seq)
 // Safe inside transaction — retries on collision
@@ -257,6 +276,7 @@ exports.createQuotation = async (req, res) => {
           ? price * qty * (1 - discount / 100)
           : (price - discount) * qty;
 
+      // Inside map()
       return {
         productId: id,
         name: p.name || db.name || "Unknown Product",
@@ -267,7 +287,7 @@ exports.createQuotation = async (req, res) => {
         price: Number(price.toFixed(2)),
         discount: Number(discount.toFixed(2)),
         discountType,
-        tax: Number(p.tax || db.tax || 0),
+        tax: 0, // ← force to 0
         total: Number(lineTotalAfterDiscount.toFixed(2)),
         isOptionFor: isOption ? p.isOptionFor : null,
         optionType: p.optionType || null,
@@ -469,7 +489,7 @@ exports.updateQuotation = async (req, res) => {
             ? price * qty * (1 - discount / 100)
             : (price - discount) * qty;
       }
-
+      // Inside map()
       return {
         productId: id,
         name: p.name || db.name || "Unknown Product",
@@ -480,8 +500,8 @@ exports.updateQuotation = async (req, res) => {
         price: Number(price.toFixed(2)),
         discount: Number(discount.toFixed(2)),
         discountType,
-        tax: Number(p.tax || db.tax || 0),
-        total: Number(total.toFixed(2)),
+        tax: 0, // ← force to 0
+        total: Number(lineTotalAfterDiscount.toFixed(2)),
         isOptionFor: isOption ? p.isOptionFor : null,
         optionType: p.optionType || null,
         groupId: groupId || null,

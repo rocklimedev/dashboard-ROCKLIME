@@ -147,7 +147,7 @@ const PODetails = () => {
             index + 1,
             "", // image placeholder
             item.productName || "N/A",
-            item.productCode || "N/A",
+            item.companyCode || "N/A",
             `₹${Number(item.unitPrice || 0).toFixed(2)}`,
             item.quantity || 0,
             `₹${Number(item.total || 0).toFixed(2)}`,
@@ -265,7 +265,6 @@ const PODetails = () => {
                       <th>Product Code</th>
                       <th>MRP</th>
                       <th>Quantity</th>
-                      <th>Total</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -302,7 +301,6 @@ const PODetails = () => {
                             {Number(item.unitPrice || item.mrp || 0).toFixed(2)}
                           </td>
                           <td>{item.quantity || 0}</td>
-                          <td>₹{Number(item.total || 0).toFixed(2)}</td>
                         </tr>
                       ))
                     ) : (
@@ -312,19 +310,6 @@ const PODetails = () => {
                         </td>
                       </tr>
                     )}
-                  </tbody>
-                </table>
-
-                <table className="po-table full-width bordered">
-                  <tbody>
-                    <tr>
-                      <td colSpan="6" className="text-right fw-bold">
-                        Total
-                      </td>
-                      <td className="fw-bold">
-                        ₹{Number(totalAmount || 0).toFixed(2)}
-                      </td>
-                    </tr>
                   </tbody>
                 </table>
               </div>

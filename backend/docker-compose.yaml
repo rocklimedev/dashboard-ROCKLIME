@@ -3,16 +3,29 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: ghcr.io/rocklimedev/dashboard-rocklime-backend:latest # ← lowercase + -backend
+    image: ghcr.io/rocklimedev/dashboard-rocklime-backend:latest
     container_name: cmtrading-api
     restart: unless-stopped
     ports:
       - "4000:4000"
     environment:
       - NODE_ENV=production
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     volumes:
       - ./.env:/app/.env:ro
       - uploads:/app/uploads
+    depends_on:
+      - redis
+    networks:
+      - app-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: cmtrading-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379" # optional, only if you want host access
     networks:
       - app-network
 

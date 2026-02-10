@@ -20,12 +20,43 @@ export default function useProductsData(rawProducts = []) {
   const {
     data: fetchedProducts = [],
     isLoading,
+    isFetching,
     isError,
     error,
+    isUninitialized,
   } = useGetProductsByIdsQuery(productIds, {
-    skip: productIds.length === 0, // Don't call if no IDs
+    skip: productIds.length === 0,
   });
-
+  useEffect(() => {
+    console.group("useProductsData — debug");
+    console.log("Input IDs (length):", productIds.length, productIds);
+    console.log("Query status:", {
+      isLoading,
+      isFetching,
+      isError,
+      isUninitialized,
+    });
+    console.log("Raw response data:", fetchedProducts);
+    console.log(
+      "First item shape (if any):",
+      fetchedProducts[0] ? Object.keys(fetchedProducts[0]) : "no items",
+    );
+    if (isError) {
+      console.error("RTK Query error:", error);
+    }
+    if (productIds.length > 0 && !isLoading && fetchedProducts.length === 0) {
+      console.warn("EMPTY RESULT FOR VALID IDS → most likely backend issue");
+    }
+    console.groupEnd();
+  }, [
+    productIds,
+    fetchedProducts,
+    isLoading,
+    isFetching,
+    isError,
+    error,
+    isUninitialized,
+  ]);
   // Map back to original order + include quantity if needed
   const productsData = useMemo(() => {
     if (!Array.isArray(fetchedProducts)) return [];

@@ -523,38 +523,237 @@ const NewCart = ({ onConvertToOrder }) => {
     }, 300),
     [products],
   );
+  const getFinalShipTo = () => {
+    if (!useBillingAddress) {
+      // user manually selected an existing address
+      return quotationData.shipTo || orderData.shipTo || null;
+    }
 
+    // ── useBillingAddress === true ──
+
+    if (billingAddressId) {
+      // user selected an existing BILLING address to use as shipping
+      return billingAddressId;
+    }
+
+    // No existing billing → we need to create one from customer's default address
+    const customer = customerList.find(
+      (c) => c.customerId === selectedCustomer,
+    );
+    if (!customer?.address) return null;
+
+    let defaultAddr;
+    try {
+      defaultAddr =
+        typeof customer.address === "string"
+          ? JSON.parse(customer.address)
+          : customer.address;
+    } catch {
+      return null;
+    }
+
+    if (!defaultAddr?.street || !defaultAddr?.city) return null;
+
+    return {
+      // flag telling backend or mutation: please create this address
+      createFromDefault: true,
+      addressDetails: {
+        street: defaultAddr.street?.trim() || "",
+        city: defaultAddr.city || "",
+        state: defaultAddr.state || "",
+        postalCode: defaultAddr.zip || defaultAddr.postalCode || "",
+        country: defaultAddr.country || "India",
+      },
+      status: "SHIPPING", // or "BILLING_AND_SHIPPING" if your backend supports it
+    };
+  };
   // ────────────────────── CREATE DOCUMENT ──────────────────────
   const handleCreateDocument = async () => {
+    if (!userId) {
+      return message.error("User not logged in!");
+    }
+
+    // ────────────────────────────────────────────────
+    //  1. Common validations
+    // ────────────────────────────────────────────────
+    if (calculationCartItems.length === 0) {
+      return message.error("Cart is empty. Please add items.");
+    }
+
+    if (documentType !== "Purchase Order" && !selectedCustomer) {
+      return message.error("Please select a customer.");
+    }
+
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+
+    if (documentType === "Quotation") {
+      if (!quotationData.dueDate || !dateRegex.test(quotationData.dueDate)) {
+        return message.error("Please select a valid due date (YYYY-MM-DD).");
+      }
+      if (moment(quotationData.dueDate).isBefore(moment(), "day")) {
+        return message.error("Due date cannot be in the past.");
+      }
+    } else if (documentType === "Order") {
+      if (!orderData.dueDate || !dateRegex.test(orderData.dueDate)) {
+        return message.error("Please select a valid due date (YYYY-MM-DD).");
+      }
+      if (moment(orderData.dueDate).isBefore(moment(), "day")) {
+        return message.error("Due date cannot be in the past.");
+      }
+      if (orderData.followupDates?.length > 0 && !validateFollowupDates()) {
+        return message.error("Follow-up dates cannot be after the due date.");
+      }
+    }
+
+    // ────────────────────────────────────────────────
+    //  2. Resolve final shipping address
+    // ────────────────────────────────────────────────
+    let finalShipTo = null;
+    let createdShippingAddressId = null;
+
+    if (documentType !== "Purchase Order") {
+      if (useBillingAddress) {
+        if (billingAddressId) {
+          // User selected an existing billing address → use it for shipping
+          finalShipTo = billingAddressId;
+        } else {
+          // "Same as Billing" → create from customer's default address
+          const customer = customerList.find(
+            (c) => c.customerId === selectedCustomer,
+          );
+          if (!customer?.address) {
+            return message.error(
+              "Customer has no default address to use as billing/shipping.",
+            );
+          }
+
+          let parsedAddr;
+          try {
+            parsedAddr =
+              typeof customer.address === "string"
+                ? JSON.parse(customer.address)
+                : customer.address;
+          } catch (e) {
+            console.error(
+              "Failed to parse customer default address:",
+              e,
+              customer.address,
+            );
+            return message.error(
+              "Invalid format in customer's default address field.",
+            );
+          }
+
+          const street = (parsedAddr.street || "").trim();
+          const city = (parsedAddr.city || "").trim();
+          const state = (parsedAddr.state || "").trim();
+          const postalCode = (
+            parsedAddr.zip ||
+            parsedAddr.postalCode ||
+            ""
+          ).trim();
+          const country = (parsedAddr.country || "India").trim();
+
+          if (!street || !city || !state || !country) {
+            console.warn("Incomplete default address:", {
+              street,
+              city,
+              state,
+              postalCode,
+              country,
+            });
+            return message.error(
+              "Cannot create shipping address: customer's default address is missing required fields (street, city, state, country).",
+            );
+          }
+
+          const newAddressPayload = {
+            customerId: selectedCustomer,
+            street: street,
+            city: city,
+            state: state,
+            postalCode: postalCode,
+            country: country,
+            status: "ADDITIONAL", // ← must match ENUM: BILLING, PRIMARY, ADDITIONAL
+          };
+
+          // Debug log
+          console.log(
+            "[DEBUG] Creating shipping address (flat payload):",
+            JSON.stringify(newAddressPayload, null, 2),
+          );
+
+          try {
+            const res = await createAddress(newAddressPayload).unwrap();
+            console.log("[DEBUG] Address created successfully:", res);
+
+            createdShippingAddressId = res.addressId;
+            finalShipTo = res.addressId;
+
+            refetchAddresses?.();
+            message.success(
+              "Shipping address automatically created from default.",
+            );
+          } catch (err) {
+            console.error("[ERROR] Address creation failed:", {
+              status: err.status,
+              response: err.data,
+              payloadSent: newAddressPayload,
+            });
+            return message.error(
+              err?.data?.message ||
+                "Failed to create shipping address from default.",
+            );
+          }
+        }
+      } else {
+        // Manually selected existing address
+        finalShipTo =
+          documentType === "Quotation"
+            ? quotationData.shipTo
+            : orderData.shipTo;
+
+        if (finalShipTo) {
+          const addr = addresses.find((a) => a.addressId === finalShipTo);
+          if (!addr) {
+            return message.error("Selected shipping address no longer exists.");
+          }
+          if (addr.customerId !== selectedCustomer) {
+            return message.error(
+              "Selected address does not belong to the chosen customer.",
+            );
+          }
+        }
+      }
+
+      // Final check
+      if (!finalShipTo) {
+        return message.error("Please select or create a shipping address.");
+      }
+    }
+
+    // ────────────────────────────────────────────────
+    //  3. Document-type specific creation
+    // ────────────────────────────────────────────────
+
     if (documentType === "Purchase Order") {
-      if (!selectedVendor) return message.error("Please select a vendor.");
-      if (
-        calculationCartItems.length === 0 &&
-        purchaseOrderData.items.length === 0
-      )
-        return message.error("Please add at least one product.");
-      if (purchaseOrderData.items.some((item) => item.mrp <= 0))
-        return message.error(
-          "All products must have a valid MRP greater than 0.",
-        );
-      if (
-        purchaseOrderData.items.some(
-          (item) => !products.some((p) => p.productId === item.productId),
-        )
-      )
-        return message.error(
-          "Some products are no longer available. Please remove them.",
-        );
+      if (!selectedVendor) {
+        return message.error("Please select a vendor.");
+      }
 
       const formattedItems = purchaseOrderData.items.map((item) => ({
         productId: item.productId,
         quantity: Number(item.quantity) || 1,
-        unitPrice: Number(item.unitPrice) || Number(item.mrp) || 0.01,
-        mrp: Number(item.mrp) || Number(item.unitPrice) || 0.01,
+        unitPrice: Number(item.mrp) || Number(item.unitPrice) || 0.01,
+        mrp: Number(item.mrp) || 0.01,
         tax: Number(item.tax) || 0,
         discount: Number(item.discount) || 0,
         discountType: item.discountType || "percent",
       }));
+
+      if (formattedItems.some((i) => i.mrp <= 0)) {
+        return message.error("All items must have MRP > 0.");
+      }
 
       const payload = {
         vendorId: selectedVendor,
@@ -567,168 +766,57 @@ const NewCart = ({ onConvertToOrder }) => {
       try {
         const result = await createPurchaseOrder(payload).unwrap();
         message.success(
-          `Purchase Order ${result.purchaseOrder.poNumber} created!`,
+          `Purchase Order ${result.purchaseOrder?.poNumber} created!`,
         );
         await handleClearCart();
         resetForm();
         navigate("/purchase-manager");
       } catch (err) {
-        const errorMessage =
-          err.status === 404
-            ? "Vendor not found."
-            : err.status === 400
-              ? `Invalid request: ${err.data?.error || err.data?.message || "Check your input data."}`
-              : err.data?.message || "Failed to create purchase order";
-        message.error(errorMessage);
+        message.error(err?.data?.message || "Failed to create Purchase Order.");
       }
       return;
-    }
-
-    if (!selectedCustomer) return message.error("Please select a customer.");
-    if (!userId) return message.error("User not logged in!");
-    if (calculationCartItems.length === 0)
-      return message.error("Cart is empty. Add items to proceed.");
-
-    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (documentType === "Order") {
-      if (!orderData.dueDate || !dateRegex.test(orderData.dueDate)) {
-        return message.error("Invalid due date format. Use YYYY-MM-DD.");
-      }
-      if (moment(orderData.dueDate).isBefore(moment().startOf("day"))) {
-        return message.error("Due date cannot be in the past.");
-      }
-    } else {
-      if (
-        !quotationData.quotationDate ||
-        !dateRegex.test(quotationData.quotationDate)
-      ) {
-        return message.error("Invalid quotation date format. Use YYYY-MM-DD.");
-      }
-      if (!quotationData.dueDate || !dateRegex.test(quotationData.dueDate)) {
-        return message.error("Invalid due date format. Use YYYY-MM-DD.");
-      }
-      if (
-        moment(quotationData.dueDate).isBefore(
-          moment(quotationData.quotationDate),
-        )
-      ) {
-        return message.error("Due date must be after quotation date.");
-      }
-    }
-
-    if (isNaN(totalAmount) || totalAmount <= 0)
-      return message.error("Invalid total amount.");
-
-    if (
-      !calculationCartItems.every(
-        (item) =>
-          item.productId &&
-          typeof item.quantity === "number" &&
-          item.quantity > 0 &&
-          typeof item.price === "number" &&
-          item.price >= 0,
-      )
-    ) {
-      return message.error(
-        "Invalid cart items. Ensure all items have valid productId, quantity, and price.",
-      );
-    }
-
-    // Auto-create address if needed
-    if (
-      useBillingAddress &&
-      !orderData.shipTo &&
-      selectedCustomer &&
-      documentType === "Order"
-    ) {
-      const selectedCustomerData = customerList.find(
-        (c) => c.customerId === selectedCustomer,
-      );
-      const defaultAddress = selectedCustomerData?.address;
-      if (defaultAddress) {
-        try {
-          const newAddress = {
-            customerId: selectedCustomer,
-            addressDetails: {
-              street: defaultAddress.street,
-              city: defaultAddress.city,
-              state: defaultAddress.state,
-              postalCode: defaultAddress.zip || defaultAddress.postalCode,
-              country: defaultAddress.country || "India",
-            },
-          };
-          const result = await createAddress(newAddress).unwrap();
-          setOrderData((prev) => ({ ...prev, shipTo: result.addressId }));
-          await refetchAddresses();
-        } catch (err) {
-          message.error(
-            `Failed to create address: ${err.data?.message || "Unknown error"}`,
-          );
-          return;
-        }
-      }
-    }
-
-    if (
-      documentType === "Order" &&
-      orderData.shipTo &&
-      !addresses.find((addr) => addr.addressId === orderData.shipTo)
-    ) {
-      return message.error("Invalid shipping address selected.");
     }
 
     const selectedCustomerData = customerList.find(
       (c) => c.customerId === selectedCustomer,
     );
-    if (!selectedCustomerData)
+    if (!selectedCustomerData) {
       return message.error("Selected customer not found.");
-
-    if (documentType === "Order" && orderData.shipTo) {
-      const selectedAddress = addresses.find(
-        (addr) => addr.addressId === orderData.shipTo,
-      );
-      if (selectedAddress && selectedAddress.customerId !== selectedCustomer) {
-        return message.error(
-          "Selected address does not belong to the chosen customer.",
-        );
-      }
     }
 
     if (documentType === "Quotation") {
       const quotationPayload = {
         quotationId: uuidv4(),
-        document_title: `Quotation for ${selectedCustomerData.name}`,
-        quotation_date: quotationData.quotationDate,
+        document_title: `Quotation for ${selectedCustomerData.name || "Customer"}`,
+        quotation_date:
+          quotationData.quotationDate || moment().format("YYYY-MM-DD"),
         due_date: quotationData.dueDate,
-        extraDiscount: parseFloat(quotationData.discountAmount) || 0,
-        extraDiscountType: quotationData.discountType || "percent",
-        shippingAmount: Number(shipping),
-        gst: gst,
+        extraDiscount: Number(quotationData.discountAmount) || 0,
+        extraDiscountType: quotationData.discountType || "fixed",
+        shippingAmount: Number(shipping) || 0,
+        gst: Number(gst) || 0,
         finalAmount: totalAmount,
 
-        // ONLY FOR QUOTATION: Send ALL items (main + optional/add-ons)
         products: allCartItems.map((item) => {
           const price = Number(item.price) || 0;
-          const quantity = Number(item.quantity) || 1;
-          const rawDiscount = Number(itemDiscounts[item.productId]) || 0;
-          const discountType = itemDiscountTypes[item.productId] || "percent";
+          const qty = Number(item.quantity) || 1;
+          const discVal = Number(itemDiscounts[item.productId]) || 0;
+          const discType = itemDiscountTypes[item.productId] || "percent";
 
-          let lineTotalAfterDiscount =
-            discountType === "percent"
-              ? price * quantity * (1 - rawDiscount / 100)
-              : (price - rawDiscount) * quantity;
+          const lineTotal =
+            discType === "percent"
+              ? price * qty * (1 - discVal / 100)
+              : (price - discVal) * qty;
 
           return {
             productId: item.productId,
             name: item.name || "Unknown Product",
             price: Number(price.toFixed(2)),
-            quantity,
-            discount: Number(rawDiscount.toFixed(2)),
-            discountType,
+            quantity: qty,
+            discount: Number(discVal.toFixed(2)),
+            discountType: discType,
             tax: Number(itemTaxes[item.productId]) || 0,
-            total: parseFloat(lineTotalAfterDiscount.toFixed(2)),
-
-            // These fields will be saved in DB & shown in preview/PDF
+            total: Number(lineTotal.toFixed(2)),
             isOptionFor: item.parentProductId || null,
             optionType: item.optionType || null,
             groupId: item.groupId || null,
@@ -736,8 +824,8 @@ const NewCart = ({ onConvertToOrder }) => {
         }),
 
         followupDates: quotationData.followupDates.filter(Boolean),
-        customerId: selectedCustomerData.customerId,
-        shipTo: quotationData.shipTo || null,
+        customerId: selectedCustomer,
+        shipTo: finalShipTo,
         createdBy: userId,
         signature_name: quotationData.signatureName || "CM TRADING CO",
         signature_image: "",
@@ -746,49 +834,46 @@ const NewCart = ({ onConvertToOrder }) => {
       try {
         const result = await createQuotation(quotationPayload).unwrap();
         message.success(
-          `Quotation ${result.quotation.reference_number} created!`,
+          `Quotation ${result.quotation?.reference_number} created!`,
         );
         await handleClearCart();
         resetForm();
         navigate("/quotations/list");
-      } catch (e) {
-        message.error(e?.data?.message || "Failed to create quotation");
+      } catch (err) {
+        message.error(err?.data?.message || "Failed to create quotation.");
       }
-    } else if (documentType === "Order") {
-      if (!validateFollowupDates()) {
-        return message.error("Follow-up dates cannot be after the due date.");
-      }
+      return;
+    }
 
+    if (documentType === "Order") {
       const taxableBase = subTotal - totalDiscount + tax;
-      const afterTax = taxableBase + shipping;
-
-      const extraDiscountValue =
+      const afterTaxAndShipping = taxableBase + shipping;
+      const extraDiscValue =
         quotationData.discountType === "percent"
-          ? (afterTax * parseFloat(quotationData.discountAmount || 0)) / 100
-          : parseFloat(quotationData.discountAmount || 0);
+          ? (afterTaxAndShipping * Number(quotationData.discountAmount || 0)) /
+            100
+          : Number(quotationData.discountAmount || 0);
 
       const amountForGst =
-        subTotal + shipping + tax - totalDiscount - extraDiscountValue;
+        subTotal + shipping + tax - totalDiscount - extraDiscValue;
       const gstAmount = Math.round((amountForGst * gst) / 100);
 
       const orderPayload = {
         id: uuidv4(),
-        createdFor: selectedCustomerData.customerId,
+        createdFor: selectedCustomer,
         createdBy: userId,
         assignedTeamId: orderData.assignedTeamId || null,
         assignedUserId: orderData.assignedUserId || null,
         secondaryUserId: orderData.secondaryUserId || null,
         pipeline: orderData.pipeline || null,
         status: orderData.status || "PREPARING",
-        gst: gst,
+        gst: Number(gst),
         gstValue: Number(gstAmount),
-        extraDiscount: parseFloat(quotationData.discountAmount) || 0,
+        extraDiscount: Number(quotationData.discountAmount) || 0,
         extraDiscountType: quotationData.discountType || "percent",
-        extraDiscountValue: Number(extraDiscountValue.toFixed(2)),
+        extraDiscountValue: Number(extraDiscValue.toFixed(2)),
         dueDate: orderData.dueDate,
-        followupDates: orderData.followupDates.filter(
-          (date) => date && moment(date).isValid(),
-        ),
+        followupDates: orderData.followupDates?.filter(Boolean) || [],
         source: orderData.source || null,
         priority: orderData.priority || "medium",
         description: orderData.description || null,
@@ -796,51 +881,47 @@ const NewCart = ({ onConvertToOrder }) => {
         quotationId: orderData.quotationId || null,
         masterPipelineNo: orderData.masterPipelineNo || null,
         previousOrderNo: orderData.previousOrderNo || null,
-        shipTo: orderData.shipTo || null,
+        shipTo: finalShipTo,
+
         products: calculationCartItems.map((item) => {
-          const price = parseFloat(item.price) || 0;
-          const quantity = parseInt(item.quantity, 10) || 1;
+          const price = Number(item.price) || 0;
+          const qty = Number(item.quantity) || 1;
+          const discVal = Number(itemDiscounts[item.productId]) || 0;
+          const discType = itemDiscountTypes[item.productId] || "percent";
 
-          const rawDiscount = Number(itemDiscounts[item.productId]) || 0;
-          const discountType = itemDiscountTypes[item.productId] || "percent";
-
-          const unitPriceAfterDiscount =
-            discountType === "percent"
-              ? price * (1 - rawDiscount / 100)
-              : price - rawDiscount;
-
-          const total = Number((unitPriceAfterDiscount * quantity).toFixed(2));
+          const unitPriceAfterDisc =
+            discType === "percent"
+              ? price * (1 - discVal / 100)
+              : price - discVal;
 
           return {
             id: item.productId,
             price: Number(price.toFixed(2)),
-            discount: Number(rawDiscount.toFixed(2)),
-            total,
-            quantity,
+            discount: Number(discVal.toFixed(2)),
+            total: Number((unitPriceAfterDisc * qty).toFixed(2)),
+            quantity: qty,
           };
         }),
       };
 
       try {
         const result = await createOrder(orderPayload).unwrap();
-        message.success(`Order ${result.orderNo} created!`);
+        message.success(`Order ${result.orderNo} created successfully!`);
         await handleClearCart();
         resetForm();
         navigate("/orders/list");
-      } catch (error) {
-        const errorMessage =
-          error?.status === 400
-            ? `Bad Request: ${error.data?.message || "Invalid data provided."}`
-            : error?.status === 404
-              ? `Not Found: ${error.data?.message || "Resource not found."}`
-              : error?.status === 500
-                ? `Server error: ${error.data?.message || "Please try again later."}`
-                : `Something went wrong: ${error.data?.message || "Please try again."}`;
-        message.error(errorMessage);
+      } catch (err) {
+        console.log(err);
+        const msg =
+          err?.status === 400
+            ? "Invalid data provided."
+            : err?.status === 404
+              ? "Resource not found."
+              : err?.data?.message || "Failed to create order.";
+        message.error(msg);
       }
     }
   };
-
   const resetForm = () => {
     setQuotationData({
       quotationDate: new Date().toISOString().split("T")[0],
