@@ -25,7 +25,7 @@ services:
     container_name: cmtrading-redis
     restart: unless-stopped
     ports:
-      - "6379:6379" # optional, only if you want host access
+      - "6379" # optional, only if you want host access
     networks:
       - app-network
 
