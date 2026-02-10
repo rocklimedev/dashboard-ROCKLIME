@@ -94,6 +94,7 @@ const CartItemRow = ({
   const discType = itemDiscountTypes[item.productId] || "percent";
 
   const isQuotationMode = documentType === "Quotation";
+  const showDiscountAndTax = ["Quotation", "Order"].includes(documentType);
 
   // Possible parents: all main (non-option) items except self
   const possibleParents = cartItems.filter(
@@ -139,7 +140,7 @@ const CartItemRow = ({
               ₹{(item.price || 0).toFixed(2)}
             </Text>
 
-            {/* Controls – only in Quotation mode */}
+            {/* Option Type + Parent Selector → Only in Quotation */}
             {isQuotationMode && (
               <div style={{ marginTop: 12 }}>
                 <Space wrap size={[12, 8]}>
@@ -188,7 +189,14 @@ const CartItemRow = ({
                       ))}
                     </Select>
                   )}
+                </Space>
+              </div>
+            )}
 
+            {/* Discount & Tax → Both Quotation and Order */}
+            {showDiscountAndTax && (
+              <div style={{ marginTop: 12 }}>
+                <Space wrap size={[12, 8]}>
                   {/* Discount controls */}
                   <Space.Compact>
                     <Select
@@ -214,7 +222,7 @@ const CartItemRow = ({
                     />
                   </Space.Compact>
 
-                  {/* Tax – if you want to show it per item */}
+                  {/* Tax */}
                   <InputNumber
                     size="small"
                     min={0}
