@@ -6,7 +6,6 @@ const { Server } = require("socket.io");
 const cors = require("cors");
 const helmet = require("helmet");
 const cron = require("node-cron");
-const LogStatsDaily = require("./models/log_stats_daily");
 const db = require("./config/database");
 const connectMongoDB = require("./config/dbMongo");
 const setupDB = require("./utils/db");
@@ -27,7 +26,6 @@ const routes = {
   signature: require("./routes/signature"),
   category: require("./routes/category"),
   parentCategory: require("./routes/parentController"),
-  attendance: require("./routes/attendance"),
   import: require("./routes/import"),
   customer: require("./routes/customer"),
   brand: require("./routes/brands"),
@@ -45,11 +43,7 @@ const routes = {
   team: require("./routes/teams"),
   productMeta: require("./routes/productMeta"),
   purchaseOrder: require("./routes/purchaseOrder"),
-  logs: require("./routes/apiLog"),
   notification: require("./routes/notification"),
-  task: require("./routes/tasks"),
-  taskBoard: require("./routes/taskBoardRoutes"),
-  feedback: require("./routes/feedback"),
   cachedPermission: require("./routes/cachedPermission"),
   siteMap: require("./routes/siteMap"),
 };
@@ -116,9 +110,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// ------------------- NON-BLOCKING API LOGGER (FIRE & FORGET) -------------------
-app.use(require("./middleware/logger")); // CRITICAL: Updated logger
-
 // ------------------- Optional: Console Debug Logger -------------------
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
@@ -134,7 +125,6 @@ app.use((req, res, next) => {
 // ------------------- Route Mounting -------------------
 app.use("/api", apiLimiter);
 app.use("/api/auth", routes.auth);
-app.use("/api/attendance", routes.attendance);
 app.use("/api/user", routes.user);
 app.use("/api/order", routes.order);
 app.use("/api/roles", routes.roles);
@@ -154,16 +144,11 @@ app.use("/api/carts", routes.cart);
 app.use("/api/companies", routes.company);
 app.use("/api/quotation", routes.quotation);
 app.use("/api/role-permissions", routes.rolePermission);
-app.use("/api/invoices", routes.invoice);
 app.use("/api/teams", routes.team);
 app.use("/api/search", routes.search);
 app.use("/api/purchase-orders", routes.purchaseOrder);
 app.use("/api/product-meta", routes.productMeta);
-app.use("/api/logs", routes.logs);
 app.use("/api/notifications", routes.notification);
-app.use("/api/tasks", routes.task);
-app.use("/api/taskboards", routes.taskBoard);
-app.use("/api/feedback", routes.feedback);
 app.use("/api/cached-permissions", routes.cachedPermission);
 app.use("/api/site-maps", routes.siteMap);
 app.use("/api/imports", routes.import);
@@ -226,79 +211,7 @@ cron.schedule("0 2 * * *", async () => {
     console.error("[CRON] Failed to clear cache:", err);
   }
 });
-cron.schedule("0 1 * * *", async () => {
-  try {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    yesterday.setHours(0, 0, 0, 0);
 
-    const tomorrow = new Date(yesterday);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    const stats = await ApiLog.aggregate([
-      {
-        $match: {
-          createdAt: { $gte: yesterday, $lt: tomorrow },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          totalRequests: { $sum: 1 },
-          avgDuration: { $avg: "$duration" },
-          errorCount: { $sum: { $cond: [{ $gte: ["$status", 400] }, 1, 0] } },
-          methods: { $push: "$method" },
-          statuses: { $push: "$status" },
-        },
-      },
-    ]);
-
-    if (stats[0]) {
-      await LogStatsDaily.findOneAndUpdate(
-        { date: yesterday },
-        {
-          date: yesterday,
-          totalRequests: stats[0].totalRequests,
-          avgDuration: Math.round(stats[0].avgDuration || 0),
-          errorRate: stats[0].totalRequests
-            ? Math.round(
-                (stats[0].errorCount / stats[0].totalRequests) * 10000,
-              ) / 100
-            : 0,
-          methodBreakdown: (stats[0].methods || []).reduce(
-            (a, m) => ((a[m] = (a[m] || 0) + 1), a),
-            {},
-          ),
-          statusBreakdown: (stats[0].statuses || [])
-            .filter(Boolean)
-            .reduce((a, s) => ((a[s] = (a[s] || 0) + 1), a), {}),
-        },
-        { upsert: true },
-      );
-      console.log("[CRON] Daily log stats updated");
-    }
-  } catch (err) {
-    console.error("[CRON] Failed to update log stats:", err);
-  }
-});
-// ------------------- Daily Cron: Delete Old API Logs (Retention: 60 days) -------------------
-cron.schedule("0 3 * * *", async () => {
-  // Runs daily at 3 AM (after stats cron at 1 AM)
-  try {
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - 60); // Keep last 60 days
-
-    const result = await ApiLog.deleteMany({
-      createdAt: { $lt: cutoffDate },
-    });
-
-    console.log(
-      `[CRON] Deleted ${result.deletedCount} old API logs (older than 60 days)`,
-    );
-  } catch (err) {
-    console.error("[CRON] Failed to delete old logs:", err);
-  }
-});
 // ------------------- Socket.IO Setup -------------------
 require("./socket")(io);
 initSocket(io);

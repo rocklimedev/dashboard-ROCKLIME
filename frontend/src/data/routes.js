@@ -63,8 +63,6 @@ import EmailVerification from "../components/Auth/EmailVerifications";
 import POWrapper from "../components/Orders/POWrapper";
 import AddPurchaseOrder from "../components/Orders/AddPurchaseOrder";
 import PODetails from "../components/Orders/PODetails";
-import LogTable from "../components/Logs/LogTable";
-import TaskWrapper from "../components/Tasks/TaskWrapper";
 import InventoryWrapper from "../components/Common/InventoryWrapper";
 import ProfileForm from "../components/Profile/ProfileForm";
 import Error403 from "../components/Error/Error403";
@@ -133,14 +131,6 @@ const masterRoutes = [
     icon: <FaUsers />,
     isSidebarActive: true,
     element: <CustomerList />,
-  },
-
-  {
-    path: "/tasks",
-    name: "Tasks",
-    icon: <FaBoxOpen />,
-    isSidebarActive: false,
-    element: <TaskWrapper />,
   },
   {
     path: "/inventory/list",
@@ -544,13 +534,6 @@ const masterRoutes = [
         isSidebarActive: false,
       },
     ],
-  },
-  {
-    path: "/logging",
-    name: "Logs",
-    icon: <FaFile />,
-    element: <LogTable />,
-    isSidebarActive: false,
   },
 ];
 

@@ -6,7 +6,6 @@ import {
   useGetTopSellingProductsQuery,
 } from "../../api/productApi";
 import { useGetAllQuotationsQuery } from "../../api/quotationApi";
-import { useGetAllInvoicesQuery } from "../../api/invoiceApi";
 import { useGetProfileQuery } from "../../api/userApi";
 import { useGetAllOrdersQuery } from "../../api/orderApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
@@ -71,8 +70,6 @@ const PageWrapper = () => {
 
   const { data: customersResponse } = useGetCustomersQuery({ limit: 1000 });
   const customersData = customersResponse?.data || [];
-
-  const { data: invoiceData } = useGetAllInvoicesQuery();
 
   const { data: topSellingData, isLoading: topProductsLoading } =
     useGetTopSellingProductsQuery(10);
