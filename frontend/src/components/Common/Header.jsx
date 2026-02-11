@@ -72,7 +72,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
     isFetching: searchFetching,
   } = useSearchAllQuery(
     { query: searchQuery, limit: 8 },
-    { skip: !searchQuery.trim() }
+    { skip: !searchQuery.trim() },
   );
   const searchResults = searchData?.results || null;
 
@@ -127,7 +127,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
   // Counters
   const notificationCount = useMemo(
     () => notifications.filter((n) => !n.read).length || 0,
-    [notifications]
+    [notifications],
   );
 
   const cartItemCount = useMemo(() => cart?.cart?.items?.length || 0, [cart]);
@@ -165,18 +165,6 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
         >
           Settings
         </Menu.Item>
-        {hasAdminOrDevAccess && (
-          <>
-            <Menu.Divider />
-            <Menu.Item
-              key="logging"
-              onClick={() => navigate("/logging")}
-              icon={<SettingOutlined className="me-2" />}
-            >
-              Logging
-            </Menu.Item>
-          </>
-        )}
         <Menu.Divider />
         <Menu.Item
           key="logout"
@@ -195,7 +183,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
       handleLogout,
       isLoggingOut,
       hasAdminOrDevAccess,
-    ]
+    ],
   );
 
   return (
