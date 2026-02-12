@@ -28,19 +28,6 @@ export default function useProductsData(rawProducts = []) {
     skip: productIds.length === 0,
   });
   useEffect(() => {
-    console.group("useProductsData — debug");
-    console.log("Input IDs (length):", productIds.length, productIds);
-    console.log("Query status:", {
-      isLoading,
-      isFetching,
-      isError,
-      isUninitialized,
-    });
-    console.log("Raw response data:", fetchedProducts);
-    console.log(
-      "First item shape (if any):",
-      fetchedProducts[0] ? Object.keys(fetchedProducts[0]) : "no items",
-    );
     if (isError) {
       console.error("RTK Query error:", error);
     }

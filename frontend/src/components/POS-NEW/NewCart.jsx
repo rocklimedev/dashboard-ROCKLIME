@@ -51,7 +51,7 @@ import { useGetAllUsersQuery } from "../../api/userApi";
 import AddCustomerModal from "../Customers/AddCustomerModal";
 import PreviewQuotation from "../Quotation/PreviewQuotation";
 import { useAuth } from "../../context/AuthContext";
-
+import { skipToken } from "@reduxjs/toolkit/query";
 const { TabPane } = Tabs;
 const { Text } = Typography;
 
@@ -147,15 +147,36 @@ const NewCart = ({ onConvertToOrder }) => {
   const [billingAddressId, setBillingAddressId] = useState(null);
 
   // ────────────────────── QUERIES ──────────────────────
-  const { data: cartData } = useGetCartQuery(userId, { skip: !userId });
-  const { data: customerData } = useGetCustomersQuery({ limit: 500 });
+  const { data: cartData } = useGetCartQuery(userId, {
+    skip: !userId,
+    refetchOnMountOrArgChange: false,
+    refetchOnFocus: false,
+    refetchOnReconnect: false,
+  });
+  const customerQueryArgs = useMemo(() => ({ limit: 500 }), []);
+  const shouldFetchCustomers = activeTab === "checkout";
+  const customerQueryOptions = useMemo(
+    () => ({
+      skip: !userId || !shouldFetchCustomers,
+      refetchOnMountOrArgChange: false,
+      refetchOnFocus: false, // ← add this
+      refetchOnReconnect: false, // ← add this
+    }),
+    [userId, shouldFetchCustomers], // ← important: include shouldFetchCustomers
+  );
+  const { data: customerData } = useGetCustomersQuery(
+    customerQueryArgs,
+    customerQueryOptions,
+  );
   const { data: allOrdersData } = useGetAllOrdersQuery();
   const { data: teamsData, refetch: refetchTeams } = useGetAllTeamsQuery();
   const { data: addressesData, refetch: refetchAddresses } =
-    useGetAllAddressesQuery(
-      { customerId: selectedCustomer },
-      { skip: !selectedCustomer },
-    );
+    useGetAllAddressesQuery(selectedCustomer || skipToken, {
+      skip: !selectedCustomer || activeTab !== "checkout", // Add tab check to skip if not in checkout
+      refetchOnMountOrArgChange: false,
+      refetchOnFocus: false,
+      refetchOnReconnect: false,
+    });
   const { data: productsData } = useGetAllProductsQuery();
   const { data: vendorsData } = useGetVendorsQuery();
 
@@ -173,8 +194,11 @@ const NewCart = ({ onConvertToOrder }) => {
 
   // ────────────────────── MEMOIZED VALUES ──────────────────────
   const addresses = useMemo(
-    () => (Array.isArray(addressesData) ? addressesData : []),
-    [addressesData],
+    () =>
+      Array.isArray(addressesData)
+        ? addressesData.filter((a) => a.customerId === selectedCustomer)
+        : [],
+    [addressesData, selectedCustomer],
   );
   const orders = useMemo(
     () => (Array.isArray(allOrdersData?.orders) ? allOrdersData.orders : []),
@@ -218,17 +242,30 @@ const NewCart = ({ onConvertToOrder }) => {
   const { productsData: cartProductsData, errors: productErrors } =
     useProductsData(calculationCartItems);
 
-  const userIds = useMemo(
-    () => [...new Set(addresses.map((a) => a.userId).filter(Boolean))],
-    [addresses],
-  );
-  const customerIds = useMemo(
-    () => [...new Set(addresses.map((a) => a.customerId).filter(Boolean))],
-    [addresses],
-  );
-  const { userMap, customerMap, userQueries, customerQueries } =
-    useUserAndCustomerData(userIds, customerIds);
+  // Add this
+  const debouncedAddresses = useMemo(() => {
+    return addresses; // or use lodash debounce if needed
+  }, [addresses]);
 
+  const userIds = useMemo(
+    () => [...new Set(debouncedAddresses.map((a) => a.userId).filter(Boolean))],
+    [debouncedAddresses],
+  );
+
+  const customerIds = useMemo(
+    () => [
+      ...new Set(debouncedAddresses.map((a) => a.customerId).filter(Boolean)),
+    ],
+    [debouncedAddresses],
+  );
+  // Only run when really needed (e.g. when rendering specific address details)
+  const { userMap, customerMap } = useUserAndCustomerData(
+    userIds,
+    customerIds,
+    {
+      skip: activeTab !== "checkout" || !addresses.length || !selectedCustomer,
+    }, // Add !selectedCustomer
+  );
   // ────────────────────── TOTALS & CALCULATIONS ──────────────────────
   const totalItems = useMemo(
     () => allCartItems.reduce((a, i) => a + (i.quantity || 0), 0),
@@ -815,6 +852,9 @@ const NewCart = ({ onConvertToOrder }) => {
             quantity: qty,
             discount: Number(discVal.toFixed(2)),
             discountType: discType,
+            imageUrl: item.imageUrl || "", // optional – nice to have
+            productCode: item.productCode || "", // if you have it
+            companyCode: item.companyCode || "", // if you have it
             tax: Number(itemTaxes[item.productId]) || 0,
             total: Number(lineTotal.toFixed(2)),
             isOptionFor: item.parentProductId || null,
@@ -883,41 +923,58 @@ const NewCart = ({ onConvertToOrder }) => {
         previousOrderNo: orderData.previousOrderNo || null,
         shipTo: finalShipTo,
 
-        products: calculationCartItems.map((item) => {
-          const price = Number(item.price) || 0;
-          const qty = Number(item.quantity) || 1;
-          const discVal = Number(itemDiscounts[item.productId]) || 0;
+        products: allCartItems.map((item) => {
+          const price = Number(item.price || 0);
+          const qty = Number(item.quantity || 1);
+          const discVal = Number(itemDiscounts[item.productId] || 0);
           const discType = itemDiscountTypes[item.productId] || "percent";
+          const taxRate = Number(itemTaxes[item.productId] || 0);
 
-          const unitPriceAfterDisc =
-            discType === "percent"
-              ? price * (1 - discVal / 100)
-              : price - discVal;
+          const subtotal = price * qty;
+          const discountAmt =
+            discType === "percent" ? (subtotal * discVal) / 100 : discVal;
+          const afterDisc = subtotal - discountAmt;
+          const taxAmt = (afterDisc * taxRate) / 100;
+          const lineTotalRaw = afterDisc + taxAmt;
 
           return {
-            id: item.productId,
+            id: item.productId, // ← CHANGE THIS: use "id" instead of "productId"
+            name: item.name || "Unnamed Product",
+            imageUrl: item.imageUrl || "",
+            productCode: item.productCode || "",
+            companyCode: item.companyCode || "",
+            quantity: qty,
             price: Number(price.toFixed(2)),
             discount: Number(discVal.toFixed(2)),
-            total: Number((unitPriceAfterDisc * qty).toFixed(2)),
-            quantity: qty,
+            discountType: discType,
+            tax: taxRate,
+            total: Number(lineTotalRaw.toFixed(2)),
           };
         }),
       };
 
       try {
+        console.log(
+          "ORDER PAYLOAD BEING SENT:",
+          JSON.stringify(orderPayload, null, 2),
+        );
         const result = await createOrder(orderPayload).unwrap();
         message.success(`Order ${result.orderNo} created successfully!`);
         await handleClearCart();
         resetForm();
         navigate("/orders/list");
       } catch (err) {
-        console.log(err);
+        console.error("Create order failed – full error:", err);
+        console.log("Response data:", err?.data);
+        console.log("Status:", err?.status);
+        console.log("Response headers:", err?.headers);
+
         const msg =
-          err?.status === 400
-            ? "Invalid data provided."
-            : err?.status === 404
-              ? "Resource not found."
-              : err?.data?.message || "Failed to create order.";
+          err?.data?.message ||
+          err?.data?.error ||
+          err?.data ||
+          "Unknown error – check network tab";
+
         message.error(msg);
       }
     }
@@ -1191,8 +1248,6 @@ const NewCart = ({ onConvertToOrder }) => {
                 addresses={addresses}
                 userMap={userMap}
                 customerMap={customerMap}
-                userQueries={userQueries}
-                customerQueries={customerQueries}
                 teams={teams}
                 users={users}
                 documentType={documentType}
@@ -1225,8 +1280,6 @@ const NewCart = ({ onConvertToOrder }) => {
                 addresses={addresses}
                 userMap={userMap}
                 customerMap={customerMap}
-                userQueries={userQueries}
-                customerQueries={customerQueries}
                 documentType={documentType}
                 setDocumentType={setDocumentType}
                 cartItems={displayCartItems}

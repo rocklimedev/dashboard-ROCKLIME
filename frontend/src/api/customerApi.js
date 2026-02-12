@@ -8,53 +8,68 @@ export const customerApi = baseApi.injectEndpoints({
         method: "POST",
         body: customerData,
       }),
-      invalidatesTags: ["Customers"], // Invalidate to refetch customers
+      invalidatesTags: ["Customers"], // only invalidate the LIST
     }),
+
     getCustomers: builder.query({
       query: (filters = {}) => {
         const params = new URLSearchParams();
-
-        // Always include pagination
         params.append("page", filters.page ?? 1);
         params.append("limit", filters.limit ?? 20);
-
-        // Search (only if provided)
         if (filters.search?.trim()) {
           params.append("search", filters.search.trim());
         }
-
-        // Add more filters here later if needed (e.g. customerType)
-        // if (filters.customerType && filters.customerType !== "All") {
-        //   params.append("customerType", filters.customerType);
-        // }
-
         const queryString = params.toString();
         return queryString ? `/customers/?${queryString}` : "/customers/";
       },
-      providesTags: ["Customers"],
+      providesTags: (result) =>
+        result?.data
+          ? [
+              // Tag the LIST
+              { type: "Customers", id: "LIST" },
+              // Tag every individual customer in the list
+              ...result.data.map(({ customerId }) => ({
+                type: "Customers",
+                id: customerId,
+              })),
+            ]
+          : [{ type: "Customers", id: "LIST" }],
     }),
+
     getCustomerById: builder.query({
       query: (id) => `/customers/${id}`,
-      providesTags: ["Customers"], // Tag for specific customer data
+      providesTags: (result, error, id) => [{ type: "Customers", id }], // ← specific ID tag
     }),
+
     getInvoicesByCustomerId: builder.query({
       query: (id) => `/customers/${id}/invoices`,
-      providesTags: ["Customers"], // Tag for customer-related invoices
+      providesTags: (result, error, id) => [
+        { type: "Customers", id }, // the customer itself
+        { type: "Invoices", id: `CUSTOMER-${id}` }, // optional: more granular
+      ],
     }),
+
     updateCustomer: builder.mutation({
       query: ({ id, ...updatedData }) => ({
         url: `/customers/${id}`,
         method: "PUT",
         body: updatedData,
       }),
-      invalidatesTags: ["Customers"], // Invalidate to refetch customers
+      invalidatesTags: (result, error, { id }) => [
+        { type: "Customers", id }, // invalidate this specific customer
+        { type: "Customers", id: "LIST" }, // invalidate the list
+      ],
     }),
+
     deleteCustomer: builder.mutation({
       query: (id) => ({
         url: `/customers/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Customers"], // Invalidate to refetch customers
+      invalidatesTags: (result, error, id) => [
+        { type: "Customers", id },
+        { type: "Customers", id: "LIST" },
+      ],
     }),
   }),
 });

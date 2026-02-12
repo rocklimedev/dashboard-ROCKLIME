@@ -199,7 +199,6 @@ body {
 }
 
 .due-date-close {
-  color: #E31E24;
   font-weight: 600;
 }
 
@@ -1249,7 +1248,6 @@ body {
 
 /* Due date */
 .due-date-close {
-  color: #E31E24;
   font-weight: 500;
 }
 

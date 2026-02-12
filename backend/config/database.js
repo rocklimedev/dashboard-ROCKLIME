@@ -26,7 +26,8 @@ function createSequelize() {
         // ssl: { require: true, rejectUnauthorized: false }, // Keep if BigRock requires SSL; comment out if not needed
         // Add queueing: wait instead of error when pool is full
         waitForConnections: true,
-        queueLimit: 0, // 0 = unlimited queue (requests wait), or set low number if you prefer fail-fast
+        queueLimit: 20,
+        // 0 = unlimited queue (requests wait), or set low number if you prefer fail-fast
       },
 
       pool: {
@@ -70,7 +71,7 @@ function createSequelize() {
           evict: 10000,
           // Optional: add maxUses here too if you want recycle in local
         },
-      }
+      },
     );
   }
 
@@ -95,7 +96,7 @@ async function connectWithRetry(attempt = 1) {
 
     console.error(
       `❌ MySQL connection failed (attempt ${attempt}):`,
-      err.message
+      err.message,
     );
 
     if (attempt >= 5) {

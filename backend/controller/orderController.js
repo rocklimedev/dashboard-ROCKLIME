@@ -180,7 +180,7 @@ exports.getComments = async (req, res) => {
       resourceId,
       resourceType,
       pageNum,
-      limitNum
+      limitNum,
     );
 
     return res.status(200).json({
@@ -198,7 +198,7 @@ const fetchCommentsWithUsers = async (
   resourceId,
   resourceType,
   pageNum,
-  limitNum
+  limitNum,
 ) => {
   const comments = await Comment.find({ resourceId, resourceType })
     .sort({ createdAt: -1 })
@@ -216,7 +216,7 @@ const fetchCommentsWithUsers = async (
         ...comment,
         user: user ? user.toJSON() : null,
       };
-    })
+    }),
   );
 
   const totalCount = await Comment.countDocuments({ resourceId, resourceType });
@@ -233,7 +233,11 @@ exports.addComment = async (req, res) => {
     // 1. Normalize userId
     const userId = String(rawUserId || "").trim();
     if (!userId || userId === "null" || userId === "undefined") {
-      return sendErrorResponse(res, 400, "userId is required and must be valid");
+      return sendErrorResponse(
+        res,
+        400,
+        "userId is required and must be valid",
+      );
     }
 
     // 2. Input validation
@@ -275,13 +279,13 @@ exports.addComment = async (req, res) => {
     const hasReachedLimit = await Comment.hasReachedCommentLimit(
       resourceId,
       resourceType,
-      userId
+      userId,
     );
     if (hasReachedLimit) {
       return sendErrorResponse(
         res,
         400,
-        `Max 3 comments allowed on this ${resourceType.toLowerCase()}`
+        `Max 3 comments allowed on this ${resourceType.toLowerCase()}`,
       );
     }
 
@@ -329,8 +333,12 @@ exports.addComment = async (req, res) => {
         const senderName = user?.name || "Someone";
 
         const recipientIds = new Set(
-          [order.createdFor, order.createdBy, order.assignedUserId, order.secondaryUserId]
-            .filter(Boolean)
+          [
+            order.createdFor,
+            order.createdBy,
+            order.assignedUserId,
+            order.secondaryUserId,
+          ].filter(Boolean),
         );
 
         for (const recipientId of recipientIds) {
@@ -391,7 +399,7 @@ exports.deleteCommentsByResource = async (req, res) => {
       res,
       500,
       "Failed to delete comments",
-      err.message
+      err.message,
     );
   }
 };
@@ -532,12 +540,12 @@ async function generateDailyOrderNumber(t) {
     }
 
     console.warn(
-      `Order number collision: ${candidate} — retrying (${attempt}/${MAX_ATTEMPTS})`
+      `Order number collision: ${candidate} — retrying (${attempt}/${MAX_ATTEMPTS})`,
     );
   }
 
   throw new Error(
-    `Failed to generate unique order number after ${MAX_ATTEMPTS} attempts`
+    `Failed to generate unique order number after ${MAX_ATTEMPTS} attempts`,
   );
 }
 /**
@@ -573,7 +581,7 @@ async function reduceStockAndLog({
     // 1. Update product quantity
     await Product.update(
       { quantity: newQty },
-      { where: { productId }, transaction }
+      { where: { productId }, transaction },
     );
 
     // Inside the loop in reduceStockAndLog:
@@ -588,7 +596,7 @@ async function reduceStockAndLog({
         userId: createdBy,
         message: msg,
       },
-      { transaction }
+      { transaction },
     );
 
     // 3. Update status if needed
@@ -605,7 +613,7 @@ async function reduceStockAndLog({
     if (newStatus !== productRecord.status) {
       await Product.update(
         { status: newStatus },
-        { where: { productId }, transaction }
+        { where: { productId }, transaction },
       );
     }
   }
@@ -625,7 +633,7 @@ async function restoreStock({ products, orderNo }) {
 
     await Product.update(
       { quantity: newQty },
-      { where: { productId: prod.productId } }
+      { where: { productId: prod.productId } },
     );
 
     await InventoryHistory.create({
@@ -640,9 +648,7 @@ async function restoreStock({ products, orderNo }) {
 }
 
 // ──────── CREATE ORDER ────────
-// ──────── CREATE ORDER ────────
-// ──────── CREATE ORDER – FINAL MYSQL-ONLY VERSION ────────
-// ──────── CREATE ORDER – FINAL FIXED & SAFE VERSION ────────
+
 exports.createOrder = async (req, res) => {
   const t = await sequelize.transaction();
 
@@ -659,7 +665,7 @@ exports.createOrder = async (req, res) => {
       source,
       priority,
       description,
-      orderNo: rawOrderNo, // ← we will ignore this from client
+      orderNo: rawOrderNo, // ignored from client
       quotationId,
       products = [],
       masterPipelineNo,
@@ -678,7 +684,7 @@ exports.createOrder = async (req, res) => {
       return sendErrorResponse(
         res,
         400,
-        "createdFor and createdBy are required"
+        "createdFor and createdBy are required",
       );
     }
 
@@ -708,13 +714,13 @@ exports.createOrder = async (req, res) => {
         return sendErrorResponse(
           res,
           404,
-          `Master order ${masterPipelineNo} not found`
+          `Master order ${masterPipelineNo} not found`,
         );
       if (masterPipelineNo === orderNo)
         return sendErrorResponse(
           res,
           400,
-          "Master cannot be the same as current order"
+          "Master cannot be the same as current order",
         );
     }
     if (previousOrderNo) {
@@ -726,77 +732,123 @@ exports.createOrder = async (req, res) => {
         return sendErrorResponse(
           res,
           404,
-          `Previous order ${previousOrderNo} not found`
+          `Previous order ${previousOrderNo} not found`,
         );
     }
 
-    // ── PRODUCTS VALIDATION + STOCK CHECK ──
+    // ── PRODUCTS VALIDATION + ENRICHMENT ──
     let productUpdates = [];
-    if (products.length > 0) {
-      if (!Array.isArray(products))
-        return sendErrorResponse(res, 400, "Products must be an array");
+    let enrichedProducts = []; // what we save in Order.products
 
-      for (const p of products) {
-        const {
-          id,
-          price,
-          discount = 0,
-          total,
-          quantity,
-          discountType = "percent",
-        } = p;
+    if (products.length === 0) {
+      return sendErrorResponse(
+        res,
+        400,
+        "Cannot create order without products",
+      );
+    }
 
-        if (
-          !id ||
-          !quantity ||
-          quantity < 1 ||
-          price == null ||
-          total == null
-        ) {
-          return sendErrorResponse(
-            res,
-            400,
-            "Each product must have id, quantity ≥ 1, price, and total"
-          );
-        }
+    if (!Array.isArray(products)) {
+      return sendErrorResponse(res, 400, "Products must be an array");
+    }
 
-        const prod = await Product.findByPk(id, {
-          lock: t.LOCK.UPDATE,
-          transaction: t,
-        });
-        if (!prod)
-          return sendErrorResponse(res, 404, `Product not found: ${id}`);
+    // Fetch all relevant products in one query
+    const productIds = products.map((p) => p.id).filter(Boolean);
+    const dbProducts = await Product.findAll({
+      where: { productId: productIds },
+      attributes: ["productId", "name", "images", "meta", "product_code"],
+      transaction: t,
+    });
 
-        // Validate line total
-        const calculatedTotal =
-          discountType === "percent"
-            ? price * (1 - discount / 100) * quantity
-            : (price - discount) * quantity;
-
-        if (Math.abs(total - calculatedTotal) > 0.01) {
-          return sendErrorResponse(
-            res,
-            400,
-            `Invalid total for product ${id}. Expected ~${calculatedTotal.toFixed(
-              2
-            )}`
-          );
-        }
-
-        if (prod.quantity < quantity) {
-          return sendErrorResponse(
-            res,
-            400,
-            `Insufficient stock for ${prod.name}. Available: ${prod.quantity}, Required: ${quantity}`
-          );
-        }
-
-        productUpdates.push({
-          productId: id,
-          quantityToReduce: quantity,
-          productRecord: prod,
-        });
+    const productMap = {};
+    dbProducts.forEach((p) => {
+      let imageUrl = null;
+      if (p.images) {
+        try {
+          const imgs = JSON.parse(p.images);
+          if (Array.isArray(imgs) && imgs.length > 0) {
+            imageUrl = imgs[0];
+          }
+        } catch (_) {}
       }
+      productMap[p.productId] = {
+        name: p.name || "Unknown",
+        imageUrl,
+        productCode: p.product_code || "",
+        companyCode: p.meta?.["d11da9f9-3f2e-4536-8236-9671200cca4a"] || null,
+      };
+    });
+
+    for (const p of products) {
+      const {
+        id,
+        price,
+        discount = 0,
+        total,
+        quantity,
+        discountType = "percent",
+        tax = 0,
+      } = p;
+
+      // Required fields validation
+      if (!id || !quantity || quantity < 1 || price == null || total == null) {
+        return sendErrorResponse(
+          res,
+          400,
+          "Each product must have id, quantity ≥ 1, price, and total",
+        );
+      }
+
+      const prod = await Product.findByPk(id, {
+        lock: t.LOCK.UPDATE,
+        transaction: t,
+      });
+      if (!prod) return sendErrorResponse(res, 404, `Product not found: ${id}`);
+
+      // Validate calculated total
+      const calculatedTotal =
+        discountType === "percent"
+          ? price * (1 - discount / 100) * quantity
+          : (price - discount) * quantity;
+
+      if (Math.abs(total - calculatedTotal) > 0.01) {
+        return sendErrorResponse(
+          res,
+          400,
+          `Invalid total for product ${id}. Expected ~${calculatedTotal.toFixed(2)}`,
+        );
+      }
+
+      // Stock check
+      if (prod.quantity < quantity) {
+        return sendErrorResponse(
+          res,
+          400,
+          `Insufficient stock for ${prod.name}. Available: ${prod.quantity}, Required: ${quantity}`,
+        );
+      }
+
+      productUpdates.push({
+        productId: id,
+        quantityToReduce: quantity,
+        productRecord: prod,
+      });
+
+      // Enrich product data for saving
+      const prodInfo = productMap[id] || {};
+      enrichedProducts.push({
+        id,
+        name: prodInfo.name,
+        imageUrl: prodInfo.imageUrl || "",
+        productCode: prodInfo.productCode || "",
+        companyCode: prodInfo.companyCode || "",
+        quantity,
+        price,
+        discount,
+        discountType,
+        tax,
+        total,
+      });
     }
 
     // ── FINANCIAL CALCULATIONS ──
@@ -811,7 +863,7 @@ exports.createOrder = async (req, res) => {
     const parsedAmountPaid = parseFloat(amountPaid) || 0;
 
     const { gstValue, extraDiscountValue, finalAmount } = computeTotals({
-      products,
+      products, // still use original for calculations
       shipping: parsedShipping,
       gst: parsedGst,
       extraDiscount: parsedExtraDiscount,
@@ -828,7 +880,7 @@ exports.createOrder = async (req, res) => {
       return sendErrorResponse(res, 400, `Invalid status: ${status}`);
     }
 
-    // ── GENERATE DAILY SEQUENTIAL orderNo (e.g. 150126101) ──
+    // ── GENERATE ORDER NUMBER ──
     const orderNo = await generateDailyOrderNumber(t);
 
     // ── CREATE ORDER (MySQL) ──
@@ -844,7 +896,7 @@ exports.createOrder = async (req, res) => {
         source: source || null,
         priority: priorityLower,
         description: description || null,
-        orderNo, // ← generated here!
+        orderNo,
         quotationId: quotationId || null,
         masterPipelineNo: masterPipelineNo || null,
         previousOrderNo: previousOrderNo || null,
@@ -860,11 +912,12 @@ exports.createOrder = async (req, res) => {
         extraDiscountValue,
         amountPaid: parsedAmountPaid,
         finalAmount,
+        products: enrichedProducts, // ← enriched version!
       },
-      { transaction: t }
+      { transaction: t },
     );
 
-    // ── REDUCE STOCK & LOG HISTORY (FULLY TRANSACTIONAL) ──
+    // ── REDUCE STOCK & LOG ──
     if (productUpdates.length > 0) {
       await reduceStockAndLog({
         productUpdates,
@@ -875,63 +928,41 @@ exports.createOrder = async (req, res) => {
       });
     }
 
-    // ── COMMIT MYSQL TRANSACTION FIRST ──
     await t.commit();
 
-    // ── SAVE ORDER ITEMS TO MONGODB (AFTER COMMIT – NON-TRANSACTIONAL) ──
+    // ── SAVE TO MONGODB (using enriched data) ──
     if (products.length > 0) {
       try {
-        const dbProducts = await Product.findAll({
-          where: { productId: products.map((p) => p.id) },
-          attributes: ["productId", "name", "images", "meta", "product_code"],
-        });
-
-        const productMap = {};
-        dbProducts.forEach((p) => {
-          let imageUrl = null;
-          if (p.images) {
-            try {
-              const imgs = JSON.parse(p.images);
-              if (Array.isArray(imgs) && imgs.length > 0) imageUrl = imgs[0];
-            } catch (_) {}
-          }
-          productMap[p.productId] = { name: p.name, imageUrl };
-        });
-
-        const mongoItems = products.map((p) => {
-          const { name = "Unknown", imageUrl = null } = productMap[p.id] || {};
-          return {
-            productId: p.id,
-            name,
-            imageUrl,
-               productCode: p.product_code || p.code || "",
-      companyCode:
-        p.meta?.["d11da9f9-3f2e-4536-8236-9671200cca4a"] || null,
-            quantity: p.quantity,
-            price: p.price,
-            discount: p.discount || 0,
-            discountType: p.discountType || "percent",
-            total: p.total,
-          };
-        });
+        // Reuse enrichedProducts (already contains name, imageUrl, etc.)
+        const mongoItems = enrichedProducts.map((p) => ({
+          productId: p.id,
+          name: p.name,
+          imageUrl: p.imageUrl,
+          productCode: p.productCode,
+          companyCode: p.companyCode,
+          quantity: p.quantity,
+          price: p.price,
+          discount: p.discount || 0,
+          discountType: p.discountType || "percent",
+          total: p.total,
+        }));
 
         await OrderItem.findOneAndUpdate(
           { orderId: order.id },
           { orderId: order.id, items: mongoItems },
-          { upsert: true }
+          { upsert: true },
         );
       } catch (mongoErr) {
         console.error(
           "Warning: Failed to save OrderItems to MongoDB:",
-          mongoErr.message
+          mongoErr.message,
         );
-        // Don't fail the whole request — order is already created safely
       }
     }
 
-    // ── SEND NOTIFICATIONS (AFTER SUCCESS) ──
+    // ── NOTIFICATIONS ──
     const recipients = new Set(
-      [createdBy, assignedUserId, secondaryUserId].filter(Boolean)
+      [createdBy, assignedUserId, secondaryUserId].filter(Boolean),
     );
     for (const userId of recipients) {
       await sendNotification({
@@ -957,7 +988,6 @@ exports.createOrder = async (req, res) => {
     } catch (rollbackErr) {
       console.warn("Rollback failed:", rollbackErr.message);
     }
-
     console.error("Create Order Error:", err);
     return sendErrorResponse(res, 500, "Failed to create order", err.message);
   }
@@ -992,7 +1022,7 @@ exports.updateOrderById = async (req, res) => {
         return sendErrorResponse(
           res,
           400,
-          "Gate-pass required before dispatching"
+          "Gate-pass required before dispatching",
         );
       }
       updates.status = norm;
@@ -1005,7 +1035,7 @@ exports.updateOrderById = async (req, res) => {
         return sendErrorResponse(
           res,
           400,
-          `Invalid priority: ${updates.priority}`
+          `Invalid priority: ${updates.priority}`,
         );
       }
       updates.priority = p;
@@ -1020,7 +1050,7 @@ exports.updateOrderById = async (req, res) => {
         return sendErrorResponse(
           res,
           400,
-          "Invalid dueDate format (YYYY-MM-DD)"
+          "Invalid dueDate format (YYYY-MM-DD)",
         );
       }
       updates.dueDate = updates.dueDate || null;
@@ -1031,7 +1061,7 @@ exports.updateOrderById = async (req, res) => {
         return sendErrorResponse(res, 400, "followupDates must be an array");
       }
       const validDates = updates.followupDates.filter(
-        (d) => d && moment(d, "YYYY-MM-DD", true).isValid()
+        (d) => d && moment(d, "YYYY-MM-DD", true).isValid(),
       );
       updates.followupDates = validDates.length > 0 ? validDates : null;
     }
@@ -1090,7 +1120,7 @@ exports.updateOrderById = async (req, res) => {
           return sendErrorResponse(
             res,
             400,
-            "Master cannot be the same as current order"
+            "Master cannot be the same as current order",
           );
         }
       }
@@ -1107,7 +1137,7 @@ exports.updateOrderById = async (req, res) => {
           return sendErrorResponse(
             res,
             400,
-            "Previous cannot be the same as current order"
+            "Previous cannot be the same as current order",
           );
         }
       }
@@ -1151,7 +1181,7 @@ exports.updateOrderById = async (req, res) => {
           return sendErrorResponse(
             res,
             400,
-            "Each product needs id, price, quantity, and total"
+            "Each product needs id, price, quantity, and total",
           );
         }
 
@@ -1171,8 +1201,8 @@ exports.updateOrderById = async (req, res) => {
             res,
             400,
             `Invalid total for product ${id}. Expected ${calculatedTotal.toFixed(
-              2
-            )}`
+              2,
+            )}`,
           );
         }
 
@@ -1181,7 +1211,7 @@ exports.updateOrderById = async (req, res) => {
           return sendErrorResponse(
             res,
             400,
-            `Insufficient stock for ${prod.name}`
+            `Insufficient stock for ${prod.name}`,
           );
         }
 
@@ -1223,7 +1253,7 @@ exports.updateOrderById = async (req, res) => {
           return sendErrorResponse(
             res,
             400,
-            "Extra discount must be a positive number or zero"
+            "Extra discount must be a positive number or zero",
           );
         }
         updates.extraDiscount = parsed;
@@ -1237,7 +1267,7 @@ exports.updateOrderById = async (req, res) => {
         return sendErrorResponse(
           res,
           400,
-          "extraDiscountType must be 'fixed' or 'percent'"
+          "extraDiscountType must be 'fixed' or 'percent'",
         );
       }
     }
@@ -1332,7 +1362,7 @@ exports.updateOrderById = async (req, res) => {
       await OrderItem.findOneAndUpdate(
         { orderId: order.id },
         { orderId: order.id, items: mongoItems },
-        { upsert: true }
+        { upsert: true },
       );
     }
 
@@ -1347,7 +1377,7 @@ exports.updateOrderById = async (req, res) => {
         order.createdBy,
         updates.assignedUserId ?? order.assignedUserId,
         updates.secondaryUserId ?? order.secondaryUserId,
-      ].filter(Boolean)
+      ].filter(Boolean),
     );
 
     for (const uid of recipients) {
@@ -1396,7 +1426,7 @@ exports.updateOrderStatus = async (req, res) => {
       return sendErrorResponse(
         res,
         400,
-        "Gate-pass must be uploaded before dispatching the order"
+        "Gate-pass must be uploaded before dispatching the order",
       );
     }
 
@@ -1412,8 +1442,8 @@ exports.updateOrderStatus = async (req, res) => {
     // ── NOTIFICATIONS ──
     const recipients = new Set(
       [order.createdBy, order.assignedUserId, order.secondaryUserId].filter(
-        Boolean
-      )
+        Boolean,
+      ),
     );
 
     for (const uid of recipients) {
@@ -1476,12 +1506,12 @@ exports.downloadInvoice = async (req, res) => {
 
     if (!response.ok) {
       console.error(
-        `Failed to fetch invoice: ${response.status} ${response.statusText}`
+        `Failed to fetch invoice: ${response.status} ${response.statusText}`,
       );
       return sendErrorResponse(
         res,
         502,
-        "Unable to retrieve invoice from storage"
+        "Unable to retrieve invoice from storage",
       );
     }
 
@@ -1534,7 +1564,7 @@ exports.deleteOrder = async (req, res) => {
       return sendErrorResponse(
         res,
         400,
-        "Order referenced by other orders – cannot delete"
+        "Order referenced by other orders – cannot delete",
       );
 
     // restore stock
@@ -1545,8 +1575,8 @@ exports.deleteOrder = async (req, res) => {
     // notifications
     const recipients = new Set(
       [order.createdBy, order.assignedUserId, order.secondaryUserId].filter(
-        Boolean
-      )
+        Boolean,
+      ),
     );
     for (const uid of recipients) {
       await sendNotification({
@@ -1604,7 +1634,7 @@ exports.draftOrder = async (req, res) => {
         return sendErrorResponse(
           res,
           404,
-          `Master order ${masterPipelineNo} not found`
+          `Master order ${masterPipelineNo} not found`,
         );
     }
     if (previousOrderNo) {
@@ -1613,7 +1643,7 @@ exports.draftOrder = async (req, res) => {
         return sendErrorResponse(
           res,
           404,
-          `Previous order ${previousOrderNo} not found`
+          `Previous order ${previousOrderNo} not found`,
         );
     }
     if (shipTo) {
@@ -1631,7 +1661,7 @@ exports.draftOrder = async (req, res) => {
           return sendErrorResponse(
             res,
             400,
-            "Each product needs id,price,discount,total"
+            "Each product needs id,price,discount,total",
           );
         const prod = await Product.findByPk(id);
         if (!prod)
@@ -1647,7 +1677,7 @@ exports.draftOrder = async (req, res) => {
           return sendErrorResponse(
             res,
             400,
-            `Invalid total for ${id}. Expected ${expected.toFixed(2)}`
+            `Invalid total for ${id}. Expected ${expected.toFixed(2)}`,
           );
       }
     }
@@ -1660,7 +1690,7 @@ exports.draftOrder = async (req, res) => {
       return sendErrorResponse(
         res,
         400,
-        "amountPaid must be 0 for draft orders"
+        "amountPaid must be 0 for draft orders",
       );
 
     // generate orderNo (same pattern as create)
@@ -1813,7 +1843,7 @@ exports.getAllOrders = async (req, res) => {
       res,
       500,
       "Failed to fetch orders",
-      process.env.NODE_ENV === "development" ? err.message : undefined
+      process.env.NODE_ENV === "development" ? err.message : undefined,
     );
   }
 };
@@ -1905,6 +1935,9 @@ exports.getOrderDetails = async (req, res) => {
     const { comments } = await fetchCommentsWithUsers(id, "Order", 1, 10);
     let orderWithDetails = order.toJSON();
 
+    // ────────────────────────────────────────────────
+    // Handle quotation-linked products (if applicable)
+    // ────────────────────────────────────────────────
     if (order.quotationId && order.quotation) {
       try {
         let quotationProducts = order.quotation.products || [];
@@ -1920,47 +1953,22 @@ exports.getOrderDetails = async (req, res) => {
           quotationProducts = [];
         }
 
-        const productIds = quotationProducts
-          .map((item) => item.productId)
-          .filter((id) => id);
+        // Optional: enrich quotation products only if really needed
+        // For now – keep minimal (remove productDetails unless required)
+        const enrichedQuotationProducts = quotationProducts.map((item) => ({
+          productId: item.productId,
+          name: item.name || "Unknown Product",
+          quantity: item.quantity || 1,
+          price: item.price || 0,
+          discount: item.discount || 0,
+          discountType: item.discountType || "percent",
+          tax: item.tax || 0,
+          total: item.total || 0,
+          // Do NOT add: productDetails, sellingPrice
+        }));
 
-        const products = productIds.length
-          ? await Product.findAll({
-              where: { productId: productIds }, // FIXED
-              attributes: [
-                "productId",
-                "name",
-                "description",
-                "discountType",
-                "meta",
-              ],
-            })
-          : [];
+        orderWithDetails.quotation.products = enrichedQuotationProducts;
 
-        const productMap = products.reduce((map, product) => {
-          map[product.productId] = product.toJSON();
-          return map;
-        }, {});
-
-        const enrichedProducts = quotationProducts.map((item) => {
-          const product = productMap[item.productId] || {};
-          const sellingPrice =
-            product.meta && product.meta["9ba862ef-f993-4873-95ef-1fef10036aa5"]
-              ? product.meta["9ba862ef-f993-4873-95ef-1fef10036aa5"]
-              : null;
-
-          return {
-            productId: item.productId,
-            quantity: item.quantity || 1,
-            discount: item.discount || 0,
-            tax: item.tax || 0,
-            total: item.total || 0,
-            sellingPrice,
-            productDetails: product,
-          };
-        });
-
-        orderWithDetails.products = enrichedProducts;
         orderWithDetails.quotationDetails = {
           quotationId: order.quotation.quotationId,
           document_title: order.quotation.document_title,
@@ -1979,45 +1987,27 @@ exports.getOrderDetails = async (req, res) => {
           status: order.quotation.status,
         };
       } catch (err) {
-        orderWithDetails.products = [];
+        console.error("Quotation enrichment failed:", err);
         orderWithDetails.quotationDetails = null;
+        orderWithDetails.quotation.products = [];
       }
-    } else if (order.products && Array.isArray(order.products)) {
-      const productIds = order.products
-        .map((item) => item.id)
-        .filter((id) => id);
+    }
 
-      const products = productIds.length
-        ? await Product.findAll({
-            where: { productId: productIds }, // FIXED
-            attributes: ["productId", "name", "discountType", "meta"],
-          })
-        : [];
-
-      const productMap = products.reduce((map, product) => {
-        map[product.productId] = product.toJSON();
-        return map;
-      }, {});
-
-      const enrichedProducts = order.products.map((item) => {
-        const product = productMap[item.id] || {};
-        const sellingPrice =
-          product.meta && product.meta["9ba862ef-f993-4873-95ef-1fef10036aa5"]
-            ? product.meta["9ba862ef-f993-4873-95ef-1fef10036aa5"]
-            : null;
-
-        return {
-          productId: item.id,
-          quantity: item.quantity || 1,
-          price: item.price || 0,
-          discount: item.discount || 0,
-          total: item.total || item.price * (item.quantity || 1),
-          sellingPrice,
-          productDetails: product,
-        };
-      });
-
-      orderWithDetails.products = enrichedProducts;
+    // ────────────────────────────────────────────────
+    // Handle regular order products – NO enrichment
+    // ────────────────────────────────────────────────
+    if (orderWithDetails.products && Array.isArray(orderWithDetails.products)) {
+      orderWithDetails.products = orderWithDetails.products.map((item) => ({
+        productId: item.id || item.productId, // support both keys if needed
+        name: item.name || "Unknown Product", // if you saved name during creation
+        quantity: item.quantity || 1,
+        price: item.price || 0,
+        discount: item.discount || 0,
+        discountType: item.discountType || "percent",
+        tax: item.tax || 0,
+        total: item.total || item.price * (item.quantity || 1),
+        // No productDetails, no sellingPrice
+      }));
     } else {
       orderWithDetails.products = [];
     }
@@ -2026,11 +2016,12 @@ exports.getOrderDetails = async (req, res) => {
 
     return res.status(200).json({ order: orderWithDetails });
   } catch (err) {
+    console.error("Get order details error:", err);
     return sendErrorResponse(
       res,
       500,
       "Failed to fetch order details",
-      err.message
+      err.message,
     );
   }
 };
@@ -2086,7 +2077,7 @@ exports.recentOrders = async (req, res) => {
       res,
       500,
       "Failed to fetch recent orders",
-      err.message
+      err.message,
     );
   }
 };
@@ -2265,7 +2256,7 @@ exports.getFilteredOrders = async (req, res) => {
         return sendErrorResponse(
           res,
           404,
-          `Master order with orderNo ${masterPipelineNo} not found`
+          `Master order with orderNo ${masterPipelineNo} not found`,
         );
       }
       filters.masterPipelineNo = masterPipelineNo;
@@ -2279,7 +2270,7 @@ exports.getFilteredOrders = async (req, res) => {
         return sendErrorResponse(
           res,
           404,
-          `Previous order with orderNo ${previousOrderNo} not found`
+          `Previous order with orderNo ${previousOrderNo} not found`,
         );
       }
       filters.previousOrderNo = previousOrderNo;
@@ -2291,7 +2282,7 @@ exports.getFilteredOrders = async (req, res) => {
         return sendErrorResponse(
           res,
           404,
-          `Address with ID ${shipTo} not found`
+          `Address with ID ${shipTo} not found`,
         );
       }
       filters.shipTo = shipTo;
@@ -2366,13 +2357,13 @@ exports.getFilteredOrders = async (req, res) => {
           order.id,
           "Order",
           1,
-          10
+          10,
         );
         return {
           ...order.toJSON(),
           comments,
         };
-      })
+      }),
     );
 
     const totalCount = await Order.count({
@@ -2391,7 +2382,7 @@ exports.getFilteredOrders = async (req, res) => {
       res,
       500,
       "Failed to fetch filtered orders",
-      err.message
+      err.message,
     );
   }
 };
@@ -2441,8 +2432,8 @@ exports.updateOrderTeam = async (req, res) => {
     // Send notification to creator, assignedUserId, and secondaryUserId
     const recipients = new Set(
       [order.createdBy, order.assignedUserId, order.secondaryUserId].filter(
-        (id) => id
-      )
+        (id) => id,
+      ),
     );
     for (const recipientId of recipients) {
       await sendNotification({
@@ -2494,7 +2485,7 @@ exports.updateOrderTeam = async (req, res) => {
       res,
       500,
       "Failed to update order team",
-      err.message
+      err.message,
     );
   }
 };
@@ -2541,7 +2532,7 @@ exports.uploadInvoiceAndLinkOrder = async (req, res) => {
 
     const [updated] = await Order.update(
       { invoiceLink: fileUrl },
-      { where: { id: req.params.orderId } }
+      { where: { id: req.params.orderId } },
     );
 
     if (!updated) {
@@ -2554,8 +2545,8 @@ exports.uploadInvoiceAndLinkOrder = async (req, res) => {
     // Send notification to creator, assignedUserId, and secondaryUserId
     const recipients = new Set(
       [order.createdBy, order.assignedUserId, order.secondaryUserId].filter(
-        (id) => id
-      )
+        (id) => id,
+      ),
     );
     for (const recipientId of recipients) {
       await sendNotification({
@@ -2636,8 +2627,8 @@ exports.issueGatePass = async (req, res) => {
     const customer = await Customer.findByPk(order.createdFor);
     const recipients = new Set(
       [order.createdBy, order.assignedUserId, order.secondaryUserId].filter(
-        Boolean
-      )
+        Boolean,
+      ),
     );
     for (const uid of recipients) {
       await sendNotification({
