@@ -449,30 +449,57 @@ const OrderForm = ({
                   <Space.Compact block>
                     <MiniSelect
                       showSearch
-                      filterOption={false}
+                      placeholder="Search customer by name..."
                       value={selectedCustomer}
-                      onSearch={debouncedSearch}
                       onChange={(v) => {
                         setSelectedCustomer(v);
                         handleOrderChange("createdFor", v);
                         handleOrderChange("shipTo", null);
                         setUseBillingAddress(false);
                       }}
+                      onSearch={debouncedSearch}
+                      filterOption={false} // keep this – we do manual filtering
                       loading={customersLoading}
                       status={hasError("customer") ? "error" : ""}
+                      optionFilterProp="label" // helps a bit with accessibility
+                      dropdownMatchSelectWidth={false}
+                      popupMatchSelectWidth={false}
+                      // Very important for stability:
+                      listHeight={256} // prevents crazy scroll jumps
+                      virtual // better performance with 500+ items
                     >
-                      {(customerSearch
-                        ? customers.filter((c) =>
+                      {customers
+                        .filter(
+                          (c) =>
+                            // Use the debounced search value
+                            !customerSearch ||
                             c.name
-                              .toLowerCase()
-                              .includes(customerSearch.toLowerCase()),
-                          )
-                        : customers
-                      ).map((c) => (
-                        <Option key={c.customerId} value={c.customerId}>
-                          {c.name} ({c.email})
-                        </Option>
-                      ))}
+                              ?.toLowerCase()
+                              .includes(customerSearch.toLowerCase()) ||
+                            c.email
+                              ?.toLowerCase()
+                              .includes(customerSearch.toLowerCase()) ||
+                            c.customerId?.includes(customerSearch),
+                        )
+                        .map((c) => (
+                          <Option
+                            key={c.customerId} // stable key
+                            value={c.customerId}
+                            label={`${c.name} (${c.email || "no email"})`} // used by filter & search highlighting
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                              }}
+                            >
+                              <span>{c.name}</span>
+                              <Text type="secondary" style={{ fontSize: 12 }}>
+                                {c.email || "—"}
+                              </Text>
+                            </div>
+                          </Option>
+                        ))}
                     </MiniSelect>
                     {hasError("customer") && (
                       <Text
@@ -855,7 +882,7 @@ const OrderForm = ({
                   </MiniSelect>
                 </Col>
               </TightRow>
-{/* 
+              {/* 
               <TightRow gutter={8}>
                 <Col span={8}>
                   <Text strong>GST %</Text>

@@ -13,7 +13,6 @@ module.exports = {
       instances: 1, // start with 1; increase to 2–4 later
       exec_mode: "fork",
       env: { NODE_ENV: "production" },
-      // Optional: autorestart, memory limits, etc.
       autorestart: true,
       max_memory_restart: "800M",
     },

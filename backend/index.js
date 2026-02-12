@@ -12,7 +12,8 @@ const setupDB = require("./utils/db");
 const keys = require("./config/keys");
 const { initSocket } = require("./controller/notificationController");
 const CachedPermission = require("./models/cachedPermission");
-const apiLimiter = require("./middleware/rateLimit");
+const { apiLimiter, burstLimiter } = require("./middleware/rateLimit");
+
 // ------------------- Route Imports -------------------
 const routes = {
   auth: require("./routes/auth"),
@@ -50,6 +51,8 @@ const routes = {
 
 // ------------------- Express App -------------------
 const app = express();
+app.set("trust proxy", 1);
+
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
@@ -111,10 +114,12 @@ app.use((req, res, next) => {
 });
 
 // ------------------- Optional: Console Debug Logger -------------------
-app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-  next();
-});
+if (process.env.NODE_ENV !== "production") {
+  app.use((req, res, next) => {
+    console.log(`${req.method} ${req.url}`);
+    next();
+  });
+}
 
 // ------------------- Make io available in all routes -------------------
 app.use((req, res, next) => {
@@ -124,6 +129,10 @@ app.use((req, res, next) => {
 
 // ------------------- Route Mounting -------------------
 app.use("/api", apiLimiter);
+app.use("/api/carts", burstLimiter);
+app.use("/api/order", burstLimiter);
+app.use("/api/quotation", burstLimiter);
+
 app.use("/api/auth", routes.auth);
 app.use("/api/user", routes.user);
 app.use("/api/order", routes.order);
