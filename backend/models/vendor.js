@@ -13,7 +13,7 @@ module.exports = (sequelize, DataTypes) => {
       vendorId: {
         type: DataTypes.STRING,
         unique: true,
-        allowNull: false,
+        allowNull: true, // ✅ changed
       },
 
       vendorName: {
@@ -49,7 +49,7 @@ module.exports = (sequelize, DataTypes) => {
       charset: "utf8mb4",
       collate: "utf8mb4_unicode_ci",
       engine: "InnoDB",
-    }
+    },
   );
 
   // -------------------------------
