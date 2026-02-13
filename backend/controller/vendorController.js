@@ -1,13 +1,19 @@
 const { Vendor } = require("../models");
+
 const createVendor = async (req, res) => {
   try {
     const { vendorId, vendorName, brandSlug, brandId } = req.body;
+
+    // Convert empty string to null
+    const safeVendorId = vendorId?.trim() || null;
+
     const vendor = await Vendor.create({
-      vendorId,
+      vendorId: safeVendorId,
       vendorName,
       brandSlug,
       brandId,
     });
+
     res.status(201).json(vendor);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -40,11 +46,19 @@ const updateVendor = async (req, res) => {
   try {
     const { id } = req.params;
     const { vendorId, vendorName, brandSlug, brandId } = req.body;
+
     const vendor = await Vendor.findByPk(id);
     if (!vendor) {
       return res.status(404).json({ message: "Vendor not found." });
     }
-    await vendor.update({ vendorId, vendorName, brandSlug, brandId });
+
+    await vendor.update({
+      vendorId: vendorId?.trim() || null,
+      vendorName,
+      brandSlug,
+      brandId,
+    });
+
     res.json({ message: "Vendor updated successfully.", vendor });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -64,15 +78,23 @@ const deleteVendor = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
 const checkVendorId = async (req, res) => {
   try {
     const { vendorId } = req.params;
+
+    // Treat empty strings as null
+    if (!vendorId || vendorId.trim() === "") {
+      return res.status(200).json({ isUnique: true });
+    }
+
     const vendor = await Vendor.findOne({ where: { vendorId } });
     res.status(200).json({ isUnique: !vendor });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+
 module.exports = {
   createVendor,
   getVendors,

@@ -1,28 +1,31 @@
 import React, { useState, useEffect } from "react";
-import { Modal, Form, Input, Select, Button, Alert, Spin } from "antd";
+import { Modal, Form, Input, Select, Button, Alert, message } from "antd";
 import {
   useCheckVendorIdQuery,
-  useGetVendorByIdQuery,
   useCreateVendorMutation,
-} from "../../api/vendorApi"; // Assume vendorApi
+} from "../../api/vendorApi"; // Your vendor API hooks
 import { useSendNotificationMutation } from "../../api/notificationApi";
-import { message } from "antd";
 import { useGetAllBrandsQuery } from "../../api/brandsApi";
 import { useAuth } from "../../context/AuthContext";
+
 const { Option } = Select;
 
-const AddVendorModal = ({ show, onClose, isCreatingVendor }) => {
+const AddVendorModal = ({ show, onClose }) => {
   const { auth } = useAuth();
+
+  // Fetch brands
   const {
     data: brandsData,
     isLoading: isBrandsLoading,
     error: brandsError,
-  } = useGetAllBrandsQuery(undefined, {
-    refetchOnMountOrArgChange: true,
-  });
-  const [sendNotification] = useSendNotificationMutation();
-  const [createVendor, { isLoading: isCreating }] = useCreateVendorMutation();
+  } = useGetAllBrandsQuery(undefined, { refetchOnMountOrArgChange: true });
   const brands = brandsData || [];
+
+  // Vendor API
+  const [createVendor, { isLoading: isCreating }] = useCreateVendorMutation();
+  const [sendNotification] = useSendNotificationMutation();
+
+  // Form and state
   const [form] = Form.useForm();
   const [vendorData, setVendorData] = useState({
     vendorId: "",
@@ -32,32 +35,34 @@ const AddVendorModal = ({ show, onClose, isCreatingVendor }) => {
   });
   const [vendorIdError, setVendorIdError] = useState(null);
 
-  // Check vendorId uniqueness
+  // Check vendorId uniqueness only if provided
   const { data: isVendorIdUnique, error: vendorIdCheckError } =
     useCheckVendorIdQuery(vendorData.vendorId, {
-      skip: !vendorData.vendorId || vendorData.vendorId.length < 3, // Debounce-like effect
+      skip: !vendorData.vendorId || vendorData.vendorId.trim().length < 3,
     });
 
   useEffect(() => {
-    if (vendorIdCheckError) {
+    if (!vendorData.vendorId || vendorData.vendorId.trim() === "") {
+      setVendorIdError(null); // No error if empty
+    } else if (vendorIdCheckError) {
       setVendorIdError("Error checking Vendor ID availability");
     } else if (isVendorIdUnique === false) {
       setVendorIdError("Vendor ID already exists");
     } else {
       setVendorIdError(null);
     }
-  }, [isVendorIdUnique, vendorIdCheckError]);
+  }, [vendorIdCheckError, isVendorIdUnique, vendorData.vendorId]);
 
+  // Handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setVendorData((prev) => ({ ...prev, [name]: value }));
-    if (name === "vendorId") {
-      setVendorIdError(null); // Reset error on change
-    }
+    if (name === "vendorId") setVendorIdError(null);
   };
 
+  // Handle brand selection
   const handleBrandChange = (value) => {
-    const selectedBrand = brands.find((brand) => brand.id === value);
+    const selectedBrand = brands.find((b) => b.id === value);
     setVendorData((prev) => ({
       ...prev,
       brandId: value,
@@ -66,15 +71,18 @@ const AddVendorModal = ({ show, onClose, isCreatingVendor }) => {
     form.setFieldsValue({ brandId: value });
   };
 
+  // Submit form
   const handleSubmit = async () => {
     try {
       await form.validateFields();
+
       if (vendorIdError || isVendorIdUnique === false) {
         message.error("Please fix the Vendor ID error before submitting.");
         return;
       }
+
       const vendor = await createVendor({
-        vendorId: vendorData.vendorId,
+        vendorId: vendorData.vendorId?.trim() || null,
         vendorName: vendorData.vendorName,
         brandId: vendorData.brandId || null,
         brandSlug: vendorData.brandSlug || null,
@@ -82,11 +90,14 @@ const AddVendorModal = ({ show, onClose, isCreatingVendor }) => {
 
       // Send notification
       await sendNotification({
-        userId: auth?.user?.userId, // Adjust based on AuthContext
+        userId: auth?.user?.userId,
         title: "New Vendor Created",
-        message: `Vendor ${vendorData.vendorName} (${vendorData.vendorId}) has been created.`,
+        message: `Vendor ${vendorData.vendorName}${
+          vendorData.vendorId ? ` (${vendorData.vendorId})` : ""
+        } has been created.`,
       }).unwrap();
 
+      // Reset form
       setVendorData({
         vendorId: "",
         vendorName: "",
@@ -95,6 +106,7 @@ const AddVendorModal = ({ show, onClose, isCreatingVendor }) => {
       });
       form.resetFields();
       onClose();
+      message.success("Vendor created successfully!");
     } catch (err) {
       const errorMessage =
         err.status === 400 && err.data?.message.includes("vendorId")
@@ -122,11 +134,11 @@ const AddVendorModal = ({ show, onClose, isCreatingVendor }) => {
             className="mb-3"
           />
         )}
+
         <Form.Item
-          label="Vendor ID"
+          label="Vendor ID (Optional)"
           name="vendorId"
           rules={[
-            { required: true, message: "Please enter a Vendor ID" },
             { min: 3, message: "Vendor ID must be at least 3 characters" },
           ]}
           validateStatus={vendorIdError ? "error" : ""}
@@ -136,14 +148,15 @@ const AddVendorModal = ({ show, onClose, isCreatingVendor }) => {
             name="vendorId"
             value={vendorData.vendorId}
             onChange={handleChange}
-            placeholder="e.g., VEND123"
+            placeholder="e.g., VEND123 (optional)"
           />
         </Form.Item>
         <div
           style={{ color: "#8c8c8c", fontSize: "12px", marginBottom: "16px" }}
         >
-          Must be unique (e.g., VEND123).
+          Must be unique if provided (e.g., VEND123).
         </div>
+
         <Form.Item
           label="Vendor Name"
           name="vendorName"
@@ -156,6 +169,7 @@ const AddVendorModal = ({ show, onClose, isCreatingVendor }) => {
             placeholder="e.g., Acme Supplies"
           />
         </Form.Item>
+
         <Form.Item label="Brand" name="brandId">
           <Select
             style={{ width: "100%" }}
@@ -173,6 +187,7 @@ const AddVendorModal = ({ show, onClose, isCreatingVendor }) => {
             }))}
           />
         </Form.Item>
+
         <div style={{ display: "flex", justifyContent: "flex-end" }}>
           <Button
             onClick={onClose}
