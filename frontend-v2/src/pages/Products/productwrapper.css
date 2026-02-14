@@ -1,0 +1,126 @@
+/* Reset default margins and ensure content fits within viewport */
+.product-main-wrapper {
+  width: 100%;
+  max-height: 50vh; /* Limit height for responsiveness */
+  object-fit: cover; /* Ensure the image scales properly */
+  border-radius: 12px;
+}
+
+.categories-wrapper {
+  text-transform: uppercase;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Responsive grid */
+  gap: 1.5rem; /* Space between cards */
+  width: 100%;
+  padding: 1rem 0;
+}
+
+.categories-card,
+.brands-selection-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  background: #f9f9f9;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Slightly stronger shadow */
+  border-radius: 12px;
+  padding: 1rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease; /* Smooth hover effect */
+  min-height: calc(100px + 5vw); /* Scale height relative to viewport width */
+  width: 100%; /* Ensure cards take full available width */
+}
+
+.categories-card:hover,
+.brands-selection-card:hover {
+  transform: translateY(-5px); /* Lift effect on hover */
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Brand logo container to control image aspect ratio */
+.brand-logo-container {
+  width: 100%;
+  height: calc(120px + 3vw); /* Scale height relative to viewport width */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden; /* Hide overflow to contain the image */
+}
+
+.categories-img,
+.brands-selection-img {
+  max-width: 100%; /* Limit width to container */
+  max-height: 100%; /* Limit height to container */
+  object-fit: contain; /* Contain the image within bounds without stretching */
+  border-radius: 8px;
+}
+
+.categories-text {
+  font-weight: 800;
+  font-size: 1rem; /* Relative unit */
+  line-height: 1.2;
+  color: #202020;
+  text-align: center;
+  margin-top: 0.75rem;
+  word-break: break-word; /* Prevent text overflow */
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .product-main-wrapper {
+    max-height: 40vh; /* Smaller hero image on mobile */
+  }
+
+  .categories-wrapper {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); /* Smaller minimum width */
+    gap: 1rem;
+  }
+
+  .categories-card,
+  .brands-selection-card {
+    padding: 0.75rem;
+    min-height: calc(160px + 4vw); /* Reduced height, still relative to viewport width */
+  }
+
+  .brand-logo-container {
+    height: calc(100px + 3vw); /* Reduced height for tablets */
+  }
+
+  .categories-img,
+  .brands-selection-img {
+    max-height: calc(100px + 3vw); /* Reduced max height */
+  }
+
+  .categories-text {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .product-main-wrapper {
+    max-height: 30vh;
+  }
+
+  .categories-wrapper {
+    grid-template-columns: 1fr; /* Single column on very small screens */
+    gap: 0.75rem;
+  }
+
+  .categories-card,
+  .brands-selection-card {
+    padding: 0.5rem;
+    min-height: calc(140px + 4vw); /* Further reduced height, still relative to viewport width */
+  }
+
+  .brand-logo-container {
+    height: calc(80px + 3vw); /* Further reduced height for mobile */
+  }
+
+  .categories-img,
+  .brands-selection-img {
+    max-height: calc(80px + 3vw); /* Further reduced max height */
+  }
+
+  .categories-text {
+    font-size: 0.85rem;
+  }
+}

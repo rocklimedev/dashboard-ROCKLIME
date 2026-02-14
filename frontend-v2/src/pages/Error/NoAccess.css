@@ -1,0 +1,138 @@
+/* NoAccess.css */
+
+/* No-access icon */
+.no-access-icon {
+  width: 100%;
+  max-width: 180px; /* Slightly smaller for balance */
+  height: 180px;
+  margin: 0 auto 20px; /* Add bottom margin for spacing */
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Circular background with red border (prohibition symbol) */
+.no-access-icon::before {
+  content: "";
+  width: 120px; /* Larger circle for prominence */
+  height: 120px;
+  background: #ffffff; /* White background for contrast */
+  border: 10px solid #E31E24; /* Bootstrap's danger red */
+  border-radius: 50%;
+  position: absolute;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+}
+
+/* Diagonal bar (to mimic a "no entry" or "denied" symbol) */
+.no-access-icon::after {
+  content: "";
+  width: 140px; /* Slightly wider than the circle */
+  height: 12px; /* Thin bar */
+  background: #E31E24; /* Red to match border */
+  position: absolute;
+  transform: rotate(45deg); /* Diagonal orientation */
+  border-radius: 6px; /* Rounded edges */
+}
+
+/* Heading styles */
+h2.mt-4 {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #343a40; /* Dark gray for contrast */
+  margin-bottom: 1rem;
+}
+
+/* Text styles */
+.text-muted {
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #6c757d; /* Bootstrap's muted gray */
+  margin-bottom: 1rem;
+}
+
+.text-muted a {
+  color: #E31E24; /* Red for links to match theme */
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.text-muted a:hover {
+  color: #a71d2a; /* Darker red on hover */
+  text-decoration: underline;
+}
+
+/* Button group */
+.d-flex.gap-3 {
+  gap: 1rem; /* Ensure consistent spacing */
+}
+
+/* Outline danger button (Logout) */
+.btn-outline-danger {
+  color: #E31E24;
+  border-color: #E31E24;
+  font-size: 1rem;
+  padding: 0.5rem 1.5rem;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
+}
+
+.btn-outline-danger:hover {
+  background-color: #E31E24;
+  color: #ffffff;
+  border-color: #E31E24;
+  transform: translateY(-1px);
+}
+
+.btn-outline-danger:disabled {
+  color: #6c757d;
+  border-color: #6c757d;
+  cursor: not-allowed;
+}
+
+/* Spinner in Retry button */
+.spinner-border-sm {
+  width: 1rem;
+  height: 1rem;
+  vertical-align: middle;
+  margin-right: 0.5rem;
+}
+
+/* Alert for errors */
+.alert-danger {
+  font-size: 0.9rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.25rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+  .no-access-icon {
+    max-width: 140px;
+    height: 140px;
+  }
+
+  .no-access-icon::before {
+    width: 90px;
+    height: 90px;
+    border-width: 8px;
+  }
+
+  .no-access-icon::after {
+    width: 100px;
+    height: 10px;
+  }
+
+  h2.mt-4 {
+    font-size: 1.5rem;
+  }
+
+  .text-muted {
+    font-size: 0.9rem;
+  }
+
+  .btn-outline-danger {
+    font-size: 0.9rem;
+    padding: 0.4rem 1rem;
+  }
+}

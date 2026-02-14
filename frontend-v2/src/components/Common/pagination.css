@@ -1,0 +1,117 @@
+/* Container for the entire pagination section */
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+  margin-top: 16px;
+  font-family: "Lato";
+  font-size: 14px;
+  color: #444;
+}
+
+/* Info text */
+.pagination-info {
+  flex: 1;
+  font-size: 14px;
+  color: #666;
+}
+
+/* Pagination Buttons Container */
+.pagination-buttons {
+  display: flex;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  gap: 6px;
+}
+
+/* Individual Page Item */
+.page-item {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Page Link */
+.page-link {
+  width: 34px;
+  height: 34px;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  background: #fff;
+  color: #333;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Hover Effect */
+.page-link:hover {
+  border-color: #e31e24;
+  background-color: #fbeaea;
+  color: #e31e24;
+}
+
+/* Active Page */
+.page-item.active .page-link {
+  background-color: #e31e24;
+  color: #fff;
+  border-color: #e31e24;
+  font-weight: 600;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Disabled State */
+.page-item.disabled .page-link {
+  background-color: #f0f0f0;
+  color: #bbb;
+  border-color: #ddd;
+  cursor: not-allowed;
+}
+
+/* Arrow Buttons */
+.previous-link,
+.next-link {
+  font-size: 16px;
+  padding: 0 8px;
+}
+
+/* Break Label */
+.break-link {
+  border: none;
+  background: transparent;
+  color: #888;
+  font-weight: 500;
+  cursor: default;
+  padding: 0 6px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 576px) {
+  .pagination {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .pagination-info {
+    text-align: center;
+    width: 100%;
+  }
+
+  .pagination-buttons {
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .page-link {
+    width: 30px;
+    height: 30px;
+    font-size: 13px;
+  }
+}
