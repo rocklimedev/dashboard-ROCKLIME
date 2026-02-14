@@ -5,11 +5,12 @@ on:
     branches:
       - main
     paths:
-      - "frontend/**"
+      - "frontend-v2/**"
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -20,11 +21,11 @@ jobs:
           node-version: "20"
 
       - name: Install dependencies
-        working-directory: ./frontend
+        working-directory: ./frontend-v2
         run: npm install
 
       - name: Build project
-        working-directory: ./frontend
+        working-directory: ./frontend-v2
         env:
           CI: false
         run: npm run build
@@ -36,4 +37,4 @@ jobs:
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           vercel-args: "--prod"
-          working-directory: ./frontend
+          working-directory: ./frontend-v2
