@@ -40,7 +40,7 @@ import { useGetAllProductCodesQuery } from "../../api/productApi";
 import AddParentCategoryModal from "./AddParentCategoryModal";
 import AddCategoryModal from "./AddCategoryModal";
 import AddKeywordModal from "./AddKeywordModal";
-
+import "./category.css";
 const { Search } = Input;
 
 const CategoryManagement = () => {
@@ -371,399 +371,249 @@ const CategoryManagement = () => {
   };
 
   return (
-    <>
-      {/* Embedded CSS remains the same */}
-      <style jsx>{`
-        :global(.ant-typography) {
-          color: #1a1a1a;
-        }
-
-        .main-layout {
-          display: flex;
-          height: 100%;
-          background: #fff;
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-          border-radius: 12px;
-          overflow: hidden;
-        }
-
-        .left-panel {
-          width: 380px;
-          min-width: 320px;
-          background: #fafbfc;
-          border-right: 1px solid #e8ecef;
-          display: flex;
-          flex-direction: column;
-          box-shadow: 2px 0 10px rgba(0, 0, 0, 0.04);
-        }
-
-        .left-header {
-          padding: 20px;
-          background: #ffffff;
-          border-bottom: 1px solid #e8ecef;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-        }
-
-        .left-header :global(.ant-input-search) {
-          border-radius: 10px;
-          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-        }
-
-        .action-buttons {
-          margin-top: 16px;
-          display: grid;
-          grid-template-columns: 1fr 1fr 1fr;
-          gap: 10px;
-        }
-
-        .action-buttons :global(.ant-btn) {
-          border-radius: 8px;
-          font-weight: 500;
-          height: 38px;
-          font-size: 13px;
-          transition: all 0.2s ease;
-        }
-
-        .tree-container {
-          flex: 1;
-          overflow-y: auto;
-          padding: 12px 8px;
-          background: #fafbfc;
-        }
-
-        .tree-node {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          width: 100%;
-          padding: 4px 8px;
-          border-radius: 8px;
-          transition: all 0.2s ease;
-          margin: 2px 4px;
-        }
-
-        .tree-node:hover {
-          background: #f0f5ff;
-        }
-
-        .tree-title {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          width: 100%;
-          font-size: 14px;
-          font-weight: 500;
-        }
-
-        .tree-actions {
-          opacity: 0;
-          transition: opacity 0.25s ease;
-          display: flex;
-          gap: 6px;
-        }
-
-        .tree-node:hover .tree-actions {
-          opacity: 1;
-        }
-
-        .right-panel {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          background: #ffffff;
-          padding: 24px;
-          gap: 20px;
-        }
-
-        .product-checker-card {
-          color: white;
-          border: none;
-          border-radius: 14px;
-          padding: 20px;
-          box-shadow: 0 8px 25px rgba(102, 126, 234, 0.25);
-        }
-
-        .details-card {
-          flex: 1;
-          border-radius: 14px;
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-          border: 1px solid #f0f0f0;
-        }
-
-        .product-table :global(.ant-table) {
-          border-radius: 10px;
-          overflow: hidden;
-          box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
-        }
-
-        .product-image {
-          width: 48px;
-          height: 48px;
-          object-fit: cover;
-          border-radius: 8px;
-          border: 1px solid #e8e8e8;
-          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .no-image {
-          width: 48px;
-          height: 48px;
-          background: #f9f9f9;
-          border: 1px dashed #d9d9d9;
-          border-radius: 8px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 11px;
-          color: #aaa;
-        }
-      `}</style>
-
-      <div className="page-wrapper">
-        <div className="content">
-          <div className="main-layout">
-            {/* Left: Tree */}
-            <div className="left-panel">
-              <div className="left-header">
-                <Search
-                  placeholder="Search hierarchy..."
-                  allowClear
-                  onChange={(e) => debouncedSearch(e.target.value)}
-                  style={{ width: "100%" }}
-                />
-                <Space className="action-buttons" wrap>
-                  <Button
-                    type="primary"
-                    icon={<PlusOutlined />}
-                    style={{ background: "#E31E24", color: "#fff" }}
-                    onClick={() => {
-                      setEditingItem(null);
-                      setShowParentModal(true);
-                    }}
-                  >
-                    Parent
-                  </Button>
-                  <Button
-                    icon={<PlusOutlined />}
-                    style={{ background: "#E31E24", color: "#fff" }}
-                    disabled={!selectedNode || selectedNode.type !== "parent"}
-                    onClick={() => {
-                      setEditingItem(null);
-                      setShowCategoryModal(true);
-                    }}
-                  >
-                    Category
-                  </Button>
-                  <Button
-                    icon={<PlusOutlined />}
-                    style={{ background: "#E31E24", color: "#fff" }}
-                    disabled={!selectedNode || selectedNode.type !== "category"}
-                    onClick={() => {
-                      setEditingItem(null);
-                      setShowKeywordModal(true);
-                    }}
-                  >
-                    Keyword
-                  </Button>
-                </Space>
-              </div>
-
-              <div className="tree-container">
-                {treeData.length > 0 ? (
-                  <Tree
-                    showIcon
-                    defaultExpandAll
-                    expandedKeys={expandedKeys}
-                    onExpand={setExpandedKeys}
-                    onSelect={handleNodeSelect}
-                    selectedKeys={
-                      selectedNode
-                        ? [`${selectedNode.type}-${selectedNode.id}`]
-                        : []
-                    }
-                    treeData={treeData}
-                    height={window.innerHeight - 200}
-                  />
-                ) : (
-                  <Empty
-                    image={Empty.PRESENTED_IMAGE_SIMPLE}
-                    style={{ margin: 32 }}
-                  />
-                )}
-              </div>
+    <div className="page-wrapper">
+      <div className="content">
+        <div className="main-layout">
+          {/* Left: Tree */}
+          <div className="left-panel">
+            <div className="left-header">
+              <Search
+                placeholder="Search hierarchy..."
+                allowClear
+                onChange={(e) => debouncedSearch(e.target.value)}
+                style={{ width: "100%" }}
+              />
+              <Space className="action-buttons" wrap>
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  style={{ background: "#E31E24", color: "#fff" }}
+                  onClick={() => {
+                    setEditingItem(null);
+                    setShowParentModal(true);
+                  }}
+                >
+                  Parent
+                </Button>
+                <Button
+                  icon={<PlusOutlined />}
+                  style={{ background: "#E31E24", color: "#fff" }}
+                  disabled={!selectedNode || selectedNode.type !== "parent"}
+                  onClick={() => {
+                    setEditingItem(null);
+                    setShowCategoryModal(true);
+                  }}
+                >
+                  Category
+                </Button>
+                <Button
+                  icon={<PlusOutlined />}
+                  style={{ background: "#E31E24", color: "#fff" }}
+                  disabled={!selectedNode || selectedNode.type !== "category"}
+                  onClick={() => {
+                    setEditingItem(null);
+                    setShowKeywordModal(true);
+                  }}
+                >
+                  Keyword
+                </Button>
+              </Space>
             </div>
 
-            {/* Right: Details */}
-            <div className="right-panel">
-              <Card className="product-checker-card">
-                <Space direction="vertical" style={{ width: "100%" }}>
-                  <Search
-                    placeholder="Check Product Code"
-                    enterButton={
-                      <Button
-                        type="primary"
-                        style={{
-                          background: "#E31E24", // your brand red from other buttons
-                          borderColor: "#E31E24",
-                        }}
-                      >
-                        Check
-                      </Button>
-                    }
-                    value={productSearch}
-                    onChange={(e) => setProductSearch(e.target.value)}
-                    onSearch={handleProductSearch}
-                    style={{ width: 300, maxWidth: "100%" }}
-                  />
-
-                  {filteredProduct && (
-                    <div className="result-box result-success">
-                      <CheckCircleOutlined />
-                      <strong>{filteredProduct.name}</strong> |{" "}
-                      {filteredProduct.product_code}
-                      <Link to={`/product/${filteredProduct.productId}/edit`}>
-                        <Button size="small" type="link">
-                          Edit
-                        </Button>
-                      </Link>
-                    </div>
-                  )}
-
-                  {productNotFound && (
-                    <div className="result-box result-warning">
-                      <ExclamationCircleOutlined />
-                      <span>Code available</span>
-                    </div>
-                  )}
-                </Space>
-              </Card>
-
-              <Card
-                className="details-card"
-                title={
-                  <Space>
-                    {selectedNode?.type === "parent" && <FolderOutlined />}
-                    {selectedNode?.type === "category" && <FolderOutlined />}
-                    {selectedNode?.type === "keyword" && <TagOutlined />}
-                    {selectedNode
-                      ? selectedNode.type === "parent"
-                        ? parentMap[selectedNode.id]
-                        : selectedNode.type === "category"
-                          ? categoryMap[selectedNode.id]
-                          : selectedNode.data.keyword
-                      : "Category Details"}
-                    {selectedNode?.type === "category" &&
-                      products.length > 0 && (
-                        <Tag color="blue" style={{ marginLeft: 8 }}>
-                          {products.length} products
-                        </Tag>
-                      )}
-                  </Space>
-                }
-              >
-                {selectedNode ? (
-                  <>
-                    {selectedNode.type === "category" ? (
-                      products.length > 0 ? (
-                        <Table
-                          className="product-table"
-                          columns={productColumns}
-                          dataSource={products}
-                          pagination={{ pageSize: 10, showSizeChanger: true }}
-                          rowKey="productId"
-                          locale={{ emptyText: "No products in this category" }}
-                        />
-                      ) : (
-                        <Empty
-                          image={Empty.PRESENTED_IMAGE_SIMPLE}
-                          description="No products assigned to this category yet"
-                          style={{ margin: "60px 0" }}
-                        >
-                          <Button
-                            type="primary"
-                            icon={<PlusOutlined />}
-                            onClick={() =>
-                              navigate("/product/add", {
-                                state: { prefillCategoryId: selectedNode.id },
-                              })
-                            }
-                          >
-                            Add Product to this Category
-                          </Button>
-                        </Empty>
-                      )
-                    ) : selectedNode.type === "parent" ? (
-                      <div
-                        style={{
-                          textAlign: "center",
-                          padding: "60px 0",
-                          color: "#8c8c8c",
-                        }}
-                      >
-                        <FolderOutlined
-                          style={{ fontSize: 48, marginBottom: 16 }}
-                        />
-                        <p>
-                          Select a category under this parent to view products
-                        </p>
-                      </div>
-                    ) : (
-                      <div style={{ padding: "20px" }}>
-                        <Tag
-                          color="purple"
-                          style={{ fontSize: 14, padding: "6px 12px" }}
-                        >
-                          {selectedNode.data.keyword}
-                        </Tag>
-                        <p style={{ marginTop: 16, color: "#595959" }}>
-                          This keyword is associated with category:{" "}
-                          <strong>
-                            {categoryMap[selectedNode.data.categoryId]}
-                          </strong>
-                        </p>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="empty-state">
-                    <Empty description="Select a category from the tree to view its products" />
-                  </div>
-                )}
-              </Card>
+            <div className="tree-container">
+              {treeData.length > 0 ? (
+                <Tree
+                  showIcon
+                  defaultExpandAll
+                  expandedKeys={expandedKeys}
+                  onExpand={setExpandedKeys}
+                  onSelect={handleNodeSelect}
+                  selectedKeys={
+                    selectedNode
+                      ? [`${selectedNode.type}-${selectedNode.id}`]
+                      : []
+                  }
+                  treeData={treeData}
+                  height={window.innerHeight - 200}
+                />
+              ) : (
+                <Empty
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  style={{ margin: 32 }}
+                />
+              )}
             </div>
           </div>
 
-          {/* Modals */}
-          <AddParentCategoryModal
-            open={showParentModal}
-            onClose={closeParentModal}
-            editMode={!!editingItem && editingItem.type === "parent"}
-            parentCategoryData={
-              editingItem?.type === "parent" ? editingItem : null
-            }
-          />
+          {/* Right: Details */}
+          <div className="right-panel">
+            <Card className="product-checker-card">
+              <Space direction="vertical" style={{ width: "100%" }}>
+                <Search
+                  placeholder="Check Product Code"
+                  enterButton={
+                    <Button
+                      type="primary"
+                      style={{
+                        background: "#E31E24", // your brand red from other buttons
+                        borderColor: "#E31E24",
+                      }}
+                    >
+                      Check
+                    </Button>
+                  }
+                  value={productSearch}
+                  onChange={(e) => setProductSearch(e.target.value)}
+                  onSearch={handleProductSearch}
+                  style={{ width: 300, maxWidth: "100%" }}
+                />
 
-          <AddCategoryModal
-            open={showCategoryModal}
-            onClose={closeCategoryModal}
-            editMode={!!editingItem && editingItem.type === "category"}
-            categoryData={editingItem?.type === "category" ? editingItem : null}
-            selectedParentId={
-              selectedNode?.type === "parent" ? selectedNode.id : null
-            }
-          />
+                {filteredProduct && (
+                  <div className="result-box result-success">
+                    <CheckCircleOutlined />
+                    <strong>{filteredProduct.name}</strong> |{" "}
+                    {filteredProduct.product_code}
+                    <Link to={`/product/${filteredProduct.productId}/edit`}>
+                      <Button size="small" type="link">
+                        Edit
+                      </Button>
+                    </Link>
+                  </div>
+                )}
 
-          <AddKeywordModal
-            open={showKeywordModal}
-            onClose={closeKeywordModal}
-            editData={editingItem?.type === "keyword" ? editingItem : null}
-            selectedCategoryId={
-              selectedNode?.type === "category" ? selectedNode.id : null
-            }
-          />
+                {productNotFound && (
+                  <div className="result-box result-warning">
+                    <ExclamationCircleOutlined />
+                    <span>Code available</span>
+                  </div>
+                )}
+              </Space>
+            </Card>
+
+            <Card
+              className="details-card"
+              title={
+                <Space>
+                  {selectedNode?.type === "parent" && <FolderOutlined />}
+                  {selectedNode?.type === "category" && <FolderOutlined />}
+                  {selectedNode?.type === "keyword" && <TagOutlined />}
+                  {selectedNode
+                    ? selectedNode.type === "parent"
+                      ? parentMap[selectedNode.id]
+                      : selectedNode.type === "category"
+                        ? categoryMap[selectedNode.id]
+                        : selectedNode.data.keyword
+                    : "Category Details"}
+                  {selectedNode?.type === "category" && products.length > 0 && (
+                    <Tag color="blue" style={{ marginLeft: 8 }}>
+                      {products.length} products
+                    </Tag>
+                  )}
+                </Space>
+              }
+            >
+              {selectedNode ? (
+                <>
+                  {selectedNode.type === "category" ? (
+                    products.length > 0 ? (
+                      <Table
+                        className="product-table"
+                        columns={productColumns}
+                        dataSource={products}
+                        pagination={{ pageSize: 10, showSizeChanger: true }}
+                        rowKey="productId"
+                        locale={{ emptyText: "No products in this category" }}
+                      />
+                    ) : (
+                      <Empty
+                        image={Empty.PRESENTED_IMAGE_SIMPLE}
+                        description="No products assigned to this category yet"
+                        style={{ margin: "60px 0" }}
+                      >
+                        <Button
+                          type="primary"
+                          icon={<PlusOutlined />}
+                          onClick={() =>
+                            navigate("/product/add", {
+                              state: { prefillCategoryId: selectedNode.id },
+                            })
+                          }
+                        >
+                          Add Product to this Category
+                        </Button>
+                      </Empty>
+                    )
+                  ) : selectedNode.type === "parent" ? (
+                    <div
+                      style={{
+                        textAlign: "center",
+                        padding: "60px 0",
+                        color: "#8c8c8c",
+                      }}
+                    >
+                      <FolderOutlined
+                        style={{ fontSize: 48, marginBottom: 16 }}
+                      />
+                      <p>
+                        Select a category under this parent to view products
+                      </p>
+                    </div>
+                  ) : (
+                    <div style={{ padding: "20px" }}>
+                      <Tag
+                        color="purple"
+                        style={{ fontSize: 14, padding: "6px 12px" }}
+                      >
+                        {selectedNode.data.keyword}
+                      </Tag>
+                      <p style={{ marginTop: 16, color: "#595959" }}>
+                        This keyword is associated with category:{" "}
+                        <strong>
+                          {categoryMap[selectedNode.data.categoryId]}
+                        </strong>
+                      </p>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="empty-state">
+                  <Empty description="Select a category from the tree to view its products" />
+                </div>
+              )}
+            </Card>
+          </div>
         </div>
+
+        {/* Modals */}
+        <AddParentCategoryModal
+          open={showParentModal}
+          onClose={closeParentModal}
+          editMode={!!editingItem && editingItem.type === "parent"}
+          parentCategoryData={
+            editingItem?.type === "parent" ? editingItem : null
+          }
+        />
+
+        <AddCategoryModal
+          open={showCategoryModal}
+          onClose={closeCategoryModal}
+          editMode={!!editingItem && editingItem.type === "category"}
+          categoryData={editingItem?.type === "category" ? editingItem : null}
+          selectedParentId={
+            selectedNode?.type === "parent" ? selectedNode.id : null
+          }
+        />
+
+        <AddKeywordModal
+          open={showKeywordModal}
+          onClose={closeKeywordModal}
+          editData={editingItem?.type === "keyword" ? editingItem : null}
+          selectedCategoryId={
+            selectedNode?.type === "category" ? selectedNode.id : null
+          }
+        />
       </div>
-    </>
+    </div>
   );
 };
 

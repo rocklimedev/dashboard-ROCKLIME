@@ -1,0 +1,288 @@
+/* Filter bar */
+.filter-bar {
+  z-index: 1000;
+  margin-bottom: 24px;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  padding: 16px;
+}
+
+.filter-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.filter-form .filter-item {
+  flex: 1;
+  min-width: 180px;
+}
+
+.filter-form .ant-input,
+.filter-form .ant-select-selector {
+  border-radius: 6px;
+  height: 40px;
+  font-size: 14px;
+}
+
+.filter-form .ant-btn {
+  border-radius: 6px;
+  height: 40px;
+  font-weight: 500;
+}
+
+/* ---------- GRID: Responsive columns based on device width ---------- */
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Responsive columns */
+  gap: 16px;
+}
+
+/* Remove bootstrap column spacing influence if present */
+.products-grid > [class*="col-"] {
+  all: unset;
+}
+
+/* ---------- CARD: square + grid interior ---------- */
+.product-info.card {
+  aspect-ratio: 1 / 1; /* Maintain square shape */
+  width: 100%;
+  display: grid;
+  grid-template-rows: 1fr auto auto auto; /* image | name | price/qty | actions */
+  border: 1px solid #e8ecef;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  background: #fff;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.product-info.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
+}
+
+/* ---------- IMAGE AREA stays inside the top 1fr row ---------- */
+.pro-img {
+  position: relative;
+  display: block;
+  background: #fafafa;
+}
+
+.image-wrapper {
+
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+
+.product-image-card {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: transform 0.25s ease;
+}
+
+.product-info.card:hover .product-image-card {
+  transform: scale(1.03);
+}
+
+/* Heart & stock badge */
+.heart-button-wrapper {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+}
+.heart-button {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+}
+.out-of-stock-badge .ant-badge-count {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background-color: #E31E24;
+  color: #fff;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+/* ---------- TEXT AREAS ---------- */
+.product-name {
+  margin: 8px 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.product-name a {
+  color: #222;
+  text-decoration: none;
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* clamp to two lines */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.product-name a:hover {
+  color: #e31e24;
+}
+
+/* ---------- PRICE + QTY ---------- */
+.price {
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.text-gray-9 {
+  color: #28a745; /* Green color for price */
+  font-weight: 600;
+}
+
+.qty-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.qty-item .form-control {
+  width: 52px;
+  height: 30px;
+  font-size: 12px;
+  border: 1px solid #e8ecef;
+  border-radius: 4px;
+  text-align: center;
+}
+.dec,
+.inc {
+  width: 30px;
+  height: 30px;
+  border: 1px solid #e8ecef;
+  border-radius: 4px;
+  background: #f7f8fa;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.dec:hover,
+.inc:hover {
+  background: #eef1f4;
+}
+
+/* ---------- ACTIONS (same row) ---------- */
+.product-actions {
+  padding: 10px 12px;
+  border-top: 1px solid #eef1f4;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative; /* For positioning the More button */
+}
+
+/* Move the More button to the extreme left */
+.more-options-btn {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  position: absolute;
+  left: 8px; /* Align to the left with padding */
+}
+
+/* Ensure Add to Cart button takes remaining space */
+.add-to-cart-btn {
+  flex: 1;
+}
+
+/* ---------- RESPONSIVE ADJUSTMENTS ---------- */
+@media (max-width: 768px) {
+  .products-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Smaller min width for tablets */
+  }
+
+  .product-name {
+    font-size: 13px;
+  }
+  .text-gray-9 {
+    font-size: 13px;
+  }
+  .qty-item .form-control {
+    width: 46px;
+    height: 28px;
+    font-size: 11px;
+  }
+  .dec,
+  .inc {
+    width: 28px;
+    height: 28px;
+  }
+  .more-options-btn {
+    width: 36px;
+    height: 36px;
+  }
+  .image-wrapper {
+    padding: 8px; /* Slightly reduce padding for smaller screens */
+  }
+}
+
+@media (max-width: 480px) {
+  .products-grid {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); /* Even smaller min width for mobile */
+  }
+
+  .product-name {
+    font-size: 12px;
+  }
+  .text-gray-9 {
+    font-size: 12px;
+  }
+  .qty-item .form-control {
+    width: 40px;
+    height: 26px;
+    font-size: 10px;
+  }
+  .dec,
+  .inc {
+    width: 26px;
+    height: 26px;
+  }
+  .more-options-btn {
+    width: 32px;
+    height: 32px;
+  }
+  .image-wrapper {
+    padding: 6px; /* Further reduce padding for very small screens */
+  }
+  .product-info.card {
+    border-radius: 8px; /* Slightly smaller border radius for mobile */
+  }
+}
+/* Top-right status bar */
+.status-bar {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 12px;
+  color: #fff;
+  z-index: 2;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.status-bar.in-stock {
+  background-color: #28a745; /* Green */
+}
+
+.status-bar.out-of-stock {
+  background-color: #E31E24; /* Red */
+}

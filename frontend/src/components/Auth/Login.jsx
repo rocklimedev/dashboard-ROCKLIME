@@ -49,7 +49,25 @@ const Login = () => {
       await authLogin(token, response.user || null);
       navigate("/", { replace: true });
     } catch (err) {
-      message.error("Login failed! " + (err?.data?.message || err.message));
+      // Server unreachable / down / network error
+      const isServerDown =
+        !err ||
+        err.status === "FETCH_ERROR" ||
+        err.status === "PARSING_ERROR" ||
+        err.originalStatus === 0 ||
+        err?.error === "TypeError: Failed to fetch" ||
+        !err?.data;
+
+      if (isServerDown) {
+        message.error("Server is down. Please try again later.");
+        return;
+      }
+
+      // Backend returned proper error
+      message.error(
+        "Login failed! " +
+          (err?.data?.message || err.message || "Something went wrong"),
+      );
     }
   };
 
