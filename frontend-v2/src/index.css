@@ -8,7 +8,7 @@
 .ant-form-item-required::before {
   display: none !important;
 }
-/**//**/
+/**//**//**//**/
 /* Add asterisk after label */
 .ant-form-item-required::after {
   content: " *";
