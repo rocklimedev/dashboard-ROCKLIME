@@ -177,12 +177,12 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
       </Menu>
     ),
     [
-      user?.user?.username,
+      user?.user?.username, // only what is actually used
       userId,
       navigate,
       handleLogout,
       isLoggingOut,
-      hasAdminOrDevAccess,
+      // Remove hasAdminOrDevAccess — it's not used here
     ],
   );
 
@@ -326,38 +326,48 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
             <div className="d-md-none">
               <Dropdown
                 overlay={
-                  <Menu>
+                  <Menu className="shadow-sm rounded">
                     <Menu.Item
                       key="fullscreen"
-                      onClick={handleFullscreenToggle}
                       icon={<FullscreenOutlined />}
+                      onClick={handleFullscreenToggle}
                     >
                       {isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
                     </Menu.Item>
+
                     <Menu.Item
                       key="notifications"
-                      onClick={() => setShowNotifications(true)}
                       icon={<BellOutlined />}
+                      onClick={() => setShowNotifications(true)}
                     >
-                      Notifications{" "}
+                      Notifications
                       {notificationCount > 0 && (
-                        <Badge count={notificationCount} />
+                        <Badge
+                          count={notificationCount}
+                          size="small"
+                          className="ms-2"
+                        />
                       )}
                     </Menu.Item>
+
                     <PermissionsGate api="write" module="cart">
                       <Menu.Item key="cart" icon={<ShoppingCartOutlined />}>
                         <Link
                           to="/cart"
-                          className="d-flex justify-content-between w-100"
+                          className="d-flex justify-content-between align-items-center w-100 text-decoration-none"
+                          style={{ color: "inherit" }}
                         >
-                          Cart{" "}
-                          {cartItemCount > 0 && <Badge count={cartItemCount} />}
+                          <span>Cart</span>
+                          {cartItemCount > 0 && (
+                            <Badge count={cartItemCount} size="small" />
+                          )}
                         </Link>
                       </Menu.Item>
                     </PermissionsGate>
                   </Menu>
                 }
                 trigger={["click"]}
+                placement="bottomRight"
               >
                 <Button type="link" size="large">
                   <svg
@@ -375,13 +385,60 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
             </div>
 
             {/* User Avatar */}
+            {/* User Avatar */}
+            {/* User Avatar */}
             <div className="ms-1 ms-md-2">
               {isProfileLoading ? (
                 <span className="text-muted">Loading...</span>
               ) : profileError ? (
                 <span className="text-danger">Error</span>
               ) : (
-                <Dropdown overlay={userMenu} trigger={["click"]}>
+                <Dropdown
+                  overlay={() => (
+                    <Menu
+                      className="shadow-sm rounded menu-drop-user"
+                      style={{ zIndex: 1100 }}
+                    >
+                      <Menu.Item
+                        key="profile-header"
+                        className="d-flex align-items-center p-3 profileset"
+                        disabled
+                      >
+                        <div>
+                          <h6 className="fw-medium mb-0">
+                            @{user?.user?.username || "User"}
+                          </h6>
+                        </div>
+                      </Menu.Item>
+                      <Menu.Divider />
+                      <Menu.Item
+                        key="profile"
+                        onClick={() => navigate(`/u/${userId}`)}
+                        icon={<UserOutlined className="me-2" />}
+                      >
+                        Profile
+                      </Menu.Item>
+                      <Menu.Item
+                        key="settings"
+                        onClick={() => navigate("/settings")}
+                        icon={<SettingOutlined className="me-2" />}
+                      >
+                        Settings
+                      </Menu.Item>
+                      <Menu.Divider />
+                      <Menu.Item
+                        key="logout"
+                        onClick={handleLogout}
+                        disabled={isLoggingOut}
+                        icon={<LogoutOutlined className="me-2" />}
+                      >
+                        {isLoggingOut ? "Logging out..." : "Logout"}
+                      </Menu.Item>
+                    </Menu>
+                  )}
+                  trigger={["click"]}
+                  placement="bottomRight"
+                >
                   <a
                     href="#"
                     className="nav-link userset d-flex align-items-center"
