@@ -1,4 +1,4 @@
-name: Deploy Frontend to Vercel
+name: Deploy Frontend (Vite) to Vercel
 
 on:
   push:
@@ -12,19 +12,32 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Checkout repository
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 2️⃣ Setup Node (match Vercel setting)
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
 
-      - name: Deploy to Vercel (Production)
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: "--prod"
-          working-directory: ./frontend-v2
+      # 3️⃣ Install Vercel CLI
+      - name: Install Vercel CLI
+        run: npm install -g vercel
+
+      # 4️⃣ Install dependencies
+      - name: Install dependencies
+        working-directory: ./frontend-v2
+        run: npm install
+
+      # 5️⃣ Build project (optional but recommended)
+      - name: Build project
+        working-directory: ./frontend-v2
+        run: npm run build
+
+      # 6️⃣ Deploy to Vercel (Production)
+      - name: Deploy to Vercel
+        run: |
+          cd frontend-v2
+          vercel deploy --prod --token ${{ secrets.VERCEL_TOKEN }} --yes
