@@ -763,6 +763,7 @@ const NewCart = ({ onConvertToOrder }) => {
         return;
       }
     }
+
     // ────────────────────────────────────────────────
     //  3. Document-type specific creation
     // ────────────────────────────────────────────────
