@@ -592,22 +592,18 @@ const QuotationForm = ({
             block
             size="large"
             icon={<CheckCircleOutlined />}
+            disabled={isCreatingAddress}
             onClick={() => {
               if (!selectedCustomer)
                 return message.error("Please select a customer");
               if (!quotationData.dueDate)
                 return message.error("Please select due date");
 
-              const hasValidShipping =
-                quotationData.shipTo ||
-                (useBillingAddress && (billingAddressId || isCreatingAddress));
+              if (useBillingAddress && !billingAddressId) {
+                setIsCreatingAddress(true);
+              }
 
-              if (!hasValidShipping)
-                return message.error(
-                  "Please select or create shipping address",
-                );
-
-              handleCreateDocument();
+              handleCreateDocument().finally(() => setIsCreatingAddress(false));
             }}
           >
             Create {documentType}
