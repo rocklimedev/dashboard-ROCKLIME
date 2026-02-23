@@ -8,15 +8,7 @@ import {
 import { useGetAllTeamsQuery } from "../../api/teamApi";
 import { useGetAllUsersQuery } from "../../api/userApi";
 import { useGetAllQuotationsQuery } from "../../api/quotationApi";
-import {
-  message,
-  Input,
-  Button,
-  Select,
-  Pagination,
-  Dropdown,
-  Menu,
-} from "antd";
+import { message, Input, Button, Select, Pagination, Dropdown } from "antd";
 import {
   SearchOutlined,
   EditOutlined,
@@ -255,7 +247,6 @@ const OrderWrapper = () => {
 
           <div className="card-body">
             <div className="row mb-4 align-items-center g-3">
-              {/* Search – left side, takes what it needs */}
               <div className="col-12 col-md-7 col-lg-6 col-xl-5">
                 <Input
                   prefix={<SearchOutlined />}
@@ -268,16 +259,16 @@ const OrderWrapper = () => {
                 />
               </div>
 
-              {/* Filters – right side, takes remaining space */}
               <div className="col-12 col-md-5 col-lg-6 col-xl-7">
                 <div className="d-flex gap-3 flex-wrap justify-content-md-end">
-                  {/* All Selects + Clear button here – same as above */}
                   <Select
                     value={committedFilters.status}
+                    onChange={handleStatusChange}
                     style={{ width: 170 }}
                     size="large"
+                    placeholder="All Status"
+                    allowClear
                   >
-                    {" "}
                     {[
                       "PREPARING",
                       "CHECKING",
@@ -295,18 +286,26 @@ const OrderWrapper = () => {
                       </Option>
                     ))}
                   </Select>
+
                   <Select
                     value={committedFilters.priority}
+                    onChange={handlePriorityChange}
                     style={{ width: 130 }}
                     size="large"
+                    placeholder="Priority"
+                    allowClear
                   >
-                    {" "}
                     <Option value="high">High</Option>
                     <Option value="medium">Medium</Option>
                     <Option value="low">Low</Option>
                   </Select>
-                  <Select value={sortBy} style={{ width: 190 }} size="large">
-                    {" "}
+
+                  <Select
+                    value={sortBy}
+                    onChange={handleSortChange}
+                    style={{ width: 190 }}
+                    size="large"
+                  >
                     <Option value="Recently Added">Recently Added</Option>
                     <Option value="Due Date Ascending">
                       Due Date (Soonest)
@@ -315,7 +314,10 @@ const OrderWrapper = () => {
                       Due Date (Latest)
                     </Option>
                   </Select>
-                  <Button size="large">Clear</Button>
+
+                  <Button size="large" onClick={handleClearFilters}>
+                    Clear
+                  </Button>
                 </div>
               </div>
             </div>
@@ -392,7 +394,7 @@ const OrderWrapper = () => {
                                     : "#721c24",
                                 }}
                               >
-                                {order.quotationId ? "" : "IDLE"}
+                                {order.quotationId ? " " : "IDLE"}
                               </span>
                             </td>
 
@@ -409,35 +411,29 @@ const OrderWrapper = () => {
 
                               {canUpdateOrderStatus && (
                                 <Dropdown
-                                  overlay={
-                                    <Menu>
-                                      {[
-                                        "PREPARING",
-                                        "CHECKING",
-                                        "INVOICE",
-                                        "DISPATCHED",
-                                        "DELIVERED",
-                                        "PARTIALLY_DELIVERED",
-                                        "CANCELED",
-                                        "DRAFT",
-                                        "ONHOLD",
-                                        "CLOSED",
-                                      ].map((s) => (
-                                        <Menu.Item
-                                          key={s}
-                                          onClick={() =>
-                                            updateOrderStatus({
-                                              orderId: order.id,
-                                              status: s,
-                                            })
-                                          }
-                                          disabled={order.status === s}
-                                        >
-                                          {s}
-                                        </Menu.Item>
-                                      ))}
-                                    </Menu>
-                                  }
+                                  menu={{
+                                    items: [
+                                      "PREPARING",
+                                      "CHECKING",
+                                      "INVOICE",
+                                      "DISPATCHED",
+                                      "DELIVERED",
+                                      "PARTIALLY_DELIVERED",
+                                      "CANCELED",
+                                      "DRAFT",
+                                      "ONHOLD",
+                                      "CLOSED",
+                                    ].map((s) => ({
+                                      key: s,
+                                      label: s,
+                                      disabled: order.status === s,
+                                      onClick: () =>
+                                        updateOrderStatus({
+                                          orderId: order.id,
+                                          status: s,
+                                        }),
+                                    })),
+                                  }}
                                   trigger={["click"]}
                                 >
                                   <EditOutlined
@@ -531,31 +527,31 @@ const OrderWrapper = () => {
 
                               {(canDeleteOrder || hasInvoice) && (
                                 <Dropdown
-                                  overlay={
-                                    <Menu>
-                                      {hasInvoice && (
-                                        <Menu.Item
-                                          key="invoice"
-                                          onClick={() =>
-                                            handleViewInvoice(order.invoiceLink)
-                                          }
-                                        >
-                                          <FileTextOutlined /> View Invoice
-                                        </Menu.Item>
-                                      )}
-                                      {canDeleteOrder && (
-                                        <Menu.Item
-                                          key="delete"
-                                          danger
-                                          onClick={() =>
-                                            handleDeleteClick(order.id)
-                                          }
-                                        >
-                                          <DeleteOutlined /> Delete
-                                        </Menu.Item>
-                                      )}
-                                    </Menu>
-                                  }
+                                  menu={{
+                                    items: [
+                                      hasInvoice && {
+                                        key: "invoice",
+                                        label: (
+                                          <>
+                                            <FileTextOutlined /> View Invoice
+                                          </>
+                                        ),
+                                        onClick: () =>
+                                          handleViewInvoice(order.invoiceLink),
+                                      },
+                                      canDeleteOrder && {
+                                        key: "delete",
+                                        danger: true,
+                                        label: (
+                                          <>
+                                            <DeleteOutlined /> Delete
+                                          </>
+                                        ),
+                                        onClick: () =>
+                                          handleDeleteClick(order.id),
+                                      },
+                                    ].filter(Boolean),
+                                  }}
                                   trigger={["click"]}
                                 >
                                   <Button type="text" icon={<MoreOutlined />} />

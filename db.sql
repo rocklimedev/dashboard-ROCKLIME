@@ -720,7 +720,7 @@ CREATE TABLE IF NOT EXISTS `users` (
 -- Dumping structure for table spsyn8lm_rocklime_dashboard.vendors
 CREATE TABLE IF NOT EXISTS `vendors` (
   `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-  `vendorId` varchar(255) NOT NULL,
+  `vendorId` varchar(255) DEFAULT NULL,
   `vendorName` varchar(255) NOT NULL,
   `brandId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
   `brandSlug` varchar(255) DEFAULT NULL,
@@ -728,7 +728,6 @@ CREATE TABLE IF NOT EXISTS `vendors` (
   `updatedAt` datetime NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `vendorId` (`vendorId`),
-  UNIQUE KEY `vendorId_2` (`vendorId`),
   KEY `vendors_fk_brandId` (`brandId`),
   KEY `vendors_fk_brandSlug` (`brandSlug`),
   CONSTRAINT `vendors_ibfk_1093` FOREIGN KEY (`brandId`) REFERENCES `brands` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,

@@ -5,7 +5,6 @@ import {
   useDeleteQuotationMutation,
 } from "../../api/quotationApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
-import { useGetAllUsersQuery } from "../../api/userApi";
 import {
   SearchOutlined,
   EyeOutlined,
@@ -27,19 +26,20 @@ import {
   Select,
   Pagination,
   Dropdown,
-  Menu,
   DatePicker,
   Table,
 } from "antd";
 import PageHeader from "../../components/Common/PageHeader";
 import moment from "moment";
 import PermissionGate from "../../context/PermissionGate";
+
 const { RangePicker } = DatePicker;
 const { Option } = Select;
+
 const QuotationList = () => {
   const navigate = useNavigate();
 
-  // State
+  // ── State ────────────────────────────────────────────────────────────────
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [searchTerm, setSearchTerm] = useState("");
@@ -56,16 +56,16 @@ const QuotationList = () => {
   const [quotationToDelete, setQuotationToDelete] = useState(null);
   const [selectedForDates, setSelectedForDates] = useState(null);
 
-  // Debounce search
+  // ── Debounce search ──────────────────────────────────────────────────────
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedSearch(searchTerm);
+      setDebouncedSearch(searchTerm.trim());
       setCurrentPage(1);
     }, 500);
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Format date range for API (YYYY-MM-DD)
+  // ── Format date range for API ────────────────────────────────────────────
   const formattedDateRange = useMemo(() => {
     if (!dateRange[0] || !dateRange[1]) return undefined;
     return [
@@ -74,7 +74,7 @@ const QuotationList = () => {
     ];
   }, [dateRange]);
 
-  // Fetch quotations with server-side pagination
+  // ── Fetch quotations ─────────────────────────────────────────────────────
   const {
     data: response,
     isLoading,
@@ -84,47 +84,29 @@ const QuotationList = () => {
   } = useGetAllQuotationsQuery({
     page: currentPage,
     limit: pageSize,
-    search: debouncedSearch.trim() === "" ? undefined : debouncedSearch.trim(),
-    customerId: customerFilter === "" ? undefined : customerFilter,
-    status: statusFilter === "" ? undefined : statusFilter,
-    dateRange:
-      formattedDateRange && formattedDateRange[0] && formattedDateRange[1]
-        ? formattedDateRange
-        : undefined,
-
-    // ──────────────── Add sorting ────────────────
-    sortBy: "createdAt", // or "quotation_date" depending on your backend
-    order: "desc", // desc = newest first
+    search: debouncedSearch || undefined,
+    customerId: customerFilter || undefined,
+    status: statusFilter || undefined,
+    dateRange: formattedDateRange,
+    sortBy: "createdAt",
+    order: "desc",
   });
 
   const quotations = Array.isArray(response?.data) ? response?.data : [];
-  const sortedQuotations = useMemo(() => {
-    if (!quotations?.length) return [];
-
-    return [...quotations].sort((a, b) => {
-      // createdAt is ISO string → can be compared directly or parsed
-      return new Date(b.createdAt) - new Date(a.createdAt);
-      // Alternative if you want to fall back to quotation_date:
-      // const dateA = new Date(a.createdAt || a.quotation_date || 0);
-      // const dateB = new Date(b.createdAt || b.quotation_date || 0);
-      // return dateB - dateA;
-    });
-  }, [quotations]);
   const pagination = response?.pagination || {
     total: 0,
     page: 1,
-    limit: 20,
+    limit: pageSize,
     totalPages: 0,
   };
 
-  // Supporting data
-  const { data: customersData } = useGetCustomersQuery({ limit: 1000 }); // fetch all for filter
+  const { data: customersData } = useGetCustomersQuery({ limit: 1000 });
   const customers = customersData?.data || [];
 
   const [deleteQuotation, { isLoading: isDeleting }] =
     useDeleteQuotationMutation();
 
-  // Helper
+  // ── Helpers ──────────────────────────────────────────────────────────────
   const getProductCount = (items) => {
     if (!items) return 0;
     if (Array.isArray(items)) return items.length;
@@ -135,7 +117,67 @@ const QuotationList = () => {
     }
   };
 
-  // Handlers
+  // ── Menu Items (modern Ant Design pattern) ───────────────────────────────
+  const getQuotationMenuItems = (q) => [
+    {
+      key: "view",
+      label: (
+        <Link to={`/quotation/${q.quotationId}`}>
+          <EyeOutlined className="me-2" /> View
+        </Link>
+      ),
+    },
+    {
+      key: "dates",
+      label: (
+        <>
+          <CalendarOutlined className="me-2" /> Dates
+        </>
+      ),
+      onClick: () => handleOpenDatesModal(q),
+    },
+    {
+      key: "whatsapp",
+      label: (
+        <>
+          <WhatsAppOutlined className="me-2" style={{ color: "#25D366" }} />{" "}
+          WhatsApp
+        </>
+      ),
+      onClick: () => handleShareOnWhatsApp(q),
+    },
+    {
+      key: "sitemap",
+      label: (
+        <>
+          <HomeOutlined className="me-2" /> Site Map
+        </>
+      ),
+      onClick: () => handleGenerateSiteMap(q),
+    },
+    {
+      key: "convert",
+      label: (
+        <>
+          <FileAddOutlined className="me-2" /> Convert to Order
+        </>
+      ),
+      onClick: () => handleConvertToOrder(q),
+      disabled: !q.items?.length,
+    },
+    {
+      key: "delete",
+      danger: true,
+      label: (
+        <>
+          <DeleteFilled className="me-2" /> Delete
+        </>
+      ),
+      onClick: () => handleDeleteClick(q),
+    },
+  ];
+
+  // ── Handlers ─────────────────────────────────────────────────────────────
   const handleOpenProductModal = (id) => {
     setSelectedQuotationId(id);
     setShowProductModal(true);
@@ -292,7 +334,7 @@ View: ${window.location.origin}/quotation/${q.quotationId}
     setCurrentPage(1);
   };
 
-  // Table columns
+  // ── Table Columns ────────────────────────────────────────────────────────
   const columns = [
     {
       title: "S.No.",
@@ -358,7 +400,6 @@ View: ${window.location.origin}/quotation/${q.quotationId}
       key: "amount",
       render: (amt) => `₹${Number(amt || 0).toFixed(2)}`,
     },
-
     {
       title: "Actions",
       key: "actions",
@@ -379,59 +420,7 @@ View: ${window.location.origin}/quotation/${q.quotationId}
           </PermissionGate>
 
           <Dropdown
-            overlay={
-              <Menu>
-                <Menu.Item key="view">
-                  <Link to={`/quotation/${rec.quotationId}`}>
-                    <EyeOutlined className="me-2" /> View
-                  </Link>
-                </Menu.Item>
-
-                <Menu.Item
-                  key="dates"
-                  onClick={() => handleOpenDatesModal(rec)}
-                >
-                  <CalendarOutlined className="me-2" /> Dates
-                </Menu.Item>
-
-                <Menu.Item
-                  key="whatsapp"
-                  onClick={() => handleShareOnWhatsApp(rec)}
-                >
-                  <WhatsAppOutlined
-                    className="me-2"
-                    style={{ color: "#25D366" }}
-                  />{" "}
-                  WhatsApp
-                </Menu.Item>
-
-                <Menu.Item
-                  key="sitemap"
-                  onClick={() => handleGenerateSiteMap(rec)}
-                >
-                  <HomeOutlined className="me-2" /> Site Map
-                </Menu.Item>
-
-                <PermissionGate api="write" module="quotations">
-                  <Menu.Item
-                    key="convert"
-                    onClick={() => handleConvertToOrder(rec)}
-                  >
-                    <FileAddOutlined className="me-2" /> Convert to Order
-                  </Menu.Item>
-                </PermissionGate>
-
-                <PermissionGate api="delete" module="quotations">
-                  <Menu.Item
-                    key="delete"
-                    danger
-                    onClick={() => handleDeleteClick(rec)}
-                  >
-                    <DeleteFilled className="me-2" /> Delete
-                  </Menu.Item>
-                </PermissionGate>
-              </Menu>
-            }
+            menu={{ items: getQuotationMenuItems(rec) }}
             trigger={["click"]}
           >
             <Button type="text" icon={<MoreOutlined />} />
@@ -440,6 +429,8 @@ View: ${window.location.origin}/quotation/${q.quotationId}
       ),
     },
   ];
+
+  // ── Export data ──────────────────────────────────────────────────────────
   const tableDataForExport = useMemo(() => {
     if (!Array.isArray(quotations)) return [];
 
@@ -457,6 +448,7 @@ View: ${window.location.origin}/quotation/${q.quotationId}
       Status: q.status || "Pending",
     }));
   }, [quotations, currentPage, pageSize, customers]);
+
   return (
     <div className="page-wrapper">
       <div className="content">
@@ -520,12 +512,11 @@ View: ${window.location.origin}/quotation/${q.quotationId}
               </div>
             </div>
 
-            {/* Loading */}
+            {/* Loading / Error / Empty states */}
             {isFetching && !isLoading && (
               <div className="text-center my-3 text-muted">Updating...</div>
             )}
 
-            {/* Table */}
             {isLoading ? (
               <div className="text-center py-5">
                 <div className="spinner-border text-primary" role="status" />
@@ -543,14 +534,13 @@ View: ${window.location.origin}/quotation/${q.quotationId}
                 <div className="table-responsive">
                   <Table
                     columns={columns}
-                    dataSource={sortedQuotations} // ← changed here
+                    dataSource={quotations}
                     rowKey="quotationId"
                     pagination={false}
                     scroll={{ x: "max-content" }}
                   />
                 </div>
 
-                {/* Pagination */}
                 {pagination.total > 0 && (
                   <div className="mt-4 d-flex justify-content-between align-items-center">
                     <div className="text-muted small">

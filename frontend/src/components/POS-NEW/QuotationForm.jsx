@@ -395,9 +395,11 @@ const QuotationForm = ({
                     <MiniSelect
                       value={dropdownValue}
                       onChange={(v) => {
-                        if (v === "sameAsBilling" || v === "creating") {
+                        if (v === "sameAsBilling") {
                           setUseBillingAddress(true);
                           setBillingAddressId(null);
+                          // Important: clear any previously selected address id
+                          handleQuotationChange("shipTo", null);
                         } else {
                           setUseBillingAddress(false);
                           setBillingAddressId(null);

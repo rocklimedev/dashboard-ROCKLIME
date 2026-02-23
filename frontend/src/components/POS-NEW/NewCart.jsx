@@ -646,22 +646,24 @@ const NewCart = ({ onConvertToOrder }) => {
     //  2. Resolve final shipping address
     // ────────────────────────────────────────────────
     let finalShipTo = null;
-    let createdShippingAddressId = null;
 
     if (documentType !== "Purchase Order") {
       if (useBillingAddress) {
         if (billingAddressId) {
-          // User selected an existing billing address → use it for shipping
+          // Explicitly selected existing billing address → use as shipping
           finalShipTo = billingAddressId;
         } else {
-          // "Same as Billing" → create from customer's default address
+          // "Same as Billing" chosen → auto-create new shipping address
+
           const customer = customerList.find(
             (c) => c.customerId === selectedCustomer,
           );
+
           if (!customer?.address) {
-            return message.error(
-              "Customer has no default address to use as billing/shipping.",
+            message.error(
+              "Customer has no default address. Please add an address first.",
             );
+            return;
           }
 
           let parsedAddr;
@@ -670,15 +672,14 @@ const NewCart = ({ onConvertToOrder }) => {
               typeof customer.address === "string"
                 ? JSON.parse(customer.address)
                 : customer.address;
-          } catch (e) {
+          } catch (parseError) {
             console.error(
-              "Failed to parse customer default address:",
-              e,
+              "Default address parse failed",
               customer.address,
+              parseError,
             );
-            return message.error(
-              "Invalid format in customer's default address field.",
-            );
+            message.error("Customer's default address format is invalid.");
+            return;
           }
 
           const street = (parsedAddr.street || "").trim();
@@ -692,55 +693,46 @@ const NewCart = ({ onConvertToOrder }) => {
           const country = (parsedAddr.country || "India").trim();
 
           if (!street || !city || !state || !country) {
-            console.warn("Incomplete default address:", {
-              street,
-              city,
-              state,
-              postalCode,
-              country,
-            });
-            return message.error(
-              "Cannot create shipping address: customer's default address is missing required fields (street, city, state, country).",
+            message.error(
+              "Default address is missing required fields (street, city, state, country).",
             );
+            return;
           }
 
-          const newAddressPayload = {
+          const payload = {
             customerId: selectedCustomer,
-            street: street,
-            city: city,
-            state: state,
-            postalCode: postalCode,
-            country: country,
-            status: "ADDITIONAL", // ← must match ENUM: BILLING, PRIMARY, ADDITIONAL
+            street,
+            city,
+            state,
+            postalCode,
+            country,
+            status: "SHIPPING", // ← confirm this is valid in your backend
           };
 
-          // Debug log
-          console.log(
-            "[DEBUG] Creating shipping address (flat payload):",
-            JSON.stringify(newAddressPayload, null, 2),
-          );
+          console.log("[QUOTATION] Creating shipping address →", payload);
 
           try {
-            const res = await createAddress(newAddressPayload).unwrap();
-            console.log("[DEBUG] Address created successfully:", res);
+            const response = await createAddress(payload).unwrap();
+            console.log(
+              "[QUOTATION] Address created → ID:",
+              response?.addressId,
+            );
 
-            createdShippingAddressId = res.addressId;
-            finalShipTo = res.addressId;
+            finalShipTo = response.addressId;
 
-            refetchAddresses?.();
+            // Optional: refresh addresses in UI
+            // refetchAddresses();
+
             message.success(
-              "Shipping address automatically created from default.",
+              "Shipping address created automatically from default",
             );
-          } catch (err) {
-            console.error("[ERROR] Address creation failed:", {
-              status: err.status,
-              response: err.data,
-              payloadSent: newAddressPayload,
-            });
-            return message.error(
-              err?.data?.message ||
-                "Failed to create shipping address from default.",
+          } catch (apiError) {
+            console.error("[QUOTATION] Create address failed", apiError);
+            message.error(
+              apiError?.data?.message ||
+                "Could not create shipping address automatically.",
             );
+            return; // ← stop here if creation failed
           }
         }
       } else {
@@ -753,22 +745,24 @@ const NewCart = ({ onConvertToOrder }) => {
         if (finalShipTo) {
           const addr = addresses.find((a) => a.addressId === finalShipTo);
           if (!addr) {
-            return message.error("Selected shipping address no longer exists.");
+            message.error("Selected shipping address was deleted.");
+            return;
           }
           if (addr.customerId !== selectedCustomer) {
-            return message.error(
-              "Selected address does not belong to the chosen customer.",
-            );
+            message.error("Selected address does not belong to this customer.");
+            return;
           }
         }
       }
 
-      // Final check
+      // ────────────────────────────────────────────────
+      // FINAL CHECK – only here, after all possible ways of setting finalShipTo
+      // ────────────────────────────────────────────────
       if (!finalShipTo) {
-        return message.error("Please select or create a shipping address.");
+        message.error("Please select or create a shipping address.");
+        return;
       }
     }
-
     // ────────────────────────────────────────────────
     //  3. Document-type specific creation
     // ────────────────────────────────────────────────

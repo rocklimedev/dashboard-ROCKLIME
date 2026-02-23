@@ -1,30 +1,30 @@
-import React, { useState, useEffect } from "react";
-import {
-  useGetCustomersQuery,
-  useDeleteCustomerMutation,
-} from "../../api/customerApi";
-import Avatar from "react-avatar";
-import { BiTrash } from "react-icons/bi";
-import {
-  EyeOutlined,
-  SearchOutlined,
-  AppstoreOutlined, // Better for card/grid view
-  BarsOutlined, // Better for list view
-  MoreOutlined,
-  EditOutlined,
-} from "@ant-design/icons";
+import React, { useState, useEffect, useMemo } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import {
   message,
   Button,
   Dropdown,
-  Menu,
   Pagination,
   Select,
   Input,
+  Avatar as AntAvatar,
 } from "antd";
+import {
+  SearchOutlined,
+  EyeOutlined,
+  EditOutlined,
+  BarsOutlined,
+  MoreOutlined,
+  AppstoreOutlined,
+} from "@ant-design/icons";
+import { BiTrash } from "react-icons/bi";
+import Avatar from "react-avatar";
+import {
+  useGetCustomersQuery,
+  useDeleteCustomerMutation,
+} from "../../api/customerApi";
 import DeleteModal from "../../components/Common/DeleteModal";
 import PageHeader from "../../components/Common/PageHeader";
-import { useNavigate } from "react-router-dom";
 import PermissionGate from "../../context/PermissionGate";
 
 const { Option } = Select;
@@ -42,19 +42,18 @@ const CustomerList = () => {
   const [customerTypeFilter, setCustomerTypeFilter] = useState("All");
   const [sortBy, setSortBy] = useState("Recently Added");
 
-  // Debounced search to avoid too many requests
+  // Debounced search
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedSearch(searchTerm);
-      setCurrentPage(1); // Reset to page 1 on search
+      setDebouncedSearch(searchTerm.trim());
+      setCurrentPage(1);
     }, 500);
-
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // RTK Query with server-side pagination + search
+  // Fetch customers (server-side pagination + search)
   const {
     data: response,
     error,
@@ -63,14 +62,14 @@ const CustomerList = () => {
   } = useGetCustomersQuery({
     page: currentPage,
     limit: pageSize,
-    search: debouncedSearch || undefined, // only send if not empty
+    search: debouncedSearch || undefined,
   });
 
   const customers = response?.data || [];
   const pagination = response?.pagination || {
     total: 0,
     page: 1,
-    limit: 20,
+    limit: pageSize,
     totalPages: 0,
   };
 
@@ -85,18 +84,8 @@ const CustomerList = () => {
     { value: "Contractor", label: "Contractor" },
   ];
 
-  const getInitials = (name) => {
-    if (!name) return "CU";
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
-  // Client-side filtering by customer type only (since search is server-side)
-  const filteredCustomers = React.useMemo(() => {
+  // Client-side filtering & sorting
+  const filteredCustomers = useMemo(() => {
     let result = customers;
 
     if (customerTypeFilter !== "All") {
@@ -108,7 +97,7 @@ const CustomerList = () => {
       });
     }
 
-    // Client-side sorting (you can move this to backend later)
+    // Sorting
     switch (sortBy) {
       case "Ascending":
         return [...result].sort((a, b) =>
@@ -154,7 +143,6 @@ const CustomerList = () => {
       await deleteCustomer(customerToDelete).unwrap();
       message.success("Customer deleted successfully");
 
-      // If current page becomes empty, go to previous page
       if (filteredCustomers.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
       }
@@ -178,7 +166,33 @@ const CustomerList = () => {
     setCurrentPage(1);
   };
 
-  // Loading state
+  // ── Shared Menu Items for Actions Dropdown ───────────────────────────────
+  const getCustomerMenuItems = (customer) => [
+    {
+      key: "view",
+      label: (
+        <a
+          href={`/customer/${customer.customerId}`}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <EyeOutlined className="me-2" /> View
+        </a>
+      ),
+    },
+    {
+      key: "delete",
+      danger: true,
+      label: (
+        <>
+          <BiTrash className="me-2" /> Delete
+        </>
+      ),
+      onClick: () => handleDelete(customer.customerId),
+    },
+  ];
+
+  // Loading / Error states
   if (isLoading) {
     return (
       <div className="content p-5 text-center">
@@ -289,7 +303,7 @@ const CustomerList = () => {
               </div>
             </div>
 
-            {/* Loading indicator for fetching */}
+            {/* Loading indicator during fetch */}
             {isFetching && !isLoading && (
               <div className="text-center my-3">
                 <span className="text-muted">Updating...</span>
@@ -349,39 +363,8 @@ const CustomerList = () => {
                               module="customers"
                             >
                               <Dropdown
+                                menu={{ items: getCustomerMenuItems(c) }}
                                 trigger={["click"]}
-                                overlay={
-                                  <Menu>
-                                    <PermissionGate
-                                      api="view"
-                                      module="customers"
-                                    >
-                                      <Menu.Item key="view">
-                                        <a
-                                          href={`/customer/${c.customerId}`}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                        >
-                                          <EyeOutlined className="me-2" /> View
-                                        </a>
-                                      </Menu.Item>
-                                    </PermissionGate>
-                                    <PermissionGate
-                                      api="delete"
-                                      module="customers"
-                                    >
-                                      <Menu.Item
-                                        key="delete"
-                                        danger
-                                        onClick={() =>
-                                          handleDelete(c.customerId)
-                                        }
-                                      >
-                                        <BiTrash className="me-2" /> Delete
-                                      </Menu.Item>
-                                    </PermissionGate>
-                                  </Menu>
-                                }
                               >
                                 <Button size="small" icon={<MoreOutlined />} />
                               </Dropdown>
@@ -459,40 +442,8 @@ const CustomerList = () => {
                                 module="customers"
                               >
                                 <Dropdown
+                                  menu={{ items: getCustomerMenuItems(c) }}
                                   trigger={["click"]}
-                                  overlay={
-                                    <Menu>
-                                      <PermissionGate
-                                        api="view"
-                                        module="customers"
-                                      >
-                                        <Menu.Item key="view">
-                                          <a
-                                            href={`/customer/${c.customerId}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                          >
-                                            <EyeOutlined className="me-2" />{" "}
-                                            View
-                                          </a>
-                                        </Menu.Item>
-                                      </PermissionGate>
-                                      <PermissionGate
-                                        api="delete"
-                                        module="customers"
-                                      >
-                                        <Menu.Item
-                                          key="delete"
-                                          danger
-                                          onClick={() =>
-                                            handleDelete(c.customerId)
-                                          }
-                                        >
-                                          <BiTrash className="me-2" /> Delete
-                                        </Menu.Item>
-                                      </PermissionGate>
-                                    </Menu>
-                                  }
                                 >
                                   <Button
                                     size="small"
@@ -511,7 +462,7 @@ const CustomerList = () => {
               </div>
             )}
 
-            {/* Pagination - uses server total */}
+            {/* Pagination */}
             {pagination.total > 0 && (
               <div className="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
                 <div className="text-muted small">
