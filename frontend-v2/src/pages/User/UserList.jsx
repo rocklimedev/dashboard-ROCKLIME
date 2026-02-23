@@ -3,6 +3,12 @@ import {
   SearchOutlined,
   UnorderedListOutlined,
   OrderedListOutlined,
+  EyeOutlined,
+  EditOutlined,
+  ExclamationCircleOutlined,
+  DeleteOutlined,
+  MoreOutlined,
+  MailOutlined,
 } from "@ant-design/icons";
 import Avatar from "react-avatar";
 import {
@@ -12,17 +18,8 @@ import {
   useUpdateStatusMutation,
   useGetUserByIdQuery,
 } from "../../api/userApi";
-import {
-  EyeOutlined,
-  EditOutlined,
-  ExclamationCircleOutlined,
-  DeleteOutlined,
-  MoreOutlined,
-  MailOutlined,
-} from "@ant-design/icons";
-import { Dropdown, Menu, Button, Pagination, Tooltip } from "antd";
+import { Dropdown, Button, Pagination, Tooltip, message } from "antd";
 import DeleteModal from "../../components/Common/DeleteModal";
-import { message } from "antd";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "../../components/Common/PageHeader";
 import { useResendVerificationEmailMutation } from "../../api/authApi";
@@ -103,7 +100,10 @@ const UserList = () => {
   const handleStatusChange = async (userId, newStatus) => {
     try {
       await updateStatus({ userId, status: newStatus }).unwrap();
-      message.success("Status updated");
+      message.success(
+        `User ${newStatus === "active" ? "activated" : "deactivated"}`,
+      );
+      refetch();
     } catch {
       message.error("Failed to update status");
     }
@@ -112,11 +112,12 @@ const UserList = () => {
   const handleConfirmDelete = async () => {
     try {
       await deleteUser(userToDelete).unwrap();
-      message.success("User deleted");
+      message.success("User deleted successfully");
 
-      // Auto-fix pagination if last item on page was deleted
       if (filteredUsers.length === 1 && currentPage > 1) {
-        setCurrentPage((p) => p - 1);
+        setCurrentPage((prev) => prev - 1);
+      } else {
+        refetch();
       }
     } catch {
       message.error("Failed to delete user");
@@ -131,13 +132,13 @@ const UserList = () => {
     if (resendUserId && selectedUser?.email) {
       resendVerificationEmail({ email: selectedUser.email })
         .unwrap()
-        .then(() => message.success("Verification email sent"))
-        .catch(() => message.error("Failed to send email"))
+        .then(() => message.success("Verification email resent"))
+        .catch(() => message.error("Failed to resend verification email"))
         .finally(() => setResendUserId(null));
     }
   }, [resendUserId, selectedUser, resendVerificationEmail]);
 
-  // === Render (No loading/error states — handled globally) ===
+  // === Render ===
   return (
     <div className="page-wrapper">
       <div className="content">
@@ -219,7 +220,7 @@ const UserList = () => {
             {viewMode === "card" && (
               <div className="row g-4">
                 {filteredUsers.map((user) => {
-                  const active = isUserActive(user.status);
+                  const isActive = isUserActive(user.status);
                   return (
                     <div
                       key={user.userId}
@@ -229,51 +230,50 @@ const UserList = () => {
                         <div className="card-body text-center p-4">
                           <Avatar
                             src={user.photo_thumbnail}
-                            name={user.name || user.username}
+                            name={user.name || user.username || "?"}
                             round
                             size="80"
                             className="mb-3"
                           />
                           <h6 className="mb-1">{user.name || "No Name"}</h6>
-                          <p className="text-muted small">@{user.username}</p>
+                          <p className="text-muted small">
+                            @{user.username || "—"}
+                          </p>
 
                           <div className="d-flex justify-content-center gap-2 mb-3 flex-wrap">
                             <span className="badge bg-light text-dark">
                               {safeRoles(user.roles)}
                             </span>
+
                             <Dropdown
-                              overlay={
-                                <Menu>
-                                  <Menu.Item
-                                    disabled={active}
-                                    onClick={() =>
-                                      handleStatusChange(user.userId, "active")
-                                    }
-                                  >
-                                    Active
-                                  </Menu.Item>
-                                  <Menu.Item
-                                    disabled={!active}
-                                    onClick={() =>
+                              menu={{
+                                items: [
+                                  !isActive && {
+                                    key: "activate",
+                                    label: "Activate",
+                                    onClick: () =>
+                                      handleStatusChange(user.userId, "active"),
+                                  },
+                                  isActive && {
+                                    key: "deactivate",
+                                    label: "Deactivate",
+                                    onClick: () =>
                                       handleStatusChange(
                                         user.userId,
                                         "inactive",
-                                      )
-                                    }
-                                  >
-                                    Inactive
-                                  </Menu.Item>
-                                </Menu>
-                              }
+                                      ),
+                                  },
+                                ].filter(Boolean),
+                              }}
                               trigger={["click"]}
                             >
                               <span
                                 className={`badge ${
-                                  active ? "bg-success" : "bg-danger"
+                                  isActive ? "bg-success" : "bg-danger"
                                 } text-white cursor-pointer`}
                               >
-                                {active ? "Active" : "Inactive"}{" "}
-                                <EditOutlined size={10} />
+                                {isActive ? "Active" : "Inactive"}{" "}
+                                <EditOutlined style={{ fontSize: 10 }} />
                               </span>
                             </Dropdown>
                           </div>
@@ -287,43 +287,48 @@ const UserList = () => {
                                 <EditOutlined />
                               </Button>
                             </Tooltip>
-                            <Dropdown
-                              overlay={
-                                <Menu>
-                                  <Menu.Item
-                                    onClick={() => handleViewUser(user)}
-                                  >
-                                    <EyeOutlined /> View
-                                  </Menu.Item>
 
-                                  <Menu.Item
-                                    onClick={() =>
+                            <Dropdown
+                              menu={{
+                                items: [
+                                  {
+                                    key: "view",
+                                    icon: <EyeOutlined />,
+                                    label: "View",
+                                    onClick: () => handleViewUser(user),
+                                  },
+                                  {
+                                    key: "report",
+                                    icon: <ExclamationCircleOutlined />,
+                                    label: "Report",
+                                    onClick: () =>
                                       reportUser(user.userId)
                                         .unwrap()
-                                        .then(() => message.success("Reported"))
-                                    }
-                                  >
-                                    <ExclamationCircleOutlined /> Report
-                                  </Menu.Item>
-                                  {!user.isEmailVerified && (
-                                    <Menu.Item
-                                      onClick={() =>
-                                        setResendUserId(user.userId)
-                                      }
-                                    >
-                                      <MailOutlined /> Resend Email
-                                    </Menu.Item>
-                                  )}
-                                  <Menu.Item
-                                    danger
-                                    onClick={() =>
-                                      handleDeleteUser(user.userId)
-                                    }
-                                  >
-                                    <DeleteOutlined /> Delete
-                                  </Menu.Item>
-                                </Menu>
-                              }
+                                        .then(() =>
+                                          message.success("User reported"),
+                                        )
+                                        .catch(() =>
+                                          message.error(
+                                            "Failed to report user",
+                                          ),
+                                        ),
+                                  },
+                                  !user.isEmailVerified && {
+                                    key: "resend",
+                                    icon: <MailOutlined />,
+                                    label: "Resend Verification",
+                                    onClick: () => setResendUserId(user.userId),
+                                  },
+                                  {
+                                    key: "delete",
+                                    danger: true,
+                                    icon: <DeleteOutlined />,
+                                    label: "Delete",
+                                    onClick: () =>
+                                      handleDeleteUser(user.userId),
+                                  },
+                                ].filter(Boolean),
+                              }}
                               trigger={["click"]}
                             >
                               <Button size="small">
@@ -357,13 +362,13 @@ const UserList = () => {
                   </thead>
                   <tbody>
                     {filteredUsers.map((user) => {
-                      const active = isUserActive(user.status);
+                      const isActive = isUserActive(user.status);
                       return (
                         <tr key={user.userId}>
                           <td>
                             <Avatar
                               src={user.photo_thumbnail}
-                              name={user.name || user.username}
+                              name={user.name || user.username || "?"}
                               size="40"
                               round
                             />
@@ -390,38 +395,34 @@ const UserList = () => {
                           </td>
                           <td>
                             <Dropdown
-                              overlay={
-                                <Menu>
-                                  <Menu.Item
-                                    disabled={active}
-                                    onClick={() =>
-                                      handleStatusChange(user.userId, "active")
-                                    }
-                                  >
-                                    Active
-                                  </Menu.Item>
-                                  <Menu.Item
-                                    disabled={!active}
-                                    onClick={() =>
+                              menu={{
+                                items: [
+                                  !isActive && {
+                                    key: "activate",
+                                    label: "Activate",
+                                    onClick: () =>
+                                      handleStatusChange(user.userId, "active"),
+                                  },
+                                  isActive && {
+                                    key: "deactivate",
+                                    label: "Deactivate",
+                                    onClick: () =>
                                       handleStatusChange(
                                         user.userId,
                                         "inactive",
-                                      )
-                                    }
-                                  >
-                                    Inactive
-                                  </Menu.Item>
-                                </Menu>
-                              }
+                                      ),
+                                  },
+                                ].filter(Boolean),
+                              }}
                               trigger={["click"]}
                             >
                               <span
                                 className={`badge ${
-                                  active ? "bg-success" : "bg-danger"
+                                  isActive ? "bg-success" : "bg-danger"
                                 } text-white cursor-pointer`}
                               >
-                                {active ? "Active" : "Inactive"}{" "}
-                                <EditOutlined size={10} />
+                                {isActive ? "Active" : "Inactive"}{" "}
+                                <EditOutlined style={{ fontSize: 10 }} />
                               </span>
                             </Dropdown>
                           </td>
@@ -431,38 +432,48 @@ const UserList = () => {
                               style={{ cursor: "pointer", fontSize: 16 }}
                               onClick={() => handleEditUser(user)}
                             />
+
                             <Dropdown
-                              overlay={
-                                <Menu>
-                                  <Menu.Item
-                                    onClick={() => handleViewUser(user)}
-                                  >
-                                    <EyeOutlined /> View
-                                  </Menu.Item>
-                                  <Menu.Item
-                                    onClick={() => reportUser(user.userId)}
-                                  >
-                                    <ExclamationCircleOutlined /> Report
-                                  </Menu.Item>
-                                  {!user.isEmailVerified && (
-                                    <Menu.Item
-                                      onClick={() =>
-                                        setResendUserId(user.userId)
-                                      }
-                                    >
-                                      <MailOutlined /> Resend
-                                    </Menu.Item>
-                                  )}
-                                  <Menu.Item
-                                    danger
-                                    onClick={() =>
-                                      handleDeleteUser(user.userId)
-                                    }
-                                  >
-                                    <DeleteOutlined /> Delete
-                                  </Menu.Item>
-                                </Menu>
-                              }
+                              menu={{
+                                items: [
+                                  {
+                                    key: "view",
+                                    icon: <EyeOutlined />,
+                                    label: "View",
+                                    onClick: () => handleViewUser(user),
+                                  },
+                                  {
+                                    key: "report",
+                                    icon: <ExclamationCircleOutlined />,
+                                    label: "Report",
+                                    onClick: () =>
+                                      reportUser(user.userId)
+                                        .unwrap()
+                                        .then(() =>
+                                          message.success("User reported"),
+                                        )
+                                        .catch(() =>
+                                          message.error(
+                                            "Failed to report user",
+                                          ),
+                                        ),
+                                  },
+                                  !user.isEmailVerified && {
+                                    key: "resend",
+                                    icon: <MailOutlined />,
+                                    label: "Resend Verification",
+                                    onClick: () => setResendUserId(user.userId),
+                                  },
+                                  {
+                                    key: "delete",
+                                    danger: true,
+                                    icon: <DeleteOutlined />,
+                                    label: "Delete",
+                                    onClick: () =>
+                                      handleDeleteUser(user.userId),
+                                  },
+                                ].filter(Boolean),
+                              }}
                               trigger={["click"]}
                             >
                               <Button

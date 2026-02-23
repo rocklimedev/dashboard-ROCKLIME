@@ -1,10 +1,8 @@
 import React, { useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { SearchOutlined, LeftOutlined } from "@ant-design/icons";
-import { MoreOutlined } from "@ant-design/icons";
-import { Dropdown, Menu, Button } from "antd";
-import { message } from "antd";
+import { SearchOutlined, LeftOutlined, MoreOutlined } from "@ant-design/icons";
+import { Dropdown, Button, message } from "antd";
 import PageHeader from "../../components/Common/PageHeader";
 import { rolePermissionsApi as api } from "../../api/rolePermissionApi";
 import "./permission.css";
@@ -74,10 +72,8 @@ const Permissions = () => {
       };
     });
 
-    const validModules = Object.keys(moduleMap);
-
     return {
-      validModules,
+      validModules: Object.keys(moduleMap),
       permissionTypes: Array.from(types),
       routeLookup: lookup,
     };
@@ -92,7 +88,7 @@ const Permissions = () => {
   }, [validModules, searchTerm]);
 
   /* ==================== HANDLE PERMISSION CHANGE ==================== */
-  const handlePermissionChange = async (module, type, isChecked) => {
+  const handlePermissionChange = async (module, type, shouldGrant) => {
     if (isUpdating || isAssigning || isRemoving) return;
     setIsUpdating(true);
 
@@ -102,17 +98,19 @@ const Permissions = () => {
         throw new Error(`Permission ID not found for ${module} - ${type}`);
       }
 
-      if (isChecked) {
+      if (shouldGrant) {
         await assignPermission({
           roleId,
           permissionId,
           isGranted: true,
         }).unwrap();
+        message.success(`${type} assigned to ${module}`);
       } else {
         await removePermission({
           roleId,
           permissionId,
         }).unwrap();
+        message.success(`${type} removed from ${module}`);
       }
 
       dispatch(
@@ -129,7 +127,7 @@ const Permissions = () => {
     return isGranted ? "badge bg-success" : "badge bg-warning";
   };
 
-  /* ==================== ERROR STATE (optional – remove if handled globally) ==================== */
+  /* ==================== ERROR STATE ==================== */
   if (roleError || rolePermissionsError || permissionsError || !roleId) {
     return (
       <div className="content">
@@ -216,17 +214,15 @@ const Permissions = () => {
                               rp.permissionId ===
                               routeLookup[module]?.[type]?.permissionId,
                           );
-                          const isUpdatingThis =
+                          const isDisabled =
                             isUpdating || isAssigning || isRemoving;
 
                           return (
                             <td key={type} className="text-center">
                               <span
-                                className={`${getBadgeClass(
-                                  isGranted,
-                                )} px-3 py-1 small`}
+                                className={`${getBadgeClass(isGranted)} px-3 py-1 small`}
                                 onClick={() =>
-                                  !isUpdatingThis &&
+                                  !isDisabled &&
                                   handlePermissionChange(
                                     module,
                                     type,
@@ -234,14 +230,12 @@ const Permissions = () => {
                                   )
                                 }
                                 style={{
-                                  cursor: isUpdatingThis
+                                  cursor: isDisabled
                                     ? "not-allowed"
                                     : "pointer",
-                                  opacity: isUpdatingThis ? 0.7 : 1,
+                                  opacity: isDisabled ? 0.7 : 1,
                                 }}
-                                aria-label={`${
-                                  isGranted ? "Remove" : "Assign"
-                                } ${type} permission`}
+                                aria-label={`${isGranted ? "Remove" : "Assign"} ${type} permission`}
                               >
                                 {isGranted ? "Assigned" : "Unassigned"}
                               </span>
@@ -250,36 +244,30 @@ const Permissions = () => {
                         })}
                         <td className="text-center">
                           <Dropdown
-                            overlay={
-                              <Menu>
-                                {permissionTypes.map((type) => {
-                                  const isGranted = assignedPermissions.some(
-                                    (rp) =>
-                                      rp.permissionId ===
-                                      routeLookup[module]?.[type]?.permissionId,
-                                  );
-                                  return (
-                                    <Menu.Item
-                                      key={type}
-                                      onClick={() =>
-                                        handlePermissionChange(
-                                          module,
-                                          type,
-                                          !isGranted,
-                                        )
-                                      }
-                                      disabled={
-                                        isUpdating || isAssigning || isRemoving
-                                      }
-                                    >
-                                      {isGranted ? "Remove" : "Assign"}{" "}
-                                      {type.charAt(0).toUpperCase() +
-                                        type.slice(1)}
-                                    </Menu.Item>
-                                  );
-                                })}
-                              </Menu>
-                            }
+                            menu={{
+                              items: permissionTypes.map((type) => {
+                                const isGranted = assignedPermissions.some(
+                                  (rp) =>
+                                    rp.permissionId ===
+                                    routeLookup[module]?.[type]?.permissionId,
+                                );
+
+                                return {
+                                  key: type,
+                                  label: `${isGranted ? "Remove" : "Assign"} ${
+                                    type.charAt(0).toUpperCase() + type.slice(1)
+                                  }`,
+                                  onClick: () =>
+                                    handlePermissionChange(
+                                      module,
+                                      type,
+                                      !isGranted,
+                                    ),
+                                  disabled:
+                                    isUpdating || isAssigning || isRemoving,
+                                };
+                              }),
+                            }}
                             trigger={["click"]}
                             placement="bottomRight"
                           >

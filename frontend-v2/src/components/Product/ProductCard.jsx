@@ -13,10 +13,10 @@ import "../../pages/Products/productlist.css";
 import PermissionGate from "../../context/PermissionGate";
 import { useAuth } from "../../context/AuthContext";
 
-// Known meta UUIDs — keep in sync with ProductsList / backend
+// Known meta UUIDs — keep in sync with backend
 const META_KEYS = {
   SELLING_PRICE: "9ba862ef-f993-4873-95ef-1fef10036aa5",
-  COMPANY_CODE: "d11da9f9-3f2e-4536-8236-9671200cca4a", // model/company code
+  COMPANY_CODE: "d11da9f9-3f2e-4536-8236-9671200cca4a",
 };
 
 const ProductCard = ({
@@ -25,7 +25,7 @@ const ProductCard = ({
   getCategoryName,
   handleAddToCart,
   cartLoadingStates,
-  menu,
+  menuItems, // ← changed from menu → menuItems (array)
 }) => {
   const [quantity, setQuantity] = useState(product.quantity > 0 ? 1 : 0);
   const { auth } = useAuth();
@@ -46,9 +46,8 @@ const ProductCard = ({
 
   const productImages = safeParseImages(product.images);
 
-  // ── Price & Code from flat meta object (same as ProductsList) ──
+  // ── Price & Code ─────────────────────────────────────────
   const meta = product?.meta || {};
-
   const rawPrice = meta[META_KEYS.SELLING_PRICE];
   const priceValue = rawPrice ? parseFloat(rawPrice) : NaN;
   const displayPrice = !isNaN(priceValue)
@@ -96,10 +95,6 @@ const ProductCard = ({
   const canAddToCart = permissions.some(
     (p) => p.action === "write" && p.module === "cart",
   );
-  const canEditOrDelete = permissions.some(
-    (p) => ["edit", "delete"].includes(p.action) && p.module === "products",
-  );
-
   const isOutOfStock = product.quantity <= 0;
   const hasValidPrice = !isNaN(priceValue);
 
@@ -119,19 +114,20 @@ const ProductCard = ({
         )}
       </div>
 
-      {/* More options dropdown */}
-      {canEditOrDelete && (
-        <PermissionGate api="edit|delete" module="products">
-          <Dropdown overlay={menu(product)} trigger={["click"]}>
-            <Button
-              type="text"
-              icon={<MoreOutlined />}
-              size="large"
-              className="more-options-btn"
-            />
-          </Dropdown>
-        </PermissionGate>
-      )}
+      {/* More options dropdown – fixed version */}
+      <PermissionGate api="edit|delete" module="products">
+        <Dropdown
+          menu={{ items: menuItems }} // ← use menuItems array here
+          trigger={["click"]}
+        >
+          <Button
+            type="text"
+            icon={<MoreOutlined />}
+            size="large"
+            className="more-options-btn"
+          />
+        </Dropdown>
+      </PermissionGate>
 
       {/* Out of stock badge (alternative position) */}
       {isOutOfStock && (

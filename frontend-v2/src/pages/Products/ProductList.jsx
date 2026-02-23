@@ -8,7 +8,6 @@ import {
   Button,
   Tooltip,
   Dropdown,
-  Menu,
   Spin,
   Pagination,
   Select,
@@ -43,7 +42,7 @@ import PageHeader from "../../components/Common/PageHeader";
 import Breadcrumb from "../../components/Product/Breadcrumb";
 import pos from "../../assets/img/default.png";
 import PermissionGate from "../../context/PermissionGate";
-import { debounce } from "lodash"; // Make sure lodash is installed: npm install lodash
+import { debounce } from "lodash";
 
 // ────────────────────────────────────────────────
 //   META UUIDS – keep in sync with backend
@@ -51,8 +50,9 @@ import { debounce } from "lodash"; // Make sure lodash is installed: npm install
 const META_KEYS = {
   SELLING_PRICE: "9ba862ef-f993-4873-95ef-1fef10036aa5",
   MODEL_CODE: "d11da9f9-3f2e-4536-8236-9671200cca4a",
-  SIZE_FEET: "7e2b4efb-4ff2-4e4d-9b08-82559a7e3cd0", // ← Add this line
+  SIZE_FEET: "7e2b4efb-4ff2-4e4d-9b08-82559a7e3cd0",
 };
+
 // Brands that use the sizeFeet meta field and should show the size filter
 const BRANDS_WITH_SIZE_FILTER = [
   "50105657-7686-11f0-9e84-52540021303b", // SGT
@@ -61,6 +61,7 @@ const BRANDS_WITH_SIZE_FILTER = [
   "50107b22-7686-11f0-9e84-52540021303b", // UW
   "987bb747-773d-11f0-9e84-52540021303b", // SUBWAY
 ];
+
 const ProductsList = () => {
   const { id, bpcId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -82,15 +83,17 @@ const ProductsList = () => {
   const isBrandView = !!id && !bpcId;
   const isBpcView = !!bpcId;
   const isCategoryView = !!id && !isBrandView && !isBpcView;
-  // ── Read state from URL ───────────────────────────────
-  const urlSizes = searchParams.getAll("size"); // supports multiple ?size=2x2&size=4x2
+
+  const urlSizes = searchParams.getAll("size");
   const [selectedSizes, setSelectedSizes] = useState(urlSizes);
   const showSizeFilter =
     isBrandView && id && BRANDS_WITH_SIZE_FILTER.includes(id);
+
   // Sync when URL changes (back/forward navigation)
   useEffect(() => {
     setSelectedSizes(searchParams.getAll("size"));
   }, [searchParams]);
+
   // ── Debounced search update ───────────────────────────
   const debouncedUpdateSearch = useMemo(
     () =>
@@ -102,12 +105,13 @@ const ProductsList = () => {
           } else {
             next.delete("search");
           }
-          next.set("page", "1"); // reset to page 1 on search change
+          next.set("page", "1");
           return next;
         });
       }, 400),
     [setSearchParams],
   );
+
   const COMMON_SIZES_FEET = [
     "12''X12''",
     "12''X18''",
@@ -121,7 +125,8 @@ const ProductsList = () => {
     "32''x64''",
     "32''x96''",
   ];
-  // Sync local search when URL search changes (browser back/forward, reset, etc.)
+
+  // Sync local search when URL search changes
   useEffect(() => {
     setLocalSearch(urlSearch);
   }, [urlSearch]);
@@ -135,8 +140,8 @@ const ProductsList = () => {
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
-    setLocalSearch(value); // instant UI update
-    debouncedUpdateSearch(value); // delayed URL + query trigger
+    setLocalSearch(value);
+    debouncedUpdateSearch(value);
   };
 
   // ── Queries ────────────────────────────────────────────
@@ -249,13 +254,15 @@ const ProductsList = () => {
         return price !== null && price >= min && price <= max;
       });
     }
-    // Size filter – only apply when the filter is visible (and thus selectedSizes may have values)
+
+    // Size filter
     if (showSizeFilter && selectedSizes.length > 0) {
       result = result.filter((product) => {
         const sizeValue = (product?.meta?.[META_KEYS.SIZE_FEET] || "").trim();
         return selectedSizes.includes(sizeValue);
       });
     }
+
     // Sorting
     if (sortField && sortOrder) {
       result = result.sort((a, b) => {
@@ -292,7 +299,7 @@ const ProductsList = () => {
     priceMax,
     sortField,
     sortOrder,
-    showSizeFilter, // ← add
+    showSizeFilter,
     selectedSizes,
   ]);
 
@@ -336,6 +343,47 @@ const ProductsList = () => {
     setSearchParams({ page: currentPage.toString() });
     setLocalSearch("");
   };
+
+  // ── Menu Items for Actions Dropdown ────────────────────
+  const getActionsMenuItems = (product) => [
+    {
+      key: "view",
+      label: <Link to={`/product/${product.productId}`}>View</Link>,
+    },
+    {
+      key: "edit",
+      label: (
+        <PermissionGate api="edit" module="products">
+          <Link to={`/product/${product.productId}/edit`}>Edit</Link>
+        </PermissionGate>
+      ),
+    },
+    {
+      key: "add-stock",
+      label: "Add Stock",
+      onClick: () => openStockModal(product, "add"),
+    },
+    {
+      key: "remove-stock",
+      label: "Remove Stock",
+      onClick: () => openStockModal(product, "remove"),
+    },
+    {
+      key: "history",
+      label: "View History",
+      onClick: () => openHistoryModal(product),
+    },
+    {
+      key: "delete",
+      danger: true,
+      label: (
+        <PermissionGate api="delete" module="products">
+          Delete
+        </PermissionGate>
+      ),
+      onClick: () => handleDeleteClick(product),
+    },
+  ];
 
   // ── Table Columns ──────────────────────────────────────
   const columns = [
@@ -447,7 +495,10 @@ const ProductsList = () => {
             </PermissionGate>
 
             <PermissionGate api="edit|delete" module="products">
-              <Dropdown overlay={menu(record)} trigger={["click"]}>
+              <Dropdown
+                menu={{ items: getActionsMenuItems(record) }}
+                trigger={["click"]}
+              >
                 <Button type="text" icon={<MoreOutlined />} />
               </Dropdown>
             </PermissionGate>
@@ -456,40 +507,6 @@ const ProductsList = () => {
       },
     },
   ];
-
-  const menu = (product) => (
-    <Menu>
-      <Menu.Item key="view">
-        <Link to={`/product/${product.productId}`}>View</Link>
-      </Menu.Item>
-      <PermissionGate api="edit" module="products">
-        <Menu.Item key="edit">
-          <Link to={`/product/${product.productId}/edit`}>Edit</Link>
-        </Menu.Item>
-      </PermissionGate>
-      <Menu.Item key="add-stock" onClick={() => openStockModal(product, "add")}>
-        Add Stock
-      </Menu.Item>
-      <Menu.Item
-        key="remove-stock"
-        onClick={() => openStockModal(product, "remove")}
-      >
-        Remove Stock
-      </Menu.Item>
-      <Menu.Item key="history" onClick={() => openHistoryModal(product)}>
-        View History
-      </Menu.Item>
-      <PermissionGate api="delete" module="products">
-        <Menu.Item
-          danger
-          key="delete"
-          onClick={() => handleDeleteClick(product)}
-        >
-          Delete
-        </Menu.Item>
-      </PermissionGate>
-    </Menu>
-  );
 
   // ── Handlers ───────────────────────────────────────────
   const handleAddToCart = async (product) => {
@@ -665,6 +682,7 @@ const ProductsList = () => {
             </Form.Item>
           </Form>
         </div>
+
         {isLoading ? (
           <div className="text-center py-5">
             <Spin size="large" />
@@ -701,7 +719,7 @@ const ProductsList = () => {
                     getCategoryName={getCategoryName}
                     handleAddToCart={handleAddToCart}
                     cartLoadingStates={cartLoadingStates}
-                    menu={menu}
+                    menuItems={getActionsMenuItems(product)} // pass items instead of menu function
                   />
                 ))}
               </div>

@@ -15,13 +15,12 @@ import {
   WhatsAppOutlined,
   MoreOutlined,
   FileAddFilled,
+  EditOutlined,
 } from "@ant-design/icons";
-import { EditOutlined } from "@ant-design/icons";
 import {
   message,
   Table,
   Dropdown,
-  Menu,
   Button,
   Input,
   Select,
@@ -42,37 +41,32 @@ const { Option } = Select;
 const SiteMapList = () => {
   const navigate = useNavigate();
 
-  // RTK Queries
-  const { data: customersData } = useGetCustomersQuery({ limit: 500 }); // or 500
+  // ── RTK Queries ──────────────────────────────────────────────────────────
+  const { data: customersData } = useGetCustomersQuery({ limit: 500 });
+  const customers = customersData?.data || [];
+
+  const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const {
-    data: siteMapsData,
-    isLoading,
-    isError,
+    data: customerSiteMaps = { data: [] },
+    isFetching,
     refetch,
-  } = useGetSiteMapsByCustomerQuery("", { skip: true }); // We'll fetch per customer
+  } = useGetSiteMapsByCustomerQuery(selectedCustomerId, {
+    skip: !selectedCustomerId,
+  });
+
+  const siteMapsForCustomer = customerSiteMaps.data || [];
+
   const [deleteSiteMap, { isLoading: isDeleting }] = useDeleteSiteMapMutation();
   const [generateQuotation] = useGenerateQuotationFromSiteMapMutation();
 
-  const customers = customersData?.data || [];
-  const siteMaps = siteMapsData?.data || [];
-
-  // State
-  const [selectedCustomerId, setSelectedCustomerId] = useState("");
+  // ── State ────────────────────────────────────────────────────────────────
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [siteMapToDelete, setSiteMapToDelete] = useState(null);
 
-  // Refetch when customer changes
-  const { data: customerSiteMaps = { data: [] }, isFetching } =
-    useGetSiteMapsByCustomerQuery(selectedCustomerId, {
-      skip: !selectedCustomerId,
-    });
-
-  const siteMapsForCustomer = customerSiteMaps.data || [];
-
-  // Filtering & Search
+  // ── Filtering & Pagination ───────────────────────────────────────────────
   const filteredSiteMaps = useMemo(() => {
     let result = siteMapsForCustomer;
 
@@ -85,11 +79,12 @@ const SiteMapList = () => {
       );
     }
 
-    // Create a shallow copy before sorting to avoid mutating frozen array
+    // Sort newest first
     return [...result].sort(
       (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
     );
   }, [siteMapsForCustomer, searchTerm]);
+
   const currentSiteMaps = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
     return filteredSiteMaps.slice(start, start + pageSize);
@@ -100,6 +95,57 @@ const SiteMapList = () => {
     return cust ? cust.name : "Unknown";
   };
 
+  // ── Actions Menu Items (fixed pattern) ───────────────────────────────────
+  const getSiteMapMenuItems = (record) =>
+    [
+      {
+        key: "view",
+        label: (
+          <Link to={`/site-map/${record.id}`}>
+            <EyeOutlined style={{ marginRight: 8 }} /> View
+          </Link>
+        ),
+      },
+      {
+        key: "edit",
+        label: (
+          <Link to={`/site-map/${record.id}/edit`}>
+            <EditOutlined style={{ marginRight: 8 }} /> Edit
+          </Link>
+        ),
+      },
+      record.status !== "converted" && {
+        key: "generate",
+        label: (
+          <>
+            <FileAddFilled style={{ marginRight: 8 }} /> Generate Quotation
+          </>
+        ),
+        onClick: () => handleGenerateQuotation(record),
+      },
+      {
+        key: "whatsapp",
+        label: (
+          <>
+            <WhatsAppOutlined style={{ marginRight: 8, color: "#25D366" }} />{" "}
+            Share
+          </>
+        ),
+        onClick: () => handleShareOnWhatsApp(record),
+      },
+      {
+        key: "delete",
+        danger: true,
+        label: (
+          <>
+            <DeleteOutlined style={{ marginRight: 8 }} /> Delete
+          </>
+        ),
+        onClick: () => handleDeleteClick(record),
+      },
+    ].filter(Boolean); // remove falsy entries (e.g. hidden generate button)
+
+  // ── Handlers ─────────────────────────────────────────────────────────────
   const handleGenerateQuotation = async (siteMap) => {
     try {
       const res = await generateQuotation(siteMap.id).unwrap();
@@ -109,6 +155,7 @@ const SiteMapList = () => {
       message.error(err.data?.message || "Failed to generate quotation");
     }
   };
+
   const handleOpenAddSiteMap = () => {
     if (!selectedCustomerId) {
       message.warning("Please select a customer first.");
@@ -116,6 +163,7 @@ const SiteMapList = () => {
     }
     navigate(`/site-map/add?customerId=${selectedCustomerId}`);
   };
+
   const handleDeleteClick = (siteMap) => {
     setSiteMapToDelete(siteMap);
     setShowDeleteModal(true);
@@ -152,6 +200,7 @@ View Site Map: ${window.location.origin}/site-map/${siteMap.id}
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
   };
 
+  // ── Table Columns ────────────────────────────────────────────────────────
   const columns = [
     {
       title: "S.No.",
@@ -214,45 +263,7 @@ View Site Map: ${window.location.origin}/site-map/${siteMap.id}
       width: 100,
       render: (_, record) => (
         <Dropdown
-          overlay={
-            <Menu>
-              <Menu.Item key="view">
-                <Link to={`/site-map/${record.id}`}>
-                  <EyeOutlined style={{ marginRight: 8 }} /> View
-                </Link>
-              </Menu.Item>
-              <Menu.Item key="edit">
-                <Link to={`/site-map/${record.id}/edit`}>
-                  <EditOutlined style={{ marginRight: 8 }} /> Edit
-                </Link>
-              </Menu.Item>
-              {record.status !== "converted" && (
-                <Menu.Item
-                  key="generate"
-                  onClick={() => handleGenerateQuotation(record)}
-                >
-                  <FileAddFilled style={{ marginRight: 8 }} /> Generate
-                  Quotation
-                </Menu.Item>
-              )}
-              <Menu.Item
-                key="whatsapp"
-                onClick={() => handleShareOnWhatsApp(record)}
-              >
-                <WhatsAppOutlined
-                  style={{ marginRight: 8, color: "#25D366" }}
-                />{" "}
-                Share
-              </Menu.Item>
-              <Menu.Item
-                key="delete"
-                danger
-                onClick={() => handleDeleteClick(record)}
-              >
-                <DeleteOutlined style={{ marginRight: 8 }} /> Delete
-              </Menu.Item>
-            </Menu>
-          }
+          menu={{ items: getSiteMapMenuItems(record) }}
           trigger={["click"]}
         >
           <Button type="text" icon={<MoreOutlined />} />
@@ -261,6 +272,7 @@ View Site Map: ${window.location.origin}/site-map/${siteMap.id}
     },
   ];
 
+  // ── Render ───────────────────────────────────────────────────────────────
   if (!selectedCustomerId) {
     return (
       <div className="page-wrapper">
@@ -273,9 +285,7 @@ View Site Map: ${window.location.origin}/site-map/${siteMap.id}
           <Card>
             <div style={{ textAlign: "center", padding: "60px 20px" }}>
               <HomeOutlined
-                size={64}
-                color="#e31e24"
-                style={{ marginBottom: 24 }}
+                style={{ fontSize: 64, color: "#e31e24", marginBottom: 24 }}
               />
               <Title level={3}>Select a Customer to View Site Maps</Title>
               <Text type="secondary">
@@ -322,124 +332,103 @@ View Site Map: ${window.location.origin}/site-map/${siteMap.id}
           }}
         />
 
-        {/* Show empty state only when no customer selected */}
-        {!selectedCustomerId ? (
-          <Card>
-            <div style={{ textAlign: "center", padding: "80px 20px" }}>
-              <HomeOutlined
-                size={80}
-                color="#1890ff"
-                style={{ marginBottom: 24 }}
+        <Card>
+          <div className="card-body">
+            <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+              <Input
+                prefix={<SearchOutlined />}
+                placeholder="Search site maps..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+                style={{ width: 300 }}
               />
-              <Title level={3}>Select a Customer to View Site Maps</Title>
-              <Text type="secondary">
-                Choose a customer from the dropdown above to see their projects
+              <Select
+                showSearch
+                allowClear
+                placeholder="Select customer to view site maps"
+                style={{ width: 340 }}
+                value={selectedCustomerId || undefined}
+                onChange={(value) => {
+                  setSelectedCustomerId(value || "");
+                  setCurrentPage(1);
+                  setSearchTerm("");
+                }}
+                optionFilterProp="children"
+                filterOption={(input, option) =>
+                  option.children
+                    .toString()
+                    .toLowerCase()
+                    .includes(input.toLowerCase())
+                }
+              >
+                {customers.map((c) => (
+                  <Option key={c.customerId} value={c.customerId}>
+                    <div>
+                      <div>
+                        <strong>{c.name}</strong>
+                      </div>
+                      {c.phone && (
+                        <small style={{ color: "#666" }}>{c.phone}</small>
+                      )}
+                    </div>
+                  </Option>
+                ))}
+              </Select>
+              <Text strong>
+                Total: {filteredSiteMaps.length} Site Map
+                {filteredSiteMaps.length !== 1 ? "s" : ""}
               </Text>
             </div>
-          </Card>
-        ) : (
-          <Card>
-            {/* Your existing table code */}
-            <div className="card-body">
-              <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-                <Input
-                  prefix={<SearchOutlined />}
-                  placeholder="Search site maps..."
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setCurrentPage(1);
+
+            <Table
+              columns={columns}
+              dataSource={currentSiteMaps}
+              pagination={false}
+              loading={isFetching}
+              rowKey="id"
+              scroll={{ x: 1200 }}
+            />
+
+            {filteredSiteMaps.length > pageSize && (
+              <div className="d-flex justify-content-end mt-4">
+                <Pagination
+                  current={currentPage}
+                  pageSize={pageSize}
+                  total={filteredSiteMaps.length}
+                  onChange={(page, size) => {
+                    setCurrentPage(page);
+                    setPageSize(size);
                   }}
-                  style={{ width: 300 }}
+                  showSizeChanger
+                  pageSizeOptions={["10", "20", "50"]}
                 />
-                <Select
-                  showSearch
-                  allowClear
-                  placeholder="Select customer to view site maps"
-                  style={{ width: 340 }}
-                  value={selectedCustomerId || undefined}
-                  onChange={(value) => {
-                    setSelectedCustomerId(value || "");
-                    setCurrentPage(1);
-                    setSearchTerm("");
-                  }}
-                  optionFilterProp="children"
-                  filterOption={(input, option) =>
-                    option.children
-                      .toString()
-                      .toLowerCase()
-                      .includes(input.toLowerCase())
+              </div>
+            )}
+
+            {filteredSiteMaps.length === 0 && (
+              <div style={{ textAlign: "center", padding: "60px 20px" }}>
+                <HomeOutlined
+                  style={{ fontSize: 48, color: "#d9d9d9", marginBottom: 16 }}
+                />
+                <Text type="secondary">No site maps found</Text>
+                <br />
+                <Button
+                  type="primary"
+                  size="large"
+                  style={{ marginTop: 16, backgroundColor: "#333333" }}
+                  onClick={() =>
+                    navigate(`/site-map/add?customerId=${selectedCustomerId}`)
                   }
                 >
-                  {customers.map((c) => (
-                    <Option key={c.customerId} value={c.customerId}>
-                      <div>
-                        <div>
-                          <strong>{c.name}</strong>
-                        </div>
-                        {c.phone && (
-                          <small style={{ color: "#666" }}>{c.phone}</small>
-                        )}
-                      </div>
-                    </Option>
-                  ))}
-                </Select>
-                <Text strong>
-                  Total: {filteredSiteMaps.length} Site Map
-                  {filteredSiteMaps.length !== 1 ? "s" : ""}
-                </Text>
+                  Create First Site Map
+                </Button>
               </div>
-
-              <Table
-                columns={columns}
-                dataSource={currentSiteMaps}
-                pagination={false}
-                loading={isFetching}
-                rowKey="id"
-                scroll={{ x: 1200 }}
-              />
-
-              {/* Pagination & Empty State */}
-              {filteredSiteMaps.length > pageSize && (
-                <div className="d-flex justify-content-end mt-4">
-                  <Pagination
-                    current={currentPage}
-                    pageSize={pageSize}
-                    total={filteredSiteMaps.length}
-                    onChange={(page, size) => {
-                      setCurrentPage(page);
-                      setPageSize(size);
-                    }}
-                    showSizeChanger
-                    pageSizeOptions={["10", "20", "50"]}
-                  />
-                </div>
-              )}
-
-              {filteredSiteMaps.length === 0 && (
-                <div style={{ textAlign: "center", padding: "60px 20px" }}>
-                  <HomeOutlined
-                    size={48}
-                    color="#d9d9d9"
-                    style={{ marginBottom: 16 }}
-                  />
-                  <Text type="secondary">No site maps found</Text>
-                  <br />
-                  <Button
-                    type="primary"
-                    size="large"
-                    style={{ marginTop: 16, backgroundColor: "#333333" }}
-                    onClick={() =>
-                      navigate(`/site-map/add?customerId=${selectedCustomerId}`)
-                    }
-                  >
-                    Create First Site Map
-                  </Button>
-                </div>
-              )}
-            </div>
-          </Card>
-        )}
+            )}
+          </div>
+        </Card>
 
         <DeleteModal
           isVisible={showDeleteModal}

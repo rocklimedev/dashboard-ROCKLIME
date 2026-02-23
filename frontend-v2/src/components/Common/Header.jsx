@@ -1,15 +1,5 @@
-import React, {
-  useState,
-  useEffect,
-  useCallback,
-  useMemo,
-  useRef,
-} from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useGetProfileQuery } from "../../api/userApi";
-import { useGetCartQuery } from "../../api/cartApi";
-import { useGetNotificationsQuery } from "../../api/notificationApi";
-import { Dropdown, Button, Menu, Badge, Input, Spin } from "antd";
 import {
   BellOutlined,
   ShoppingCartOutlined,
@@ -20,51 +10,48 @@ import {
   SearchOutlined,
   CloseOutlined,
 } from "@ant-design/icons";
-import SearchOverlay from "./SearchOverlay";
-import { message } from "antd";
-import Avatar from "react-avatar";
+import { Badge, Button, Dropdown, Input, Menu, message, Spin } from "antd";
+
+import { useGetProfileQuery } from "../../api/userApi";
+import { useGetCartQuery } from "../../api/cartApi";
+import { useGetNotificationsQuery } from "../../api/notificationApi";
 import { useLogoutMutation } from "../../api/authApi";
+import { useSearchAllQuery } from "../../api/searchApi";
+
 import { useAuth } from "../../context/AuthContext";
 import PermissionsGate from "../../context/PermissionGate";
-import { useSearchAllQuery } from "../../api/searchApi";
+import SearchOverlay from "./SearchOverlay";
 import NotificationsOverlay from "../Notifications/NotificationsWrapper";
 
-const Header = ({ toggleSidebar, isSidebarOpen }) => {
+import Avatar from "react-avatar";
+
+export default function Header({ toggleSidebar, isSidebarOpen }) {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout: contextLogout } = useAuth();
 
-  // === Queries ===
-  const {
-    data: user,
-    isLoading: isProfileLoading,
-    error: profileError,
-  } = useGetProfileQuery();
-
+  // ── Data ────────────────────────────────────────────────
+  const { data: user, isLoading: isProfileLoading } = useGetProfileQuery();
   const userId = user?.user?.userId;
-  const userRoles = user?.user?.roles || [];
-  const hasAdminOrDevAccess =
-    userRoles.includes("SUPER_ADMIN") || userRoles.includes("DEVELOPER");
+  const username = user?.user?.username || "User";
+  const avatarSrc = user?.user?.photo_thumbnail || user?.user?.profileImage;
 
   const { data: cart } = useGetCartQuery(userId, { skip: !userId });
-
   const { data: notifications = [] } = useGetNotificationsQuery(undefined, {
     skip: !userId,
   });
 
   const [logoutMutation, { isLoading: isLoggingOut }] = useLogoutMutation();
 
-  // === State ===
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
+  const cartCount = cart?.cart?.items?.length || 0;
+  const unreadNotifications = notifications.filter((n) => !n.read).length;
 
-  // Mobile Search States
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  // ── Search ──────────────────────────────────────────────
   const [searchQuery, setSearchQuery] = useState("");
-
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [showSearchOverlay, setShowSearchOverlay] = useState(false);
 
   const searchRef = useRef(null);
-  const mobileSearchInputRef = useRef(null);
+  const mobileInputRef = useRef(null);
 
   const {
     data: searchData,
@@ -74,21 +61,22 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
     { query: searchQuery, limit: 8 },
     { skip: !searchQuery.trim() },
   );
-  const searchResults = searchData?.results || null;
 
-  // Auto-focus mobile search
+  const searchResults = searchData?.results ?? null;
+
+  // Auto-focus mobile input
   useEffect(() => {
-    if (mobileSearchOpen && mobileSearchInputRef.current) {
-      mobileSearchInputRef.current.focus();
+    if (mobileSearchOpen && mobileInputRef.current) {
+      mobileInputRef.current.focus();
     }
   }, [mobileSearchOpen]);
 
-  // Show overlay when typing
+  // Show overlay when there's a query
   useEffect(() => {
     setShowSearchOverlay(!!searchQuery.trim());
   }, [searchQuery]);
 
-  // Click outside to close search
+  // Click outside → close search
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (searchRef.current && !searchRef.current.contains(e.target)) {
@@ -97,14 +85,17 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
         setSearchQuery("");
       }
     };
+
     if (mobileSearchOpen || showSearchOverlay) {
       document.addEventListener("mousedown", handleClickOutside);
     }
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [mobileSearchOpen, showSearchOverlay]);
 
-  // Handlers
-  const handleFullscreenToggle = useCallback(() => {
+  // ── Fullscreen ──────────────────────────────────────────
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const toggleFullscreen = useCallback(() => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen?.();
       setIsFullscreen(true);
@@ -114,129 +105,147 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
     }
   }, []);
 
+  // ── Logout ──────────────────────────────────────────────
   const handleLogout = useCallback(async () => {
     try {
       await logoutMutation().unwrap();
-      logout();
+      contextLogout();
       navigate("/login", { replace: true });
     } catch {
       message.error("Logout failed. Please try again.");
     }
-  }, [logoutMutation, logout, navigate]);
+  }, [logoutMutation, contextLogout, navigate]);
 
-  // Counters
-  const notificationCount = useMemo(
-    () => notifications.filter((n) => !n.read).length || 0,
-    [notifications],
-  );
-
-  const cartItemCount = useMemo(() => cart?.cart?.items?.length || 0, [cart]);
-
-  // User Dropdown Menu
-  const userMenu = useMemo(
-    () => (
-      <Menu
-        className="shadow-sm rounded menu-drop-user"
-        style={{ zIndex: 1100 }}
-      >
-        <Menu.Item
-          key="profile-header"
-          className="d-flex align-items-center p-3 profileset"
-          disabled
-        >
-          <div>
-            <h6 className="fw-medium mb-0">
-              @{user?.user?.username || "User"}
-            </h6>
+  // ── Menus ───────────────────────────────────────────────
+  const userMenuItems = useMemo(
+    () => [
+      {
+        key: "profile-header",
+        disabled: true,
+        label: (
+          <div className="p-3">
+            <h6 className="mb-0 fw-medium">@{username}</h6>
           </div>
-        </Menu.Item>
-        <Menu.Divider />
-        <Menu.Item
-          key="profile"
-          onClick={() => navigate(`/u/${userId}`)}
-          icon={<UserOutlined className="me-2" />}
-        >
-          Profile
-        </Menu.Item>
-        <Menu.Item
-          key="settings"
-          onClick={() => navigate("/settings")}
-          icon={<SettingOutlined className="me-2" />}
-        >
-          Settings
-        </Menu.Item>
-        <Menu.Divider />
-        <Menu.Item
-          key="logout"
-          onClick={handleLogout}
-          disabled={isLoggingOut}
-          icon={<LogoutOutlined className="me-2" />}
-        >
-          {isLoggingOut ? "Logging out..." : "Logout"}
-        </Menu.Item>
-      </Menu>
-    ),
-    [
-      user?.user?.username, // only what is actually used
-      userId,
-      navigate,
-      handleLogout,
-      isLoggingOut,
-      // Remove hasAdminOrDevAccess — it's not used here
+        ),
+      },
+      { type: "divider" },
+      {
+        key: "profile",
+        icon: <UserOutlined />,
+        label: "Profile",
+        onClick: () => navigate(`/u/${userId}`),
+      },
+      {
+        key: "settings",
+        icon: <SettingOutlined />,
+        label: "Settings",
+        onClick: () => navigate("/settings"),
+      },
+      { type: "divider" },
+      {
+        key: "logout",
+        icon: <LogoutOutlined />,
+        label: isLoggingOut ? "Logging out..." : "Logout",
+        disabled: isLoggingOut,
+        onClick: handleLogout,
+      },
     ],
+    [username, userId, navigate, handleLogout, isLoggingOut],
   );
+
+  const mobileMoreMenuItems = useMemo(
+    () => [
+      {
+        key: "fullscreen",
+        icon: <FullscreenOutlined />,
+        label: isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen",
+        onClick: toggleFullscreen,
+      },
+      {
+        key: "notifications",
+        icon: <BellOutlined />,
+        label: (
+          <>
+            Notifications
+            {unreadNotifications > 0 && (
+              <Badge
+                count={unreadNotifications}
+                size="small"
+                className="ms-2"
+              />
+            )}
+          </>
+        ),
+        onClick: () => setShowNotifications(true),
+      },
+      {
+        key: "cart",
+        icon: <ShoppingCartOutlined />,
+        label: (
+          <Link
+            to="/cart"
+            className="d-flex justify-content-between align-items-center text-decoration-none"
+            style={{ color: "inherit" }}
+          >
+            <span>Cart</span>
+            {cartCount > 0 && <Badge count={cartCount} size="small" />}
+          </Link>
+        ),
+      },
+    ],
+    [isFullscreen, unreadNotifications, cartCount, toggleFullscreen],
+  );
+
+  // ── Notifications Overlay ───────────────────────────────
+  const [showNotifications, setShowNotifications] = useState(false);
 
   return (
     <>
-      <header className="header bg-white shadow-sm">
+      <header className="header bg-white shadow-sm sticky-top">
         <div className="main-header d-flex align-items-center justify-content-between px-3 px-md-4 py-2">
-          {/* Left: Hamburger (mobile) */}
+          {/* Left – Mobile Hamburger */}
           <div className="d-flex align-items-center">
-            <a
+            <button
+              type="button"
               className="mobile_btn me-3 d-lg-none"
               onClick={() => toggleSidebar(!isSidebarOpen)}
-              id="mobile_btn"
             >
               <span className="bar-icon">
-                <span></span>
-                <span></span>
-                <span></span>
+                <span />
+                <span />
+                <span />
               </span>
-            </a>
+            </button>
           </div>
 
-          {/* Center: Search */}
+          {/* Center – Search */}
           <div className="flex-grow-1 px-2 px-md-4" ref={searchRef}>
             <div className="position-relative w-100">
-              {/* Mobile Search Trigger */}
+              {/* Mobile search trigger */}
               <div className="d-md-none text-center">
                 <Button
                   type="link"
-                  className={mobileSearchOpen ? "d-none" : "d-inline-block"}
+                  className={mobileSearchOpen ? "d-none" : ""}
                   onClick={() => setMobileSearchOpen(true)}
                 >
                   <SearchOutlined style={{ fontSize: 24 }} />
                 </Button>
               </div>
 
-              {/* Mobile Full-width Search */}
+              {/* Mobile full-width search */}
               <div
-                className={`mobile-search-container d-md-none ${
-                  mobileSearchOpen ? "open" : ""
-                }`}
+                className={`mobile-search-container d-md-none ${mobileSearchOpen ? "open" : ""}`}
                 style={{
                   position: mobileSearchOpen ? "fixed" : "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
+                  inset: mobileSearchOpen ? "0" : undefined,
                   zIndex: 1000,
-                  background: "var(--background-color, white)",
+                  background: "white",
                   padding: "12px 16px",
                   boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                 }}
               >
                 <Input
-                  ref={mobileSearchInputRef}
+                  ref={mobileInputRef}
                   prefix={<SearchOutlined />}
                   suffix={
                     searchFetching ? (
@@ -248,7 +257,6 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                         onClick={() => {
                           setMobileSearchOpen(false);
                           setSearchQuery("");
-                          setShowSearchOverlay(false);
                         }}
                         size="small"
                       />
@@ -262,7 +270,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                 />
               </div>
 
-              {/* Desktop Search Bar */}
+              {/* Desktop search */}
               <div className="d-none d-md-block">
                 <Input
                   prefix={<SearchOutlined />}
@@ -279,7 +287,6 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                 />
               </div>
 
-              {/* Search Results Overlay */}
               <SearchOverlay
                 visible={showSearchOverlay}
                 loading={searchLoading || searchFetching}
@@ -293,79 +300,37 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
             </div>
           </div>
 
-          {/* Right: Actions + User */}
+          {/* Right – Actions + User */}
           <div className="d-flex align-items-center gap-2 gap-md-3">
-            {/* Desktop-only icons */}
+            {/* Desktop icons */}
             <div className="d-none d-md-flex align-items-center gap-3">
-              <Button
-                type="link"
-                onClick={handleFullscreenToggle}
-                title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
-              >
-                <FullscreenOutlined
-                  style={{ fontSize: 18, color: "#333333" }}
-                />
+              <Button type="link" onClick={toggleFullscreen}>
+                <FullscreenOutlined style={{ fontSize: 18, color: "#333" }} />
               </Button>
 
               <Button type="link" onClick={() => setShowNotifications(true)}>
-                <Badge count={notificationCount} size="small" offset={[-4, 4]}>
+                <Badge
+                  count={unreadNotifications}
+                  size="small"
+                  offset={[-4, 4]}
+                >
                   <BellOutlined style={{ fontSize: 18 }} />
                 </Badge>
               </Button>
 
               <PermissionsGate api="write" module="cart">
                 <Link to="/cart">
-                  <Badge count={cartItemCount} size="small" offset={[-4, 4]}>
+                  <Badge count={cartCount} size="small" offset={[-4, 4]}>
                     <ShoppingCartOutlined style={{ fontSize: 20 }} />
                   </Badge>
                 </Link>
               </PermissionsGate>
             </div>
 
-            {/* Mobile More Menu */}
+            {/* Mobile more menu */}
             <div className="d-md-none">
               <Dropdown
-                overlay={
-                  <Menu className="shadow-sm rounded">
-                    <Menu.Item
-                      key="fullscreen"
-                      icon={<FullscreenOutlined />}
-                      onClick={handleFullscreenToggle}
-                    >
-                      {isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
-                    </Menu.Item>
-
-                    <Menu.Item
-                      key="notifications"
-                      icon={<BellOutlined />}
-                      onClick={() => setShowNotifications(true)}
-                    >
-                      Notifications
-                      {notificationCount > 0 && (
-                        <Badge
-                          count={notificationCount}
-                          size="small"
-                          className="ms-2"
-                        />
-                      )}
-                    </Menu.Item>
-
-                    <PermissionsGate api="write" module="cart">
-                      <Menu.Item key="cart" icon={<ShoppingCartOutlined />}>
-                        <Link
-                          to="/cart"
-                          className="d-flex justify-content-between align-items-center w-100 text-decoration-none"
-                          style={{ color: "inherit" }}
-                        >
-                          <span>Cart</span>
-                          {cartItemCount > 0 && (
-                            <Badge count={cartItemCount} size="small" />
-                          )}
-                        </Link>
-                      </Menu.Item>
-                    </PermissionsGate>
-                  </Menu>
-                }
+                menu={{ items: mobileMoreMenuItems }}
                 trigger={["click"]}
                 placement="bottomRight"
               >
@@ -384,81 +349,32 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
               </Dropdown>
             </div>
 
-            {/* User Avatar */}
-            {/* User Avatar */}
-            {/* User Avatar */}
-            <div className="ms-1 ms-md-2">
-              {isProfileLoading ? (
-                <span className="text-muted">Loading...</span>
-              ) : profileError ? (
-                <span className="text-danger">Error</span>
-              ) : (
-                <Dropdown
-                  overlay={() => (
-                    <Menu
-                      className="shadow-sm rounded menu-drop-user"
-                      style={{ zIndex: 1100 }}
-                    >
-                      <Menu.Item
-                        key="profile-header"
-                        className="d-flex align-items-center p-3 profileset"
-                        disabled
-                      >
-                        <div>
-                          <h6 className="fw-medium mb-0">
-                            @{user?.user?.username || "User"}
-                          </h6>
-                        </div>
-                      </Menu.Item>
-                      <Menu.Divider />
-                      <Menu.Item
-                        key="profile"
-                        onClick={() => navigate(`/u/${userId}`)}
-                        icon={<UserOutlined className="me-2" />}
-                      >
-                        Profile
-                      </Menu.Item>
-                      <Menu.Item
-                        key="settings"
-                        onClick={() => navigate("/settings")}
-                        icon={<SettingOutlined className="me-2" />}
-                      >
-                        Settings
-                      </Menu.Item>
-                      <Menu.Divider />
-                      <Menu.Item
-                        key="logout"
-                        onClick={handleLogout}
-                        disabled={isLoggingOut}
-                        icon={<LogoutOutlined className="me-2" />}
-                      >
-                        {isLoggingOut ? "Logging out..." : "Logout"}
-                      </Menu.Item>
-                    </Menu>
-                  )}
-                  trigger={["click"]}
-                  placement="bottomRight"
-                >
-                  <a
-                    href="#"
-                    className="nav-link userset d-flex align-items-center"
-                    onClick={(e) => e.preventDefault()}
-                  >
-                    <Avatar
-                      name={user?.user?.name || user?.user?.username || "User"}
-                      src={
-                        user?.user?.photo_thumbnail || user?.user?.profileImage
-                      }
-                      size={36}
-                      round={true}
-                      className="circular-avatar"
-                      textSizeRatio={2.2}
-                      maxInitials={2}
-                    />
-                  </a>
-                </Dropdown>
-              )}
-            </div>
+            {/* User avatar dropdown */}
+            <Dropdown
+              menu={{ items: userMenuItems }}
+              trigger={["click"]}
+              placement="bottomRight"
+            >
+              <a
+                href="#"
+                className="nav-link userset d-flex align-items-center"
+                onClick={(e) => e.preventDefault()}
+              >
+                {isProfileLoading ? (
+                  <Spin size="small" />
+                ) : (
+                  <Avatar
+                    name={user?.user?.name || username}
+                    src={avatarSrc}
+                    size={36}
+                    round
+                    className="circular-avatar"
+                    textSizeRatio={2.2}
+                    maxInitials={2}
+                  />
+                )}
+              </a>
+            </Dropdown>
           </div>
         </div>
       </header>
@@ -469,6 +385,4 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
       />
     </>
   );
-};
-
-export default Header;
+}

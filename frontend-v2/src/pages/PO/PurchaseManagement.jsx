@@ -16,7 +16,7 @@ import {
   DeleteOutlined,
   MoreOutlined,
 } from "@ant-design/icons";
-import { Dropdown, Menu } from "antd";
+import { Dropdown } from "antd";
 import { useGetUserByIdQuery } from "../../api/userApi";
 
 import DeleteModal from "../../components/Common/DeleteModal";
@@ -50,13 +50,7 @@ const RED_LIGHT = "#ffebee";
 const RED_SOFT = "#ef9a9a";
 
 // ─────────────────────────────────────────────────────────────
-// PO Row Component
-// ─────────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────
-// PO Row Component (Fully Corrected Version)
-// ─────────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────
-// PO Row Component (Fixed - Hooks Rules Compliant)
+// PO Row Component (Fixed)
 // ─────────────────────────────────────────────────────────────
 const PORow = ({
   po,
@@ -75,12 +69,8 @@ const PORow = ({
 }) => {
   const navigate = useNavigate();
 
-  // ── Created By – now simple & direct ─────────────────────────
   const createdByDisplay = po?.createdBy ? (
-    po?.createdBy?.name ||
-    po?.createdBy?.email ||
-    po?.createdBy?.username ||
-    "—"
+    po.createdBy.name || po.createdBy.email || po.createdBy.username || "—"
   ) : (
     <span style={{ color: "#999", fontStyle: "italic" }}>-</span>
   );
@@ -88,6 +78,17 @@ const PORow = ({
   const serial = (filters.page - 1) * filters.limit + idx + 1;
   const vendorName = vendorMap[po.vendorId] || "—";
   const status = po.status || "pending";
+
+  // Menu items for PO actions
+  const poMenuItems = [
+    {
+      key: "delete",
+      danger: true,
+      icon: <DeleteOutlined />,
+      label: "Delete",
+      onClick: () => handleDeletePOClick(po.id),
+    },
+  ];
 
   return (
     <tr key={po.id}>
@@ -205,18 +206,7 @@ const PORow = ({
 
           <PermissionGate api="delete" module="purchase_orders">
             <Dropdown
-              overlay={
-                <Menu>
-                  <Menu.Item
-                    key="delete"
-                    danger
-                    icon={<DeleteOutlined />}
-                    onClick={() => handleDeletePOClick(po.id)}
-                  >
-                    Delete
-                  </Menu.Item>
-                </Menu>
-              }
+              menu={{ items: poMenuItems }}
               trigger={["click"]}
               placement="bottomRight"
             >
@@ -230,7 +220,7 @@ const PORow = ({
 };
 
 // ─────────────────────────────────────────────────────────────
-// FGS Row Component
+// FGS Row Component (Fixed)
 // ─────────────────────────────────────────────────────────────
 const FGSRow = ({
   fgs,
@@ -248,7 +238,6 @@ const FGSRow = ({
   getFGSStatusBg,
   getFGSStatusColor,
 }) => {
-  // ── No more useGetUserByIdQuery ────────────────────────────────
   const createdByDisplay = fgs?.createdBy ? (
     fgs.createdBy.name || fgs.createdBy.email || fgs.createdBy.username || "—"
   ) : (
@@ -258,6 +247,23 @@ const FGSRow = ({
   const serial = (filters.page - 1) * filters.limit + idx + 1;
   const vendorName = vendorMap[fgs.vendorId] || "—";
   const status = fgs.status || "draft";
+
+  // Menu items for FGS actions
+  const fgsMenuItems = [
+    {
+      key: "delete",
+      danger: true,
+      icon: <DeleteOutlined />,
+      label: "Delete",
+      onClick: () => handleDeleteFGSClick(fgs.id),
+    },
+    status === "approved" && {
+      key: "convert",
+      icon: <span style={{ color: PRIMARY_RED }}>→</span>,
+      label: "Convert to PO",
+      onClick: () => handleConvertToPO(fgs.id, fgs.fgsNumber),
+    },
+  ].filter(Boolean);
 
   return (
     <tr key={fgs.id}>
@@ -317,7 +323,7 @@ const FGSRow = ({
           ? new Date(fgs.expectDeliveryDate).toLocaleDateString()
           : "—"}
       </td>
-      <td>{createdByDisplay}</td> {/* ← now uses backend-populated data */}
+      <td>{createdByDisplay}</td>
       <td>
         <div className="d-flex gap-2">
           <PermissionGate api="edit" module="field_guided_sheets">
@@ -327,30 +333,7 @@ const FGSRow = ({
             />
           </PermissionGate>
           <PermissionGate api="delete" module="field_guided_sheets">
-            <Dropdown
-              overlay={
-                <Menu>
-                  <Menu.Item
-                    key="delete"
-                    danger
-                    icon={<DeleteOutlined />}
-                    onClick={() => handleDeleteFGSClick(fgs.id)}
-                  >
-                    Delete
-                  </Menu.Item>
-                  {status === "approved" && (
-                    <Menu.Item
-                      key="convert"
-                      icon={<span style={{ color: PRIMARY_RED }}>→</span>}
-                      onClick={() => handleConvertToPO(fgs.id, fgs.fgsNumber)}
-                    >
-                      Convert to PO
-                    </Menu.Item>
-                  )}
-                </Menu>
-              }
-              trigger={["click"]}
-            >
+            <Dropdown menu={{ items: fgsMenuItems }} trigger={["click"]}>
               <Button type="text" icon={<MoreOutlined />} />
             </Dropdown>
           </PermissionGate>
@@ -359,6 +342,7 @@ const FGSRow = ({
     </tr>
   );
 };
+
 const PurchaseManagement = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -408,13 +392,12 @@ const PurchaseManagement = () => {
     },
     { skip: activeTab !== "po" },
   );
-  console.log(poData);
+
   const [deletePurchaseOrder] = useDeletePurchaseOrderMutation();
   const [updatePurchaseOrderStatus, { isLoading: isUpdatingPOStatus }] =
     useUpdatePurchaseOrderStatusMutation();
 
   const purchaseOrders = poData?.purchaseOrders?.data || [];
-
   const poTotal = poData?.purchaseOrders?.pagination?.total || 0;
 
   // ─── FGS Queries ─────────────────────────────────────
@@ -694,8 +677,8 @@ const PurchaseManagement = () => {
                     handlePOStatusChange={handlePOStatusChange}
                     isUpdatingPOStatus={isUpdatingPOStatus}
                     handleOpenDatesModal={handleOpenDatesModal}
-                    poStatuses={poStatuses} // ← passed here
-                    isDueDateClose={isDueDateClose} // ← passed here
+                    poStatuses={poStatuses}
+                    isDueDateClose={isDueDateClose}
                   />
                 ) : (
                   <FGSRow
@@ -711,9 +694,9 @@ const PurchaseManagement = () => {
                     setEditingFGSStatusId={setEditingFGSStatusId}
                     handleFGSStatusChange={handleFGSStatusChange}
                     isUpdatingFGSStatus={isUpdatingFGSStatus}
-                    fgsStatuses={fgsStatuses} // ← passed here
-                    getFGSStatusBg={getFGSStatusBg} // ← passed here
-                    getFGSStatusColor={getFGSStatusColor} // ← passed here
+                    fgsStatuses={fgsStatuses}
+                    getFGSStatusBg={getFGSStatusBg}
+                    getFGSStatusColor={getFGSStatusColor}
                   />
                 ),
               )}
