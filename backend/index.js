@@ -8,7 +8,6 @@ const helmet = require("helmet");
 const cron = require("node-cron");
 const db = require("./config/database");
 const connectMongoDB = require("./config/dbMongo");
-const setupDB = require("./utils/db");
 const keys = require("./config/keys");
 const { initSocket } = require("./controller/notificationController");
 const CachedPermission = require("./models/cachedPermission");

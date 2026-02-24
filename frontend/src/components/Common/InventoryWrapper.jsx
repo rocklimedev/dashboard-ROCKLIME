@@ -44,13 +44,11 @@ const InventoryWrapper = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Read initial tab from URL, default to "all"
   const queryParams = new URLSearchParams(location.search);
   const urlTab = queryParams.get("tab");
   const validTabs = ["all", "in-stock", "low-stock", "out-of-stock"];
   const initialTab = validTabs.includes(urlTab) ? urlTab : "all";
 
-  // States
   const [activeTab, setActiveTab] = useState(initialTab);
   const [currentPage, setCurrentPage] = useState(() => {
     const page = Number(queryParams.get("page"));
@@ -61,14 +59,12 @@ const InventoryWrapper = () => {
     return [10, 25, 50, 100].includes(limit) ? limit : 50;
   });
 
-  // Search initializes from URL once, then becomes local-only (no URL sync)
   const [search, setSearch] = useState(() => queryParams.get("search") || "");
 
   const [lowStockThreshold, setLowStockThreshold] = useState(10);
   const [maxStockFilter, setMaxStockFilter] = useState(null);
   const [priceRange, setPriceRange] = useState([null, null]);
 
-  // Modals
   const [stockModalOpen, setStockModalOpen] = useState(false);
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [reportModalOpen, setReportModalOpen] = useState(false);
@@ -81,17 +77,31 @@ const InventoryWrapper = () => {
   const screens = Grid.useBreakpoint();
   const isMobile = !screens.md;
 
-  // RTK Query
+  // Query arguments - include tab to prepare for future cache key customization
+  const queryArgs = useMemo(
+    () => ({
+      page: currentPage,
+      limit: pageSize,
+      search: search.trim() || undefined,
+      tab: activeTab, // dummy - helps if you later customize serializeQueryArgs
+    }),
+    [currentPage, pageSize, search, activeTab],
+  );
+
   const {
     data: response,
     error,
     isLoading,
     isFetching,
-  } = useGetAllProductsQuery({
-    page: currentPage,
-    limit: pageSize,
-    search: search.trim() || undefined, // optional: already sent to backend if supported
+    refetch,
+  } = useGetAllProductsQuery(queryArgs, {
+    refetchOnMountOrArgChange: true, // Helps prevent stale data on tab switches
   });
+
+  // Force refetch after tab change (critical for pagination reset)
+  useEffect(() => {
+    refetch();
+  }, [activeTab, refetch]);
 
   const [addStock] = useAddStockMutation();
   const [removeStock] = useRemoveStockMutation();
@@ -108,7 +118,7 @@ const InventoryWrapper = () => {
     totalPages: 0,
   };
 
-  // Auto-switch to low-stock tab if coming from dashboard with ?low_stock
+  // Auto-switch to low-stock if coming from dashboard
   useEffect(() => {
     if (queryParams.has("low_stock") && activeTab === "all") {
       setActiveTab("low-stock");
@@ -121,29 +131,37 @@ const InventoryWrapper = () => {
     }
   }, [location.search, activeTab, navigate]);
 
-  // Update URL when tab, page, or limit changes — but NOT when search changes
+  // URL sync for tab, page, limit only
   useEffect(() => {
-    const params = new URLSearchParams();
+    const params = new URLSearchParams(location.search);
 
-    if (activeTab !== "all") params.set("tab", activeTab);
-    if (currentPage > 1) params.set("page", currentPage);
-    if (pageSize !== 50) params.set("limit", pageSize);
-    // IMPORTANT: search is intentionally NOT added here anymore
+    if (activeTab === "all") params.delete("tab");
+    else params.set("tab", activeTab);
 
-    const searchString = params.toString();
-    const newSearch = searchString ? `?${searchString}` : "";
+    if (currentPage <= 1) params.delete("page");
+    else params.set("page", currentPage);
 
-    if (newSearch !== location.search) {
-      navigate(`${location.pathname}${newSearch}`, { replace: true });
+    if (pageSize === 50) params.delete("limit");
+    else params.set("limit", pageSize);
+
+    const newSearch = params.toString();
+    const newUrl = newSearch ? `?${newSearch}` : "";
+
+    if (newUrl !== location.search) {
+      navigate(`${location.pathname}${newUrl}`, { replace: true });
     }
   }, [activeTab, currentPage, pageSize, navigate, location.pathname]);
 
-  // Reset page when tab changes
-  useEffect(() => {
+  const handleTabChange = (key) => {
     setCurrentPage(1);
-  }, [activeTab]);
+    setActiveTab(key);
+  };
 
-  // Image parsing
+  const handlePageChange = (page, size) => {
+    setCurrentPage(page);
+    if (size) setPageSize(size);
+  };
+
   const parseImages = (images) => {
     try {
       if (typeof images === "string") {
@@ -156,7 +174,6 @@ const InventoryWrapper = () => {
     }
   };
 
-  // Company code helper
   const getCompanyCode = (metaDetails) => {
     if (!Array.isArray(metaDetails) || metaDetails.length === 0) return "N/A";
     const lastEntry = metaDetails[metaDetails.length - 1];
@@ -176,7 +193,6 @@ const InventoryWrapper = () => {
     return codeLike ? String(codeLike.value).trim() : "N/A";
   };
 
-  // Selling price helper
   const getSellingPrice = (metaDetails) => {
     if (!Array.isArray(metaDetails) || metaDetails.length === 0) return null;
     for (const d of metaDetails) {
@@ -197,7 +213,6 @@ const InventoryWrapper = () => {
     return null;
   };
 
-  // Filtering (client-side)
   const filteredProducts = useMemo(() => {
     const term = search.toLowerCase().trim();
     return products.filter((p) => {
@@ -232,25 +247,46 @@ const InventoryWrapper = () => {
   }, [filteredProducts, activeTab, lowStockThreshold]);
 
   const counts = useMemo(() => {
-    return {
+    const base = {
       all: paginationInfo.total,
-      inStock: products.filter((p) => p.quantity > 0).length,
-      lowStock: products.filter(
-        (p) => p.quantity > 0 && p.quantity <= lowStockThreshold,
-      ).length,
-      outStock: products.filter((p) => p.quantity === 0).length,
+      inStock: 0,
+      lowStock: 0,
+      outStock: 0,
     };
-  }, [products, paginationInfo.total, lowStockThreshold]);
 
-  // Handlers
-  const handleTabChange = (key) => {
-    setActiveTab(key);
-  };
+    const hasClientFilter =
+      maxStockFilter !== null ||
+      priceRange[0] !== null ||
+      priceRange[1] !== null ||
+      search.trim() !== "";
 
-  const handlePageChange = (page, size) => {
-    setCurrentPage(page);
-    setPageSize(size);
-  };
+    if (hasClientFilter) {
+      base.all = tabFilteredProducts.length;
+      base.inStock = tabFilteredProducts.filter((p) => p.quantity > 0).length;
+      base.lowStock = tabFilteredProducts.filter(
+        (p) => p.quantity > 0 && p.quantity <= lowStockThreshold,
+      ).length;
+      base.outStock = tabFilteredProducts.filter(
+        (p) => p.quantity === 0,
+      ).length;
+    } else {
+      base.inStock = products.filter((p) => p.quantity > 0).length;
+      base.lowStock = products.filter(
+        (p) => p.quantity > 0 && p.quantity <= lowStockThreshold,
+      ).length;
+      base.outStock = products.filter((p) => p.quantity === 0).length;
+    }
+
+    return base;
+  }, [
+    paginationInfo.total,
+    products,
+    tabFilteredProducts,
+    maxStockFilter,
+    priceRange,
+    lowStockThreshold,
+    search,
+  ]);
 
   const openStockModal = (product, action) => {
     setSelectedProduct(product);
@@ -307,11 +343,8 @@ const InventoryWrapper = () => {
             : "In Stock",
     }));
     const title = `Custom Inventory Report - ${new Date().toLocaleDateString("en-IN")}`;
-    if (format === "pdf") {
-      generatePDF(reportData, title);
-    } else {
-      generateExcel(reportData, title);
-    }
+    if (format === "pdf") generatePDF(reportData, title);
+    else generateExcel(reportData, title);
     setReportModalOpen(false);
     setSelectedReportProducts([]);
     message.success("Report generated successfully!");

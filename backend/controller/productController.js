@@ -22,7 +22,7 @@ const {
 // Correct import
 const { uploadToFtp } = require("../middleware/upload"); // ← this is where it really is
 // controllers/productController.js
-
+const COMPANY_CODE_META_ID = "d11da9f9-3f2e-4536-8236-9671200cca4a"; // ← your existing UUID
 // THIS IS THE MAGIC FIX — RUN IT ON EVERY REQUEST
 const ensureAssociations = () => {
   // Force Product ↔ Keyword (M:N)
@@ -70,17 +70,91 @@ const parseJsonSafely = (input, fallback = {}, context = "") => {
     return fallback;
   }
 };
+async function generateProductCode({
+  brandId,
+  categoryId, // optional – can be ignored if not needed in code
+  companyCode, // ← this is the 4-digit base from frontend (Company/Batch Code)
+  transaction,
+}) {
+  // ────────────────────────────────────────────────
+  // Brand short code & prefix part
+  // ────────────────────────────────────────────────
+  let brandShort = "XX"; // fallback
+  let brandPrefix = "XX";
 
+  if (brandId) {
+    const brand = await Brand.findByPk(brandId, {
+      attributes: ["brandName"],
+      transaction,
+    });
+    if (brand?.brandName) {
+      const name = brand.brandName.trim().toUpperCase();
+      brandShort = name.slice(0, 2); // e.g. "PR", "GR", "PE"
+      brandPrefix = name.slice(0, 2); // same or customize if needed
+    }
+  }
+
+  // ────────────────────────────────────────────────
+  // Base code = Company/Batch Code from frontend (4 digits)
+  // ────────────────────────────────────────────────
+  let baseCode = "0000";
+
+  if (companyCode) {
+    const raw = String(companyCode).trim();
+    const digits = raw.replace(/\D/g, ""); // keep only numbers
+    if (digits.length >= 4) {
+      baseCode = digits.slice(-4); // take last 4 digits
+    } else if (digits.length > 0) {
+      baseCode = digits.padEnd(4, "0"); // pad if shorter
+    }
+  } else {
+    // Ultimate fallback if user didn't enter anything
+    baseCode = new Date().getFullYear().toString().slice(-2) + "00";
+  }
+
+  // ────────────────────────────────────────────────
+  // Final prefix: E + BrandShort + BrandPrefix + baseCode
+  // Example: EPRPE3009XXXX
+  // ────────────────────────────────────────────────
+  const prefix = `E${brandShort}${brandPrefix}${baseCode}`;
+
+  // ────────────────────────────────────────────────
+  // Generate random 4-digit suffix (1000–9999) + retry if duplicate
+  // ────────────────────────────────────────────────
+  let newCode;
+  let attempts = 0;
+  const MAX_ATTEMPTS = 50; // very safe – collisions are rare
+
+  do {
+    if (attempts++ > MAX_ATTEMPTS) {
+      throw new Error(
+        `Cannot generate unique product code after ${MAX_ATTEMPTS} attempts`,
+      );
+    }
+
+    const suffix = Math.floor(1000 + Math.random() * 9000).toString(); // 1000–9999
+    newCode = `${prefix}${suffix}`;
+
+    const exists = await Product.findOne({
+      where: { product_code: newCode },
+      transaction,
+    });
+
+    if (!exists) break;
+  } while (true);
+
+  return newCode;
+}
 // ==================== CREATE PRODUCT ====================
 exports.createProduct = async (req, res) => {
   const t = await sequelize.transaction();
 
   try {
-    // THIS LINE FIXES EVERYTHING ON RENDER
     ensureAssociations();
+
     const {
       name,
-      product_code,
+      product_code: inputProductCode,
       quantity = 0,
       isMaster,
       masterProductId,
@@ -90,19 +164,14 @@ exports.createProduct = async (req, res) => {
       meta: metaInput,
       isFeatured = false,
       status,
-      keywordIds = [], // ← can be string or array
+      keywordIds = [],
       ...restFields
     } = req.body;
 
-    // Parse meta safely
+    // Parse meta
     let metaObj = {};
     if (metaInput) {
-      try {
-        metaObj =
-          typeof metaInput === "string" ? JSON.parse(metaInput) : metaInput;
-      } catch (e) {
-        return res.status(400).json({ message: "Invalid meta JSON" });
-      }
+      metaObj = parseJsonSafely(metaInput, {}, "meta");
     }
 
     // Upload images
@@ -114,15 +183,17 @@ exports.createProduct = async (req, res) => {
       }
     }
 
+    // ────────────────────────────────────────────────
+    // 1. Prepare base product data
+    // ────────────────────────────────────────────────
     const productData = {
-      name: name?.trim(),
-      product_code: product_code?.trim(),
-      quantity: parseInt(quantity, 10),
+      name: name?.trim() || "Unnamed Product",
+      quantity: parseInt(quantity, 10) || 0,
       images: imageUrls.length > 0 ? JSON.stringify(imageUrls) : null,
       meta: Object.keys(metaObj).length > 0 ? metaObj : null,
       isFeatured: isFeatured === "true" || isFeatured === true,
       status: status || (quantity > 0 ? "active" : "out_of_stock"),
-      description: restFields.description || null,
+      description: restFields.description?.trim() || null,
       tax: restFields.tax ? parseFloat(restFields.tax) : null,
       alert_quantity: restFields.alert_quantity
         ? parseInt(restFields.alert_quantity, 10)
@@ -131,11 +202,66 @@ exports.createProduct = async (req, res) => {
       brandId: restFields.brandId || null,
       vendorId: restFields.vendorId || null,
       brand_parentcategoriesId: restFields.brand_parentcategoriesId || null,
+      // product_code will be set below
     };
+
+    // ────────────────────────────────────────────────
+    // 2. Handle product_code – auto-generate if missing
+    // ────────────────────────────────────────────────
+    let finalProductCode = (inputProductCode || "").trim();
+
+    if (!finalProductCode) {
+      try {
+        finalProductCode = await generateProductCode({
+          brandId: restFields.brandId,
+          categoryId: restFields.categoryId,
+          companyCode: metaObj?.[COMPANY_CODE_META_ID] || null,
+          transaction: t,
+        });
+      } catch (err) {
+        await t.rollback();
+        return res.status(500).json({
+          message: "Failed to auto-generate product code",
+          error: err.message,
+        });
+      }
+    }
+
+    // ────────────────────────────────────────────────
+    // 3. Ensure uniqueness with simple collision handling
+    // ────────────────────────────────────────────────
+    let attempt = 0;
+    const maxAttempts = 10;
+
+    while (attempt < maxAttempts) {
+      const duplicate = await Product.findOne({
+        where: { product_code: finalProductCode },
+        transaction: t,
+      });
+
+      if (!duplicate) break;
+
+      finalProductCode =
+        finalProductCode.replace(/-\d+$/, "") + `-${attempt + 2}`;
+      attempt++;
+    }
+
+    if (attempt >= maxAttempts) {
+      await t.rollback();
+      return res.status(409).json({
+        message:
+          "Could not generate a unique product code after multiple attempts",
+      });
+    }
+
+    // Assign the final safe code
+    productData.product_code = finalProductCode;
 
     let finalProduct;
 
+    // ────────────────────────────────────────────────
     // CASE 1: Master Product
+    // ────────────────────────────────────────────────
     if (isMaster === "true" || isMaster === true) {
       finalProduct = await Product.create(
         {
@@ -149,45 +275,41 @@ exports.createProduct = async (req, res) => {
         { transaction: t },
       );
     }
-    // CASE 2: Variant of a Master
+
+    // ────────────────────────────────────────────────
+    // CASE 2: Variant of existing master
+    // ────────────────────────────────────────────────
     else if (masterProductId) {
       const master = await Product.findOne({
         where: { productId: masterProductId, isMaster: true },
         transaction: t,
       });
+
       if (!master) {
         await t.rollback();
         return res.status(400).json({ message: "Master product not found" });
       }
 
-      let variantOpts = {};
-      try {
-        variantOpts = variantOptionsInput
-          ? JSON.parse(variantOptionsInput)
-          : {};
-      } catch (e) {
-        await t.rollback();
-        return res.status(400).json({ message: "Invalid variantOptions JSON" });
-      }
+      const variantOpts = parseJsonSafely(variantOptionsInput, {});
 
       const generatedVariantKey = Object.values(variantOpts)
         .filter(Boolean)
         .join(" ");
+
       const generatedSkuSuffix = generatedVariantKey
         ? `-${generatedVariantKey.toUpperCase().replace(/\s+/g, "-")}`
         : "";
 
       finalProduct = await Product.create(
         {
-          ...productData,
-          name: name || `${master.name} - ${generatedVariantKey}`,
-          product_code:
-            product_code || `${master.product_code}${generatedSkuSuffix}`,
+          ...productData, // ← already has correct product_code
+          name:
+            name?.trim() || `${master.name} - ${generatedVariantKey}`.trim(),
           masterProductId: master.productId,
           isMaster: false,
           variantOptions: Object.keys(variantOpts).length ? variantOpts : null,
-          variantKey: generatedVariantKey || variantKey,
-          skuSuffix: generatedSkuSuffix || skuSuffix,
+          variantKey: generatedVariantKey || variantKey || null,
+          skuSuffix: generatedSkuSuffix || skuSuffix || null,
           categoryId: restFields.categoryId || master.categoryId,
           brandId: restFields.brandId || master.brandId,
           vendorId: restFields.vendorId || master.vendorId,
@@ -197,12 +319,15 @@ exports.createProduct = async (req, res) => {
           images:
             imageUrls.length > 0 ? JSON.stringify(imageUrls) : master.images,
           meta: Object.keys(metaObj).length > 0 ? metaObj : master.meta,
-          description: restFields.description || master.description,
+          description: restFields.description?.trim() || master.description,
         },
         { transaction: t },
       );
     }
-    // CASE 3: Standalone Product
+
+    // ────────────────────────────────────────────────
+    // CASE 3: Standalone / normal product
+    // ────────────────────────────────────────────────
     else {
       finalProduct = await Product.create(
         { ...productData, isMaster: false },
@@ -210,22 +335,28 @@ exports.createProduct = async (req, res) => {
       );
     }
 
-    // Set keywords using belongsToMany magic method
+    // ────────────────────────────────────────────────
+    // Attach keywords
+    // ────────────────────────────────────────────────
     const cleanKeywordIds = Array.isArray(keywordIds)
-      ? keywordIds.filter((id) => id)
+      ? keywordIds.filter(Boolean)
       : typeof keywordIds === "string"
         ? keywordIds
             .split(",")
             .map((id) => id.trim())
-            .filter((id) => id)
+            .filter(Boolean)
         : [];
 
-    await finalProduct.setKeywords(cleanKeywordIds, { transaction: t });
+    if (cleanKeywordIds.length > 0) {
+      await finalProduct.setKeywords(cleanKeywordIds, { transaction: t });
+    }
 
     await t.commit();
 
-    // Return fresh product with keywords
-    const product = await Product.findByPk(finalProduct.productId, {
+    // ────────────────────────────────────────────────
+    // Return fresh product with relations
+    // ────────────────────────────────────────────────
+    const createdProduct = await Product.findByPk(finalProduct.productId, {
       include: [
         {
           model: Keyword,
@@ -243,7 +374,7 @@ exports.createProduct = async (req, res) => {
       ],
     });
 
-    const keywords = (product.keywords || []).map((k) => ({
+    const keywords = (createdProduct.keywords || []).map((k) => ({
       id: k.id,
       keyword: k.keyword,
       categories: k.categories
@@ -258,23 +389,24 @@ exports.createProduct = async (req, res) => {
     res.status(201).json({
       message: "Product created successfully",
       product: {
-        ...product.toJSON(),
-        images: product.images ? JSON.parse(product.images) : [],
-        meta: product.meta || {},
+        ...createdProduct.toJSON(),
+        images: createdProduct.images ? JSON.parse(createdProduct.images) : [],
+        meta: createdProduct.meta || {},
         keywords,
-        variantOptions: product.variantOptions || {},
-        variantKey: product.variantKey || null,
-        skuSuffix: product.skuSuffix || null,
-        isMaster: !!product.isMaster,
-        isVariant: !!product.masterProductId,
+        variantOptions: createdProduct.variantOptions || {},
+        variantKey: createdProduct.variantKey || null,
+        skuSuffix: createdProduct.skuSuffix || null,
+        isMaster: !!createdProduct.isMaster,
+        isVariant: !!createdProduct.masterProductId,
       },
     });
   } catch (error) {
     await t.rollback();
     console.error("createProduct error:", error);
-    res
-      .status(500)
-      .json({ message: "Failed to create product", error: error.message });
+    res.status(500).json({
+      message: "Failed to create product",
+      error: error.message,
+    });
   }
 };
 

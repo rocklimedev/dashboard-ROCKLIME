@@ -1,0 +1,6418 @@
+[
+  {
+    "category": "Auric Series",
+    "company_code": "AA-5982-2",
+    "name": "Double Robe Hook",
+    "meta": [{ "color_name": "Chrome" }],
+    "selling_price": 3506
+  },
+  {
+    "category": "Auric Series",
+    "company_code": "AA-5982-2",
+    "name": "Double Robe Hook",
+    "meta": [{ "color_name": "Gold" }],
+    "selling_price": 5260
+  },
+  {
+    "category": "Auric Series",
+    "company_code": "AA-5984-A",
+    "name": "Tumbler Holder",
+    "meta": [{ "color_name": "Chrome" }],
+    "selling_price": 3797
+  },
+  {
+    "category": "Auric Series",
+    "company_code": "AA-5984-A",
+    "name": "Tumbler Holder",
+    "meta": [{ "color_name": "Gold" }],
+    "selling_price": 5697
+  },
+  {
+    "category": "Auric Series",
+    "company_code": "AA-5985-A",
+    "name": "Soap Holder",
+    "meta": [{ "color_name": "Chrome" }],
+    "selling_price": 3797
+  },
+  {
+    "category": "Auric Series",
+    "company_code": "AA-5985-A",
+    "name": "Soap Holder",
+    "meta": [{ "color_name": "Gold" }],
+    "selling_price": 5697
+  },
+  {
+    "category": "Auric Series",
+    "company_code": "AA-5980",
+    "name": "Towel Ring",
+    "meta": [{ "color_name": "Chrome" }],
+    "selling_price": 5571
+  },
+  {
+    "category": "Auric Series",
+    "company_code": "AA-5980",
+    "name": "Towel Ring",
+    "meta": [{ "color_name": "Gold" }],
+    "selling_price": 8357
+  },
+  {
+    "category": "Auric Series",
+    "company_code": "AA-5924",
+    "name": "Towel Bar 600 mm",
+    "meta": [{ "color_name": "Chrome" }],
+    "selling_price": 7038
+  },
+  {
+    "category": "Auric Series",
+    "company_code": "AA-5924",
+    "name": "Towel Bar 600 mm",
+    "meta": [{ "color_name": "Gold" }],
+    "selling_price": 10558
+  },
+  {
+    "category": "Auric Series",
+    "company_code": "AA-5911",
+    "name": "Soap Basket",
+    "meta": [{ "color_name": "Chrome" }],
+    "selling_price": 4893
+  },
+  {
+    "category": "Auric Series",
+    "company_code": "AA-5911",
+    "name": "Soap Basket",
+    "meta": [{ "color_name": "Gold" }],
+    "selling_price": 7339
+  },
+  {
+    "category": "Auric Series",
+    "company_code": "AA-5925",
+    "name": "Double Towel Bar 600 mm",
+    "meta": [{ "color_name": "Chrome" }],
+    "selling_price": 10218
+  },
+  {
+    "category": "Auric Series",
+    "company_code": "AA-5925",
+    "name": "Double Towel Bar 600 mm",
+    "meta": [{ "color_name": "Gold" }],
+    "selling_price": 15327
+  },
+  {
+    "category": "Auric Series",
+    "company_code": "AA-5986",
+    "name": "Toilet Paper Holder With Cover",
+    "meta": [{ "color_name": "Chrome" }],
+    "selling_price": 5582
+  },
+  {
+    "category": "Auric Series",
+    "company_code": "AA-5986",
+    "name": "Toilet Paper Holder With Cover",
+    "meta": [{ "color_name": "Gold" }],
+    "selling_price": 8373
+  },
+  {
+    "category": "Auric Series",
+    "company_code": "AA-5988-A",
+    "name": "Toilet Brush Set",
+    "meta": [{ "color_name": "Chrome" }],
+    "selling_price": 6430
+  },
+  {
+    "category": "Auric Series",
+    "company_code": "AA-5988-A",
+    "name": "Toilet Brush Set",
+    "meta": [{ "color_name": "Gold" }],
+    "selling_price": 9646
+  },
+  {
+    "category": "Auric Series",
+    "company_code": "AA-5962",
+    "name": "Towel Rack 600 mm",
+    "meta": [{ "color_name": "Chrome" }],
+    "selling_price": 16710
+  },
+  {
+    "category": "Auric Series",
+    "company_code": "AA-5962",
+    "name": "Towel Rack 600 mm",
+    "meta": [{ "color_name": "Gold" }],
+    "selling_price": 25064
+  },
+  {
+    "category": "Auric Series",
+    "company_code": "AA-5981A",
+    "name": "Soap Dispenser",
+    "meta": [{ "color_name": "Chrome" }],
+    "selling_price": 6324
+  },
+  {
+    "category": "Auric Series",
+    "company_code": "AA-5981A",
+    "name": "Soap Dispenser",
+    "meta": [{ "color_name": "Gold" }],
+    "selling_price": 9486
+  },
+
+  {
+    "category": "Solid Brass Shelf Series",
+    "company_code": "68207",
+    "name": "Solid Soap Dish",
+    "meta": [{ "color_name": "Chrome" }],
+    "selling_price": 6883
+  },
+  {
+    "category": "Solid Brass Shelf Series",
+    "company_code": "68207",
+    "name": "Solid Soap Dish",
+    "meta": [{ "color_name": "Matt Black" }],
+    "selling_price": 4589
+  },
+
+  {
+    "company_code": "AG-22308",
+    "category": "AEGON_SERIES",
+    "name": "Robe Hook",
+    "meta": [{ "color_name": "Chrome", "selling_price": 1504 }]
+  },
+  {
+    "company_code": "AG-22303A",
+    "category": "AEGON_SERIES",
+    "name": "Tumbler Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3046 }]
+  },
+  {
+    "company_code": "AG-22301A",
+    "name": "Soap Holder",
+    "category": "AEGON_SERIES",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3046 }]
+  },
+  {
+    "company_code": "AG-22304",
+    "category": "AEGON_SERIES",
+    "name": "Paper Holder With Flap",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3428 }]
+  },
+  {
+    "company_code": "AG-22306",
+    "category": "AEGON_SERIES",
+    "name": "Towel Ring",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3291 }]
+  },
+  {
+    "company_code": "AG-22305",
+    "category": "AEGON_SERIES",
+    "name": "Paper Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 2588 }]
+  },
+  {
+    "company_code": "AG-22309",
+    "category": "AEGON_SERIES",
+    "name": "Towel Rail 600 mm",
+    "meta": [{ "color_name": "Chrome", "selling_price": 4945 }]
+  },
+  {
+    "company_code": "AG-22310",
+    "category": "AEGON_SERIES",
+    "name": "Towel Rail 450 mm",
+    "meta": [{ "color_name": "Chrome", "selling_price": 4754 }]
+  },
+  {
+    "company_code": "AG-22302A",
+    "category": "AEGON_SERIES",
+    "name": "Soap Dispenser",
+    "meta": [{ "color_name": "Chrome", "selling_price": 4945 }]
+  },
+  {
+    "company_code": "AG-22311",
+    "category": "AEGON_SERIES",
+    "name": "Towel Rack 600 mm",
+    "meta": [{ "color_name": "Chrome", "selling_price": 12536 }]
+  },
+  {
+    "company_code": "AG-22312",
+    "category": "AEGON_SERIES",
+    "name": "Towel Rack 450 mm",
+    "meta": [{ "color_name": "Chrome", "selling_price": 12184 }]
+  },
+  {
+    "company_code": "AG-22307A",
+    "category": "AEGON_SERIES",
+    "name": "Toilet Brush Set",
+    "meta": [{ "color_name": "Chrome", "selling_price": 4883 }]
+  },
+
+  {
+    "category": "BREEZE_SERIES",
+    "company_code": "WY-7401",
+    "name": "Robe Hook",
+    "meta": [{ "color_name": "Chrome", "selling_price": 1449 }]
+  },
+  {
+    "category": "BREEZE_SERIES",
+    "company_code": "WY-7411",
+    "name": "Double Robe Hook",
+    "meta": [{ "color_name": "Chrome", "selling_price": 2479 }]
+  },
+  {
+    "category": "BREEZE_SERIES",
+    "company_code": "WY-89005A",
+    "name": "Tumbler Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 4916 }]
+  },
+  {
+    "category": "BREEZE_SERIES",
+    "company_code": "WY-89004",
+    "name": "Solid Soap Dish",
+    "meta": [{ "color_name": "Chrome", "selling_price": 5388 }]
+  },
+  {
+    "category": "BREEZE_SERIES",
+    "company_code": "WY-89002",
+    "name": "Roll Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 6953 }]
+  },
+  {
+    "category": "BREEZE_SERIES",
+    "company_code": "WY-89210",
+    "name": "Shelf With Paper Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 8096 }]
+  },
+  {
+    "category": "BREEZE_SERIES",
+    "company_code": "WY-89006A",
+    "name": "Soap Dispenser",
+    "meta": [{ "color_name": "Chrome", "selling_price": 7638 }]
+  },
+  {
+    "category": "BREEZE_SERIES",
+    "company_code": "WY-89010",
+    "name": "Shelf",
+    "meta": [{ "color_name": "Chrome", "selling_price": 12628 }]
+  },
+  {
+    "category": "BREEZE_SERIES",
+    "company_code": "WY-89310",
+    "name": "Shelf With Towel Ring",
+    "meta": [{ "color_name": "Chrome", "selling_price": 14567 }]
+  },
+  {
+    "category": "BREEZE_SERIES",
+    "company_code": "WY-89610A",
+    "name": "Shelf + Soap Dispenser With Towel Ring",
+    "meta": [{ "color_name": "Chrome", "selling_price": 16089 }]
+  },
+  {
+    "category": "BREEZE_SERIES",
+    "company_code": "WY-89008",
+    "name": "Single Towel Bar 500 mm",
+    "meta": [{ "color_name": "Chrome", "selling_price": 18261 }]
+  },
+  {
+    "category": "BREEZE_SERIES",
+    "company_code": "WYK016",
+    "name": "Towel Rack 600 mm",
+    "meta": [{ "color_name": "Chrome", "selling_price": 22882 }]
+  },
+
+  {
+    "category": "Altair",
+    "company_code": "ALT-70001",
+    "name": "Robe Hook",
+    "meta": [{ "color_name": "Chrome", "selling_price": 1843 }]
+  },
+  {
+    "category": "Altair",
+    "company_code": "ALT-70002",
+    "name": "Paper Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 2668 }]
+  },
+  {
+    "category": "Altair",
+    "company_code": "ALT-70003",
+    "name": "Towel Ring",
+    "meta": [{ "color_name": "Chrome", "selling_price": 2697 }]
+  },
+  {
+    "category": "Altair",
+    "company_code": "ALT-70104",
+    "name": "Forging Solid Soap Dish",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3499 }]
+  },
+  {
+    "category": "Altair",
+    "company_code": "ALT-70004A",
+    "name": "Soap Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 2958 }]
+  },
+  {
+    "category": "Altair",
+    "company_code": "ALT-70005A",
+    "name": "Tumbler Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3134 }]
+  },
+  {
+    "category": "Altair",
+    "company_code": "ALT-70008",
+    "name": "Towel Bar 600 MM",
+    "meta": [{ "color_name": "Chrome", "selling_price": 4517 }]
+  },
+  {
+    "category": "Altair",
+    "company_code": "ALT-70012A",
+    "name": "Toilet Brush Set",
+    "meta": [{ "color_name": "Chrome", "selling_price": 4401 }]
+  },
+  {
+    "category": "Altair",
+    "company_code": "ALT-70010",
+    "name": "Soap Dish (Brass)",
+    "meta": [{ "color_name": "Chrome", "selling_price": 2566 }]
+  },
+  {
+    "category": "Altair",
+    "company_code": "ALT-70006A",
+    "name": "Soap Dispenser",
+    "meta": [{ "color_name": "Chrome", "selling_price": 6346 }]
+  },
+  {
+    "category": "Altair",
+    "company_code": "ALT-70009",
+    "name": "Shelf 600 MM",
+    "meta": [{ "color_name": "Chrome", "selling_price": 6118 }]
+  },
+  {
+    "category": "Altair",
+    "company_code": "ALT-70007",
+    "name": "Towel Rack 600 MM",
+    "meta": [{ "color_name": "Chrome", "selling_price": 15052 }]
+  },
+
+  {
+    "category": "Monza",
+    "company_code": "WY-88104",
+    "name": "Single Robe Hook",
+    "meta": [{ "color_name": "Chrome", "selling_price": 1189 }]
+  },
+  {
+    "category": "Monza",
+    "company_code": "WY-88101",
+    "name": "Solid Double Robe Hook",
+    "meta": [{ "color_name": "Chrome", "selling_price": 2208 }]
+  },
+  {
+    "category": "Monza",
+    "company_code": "S-101017",
+    "name": "Solid Soap Dish 100x100x30 MM",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3751 }]
+  },
+  {
+    "category": "Monza",
+    "company_code": "WY-88103A",
+    "name": "Solid Soap Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3856 }]
+  },
+  {
+    "category": "Monza",
+    "company_code": "WY-88102A",
+    "name": "Solid Tumbler Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3856 }]
+  },
+  {
+    "category": "Monza",
+    "company_code": "S-101011",
+    "name": "Solid Shelf with Towel Ring",
+    "meta": [{ "color_name": "Chrome", "selling_price": 5663 }]
+  },
+  {
+    "category": "Monza",
+    "company_code": "WY-88107A",
+    "name": "Solid Soap Dish with Tumbler Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 7024 }]
+  },
+  {
+    "category": "Monza",
+    "company_code": "WY-88105AA",
+    "name": "Solid Double Tumbler Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 6442 }]
+  },
+  {
+    "category": "Monza",
+    "company_code": "S201017",
+    "name": "Solid Soap Dish with Shelf 200 MM",
+    "meta": [{ "color_name": "Chrome", "selling_price": 7100 }]
+  },
+  {
+    "category": "Monza",
+    "company_code": "S301017",
+    "name": "Solid Soap Dish with Shelf 300 MM",
+    "meta": [{ "color_name": "Chrome", "selling_price": 10167 }]
+  },
+  {
+    "category": "Monza",
+    "company_code": "WY-88106",
+    "name": "Solid Paper Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 6163 }]
+  },
+  {
+    "category": "Monza",
+    "company_code": "S-101012",
+    "name": "Toilet Paper Holder with Lid",
+    "meta": [{ "color_name": "Chrome", "selling_price": 7024 }]
+  },
+  {
+    "category": "Monza",
+    "company_code": "WY-88109",
+    "name": "Solid Paper Holder with Cover",
+    "meta": [{ "color_name": "Chrome", "selling_price": 7384 }]
+  },
+  {
+    "category": "Monza",
+    "company_code": "WY-88016",
+    "name": "Soap Dispenser Square Table Top",
+    "meta": [{ "color_name": "Chrome", "selling_price": 7024 }]
+  },
+  {
+    "category": "Monza",
+    "company_code": "68116",
+    "name": "Square Soap Dispenser",
+    "meta": [{ "color_name": "Chrome", "selling_price": 7024 }]
+  },
+  {
+    "category": "Monza",
+    "company_code": "95022",
+    "name": "Solid Double Swivel Towel Bar 375 MM",
+    "meta": [{ "color_name": "Chrome", "selling_price": 4301 }]
+  },
+
+  {
+    "category": "Monza",
+    "company_code": "S301003",
+    "name": "Solid Shelf",
+    "meta": [{ "color_name": "Chrome", "selling_price": 9975 }]
+  },
+  {
+    "category": "Monza",
+    "company_code": "S-101011A",
+    "name": "Shelf with Frame + Paper Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 8055 }]
+  },
+  {
+    "category": "Monza",
+    "company_code": "WY-68202",
+    "name": "Shelf with Towel Ring 300x100x30",
+    "meta": [{ "color_name": "Chrome", "selling_price": 11372 }]
+  },
+  {
+    "category": "Monza",
+    "company_code": "WY-88108",
+    "name": "Solid Towel Ring",
+    "meta": [{ "color_name": "Chrome", "selling_price": 9331 }]
+  },
+  {
+    "category": "Monza",
+    "company_code": "S301004",
+    "name": "Solid Shelf with Towel Ring",
+    "meta": [{ "color_name": "Chrome", "selling_price": 13623 }]
+  },
+  {
+    "category": "Monza",
+    "company_code": "S301011",
+    "name": "Solid Shelf with Double Paper Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 11663 }]
+  },
+  {
+    "category": "Monza",
+    "company_code": "WY88012",
+    "name": "Solid Towel Bar 500 MM",
+    "meta": [{ "color_name": "Chrome", "selling_price": 15631 }]
+  },
+  {
+    "category": "Monza",
+    "company_code": "WY-68103",
+    "name": "Shelf with Towel Ring 400x100x30",
+    "meta": [{ "color_name": "Chrome", "selling_price": 16739 }]
+  },
+  {
+    "category": "Monza",
+    "company_code": "WY-68008",
+    "name": "Shelf with Towel Bar 500x100x30",
+    "meta": [{ "color_name": "Chrome", "selling_price": 20450 }]
+  },
+  {
+    "category": "Monza",
+    "company_code": "WY88018",
+    "name": "Towel Rack 500 MM",
+    "meta": [{ "color_name": "Chrome", "selling_price": 13727 }]
+  },
+  {
+    "category": "Monza",
+    "company_code": "WY-88021",
+    "name": "Towel Rack 600 MM",
+    "meta": [{ "color_name": "Chrome", "selling_price": 14602 }]
+  },
+  {
+    "category": "Monza",
+    "company_code": "WY88020",
+    "name": "Double Towel Rack 500 MM",
+    "meta": [{ "color_name": "Chrome", "selling_price": 17449 }]
+  },
+  {
+    "category": "Monza",
+    "company_code": "WY88019",
+    "name": "Double Towel Rack 600 MM",
+    "meta": [{ "color_name": "Chrome", "selling_price": 19884 }]
+  },
+  {
+    "category": "Monza",
+    "company_code": "WY88000A",
+    "name": "4 Way Shelf + Soap Dish + Tumbler Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 17584 }]
+  },
+  {
+    "category": "Monza",
+    "company_code": "WY-68110",
+    "name": "Shelf 300x100x30",
+    "meta": [{ "color_name": "Chrome", "selling_price": 12146 }]
+  },
+  {
+    "category": "Monza",
+    "company_code": "WY-69003",
+    "name": "Shelf with Towel Ring 300x100x80",
+    "meta": [{ "color_name": "Chrome", "selling_price": 13623 }]
+  },
+  {
+    "category": "Monza",
+    "company_code": "WY-68302",
+    "name": "Shelf + Towel Ring + Roll Holder 300x100x100",
+    "meta": [{ "color_name": "Chrome", "selling_price": 14434 }]
+  },
+
+  {
+    "category": "Zonda",
+    "company_code": "K-71001",
+    "name": "Robe Hook",
+    "meta": [{ "color_name": "Chrome", "selling_price": 1718 }]
+  },
+  {
+    "category": "Zonda",
+    "company_code": "K-71002",
+    "name": "Paper Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 4292 }]
+  },
+  {
+    "category": "Zonda",
+    "company_code": "K-71004",
+    "name": "Soap Dish (Brass)",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3885 }]
+  },
+  {
+    "category": "Zonda",
+    "company_code": "K-71003",
+    "name": "Towel Ring",
+    "meta": [{ "color_name": "Chrome", "selling_price": 4477 }]
+  },
+  {
+    "category": "Zonda",
+    "company_code": "K-71005A",
+    "name": "Tumbler Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 4218 }]
+  },
+  {
+    "category": "Zonda",
+    "company_code": "K-71007A",
+    "name": "Soap Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 4218 }]
+  },
+  {
+    "category": "Zonda",
+    "company_code": "K-71008",
+    "name": "Towel Bar 600 MM",
+    "meta": [{ "color_name": "Chrome", "selling_price": 6111 }]
+  },
+  {
+    "category": "Zonda",
+    "company_code": "K-71006A",
+    "name": "Soap Dispenser",
+    "meta": [{ "color_name": "Chrome", "selling_price": 5452 }]
+  },
+  {
+    "category": "Zonda",
+    "company_code": "K-71009",
+    "name": "Forging Solid Soap Dish",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3499 }]
+  },
+  {
+    "category": "Zonda",
+    "company_code": "K-71010",
+    "name": "Shelf 600 MM",
+    "meta": [{ "color_name": "Chrome", "selling_price": 6478 }]
+  },
+  {
+    "category": "Zonda",
+    "company_code": "K-71011",
+    "name": "Towel Rack – Swivel Bar & Hook",
+    "meta": [{ "color_name": "Chrome", "selling_price": 15044 }]
+  },
+  {
+    "category": "Altair",
+    "company_code": "ALT-70001",
+    "name": "Robe Hook",
+    "selling_price": 1843,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Altair",
+    "company_code": "ALT-70002",
+    "name": "Paper Holder",
+    "selling_price": 2668,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Altair",
+    "company_code": "ALT-70003",
+    "name": "Towel Ring",
+    "selling_price": 2697,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Altair",
+    "company_code": "ALT-70104",
+    "name": "Forging Solid Soap Dish",
+    "selling_price": 3499,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Altair",
+    "company_code": "ALT-70004A",
+    "name": "Soap Holder",
+    "selling_price": 2958,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Altair",
+    "company_code": "ALT-70005A",
+    "name": "Tumbler Holder",
+    "selling_price": 3134,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Altair",
+    "company_code": "ALT-70008",
+    "name": "Towel Bar 600 MM",
+    "selling_price": 4517,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Altair",
+    "company_code": "ALT-70012A",
+    "name": "Toilet Brush Set",
+    "selling_price": 4401,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Altair",
+    "company_code": "ALT-70010",
+    "name": "Soap Dish (Brass)",
+    "selling_price": 2566,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Altair",
+    "company_code": "ALT-70006A",
+    "name": "Soap Dispenser",
+    "selling_price": 6346,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Altair",
+    "company_code": "ALT-70009",
+    "name": "Shelf 600 MM",
+    "selling_price": 6118,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Altair",
+    "company_code": "ALT-70007",
+    "name": "Towel Rack 600 MM",
+    "selling_price": 15052,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+
+  {
+    "category": "Monza",
+    "company_code": "WY-88104",
+    "name": "Single Robe Hook",
+    "selling_price": 1189,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Monza",
+    "company_code": "WY-88101",
+    "name": "Solid Double Robe Hook",
+    "selling_price": 2208,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Monza",
+    "company_code": "S-101017",
+    "name": "Solid Soap Dish 100x100x30 MM",
+    "selling_price": 3751,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Monza",
+    "company_code": "WY-88103A",
+    "name": "Solid Soap Holder",
+    "selling_price": 3856,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Monza",
+    "company_code": "WY-88102A",
+    "name": "Solid Tumbler Holder",
+    "selling_price": 3856,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+
+  {
+    "category": "Monza",
+    "company_code": "S301003",
+    "name": "Solid Shelf",
+    "selling_price": 9975,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Monza",
+    "company_code": "S-101011A",
+    "name": "Shelf With Frame + Paper Holder",
+    "selling_price": 8055,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Monza",
+    "company_code": "WY-68202",
+    "name": "Shelf With Towel Ring 300x100x30",
+    "selling_price": 11372,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Monza",
+    "company_code": "WY-88108",
+    "name": "Solid Towel Ring",
+    "selling_price": 9331,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+
+  {
+    "category": "Zonda",
+    "company_code": "K-71001",
+    "name": "Robe Hook",
+    "selling_price": 1718,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Zonda",
+    "company_code": "K-71002",
+    "name": "Paper Holder",
+    "selling_price": 4292,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Zonda",
+    "company_code": "K-71004",
+    "name": "Soap Dish (Brass)",
+    "selling_price": 3885,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Zonda",
+    "company_code": "K-71003",
+    "name": "Towel Ring",
+    "selling_price": 4477,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Zonda",
+    "company_code": "K-71005A",
+    "name": "Tumbler Holder",
+    "selling_price": 4218,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+
+  {
+    "category": "Orient",
+    "company_code": "OS-10108",
+    "name": "Double Swivel Hook",
+    "selling_price": 2182,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Orient",
+    "company_code": "OS-10105A",
+    "name": "Soap Dish With Tumbler Holder",
+    "selling_price": 4331,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Orient",
+    "company_code": "OS-10111A",
+    "name": "Tumbler Holder With Napkin Ring",
+    "selling_price": 4132,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Orient",
+    "company_code": "OS-10102",
+    "name": "Towel Bar With Swivel Towel Ring & Hook",
+    "selling_price": 6637,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+
+  {
+    "category": "Sumberg",
+    "company_code": "SB-75010",
+    "name": "Robe Hook",
+    "selling_price": 1830,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Sumberg",
+    "company_code": "SB-75211",
+    "name": "Roll Holder Spare",
+    "selling_price": 2967,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Sumberg",
+    "company_code": "SB-75007A",
+    "name": "Soap Holder",
+    "selling_price": 3370,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Sumberg",
+    "company_code": "SB-75006A",
+    "name": "Tumbler Holder",
+    "selling_price": 3370,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Sumberg",
+    "company_code": "SB-75004",
+    "name": "Towel Ring",
+    "selling_price": 4276,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Sumberg",
+    "company_code": "SB-75001",
+    "name": "Towel Rail 600 MM",
+    "selling_price": 5191,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Sumberg",
+    "company_code": "SB-75111",
+    "name": "Roll Holder With Cover",
+    "selling_price": 4069,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Sumberg",
+    "company_code": "SB-75011",
+    "name": "Toilet Brush Set Wall & Floor Mounted",
+    "selling_price": 5047,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Sumberg",
+    "company_code": "SB-75107",
+    "name": "Soap Dish (Brass)",
+    "selling_price": 7487,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Sumberg",
+    "company_code": "SB-75103",
+    "name": "Shelf With Frame",
+    "selling_price": 9153,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Sumberg",
+    "company_code": "SB-75102",
+    "name": "Towel Rack 600 MM",
+    "selling_price": 12536,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Sumberg",
+    "company_code": "SB-75105",
+    "name": "Towel Rack 450 MM",
+    "selling_price": 12184,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "New Hopes",
+    "company_code": "NH-46001",
+    "name": "Double Robe Hook",
+    "selling_price": 1280,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "New Hopes",
+    "company_code": "NH-46010",
+    "name": "Soap Dish (Brass)",
+    "selling_price": 2312,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "New Hopes",
+    "company_code": "NH-46007",
+    "name": "Roll Holder",
+    "selling_price": 2244,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "New Hopes",
+    "company_code": "NH-46002A",
+    "name": "Soap Holder",
+    "selling_price": 2192,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "New Hopes",
+    "company_code": "NH-46003A",
+    "name": "Tumbler Holder",
+    "selling_price": 2192,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "New Hopes",
+    "company_code": "NH-46011AA",
+    "name": "Double Soap Holder",
+    "selling_price": 4285,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "New Hopes",
+    "company_code": "NH-46004",
+    "name": "Towel Ring",
+    "selling_price": 2353,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "New Hopes",
+    "company_code": "NH-46008",
+    "name": "Roll Holder With Cover",
+    "selling_price": 2939,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "New Hopes",
+    "company_code": "NH-46005",
+    "name": "Towel Bar 600 MM",
+    "selling_price": 3713,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "New Hopes",
+    "company_code": "NH-46006",
+    "name": "Towel Bar 450 MM",
+    "selling_price": 3593,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "New Hopes",
+    "company_code": "NH-46009",
+    "name": "Double Towel Bar 600 MM",
+    "selling_price": 6089,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "New Hopes",
+    "company_code": "NH-46015A",
+    "name": "Soap Dispenser",
+    "selling_price": 2844,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "New Hopes",
+    "company_code": "NH-46012AA",
+    "name": "Double Tumbler Holder",
+    "selling_price": 4285,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "New Hopes",
+    "company_code": "NH-46016A",
+    "name": "Toilet Brush Set",
+    "selling_price": 3453,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "New Hopes",
+    "company_code": "NH-46014",
+    "name": "Soap Dispenser",
+    "selling_price": 4806,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "New Hopes",
+    "company_code": "NH-46017",
+    "name": "Bath Towel Rack 600 MM",
+    "selling_price": 11039,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "New Hopes",
+    "company_code": "NH-46018",
+    "name": "Bath Towel Rack 450 MM",
+    "selling_price": 10612,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Spanish",
+    "company_code": "SP-68010",
+    "name": "Robe Hook",
+    "selling_price": 1206,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Spanish",
+    "company_code": "WY-88101",
+    "name": "Double Robe Hook",
+    "selling_price": 2208,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Spanish",
+    "company_code": "SP-68011",
+    "name": "Roll Holder",
+    "selling_price": 2758,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Spanish",
+    "company_code": "SP-68007A",
+    "name": "Soap Holder",
+    "selling_price": 4072,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Spanish",
+    "company_code": "SP-68207",
+    "name": "Solid Soap Dish",
+    "selling_price": 4589,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Spanish",
+    "company_code": "SP-68001B",
+    "name": "Towel Rail 600 MM",
+    "selling_price": 6016,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Spanish",
+    "company_code": "SP-68006A",
+    "name": "Tumbler Holder",
+    "selling_price": 4072,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Spanish",
+    "company_code": "SP-95022",
+    "name": "Double Swivel Towel Bar",
+    "selling_price": 4301,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Spanish",
+    "company_code": "SP-68111",
+    "name": "Roll Holder With Cover",
+    "selling_price": 3718,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Spanish",
+    "company_code": "SP-68004",
+    "name": "Towel Ring",
+    "selling_price": 3820,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Spanish",
+    "company_code": "SP-68005A",
+    "name": "Toilet Brush Set",
+    "selling_price": 3968,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Spanish",
+    "company_code": "SP-68117",
+    "name": "Round Soap Dispenser",
+    "selling_price": 4806,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Spanish",
+    "company_code": "SP-68001A",
+    "name": "TOWEL RAIL 500 MM",
+    "selling_price": 6953,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Spanish",
+    "company_code": "SP-68014",
+    "name": "TOWEL RAIL 600 MM",
+    "selling_price": 7418,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Spanish",
+    "company_code": "SP-68003A",
+    "name": "GLASS SHELF",
+    "selling_price": 8543,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Spanish",
+    "company_code": "SP-9418",
+    "name": "DOUBLE TOWEL RACK 500 MM",
+    "selling_price": 17449,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Spanish",
+    "company_code": "SP-9419",
+    "name": "DOUBLE TOWEL RACK 600 MM",
+    "selling_price": 19884,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Spanish",
+    "company_code": "SP-68012",
+    "name": "TOWEL RACK 500 MM",
+    "selling_price": 13723,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Spanish",
+    "company_code": "SP-68013",
+    "name": "TOWEL RACK 600 MM",
+    "selling_price": 14602,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Spanish",
+    "company_code": "SP-8120",
+    "name": "SQUARE TOILET BRUSH SET WALL & FLOOR MOUNT",
+    "selling_price": 6108,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Spanish",
+    "company_code": "SP-75011",
+    "name": "TOILET BRUSH SET WALL & FLOOR MOUNTED",
+    "selling_price": 5047,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Spanish",
+    "company_code": "SP-68116",
+    "name": "SQUARE SOAP DISPENSER",
+    "selling_price": 7024,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Spanish",
+    "company_code": "WY-88016",
+    "name": "SOAP DISPENSER TABLE TOP",
+    "selling_price": 7024,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Spanish",
+    "company_code": "SP-61003",
+    "name": "SHELF 300 MM",
+    "selling_price": 7902,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Aries",
+    "company_code": "AR-94010",
+    "name": "DOUBLE ROBE HOOK",
+    "selling_price": 1466,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Aries",
+    "company_code": "AR-94007A",
+    "name": "SOAP HOLDER",
+    "selling_price": 2517,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Aries",
+    "company_code": "AR-94006A",
+    "name": "TUMBLER HOLDER",
+    "selling_price": 2517,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Aries",
+    "company_code": "AR-94018",
+    "name": "FORGING SOAP DISH",
+    "selling_price": 3499,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Aries",
+    "company_code": "AR-94004",
+    "name": "TOWEL RING",
+    "selling_price": 2083,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Aries",
+    "company_code": "AR-94011",
+    "name": "ROLL HOLDER",
+    "selling_price": 2545,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Aries",
+    "company_code": "AR-94001",
+    "name": "TOWEL RAIL 600 MM",
+    "selling_price": 4169,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Aries",
+    "company_code": "AR-94201",
+    "name": "TOWEL RAIL 450 MM",
+    "selling_price": 4096,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Aries",
+    "company_code": "AR-94111",
+    "name": "ROLL HOLDER WITH COVER",
+    "selling_price": 2870,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Aries",
+    "company_code": "AR-94005A",
+    "name": "TOILET BRUSH SET",
+    "selling_price": 3781,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Aries",
+    "company_code": "AR-94016",
+    "name": "SQUARE SOAP DISPENSER",
+    "selling_price": 7024,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Aries",
+    "company_code": "AR-94002",
+    "name": "DOUBLE TOWEL BAR 600 MM",
+    "selling_price": 6664,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Aries",
+    "company_code": "AR-94003",
+    "name": "SHELF 600 MM",
+    "selling_price": 6664,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Aries",
+    "company_code": "SG-61011",
+    "name": "TOWEL RACK 450 MM",
+    "selling_price": 11769,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Aries",
+    "company_code": "SG-61012",
+    "name": "TOWEL RACK 600 MM",
+    "selling_price": 11954,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Aries",
+    "company_code": "AR-94212",
+    "name": "TOWEL RACK 450 MM",
+    "selling_price": 16007,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Aries",
+    "company_code": "AR-94012",
+    "name": "TOWEL RACK 600 MM",
+    "selling_price": 16296,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Aries",
+    "company_code": "AR-94107",
+    "name": "SOAP DISH BRASS",
+    "selling_price": 2231,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "New 95 Angel",
+    "company_code": "AN-95001",
+    "name": "ROBE HOOK",
+    "selling_price": 1290,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "New 95 Angel",
+    "company_code": "AN-95017",
+    "name": "DOUBLE ROBE HOOK",
+    "selling_price": 1527,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "New 95 Angel",
+    "company_code": "AN-95011",
+    "name": "SOAP DISH (BRASS)",
+    "selling_price": 2312,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "New 95 Angel",
+    "company_code": "AN-95007",
+    "name": "PAPER HOLDER",
+    "selling_price": 2271,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "New 95 Angel",
+    "company_code": "AN-95003A",
+    "name": "TUMBLER HOLDER",
+    "selling_price": 2192,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "New 95 Angel",
+    "company_code": "AN-95002A",
+    "name": "SOAP HOLDER",
+    "selling_price": 2192,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "New 95 Angel",
+    "company_code": "AN-95004",
+    "name": "TOWEL RING",
+    "selling_price": 2439,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "New 95 Angel",
+    "company_code": "AN-95005",
+    "name": "TOWEL BAR 600MM",
+    "selling_price": 4802,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "New 95 Angel",
+    "company_code": "AN-95006",
+    "name": "TOWEL BAR 450MM",
+    "selling_price": 4609,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "New 95 Angel",
+    "company_code": "AN-95008",
+    "name": "PAPER HOLDER WITH COVER",
+    "selling_price": 4032,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "New 95 Angel",
+    "company_code": "AN-95022",
+    "name": "DOUBLE SWIVEL TOWEL BAR",
+    "selling_price": 4301,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "New 95 Angel",
+    "company_code": "K-71009",
+    "name": "Forging Solid Soap Dish",
+    "selling_price": 3499,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "New 95 Angel",
+    "company_code": "AN-95010",
+    "name": "Soap Dish (Basket)",
+    "selling_price": 2795,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "New 95 Angel",
+    "company_code": "AN-95012AA",
+    "name": "Double Tumbler Holder",
+    "selling_price": 4285,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "New 95 Angel",
+    "company_code": "AN-95014",
+    "name": "Soap Dispenser",
+    "selling_price": 4806,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "New 95 Angel",
+    "company_code": "AN-95018A",
+    "name": "Toilet Brush Set",
+    "selling_price": 3453,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "New 95 Angel",
+    "company_code": "AN-95015A",
+    "name": "Shelf",
+    "selling_price": 3046,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "New 95 Angel",
+    "company_code": "AN-95016AA",
+    "name": "Double Shelf",
+    "selling_price": 9988,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "New 95 Angel",
+    "company_code": "AN-95009",
+    "name": "Double Towel Bar 600 MM",
+    "selling_price": 6747,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "New 95 Angel",
+    "company_code": "AN-95019",
+    "name": "Towel Rack with 4 Hook 600 MM",
+    "selling_price": 14774,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "New 95 Angel",
+    "company_code": "AN-95020",
+    "name": "Towel Rack with 4 Hook 450 MM",
+    "selling_price": 14505,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+
+  {
+    "category": "Audi",
+    "company_code": "AU-54001",
+    "name": "Double Robe Hook",
+    "selling_price": 1624,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Audi",
+    "company_code": "AU-95010",
+    "name": "Soap Dish",
+    "selling_price": 2795,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Audi",
+    "company_code": "AU-68207",
+    "name": "Solid Soap Dish",
+    "selling_price": 4589,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Audi",
+    "company_code": "AU-54004",
+    "name": "Towel Ring",
+    "selling_price": 2631,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Audi",
+    "company_code": "AU-54007",
+    "name": "Paper Holder",
+    "selling_price": 2470,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Audi",
+    "company_code": "AU-54003A",
+    "name": "Tumbler Holder",
+    "selling_price": 3696,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Audi",
+    "company_code": "AU-54002A",
+    "name": "Soap Holder",
+    "selling_price": 3696,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Audi",
+    "company_code": "AU-54010",
+    "name": "Soap Rack",
+    "selling_price": 4346,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Audi",
+    "company_code": "AU-54008",
+    "name": "Paper Holder with Cover",
+    "selling_price": 3204,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Audi",
+    "company_code": "AU-54015A",
+    "name": "Toilet Brush Set",
+    "selling_price": 3453,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Audi",
+    "company_code": "AU-95022",
+    "name": "Double Swivel Towel Bar",
+    "selling_price": 4301,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Audi",
+    "company_code": "AU-54005",
+    "name": "Towel Bar 600 MM",
+    "selling_price": 3501,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Audi",
+    "company_code": "AU-54006",
+    "name": "Towel Bar 450 MM",
+    "selling_price": 3460,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Audi",
+    "company_code": "AU-54009",
+    "name": "Double Towel Bar 600 MM",
+    "selling_price": 4981,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Audi",
+    "company_code": "AU-54011",
+    "name": "Round Soap Dispenser",
+    "selling_price": 4806,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Audi",
+    "company_code": "AU-68116",
+    "name": "Square Soap Dispenser",
+    "selling_price": 7024,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Audi",
+    "company_code": "AU-54012",
+    "name": "Towel Rack 600 MM",
+    "selling_price": 14481,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Audi",
+    "company_code": "AU-54014",
+    "name": "Towel Rack 450 MM",
+    "selling_price": 14190,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+
+  {
+    "category": "Q Prime",
+    "company_code": "QP-73001",
+    "name": "Robe Hook",
+    "selling_price": 1678,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Q Prime",
+    "company_code": "QP-76027",
+    "name": "Soap Dish",
+    "selling_price": 2795,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Q Prime",
+    "company_code": "QP-73004",
+    "name": "Towel Ring (Rotable)",
+    "selling_price": 2812,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Q Prime",
+    "company_code": "QP-73006",
+    "name": "Paper Holder",
+    "selling_price": 2034,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Q Prime",
+    "company_code": "QP-73007",
+    "name": "Paper Holder with Cover",
+    "selling_price": 2792,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Q Prime",
+    "company_code": "QP-73008",
+    "name": "Roll Holder (Straight)",
+    "selling_price": 2176,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Q Prime",
+    "company_code": "QP-73005",
+    "name": "Single Towel Rail 600 MM",
+    "selling_price": 3842,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Q Prime",
+    "company_code": "QP-73105",
+    "name": "Single Towel Rail 450 MM",
+    "selling_price": 3605,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Q Prime",
+    "company_code": "QP-73015",
+    "name": "Towel Rack with Hook 600 MM",
+    "selling_price": 13902,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Q Prime",
+    "company_code": "QP-73014",
+    "name": "Towel Rack with Hook 450 MM",
+    "selling_price": 13509,
+    "meta": [{ "color_name": "Chrome" }]
+  },
+  {
+    "category": "Q Prime Series",
+    "company_code": "QP-73010",
+    "name": "Square Grab Bar 300 MM",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3214 }]
+  },
+  {
+    "category": "Q Prime Series",
+    "company_code": "QP-73009",
+    "name": "Sliding Towel Bar",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3260 }]
+  },
+  {
+    "category": "Q Prime Series",
+    "company_code": "QP-73003A",
+    "name": "Soap Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 2105 }]
+  },
+  {
+    "category": "Q Prime Series",
+    "company_code": "QP-73002A",
+    "name": "Tumbler Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 2105 }]
+  },
+  {
+    "category": "Q Prime Series",
+    "company_code": "QP-68116",
+    "name": "Square Soap Dispenser",
+    "meta": [{ "color_name": "Chrome", "selling_price": 7024 }]
+  },
+  {
+    "category": "Q Prime Series",
+    "company_code": "QP-73012A",
+    "name": "Toilet Brush Set",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3563 }]
+  },
+  {
+    "category": "Q Prime Series",
+    "company_code": "QP-88016",
+    "name": "Square Table Top Soap Dispenser",
+    "meta": [{ "color_name": "Chrome", "selling_price": 7024 }]
+  },
+  {
+    "category": "Q Prime Series",
+    "company_code": "QP-73011A",
+    "name": "Soap Dispenser (Glass)",
+    "meta": [{ "color_name": "Chrome", "selling_price": 4944 }]
+  },
+  {
+    "category": "Q Prime Series",
+    "company_code": "QP-73016A",
+    "name": "Glass Shelf with Frame",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3467 }]
+  },
+
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76001",
+    "name": "Double Robe Hook",
+    "meta": [{ "color_name": "Gold" }],
+    "selling_price": 1872
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76001",
+    "name": "Double Robe Hook",
+    "meta": [{ "color_name": "Rose Gold" }],
+    "selling_price": 1872
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76001",
+    "name": "Double Robe Hook",
+    "meta": [{ "color_name": "Matt Black" }],
+    "selling_price": 1872
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76001",
+    "name": "Double Robe Hook",
+    "meta": [{ "color_name": "Chrome" }],
+    "selling_price": 1250
+  },
+
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76003A",
+    "name": "Soap Holder",
+    "meta": [{ "color_name": "Gold" }],
+    "selling_price": 2946
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76003A",
+    "name": "Soap Holder",
+    "meta": [{ "color_name": "Rose Gold" }],
+    "selling_price": 2946
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76003A",
+    "name": "Soap Holder",
+    "meta": [{ "color_name": "Matt Black" }],
+    "selling_price": 2946
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76003A",
+    "name": "Soap Holder",
+    "meta": [{ "color_name": "Chrome" }],
+    "selling_price": 2105
+  },
+
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76002A",
+    "name": "Tumbler Holder",
+    "meta": [{ "color_name": "Gold" }],
+    "selling_price": 2946
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76002A",
+    "name": "Tumbler Holder",
+    "meta": [{ "color_name": "Rose Gold" }],
+    "selling_price": 2946
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76002A",
+    "name": "Tumbler Holder",
+    "meta": [{ "color_name": "Matt Black" }],
+    "selling_price": 2946
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76002A",
+    "name": "Tumbler Holder",
+    "meta": [{ "color_name": "Chrome" }],
+    "selling_price": 2105
+  },
+
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76006",
+    "name": "Towel Bar 450 MM",
+    "meta": [{ "color_name": "Gold" }],
+    "selling_price": 4465
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76006",
+    "name": "Towel Bar 450 MM",
+    "meta": [{ "color_name": "Rose Gold" }],
+    "selling_price": 4465
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76006",
+    "name": "Towel Bar 450 MM",
+    "meta": [{ "color_name": "Matt Black" }],
+    "selling_price": 4465
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76006",
+    "name": "Towel Bar 450 MM",
+    "meta": [{ "color_name": "Chrome" }],
+    "selling_price": 2977
+  },
+
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76005",
+    "name": "Towel Bar 600 MM",
+    "meta": [{ "color_name": "Gold" }],
+    "selling_price": 4809
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76005",
+    "name": "Towel Bar 600 MM",
+    "meta": [{ "color_name": "Rose Gold" }],
+    "selling_price": 4809
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76005",
+    "name": "Towel Bar 600 MM",
+    "meta": [{ "color_name": "Matt Black" }],
+    "selling_price": 4809
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76005",
+    "name": "Towel Bar 600 MM",
+    "meta": [{ "color_name": "Chrome" }],
+    "selling_price": 3209
+  },
+
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76007",
+    "name": "Roll Holder",
+    "meta": [{ "color_name": "Gold" }],
+    "selling_price": 2758
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76007",
+    "name": "Roll Holder",
+    "meta": [{ "color_name": "Rose Gold" }],
+    "selling_price": 2758
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76007",
+    "name": "Roll Holder",
+    "meta": [{ "color_name": "Matt Black" }],
+    "selling_price": 2758
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76007",
+    "name": "Roll Holder",
+    "meta": [{ "color_name": "Chrome" }],
+    "selling_price": 1839
+  },
+
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76009",
+    "name": "Roll Holder with Cover",
+    "meta": [{ "color_name": "Gold" }],
+    "selling_price": 4465
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76009",
+    "name": "Roll Holder with Cover",
+    "meta": [{ "color_name": "Rose Gold" }],
+    "selling_price": 4465
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76009",
+    "name": "Roll Holder with Cover",
+    "meta": [{ "color_name": "Matt Black" }],
+    "selling_price": 4465
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76009",
+    "name": "Roll Holder with Cover",
+    "meta": [{ "color_name": "Chrome" }],
+    "selling_price": 3117
+  },
+
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76008",
+    "name": "Roll Holder (Straight)",
+    "meta": [{ "color_name": "Gold" }],
+    "selling_price": 2808
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76008",
+    "name": "Roll Holder (Straight)",
+    "meta": [{ "color_name": "Rose Gold" }],
+    "selling_price": 2808
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76008",
+    "name": "Roll Holder (Straight)",
+    "meta": [{ "color_name": "Matt Black" }],
+    "selling_price": 2808
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76008",
+    "name": "Roll Holder (Straight)",
+    "meta": [{ "color_name": "Chrome" }],
+    "selling_price": 1872
+  },
+
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76004",
+    "name": "Towel Ring",
+    "meta": [{ "color_name": "Gold" }],
+    "selling_price": 3778
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76004",
+    "name": "Towel Ring",
+    "meta": [{ "color_name": "Rose Gold" }],
+    "selling_price": 3778
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76004",
+    "name": "Towel Ring",
+    "meta": [{ "color_name": "Matt Black" }],
+    "selling_price": 3778
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76004",
+    "name": "Towel Ring",
+    "meta": [{ "color_name": "Chrome" }],
+    "selling_price": 2517
+  },
+
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76019A",
+    "name": "Shelf with Frame",
+    "meta": [{ "color_name": "Gold" }],
+    "selling_price": 4629
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76019A",
+    "name": "Shelf with Frame",
+    "meta": [{ "color_name": "Rose Gold" }],
+    "selling_price": 4629
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76019A",
+    "name": "Shelf with Frame",
+    "meta": [{ "color_name": "Matt Black" }],
+    "selling_price": 4629
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76019A",
+    "name": "Shelf with Frame",
+    "meta": [{ "color_name": "Chrome" }],
+    "selling_price": 3306
+  },
+
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76022",
+    "name": "Soap Dispenser Round",
+    "meta": [{ "color_name": "Gold" }],
+    "selling_price": 7552
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76022",
+    "name": "Soap Dispenser Round",
+    "meta": [{ "color_name": "Rose Gold" }],
+    "selling_price": 7552
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76022",
+    "name": "Soap Dispenser Round",
+    "meta": [{ "color_name": "Matt Black" }],
+    "selling_price": 7552
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76022",
+    "name": "Soap Dispenser Round",
+    "meta": [{ "color_name": "Chrome" }],
+    "selling_price": 5035
+  },
+
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76024A",
+    "name": "Toilet Brush Set",
+    "meta": [{ "color_name": "Gold" }],
+    "selling_price": 5343
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76024A",
+    "name": "Toilet Brush Set",
+    "meta": [{ "color_name": "Rose Gold" }],
+    "selling_price": 5343
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76024A",
+    "name": "Toilet Brush Set",
+    "meta": [{ "color_name": "Matt Black" }],
+    "selling_price": 5343
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76024A",
+    "name": "Toilet Brush Set",
+    "meta": [{ "color_name": "Chrome" }],
+    "selling_price": 3563
+  },
+
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76017",
+    "name": "Soap Dish Brass",
+    "meta": [{ "color_name": "Chrome" }],
+    "selling_price": 1960
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76018",
+    "name": "New Towel Ring",
+    "meta": [{ "color_name": "Chrome" }],
+    "selling_price": 2558
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76027",
+    "name": "Soap Dish (Basket)",
+    "meta": [{ "color_name": "Chrome" }],
+    "selling_price": 2795
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76015",
+    "name": "Sliding Towel Bar",
+    "meta": [{ "color_name": "Chrome" }],
+    "selling_price": 3260
+  },
+
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76025",
+    "name": "Towel Rack with Hook 600 MM",
+    "meta": [{ "color_name": "Gold" }],
+    "selling_price": 14290
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76025",
+    "name": "Towel Rack with Hook 600 MM",
+    "meta": [{ "color_name": "Rose Gold" }],
+    "selling_price": 14290
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76025",
+    "name": "Towel Rack with Hook 600 MM",
+    "meta": [{ "color_name": "Matt Black" }],
+    "selling_price": 14290
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76025",
+    "name": "Towel Rack with Hook 600 MM",
+    "meta": [{ "color_name": "Chrome" }],
+    "selling_price": 9524
+  },
+
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76026",
+    "name": "Towel Rack with Hook 450 MM",
+    "meta": [{ "color_name": "Gold" }],
+    "selling_price": 13523
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76026",
+    "name": "Towel Rack with Hook 450 MM",
+    "meta": [{ "color_name": "Rose Gold" }],
+    "selling_price": 13523
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76026",
+    "name": "Towel Rack with Hook 450 MM",
+    "meta": [{ "color_name": "Matt Black" }],
+    "selling_price": 13523
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76026",
+    "name": "Towel Rack with Hook 450 MM",
+    "meta": [{ "color_name": "Chrome" }],
+    "selling_price": 9016
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76010",
+    "name": "Double Towel Bar 600 MM",
+    "meta": [{ "color_name": "Chrome", "selling_price": 4747 }]
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76011",
+    "name": "Double Towel Bar 450 MM",
+    "meta": [{ "color_name": "Chrome", "selling_price": 4355 }]
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76016",
+    "name": "Grab Bar 12 Inches",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3734 }]
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76014AA",
+    "name": "Double Tumbler Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3901 }]
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76012AA",
+    "name": "Double Soap Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3901 }]
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-68116",
+    "name": "Soap Dispenser Square",
+    "meta": [{ "color_name": "Chrome", "selling_price": 7024 }]
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76020AA",
+    "name": "Double Shelf",
+    "meta": [{ "color_name": "Chrome", "selling_price": 8872 }]
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-76021AAA",
+    "name": "Triple Shelf",
+    "meta": [{ "color_name": "Chrome", "selling_price": 10862 }]
+  },
+  {
+    "category": "Qubix Series",
+    "company_code": "QX-3186W",
+    "name": "Paper Holder with Lock",
+    "meta": [{ "color_name": "Chrome", "selling_price": 1872 }]
+  },
+  {
+    "category": "Oval Series",
+    "company_code": "OV-69010",
+    "name": "Double Robe Hook",
+    "meta": [{ "color_name": "Chrome", "selling_price": 1439 }]
+  },
+  {
+    "category": "Oval Series",
+    "company_code": "OV-69007A",
+    "name": "Soap Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 2045 }]
+  },
+  {
+    "category": "Oval Series",
+    "company_code": "OV-69006A",
+    "name": "Tumbler Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 2045 }]
+  },
+  {
+    "category": "Oval Series",
+    "company_code": "OV-69107",
+    "name": "Soap Dish Brass",
+    "meta": [{ "color_name": "Chrome", "selling_price": 1960 }]
+  },
+  {
+    "category": "Oval Series",
+    "company_code": "OV-69015",
+    "name": "Forging Solid Soap Dish",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3499 }]
+  },
+  {
+    "category": "Oval Series",
+    "company_code": "OV-69011",
+    "name": "Roll Holder Spare",
+    "meta": [{ "color_name": "Chrome", "selling_price": 1822 }]
+  },
+  {
+    "category": "Oval Series",
+    "company_code": "OV-69004",
+    "name": "Towel Ring",
+    "meta": [{ "color_name": "Chrome", "selling_price": 2448 }]
+  },
+  {
+    "category": "Oval Series",
+    "company_code": "OV-69001",
+    "name": "Towel Rail 600 MM",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3667 }]
+  },
+  {
+    "category": "Oval Series",
+    "company_code": "OV-69201",
+    "name": "Towel Rail 450 MM",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3552 }]
+  },
+  {
+    "category": "Oval Series",
+    "company_code": "OV-69002",
+    "name": "Double Towel Bar 600 MM",
+    "meta": [{ "color_name": "Chrome", "selling_price": 5733 }]
+  },
+  {
+    "category": "Oval Series",
+    "company_code": "OV-69003",
+    "name": "Double Towel Bar 450 MM",
+    "meta": [{ "color_name": "Chrome", "selling_price": 5509 }]
+  },
+  {
+    "category": "Oval Series",
+    "company_code": "OV-69111",
+    "name": "Roll Holder with Cover",
+    "meta": [{ "color_name": "Chrome", "selling_price": 2832 }]
+  },
+  {
+    "category": "Oval Series",
+    "company_code": "OV-69116",
+    "name": "Soap Dispenser Brass",
+    "meta": [{ "color_name": "Chrome", "selling_price": 4866 }]
+  },
+  {
+    "category": "Oval Series",
+    "company_code": "OV-69016A",
+    "name": "Soap Dispenser",
+    "meta": [{ "color_name": "Chrome", "selling_price": 2795 }]
+  },
+  {
+    "category": "Oval Series",
+    "company_code": "OV-69103A",
+    "name": "Glass Shelf with Rail",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3351 }]
+  },
+  {
+    "category": "Oval Series",
+    "company_code": "OV-69022",
+    "name": "Solid Brass Shelf 350 MM",
+    "meta": [{ "color_name": "Chrome", "selling_price": 7902 }]
+  },
+  {
+    "category": "Oval Series",
+    "company_code": "OV-69005A",
+    "name": "Toilet Brush Set",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3081 }]
+  },
+  {
+    "category": "Oval Series",
+    "company_code": "OV-69012",
+    "name": "Towel Rack with Hooks 600 MM",
+    "meta": [{ "color_name": "Chrome", "selling_price": 16597 }]
+  },
+  {
+    "category": "Oval Series",
+    "company_code": "OV-69212",
+    "name": "Towel Rack with Hooks 450 MM",
+    "meta": [{ "color_name": "Chrome", "selling_price": 14926 }]
+  },
+
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74001",
+    "name": "Double Robe Hook",
+    "meta": { "color_name": "Gold" },
+    "selling_price": 1833
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74001",
+    "name": "Double Robe Hook",
+    "meta": { "color_name": "Rose Gold" },
+    "selling_price": 1833
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74001",
+    "name": "Double Robe Hook",
+    "meta": { "color_name": "Matt Black" },
+    "selling_price": 1833
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74001",
+    "name": "Double Robe Hook",
+    "meta": { "color_name": "Chrome" },
+    "selling_price": 1222
+  },
+
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74002A",
+    "name": "Tumbler Holder",
+    "meta": { "color_name": "Gold" },
+    "selling_price": 2475
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74002A",
+    "name": "Tumbler Holder",
+    "meta": { "color_name": "Rose Gold" },
+    "selling_price": 2475
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74002A",
+    "name": "Tumbler Holder",
+    "meta": { "color_name": "Matt Black" },
+    "selling_price": 2475
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74002A",
+    "name": "Tumbler Holder",
+    "meta": { "color_name": "Chrome" },
+    "selling_price": 1766
+  },
+
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74003A",
+    "name": "Soap Holder",
+    "meta": { "color_name": "Gold" },
+    "selling_price": 2475
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74003A",
+    "name": "Soap Holder",
+    "meta": { "color_name": "Rose Gold" },
+    "selling_price": 2475
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74003A",
+    "name": "Soap Holder",
+    "meta": { "color_name": "Matt Black" },
+    "selling_price": 2475
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74003A",
+    "name": "Soap Holder",
+    "meta": { "color_name": "Chrome" },
+    "selling_price": 1766
+  },
+
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74010",
+    "name": "Soap Dish (Brass)",
+    "meta": { "color_name": "Gold" },
+    "selling_price": 2648
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74010",
+    "name": "Soap Dish (Brass)",
+    "meta": { "color_name": "Rose Gold" },
+    "selling_price": 2648
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74010",
+    "name": "Soap Dish (Brass)",
+    "meta": { "color_name": "Matt Black" },
+    "selling_price": 2648
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74010",
+    "name": "Soap Dish (Brass)",
+    "meta": { "color_name": "Chrome" },
+    "selling_price": 1766
+  },
+
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74006",
+    "name": "Roll Holder",
+    "meta": { "color_name": "Gold" },
+    "selling_price": 2745
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74006",
+    "name": "Roll Holder",
+    "meta": { "color_name": "Rose Gold" },
+    "selling_price": 2745
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74006",
+    "name": "Roll Holder",
+    "meta": { "color_name": "Matt Black" },
+    "selling_price": 2745
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74006",
+    "name": "Roll Holder",
+    "meta": { "color_name": "Chrome" },
+    "selling_price": 1832
+  },
+
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74007",
+    "name": "Roll Holder Straight",
+    "meta": { "color_name": "Gold" },
+    "selling_price": 2707
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74007",
+    "name": "Roll Holder Straight",
+    "meta": { "color_name": "Rose Gold" },
+    "selling_price": 2707
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74007",
+    "name": "Roll Holder Straight",
+    "meta": { "color_name": "Matt Black" },
+    "selling_price": 2707
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74007",
+    "name": "Roll Holder Straight",
+    "meta": { "color_name": "Chrome" },
+    "selling_price": 1806
+  },
+
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74021",
+    "name": "Towel Ring (New)",
+    "meta": { "color_name": "Gold" },
+    "selling_price": 3628
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74021",
+    "name": "Towel Ring (New)",
+    "meta": { "color_name": "Rose Gold" },
+    "selling_price": 3628
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74021",
+    "name": "Towel Ring (New)",
+    "meta": { "color_name": "Matt Black" },
+    "selling_price": 3628
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74021",
+    "name": "Towel Ring (New)",
+    "meta": { "color_name": "Chrome" },
+    "selling_price": 2418
+  },
+
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74004",
+    "name": "Square Towel Ring",
+    "meta": { "color_name": "Gold" },
+    "selling_price": 3628
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74004",
+    "name": "Square Towel Ring",
+    "meta": { "color_name": "Rose Gold" },
+    "selling_price": 3628
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74004",
+    "name": "Square Towel Ring",
+    "meta": { "color_name": "Matt Black" },
+    "selling_price": 3628
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74004",
+    "name": "Square Towel Ring",
+    "meta": { "color_name": "Chrome" },
+    "selling_price": 2418
+  },
+
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74014",
+    "name": "Towel Bar 600 MM",
+    "meta": { "color_name": "Gold" },
+    "selling_price": 4666
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74014",
+    "name": "Towel Bar 600 MM",
+    "meta": { "color_name": "Rose Gold" },
+    "selling_price": 4666
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74014",
+    "name": "Towel Bar 600 MM",
+    "meta": { "color_name": "Matt Black" },
+    "selling_price": 4666
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74014",
+    "name": "Towel Bar 600 MM",
+    "meta": { "color_name": "Chrome" },
+    "selling_price": 3111
+  },
+
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74015",
+    "name": "Towel Bar 450 MM",
+    "meta": { "color_name": "Gold" },
+    "selling_price": 4237
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74015",
+    "name": "Towel Bar 450 MM",
+    "meta": { "color_name": "Rose Gold" },
+    "selling_price": 4237
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74015",
+    "name": "Towel Bar 450 MM",
+    "meta": { "color_name": "Matt Black" },
+    "selling_price": 4237
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74015",
+    "name": "Towel Bar 450 MM",
+    "meta": { "color_name": "Chrome" },
+    "selling_price": 2824
+  },
+
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74022",
+    "name": "Towel Bar 300 MM",
+    "meta": { "color_name": "Gold" },
+    "selling_price": 3711
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74022",
+    "name": "Towel Bar 300 MM",
+    "meta": { "color_name": "Rose Gold" },
+    "selling_price": 3711
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74022",
+    "name": "Towel Bar 300 MM",
+    "meta": { "color_name": "Matt Black" },
+    "selling_price": 3711
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74022",
+    "name": "Towel Bar 300 MM",
+    "meta": { "color_name": "Chrome" },
+    "selling_price": 2474
+  },
+
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74005",
+    "name": "Towel Shelf",
+    "meta": { "color_name": "Gold" },
+    "selling_price": 8838
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74005",
+    "name": "Towel Shelf",
+    "meta": { "color_name": "Rose Gold" },
+    "selling_price": 8838
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74005",
+    "name": "Towel Shelf",
+    "meta": { "color_name": "Matt Black" },
+    "selling_price": 8838
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74005",
+    "name": "Towel Shelf",
+    "meta": { "color_name": "Chrome" },
+    "selling_price": 5892
+  },
+
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74023",
+    "name": "Towel Rack",
+    "meta": { "color_name": "Gold" },
+    "selling_price": 6428
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74023",
+    "name": "Towel Rack",
+    "meta": { "color_name": "Rose Gold" },
+    "selling_price": 6428
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74023",
+    "name": "Towel Rack",
+    "meta": { "color_name": "Matt Black" },
+    "selling_price": 6428
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74023",
+    "name": "Towel Rack",
+    "meta": { "color_name": "Chrome" },
+    "selling_price": 4286
+  },
+
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74016",
+    "name": "Glass Shelf 600 MM",
+    "meta": { "color_name": "Gold" },
+    "selling_price": 8838
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74016",
+    "name": "Glass Shelf 600 MM",
+    "meta": { "color_name": "Rose Gold" },
+    "selling_price": 8838
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74016",
+    "name": "Glass Shelf 600 MM",
+    "meta": { "color_name": "Matt Black" },
+    "selling_price": 8838
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74016",
+    "name": "Glass Shelf 600 MM",
+    "meta": { "color_name": "Chrome" },
+    "selling_price": 5892
+  },
+
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74017",
+    "name": "Glass Shelf 450 MM",
+    "meta": { "color_name": "Gold" },
+    "selling_price": 8353
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74017",
+    "name": "Glass Shelf 450 MM",
+    "meta": { "color_name": "Rose Gold" },
+    "selling_price": 8353
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74017",
+    "name": "Glass Shelf 450 MM",
+    "meta": { "color_name": "Matt Black" },
+    "selling_price": 8353
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74017",
+    "name": "Glass Shelf 450 MM",
+    "meta": { "color_name": "Chrome" },
+    "selling_price": 5569
+  },
+
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74018",
+    "name": "Corner Glass Shelf",
+    "meta": { "color_name": "Gold" },
+    "selling_price": 5906
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74018",
+    "name": "Corner Glass Shelf",
+    "meta": { "color_name": "Rose Gold" },
+    "selling_price": 5906
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74018",
+    "name": "Corner Glass Shelf",
+    "meta": { "color_name": "Matt Black" },
+    "selling_price": 5906
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74018",
+    "name": "Corner Glass Shelf",
+    "meta": { "color_name": "Chrome" },
+    "selling_price": 3937
+  },
+
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74019",
+    "name": "Soap Dispenser",
+    "meta": { "color_name": "Gold" },
+    "selling_price": 4573
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74019",
+    "name": "Soap Dispenser",
+    "meta": { "color_name": "Rose Gold" },
+    "selling_price": 4573
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74019",
+    "name": "Soap Dispenser",
+    "meta": { "color_name": "Matt Black" },
+    "selling_price": 4573
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74019",
+    "name": "Soap Dispenser",
+    "meta": { "color_name": "Chrome" },
+    "selling_price": 3049
+  },
+
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74020",
+    "name": "Brush Holder",
+    "meta": { "color_name": "Gold" },
+    "selling_price": 4237
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74020",
+    "name": "Brush Holder",
+    "meta": { "color_name": "Rose Gold" },
+    "selling_price": 4237
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74020",
+    "name": "Brush Holder",
+    "meta": { "color_name": "Matt Black" },
+    "selling_price": 4237
+  },
+  {
+    "category": "Conti-DX Series",
+    "company_code": "CX-74020",
+    "name": "Brush Holder",
+    "meta": { "color_name": "Chrome" },
+    "selling_price": 2824
+  },
+  {
+    "category": "AXN Series",
+    "company_code": "AXN-00478",
+    "name": "Towel Ring",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3107 }]
+  },
+  {
+    "category": "AXN Series",
+    "company_code": "AXN-00578",
+    "name": "Toilet Brush Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3968 }]
+  },
+  {
+    "category": "AXN Series",
+    "company_code": "AXN-1801",
+    "name": "Roll Holder With Cover",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3174 }]
+  },
+  {
+    "category": "AXN Series",
+    "company_code": "AXN-1178",
+    "name": "Roll Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 2514 }]
+  },
+  {
+    "category": "AXN Series",
+    "company_code": "AXN-1199",
+    "name": "Liquid Soap Dispenser",
+    "meta": [{ "color_name": "Chrome", "selling_price": 4806 }]
+  },
+  {
+    "category": "AXN Series",
+    "company_code": "AXN-00878",
+    "name": "Square Toilet Brush Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 6109 }]
+  },
+  {
+    "category": "AXN Series",
+    "company_code": "AXN-1300",
+    "name": "Shelf With Roll Holder With Hook",
+    "meta": [{ "color_name": "Chrome", "selling_price": 7577 }]
+  },
+  {
+    "category": "AXN Series",
+    "company_code": "AXN-1170",
+    "name": "Glass Shelf With Roll Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 5047 }]
+  },
+  {
+    "category": "AXN Series",
+    "company_code": "AXN-54015A",
+    "name": "Toilet Brush Set",
+    "meta": [{ "color_name": "Chrome", "selling_price": 2989 }]
+  },
+  {
+    "category": "AXN Series",
+    "company_code": "AXN-SB01",
+    "name": "Storage Box",
+    "meta": [{ "color_name": "Chrome", "selling_price": 2440 }]
+  },
+  {
+    "category": "AXN Series",
+    "company_code": "AXN-SB02",
+    "name": "Storage Box With Paper Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 4002 }]
+  },
+  {
+    "category": "AXN Series",
+    "company_code": "AXN-SB03",
+    "name": "Table Top Soap Dish",
+    "meta": [{ "color_name": "Chrome", "selling_price": 909 }]
+  },
+  {
+    "category": "AXN Series",
+    "company_code": "AXN-SB04",
+    "name": "Table Top Tumbler Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 909 }]
+  },
+  {
+    "category": "AXN Series",
+    "company_code": "AXN-SB05",
+    "name": "Table Top Liquid Soap Dispenser",
+    "meta": [{ "color_name": "Chrome", "selling_price": 2289 }]
+  },
+  {
+    "category": "AXN Series",
+    "company_code": "AXN-SB06",
+    "name": "Table Top Soap Dish",
+    "meta": [{ "color_name": "Chrome", "selling_price": 1760 }]
+  },
+  {
+    "category": "AXN Series",
+    "company_code": "AXN-0078",
+    "name": "Shelf With Double Roll Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 7533 }]
+  },
+  {
+    "category": "SAGA Series",
+    "company_code": "SG-6110",
+    "name": "Double Robe Hook",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3060 }]
+  },
+  {
+    "category": "SAGA Series",
+    "company_code": "SG-61007A",
+    "name": "Soap Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 4081 }]
+  },
+  {
+    "category": "SAGA Series",
+    "company_code": "SG-61006A",
+    "name": "Tumbler Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 4081 }]
+  },
+  {
+    "category": "SAGA Series",
+    "company_code": "SG-61004",
+    "name": "Towel Ring",
+    "meta": [{ "color_name": "Chrome", "selling_price": 5537 }]
+  },
+  {
+    "category": "SAGA Series",
+    "company_code": "SG-61001",
+    "name": "Towel Bar 600 MM",
+    "meta": [{ "color_name": "Chrome", "selling_price": 6565 }]
+  },
+  {
+    "category": "SAGA Series",
+    "company_code": "SG-61201",
+    "name": "Towel Bar 450 MM",
+    "meta": [{ "color_name": "Chrome", "selling_price": 6431 }]
+  },
+  {
+    "category": "SAGA Series",
+    "company_code": "SG-61014",
+    "name": "Roll Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 4338 }]
+  },
+  {
+    "category": "SAGA Series",
+    "company_code": "SG-61111",
+    "name": "Roll Holder With Cover",
+    "meta": [{ "color_name": "Chrome", "selling_price": 4816 }]
+  },
+  {
+    "category": "SAGA Series",
+    "company_code": "SG-61003",
+    "name": "Shelf",
+    "meta": [{ "color_name": "Chrome", "selling_price": 7902 }]
+  },
+  {
+    "category": "SAGA Series",
+    "company_code": "SG-61012",
+    "name": "Towel Rack 600 MM",
+    "meta": [{ "color_name": "Chrome", "selling_price": 11954 }]
+  },
+  {
+    "category": "SAGA Series",
+    "company_code": "SG-61011",
+    "name": "Towel Rack 450 MM",
+    "meta": [{ "color_name": "Chrome", "selling_price": 11769 }]
+  },
+  {
+    "category": "SAGA Series",
+    "company_code": "SG-61008A",
+    "name": "Crystal Square Tumbler Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 4192 }]
+  },
+  {
+    "category": "SAGA Series",
+    "company_code": "SG-61002A",
+    "name": "Soap Holder Round",
+    "meta": [{ "color_name": "Chrome", "selling_price": 4192 }]
+  },
+  {
+    "category": "SAGA Series",
+    "company_code": "SG-61009A",
+    "name": "Crystal Soap Holder Square",
+    "meta": [{ "color_name": "Chrome", "selling_price": 4192 }]
+  },
+  {
+    "category": "SAGA Series",
+    "company_code": "SG-61005A",
+    "name": "Toilet Brush Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 5617 }]
+  },
+  {
+    "category": "Italian New Concept Series",
+    "company_code": "RH-02",
+    "name": "2 Way Hook (Brass)",
+    "meta": [{ "color_name": "Chrome", "selling_price": 370 }]
+  },
+  {
+    "category": "Italian New Concept Series",
+    "company_code": "RH-04",
+    "name": "4 Way Hook (Brass)",
+    "meta": [{ "color_name": "Chrome", "selling_price": 740 }]
+  },
+  {
+    "category": "Italian New Concept Series",
+    "company_code": "RH-06",
+    "name": "6 Way Hook (Brass)",
+    "meta": [{ "color_name": "Chrome", "selling_price": 1110 }]
+  },
+  {
+    "category": "Italian New Concept Series",
+    "company_code": "K002",
+    "name": "2 Way Hook (Brass)",
+    "meta": [{ "color_name": "Chrome", "selling_price": 1262 }]
+  },
+  {
+    "category": "Italian New Concept Series",
+    "company_code": "K003",
+    "name": "3 Way Hook (Brass)",
+    "meta": [{ "color_name": "Chrome", "selling_price": 1525 }]
+  },
+  {
+    "category": "Italian New Concept Series",
+    "company_code": "K004",
+    "name": "4 Way Hook (Brass)",
+    "meta": [{ "color_name": "Chrome", "selling_price": 2044 }]
+  },
+  {
+    "category": "Italian New Concept Series",
+    "company_code": "K005",
+    "name": "5 Way Hook (Brass)",
+    "meta": [{ "color_name": "Chrome", "selling_price": 2669 }]
+  },
+  {
+    "category": "Italian New Concept Series",
+    "company_code": "K006",
+    "name": "6 Way Hook (Brass)",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3151 }]
+  },
+  {
+    "category": "Italian New Concept Series",
+    "company_code": "K007",
+    "name": "Italian Folding Towel Rack 600 MM (Round)",
+    "meta": [{ "color_name": "Chrome", "selling_price": 13028 }]
+  },
+  {
+    "category": "Italian New Concept Series",
+    "company_code": "K008",
+    "name": "Italian Folding Towel Rack 600 MM (Square)",
+    "meta": [{ "color_name": "Chrome", "selling_price": 14646 }]
+  },
+  {
+    "category": "Italian New Concept Series",
+    "company_code": "MM-8299",
+    "name": "SS 3 Way Robe Hook",
+    "meta": [{ "color_name": "Chrome", "selling_price": 820 }]
+  },
+  {
+    "category": "Italian New Concept Series",
+    "company_code": "SS-261126N",
+    "name": "Round Cloth Line 2.4 Meter (Polish) SS",
+    "meta": [{ "color_name": "Chrome", "selling_price": 1380 }]
+  },
+  {
+    "category": "Italian New Concept Series",
+    "company_code": "SS-261128N",
+    "name": "Square Cloth Line 2.4 Meter (Polish) SS",
+    "meta": [{ "color_name": "Chrome", "selling_price": 1484 }]
+  },
+  {
+    "category": "Italian New Concept Series",
+    "company_code": "CL-261121N",
+    "name": "Round Cloth Line 2.4 Meter (Brass)",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3258 }]
+  },
+  {
+    "category": "Italian New Concept Series",
+    "company_code": "CL-261122N",
+    "name": "Round Cloth Line 2.4 Meter (Brass)",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3258 }]
+  },
+  {
+    "category": "Italian New Concept Series",
+    "company_code": "CL-261124N",
+    "name": "Square Cloth Line 4.2 Meter White",
+    "meta": [{ "color_name": "White", "selling_price": 4513 }]
+  },
+  {
+    "category": "Italian New Concept Series",
+    "company_code": "CL-02",
+    "name": "Single Rope Cloth Line 5.1 Meter",
+    "meta": [{ "color_name": "White", "selling_price": 4853 }]
+  },
+  {
+    "category": "Italian New Concept Series",
+    "company_code": "CL-04",
+    "name": "Belt Shaped Cloth Line 4.2 Meter",
+    "meta": [{ "color_name": "White", "selling_price": 5548 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "MM-8227",
+    "name": "Paper Holder Box",
+    "meta": [{ "color_name": "Chrome", "selling_price": 5035 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC30018MP",
+    "name": "Foot Rest With Hook & Brush",
+    "meta": [{ "color_name": "Chrome", "selling_price": 6841 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC0013W",
+    "name": "Foot Rest",
+    "meta": [{ "color_name": "White", "selling_price": 5290 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC0013B",
+    "name": "Foot Rest",
+    "meta": [{ "color_name": "Black", "selling_price": 5290 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "MM-8189",
+    "name": "Soap Dispenser 220ML Table Top",
+    "meta": [{ "color_name": "Chrome", "selling_price": 4900 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "MM-8186",
+    "name": "Soap Dispenser 220ML Table Top",
+    "meta": [{ "color_name": "Chrome", "selling_price": 4060 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "MM-8185",
+    "name": "Brush Holder Table Top",
+    "meta": [{ "color_name": "Chrome", "selling_price": 4531 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "MM-8184",
+    "name": "Cotton Ball Jar Table Top",
+    "meta": [{ "color_name": "Chrome", "selling_price": 4241 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "MM-8061",
+    "name": "Soap Dish Round Table Top",
+    "meta": [{ "color_name": "Chrome", "selling_price": 1727 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "MM-8187",
+    "name": "Cotton Ball Jar Table Top",
+    "meta": [{ "color_name": "Chrome", "selling_price": 4241 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "MM-8188",
+    "name": "Brush Holder Table Top",
+    "meta": [{ "color_name": "Chrome", "selling_price": 4531 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "MM-8228",
+    "name": "SS Concealed Paper Holder With Cover",
+    "meta": [{ "color_name": "Chrome", "selling_price": 2024 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "CX-7023",
+    "name": "SS-Wall Mounted Toilet Brush Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3968 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "CX-7021",
+    "name": "ABS Wall Mounted Toilet Brush Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3968 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "KK-0053",
+    "name": "Soap Dispenser",
+    "meta": [{ "color_name": "Chrome", "selling_price": 5709 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "KK-0024",
+    "name": "Soap Dispenser",
+    "meta": [{ "color_name": "Chrome", "selling_price": 6565 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "2660389C",
+    "name": "Soap Dispenser Table Top",
+    "meta": [{ "color_name": "Chrome", "selling_price": 6440 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "WM-8099",
+    "name": "Hygienic Dispenser Bag",
+    "meta": [{ "color_name": "Chrome", "selling_price": 1269 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "WY68108",
+    "name": "Glass Wiper With Hook",
+    "meta": [{ "color_name": "Chrome", "selling_price": 2338 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "WM-8116",
+    "name": "Glass Wiper",
+    "meta": [{ "color_name": "Chrome", "selling_price": 2203 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "WM-8120",
+    "name": "Glass Wiper",
+    "meta": [{ "color_name": "Chrome", "selling_price": 2975 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC3042",
+    "name": "Four Swivel Bar",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3075 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-6111DP",
+    "name": "Magazine Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 5981 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-2006",
+    "name": "Multi Function/Tooth Brush Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 6046 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-5011",
+    "name": "Roll Holder With Shelf",
+    "meta": [{ "color_name": "Chrome", "selling_price": 4881 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-1202",
+    "name": "Multi Function Storage Hair Dryer",
+    "meta": [{ "color_name": "Chrome", "selling_price": 7637 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-3812",
+    "name": "Multi Function Storage Rack",
+    "meta": [{ "color_name": "Chrome", "selling_price": 5296 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-1401",
+    "name": "Swivelling Hook",
+    "meta": [{ "color_name": "Chrome", "selling_price": 1790 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-3010",
+    "name": "Mop Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3335 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-6003",
+    "name": "Grab Bar With Shelf",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3494 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-3230DP",
+    "name": "Corner Shelf With Storage Box",
+    "meta": [{ "color_name": "Chrome", "selling_price": 5351 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-3131DP",
+    "name": "3-in-1 Double Roll Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 5963 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-3301DP",
+    "name": "3-in-1 Roll Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 9179 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-40310DP",
+    "name": "Grab Bar 4-in-1 Shelf",
+    "meta": [{ "color_name": "Chrome", "selling_price": 12192 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-40311DP",
+    "name": "Grab Bar 4-in-1 Roll Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 12041 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-40318DP",
+    "name": "5-in-1 Sliding Rail",
+    "meta": [{ "color_name": "Chrome", "selling_price": 13028 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-33012DP",
+    "name": "Shelf With Preservation Film",
+    "meta": [{ "color_name": "Chrome", "selling_price": 4745 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-33010DP",
+    "name": "3-in-1 Shelf",
+    "meta": [{ "color_name": "Chrome", "selling_price": 9505 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-30300DP",
+    "name": "Shelf With 2 Storage Box",
+    "meta": [{ "color_name": "Chrome", "selling_price": 9882 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-9900-4",
+    "name": "4 Robe Hook",
+    "meta": [{ "color_name": "White", "selling_price": 2938 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-9900-5",
+    "name": "5 Robe Hook",
+    "meta": [{ "color_name": "White", "selling_price": 3658 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-87003",
+    "name": "Shelf With Soap Dish",
+    "meta": [{ "color_name": "Chrome", "selling_price": 1814 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-87007",
+    "name": "Soap Dish",
+    "meta": [{ "color_name": "Chrome", "selling_price": 1057 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-3101MP",
+    "name": "Roll Holder With Shelf & Hook",
+    "meta": [{ "color_name": "White", "selling_price": 2938 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-3031MP",
+    "name": "Double Roll Holder With Shelf",
+    "meta": [{ "color_name": "White", "selling_price": 3412 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-30304MP",
+    "name": "Shelf With Towel Ring & Hook",
+    "meta": [{ "color_name": "White", "selling_price": 4432 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-32310MP",
+    "name": "Corner Shelf With Hook",
+    "meta": [{ "color_name": "White", "selling_price": 3703 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-87006AMP",
+    "name": "Tumbler Holder (Heavy Off White)",
+    "meta": [{ "color_name": "Heavy Off White", "selling_price": 1346 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-5011",
+    "name": "Roll Holder With Shelf",
+    "meta": [{ "color_name": "Chrome", "selling_price": 4881 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-1202",
+    "name": "Multi Function Storage Hair Dryer",
+    "meta": [{ "color_name": "Chrome", "selling_price": 7637 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-3812",
+    "name": "Multi Function Storage Rack",
+    "meta": [{ "color_name": "Chrome", "selling_price": 5296 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-1401",
+    "name": "Swivelling Hook",
+    "meta": [{ "color_name": "Chrome", "selling_price": 1790 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-3010",
+    "name": "Mop Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3335 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-6003",
+    "name": "Grab Bar With Shelf",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3494 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-32300DP",
+    "name": "Corner Shelf With Storage Box",
+    "meta": [{ "color_name": "Chrome", "selling_price": 5351 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-3131DP",
+    "name": "3-in-1 Double Roll Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 5963 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-3301DP",
+    "name": "3-in-1 Roll Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 9179 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-40310DP",
+    "name": "Grab Bar 4-in-1 Shelf",
+    "meta": [{ "color_name": "Chrome", "selling_price": 12192 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-40311DP",
+    "name": "Grab Bar 4-in-1 Roll Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 12041 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-40318DP",
+    "name": "5-in-1 Sliding Rail",
+    "meta": [{ "color_name": "Chrome", "selling_price": 13028 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-33012DP",
+    "name": "Shelf With Preservation Film",
+    "meta": [{ "color_name": "Chrome", "selling_price": 4745 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-33010DP",
+    "name": "3-in-1 Shelf",
+    "meta": [{ "color_name": "Chrome", "selling_price": 9505 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-30300DP",
+    "name": "Shelf With 2 Storage Box",
+    "meta": [{ "color_name": "Chrome", "selling_price": 9882 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-9900-4",
+    "name": "4 Robe Hook",
+    "meta": [{ "color_name": "Chrome", "selling_price": 2938 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-9900-5",
+    "name": "5 Robe Hook",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3658 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-87003",
+    "name": "Shelf With Soap Dish",
+    "meta": [{ "color_name": "Chrome", "selling_price": 1814 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-87007",
+    "name": "Soap Dish",
+    "meta": [{ "color_name": "Chrome", "selling_price": 1057 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-3101MP",
+    "name": "Roll Holder With Shelf & Hook",
+    "meta": [{ "color_name": "Chrome", "selling_price": 2938 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-30311MP",
+    "name": "Double Roll Holder With Shelf",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3412 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-30304MP",
+    "name": "Shelf With Towel Ring & Hook",
+    "meta": [{ "color_name": "Chrome", "selling_price": 4432 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-32310MP",
+    "name": "Corner Shelf With Hook",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3703 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-87006AMP",
+    "name": "Tumbler Holder (Heavy Off White)",
+    "meta": [{ "color_name": "Heavy Off White", "selling_price": 1346 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-87005AMP",
+    "name": "Toilet Brush Set",
+    "meta": [{ "color_name": "Chrome", "selling_price": 2282 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "GP-8215",
+    "name": "Toilet Brush Set",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3696 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-0164",
+    "name": "Soap Dispenser",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3702 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-1164",
+    "name": "Soap Dispenser Table Top",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3428 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-0019",
+    "name": "Multi-Functional Hair Dryer Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 4883 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-0619",
+    "name": "Front Shower Basket With Glass Scraper",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3259 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-0719",
+    "name": "Corner Shower Basket With Glass Scraper",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3259 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-30610MP",
+    "name": "Tooth Brush Holder With Hook",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3365 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-30310MP",
+    "name": "Shelf With 5-Hook",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3920 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-30003MP",
+    "name": "Shelf",
+    "meta": [{ "color_name": "Chrome", "selling_price": 2585 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-8003MP",
+    "name": "Shelf Big",
+    "meta": [{ "color_name": "Chrome", "selling_price": 1331 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-8006MP",
+    "name": "Napkin Holder",
+    "meta": [{ "color_name": "Chrome", "selling_price": 1574 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-8002MP",
+    "name": "Knife Stand (Small)",
+    "meta": [{ "color_name": "Chrome", "selling_price": 935 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-8001MP",
+    "name": "Shelf (Small)",
+    "meta": [{ "color_name": "Chrome", "selling_price": 935 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "HC-510",
+    "name": "Malasian Aerosol Air Freshener Dispenser",
+    "meta": [{ "color_name": "Chrome", "selling_price": 1778 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "HC-199A LCD",
+    "name": "Aerosol Dispenser",
+    "meta": [{ "color_name": "Chrome", "selling_price": 1829 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "HC-199B LED",
+    "name": "Mini Aerosol Dispenser",
+    "meta": [{ "color_name": "Chrome", "selling_price": 1461 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "KK-0066",
+    "name": "Soap Dispenser 800 ML",
+    "meta": [{ "color_name": "Chrome", "selling_price": 2091 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "KK-0077",
+    "name": "Soap Dispenser 800 ML",
+    "meta": [{ "color_name": "Chrome", "selling_price": 2091 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "AZ-361",
+    "name": "Men's Toilet EVA Urinal Screen",
+    "meta": [{ "color_name": "Assorted", "selling_price": 240 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "NC-1066",
+    "name": "Automatic Sensor Faucet Touchless Sink Tap",
+    "meta": [{ "color_name": "Chrome", "selling_price": 6251 }]
+  },
+  {
+    "category": "New Concept Multi-Purpose Series",
+    "company_code": "AC-1020",
+    "name": "Washable AC Air Purifier",
+    "meta": [{ "color_name": "Chrome", "selling_price": 3273 }]
+  },
+
+  {
+    "category": "Fragrance Dispensers",
+    "company_code": "HC-880 LCD",
+    "name": "Automatic Aerosol Dispenser",
+    "selling_price": 2404
+  },
+  {
+    "category": "Fragrance Dispensers",
+    "company_code": "PXQ-188",
+    "name": "Automatic Aerosol Dispenser",
+    "selling_price": 2634
+  },
+  {
+    "category": "Fragrance Dispensers",
+    "company_code": "D-3230",
+    "name": "Plug In Aroma Diffuser (Italy)",
+    "selling_price": 6889
+  },
+  {
+    "category": "Fragrance Dispensers",
+    "company_code": "WE-2202",
+    "name": "Electric Essential Oil Scent Diffuser",
+    "selling_price": 6394
+  },
+  {
+    "category": "Fragrance Dispensers",
+    "company_code": "D-3233",
+    "name": "Electric Essential Oil Scent Diffuser AC 400 ML (Malaysian)",
+    "selling_price": 17000
+  },
+  {
+    "category": "Fragrance Dispensers",
+    "company_code": "X2S",
+    "name": "Electric Essential Oil Scent Diffuser AC / DC 240 ML (Malaysian)",
+    "selling_price": 11990
+  },
+  {
+    "category": "Fragrance Dispensers",
+    "company_code": "D-1070",
+    "name": "Bluetooth Aroma Diffuser (France)",
+    "selling_price": 34500
+  },
+  {
+    "category": "Fragrance Dispensers",
+    "company_code": "A-305L",
+    "name": "Automatic Aerosol Dispenser (USA)",
+    "selling_price": 56349
+  },
+  {
+    "category": "Fragrance Dispensers",
+    "company_code": "D-3234",
+    "name": "Automatic Aerosol Dispenser (USA)",
+    "selling_price": 56350
+  },
+  {
+    "category": "Fragrance Dispensers",
+    "company_code": "A-311",
+    "name": "Mini Aroma Diffuser (Japan)",
+    "selling_price": 56350
+  },
+  {
+    "category": "Fragrance Dispensers",
+    "company_code": "A-3042",
+    "name": "Scent LCD Tower Diffuser AC (Paris)",
+    "selling_price": 69000
+  },
+  {
+    "category": "Fragrance Dispensers",
+    "company_code": "A-3041",
+    "name": "Commercial Remote Control Floor Standing Aroma Diffuser (U.K)",
+    "selling_price": 92000
+  },
+  {
+    "category": "Fragrance Dispensers",
+    "company_code": "A-326",
+    "name": "Bluetooth Aroma Diffuser (UAE)",
+    "selling_price": 45989
+  },
+  {
+    "category": "Fragrance Dispensers",
+    "company_code": "A-974",
+    "name": "Smart Electric Oil Aroma Diffuser (Korea)",
+    "selling_price": 28750
+  },
+
+  {
+    "category": "ABS Soap Dispensers",
+    "company_code": "HC-0641",
+    "name": "Liquid Dispenser 350 ML",
+    "selling_price": 459
+  },
+  {
+    "category": "ABS Soap Dispensers",
+    "company_code": "HC-4201",
+    "name": "Manual Mini Soap Dispenser 250 ML",
+    "selling_price": 753
+  },
+  {
+    "category": "ABS Soap Dispensers",
+    "company_code": "HC-111",
+    "name": "Manual Single Soap Dispenser 400 ML",
+    "selling_price": 753
+  },
+  {
+    "category": "ABS Soap Dispensers",
+    "company_code": "HC-112",
+    "name": "Manual Double Soap Dispenser 400 ML x 2",
+    "selling_price": 1507
+  },
+  {
+    "category": "ABS Soap Dispensers",
+    "company_code": "HC-113",
+    "name": "Manual Triple Soap Dispenser 400 ML x 3",
+    "selling_price": 2260
+  },
+  {
+    "category": "ABS Soap Dispensers",
+    "company_code": "HC-2801",
+    "name": "Single Dispenser 350 ML",
+    "selling_price": 731
+  },
+  {
+    "category": "ABS Soap Dispensers",
+    "company_code": "HC-2802",
+    "name": "Double Dispenser 350 ML x 2",
+    "selling_price": 1463
+  },
+  {
+    "category": "ABS Soap Dispensers",
+    "company_code": "NC-1064",
+    "name": "Manual Soap Dispenser 500 ML",
+    "selling_price": 713
+  },
+  {
+    "category": "ABS Soap Dispensers",
+    "company_code": "HC-2701",
+    "name": "Soap Dispenser 1000 ML",
+    "selling_price": 2473
+  },
+  {
+    "category": "ABS Soap Dispensers",
+    "company_code": "HC-0642",
+    "name": "Soap Dispenser 1000 ML",
+    "selling_price": 941
+  },
+  {
+    "category": "ABS Soap Dispensers",
+    "company_code": "HC-SDF-01",
+    "name": "Single Soap Dispenser 500 ML",
+    "selling_price": 2622
+  },
+  {
+    "category": "ABS Soap Dispensers",
+    "company_code": "HC-SDF-02",
+    "name": "Double Soap Dispenser 500 ML x 2",
+    "selling_price": 4474
+  },
+  {
+    "category": "ABS Soap Dispensers",
+    "company_code": "HC-SDF-03",
+    "name": "Triple Soap Dispenser 500 ML x 3",
+    "selling_price": 6302
+  },
+
+  {
+    "category": "Tissue & Paper Dispensers",
+    "company_code": "JZH212V1",
+    "name": "Toilet Paper Dispenser",
+    "selling_price": 1201
+  },
+  {
+    "category": "Tissue & Paper Dispensers",
+    "company_code": "JZH212W1",
+    "name": "Double Toilet Paper Dispenser",
+    "selling_price": 2401
+  },
+  {
+    "category": "Tissue & Paper Dispensers",
+    "company_code": "NC-1068",
+    "name": "Tissue Holder Box [White]",
+    "selling_price": 2298
+  },
+  {
+    "category": "Tissue & Paper Dispensers",
+    "company_code": "HC-151060",
+    "name": "Public Bathroom Paper Towel Dispenser",
+    "selling_price": 2298
+  },
+  {
+    "category": "Tissue & Paper Dispensers",
+    "company_code": "HC-603",
+    "name": "Paper Dispenser (N/Z-Fold)",
+    "selling_price": 2507
+  },
+  {
+    "category": "Tissue & Paper Dispensers",
+    "company_code": "HC-JZH275",
+    "name": "SS Jumbo Roll Tissue Box Satin",
+    "selling_price": 5796
+  },
+  {
+    "category": "Tissue & Paper Dispensers",
+    "company_code": "HC-2063M",
+    "name": "Mini ABS Center Pull Toilet Paper Dispenser",
+    "selling_price": 2312
+  },
+  {
+    "category": "Tissue & Paper Dispensers",
+    "company_code": "HC-2063",
+    "name": "ABS Center Pull Toilet Paper Dispenser",
+    "selling_price": 2489
+  },
+  {
+    "category": "Tissue & Paper Dispensers",
+    "company_code": "WE-2209",
+    "name": "Toilet Paper Roll Dispenser 7 CM",
+    "selling_price": 2117
+  },
+  {
+    "category": "Tissue & Paper Dispensers",
+    "company_code": "WE-2210",
+    "name": "Hand Towel Dispenser (N/Z-Fold)",
+    "selling_price": 1763
+  },
+  {
+    "category": "Tissue & Paper Dispensers",
+    "company_code": "HC-ZJH1S",
+    "name": "Paper Towel Dispenser Small SS-304",
+    "selling_price": 6251
+  },
+  {
+    "category": "Tissue & Paper Dispensers",
+    "company_code": "HC-ZJVB",
+    "name": "Paper Towel Dispenser Big SS-304",
+    "selling_price": 6711
+  },
+  {
+    "category": "Tissue & Paper Dispensers",
+    "company_code": "HC-1069",
+    "name": "Tissue Paper Holder",
+    "selling_price": 2588
+  },
+
+  {
+    "category": "ABS Soap Dispensers (Extended Range)",
+    "company_code": "HC-151051",
+    "name": "Manual Soap Dispenser 800 ML",
+    "selling_price": 2415
+  },
+  {
+    "category": "ABS Soap Dispensers (Extended Range)",
+    "company_code": "HC-151052",
+    "name": "Manual Soap Dispenser 550 ML x 2",
+    "selling_price": 2599
+  },
+  {
+    "category": "ABS Soap Dispensers (Extended Range)",
+    "company_code": "HC-064",
+    "name": "Manual Soap Dispenser 500 ML",
+    "selling_price": 868
+  },
+  {
+    "category": "ABS Soap Dispensers (Extended Range)",
+    "company_code": "HC-065",
+    "name": "Manual Soap Dispenser 1 LTR.",
+    "selling_price": 1288
+  },
+  {
+    "category": "ABS Soap Dispensers (Extended Range)",
+    "company_code": "WE-2205-S",
+    "name": "Manual Soap Dispenser 500 ML (Liquid)",
+    "selling_price": 1634
+  },
+  {
+    "category": "ABS Soap Dispensers (Extended Range)",
+    "company_code": "WE-2205",
+    "name": "Manual Disinfectant Dispenser 500 ML (Spray & Foaming)",
+    "selling_price": 1452
+  },
+  {
+    "category": "ABS Soap Dispensers (Extended Range)",
+    "company_code": "WE-2203",
+    "name": "Manual Soap Dispenser 800 ML (Liquid)",
+    "selling_price": 1985
+  },
+  {
+    "category": "ABS Soap Dispensers (Extended Range)",
+    "company_code": "WE-2220",
+    "name": "Manual Disinfectant Dispenser 500 ML (Foam)",
+    "selling_price": 1452
+  },
+  {
+    "category": "ABS Soap Dispensers (Extended Range)",
+    "company_code": "HC-ZYQ110",
+    "name": "Automatic Soap Dispenser 1100 ML",
+    "selling_price": 4637
+  },
+  {
+    "category": "ABS Soap Dispensers (Extended Range)",
+    "company_code": "HC-ZYQ110B",
+    "name": "Automatic Soap Dispenser with Table Stand 1100 ML",
+    "selling_price": 6182
+  },
+  {
+    "category": "ABS Soap Dispensers (Extended Range)",
+    "company_code": "FS-3319 (XDQ110A1)",
+    "name": "Automatic Hand Sanitizer Dispenser with Stand",
+    "selling_price": 13662
+  },
+  {
+    "category": "ABS Soap Dispensers (Extended Range)",
+    "company_code": "WE-2201",
+    "name": "Automatic Soap Dispenser 500 ML (Spray)",
+    "selling_price": 5129
+  },
+  {
+    "category": "ABS Soap Dispensers (Extended Range)",
+    "company_code": "WE-2206",
+    "name": "Automatic Soap Dispenser 350 ML (Foaming)",
+    "selling_price": 3270
+  },
+  {
+    "category": "ABS Soap Dispensers (Extended Range)",
+    "company_code": "WE-2206M",
+    "name": "Automatic Mirror Soap Dispenser 350 ML (Foaming)",
+    "selling_price": 3450
+  },
+
+  {
+    "category": "Tissue & Paper Dispensers",
+    "company_code": "HC-5010",
+    "name": "Industrial Kitchen Roll Dispenser",
+    "selling_price": 3764
+  },
+  {
+    "category": "Tissue & Paper Dispensers",
+    "company_code": "HC-1200",
+    "name": "Autocut (HRT) Dispenser",
+    "selling_price": 16960
+  },
+  {
+    "category": "Tissue & Paper Dispensers",
+    "company_code": "HC-2016",
+    "name": "Auto Cut HRT Roll Towel Dispenser 6 Inches",
+    "selling_price": 9410
+  },
+  {
+    "category": "Tissue & Paper Dispensers",
+    "company_code": "HC-2018",
+    "name": "Auto Cut HRT Roll Towel Dispenser 8 Inches",
+    "selling_price": 10664
+  },
+  {
+    "category": "Tissue & Paper Dispensers",
+    "company_code": "HC-151066",
+    "name": "Automatic Paper Towel Dispenser 6 Inches [Small]",
+    "selling_price": 12231
+  },
+  {
+    "category": "Tissue & Paper Dispensers",
+    "company_code": "HC-151068",
+    "name": "Automatic Paper Towel Dispenser 8 Inches [Big]",
+    "selling_price": 14323
+  },
+  {
+    "category": "Tissue & Paper Dispensers",
+    "company_code": "HC-151068-S",
+    "name": "Sensomatic HRT Roll Towel Dispenser",
+    "selling_price": 9273
+  },
+  {
+    "category": "Tissue & Paper Dispensers",
+    "company_code": "CZQ25K1",
+    "name": "Sensomatic HRT Roll Towel Dispenser",
+    "selling_price": 26496
+  },
+  {
+    "category": "Tissue & Paper Dispensers",
+    "company_code": "CZQ20K",
+    "name": "Sensomatic HRT Roll Towel Dispenser",
+    "selling_price": 35604
+  },
+
+  {
+    "category": "Hand Dryers Series",
+    "company_code": "WE-2208",
+    "name": "High Speed Hand Dryer - HEPA",
+    "selling_price": 18343
+  },
+  {
+    "category": "Hand Dryers Series",
+    "company_code": "HC-329S1",
+    "name": "Slide-Adjustable Hand Dryer",
+    "selling_price": 20125
+  },
+  {
+    "category": "Hand Dryers Series",
+    "company_code": "HC-GSQ-91k",
+    "name": "Hand Dryer High Speed",
+    "selling_price": 36432
+  },
+  {
+    "category": "Hand Dryers Series",
+    "company_code": "HC-2502",
+    "name": "Super Slim Hand Dryer with High Speed Brushless Motor Console",
+    "selling_price": 8308
+  },
+  {
+    "category": "Hand Dryers Series",
+    "company_code": "HC-2807",
+    "name": "High Speed Hand Dryer",
+    "selling_price": 10455
+  },
+  {
+    "category": "Hand Dryers Series",
+    "company_code": "HC-2006",
+    "name": "ABS Hand Dryer",
+    "selling_price": 9394
+  },
+  {
+    "category": "Hand Dryers Series",
+    "company_code": "HC-25011",
+    "name": "Automatic Hand Dryer with Brushless Motor",
+    "selling_price": 11592
+  },
+  {
+    "category": "Hand Dryers Series",
+    "company_code": "HC-220",
+    "name": "Automatic Hand Dryer",
+    "selling_price": 5855
+  },
+  {
+    "category": "Hand Dryers Series",
+    "company_code": "NC-1065",
+    "name": "Automatic Hand Dryer",
+    "selling_price": 5047
+  },
+  {
+    "category": "Hand Dryers Series",
+    "company_code": "HC-2029",
+    "name": "Hand Dryer with Dual Side HEPA Filter",
+    "selling_price": 55200
+  },
+  {
+    "category": "Hand Dryers Series",
+    "company_code": "HC-2030",
+    "name": "HEPA Filter Jet Air Hand Dryer",
+    "selling_price": 95220
+  },
+
+  {
+    "category": "Floor Stand Series",
+    "company_code": "FS-3318",
+    "name": "Towel & Clothes Stand with Storage Shelf",
+    "selling_price": 11546
+  },
+  {
+    "category": "Floor Stand Series",
+    "company_code": "FS-3357",
+    "name": "Toilet Brush Set & Paper Holder Stand with Storage Shelf",
+    "selling_price": 12535
+  },
+  {
+    "category": "Floor Stand Series",
+    "company_code": "FS-3330",
+    "name": "Floor Standing Roll Holder with Toilet Brush Set",
+    "selling_price": 11489
+  },
+  {
+    "category": "Floor Stand Series",
+    "company_code": "FS-3362",
+    "name": "Tree Multipurpose Floor Stand Rack",
+    "selling_price": 25289
+  },
+  {
+    "category": "Floor Stand Series",
+    "company_code": "FS-3358",
+    "name": "Wooden Round Shelf with Cloth Hanging Stand",
+    "selling_price": 11546
+  },
+
+  {
+    "category": "Baby Diaper Changing Station Panels",
+    "company_code": "NC-6016",
+    "name": "Baby Diaper Changing Station",
+    "selling_price": 20590
+  },
+  {
+    "category": "Baby Diaper Changing Station Panels",
+    "company_code": "NC-6015",
+    "name": "High Quality HDPE Baby Diaper Changing",
+    "selling_price": 21490
+  },
+  {
+    "category": "Baby Diaper Changing Station Panels",
+    "company_code": "NC-6014",
+    "name": "Surface Mounted Horizontal Baby Diaper Changing Station",
+    "selling_price": 28164
+  },
+
+  {
+    "category": "Dustbin Series",
+    "company_code": "DB-8855",
+    "name": "Stella Dustbin",
+    "meta": { "size": "9L" },
+    "selling_price": 4559
+  },
+  {
+    "category": "Dustbin Series",
+    "company_code": "DB-8855",
+    "name": "Stella Dustbin",
+    "meta": { "size": "12L" },
+    "selling_price": 5639
+  },
+
+  {
+    "category": "Dustbin Series",
+    "company_code": "DB-8856",
+    "name": "Serene Dustbin",
+    "meta": { "size": "5L" },
+    "selling_price": 3359
+  },
+  {
+    "category": "Dustbin Series",
+    "company_code": "DB-8856",
+    "name": "Serene Dustbin",
+    "meta": { "size": "8L" },
+    "selling_price": 4319
+  },
+  {
+    "category": "Dustbin Series",
+    "company_code": "DB-8856",
+    "name": "Serene Dustbin",
+    "meta": { "size": "12L" },
+    "selling_price": 5220
+  },
+  {
+    "category": "Dustbin Series",
+    "company_code": "DB-8856",
+    "name": "Serene Dustbin",
+    "meta": { "size": "20L" },
+    "selling_price": 9060
+  },
+  {
+    "category": "Dustbin Series",
+    "company_code": "DB-8856",
+    "name": "Serene Dustbin",
+    "meta": { "size": "30L" },
+    "selling_price": 13188
+  },
+
+  {
+    "category": "Dustbin Series",
+    "company_code": "DB-8877",
+    "name": "Ecoslim Dustbin",
+    "meta": { "size": "6L" },
+    "selling_price": 5220
+  },
+  {
+    "category": "Dustbin Series",
+    "company_code": "DB-8877",
+    "name": "Ecoslim Dustbin",
+    "meta": { "size": "10L" },
+    "selling_price": 7559
+  },
+  {
+    "category": "Dustbin Series",
+    "company_code": "DB-8877",
+    "name": "Ecoslim Dustbin",
+    "meta": { "size": "15L" },
+    "selling_price": 9959
+  },
+
+  {
+    "category": "Dustbin Series",
+    "company_code": "DB-8878",
+    "name": "Madison Dustbin",
+    "meta": { "size": "6L" },
+    "selling_price": 3954
+  },
+  {
+    "category": "Dustbin Series",
+    "company_code": "DB-8878",
+    "name": "Madison Dustbin",
+    "meta": { "size": "10L" },
+    "selling_price": 6719
+  },
+  {
+    "category": "Dustbin Series",
+    "company_code": "DB-8878",
+    "name": "Madison Dustbin",
+    "meta": { "size": "15L" },
+    "selling_price": 9959
+  },
+
+  {
+    "category": "Dustbin Series",
+    "company_code": "DB-8857",
+    "name": "Regent Dustbin",
+    "meta": { "size": "9L" },
+    "selling_price": 8159
+  },
+  {
+    "category": "Dustbin Series",
+    "company_code": "DB-8857",
+    "name": "Regent Dustbin",
+    "meta": { "size": "12L" },
+    "selling_price": 9119
+  },
+
+  {
+    "category": "Dustbin Series",
+    "company_code": "DB-8829",
+    "name": "Ecosense Dustbin (Sensor)",
+    "meta": { "size": "9L" },
+    "selling_price": 9683
+  },
+  {
+    "category": "Dustbin Series",
+    "company_code": "DB-8829",
+    "name": "Ecosense Dustbin (Sensor)",
+    "meta": { "size": "12L" },
+    "selling_price": 11315
+  },
+
+  {
+    "category": "Dustbin Series",
+    "company_code": "DB-8870",
+    "name": "Ecocasa Recycling Pedal Dustbin 12 + 12 + 12L",
+    "meta": { "size": "12L + 12L + 12L" },
+    "selling_price": 29686
+  },
+
+  {
+    "category": "Dustbin Series",
+    "company_code": "DB-8226",
+    "name": "Docomo Sensor Dustbin",
+    "meta": { "size": "9L" },
+    "selling_price": 9461
+  },
+  {
+    "category": "Dustbin Series",
+    "company_code": "DB-8226",
+    "name": "Docomo Sensor Dustbin",
+    "meta": { "size": "12L" },
+    "selling_price": 11075
+  },
+
+  {
+    "category": "Dustbin Series",
+    "company_code": "DB-2288",
+    "name": "Sensor Bin with Stand USA Model 20L",
+    "meta": { "size": "9L" },
+    "selling_price": 10596
+  },
+  {
+    "category": "Dustbin Series",
+    "company_code": "DB-2288",
+    "name": "Sensor Bin with Stand USA Model 20L",
+    "meta": { "size": "12L" },
+    "selling_price": 12636
+  },
+  {
+    "category": "Dustbin Series",
+    "company_code": "DB-2288",
+    "name": "Sensor Bin with Stand USA Model 20L",
+    "meta": { "size": "16L" },
+    "selling_price": 13824
+  },
+  {
+    "category": "Dustbin Series",
+    "company_code": "DB-2288",
+    "name": "Sensor Bin with Stand USA Model 20L",
+    "meta": { "size": "20L" },
+    "selling_price": 16080
+  },
+
+  {
+    "category": "Dustbin Series",
+    "company_code": "DB-8853",
+    "name": "Bass Pedal Dustbin",
+    "meta": { "size": "3L" },
+    "selling_price": 3599
+  },
+  {
+    "category": "Dustbin Series",
+    "company_code": "DB-8853",
+    "name": "Bass Pedal Dustbin",
+    "meta": { "size": "5L" },
+    "selling_price": 4439
+  },
+  {
+    "category": "Dustbin Series",
+    "company_code": "DB-8853",
+    "name": "Bass Pedal Dustbin",
+    "meta": { "size": "8L" },
+    "selling_price": 5519
+  },
+  {
+    "category": "Dustbin Series",
+    "company_code": "DB-8853",
+    "name": "Bass Pedal Dustbin",
+    "meta": { "size": "12L" },
+    "selling_price": 6599
+  },
+
+  {
+    "category": "Dustbin Series",
+    "company_code": "DB-8869",
+    "name": "Nafisi Dustbin",
+    "meta": { "size": "12L + 12L" },
+    "selling_price": 17988
+  },
+  {
+    "category": "Dustbin Series",
+    "company_code": "DB-8869",
+    "name": "Nafisi Dustbin",
+    "meta": { "size": "18L + 18L" },
+    "selling_price": 22427
+  },
+
+  {
+    "category": "Dustbin Series",
+    "company_code": "DB-2308",
+    "name": "Ecosmart Dustbin",
+    "meta": { "size": "6L" },
+    "selling_price": 3024
+  },
+  {
+    "category": "Dustbin Series",
+    "company_code": "SL-1800",
+    "name": "Feminine Hygiene Bin",
+    "selling_price": 3492
+  },
+
+  {
+    "category": "Washroom Panels",
+    "company_code": "HC-25033",
+    "name": "Washroom Panel / Recessed 3 in 1 (Paper Dispenser + Waste Receptacle)",
+    "selling_price": 104931
+  },
+  {
+    "category": "Washroom Panels",
+    "company_code": "HC-2501",
+    "name": "Washroom Panel / Recessed 2 in 1 (Paper Dispenser + Waste Receptacle)",
+    "selling_price": 55614
+  },
+  {
+    "category": "Washroom Panels",
+    "company_code": "HC-25022",
+    "name": "Washroom Panel / Recessed 3 in 1 (Manual Paper Dispenser + High Speed Hand Dryer + Waste Receptacle)",
+    "selling_price": 115920
+  },
+  {
+    "category": "Mirror Series",
+    "company_code": "MM-1022A",
+    "name": "Double Sided Cosmetic Mirror Round 8 Inches",
+    "selling_price": 3352
+  },
+  {
+    "category": "Mirror Series",
+    "company_code": "MM0010A",
+    "name": "Double Sided Round LED Wall Mirror 8 Inches",
+    "selling_price": 13224
+  },
+  {
+    "category": "Mirror Series",
+    "company_code": "MM-0737",
+    "name": "LED Square Mirror 5X",
+    "selling_price": 18389
+  },
+  {
+    "category": "Mirror Series",
+    "company_code": "MM-5289A",
+    "name": "LED Round Mirror 8 Inches",
+    "selling_price": 12459
+  },
+  {
+    "category": "Mirror Series",
+    "company_code": "MM-5501",
+    "name": "LED Square Cosmetic Mirror 8 Inches",
+    "selling_price": 12459
+  },
+  {
+    "category": "Mirror Series",
+    "company_code": "MM0005A",
+    "name": "Double Sided Cosmetic Mirror 8 Inches",
+    "selling_price": 7283
+  },
+  {
+    "category": "Mirror Series",
+    "company_code": "MM0009A",
+    "name": "Square Cosmetic Mirror",
+    "selling_price": 7518
+  },
+  {
+    "category": "Mirror Series",
+    "company_code": "MM0012A",
+    "name": "Round Mirror Table Top 8 Inches",
+    "selling_price": 7749
+  },
+  {
+    "category": "Mirror Series",
+    "company_code": "MM-8150A",
+    "name": "Mirror X3 Sizes 8 Inches",
+    "selling_price": 6108
+  },
+  {
+    "category": "Mirror Series",
+    "company_code": "MM-8254A",
+    "name": "Mirror X3 Sizes 8 Inches Square Height Adjustable",
+    "selling_price": 8005
+  },
+  {
+    "category": "Mirror Series",
+    "company_code": "MM-8224A",
+    "name": "Double Sided Mirror X3 Sizes 8 Inches",
+    "selling_price": 9383
+  },
+  {
+    "category": "Mirror Series",
+    "company_code": "MM-0011A",
+    "name": "Rectangle Wall Mirror",
+    "selling_price": 6392
+  },
+  {
+    "category": "Mirror Series",
+    "company_code": "MM-8257A",
+    "name": "Mirror X3 Sizes 8 Inches",
+    "selling_price": 7820
+  },
+  {
+    "category": "Mirror Series",
+    "company_code": "MM-101A",
+    "name": "Rectangle Table Top Mirror",
+    "selling_price": 6386
+  },
+  {
+    "category": "Mirror Series",
+    "company_code": "MM-8225A",
+    "name": "Mirror X3 LED Round 8 Inches",
+    "selling_price": 20095
+  },
+  {
+    "category": "Mirror Series",
+    "company_code": "MM-8226A",
+    "name": "Mirror X3 LED Square",
+    "selling_price": 20085
+  },
+  {
+    "category": "Mirror Series",
+    "company_code": "MM-0738",
+    "name": "Standing LED Mirror 5X (AC / DC)",
+    "selling_price": 14991
+  },
+
+  {
+    "category": "Basket Series",
+    "company_code": "NC-0699",
+    "name": "Shelf for Shower Enclosure",
+    "selling_price": 8840
+  },
+  {
+    "category": "Basket Series",
+    "company_code": "NC-0609MP",
+    "name": "Front Basket 300 MM",
+    "selling_price": 3079
+  },
+  {
+    "category": "Basket Series",
+    "company_code": "NC-1609MP",
+    "name": "Front Basket 350 MM",
+    "selling_price": 3704
+  },
+  {
+    "category": "Basket Series",
+    "company_code": "NC-0709MP",
+    "name": "Corner Basket 8 x 8 Inches",
+    "selling_price": 3079
+  },
+  {
+    "category": "Basket Series",
+    "company_code": "NC-1709MP",
+    "name": "Corner Basket 9 x 9 Inches",
+    "selling_price": 3704
+  },
+  {
+    "category": "Basket Series",
+    "company_code": "NC-0809MP",
+    "name": "Shelf with Glass Scraper",
+    "selling_price": 3704
+  },
+  {
+    "category": "Basket Series",
+    "company_code": "NC-0909MP",
+    "name": "Corner Shelf with Glass Scraper",
+    "selling_price": 3704
+  },
+  {
+    "category": "Basket Series",
+    "company_code": "NC-0009MP",
+    "name": "Rectangle Basket with Bracket (12 x 5.25 x 3.5 Inches)",
+    "selling_price": 5725,
+    "gold_price": 8587
+  },
+  {
+    "category": "Basket Series",
+    "company_code": "NC-0109MP",
+    "name": "Oval Basket with Bracket (12 x 5.25 x 3.5 Inches)",
+    "selling_price": 5269,
+    "gold_price": 7904
+  },
+  {
+    "category": "Basket Series",
+    "company_code": "NC-0209MP",
+    "name": "Corner Basket with Bracket (9 x 9 x 3.5 Inches)",
+    "selling_price": 4996,
+    "gold_price": 7493
+  },
+  {
+    "category": "Basket Series",
+    "company_code": "NC-0029MP",
+    "name": "Double Rectangle Basket with Bracket (12 x 5.25 x 14 Inches)",
+    "selling_price": 9448,
+    "gold_price": 14173
+  },
+  {
+    "category": "Basket Series",
+    "company_code": "NC-0129MP",
+    "name": "Double Oval Basket with Bracket (12 x 5.25 x 14 Inches)",
+    "selling_price": 9448,
+    "gold_price": 14173
+  },
+  {
+    "category": "Basket Series",
+    "company_code": "NC-0229MP",
+    "name": "Double Corner Basket with Bracket (9 x 9 x 14 Inches)",
+    "selling_price": 9448,
+    "gold_price": 14173
+  },
+  {
+    "category": "Basket Series",
+    "company_code": "K012",
+    "name": "Shower Shelf - Corner",
+    "selling_price": 4561
+  },
+  {
+    "category": "Basket Series",
+    "company_code": "K013",
+    "name": "Shower Shelf - Rectangle",
+    "selling_price": 4902
+  },
+
+  {
+    "category": "Basket Series",
+    "company_code": "G-2222",
+    "name": "Wire Basket (5 x 4 Inches)",
+    "selling_price": 1032
+  },
+  {
+    "category": "Basket Series",
+    "company_code": "G-2223",
+    "name": "Wire Basket (10 x 5 x 1.5 Inches)",
+    "selling_price": 2183
+  },
+  {
+    "category": "Basket Series",
+    "company_code": "G-2224",
+    "name": "Wire Basket with Bracket (10 x 5 x 2.5 Inches)",
+    "selling_price": 2183
+  },
+  {
+    "category": "Basket Series",
+    "company_code": "G-2225",
+    "name": "Wire Basket with Bracket (8 x 8 x 3 Inches)",
+    "selling_price": 3968,
+    "gold_price": 5555
+  },
+  {
+    "category": "Basket Series",
+    "company_code": "G-2226",
+    "name": "Wire Basket with Bracket (12 x 6 x 3.5 Inches)",
+    "selling_price": 3968,
+    "gold_price": 5555
+  },
+  {
+    "category": "Basket Series",
+    "company_code": "G-2244",
+    "name": "Wire Basket with Bracket (12 x 5.5 x 3.5 Inches)",
+    "selling_price": 6297
+  },
+  {
+    "category": "Basket Series",
+    "company_code": "G-2245",
+    "name": "Wire Corner Basket with Bracket (10 x 10 x 2 Inches)",
+    "selling_price": 5150
+  },
+
+  {
+    "category": "SS Baskets",
+    "company_code": "SS-30401",
+    "name": "Corner Basket Single with Bracket (9 x 9 x 3.5 Inches)",
+    "selling_price": 4540,
+    "gold_price": 6814
+  },
+  {
+    "category": "SS Baskets",
+    "company_code": "SS-30402",
+    "name": "Corner Basket Double with Bracket (9 x 9 x 14 Inches)",
+    "selling_price": 8868
+  },
+  {
+    "category": "SS Baskets",
+    "company_code": "SS-30403",
+    "name": "Rectangle Basket Single with Bracket (12 x 5.5 x 3.5 Inches)",
+    "selling_price": 5204,
+    "gold_price": 7807
+  },
+  {
+    "category": "SS Baskets",
+    "company_code": "SS-30304",
+    "name": "Rectangle Basket Double with Bracket (12 x 5.5 x 14 Inches)",
+    "selling_price": 9424
+  },
+  {
+    "category": "SS Baskets",
+    "company_code": "SS-0135",
+    "name": "Shelf Corner (8.5 x 8.5 x 2 Inches)",
+    "selling_price": 3172
+  },
+  {
+    "category": "SS Baskets",
+    "company_code": "SS-0145",
+    "name": "Shelf Front (12 x 5.5 x 2.5 Inches)",
+    "selling_price": 3172
+  },
+
+  {
+    "category": "Glass Shelf Series",
+    "company_code": "GS-0101A",
+    "name": "Corner Shelf (8 x 8 Inches)",
+    "selling_price": 3503,
+    "gold_price": 5254
+  },
+  {
+    "category": "Glass Shelf Series",
+    "company_code": "GS-0102A",
+    "name": "Corner Shelf (10 x 10 Inches)",
+    "selling_price": 4015,
+    "gold_price": 6024
+  },
+  {
+    "category": "Glass Shelf Series",
+    "company_code": "GS-0103A",
+    "name": "Corner Shelf (12 x 12 Inches)",
+    "selling_price": 4513,
+    "gold_price": 6768
+  },
+  {
+    "category": "Glass Shelf Series",
+    "company_code": "GS-0010A",
+    "name": "Front Shelf (12 x 6 Inches)",
+    "selling_price": 3473,
+    "gold_price": 4733
+  },
+  {
+    "category": "Glass Shelf Series",
+    "company_code": "GS-0020A",
+    "name": "Front Shelf (16 x 6 Inches)",
+    "selling_price": 3969,
+    "gold_price": 5954
+  },
+  {
+    "category": "Glass Shelf Series",
+    "company_code": "GS-0030A",
+    "name": "Front Shelf (20 x 6 Inches)",
+    "selling_price": 4464,
+    "gold_price": 6696
+  },
+
+  {
+    "category": "Freshener Refill & Aroma Oil",
+    "company_code": "AZ-112",
+    "name": "Automatic Dispenser Perfume Spray Refill Lavender 100ML",
+    "selling_price": 410
+  },
+  {
+    "category": "Freshener Refill & Aroma Oil",
+    "company_code": "AZ-1029",
+    "name": "Automatic Dispenser Perfume Spray Refill Lavender 300ML",
+    "selling_price": 454
+  },
+  {
+    "category": "Freshener Refill & Aroma Oil",
+    "company_code": "AZ-115",
+    "name": "Aroma Oil",
+    "sizes": [
+      { "size": "250ML", "selling_price": 3636 },
+      { "size": "1000ML", "selling_price": 12727 }
+    ],
+    "fragrances": ["Oudh", "Oudh Musk", "White Oudh", "Ameer Oudh"]
+  },
+  {
+    "category": "Freshener Refill & Aroma Oil",
+    "company_code": "AZ-116",
+    "name": "Aroma Oil",
+    "sizes": [
+      { "size": "250ML", "selling_price": 1270 },
+      { "size": "1000ML", "selling_price": 5091 }
+    ],
+    "fragrances": [
+      "Rose",
+      "Lavender",
+      "Lotus",
+      "Lemongrass",
+      "RajniGandha",
+      "Jasmine",
+      "Sandalwood",
+      "Mix Fruit",
+      "Orange",
+      "Citronella",
+      "Aquatic Breeze",
+      "Black Bloom",
+      "White Green",
+      "Aqua Green"
+    ]
+  },
+
+  {
+    "category": "Round Series",
+    "company_code": "RS-4101",
+    "name": "Double Robe Hook",
+    "selling_price": 708
+  },
+  {
+    "category": "Round Series",
+    "company_code": "RS-4102",
+    "name": "Soap Dish (Glass)",
+    "selling_price": 1127
+  },
+  {
+    "category": "Round Series",
+    "company_code": "RS-4103",
+    "name": "Tumbler Holder",
+    "selling_price": 1127
+  },
+  {
+    "category": "Round Series",
+    "company_code": "RS-4104",
+    "name": "Towel Ring",
+    "selling_price": 1394
+  },
+  {
+    "category": "Round Series",
+    "company_code": "RS-4105",
+    "name": "Towel Rod 600 MM",
+    "selling_price": 1748
+  },
+  {
+    "category": "Round Series",
+    "company_code": "RS-4106",
+    "name": "Towel Rod 450 MM",
+    "selling_price": 1696
+  },
+  {
+    "category": "Round Series",
+    "company_code": "RS-4107",
+    "name": "Towel Ring (Round)",
+    "selling_price": 1599
+  },
+  {
+    "category": "Round Series",
+    "company_code": "RS-4108",
+    "name": "Soap Dish (Brass)",
+    "selling_price": 1205
+  },
+  {
+    "category": "Round Series",
+    "company_code": "RS-4109",
+    "name": "Toilet Paper Holder",
+    "selling_price": 1526
+  },
+  {
+    "category": "Round Series",
+    "company_code": "RS-4110",
+    "name": "Toilet Paper Holder with Lid",
+    "selling_price": 2128
+  },
+  {
+    "category": "Round Series",
+    "company_code": "RS-4111",
+    "name": "Towel Rack 600 MM",
+    "selling_price": 5727
+  },
+  {
+    "category": "Round Series",
+    "company_code": "RS-4112",
+    "name": "Towel Rack 450 MM",
+    "selling_price": 5683
+  },
+  {
+    "category": "Round Series",
+    "company_code": "RS-4114",
+    "name": "Soap Dispenser (Glass)",
+    "selling_price": 1647
+  },
+  {
+    "category": "Round Series",
+    "company_code": "RS-4116",
+    "name": "Soap Dispenser (Brass)",
+    "selling_price": 3119
+  },
+  {
+    "category": "Round Series",
+    "company_code": "GS-133",
+    "name": "Front Glass Shelf 12 x 6 Inches",
+    "selling_price": 1950
+  },
+  {
+    "category": "Round Series",
+    "company_code": "GS-134",
+    "name": "Front Glass Shelf 16 x 6 Inches",
+    "selling_price": 2250
+  },
+  {
+    "category": "Round Series",
+    "company_code": "GS-135",
+    "name": "Front Glass Shelf 20 x 6 Inches",
+    "selling_price": 2450
+  },
+
+  {
+    "category": "Square Series",
+    "company_code": "SQ-5101",
+    "name": "Double Robe Hook",
+    "selling_price": 775
+  },
+  {
+    "category": "Square Series",
+    "company_code": "SQ-5102",
+    "name": "Soap Dish (Glass)",
+    "selling_price": 1194
+  },
+  {
+    "category": "Square Series",
+    "company_code": "SQ-5103",
+    "name": "Tumbler Holder (Glass)",
+    "selling_price": 1194
+  },
+  {
+    "category": "Square Series",
+    "company_code": "SQ-5104",
+    "name": "Towel Ring",
+    "selling_price": 1461
+  },
+  {
+    "category": "Square Series",
+    "company_code": "SQ-5105",
+    "name": "Towel Rod 600 MM",
+    "selling_price": 1879
+  },
+  {
+    "category": "Square Series",
+    "company_code": "SQ-5106",
+    "name": "Towel Rod 450 MM",
+    "selling_price": 1829
+  },
+  {
+    "category": "Square Series",
+    "company_code": "SQ-5107",
+    "name": "Towel Ring (Square)",
+    "selling_price": 1748
+  },
+  {
+    "category": "Square Series",
+    "company_code": "SQ-5108",
+    "name": "Soap Dish (Brass)",
+    "selling_price": 1272
+  },
+  {
+    "category": "Square Series",
+    "company_code": "SQ-5109",
+    "name": "Toilet Paper Holder",
+    "selling_price": 1571
+  },
+  {
+    "category": "Square Series",
+    "company_code": "SQ-5110",
+    "name": "Toilet Paper Holder with Lid",
+    "selling_price": 2243
+  },
+  {
+    "category": "Square Series",
+    "company_code": "SQ-5111",
+    "name": "Towel Rack 600 MM",
+    "selling_price": 5860
+  },
+  {
+    "category": "Square Series",
+    "company_code": "SQ-5112",
+    "name": "Towel Rack 450 MM",
+    "selling_price": 5817
+  },
+  {
+    "category": "Square Series",
+    "company_code": "SQ-5114",
+    "name": "Soap Dispenser (Glass)",
+    "selling_price": 1714
+  },
+  {
+    "category": "Square Series",
+    "company_code": "SQ-5115",
+    "name": "Grab Bar 300 MM",
+    "selling_price": 3214
+  },
+  {
+    "category": "Square Series",
+    "company_code": "SQ-5116",
+    "name": "Soap Dispenser (Brass)",
+    "selling_price": 3439
+  },
+
+  {
+    "category": "Archie Series",
+    "company_code": "AR-6205",
+    "name": "Robe Hook",
+    "selling_price": 919,
+    "matt_black_price": 1379
+  },
+  {
+    "category": "Archie Series",
+    "company_code": "AR-6201A",
+    "name": "Soap Dish",
+    "selling_price": 1408,
+    "matt_black_price": 2111
+  },
+  {
+    "category": "Archie Series",
+    "company_code": "AR-6202",
+    "name": "Soap Dish (Brass)",
+    "selling_price": 1408,
+    "matt_black_price": 2111
+  },
+  {
+    "category": "Archie Series",
+    "company_code": "AR-6203A",
+    "name": "Tumbler Holder",
+    "selling_price": 1408,
+    "matt_black_price": 2111
+  },
+  {
+    "category": "Archie Series",
+    "company_code": "AR-6204",
+    "name": "Towel Ring",
+    "selling_price": 1930,
+    "matt_black_price": 2895
+  },
+  {
+    "category": "Archie Series",
+    "company_code": "AR-6210A",
+    "name": "Towel Rod 600 MM",
+    "selling_price": 2993,
+    "matt_black_price": 4491
+  },
+  {
+    "category": "Archie Series",
+    "company_code": "AR-6206",
+    "name": "Toilet Paper Holder",
+    "selling_price": 1860,
+    "matt_black_price": 2790
+  },
+  {
+    "category": "Archie Series",
+    "company_code": "AR-6207",
+    "name": "Toilet Paper Holder with Lid",
+    "selling_price": 2701,
+    "matt_black_price": 4053
+  },
+  {
+    "category": "Archie Series",
+    "company_code": "AR-6208A",
+    "name": "Liquid Soap Dispenser (Glass)",
+    "selling_price": 2527,
+    "matt_black_price": 3790
+  },
+  {
+    "category": "Archie Series",
+    "company_code": "AR-6212",
+    "name": "Double Soap Dish",
+    "selling_price": 3243,
+    "matt_black_price": 4863
+  },
+  {
+    "category": "Archie Series",
+    "company_code": "AR-6200A",
+    "name": "Towel Rack 600 MM",
+    "selling_price": 8028,
+    "matt_black_price": 12043
+  },
+
+  {
+    "category": "Continental Series",
+    "company_code": "CS-3033",
+    "name": "Robe Hook",
+    "selling_price": 683
+  },
+  {
+    "category": "Continental Series",
+    "company_code": "CS-3031",
+    "name": "Soap Dish",
+    "selling_price": 1104
+  },
+  {
+    "category": "Continental Series",
+    "company_code": "CS-3344",
+    "name": "Towel Ring (Round)",
+    "selling_price": 1682
+  },
+  {
+    "category": "Continental Series",
+    "company_code": "CS-3034",
+    "name": "Towel Ring",
+    "selling_price": 1314
+  },
+  {
+    "category": "Continental Series",
+    "company_code": "CS-3032",
+    "name": "Tumbler Holder",
+    "selling_price": 1599
+  },
+  {
+    "category": "Continental Series",
+    "company_code": "CS-3335A",
+    "name": "Towel Rail 600 MM",
+    "selling_price": 2184
+  },
+  {
+    "category": "Continental Series",
+    "company_code": "CS-3335B",
+    "name": "Towel Rail 450 MM",
+    "selling_price": 2142
+  },
+  {
+    "category": "Continental Series",
+    "company_code": "CS-3036",
+    "name": "Toilet Paper Holder",
+    "selling_price": 1470
+  },
+  {
+    "category": "Continental Series",
+    "company_code": "CS-3038",
+    "name": "Toilet Paper Holder with Lid",
+    "selling_price": 2302
+  },
+  {
+    "category": "Continental Series",
+    "company_code": "CS-3345",
+    "name": "Double Soap Dish",
+    "selling_price": 3006
+  },
+  {
+    "category": "Continental Series",
+    "company_code": "CS-3041",
+    "name": "Soap Dish with Tumbler",
+    "selling_price": 3006
+  },
+  {
+    "category": "Continental Series",
+    "company_code": "CS-3037",
+    "name": "Liquid Soap Dispenser (Brass)",
+    "selling_price": 3439
+  },
+  {
+    "category": "Continental Series",
+    "company_code": "CS-3340A",
+    "name": "Towel Rack 600 MM",
+    "selling_price": 5560
+  },
+  {
+    "category": "Continental Series",
+    "company_code": "CS-3340B",
+    "name": "Towel Rack 450 MM",
+    "selling_price": 5490
+  },
+  {
+    "category": "Continental Series",
+    "company_code": "CS-1018A",
+    "name": "Liquid Soap Dispenser (Glass)",
+    "selling_price": 1604
+  },
+  {
+    "category": "Continental Series",
+    "company_code": "CS-1019",
+    "name": "Towel Rack Folding 600 MM",
+    "selling_price": 4590
+  },
+  {
+    "category": "Continental Series",
+    "company_code": "CS-1017A",
+    "name": "Towel Rack 600 MM (4 Pipes)",
+    "selling_price": 4907
+  },
+  {
+    "category": "Continental Series",
+    "company_code": "CS-1017B",
+    "name": "Towel Rack 450 MM (4 Pipes)",
+    "selling_price": 4883
+  },
+  {
+    "category": "Continental Series",
+    "company_code": "CS-129",
+    "name": "Brass Hook 2 Way",
+    "selling_price": 384
+  },
+  {
+    "category": "Continental Series",
+    "company_code": "CS-130",
+    "name": "Brass Hook 3 Way",
+    "selling_price": 576
+  },
+  {
+    "category": "Continental Series",
+    "company_code": "CS-131",
+    "name": "Brass Hook 4 Way",
+    "selling_price": 768
+  },
+  {
+    "category": "Continental Series",
+    "company_code": "CS-132",
+    "name": "Brass Hook 6 Way",
+    "selling_price": 1152
+  },
+  {
+    "category": "New Ideal Series",
+    "company_code": "NIS-2023",
+    "name": "Robe Hook",
+    "selling_price": 683
+  },
+  {
+    "category": "New Ideal Series",
+    "company_code": "NIS-2024",
+    "name": "Towel Ring",
+    "selling_price": 1313
+  },
+  {
+    "category": "New Ideal Series",
+    "company_code": "NIS-2021",
+    "name": "Soap Dish",
+    "selling_price": 909
+  },
+  {
+    "category": "New Ideal Series",
+    "company_code": "NIS-2026",
+    "name": "Toilet Paper Holder",
+    "selling_price": 1428
+  },
+  {
+    "category": "New Ideal Series",
+    "company_code": "NIS-2022",
+    "name": "Tumbler Holder",
+    "selling_price": 1227
+  },
+  {
+    "category": "New Ideal Series",
+    "company_code": "NIS-2027",
+    "name": "Liquid Soap Dispenser (Glass)",
+    "selling_price": 1978
+  },
+  {
+    "category": "New Ideal Series",
+    "company_code": "NIS-2028",
+    "name": "Toilet Paper Holder with Lid",
+    "selling_price": 2302
+  },
+  {
+    "category": "New Ideal Series",
+    "company_code": "NIS-2025A",
+    "name": "Towel Rail 600 MM",
+    "selling_price": 1766
+  },
+  {
+    "category": "New Ideal Series",
+    "company_code": "NIS-2025B",
+    "name": "Towel Rail 450 MM",
+    "selling_price": 1733
+  },
+  {
+    "category": "New Ideal Series",
+    "company_code": "NIS-2029A",
+    "name": "Towel Rack 600 MM",
+    "selling_price": 6090
+  },
+  {
+    "category": "New Ideal Series",
+    "company_code": "NIS-2029B",
+    "name": "Towel Rack 450 MM",
+    "selling_price": 6010
+  },
+
+  {
+    "series": "Heated Towel Rack Series",
+    "company_code": "NC-6019",
+    "name": "Heated Towel Rack with Controller",
+    "variants": [
+      { "finish": "Black", "selling_price": 28014 },
+      { "finish": "Gold", "selling_price": 31378 }
+    ],
+    "selling_price": 18676
+  },
+  {
+    "series": "Heated Towel Rack Series",
+    "company_code": "NC-6059",
+    "name": "Heated Towel Rack with Controller (Polished)",
+    "variants": [
+      { "finish": "Black", "selling_price": 19145 },
+      { "finish": "Gold", "selling_price": 21445 }
+    ],
+    "selling_price": 12452
+  },
+  {
+    "series": "Heated Towel Rack Series",
+    "company_code": "NC-2507",
+    "name": "Heated Towel Rack (Polished)",
+    "selling_price": 21611
+  },
+  {
+    "series": "Heated Towel Rack Series",
+    "company_code": "NC-3049",
+    "name": "Heated Towel Rack with Controller",
+    "variants": [
+      { "finish": "Black", "selling_price": 19145 },
+      { "finish": "Gold", "selling_price": 21445 }
+    ],
+    "selling_price": 14490
+  },
+  {
+    "series": "Heated Towel Rack Series",
+    "company_code": "NC-101525",
+    "name": "Heated Towel Rack with Controller (Polished)",
+    "selling_price": 15823
+  },
+  {
+    "series": "Heated Towel Rack Series",
+    "company_code": "NC-2029",
+    "name": "Heated Towel Rack with New Controller (Polished)",
+    "variants": [{ "finish": "Black", "selling_price": 24133 }],
+    "selling_price": 16089
+  },
+  {
+    "series": "Heated Towel Rack Series",
+    "company_code": "NC-2509",
+    "name": "Heated Towel Rack 5 Bar Floor Stand",
+    "selling_price": 19990
+  },
+
+  {
+    "series": "Support Arm Series",
+    "company_code": "DA-600Y",
+    "name": "Support Arm 600 MM (Fixed)",
+    "selling_price": 20109
+  },
+  {
+    "series": "Support Arm Series",
+    "company_code": "DAP-3226Y",
+    "name": "Support Arm with Paper Holder 625 MM (Fixed)",
+    "selling_price": 21374
+  },
+  {
+    "series": "Support Arm Series",
+    "company_code": "DA-700Y",
+    "name": "Support Arm 700 MM with Curtain (Fixed)",
+    "selling_price": 25551
+  },
+
+  {
+    "series": "Support Arm Series",
+    "product-group": "Horizontal Wall Track Include",
+    "company_code": "DB-625Y",
+    "name": "Support Arm 625 MM",
+    "selling_price": 21352
+  },
+  {
+    "series": "Support Arm Series",
+    "product-group": "Horizontal Wall Track Include",
+    "company_code": "DB-725Y",
+    "name": "Support Arm 725 MM",
+    "selling_price": 21554
+  },
+
+  {
+    "series": "Support Arm Series",
+    "product-group": "Height-Adjustable",
+    "company_code": "DC-625Y",
+    "name": "Support Arm 625 MM",
+    "selling_price": 21707
+  },
+  {
+    "series": "Support Arm Series",
+    "product-group": "Height-Adjustable",
+    "company_code": "DC-725Y",
+    "name": "Support Arm 725 MM",
+    "selling_price": 22249
+  },
+
+  {
+    "series": "Support Arm Series",
+    "product-group": "Height-Adjustable with Horizontal Wall Track Include",
+    "company_code": "DD-625Y",
+    "name": "Support Arm 625 MM",
+    "selling_price": 30045
+  },
+  {
+    "series": "Support Arm Series",
+    "product-group": "Height-Adjustable with Horizontal Wall Track Include",
+    "company_code": "DD-725Y",
+    "name": "Support Arm 725 MM",
+    "selling_price": 30349
+  },
+
+  {
+    "series": "Shower Seats Series",
+    "company_code": "DSD-001W",
+    "name": "Shower Seat Folding White 370 x 350 MM",
+    "selling_price": 7804
+  },
+  {
+    "series": "Shower Seats Series",
+    "company_code": "DSD-001B",
+    "name": "Shower Seat Folding Black 370 x 350 MM",
+    "selling_price": 7804
+  },
+  {
+    "series": "Shower Seats Series",
+    "company_code": "DW-W300",
+    "name": "Wooden Bath Seat 300 x 300 MM (Teak Wood)",
+    "selling_price": 11489
+  },
+  {
+    "series": "Shower Seats Series",
+    "company_code": "DW-W500",
+    "name": "Wooden Bath Seat 500 x 300 MM (Teak Wood)",
+    "selling_price": 22195
+  },
+  {
+    "series": "Shower Seats Series",
+    "company_code": "DSA-W325",
+    "name": "UF Tonice Shower Seat 400 x 405 MM (White)",
+    "selling_price": 16722
+  },
+  {
+    "series": "Shower Seats Series",
+    "company_code": "DSA-B326",
+    "name": "UF Tonice Shower Seat 400 x 405 MM (Black)",
+    "selling_price": 16722
+  },
+  {
+    "series": "Shower Seats Series",
+    "company_code": "DSA-C322",
+    "name": "ABS Bath Chair (Geedy) 370 x 350 MM",
+    "selling_price": 16722
+  },
+  {
+    "series": "Shower Seats Series",
+    "company_code": "DP-1005",
+    "name": "Folding Chair",
+    "selling_price": 16675
+  },
+  {
+    "series": "Shower Seats Series",
+    "company_code": "DP-8980",
+    "name": "Shower Seat Folding",
+    "selling_price": 7148
+  },
+  {
+    "series": "Shower Seats Series",
+    "company_code": "DP-8990",
+    "name": "New Shower Seat Folding with Supporten",
+    "selling_price": 10626
+  },
+  {
+    "series": "Shower Seats Series",
+    "company_code": "DSB-A415A",
+    "name": "Fixed Shower Seat",
+    "selling_price": 25760
+  },
+  {
+    "series": "Shower Seats Series",
+    "company_code": "DSA-C320",
+    "name": "Height-Adjustable Shower Seat with Horizontal Wall Track",
+    "selling_price": 31165
+  },
+  {
+    "series": "Shower Seats Series",
+    "company_code": "DSB-A415B",
+    "name": "Fixed Shower Seat with Backrest",
+    "selling_price": 32959
+  },
+
+  {
+    "series": "Shower Seats Series",
+    "company_code": "DSB-B415A",
+    "name": "Height-Adjustable Shower Seat",
+    "selling_price": 33060
+  },
+  {
+    "series": "Shower Seats Series",
+    "company_code": "DSB-C415B",
+    "name": "Height-Adjustable Shower Seat with Horizontal Wall Track Include",
+    "selling_price": 40328
+  },
+  {
+    "series": "Shower Seats Series",
+    "company_code": "DSC-A460",
+    "name": "Fixed Shower Seat",
+    "selling_price": 43495
+  },
+  {
+    "series": "Shower Seats Series",
+    "company_code": "DSC-B460",
+    "name": "Height-Adjustable Shower Seat",
+    "selling_price": 51161
+  },
+  {
+    "series": "Shower Seats Series",
+    "company_code": "DSC-C460",
+    "name": "Height-Adjustable Shower Seat with Horizontal Wall Track Include",
+    "selling_price": 62689
+  },
+
+  {
+    "series": "Antibiosis Nylon Shower Seats",
+    "company_code": "DP-8841",
+    "name": "Foldable Shower Chair with Back Rest",
+    "selling_price": 18735
+  },
+  {
+    "series": "Antibiosis Nylon Shower Seats",
+    "company_code": "DP-8887",
+    "name": "Foldable Shower Chair",
+    "selling_price": 10820
+  },
+  {
+    "series": "Antibiosis Nylon Shower Seats",
+    "company_code": "DP-8885",
+    "name": "Foldable Shower Chair (Big Size)",
+    "selling_price": 13993
+  },
+  {
+    "series": "Antibiosis Nylon Shower Seats",
+    "company_code": "DP-8889",
+    "name": "Foldable Shower Chair with Supporter",
+    "selling_price": 12139
+  },
+  {
+    "series": "Antibiosis Nylon Shower Seats",
+    "company_code": "DP-8905",
+    "name": "Foldable Shower Chair with Floor Supporter",
+    "selling_price": 9836
+  },
+  {
+    "series": "Antibiosis Nylon Shower Seats",
+    "company_code": "DP-8857-W",
+    "name": "Shower Chair",
+    "selling_price": 11322
+  },
+  {
+    "series": "Antibiosis Nylon Shower Seats",
+    "company_code": "DP-8933",
+    "name": "Folding Chair with Adjustable Height",
+    "selling_price": 19780
+  },
+  {
+    "series": "Antibiosis Nylon Shower Seats",
+    "company_code": "DP-8925",
+    "name": "Folding Handrail 700 MM with Push Button & Call Bell",
+    "selling_price": 22989
+  },
+
+  {
+    "series": "Antibiosis Nylon Handrail Series",
+    "company_code": "DP-8850",
+    "name": "Handrail Folding 750 MM (Steel)",
+    "selling_price": 6210
+  },
+  {
+    "series": "Antibiosis Nylon Handrail Series",
+    "company_code": "DP-8814",
+    "name": "Handrail Folding 600 MM",
+    "selling_price": 10820
+  },
+  {
+    "series": "Antibiosis Nylon Handrail Series",
+    "company_code": "DP-8849",
+    "name": "Handrail Foldable 600 MM",
+    "selling_price": 11489
+  },
+  {
+    "series": "Antibiosis Nylon Handrail Series",
+    "company_code": "DP-8801-1",
+    "name": "U Shaped Rail with Wall & Floor Mounting 600 MM",
+    "selling_price": 6814
+  },
+  {
+    "series": "Antibiosis Nylon Handrail Series",
+    "company_code": "DP-8801-2",
+    "name": "U Shaped Rail with Wall & Floor Mounting 600 MM",
+    "selling_price": 8817
+  },
+  {
+    "series": "Antibiosis Nylon Handrail Series",
+    "company_code": "DP-8881",
+    "name": "Wall Mounted Hinged Handrail Folding 600 MM",
+    "selling_price": 7658
+  },
+  {
+    "series": "Antibiosis Nylon Handrail Series",
+    "company_code": "DP-8882",
+    "name": "Wall Mounted Hinged Handrail Folding 600 MM",
+    "selling_price": 9460
+  },
+  {
+    "series": "Antibiosis Nylon Handrail Series",
+    "company_code": "DP-8865-2",
+    "name": "Wall Mounted Hinged Handrail Folding 600 MM",
+    "selling_price": 10838
+  },
+  {
+    "series": "Antibiosis Nylon Handrail Series",
+    "company_code": "DP-8865-3",
+    "name": "Wall Mounted Hinged Handrail Folding 750 MM",
+    "selling_price": 11906
+  },
+  {
+    "series": "Antibiosis Nylon Handrail Series",
+    "company_code": "DP-8805-1",
+    "name": "Wall Mounted Hinged Handrail Folding 600 MM",
+    "selling_price": 24363
+  },
+  {
+    "series": "Antibiosis Nylon Handrail Series",
+    "company_code": "DP-8806-1",
+    "name": "Wall Mounted Hinged Handrail Folding 750 MM",
+    "selling_price": 26701
+  },
+  {
+    "series": "Antibiosis Nylon Handrail Series",
+    "company_code": "DP-8803-3",
+    "name": "Wall Mounted Rail 600 MM (Without Hinged)",
+    "selling_price": 6663
+  },
+  {
+    "series": "Antibiosis Nylon Handrail Series",
+    "company_code": "DP-8802-3",
+    "name": "Wall Mounted Rail 600 MM (Without Hinged)",
+    "selling_price": 6678
+  },
+
+  {
+    "series": "Grab Bar & Antibiosis Nylon Series",
+    "company_code": "DP-8902",
+    "name": "Wall Mounted Grab Bar 350 MM",
+    "selling_price": 2125
+  },
+  {
+    "series": "Grab Bar & Antibiosis Nylon Series",
+    "company_code": "DP-8903",
+    "name": "Wall Mounted Grab Bar 600 MM",
+    "selling_price": 4023
+  },
+  {
+    "series": "Grab Bar & Antibiosis Nylon Series",
+    "company_code": "DP-8904",
+    "name": "Wall Mounted Grab Bar 700 MM",
+    "selling_price": 5047
+  },
+  {
+    "series": "Grab Bar & Antibiosis Nylon Series",
+    "company_code": "DP-8808-3",
+    "name": "Wall Mounted Inverted 'L' Shaped Grab Bar 700 MM",
+    "selling_price": 6203
+  },
+  {
+    "series": "Grab Bar & Antibiosis Nylon Series",
+    "company_code": "DP-8809",
+    "name": "Wall Mounted Corner Grab Bar 450 x 750 MM",
+    "selling_price": 6203
+  },
+  {
+    "series": "Grab Bar & Antibiosis Nylon Series",
+    "company_code": "DP-8852-3",
+    "name": "Wall Mounted Grab Bar 450 x 750 MM",
+    "selling_price": 6203
+  },
+  {
+    "series": "Grab Bar & Antibiosis Nylon Series",
+    "company_code": "DP-8706",
+    "name": "Grab Bar 90 Degree Left Angle (4 Brackets)",
+    "selling_price": 7073
+  },
+  {
+    "series": "Grab Bar & Antibiosis Nylon Series",
+    "company_code": "DP-8707",
+    "name": "Grab Bar 90 Degree Right Angle (4 Brackets)",
+    "selling_price": 7073
+  },
+  {
+    "series": "Grab Bar & Antibiosis Nylon Series",
+    "company_code": "DP-8708",
+    "name": "Grab Bar 90 Degree Outer Corner (4 Brackets)",
+    "selling_price": 7073
+  },
+  {
+    "series": "Grab Bar & Antibiosis Nylon Series",
+    "company_code": "DP-8709",
+    "name": "Grab Bar 90 Degree Inner Corner (4 Brackets)",
+    "selling_price": 7073
+  },
+  {
+    "series": "Grab Bar & Antibiosis Nylon Series",
+    "company_code": "DP-8710",
+    "name": "Grab Bar 135 Degree Left Angle (4 Brackets)",
+    "selling_price": 7073
+  },
+  {
+    "series": "Grab Bar & Antibiosis Nylon Series",
+    "company_code": "DP-8711",
+    "name": "Grab Bar 135 Degree Right Angle (4 Brackets)",
+    "selling_price": 7073
+  },
+  {
+    "series": "Grab Bar & Antibiosis Nylon Series",
+    "company_code": "DP-8826",
+    "name": "Handrail 1200 MM",
+    "selling_price": 8683
+  },
+  {
+    "series": "Grab Bar & Antibiosis Nylon Series",
+    "company_code": "DP-8870-3",
+    "name": "Hand Rail Wall & Floor Mounting 700 MM",
+    "selling_price": 6203
+  },
+  {
+    "series": "Grab Bar & Antibiosis Nylon Series",
+    "company_code": "DP-8866-3",
+    "name": "Hand Rail Wall & Floor Mounting 700 MM",
+    "selling_price": 6203
+  },
+
+  {
+    "series": "Grab Bar Brass & Stainless Steel Series",
+    "company_code": "CX-74027",
+    "name": "Grab Bar 350 MM (Brass)",
+    "selling_price": 3015
+  },
+  {
+    "series": "Grab Bar Brass & Stainless Steel Series",
+    "company_code": "CX-74032",
+    "name": "Grab Bar 450 MM (Brass)",
+    "selling_price": 3873
+  },
+  {
+    "series": "Grab Bar Brass & Stainless Steel Series",
+    "company_code": "CX-74036",
+    "name": "Grab Bar 609 MM (Brass)",
+    "selling_price": 4731
+  },
+  {
+    "series": "Grab Bar Brass & Stainless Steel Series",
+    "company_code": "QX-76016",
+    "name": "Grab Bar 300 MM (Brass)",
+    "selling_price": 3734
+  },
+  {
+    "series": "Grab Bar Brass & Stainless Steel Series",
+    "company_code": "CX-74005",
+    "name": "Grab Bar 300 MM (Brass)",
+    "selling_price": 2872
+  },
+  {
+    "series": "Grab Bar Brass & Stainless Steel Series",
+    "company_code": "DP-8823",
+    "name": "Grab Bar 350 MM",
+    "selling_price": 2034
+  },
+  {
+    "series": "Grab Bar Brass & Stainless Steel Series",
+    "company_code": "DP-8824",
+    "name": "Grab Bar 450 MM",
+    "selling_price": 2451
+  },
+  {
+    "series": "Grab Bar Brass & Stainless Steel Series",
+    "company_code": "DP-0951",
+    "name": "Grab Bar 350 MM",
+    "selling_price": 2823
+  },
+  {
+    "series": "Grab Bar Brass & Stainless Steel Series",
+    "company_code": "DP-0952",
+    "name": "Grab Bar 450 MM",
+    "selling_price": 3236
+  },
+  {
+    "series": "Grab Bar Brass & Stainless Steel Series",
+    "company_code": "DP-8825",
+    "name": "Grab Bar 692 MM",
+    "selling_price": 3767
+  },
+  {
+    "series": "Grab Bar Brass & Stainless Steel Series",
+    "company_code": "DP-8827",
+    "name": "Grab Bar 842 MM",
+    "selling_price": 4584
+  },
+  {
+    "series": "Grab Bar Brass & Stainless Steel Series",
+    "company_code": "DP-8606",
+    "name": "Grab Bar 90 Degree Left Angle (4 Brackets)",
+    "selling_price": 7763
+  },
+  {
+    "series": "Grab Bar Brass & Stainless Steel Series",
+    "company_code": "DP-8607",
+    "name": "Grab Bar 90 Degree Right Angle (4 Brackets)",
+    "selling_price": 7763
+  },
+  {
+    "series": "Grab Bar Brass & Stainless Steel Series",
+    "company_code": "DP-8608",
+    "name": "Grab Bar 90 Degree Outer Corner (4 Brackets)",
+    "selling_price": 7763
+  },
+
+  {
+    "series": "Grab Bar Stainless Steel Series",
+    "company_code": "DP-8609",
+    "name": "Grab Bar 90 Degree Inner Corner (4 Brackets)",
+    "selling_price": 7763
+  },
+  {
+    "series": "Grab Bar Stainless Steel Series",
+    "company_code": "DP-8610",
+    "name": "Grab Bar 135 Degree Left Angle (4 Brackets)",
+    "selling_price": 7763
+  },
+  {
+    "series": "Grab Bar Stainless Steel Series",
+    "company_code": "DP-8611",
+    "name": "Grab Bar 135 Degree Right Angle (4 Brackets)",
+    "selling_price": 7763
+  },
+  {
+    "series": "Grab Bar Stainless Steel Series",
+    "company_code": "DP-8604",
+    "name": "Grab Bar 90 Degree Angle Right 813 x 406 MM (3 Brackets)",
+    "selling_price": 7327
+  },
+  {
+    "series": "Grab Bar Stainless Steel Series",
+    "company_code": "DP-8602",
+    "name": "Grab Bar 90 Degree Angle Left 813 x 406 MM (3 Brackets)",
+    "selling_price": 7327
+  },
+  {
+    "series": "Grab Bar Stainless Steel Series",
+    "company_code": "DP-8800",
+    "name": "Roll Holder",
+    "selling_price": 1149
+  },
+  {
+    "series": "Grab Bar Stainless Steel Series",
+    "company_code": "DP-8600",
+    "name": "Slide Shower Holder",
+    "selling_price": 649
+  },
+  {
+    "series": "Grab Bar Stainless Steel Series",
+    "company_code": "DP-8916-2",
+    "name": "Safety Handrail with Stand",
+    "selling_price": 27187
+  },
+  {
+    "series": "Grab Bar Stainless Steel Series",
+    "company_code": "DP-8960",
+    "name": "Bed Handrail with Storage Pocket",
+    "selling_price": 4830
+  },
+  {
+    "series": "Grab Bar Stainless Steel Series",
+    "company_code": "DP-8899",
+    "name": "ABS Soap Dish",
+    "selling_price": 420
+  },
+  {
+    "series": "Grab Bar Stainless Steel Series",
+    "company_code": "DP-8920",
+    "name": "Grab Bar 300 MM",
+    "selling_price": 2551
+  },
+
+  {
+    "series": "General Range",
+    "company_code": "HF-22",
+    "name": "ABS Health Faucet Set (Chrome)",
+    "selling_price": 710
+  },
+  {
+    "series": "General Range",
+    "company_code": "HF-033",
+    "name": "Perk Health Faucet Set Brass (Chrome)",
+    "selling_price": 1327
+  },
+  {
+    "series": "General Range",
+    "company_code": "HF-21",
+    "name": "ABS Health Faucet Set (Chrome)",
+    "selling_price": 630
+  },
+  {
+    "series": "General Range",
+    "company_code": "HF-23",
+    "name": "ABS Health Faucet Set Square (Chrome)",
+    "selling_price": 710
+  },
+  {
+    "series": "General Range",
+    "company_code": "HF-19",
+    "name": "Tonice Single Flow Extra Heavy Brass Health Faucet Set (Chrome)",
+    "selling_price": 1758
+  },
+  {
+    "series": "General Range",
+    "company_code": "GF-19",
+    "name": "Tonice Single Flow Extra Heavy Brass Health Faucet Set (Gold)",
+    "selling_price": 2644
+  },
+  {
+    "series": "General Range",
+    "company_code": "RF-19",
+    "name": "Tonice Single Flow Extra Heavy Brass Health Faucet Set (Rose Gold)",
+    "selling_price": 2644
+  },
+  {
+    "series": "General Range",
+    "company_code": "BF-19",
+    "name": "Tonice Single Flow Extra Heavy Brass Health Faucet Set (Matt Black)",
+    "selling_price": 2644
+  },
+  {
+    "series": "General Range",
+    "company_code": "HF-24",
+    "name": "Square Health Faucet Set Brass (Chrome)",
+    "selling_price": 1465
+  },
+  {
+    "series": "General Range",
+    "company_code": "GF-24",
+    "name": "Square Health Faucet Set Brass (Gold)",
+    "selling_price": 2198
+  },
+  {
+    "series": "General Range",
+    "company_code": "RF-24",
+    "name": "Square Health Faucet Set Brass (Rose Gold)",
+    "selling_price": 2198
+  },
+
+  {
+    "category": "General Range",
+    "company_code": "BF-024",
+    "name": "Square Health Faucet Set Brass",
+    "meta": [{ "color_name": "Matt Black", "selling_price": 2198 }]
+  },
+  {
+    "category": "General Range",
+    "company_code": "SS-03",
+    "name": "SS 304 Tube 1.2 Mtr. HY",
+    "meta": [{ "color_name": "Chrome", "selling_price": 338 }]
+  },
+
+  {
+    "category": "General Range",
+    "company_code": null,
+    "name": "SS 304 Tube 1.5 Mtr. HY",
+    "meta": { "color_name": "Rose Gold" },
+    "selling_price": 778
+  },
+  {
+    "category": "General Range",
+    "company_code": null,
+    "name": "SS 304 Tube 1.5 Mtr. HY",
+    "meta": { "color_name": "Gold" },
+    "selling_price": 778
+  },
+  {
+    "category": "General Range",
+    "company_code": null,
+    "name": "SS 304 Tube 1.5 Mtr. HY",
+    "meta": { "color_name": "Matt Black" },
+    "selling_price": 778
+  },
+
+  {
+    "category": "General Range",
+    "company_code": "SS-04",
+    "name": "SS 304 Tube 1.5 Mtr. HY",
+    "meta": { "color_name": "Chrome" },
+    "selling_price": 390
+  },
+
+  {
+    "category": "General Range",
+    "company_code": "SS-05",
+    "name": "To Nice Connector SS-304 Tube 1.2 Mtr",
+    "meta": { "color_name": "Chrome" },
+    "selling_price": 598
+  },
+
+  {
+    "category": "General Range",
+    "company_code": null,
+    "name": "To Nice Connector SS-304 Tube 1.2 Mtr",
+    "meta": { "color_name": "Rose Gold" },
+    "selling_price": 942
+  },
+  {
+    "category": "General Range",
+    "company_code": null,
+    "name": "To Nice Connector SS-304 Tube 1.2 Mtr",
+    "meta": { "color_name": "Gold" },
+    "selling_price": 942
+  },
+  {
+    "category": "General Range",
+    "company_code": null,
+    "name": "To Nice Connector SS-304 Tube 1.2 Mtr",
+    "meta": { "color_name": "Matt Black" },
+    "selling_price": 942
+  },
+
+  {
+    "category": "General Range",
+    "company_code": "SS-06",
+    "name": "To Nice Connector SS-304 Tube 1.5 Mtr",
+    "meta": { "color_name": "Chrome" },
+    "selling_price": 684
+  },
+
+  {
+    "category": "General Range",
+    "company_code": "M-31",
+    "name": "Round Brass Wall Hook",
+    "meta": { "color_name": "Chrome" },
+    "selling_price": 255
+  },
+
+  {
+    "category": "General Range",
+    "company_code": null,
+    "name": "Brass Wall Hook",
+    "meta": { "color_name": "Rose Gold" },
+    "selling_price": 340
+  },
+  {
+    "category": "General Range",
+    "company_code": null,
+    "name": "Brass Wall Hook",
+    "meta": { "color_name": "Gold" },
+    "selling_price": 340
+  },
+  {
+    "category": "General Range",
+    "company_code": null,
+    "name": "Brass Wall Hook",
+    "meta": { "color_name": "Matt Black" },
+    "selling_price": 340
+  },
+
+  {
+    "category": "General Range",
+    "company_code": "M-32",
+    "name": "JQ Brass Wall Hook",
+    "meta": { "color_name": "Chrome" },
+    "selling_price": 232
+  },
+
+  {
+    "category": "General Range",
+    "company_code": null,
+    "name": "JQ Brass Wall Hook",
+    "meta": { "color_name": "Rose Gold" },
+    "selling_price": 317
+  },
+  {
+    "category": "General Range",
+    "company_code": null,
+    "name": "JQ Brass Wall Hook",
+    "meta": { "color_name": "Gold" },
+    "selling_price": 317
+  },
+  {
+    "category": "General Range",
+    "company_code": null,
+    "name": "JQ Brass Wall Hook",
+    "meta": { "color_name": "Matt Black" },
+    "selling_price": 317
+  },
+
+  {
+    "category": "General Range",
+    "company_code": "M-38",
+    "name": "ABS Wall Hook",
+    "meta": { "color_name": "Chrome" },
+    "selling_price": 156
+  },
+
+  {
+    "category": "General Range",
+    "company_code": null,
+    "name": "ABS Wall Hook",
+    "meta": { "color_name": "Rose Gold" },
+    "selling_price": 242
+  },
+  {
+    "category": "General Range",
+    "company_code": null,
+    "name": "ABS Wall Hook",
+    "meta": { "color_name": "Gold" },
+    "selling_price": 242
+  },
+  {
+    "category": "General Range",
+    "company_code": null,
+    "name": "ABS Wall Hook",
+    "meta": { "color_name": "Matt Black" },
+    "selling_price": 242
+  },
+
+  {
+    "category": "General Range",
+    "company_code": "SHO-R-10",
+    "name": "Sun Round Shower Head 250 x 8 mm",
+    "meta": { "color_name": "Chrome" },
+    "selling_price": 4953
+  },
+  {
+    "category": "General Range",
+    "company_code": "SHO-R-10",
+    "name": "Sun Round Shower Head 250 x 8 mm",
+    "meta": { "color_name": "Rose Gold" },
+    "selling_price": 6813
+  },
+  {
+    "category": "General Range",
+    "company_code": "SHO-R-10",
+    "name": "Sun Round Shower Head 250 x 8 mm",
+    "meta": { "color_name": "Gold" },
+    "selling_price": 6813
+  },
+  {
+    "category": "General Range",
+    "company_code": "SHO-R-10",
+    "name": "Sun Round Shower Head 250 x 8 mm",
+    "meta": { "color_name": "Brush Gold" },
+    "selling_price": 6813
+  },
+  {
+    "category": "General Range",
+    "company_code": "SHO-R-10",
+    "name": "Sun Round Shower Head 250 x 8 mm",
+    "meta": { "color_name": "Matt Black" },
+    "selling_price": 6813
+  },
+
+  {
+    "category": "General Range",
+    "company_code": "SHO-R-12",
+    "name": "Sun Round Shower Head 300 x 8 mm",
+    "meta": { "color_name": "Chrome" },
+    "selling_price": 5433
+  },
+  {
+    "category": "General Range",
+    "company_code": "SHO-R-12",
+    "name": "Sun Round Shower Head 300 x 8 mm",
+    "meta": { "color_name": "Rose Gold" },
+    "selling_price": 7313
+  },
+  {
+    "category": "General Range",
+    "company_code": "SHO-R-12",
+    "name": "Sun Round Shower Head 300 x 8 mm",
+    "meta": { "color_name": "Gold" },
+    "selling_price": 7313
+  },
+  {
+    "category": "General Range",
+    "company_code": "SHO-R-12",
+    "name": "Sun Round Shower Head 300 x 8 mm",
+    "meta": { "color_name": "Brush Gold" },
+    "selling_price": 7313
+  },
+  {
+    "category": "General Range",
+    "company_code": "SHO-R-12",
+    "name": "Sun Round Shower Head 300 x 8 mm",
+    "meta": { "color_name": "Matt Black" },
+    "selling_price": 7313
+  },
+  {
+    "category": "General Range",
+    "company_code": "SHO-S-10",
+    "name": "Sun Square Shower Head 250 x 250 x 8 mm",
+    "meta": { "color_name": "Chrome" },
+    "selling_price": 5777
+  },
+  {
+    "category": "General Range",
+    "company_code": "SHO-S-10",
+    "name": "Sun Square Shower Head 250 x 250 x 8 mm",
+    "meta": { "color_name": "Rose Gold" },
+    "selling_price": 8048
+  },
+  {
+    "category": "General Range",
+    "company_code": "SHO-S-10",
+    "name": "Sun Square Shower Head 250 x 250 x 8 mm",
+    "meta": { "color_name": "Gold" },
+    "selling_price": 8048
+  },
+  {
+    "category": "General Range",
+    "company_code": "SHO-S-10",
+    "name": "Sun Square Shower Head 250 x 250 x 8 mm",
+    "meta": { "color_name": "Brush Gold" },
+    "selling_price": 8048
+  },
+  {
+    "category": "General Range",
+    "company_code": "SHO-S-10",
+    "name": "Sun Square Shower Head 250 x 250 x 8 mm",
+    "meta": { "color_name": "Matt Black" },
+    "selling_price": 8048
+  },
+
+  {
+    "category": "General Range",
+    "company_code": "SHO-S-12",
+    "name": "Sun Square Shower Head 300 x 300 x 8 mm",
+    "meta": { "color_name": "Chrome" },
+    "selling_price": 6277
+  },
+  {
+    "category": "General Range",
+    "company_code": "SHO-S-12",
+    "name": "Sun Square Shower Head 300 x 300 x 8 mm",
+    "meta": { "color_name": "Rose Gold" },
+    "selling_price": 8548
+  },
+  {
+    "category": "General Range",
+    "company_code": "SHO-S-12",
+    "name": "Sun Square Shower Head 300 x 300 x 8 mm",
+    "meta": { "color_name": "Gold" },
+    "selling_price": 8548
+  },
+  {
+    "category": "General Range",
+    "company_code": "SHO-S-12",
+    "name": "Sun Square Shower Head 300 x 300 x 8 mm",
+    "meta": { "color_name": "Brush Gold" },
+    "selling_price": 8548
+  },
+  {
+    "category": "General Range",
+    "company_code": "SHO-S-12",
+    "name": "Sun Square Shower Head 300 x 300 x 8 mm",
+    "meta": { "color_name": "Matt Black" },
+    "selling_price": 8548
+  },
+
+  {
+    "category": "General Range",
+    "company_code": "SA-R01",
+    "name": "Round Shower Arm 400 mm",
+    "meta": { "color_name": "Chrome" },
+    "selling_price": 1224
+  },
+
+  {
+    "category": "General Range",
+    "company_code": "SA-S01",
+    "name": "Round Shower Arm 400 mm",
+    "meta": { "color_name": "Rose Gold" },
+    "selling_price": 1592
+  },
+  {
+    "category": "General Range",
+    "company_code": "SA-S01",
+    "name": "Round Shower Arm 400 mm",
+    "meta": { "color_name": "Gold" },
+    "selling_price": 1592
+  },
+  {
+    "category": "General Range",
+    "company_code": "SA-S01",
+    "name": "Round Shower Arm 400 mm",
+    "meta": { "color_name": "Brush Gold" },
+    "selling_price": 1592
+  },
+  {
+    "category": "General Range",
+    "company_code": "SA-S01",
+    "name": "Round Shower Arm 400 mm",
+    "meta": { "color_name": "Matt Black" },
+    "selling_price": 1592
+  },
+
+  {
+    "category": "General Range",
+    "company_code": "SA-S01",
+    "name": "Square Shower Arm 400 mm",
+    "meta": { "color_name": "Chrome" },
+    "selling_price": 2216
+  },
+
+  {
+    "category": "General Range",
+    "company_code": "SA-S01",
+    "name": "Square Shower Arm 400 mm",
+    "meta": { "color_name": "Rose Gold" },
+    "selling_price": 2864
+  },
+  {
+    "category": "General Range",
+    "company_code": "SA-S01",
+    "name": "Square Shower Arm 400 mm",
+    "meta": { "color_name": "Gold" },
+    "selling_price": 2864
+  },
+  {
+    "category": "General Range",
+    "company_code": "SA-S01",
+    "name": "Square Shower Arm 400 mm",
+    "meta": { "color_name": "Brush Gold" },
+    "selling_price": 2864
+  },
+  {
+    "category": "General Range",
+    "company_code": "SA-S01",
+    "name": "Square Shower Arm 400 mm",
+    "meta": { "color_name": "Matt Black" },
+    "selling_price": 2864
+  },
+  {
+    "category": "General Range",
+    "company_code": "OS-01",
+    "name": "Growe 4 Way ABS Shower",
+    "meta": [{ "color_name": "Chrome", "selling_price": 598 }]
+  },
+  {
+    "category": "General Range",
+    "company_code": "HS-01",
+    "name": "Growe 4 Way ABS Shower With Handle",
+    "meta": [{ "color_name": "Chrome", "selling_price": 598 }]
+  }
+]

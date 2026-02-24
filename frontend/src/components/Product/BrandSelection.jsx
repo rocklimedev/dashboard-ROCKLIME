@@ -21,7 +21,7 @@ const sgt = "https://static.cmtradingco.com/brands/sgt.jpg";
 const plumbing = "https://static.cmtradingco.com/brands/plumbing.jpg";
 const jayna = "https://via.placeholder.com/300";
 const grohe_pr = "https://static.cmtradingco.com/brands/grohe_premium.png";
-
+const perk = "https://static.cmtradingco.com/brands/perk.png";
 const BrandSelection = () => {
   const { bpcId } = useParams();
 
@@ -47,6 +47,7 @@ const BrandSelection = () => {
       walplast: walplast,
       jk_adhesive: jk,
       plumbing: plumbing,
+      perk: perk,
     };
 
     const mappedBrands = Array.isArray(bpc?.brands)
