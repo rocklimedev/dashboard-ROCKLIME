@@ -6,11 +6,11 @@ const path = require("path");
 //   CONFIGURATION – ADJUST THESE FOR YOUR BRAND
 // ────────────────────────────────────────────────
 const BRAND = {
-  shortCode: "GR", // "GR" for GROHE
-  namePrefix: "GROHE PREMIUM", // used in readable name if needed
+  shortCode: "PR", // "GR" for GROHE
+  namePrefix: "PERK", // used in readable name if needed
 };
 
-const MODEL_META_KEY = "d11da9f9-3f2e-4536-8236-9671200cca4a"; // ← your model number key
+const MODEL_META_KEY = "1e19b647-1138-11f1-b773-52540021303b"; // ← your model number key
 
 // ────────────────────────────────────────────────
 
@@ -27,9 +27,9 @@ async function main() {
       jsonData
         .filter(
           (p) =>
-            typeof p.product_code === "string" && p.product_code.length >= 8
+            typeof p.product_code === "string" && p.product_code.length >= 8,
         )
-        .map((p) => p.product_code.trim())
+        .map((p) => p.product_code.trim()),
     );
 
     let updatedCount = 0;
@@ -45,7 +45,7 @@ async function main() {
         console.log(
           `Keeping existing: ${product.product_code.padEnd(12)} → ${
             product.name
-          }`
+          }`,
         );
         existingCodes.add(product.product_code);
         continue;
@@ -80,11 +80,11 @@ async function main() {
       do {
         if (attempts++ > MAX_ATTEMPTS) {
           throw new Error(
-            `Cannot generate unique code for ${product.name} after ${MAX_ATTEMPTS} attempts`
+            `Cannot generate unique code for ${product.name} after ${MAX_ATTEMPTS} attempts`,
           );
         }
 
-        const suffix = Math.floor(Math.random() * 900 + 100).toString(); // 100–999
+        const suffix = Math.floor(Math.random() * 9000 + 1000).toString(); // 1000–9999
         newCode = `${prefix}${suffix}`;
       } while (existingCodes.has(newCode));
 
@@ -96,7 +96,7 @@ async function main() {
       console.log(
         `Generated : ${newCode} → ${product.name} (model: ${
           product.meta?.[MODEL_META_KEY] || "—"
-        })`
+        })`,
       );
     }
 
@@ -110,7 +110,7 @@ async function main() {
     console.log(`Success! Processed ${jsonData.length} products`);
     console.log(`  • Newly generated codes : ${updatedCount}`);
     console.log(
-      `  • Kept existing codes   : ${jsonData.length - updatedCount}`
+      `  • Kept existing codes   : ${jsonData.length - updatedCount}`,
     );
     console.log(`Output saved to: ${outputPath}`);
     console.log("═".repeat(60));

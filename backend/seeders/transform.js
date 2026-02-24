@@ -1,65 +1,68 @@
 const fs = require("fs");
-const path = require("path");
-const Category = require("../models/category");
-const sequelize = require("../config/database");
 
-const inputFile = path.join(__dirname, "../transformed.json");
-const outputFile = path.join(__dirname, "transformed2.json");
+// ---------------------------
+// CONFIGURE UUIDs HERE
+// ---------------------------
+const uuidList = [
+  "b9e1df45-113d-11f1-b773-52540021303b",
+  "9ba862ef-f993-4873-95ef-1fef10036aa5",
+  "d11da9f9-3f2e-4536-8236-9671200cca4a",
+  "4a427124-1143-11f1-b773-52540021303b",
+  "4a408954-1143-11f1-b773-52540021303b",
+];
 
-fs.readFile(inputFile, "utf8", async (err, data) => {
-  if (err) {
-    console.error("Error reading input file:", err);
-    return;
-  }
+// ---------------------------
+// LOAD INPUT JSON FILE
+// ---------------------------
+const inputFile = "./seeders/normalized_products.json";
+const outputFile = "output.json";
 
-  let products;
-  try {
-    products = JSON.parse(data);
-  } catch (parseError) {
-    console.error("Error parsing JSON:", parseError);
-    return;
-  }
+let products;
 
-  try {
-    await sequelize.authenticate();
+try {
+  const raw = fs.readFileSync(inputFile, "utf8");
+  products = JSON.parse(raw);
+} catch (err) {
+  console.error("❌ Failed to read input.json:", err);
+  process.exit(1);
+}
 
-    // 1. Collect all unique category names
-    const categoryNames = [...new Set(products.map((p) => p.category))];
+// ---------------------------
+// NORMALIZE FUNCTION
+// ---------------------------
+function normalizeProducts(products, uuidList) {
+  return products.map((product) => {
+    if (!product.meta || typeof product.meta !== "object") {
+      product.meta = {};
+    }
 
-    // 2. Fetch matching categories from DB
-    const categories = await Category.findAll({
-      where: { name: categoryNames },
-    });
-
-    // 3. Build name → categoryId map
-    const categoryMap = {};
-    categories.forEach((cat) => {
-      categoryMap[cat.name] = cat.categoryId;
-    });
-
-    // 4. Replace category name with categoryId
-    const updatedProducts = products.map((p) => ({
-      ...p,
-      category: categoryMap[p.category] || p.category, // Replace with UUID if found
-    }));
-
-    // 5. Save updated JSON
-    fs.writeFile(
-      outputFile,
-      JSON.stringify(updatedProducts, null, 2),
-      (writeErr) => {
-        if (writeErr) {
-          console.error("Error writing output file:", writeErr);
-        } else {
-          console.log(
-            `✅ File saved as '${outputFile}' with category replaced by categoryId.`
-          );
-        }
+    uuidList.forEach((uuid) => {
+      // Move top-level UUID → meta
+      if (product.hasOwnProperty(uuid)) {
+        product.meta[uuid] = product[uuid];
+        delete product[uuid];
       }
-    );
+      // Ensure it exists in meta
+      else if (!product.meta.hasOwnProperty(uuid)) {
+        product.meta[uuid] = null;
+      }
+    });
 
-    await sequelize.close();
-  } catch (dbError) {
-    console.error("Error fetching category IDs:", dbError);
-  }
-});
+    return product;
+  });
+}
+
+// ---------------------------
+// RUN NORMALIZATION
+// ---------------------------
+const normalized = normalizeProducts(products, uuidList);
+
+// ---------------------------
+// SAVE TO output.json
+// ---------------------------
+try {
+  fs.writeFileSync(outputFile, JSON.stringify(normalized, null, 2), "utf8");
+  console.log("✅ Normalized data saved to", outputFile);
+} catch (err) {
+  console.error("❌ Failed to write output.json:", err);
+}
