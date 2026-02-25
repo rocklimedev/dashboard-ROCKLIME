@@ -41,7 +41,7 @@ export const exportToPDF = async (
   id,
   activeVersion,
   quotation = {},
-  filename = "quotation.pdf"
+  filename = "quotation.pdf",
 ) => {
   if (!ref?.current) {
     console.error("Ref is null");
@@ -156,7 +156,7 @@ export const exportToPDF = async (
         pdfWidth,
         pdfHeight,
         undefined,
-        "FAST"
+        "FAST",
       );
     }
 
@@ -212,13 +212,14 @@ export const exportToExcel = async (
   products,
   productsData,
   brandNames,
+  customerName,
   quotation = {}, // Now used for title
   address,
   logo,
   accountDetails,
   id,
   activeVersion,
-  allBrands = []
+  allBrands = [],
 ) => {
   /* ---------- 1. Normalise product list ---------- */
   let productList = [];
@@ -226,8 +227,8 @@ export const exportToExcel = async (
     productList = Array.isArray(products)
       ? products
       : typeof products === "string"
-      ? JSON.parse(products)
-      : [];
+        ? JSON.parse(products)
+        : [];
   } catch (e) {
     productList = [];
   }
@@ -279,8 +280,8 @@ export const exportToExcel = async (
         p.discount && p.discountType === "percent"
           ? `${p.discount}%`
           : p.discount
-          ? `₹${p.discount}`
-          : "0",
+            ? `₹${p.discount}`
+            : "0",
       rate: `₹${(p.rate || mrp).toFixed(2)}`,
       qty: p.quantity || "1",
       total: `₹${Number(p.total).toFixed(2)}`,
@@ -290,7 +291,7 @@ export const exportToExcel = async (
   /* ---------- 3. Load images ---------- */
   const logoImg = logo ? await fetchImg(logo) : placeholder;
   const prodImgPromises = rows.map((r) =>
-    r.img ? fetchImg(r.img) : Promise.resolve(placeholder)
+    r.img ? fetchImg(r.img) : Promise.resolve(placeholder),
   );
   const prodImgs = await Promise.all(prodImgPromises);
 
@@ -340,7 +341,7 @@ export const exportToExcel = async (
 
   /* ---------- 8. Customer block ---------- */
   ws.mergeCells("B4:E5");
-  ws.getCell("B4").value = quotation?.customerName || "‑";
+  ws.getCell("B4").value = customerName || "Dear Client";
 
   ws.mergeCells("G4:I5");
   const dateStr = quotation?.quotation_date
@@ -394,8 +395,23 @@ export const exportToExcel = async (
       r.total,
     ]);
     row.height = 60;
+    const imgData = prodImgs[i];
 
-    const img = prodImgs[i];
+    if (imgData === placeholder) {
+      console.log(
+        `Using placeholder for product ${r.idx}: ${r.img || "(no url)"}`,
+      );
+    } else if (imgData?.buffer?.byteLength > 0) {
+      console.log(
+        `Product ${r.idx} image:`,
+        `url = ${r.img}`,
+        `type = ${imgData.extension}`,
+        `size = ${imgData.buffer.byteLength} bytes`,
+      );
+    } else {
+      console.log(`Invalid image data for product ${r.idx}:`, imgData);
+    }
+    const img = "https://picsum.photos/200/200"; // force one good image
     if (img?.buffer) {
       const imgId = wb.addImage({
         buffer: img.buffer,
@@ -427,14 +443,13 @@ export const exportToExcel = async (
   } = calcTotals(
     productList,
     quotation?.gst_value ?? 0,
-    quotation?.include_gst ?? false
+    quotation?.include_gst ?? false,
   );
 
   ws.addRow([]);
   ws.mergeCells(`A${ws.rowCount}:I${ws.rowCount}`);
-  ws.getCell(
-    `A${ws.rowCount}`
-  ).value = `Amount Chargeable (in words): ${amountInWords(finalTotal)}`;
+  ws.getCell(`A${ws.rowCount}`).value =
+    `Amount Chargeable (in words): ${amountInWords(finalTotal)}`;
   ws.getCell(`A${ws.rowCount}`).font = { bold: true };
 
   // Tax summary logic (same as before)
@@ -501,22 +516,20 @@ export const exportToExcel = async (
   ws.addRow([]);
   ws.mergeCells(`A${ws.rowCount}:G${ws.rowCount}`);
   ws.getCell(`A${ws.rowCount}`).value = `Tax Amount (in words): ${amountInWords(
-    gstAmount
+    gstAmount,
   )}`;
   ws.getCell(`A${ws.rowCount}`).font = { bold: true };
 
   const bank = accountDetails || {};
   ws.addRow([]);
   ws.mergeCells(`A${ws.rowCount}:D${ws.rowCount}`);
-  ws.getCell(
-    `A${ws.rowCount}`
-  ).value = `Company's Bank Details\nA/c Holder: EMBARK ENTERPRISES\nBank: IDFC FIRST BANK\nA/c No: 10179373657\nBranch & IFS: BHERA ENCLAVE PASCHIM VIHAR & IDFB0020149`;
+  ws.getCell(`A${ws.rowCount}`).value =
+    `Company's Bank Details\nA/c Holder: EMBARK ENTERPRISES\nBank: IDFC FIRST BANK\nA/c No: 10179373657\nBranch & IFS: BHERA ENCLAVE PASCHIM VIHAR & IDFB0020149`;
   ws.getCell(`A${ws.rowCount}`).alignment = { vertical: "top" };
 
   ws.mergeCells(`E${ws.rowCount}:I${ws.rowCount}`);
-  ws.getCell(
-    `E${ws.rowCount}`
-  ).value = `PAN: AALFE0496K\nDeclaration: We declare that this quotation shows the actual price...`;
+  ws.getCell(`E${ws.rowCount}`).value =
+    `PAN: AALFE0496K\nDeclaration: We declare that this quotation shows the actual price...`;
   ws.getCell(`E${ws.rowCount}`).alignment = {
     horizontal: "right",
     vertical: "top",
@@ -542,7 +555,7 @@ export const exportToExcel = async (
   const safeVersion = activeVersion === "current" ? "Latest" : activeVersion;
   const safeTitle = getSafeTitle(quotation);
   const titlePart = safeTitle ? `${safeTitle}_` : "";
-  const excelFilename = `Quotation_${titlePart}${id}_V${safeVersion}.xlsx`;
+  const excelFilename = `${titlePart}_V${safeVersion}.xlsx`;
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

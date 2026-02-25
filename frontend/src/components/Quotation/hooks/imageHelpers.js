@@ -1,6 +1,4 @@
-// ---------------------------------------------------------------
-// imageHelpers.js – returns { buffer: Uint8Array, extension }
-// ---------------------------------------------------------------
+// imageHelpers.js
 const placeholderBase64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
 
@@ -9,35 +7,80 @@ export const placeholder = {
   extension: "png",
 };
 
-/**
- * Works with:
- *   • data:image/... URLs
- *   • remote URLs (CORS must be allowed)
- *   • broken URLs → placeholder
- */
 export const fetchImg = async (src) => {
-  if (!src) return placeholder;
+  if (!src || typeof src !== "string") {
+    console.warn("fetchImg: invalid src", src);
+    return placeholder;
+  }
 
-  // ---- data URL ------------------------------------------------
-  if (src.startsWith("data:")) {
-    const m = src.match(/^data:image\/(\w+);base64,(.*)$/);
-    if (m) {
-      const [, ext, b64] = m;
-      const buffer = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
-      return { buffer, extension: ext };
+  // 1. Data URL handling
+  if (src.startsWith("data:image/")) {
+    const match = src.match(/^data:image\/([a-zA-Z0-9]+);base64,(.*)$/);
+    if (match) {
+      const [, extRaw, base64] = match;
+      let extension = extRaw.toLowerCase();
+      // Normalize common variations
+      if (extension === "jpg") extension = "jpeg";
+      try {
+        const binary = atob(base64);
+        const buffer = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+          buffer[i] = binary.charCodeAt(i);
+        }
+        return { buffer, extension };
+      } catch (err) {
+        console.warn("Invalid base64 data URL:", src.substring(0, 50), err);
+      }
     }
     return placeholder;
   }
 
-  // ---- remote URL ---------------------------------------------
+  // 2. Remote URL
   try {
-    const res = await fetch(src, { mode: "cors" });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const blob = await res.blob();
-    const buffer = new Uint8Array(await blob.arrayBuffer());
-    const extension = blob.type.split("/").pop() || "png";
+    const response = await fetch(src, {
+      method: "GET",
+      mode: "cors",
+      cache: "default", // helps with repeated fetches
+      redirect: "follow",
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} ${response.statusText}`);
+    }
+
+    const contentType = response.headers.get("content-type") || "";
+    let extension = "png";
+
+    if (contentType.includes("jpeg") || contentType.includes("jpg")) {
+      extension = "jpeg";
+    } else if (contentType.includes("png")) {
+      extension = "png";
+    } else if (contentType.includes("webp")) {
+      extension = "webp"; // Excel 2016+ supports webp
+    } else if (contentType.includes("gif")) {
+      extension = "gif";
+    }
+
+    // Fallback from URL extension if MIME is generic
+    if (extension === "png") {
+      const urlExt = src.split(".").pop()?.toLowerCase();
+      if (["jpg", "jpeg", "png", "webp", "gif"].includes(urlExt)) {
+        extension = urlExt === "jpg" ? "jpeg" : urlExt;
+      }
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = new Uint8Array(arrayBuffer);
+
+    if (buffer.length < 100) {
+      throw new Error("Image too small / empty");
+    }
+
     return { buffer, extension };
-  } catch (e) {
+  } catch (err) {
+    console.warn(
+      `fetchImg failed for: ${src.substring(0, 80)}... → ${err.message}`,
+    );
     return placeholder;
   }
 };
