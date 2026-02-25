@@ -221,6 +221,7 @@ const NewQuotationsDetails = () => {
         await exportToExcel(
           mainProducts,
           productsData,
+          customerName,
           brandNames,
           activeVersionData.quotation,
           customerAddress,
