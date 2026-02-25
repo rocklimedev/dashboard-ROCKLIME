@@ -411,7 +411,7 @@ export const exportToExcel = async (
     } else {
       console.log(`Invalid image data for product ${r.idx}:`, imgData);
     }
-    const img = "https://picsum.photos/200/200"; // force one good image
+    const img = prodImgs[i];
     if (img?.buffer) {
       const imgId = wb.addImage({
         buffer: img.buffer,
@@ -555,7 +555,7 @@ export const exportToExcel = async (
   const safeVersion = activeVersion === "current" ? "Latest" : activeVersion;
   const safeTitle = getSafeTitle(quotation);
   const titlePart = safeTitle ? `${safeTitle}_` : "";
-  const excelFilename = `${titlePart}_V${safeVersion}.xlsx`;
+  const excelFilename = `${titlePart}  _V${safeVersion}.xlsx`;
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
