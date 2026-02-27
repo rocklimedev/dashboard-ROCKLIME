@@ -285,7 +285,6 @@ const AddFieldgeneratedSheet = () => {
       }
 
       const currentUserId = profile?.user?.userId || "nill";
-      console.log(currentUserId);
 
       if (!currentUserId || currentUserId === "nill") {
         message.error(
@@ -305,8 +304,6 @@ const AddFieldgeneratedSheet = () => {
           ? formValues.expectDeliveryDate.format("YYYY-MM-DD")
           : null,
       };
-
-      console.log(payload);
 
       if (isEditMode) {
         await updateFGS({ id, ...payload }).unwrap();

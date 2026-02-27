@@ -19,7 +19,7 @@ exports.createKeyword = async (req, res) => {
         categoryId,
         [Op.and]: sequelize.where(
           sequelize.fn("LOWER", sequelize.col("keyword")),
-          sequelize.fn("LOWER", trimmed)
+          sequelize.fn("LOWER", trimmed),
         ),
       },
     });
@@ -55,7 +55,6 @@ exports.createKeyword = async (req, res) => {
 
     return res.status(201).json(keywordWithCategory);
   } catch (error) {
-    console.error("createKeyword error:", error);
     return res.status(500).json({ message: "Failed to create keyword" });
   }
 };
@@ -74,7 +73,6 @@ exports.getAllKeywords = async (req, res) => {
     });
     return res.status(200).json({ keywords });
   } catch (error) {
-    console.log(error);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 };

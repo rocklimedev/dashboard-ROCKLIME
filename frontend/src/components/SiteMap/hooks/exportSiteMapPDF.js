@@ -4,7 +4,6 @@ import jsPDF from "jspdf";
 
 export const exportToPDF = async (elementRef, siteMap) => {
   if (!elementRef?.current) {
-    console.warn("Element ref is not available");
     return;
   }
 
@@ -12,7 +11,6 @@ export const exportToPDF = async (elementRef, siteMap) => {
   const pages = elementRef.current.querySelectorAll(".quotation-page-print");
 
   if (pages.length === 0) {
-    console.warn("No pages found to export");
     return;
   }
 
@@ -58,19 +56,18 @@ export const exportToPDF = async (elementRef, siteMap) => {
     // Generate filename
     const siteName = (siteMap?.project_name || "SiteMap").replace(
       /[^a-zA-Z0-9]/g,
-      "_"
+      "_",
     );
     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
     const fileName = `SiteMap_${siteName}_${dateStr}.pdf`;
 
     pdf.save(fileName);
   } catch (error) {
-    console.error("PDF Export Failed:", error);
     alert("Failed to generate PDF. Check images (CORS) or try again.");
   } finally {
     // Always restore visibility
     pages.forEach(
-      (p, idx) => (p.style.display = originalDisplays[idx] || "block")
+      (p, idx) => (p.style.display = originalDisplays[idx] || "block"),
     );
   }
 };

@@ -1,6 +1,6 @@
 // src/components/ProductCard.jsx
 import React, { useState } from "react";
-import { Button, Tooltip, Badge, Dropdown, Input, message } from "antd";
+import { Button, Dropdown, Input, message } from "antd";
 import {
   ShoppingCartOutlined,
   MoreOutlined,
@@ -13,105 +13,84 @@ import "./productlist.css";
 import PermissionGate from "../../context/PermissionGate";
 import { useAuth } from "../../context/AuthContext";
 
-// Known meta UUIDs — keep in sync with ProductsList / backend
 const META_KEYS = {
   SELLING_PRICE: "9ba862ef-f993-4873-95ef-1fef10036aa5",
-  COMPANY_CODE: "d11da9f9-3f2e-4536-8236-9671200cca4a", // model/company code
+  COMPANY_CODE: "d11da9f9-3f2e-4536-8236-9671200cca4a",
 };
 
-const ProductCard = ({
-  product,
-  getBrandsName,
-  getCategoryName,
-  handleAddToCart,
-  cartLoadingStates,
-  menu,
-}) => {
-  const [quantity, setQuantity] = useState(product.quantity > 0 ? 1 : 0);
+const ProductCard = ({ product, handleAddToCart, cartLoadingStates, menu }) => {
   const { auth } = useAuth();
 
-  // ── Image handling ───────────────────────────────────────
+  const [quantity, setQuantity] = useState(1);
+  const [isSelectingQty, setIsSelectingQty] = useState(false);
+
   const safeParseImages = (images) => {
-    if (Array.isArray(images) && images.length > 0) return images;
-    if (typeof images === "string" && images.trim()) {
-      try {
-        const parsed = JSON.parse(images);
-        return Array.isArray(parsed) && parsed.length ? parsed : [pos];
-      } catch {
-        return [pos];
-      }
+    try {
+      if (Array.isArray(images) && images.length > 0) return images;
+      if (!images) return [pos];
+      const parsed = JSON.parse(images);
+      return Array.isArray(parsed) && parsed.length ? parsed : [pos];
+    } catch {
+      return [pos];
     }
-    return [pos];
   };
 
   const productImages = safeParseImages(product.images);
 
-  // ── Price & Code from flat meta object (same as ProductsList) ──
   const meta = product?.meta || {};
-
   const rawPrice = meta[META_KEYS.SELLING_PRICE];
   const priceValue = rawPrice ? parseFloat(rawPrice) : NaN;
+
   const displayPrice = !isNaN(priceValue)
     ? `₹${priceValue.toFixed(2)}`
     : "Price not set";
 
-  const companyCode =
-    String(meta[META_KEYS.COMPANY_CODE] || "").trim() || "N/A";
-
-  // ── Quantity logic ───────────────────────────────────────
-  const handleIncrement = () => {
-    if (quantity < product.quantity) setQuantity(quantity + 1);
-  };
-
-  const handleDecrement = () => {
-    if (quantity > 1) setQuantity(quantity - 1);
-  };
-
-  const handleQuantityChange = (e) => {
-    const val = e.target.value.trim();
-    if (val === "") {
-      setQuantity("");
-      return;
-    }
-    const num = parseInt(val, 10);
-    if (!isNaN(num) && num >= 1 && num <= product.quantity) {
-      setQuantity(num);
-    }
-  };
-
-  const handleAddToCartWithQuantity = () => {
-    if (isNaN(priceValue)) {
-      message.error("Cannot add — price is not set");
-      return;
-    }
-    if (quantity < 1 || quantity > product.quantity) {
-      message.error("Invalid quantity");
-      return;
-    }
-    handleAddToCart(product, quantity);
-  };
-
-  // ── Permissions & states ─────────────────────────────────
-  const permissions = auth?.permissions ?? [];
-  const canAddToCart = permissions.some(
-    (p) => p.action === "write" && p.module === "cart"
+  const canAddToCart = auth?.permissions?.some(
+    (p) => p.action === "write" && p.module === "cart",
   );
-  const canEditOrDelete = permissions.some(
-    (p) => ["edit", "delete"].includes(p.action) && p.module === "products"
+
+  const canEditOrDelete = auth?.permissions?.some(
+    (p) => ["edit", "delete"].includes(p.action) && p.module === "products",
   );
 
   const isOutOfStock = product.quantity <= 0;
-  const hasValidPrice = !isNaN(priceValue);
+
+  // AUTO UPDATE CART QUANTITY
+  const updateCartQuantity = (newQty) => {
+    if (newQty < 1) return;
+    if (newQty > product.quantity) return;
+
+    setQuantity(newQty);
+    handleAddToCart(product, newQty);
+  };
+
+  const handleIncrement = () => {
+    if (quantity < product.quantity) {
+      updateCartQuantity(quantity + 1);
+    }
+  };
+
+  const handleDecrement = () => {
+    if (quantity > 1) {
+      updateCartQuantity(quantity - 1);
+    }
+  };
+
+  const handleQuantityChange = (e) => {
+    const num = parseInt(e.target.value);
+    if (!isNaN(num)) updateCartQuantity(num);
+  };
 
   return (
     <div className="card mb-0">
-      {/* Image + Stock badge */}
+      {/* IMAGE */}
       <div className="image-wrapper">
         <img
-          src={productImages[0] || pos}
-          alt={product.name || "Product"}
+          src={productImages[0]}
+          alt={product.name}
           className="product-image-card"
         />
+
         {isOutOfStock ? (
           <div className="status-bar out-of-stock">Out of Stock</div>
         ) : (
@@ -119,98 +98,109 @@ const ProductCard = ({
         )}
       </div>
 
-      {/* More options dropdown */}
+      {/* MENU */}
       {canEditOrDelete && (
         <PermissionGate api="edit|delete" module="products">
           <Dropdown overlay={menu(product)} trigger={["click"]}>
             <Button
               type="text"
               icon={<MoreOutlined />}
-              size="large"
               className="more-options-btn"
             />
           </Dropdown>
         </PermissionGate>
       )}
 
-      {/* Out of stock badge (alternative position) */}
-      {isOutOfStock && (
-        <Badge count="Out of Stock" className="out-of-stock-badge" />
-      )}
-
-      {/* Name */}
+      {/* NAME */}
       <h6 className="product-name">
-        <Link to={`/product/${product.productId}`}>
-          {product.name || "Unnamed Product"}
-        </Link>
+        <Link to={`/product/${product.productId}`}>{product.name}</Link>
       </h6>
 
-      {/* Price + Quantity selector */}
+      {/* PRICE */}
       <div className="price">
         <p className="text-gray-9 mb-0 fw-bold">{displayPrice}</p>
-
-        <div className="qty-item">
-          <Tooltip title="Decrease">
-            <button
-              type="button"
-              className="dec"
-              onClick={handleDecrement}
-              disabled={isOutOfStock || quantity <= 1}
-            >
-              <MinusOutlined />
-            </button>
-          </Tooltip>
-
-          <Input
-            type="text"
-            className="form-control text-center"
-            value={quantity}
-            onChange={handleQuantityChange}
-            disabled={isOutOfStock}
-            style={{ width: 60, textAlign: "center" }}
-          />
-
-          <Tooltip title="Increase">
-            <button
-              type="button"
-              className="inc"
-              onClick={handleIncrement}
-              disabled={isOutOfStock || quantity >= product.quantity}
-            >
-              <PlusOutlined />
-            </button>
-          </Tooltip>
-        </div>
       </div>
 
-      {/* Add to Cart */}
+      {/* ADD TO CART SECTION */}
       {canAddToCart && (
-        <Tooltip
-          title={
-            isOutOfStock
-              ? "Out of stock"
-              : !hasValidPrice
-              ? "Price not set"
-              : "Add to cart"
-          }
-        >
-          <Button
-            type="primary"
-            className="cart-button"
-            icon={<ShoppingCartOutlined />}
-            onClick={handleAddToCartWithQuantity}
-            disabled={
-              isOutOfStock ||
-              !hasValidPrice ||
-              cartLoadingStates[product.productId]
-            }
-            size="large"
-            block
-            loading={cartLoadingStates[product.productId]}
-          >
-            {isOutOfStock ? "Out of Stock" : "Add to Cart"}
-          </Button>
-        </Tooltip>
+        <>
+          {!isSelectingQty ? (
+            <Button
+              type="primary"
+              className="cart-button"
+              icon={<ShoppingCartOutlined />}
+              disabled={isOutOfStock || isNaN(priceValue)}
+              block
+              onClick={() => {
+                setIsSelectingQty(true);
+                updateCartQuantity(1); // ADD TO CART IMMEDIATELY
+              }}
+            >
+              {isOutOfStock ? "Out of Stock" : "Add to Cart"}
+            </Button>
+          ) : (
+            <div
+              className="amazon-qty-bar"
+              style={{
+                marginTop: "10px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                width: "100%",
+                background: "#f7f7f7",
+                padding: "8px",
+                borderRadius: "8px",
+                border: "1px solid #ddd",
+                gap: "10px",
+              }}
+            >
+              {/* - BUTTON */}
+              <button
+                className="dec"
+                style={{
+                  width: "35px",
+                  height: "35px",
+                  borderRadius: "6px",
+                  background: "#fff",
+                  border: "1px solid #ccc",
+                }}
+                onClick={handleDecrement}
+                disabled={quantity <= 1}
+              >
+                <MinusOutlined />
+              </button>
+
+              {/* QUANTITY INPUT */}
+              <Input
+                type="text"
+                value={quantity}
+                onChange={handleQuantityChange}
+                style={{
+                  width: "60px",
+                  textAlign: "center",
+                  fontWeight: "bold",
+                  borderRadius: "6px",
+                }}
+              />
+
+              {/* + BUTTON */}
+              <button
+                className="inc"
+                style={{
+                  width: "35px",
+                  height: "35px",
+                  borderRadius: "6px",
+                  background: "#fff",
+                  border: "1px solid #ccc",
+                }}
+                onClick={handleIncrement}
+                disabled={quantity >= product.quantity}
+              >
+                <PlusOutlined />
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

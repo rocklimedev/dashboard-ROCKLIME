@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import {
   Form,
   Input,
@@ -16,6 +16,7 @@ import {
   Modal,
   Slider,
   Card,
+  Spin,
 } from "antd";
 import {
   UploadOutlined,
@@ -24,6 +25,7 @@ import {
   PhoneOutlined,
   CalendarOutlined,
   HomeOutlined,
+  SafetyCertificateOutlined,
 } from "@ant-design/icons";
 import moment from "moment";
 import Cropper from "react-easy-crop";
@@ -32,6 +34,8 @@ import {
   useUploadPhotoMutation,
   useGetProfileQuery,
 } from "../../api/userApi";
+
+import "./profileform.css";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -43,7 +47,7 @@ const getCroppedImg = (imageSrc, pixelCrop) => {
     image.onload = () => {
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
-      if (!ctx) return reject(new Error("Canvas error"));
+      if (!ctx) return reject(new Error("Canvas context not available"));
 
       canvas.width = 400;
       canvas.height = 400;
@@ -57,15 +61,14 @@ const getCroppedImg = (imageSrc, pixelCrop) => {
         0,
         0,
         400,
-        400
+        400,
       );
 
       canvas.toBlob(
-        (blob) => {
-          blob ? resolve(blob) : reject(new Error("Crop failed"));
-        },
+        (blob) =>
+          blob ? resolve(blob) : reject(new Error("Blob creation failed")),
         "image/jpeg",
-        0.95
+        0.92,
       );
     };
     image.onerror = reject;
@@ -74,7 +77,7 @@ const getCroppedImg = (imageSrc, pixelCrop) => {
 
 const ProfileForm = ({ onSuccess, onCancel }) => {
   const [form] = Form.useForm();
-  const { data: profileData, isLoading } = useGetProfileQuery();
+  const { data: profileData, isLoading: profileLoading } = useGetProfileQuery();
   const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
   const [uploadPhoto, { isLoading: isUploading }] = useUploadPhotoMutation();
 
@@ -85,39 +88,40 @@ const ProfileForm = ({ onSuccess, onCancel }) => {
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
 
+  const user = profileData?.user;
+
   useEffect(() => {
-    if (profileData?.user) {
-      const u = profileData.user;
+    if (user) {
       form.setFieldsValue({
-        username: u.username || "",
-        name: u.name || "",
-        email: u.email || "",
-        mobileNumber: u.mobileNumber || "",
-        dateOfBirth: u.dateOfBirth ? moment(u.dateOfBirth) : null,
-        bloodGroup: u.bloodGroup || undefined,
-        emergencyNumber: u.emergencyNumber || "",
-        shiftFrom: u.shiftFrom ? moment(u.shiftFrom, "HH:mm:ss") : null,
-        shiftTo: u.shiftTo ? moment(u.shiftTo, "HH:mm:ss") : null,
-        street: u.address?.street || "",
-        city: u.address?.city || "",
-        state: u.address?.state || "",
-        postalCode: u.address?.postalCode || "",
-        country: u.address?.country || "",
+        username: user.username || "",
+        name: user.name || "",
+        email: user.email || "",
+        mobileNumber: user.mobileNumber || "",
+        dateOfBirth: user.dateOfBirth ? moment(user.dateOfBirth) : null,
+        bloodGroup: user.bloodGroup || undefined,
+        emergencyNumber: user.emergencyNumber || "",
+        shiftFrom: user.shiftFrom ? moment(user.shiftFrom, "HH:mm:ss") : null,
+        shiftTo: user.shiftTo ? moment(user.shiftTo, "HH:mm:ss") : null,
+        street: user.address?.street || "",
+        city: user.address?.city || "",
+        state: user.address?.state || "",
+        postalCode: user.address?.postalCode || "",
+        country: user.address?.country || "India",
       });
-      setAvatarUrl(u.photo_thumbnail || "");
+      setAvatarUrl(user.photo_thumbnail || "");
     }
-  }, [profileData, form]);
+  }, [user, form]);
 
   const beforeUpload = (file) => {
-    const isImage = /image\/(jpeg|png|webp)/.test(file.type);
+    const isValidType = /image\/(jpeg|png|webp)/.test(file.type);
     const isLt5M = file.size / 1024 / 1024 < 5;
 
-    if (!isImage) {
-      message.error("Only JPG, PNG, or WebP images allowed!");
+    if (!isValidType) {
+      message.error("Only JPG, PNG, or WebP files are allowed");
       return Upload.LIST_IGNORE;
     }
     if (!isLt5M) {
-      message.error("Image must be smaller than 5MB!");
+      message.error("Image must be smaller than 5MB");
       return Upload.LIST_IGNORE;
     }
 
@@ -137,16 +141,18 @@ const ProfileForm = ({ onSuccess, onCancel }) => {
   }, []);
 
   const handleCropSave = async () => {
+    if (!croppedAreaPixels) return;
+
     try {
       const croppedBlob = await getCroppedImg(cropImage, croppedAreaPixels);
       const result = await uploadPhoto(croppedBlob).unwrap();
 
       setAvatarUrl(result.photo_thumbnail);
-      message.success("Avatar updated successfully!");
+      message.success("Profile photo updated");
       setCropModalVisible(false);
       setCropImage(null);
     } catch (err) {
-      message.error("Failed to upload image");
+      message.error("Failed to upload photo");
     }
   };
 
@@ -162,23 +168,23 @@ const ProfileForm = ({ onSuccess, onCancel }) => {
         city: values.city?.trim() || "",
         state: values.state?.trim() || "",
         postalCode: values.postalCode?.trim() || "",
-        country: values.country?.trim() || "",
+        country: values.country?.trim() || "India",
       },
     };
 
     try {
       await updateProfile(payload).unwrap();
-      message.success("Profile updated successfully!");
+      message.success("Profile updated successfully");
       onSuccess?.();
     } catch (err) {
       message.error(err?.data?.message || "Failed to update profile");
     }
   };
 
-  if (isLoading) {
+  if (profileLoading) {
     return (
-      <div className="flex justify-center items-center min-h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-600"></div>
+      <div className="profile-loading">
+        <Spin size="large" />
       </div>
     );
   }
@@ -186,285 +192,271 @@ const ProfileForm = ({ onSuccess, onCancel }) => {
   return (
     <div className="page-wrapper">
       <div className="content">
-        <div
-          style={{
-            background: "#f8fafc",
-            minHeight: "100vh",
-            padding: "24px 0",
-          }}
-        >
-          <div style={{ maxWidth: 1000, margin: "0 auto", padding: "0 16px" }}>
-            <Card className="shadow-xl rounded-2xl border-0">
-              <div className="text-center mb-8">
-                <Title level={2} className="text-gray-800">
-                  Edit Profile
-                </Title>
-                <Text type="secondary">Update your personal information</Text>
-              </div>
+        <div className="profile-form-page">
+          <Card className="profile-form-card">
+            <div className="form-header">
+              <Title level={3}>Edit Your Profile</Title>
+              <Text type="secondary">Keep your information up to date</Text>
+            </div>
 
-              <Row gutter={[32, 24]} align="top">
-                {/* Avatar Section */}
-                <Col xs={24} md={8}>
-                  <Card className="text-center border-0 shadow-lg rounded-2xl">
+            <Row gutter={[32, 32]}>
+              {/* Avatar Column */}
+              <Col xs={24} md={8}>
+                <Card className="avatar-card">
+                  <div className="avatar-preview">
                     <Avatar
-                      size={160}
-                      icon={<UserOutlined />}
+                      size={180}
                       src={avatarUrl}
-                      className="shadow-2xl border-8 border-white"
-                      style={{ backgroundColor: "#e6f7ff" }}
+                      icon={<UserOutlined />}
+                      className="avatar-main"
                     />
-                    <div className="mt-6">
-                      <Upload
-                        showUploadList={false}
-                        beforeUpload={beforeUpload}
+                  </div>
+
+                  <Upload showUploadList={false} beforeUpload={beforeUpload}>
+                    <Button
+                      type="primary"
+                      icon={<UploadOutlined />}
+                      loading={isUploading}
+                      block
+                      size="large"
+                      className="upload-btn"
+                    >
+                      Change Photo
+                    </Button>
+                  </Upload>
+
+                  <Text type="secondary" className="upload-hint">
+                    JPG, PNG, WebP • Max 5 MB
+                  </Text>
+                </Card>
+              </Col>
+
+              {/* Form Column */}
+              <Col xs={24} md={16}>
+                <Form form={form} layout="vertical" onFinish={onFinish}>
+                  {/* Personal Information */}
+                  <Divider orientation="left" plain>
+                    <Space>
+                      <UserOutlined className="section-icon" />
+                      Personal Information
+                    </Space>
+                  </Divider>
+
+                  <Row gutter={16}>
+                    <Col xs={24} sm={12}>
+                      <Form.Item
+                        label="Full Name"
+                        name="name"
+                        rules={[
+                          { required: true, message: "Please enter your name" },
+                        ]}
                       >
-                        <Button
-                          type="primary"
+                        <Input size="large" placeholder="John Doe" />
+                      </Form.Item>
+                    </Col>
+
+                    <Col xs={24} sm={12}>
+                      <Form.Item
+                        label="Username"
+                        name="username"
+                        rules={[
+                          { required: true, message: "Username is required" },
+                        ]}
+                      >
+                        <Input size="large" placeholder="@johndoe" />
+                      </Form.Item>
+                    </Col>
+
+                    <Col xs={24} sm={12}>
+                      <Form.Item
+                        label="Email Address"
+                        name="email"
+                        rules={[
+                          { required: true, message: "Email is required" },
+                          { type: "email", message: "Invalid email format" },
+                        ]}
+                      >
+                        <Input
                           size="large"
-                          icon={<UploadOutlined />}
-                          loading={isUploading}
-                          className="rounded-xl font-medium"
-                        >
-                          Change Avatar
-                        </Button>
-                      </Upload>
-                      <Text type="secondary" className="block mt-3 text-sm">
-                        JPG, PNG or WebP • Max 5MB
-                      </Text>
-                    </div>
-                  </Card>
-                </Col>
+                          prefix={<MailOutlined />}
+                          disabled
+                        />
+                      </Form.Item>
+                    </Col>
 
-                {/* Form Section */}
-                <Col xs={24} md={16}>
-                  <Form form={form} layout="vertical" onFinish={onFinish}>
-                    {/* Personal Info */}
-                    <Divider>
-                      <Title level={4} className="flex items-center gap-2">
-                        <UserOutlined className="text-blue-600" />
-                        Personal Information
-                      </Title>
-                    </Divider>
-
-                    <Row gutter={16}>
-                      <Col xs={24} sm={12}>
-                        <Form.Item
-                          label="Full Name"
-                          name="name"
-                          rules={[
-                            { required: true, message: "Name is required" },
-                          ]}
-                        >
-                          <Input
-                            size="large"
-                            prefix={<UserOutlined />}
-                            placeholder="John Doe"
-                          />
-                        </Form.Item>
-                      </Col>
-                      <Col xs={24} sm={12}>
-                        <Form.Item
-                          label="Username"
-                          name="username"
-                          rules={[
-                            { required: true, message: "Username required" },
-                          ]}
-                        >
-                          <Input size="large" placeholder="@johndoe" />
-                        </Form.Item>
-                      </Col>
-                      <Col xs={24} sm={12}>
-                        <Form.Item
-                          label="Email Address"
-                          name="email"
-                          rules={[
-                            { required: true, message: "Email required" },
-                            { type: "email", message: "Invalid email" },
-                          ]}
-                        >
-                          <Input
-                            size="large"
-                            prefix={<MailOutlined />}
-                            disabled
-                          />
-                        </Form.Item>
-                      </Col>
-                      <Col xs={24} sm={12}>
-                        <Form.Item
-                          label="Phone Number"
-                          name="mobileNumber"
-                          rules={[
-                            {
-                              pattern: /^[0-9]{10}$/,
-                              message: "10 digits only",
-                            },
-                          ]}
-                        >
-                          <Input
-                            size="large"
-                            prefix={<PhoneOutlined />}
-                            placeholder="9876543210"
-                          />
-                        </Form.Item>
-                      </Col>
-                      <Col xs={24} sm={12}>
-                        <Form.Item label="Date of Birth" name="dateOfBirth">
-                          <DatePicker
-                            size="large"
-                            style={{ width: "100%" }}
-                            prefix={<CalendarOutlined />}
-                          />
-                        </Form.Item>
-                      </Col>
-                      <Col xs={24} sm={12}>
-                        <Form.Item label="Blood Group" name="bloodGroup">
-                          <Select
-                            size="large"
-                            allowClear
-                            placeholder="Select blood group"
-                          >
-                            {[
-                              "A+",
-                              "A-",
-                              "B+",
-                              "B-",
-                              "AB+",
-                              "AB-",
-                              "O+",
-                              "O-",
-                            ].map((g) => (
-                              <Option key={g} value={g}>
-                                {g}
-                              </Option>
-                            ))}
-                          </Select>
-                        </Form.Item>
-                      </Col>
-                      <Col xs={24} sm={12}>
-                        <Form.Item
-                          label="Emergency Contact"
-                          name="emergencyNumber"
-                        >
-                          <Input size="large" placeholder="9876543210" />
-                        </Form.Item>
-                      </Col>
-                    </Row>
-
-                    {/* Address */}
-                    <Divider>
-                      <Title level={4} className="flex items-center gap-2">
-                        <HomeOutlined className="text-green-600" />
-                        Address
-                      </Title>
-                    </Divider>
-
-                    <Row gutter={16}>
-                      <Col span={24}>
-                        <Form.Item label="Street Address" name="street">
-                          <Input size="large" placeholder="123 Main Street" />
-                        </Form.Item>
-                      </Col>
-                      <Col xs={24} sm={12}>
-                        <Form.Item label="City" name="city">
-                          <Input size="large" placeholder="Mumbai" />
-                        </Form.Item>
-                      </Col>
-                      <Col xs={24} sm={12}>
-                        <Form.Item label="State" name="state">
-                          <Input size="large" placeholder="Maharashtra" />
-                        </Form.Item>
-                      </Col>
-                      <Col xs={24} sm={12}>
-                        <Form.Item label="Postal Code" name="postalCode">
-                          <Input size="large" placeholder="400001" />
-                        </Form.Item>
-                      </Col>
-                      <Col xs={24} sm={12}>
-                        <Form.Item label="Country" name="country">
-                          <Input size="large" placeholder="India" />
-                        </Form.Item>
-                      </Col>
-                    </Row>
-
-                    {/* Actions */}
-                    <div className="flex justify-end gap-4 mt-10">
-                      <Button size="large" onClick={onCancel}>
-                        Cancel
-                      </Button>
-                      <Button
-                        type="primary"
-                        size="large"
-                        htmlType="submit"
-                        loading={isUpdating}
-                        className="px-8 font-medium"
+                    <Col xs={24} sm={12}>
+                      <Form.Item
+                        label="Phone Number"
+                        name="mobileNumber"
+                        rules={[
+                          {
+                            pattern: /^[0-9]{10}$/,
+                            message: "Enter a valid 10-digit number",
+                          },
+                        ]}
                       >
-                        Save Changes
-                      </Button>
-                    </div>
-                  </Form>
-                </Col>
-              </Row>
-            </Card>
+                        <Input
+                          size="large"
+                          prefix={<PhoneOutlined />}
+                          placeholder="9876543210"
+                        />
+                      </Form.Item>
+                    </Col>
 
-            {/* Crop Modal */}
-            <Modal
-              title={<Title level={4}>Crop Your Avatar</Title>}
-              open={cropModalVisible}
-              onCancel={() => {
-                setCropModalVisible(false);
-                setCropImage(null);
-              }}
-              footer={null}
-              width={560}
-              destroyOnClose
-            >
-              <div
-                style={{
-                  position: "relative",
-                  height: 400,
-                  background: "#000",
-                  borderRadius: 12,
-                  overflow: "hidden",
-                }}
+                    <Col xs={24} sm={12}>
+                      <Form.Item label="Date of Birth" name="dateOfBirth">
+                        <DatePicker size="large" style={{ width: "100%" }} />
+                      </Form.Item>
+                    </Col>
+
+                    <Col xs={24} sm={12}>
+                      <Form.Item label="Blood Group" name="bloodGroup">
+                        <Select
+                          size="large"
+                          allowClear
+                          placeholder="Select blood group"
+                        >
+                          {[
+                            "A+",
+                            "A-",
+                            "B+",
+                            "B-",
+                            "AB+",
+                            "AB-",
+                            "O+",
+                            "O-",
+                          ].map((g) => (
+                            <Option key={g} value={g}>
+                              {g}
+                            </Option>
+                          ))}
+                        </Select>
+                      </Form.Item>
+                    </Col>
+
+                    <Col xs={24} sm={12}>
+                      <Form.Item
+                        label="Emergency Contact"
+                        name="emergencyNumber"
+                      >
+                        <Input size="large" placeholder="9876543210" />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+
+                  {/* Address Section */}
+                  <Divider orientation="left" plain>
+                    <Space>
+                      <HomeOutlined className="section-icon" />
+                      Address Information
+                    </Space>
+                  </Divider>
+
+                  <Row gutter={16}>
+                    <Col span={24}>
+                      <Form.Item label="Street Address" name="street">
+                        <Input
+                          size="large"
+                          placeholder="123 Main Street, Apt 4B"
+                        />
+                      </Form.Item>
+                    </Col>
+
+                    <Col xs={24} sm={12}>
+                      <Form.Item label="City" name="city">
+                        <Input size="large" placeholder="Mumbai" />
+                      </Form.Item>
+                    </Col>
+
+                    <Col xs={24} sm={12}>
+                      <Form.Item label="State / Province" name="state">
+                        <Input size="large" placeholder="Maharashtra" />
+                      </Form.Item>
+                    </Col>
+
+                    <Col xs={24} sm={12}>
+                      <Form.Item label="Postal Code" name="postalCode">
+                        <Input size="large" placeholder="400001" />
+                      </Form.Item>
+                    </Col>
+
+                    <Col xs={24} sm={12}>
+                      <Form.Item label="Country" name="country">
+                        <Input size="large" placeholder="India" />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+
+                  {/* Form Actions */}
+                  <div className="form-actions">
+                    <Button size="large" onClick={onCancel}>
+                      Cancel
+                    </Button>
+                    <Button
+                      type="primary"
+                      size="large"
+                      htmlType="submit"
+                      loading={isUpdating}
+                      className="submit-btn"
+                    >
+                      Save Changes
+                    </Button>
+                  </div>
+                </Form>
+              </Col>
+            </Row>
+          </Card>
+
+          {/* Crop Modal */}
+          <Modal
+            title={<Title level={4}>Crop & Adjust Avatar</Title>}
+            open={cropModalVisible}
+            onCancel={() => {
+              setCropModalVisible(false);
+              setCropImage(null);
+            }}
+            footer={null}
+            width={640}
+            destroyOnClose
+            className="crop-modal"
+          >
+            <div className="crop-container">
+              <Cropper
+                image={cropImage}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
+                cropShape="round"
+                showGrid={false}
+              />
+            </div>
+
+            <div className="crop-controls">
+              <Text strong>Zoom</Text>
+              <Slider
+                min={1}
+                max={3}
+                step={0.05}
+                value={zoom}
+                onChange={setZoom}
+                tooltip={{ open: false }}
+              />
+            </div>
+
+            <div className="crop-actions">
+              <Button onClick={() => setCropModalVisible(false)}>Cancel</Button>
+              <Button
+                type="primary"
+                loading={isUploading}
+                onClick={handleCropSave}
               >
-                <Cropper
-                  image={cropImage}
-                  crop={crop}
-                  zoom={zoom}
-                  aspect={1}
-                  onCropChange={setCrop}
-                  onZoomChange={setZoom}
-                  onCropComplete={onCropComplete}
-                  cropShape="round"
-                  showGrid={false}
-                  style={{ containerStyle: { borderRadius: 12 } }}
-                />
-              </div>
-              <div className="mt-6">
-                <Text>Zoom</Text>
-                <Slider
-                  min={1}
-                  max={3}
-                  step={0.1}
-                  value={zoom}
-                  onChange={setZoom}
-                  className="mt-2"
-                />
-              </div>
-              <div className="flex justify-end gap-3 mt-6">
-                <Button onClick={() => setCropModalVisible(false)}>
-                  Cancel
-                </Button>
-                <Button
-                  type="primary"
-                  loading={isUploading}
-                  onClick={handleCropSave}
-                >
-                  Apply
-                </Button>
-              </div>
-            </Modal>
-          </div>
+                Apply Photo
+              </Button>
+            </div>
+          </Modal>
         </div>
       </div>
     </div>

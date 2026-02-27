@@ -83,7 +83,6 @@ export const amountInWords = (num) => {
 
     return out + " only";
   } catch (err) {
-    console.error("amountInWords failed:", err);
     return "N/A";
   }
 };
@@ -98,7 +97,7 @@ export const calcTotals = (
   extraDiscountType = "percent",
   roundOff = 0,
   itemDiscounts = {}, // ← NEW: { productId: number }
-  itemDiscountTypes = {} // ← NEW: { productId: "percent" | "fixed" }
+  itemDiscountTypes = {}, // ← NEW: { productId: "percent" | "fixed" }
 ) => {
   const safeExtraDiscount = Number(extraDiscount) || 0;
   const safeExtraDiscType = (extraDiscountType || "percent").toLowerCase();
@@ -115,7 +114,7 @@ export const calcTotals = (
         productDetailsMap[p.productId]?.price ||
         p.price ||
         p.sellingPrice ||
-        0
+        0,
     );
 
     const originalLineTotal = basePrice * qty;
@@ -165,7 +164,7 @@ export const calcTotals = (
     roundOffApplied: Number(roundOffApplied.toFixed(2)),
     total: Number(finalTotal.toFixed(2)),
     netAfterDiscounts: Number(
-      (subtotal - totalProductDiscount - extraDiscountAmt).toFixed(2)
+      (subtotal - totalProductDiscount - extraDiscountAmt).toFixed(2),
     ),
   };
 };

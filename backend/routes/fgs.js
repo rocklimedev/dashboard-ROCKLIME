@@ -8,7 +8,7 @@ const fieldGuidedSheetController = require("../controller/fgsController");
 
 // Optional: Add middleware for authentication / authorization if needed
 // const { authenticate, authorize } = require('../middleware/auth');
-// router.use(authenticate);  // protect all routes
+router.use(auth); // protect all routes
 // or per-route: router.post('/', authorize('admin'), controller.create...)
 
 // ─────────────────────────────────────────────────────────────

@@ -44,7 +44,6 @@ export const exportToPDF = async (
   filename = "quotation.pdf",
 ) => {
   if (!ref?.current) {
-    console.error("Ref is null");
     return;
   }
 
@@ -63,12 +62,10 @@ export const exportToPDF = async (
 
   // METHOD 4: Last resort – use ref.current directly
   if (!printArea) {
-    console.warn("No .print-area found → falling back to ref.current");
     printArea = ref.current;
   }
 
   if (!printArea) {
-    console.error("No printable area found at all");
     message.error("Print area not found");
     return;
   }
@@ -88,7 +85,6 @@ export const exportToPDF = async (
     return new Promise((resolve, reject) => {
       img.onload = resolve;
       img.onerror = () => {
-        console.warn("Image failed to load:", img.src);
         resolve(); // continue anyway
       };
       // Force reload to apply crossOrigin
@@ -172,9 +168,7 @@ export const exportToPDF = async (
         copied.forEach((p) => mainPdf.addPage(p));
         finalPdfBytes = await mainPdf.save();
       }
-    } catch (e) {
-      console.warn("T&C attachment failed (continuing without):", e.message);
-    }
+    } catch (e) {}
 
     // === Download ===
     const blob = new Blob([finalPdfBytes], { type: "application/pdf" });
@@ -187,7 +181,6 @@ export const exportToPDF = async (
 
     message.success("PDF exported successfully!");
   } catch (err) {
-    console.error("PDF Export failed:", err);
     message.error("PDF export failed: " + err.message);
   } finally {
     document.body.removeChild(container);
@@ -260,7 +253,6 @@ export const exportToExcel = async (
         }
       }
     } catch (e) {
-      console.warn("Failed to parse product image:", pd.images, e);
       img = null;
     }
     const code =
@@ -397,20 +389,6 @@ export const exportToExcel = async (
     row.height = 60;
     const imgData = prodImgs[i];
 
-    if (imgData === placeholder) {
-      console.log(
-        `Using placeholder for product ${r.idx}: ${r.img || "(no url)"}`,
-      );
-    } else if (imgData?.buffer?.byteLength > 0) {
-      console.log(
-        `Product ${r.idx} image:`,
-        `url = ${r.img}`,
-        `type = ${imgData.extension}`,
-        `size = ${imgData.buffer.byteLength} bytes`,
-      );
-    } else {
-      console.log(`Invalid image data for product ${r.idx}:`, imgData);
-    }
     const img = prodImgs[i];
     if (img?.buffer) {
       const imgId = wb.addImage({

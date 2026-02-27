@@ -218,9 +218,7 @@ const CreateProduct = ({
           : Array.isArray(existingProduct.images)
             ? existingProduct.images
             : [];
-    } catch (e) {
-      console.error("Failed to parse images", e);
-    }
+    } catch (e) {}
     setExistingImages(Array.isArray(imagesArray) ? imagesArray : []);
 
     let metaObj = {};
@@ -257,9 +255,7 @@ const CreateProduct = ({
           }),
         );
         setSelectedKeywords(normalized);
-      } catch (e) {
-        console.error("Failed to parse keywords", e);
-      }
+      } catch (e) {}
     }
 
     if (existingProduct.variantOptions) {
@@ -278,9 +274,7 @@ const CreateProduct = ({
           variantOptions: JSON.stringify(opts, null, 2),
           variantAttributes: listFormat,
         });
-      } catch (e) {
-        console.error("Failed to parse variantOptions", e);
-      }
+      } catch (e) {}
     }
   }, [existingProduct, productMetaData, form, isEditMode]);
 
@@ -336,7 +330,6 @@ const CreateProduct = ({
         }
       }
     } catch (err) {
-      console.error("Failed to create keyword", err);
       message.error("Failed to create keyword");
     }
   };
@@ -547,7 +540,6 @@ const CreateProduct = ({
       message.success(isEditMode ? "Product updated!" : "Product created!");
       if (!isBulkMode) navigate(-1);
     } catch (err) {
-      console.error("Save failed:", err);
       message.error(err?.data?.message || "Failed to save product");
     }
   };

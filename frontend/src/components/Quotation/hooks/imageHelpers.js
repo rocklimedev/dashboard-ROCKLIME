@@ -9,7 +9,6 @@ export const placeholder = {
 
 export const fetchImg = async (src) => {
   if (!src || typeof src !== "string") {
-    console.warn("fetchImg: invalid src", src);
     return placeholder;
   }
 
@@ -28,9 +27,7 @@ export const fetchImg = async (src) => {
           buffer[i] = binary.charCodeAt(i);
         }
         return { buffer, extension };
-      } catch (err) {
-        console.warn("Invalid base64 data URL:", src.substring(0, 50), err);
-      }
+      } catch (err) {}
     }
     return placeholder;
   }
@@ -78,9 +75,6 @@ export const fetchImg = async (src) => {
 
     return { buffer, extension };
   } catch (err) {
-    console.warn(
-      `fetchImg failed for: ${src.substring(0, 80)}... → ${err.message}`,
-    );
     return placeholder;
   }
 };

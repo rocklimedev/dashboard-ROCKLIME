@@ -214,7 +214,7 @@ const NewCart = ({ onConvertToOrder }) => {
     if (Array.isArray(productsData)) return productsData;
     if (Array.isArray(productsData?.data)) return productsData.data;
     if (Array.isArray(productsData?.products)) return productsData.products;
-    console.warn("useGetAllProductsQuery returned non-array:", productsData);
+
     return [];
   }, [productsData]);
 
@@ -673,11 +673,6 @@ const NewCart = ({ onConvertToOrder }) => {
                 ? JSON.parse(customer.address)
                 : customer.address;
           } catch (parseError) {
-            console.error(
-              "Default address parse failed",
-              customer.address,
-              parseError,
-            );
             message.error("Customer's default address format is invalid.");
             return;
           }
@@ -709,14 +704,8 @@ const NewCart = ({ onConvertToOrder }) => {
             status: "SHIPPING", // ← confirm this is valid in your backend
           };
 
-          console.log("[QUOTATION] Creating shipping address →", payload);
-
           try {
             const response = await createAddress(payload).unwrap();
-            console.log(
-              "[QUOTATION] Address created → ID:",
-              response?.addressId,
-            );
 
             finalShipTo = response.addressId;
 
@@ -727,7 +716,6 @@ const NewCart = ({ onConvertToOrder }) => {
               "Shipping address created automatically from default",
             );
           } catch (apiError) {
-            console.error("[QUOTATION] Create address failed", apiError);
             message.error(
               apiError?.data?.message ||
                 "Could not create shipping address automatically.",
@@ -919,51 +907,43 @@ const NewCart = ({ onConvertToOrder }) => {
         shipTo: finalShipTo,
 
         products: allCartItems.map((item) => {
-          const price = Number(item.price || 0);
-          const qty = Number(item.quantity || 1);
-          const discVal = Number(itemDiscounts[item.productId] || 0);
-          const discType = itemDiscountTypes[item.productId] || "percent";
-          const taxRate = Number(itemTaxes[item.productId] || 0);
+          const price = Number(item.price ?? 0);
+          const qty = Number(item.quantity ?? 1);
+          const discVal = Number(itemDiscounts[item.productId] ?? 0);
+          const discType = itemDiscountTypes[item.productId] ?? "percent";
+          const taxRate = Number(itemTaxes[item.productId] ?? 0);
 
           const subtotal = price * qty;
           const discountAmt =
             discType === "percent" ? (subtotal * discVal) / 100 : discVal;
           const afterDisc = subtotal - discountAmt;
           const taxAmt = (afterDisc * taxRate) / 100;
-          const lineTotalRaw = afterDisc + taxAmt;
+          const lineTotal = afterDisc + taxAmt;
 
           return {
-            id: item.productId, // ← CHANGE THIS: use "id" instead of "productId"
+            id: item.productId,
             name: item.name || "Unnamed Product",
             imageUrl: item.imageUrl || "",
-            productCode: item.productCode || "",
-            companyCode: item.companyCode || "",
+            productCode:
+              item.productCode ?? item.code ?? item.product_code ?? "",
+            companyCode: item.companyCode ?? item.company_code ?? "",
             quantity: qty,
             price: Number(price.toFixed(2)),
             discount: Number(discVal.toFixed(2)),
             discountType: discType,
             tax: taxRate,
-            total: Number(lineTotalRaw.toFixed(2)),
+            total: Number(lineTotal.toFixed(2)),
           };
         }),
       };
 
       try {
-        console.log(
-          "ORDER PAYLOAD BEING SENT:",
-          JSON.stringify(orderPayload, null, 2),
-        );
         const result = await createOrder(orderPayload).unwrap();
         message.success(`Order ${result.orderNo} created successfully!`);
         await handleClearCart();
         resetForm();
         navigate("/orders/list");
       } catch (err) {
-        console.error("Create order failed – full error:", err);
-        console.log("Response data:", err?.data);
-        console.log("Status:", err?.status);
-        console.log("Response headers:", err?.headers);
-
         const msg =
           err?.data?.message ||
           err?.data?.error ||
@@ -1321,7 +1301,6 @@ const NewCart = ({ onConvertToOrder }) => {
             visible={true}
             onClose={() => setShowAddAddressModal(false)}
             onSave={(addressId) => {
-              console.log("New address created:", addressId);
               if (documentType === "Order") {
                 setOrderData((prev) => ({ ...prev, shipTo: addressId }));
               }

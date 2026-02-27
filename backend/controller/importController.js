@@ -9,11 +9,6 @@ const { Product, Category, Brand, Vendor, Keyword } = require("../models");
 exports.startBulkImport = async (req, res) => {
   try {
     // ────────────────────────────── DEBUG LOGGING ──────────────────────────────
-    console.log("=== startBulkImport called ===");
-    console.log("req.files present?", !!req.files);
-    console.log("req.files.file?", !!req.files?.file?.[0]);
-    console.log("req.body keys:", Object.keys(req.body || {}));
-    console.log("req.body full:", req.body);
 
     if (!req.files?.file?.[0]) {
       return res.status(400).json({ message: "No file uploaded" });
@@ -23,18 +18,13 @@ exports.startBulkImport = async (req, res) => {
 
     // Get raw mapping string
     const rawMapping = req.body?.mapping;
-    console.log("raw req.body.mapping:", rawMapping);
-    console.log("typeof rawMapping:", typeof rawMapping);
 
     let mapping = {};
 
     if (typeof rawMapping === "string" && rawMapping.trim() !== "") {
       try {
         mapping = JSON.parse(rawMapping);
-        console.log("Successfully parsed mapping:", mapping);
-        console.log("Mapping values:", Object.values(mapping));
       } catch (parseErr) {
-        console.error("JSON parse error on mapping:", parseErr.message);
         return res.status(400).json({
           message: "Invalid mapping JSON format",
           error: parseErr.message,
@@ -49,8 +39,6 @@ exports.startBulkImport = async (req, res) => {
     const hasName = mappedFields.includes("name");
     const hasCode = mappedFields.includes("product_code");
 
-    console.log("hasName:", hasName, "hasCode:", hasCode);
-
     if (!hasName || !hasCode) {
       return res.status(400).json({
         message: 'Must map at least "name" and "product_code" fields',
@@ -62,11 +50,6 @@ exports.startBulkImport = async (req, res) => {
     const nameColumn = Object.keys(mapping).find((k) => mapping[k] === "name");
     const codeColumn = Object.keys(mapping).find(
       (k) => mapping[k] === "product_code",
-    );
-
-    console.log(`[startBulkImport] name mapped to column index: ${nameColumn}`);
-    console.log(
-      `[startBulkImport] product_code mapped to column index: ${codeColumn}`,
     );
 
     // ────────────────────────────── NORMAL FLOW ──────────────────────────────
@@ -97,7 +80,6 @@ exports.startBulkImport = async (req, res) => {
       status: "pending",
     });
   } catch (err) {
-    console.error("Start import error:", err);
     return res.status(500).json({ message: "Failed to queue import" });
   }
 };
@@ -125,7 +107,6 @@ exports.getImportStatus = async (req, res) => {
       createdAt: job.createdAt,
     });
   } catch (err) {
-    console.error(err);
     res.status(500).json({ message: "Error fetching import status" });
   }
 };
@@ -201,7 +182,6 @@ exports.getAllJobs = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("Error fetching import jobs:", err);
     res.status(500).json({
       success: false,
       message: "Failed to fetch import jobs",
@@ -262,7 +242,6 @@ exports.getJobById = async (req, res) => {
       data: job,
     });
   } catch (err) {
-    console.error("Error fetching job:", err);
     res.status(500).json({
       success: false,
       message: "Failed to fetch job details",
@@ -314,7 +293,6 @@ exports.deleteJob = async (req, res) => {
       jobId,
     });
   } catch (err) {
-    console.error("Error deleting job:", err);
     res.status(500).json({
       success: false,
       message: "Failed to delete import job",
@@ -401,7 +379,6 @@ exports.updateJobStatus = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("Error updating job status:", err);
     res.status(500).json({
       success: false,
       message: "Failed to update job status",
@@ -473,7 +450,6 @@ exports.previewImportFile = async (req, res) => {
         originalFileName: file.originalname,
       });
     } catch (parseErr) {
-      console.error("Preview parse error:", parseErr);
       return res.status(400).json({
         success: false,
         message: "Could not parse file",
@@ -481,7 +457,6 @@ exports.previewImportFile = async (req, res) => {
       });
     }
   } catch (err) {
-    console.error(err);
     res.status(500).json({ message: "Server error during preview" });
   }
 };
@@ -538,7 +513,6 @@ exports.cancelImportJob = async (req, res) => {
       const bullJob = await bulkImportQueue.getJob(jobId); // note: job.id in BullMQ is usually string
       if (bullJob) {
         await bullJob.remove();
-        console.log(`[Cancel] Removed job ${jobId} from queue`);
       }
     } catch (queueErr) {
       console.warn(
@@ -555,7 +529,6 @@ exports.cancelImportJob = async (req, res) => {
       status: "cancelled",
     });
   } catch (err) {
-    console.error("Cancel job error:", err);
     res.status(500).json({
       success: false,
       message: "Failed to cancel import job",

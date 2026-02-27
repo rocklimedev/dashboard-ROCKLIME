@@ -402,7 +402,7 @@ exports.createProduct = async (req, res) => {
     });
   } catch (error) {
     await t.rollback();
-    console.error("createProduct error:", error);
+
     res.status(500).json({
       message: "Failed to create product",
       error: error.message,
@@ -635,7 +635,7 @@ exports.updateProduct = async (req, res) => {
     });
   } catch (error) {
     await t.rollback();
-    console.error("updateProduct error:", error);
+
     res
       .status(500)
       .json({ message: "Failed to update product", error: error.message });
@@ -840,7 +840,6 @@ exports.getAllProducts = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("getAllProducts error:", error);
     res.status(500).json({
       message: "Failed to fetch products",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
@@ -889,12 +888,6 @@ exports.getProductById = async (req, res) => {
         const parsed = JSON.parse(trimmed);
         return Array.isArray(parsed) ? parsed : [parsed]; // normalize to array
       } catch (err) {
-        console.warn(`[getProductById] Failed to parse JSON field:`, {
-          field: "images or meta",
-          rawValue:
-            trimmed.substring(0, 100) + (trimmed.length > 100 ? "..." : ""),
-          error: err.message,
-        });
         return fallback;
       }
     };
@@ -947,7 +940,6 @@ exports.getProductById = async (req, res) => {
       masterProductId: raw.masterProductId || raw.productId,
     });
   } catch (error) {
-    console.error("getProductById error:", error);
     res.status(500).json({ message: "Error fetching product" });
   }
 };
@@ -1155,7 +1147,6 @@ exports.getProductsByCategory = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("getProductsByCategory error:", error);
     res.status(500).json({
       message: "Failed to fetch products by category",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
@@ -1364,7 +1355,6 @@ exports.getProductsByBrand = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("getProductsByBrand error:", error);
     res.status(500).json({
       message: "Failed to fetch products by brand",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
@@ -1785,7 +1775,6 @@ exports.searchProducts = async (req, res) => {
 
     return res.status(200).json(enrichedProducts);
   } catch (error) {
-    console.error("searchProducts error:", error);
     return res.status(500).json({
       message: "Error searching products",
       error: error.message,
@@ -2026,7 +2015,6 @@ exports.getProductsByIds = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("getProductsByIds error:", err);
     return res.status(500).json({
       message: "Failed to fetch products by IDs",
       error: process.env.NODE_ENV === "development" ? err.message : undefined,
@@ -2185,7 +2173,6 @@ exports.checkproductCode = async (req, res) => {
 
     res.json({ exists: !!existing });
   } catch (error) {
-    console.error("Error checking product code:", error);
     res.status(500).json({ exists: false, error: "Server error" });
   }
 };
@@ -2429,7 +2416,7 @@ exports.replaceAllKeywordsForProduct = async (req, res) => {
     });
   } catch (error) {
     await t.rollback();
-    console.error("replaceAllKeywordsForProduct error:", error);
+
     res.status(500).json({ message: "Failed to update keywords" });
   }
 };
@@ -2469,11 +2456,6 @@ exports.getTopSellingProducts = async (req, res) => {
               ? JSON.parse(q.products)
               : q.products;
         } catch (e) {
-          console.warn(
-            "Failed to parse quotation products:",
-            q.quotationId,
-            e.message,
-          );
           return;
         }
         processItemsArray(items);
@@ -2518,9 +2500,7 @@ exports.getTopSellingProducts = async (req, res) => {
           if (Array.isArray(parsed) && parsed.length > 0) {
             itemsToUse = parsed;
           }
-        } catch (e) {
-          console.warn("Failed to parse order products:", order.id);
-        }
+        } catch (e) {}
       }
 
       // Priority 2: Fallback to linked quotation's products
@@ -2632,7 +2612,6 @@ exports.getTopSellingProducts = async (req, res) => {
       total: finalTopProducts.length,
     });
   } catch (err) {
-    console.error("getTopSellingProducts error:", err);
     res.status(500).json({
       message: "Failed to fetch top selling products",
       error: process.env.NODE_ENV === "development" ? err.message : undefined,
@@ -2911,7 +2890,7 @@ exports.bulkImportProducts = async (req, res) => {
     });
   } catch (error) {
     await t.rollback();
-    console.error("Bulk import error:", error);
+
     return res.status(500).json({
       success: false,
       message: "Bulk import failed",
