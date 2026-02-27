@@ -64,10 +64,6 @@ async function generateDailyPONumber(t) {
     });
 
     if (!conflict) return candidate;
-
-    console.warn(
-      `PO number collision: ${candidate} — attempt ${attempt}/${MAX_ATTEMPTS}`,
-    );
   }
 
   throw new Error(
@@ -210,11 +206,7 @@ exports.createPurchaseOrder = async (req, res) => {
     });
   } catch (err) {
     await t.rollback();
-    if (mongoDoc?._id) {
-      await PoItem.deleteOne({ _id: mongoDoc._id }).catch((e) =>
-        console.error("Orphaned Mongo cleanup failed:", mongoDoc._id, e),
-      );
-    }
+
     return res.status(500).json({
       message: "Failed to create Purchase Order",
       error: err.message,
@@ -334,7 +326,6 @@ exports.getPurchaseOrderById = async (req, res) => {
       return res.status(404).json({ message: "Purchase order not found" });
     // Temporary test route or console
 
-    console.log(po?.toJSON()?.createdBy);
     const items = await fetchPoItems(po.id);
 
     return res.json({
@@ -407,11 +398,6 @@ exports.getAllPurchaseOrders = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("Error in getAllPurchaseOrders:", {
-      message: err.message,
-      stack: err.stack,
-      name: err.name,
-    });
     return res.status(500).json({
       message: "Error listing Purchase Orders",
       error: err.message, // ← send it to frontend during dev

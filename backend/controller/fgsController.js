@@ -64,10 +64,6 @@ async function generateDailyFGSNumber(t) {
     });
 
     if (!conflict) return candidate;
-
-    console.warn(
-      `FGS number collision: ${candidate} — attempt ${attempt}/${MAX_ATTEMPTS}`,
-    );
   }
 
   throw new Error(
@@ -148,8 +144,7 @@ async function fetchFgsItems(fgsId) {
 exports.createFieldGuidedSheet = async (req, res) => {
   const t = await sequelize.transaction();
   let mongoDoc = null;
-  console.log("Request body:", req.body);
-  console.log("Authenticated user:", req.user);
+
   try {
     const { vendorId, items, expectDeliveryDate } = req.body;
     const userId = req.user?.userId || null; // ← from auth middleware
@@ -219,7 +214,6 @@ exports.createFieldGuidedSheet = async (req, res) => {
       );
     }
 
-    console.error("FGS create error:", err);
     return res.status(500).json({
       message: "Failed to create Field Guided Sheet",
       error: err.message,
@@ -361,7 +355,6 @@ exports.getFieldGuidedSheetById = async (req, res) => {
       createdBy, // ← add this explicitly if you want same shape as PO
     });
   } catch (err) {
-    console.error("Get FGS error:", err);
     return res
       .status(500)
       .json({ message: "Error fetching FGS", error: err.message });
@@ -423,7 +416,6 @@ exports.getAllFieldGuidedSheets = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("List FGS error:", err);
     return res
       .status(500)
       .json({ message: "Error listing Field Guided Sheets" });

@@ -6,7 +6,7 @@ const { auth } = require("../middleware/auth");
 const multer = require("multer");
 require("dotenv").config();
 
-// router.use(auth);
+router.use(auth);
 // ──────── MULTER CONFIG ────────
 const createUploader = (fieldName) => {
   return multer({

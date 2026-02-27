@@ -238,7 +238,7 @@ exports.updateProfile = async (req, res) => {
               ...address,
               userId: user.userId, // ← THIS WAS MISSING!
             },
-            { transaction: t }
+            { transaction: t },
           );
           user.addressId = newAddr.addressId;
         }
@@ -261,8 +261,8 @@ exports.updateProfile = async (req, res) => {
       err.message === "User not found"
         ? 404
         : err.message.includes("already exists")
-        ? 400
-        : 500;
+          ? 400
+          : 500;
     res.status(status).json({ message: err.message || "Server Error" });
   }
 };
@@ -547,7 +547,6 @@ exports.updateUser = async (req, res) => {
       data: updatedUser,
     });
   } catch (err) {
-    console.error("Update User Error:", err);
     return res.status(500).json({
       message: `Failed to update user: ${
         err.message || "Unknown server error"
@@ -663,7 +662,7 @@ exports.updateStatus = async (req, res) => {
     // Now safe to use excludeSensitiveFields
     const updatedUser = await User.findByPk(
       user.userId,
-      excludeSensitiveFields
+      excludeSensitiveFields,
     );
 
     res.status(200).json({

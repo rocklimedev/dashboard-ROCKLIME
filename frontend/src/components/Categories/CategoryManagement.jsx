@@ -138,12 +138,6 @@ const CategoryManagement = () => {
     else if (node.type === "category") id = node.data?.categoryId;
     else if (node.type === "keyword") id = node.data?.id;
 
-    if (id === undefined || id === null) {
-      console.warn("Invalid node selected", node);
-      setSelectedNode(null);
-      return;
-    }
-
     const newNode = {
       type: node.type,
       id,

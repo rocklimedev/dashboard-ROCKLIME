@@ -163,7 +163,6 @@ const searchAll = async (req, res) => {
               pages: 1,
             };
           } catch (error) {
-            console.error(`Search failed for ${key}:`, error);
             results[key] = {
               items: [],
               total: 0,
@@ -192,7 +191,6 @@ const searchAll = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Global search error:", error);
     return res.status(500).json({
       success: false,
       message: error.message || "An error occurred during search",

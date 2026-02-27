@@ -74,7 +74,7 @@ const AddAddress = ({
   const { data: addressesData, isLoading: isAddressesLoading } =
     useGetAllAddressesQuery(
       { customerId: selectedCustomer },
-      { skip: !selectedCustomer || addressType !== "customer" }
+      { skip: !selectedCustomer || addressType !== "customer" },
     );
 
   const customers = customersData?.data || [];
@@ -89,11 +89,11 @@ const AddAddress = ({
 
     const hasBilling = customerAddresses.some(
       (a) =>
-        a.status === "BILLING" && a.addressId !== existingAddress?.addressId
+        a.status === "BILLING" && a.addressId !== existingAddress?.addressId,
     );
     const hasPrimary = customerAddresses.some(
       (a) =>
-        a.status === "PRIMARY" && a.addressId !== existingAddress?.addressId
+        a.status === "PRIMARY" && a.addressId !== existingAddress?.addressId,
     );
 
     const options = ["ADDITIONAL"];
@@ -183,7 +183,6 @@ const AddAddress = ({
       onClose();
       form.resetFields();
     } catch (err) {
-      console.log(err);
       message.error(err?.data?.message || "Failed to save address");
     }
   };

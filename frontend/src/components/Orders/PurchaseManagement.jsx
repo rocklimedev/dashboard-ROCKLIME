@@ -408,7 +408,7 @@ const PurchaseManagement = () => {
     },
     { skip: activeTab !== "po" },
   );
-  console.log(poData);
+
   const [deletePurchaseOrder] = useDeletePurchaseOrderMutation();
   const [updatePurchaseOrderStatus, { isLoading: isUpdatingPOStatus }] =
     useUpdatePurchaseOrderStatusMutation();

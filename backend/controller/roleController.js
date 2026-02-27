@@ -95,11 +95,9 @@ const checkUserRoleStatus = async () => {
           createdAt: { [Op.lte]: sevenDaysAgo },
           status: { [Op.ne]: "inactive" },
         },
-      }
+      },
     );
-  } catch (error) {
-    console.error("Error in checkUserRoleStatus:", error);
-  }
+  } catch (error) {}
 };
 
 // Create a new role
@@ -135,7 +133,6 @@ const getAllRoles = async (req, res) => {
 
     res.status(200).json(roles);
   } catch (error) {
-    console.error("Error retrieving roles:", error); // ← Add logging in dev
     res.status(500).json({ message: "Error retrieving roles" });
   }
 };
@@ -225,7 +222,6 @@ const getRoleById = async (req, res) => {
 
     res.status(200).json(role);
   } catch (error) {
-    console.log("Error retrieving role:", error);
     res.status(500).json({ message: "Error retrieving role" });
   }
 };

@@ -275,7 +275,6 @@ const QuotationsDetails = () => {
 
       message.success(`Quotation exported successfully!`);
     } catch (err) {
-      console.error("Export error:", err);
       message.error("Export failed. Please try again.");
     } finally {
       setIsExporting(false);

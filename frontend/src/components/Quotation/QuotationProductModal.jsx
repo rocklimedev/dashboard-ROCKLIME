@@ -46,12 +46,11 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
   const allItems = useMemo(() => {
     const products = safeParse(q.products, []);
     if (products.length > 0) {
-      console.log("Using products array (has isOptionFor)");
       return products;
     }
 
     const items = q.items || [];
-    console.log("Falling back to items array (may miss isOptionFor)");
+
     return items;
   }, [q.products, q.items]);
 

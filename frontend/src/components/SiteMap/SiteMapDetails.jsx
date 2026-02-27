@@ -93,7 +93,7 @@ const SiteMapDetails = () => {
         items: grouped[floorNum],
         total: grouped[floorNum].reduce(
           (sum, item) => sum + (item.price || 0) * (item.quantity || 1),
-          0
+          0,
         ),
       }));
   }, [siteMap?.items]);
@@ -110,7 +110,6 @@ const SiteMapDetails = () => {
       await exportToPDF(siteMapRef, siteMap, customer);
       message.success("Quotation exported successfully!");
     } catch (err) {
-      console.error("PDF Export Error:", err);
       message.error("Failed to export PDF");
     }
   };

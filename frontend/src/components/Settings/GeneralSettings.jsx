@@ -58,15 +58,6 @@ const GeneralSettings = () => {
 
   // Handlers
   const handlePasswordChange = async (values) => {
-    // Log BEFORE calling the API — so we see it even on failure
-    console.log("→ Sending password change payload:", {
-      password: values.currentPassword,
-      newPassword: values.newPassword,
-    });
-
-    // Optional: also log the form values object itself
-    console.log("Form values received:", values);
-
     try {
       await changePassword({
         password: values.currentPassword,
@@ -77,14 +68,6 @@ const GeneralSettings = () => {
       passwordForm.resetFields();
       setShowPasswordModal(false);
     } catch (error) {
-      // Log the full error details — very helpful
-      console.error("Change password failed:", {
-        status: error?.status,
-        data: error?.data,
-        message: error?.data?.message,
-        originalError: error,
-      });
-
       message.error(error?.data?.message || "Failed to change password");
     }
   };
@@ -121,7 +104,6 @@ const GeneralSettings = () => {
       dispatch(logout());
       navigate("/login");
     } catch (error) {
-      console.error("Deactivation failed:", error);
       message.error(
         error?.data?.message ||
           "Failed to deactivate account. Please try again.",

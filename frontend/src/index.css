@@ -4,18 +4,121 @@
 @import url("./assets/css/animate.css");
 @import url("./assets/css/style.css");
 @import url("https://fonts.cdnfonts.com/css/neuropol-2");
-/* Remove default asterisk before label */
+/* Remove default asterisk */
 .ant-form-item-required::before {
   display: none !important;
 }
-/**/
-/* Add asterisk after label */
+
+/* Custom asterisk */
 .ant-form-item-required::after {
   content: " *";
   color: #ff4d4f;
   margin-left: 4px;
 }
 
+/* ===================================================== */
+/* --------------------- BUTTONS ----------------------- */
+/* ===================================================== */
+
+.ant-btn:hover,
+.ant-btn:focus {
+  border-color: #e31e24 !important;
+  color: #e31e24 !important;
+}
+
+.ant-btn-primary {
+  background-color: #e31e24 !important;
+  border-color: #e31e24 !important;
+  color: #fff !important;
+}
+
+.ant-btn-primary:hover,
+.ant-btn-primary:focus {
+  background-color: #e31e24 !important;
+  border-color: #e31e24 !important;
+  color: #fff !important;
+}
+
+/* ===================================================== */
+/* -------- INPUTS/TEXTAREAS/NORMAL FIELDS (FOCUS) ----- */
+/* ===================================================== */
+
+/* Default state (no red border) */
+.ant-input,
+.ant-input-affix-wrapper,
+.ant-input-number,
+.ant-picker,
+.ant-select-selector,
+.ant-input-search .ant-input {
+  border-color: #d9d9d9 !important; /* normal grey */
+}
+
+/* Focus (clicked) = red */
+.ant-input:focus,
+.ant-input-focused,
+.ant-input-affix-wrapper-focused,
+.ant-input-affix-wrapper:focus,
+.ant-input-number:focus,
+.ant-picker-focused,
+.ant-picker:focus,
+.ant-select-focused .ant-select-selector,
+.ant-select-selector:focus,
+.ant-input-search .ant-input:focus {
+  border-color: #e31e24 !important;
+  box-shadow: 0 0 0 2px rgba(227, 30, 36, 0.2) !important;
+}
+
+/* Remove hover border color — keep default grey */
+.ant-input:hover,
+.ant-input-affix-wrapper:hover,
+.ant-picker:hover,
+.ant-select-selector:hover,
+.ant-input-number:hover {
+  border-color: #d9d9d9 !important;
+}
+
+/* ===================================================== */
+/* ----------------- SEARCH BAR CLICK ------------------ */
+/* ===================================================== */
+
+/* Only when clicked */
+.ant-input-search:focus-within .ant-input {
+  border-color: #e31e24 !important;
+  box-shadow: 0 0 0 2px rgba(227, 30, 36, 0.2) !important;
+}
+
+/* Search button same color rule */
+.ant-input-search-button:focus {
+  border-color: #e31e24 !important;
+  color: #e31e24 !important;
+}
+
+/* ===================================================== */
+/* -------------------- SELECT DROPDOWN ---------------- */
+/* ===================================================== */
+
+.ant-select-selector:hover {
+  border-color: #d9d9d9 !important; /* keep default */
+}
+
+.ant-select-open .ant-select-selector,
+.ant-select-focused .ant-select-selector {
+  border-color: #e31e24 !important;
+  box-shadow: 0 0 0 2px rgba(227, 30, 36, 0.2) !important;
+}
+
+/* ===================================================== */
+/* ---------------------- DATE PICKER ------------------ */
+/* ===================================================== */
+
+.ant-picker:hover {
+  border-color: #d9d9d9 !important;
+}
+
+.ant-picker-focused {
+  border-color: #e31e24 !important;
+  box-shadow: 0 0 0 2px rgba(227, 30, 36, 0.2) !important;
+}
 /* Use variables */
 body {
   background: var(--bg-color);
@@ -796,7 +899,7 @@ body {
 }
 
 .card-content .actions .delete-icon:hover {
-  color: #d63031; /* Red for delete */
+  color: #d63031; /* #e31e24 for delete */
   transform: scale(1.1);
 }
 
@@ -1159,7 +1262,7 @@ body {
   gap: 10px;
 }
 
-.btn-red {
+.btn-#e31e24 {
   background: #d63031;
   color: #fff;
   border: none;
@@ -1169,13 +1272,13 @@ body {
   transition: background 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
 }
 
-.btn-red:hover {
+.btn-#e31e24:hover {
   background: linear-gradient(90deg, #d63031 0%, #27ae60 100%);
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
   transform: scale(1.05);
 }
 
-.btn-outline-red {
+.btn-outline-#e31e24 {
   border: 1px solid #d63031;
   color: #d63031;
   border-radius: 6px;
@@ -1185,7 +1288,7 @@ body {
     transform 0.3s ease;
 }
 
-.btn-outline-red:hover {
+.btn-outline-#e31e24:hover {
   background: linear-gradient(90deg, #d63031 0%, #27ae60 100%);
   color: #fff;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
@@ -1347,8 +1450,8 @@ body {
     width: 100%;
   }
 
-  .btn-red,
-  .btn-outline-red {
+  .btn-#e31e24,
+  .btn-outline-#e31e24 {
     width: 100%;
   }
 
@@ -2003,7 +2106,7 @@ body {
   color: #333333 !important;
   font-weight: 600;               /* optional – makes active tab bolder */
 }
-.active-red-btn {
+.active-#e31e24-btn {
   background-color: #e31e24  !important;
   border-color: #e31e24  !important;
   color: #fff !important;
@@ -2026,4 +2129,139 @@ body {
 /* Optional: selected/active tab text */
 .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
   color: #262626 !important;
+}
+.inventory-page {
+  padding: 24px;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.filter-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  margin-bottom: 32px;
+  padding: 20px;
+}
+
+.search-input .ant-input {
+  border-radius: 8px;
+  height: 44px;
+}
+
+.filter-controls {
+  width: 100%;
+  justify-content: flex-end;
+}
+
+.action-bar {
+  margin-top: 20px;
+  text-align: right;
+}
+
+.report-btn,
+.add-product-btn {
+  background: #1f2937;
+  border-color: #1f2937;
+}
+
+.report-btn:hover,
+.add-product-btn:hover {
+  background: #374151;
+  border-color: #374151;
+}
+
+.inventory-tabs .ant-tabs-tab {
+  padding: 12px 20px;
+  font-weight: 500;
+}
+
+.inventory-tabs .ant-tabs-tab-active {
+  font-weight: 600;
+  color: #111827;
+}
+
+.inventory-tabs .ant-badge-count {
+  background: #e5e7eb;
+  color: #374151;
+  box-shadow: none;
+}
+
+.table-container {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+.modern-inventory-table .ant-table-thead > tr > th {
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.82rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.product-link {
+  color: #111827;
+  font-weight: 500;
+}
+
+.product-link:hover {
+  color: #e11d48;
+}
+
+.product-codes {
+  margin-top: 4px;
+}
+
+.code-tag {
+  font-size: 12px;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.price-text {
+  color: #15803d;
+  font-weight: 600;
+}
+
+.action-btn {
+  border-radius: 6px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-btn.add { color: #16a34a; }
+.action-btn.remove { color: #dc2626; }
+.action-btn.history { color: #7c3aed; }
+
+.action-btn:hover {
+  background: #f1f5f9;
+}
+
+.pagination-wrapper {
+  margin-top: 32px;
+  display: flex;
+  justify-content: center;
+}
+
+.empty-card {
+  background: white;
+  border-radius: 12px;
+  padding: 60px 20px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+.loading-full {
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  color: #6b7280;
 }

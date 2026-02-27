@@ -258,16 +258,7 @@ exports.addComment = async (req, res) => {
         where: { userId },
         attributes: ["userId", "username", "name"],
       });
-    } catch (dbErr) {
-      console.error("MySQL lookup error in addComment:", {
-        userId,
-        error: dbErr.message,
-      });
-    }
-
-    if (!user) {
-      console.warn(`User not found in MySQL (proceeding) - userId: ${userId}`);
-    }
+    } catch (dbErr) {}
 
     // 4. Resource must exist
     const resourceValidation = await validateResource(resourceId, resourceType);
@@ -357,12 +348,6 @@ exports.addComment = async (req, res) => {
       comment: populatedComment,
     });
   } catch (err) {
-    console.error("Critical error in addComment:", {
-      message: err.message,
-      stack: err.stack,
-      body: req.body,
-    });
-
     return sendErrorResponse(res, 500, "Failed to add comment", err.message);
   }
 };
@@ -538,10 +523,6 @@ async function generateDailyOrderNumber(t) {
     if (!conflict) {
       return candidate;
     }
-
-    console.warn(
-      `Order number collision: ${candidate} — retrying (${attempt}/${MAX_ATTEMPTS})`,
-    );
   }
 
   throw new Error(
@@ -952,12 +933,7 @@ exports.createOrder = async (req, res) => {
           { orderId: order.id, items: mongoItems },
           { upsert: true },
         );
-      } catch (mongoErr) {
-        console.error(
-          "Warning: Failed to save OrderItems to MongoDB:",
-          mongoErr.message,
-        );
-      }
+      } catch (mongoErr) {}
     }
 
     // ── NOTIFICATIONS ──
@@ -985,10 +961,8 @@ exports.createOrder = async (req, res) => {
   } catch (err) {
     try {
       await t.rollback();
-    } catch (rollbackErr) {
-      console.warn("Rollback failed:", rollbackErr.message);
-    }
-    console.error("Create Order Error:", err);
+    } catch (rollbackErr) {}
+
     return sendErrorResponse(res, 500, "Failed to create order", err.message);
   }
 };
@@ -1399,7 +1373,6 @@ exports.updateOrderById = async (req, res) => {
       order,
     });
   } catch (err) {
-    console.error("Update Order Error:", err);
     return sendErrorResponse(res, 500, "Failed to update order", err.message);
   }
 };
@@ -1505,9 +1478,6 @@ exports.downloadInvoice = async (req, res) => {
     const response = await fetch(invoiceUrl);
 
     if (!response.ok) {
-      console.error(
-        `Failed to fetch invoice: ${response.status} ${response.statusText}`,
-      );
       return sendErrorResponse(
         res,
         502,
@@ -1534,11 +1504,7 @@ exports.downloadInvoice = async (req, res) => {
 
     // Stream the file directly to client
     await pipe(response.body, res);
-
-    // Log success
-    console.log(`Invoice downloaded: ${filename} (Order #${order.orderNo})`);
   } catch (err) {
-    console.error("downloadInvoice error:", err);
     return sendErrorResponse(res, 500, "Failed to download invoice");
   }
 };
@@ -1838,7 +1804,6 @@ exports.getAllOrders = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("getAllOrders error:", err);
     return sendErrorResponse(
       res,
       500,
@@ -1987,7 +1952,6 @@ exports.getOrderDetails = async (req, res) => {
           status: order.quotation.status,
         };
       } catch (err) {
-        console.error("Quotation enrichment failed:", err);
         orderWithDetails.quotationDetails = null;
         orderWithDetails.quotation.products = [];
       }
@@ -2016,7 +1980,6 @@ exports.getOrderDetails = async (req, res) => {
 
     return res.status(200).json({ order: orderWithDetails });
   } catch (err) {
-    console.error("Get order details error:", err);
     return sendErrorResponse(
       res,
       500,

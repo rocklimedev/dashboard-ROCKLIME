@@ -271,10 +271,6 @@ exports.forgotPassword = async (req, res, next) => {
 
           // Or even delete the stale user if you're aggressive
           // await User.destroy({ where: { userId: user.userId } });
-
-          console.warn(
-            `Hard bounce for ${user.email} - removing/invalidating user`,
-          );
         }
         throw mailError; // still fail the request or handle gracefully
       });
@@ -642,7 +638,6 @@ exports.getAllPermissionsOfLoggedInUser = async (req, res) => {
       roleId: role.roleId,
     });
   } catch (err) {
-    console.error("Error fetching permissions:", err);
     return res.status(500).json({
       message: "Failed to fetch permissions",
       error: err.message,

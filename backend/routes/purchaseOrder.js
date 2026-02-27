@@ -3,7 +3,7 @@ const express = require("express");
 const router = express.Router();
 const purchaseOrderController = require("../controller/purchaseOrderController");
 const { auth } = require("../middleware/auth");
-//router.use(auth);
+router.use(auth);
 // Create a new purchase order
 router.post("/", purchaseOrderController.createPurchaseOrder);
 

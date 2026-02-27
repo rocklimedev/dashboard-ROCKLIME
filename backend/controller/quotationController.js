@@ -172,10 +172,6 @@ async function generateQuotationNumber(t) {
     if (!exists) {
       return candidate;
     }
-
-    console.warn(
-      `Collision detected: ${candidate} — retrying (${attempt}/${MAX_ATTEMPTS})`,
-    );
   }
 
   throw new Error(
@@ -355,7 +351,7 @@ exports.createQuotation = async (req, res) => {
     });
   } catch (error) {
     await t.rollback();
-    console.error("Create Quotation Error:", error);
+
     return res.status(500).json({
       error: "Failed to create quotation",
       details: error.message,
@@ -415,10 +411,7 @@ exports.updateQuotation = async (req, res) => {
         updatedBy: req.user?.userId || "unknown",
         updatedAt: new Date(),
       });
-    } catch (verErr) {
-      console.warn("Version save failed (non-critical):", verErr.message);
-      // continue anyway
-    }
+    } catch (verErr) {}
 
     if (!Array.isArray(incomingProducts) || incomingProducts.length === 0) {
       await t.rollback();
@@ -555,7 +548,7 @@ exports.updateQuotation = async (req, res) => {
     });
   } catch (error) {
     await t.rollback();
-    console.error("Update Quotation Error:", error);
+
     return res.status(500).json({
       error: "Failed to update quotation",
       details: error.message,
@@ -1037,7 +1030,6 @@ exports.getAllQuotations = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("getAllQuotations error:", error);
     return res.status(500).json({
       message: "Error fetching quotations",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
@@ -1101,7 +1093,6 @@ exports.getQuotationVersions = async (req, res) => {
 
     res.status(200).json(cleanedVersions);
   } catch (error) {
-    console.error("getQuotationVersions error:", error);
     res.status(500).json({
       error: "Failed to retrieve versions",
       details: error.message,

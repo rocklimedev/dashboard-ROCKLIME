@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Avatar,
   Card,
@@ -13,6 +14,7 @@ import {
   Empty,
   Spin,
   Skeleton,
+  Badge,
 } from "antd";
 import {
   EditOutlined,
@@ -28,7 +30,6 @@ import {
   UserOutlined,
   ClockCircleOutlined,
 } from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
 import moment from "moment";
 import DataTable from "./DataTable";
 import AddAddress from "../Address/AddAddressModal";
@@ -37,6 +38,8 @@ import { useGetAllQuotationsQuery } from "../../api/quotationApi";
 import { useGetAllOrdersQuery } from "../../api/orderApi";
 import { useGetPurchaseOrdersQuery } from "../../api/poApi";
 import { useGetAllUserAddressesQuery } from "../../api/addressApi";
+
+import "./profile.css";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -50,15 +53,12 @@ const Profile = () => {
 
   const { data: quotationsData, isLoading: quotationsLoading } =
     useGetAllQuotationsQuery({ userId }, { skip });
-
   const { data: ordersData, isLoading: ordersLoading } = useGetAllOrdersQuery(
     { userId },
     { skip },
   );
-
   const { data: purchaseOrdersData, isLoading: posLoading } =
     useGetPurchaseOrdersQuery({ userId }, { skip });
-
   const {
     data: addressesData,
     isLoading: addressesLoading,
@@ -73,19 +73,19 @@ const Profile = () => {
 
   const myQuotations = useMemo(
     () => quotationsData?.data?.filter((q) => q.createdBy === userId) || [],
-    [quotationsData, userId],
+    [quotationsData],
   );
   const myOrders = useMemo(
     () =>
       ordersData?.orders?.filter(
         (o) => o.createdBy === userId || o.assignedUserId === userId,
       ) || [],
-    [ordersData, userId],
+    [ordersData],
   );
   const myPOs = useMemo(
     () =>
       purchaseOrdersData?.data?.filter((po) => po.createdBy === userId) || [],
-    [purchaseOrdersData, userId],
+    [purchaseOrdersData],
   );
 
   const formatDate = (date) =>
@@ -94,52 +94,56 @@ const Profile = () => {
   const primaryAddress =
     myAddresses.find((a) => a.status === "PRIMARY") || myAddresses[0];
 
-  if (isProfileLoading) {
-    return (
-      <div className="text-center py-10">
-        <Spin size="large" />
-      </div>
-    );
-  }
-
   const tabItems = [
     {
       key: "overview",
-      label: "Overview",
+      label: (
+        <Badge count={myQuotations.length} showZero overflowCount={99}>
+          Overview
+        </Badge>
+      ),
       children: quotationsLoading ? (
-        <Skeleton active paragraph={{ rows: 8 }} />
+        <Skeleton active paragraph={{ rows: 6 }} />
       ) : myQuotations.length === 0 ? (
-        <Empty description="No quotations created yet" />
+        <Empty
+          description="No quotations created yet"
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+        />
       ) : (
-        <Row gutter={[16, 16]}>
+        <div className="quotation-grid">
           {myQuotations.slice(0, 6).map((q) => (
-            <Col xs={24} sm={12} key={q.quotationId}>
-              <Card hoverable className="rounded-xl border border-gray-200">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h4 className="font-medium text-base text-gray-900">
-                      {q.document_title}
-                    </h4>
-                    <p className="text-gray-500 text-sm">
-                      Ref: {q.reference_number}
-                    </p>
-                    <p className="text-gray-600 text-sm mt-2">
-                      Due: {formatDate(q.due_date)}
-                    </p>
-                  </div>
-                  <Tag color="default" className="text-base font-medium">
-                    ₹{Number(q.finalAmount).toLocaleString()}
-                  </Tag>
+            <Card
+              key={q.quotationId}
+              hoverable
+              className="quotation-card"
+              bodyStyle={{ padding: "16px" }}
+            >
+              <div className="flex justify-between items-start">
+                <div>
+                  <h4 className="quotation-title">
+                    {q.document_title || "Quotation"}
+                  </h4>
+                  <p className="quotation-ref">
+                    Ref: {q.reference_number || "—"}
+                  </p>
+                  <p className="quotation-due">Due: {formatDate(q.due_date)}</p>
                 </div>
-              </Card>
-            </Col>
+                <div className="quotation-amount">
+                  ₹{Number(q.finalAmount || 0).toLocaleString("en-IN")}
+                </div>
+              </div>
+            </Card>
           ))}
-        </Row>
+        </div>
       ),
     },
     {
       key: "orders",
-      label: "Orders",
+      label: (
+        <Badge count={myOrders.length} showZero overflowCount={99}>
+          Orders
+        </Badge>
+      ),
       children: ordersLoading ? (
         <Skeleton active />
       ) : (
@@ -149,27 +153,47 @@ const Profile = () => {
             {
               title: "Order #",
               dataIndex: "orderNo",
-              render: (text) => <strong className="text-gray-900">{text}</strong>,
+              render: (text) => <strong>{text}</strong>,
             },
             { title: "Customer", render: (r) => r.customers?.name || "—" },
             {
               title: "Status",
-              render: (r) => <Tag color="default">{r.status}</Tag>,
+              render: (r) => (
+                <Tag
+                  color={
+                    r.status === "DELIVERED"
+                      ? "success"
+                      : r.status === "CANCELED"
+                        ? "error"
+                        : "processing"
+                  }
+                >
+                  {r.status}
+                </Tag>
+              ),
             },
             {
               title: "Total",
-              render: (r) => `₹${Number(r.finalAmount || 0).toFixed(2)}`,
+              render: (r) =>
+                `₹${Number(r.finalAmount || 0).toLocaleString("en-IN")}`,
             },
-            { title: "Date", render: (r) => formatDate(r.orderDate) },
+            {
+              title: "Date",
+              render: (r) => formatDate(r.orderDate || r.createdAt),
+            },
           ]}
           rowKey="id"
-          pagination={{ pageSize: 10 }}
+          pagination={{ pageSize: 8 }}
         />
       ),
     },
     {
       key: "purchaseorders",
-      label: "Purchase Orders",
+      label: (
+        <Badge count={myPOs.length} showZero overflowCount={99}>
+          Purchase Orders
+        </Badge>
+      ),
       children: posLoading ? (
         <Skeleton active />
       ) : (
@@ -177,10 +201,7 @@ const Profile = () => {
           dataSource={myPOs}
           columns={[
             { title: "PO #", dataIndex: "poNumber" },
-            {
-              title: "Vendor",
-              render: (r) => r.Vendor?.vendorName || "—",
-            },
+            { title: "Vendor", render: (r) => r.Vendor?.vendorName || "—" },
             {
               title: "Status",
               dataIndex: "status",
@@ -188,203 +209,195 @@ const Profile = () => {
             },
             {
               title: "Amount",
-              render: (r) => `₹${Number(r.totalAmount).toFixed(2)}`,
+              render: (r) =>
+                `₹${Number(r.totalAmount || 0).toLocaleString("en-IN")}`,
             },
           ]}
           rowKey="id"
-          pagination={{ pageSize: 10 }}
+          pagination={{ pageSize: 8 }}
         />
       ),
     },
   ];
 
+  if (isProfileLoading) {
+    return (
+      <div className="profile-loading">
+        <Spin size="large" />
+      </div>
+    );
+  }
+
   return (
     <div className="page-wrapper">
       <div className="content">
-        <div
-          style={{
-            background: "#f5f5f5", // gray-2
-            minHeight: "100vh",
-            padding: "24px 16px",
-          }}
-        >
-          <div style={{ maxWidth: 1400, margin: "0 auto" }}>
-            {/* Header Hero Section */}
-            <Card className="mb-6 shadow rounded-2xl border-0 bg-white">
-              <div className="grid md:grid-cols-4 gap-6 items-center">
-                <div className="text-center md:text-left">
-                  <Avatar
-                    size={120}
-                    src={user?.avatarUrl || user?.photo_thumbnail}
-                    icon={<UserOutlined />}
-                    className="shadow border-4 border-white"
-                  />
-                </div>
+        <div className="profile-page">
+          <div className="profile-container">
+            {/* Hero Header */}
+            <Card className="profile-hero">
+              <div className="hero-content">
+                <Avatar
+                  size={140}
+                  src={user?.avatarUrl || user?.photo_thumbnail}
+                  icon={<UserOutlined />}
+                  className="hero-avatar"
+                />
 
-                <div className="md:col-span-2">
-                  <h2 className="text-3xl font-bold text-gray-900">
-                    {user?.name}
-                  </h2>
-                  <p className="text-lg text-gray-600">
-                    @{user?.username || "user"}
-                  </p>
-                  <Space wrap className="mt-3">
+                <div className="hero-info">
+                  <h1 className="hero-name">{user?.name || "User"}</h1>
+                  <p className="hero-username">@{user?.username || "—"}</p>
+
+                  <Space wrap size="small" className="hero-roles">
                     {user?.roles?.map((role) => (
-                      <Tag
-                        key={role}
-                        color="default"
-                        className="text-sm font-medium py-1 px-3 border-gray-300"
-                      >
+                      <Tag key={role} className="role-tag">
                         {role.replace(/_/g, " ")}
                       </Tag>
                     ))}
                   </Space>
                 </div>
 
-                <div className="text-center md:text-right">
-                  <Button
-                    type="primary"
-                    size="large"
-                    style={{ background: "#E31E24", borderColor: "#E31E24" }}
-                    icon={<EditOutlined />}
-                    onClick={() => navigate(`/u/${userId}/edit`)}
-                    className="rounded-xl font-medium"
-                  >
-                    Edit Profile
-                  </Button>
-                </div>
+                <Button
+                  type="primary"
+                  icon={<EditOutlined />}
+                  onClick={() => navigate(`/u/${userId}/edit`)}
+                  className="edit-profile-btn"
+                >
+                  Edit Profile
+                </Button>
               </div>
 
-              <Divider className="my-6 border-gray-200" />
+              <Divider />
 
-              <Row gutter={[16, 16]}>
-                <Col xs={12} md={6}>
+              <Row gutter={[16, 16]} className="hero-stats">
+                <Col xs={12} sm={6}>
                   <Statistic
-                    title="Total Quotations"
+                    title="Quotations"
                     value={myQuotations.length}
-                    prefix={<FileTextOutlined className="text-gray-500" />}
-                    valueStyle={{ color: "#262626" }}
+                    prefix={<FileTextOutlined />}
                   />
                 </Col>
-                <Col xs={12} md={6}>
+                <Col xs={12} sm={6}>
                   <Statistic
                     title="Active Orders"
                     value={
                       myOrders.filter((o) => o.status !== "DELIVERED").length
                     }
-                    prefix={<ShoppingCartOutlined className="text-gray-500" />}
-                    valueStyle={{ color: "#262626" }}
+                    prefix={<ShoppingCartOutlined />}
                   />
                 </Col>
-                <Col xs={12} md={6}>
+                <Col xs={12} sm={6}>
                   <Statistic
                     title="Purchase Orders"
                     value={myPOs.length}
-                    prefix={<DollarCircleOutlined className="text-gray-500" />}
-                    valueStyle={{ color: "#262626" }}
+                    prefix={<DollarCircleOutlined />}
                   />
                 </Col>
-                <Col xs={12} md={6}>
+                <Col xs={12} sm={6}>
                   <Statistic
                     title="Team"
                     value={user?.team || "Individual"}
-                    prefix={<TeamOutlined className="text-gray-500" />}
-                    valueStyle={{ color: "#262626" }}
+                    prefix={<TeamOutlined />}
                   />
                 </Col>
               </Row>
             </Card>
 
             <Row gutter={[24, 24]}>
+              {/* Left Column – Personal Info + Address */}
               <Col xs={24} lg={8}>
-                <Card
-                  title="Personal Information"
-                  className="shadow rounded-xl border border-gray-200 bg-white"
-                >
-                  <Space direction="vertical" size="large" className="w-full">
-                    <div>
-                      <div className="text-gray-600 text-sm">Email</div>
-                      <div className="font-medium flex items-center gap-2 text-gray-900">
-                        <MailOutlined className="text-gray-500" />
-                        <a href={`mailto:${user?.email}`}>{user?.email}</a>
+                <Card title="Personal Information" className="info-card">
+                  <Space direction="vertical" size="middle" className="w-full">
+                    <div className="info-row">
+                      <MailOutlined className="info-icon" />
+                      <div>
+                        <div className="info-label">Email</div>
+                        <a
+                          href={`mailto:${user?.email}`}
+                          className="info-value"
+                        >
+                          {user?.email || "—"}
+                        </a>
                       </div>
                     </div>
-                    <div>
-                      <div className="text-gray-600 text-sm">Phone</div>
-                      <div className="font-medium flex items-center gap-2 text-gray-900">
-                        <PhoneOutlined className="text-gray-500" />
-                        {user?.mobileNumber || "Not added"}
+
+                    <div className="info-row">
+                      <PhoneOutlined className="info-icon" />
+                      <div>
+                        <div className="info-label">Phone</div>
+                        <div className="info-value">
+                          {user?.mobileNumber || "Not added"}
+                        </div>
                       </div>
                     </div>
-                    <div>
-                      <div className="text-gray-600 text-sm">Birthday</div>
-                      <div className="font-medium flex items-center gap-2 text-gray-900">
-                        <CalendarOutlined className="text-gray-500" />
-                        {formatDate(user?.dateOfBirth)}
+
+                    <div className="info-row">
+                      <CalendarOutlined className="info-icon" />
+                      <div>
+                        <div className="info-label">Birthday</div>
+                        <div className="info-value">
+                          {formatDate(user?.dateOfBirth)}
+                        </div>
                       </div>
                     </div>
-                    <div>
-                      <div className="text-gray-600 text-sm">Joined</div>
-                      <div className="font-medium flex items-center gap-2 text-gray-900">
-                        <ClockCircleOutlined className="text-gray-500" />
-                        {formatDate(user?.createdAt)}
+
+                    <div className="info-row">
+                      <ClockCircleOutlined className="info-icon" />
+                      <div>
+                        <div className="info-label">Joined</div>
+                        <div className="info-value">
+                          {formatDate(user?.createdAt)}
+                        </div>
                       </div>
                     </div>
                   </Space>
+                </Card>
 
-                  <Card
-                    title="Primary Address"
-                    className="shadow rounded-xl mt-6 border border-gray-200 bg-white"
-                    loading={addressesLoading}
-                    extra={
-                      <Button
-                        type="text"
-                        icon={<PlusOutlined />}
-                        onClick={() => setAddressModalOpen(true)}
-                        className="text-gray-700 hover:text-[#E31E24]"
-                      >
-                        {myAddresses.length > 0 ? "Manage" : "Add"}
-                      </Button>
-                    }
-                  >
-                    {primaryAddress ? (
-                      <div className="flex items-start gap-3">
-                        <EnvironmentOutlined className="text-gray-500 text-xl mt-1" />
-                        <div>
-                          <div className="font-medium text-gray-900">
-                            {primaryAddress.street}
-                          </div>
-                          <div className="text-gray-600">
-                            {primaryAddress.city}, {primaryAddress.state}{" "}
-                            {primaryAddress.postalCode}
-                          </div>
-                          <div className="text-gray-600">
-                            {primaryAddress.country}
-                          </div>
-                          {primaryAddress.status === "PRIMARY" && (
-                            <Tag color="default" className="mt-2 border-gray-300">
-                              Primary
-                            </Tag>
-                          )}
+                <Card
+                  title="Primary Address"
+                  className="address-card mt-6"
+                  loading={addressesLoading}
+                  extra={
+                    <Button
+                      type="text"
+                      icon={<PlusOutlined />}
+                      onClick={() => setAddressModalOpen(true)}
+                    >
+                      {myAddresses.length > 0 ? "Manage" : "Add"}
+                    </Button>
+                  }
+                >
+                  {primaryAddress ? (
+                    <div className="address-content">
+                      <EnvironmentOutlined className="address-icon" />
+                      <div>
+                        <div className="address-street">
+                          {primaryAddress.street}
                         </div>
+                        <div className="address-city">
+                          {primaryAddress.city}, {primaryAddress.state}{" "}
+                          {primaryAddress.postalCode &&
+                            `(${primaryAddress.postalCode})`}
+                        </div>
+                        <div className="address-country">
+                          {primaryAddress.country || "India"}
+                        </div>
+                        {primaryAddress.status === "PRIMARY" && (
+                          <Tag color="blue" className="mt-2">
+                            Primary
+                          </Tag>
+                        )}
                       </div>
-                    ) : (
-                      <Empty
-                        description="No address added"
-                        image={Empty.PRESENTED_IMAGE_SIMPLE}
-                      />
-                    )}
-                  </Card>
+                    </div>
+                  ) : (
+                    <Empty description="No address added yet" />
+                  )}
                 </Card>
               </Col>
 
+              {/* Right Column – Tabs */}
               <Col xs={24} lg={16}>
-                <Card className="shadow rounded-xl border border-gray-200 bg-white">
-                  <Tabs
-                    items={tabItems}
-                    size="large"
-                    defaultActiveKey="overview"
-                  />
+                <Card className="tabs-card">
+                  <Tabs items={tabItems} size="large" />
                 </Card>
               </Col>
             </Row>

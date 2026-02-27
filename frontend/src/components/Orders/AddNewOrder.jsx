@@ -590,7 +590,7 @@ const AddNewOrder = ({ adminName }) => {
             : err?.status === 500
               ? "Server error."
               : "Something went wrong.";
-      console.error(err);
+
       message.error(msg);
     }
   };

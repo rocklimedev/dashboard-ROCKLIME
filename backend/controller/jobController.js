@@ -11,22 +11,6 @@ const XLSX = require("xlsx");
 // POST /api/jobs/bulk-import/start
 
 exports.startBulkImport = async (req, res) => {
-  console.log("┌──────────────────────────────────────────────┐");
-  console.log("│          startBulkImport - DEBUG LOG         │");
-  console.log("└──────────────────────────────────────────────┘");
-  console.log("Request received at:", new Date().toISOString());
-  console.log(
-    "User:",
-    req.user?.id || "anonymous",
-    "Role:",
-    req.user?.role || "none",
-  );
-  console.log("Content-Type:", req.headers["content-type"]);
-  console.log("Has files?", !!req.files);
-  console.log("File present?", !!req.files?.file?.[0]);
-  console.log("req.body keys:", Object.keys(req.body || {}));
-  console.log("req.body:", JSON.stringify(req.body, null, 2));
-
   try {
     // 1. Validate file upload
     if (!req.files || !req.files.file || !req.files.file[0]) {
@@ -52,9 +36,7 @@ exports.startBulkImport = async (req, res) => {
         if (typeof mapping !== "object" || mapping === null) {
           throw new Error("Mapping must be a valid JSON object");
         }
-        console.log("Parsed mapping:", mapping);
       } catch (parseErr) {
-        console.error("Mapping parse error:", parseErr.message);
         return res.status(400).json({
           success: false,
           message: "Invalid mapping format – must be valid JSON object",
@@ -105,17 +87,11 @@ exports.startBulkImport = async (req, res) => {
       });
     }
 
-    console.log(
-      `[startBulkImport] Using selectedBrandId (UUID): ${selectedBrandId}`,
-    );
-
     // 5. Upload file to FTP / storage
     let ftpPath;
     try {
       ftpPath = await uploadToFtp(file.buffer, file.originalname);
-      console.log("File uploaded to FTP:", ftpPath);
     } catch (uploadErr) {
-      console.error("FTP upload failed:", uploadErr);
       return res.status(500).json({
         success: false,
         message: "Failed to store uploaded file",
@@ -147,8 +123,6 @@ exports.startBulkImport = async (req, res) => {
       userId: req.user?.id || null,
     });
 
-    console.log(`Job created with ID: ${jobRecord.id}`);
-
     // 7. Queue the job
     await jobsQueue.add(
       "process-job",
@@ -161,8 +135,6 @@ exports.startBulkImport = async (req, res) => {
       },
     );
 
-    console.log(`Job ${jobRecord.id} queued successfully`);
-
     // 8. Success response
     return res.status(202).json({
       success: true,
@@ -173,9 +145,6 @@ exports.startBulkImport = async (req, res) => {
       brandId: selectedBrandId,
     });
   } catch (err) {
-    console.error("startBulkImport failed:", err.message);
-    console.error(err.stack);
-
     return res.status(500).json({
       success: false,
       message: "Failed to start bulk import job",
@@ -202,7 +171,6 @@ exports.getJobStatus = async (req, res) => {
       createdAt: job.createdAt,
     });
   } catch (err) {
-    console.error(err);
     res.status(500).json({ message: "Error fetching job status" });
   }
 };
@@ -259,7 +227,6 @@ exports.getAllJobs = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("Error fetching jobs:", err);
     res.status(500).json({
       success: false,
       message: "Failed to fetch jobs",
@@ -275,17 +242,10 @@ exports.getJobById = async (req, res) => {
   try {
     const { jobId } = req.params;
 
-    // ────────────────────────────── Logging for debugging ──────────────────────────────
-    console.log(`[getJobById] Requested jobId: ${jobId}`);
-    console.log(
-      `[getJobById] User: ${req.user?.id || "anonymous"}, Role: ${req.user?.role || "none"}`,
-    );
-
     // Validate UUID format (very helpful in development)
     const uuidRegex =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(jobId)) {
-      console.warn(`[getJobById] Invalid UUID format: ${jobId}`);
       return res.status(400).json({
         success: false,
         message: "Invalid job ID format. Expected UUID.",
@@ -319,12 +279,8 @@ exports.getJobById = async (req, res) => {
     });
 
     if (!job) {
-      console.log(`[getJobById] Job not found for ID: ${jobId}`);
       // Optional: confirm no record exists (for debugging)
       const count = await Job.count({ where: { id: jobId } });
-      if (count === 0) {
-        console.log(`[getJobById] Confirmed: 0 records with id = ${jobId}`);
-      }
 
       return res.status(404).json({
         success: false,
@@ -353,9 +309,6 @@ exports.getJobById = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("[getJobById] Error:", err.message);
-    console.error(err.stack); // full stack for serious debugging
-
     return res.status(500).json({
       success: false,
       message: "Failed to fetch job details",
@@ -394,7 +347,6 @@ exports.deleteJob = async (req, res) => {
       jobId,
     });
   } catch (err) {
-    console.error("Error deleting job:", err);
     res.status(500).json({
       success: false,
       message: "Failed to delete job",
@@ -470,7 +422,6 @@ exports.updateJobStatus = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("Error updating job status:", err);
     res.status(500).json({
       success: false,
       message: "Failed to update job status",
@@ -542,7 +493,6 @@ exports.previewImportFile = async (req, res) => {
         originalFileName: file.originalname,
       });
     } catch (parseErr) {
-      console.error("Preview parse error:", parseErr);
       return res.status(400).json({
         success: false,
         message: "Could not parse file",
@@ -550,7 +500,6 @@ exports.previewImportFile = async (req, res) => {
       });
     }
   } catch (err) {
-    console.error(err);
     res.status(500).json({ message: "Server error during preview" });
   }
 };
@@ -597,7 +546,6 @@ exports.cancelJob = async (req, res) => {
       const bullJob = await jobsQueue.getJob(jobId.toString()); // BullMQ job IDs are strings
       if (bullJob) {
         await bullJob.remove();
-        console.log(`[Cancel] Removed job ${jobId} from queue`);
       }
     } catch (queueErr) {
       console.warn(
@@ -614,7 +562,6 @@ exports.cancelJob = async (req, res) => {
       status: "cancelled",
     });
   } catch (err) {
-    console.error("Cancel job error:", err);
     res.status(500).json({
       success: false,
       message: "Failed to cancel job",
@@ -660,7 +607,6 @@ exports.startReportGeneration = async (req, res) => {
       status: "pending",
     });
   } catch (err) {
-    console.error("Start report generation error:", err);
     return res.status(500).json({ message: "Failed to queue job" });
   }
 };
@@ -699,7 +645,6 @@ exports.downloadSuccessfulEntries = async (req, res) => {
 
     return res.send(fileBuffer);
   } catch (err) {
-    console.error("Download successful entries error:", err);
     res.status(500).json({ message: "Failed to download file" });
   }
 };

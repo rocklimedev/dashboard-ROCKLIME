@@ -293,7 +293,6 @@ const NewSiteMapDetails = () => {
       await exportToPDF(printContainerRef, siteMap, `${safeTitle}.pdf`);
       message.success("Site Map exported successfully!");
     } catch (err) {
-      console.error(err);
       message.error("Export failed");
     }
   };
