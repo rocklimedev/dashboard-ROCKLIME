@@ -18,6 +18,12 @@ export const categoryApi = baseApi.injectEndpoints({
       query: (id) => `/category/${id}`,
       providesTags: ["Category"],
     }),
+    // ⭐ NEW: Get all categories by brandId
+    getCategoriesByBrand: builder.query({
+      query: (brandId) => `/category/by-brand/${brandId}`,
+      providesTags: ["Category"],
+    }),
+
     updateCategory: builder.mutation({
       query: ({ id, updatedData }) => ({
         url: `/category/${id}`,
@@ -41,5 +47,7 @@ export const {
   useGetAllCategoriesQuery,
   useGetCategoryByIdQuery,
   useUpdateCategoryMutation,
+  useGetCategoriesByBrandQuery,
+
   useDeleteCategoryMutation,
 } = categoryApi;

@@ -362,11 +362,14 @@ exports.createQuotation = async (req, res) => {
 // ─────────────────────────────────────────────
 // UPDATE QUOTATION
 // ─────────────────────────────────────────────
+// UPDATE QUOTATION
+// ─────────────────────────────────────────────
 exports.updateQuotation = async (req, res) => {
   const t = await sequelize.transaction();
 
   try {
     const { id } = req.params;
+
     let {
       products: incomingProducts,
       followupDates = [],
@@ -374,7 +377,7 @@ exports.updateQuotation = async (req, res) => {
       extraDiscountType = "percent",
       shippingAmount = 0,
       gst = 0,
-      roundOff = 0,
+      roundOff = 0, // client may send, but we override with calculated value
       ...quotationData
     } = req.body;
 
@@ -383,6 +386,7 @@ exports.updateQuotation = async (req, res) => {
       return res.status(400).json({ message: "Quotation ID is required" });
     }
 
+    // Fetch current quotation (PostgreSQL)
     const currentQuotation = await Quotation.findOne({
       where: { quotationId: id },
       transaction: t,
@@ -393,26 +397,94 @@ exports.updateQuotation = async (req, res) => {
       return res.status(404).json({ message: "Quotation not found" });
     }
 
-    // Save version (non-blocking on failure)
-    const latestVersion = await QuotationVersion.findOne({
-      quotationId: id,
-    }).sort({ version: -1 });
-
-    let newVersionNumber = latestVersion ? latestVersion.version + 1 : 1;
-
-    const currentMongoItems = await QuotationItem.findOne({ quotationId: id });
+    // ─────────────────────────────────────────────
+    // VERSIONING – Mongoose (done OUTSIDE transaction)
+    // ─────────────────────────────────────────────
+    let newVersionNumber = 1;
 
     try {
+      const latestVersionDoc = await QuotationVersion.findOne({
+        quotationId: id,
+      })
+        .sort({ version: -1 })
+        .lean();
+
+      if (latestVersionDoc) {
+        newVersionNumber = latestVersionDoc.version + 1;
+      }
+
+      // Fetch current items from MongoDB for versioning
+      const currentMongoItems = await QuotationItem.findOne({
+        quotationId: id,
+      }).lean();
+
+      // Get plain quotation data for snapshot
+      const rawQuotation = await Quotation.findOne({
+        where: { quotationId: id },
+        attributes: [
+          "quotationId",
+          "reference_number",
+          "customerId",
+          "products",
+          "extraDiscount",
+          "extraDiscountType",
+          "discountAmount",
+          "shippingAmount",
+          "gst",
+          "gstAmount",
+          "roundOff",
+          "finalAmount",
+          "followupDates",
+          "createdAt",
+          "updatedAt",
+        ],
+        raw: true,
+        transaction: t,
+      });
+
+      const safeQuotationData = {
+        quotationId: rawQuotation.quotationId,
+        reference_number: rawQuotation.reference_number,
+        customerId: rawQuotation.customerId,
+        products: rawQuotation.products || [],
+        extraDiscount: Number(rawQuotation.extraDiscount ?? 0),
+        extraDiscountType: rawQuotation.extraDiscountType || "percent",
+        discountAmount: Number(rawQuotation.discountAmount ?? 0),
+        shippingAmount: Number(rawQuotation.shippingAmount ?? 0),
+        gst: Number(rawQuotation.gst ?? 0),
+        gstAmount: Number(rawQuotation.gstAmount ?? 0),
+        roundOff: Number(rawQuotation.roundOff ?? 0),
+        finalAmount: Number(rawQuotation.finalAmount ?? 0),
+        followupDates: rawQuotation.followupDates || null,
+        createdAt: rawQuotation.createdAt
+          ? rawQuotation.createdAt.toISOString()
+          : null,
+        updatedAt: rawQuotation.updatedAt
+          ? rawQuotation.updatedAt.toISOString()
+          : null,
+      };
+
+      // Save version
       await QuotationVersion.create({
         quotationId: id,
         version: newVersionNumber,
-        quotationData: currentQuotation.toJSON(),
+        quotationData: safeQuotationData,
         quotationItems: currentMongoItems?.items || [],
-        updatedBy: req.user?.userId || "unknown",
+        updatedBy: req.user?.userId || "System",
         updatedAt: new Date(),
       });
-    } catch (verErr) {}
+    } catch (versionErr) {
+      console.error(
+        `Versioning failed for quotation ${id} (version ${newVersionNumber}):`,
+        {
+          message: versionErr.message,
+          stack: versionErr.stack,
+        },
+      );
+      // Continue – versioning is non-critical
+    }
 
+    // ─── Validate incoming products ─────────────────────────────────────
     if (!Array.isArray(incomingProducts) || incomingProducts.length === 0) {
       await t.rollback();
       return res
@@ -420,14 +492,14 @@ exports.updateQuotation = async (req, res) => {
         .json({ error: "At least one product is required" });
     }
 
-    // Fetch product details (same as create)
+    // ─── Fetch product master data ───────────────────────────────────────
     const productIds = [
       ...new Set(
         incomingProducts.map((p) => p.productId || p.id).filter(Boolean),
       ),
     ];
-    const productMap = {};
 
+    const productMap = {};
     if (productIds.length > 0) {
       const dbProducts = await Product.findAll({
         where: { productId: productIds },
@@ -451,6 +523,7 @@ exports.updateQuotation = async (req, res) => {
             if (Array.isArray(imgs) && imgs.length) imageUrl = imgs[0];
           } catch {}
         }
+
         productMap[p.productId] = {
           name: p.name?.trim() || "Unnamed Product",
           imageUrl,
@@ -462,29 +535,26 @@ exports.updateQuotation = async (req, res) => {
       });
     }
 
-    // Enrich incoming products
+    // ─── Enrich products & recalculate line totals ───────────────────────
     const enrichedProducts = incomingProducts.map((p) => {
-      const id = p.productId || p.id;
-      const db = productMap[id] || {};
+      const prodId = p.productId || p.id;
+      const db = productMap[prodId] || {};
 
       const price = Number(p.price || 0);
-      const qty = Number(p.quantity) || 1;
+      const qty = Number(p.quantity || 1);
       const discount = Number(p.discount || 0);
       const discountType = p.discountType || db.discountType || "percent";
 
       const isOption = !!p.isOptionFor;
       const groupId = p.groupId || (isOption ? null : generateGroupId());
 
-      let total = p.total ? Number(p.total) : 0;
-      if (!total) {
-        total =
-          discountType === "percent"
-            ? price * qty * (1 - discount / 100)
-            : (price - discount) * qty;
-      }
-      // Inside map()
+      let lineTotalAfterDiscount =
+        discountType === "percent"
+          ? price * qty * (1 - discount / 100)
+          : (price - discount) * qty;
+
       return {
-        productId: id,
+        productId: prodId,
         name: p.name || db.name || "Unknown Product",
         imageUrl: p.imageUrl || db.imageUrl || null,
         productCode: p.productCode || db.productCode || null,
@@ -493,7 +563,7 @@ exports.updateQuotation = async (req, res) => {
         price: Number(price.toFixed(2)),
         discount: Number(discount.toFixed(2)),
         discountType,
-        tax: 0, // ← force to 0
+        tax: 0, // GST-inclusive → force 0
         total: Number(lineTotalAfterDiscount.toFixed(2)),
         isOptionFor: isOption ? p.isOptionFor : null,
         optionType: p.optionType || null,
@@ -501,6 +571,7 @@ exports.updateQuotation = async (req, res) => {
       };
     });
 
+    // ─── Recalculate totals ──────────────────────────────────────────────
     const totals = calculateTotals(
       enrichedProducts,
       Number(extraDiscount),
@@ -509,13 +580,13 @@ exports.updateQuotation = async (req, res) => {
       Number(gst),
     );
 
-    // Update main record
+    // ─── Update main quotation (PostgreSQL) ──────────────────────────────
     await Quotation.update(
       {
         ...quotationData,
         products: enrichedProducts,
         extraDiscount: Number(extraDiscount) || 0,
-        extraDiscountType,
+        extraDiscountType: extraDiscountType || "percent",
         discountAmount: totals.extraDiscountAmount,
         shippingAmount: Number(shippingAmount) || 0,
         gst: Number(gst) || 0,
@@ -527,17 +598,23 @@ exports.updateQuotation = async (req, res) => {
       { where: { quotationId: id }, transaction: t },
     );
 
-    // Update MongoDB items
-    if (enrichedProducts.length > 0) {
-      await QuotationItem.updateOne(
-        { quotationId: id },
-        { $set: { items: enrichedProducts } },
-        { upsert: true },
-      );
-    } else {
-      await QuotationItem.deleteOne({ quotationId: id });
+    // ─── Sync MongoDB items (OUTSIDE transaction) ────────────────────────
+    try {
+      if (enrichedProducts.length > 0) {
+        await QuotationItem.updateOne(
+          { quotationId: id },
+          { $set: { items: enrichedProducts } },
+          { upsert: true },
+        );
+      } else {
+        await QuotationItem.deleteOne({ quotationId: id });
+      }
+    } catch (mongoErr) {
+      console.error(`MongoDB items sync failed for quotation ${id}:`, mongoErr);
+      // Non-fatal – we already committed PostgreSQL changes
     }
 
+    // ─── Commit PostgreSQL transaction ───────────────────────────────────
     await t.commit();
 
     return res.status(200).json({
@@ -547,7 +624,13 @@ exports.updateQuotation = async (req, res) => {
       calculated: totals,
     });
   } catch (error) {
-    await t.rollback();
+    await t.rollback().catch(() => {});
+
+    console.error("updateQuotation failed:", {
+      message: error.message,
+      stack: error.stack,
+      quotationId: req.params.id,
+    });
 
     return res.status(500).json({
       error: "Failed to update quotation",
@@ -555,7 +638,6 @@ exports.updateQuotation = async (req, res) => {
     });
   }
 };
-
 // EXPORT TO EXCEL – includes shippingAmount
 exports.exportQuotation = async (req, res) => {
   try {

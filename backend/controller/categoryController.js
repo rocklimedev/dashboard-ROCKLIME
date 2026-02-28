@@ -52,7 +52,7 @@ exports.createCategory = async (req, res) => {
 
     const category = await Category.create(
       { name, slug, brandId, parentCategoryId },
-      { transaction: t }
+      { transaction: t },
     );
 
     if (Array.isArray(keywords) && keywords.length) {
@@ -61,14 +61,14 @@ exports.createCategory = async (req, res) => {
           keywords
             .map(String)
             .map((k) => k.trim())
-            .filter(Boolean)
+            .filter(Boolean),
         ),
       ];
       // If your Keyword model is globally unique on `keyword`, replace with findOrCreate or switch to composite unique (see note at bottom).
       for (const k of clean) {
         await Keyword.create(
           { keyword: k, categoryId: category.categoryId },
-          { transaction: t }
+          { transaction: t },
         );
       }
     }
@@ -214,7 +214,7 @@ exports.updateCategory = async (req, res) => {
           keywords
             .map(String)
             .map((k) => k.trim())
-            .filter(Boolean)
+            .filter(Boolean),
         ),
       ];
       const existing = await Keyword.findAll({
@@ -236,7 +236,7 @@ exports.updateCategory = async (req, res) => {
       for (const k of toAdd) {
         await Keyword.create(
           { keyword: k, categoryId: id },
-          { transaction: t }
+          { transaction: t },
         );
       }
     }
@@ -308,7 +308,7 @@ exports.replaceCategoryKeywords = async (req, res) => {
         (Array.isArray(keywords) ? keywords : [])
           .map(String)
           .map((k) => k.trim())
-          .filter(Boolean)
+          .filter(Boolean),
       ),
     ];
 
@@ -342,5 +342,49 @@ exports.replaceCategoryKeywords = async (req, res) => {
   } catch (error) {
     await t.rollback();
     return res.status(500).json({ success: false, message: error.message });
+  }
+};
+// Get all categories for a specific brandId
+exports.getAllCategoriesByBrand = async (req, res) => {
+  try {
+    const { brandId } = req.params;
+
+    if (!brandId) {
+      return res.status(400).json({
+        success: false,
+        message: "brandId is required",
+      });
+    }
+
+    const categories = await Category.findAll({
+      where: { brandId },
+      include: [
+        {
+          model: ParentCategory,
+          as: "parentCategory",
+          attributes: ["id", "name", "slug"],
+        },
+        {
+          model: Brand,
+          as: "brand",
+          attributes: ["id", "brandName", "brandSlug"],
+        },
+        { model: Keyword, as: "keywords" },
+      ],
+      order: [
+        ["name", "ASC"],
+        [{ model: Keyword, as: "keywords" }, "keyword", "ASC"],
+      ],
+    });
+
+    return res.status(200).json({
+      success: true,
+      categories,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
