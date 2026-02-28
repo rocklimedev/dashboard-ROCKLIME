@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { useGetPurchaseOrderByIdQuery } from "../../api/poApi";
 import { message } from "antd";
 import logo from "../../assets/img/logo.png";
+import defaultProductImg from "../../assets/img/default.png"; // ← Import default image
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import ExcelJS from "exceljs";
@@ -61,38 +62,79 @@ const PODetails = () => {
           message.error("Purchase Order content not found.");
           return;
         }
+
+        // Minimize visual disruption
+        const originalScrollY = window.scrollY;
+        window.scrollTo({ top: 0, behavior: "instant" });
+
+        // Small delay helps images stabilize and reduces flicker
+        await new Promise((resolve) => setTimeout(resolve, 400));
+
         const canvas = await html2canvas(poRef.current, {
-          scale: 2,
+          scale: 2.5, // Higher quality
           useCORS: true,
+          allowTaint: false,
           logging: false,
+          backgroundColor: "#ffffff",
+          windowWidth: poRef.current.scrollWidth,
+          windowHeight: poRef.current.scrollHeight,
+          onclone: (clonedDoc) => {
+            // Force images to load eagerly in the cloned document
+            Array.from(clonedDoc.getElementsByTagName("img")).forEach((img) => {
+              if (!img.complete) {
+                img.loading = "eager";
+              }
+            });
+          },
         });
+
         const pdf = new jsPDF({
           orientation: "portrait",
           unit: "mm",
           format: "a4",
         });
+
         const imgWidth = 190;
         const pageHeight = 297;
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
         let heightLeft = imgHeight;
         let position = 10;
-        const imgData = canvas.toDataURL("image/png");
-        pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+
+        pdf.addImage(
+          canvas.toDataURL("image/png"),
+          "PNG",
+          10,
+          position,
+          imgWidth,
+          imgHeight,
+        );
         heightLeft -= pageHeight - 20;
+
         while (heightLeft > 0) {
           pdf.addPage();
           position = heightLeft - imgHeight + 10;
-          pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+          pdf.addImage(
+            canvas.toDataURL("image/png"),
+            "PNG",
+            10,
+            position,
+            imgWidth,
+            imgHeight,
+          );
           heightLeft -= pageHeight - 20;
         }
+
         pdf.save(`PurchaseOrder_${poNumber || id}.pdf`);
+
+        // Restore scroll position
+        window.scrollTo({ top: originalScrollY, behavior: "instant" });
       } else if (exportFormat === "excel") {
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet("Purchase Order");
 
         worksheet.columns = [
           { width: 8 }, // S.No
-          { width: 15 }, // Image placeholder (we skip actual image in excel for simplicity)
+          { width: 15 }, // Image placeholder
           { width: 35 }, // Product Name
           { width: 18 }, // Product Code
           { width: 12 }, // MRP
@@ -100,10 +142,9 @@ const PODetails = () => {
           { width: 14 }, // Total
         ];
 
-        // Logo & Title (same structure)
+        // Header section
         worksheet.mergeCells("A1:G1");
         worksheet.getCell("A1").value = " ";
-        // You can add image logic here if needed (similar to before)
 
         worksheet.mergeCells("B2:D2");
         worksheet.getCell("B2").value = "Purchase Order";
@@ -111,7 +152,7 @@ const PODetails = () => {
         worksheet.getCell("B2").alignment = { horizontal: "center" };
 
         worksheet.mergeCells("E2:G2");
-        worksheet.getCell("E2").value = " "; // Brand can be added if you want
+        worksheet.getCell("E2").value = " ";
 
         // Vendor & Dates
         worksheet.getCell("A4").value = "Vendor";
@@ -119,17 +160,17 @@ const PODetails = () => {
         worksheet.mergeCells("B4:D4");
 
         worksheet.getCell("E4").value = "Order Date";
-        worksheet.getCell("F4").value = new Date(
-          orderDate,
-        ).toLocaleDateString();
+        worksheet.getCell("F4").value = orderDate
+          ? new Date(orderDate).toLocaleDateString("en-IN")
+          : "N/A";
 
         worksheet.getCell("A5").value = "Expected Delivery";
         worksheet.getCell("B5").value = expectDeliveryDate
-          ? new Date(expectDeliveryDate).toLocaleDateString()
+          ? new Date(expectDeliveryDate).toLocaleDateString("en-IN")
           : "N/A";
         worksheet.mergeCells("B5:D5");
 
-        // Headers
+        // Table headers
         const headerRow = worksheet.addRow([
           "S.No",
           "Product Image",
@@ -145,16 +186,16 @@ const PODetails = () => {
         items.forEach((item, index) => {
           worksheet.addRow([
             index + 1,
-            "", // image placeholder
+            "", // Image placeholder (can be extended later with base64)
             item.productName || "N/A",
             item.companyCode || "N/A",
-            `₹${Number(item.unitPrice || 0).toFixed(2)}`,
+            `₹${Number(item.unitPrice ?? 0).toFixed(2)}`,
             item.quantity || 0,
-            `₹${Number(item.total || 0).toFixed(2)}`,
+            `₹${Number(item.total ?? 0).toFixed(2)}`,
           ]);
         });
 
-        // Total
+        // Grand Total
         worksheet.addRow([
           "",
           "",
@@ -162,7 +203,7 @@ const PODetails = () => {
           "",
           "",
           "Total",
-          `₹${Number(totalAmount || 0).toFixed(2)}`,
+          `₹${Number(totalAmount ?? 0).toFixed(2)}`,
         ]);
 
         const buffer = await workbook.xlsx.writeBuffer();
@@ -178,6 +219,7 @@ const PODetails = () => {
       }
     } catch (err) {
       message.error(`Export failed: ${err.message}`);
+      console.error(err);
     } finally {
       setIsExporting(false);
     }
@@ -207,7 +249,7 @@ const PODetails = () => {
                 <table className="po-table full-width">
                   <tbody>
                     <tr>
-                      <td colSpan="3" style={{ textAlign: "center" }}>
+                      <td colSpan={3} style={{ textAlign: "center" }}>
                         <img
                           src={logo}
                           alt="Company Logo"
@@ -218,7 +260,7 @@ const PODetails = () => {
                     <tr>
                       <td></td>
                       <td className="title-cell">Purchase Order</td>
-                      <td className="brand-cell">{poNumber}</td>
+                      <td className="brand-cell">{poNumber || "—"}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -273,39 +315,37 @@ const PODetails = () => {
                         <tr key={item._id || index}>
                           <td>{index + 1}</td>
                           <td>
-                            {item.imageUrl ? (
-                              <img
-                                src={item.imageUrl}
-                                alt={item.productName || "Product image"}
-                                style={{
-                                  maxWidth: "80px",
-                                  maxHeight: "80px",
-                                  objectFit: "contain",
-                                  borderRadius: "4px",
-                                  border: "1px solid #eee",
-                                }}
-                                onError={(e) => {
-                                  e.currentTarget.src =
-                                    "/assets/fallback-product.png"; // optional fallback
-                                  e.currentTarget.alt = "Image failed to load";
-                                }}
-                              />
-                            ) : (
-                              <span>N/A</span>
-                            )}
+                            <img
+                              src={item.imageUrl || defaultProductImg}
+                              alt={item.productName || "Product"}
+                              style={{
+                                maxWidth: "80px",
+                                maxHeight: "80px",
+                                objectFit: "contain",
+                                borderRadius: "4px",
+                                border: "1px solid #eee",
+                                backgroundColor: "#f8f9fa",
+                              }}
+                              onError={(e) => {
+                                e.currentTarget.src = defaultProductImg;
+                                e.currentTarget.style.border =
+                                  "1px solid #dc3545";
+                              }}
+                              loading="lazy"
+                              crossOrigin="anonymous"
+                            />
                           </td>
                           <td>{item.productName || "N/A"}</td>
                           <td>{item.companyCode || "N/A"}</td>
                           <td>
-                            ₹
-                            {Number(item.unitPrice || item.mrp || 0).toFixed(2)}
+                            ₹{(item.unitPrice ?? item.mrp ?? 0).toFixed(2)}
                           </td>
                           <td>{item.quantity || 0}</td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="7" className="text-center">
+                        <td colSpan={6} className="text-center">
                           No products in this purchase order
                         </td>
                       </tr>
@@ -325,12 +365,13 @@ const PODetails = () => {
                   <option value="pdf">Export as PDF</option>
                   <option value="excel">Export as Excel</option>
                 </select>
+
                 <button
                   className="btn btn-primary d-flex justify-content-center align-items-center"
                   onClick={handleExport}
                   disabled={isExporting}
                 >
-                  <PrinterOutlined />
+                  <PrinterOutlined className="me-2" />
                   {isExporting ? "Exporting..." : "Export Purchase Order"}
                 </button>
               </div>
