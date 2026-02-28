@@ -41,6 +41,11 @@ const ProductCard = ({ product, handleAddToCart, cartLoadingStates, menu }) => {
   const rawPrice = meta[META_KEYS.SELLING_PRICE];
   const priceValue = rawPrice ? parseFloat(rawPrice) : NaN;
 
+  // Company Code extraction
+  const companyCode = meta[META_KEYS.COMPANY_CODE]
+    ? String(meta[META_KEYS.COMPANY_CODE]).trim()
+    : "—";
+
   const displayPrice = !isNaN(priceValue)
     ? `₹${priceValue.toFixed(2)}`
     : "Price not set";
@@ -77,8 +82,10 @@ const ProductCard = ({ product, handleAddToCart, cartLoadingStates, menu }) => {
   };
 
   const handleQuantityChange = (e) => {
-    const num = parseInt(e.target.value);
-    if (!isNaN(num)) updateCartQuantity(num);
+    const num = parseInt(e.target.value, 10);
+    if (!isNaN(num)) {
+      updateCartQuantity(num);
+    }
   };
 
   return (
@@ -116,9 +123,38 @@ const ProductCard = ({ product, handleAddToCart, cartLoadingStates, menu }) => {
         <Link to={`/product/${product.productId}`}>{product.name}</Link>
       </h6>
 
-      {/* PRICE */}
-      <div className="price">
-        <p className="text-gray-9 mb-0 fw-bold">{displayPrice}</p>
+      {/* COMPANY CODE + PRICE – placed side by side, code on left */}
+      <div
+        className="meta-row"
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: "0 12px",
+          margin: "8px 0 12px",
+        }}
+      >
+        {/* Left: Company Code */}
+        <div className="company-code">
+          <span className="text-muted" style={{ fontSize: "0.9rem" }}>
+            <strong style={{ color: "#1a1a1a", fontWeight: 600 }}>
+              {companyCode}
+            </strong>
+          </span>
+        </div>
+
+        {/* Right: Price */}
+        <div className="price">
+          <p
+            className="mb-0 fw-bold"
+            style={{
+              fontSize: "1.1rem",
+              color: isNaN(priceValue) ? "#999" : "#d32f2f",
+            }}
+          >
+            {displayPrice}
+          </p>
+        </div>
       </div>
 
       {/* ADD TO CART SECTION */}

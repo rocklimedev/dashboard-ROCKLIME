@@ -47,11 +47,19 @@ const SearchOverlay = ({ visible, loading, results, onClose, query }) => {
 
   if (!visible) return null;
 
+  // Get filtered groups with at least 1 item
   const resultGroups = results
     ? Object.entries(results).filter(([_, data]) => data.items?.length > 0)
     : [];
 
-  const hasResults = resultGroups.length > 0;
+  // Prioritize "Product" → always first if present
+  const prioritizedGroups = [...resultGroups].sort((a, b) => {
+    if (a[0] === "Product") return -1;
+    if (b[0] === "Product") return 1;
+    return 0;
+  });
+
+  const hasResults = prioritizedGroups.length > 0;
 
   // Safe text highlighter
   const highlightText = (text, highlight) => {
@@ -60,7 +68,7 @@ const SearchOverlay = ({ visible, loading, results, onClose, query }) => {
       const regex = new RegExp(`(${highlight.trim()})`, "gi");
       const parts = text.split(regex);
       return parts.map((part, i) =>
-        regex.test(part) ? <mark key={i}>{part}</mark> : part
+        regex.test(part) ? <mark key={i}>{part}</mark> : part,
       );
     } catch {
       return text;
@@ -184,17 +192,15 @@ const SearchOverlay = ({ visible, loading, results, onClose, query }) => {
     return base[modelName] || { link: "#", title: "Unknown Item" };
   };
 
-  // Navigate to full search page when "Show all" is clicked
-  const handleShowAll = () => {
-    onClose(); // Close overlay first
+  // Navigate to full search page
+  const handleViewAllResults = () => {
+    onClose();
     if (query?.trim()) {
       navigate(`/search?q=${encodeURIComponent(query.trim())}`);
     } else {
       navigate("/search");
     }
   };
-
-  const MAX_VISIBLE_PER_GROUP = 5;
 
   return (
     <div className="search-overlay-backdrop" onClick={onClose}>
@@ -213,6 +219,16 @@ const SearchOverlay = ({ visible, loading, results, onClose, query }) => {
               "Type to search users, products, orders, invoices..."
             )}
           </span>
+
+          {query?.trim() && hasResults && (
+            <Button
+              type="link"
+              onClick={handleViewAllResults}
+              className="view-all-link"
+            >
+              View all results <DownOutlined />
+            </Button>
+          )}
         </div>
 
         <Spin spinning={loading}>
@@ -241,72 +257,53 @@ const SearchOverlay = ({ visible, loading, results, onClose, query }) => {
                 style={{ margin: "60px 0" }}
               />
             ) : (
-              <>
-                {resultGroups.map(([modelName, { items }]) => {
-                  const visibleItems = items.slice(0, MAX_VISIBLE_PER_GROUP);
-                  const remaining = items.length - visibleItems.length;
+              prioritizedGroups.map(([modelName, { items }]) => (
+                <div key={modelName} className="search-result-group">
+                  <div className="search-group-title">
+                    {modelName}s{" "}
+                    <span className="result-count">({items.length})</span>
+                  </div>
 
-                  return (
-                    <div key={modelName} className="search-result-group">
-                      <div className="search-group-title">
-                        {modelName}s{" "}
-                        <span className="result-count">({items.length})</span>
-                      </div>
+                  {items.map((item) => {
+                    const { link, title } = getLinkAndTitle(modelName, item);
+                    const secondary = getSecondaryText(modelName, item);
+                    const key =
+                      item.userId ||
+                      item.productId ||
+                      item.id ||
+                      item.invoiceId ||
+                      item.quotationId ||
+                      item.categoryId ||
+                      item.companyId ||
+                      Math.random().toString();
 
-                      {visibleItems.map((item) => {
-                        const { link, title } = getLinkAndTitle(
-                          modelName,
-                          item
-                        );
-                        const secondary = getSecondaryText(modelName, item);
-                        const key =
-                          item.userId ||
-                          item.productId ||
-                          item.id ||
-                          item.invoiceId ||
-                          item.quotationId ||
-                          item.categoryId ||
-                          item.companyId ||
-                          Math.random().toString();
-
-                        return (
-                          <Link
-                            key={key}
-                            to={link}
-                            className="search-result-item d-flex align-items-center"
-                            onClick={onClose}
-                            tabIndex={0}
-                          >
-                            <div className="result-avatar me-3">
-                              {getIconAndAvatar(modelName, item)}
-                            </div>
-
-                            <div className="result-content flex-grow-1">
-                              <div className="result-title">
-                                {highlightText(title, query)}
-                              </div>
-                              {secondary && (
-                                <div className="result-meta text-muted small">
-                                  {secondary}
-                                </div>
-                              )}
-                            </div>
-                          </Link>
-                        );
-                      })}
-
-                      {remaining > 0 && (
-                        <div className="text-center py-3">
-                          <Button type="link" onClick={handleShowAll}>
-                            Show all results for "{query}" ({items.length}{" "}
-                            total) <DownOutlined />
-                          </Button>
+                    return (
+                      <Link
+                        key={key}
+                        to={link}
+                        className="search-result-item d-flex align-items-center"
+                        onClick={onClose}
+                        tabIndex={0}
+                      >
+                        <div className="result-avatar me-3">
+                          {getIconAndAvatar(modelName, item)}
                         </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </>
+
+                        <div className="result-content flex-grow-1">
+                          <div className="result-title">
+                            {highlightText(title, query)}
+                          </div>
+                          {secondary && (
+                            <div className="result-meta text-muted small">
+                              {highlightText(secondary, query)}
+                            </div>
+                          )}
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              ))
             )}
           </div>
         </Spin>
