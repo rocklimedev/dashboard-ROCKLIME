@@ -1155,10 +1155,7 @@ exports.getProductsByCategory = async (req, res) => {
 };
 // ─────────────────────────────────────────────────────────────────────────────
 // Get products by brandId (with pagination, search, and metaDetails)
-// ─────────────────────────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────────
-// Get products by brandId (paginated, searchable, enriched meta & keywords)
-// ─────────────────────────────────────────────────────────────────────────────
+
 exports.getProductsByBrand = async (req, res) => {
   const { brandId } = req.params;
   const { page = 1, limit = 50, search } = req.query;
@@ -1181,56 +1178,65 @@ exports.getProductsByBrand = async (req, res) => {
     // ── Base where clause ───────────────────────────────────────────────
     const where = { brandId };
 
-    // ── Search support (MySQL compatible – case-insensitive) ────────────
+    // ── Search support – fully case-insensitive ─────────────────────────
+    // ── Search support – fully case-insensitive, multi-word AND ──────────
     if (search && search.trim()) {
-      const searchTerm = search.trim().toLowerCase();
-      const pattern = `%${searchTerm}%`;
+      const searchWords = search
+        .trim()
+        .toLowerCase()
+        .split(/\s+/)
+        .filter((w) => w.length > 0);
 
-      where[Op.or] = [
-        // Product name
-        sequelize.where(
-          sequelize.fn("LOWER", sequelize.col("Product.name")),
-          Op.like,
-          pattern,
-        ),
+      if (searchWords.length > 0) {
+        where[Op.and] = searchWords.map((word) => {
+          const pattern = `%${word}%`;
 
-        // Company code / Model code in JSON meta – FIXED with quoted key
-        sequelize.where(
-          sequelize.fn(
-            "LOWER",
-            sequelize.fn(
-              "JSON_EXTRACT",
-              sequelize.col("Product.meta"),
-              sequelize.literal(`'$."d11da9f9-3f2e-4536-8236-9671200cca4a"'`),
-            ),
-          ),
-          Op.like,
-          pattern,
-        ),
+          return {
+            [Op.or]: [
+              // Product name
+              sequelize.where(
+                sequelize.fn("LOWER", sequelize.col("Product.name")),
+                Op.like,
+                pattern,
+              ),
 
-        // Keywords
-        sequelize.where(
-          sequelize.fn("LOWER", sequelize.col("keywords.keyword")),
-          Op.like,
-          pattern,
-        ),
+              // Model code from meta
+              sequelize.where(
+                sequelize.fn(
+                  "LOWER",
+                  sequelize.fn(
+                    "JSON_EXTRACT",
+                    sequelize.col("Product.meta"),
+                    sequelize.literal(
+                      `'$."d11da9f9-3f2e-4536-8236-9671200cca4a"'`,
+                    ),
+                  ),
+                ),
+                Op.like,
+                pattern,
+              ),
 
-        // Category names (via keyword → category relation)
-        sequelize.where(
-          sequelize.fn("LOWER", sequelize.col("keywords.categories.name")),
-          Op.like,
-          pattern,
-        ),
+              // Keywords
+              sequelize.where(
+                sequelize.fn("LOWER", sequelize.col("keywords.keyword")),
+                Op.like,
+                pattern,
+              ),
 
-        // Optional: uncomment if you have a real product_code / sku column
-        // sequelize.where(
-        //   sequelize.fn("LOWER", sequelize.col("Product.product_code")),
-        //   Op.like,
-        //   pattern
-        // ),
-      ];
+              // Category names
+              sequelize.where(
+                sequelize.fn(
+                  "LOWER",
+                  sequelize.col("keywords.categories.name"),
+                ),
+                Op.like,
+                pattern,
+              ),
+            ],
+          };
+        });
+      }
     }
-    // ────────────────────────────────────────────────────────────────────
 
     const { count: totalProducts, rows: products } =
       await Product.findAndCountAll({
@@ -1355,6 +1361,7 @@ exports.getProductsByBrand = async (req, res) => {
       },
     });
   } catch (error) {
+    console.error("Error in getProductsByBrand:", error);
     res.status(500).json({
       message: "Failed to fetch products by brand",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,

@@ -42,7 +42,7 @@ import PageHeader from "../Common/PageHeader";
 import Breadcrumb from "./Breadcrumb";
 import pos from "../../assets/img/default.png";
 import PermissionGate from "../../context/PermissionGate";
-import { debounce } from "lodash"; // Make sure lodash is installed: npm install lodash
+import { debounce } from "lodash";
 
 // ────────────────────────────────────────────────
 //   META UUIDS – keep in sync with backend
@@ -50,8 +50,9 @@ import { debounce } from "lodash"; // Make sure lodash is installed: npm install
 const META_KEYS = {
   SELLING_PRICE: "9ba862ef-f993-4873-95ef-1fef10036aa5",
   MODEL_CODE: "d11da9f9-3f2e-4536-8236-9671200cca4a",
-  SIZE_FEET: "7e2b4efb-4ff2-4e4d-9b08-82559a7e3cd0", // ← Add this line
+  SIZE_FEET: "7e2b4efb-4ff2-4e4d-9b08-82559a7e3cd0",
 };
+
 // Brands that use the sizeFeet meta field and should show the size filter
 const BRANDS_WITH_SIZE_FILTER = [
   "50105657-7686-11f0-9e84-52540021303b", // SGT
@@ -60,6 +61,7 @@ const BRANDS_WITH_SIZE_FILTER = [
   "50107b22-7686-11f0-9e84-52540021303b", // UW
   "987bb747-773d-11f0-9e84-52540021303b", // SUBWAY
 ];
+
 const ProductsList = () => {
   const { id, bpcId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -75,38 +77,23 @@ const ProductsList = () => {
   const [viewMode, setViewMode] = useState("list");
   const [cartLoadingStates, setCartLoadingStates] = useState({});
   const [localSearch, setLocalSearch] = useState(urlSearch);
+  const [searchTerm, setSearchTerm] = useState(urlSearch); // debounced & normalized value
 
   const pageSize = 50;
 
   const isBrandView = !!id && !bpcId;
   const isBpcView = !!bpcId;
   const isCategoryView = !!id && !isBrandView && !isBpcView;
-  // ── Read state from URL ───────────────────────────────
-  const urlSizes = searchParams.getAll("size"); // supports multiple ?size=2x2&size=4x2
+
+  const urlSizes = searchParams.getAll("size");
   const [selectedSizes, setSelectedSizes] = useState(urlSizes);
   const showSizeFilter =
     isBrandView && id && BRANDS_WITH_SIZE_FILTER.includes(id);
-  // Sync when URL changes (back/forward navigation)
+
+  // Sync selected sizes when URL changes
   useEffect(() => {
     setSelectedSizes(searchParams.getAll("size"));
   }, [searchParams]);
-  // ── Debounced search update ───────────────────────────
-  const debouncedUpdateSearch = useMemo(
-    () =>
-      debounce((value) => {
-        setSearchParams((prev) => {
-          const next = new URLSearchParams(prev);
-          if (value.trim()) {
-            next.set("search", value.trim());
-          } else {
-            next.delete("search");
-          }
-          next.set("page", "1"); // reset to page 1 on search change
-          return next;
-        });
-      }, 400),
-    [setSearchParams],
-  );
   const COMMON_SIZES_FEET = [
     "12''X12''",
     "12''X18''",
@@ -120,22 +107,49 @@ const ProductsList = () => {
     "32''x64''",
     "32''x96''",
   ];
-  // Sync local search when URL search changes (browser back/forward, reset, etc.)
+  // Sync localSearch & searchTerm when URL changes (back/forward, reset)
   useEffect(() => {
     setLocalSearch(urlSearch);
+    setSearchTerm(urlSearch);
   }, [urlSearch]);
+
+  // Debounced search handler with normalization
+  const debouncedSetSearch = useMemo(
+    () =>
+      debounce((value) => {
+        // Normalize: replace + , ; | with space, remove extra spaces
+        const normalized = value
+          .replace(/[+;,|]+/g, " ") // treat + , ; | as separators
+          .replace(/\s+/g, " ") // collapse multiple spaces
+          .trim();
+
+        setSearchTerm(normalized);
+
+        setSearchParams((prev) => {
+          const next = new URLSearchParams(prev);
+          if (normalized) {
+            next.set("search", normalized);
+          } else {
+            next.delete("search");
+          }
+          next.set("page", "1");
+          return next;
+        });
+      }, 450),
+    [setSearchParams],
+  );
 
   // Cleanup debounce
   useEffect(() => {
     return () => {
-      debouncedUpdateSearch.cancel();
+      debouncedSetSearch.cancel();
     };
-  }, [debouncedUpdateSearch]);
+  }, [debouncedSetSearch]);
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setLocalSearch(value); // instant UI update
-    debouncedUpdateSearch(value); // delayed URL + query trigger
+    debouncedSetSearch(value); // delayed normalized update + URL
   };
 
   // ── Queries ────────────────────────────────────────────
@@ -144,7 +158,7 @@ const ProductsList = () => {
       brandId: id || "",
       page: currentPage,
       limit: pageSize,
-      search: urlSearch || undefined,
+      search: searchTerm || undefined,
     },
     { skip: !isBrandView || !id },
   );
@@ -154,7 +168,7 @@ const ProductsList = () => {
       categoryId: id || "",
       page: currentPage,
       limit: pageSize,
-      search: urlSearch || undefined,
+      search: searchTerm || undefined,
     },
     { skip: !isCategoryView || !id },
   );
@@ -163,7 +177,7 @@ const ProductsList = () => {
     {
       page: currentPage,
       limit: pageSize,
-      search: urlSearch || undefined,
+      search: searchTerm || undefined,
     },
     { skip: isBrandView || isCategoryView },
   );
@@ -248,13 +262,15 @@ const ProductsList = () => {
         return price !== null && price >= min && price <= max;
       });
     }
-    // Size filter – only apply when the filter is visible (and thus selectedSizes may have values)
+
+    // Size filter
     if (showSizeFilter && selectedSizes.length > 0) {
       result = result.filter((product) => {
         const sizeValue = (product?.meta?.[META_KEYS.SIZE_FEET] || "").trim();
         return selectedSizes.includes(sizeValue);
       });
     }
+
     // Sorting
     if (sortField && sortOrder) {
       result = result.sort((a, b) => {
@@ -291,7 +307,7 @@ const ProductsList = () => {
     priceMax,
     sortField,
     sortOrder,
-    showSizeFilter, // ← add
+    showSizeFilter,
     selectedSizes,
   ]);
 
@@ -334,6 +350,7 @@ const ProductsList = () => {
   const resetFilters = () => {
     setSearchParams({ page: currentPage.toString() });
     setLocalSearch("");
+    setSearchTerm("");
   };
 
   // ── Table Columns ──────────────────────────────────────
@@ -577,6 +594,10 @@ const ProductsList = () => {
           ]
         : [{ label: "Home", url: "/" }, { label: "Products" }];
 
+  // Show spinner while debounce is pending
+  const isSearchPending =
+    localSearch.trim() !== searchTerm.trim() && localSearch.trim() !== "";
+
   return (
     <div className="page-wrapper">
       <div className="content">
@@ -598,12 +619,13 @@ const ProductsList = () => {
             <Form.Item>
               <Input
                 prefix={<SearchOutlined />}
-                placeholder="Search products..."
+                placeholder="Search products... (e.g. essence l)"
                 value={localSearch}
                 onChange={handleSearchChange}
                 allowClear
                 size="large"
                 style={{ width: 300 }}
+                suffix={isSearchPending ? <Spin size="small" /> : null}
               />
             </Form.Item>
 
@@ -664,6 +686,7 @@ const ProductsList = () => {
             </Form.Item>
           </Form>
         </div>
+
         {isLoading ? (
           <div className="text-center py-5">
             <Spin size="large" />
@@ -675,8 +698,12 @@ const ProductsList = () => {
         ) : processedProducts.length === 0 ? (
           <Empty
             description={
-              urlSearch || priceMin || priceMax || sortField
-                ? "No products match your filters"
+              localSearch.trim() ||
+              priceMin ||
+              priceMax ||
+              sortField ||
+              selectedSizes.length > 0
+                ? `No products match "${localSearch.trim() || "your filters"}"`
                 : "No products found"
             }
             style={{ margin: "80px 0" }}
