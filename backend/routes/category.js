@@ -11,6 +11,8 @@ router.post(
   // checkPermission("write", "create_category", "categories", "/category"),
   categoryController.createCategory,
 );
+// GET all categories for a brand
+router.get("/by-brand/:brandId", categoryController.getAllCategoriesByBrand);
 
 // All categories (with brand, parent, keywords)
 router.get(

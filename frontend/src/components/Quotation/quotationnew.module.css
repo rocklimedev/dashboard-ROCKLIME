@@ -192,44 +192,106 @@ margin: 351px 0;
 .clientAddress { font-size:18px; color:#333; margin-top:8px; line-height:1.5; max-width:600px; }
 .pageDate { font-weight:bold; color:#e31e24; text-align:right; }
 
-/* MAIN TABLE – THIS IS WHERE THE MAGIC HAPPENS */
+/* ── MAIN PRODUCT TABLE ──────────────────────────────────────────────── */
 .productTable {
   width: 100%;
   border-collapse: collapse;
-  font-size: 10px;
-                 /* CRITICAL: forces column widths */
-  margin-top: 15px;
+  margin: 24px 0 0 0;
+  font-family: "Lato", sans-serif;
+  font-size: 13px;
+  color: #222;
+  table-layout: fixed;               /* very important for stable columns */
+  border: 1px solid #d8d8d8;         /* outer frame – subtle luxury look */
+  background: white;
 }
 
-.productTable th {
+.productTable thead th {
   background: #e31e24;
   color: white;
-  padding: 16px 10px;
-  font-weight: 600;
-  font-size: 12px;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 14px 8px;
   text-align: center;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  border-bottom: 2px solid #c00;     /* slightly darker red bottom edge */
 }
 
-/* EXACT COLUMN WIDTHS – NO MORE OVERFLOW */
-.productTable colgroup {
-  display: table-column-group;
+/* All cells get clean internal borders */
+.productTable th,
+.productTable td {
+  border: 1px solid #d8d8d8;         /* light gray – elegant, not harsh */
+  padding: 12px 10px;
+  vertical-align: middle;
 }
-.productTable col.sno      { width: 7%; }
-.productTable col.name     { width: 34%; }   /* longest text */
-.productTable col.code     { width: 10%; }
-.productTable col.image    { width: 14%; }
+
+/* Column-specific tweaks */
+.productTable col.sno      { width: 6.5%; }
+.productTable col.name     { width: 33%; }
+.productTable col.code     { width: 11%; }
+.productTable col.image    { width: 13%; }
 .productTable col.unit     { width: 7%; }
 .productTable col.mrp      { width: 10%; }
 .productTable col.discount { width: 9%; }
-.productTable col.total    { width: 9%; }
+.productTable col.total    { width: 10.5%; }
 
-.productTable td {
-/*width: 100%; */
-    border-collapse: collapse;
-    font-size: 13px;
-    table-layout: fixed;
-    /* margin-top: 15px;*/
+/* ── CELL STYLING ────────────────────────────────────────────────────── */
+.snoCell {
+  font-weight: 600;
+  color: #444;
+  font-size: 14px;
+  text-align: center;
 }
+
+.prodNameCell {
+  text-align: left;
+  font-weight: 500;
+  line-height: 1.38;
+  font-size: 13px;
+  padding: 12px 14px !important;
+  hyphens: auto;
+  word-break: break-word;
+  white-space: normal;
+}
+
+/* Product image cell */
+td.image {
+  padding: 8px !important;
+  text-align: center;
+}
+
+.prodImg {
+  max-height: 68px;
+  max-width: 100%;
+  object-fit: contain;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+/* Right-aligned numeric cells */
+.discountCell,
+.totalCell,
+.mrpCell {          /* optional – if you add class to MRP <td> */
+  text-align: right;
+  font-weight: 600;
+  color: #111;
+  font-size: 13.5px;
+}
+
+/* Optional row striping – subtle luxury feel */
+.productTable tbody tr:nth-child(even) {
+  background-color: #fdfdfd;
+}
+
+/* Hover (screen only) */
+@media screen {
+  .productTable tbody tr:hover {
+    background-color: #fff5f5;        /* very light red tint */
+    transition: background-color 0.12s;
+  }
+}
+
 
 /* LONG PRODUCT NAMES – NEVER BREAK THE LAYOUT */
 .prodNameCell {

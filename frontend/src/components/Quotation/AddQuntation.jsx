@@ -434,7 +434,7 @@ const AddQuotation = () => {
         .map((d) => format(d, "yyyy-MM-dd")),
       shipTo: formData.shipTo || null,
     };
-
+    console.log("Submitting payload:", payload);
     try {
       if (isEditMode) {
         await updateQuotation({ id, updatedQuotation: payload }).unwrap();
@@ -446,6 +446,7 @@ const AddQuotation = () => {
       }
       navigate("/quotations/list");
     } catch (err) {
+      console.log(err);
       message.error(err?.data?.message || "Failed to save quotation");
     }
   };
