@@ -626,12 +626,6 @@ exports.updateQuotation = async (req, res) => {
   } catch (error) {
     await t.rollback().catch(() => {});
 
-    console.error("updateQuotation failed:", {
-      message: error.message,
-      stack: error.stack,
-      quotationId: req.params.id,
-    });
-
     return res.status(500).json({
       error: "Failed to update quotation",
       details: error.message,

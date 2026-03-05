@@ -32,7 +32,14 @@ CREATE TABLE IF NOT EXISTS `brand_parentcategories` (
   CONSTRAINT `brand_parentcategories_ibfk_1048` FOREIGN KEY (`parentCategoryId`) REFERENCES `parentcategories` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Data exporting was unselected.
+-- Dumping data for table spsyn8lm_rocklime_dashboard.brand_parentcategories: ~6 rows (approximately)
+INSERT INTO `brand_parentcategories` (`id`, `name`, `slug`, `createdAt`, `updatedAt`, `brandId`, `parentCategoryId`) VALUES
+	('158dd2fa-7421-11f0-9e84-52540021303b', 'Plumbing', 'plumbing', '2025-08-08 11:59:49', '2025-08-08 11:59:49', NULL, NULL),
+	('94b8daf8-d026-4983-a567-85381c8faded', 'Chemicals & Adhesive', 'chemicals_and_adhesive', '2025-07-30 08:53:20', '2025-07-30 08:53:20', NULL, NULL),
+	('a733afe9-78ee-11f0-9e84-52540021303b', 'Accessories & Add Ons', 'accessories_and_add_ons', '2025-08-14 14:41:25', '2025-08-14 14:41:25', NULL, NULL),
+	('a73fa5fa-78ee-11f0-9e84-52540021303b', 'Stone', 'stone', '2025-08-14 14:41:25', '2025-08-14 14:41:25', NULL, NULL),
+	('dfe98ae0-3437-4d6b-933d-e51623b7dc34', 'Tiles', 'tiles', '2025-07-30 08:53:20', '2025-07-30 08:53:20', NULL, NULL),
+	('f7940b5e-8d97-43be-b37b-0fd6b56e431a', 'CP Fittings & Sanitary', 'cp_fittings_and_sanitary', '2025-07-30 08:53:18', '2025-07-30 08:53:18', NULL, NULL);
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

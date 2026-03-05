@@ -219,7 +219,6 @@ const PODetails = () => {
       }
     } catch (err) {
       message.error(`Export failed: ${err.message}`);
-      console.error(err);
     } finally {
       setIsExporting(false);
     }

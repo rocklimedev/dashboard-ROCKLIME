@@ -248,7 +248,6 @@ const BulkProductImport = () => {
         message.success("File loaded successfully. Now map columns.");
       } catch (err) {
         message.error("Failed to parse file");
-        console.error(err);
       }
     };
 
@@ -271,21 +270,6 @@ const BulkProductImport = () => {
       return;
     }
 
-    // ── DEBUG: very important ───────────────────────────────────────
-    console.log("╔════════════════════════════════════════════╗");
-    console.log("║        Starting Bulk Import – DEBUG        ║");
-    console.log("╚════════════════════════════════════════════╝");
-    console.log("selectedBrandId (raw)     :", selectedBrandId);
-    console.log("typeof selectedBrandId    :", typeof selectedBrandId);
-    console.log("String(selectedBrandId)   :", String(selectedBrandId));
-    console.log("file.name                 :", file?.name);
-    console.log("mapping (keys)            :", Object.keys(mapping));
-    console.log(
-      "required fields present?  :",
-      requiredFields.every((f) => Object.values(mapping).includes(f)),
-    );
-    console.log("────────────────────────────────────────────");
-
     setImporting(true);
 
     try {
@@ -301,7 +285,6 @@ const BulkProductImport = () => {
       setStartTime(Date.now());
       setProcessedHistory([]);
     } catch (err) {
-      console.error("startBulkImport failed:", err);
       message.error(err?.data?.message || "Failed to queue import job");
     } finally {
       setImporting(false);

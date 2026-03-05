@@ -616,12 +616,6 @@ exports.getAllPermissionsOfLoggedInUser = async (req, res) => {
     // Safety: check if rolepermissions exists and has data
     const permissions = (role.rolepermissions || [])
       .map((rp) => {
-        // Extra safety in case include failed
-        if (!rp.permission) {
-          console.warn("Missing permission data for RolePermission:", rp);
-          return null;
-        }
-
         return {
           permissionId: rp.permission.permissionId,
           name: rp.permission.name,

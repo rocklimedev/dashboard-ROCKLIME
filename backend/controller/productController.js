@@ -1361,7 +1361,6 @@ exports.getProductsByBrand = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error in getProductsByBrand:", error);
     res.status(500).json({
       message: "Failed to fetch products by brand",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,

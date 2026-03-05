@@ -79,6 +79,7 @@ import FGSDetails from "../components/Orders/FGSDetails";
 import PurchaseManagement from "../components/Orders/PurchaseManagement";
 import JobList from "../components/Jobs/JobsList";
 import JobDetails from "../components/Jobs/JobDetails";
+import CreateProject from "../components/Quotation/CreateProject.";
 const masterRoutes = [
   {
     path: "/",
@@ -211,6 +212,7 @@ const masterRoutes = [
         isSidebarActive: false,
         element: <AddSiteMap />,
       },
+
       {
         path: "/site-map/:id/edit",
         name: "Edit Site Map",
@@ -362,7 +364,7 @@ const masterRoutes = [
         path: "/quotation/add",
         name: "Add Quotations",
         icon: <FaTags />,
-        element: <AddQuotation />,
+        element: <CreateProject />,
         isSidebarActive: false,
         requiredPermission: { api: "write", module: "quotations" },
       },

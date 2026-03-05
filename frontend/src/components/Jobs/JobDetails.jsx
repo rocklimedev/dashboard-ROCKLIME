@@ -136,7 +136,6 @@ const JobDetails = () => {
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      console.error("Download failed:", err);
       Modal.error({
         title: "Download failed",
         content:

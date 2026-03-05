@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS `comments` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
--- Data exporting was unselected.
+-- Dumping data for table spsyn8lm_rocklime_dashboard.comments: ~0 rows (approximately)
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS `signatures` (
   CONSTRAINT `signatures_ibfk_258` FOREIGN KEY (`vendorId`) REFERENCES `vendors` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Data exporting was unselected.
+-- Dumping data for table spsyn8lm_rocklime_dashboard.signatures: ~0 rows (approximately)
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

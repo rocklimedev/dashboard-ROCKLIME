@@ -278,7 +278,6 @@ const NewQuotationsDetails = () => {
 
       message.success(`${exportFormat.toUpperCase()} exported successfully!`);
     } catch (err) {
-      console.error("Export error:", err);
       message.error("Export failed. Please try again.");
     } finally {
       setIsExporting(false);
