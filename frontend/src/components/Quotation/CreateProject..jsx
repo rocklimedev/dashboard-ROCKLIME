@@ -20,12 +20,10 @@ import {
   Table,
   Modal,
   Form,
-  Badge,
   Tag,
   Statistic,
   Collapse,
   Empty,
-  Tooltip,
 } from "antd";
 import {
   ArrowLeftOutlined,
@@ -34,9 +32,7 @@ import {
   PlusOutlined,
   DeleteOutlined,
   HomeOutlined,
-  EyeInvisibleOutlined,
   SearchOutlined,
-  EditOutlined,
 } from "@ant-design/icons";
 import { v4 as uuidv4 } from "uuid";
 import { debounce } from "lodash";
@@ -49,7 +45,10 @@ import {
   useSearchProductsQuery,
   useGetAllProductsQuery,
 } from "../../api/productApi";
+import { useGetAllAddressesQuery } from "../../api/addressApi";
 
+import AddAddress from "../Address/AddAddressModal"; // your improved version
+import AddCustomerModal from "../Customers/AddCustomerModal";
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { Panel } = Collapse;
@@ -61,10 +60,15 @@ export default function CreateProject() {
   const customerIdFromUrl = searchParams.get("customerId");
 
   // ── API ───────────────────────────────────────────────────────
-  const { data: customersData, isLoading: customersLoading } =
-    useGetCustomersQuery({ limit: 500 });
+  const {
+    data: customersData,
+    isLoading: customersLoading,
+    refetch: refetchCustomers,
+  } = useGetCustomersQuery({ limit: 500 });
   const { data: productsResponse, isLoading: productsLoading } =
     useGetAllProductsQuery();
+  const { data: addressesData, refetch: refetchAddresses } =
+    useGetAllAddressesQuery();
 
   const [createQuotation, { isLoading: creatingQuotation }] =
     useCreateQuotationMutation();
@@ -73,6 +77,10 @@ export default function CreateProject() {
 
   const customers = customersData?.data || [];
   const allProducts = productsResponse?.data || [];
+
+  // ── Modals visibility ─────────────────────────────────────────
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
 
   // ── Wizard Step ───────────────────────────────────────────────
   const [currentStep, setCurrentStep] = useState(0);
@@ -84,11 +92,12 @@ export default function CreateProject() {
     quotationDate: new Date(),
     dueDate: null,
     gst: 18,
+    shipTo: "",
 
     totalFloors: 1,
     floorDetails: [],
 
-    items: [], // unified → visible + concealed (we'll strip room_id on save)
+    items: [],
   });
 
   // ── Product search ────────────────────────────────────────────
@@ -100,12 +109,14 @@ export default function CreateProject() {
 
   const debouncedSearch = debounce((val) => setSearchTerm(val.trim()), 400);
 
-  // ── Modals ────────────────────────────────────────────────────
+  // ── Room & Assign modals ──────────────────────────────────────
   const [roomModal, setRoomModal] = useState({
     visible: false,
     floor: null,
     room: null,
   });
+
+  const [roomForm] = Form.useForm();
 
   const [assignModal, setAssignModal] = useState({
     visible: false,
@@ -115,24 +126,24 @@ export default function CreateProject() {
   const [selectedAssignFloor, setSelectedAssignFloor] = useState(null);
   const [selectedAssignRoom, setSelectedAssignRoom] = useState(null);
 
-  const [roomForm] = Form.useForm();
+  // ── Address Helpers ───────────────────────────────────────────
+  const shortAddress = (addr) => {
+    if (!addr) return "—";
+    const parts = [
+      addr.street || "",
+      addr.landmark ? `(${addr.landmark})` : "",
+      addr.city || "",
+      addr.pincode ? `- ${addr.pincode}` : "",
+    ].filter(Boolean);
+    return parts.join(", ") || "Unnamed address";
+  };
 
-  // ── Reset assignment modal selections ─────────────────────────
-  useEffect(() => {
-    if (assignModal.visible) {
-      const item = project.items.find((i) => i.id === assignModal.itemId);
-      if (item) {
-        setSelectedAssignFloor(item.floor_number || null);
-        setSelectedAssignRoom(item.room_id || null);
-      } else {
-        setSelectedAssignFloor(null);
-        setSelectedAssignRoom(null);
-      }
-    } else {
-      setSelectedAssignFloor(null);
-      setSelectedAssignRoom(null);
-    }
-  }, [assignModal.visible, assignModal.itemId, project.items]);
+  const filteredAddresses = useMemo(() => {
+    if (!project.customerId) return [];
+    return (addressesData || []).filter(
+      (a) => a.customerId === project.customerId,
+    );
+  }, [addressesData, project.customerId]);
 
   // ── Auto-create Ground floor ─────────────────────────────────
   useEffect(() => {
@@ -212,7 +223,7 @@ export default function CreateProject() {
       price,
       imageUrl: product.images?.[0]?.url || null,
       floor_number: null,
-      room_id: null, // kept internally for UI
+      room_id: null,
       isConcealed,
     };
 
@@ -256,11 +267,7 @@ export default function CreateProject() {
     if (project.items.length === 0)
       return message.error("Add at least one product");
 
-    // Prepare cleaned items — keep room_id for UI, but STRIP it from backend payload
-    const cleanedItemsForBackend = project.items.map((item) => {
-      const { room_id, ...rest } = item; // remove room_id completely
-      return rest;
-    });
+    const cleanedItems = project.items.map(({ room_id, ...rest }) => rest);
 
     const quotationPayload = {
       customerId: project.customerId,
@@ -268,6 +275,7 @@ export default function CreateProject() {
       quotation_date: project.quotationDate?.toISOString().split("T")[0],
       due_date: project.dueDate?.toISOString().split("T")[0] || null,
       gst: project.gst,
+      shipTo: project.shipTo || null,
       products: project.items
         .filter((i) => !i.isConcealed)
         .map((i) => ({
@@ -286,39 +294,28 @@ export default function CreateProject() {
       name: project.projectName,
       totalFloors: project.totalFloors,
       floorDetails: project.floorDetails,
-      items: cleanedItemsForBackend.map((i) => ({
+      items: cleanedItems.map((i) => ({
         productId: i.productId,
         name: i.name,
         quantity: i.quantity,
         price: i.price,
         floor_number: i.floor_number,
         isConcealed: i.isConcealed,
-        // NO room_id included — deliberately omitted
       })),
     };
 
     try {
       const quotRes = await createQuotation(quotationPayload).unwrap();
-
       const quotationId = quotRes?.quotation?.quotationId;
 
-      if (!quotationId) {
-        throw new Error("No quotation ID returned from server");
-      }
+      if (!quotationId) throw new Error("No quotation ID returned");
 
-      const siteRes = await createSiteMap({
-        ...siteMapPayload,
-        quotationId,
-      }).unwrap();
+      await createSiteMap({ ...siteMapPayload, quotationId }).unwrap();
 
       message.success("Project, Quotation & Site Map created successfully!");
-      navigate("/projects/list"); // adjust route as needed
     } catch (err) {
-      message.error(
-        err?.data?.message ||
-          err?.message ||
-          "Failed to create project – check console/server logs",
-      );
+      message.error(err?.data?.message || "Failed to create project");
+      console.error(err);
     }
   };
 
@@ -360,34 +357,109 @@ export default function CreateProject() {
             ))}
           </Steps>
 
-          {/* STEP 1 – Customer & Basic Info */}
+          {/* STEP 1 – Customer & Info */}
           {currentStep === 0 && (
             <>
               <Title level={4}>Customer & Project Information</Title>
 
               <Row gutter={24}>
-                <Col xs={24} md={12}>
-                  <label style={{ fontWeight: 500 }}>
+                <Col xs={24} lg={12}>
+                  <label
+                    style={{
+                      fontWeight: 500,
+                      display: "block",
+                      marginBottom: 8,
+                    }}
+                  >
                     Customer <span style={{ color: "red" }}>*</span>
                   </label>
-                  <Select
-                    showSearch
-                    placeholder="Select customer"
-                    value={project.customerId || undefined}
-                    onChange={(v) =>
-                      setProject((p) => ({ ...p, customerId: v }))
-                    }
-                    style={{ width: "100%", marginTop: 8 }}
-                    size="large"
-                  >
-                    {customers.map((c) => (
-                      <Option key={c.customerId} value={c.customerId}>
-                        {c.name}
-                      </Option>
-                    ))}
-                  </Select>
+                  <Space.Compact style={{ width: "100%" }}>
+                    <Select
+                      showSearch
+                      placeholder="Select customer"
+                      value={project.customerId || undefined}
+                      onChange={(v) =>
+                        setProject((p) => ({ ...p, customerId: v, shipTo: "" }))
+                      }
+                      style={{ flex: 1 }}
+                      size="large"
+                      filterOption={(input, option) =>
+                        (option?.children ?? "")
+                          .toLowerCase()
+                          .includes(input.toLowerCase())
+                      }
+                      loading={customersLoading}
+                    >
+                      {customers.map((c) => (
+                        <Option key={c.customerId} value={c.customerId}>
+                          {c.name} {c.mobile ? `(${c.mobile})` : ""}
+                        </Option>
+                      ))}
+                    </Select>
+
+                    <Button
+                      type="primary"
+                      icon={<PlusOutlined />}
+                      onClick={() => setShowAddCustomerModal(true)}
+                      size="large"
+                    />
+                  </Space.Compact>
                 </Col>
 
+                <Col xs={24} lg={12}>
+                  <label
+                    style={{
+                      fontWeight: 500,
+                      display: "block",
+                      marginBottom: 8,
+                    }}
+                  >
+                    Site / Delivery Address
+                  </label>
+                  <Space.Compact style={{ width: "100%" }}>
+                    <Select
+                      placeholder={
+                        !project.customerId
+                          ? "Select customer first"
+                          : filteredAddresses.length === 0
+                            ? "No addresses — add one"
+                            : "Select address"
+                      }
+                      value={project.shipTo || undefined}
+                      onChange={(v) => setProject((p) => ({ ...p, shipTo: v }))}
+                      disabled={!project.customerId}
+                      style={{ flex: 1 }}
+                      size="large"
+                    >
+                      {filteredAddresses.map((a) => (
+                        <Option key={a.addressId} value={a.addressId}>
+                          {shortAddress(a)}
+                          {a.isDefault && (
+                            <Tag color="green" style={{ marginLeft: 8 }}>
+                              Default
+                            </Tag>
+                          )}
+                        </Option>
+                      ))}
+                      {project.customerId && filteredAddresses.length === 0 && (
+                        <Option disabled>
+                          <Text type="secondary">No addresses found</Text>
+                        </Option>
+                      )}
+                    </Select>
+
+                    <Button
+                      type="primary"
+                      icon={<PlusOutlined />}
+                      onClick={() => setShowAddressModal(true)}
+                      disabled={!project.customerId}
+                      size="large"
+                    />
+                  </Space.Compact>
+                </Col>
+              </Row>
+
+              <Row gutter={16} style={{ marginTop: 24 }}>
                 <Col xs={24} md={12}>
                   <label style={{ fontWeight: 500 }}>
                     Project Name <span style={{ color: "red" }}>*</span>
@@ -402,9 +474,7 @@ export default function CreateProject() {
                     style={{ marginTop: 8 }}
                   />
                 </Col>
-              </Row>
 
-              <Row gutter={16} style={{ marginTop: 24 }}>
                 <Col xs={24} sm={8}>
                   <label>Quotation Date</label>
                   <Input
@@ -422,6 +492,7 @@ export default function CreateProject() {
                     }
                   />
                 </Col>
+
                 <Col xs={24} sm={8}>
                   <label>Due Date</label>
                   <Input
@@ -437,6 +508,7 @@ export default function CreateProject() {
                     }
                   />
                 </Col>
+
                 <Col xs={24} sm={8}>
                   <label>GST Rate (%)</label>
                   <InputNumber
@@ -451,7 +523,7 @@ export default function CreateProject() {
             </>
           )}
 
-          {/* STEP 2 – Rooms & Floors (rooms kept for UX) */}
+          {/* STEP 2 – Rooms & Floors */}
           {currentStep === 1 && (
             <>
               <Title level={4}>Define Floors & Rooms</Title>
@@ -527,13 +599,13 @@ export default function CreateProject() {
                                             }
                                           : f,
                                       ),
-                                      // When room deleted → clear room_id from items (but keep floor)
                                       items: p.items.map((i) =>
                                         i.room_id === room.id
                                           ? { ...i, room_id: null }
                                           : i,
                                       ),
                                     }));
+                                    message.success("Room removed");
                                   }}
                                 />
                               }
@@ -838,7 +910,7 @@ export default function CreateProject() {
           </div>
         </Card>
 
-        {/* ── Room Modal (still used for UI) ──────────────────────── */}
+        {/* ── Room Modal ──────────────────────────────────────────────── */}
         <Modal
           title={roomModal.room ? "Edit Room" : "Add Room"}
           open={roomModal.visible}
@@ -854,7 +926,7 @@ export default function CreateProject() {
             layout="vertical"
             onFinish={(values) => {
               const newRoom = {
-                id: uuidv4(),
+                id: roomModal.room?.id || uuidv4(),
                 name: values.name,
                 type: values.type,
                 size: values.size || "",
@@ -863,7 +935,7 @@ export default function CreateProject() {
               setProject((prev) => ({
                 ...prev,
                 floorDetails: prev.floorDetails.map((f) =>
-                  f.floor_number === roomModal.floor.floor_number
+                  f.floor_number === roomModal.floor?.floor_number
                     ? {
                         ...f,
                         rooms: roomModal.room
@@ -878,18 +950,20 @@ export default function CreateProject() {
 
               setRoomModal({ visible: false });
               roomForm.resetFields();
+              message.success(roomModal.room ? "Room updated" : "Room added");
             }}
+            initialValues={roomModal.room || {}}
           >
             <Form.Item
               name="name"
               label="Room Name"
-              rules={[{ required: true, message: "Room name is required" }]}
+              rules={[{ required: true }]}
             >
               <Input placeholder="e.g. Master Bedroom" />
             </Form.Item>
 
             <Form.Item name="type" label="Room Type">
-              <Select placeholder="Select type (optional)">
+              <Select placeholder="Optional">
                 <Option value="Bedroom">Bedroom</Option>
                 <Option value="Living Room">Living / Drawing Room</Option>
                 <Option value="Kitchen">Kitchen</Option>
@@ -906,30 +980,23 @@ export default function CreateProject() {
           </Form>
         </Modal>
 
-        {/* ── Assign Modal (floor + room for UI only) ─────────────── */}
+        {/* ── Assign Modal ────────────────────────────────────────────── */}
         <Modal
-          title={`Assign: ${
-            project.items.find((i) => i.id === assignModal.itemId)?.name ||
-            "Product"
-          }`}
+          title={`Assign: ${project.items.find((i) => i.id === assignModal.itemId)?.name || "Product"}`}
           open={assignModal.visible}
           okText="Assign"
-          cancelText="Cancel"
+          onCancel={() => setAssignModal({ visible: false, itemId: null })}
           onOk={() => {
-            if (!selectedAssignFloor) {
+            if (!selectedAssignFloor)
               return message.error("Please select a floor");
-            }
-
             assignItem(
               assignModal.itemId,
               selectedAssignFloor,
               selectedAssignRoom,
             );
-
-            message.success("Product assigned!");
+            message.success("Assigned successfully");
             setAssignModal({ visible: false, itemId: null });
           }}
-          onCancel={() => setAssignModal({ visible: false, itemId: null })}
           width={500}
         >
           <div style={{ padding: "16px 0" }}>
@@ -939,7 +1006,6 @@ export default function CreateProject() {
               Select Floor <span style={{ color: "red" }}>*</span>
             </label>
             <Select
-              placeholder="Choose floor"
               value={selectedAssignFloor}
               onChange={(val) => {
                 setSelectedAssignFloor(val);
@@ -967,12 +1033,12 @@ export default function CreateProject() {
                   Select Room (optional — for visualization only)
                 </label>
                 <Select
-                  placeholder="Common area / whole floor"
                   value={selectedAssignRoom}
                   onChange={setSelectedAssignRoom}
                   allowClear
                   style={{ width: "100%" }}
                   size="large"
+                  placeholder="Common area / whole floor"
                 >
                   {project.floorDetails
                     .find((f) => f.floor_number === selectedAssignFloor)
@@ -986,6 +1052,33 @@ export default function CreateProject() {
             )}
           </div>
         </Modal>
+
+        {/* ── Add Address Modal ───────────────────────────────────────── */}
+        {showAddressModal && (
+          <AddAddress
+            visible={showAddressModal}
+            onClose={() => setShowAddressModal(false)}
+            onSave={(newAddrId) => {
+              setProject((p) => ({ ...p, shipTo: newAddrId }));
+              setShowAddressModal(false);
+              refetchAddresses?.();
+            }}
+            selectedCustomer={project.customerId}
+          />
+        )}
+
+        {/* ── Add Customer Modal ──────────────────────────────────────── */}
+        {showAddCustomerModal && (
+          <AddCustomerModal
+            visible={showAddCustomerModal}
+            onClose={() => setShowAddCustomerModal(false)}
+            onCustomerCreated={(newCustomerId) => {
+              setProject((prev) => ({ ...prev, customerId: newCustomerId }));
+              refetchCustomers(); // refresh customer list
+              message.success("New customer selected automatically");
+            }}
+          />
+        )}
       </div>
     </div>
   );
