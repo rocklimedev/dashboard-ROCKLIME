@@ -1,5 +1,4 @@
 // src/pages/site-map/NewSiteMapDetails.jsx
-
 import React, { useRef, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { message, Button, Spin, Typography, Space } from "antd";
@@ -15,7 +14,7 @@ import bathroomSketch from "../../assets/img/sitemap_cover.jpg";
 const { Title, Text } = Typography;
 
 // ────────────────────────────────────────────────
-// Number to Words (unchanged)
+// Number to Words
 // ────────────────────────────────────────────────
 const NumberToWords = (num) => {
   if (!num || num === 0) return "Zero Rupees Only";
@@ -53,7 +52,6 @@ const NumberToWords = (num) => {
     "Eighty",
     "Ninety",
   ];
-
   const belowHundred = (n) =>
     n < 20
       ? ones[n]
@@ -81,7 +79,7 @@ const NumberToWords = (num) => {
 };
 
 // ────────────────────────────────────────────────
-// Category + Display helpers (unchanged)
+// Helpers
 // ────────────────────────────────────────────────
 const getAreaCategory = (name = "") => {
   const n = name.toLowerCase();
@@ -132,7 +130,9 @@ const getDisplayData = (item, fullProduct) => {
 
 const ImageWithFallback = ({ src, alt, ...props }) => {
   const [imgSrc, setImgSrc] = React.useState(src);
+
   React.useEffect(() => setImgSrc(src), [src]);
+
   return (
     <img
       src={imgSrc}
@@ -147,7 +147,7 @@ const ImageWithFallback = ({ src, alt, ...props }) => {
 };
 
 // ────────────────────────────────────────────────
-// Main Component – Single render + media queries
+// Main Component
 // ────────────────────────────────────────────────
 const NewSiteMapDetails = () => {
   const { id } = useParams();
@@ -189,8 +189,9 @@ const NewSiteMapDetails = () => {
   }, [siteMap?.floorDetails]);
 
   const { pages, grandTotal, floorTotals } = useMemo(() => {
-    if (!siteMap?.items?.length)
+    if (!siteMap?.items?.length) {
       return { pages: [], grandTotal: 0, floorTotals: {} };
+    }
 
     const floorData = {};
     let grandTotal = 0;
@@ -204,26 +205,32 @@ const NewSiteMapDetails = () => {
       if (!floorData[floorNum]) {
         floorData[floorNum] = { name: floorName, rooms: {}, total: 0 };
       }
-
       const floor = floorData[floorNum];
       if (!floor.rooms[roomName]) floor.rooms[roomName] = [];
+
+      const isConcealedItem =
+        item.isConcealed === true ||
+        item.productType?.toLowerCase().includes("concealed");
 
       const full = productMap[item.productId];
       const disp = getDisplayData(item, full);
 
-      const enriched = {
-        ...item,
-        displayName: disp.name,
-        displayCode: disp.code,
-        displayPrice: disp.price,
-        displayImage: disp.image,
-        quantity: item.quantity || 1,
-        category: getAreaCategory(disp.name || item.name),
-      };
+      // Only add visible products to room pages
+      if (!isConcealedItem) {
+        const enriched = {
+          ...item,
+          displayName: disp.name,
+          displayCode: disp.code,
+          displayPrice: disp.price,
+          displayImage: disp.image,
+          quantity: item.quantity || 1,
+          category: getAreaCategory(disp.name || item.name),
+        };
 
-      floor.rooms[roomName].push(enriched);
-      floor.total += disp.price * enriched.quantity;
-      grandTotal += disp.price * enriched.quantity;
+        floor.rooms[roomName].push(enriched);
+        floor.total += disp.price * enriched.quantity;
+        grandTotal += disp.price * enriched.quantity;
+      }
     });
 
     const pages = [];
@@ -259,11 +266,23 @@ const NewSiteMapDetails = () => {
         });
       });
 
+    // Concealed section – collect ALL concealed items (regardless of room)
     const allConcealed = siteMap.items
-      .filter((i) => i.isConcealed || i.productType === "Concealed Works")
+      .filter(
+        (i) =>
+          i.isConcealed === true ||
+          i.productType?.toLowerCase().includes("concealed"),
+      )
       .map((i) => {
         const disp = getDisplayData(i, productMap[i.productId]);
-        return { ...i, ...disp, quantity: i.quantity || 1 };
+        return {
+          ...i,
+          displayName: disp.name || i.name || "Unnamed Product",
+          displayCode: disp.code || "N/A",
+          displayPrice: Number(disp.price) || 0,
+          displayImage: disp.image || "/placeholder.jpg",
+          quantity: i.quantity || 1,
+        };
       });
 
     if (allConcealed.length > 0) {
@@ -319,9 +338,10 @@ const NewSiteMapDetails = () => {
       <Helmet>
         <title>{pageTitle}</title>
       </Helmet>
+
       <div className="page-wrapper">
         <div className="content">
-          {/* ─── Screen-only top bar ─── */}
+          {/* Screen-only header */}
           <div className={styles.screenHeader}>
             <div className={styles.headerInner}>
               <div>
@@ -333,7 +353,6 @@ const NewSiteMapDetails = () => {
                   {siteMap.siteSizeInBHK || "— sq.ft."} • {id}
                 </Text>
               </div>
-
               <Space size="middle">
                 <Button
                   type="primary"
@@ -350,14 +369,13 @@ const NewSiteMapDetails = () => {
             </div>
           </div>
 
-          {/* ─── The ONLY place where quotation pages are rendered ─── */}
+          {/* Print container – all pages rendered here */}
           <div ref={printContainerRef} className={styles.printContainer}>
             {pages.map((page) => (
               <div
                 key={page.pageKey}
-                className={`${styles.quotationPage} quotation-page-print`} // ← add this
+                className={`${styles.quotationPage} quotation-page-print`}
               >
-                {/* ─── Centered logo at top of EVERY page ─── */}
                 <div className={styles.logoContainer}>
                   <img
                     src={logo}
@@ -365,6 +383,7 @@ const NewSiteMapDetails = () => {
                     className={styles.centeredLogo}
                   />
                 </div>
+
                 {page.type === "room" ? (
                   <>
                     <div className={styles.roomHeader}>
@@ -388,11 +407,9 @@ const NewSiteMapDetails = () => {
                         alt={`${page.roomName} layout sketch`}
                         className={styles.mainIllustration}
                       />
-
                       {page.callouts.map((item, idx) => {
-                        // Different default positions for screen vs print (CSS will override)
                         let pos = { top: "50%", left: "50%" };
-                        if (item.category === "wc" && "toliet")
+                        if (item.category === "wc")
                           pos = { top: "63%", left: "5%" };
                         if (item.category === "basin")
                           pos = { top: "35%", left: "32%" };

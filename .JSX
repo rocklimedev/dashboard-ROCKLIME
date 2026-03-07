@@ -48,7 +48,7 @@ import {
   useGetAllProductsQuery,
 } from "../../api/productApi";
 import { useGetAllAddressesQuery } from "../../api/addressApi";
-import TabPane from "antd/es/tabs/TabPane";
+
 import AddAddress from "../Address/AddAddressModal";
 import AddCustomerModal from "../Customers/AddCustomerModal";
 
@@ -340,7 +340,7 @@ export default function CreateProject() {
       await createSiteMap({ ...siteMapPayload, quotationId }).unwrap();
 
       message.success("Project, Quotation & Site Map created successfully!");
-      navigate("/quotations/list"); // optional
+      // navigate("/projects"); // optional
     } catch (err) {
       message.error(err?.data?.message || "Failed to create project");
       console.error(err);

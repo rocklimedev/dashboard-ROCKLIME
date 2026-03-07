@@ -51,6 +51,7 @@ const OrderWrapper = () => {
     search: "",
     status: "",
     priority: "",
+    sort: "createdAt_desc", // default sort
     page: 1,
     limit: 20,
   });
@@ -64,6 +65,7 @@ const OrderWrapper = () => {
     followupDates: [],
   });
 
+  // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
       setCommittedFilters((prev) => ({
@@ -99,16 +101,14 @@ const OrderWrapper = () => {
   const [updateOrderStatus] = useUpdateOrderStatusMutation();
 
   const teamMap = useMemo(() => {
-    if (!teamsData?.teams) return {};
-    return teamsData.teams.reduce((acc, t) => {
+    return (teamsData?.teams || []).reduce((acc, t) => {
       acc[t.id] = t.teamName || "—";
       return acc;
     }, {});
   }, [teamsData]);
 
   const userMap = useMemo(() => {
-    if (!usersData?.users) return {};
-    return usersData.users.reduce((acc, u) => {
+    return (usersData?.users || []).reduce((acc, u) => {
       acc[u.userId] = u.username || u.name || "—";
       return acc;
     }, {});
@@ -133,41 +133,59 @@ const OrderWrapper = () => {
     if (order.secondaryUser?.userId && userMap[order.secondaryUser.userId]) {
       parts.push(`${userMap[order.secondaryUser.userId]} (User)`);
     }
-    return parts.length > 0 ? parts.join(", ") : "—";
+    return parts.length ? parts.join(", ") : "—";
   };
 
   const isDueDateClose = (dueDate) => {
     if (!dueDate) return false;
-    const diffDays =
-      (new Date(dueDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+    const diffDays = (new Date(dueDate) - Date.now()) / (1000 * 60 * 60 * 24);
     return diffDays <= 3 && diffDays >= 0;
   };
 
-  const handleStatusChange = (val) => {
+  const handleStatusChange = (value) => {
     setCommittedFilters((prev) => ({
       ...prev,
-      status: val || "",
+      status: value || "",
       page: 1,
     }));
   };
 
-  const handlePriorityChange = (val) => {
+  const handlePriorityChange = (value) => {
     setCommittedFilters((prev) => ({
       ...prev,
-      priority: val || "",
+      priority: value || "",
       page: 1,
     }));
   };
 
-  const handleSortChange = (val) => {
-    setSortBy(val);
+  const handleSortChange = (value) => {
+    let sortValue = "createdAt_desc";
+    switch (value) {
+      case "Recently Added":
+        sortValue = "createdAt_desc";
+        break;
+      case "Due Date Ascending":
+        sortValue = "dueDate_asc";
+        break;
+      case "Due Date Descending":
+        sortValue = "dueDate_desc";
+        break;
+      default:
+        break;
+    }
+    setCommittedFilters((prev) => ({
+      ...prev,
+      sort: sortValue,
+      page: 1,
+    }));
+    setSortBy(value);
   };
 
-  const handlePageChange = (page, newLimit) => {
+  const handlePageChange = (page, pageSize) => {
     setCommittedFilters((prev) => ({
       ...prev,
       page,
-      limit: newLimit ?? prev.limit,
+      limit: pageSize,
     }));
   };
 
@@ -178,6 +196,7 @@ const OrderWrapper = () => {
       search: "",
       status: "",
       priority: "",
+      sort: "createdAt_desc",
       page: 1,
       limit: 20,
     });
@@ -196,9 +215,9 @@ const OrderWrapper = () => {
     if (!orderToDelete) return;
     try {
       await deleteOrder(orderToDelete).unwrap();
-      message.success("Order deleted");
+      message.success("Order deleted successfully");
     } catch (err) {
-      message.error(err?.data?.message || "Failed to delete");
+      message.error(err?.data?.message || "Failed to delete order");
     } finally {
       setShowDeleteModal(false);
       setOrderToDelete(null);
@@ -206,7 +225,7 @@ const OrderWrapper = () => {
   };
 
   const handleViewInvoice = (invoiceLink) => {
-    if (invoiceLink) window.open(invoiceLink, "_blank");
+    if (invoiceLink) window.open(invoiceLink, "_blank", "noopener,noreferrer");
   };
 
   const handleOpenDatesModal = (dueDate, followupDates = []) => {
@@ -255,7 +274,6 @@ const OrderWrapper = () => {
 
           <div className="card-body">
             <div className="row mb-4 align-items-center g-3">
-              {/* Search – left side, takes what it needs */}
               <div className="col-12 col-md-7 col-lg-6 col-xl-5">
                 <Input
                   prefix={<SearchOutlined />}
@@ -264,20 +282,19 @@ const OrderWrapper = () => {
                   onChange={(e) => setSearchTerm(e.target.value)}
                   allowClear
                   size="large"
-                  style={{ width: "100%" }}
                 />
               </div>
 
-              {/* Filters – right side, takes remaining space */}
               <div className="col-12 col-md-5 col-lg-6 col-xl-7">
                 <div className="d-flex gap-3 flex-wrap justify-content-md-end">
-                  {/* All Selects + Clear button here – same as above */}
                   <Select
-                    value={committedFilters.status}
+                    placeholder="All Statuses"
+                    value={committedFilters.status || undefined}
                     style={{ width: 170 }}
                     size="large"
+                    onChange={handleStatusChange}
+                    allowClear
                   >
-                    {" "}
                     {[
                       "PREPARING",
                       "CHECKING",
@@ -291,22 +308,30 @@ const OrderWrapper = () => {
                       "CLOSED",
                     ].map((s) => (
                       <Option key={s} value={s}>
-                        {s}
+                        {s.replace("_", " ")}
                       </Option>
                     ))}
                   </Select>
+
                   <Select
-                    value={committedFilters.priority}
+                    placeholder="All Priorities"
+                    value={committedFilters.priority || undefined}
                     style={{ width: 130 }}
                     size="large"
+                    onChange={handlePriorityChange}
+                    allowClear
                   >
-                    {" "}
                     <Option value="high">High</Option>
                     <Option value="medium">Medium</Option>
                     <Option value="low">Low</Option>
                   </Select>
-                  <Select value={sortBy} style={{ width: 190 }} size="large">
-                    {" "}
+
+                  <Select
+                    value={sortBy}
+                    style={{ width: 190 }}
+                    size="large"
+                    onChange={handleSortChange}
+                  >
                     <Option value="Recently Added">Recently Added</Option>
                     <Option value="Due Date Ascending">
                       Due Date (Soonest)
@@ -315,14 +340,17 @@ const OrderWrapper = () => {
                       Due Date (Latest)
                     </Option>
                   </Select>
-                  <Button size="large">Clear</Button>
+
+                  <Button size="large" onClick={handleClearFilters}>
+                    Clear Filters
+                  </Button>
                 </div>
               </div>
             </div>
 
             {isFetching && !isLoading && (
               <div className="text-center my-3">
-                <span className="text-muted">Updating...</span>
+                <span className="text-muted">Refreshing...</span>
               </div>
             )}
 
@@ -334,7 +362,7 @@ const OrderWrapper = () => {
               </div>
             ) : error ? (
               <div className="alert alert-danger">
-                Error: {error?.data?.message || "Failed to load orders"}
+                {error?.data?.message || "Failed to load orders"}
               </div>
             ) : orders.length === 0 ? (
               <div className="text-center py-5 text-muted">No orders found</div>
@@ -360,7 +388,8 @@ const OrderWrapper = () => {
                       {orders.map((order) => {
                         const serialNo =
                           (committedFilters.page - 1) * committedFilters.limit +
-                          (orders.indexOf(order) + 1);
+                          orders.indexOf(order) +
+                          1;
 
                         const hasInvoice =
                           [
@@ -392,7 +421,7 @@ const OrderWrapper = () => {
                                     : "#721c24",
                                 }}
                               >
-                                {order.quotationId ? "" : "IDLE"}
+                                {order.quotationId ? "Linked" : "Idle"}
                               </span>
                             </td>
 
@@ -433,7 +462,7 @@ const OrderWrapper = () => {
                                           }
                                           disabled={order.status === s}
                                         >
-                                          {s}
+                                          {s.replace("_", " ")}
                                         </Menu.Item>
                                       ))}
                                     </Menu>
@@ -487,9 +516,9 @@ const OrderWrapper = () => {
                             <td>{getAssignedToDisplay(order)}</td>
 
                             <td>
-                              {order.creator
-                                ? order.creator.name || order.creator.username
-                                : "N/A"}
+                              {order.creator?.name ||
+                                order.creator?.username ||
+                                "N/A"}
                             </td>
 
                             <td
@@ -501,7 +530,7 @@ const OrderWrapper = () => {
                             >
                               {order.dueDate ? (
                                 <span
-                                  className="cursor-pointer"
+                                  className="cursor-pointer text-decoration-underline"
                                   onClick={() =>
                                     handleOpenDatesModal(
                                       order.dueDate,
@@ -570,7 +599,7 @@ const OrderWrapper = () => {
                 </div>
 
                 {pagination.total > 0 && (
-                  <div className="mt-4 d-flex justify-content-between align-items-center">
+                  <div className="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
                     <div className="text-muted small">
                       Showing{" "}
                       {(committedFilters.page - 1) * committedFilters.limit + 1}
