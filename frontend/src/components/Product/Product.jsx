@@ -4,13 +4,12 @@ import { Empty } from "antd";
 import { useGetBrandParentCategoriesQuery } from "../../api/brandParentCategoryApi";
 import Breadcrumb from "./Breadcrumb"; // Adjust the path as needed
 import "./productwrapper.css";
-
+import plumbing from "../../assets/img/plumbing.png";
+import accessories from "../../assets/img/accessories_add_ons.png";
+import adhesive from "../../assets/img/chemicals_adhesive.png";
+import fittings from "../../assets/img/cp_fittings_sanitary.png";
+import tiles from "../../assets/img/tiles.png";
 const surfaces = "https://static.cmtradingco.com/brands/SIURFACE.png";
-const tiles = "https://static.cmtradingco.com/brands/tiles.png";
-const plumbing = "https://static.cmtradingco.com/brands/plumbing.jpg";
-const fittings = "https://static.cmtradingco.com/brands/cp_fittings.png";
-const accessories = "https://static.cmtradingco.com/brands/ACCESORIES.png";
-const adhesive = "https://static.cmtradingco.com/brands/ADHESIVE.png";
 
 const Product = () => {
   const { data: bpcList, error } = useGetBrandParentCategoriesQuery();

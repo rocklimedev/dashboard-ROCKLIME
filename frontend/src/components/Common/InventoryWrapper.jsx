@@ -491,6 +491,7 @@ const InventoryWrapper = () => {
           <PageHeader
             title="Inventory Overview"
             subtitle="Manage stock levels, update quantities, and generate reports"
+            exportOptions={{ pdf: false, excel: false }}
           />
 
           {/* Filter Controls */}

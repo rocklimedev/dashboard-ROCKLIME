@@ -221,18 +221,6 @@ const CartItemRow = ({
                       style={{ width: 110 }}
                     />
                   </Space.Compact>
-
-                  {/* Tax */}
-                  <InputNumber
-                    size="small"
-                    min={0}
-                    max={100}
-                    precision={1}
-                    value={itemTaxes[item.productId] ?? 0}
-                    onChange={(v) => handleTaxChange(item.productId, v)}
-                    addonAfter="% Tax"
-                    style={{ width: 100 }}
-                  />
                 </Space>
               </div>
             )}

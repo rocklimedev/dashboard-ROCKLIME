@@ -1,5 +1,4 @@
-// src/pages/Search.jsx
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   Input,
@@ -12,20 +11,24 @@ import {
   Tag,
   Row,
   Col,
-  Tooltip,
-  Divider,
+  Typography,
+  Result,
 } from "antd";
 import {
   SearchOutlined,
   ReloadOutlined,
   UserOutlined,
-  ShoppingOutlined,
+  ShoppingCartOutlined,
   FileTextOutlined,
-  CompressOutlined,
+  TagsOutlined,
+  ShopOutlined,
+  TeamOutlined,
 } from "@ant-design/icons";
 import { Link } from "react-router-dom";
 import { useSearchAllQuery } from "../../api/searchApi";
+import { debounce } from "lodash"; // ← add lodash or implement your own
 
+const { Title, Text, Paragraph } = Typography;
 const { Search: AntSearch } = Input;
 
 const SearchPage = () => {
@@ -33,275 +36,329 @@ const SearchPage = () => {
   const initialQuery = searchParams.get("q") || "";
 
   const [query, setQuery] = useState(initialQuery);
+  const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
 
   const {
     data: searchData,
     isLoading,
     isFetching,
+    isError,
   } = useSearchAllQuery(
-    { query: query.trim(), limit: 20 },
-    { skip: !query.trim() }
+    { query: debouncedQuery.trim(), limit: 20 },
+    { skip: !debouncedQuery.trim() },
+  );
+
+  // Debounce search input (prevents too many API calls while typing)
+  const debouncedSetQuery = useCallback(
+    debounce((value) => {
+      const trimmed = value?.trim();
+      if (trimmed) {
+        setSearchParams({ q: trimmed });
+      }
+      setDebouncedQuery(trimmed);
+    }, 350),
+    [setSearchParams],
   );
 
   const results = searchData?.results || {};
   const resultGroups = useMemo(
-    () =>
-      Object.entries(results).filter(([_, data]) => data?.items?.length > 0),
-    [results]
+    () => Object.entries(results).filter(([_, v]) => v?.items?.length > 0),
+    [results],
   );
 
   const hasResults = resultGroups.length > 0;
 
   const handleSearch = (value) => {
     const trimmed = value?.trim();
-    if (!trimmed) return;
-    setSearchParams({ q: trimmed });
-    setQuery(trimmed);
-  };
-
-  const handleRefresh = () => {
-    if (query.trim()) {
-      setSearchParams({ q: query.trim() });
+    if (trimmed) {
+      setSearchParams({ q: trimmed });
+      setDebouncedQuery(trimmed);
     }
   };
 
-  // Highlight helper (same as overlay)
-  const highlightText = (text, highlight) => {
-    if (!highlight?.trim() || typeof text !== "string") return text || "";
+  const highlight = (text, term) => {
+    if (!term?.trim() || typeof text !== "string") return text || "";
     try {
-      const regex = new RegExp(`(${highlight.trim()})`, "gi");
-      const parts = text.split(regex);
-      return parts.map((part, i) =>
-        regex.test(part) ? <mark key={i}>{part}</mark> : part
+      const regex = new RegExp(`(${term.trim()})`, "gi");
+      return text.split(regex).map((part, i) =>
+        regex.test(part) ? (
+          <mark
+            key={i}
+            style={{ backgroundColor: "#ffe58f", padding: "0 2px" }}
+          >
+            {part}
+          </mark>
+        ) : (
+          part
+        ),
       );
     } catch {
       return text;
     }
   };
 
-  // Avatar logic (same as overlay)
-  const getIconAndAvatar = (modelName, item) => {
-    switch (modelName) {
-      case "User":
-        const userPhoto = item.photo_thumbnail || item.photo_original;
-        return userPhoto ? (
-          <Avatar src={userPhoto} size={48} alt={item.name || item.username} />
+  const getIcon = (modelName, item) => {
+    const commonProps = { size: 48 };
+
+    switch (modelName.toLowerCase()) {
+      case "user":
+      case "customer":
+        return item.photo_thumbnail || item.photo ? (
+          <Avatar src={item.photo_thumbnail || item.photo} {...commonProps} />
         ) : (
-          <Avatar icon={<UserOutlined />} size={48} />
+          <Avatar icon={<UserOutlined />} {...commonProps} />
         );
 
-      case "Product":
-        let productImage = null;
-        if (
-          item.images &&
-          Array.isArray(item.images) &&
-          item.images.length > 0
-        ) {
-          productImage = item.images[0];
-        } else if (typeof item.images === "string") {
-          try {
-            const parsed = JSON.parse(item.images);
-            productImage =
-              Array.isArray(parsed) && parsed.length > 0 ? parsed[0] : null;
-          } catch {}
-        }
-        return productImage ? (
+      case "product":
+        const img = Array.isArray(item.images)
+          ? item.images[0]
+          : item.images?.[0] || null;
+        return img ? (
+          <Avatar shape="square" src={img} {...commonProps} />
+        ) : (
           <Avatar
-            src={productImage}
             shape="square"
-            size={48}
-            style={{ objectFit: "cover" }}
-            alt={item.name || item.product_code}
+            icon={<ShoppingCartOutlined />}
+            {...commonProps}
           />
-        ) : (
-          <Avatar icon={<ShoppingOutlined />} shape="square" size={48} />
         );
 
-      case "Order":
-      case "Invoice":
-      case "Quotation":
-        return <Avatar icon={<FileTextOutlined />} size={48} />;
+      case "order":
+      case "invoice":
+      case "quotation":
+        return <Avatar icon={<FileTextOutlined />} {...commonProps} />;
+
+      case "brand":
+        return <Avatar icon={<ShopOutlined />} {...commonProps} />;
+
+      case "category":
+        return <Avatar icon={<TagsOutlined />} {...commonProps} />;
+
+      case "vendor":
+      case "company":
+        return <Avatar icon={<TeamOutlined />} {...commonProps} />;
 
       default:
-        return <Avatar icon={<SearchOutlined />} size={48} />;
+        return <Avatar icon={<SearchOutlined />} {...commonProps} />;
     }
   };
 
-  // Secondary text
-  const getSecondaryText = (modelName, item) => {
-    switch (modelName) {
-      case "User":
-        return item.email || item.username || item.mobileNumber || null;
-      case "Product":
-        return item.product_code || (item.price ? `$${item.price}` : null);
-      case "Customer":
-        return item.email || item.phone || null;
-      case "Order":
-        return (
-          item.customer_name || (item.total ? `Total: $${item.total}` : null)
-        );
-      case "Invoice":
+  const getSubtitle = (model, item) => {
+    switch (model.toLowerCase()) {
+      case "user":
+      case "customer":
+        return item.email || item.mobileNumber || item.phone || null;
+      case "product":
+        return item.product_code || (item.price && `$${item.price}`);
+      case "order":
+        return item.customer_name || (item.total && `Total: $${item.total}`);
+      case "invoice":
         return item.amount || item.total
           ? `$${item.amount || item.total}`
           : null;
-      case "Quotation":
-        return item.customer_name || null;
+      case "quotation":
+        return item.customer_name || item.reference_number || null;
       default:
         return null;
     }
   };
 
-  // Link & title
-  const getLinkAndTitle = (modelName, item) => {
-    const base = {
-      User: {
-        link: `/u/${item.userId}`,
+  const getLinkProps = (model, item) => {
+    const map = {
+      user: {
+        to: `/u/${item.userId || item.id}`,
         title: item.name || item.username || item.email || "User",
       },
-      Product: {
-        link: `/product/${item.productId}`,
-        title: item.name || item.product_code || "Product",
-      },
-      Customer: {
-        link: `/customer/${item.customerId}`,
+      customer: {
+        to: `/customer/${item.customerId || item.id}`,
         title: item.name || item.companyName || "Customer",
       },
-      Order: {
-        link: `/order/${item.id}`,
-        title: item.title || `Order #${item.orderNo || "N/A"}`,
+      product: {
+        to: `/product/${item.productId || item.id}`,
+        title: item.name || item.product_code || "Product",
       },
-      Invoice: {
-        link: `/invoice/${item.invoiceId}`,
-        title: `Invoice #${item.invoiceNo || item.invoiceId || "N/A"}`,
+      order: {
+        to: `/order/${item.id || item.orderId}`,
+        title: `Order #${item.orderNo || item.id || "—"}`,
       },
-      Quotation: {
-        link: `/quotation/${item.quotationId}`,
+      invoice: {
+        to: `/invoice/${item.invoiceId || item.id}`,
+        title: `Invoice #${item.invoiceNo || item.id || "—"}`,
+      },
+      quotation: {
+        to: `/quotation/${item.quotationId || item.id}`,
         title: item.document_title || item.reference_number || "Quotation",
       },
-      Brand: { link: `/store/${item.id}`, title: item.brandName || "Brand" },
-      Category: {
-        link: `/inventory/categories-keywords?category=${item.categoryId}`,
+      brand: { to: `/store/${item.id}`, title: item.brandName || "Brand" },
+      category: {
+        to: `/inventory/categories-keywords?category=${item.categoryId || item.id}`,
         title: item.name || "Category",
       },
-      Vendor: {
-        link: `/vendors/${item.id}`,
-        title: item.vendorName || "Vendor",
-      },
-      Company: {
-        link: `/companies/${item.companyId}`,
+      vendor: { to: `/vendors/${item.id}`, title: item.vendorName || "Vendor" },
+      company: {
+        to: `/companies/${item.companyId || item.id}`,
         title: item.name || "Company",
       },
     };
 
-    return base[modelName] || { link: "#", title: "Unknown Item" };
+    const key = model.toLowerCase();
+    return map[key] || { to: "#", title: "Unknown" };
   };
 
   return (
     <div className="page-wrapper">
       <div className="content">
-        {/* Page Header */}
-        <div className="page-header">
-          <div className="add-item d-flex">
-            <div className="page-title">
-              <h4>Search Results</h4>
-              <h6>Find users, products, orders, quotations and more</h6>
-            </div>
-          </div>
-        </div>
+        <Title level={3} style={{ marginBottom: 8 }}>
+          Search
+        </Title>
+        <Paragraph type="secondary" style={{ marginBottom: 32 }}>
+          Find users, products, orders, customers, quotations and more
+        </Paragraph>
 
-        {/* Search Input */}
-        <Card className="mb-4 shadow-sm">
-          <div className="card-body">
-            <AntSearch
-              placeholder="Search users, products, orders, quotations..."
-              enterButton="Search"
-              size="large"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onSearch={handleSearch}
-              style={{ maxWidth: 800 }}
-              loading={isLoading || isFetching}
-            />
-          </div>
+        <Card style={{ marginBottom: 32, borderRadius: 12 }}>
+          <AntSearch
+            placeholder="Search users, products, orders, invoices..."
+            enterButton={
+              <Space>
+                <SearchOutlined /> Search
+              </Space>
+            }
+            size="large"
+            allowClear
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              debouncedSetQuery(e.target.value);
+            }}
+            onSearch={handleSearch}
+            style={{ maxWidth: 720 }}
+          />
         </Card>
 
-        {/* Results */}
-        <Spin spinning={isLoading || isFetching}>
-          {query.trim() ? (
-            hasResults ? (
-              <>
-                <h5 className="mb-4">
-                  Showing results for "<strong>{query}</strong>"
-                </h5>
+        {isError ? (
+          <Result
+            status="error"
+            title="Something went wrong"
+            subTitle="We couldn't load search results. Please try again."
+            extra={
+              <Button
+                type="primary"
+                icon={<ReloadOutlined />}
+                onClick={() => window.location.reload()}
+              >
+                Retry
+              </Button>
+            }
+          />
+        ) : isLoading || isFetching ? (
+          <div
+            style={{
+              minHeight: 400,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Spin size="large" tip="Searching..." />
+          </div>
+        ) : query.trim() ? (
+          hasResults ? (
+            resultGroups.map(([modelName, { items }]) => (
+              <section key={modelName} style={{ marginBottom: 48 }}>
+                <Space align="center" style={{ marginBottom: 16 }}>
+                  <Title level={5} style={{ margin: 0 }}>
+                    {modelName}s
+                  </Title>
+                  <Tag
+                    color="geekblue"
+                    style={{ fontSize: 14, padding: "4px 12px" }}
+                  >
+                    {items.length}
+                  </Tag>
+                </Space>
 
-                {resultGroups.map(([modelName, { items }]) => (
-                  <div key={modelName} className="mb-5">
-                    <h6 className="mb-3">
-                      {modelName}s <Tag color="blue">({items.length})</Tag>
-                    </h6>
+                <Row gutter={[16, 24]}>
+                  {items.map((item) => {
+                    const { to, title } = getLinkProps(modelName, item);
+                    const subtitle = getSubtitle(modelName, item);
 
-                    <Row gutter={[16, 16]}>
-                      {items.map((item) => {
-                        const { link, title } = getLinkAndTitle(
-                          modelName,
-                          item
-                        );
-                        const secondary = getSecondaryText(modelName, item);
-
-                        return (
-                          <Col
-                            xs={24}
-                            md={12}
-                            lg={8}
-                            key={item.id || Math.random()}
+                    return (
+                      <Col
+                        xs={24}
+                        sm={12}
+                        lg={8}
+                        xl={6}
+                        key={item.id || `${modelName}-${Math.random()}`}
+                      >
+                        <Card
+                          hoverable
+                          bodyStyle={{ padding: 16 }}
+                          style={{ height: "100%", borderRadius: 10 }}
+                        >
+                          <Space
+                            align="start"
+                            size={16}
+                            style={{ width: "100%" }}
                           >
-                            <Card hoverable bodyStyle={{ padding: "16px" }}>
-                              <div className="d-flex align-items-start">
-                                <div className="me-3">
-                                  {getIconAndAvatar(modelName, item)}
-                                </div>
-                                <div className="flex-grow-1">
-                                  <h6 className="mb-1">
-                                    <Link
-                                      to={link}
-                                      className="text-dark fw-medium"
-                                    >
-                                      {highlightText(title, query)}
-                                    </Link>
-                                  </h6>
-                                  {secondary && (
-                                    <p className="text-muted small mb-2">
-                                      {secondary}
-                                    </p>
-                                  )}
-                                  {/* Optional: add more metadata here */}
-                                </div>
-                              </div>
-                            </Card>
-                          </Col>
-                        );
-                      })}
-                    </Row>
-                  </div>
-                ))}
-              </>
-            ) : (
-              <Empty
-                description={
-                  <span>
-                    No results found for "<strong>{query}</strong>"
-                  </span>
-                }
-                style={{ margin: "120px 0" }}
-              />
-            )
+                            {getIcon(modelName, item)}
+
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <Title
+                                level={5}
+                                style={{ margin: "0 0 4px 0", fontSize: 16 }}
+                              >
+                                <Link
+                                  to={to}
+                                  style={{
+                                    color: "#000",
+                                    textDecoration: "none",
+                                  }}
+                                >
+                                  {highlight(title, debouncedQuery)}
+                                </Link>
+                              </Title>
+
+                              {subtitle && (
+                                <Text type="secondary" style={{ fontSize: 13 }}>
+                                  {highlight(subtitle, debouncedQuery)}
+                                </Text>
+                              )}
+                            </div>
+                          </Space>
+                        </Card>
+                      </Col>
+                    );
+                  })}
+                </Row>
+              </section>
+            ))
           ) : (
             <Empty
-              description="Enter a search term above to see results"
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+              description={
+                <div style={{ marginTop: 16 }}>
+                  <Paragraph strong>No results found for "{query}"</Paragraph>
+                  <Text type="secondary">
+                    Try different keywords or check your spelling
+                  </Text>
+                </div>
+              }
               style={{ margin: "120px 0" }}
             />
-          )}
-        </Spin>
+          )
+        ) : (
+          <Empty
+            description={
+              <div style={{ marginTop: 16 }}>
+                <Paragraph strong>Start typing to search</Paragraph>
+                <Text type="secondary">
+                  Users, products, orders, quotations, customers...
+                </Text>
+              </div>
+            }
+            style={{ margin: "140px 0" }}
+          />
+        )}
       </div>
     </div>
   );
