@@ -384,19 +384,25 @@ export default function CreateProject() {
                       style={{ flex: 1 }}
                       size="large"
                       filterOption={(input, option) =>
-                        (option?.children ?? "")
+                        (option.label || "")
                           .toLowerCase()
                           .includes(input.toLowerCase())
                       }
                       loading={customersLoading}
                     >
-                      {customers.map((c) => (
-                        <Option key={c.customerId} value={c.customerId}>
-                          {c.name} {c.mobile ? `(${c.mobile})` : ""}
-                        </Option>
-                      ))}
+                      {customers.map((c) => {
+                        const label = `${c.name}${c.mobile ? ` (${c.mobile})` : ""}`;
+                        return (
+                          <Option
+                            key={c.customerId}
+                            value={c.customerId}
+                            label={label}
+                          >
+                            {label}
+                          </Option>
+                        );
+                      })}
                     </Select>
-
                     <Button
                       type="primary"
                       icon={<PlusOutlined />}
