@@ -8,7 +8,8 @@ const {
   Product,
   Customer,
 } = require("../models");
-// Helper: Recompute summaries + pagination logic
+
+// Helper: Recompute summaries (GST completely removed)
 const computeSummaries = (items, floorDetails) => {
   const perFloor = {};
   const perType = {};
@@ -23,7 +24,6 @@ const computeSummaries = (items, floorDetails) => {
     totalItems: 0,
     totalQty: 0,
     totalAmount: 0,
-    totalWithGST: 0,
     visible: { qty: 0, amount: 0, items: 0 },
     concealed: concealed.overall,
   };
@@ -53,7 +53,7 @@ const computeSummaries = (items, floorDetails) => {
     // Per Floor
     if (!perFloor[floor]) {
       const floorInfo = floorDetails.find(
-        (f) => f.floor_number === item.floor_number
+        (f) => f.floor_number === item.floor_number,
       );
       perFloor[floor] = {
         floorName: floorInfo?.floor_name || floor,
@@ -98,7 +98,7 @@ const computeSummaries = (items, floorDetails) => {
       }
     }
 
-    // Existing perType logic...
+    // Per type
     if (!perType[type])
       perType[type] = { qty: 0, amount: 0, items: 0, pages: 0 };
     perType[type].qty += item.quantity;
@@ -106,8 +106,6 @@ const computeSummaries = (items, floorDetails) => {
     perType[type].items += 1;
     perType[type].pages = Math.ceil(perType[type].items / 10);
   });
-
-  overall.totalWithGST = overall.totalAmount * 1.18;
 
   return {
     overall,
@@ -117,18 +115,19 @@ const computeSummaries = (items, floorDetails) => {
       summary: concealed.overall,
       byCategory: concealed.byCategory,
       perFloor: Object.fromEntries(
-        Object.entries(perFloor).map(([k, v]) => [k, v.concealed])
+        Object.entries(perFloor).map(([k, v]) => [k, v.concealed]),
       ),
-      // perRoom: concealed.perRoom
     },
   };
 };
+
 // Helper for nice floor names
 function getOrdinal(n) {
   const s = ["th", "st", "nd", "rd"],
     v = n % 100;
   return s[(v - 20) % 10] || s[v] || s[0];
 }
+
 const siteMapController = {
   // 1. Create New Site Map
   async createSiteMap(req, res) {
@@ -156,7 +155,6 @@ const siteMapController = {
           .status(404)
           .json({ success: false, message: "Customer not found" });
 
-      // Auto-generate floorDetails if empty, including default rooms (optional: customize based on siteSizeInBHK)
       let finalFloorDetails = floorDetails.length > 0 ? floorDetails : [];
       if (finalFloorDetails.length === 0) {
         for (let i = 1; i <= totalFloors; i++) {
@@ -167,16 +165,15 @@ const siteMapController = {
             floor_name: floorName,
             floor_size: "",
             details: "",
-            rooms: [], // Default empty; user can add rooms later
+            rooms: [],
           });
         }
       }
 
-      // Validate items' floor_number and room_id (optional: add stricter validation)
       items.forEach((item) => {
         if (item.floor_number) {
           const floor = finalFloorDetails.find(
-            (f) => f.floor_number === item.floor_number
+            (f) => f.floor_number === item.floor_number,
           );
           if (!floor)
             throw new Error(`Invalid floor_number: ${item.floor_number}`);
@@ -185,7 +182,7 @@ const siteMapController = {
             !floor.rooms.find((r) => r.room_id === item.room_id)
           ) {
             throw new Error(
-              `Invalid room_id: ${item.room_id} for floor ${item.floor_number}`
+              `Invalid room_id: ${item.room_id} for floor ${item.floor_number}`,
             );
           }
         }
@@ -206,14 +203,13 @@ const siteMapController = {
           quotationId,
           status: quotationId ? "converted" : "draft",
         },
-        { transaction: t }
+        { transaction: t },
       );
 
-      // If linked to quotation at creation
       if (quotationId) {
         await Quotation.update(
           { siteMapId: siteMap.id },
-          { where: { quotationId }, transaction: t }
+          { where: { quotationId }, transaction: t },
         );
       }
 
@@ -275,16 +271,14 @@ const siteMapController = {
       if (!siteMap)
         return res.status(404).json({ success: false, message: "Not found" });
 
-      // Recompute if items or floors changed
       if (updates.items || updates.floorDetails || updates.totalFloors) {
         const finalItems = updates.items || siteMap.items;
         const finalFloors = updates.floorDetails || siteMap.floorDetails;
 
-        // Validate items' floor_number and room_id
         finalItems.forEach((item) => {
           if (item.floor_number) {
             const floor = finalFloors.find(
-              (f) => f.floor_number === item.floor_number
+              (f) => f.floor_number === item.floor_number,
             );
             if (!floor)
               throw new Error(`Invalid floor_number: ${item.floor_number}`);
@@ -293,7 +287,7 @@ const siteMapController = {
               !floor.rooms.find((r) => r.room_id === item.room_id)
             ) {
               throw new Error(
-                `Invalid room_id: ${item.room_id} for floor ${item.floor_number}`
+                `Invalid room_id: ${item.room_id} for floor ${item.floor_number}`,
               );
             }
           }
@@ -304,19 +298,18 @@ const siteMapController = {
 
       await siteMap.update(updates, { transaction: t });
 
-      // If quotation linked and sync requested
       if (siteMap.quotationId && updates.syncToQuotation) {
         await Quotation.update(
           {
             products: siteMap.items,
-            finalAmount: siteMap.summaries.overall.totalAmount * 1.18,
+            finalAmount: siteMap.summaries.overall.totalAmount,
           },
-          { where: { quotationId: siteMap.quotationId }, transaction: t }
+          { where: { quotationId: siteMap.quotationId }, transaction: t },
         );
       }
 
       await t.commit();
-      res.json({ success: true, data: siteMap.reload() });
+      res.json({ success: true, data: await siteMap.reload() });
     } catch (error) {
       await t.rollback();
       res.status(500).json({ success: false, error: error.message });
@@ -335,7 +328,7 @@ const siteMapController = {
       if (siteMap.quotationId) {
         await Quotation.update(
           { siteMapId: null },
-          { where: { quotationId: siteMap.quotationId }, transaction: t }
+          { where: { quotationId: siteMap.quotationId }, transaction: t },
         );
       }
 
@@ -349,7 +342,7 @@ const siteMapController = {
     }
   },
 
-  // 6. Generate Quotation from Site Map
+  // 6. Generate Quotation from Site Map (no GST)
   async generateQuotationFromSiteMap(req, res) {
     const t = await sequelize.transaction();
     try {
@@ -363,19 +356,18 @@ const siteMapController = {
           customerId: siteMap.customerId,
           document_title: `${siteMap.name} - Site Based Quotation`,
           quotation_date: new Date(),
-          due_date: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000), // +15 days
+          due_date: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
           products: siteMap.items,
-          finalAmount: siteMap.summaries.overall.totalWithGST,
-          gst: 18,
+          finalAmount: siteMap.summaries.overall.totalAmount,
           siteMapId: siteMap.id,
           createdBy: req.user?.userId || null,
         },
-        { transaction: t }
+        { transaction: t },
       );
 
       await siteMap.update(
         { quotationId: quotation.quotationId, status: "converted" },
-        { transaction: t }
+        { transaction: t },
       );
       await t.commit();
 
@@ -398,11 +390,11 @@ const siteMapController = {
 
       await SiteMap.update(
         { quotationId },
-        { where: { id: siteMapId }, transaction: t }
+        { where: { id: siteMapId }, transaction: t },
       );
       await Quotation.update(
         { siteMapId },
-        { where: { quotationId }, transaction: t }
+        { where: { quotationId }, transaction: t },
       );
 
       await t.commit();
@@ -423,11 +415,11 @@ const siteMapController = {
       if (siteMap?.quotationId) {
         await Quotation.update(
           { siteMapId: null },
-          { where: { quotationId: siteMap.quotationId }, transaction: t }
+          { where: { quotationId: siteMap.quotationId }, transaction: t },
         );
         await siteMap.update(
           { quotationId: null, status: "draft" },
-          { transaction: t }
+          { transaction: t },
         );
       }
 

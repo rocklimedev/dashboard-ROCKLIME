@@ -2265,3 +2265,19 @@ body {
   gap: 16px;
   color: #6b7280;
 }
+.visible-row {
+  background: white;
+}
+.concealed-row {
+  background: #fff7e6 !important;
+  opacity: 0.94;
+}
+.ant-collapse-ghost .ant-collapse-header {
+  padding: 12px 0 !important;
+}
+.ant-card {
+  transition: all 0.2s ease;
+}
+.ant-card:hover {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}

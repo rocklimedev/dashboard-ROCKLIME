@@ -1093,15 +1093,6 @@ const AddSiteMap = () => {
                 valueStyle={{ fontWeight: 600, fontSize: 28 }}
               />
             </Col>
-            <Col xs={12} sm={6}>
-              <Statistic
-                title="incl. 18% GST"
-                value={grandTotal * 1.18}
-                precision={0}
-                formatter={(v) => `₹${Math.round(v).toLocaleString("en-IN")}`}
-                valueStyle={{ color: "#722ed1", fontSize: 28 }}
-              />
-            </Col>
           </Row>
 
           <Divider />
