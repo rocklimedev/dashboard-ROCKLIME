@@ -4,7 +4,7 @@ const {
   adminContactNotification,
 } = require("../middleware/sendMail");
 const { sendNotification } = require("./notificationController"); // Import sendNotification
-const { Contact } = require("../models");
+const Contact = require("../models/Contact"); // Correct import
 // Assume an admin user ID or system channel for notifications
 const ADMIN_USER_ID = "2ef0f07a-a275-4fe1-832d-fe9a5d145f60"; // Replace with actual admin user ID or channel
 
@@ -32,25 +32,6 @@ exports.submitContactForm = async (req, res) => {
 
     // Save to database
     await contact.save();
-
-    // Send confirmation email to user
-    const userEmail = contactFormEmail(firstName, message);
-    await sendMail(email, userEmail.subject, userEmail.text, userEmail.html);
-
-    // Send notification email to admin
-    const adminEmail = adminContactNotification(
-      firstName,
-      lastName,
-      email,
-      phone,
-      message
-    );
-    await sendMail(
-      "no-reply@static.cmtradingco.com", // Fallback admin email
-      adminEmail.subject,
-      adminEmail.text,
-      adminEmail.html
-    );
 
     // Send real-time notification to admin or system channel
     await sendNotification({
@@ -229,7 +210,7 @@ exports.replyToEmail = async (req, res) => {
       query.email,
       replyEmail.subject,
       replyEmail.text,
-      replyEmail.html
+      replyEmail.html,
     );
 
     // Send real-time notification to the user (if userId is available)
