@@ -19,16 +19,12 @@ import {
   FilePdfFilled,
   FileExcelFilled,
   HistoryOutlined,
+  SettingOutlined,
 } from "@ant-design/icons";
 import { Helmet } from "react-helmet";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { Dropdown } from "antd";
-import {
-  SettingOutlined,
-  EyeOutlined,
-  EyeInvisibleOutlined,
-} from "@ant-design/icons";
 import logo from "../../assets/img/logo-quotation.png";
 import styles from "./quotationnew.module.css";
 import coverImage from "../../assets/img/quotation_first_page.jpeg";
@@ -40,8 +36,6 @@ import {
 } from "../../api/quotationApi";
 import { useGetCustomerByIdQuery } from "../../api/customerApi";
 import { useGetAddressByIdQuery } from "../../api/addressApi";
-import useProductsData from "../../data/useProductdata";
-import { useGetAllBrandsQuery } from "../../api/brandsApi";
 import { exportToPDF, exportToExcel } from "./hooks/exportHelpers";
 import { amountInWords } from "./hooks/calcHelpers";
 
@@ -75,9 +69,9 @@ const NewQuotationsDetails = () => {
     isLoading: qLoading,
     error: qError,
   } = useGetQuotationByIdQuery(id);
+
   const { data: versionsData, isLoading: vLoading } =
     useGetQuotationVersionsQuery(id);
-  const { data: brandsData } = useGetAllBrandsQuery();
 
   const safeParse = (data) => {
     if (!data) return [];
@@ -149,9 +143,6 @@ const NewQuotationsDetails = () => {
     [classificationSource],
   );
 
-  const { productsData, loading: prodLoading } =
-    useProductsData(classificationSource);
-
   // ── Customer & Address ──────────────────────────────────────────────────
   const customerId =
     activeVersionData.quotation?.customerId || quotation?.customerId;
@@ -159,6 +150,7 @@ const NewQuotationsDetails = () => {
 
   const { data: customerResponse, isFetching: custLoading } =
     useGetCustomerByIdQuery(customerId, { skip: !customerId });
+
   const { data: addressResponse, isFetching: addrLoading } =
     useGetAddressByIdQuery(shipToId, { skip: !shipToId });
 
@@ -174,48 +166,52 @@ const NewQuotationsDetails = () => {
         .trim()
     : "--";
 
-  // ── Brand Names ─────────────────────────────────────────────────────────
+  // ── Brand Names (no external product data) ──────────────────────────────
   const brandNames = useMemo(() => {
-    const set = new Set();
+    const brands = new Set();
+
     mainProducts.forEach((p) => {
-      const pd = productsData?.find((x) => x.productId === p.productId) || {};
-      const brand =
-        pd.brandName ||
-        pd.metaDetails?.find((m) => m.title?.toLowerCase().includes("brand"))
-          ?.value ||
-        brandsData?.find((b) => b.id === pd.brandId)?.brandName ||
-        "N/A";
-      if (brand && brand !== "N/A") set.add(brand.trim());
+      const name = (p.name || "").toLowerCase();
+      if (name.includes("grohe")) brands.add("GROHE");
+      if (name.includes("american standard")) brands.add("AMERICAN STANDARD");
+      if (name.includes("caesarstone")) brands.add("Caesarstone");
     });
-    return set.size ? [...set].join(" / ") : "GROHE / AMERICAN STANDARD";
-  }, [mainProducts, productsData, brandsData]);
+
+    return brands.size > 0
+      ? [...brands].join(" / ")
+      : "GROHE / AMERICAN STANDARD";
+  }, [mainProducts]);
 
   // ── Calculations ────────────────────────────────────────────────────────
   const backendFinalAmount = Number(quotation?.finalAmount ?? 0);
   const backendRoundOff = Number(quotation?.roundOff ?? 0);
   const backendExtraDiscount = Number(quotation?.extraDiscount ?? 0);
 
-  const displaySubtotal = useMemo(() => {
-    return mainProducts.reduce((sum, p) => {
-      const item =
-        quotation?.items?.find((i) => i.productId === p.productId) ||
-        quotation?.products?.find((i) => i.productId === p.productId) ||
-        p;
-      return sum + Number(item?.total ?? 0);
-    }, 0);
-  }, [mainProducts, quotation]);
+  const displaySubtotal = useMemo(
+    () =>
+      mainProducts.reduce((sum, p) => {
+        const item =
+          quotation?.items?.find((i) => i.productId === p.productId) ||
+          quotation?.products?.find((i) => i.productId === p.productId) ||
+          p;
+        return sum + Number(item?.total ?? 0);
+      }, 0),
+    [mainProducts, quotation],
+  );
 
-  const displayProductDiscount = useMemo(() => {
-    return mainProducts.reduce((sum, p) => {
-      const item =
-        quotation?.items?.find((i) => i.productId === p.productId) ||
-        quotation?.products?.find((i) => i.productId === p.productId) ||
-        p;
-      const orig = Number(item?.price ?? 0) * Number(item?.quantity ?? 1);
-      const discounted = Number(item?.total ?? 0);
-      return sum + (orig - discounted);
-    }, 0);
-  }, [mainProducts, quotation]);
+  const displayProductDiscount = useMemo(
+    () =>
+      mainProducts.reduce((sum, p) => {
+        const item =
+          quotation?.items?.find((i) => i.productId === p.productId) ||
+          quotation?.products?.find((i) => i.productId === p.productId) ||
+          p;
+        const orig = Number(item?.price ?? 0) * Number(item?.quantity ?? 1);
+        const discounted = Number(item?.total ?? 0);
+        return sum + (orig - discounted);
+      }, 0),
+    [mainProducts, quotation],
+  );
 
   const finalAmountInWords = amountInWords(Math.round(backendFinalAmount));
 
@@ -256,7 +252,7 @@ const NewQuotationsDetails = () => {
       } else {
         await exportToExcel(
           mainProducts,
-          productsData,
+          [], // no productsData
           customerName,
           brandNames,
           activeVersionData.quotation,
@@ -285,7 +281,7 @@ const NewQuotationsDetails = () => {
   };
 
   // ── Loading / Error States ──────────────────────────────────────────────
-  if (qLoading || vLoading || prodLoading || custLoading || addrLoading) {
+  if (qLoading || vLoading || custLoading || addrLoading) {
     return (
       <Spin
         tip="Loading Quotation Details..."
@@ -345,33 +341,28 @@ const NewQuotationsDetails = () => {
 
           <tbody>
             {items.map((p) => {
-              const pd =
-                productsData?.find((x) => x.productId === p.productId) || {};
               const matchingItem =
-                quotation?.items?.find((it) => it.productId === p.productId) ||
+                // Prefer products array first — it has more complete data
                 quotation?.products?.find(
                   (it) => it.productId === p.productId,
                 ) ||
+                // fallback to items (which may be partial/minimal)
+                quotation?.items?.find((it) => it.productId === p.productId) ||
+                // last resort: use whatever came from classificationSource
                 p;
 
               const code =
                 matchingItem?.companyCode ||
-                p.companyCode ||
-                p.productCode ||
                 matchingItem?.productCode ||
-                pd.companyCode ||
+                p.companyCode ||
                 "—";
 
-              const img =
-                p.imageUrl ||
-                matchingItem?.imageUrl ||
-                pd.images?.[0] ||
-                pd.imageUrl ||
-                "";
+              const img = matchingItem?.imageUrl || p.imageUrl || "";
 
               const mrp = Number(matchingItem?.price ?? p.price ?? 0);
               const qty = Number(matchingItem?.quantity ?? p.quantity ?? 1);
               const lineTotal = Number(matchingItem?.total ?? p.total ?? 0);
+
               const discValue = Number(matchingItem?.discount ?? 0);
               const discType = (
                 matchingItem?.discountType ?? "percent"
@@ -396,7 +387,7 @@ const NewQuotationsDetails = () => {
                   )}
                   {shouldShowColumn("name") && (
                     <td className={styles.prodNameCell}>
-                      {p.name || matchingItem?.name || pd.name || "—"}
+                      {matchingItem?.name || p.name || "—"}
                     </td>
                   )}
                   {shouldShowColumn("code") && <td>{code}</td>}
@@ -405,7 +396,7 @@ const NewQuotationsDetails = () => {
                       {img ? (
                         <img
                           src={img}
-                          alt={p.name}
+                          alt={matchingItem?.name || p.name || "Product"}
                           className={styles.prodImg}
                         />
                       ) : null}
@@ -655,8 +646,6 @@ const NewQuotationsDetails = () => {
           </div>
         </div>,
       );
-
-      globalSno += optionalProducts.length;
     }
 
     // SUMMARY ONLY (when optional items exist)
@@ -750,7 +739,7 @@ const NewQuotationsDetails = () => {
   };
 
   // ────────────────────────────────────────────────────────────────────────
-  //   MAIN RETURN – with sticky bottom tabs
+  //   MAIN RETURN
   // ────────────────────────────────────────────────────────────────────────
   return (
     <>
@@ -763,8 +752,7 @@ const NewQuotationsDetails = () => {
         style={{ position: "relative", minHeight: "100vh" }}
       >
         <div className="content">
-          {/* TOP BAR – made sticky at top */}
-
+          {/* TOP BAR */}
           <div
             style={{
               padding: "16px 40px",
@@ -799,7 +787,6 @@ const NewQuotationsDetails = () => {
               </div>
 
               <Space size="middle" wrap>
-                {/* Column visibility controls */}
                 <Dropdown
                   placement="bottomRight"
                   trigger={["click"]}
@@ -888,6 +875,7 @@ const NewQuotationsDetails = () => {
                     {Object.values(visibleColumns).filter(Boolean).length}/8
                   </Button>
                 </Dropdown>
+
                 <Divider type="vertical" style={{ height: 120 }} />
 
                 <Space>
@@ -945,13 +933,13 @@ const NewQuotationsDetails = () => {
             style={{
               padding: "32px 40px",
               background: "#f9f9f9",
-              minHeight: "calc(100vh - 220px)", // give space for top + bottom bars
+              minHeight: "calc(100vh - 220px)",
             }}
           >
             <div className={styles.printArea}>{renderPages(() => true)}</div>
           </div>
 
-          {/* STICKY VERSION TABS AT BOTTOM */}
+          {/* STICKY VERSION TABS */}
           <div
             style={{
               position: "sticky",

@@ -60,7 +60,21 @@ const PageWrapper = () => {
     undefined,
     { pollingInterval: 30000 },
   );
-  const orders = ordersResponse?.data || [];
+
+  const THIRTY_DAYS_AGO = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
+
+  const recentOrders = useMemo(() => {
+    const allOrders = ordersResponse?.data || [];
+    return allOrders.filter((order) => {
+      const orderDate = new Date(order.createdAt);
+      return orderDate >= THIRTY_DAYS_AGO;
+    });
+  }, [ordersResponse, THIRTY_DAYS_AGO]);
 
   const { data: quotationsResponse } = useGetAllQuotationsQuery({ limit: 20 });
   const quotations = quotationsResponse?.data || [];
@@ -125,6 +139,7 @@ const PageWrapper = () => {
     () => lowStockProducts.slice(0, 10),
     [lowStockProducts],
   );
+
   /* ------------------------------------------------------------------ */
   /*  STATUS UPDATE                                                     */
   /* ------------------------------------------------------------------ */
@@ -143,7 +158,6 @@ const PageWrapper = () => {
   /* ------------------------------------------------------------------ */
   /*  COUNTS & LATEST                                                   */
   /* ------------------------------------------------------------------ */
-
   const quotationCount = quotations.length;
   const productCount = products.length;
 
@@ -182,14 +196,11 @@ const PageWrapper = () => {
   };
 
   const getSellingPrice = (product) => {
-    // Preferred: use the meta object with UUID key
     const metaValue = product.meta?.[SELLING_PRICE_META_ID];
     if (metaValue != null) {
-      // catches null/undefined
-      return String(metaValue); // ensure string for parseFloat
+      return String(metaValue);
     }
 
-    // Fallback for older data (numeric id in metaDetails)
     const entry = product.metaDetails?.find((m) => m.id === 9);
     if (entry?.value) {
       return entry.value;
@@ -205,22 +216,24 @@ const PageWrapper = () => {
     <div className="page-wrapper">
       <div className="content">
         <div className="row gx-3 gy-3">
-          {/* LEFT: Orders */}
+          {/* LEFT: Orders – Last 30 Days */}
           <div className="col-12 col-md-4 d-flex flex-column gap-3">
             <div className="card shadow-sm rounded-3">
               <div className="card-header bg-light fw-semibold">
-                ORDERS THIS MONTH{" "}
+                ORDERS LAST 30 DAYS
               </div>
               <div className="card-body p-0">
-                {orders.length ? (
+                {recentOrders.length ? (
                   <ul className="list-unstyled m-0">
-                    {orders.map((o, i) => (
+                    {recentOrders.map((o, i) => (
                       <li
                         key={o.id}
                         className="list-item d-flex justify-content-between align-items-start p-2"
                         style={{
                           borderBottom:
-                            i < orders.length - 1 ? "1px solid #eee" : "none",
+                            i < recentOrders.length - 1
+                              ? "1px solid #eee"
+                              : "none",
                         }}
                       >
                         <div className="flex-grow-1">
@@ -328,7 +341,9 @@ const PageWrapper = () => {
                     ))}
                   </ul>
                 ) : (
-                  <p className="empty-state p-3">No orders this month.</p>
+                  <p className="empty-state p-3">
+                    No orders in the last 30 days.
+                  </p>
                 )}
               </div>
             </div>

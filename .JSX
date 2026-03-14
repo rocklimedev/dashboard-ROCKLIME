@@ -1,1450 +1,1392 @@
-// src/pages/CreateProject.jsx
-import React, { useState, useEffect, useMemo } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
-  Steps,
-  Button,
-  message,
-  Card,
-  Tabs,
-  Space,
   Alert,
-  Row,
-  Col,
-  Spin,
-  Divider,
-  Typography,
-  Select,
-  Input,
-  InputNumber,
-  Table,
+  Tabs,
   Modal,
-  Form,
+  Button,
+  Typography,
+  Segmented,
+  Space,
   Tag,
-  Statistic,
-  Collapse,
-  Empty,
-  Tooltip,
+  Select,
+  Form,
+  Input,
+  message,
 } from "antd";
 import {
-  ArrowLeftOutlined,
-  ArrowRightOutlined,
-  SaveOutlined,
-  PlusOutlined,
-  DeleteOutlined,
+  ShoppingCartOutlined,
+  CheckCircleOutlined,
   HomeOutlined,
-  SearchOutlined,
-  InfoCircleOutlined,
 } from "@ant-design/icons";
-import { v4 as uuidv4 } from "uuid";
-import { debounce } from "lodash";
-
-import PageHeader from "../Common/PageHeader";
-import { useCreateQuotationMutation } from "../../api/quotationApi";
-import { useCreateSiteMapMutation } from "../../api/siteMapApi";
-import { useGetCustomersQuery } from "../../api/customerApi";
 import {
-  useSearchProductsQuery,
-  useGetAllProductsQuery,
-} from "../../api/productApi";
-import { useGetAllAddressesQuery } from "../../api/addressApi";
-
+  useGetCustomersQuery,
+  useCreateCustomerMutation,
+  customerApi,
+} from "../../api/customerApi";
+import {
+  useGetCartQuery,
+  useUpdateCartMutation,
+  useClearCartMutation,
+  useRemoveFromCartMutation,
+  cartApi,
+} from "../../api/cartApi";
+import { useGetProfileQuery } from "../../api/userApi";
+import { useCreateQuotationMutation } from "../../api/quotationApi";
+import {
+  useCreateOrderMutation,
+  useGetAllOrdersQuery,
+} from "../../api/orderApi";
+import {
+  useGetAllAddressesQuery,
+  useCreateAddressMutation,
+} from "../../api/addressApi";
+import { useGetAllTeamsQuery } from "../../api/teamApi";
+import {
+  useGetVendorsQuery,
+  useCreateVendorMutation,
+} from "../../api/vendorApi";
+import { useCreatePurchaseOrderMutation } from "../../api/poApi";
+import { useGetAllProductsQuery } from "../../api/productApi";
+import { v4 as uuidv4 } from "uuid";
+import { useDispatch } from "react-redux";
+import useUserAndCustomerData from "../../data/useUserAndCustomerData";
+import useProductsData from "../../data/useProductdata";
+import { debounce } from "lodash";
+import moment from "moment";
+import styled from "styled-components";
+import PropTypes from "prop-types";
+import CartTab from "./Cart";
+import QuotationForm from "./QuotationForm";
+import OrderForm from "./OrderForm";
+import PurchaseOrderForm from "./PurchaseOrderForm";
 import AddAddress from "../Address/AddAddressModal";
+import AddVendorModal from "./AddVendorModal";
+import AddNewTeam from "../Orders/AddNewTeam";
+import { useGetAllUsersQuery } from "../../api/userApi";
 import AddCustomerModal from "../Customers/AddCustomerModal";
+import PreviewQuotation from "../Quotation/PreviewQuotation";
+import { useAuth } from "../../context/AuthContext";
+import { skipToken } from "@reduxjs/toolkit/query";
+import { useCreateSiteMapMutation } from "../../api/siteMapApi";
+const { TabPane } = Tabs;
+const { Text } = Typography;
 
-const { Title, Text } = Typography;
-const { Option } = Select;
-const { Panel } = Collapse;
+const PageWrapper = styled.div`
+  padding: 16px;
+  background-color: #f5f5f5;
+  min-height: 100vh;
+  @media (min-width: 768px) {
+    padding: 24px;
+  }
+`;
 
-export default function CreateProject() {
+const RESTRICTED_ROLES = ["SUPER_ADMIN", "DEVELOPER", "ADMIN"];
+
+const NewCart = ({ onConvertToOrder }) => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const customerIdFromUrl = searchParams.get("customerId");
+  const dispatch = useDispatch();
+  const { auth } = useAuth();
+  const canCreatePurchaseOrder =
+    auth?.role && RESTRICTED_ROLES.includes(auth.role);
 
-  // ── API ───────────────────────────────────────────────────────
-  const {
-    data: customersData,
-    isLoading: customersLoading,
-    refetch: refetchCustomers,
-  } = useGetCustomersQuery({ limit: 500 });
-  const { data: productsResponse, isLoading: productsLoading } =
-    useGetAllProductsQuery();
-  const { data: addressesData, refetch: refetchAddresses } =
-    useGetAllAddressesQuery();
-
-  const [createQuotation, { isLoading: creatingQuotation }] =
-    useCreateQuotationMutation();
-  const [createSiteMap, { isLoading: creatingSiteMap }] =
+  // ────────────────────── PROFILE & USER ──────────────────────
+  const { data: profileData } = useGetProfileQuery();
+  const { data: usersData } = useGetAllUsersQuery();
+  const users = Array.isArray(usersData?.users) ? usersData.users : [];
+  const user = profileData?.user || {};
+  const userId = user.userId;
+  const [createSiteMap, { isLoading, isError, error }] =
     useCreateSiteMapMutation();
-
-  const customers = customersData?.data || [];
-  const allProducts = productsResponse?.data || [];
-
-  // ── Modals ────────────────────────────────────────────────────
-  const [showAddressModal, setShowAddressModal] = useState(false);
+  // ────────────────────── STATE ──────────────────────
+  const [activeTab, setActiveTab] = useState("cart");
+  const [selectedCustomer, setSelectedCustomer] = useState("");
+  const [selectedVendor, setSelectedVendor] = useState("");
+  const [showClearCartModal, setShowClearCartModal] = useState(false);
+  const [showAddAddressModal, setShowAddAddressModal] = useState(false);
+  const [showAddVendorModal, setShowAddVendorModal] = useState(false);
+  const [showAddTeamModal, setShowAddTeamModal] = useState(false);
   const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
+  const [documentType, setDocumentType] = useState("Quotation");
+  const [useBillingAddress, setUseBillingAddress] = useState(false);
 
-  // ── Wizard ────────────────────────────────────────────────────
-  const [currentStep, setCurrentStep] = useState(0);
+  // Local cart state – allows mutating floor_number / room_id
+  const [localCartItems, setLocalCartItems] = useState([]);
 
-  // ── Form State ────────────────────────────────────────────────
-  const [project, setProject] = useState({
-    customerId: customerIdFromUrl || "",
-    projectName: "",
-    quotationDate: new Date(),
-    dueDate: null,
-    gst: 18,
-    shipTo: "",
-    totalFloors: 1,
-    floorDetails: [],
-    items: [],
-  });
-
-  // ── Product Search ────────────────────────────────────────────
-  const [searchTerm, setSearchTerm] = useState("");
-  const { data: searchResult = [], isFetching: searching } =
-    useSearchProductsQuery(searchTerm.trim(), {
-      skip: searchTerm.trim().length < 2,
-    });
-
-  const debouncedSearch = debounce((val) => setSearchTerm(val.trim()), 400);
-
-  // ── Room & Assign modals ──────────────────────────────────────
-  const [roomModal, setRoomModal] = useState({
-    visible: false,
-    floor: null,
-    room: null,
-  });
-  const [roomForm] = Form.useForm();
-
+  // Assignment modal state
   const [assignModal, setAssignModal] = useState({
     visible: false,
     itemId: null,
   });
-  const [selectedAssignFloor, setSelectedAssignFloor] = useState(null);
-  const [selectedAssignRoom, setSelectedAssignRoom] = useState(null);
+  const [selectedFloorForAssign, setSelectedFloorForAssign] = useState(null);
+  const [selectedRoomForAssign, setSelectedRoomForAssign] = useState(null);
 
-  // ── Address Helpers ───────────────────────────────────────────
-  const shortAddress = (addr) => {
-    if (!addr) return "—";
-    const parts = [
-      addr.street || "",
-      addr.landmark ? `(${addr.landmark})` : "",
-      addr.city || "",
-      addr.pincode ? `- ${addr.pincode}` : "",
-    ].filter(Boolean);
-    return parts.join(", ") || "Unnamed address";
+  // Form data
+  const [quotationData, setQuotationData] = useState({
+    quotationDate: new Date().toISOString().split("T")[0],
+    dueDate: "",
+    billTo: "",
+    shipTo: null,
+    floors: [{ number: 1, name: "Ground Floor", rooms: [] }],
+    signatureName: "CM TRADING CO",
+    discountType: "fixed",
+    discountAmount: "",
+    followupDates: [],
+  });
+
+  const [orderData, setOrderData] = useState({
+    createdFor: "",
+    createdBy: userId || "",
+    assignedTeamId: "",
+    assignedUserId: "",
+    secondaryUserId: "",
+    pipeline: "",
+    status: "PREPARING",
+    dueDate: moment().add(1, "days").format("YYYY-MM-DD"),
+    followupDates: [],
+    source: "",
+    priority: "medium",
+    description: "",
+    invoiceLink: null,
+    orderNo: "",
+    quotationId: "",
+    masterPipelineNo: "",
+    previousOrderNo: "",
+    shipTo: "",
+  });
+
+  const [purchaseOrderData, setPurchaseOrderData] = useState({
+    vendorId: "",
+    orderDate: moment().format("YYYY-MM-DD"),
+    expectedDeliveryDate: null,
+    items: [],
+    totalAmount: 0,
+    status: "pending",
+  });
+
+  // Per-item overrides
+  const [itemDiscounts, setItemDiscounts] = useState({});
+  const [itemTaxes, setItemTaxes] = useState({});
+  const [itemDiscountTypes, setItemDiscountTypes] = useState({});
+  const [previewVisible, setPreviewVisible] = useState(false);
+  const [updatingItems, setUpdatingItems] = useState({});
+  const [productSearch, setProductSearch] = useState("");
+  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [shipping, setShipping] = useState(0);
+  const [gst, setGst] = useState(0);
+  const [billingAddressId, setBillingAddressId] = useState(null);
+
+  // ────────────────────── QUERIES & MUTATIONS ──────────────────────
+  const { data: cartData } = useGetCartQuery(userId, { skip: !userId });
+  const { data: customerData } = useGetCustomersQuery(
+    { limit: 500 },
+    { skip: activeTab !== "checkout" },
+  );
+  const { data: allOrdersData } = useGetAllOrdersQuery();
+  const { data: teamsData, refetch: refetchTeams } = useGetAllTeamsQuery();
+  const { data: addressesData, refetch: refetchAddresses } =
+    useGetAllAddressesQuery(selectedCustomer || skipToken, {
+      skip: !selectedCustomer || activeTab !== "checkout",
+    });
+  const { data: productsData } = useGetAllProductsQuery();
+  const { data: vendorsData } = useGetVendorsQuery();
+
+  const [updateCart] = useUpdateCartMutation();
+  const [clearCart] = useClearCartMutation();
+  const [removeFromCart] = useRemoveFromCartMutation();
+  const [createQuotation] = useCreateQuotationMutation();
+  const [createOrder] = useCreateOrderMutation();
+  const [createPurchaseOrder] = useCreatePurchaseOrderMutation();
+  const [createVendor, { isLoading: isCreatingVendor }] =
+    useCreateVendorMutation();
+  const [createAddress] = useCreateAddressMutation();
+  const [createCustomer] = useCreateCustomerMutation();
+
+  // ────────────────────── MEMOIZED VALUES ──────────────────────
+  const allCartItems = useMemo(() => cartData?.cart?.items || [], [cartData]);
+
+  // Sync local cart with server + ensure unique id
+  useEffect(() => {
+    if (allCartItems.length > 0) {
+      const synced = allCartItems.map((item) => ({
+        ...item,
+        id: item.id || item.productId || uuidv4(),
+        floor_number: item.floor_number ?? null,
+        room_id: item.room_id ?? null,
+      }));
+
+      setLocalCartItems((prev) => {
+        return synced.map((srv) => {
+          const local = prev.find((l) => l.id === srv.id);
+          return local
+            ? {
+                ...srv,
+                floor_number: local.floor_number,
+                room_id: local.room_id,
+              }
+            : srv;
+        });
+      });
+    }
+  }, [allCartItems]);
+
+  const customers = customerData?.data || [];
+  const customerList = useMemo(
+    () => (Array.isArray(customers) ? customers : []),
+    [customers],
+  );
+
+  const addresses = addressesData || [];
+  const products = productsData?.data || productsData || [];
+
+  // ── Calculations ────────────────────────────────────────────────
+  const totalItems = useMemo(
+    () => localCartItems.reduce((a, i) => a + (i.quantity || 0), 0),
+    [localCartItems],
+  );
+  const teams = useMemo(
+    () => (Array.isArray(teamsData?.teams) ? teamsData.teams : []),
+    [teamsData],
+  );
+  const vendors = useMemo(() => vendorsData || [], [vendorsData]);
+  const calculationCartItems = useMemo(
+    () => localCartItems.filter((i) => !i.isOption),
+    [localCartItems],
+  );
+  // Full list for UI rendering (main + optional)
+  const displayCartItems = allCartItems;
+
+  const { productsData: cartProductsData, errors: productErrors } =
+    useProductsData(calculationCartItems);
+
+  // Add this
+  const debouncedAddresses = useMemo(() => {
+    return addresses; // or use lodash debounce if needed
+  }, [addresses]);
+
+  const userIds = useMemo(
+    () => [...new Set(debouncedAddresses.map((a) => a.userId).filter(Boolean))],
+    [debouncedAddresses],
+  );
+
+  const customerIds = useMemo(
+    () => [
+      ...new Set(debouncedAddresses.map((a) => a.customerId).filter(Boolean)),
+    ],
+    [debouncedAddresses],
+  );
+  // Only run when really needed (e.g. when rendering specific address details)
+  const { userMap, customerMap } = useUserAndCustomerData(
+    userIds,
+    customerIds,
+    {
+      skip: activeTab !== "checkout" || !addresses.length || !selectedCustomer,
+    }, // Add !selectedCustomer
+  );
+
+  const subTotal = useMemo(
+    () =>
+      calculationCartItems.reduce(
+        (a, i) => a + (i.price || 0) * (i.quantity || 0),
+        0,
+      ),
+    [calculationCartItems],
+  );
+
+  const totalDiscount = useMemo(() => {
+    return calculationCartItems.reduce((sum, item) => {
+      const subtotal = (item.price || 0) * (item.quantity || 1);
+      const discVal = Number(itemDiscounts[item.productId]) || 0;
+      const type = itemDiscountTypes[item.productId] || "percent";
+      const disc =
+        type === "percent"
+          ? (subtotal * discVal) / 100
+          : discVal * (item.quantity || 1);
+      return sum + disc;
+    }, 0);
+  }, [calculationCartItems, itemDiscounts, itemDiscountTypes]);
+
+  const tax = useMemo(() => {
+    return calculationCartItems.reduce((acc, item) => {
+      const price = item.price || 0;
+      const qty = item.quantity || 1;
+      const subtotal = price * qty;
+      const discVal = Number(itemDiscounts[item.productId]) || 0;
+      const type = itemDiscountTypes[item.productId] || "percent";
+      const discAmt =
+        type === "percent" ? (subtotal * discVal) / 100 : discVal * qty;
+      const taxable = subtotal - discAmt;
+      const itemTax = parseFloat(itemTaxes[item.productId]) || 0;
+      return acc + (taxable * itemTax) / 100;
+    }, 0);
+  }, [calculationCartItems, itemDiscounts, itemDiscountTypes, itemTaxes]);
+
+  const extraDiscount = useMemo(() => {
+    const amount = parseFloat(quotationData.discountAmount) || 0;
+    if (!amount) return 0;
+    const base = subTotal - totalDiscount + tax + shipping;
+    return quotationData.discountType === "percent"
+      ? parseFloat(((base * amount) / 100).toFixed(2))
+      : parseFloat(amount.toFixed(2));
+  }, [
+    quotationData.discountAmount,
+    quotationData.discountType,
+    subTotal,
+    totalDiscount,
+    tax,
+    shipping,
+  ]);
+
+  const amountBeforeGstRaw =
+    subTotal - totalDiscount + tax + shipping - extraDiscount;
+  const amountBeforeGst = parseFloat(amountBeforeGstRaw.toFixed(2));
+
+  const rupees = Math.floor(amountBeforeGst);
+  const paise = Math.round((amountBeforeGst - rupees) * 100);
+  let roundOff = 0;
+  if (paise > 0 && paise <= 50)
+    roundOff = parseFloat((-paise / 100).toFixed(2));
+  else if (paise > 50) roundOff = parseFloat(((100 - paise) / 100).toFixed(2));
+
+  const roundedAmount = parseFloat((amountBeforeGst + roundOff).toFixed(2));
+  const gstAmount =
+    gst > 0 ? parseFloat(((roundedAmount * gst) / 100).toFixed(2)) : 0;
+  const totalAmount = parseFloat((roundedAmount + gstAmount).toFixed(2));
+
+  // ── Handlers ────────────────────────────────────────────────────
+  const handleMakeOption = (productId, optionType, parentProductId = null) => {
+    if (!userId) return message.error("User not logged in");
+
+    dispatch(
+      cartApi.util.updateQueryData("getCart", userId, (draft) => {
+        const item = draft.cart.items.find((i) => i.productId === productId);
+        if (item) {
+          if (optionType === null) {
+            item.isOption = false;
+            item.optionType = null;
+            item.parentProductId = null;
+            item.selected = true;
+          } else {
+            item.isOption = true;
+            item.optionType = optionType;
+            item.parentProductId = parentProductId || null;
+            item.selected = true;
+          }
+        }
+      }),
+    );
+
+    message.info(
+      optionType
+        ? `Item marked as ${optionType}${parentProductId ? ` for ${getParentName(parentProductId)}` : ""}`
+        : "Item reset to main product",
+    );
   };
 
-  const filteredAddresses = useMemo(() => {
-    if (!project.customerId) return [];
-    return (addressesData || []).filter(
-      (a) => a.customerId === project.customerId,
+  const getParentName = (parentProductId) => {
+    if (!parentProductId) return "Unknown";
+    const parent = allCartItems.find((i) => i.productId === parentProductId);
+    return parent?.name || "Deleted/Unknown product";
+  };
+  const handleShippingChange = useCallback((v) => setShipping(v), []);
+
+  const handleDiscountChange = (productId, value) =>
+    setItemDiscounts((p) => ({ ...p, [productId]: value >= 0 ? value : 0 }));
+
+  const handleDiscountTypeChange = (productId, type) =>
+    setItemDiscountTypes((p) => ({ ...p, [productId]: type }));
+
+  const handleTaxChange = (productId, value) =>
+    setItemTaxes((p) => ({ ...p, [productId]: value >= 0 ? value : 0 }));
+
+  const handleClearCart = async () => {
+    if (!userId) return message.error("User not logged in!");
+    try {
+      await clearCart({ userId }).unwrap();
+      resetForm();
+      setShowClearCartModal(false);
+      setActiveTab("cart");
+    } catch (e) {
+      message.error(e.data?.message || "Failed to clear cart");
+    }
+  };
+
+  const handleRemoveItem = useCallback(
+    async (e, productId) => {
+      e?.preventDefault?.();
+      e?.stopPropagation?.();
+
+      if (!userId) return message.error("User not logged in!");
+
+      dispatch(
+        cartApi.util.updateQueryData("getCart", userId, (draft) => {
+          draft.cart.items = draft.cart.items.filter(
+            (i) => i.productId !== productId,
+          );
+        }),
+      );
+
+      setItemDiscounts((p) => {
+        const { [productId]: _, ...rest } = p;
+        return rest;
+      });
+      setItemTaxes((p) => {
+        const { [productId]: _, ...rest } = p;
+        return rest;
+      });
+      setItemDiscountTypes((p) => {
+        const { [productId]: _, ...rest } = p;
+        return rest;
+      });
+
+      setUpdatingItems((p) => ({ ...p, [productId]: true }));
+
+      try {
+        await removeFromCart({ userId, productId }).unwrap();
+      } catch (err) {
+        message.error(err?.data?.message || "Failed");
+        dispatch(
+          cartApi.util.updateQueryData("getCart", userId, () => ({
+            cart: { items: allCartItems },
+          })),
+        );
+      } finally {
+        setUpdatingItems((p) => ({ ...p, [productId]: false }));
+      }
+    },
+    [userId, allCartItems, dispatch, removeFromCart],
+  );
+
+  const handleUpdateQuantity = useCallback(
+    async (productId, newQty) => {
+      if (!userId || newQty < 1) return;
+      setUpdatingItems((p) => ({ ...p, [productId]: true }));
+      try {
+        await updateCart({
+          userId,
+          productId,
+          quantity: Number(newQty),
+        }).unwrap();
+      } catch (err) {
+        message.error(err?.data?.message || "Failed");
+      } finally {
+        setUpdatingItems((p) => ({ ...p, [productId]: false }));
+      }
+    },
+    [userId, updateCart],
+  );
+
+  const handleTeamAdded = (showModal) => {
+    setShowAddTeamModal(showModal);
+    if (!showModal) refetchTeams();
+  };
+
+  const handleQuotationChange = useCallback((key, value) => {
+    setQuotationData((prev) => ({ ...prev, [key]: value }));
+  }, []);
+
+  const purchaseOrderTotal = useMemo(
+    () =>
+      purchaseOrderData.items
+        .reduce(
+          (sum, item) =>
+            sum + Number(item.total || 0) * (1 + (item.tax || 0) / 100),
+          0,
+        )
+        .toFixed(2),
+    [purchaseOrderData.items],
+  );
+
+  const debouncedSearch = useCallback(
+    debounce((value) => {
+      setProductSearch(value);
+      if (value) {
+        const filtered = products
+          .filter(
+            (p) =>
+              p.productId &&
+              (p.name?.toLowerCase().includes(value.toLowerCase()) ||
+                p.product_code?.toLowerCase().includes(value.toLowerCase())),
+          )
+          .slice(0, 5);
+        setFilteredProducts(filtered);
+      } else {
+        setFilteredProducts([]);
+      }
+    }, 300),
+    [products],
+  );
+  const assignItemToLocation = () => {
+    if (!selectedFloorForAssign) {
+      return message.error("Please select a floor");
+    }
+
+    const updatedItems = localCartItems.map((item) =>
+      item.id === assignModal.itemId
+        ? {
+            ...item,
+            floor_number: selectedFloorForAssign,
+            room_id: selectedRoomForAssign || null,
+          }
+        : item,
     );
-  }, [addressesData, project.customerId]);
 
-  // ── Auto-create & sync floors ─────────────────────────────────
-  useEffect(() => {
-    if (project.floorDetails.length === 0 && project.totalFloors >= 1) {
-      setProject((prev) => ({
-        ...prev,
-        floorDetails: [
-          {
-            floor_number: 1,
-            floor_name: "Ground Floor",
-            rooms: [],
-          },
-        ],
-      }));
-    }
-  }, [project.totalFloors]);
+    setLocalCartItems(updatedItems);
+    message.success("Item assigned successfully");
 
-  useEffect(() => {
-    let floors = [...project.floorDetails];
-
-    while (floors.length < project.totalFloors) {
-      const num = floors.length + 1;
-      const name =
-        num === 1
-          ? "Ground Floor"
-          : `${num - 1}${["st", "nd", "rd"][(num - 2) % 3] || "th"} Floor`;
-      floors.push({ floor_number: num, floor_name: name, rooms: [] });
+    setAssignModal({ visible: false, itemId: null });
+    setSelectedFloorForAssign(null);
+    setSelectedRoomForAssign(null);
+  };
+  const getFinalShipTo = () => {
+    if (!useBillingAddress) {
+      // user manually selected an existing address
+      return quotationData.shipTo || orderData.shipTo || null;
     }
 
-    if (floors.length > project.totalFloors) {
-      floors = floors.slice(0, project.totalFloors);
+    // ── useBillingAddress === true ──
+
+    if (billingAddressId) {
+      // user selected an existing BILLING address to use as shipping
+      return billingAddressId;
     }
 
-    setProject((prev) => ({ ...prev, floorDetails: floors }));
-  }, [project.totalFloors]);
+    // No existing billing → we need to create one from customer's default address
+    const customer = customerList.find(
+      (c) => c.customerId === selectedCustomer,
+    );
+    if (!customer?.address) return null;
 
-  // ── Calculations ──────────────────────────────────────────────
-  const totals = useMemo(() => {
-    let visible = 0;
-    let concealed = 0;
+    let defaultAddr;
+    try {
+      defaultAddr =
+        typeof customer.address === "string"
+          ? JSON.parse(customer.address)
+          : customer.address;
+    } catch {
+      return null;
+    }
 
-    project.items.forEach((item) => {
-      const qty = Number(item.quantity) || 1;
-      const price = Number(item.price) || 0;
-      const discount = Number(item.discount) || 0;
-      const discountType = item.discountType || "percent";
-
-      let lineTotal =
-        discountType === "percent"
-          ? qty * price * (1 - discount / 100)
-          : qty * (price - discount);
-      lineTotal = Math.max(0, lineTotal);
-
-      if (item.isConcealed) concealed += lineTotal;
-      else visible += lineTotal;
-    });
-
-    const subtotal = visible + concealed;
-    const gstAmount = subtotal * (project.gst / 100);
-    const grandTotal = subtotal + gstAmount;
+    if (!defaultAddr?.street || !defaultAddr?.city) return null;
 
     return {
-      visible: Math.round(visible),
-      concealed: Math.round(concealed),
-      subtotal: Math.round(subtotal),
-      gstAmount: Math.round(gstAmount),
-      grandTotal: Math.round(grandTotal),
+      // flag telling backend or mutation: please create this address
+      createFromDefault: true,
+      addressDetails: {
+        street: defaultAddr.street?.trim() || "",
+        city: defaultAddr.city || "",
+        state: defaultAddr.state || "",
+        postalCode: defaultAddr.zip || defaultAddr.postalCode || "",
+        country: defaultAddr.country || "India",
+      },
+      status: "SHIPPING", // or "BILLING_AND_SHIPPING" if your backend supports it
     };
-  }, [project.items, project.gst]);
-
-  // ── Product Actions ───────────────────────────────────────────
-  const addProduct = (product, isConcealed = false) => {
-    const price = Number(
-      product.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"] || 0,
-    );
-
-    const newItem = {
-      id: uuidv4(),
-      productId: product.id || product.productId,
-      name: product.name || "Unknown",
-      quantity: 1,
-      price,
-      discount: 0,
-      discountType: "percent",
-      imageUrl: product.images?.[0]?.url || null,
-      floor_number: null,
-      room_id: null,
-      isConcealed,
-    };
-
-    setProject((prev) => ({
-      ...prev,
-      items: [...prev.items, newItem],
-    }));
-    setSearchTerm("");
   };
+  const handleCreateDocument = async () => {
+    if (!userId) {
+      return message.error("User not logged in!");
+    }
 
-  const updateItem = (id, field, value) => {
-    setProject((prev) => ({
-      ...prev,
-      items: prev.items.map((item) =>
-        item.id === id ? { ...item, [field]: value } : item,
-      ),
-    }));
-  };
+    // ────────────────────────────────────────────────
+    //  1. Common validations
+    // ────────────────────────────────────────────────
+    if (localCartItems.length === 0) {
+      return message.error("Cart is empty. Please add items.");
+    }
 
-  const removeItem = (id) => {
-    setProject((prev) => ({
-      ...prev,
-      items: prev.items.filter((i) => i.id !== id),
-    }));
-  };
+    if (documentType !== "Purchase Order" && !selectedCustomer) {
+      return message.error("Please select a customer.");
+    }
 
-  const assignItem = (itemId, floor_number, room_id = null) => {
-    setProject((prev) => ({
-      ...prev,
-      items: prev.items.map((i) =>
-        i.id === itemId ? { ...i, floor_number, room_id } : i,
-      ),
-    }));
-  };
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
 
-  // ── Validation & Navigation ───────────────────────────────────
-  const canGoNext = () => {
-    if (currentStep === 0)
-      return !!project.customerId && !!project.projectName.trim();
-    if (currentStep === 1) return project.totalFloors >= 1;
-    return true;
-  };
+    if (documentType === "Quotation") {
+      if (!quotationData.dueDate || !dateRegex.test(quotationData.dueDate)) {
+        return message.error("Please select a valid due date (YYYY-MM-DD).");
+      }
+      if (moment(quotationData.dueDate).isBefore(moment(), "day")) {
+        return message.error("Due date cannot be in the past.");
+      }
+    } else if (documentType === "Order") {
+      if (!orderData.dueDate || !dateRegex.test(orderData.dueDate)) {
+        return message.error("Please select a valid due date (YYYY-MM-DD).");
+      }
+      if (moment(orderData.dueDate).isBefore(moment(), "day")) {
+        return message.error("Due date cannot be in the past.");
+      }
+      if (orderData.followupDates?.length > 0 && !validateFollowupDates()) {
+        return message.error("Follow-up dates cannot be after the due date.");
+      }
+    }
 
-  const handleNext = () => {
-    if (!canGoNext()) {
-      if (currentStep === 0) {
-        if (!project.customerId) message.error("Please select a customer");
-        if (!project.projectName.trim())
-          message.error("Project name is required");
+    // ────────────────────────────────────────────────
+    //  2. Resolve final shipping address
+    // ────────────────────────────────────────────────
+    let finalShipTo = null;
+
+    if (documentType !== "Purchase Order") {
+      if (useBillingAddress) {
+        if (billingAddressId) {
+          finalShipTo = billingAddressId;
+        } else {
+          const customer = customerList.find(
+            (c) => c.customerId === selectedCustomer,
+          );
+
+          if (!customer?.address) {
+            message.error(
+              "Customer has no default address. Please add one first.",
+            );
+            return;
+          }
+
+          let parsedAddr;
+          try {
+            parsedAddr =
+              typeof customer.address === "string"
+                ? JSON.parse(customer.address)
+                : customer.address;
+          } catch {
+            message.error("Customer's default address format is invalid.");
+            return;
+          }
+
+          const street = (parsedAddr.street || "").trim();
+          const city = (parsedAddr.city || "").trim();
+          const state = (parsedAddr.state || "").trim();
+          const postalCode = (
+            parsedAddr.zip ||
+            parsedAddr.postalCode ||
+            ""
+          ).trim();
+          const country = (parsedAddr.country || "India").trim();
+
+          if (!street || !city || !state || !country) {
+            message.error("Default address is missing required fields.");
+            return;
+          }
+
+          const payload = {
+            customerId: selectedCustomer,
+            street,
+            city,
+            state,
+            postalCode,
+            country,
+            status: "SHIPPING",
+          };
+
+          try {
+            const response = await createAddress(payload).unwrap();
+            finalShipTo = response.addressId;
+            message.success(
+              "Shipping address created automatically from default.",
+            );
+          } catch (apiError) {
+            message.error(
+              apiError?.data?.message || "Failed to create shipping address.",
+            );
+            return;
+          }
+        }
+      } else {
+        finalShipTo =
+          documentType === "Quotation"
+            ? quotationData.shipTo
+            : orderData.shipTo;
+
+        if (finalShipTo) {
+          const addr = addresses.find((a) => a.addressId === finalShipTo);
+          if (!addr) {
+            message.error("Selected shipping address was deleted.");
+            return;
+          }
+          if (addr.customerId !== selectedCustomer) {
+            message.error("Selected address does not belong to this customer.");
+            return;
+          }
+        }
+      }
+
+      if (!finalShipTo) {
+        message.error("Please select or create a shipping address.");
+        return;
+      }
+    }
+
+    // ────────────────────────────────────────────────
+    //  3. Document-type specific creation
+    // ────────────────────────────────────────────────
+
+    if (documentType === "Purchase Order") {
+      if (!selectedVendor) {
+        return message.error("Please select a vendor.");
+      }
+
+      const formattedItems = purchaseOrderData.items.map((item) => ({
+        productId: item.productId,
+        quantity: Number(item.quantity) || 1,
+        unitPrice: Number(item.mrp) || Number(item.unitPrice) || 0.01,
+        mrp: Number(item.mrp) || 0.01,
+        tax: Number(item.tax) || 0,
+        discount: Number(item.discount) || 0,
+        discountType: item.discountType || "percent",
+      }));
+
+      if (formattedItems.some((i) => i.mrp <= 0)) {
+        return message.error("All items must have MRP > 0.");
+      }
+
+      const payload = {
+        vendorId: selectedVendor,
+        items: formattedItems,
+        expectDeliveryDate: purchaseOrderData.expectedDeliveryDate
+          ? moment(purchaseOrderData.expectedDeliveryDate).format("YYYY-MM-DD")
+          : null,
+      };
+
+      try {
+        const result = await createPurchaseOrder(payload).unwrap();
+        message.success(
+          `Purchase Order ${result.purchaseOrder?.poNumber} created!`,
+        );
+        await handleClearCart();
+        resetForm();
+        navigate("/purchase-manager");
+      } catch (err) {
+        message.error(err?.data?.message || "Failed to create Purchase Order.");
       }
       return;
     }
-    setCurrentStep(currentStep + 1);
-  };
 
-  const handleSave = async () => {
-    if (!project.customerId) return message.error("Customer is required");
-    if (!project.projectName.trim())
-      return message.error("Project name is required");
-    if (project.items.length === 0)
-      return message.error("Add at least one product");
-
-    const cleanedItems = project.items.map(({ room_id, ...rest }) => rest);
-
-    const quotationPayload = {
-      customerId: project.customerId,
-      document_title: project.projectName,
-      quotation_date: project.quotationDate?.toISOString().split("T")[0],
-      due_date: project.dueDate?.toISOString().split("T")[0] || null,
-      gst: project.gst,
-      shipTo: project.shipTo || null,
-      products: project.items
-        .filter((i) => !i.isConcealed)
-        .map((i) => ({
-          productId: i.productId,
-          name: i.name,
-          quantity: i.quantity,
-          price: i.price,
-          discount: Number(i.discount) || 0,
-          discountType: i.discountType || "percent",
-          total:
-            i.discountType === "percent"
-              ? i.quantity * i.price * (1 - (Number(i.discount) || 0) / 100)
-              : i.quantity * (i.price - (Number(i.discount) || 0)),
-        })),
-    };
-
-    const siteMapPayload = {
-      customerId: project.customerId,
-      name: project.projectName,
-      totalFloors: project.totalFloors,
-      floorDetails: project.floorDetails,
-      items: cleanedItems.map((i) => ({
-        productId: i.productId,
-        name: i.name,
-        quantity: i.quantity,
-        price: i.price,
-        floor_number: i.floor_number,
-        isConcealed: i.isConcealed,
-      })),
-    };
-
-    try {
-      const quotRes = await createQuotation(quotationPayload).unwrap();
-      const quotationId = quotRes?.quotation?.quotationId;
-
-      if (!quotationId) throw new Error("No quotation ID returned");
-
-      await createSiteMap({ ...siteMapPayload, quotationId }).unwrap();
-
-      message.success("Project, Quotation & Site Map created successfully!");
-      // navigate("/projects"); // optional
-    } catch (err) {
-      message.error(err?.data?.message || "Failed to create project");
-      console.error(err);
-    }
-  };
-
-  const steps = [
-    { title: "Customer & Info" },
-    { title: "Floors & Rooms" },
-    { title: "Products" },
-    { title: "Review" },
-  ];
-
-  if (customersLoading || productsLoading) {
-    return (
-      <Spin
-        tip="Loading required data..."
-        size="large"
-        style={{ margin: "140px auto", display: "block" }}
-      />
+    const selectedCustomerData = customerList.find(
+      (c) => c.customerId === selectedCustomer,
     );
-  }
+    if (!selectedCustomerData) {
+      return message.error("Selected customer not found.");
+    }
 
-  // ── Helper: Small product table for review ────────────────────
-  const renderProductTable = (items) => {
-    const data = items.map((item) => {
-      const qty = item.quantity || 1;
-      const price = item.price || 0;
-      const disc = item.discount || 0;
-      const lineTotal =
-        item.discountType === "percent"
-          ? qty * price * (1 - disc / 100)
-          : qty * (price - disc);
+    // ────────────────────────────────────────────────
+    //  Prepare common product mapping (used for both Quotation & Order)
+    // ────────────────────────────────────────────────
+    const productsPayload = localCartItems.map((item) => {
+      const price = Number(item.price ?? 0);
+      const qty = Number(item.quantity ?? 1);
+      const discVal = Number(itemDiscounts[item.productId] ?? 0);
+      const discType = itemDiscountTypes[item.productId] ?? "percent";
+      const taxRate = Number(itemTaxes[item.productId] ?? 0);
+
+      const subtotal = price * qty;
+      const discountAmt =
+        discType === "percent" ? (subtotal * discVal) / 100 : discVal;
+      const afterDisc = subtotal - discountAmt;
+      const taxAmt = (afterDisc * taxRate) / 100;
+      const lineTotal = afterDisc + taxAmt;
 
       return {
-        key: item.id,
-        name: item.name,
-        qty,
-        price,
-        discount: `${disc}${item.discountType === "percent" ? "%" : "₹"}`,
-        total: Math.round(lineTotal),
-        type: item.isConcealed ? "concealed" : "visible",
+        productId: item.productId,
+        name: item.name || "Unnamed Product",
+        imageUrl: item.imageUrl || "",
+        productCode: item.productCode ?? item.code ?? item.product_code ?? "",
+        companyCode: item.companyCode ?? item.company_code ?? "",
+        quantity: qty,
+        price: Number(price.toFixed(2)),
+        discount: Number(discVal.toFixed(2)),
+        discountType: discType,
+        tax: taxRate,
+        total: Number(lineTotal.toFixed(2)),
+        isOptionFor: item.parentProductId || null,
+        optionType: item.optionType || null,
+        groupId: item.groupId || null,
+        floor_number: item.floor_number || null, // ← Site map integration
+        room_id: item.room_id || null, // ← Site map integration
       };
     });
 
-    return (
-      <Table
-        dataSource={data}
-        size="small"
-        pagination={false}
-        style={{ marginTop: 12 }}
-        rowClassName={(record) =>
-          record.type === "concealed" ? "review-concealed-row" : ""
+    if (documentType === "Quotation") {
+      const quotationPayload = {
+        quotationId: uuidv4(),
+        document_title: `Quotation for ${selectedCustomerData.name || "Customer"}`,
+        quotation_date:
+          quotationData.quotationDate || moment().format("YYYY-MM-DD"),
+        due_date: quotationData.dueDate,
+        extraDiscount: Number(quotationData.discountAmount) || 0,
+        extraDiscountType: quotationData.discountType || "fixed",
+        shippingAmount: Number(shipping) || 0,
+        gst: Number(gst) || 0,
+        finalAmount: totalAmount,
+        floors: quotationData.floors || [], // ← Full site map structure
+        products: productsPayload,
+        followupDates: quotationData.followupDates.filter(Boolean),
+        customerId: selectedCustomer,
+        shipTo: finalShipTo,
+        createdBy: userId,
+        signature_name: quotationData.signatureName || "CM TRADING CO",
+        signature_image: "",
+      };
+
+      try {
+        const result = await createQuotation(quotationPayload).unwrap();
+        message.success(
+          `Quotation ${result.quotation?.reference_number} created!`,
+        );
+        // After successful quotation creation
+        const quotationId =
+          result.quotation?.quotationId || result.quotation?.id;
+
+        if (quotationId && quotationData.floors?.length > 0) {
+          try {
+            await createSiteMap({
+              customerId: selectedCustomer,
+              name: `Site Map - ${selectedCustomerData.name || "Customer"} - ${moment().format("DD-MM-YY")}`,
+              totalFloors: quotationData.floors.length,
+              floors: quotationData.floors,
+              items: productsPayload, // all items with floor_number & room_id
+              quotationId: quotationId,
+            }).unwrap();
+
+            message.success("Site Map created and linked to quotation!");
+          } catch (siteMapErr) {
+            console.error("Site Map creation failed:", siteMapErr);
+            message.warning(
+              "Quotation created, but Site Map failed to create.",
+            );
+          }
         }
-      >
-        <Table.Column title="Product" dataIndex="name" />
-        <Table.Column title="Qty" dataIndex="qty" width={60} align="center" />
-        <Table.Column
-          title="Unit Price"
-          render={(_, r) => `₹${r.price.toLocaleString()}`}
-          width={100}
-          align="right"
-        />
-        <Table.Column
-          title="Disc"
-          dataIndex="discount"
-          width={80}
-          align="center"
-        />
-        <Table.Column
-          title="Line Total"
-          render={(_, r) => `₹${r.total.toLocaleString()}`}
-          width={110}
-          align="right"
-        />
-      </Table>
-    );
+        await handleClearCart();
+        resetForm();
+        navigate("/quotations/list");
+      } catch (err) {
+        message.error(err?.data?.message || "Failed to create quotation.");
+      }
+      return;
+    }
+
+    if (documentType === "Order") {
+      const taxableBase = subTotal - totalDiscount + tax;
+      const afterTaxAndShipping = taxableBase + shipping;
+      const extraDiscValue =
+        quotationData.discountType === "percent"
+          ? (afterTaxAndShipping * Number(quotationData.discountAmount || 0)) /
+            100
+          : Number(quotationData.discountAmount || 0);
+
+      const amountForGst =
+        subTotal + shipping + tax - totalDiscount - extraDiscValue;
+      const gstAmount = Math.round((amountForGst * gst) / 100);
+
+      const orderPayload = {
+        id: uuidv4(),
+        createdFor: selectedCustomer,
+        createdBy: userId,
+        assignedTeamId: orderData.assignedTeamId || null,
+        assignedUserId: orderData.assignedUserId || null,
+        secondaryUserId: orderData.secondaryUserId || null,
+        pipeline: orderData.pipeline || null,
+        status: orderData.status || "PREPARING",
+        gst: Number(gst),
+        gstValue: Number(gstAmount),
+        extraDiscount: Number(quotationData.discountAmount) || 0,
+        extraDiscountType: quotationData.discountType || "percent",
+        extraDiscountValue: Number(extraDiscValue.toFixed(2)),
+        dueDate: orderData.dueDate,
+        followupDates: orderData.followupDates?.filter(Boolean) || [],
+        source: orderData.source || null,
+        priority: orderData.priority || "medium",
+        description: orderData.description || null,
+        invoiceLink: null,
+        quotationId: orderData.quotationId || null,
+        masterPipelineNo: orderData.masterPipelineNo || null,
+        previousOrderNo: orderData.previousOrderNo || null,
+        shipTo: finalShipTo,
+        floors: quotationData.floors || [], // ← Optional: send site map if order supports it
+        products: productsPayload,
+      };
+
+      try {
+        const result = await createOrder(orderPayload).unwrap();
+        message.success(`Order ${result.orderNo} created successfully!`);
+        await handleClearCart();
+        resetForm();
+        navigate("/orders/list");
+      } catch (err) {
+        const msg =
+          err?.data?.message ||
+          err?.data?.error ||
+          err?.data ||
+          "Unknown error – check network tab";
+        message.error(msg);
+      }
+    }
   };
 
-  return (
-    <div className="page-wrapper" style={{ paddingBottom: 120 }}>
-      <div className="content">
-        <PageHeader
-          title="Create New Project"
-          subtitle="Quotation + Site Layout"
-          exportOptions={{ pdf: false, excel: false }}
-          extra={
-            <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)}>
-              Back
-            </Button>
-          }
+  const resetForm = () => {
+    setQuotationData({
+      quotationDate: new Date().toISOString().split("T")[0],
+      dueDate: "",
+      billTo: "",
+      shipTo: null,
+      signatureName: "CM TRADING CO",
+      discountType: "fixed",
+      discountAmount: "",
+      followupDates: [],
+    });
+    setOrderData((prev) => ({
+      ...prev,
+      createdFor: "",
+      assignedTeamId: "",
+      assignedUserId: "",
+      secondaryUserId: "",
+      pipeline: "",
+      dueDate: moment().add(1, "days").format("YYYY-MM-DD"),
+      followupDates: [],
+      source: "",
+      priority: "medium",
+      description: "",
+      orderNo: "",
+      shipTo: null,
+    }));
+    setPurchaseOrderData({
+      vendorId: "",
+      orderDate: moment().format("YYYY-MM-DD"),
+      expectedDeliveryDate: null,
+      items: [],
+      totalAmount: 0,
+      status: "pending",
+    });
+    setSelectedCustomer("");
+    setSelectedVendor("");
+    setItemDiscounts({});
+    setItemTaxes({});
+    setItemDiscountTypes({});
+    setDocumentType("Quotation");
+    setActiveTab("cart");
+    setProductSearch("");
+    setFilteredProducts([]);
+    setUseBillingAddress(false);
+  };
+
+  const validateFollowupDates = () => {
+    if (!orderData.dueDate || orderData.followupDates.length === 0) return true;
+    const dueDate = moment(orderData.dueDate);
+    return orderData.followupDates.every((date) => {
+      if (!date || new Date(date).toString() === "Invalid Date") return true;
+      return moment(date).isSameOrBefore(dueDate, "day");
+    });
+  };
+
+  const handleAddCustomer = () => setShowAddCustomerModal(true);
+
+  const handleCustomerSave = async (newCustomer) => {
+    try {
+      await createCustomer(newCustomer).unwrap();
+      dispatch(customerApi.util.invalidateTags(["Customer"]));
+      setSelectedCustomer(newCustomer.customerId || "");
+      setShowAddCustomerModal(false);
+    } catch (err) {
+      message.error(err?.data?.message || "Failed to create customer.");
+    }
+  };
+
+  const handleAddAddress = () => setShowAddAddressModal(true);
+
+  // ────────────────────── RENDER ──────────────────────
+  if (productErrors.length > 0) {
+    return (
+      <PageWrapper>
+        <Alert
+          message="Error loading cart products"
+          description={productErrors.map((e) => e.error).join(", ")}
+          type="error"
+          showIcon
         />
-
-        <Card style={{ marginTop: 24 }}>
-          <Steps current={currentStep} style={{ marginBottom: 40 }}>
-            {steps.map((item) => (
-              <Steps.Step key={item.title} title={item.title} />
-            ))}
-          </Steps>
-
-          {/* ── STEP 1 ── */}
-          {currentStep === 0 && (
-            <>
-              <Title level={4}>Customer & Project Details</Title>
-              <Row gutter={24}>
-                <Col xs={24} lg={12}>
-                  <label
-                    style={{
-                      fontWeight: 500,
-                      display: "block",
-                      marginBottom: 8,
-                    }}
-                  >
-                    Customer <span style={{ color: "red" }}>*</span>
-                  </label>
-                  <Space.Compact style={{ width: "100%" }}>
-                    <Select
-                      showSearch
-                      placeholder="Select customer"
-                      value={project.customerId || undefined}
-                      onChange={(v) =>
-                        setProject((p) => ({ ...p, customerId: v, shipTo: "" }))
-                      }
-                      style={{ flex: 1 }}
-                      size="large"
-                      filterOption={(input, option) =>
-                        (option.label || "")
-                          .toLowerCase()
-                          .includes(input.toLowerCase())
-                      }
-                    >
-                      {customers.map((c) => {
-                        const label = `${c.name}${c.mobile ? ` (${c.mobile})` : ""}`;
-                        return (
-                          <Option
-                            key={c.customerId}
-                            value={c.customerId}
-                            label={label}
-                          >
-                            {label}
-                          </Option>
-                        );
-                      })}
-                    </Select>
-                    <Button
-                      type="primary"
-                      icon={<PlusOutlined />}
-                      onClick={() => setShowAddCustomerModal(true)}
-                      size="large"
-                    />
-                  </Space.Compact>
-                </Col>
-
-                <Col xs={24} lg={12}>
-                  <label
-                    style={{
-                      fontWeight: 500,
-                      display: "block",
-                      marginBottom: 8,
-                    }}
-                  >
-                    Delivery Address
-                  </label>
-                  <Space.Compact style={{ width: "100%" }}>
-                    <Select
-                      placeholder={
-                        !project.customerId
-                          ? "Select customer first"
-                          : filteredAddresses.length === 0
-                            ? "No addresses — add one"
-                            : "Select address"
-                      }
-                      value={project.shipTo || undefined}
-                      onChange={(v) => setProject((p) => ({ ...p, shipTo: v }))}
-                      disabled={!project.customerId}
-                      style={{ flex: 1 }}
-                      size="large"
-                    >
-                      {filteredAddresses.map((a) => (
-                        <Option key={a.addressId} value={a.addressId}>
-                          {shortAddress(a)}
-                          {a.isDefault && (
-                            <Tag color="green" style={{ marginLeft: 8 }}>
-                              Default
-                            </Tag>
-                          )}
-                        </Option>
-                      ))}
-                    </Select>
-                    <Button
-                      type="primary"
-                      icon={<PlusOutlined />}
-                      onClick={() => setShowAddressModal(true)}
-                      disabled={!project.customerId}
-                      size="large"
-                    />
-                  </Space.Compact>
-                </Col>
-              </Row>
-
-              <Row gutter={16} style={{ marginTop: 24 }}>
-                <Col xs={24} md={12}>
-                  <label style={{ fontWeight: 500 }}>
-                    Project Name <span style={{ color: "red" }}>*</span>
-                  </label>
-                  <Input
-                    size="large"
-                    placeholder="e.g. Sharma 3BHK – Vasant Kunj"
-                    value={project.projectName}
-                    onChange={(e) =>
-                      setProject((p) => ({ ...p, projectName: e.target.value }))
-                    }
-                    style={{ marginTop: 8 }}
-                  />
-                </Col>
-
-                <Col xs={24} sm={8}>
-                  <label>Quotation Date</label>
-                  <Input
-                    type="date"
-                    value={
-                      project.quotationDate?.toISOString().split("T")[0] || ""
-                    }
-                    onChange={(e) =>
-                      setProject((p) => ({
-                        ...p,
-                        quotationDate: e.target.value
-                          ? new Date(e.target.value)
-                          : null,
-                      }))
-                    }
-                  />
-                </Col>
-
-                <Col xs={24} sm={8}>
-                  <label>Due Date</label>
-                  <Input
-                    type="date"
-                    value={project.dueDate?.toISOString().split("T")[0] || ""}
-                    onChange={(e) =>
-                      setProject((p) => ({
-                        ...p,
-                        dueDate: e.target.value
-                          ? new Date(e.target.value)
-                          : null,
-                      }))
-                    }
-                  />
-                </Col>
-
-                <Col xs={24} sm={8}>
-                  <label>GST Rate (%)</label>
-                  <InputNumber
-                    min={0}
-                    max={100}
-                    value={project.gst}
-                    onChange={(v) => setProject((p) => ({ ...p, gst: v }))}
-                    style={{ width: "100%" }}
-                  />
-                </Col>
-              </Row>
-            </>
-          )}
-
-          {/* ── STEP 2 ── */}
-          {currentStep === 1 && (
-            <>
-              <Title level={4}>Define Floors & Rooms</Title>
-
-              <Row gutter={16} style={{ marginBottom: 24 }}>
-                <Col xs={24} sm={8} md={6}>
-                  <label>Total Floors</label>
-                  <InputNumber
-                    min={1}
-                    max={30}
-                    value={project.totalFloors}
-                    onChange={(v) =>
-                      setProject((p) => ({ ...p, totalFloors: v }))
-                    }
-                    style={{ width: "100%" }}
-                  />
-                </Col>
-              </Row>
-
-              <Collapse accordion>
-                {project.floorDetails.map((floor) => (
-                  <Panel
-                    key={floor.floor_number}
-                    header={
-                      <Space>
-                        <HomeOutlined style={{ color: "#1890ff" }} />
-                        <strong>{floor.floor_name}</strong>
-                        <Text type="secondary">
-                          ({floor.rooms?.length || 0} rooms •{" "}
-                          {
-                            project.items.filter(
-                              (i) => i.floor_number === floor.floor_number,
-                            ).length
-                          }{" "}
-                          items)
-                        </Text>
-                      </Space>
-                    }
-                  >
-                    <Button
-                      type="dashed"
-                      icon={<PlusOutlined />}
-                      onClick={() =>
-                        setRoomModal({ visible: true, floor, room: null })
-                      }
-                      style={{ marginBottom: 16 }}
-                    >
-                      Add Room
-                    </Button>
-
-                    {floor.rooms?.length === 0 ? (
-                      <Empty description="No rooms added yet" />
-                    ) : (
-                      <Row gutter={[16, 16]}>
-                        {floor.rooms.map((room) => (
-                          <Col xs={24} sm={12} md={8} key={room.id}>
-                            <Card
-                              size="small"
-                              title={
-                                <Space>
-                                  {room.name}
-                                  {room.type && (
-                                    <Tag color="blue">{room.type}</Tag>
-                                  )}
-                                </Space>
-                              }
-                              extra={
-                                <Button
-                                  danger
-                                  size="small"
-                                  icon={<DeleteOutlined />}
-                                  onClick={() => {
-                                    setProject((p) => ({
-                                      ...p,
-                                      floorDetails: p.floorDetails.map((f) =>
-                                        f.floor_number === floor.floor_number
-                                          ? {
-                                              ...f,
-                                              rooms: f.rooms.filter(
-                                                (r) => r.id !== room.id,
-                                              ),
-                                            }
-                                          : f,
-                                      ),
-                                      items: p.items.map((i) =>
-                                        i.room_id === room.id
-                                          ? { ...i, room_id: null }
-                                          : i,
-                                      ),
-                                    }));
-                                    message.success("Room removed");
-                                  }}
-                                />
-                              }
-                            >
-                              <Text type="secondary">{room.size || "—"}</Text>
-                            </Card>
-                          </Col>
-                        ))}
-                      </Row>
-                    )}
-                  </Panel>
-                ))}
-              </Collapse>
-            </>
-          )}
-
-          {/* ── STEP 3 ── */}
-          {currentStep === 2 && (
-            <>
-              <Title level={4}>Add & Assign Products</Title>
-
-              <Tabs defaultActiveKey="1">
-                <Tabs.TabPane tab="Visible Products" key="1">
-                  <Select
-                    showSearch
-                    placeholder="Search product to add..."
-                    onSearch={debouncedSearch}
-                    onChange={(val) => {
-                      const prod = searchResult.find(
-                        (p) => (p.id || p.productId) === val,
-                      );
-                      if (prod) addProduct(prod, false);
-                    }}
-                    filterOption={false}
-                    style={{ width: "100%", marginBottom: 16 }}
-                    size="large"
-                    notFoundContent={searching ? <Spin /> : "No results"}
-                  >
-                    {searchResult.map((p) => {
-                      const price = Number(
-                        p.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"] || 0,
-                      );
-                      return (
-                        <Option
-                          key={p.id || p.productId}
-                          value={p.id || p.productId}
-                        >
-                          {p.name} — ₹{price.toLocaleString()}
-                        </Option>
-                      );
-                    })}
-                  </Select>
-
-                  <Table
-                    dataSource={project.items.filter((i) => !i.isConcealed)}
-                    rowKey="id"
-                    pagination={false}
-                    size="middle"
-                  >
-                    <Table.Column title="Product" dataIndex="name" />
-                    <Table.Column
-                      title="Qty"
-                      width={100}
-                      render={(_, r) => (
-                        <InputNumber
-                          min={1}
-                          value={r.quantity}
-                          onChange={(v) => updateItem(r.id, "quantity", v)}
-                        />
-                      )}
-                    />
-                    <Table.Column
-                      title="Price"
-                      width={120}
-                      render={(_, r) =>
-                        `₹${Number(r.price || 0).toLocaleString()}`
-                      }
-                    />
-                    <Table.Column
-                      title="Discount"
-                      width={180}
-                      render={(_, r) => (
-                        <Space.Compact>
-                          <InputNumber
-                            min={0}
-                            max={r.discountType === "percent" ? 100 : r.price}
-                            precision={2}
-                            value={r.discount}
-                            onChange={(v) => updateItem(r.id, "discount", v)}
-                            style={{ width: 90 }}
-                          />
-                          <Select
-                            value={r.discountType}
-                            onChange={(v) =>
-                              updateItem(r.id, "discountType", v)
-                            }
-                            style={{ width: 80 }}
-                          >
-                            <Option value="percent">%</Option>
-                            <Option value="fixed">₹</Option>
-                          </Select>
-                        </Space.Compact>
-                      )}
-                    />
-                    <Table.Column
-                      title="Location"
-                      render={(_, r) =>
-                        r.floor_number ? (
-                          <Tag color="green">
-                            {project.floorDetails.find(
-                              (f) => f.floor_number === r.floor_number,
-                            )?.floor_name || "?"}
-                            {r.room_id &&
-                              ` → ${project.floorDetails.find((f) => f.floor_number === r.floor_number)?.rooms.find((rm) => rm.id === r.room_id)?.name || ""}`}
-                          </Tag>
-                        ) : (
-                          <Tag color="orange">Unassigned</Tag>
-                        )
-                      }
-                    />
-                    <Table.Column
-                      title="Action"
-                      width={140}
-                      render={(_, r) => (
-                        <Space>
-                          <Button
-                            size="small"
-                            icon={<HomeOutlined />}
-                            onClick={() =>
-                              setAssignModal({ visible: true, itemId: r.id })
-                            }
-                          >
-                            Assign
-                          </Button>
-                          <Button
-                            danger
-                            size="small"
-                            icon={<DeleteOutlined />}
-                            onClick={() => removeItem(r.id)}
-                          />
-                        </Space>
-                      )}
-                    />
-                  </Table>
-                </Tabs.TabPane>
-
-                <TabPane tab="Concealed Works" key="2">
-                  <Select
-                    showSearch
-                    placeholder="Add concealed product..."
-                    onSearch={debouncedSearch}
-                    onChange={(val) => {
-                      const prod = searchResult.find(
-                        (p) => (p.id || p.productId) === val,
-                      );
-                      if (prod) addProduct(prod, true);
-                    }}
-                    filterOption={false}
-                    style={{ width: "100%", marginBottom: 16 }}
-                    size="large"
-                  >
-                    {searchResult.map((p) => {
-                      const price = Number(
-                        p.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"] || 0,
-                      );
-                      return (
-                        <Option
-                          key={p.id || p.productId}
-                          value={p.id || p.productId}
-                        >
-                          {p.name} — ₹{price.toLocaleString()}
-                        </Option>
-                      );
-                    })}
-                  </Select>
-
-                  <Table
-                    dataSource={project.items.filter((i) => i.isConcealed)}
-                    rowKey="id"
-                    pagination={false}
-                    size="middle"
-                  >
-                    <Table.Column title="Product" dataIndex="name" />
-                    <Table.Column
-                      title="Qty"
-                      width={100}
-                      render={(_, r) => (
-                        <InputNumber
-                          min={1}
-                          value={r.quantity}
-                          onChange={(v) => updateItem(r.id, "quantity", v)}
-                        />
-                      )}
-                    />
-                    <Table.Column
-                      title="Price"
-                      width={120}
-                      render={(_, r) =>
-                        `₹${Number(r.price || 0).toLocaleString()}`
-                      }
-                    />
-                    <Table.Column
-                      title="Discount"
-                      width={180}
-                      render={(_, r) => (
-                        <Space.Compact>
-                          <InputNumber
-                            min={0}
-                            max={r.discountType === "percent" ? 100 : r.price}
-                            precision={2}
-                            value={r.discount}
-                            onChange={(v) => updateItem(r.id, "discount", v)}
-                            style={{ width: 90 }}
-                          />
-                          <Select
-                            value={r.discountType}
-                            onChange={(v) =>
-                              updateItem(r.id, "discountType", v)
-                            }
-                            style={{ width: 80 }}
-                          >
-                            <Option value="percent">%</Option>
-                            <Option value="fixed">₹</Option>
-                          </Select>
-                        </Space.Compact>
-                      )}
-                    />
-                    <Table.Column
-                      title="Location"
-                      render={(_, r) => {
-                        if (!r.floor_number)
-                          return <Tag color="orange">Unassigned</Tag>;
-
-                        const floor = project.floorDetails.find(
-                          (f) => f.floor_number === r.floor_number,
-                        );
-                        const room = r.room_id
-                          ? floor?.rooms?.find((rm) => rm.id === r.room_id)
-                          : null;
-
-                        return (
-                          <Tag color="volcano">
-                            {floor?.floor_name}
-                            {room ? ` → ${room.name}` : ""}
-                          </Tag>
-                        );
-                      }}
-                    />
-                    <Table.Column
-                      title="Action"
-                      width={140}
-                      render={(_, r) => (
-                        <Space>
-                          <Button
-                            size="small"
-                            icon={<HomeOutlined />}
-                            onClick={() =>
-                              setAssignModal({ visible: true, itemId: r.id })
-                            }
-                          >
-                            Assign
-                          </Button>
-                          <Button
-                            danger
-                            size="small"
-                            icon={<DeleteOutlined />}
-                            onClick={() => removeItem(r.id)}
-                          />
-                        </Space>
-                      )}
-                    />
-                  </Table>
-                </TabPane>
-              </Tabs>
-            </>
-          )}
-
-          {/* ── STEP 4 – Enhanced Review ── */}
-          {currentStep === 3 && (
-            <>
-              <Title level={4}>Review & Final Confirmation</Title>
-
-              <Row gutter={24}>
-                {/* Left: Detailed Floor & Room Breakdown */}
-                <Col xs={24} lg={14}>
-                  <Card
-                    title="Floor & Room wise Product Distribution"
-                    size="small"
-                    extra={
-                      <Text type="secondary">
-                        {project.items.filter((i) => i.floor_number).length} /{" "}
-                        {project.items.length} items assigned
-                      </Text>
-                    }
-                  >
-                    {project.floorDetails.length === 0 ? (
-                      <Empty description="No floors defined yet" />
-                    ) : (
-                      <Collapse
-                        defaultActiveKey={project.floorDetails.map((f) =>
-                          f.floor_number.toString(),
-                        )}
-                      >
-                        {project.floorDetails.map((floor) => {
-                          const floorItems = project.items.filter(
-                            (i) => i.floor_number === floor.floor_number,
-                          );
-                          const visibleInFloor = floorItems.filter(
-                            (i) => !i.isConcealed,
-                          );
-                          const concealedInFloor = floorItems.filter(
-                            (i) => i.isConcealed,
-                          );
-
-                          const floorVisibleTotal = visibleInFloor.reduce(
-                            (sum, i) => {
-                              const qty = i.quantity || 1;
-                              const price = i.price || 0;
-                              const disc = i.discount || 0;
-                              return (
-                                sum +
-                                (i.discountType === "percent"
-                                  ? qty * price * (1 - disc / 100)
-                                  : qty * (price - disc))
-                              );
-                            },
-                            0,
-                          );
-
-                          const floorConcealedTotal = concealedInFloor.reduce(
-                            (sum, i) => {
-                              const qty = i.quantity || 1;
-                              const price = i.price || 0;
-                              const disc = i.discount || 0;
-                              return (
-                                sum +
-                                (i.discountType === "percent"
-                                  ? qty * price * (1 - disc / 100)
-                                  : qty * (price - disc))
-                              );
-                            },
-                            0,
-                          );
-
-                          const floorTotal = Math.round(
-                            floorVisibleTotal + floorConcealedTotal,
-                          );
-
-                          // Group by room (null = whole floor)
-                          const itemsByRoom = floorItems.reduce((acc, item) => {
-                            const key = item.room_id || "whole-floor";
-                            if (!acc[key]) acc[key] = [];
-                            acc[key].push(item);
-                            return acc;
-                          }, {});
-
-                          return (
-                            <Panel
-                              key={floor.floor_number}
-                              header={
-                                <Space>
-                                  <HomeOutlined style={{ color: "#1890ff" }} />
-                                  <strong>{floor.floor_name}</strong>
-                                  <Tag color="blue">
-                                    {floor.rooms?.length || 0} rooms
-                                  </Tag>
-                                  <Tag color="default">
-                                    {floorItems.length} items
-                                  </Tag>
-                                  <Statistic
-                                    title="Total"
-                                    value={floorTotal}
-                                    prefix="₹"
-                                    size="small"
-                                  />
-                                </Space>
-                              }
-                              extra={
-                                <Space>
-                                  <Tag color="green">
-                                    Visible: ₹{Math.round(floorVisibleTotal)}
-                                  </Tag>
-                                  <Tag color="volcano">
-                                    Concealed: ₹
-                                    {Math.round(floorConcealedTotal)}
-                                  </Tag>
-                                </Space>
-                              }
-                            >
-                              {itemsByRoom["whole-floor"]?.length > 0 && (
-                                <div style={{ marginBottom: 24 }}>
-                                  <Text strong>Common / Whole Floor Items</Text>
-                                  {renderProductTable(
-                                    itemsByRoom["whole-floor"],
-                                  )}
-                                </div>
-                              )}
-
-                              {floor.rooms?.map((room) => {
-                                const roomItems = itemsByRoom[room.id] || [];
-                                if (roomItems.length === 0) return null;
-                                return (
-                                  <div
-                                    key={room.id}
-                                    style={{ marginBottom: 24 }}
-                                  >
-                                    <Text strong>
-                                      {room.name}{" "}
-                                      {room.type && (
-                                        <Tag color="blue">{room.type}</Tag>
-                                      )}
-                                    </Text>
-                                    {renderProductTable(roomItems)}
-                                  </div>
-                                );
-                              })}
-
-                              {floorItems.length === 0 && (
-                                <Empty
-                                  description="No products assigned to this floor yet"
-                                  imageStyle={{ height: 60 }}
-                                />
-                              )}
-                            </Panel>
-                          );
-                        })}
-                      </Collapse>
-                    )}
-
-                    {project.items.some((i) => !i.floor_number) && (
-                      <Alert
-                        style={{ marginTop: 16 }}
-                        message={`There are ${project.items.filter((i) => !i.floor_number).length} unassigned items`}
-                        description="It's recommended to assign all visible products before finalizing."
-                        type="warning"
-                        showIcon
-                      />
-                    )}
-                  </Card>
-                </Col>
-
-                {/* Right: Summary */}
-                <Col xs={24} lg={10}>
-                  <Card title="Financial Summary" size="small">
-                    <Statistic
-                      title="Visible Products"
-                      value={totals.visible}
-                      prefix="₹"
-                    />
-                    <Statistic
-                      title="Concealed Works"
-                      value={totals.concealed}
-                      prefix="₹"
-                      style={{ marginTop: 12 }}
-                    />
-                    <Divider />
-                    <Statistic
-                      title="Subtotal"
-                      value={totals.subtotal}
-                      prefix="₹"
-                    />
-                    <Statistic
-                      title={`GST (${project.gst}%)`}
-                      value={totals.gstAmount}
-                      prefix="₹"
-                    />
-                    <Statistic
-                      title="Grand Total"
-                      value={totals.grandTotal}
-                      prefix="₹"
-                      valueStyle={{
-                        fontSize: 28,
-                        color: "#1890ff",
-                        fontWeight: 600,
-                      }}
-                      style={{ marginTop: 20 }}
-                    />
-                  </Card>
-
-                  <Card
-                    title="Project Overview"
-                    size="small"
-                    style={{ marginTop: 24 }}
-                  >
-                    <p>
-                      <strong>Customer:</strong>{" "}
-                      {customers.find(
-                        (c) => c.customerId === project.customerId,
-                      )?.name || "—"}
-                    </p>
-                    <p>
-                      <strong>Project:</strong> {project.projectName || "—"}
-                    </p>
-                    <p>
-                      <strong>Floors:</strong> {project.totalFloors}
-                    </p>
-                    <p>
-                      <strong>Rooms:</strong>{" "}
-                      {project.floorDetails.reduce(
-                        (sum, f) => sum + (f.rooms?.length || 0),
-                        0,
-                      )}
-                    </p>
-                    <p>
-                      <strong>Total Items:</strong> {project.items.length}
-                    </p>
-                    <p>
-                      <strong>Assigned Items:</strong>{" "}
-                      {project.items.filter((i) => i.floor_number).length}
-                    </p>
-                  </Card>
-                </Col>
-              </Row>
-
-              {project.items.some((i) => !i.floor_number && !i.isConcealed) && (
-                <Alert
-                  style={{ marginTop: 24 }}
-                  message="Action Required"
-                  description="Some visible products are still unassigned. Please go back to Step 3 to assign them."
-                  type="error"
-                  showIcon
-                />
-              )}
-            </>
-          )}
-
-          {/* Sticky Footer Navigation */}
-          <div
-            style={{
-              position: "fixed",
-              bottom: 0,
-              left: 0,
-              right: 0,
-              background: "white",
-              padding: "16px 24px",
-              borderTop: "1px solid #f0f0f0",
-              boxShadow: "0 -4px 12px rgba(0,0,0,0.08)",
-              zIndex: 1000,
-            }}
-          >
-            <div
-              style={{ maxWidth: 1200, margin: "0 auto", textAlign: "right" }}
-            >
-              <Space size="middle">
-                {currentStep > 0 && (
-                  <Button
-                    size="large"
-                    onClick={() => setCurrentStep(currentStep - 1)}
-                  >
-                    Previous
-                  </Button>
-                )}
-
-                {currentStep < 3 ? (
-                  <Button
-                    type="primary"
-                    size="large"
-                    onClick={handleNext}
-                    disabled={!canGoNext()}
-                  >
-                    Next <ArrowRightOutlined />
-                  </Button>
-                ) : (
-                  <Button
-                    type="primary"
-                    icon={<SaveOutlined />}
-                    size="large"
-                    loading={creatingQuotation || creatingSiteMap}
-                    onClick={handleSave}
-                  >
-                    Create Quotation & Site Map
-                  </Button>
-                )}
-              </Space>
-            </div>
-          </div>
-        </Card>
-
-        {/* ── Room Modal ──────────────────────────────────────────────── */}
-        <Modal
-          title={roomModal.room ? "Edit Room" : "Add Room"}
-          open={roomModal.visible}
-          onOk={() => roomForm.submit()}
-          onCancel={() => {
-            setRoomModal({ visible: false });
-            roomForm.resetFields();
-          }}
-          okText="Save Room"
+      </PageWrapper>
+    );
+  }
+  // ── RENDER ─────────────────────────────────────────────────────
+  return (
+    <div className="page-wrapper">
+      <div className="content">
+        <Tabs
+          activeKey={activeTab}
+          onChange={setActiveTab}
+          type="card"
+          tabBarExtraContent={
+            <Segmented
+              value={documentType}
+              onChange={setDocumentType}
+              options={[
+                { label: "Quotation", value: "Quotation" },
+                { label: "Order", value: "Order" },
+                ...(canCreatePurchaseOrder
+                  ? [{ label: "Purchase Order", value: "Purchase Order" }]
+                  : []),
+              ]}
+            />
+          }
         >
-          <Form
-            form={roomForm}
-            layout="vertical"
-            onFinish={(values) => {
-              const newRoom = {
-                id: roomModal.room?.id || uuidv4(),
-                name: values.name,
-                type: values.type,
-                size: values.size || "",
-              };
-
-              setProject((prev) => ({
-                ...prev,
-                floorDetails: prev.floorDetails.map((f) =>
-                  f.floor_number === roomModal.floor?.floor_number
-                    ? {
-                        ...f,
-                        rooms: roomModal.room
-                          ? f.rooms.map((r) =>
-                              r.id === roomModal.room.id ? newRoom : r,
-                            )
-                          : [...(f.rooms || []), newRoom],
-                      }
-                    : f,
-                ),
-              }));
-
-              setRoomModal({ visible: false });
-              roomForm.resetFields();
-              message.success(roomModal.room ? "Room updated" : "Room added");
-            }}
-            initialValues={roomModal.room || {}}
+          <TabPane
+            tab={
+              <span>
+                <ShoppingCartOutlined /> Cart ({localCartItems.length})
+              </span>
+            }
+            key="cart"
           >
-            <Form.Item
-              name="name"
-              label="Room Name"
-              rules={[{ required: true }]}
-            >
-              <Input placeholder="e.g. Master Bedroom" />
-            </Form.Item>
+            <CartTab
+              cartItems={localCartItems}
+              cartProductsData={cartProductsData}
+              totalItems={localCartItems.length}
+              shipping={shipping}
+              tax={tax}
+              discount={totalDiscount}
+              roundOff={roundOff}
+              subTotal={subTotal}
+              quotationData={quotationData}
+              itemDiscounts={itemDiscounts}
+              itemDiscountTypes={itemDiscountTypes}
+              itemTaxes={itemTaxes}
+              updatingItems={updatingItems}
+              handleUpdateQuantity={handleUpdateQuantity}
+              handleRemoveItem={handleRemoveItem}
+              handleDiscountChange={handleDiscountChange}
+              handleDiscountTypeChange={handleDiscountTypeChange}
+              handleTaxChange={handleTaxChange}
+              setShowClearCartModal={setShowClearCartModal}
+              setActiveTab={setActiveTab}
+              onShippingChange={(v) => setShipping(v)}
+              handleMakeOption={handleMakeOption}
+              getParentName={getParentName}
+              documentType={documentType}
+              setDocumentType={setDocumentType}
+              setAssignModal={setAssignModal} // NEW - trigger assignment
+            />
+          </TabPane>
 
-            <Form.Item name="type" label="Room Type">
-              <Select placeholder="Optional">
-                <Option value="Bedroom">Bedroom</Option>
-                <Option value="Living Room">Living / Drawing Room</Option>
-                <Option value="Kitchen">Kitchen</Option>
-                <Option value="Bathroom">Bathroom</Option>
-                <Option value="Balcony">Balcony / Terrace</Option>
-                <Option value="Puja Room">Puja Room</Option>
-                <Option value="Other">Other</Option>
-              </Select>
-            </Form.Item>
+          <TabPane
+            tab={
+              <span>
+                <CheckCircleOutlined /> Checkout
+              </span>
+            }
+            key="checkout"
+          >
+            {documentType === "Purchase Order" ? (
+              <PurchaseOrderForm
+                purchaseOrderData={purchaseOrderData}
+                setPurchaseOrderData={setPurchaseOrderData}
+                selectedVendor={selectedVendor}
+                setSelectedVendor={setSelectedVendor}
+                vendors={vendors}
+                products={products}
+                productSearch={productSearch}
+                filteredProducts={filteredProducts}
+                debouncedSearch={debouncedSearch}
+                addPurchaseOrderProduct={(productId) => {
+                  const product = products.find(
+                    (p) => p.productId === productId,
+                  );
+                  if (
+                    !product ||
+                    purchaseOrderData.items.some(
+                      (i) => i.productId === productId,
+                    ) ||
+                    allCartItems.some((i) => i.productId === productId)
+                  ) {
+                    message.error(
+                      product ? "Product already added." : "Product not found.",
+                    );
+                    return;
+                  }
+                  const sellingPrice =
+                    product.metaDetails?.find((m) => m.slug === "sellingPrice")
+                      ?.value || 0;
+                  if (sellingPrice <= 0) {
+                    message.error(`Invalid MRP for ${product.name}`);
+                    return;
+                  }
+                  const quantity = 1;
+                  const total = quantity * sellingPrice;
+                  setPurchaseOrderData((prev) => {
+                    const newItems = [
+                      ...prev.items,
+                      {
+                        id: product.productId,
+                        productId: product.productId,
+                        name: product.name,
+                        quantity,
+                        mrp: sellingPrice,
+                        total,
+                        tax: 0,
+                      },
+                    ];
+                    const totalAmount = newItems
+                      .reduce((s, i) => s + i.total * (1 + i.tax / 100), 0)
+                      .toFixed(2);
+                    return { ...prev, items: newItems, totalAmount };
+                  });
+                  setProductSearch("");
+                  setFilteredProducts([]);
+                }}
+                removePurchaseOrderProduct={(index) => {
+                  setPurchaseOrderData((prev) => {
+                    const newItems = prev.items.filter((_, i) => i !== index);
+                    const totalAmount = newItems
+                      .reduce((s, i) => s + i.total * (1 + i.tax / 100), 0)
+                      .toFixed(2);
+                    return { ...prev, items: newItems, totalAmount };
+                  });
+                }}
+                updatePurchaseOrderProductField={(index, field, value) => {
+                  const items = [...purchaseOrderData.items];
+                  items[index][field] = value;
+                  if (["quantity", "mrp", "tax"].includes(field)) {
+                    const q = Number(items[index].quantity) || 1;
+                    const m = Number(items[index].mrp) || 0.01;
+                    const t = Number(items[index].tax) || 0;
+                    items[index].total = q * m * (1 + t / 100);
+                  }
+                  const totalAmount = items
+                    .reduce((s, i) => s + i.total * (1 + i.tax / 100), 0)
+                    .toFixed(2);
+                  setPurchaseOrderData({
+                    ...purchaseOrderData,
+                    items,
+                    totalAmount,
+                  });
+                }}
+                handlePurchaseOrderChange={(key, value) =>
+                  setPurchaseOrderData((prev) => ({ ...prev, [key]: value }))
+                }
+                purchaseOrderTotal={purchaseOrderTotal}
+                documentType={documentType}
+                setDocumentType={setDocumentType}
+                cartItems={displayCartItems}
+                setActiveTab={setActiveTab}
+                handleCreateDocument={handleCreateDocument}
+                setShowAddVendorModal={setShowAddVendorModal}
+              />
+            ) : documentType === "Order" ? (
+              <OrderForm
+                orderData={orderData}
+                setOrderData={setOrderData}
+                handleOrderChange={(key, value) =>
+                  setOrderData((prev) => ({ ...prev, [key]: value }))
+                }
+                selectedCustomer={selectedCustomer}
+                setSelectedCustomer={setSelectedCustomer}
+                customers={customerList}
+                shipping={shipping}
+                onShippingChange={handleShippingChange}
+                addresses={addresses}
+                userMap={userMap}
+                customerMap={customerMap}
+                teams={teams}
+                users={users}
+                documentType={documentType}
+                setDocumentType={setDocumentType}
+                cartItems={displayCartItems}
+                totalAmount={totalAmount}
+                tax={tax}
+                totalDiscount={totalDiscount}
+                extraDiscount={orderData.extraDiscount}
+                extraDiscountType={orderData.extraDiscountType}
+                roundOff={roundOff}
+                subTotal={subTotal}
+                handleAddCustomer={handleAddCustomer}
+                handleAddAddress={handleAddAddress}
+                setActiveTab={setActiveTab}
+                handleCreateDocument={handleCreateDocument}
+                handleTeamAdded={handleTeamAdded}
+                useBillingAddress={useBillingAddress}
+                setUseBillingAddress={setUseBillingAddress}
+              />
+            ) : (
+              <QuotationForm
+                quotationData={quotationData}
+                setQuotationData={setQuotationData}
+                handleQuotationChange={handleQuotationChange}
+                selectedCustomer={selectedCustomer}
+                onShippingChange={handleShippingChange}
+                setSelectedCustomer={setSelectedCustomer}
+                customers={customerList}
+                addresses={addresses}
+                userMap={userMap}
+                customerMap={customerMap}
+                documentType={documentType}
+                setDocumentType={setDocumentType}
+                cartItems={localCartItems}
+                setCartItems={setLocalCartItems}
+                totalAmount={totalAmount}
+                gst={gst}
+                gstAmount={gstAmount}
+                setGst={setGst}
+                shipping={shipping}
+                tax={tax}
+                discount={totalDiscount}
+                extraDiscount={extraDiscount}
+                roundOff={roundOff}
+                subTotal={subTotal}
+                handleAddCustomer={handleAddCustomer}
+                handleAddAddress={handleAddAddress}
+                setActiveTab={setActiveTab}
+                handleCreateDocument={handleCreateDocument}
+                useBillingAddress={useBillingAddress}
+                setBillingAddressId={setBillingAddressId}
+                setUseBillingAddress={setUseBillingAddress}
+                itemDiscounts={itemDiscounts}
+                itemTaxes={itemTaxes}
+                previewVisible={previewVisible}
+                setPreviewVisible={setPreviewVisible} // ── These 6 lines were missing ────────────────────────────────
+                // assignModal={assignModal}
+                // setAssignModal={setAssignModal}
+                // selectedFloorForAssign={selectedFloorForAssign}
+                // setSelectedFloorForAssign={setSelectedFloorForAssign}
+                // selectedRoomForAssign={selectedRoomForAssign}
+                // setSelectedRoomForAssign={setSelectedRoomForAssign}
+              />
+            )}
+          </TabPane>
+        </Tabs>
 
-            <Form.Item name="size" label="Size (optional)">
-              <Input placeholder="e.g. 12 × 14 ft" />
-            </Form.Item>
-          </Form>
-        </Modal>
-
-        {/* ── Assign Modal ────────────────────────────────────────────── */}
+        {/* Assignment Modal */}
         <Modal
-          title={`Assign: ${project.items.find((i) => i.id === assignModal.itemId)?.name || "Product"}`}
+          title="Assign Item to Floor / Room"
           open={assignModal.visible}
-          okText="Assign"
-          onCancel={() => setAssignModal({ visible: false, itemId: null })}
-          onOk={() => {
-            if (!selectedAssignFloor)
-              return message.error("Please select a floor");
-            assignItem(
-              assignModal.itemId,
-              selectedAssignFloor,
-              selectedAssignRoom,
-            );
-            message.success("Assigned successfully");
+          onOk={assignItemToLocation}
+          onCancel={() => {
             setAssignModal({ visible: false, itemId: null });
+            setSelectedFloorForAssign(null);
+            setSelectedRoomForAssign(null);
           }}
+          okText="Assign"
           width={500}
         >
-          <div style={{ padding: "16px 0" }}>
-            <label
-              style={{ display: "block", marginBottom: 8, fontWeight: 500 }}
-            >
-              Select Floor <span style={{ color: "red" }}>*</span>
-            </label>
-            <Select
-              value={selectedAssignFloor}
-              onChange={(val) => {
-                setSelectedAssignFloor(val);
-                setSelectedAssignRoom(null);
-              }}
-              style={{ width: "100%" }}
-              size="large"
-            >
-              {project.floorDetails.map((f) => (
-                <Option key={f.floor_number} value={f.floor_number}>
-                  {f.floor_name}
-                </Option>
-              ))}
-            </Select>
+          <Space direction="vertical" style={{ width: "100%" }} size="middle">
+            <div>
+              <Text strong>Product:</Text>{" "}
+              <Text>
+                {localCartItems.find((i) => i.id === assignModal.itemId)
+                  ?.name || "—"}
+              </Text>
+            </div>
 
-            {selectedAssignFloor && (
-              <>
-                <label
-                  style={{
-                    display: "block",
-                    margin: "24px 0 8px",
-                    fontWeight: 500,
-                  }}
-                >
-                  Select Room (optional — for visualization only)
-                </label>
+            <div>
+              <Text strong>
+                Floor <span style={{ color: "red" }}>*</span>
+              </Text>
+              <Select
+                placeholder="Select floor"
+                value={selectedFloorForAssign}
+                onChange={(v) => {
+                  setSelectedFloorForAssign(v);
+                  setSelectedRoomForAssign(null);
+                }}
+                style={{ width: "100%", marginTop: 8 }}
+              >
+                {(quotationData.floors || []).map((floor) => (
+                  <Select.Option key={floor.number} value={floor.number}>
+                    {floor.name}
+                  </Select.Option>
+                ))}
+              </Select>
+            </div>
+
+            {selectedFloorForAssign && (
+              <div>
+                <Text strong>Room (optional)</Text>
                 <Select
-                  value={selectedAssignRoom}
-                  onChange={setSelectedAssignRoom}
+                  placeholder="Whole floor / common area"
                   allowClear
-                  style={{ width: "100%" }}
-                  size="large"
-                  placeholder="Common area / whole floor"
+                  value={selectedRoomForAssign}
+                  onChange={setSelectedRoomForAssign}
+                  style={{ width: "100%", marginTop: 8 }}
                 >
-                  {project.floorDetails
-                    .find((f) => f.floor_number === selectedAssignFloor)
-                    ?.rooms?.map((room) => (
-                      <Option key={room.id} value={room.id}>
-                        {room.name} {room.type ? `(${room.type})` : ""}
-                      </Option>
+                  {(quotationData.floors || [])
+                    .find((f) => f.number === selectedFloorForAssign)
+                    ?.rooms?.map((r) => (
+                      <Select.Option key={r.id} value={r.id}>
+                        {r.name} {r.type && `(${r.type})`}
+                      </Select.Option>
                     ))}
                 </Select>
-              </>
+              </div>
             )}
-          </div>
+          </Space>
         </Modal>
 
-        {/* ── Add Address Modal ───────────────────────────────────────── */}
-        {showAddressModal && (
+        {/* Your existing modals */}
+        <Modal
+          title="Confirm Clear Cart"
+          open={showClearCartModal}
+          onOk={handleClearCart}
+          onCancel={() => setShowClearCartModal(false)}
+          okText="Clear"
+          okButtonProps={{ danger: true }}
+        >
+          <Text>Are you sure you want to clear all items from your cart?</Text>
+        </Modal>
+
+        {showAddAddressModal && (
           <AddAddress
-            visible={showAddressModal}
-            onClose={() => setShowAddressModal(false)}
-            onSave={(newAddrId) => {
-              setProject((p) => ({ ...p, shipTo: newAddrId }));
-              setShowAddressModal(false);
-              refetchAddresses?.();
+            visible={true}
+            onClose={() => setShowAddAddressModal(false)}
+            onSave={(addressId) => {
+              if (documentType === "Order")
+                setOrderData((p) => ({ ...p, shipTo: addressId }));
+              setShowAddAddressModal(false);
             }}
-            selectedCustomer={project.customerId}
+            selectedCustomer={selectedCustomer}
           />
         )}
 
-        {/* ── Add Customer Modal ──────────────────────────────────────── */}
+        <AddVendorModal
+          show={showAddVendorModal}
+          onClose={() => setShowAddVendorModal(false)}
+          onSave={createVendor}
+          isCreatingVendor={isCreatingVendor}
+        />
+
+        {showAddTeamModal && (
+          <AddNewTeam
+            onClose={() => setShowAddTeamModal(false)}
+            visible={showAddTeamModal}
+          />
+        )}
+
         {showAddCustomerModal && (
           <AddCustomerModal
             visible={showAddCustomerModal}
             onClose={() => setShowAddCustomerModal(false)}
-            onCustomerCreated={(newCustomerId) => {
-              setProject((prev) => ({ ...prev, customerId: newCustomerId }));
-              refetchCustomers();
-              message.success("New customer selected automatically");
-            }}
+            customer={null}
+            onSave={() => {}}
           />
         )}
+        <PreviewQuotation
+          visible={previewVisible}
+          onClose={() => setPreviewVisible(false)}
+          cartItems={calculationCartItems} // ← only main items
+          productsData={cartProductsData}
+          customer={customerList.find((c) => c.customerId === selectedCustomer)}
+          address={addresses.find((a) => a.addressId === quotationData.shipTo)}
+          quotationData={{ ...quotationData }}
+          itemDiscounts={itemDiscounts}
+          itemDiscountTypes={itemDiscountTypes}
+          itemTaxes={itemTaxes}
+          gstRate={gst}
+          includeGst
+        />
       </div>
     </div>
   );
-}
+};
+
+NewCart.propTypes = {
+  onConvertToOrder: PropTypes.func,
+};
+
+NewCart.defaultProps = {
+  onConvertToOrder: () => {},
+};
+
+export default NewCart;

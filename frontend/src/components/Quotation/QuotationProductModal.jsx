@@ -50,7 +50,6 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
     }
 
     const items = q.items || [];
-
     return items;
   }, [q.products, q.items]);
 
@@ -67,16 +66,16 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
   const hasMainItems = mainItems.length > 0;
   const hasOptionalItems = optionalItems.length > 0;
 
-  // Financial values
-  const subtotal = safeNum(q.subTotal || q.subtotal);
-  const extraDiscountAmount = safeNum(
-    q.discountAmount || q.extraDiscountAmount,
-  );
+  // ── Use the 'calculated' object which contains correct values ─────────────
+  const calculated = q.calculated || {};
+
+  const subtotal = safeNum(calculated.subTotal);
+  const extraDiscountAmount = safeNum(calculated.extraDiscountAmount);
   const extraDiscountType = q.extraDiscountType || "fixed";
-  const shippingAmount = safeNum(q.shippingAmount);
-  const gstAmount = safeNum(q.gstAmount);
-  const roundOff = safeNum(q.roundOff);
-  const finalAmount = safeNum(q.finalAmount);
+  const shippingAmount = safeNum(calculated.shippingAmount);
+  const gstAmount = safeNum(calculated.gstAmount);
+  const roundOff = safeNum(calculated.roundOff);
+  const finalAmount = safeNum(calculated.finalAmount);
 
   const optionalPotential = useMemo(() => {
     return optionalItems.reduce((sum, item) => {
@@ -136,6 +135,14 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
               {record.productCode}
             </Text>
           )}
+          {record.companyCode && record.companyCode !== record.productCode && (
+            <Text
+              type="secondary"
+              style={{ marginLeft: 8, fontSize: "0.85em" }}
+            >
+              ({record.companyCode})
+            </Text>
+          )}
         </div>
       ),
     },
@@ -150,7 +157,7 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
       title: "Price",
       width: 110,
       align: "right",
-      render: (_, r) => `₹${safeNum(r.price).toFixed(2)}`,
+      render: (_, r) => `₹${safeNum(r.price).toLocaleString("en-IN")}`,
     },
     {
       title: "Disc",
@@ -159,14 +166,18 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
       render: (_, r) => {
         const d = safeNum(r.discount);
         if (d <= 0) return "—";
-        return r.discountType === "percent" ? `${d}%` : `₹${d.toFixed(2)}`;
+        return r.discountType === "percent"
+          ? `${d}%`
+          : `₹${d.toLocaleString("en-IN")}`;
       },
     },
     {
       title: "Total",
       width: 130,
       align: "right",
-      render: (_, r) => <Text strong>₹{safeNum(r.total).toFixed(2)}</Text>,
+      render: (_, r) => (
+        <Text strong>₹{safeNum(r.total).toLocaleString("en-IN")}</Text>
+      ),
     },
   ];
 
@@ -177,7 +188,7 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
           <Text strong>Subtotal (Main items only)</Text>
         </Table.Summary.Cell>
         <Table.Summary.Cell align="right">
-          <Text strong>₹{subtotal.toFixed(2)}</Text>
+          <Text strong>₹{subtotal.toLocaleString("en-IN")}</Text>
         </Table.Summary.Cell>
       </Table.Summary.Row>
 
@@ -187,11 +198,13 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
             <Text>
               Extra Discount{" "}
               {extraDiscountType === "percent" &&
-                `(${safeNum(q.extraDiscount || q.extraDiscountAmount)}%)`}
+                `(${safeNum(q.extraDiscount || extraDiscountAmount)}%)`}
             </Text>
           </Table.Summary.Cell>
           <Table.Summary.Cell align="right">
-            <Text type="danger">-₹{extraDiscountAmount.toFixed(2)}</Text>
+            <Text type="danger">
+              -₹{extraDiscountAmount.toLocaleString("en-IN")}
+            </Text>
           </Table.Summary.Cell>
         </Table.Summary.Row>
       )}
@@ -202,7 +215,9 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
             <Text>Shipping</Text>
           </Table.Summary.Cell>
           <Table.Summary.Cell align="right">
-            <Text type="success">+₹{shippingAmount.toFixed(2)}</Text>
+            <Text type="success">
+              +₹{shippingAmount.toLocaleString("en-IN")}
+            </Text>
           </Table.Summary.Cell>
         </Table.Summary.Row>
       )}
@@ -213,7 +228,7 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
             <Text>GST</Text>
           </Table.Summary.Cell>
           <Table.Summary.Cell align="right">
-            <Text>₹{gstAmount.toFixed(2)}</Text>
+            <Text>₹{gstAmount.toLocaleString("en-IN")}</Text>
           </Table.Summary.Cell>
         </Table.Summary.Row>
       )}
@@ -225,7 +240,8 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
           </Table.Summary.Cell>
           <Table.Summary.Cell align="right">
             <Text type={roundOff >= 0 ? "success" : "danger"}>
-              {roundOff >= 0 ? "+" : "-"}₹{Math.abs(roundOff).toFixed(2)}
+              {roundOff >= 0 ? "+" : "-"}₹
+              {Math.abs(roundOff).toLocaleString("en-IN")}
             </Text>
           </Table.Summary.Cell>
         </Table.Summary.Row>
@@ -239,7 +255,7 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
         </Table.Summary.Cell>
         <Table.Summary.Cell align="right">
           <Text strong style={{ fontSize: "1.4em", color: "#3f8600" }}>
-            ₹{finalAmount.toFixed(2)}
+            ₹{finalAmount.toLocaleString("en-IN")}
           </Text>
         </Table.Summary.Cell>
       </Table.Summary.Row>
@@ -260,7 +276,9 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
               <Text type="secondary">Potential extra from options</Text>
             </Table.Summary.Cell>
             <Table.Summary.Cell align="right">
-              <Text type="secondary">₹{optionalPotential.toFixed(2)}</Text>
+              <Text type="secondary">
+                ₹{optionalPotential.toLocaleString("en-IN")}
+              </Text>
             </Table.Summary.Cell>
           </Table.Summary.Row>
         </>
@@ -330,6 +348,7 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
                   bordered
                   size="middle"
                   scroll={{ x: "max-content" }}
+                  summary={tableSummary}
                 />
               ) : (
                 <Empty description="No main products found" />
@@ -337,17 +356,17 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
             </Card>
 
             {/* Optional Items */}
-            <Card
-              title={
-                <span>
-                  Optional Items{" "}
-                  <Text type="secondary">
-                    (Variants / Upgrades / Add-ons – reference only)
-                  </Text>
-                </span>
-              }
-              extra={
-                hasOptionalItems && (
+            {hasOptionalItems && (
+              <Card
+                title={
+                  <span>
+                    Optional Items{" "}
+                    <Text type="secondary">
+                      (Variants / Upgrades / Add-ons – reference only)
+                    </Text>
+                  </span>
+                }
+                extra={
                   <Alert
                     message="These items are NOT included in the final amount"
                     type="info"
@@ -355,10 +374,8 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
                     banner
                     style={{ marginBottom: 16 }}
                   />
-                )
-              }
-            >
-              {hasOptionalItems ? (
+                }
+              >
                 <Table
                   columns={[
                     ...commonColumns.slice(0, 2), // # and Image
@@ -385,12 +402,10 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
                   size="middle"
                   scroll={{ x: "max-content" }}
                 />
-              ) : (
-                <Empty description="No optional items in this quotation" />
-              )}
-            </Card>
+              </Card>
+            )}
 
-            {/* Financial Summary */}
+            {/* Financial Summary (alternative compact view) */}
             <Card title="Financial Summary" style={{ marginTop: 24 }}>
               <Table
                 columns={[
@@ -402,35 +417,40 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
                   },
                 ]}
                 dataSource={[
-                  { desc: "Main Subtotal", amount: `₹${subtotal.toFixed(2)}` },
+                  {
+                    desc: "Main Subtotal",
+                    amount: `₹${subtotal.toLocaleString("en-IN")}`,
+                  },
                   extraDiscountAmount > 0 && {
                     desc: `Extra Discount ${
                       extraDiscountType === "percent"
-                        ? `(${safeNum(q.extraDiscount)}%)`
+                        ? `(${safeNum(q.extraDiscount || extraDiscountAmount)}%)`
                         : ""
                     }`,
                     amount: (
                       <Text type="danger">
-                        -₹{extraDiscountAmount.toFixed(2)}
+                        -₹{extraDiscountAmount.toLocaleString("en-IN")}
                       </Text>
                     ),
                   },
                   shippingAmount > 0 && {
                     desc: "Shipping",
                     amount: (
-                      <Text type="success">+₹{shippingAmount.toFixed(2)}</Text>
+                      <Text type="success">
+                        +₹{shippingAmount.toLocaleString("en-IN")}
+                      </Text>
                     ),
                   },
                   gstAmount > 0 && {
                     desc: "GST",
-                    amount: `₹${gstAmount.toFixed(2)}`,
+                    amount: `₹${gstAmount.toLocaleString("en-IN")}`,
                   },
                   roundOff !== 0 && {
                     desc: "Round Off",
                     amount: (
                       <Text type={roundOff >= 0 ? "success" : "danger"}>
                         {roundOff >= 0 ? "+" : "-"}₹
-                        {Math.abs(roundOff).toFixed(2)}
+                        {Math.abs(roundOff).toLocaleString("en-IN")}
                       </Text>
                     ),
                   },
@@ -441,7 +461,7 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
                         strong
                         style={{ fontSize: "1.3em", color: "#3f8600" }}
                       >
-                        ₹{finalAmount.toFixed(2)}
+                        ₹{finalAmount.toLocaleString("en-IN")}
                       </Text>
                     ),
                   },
@@ -449,7 +469,7 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
                     desc: "Potential from options (not included)",
                     amount: (
                       <Text type="secondary">
-                        ₹{optionalPotential.toFixed(2)}
+                        ₹{optionalPotential.toLocaleString("en-IN")}
                       </Text>
                     ),
                   },

@@ -80,13 +80,14 @@ import PurchaseManagement from "../components/Orders/PurchaseManagement";
 import JobList from "../components/Jobs/JobsList";
 import JobDetails from "../components/Jobs/JobDetails";
 import CreateProject from "../components/Quotation/CreateProject.";
+import NewPageWrapper from "../components/Home/NewPageWrapper";
 const masterRoutes = [
   {
     path: "/",
     name: "Dashboard",
     icon: <FaHome />,
     isSidebarActive: true,
-    element: <PageWrapper />,
+    element: <NewPageWrapper />,
     submenu: [],
   },
   {
