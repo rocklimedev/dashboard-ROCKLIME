@@ -195,34 +195,53 @@ const NewPageWrapper = () => {
     <div className="page-wrapper">
       <div className="content">
         {/* Top Statistics Row */}
+        {/* Top Statistics Row */}
         <div className="row gx-3 gy-3 mb-4">
+          {/* Total Quotations */}
           <div className="col-12 col-md-4">
-            <div className="card shadow-sm rounded-3 text-center p-4">
-              <h5 className="fw-bold mb-2">Total Quotations</h5>
-              <div className="display-5 fw-bold text-primary">
-                {quotationCount}
+            <div className="dashboard-stat-card">
+              <div className="stat-header">
+                <span className="stat-icon">
+                  <i className="bi bi-receipt"></i>
+                </span>
+                <span className="stat-number">{quotationCount}</span>
               </div>
-              <hr className="my-2 border-danger w-50 mx-auto" />
+
+              <div className="stat-label">Total Quotations</div>
+
+              <div className="stat-line"></div>
             </div>
           </div>
 
+          {/* Total Orders */}
           <div className="col-12 col-md-4">
-            <div className="card shadow-sm rounded-3 text-center p-4">
-              <h5 className="fw-bold mb-2">Orders This Month</h5>
-              <div className="display-5 fw-bold text-primary">
-                {recentOrders.length}
+            <div className="dashboard-stat-card">
+              <div className="stat-header">
+                <span className="stat-icon">
+                  <i className="bi bi-bag-check"></i>
+                </span>
+                <span className="stat-number">{recentOrders.length}</span>
               </div>
-              <hr className="my-2 border-danger w-50 mx-auto" />
+
+              <div className="stat-label">Total Orders</div>
+
+              <div className="stat-line"></div>
             </div>
           </div>
 
+          {/* Total Products */}
           <div className="col-12 col-md-4">
-            <div className="card shadow-sm rounded-3 text-center p-4">
-              <h5 className="fw-bold mb-2">Total Products</h5>
-              <div className="display-5 fw-bold text-primary">
-                {productCount}
+            <div className="dashboard-stat-card">
+              <div className="stat-header">
+                <span className="stat-icon">
+                  <i className="bi bi-box-seam"></i>
+                </span>
+                <span className="stat-number">{productCount}</span>
               </div>
-              <hr className="my-2 border-danger w-50 mx-auto" />
+
+              <div className="stat-label">Total Products</div>
+
+              <div className="stat-line"></div>
             </div>
           </div>
         </div>

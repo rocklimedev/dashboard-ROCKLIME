@@ -15,6 +15,7 @@ services:
     volumes:
       - ./.env:/app/.env:ro
       - uploads:/app/uploads
+      - /var/www/static:/var/www/static
     depends_on:
       - redis
     networks:

@@ -2281,3 +2281,44 @@ body {
 .ant-card:hover {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
+.dashboard-stat-card {
+  background: #f6f6f6;
+  border-radius: 6px;
+  padding: 18px 20px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.stat-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.stat-icon {
+  font-size: 14px;
+  color: #6c757d;
+}
+
+.stat-number {
+  font-size: 20px;
+  font-weight: 700;
+  color: #222;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #6c757d;
+  margin-bottom: 10px;
+}
+
+.stat-line {
+  height: 3px;
+  background: #e60000;
+  width: 100%;
+  border-radius: 2px;
+}
