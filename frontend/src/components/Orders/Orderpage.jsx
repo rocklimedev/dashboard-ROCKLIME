@@ -309,7 +309,7 @@ const OrderPage = () => {
       if (!token) throw new Error("Not authenticated");
 
       const res = await fetch(
-        `http://localhost:4000/api/order/${id}/download?type=${type}`,
+        `https://api.cmtradingco.com/api/order/${id}/download?type=${type}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

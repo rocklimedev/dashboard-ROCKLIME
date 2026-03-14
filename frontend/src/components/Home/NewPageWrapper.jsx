@@ -86,6 +86,9 @@ const NewPageWrapper = () => {
   const { data: topSellingData, isLoading: topProductsLoading } =
     useGetTopSellingProductsQuery(10);
   const topProducts = topSellingData?.data || [];
+  const lastFiveQuotations = [...quotations]
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, 5);
 
   /* ------------------------------------------------------------------ */
   /*  CART & HELPERS                                                    */
@@ -250,73 +253,71 @@ const NewPageWrapper = () => {
         <div className="row gx-3 gy-3">
           {/* LEFT: Top Selling Products */}
           <div className="col-12 col-lg-4">
-            <div className="card shadow-sm rounded-3 h-100">
-              <div className="card-header bg-light fw-semibold">
-                Top Selling Products (Quotations + Orders)
-              </div>
-              <div
-                className="card-body p-0 overflow-auto"
-                style={{ maxHeight: "520px" }}
-              >
-                {topProductsLoading ? (
-                  <p className="p-4 text-center">Loading top products…</p>
-                ) : topProducts.length > 0 ? (
-                  <ul className="list-unstyled m-0">
-                    {topProducts.slice(0, 10).map((product, idx) => {
-                      const imgUrl = getImageUrl(product.images);
-                      const sellingPrice = getSellingPrice(product);
-
-                      return (
-                        <li
-                          key={product.productId}
-                          className="d-flex align-items-center justify-content-between px-3 py-3 border-bottom"
+            <div className="card-header bg-light fw-semibold">
+              TOTAL QUOTATIONS{" "}
+              <span className="text-danger fw-semibold">
+                ({quotationCount})
+              </span>
+            </div>
+            <div className="card-body p-0">
+              <ul className="list-unstyled m-0">
+                {lastFiveQuotations.length > 0 ? (
+                  lastFiveQuotations.map((q, i) => (
+                    <li
+                      key={q.quotationId}
+                      className="list-item"
+                      style={{
+                        borderBottom:
+                          i < lastFiveQuotations.length - 1
+                            ? "1px solid #eee"
+                            : "none",
+                      }}
+                    >
+                      <div className="flex-grow-1">
+                        <a
+                          href={`/quotation/${q.quotationId}`}
+                          className="order-link"
                         >
-                          <div className="d-flex align-items-center gap-3 flex-grow-1">
-                            {imgUrl && (
-                              <img
-                                src={imgUrl}
-                                alt={product.name}
-                                className="rounded"
-                                style={{
-                                  width: "60px",
-                                  height: "60px",
-                                  objectFit: "cover",
-                                }}
-                                onError={(e) =>
-                                  (e.target.style.display = "none")
-                                }
-                              />
-                            )}
-                            <div>
-                              <div className="fw-semibold">{product.name}</div>
-                              <div className="small text-muted">
-                                {product.totalSold}{" "}
-                                {product.totalSold === 1 ? "unit" : "units"}{" "}
-                                sold
-                              </div>
-                            </div>
-                          </div>
-                          <div className="text-end">
-                            <button
-                              className="btn btn-outline-primary btn-sm"
-                              onClick={() => handleAddToCart(product)}
-                              disabled={cartLoadingStates[product.productId]}
-                            >
-                              {cartLoadingStates[product.productId]
-                                ? "Adding…"
-                                : "Add to Cart"}
-                            </button>
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
+                          {q.reference_number || "Quotation"}
+                        </a>
+                        <div className="mt-1 info-text">
+                          <span className="me-2">
+                            <i className="bi bi-person info-icon"></i>
+                            {getCustomerName(q.customerId) ||
+                              q.customer?.name ||
+                              "Customer"}
+                          </span>
+                          <span className="me-2">
+                            <i className="bi bi-calendar-event info-icon"></i>
+                            Due:{" "}
+                            {new Date(q.due_date).toLocaleDateString("en-IN", {
+                              day: "2-digit",
+                              month: "short",
+                            })}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-end">
+                        <div className="amount">
+                          ₹
+                          {parseFloat(q.finalAmount || 0).toLocaleString(
+                            "en-IN",
+                          )}
+                        </div>
+                        <span className="ms-2 info-text">
+                          {new Date(q.createdAt).toLocaleDateString("en-IN", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </span>
+                      </div>
+                    </li>
+                  ))
                 ) : (
-                  <p className="p-4 text-center text-muted">
-                    No sales data yet
-                  </p>
+                  <li className="empty-state">No quotations.</li>
                 )}
-              </div>
+              </ul>
             </div>
           </div>
 
