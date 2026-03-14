@@ -40,12 +40,19 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             set -e
-
             cd /root/cmtrading-api
 
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io \
               -u rocklimedev --password-stdin
 
+            # Remove old container if exists
+            docker rm -f cmtrading-api || true
+
+            # Pull latest image
             docker compose pull backend
-            docker compose up -d backend --force-recreate --pull always
+
+            # Recreate container
+            docker compose up -d backend
+
+            # Clean old images
             docker image prune -f
