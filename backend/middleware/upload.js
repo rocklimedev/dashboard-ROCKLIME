@@ -1,4 +1,4 @@
-// middleware/upload.js (or utils/ftpUpload.js)
+// middleware/upload.js or utils/ftpUpload.js
 const ftp = require("basic-ftp");
 const { Readable, Writable } = require("stream");
 const { v4: uuidv4 } = require("uuid");
@@ -19,13 +19,36 @@ function createBufferWritable() {
   return writable;
 }
 
-async function uploadToFtp(buffer, originalName, options = {}) {
-  // Your existing upload code is fine (uses uploadFrom with stream) → no change needed
-  const ext = path.extname(originalName);
-  const uniqueName = `${uuidv4()}${ext}`;
+function bufferToStream(buffer) {
+  const stream = new Readable();
+  stream.push(buffer);
+  stream.push(null);
+  return stream;
+}
 
+/**
+ * Upload buffer to FTP and return public URL
+ * @param {Buffer} buffer - file buffer
+ * @param {string} originalName - original filename
+ * @param {string} remoteDir - remote directory, e.g., "/product_images"
+ */
+
+/**
+ * Upload buffer to FTP.
+ * @param {Buffer} buffer
+ * @param {string} filename
+ * @param {object} options { remoteDir: string, chmod: string }
+ */
+async function uploadToFtp(buffer, filename, options = {}) {
   const client = new ftp.Client();
   client.ftp.verbose = process.env.NODE_ENV === "development";
+
+  const ext = path.extname(filename) || ".bin";
+  const uniqueName = `${uuidv4()}${ext}`;
+
+  const remoteDir =
+    typeof options.remoteDir === "string" ? options.remoteDir : "/";
+  const chmod = options.chmod;
 
   try {
     await client.access({
@@ -35,39 +58,41 @@ async function uploadToFtp(buffer, originalName, options = {}) {
       password: process.env.FTP_PASSWORD,
       secure: process.env.FTP_SECURE === "true",
       timeout: 0,
-      ...options,
     });
 
-    const uploadDir = "/product_images";
-    await client.ensureDir(uploadDir);
-    await client.cd(uploadDir);
+    // Ensure directory exists (string required)
+    await client.ensureDir(remoteDir);
+    await client.cd(remoteDir);
 
-    const stream = bufferToStream(buffer);
-    await client.uploadFrom(stream, uniqueName);
+    // Upload
+    await client.uploadFrom(bufferToStream(buffer), uniqueName);
 
-    return `${process.env.FTP_BASE_URL}${uploadDir}/${uniqueName}`;
+    // Set permissions if provided
+    if (chmod) {
+      await client.send(`SITE CHMOD ${chmod} ${uniqueName}`);
+    }
+
+    return `${process.env.FTP_BASE_URL}${remoteDir}/${uniqueName}`;
   } finally {
     client.close();
   }
 }
 
-function bufferToStream(buffer) {
-  const stream = new Readable();
-  stream.push(buffer);
-  stream.push(null);
-  return stream;
-}
+module.exports = { uploadToFtp };
 
+/**
+ * Download file from FTP
+ * @param {string} ftpPath - either full URL or remote path
+ */
 async function downloadFromFtp(ftpPath) {
   const client = new ftp.Client();
   client.ftp.verbose = process.env.NODE_ENV === "development";
 
   try {
-    // Extract remote path from URL if needed
     let remotePath = ftpPath;
     if (ftpPath.startsWith("http")) {
       const url = new URL(ftpPath);
-      remotePath = url.pathname;
+      remotePath = url.pathname; // extract path from URL
     }
 
     await client.access({
@@ -79,9 +104,7 @@ async function downloadFromFtp(ftpPath) {
       timeout: 0,
     });
 
-    // Use a writable that collects into Buffer
     const bufferWritable = createBufferWritable();
-
     await client.downloadTo(bufferWritable, remotePath);
 
     return bufferWritable.getBuffer();

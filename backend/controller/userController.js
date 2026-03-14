@@ -682,21 +682,21 @@ exports.updateStatus = async (req, res) => {
  * Body: multipart/form-data → field "photo"
  * Auth: logged-in user (req.user.userId)
  */
+
 exports.uploadUserPhoto = async (req, res) => {
   try {
     // 1. Validate file
-    if (!req.file) {
+    if (!req.file)
       return res.status(400).json({ message: "No photo uploaded" });
-    }
 
     const allowedMime = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
     if (!allowedMime.includes(req.file.mimetype)) {
       return res
         .status(400)
-        .json({ message: "Only JPEG, PNG or WEBP images are allowed" });
+        .json({ message: "Only JPEG, PNG, or WEBP images are allowed" });
     }
 
-    // 2. Generate unique names
+    // 2. Generate unique filenames
     const ext = path.extname(req.file.originalname);
     const uid = uuidv4();
     const originalName = `${uid}${ext}`;
@@ -721,19 +721,21 @@ exports.uploadUserPhoto = async (req, res) => {
       await client.cd(uploadDir);
 
       // ---- Upload original ----
-      const originalStream = bufferToStream(req.file.buffer);
-      await client.uploadFrom(originalStream, originalName);
+      await client.uploadFrom(bufferToStream(req.file.buffer), originalName);
+      // Make it readable by Nginx
+      await client.send(`SITE CHMOD 644 ${originalName}`);
       originalUrl = `${process.env.FTP_BASE_URL}${uploadDir}/${originalName}`;
 
-      // ---- Create & upload thumbnail (200×200) ----
+      // ---- Create & upload thumbnail ----
       const thumbBuffer = await sharp(req.file.buffer)
         .resize(200, 200, { fit: "cover", withoutEnlargement: true })
         .toBuffer();
 
-      const thumbStream = bufferToStream(thumbBuffer);
-      await client.uploadFrom(thumbStream, thumbName);
+      await client.uploadFrom(bufferToStream(thumbBuffer), thumbName);
+      await client.send(`SITE CHMOD 644 ${thumbName}`);
       thumbUrl = `${process.env.FTP_BASE_URL}${uploadDir}/${thumbName}`;
     } catch (ftpErr) {
+      console.error("FTP upload failed:", ftpErr);
       return res
         .status(500)
         .json({ message: "FTP upload failed", error: ftpErr.message });
@@ -743,16 +745,16 @@ exports.uploadUserPhoto = async (req, res) => {
 
     // 4. Update user record
     const user = await User.findByPk(req.user.userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
+    if (!user) return res.status(404).json({ message: "User not found" });
 
     user.photo_original = originalUrl;
     user.photo_thumbnail = thumbUrl;
     await user.save();
 
-    // 5. Return updated user (no password, timestamps…)
-    const safeUser = await User.findByPk(user.userId, excludeSensitiveFields);
+    // 5. Return updated user (exclude sensitive fields)
+    const safeUser = await User.findByPk(user.userId, {
+      attributes: { exclude: ["password", "createdAt", "updatedAt"] },
+    });
 
     return res.status(200).json({
       message: "Photo uploaded successfully",
@@ -761,6 +763,7 @@ exports.uploadUserPhoto = async (req, res) => {
       user: safeUser,
     });
   } catch (err) {
+    console.error("Server error:", err);
     return res
       .status(500)
       .json({ message: "Server error", error: err.message });

@@ -38,6 +38,9 @@ router.get("/comments", orderController.getComments);
 router.delete("/comments/:commentId", orderController.deleteComment);
 router.post("/delete-comment", orderController.deleteCommentsByResource);
 router.get("/:id/download-invoice", auth, orderController.downloadInvoice);
+// GET /orders/:orderId/download?type=invoice|gatepass
+router.get("/:orderId/download", orderController.getDownloadDocument);
+
 router.post("/create", orderController.createOrder);
 router.get("/all", orderController.getAllOrders);
 router.get("/:id", orderController.getOrderDetails);

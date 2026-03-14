@@ -1,6 +1,7 @@
 const OrderItem = require("../models/orderItem");
 const Comment = require("../models/comment");
 const path = require("path");
+const axios = require("axios");
 const { v4: uuidv4 } = require("uuid");
 const ftp = require("basic-ftp");
 require("dotenv").config();
@@ -9,6 +10,7 @@ const sequelize = require("../config/database");
 const sanitizeHtml = require("sanitize-html");
 const { Readable } = require("stream");
 const moment = require("moment");
+const { uploadToFtp } = require("../middleware/upload");
 const { sendNotification } = require("./notificationController"); // Import sendNotification
 const { error } = require("console");
 const {
@@ -2453,14 +2455,17 @@ exports.updateOrderTeam = async (req, res) => {
   }
 };
 
-// Upload invoice and link to order
 exports.uploadInvoiceAndLinkOrder = async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" });
     }
 
-    const ext = path.extname(req.file.originalname);
+    const { orderId } = req.params;
+    const order = await Order.findByPk(orderId);
+    if (!order) return res.status(404).json({ message: "Order not found" });
+
+    const ext = path.extname(req.file.originalname) || ".pdf";
     const uniqueName = `${uuidv4()}${ext}`;
 
     const client = new ftp.Client();
@@ -2473,18 +2478,19 @@ exports.uploadInvoiceAndLinkOrder = async (req, res) => {
         port: process.env.FTP_PORT || 21,
         user: process.env.FTP_USER,
         password: process.env.FTP_PASSWORD,
-        secure: process.env.FTP_SECURE === "true" || false,
+        secure: process.env.FTP_SECURE === "true",
       });
 
-      const cwd = await client.pwd();
       const uploadDir = "/invoice_pdfs";
-      await client.ensureDir(uploadDir);
+      await client.ensureDir(uploadDir); // string required
       await client.cd(uploadDir);
 
-      const stream = bufferToStream(req.file.buffer);
-      await client.uploadFrom(stream, uniqueName);
+      await client.uploadFrom(bufferToStream(req.file.buffer), uniqueName);
 
-      fileUrl = `${process.env.FTP_BASE_URL}/invoice_pdfs/${uniqueName}`;
+      // Make file world-readable
+      await client.send(`SITE CHMOD 644 ${uniqueName}`);
+
+      fileUrl = `${process.env.FTP_BASE_URL}${uploadDir}/${uniqueName}`;
     } catch (ftpErr) {
       return res
         .status(500)
@@ -2493,42 +2499,34 @@ exports.uploadInvoiceAndLinkOrder = async (req, res) => {
       client.close();
     }
 
-    const [updated] = await Order.update(
-      { invoiceLink: fileUrl },
-      { where: { id: req.params.orderId } },
-    );
+    // Update order
+    order.invoiceLink = fileUrl;
+    await order.save();
 
-    if (!updated) {
-      return res.status(404).json({ message: "Order not found" });
-    }
-
-    const order = await Order.findByPk(req.params.orderId);
     const customer = await Customer.findByPk(order.createdFor);
 
-    // Send notification to creator, assignedUserId, and secondaryUserId
+    // Send notifications to relevant users
     const recipients = new Set(
       [order.createdBy, order.assignedUserId, order.secondaryUserId].filter(
-        (id) => id,
+        Boolean,
       ),
     );
-    for (const recipientId of recipients) {
+    for (const uid of recipients) {
       await sendNotification({
-        userId: recipientId,
+        userId: uid,
         title: `Invoice Uploaded for Order #${order.orderNo}`,
-        message: `An invoice has been uploaded for order #${
-          order.orderNo
-        } for ${customer?.name || "Customer"}.`,
+        message: `An invoice has been uploaded for order #${order.orderNo} for ${customer?.name || "Customer"}.`,
       });
     }
 
-    // Send notification to admin
-    await sendNotification({
-      userId: ADMIN_USER_ID,
-      title: `Invoice Uploaded for Order #${order.orderNo}`,
-      message: `An invoice has been uploaded for order #${order.orderNo} for ${
-        customer?.name || "Customer"
-      }.`,
-    });
+    // Notify admin
+    if (ADMIN_USER_ID) {
+      await sendNotification({
+        userId: ADMIN_USER_ID,
+        title: `Invoice Uploaded for Order #${order.orderNo}`,
+        message: `An invoice has been uploaded for order #${order.orderNo} for ${customer?.name || "Customer"}.`,
+      });
+    }
 
     return res.status(200).json({
       message: "Invoice uploaded successfully",
@@ -2537,12 +2535,12 @@ exports.uploadInvoiceAndLinkOrder = async (req, res) => {
       fileUrl,
     });
   } catch (err) {
+    console.error("Invoice upload error:", err);
     return res
       .status(500)
       .json({ message: "Server error", error: err.message });
   }
 };
-
 // Count orders (no notification needed)
 exports.countOrders = async (req, res) => {
   try {
@@ -2570,7 +2568,7 @@ exports.countOrders = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-// ──────── ISSUE GATE-PASS ────────
+
 exports.issueGatePass = async (req, res) => {
   try {
     if (!req.file) {
@@ -2581,38 +2579,97 @@ exports.issueGatePass = async (req, res) => {
     const order = await Order.findByPk(orderId);
     if (!order) return sendErrorResponse(res, 404, "Order not found");
 
-    // reuse the same FTP upload you already have for invoices
-    const fileUrl = await uploadToCDN(req.file); // <-- already defined in your file
+    // --- Generate unique filename ---
+    const ext = path.extname(req.file.originalname) || ".pdf"; // fallback
+    const uniqueName = `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`;
 
+    // --- Upload to FTP ---
+    const fileUrl = await uploadToFtp(req.file.buffer, uniqueName, {
+      remoteDir: "/invoice_pdfs",
+      chmod: "644",
+    });
+
+    // --- Update order record ---
     await order.update({ gatePassLink: fileUrl });
 
-    // ---------- NOTIFICATIONS ----------
+    // --- Send notifications ---
     const customer = await Customer.findByPk(order.createdFor);
     const recipients = new Set(
       [order.createdBy, order.assignedUserId, order.secondaryUserId].filter(
         Boolean,
       ),
     );
+
     for (const uid of recipients) {
       await sendNotification({
         userId: uid,
         title: `Gate-Pass Issued #${order.orderNo}`,
-        message: `Gate-pass uploaded for order #${order.orderNo} – ${
-          customer?.name || ""
-        }.`,
+        message: `Gate-pass uploaded for order #${order.orderNo} – ${customer?.name || ""}.`,
       });
     }
-    await sendNotification({
-      userId: ADMIN_USER_ID,
-      title: `Gate-Pass Issued #${order.orderNo}`,
-      message: `Gate-pass uploaded for order #${order.orderNo}.`,
+
+    // Notify admin
+    if (ADMIN_USER_ID) {
+      await sendNotification({
+        userId: ADMIN_USER_ID,
+        title: `Gate-Pass Issued #${order.orderNo}`,
+        message: `Gate-pass uploaded for order #${order.orderNo}.`,
+      });
+    }
+
+    return res
+      .status(200)
+      .json({ message: "Gate-pass uploaded", gatePassLink: fileUrl });
+  } catch (err) {
+    console.error("Gate-pass error:", err);
+    return sendErrorResponse(res, 500, "Gate-pass upload failed", err.message);
+  }
+};
+
+// GET /orders/:orderId/download?type=invoice|gatepass
+exports.getDownloadDocument = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { type } = req.query; // "invoice" or "gatepass"
+
+    if (!["invoice", "gatepass"].includes(type)) {
+      return res.status(400).json({ message: "Invalid type" });
+    }
+
+    const order = await Order.findByPk(orderId);
+    if (!order) return res.status(404).json({ message: "Order not found" });
+
+    let fileUrl;
+    if (type === "invoice") fileUrl = order.invoiceLink;
+    if (type === "gatepass") fileUrl = order.gatePassLink;
+
+    if (!fileUrl) {
+      return res.status(404).json({ message: `${type} not available` });
+    }
+
+    // Extract filename
+    const filename = path.basename(fileUrl);
+
+    // Fetch file from URL and pipe it to response
+    const response = await axios.get(fileUrl, {
+      responseType: "stream",
     });
 
-    return res.status(200).json({
-      message: "Gate-pass uploaded",
-      gatePassLink: fileUrl,
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.setHeader(
+      "Content-Type",
+      response.headers["content-type"] || "application/octet-stream",
+    );
+
+    response.data.pipe(res);
+
+    response.data.on("end", () => res.end());
+    response.data.on("error", (err) => {
+      console.error("Download stream error:", err);
+      res.status(500).end();
     });
   } catch (err) {
-    return sendErrorResponse(res, 500, "Gate-pass upload failed", err.message);
+    console.error("Download error:", err);
+    res.status(500).json({ message: "Download failed", error: err.message });
   }
 };

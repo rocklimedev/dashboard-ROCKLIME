@@ -218,12 +218,8 @@ const OrderPage = () => {
     order.shippingAddress ||
     null;
 
-  const invoiceUrl = order.invoiceLink
-    ? `${process.env.REACT_APP_FTP_BASE_URL}${order.invoiceLink}`
-    : null;
-  const gatePassUrl = order.gatePassLink
-    ? `${process.env.REACT_APP_FTP_BASE_URL}${order.gatePassLink}`
-    : null;
+  const invoiceUrl = order.invoiceLink ? `${order.invoiceLink}` : null;
+  const gatePassUrl = order.gatePassLink ? `${order.gatePassLink}` : null;
 
   const isDispatched = order.status === "DISPATCHED";
 
@@ -304,7 +300,45 @@ const OrderPage = () => {
       message.error(err.data?.message || "Delete failed");
     }
   };
+  const handleDownloadFile = async (type) => {
+    if (!id) return;
+    try {
+      // Retrieve token from localStorage/sessionStorage
+      const token =
+        localStorage.getItem("token") || sessionStorage.getItem("token");
+      if (!token) throw new Error("Not authenticated");
 
+      const res = await fetch(
+        `http://localhost:4000/api/order/${id}/download?type=${type}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      if (!res.ok) throw new Error(`Download failed: ${res.status}`);
+
+      const blob = await res.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      const filename =
+        type === "invoice"
+          ? `Invoice-${order.orderNo}.pdf`
+          : `GatePass-${order.orderNo}${order.gatePassLink?.endsWith(".pdf") ? ".pdf" : ".jpg"}`;
+      a.download = filename;
+
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error("Download error:", err);
+      message.error(err.message || "Download failed");
+    }
+  };
   const menu = (
     <Menu>
       <Menu.Item key="edit" onClick={() => navigate(`/order/${id}/edit`)}>
@@ -574,26 +608,7 @@ const OrderPage = () => {
                         <Button
                           icon={<DownloadOutlined />}
                           size="small"
-                          onClick={async () => {
-                            try {
-                              const res = await fetch(
-                                `https://api.cmtrading.com/api/order/${id}/download-invoice`,
-                                {
-                                  credentials: "include",
-                                },
-                              );
-                              if (!res.ok) throw new Error();
-                              const blob = await res.blob();
-                              const url = window.URL.createObjectURL(blob);
-                              const a = document.createElement("a");
-                              a.href = url;
-                              a.download = `Invoice-${order.orderNo}.pdf`;
-                              a.click();
-                              window.URL.revokeObjectURL(url);
-                            } catch {
-                              message.error("Download failed");
-                            }
-                          }}
+                          onClick={() => handleDownloadFile("invoice")}
                         >
                           Download
                         </Button>
@@ -638,7 +653,11 @@ const OrderPage = () => {
                         >
                           View
                         </a>
-                        <Button icon={<DownloadOutlined />} size="small">
+                        <Button
+                          icon={<DownloadOutlined />}
+                          size="small"
+                          onClick={() => handleDownloadFile("gatepass")}
+                        >
                           Download
                         </Button>
                       </Space>

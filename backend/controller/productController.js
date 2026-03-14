@@ -415,8 +415,6 @@ exports.updateProduct = async (req, res) => {
   const t = await sequelize.transaction();
 
   try {
-    // THIS LINE FIXES EVERYTHING ON RENDER
-    ensureAssociations();
     const { productId } = req.params;
     const product = await Product.findByPk(productId, { transaction: t });
     if (!product) {
@@ -441,7 +439,7 @@ exports.updateProduct = async (req, res) => {
       ...restFields
     } = req.body;
 
-    // Parse meta
+    // --- Parse meta safely ---
     let metaObj = {};
     if (metaInput) {
       try {
@@ -453,7 +451,7 @@ exports.updateProduct = async (req, res) => {
       }
     }
 
-    // Handle image deletion + upload
+    // --- Handle images ---
     let currentImages = product.images ? JSON.parse(product.images) : [];
     const imagesToDelete = deleteInput
       ? typeof deleteInput === "string"
@@ -466,7 +464,11 @@ exports.updateProduct = async (req, res) => {
 
     if (req.files?.length > 0) {
       for (const file of req.files) {
-        const url = await uploadToFtp(file.buffer, file.originalname);
+        const url = await uploadToFtp(
+          file.buffer,
+          file.originalname,
+          "/product_images",
+        );
         currentImages.push(url);
       }
     }
@@ -479,9 +481,9 @@ exports.updateProduct = async (req, res) => {
       quantity:
         quantity !== undefined ? parseInt(quantity, 10) : product.quantity,
       images: JSON.stringify(currentImages),
-      meta: Object.keys(metaObj).length > 0 ? metaObj : null,
+      meta: Object.keys(metaObj).length ? metaObj : null,
       isFeatured:
-        isFeatured === "true" || isFeatured === true || product.isFeatured,
+        isFeatured === true || isFeatured === "true" || product.isFeatured,
       status: status || product.status,
       description: restFields.description?.trim() || product.description,
       tax: restFields.tax ? parseFloat(restFields.tax) : product.tax,
@@ -495,7 +497,7 @@ exports.updateProduct = async (req, res) => {
         restFields.brand_parentcategoriesId || product.brand_parentcategoriesId,
     };
 
-    // Variant/Master logic (unchanged — your logic is perfect)
+    // --- Variant / Master logic ---
     if (isMaster && !product.isMaster) {
       const hasVariants = await Product.count({
         where: { masterProductId: product.productId },
@@ -527,11 +529,22 @@ exports.updateProduct = async (req, res) => {
         await t.rollback();
         return res.status(400).json({ message: "Master product not found" });
       }
-      const variantOpts = variantOptionsInput
-        ? JSON.parse(variantOptionsInput)
-        : {};
+
+      let variantOpts = {};
+      try {
+        variantOpts = variantOptionsInput
+          ? typeof variantOptionsInput === "string"
+            ? JSON.parse(variantOptionsInput)
+            : variantOptionsInput
+          : {};
+      } catch (err) {
+        await t.rollback();
+        return res.status(400).json({ message: "Invalid variant options" });
+      }
+
       const key = Object.values(variantOpts).filter(Boolean).join(" ");
       const suffix = key ? `-${key.toUpperCase().replace(/\s+/g, "-")}` : "";
+
       Object.assign(updateData, {
         masterProductId: master.productId,
         isMaster: false,
@@ -542,18 +555,21 @@ exports.updateProduct = async (req, res) => {
         name: name || `${master.name} - ${key}`,
         categoryId: restFields.categoryId || master.categoryId,
         brandId: restFields.brandId || master.brandId,
-        images:
-          currentImages.length > 0
-            ? JSON.stringify(currentImages)
-            : master.images,
-        meta: Object.keys(metaObj).length > 0 ? metaObj : master.meta,
+        images: currentImages.length
+          ? JSON.stringify(currentImages)
+          : master.images,
+        meta: Object.keys(metaObj).length ? metaObj : master.meta,
       });
     } else {
       if (!isMaster) {
         const finalKey =
           variantKey ||
           (variantOptionsInput
-            ? Object.values(JSON.parse(variantOptionsInput))
+            ? Object.values(
+                typeof variantOptionsInput === "string"
+                  ? JSON.parse(variantOptionsInput)
+                  : variantOptionsInput,
+              )
                 .filter(Boolean)
                 .join(" ")
             : product.variantKey);
@@ -563,7 +579,9 @@ exports.updateProduct = async (req, res) => {
         updateData.variantKey = finalKey;
         updateData.skuSuffix = finalSuffix;
         updateData.variantOptions = variantOptionsInput
-          ? JSON.parse(variantOptionsInput)
+          ? typeof variantOptionsInput === "string"
+            ? JSON.parse(variantOptionsInput)
+            : variantOptionsInput
           : product.variantOptions;
       } else {
         updateData.variantOptions = null;
@@ -576,20 +594,20 @@ exports.updateProduct = async (req, res) => {
 
     await product.update(updateData, { transaction: t });
 
-    // Replace all keywords — ONE LINE
+    // --- Update keywords ---
     const cleanKeywordIds = Array.isArray(keywordIds)
       ? keywordIds.filter(Boolean)
       : typeof keywordIds === "string"
         ? keywordIds
             .split(",")
             .map((id) => id.trim())
-            .filter((id) => id)
+            .filter(Boolean)
         : [];
     await product.setKeywords(cleanKeywordIds, { transaction: t });
 
     await t.commit();
 
-    // Return fresh data
+    // --- Return updated product ---
     const updated = await Product.findByPk(productId, {
       include: [
         {
@@ -619,7 +637,7 @@ exports.updateProduct = async (req, res) => {
         : null,
     }));
 
-    res.json({
+    return res.json({
       message: "Product updated successfully",
       product: {
         ...updated.toJSON(),
@@ -635,8 +653,7 @@ exports.updateProduct = async (req, res) => {
     });
   } catch (error) {
     await t.rollback();
-
-    res
+    return res
       .status(500)
       .json({ message: "Failed to update product", error: error.message });
   }
@@ -2360,10 +2377,7 @@ exports.removeAllKeywordsFromProduct = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-// controllers/product.controller.js
 
-// Replace ALL keywords for a product (used in edit mode)
-// ───────────────────────────────
 // Replace ALL keywords for a product (clean version)
 // ───────────────────────────────
 exports.replaceAllKeywordsForProduct = async (req, res) => {
