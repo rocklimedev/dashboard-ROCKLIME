@@ -167,36 +167,6 @@ const QuotationList = () => {
     }
   };
 
-  const handleShareOnWhatsApp = (q) => {
-    const items = (q.items || [])
-      .map(
-        (it, i) =>
-          `${i + 1}. ${it.name || "Product"} (ID: ${it.productId})\n   Qty: ${
-            it.quantity
-          } | Price: ₹${it.price} | Total: ₹${it.total}`,
-      )
-      .join("\n");
-
-    const msg = `
-*QUOTATION #${q.reference_number || q.quotationId}*
-${q.document_title || ""}
-
-Date: ${
-      q.quotation_date ? moment(q.quotation_date).format("DD/MM/YYYY") : "N/A"
-    }
-Due: ${q.due_date ? moment(q.due_date).format("DD/MM/YYYY") : "N/A"}
-Customer: ${customers.find((c) => c.customerId === q.customerId)?.name || "N/A"}
-
-${items ? `*Items:*\n${items}` : "No items"}
-
-*Final Amount: ₹${Number(q.finalAmount || 0).toFixed(2)}*
-
-View: ${window.location.origin}/quotation/${q.quotationId}
-    `.trim();
-
-    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
-  };
-
   const handleGenerateSiteMap = (q) => {
     const rawItems = q.items || [];
     if (rawItems.length === 0) {
@@ -392,17 +362,6 @@ View: ${window.location.origin}/quotation/${q.quotationId}
                   onClick={() => handleOpenDatesModal(rec)}
                 >
                   <CalendarOutlined className="me-2" /> Dates
-                </Menu.Item>
-
-                <Menu.Item
-                  key="whatsapp"
-                  onClick={() => handleShareOnWhatsApp(rec)}
-                >
-                  <WhatsAppOutlined
-                    className="me-2"
-                    style={{ color: "#25D366" }}
-                  />{" "}
-                  WhatsApp
                 </Menu.Item>
 
                 <Menu.Item

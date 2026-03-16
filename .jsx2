@@ -570,67 +570,6 @@ const NewCart = ({ onConvertToOrder }) => {
     }
 
     // ────────────────────────────────────────────────
-    // Helper: Clean invalid floor_number / room_id references
-    // ────────────────────────────────────────────────
-    // Helper: Remove references to floors/rooms that no longer exist
-    // Helper: Remove references to non-existent floors/rooms before sending to backend
-    const cleanItemAssignments = (items, floors) => {
-      if (!floors?.length || !items?.length) {
-        return items.map((item) => ({
-          ...item,
-          floor_number: null,
-          room_id: null,
-        }));
-      }
-
-      // Known good floors and their rooms
-      const validFloors = new Set(floors.map((f) => f.number));
-      const floorToRooms = new Map(
-        floors.map((floor) => [
-          floor.number,
-          new Set(floor.rooms?.map((r) => r.id) || []),
-        ]),
-      );
-
-      return items.map((item) => {
-        let { floor_number, room_id, ...rest } = item;
-
-        // 1. Floor no longer exists → clear both
-        if (floor_number && !validFloors.has(floor_number)) {
-          floor_number = null;
-          room_id = null;
-        }
-
-        // 2. Room no longer exists on that floor → keep floor, clear room
-        if (
-          room_id &&
-          floor_number &&
-          !floorToRooms.get(floor_number)?.has(room_id)
-        ) {
-          room_id = null;
-        }
-
-        return { ...rest, floor_number, room_id };
-      });
-    };
-    // Helper: Transform floors to match backend's expected room key (room_id instead of id)
-    // Helper: Transform floors → match backend DB structure + validation expectation
-    const normalizeFloorsForBackend = (floors) => {
-      if (!floors?.length) return [];
-
-      return floors.map((floor) => ({
-        floor_number: floor.number, // backend field
-        floor_name: floor.name, // backend field
-        rooms: (floor.rooms || []).map((room) => ({
-          room_id: room.id, // ← must match backend validation: r.room_id
-          name: room.name || room.room_name, // consistent
-          type: room.type || room.room_type,
-          // add size/details if you have them later
-        })),
-        // Do NOT include extra keys like number/name — keep only what DB expects
-      }));
-    };
-    // ────────────────────────────────────────────────
     //  1. Common validations
     // ────────────────────────────────────────────────
     if (localCartItems.length === 0) {
@@ -758,27 +697,41 @@ const NewCart = ({ onConvertToOrder }) => {
     }
 
     // ────────────────────────────────────────────────
-    //  3. Prepare & CLEAN common product payload
+    //  3. Prepare common product payload
     // ────────────────────────────────────────────────
-    const safeItems = cleanItemAssignments(
-      localCartItems,
-      quotationData.floors,
-    );
+    const productsPayload = localCartItems.map((item) => {
+      const price = Number(item.price ?? 0);
+      const qty = Number(item.quantity ?? 1);
+      const discVal = Number(itemDiscounts[item.productId] ?? 0);
+      const discType = itemDiscountTypes[item.productId] ?? "percent";
+      const taxRate = Number(itemTaxes[item.productId] ?? 0);
 
-    // Debug: Log how many assignments were cleaned (remove in production)
-    const cleanedCount = safeItems.filter((safe, idx) => {
-      const original = localCartItems[idx];
-      return (
-        safe.floor_number !== original?.floor_number ||
-        safe.room_id !== original?.room_id
-      );
-    }).length;
+      const subtotal = price * qty;
+      const discountAmt =
+        discType === "percent" ? (subtotal * discVal) / 100 : discVal;
+      const afterDisc = subtotal - discountAmt;
+      const taxAmt = (afterDisc * taxRate) / 100;
+      const lineTotal = afterDisc + taxAmt;
 
-    if (cleanedCount > 0) {
-      console.warn(
-        `Cleaned ${cleanedCount} invalid floor/room assignments before creation`,
-      );
-    }
+      return {
+        productId: item.productId,
+        name: item.name || "Unnamed Product",
+        imageUrl: item.imageUrl || "",
+        productCode: item.productCode ?? item.code ?? item.product_code ?? "",
+        companyCode: item.companyCode ?? item.company_code ?? "",
+        quantity: qty,
+        price: Number(price.toFixed(2)),
+        discount: Number(discVal.toFixed(2)),
+        discountType: discType,
+        tax: taxRate,
+        total: Number(lineTotal.toFixed(2)),
+        isOptionFor: item.parentProductId || null,
+        optionType: item.optionType || null,
+        groupId: item.groupId || null,
+        floor_number: item.floor_number || null,
+        room_id: item.room_id || null,
+      };
+    });
 
     // ────────────────────────────────────────────────
     //  4. Document-type specific creation
@@ -833,7 +786,7 @@ const NewCart = ({ onConvertToOrder }) => {
     }
 
     // ────────────────────────────────────────────────
-    // Quotation Creation
+    //  Quotation Creation
     // ────────────────────────────────────────────────
     if (documentType === "Quotation") {
       const quotationPayload = {
@@ -848,7 +801,7 @@ const NewCart = ({ onConvertToOrder }) => {
         gst: Number(gst) || 0,
         finalAmount: totalAmount,
         floors: quotationData.floors || [],
-        products: safeItems, // ← cleaned version
+        products: productsPayload,
         followupDates: quotationData.followupDates.filter(Boolean),
         customerId: selectedCustomer,
         shipTo: finalShipTo,
@@ -870,19 +823,50 @@ const NewCart = ({ onConvertToOrder }) => {
         return;
       }
 
-      // Inside handleCreateDocument → site-map block
+      // ── Site Map Creation (with cleaning) ────────────────────────────────
       if (quotationId && quotationData.floors?.length > 0) {
-        try {
-          const normalizedFloorDetails = normalizeFloorsForBackend(
-            quotationData.floors,
-          );
+        // Clean invalid floor_number / room_id references
+        const validFloorNumbers = new Set(
+          quotationData.floors.map((f) => f.number),
+        );
 
+        const floorToValidRooms = new Map(
+          quotationData.floors.map((floor) => [
+            floor.number,
+            new Set(floor.rooms?.map((r) => r.id) || []),
+          ]),
+        );
+
+        const safeItems = productsPayload.map((item) => {
+          let { floor_number, room_id, ...rest } = item;
+
+          // Drop assignment if floor no longer exists
+          if (floor_number && !validFloorNumbers.has(floor_number)) {
+            floor_number = null;
+            room_id = null;
+          }
+
+          // Drop room_id if it no longer exists on that floor
+          if (room_id && floor_number) {
+            if (!floorToValidRooms.get(floor_number)?.has(room_id)) {
+              room_id = null;
+            }
+          }
+
+          return {
+            ...rest,
+            floor_number,
+            room_id,
+          };
+        });
+
+        try {
           await createSiteMap({
             customerId: selectedCustomer,
-            name: `Site Map - ${selectedCustomerData?.name || "Customer"} - ${moment().format("DD-MM-YY")}`,
+            name: `Site Map - ${selectedCustomerData.name || "Customer"} - ${moment().format("DD-MM-YY")}`,
             totalFloors: quotationData.floors.length,
-            floorDetails: normalizedFloorDetails, // ← KEY CHANGE: floorDetails, not floors
-            items: safeItems,
+            floors: quotationData.floors,
+            items: safeItems, // ← cleaned version
             quotationId: quotationId,
           }).unwrap();
 
@@ -890,7 +874,8 @@ const NewCart = ({ onConvertToOrder }) => {
         } catch (siteMapErr) {
           console.error("Site Map creation failed:", siteMapErr);
           message.warning(
-            "Quotation created, but Site Map failed – check console/network tab.",
+            "Quotation was created successfully, but Site Map could not be linked " +
+              "(some floor/room assignments were invalid or removed).",
           );
         }
       }
@@ -902,7 +887,7 @@ const NewCart = ({ onConvertToOrder }) => {
     }
 
     // ────────────────────────────────────────────────
-    // Order Creation
+    //  Order Creation
     // ────────────────────────────────────────────────
     if (documentType === "Order") {
       const taxableBase = subTotal - totalDiscount + tax;
@@ -942,7 +927,7 @@ const NewCart = ({ onConvertToOrder }) => {
         previousOrderNo: orderData.previousOrderNo || null,
         shipTo: finalShipTo,
         floors: quotationData.floors || [],
-        products: safeItems, // ← cleaned version (if Order backend validates too)
+        products: productsPayload,
       };
 
       try {

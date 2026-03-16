@@ -346,13 +346,11 @@ const NewPageWrapper = () => {
                             #{o.orderNo}
                             {o.priority && (
                               <span
-                                className={`ms-2 badge ${
-                                  o.priority === "HIGH"
-                                    ? "bg-danger"
-                                    : o.priority === "MEDIUM"
-                                      ? "bg-warning"
-                                      : "bg-success"
-                                }`}
+                                className="ms-2 badge"
+                                style={{
+                                  backgroundColor: "#e31e24",
+                                  color: "#fff",
+                                }}
                               >
                                 {o.priority}
                               </span>
@@ -373,7 +371,13 @@ const NewPageWrapper = () => {
 
                         <div className="position-relative">
                           <div className="d-flex align-items-center gap-2">
-                            <span className="badge bg-secondary">
+                            <span
+                              className="badge"
+                              style={{
+                                backgroundColor: "#e31e24",
+                                color: "#fff",
+                              }}
+                            >
                               {o.status}
                             </span>
                             <EditOutlined

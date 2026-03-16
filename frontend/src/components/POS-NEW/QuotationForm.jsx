@@ -1,4 +1,3 @@
-// src/components/Quotation/QuotationForm.jsx
 import React, { useState, useEffect, useMemo } from "react";
 import {
   Card,
@@ -15,6 +14,10 @@ import {
   Spin,
   message,
   Alert,
+  Tag,
+  Modal,
+  Form,
+  Input,
 } from "antd";
 import {
   UserAddOutlined,
@@ -22,6 +25,9 @@ import {
   ArrowLeftOutlined,
   DeleteOutlined,
   PlusOutlined,
+  HomeOutlined,
+  ApartmentOutlined,
+  PushpinOutlined,
 } from "@ant-design/icons";
 import styled from "styled-components";
 import OrderTotal from "./OrderTotal";
@@ -30,13 +36,16 @@ import moment from "moment";
 import DatePicker from "react-datepicker";
 import { useAuth } from "../../context/AuthContext";
 import "react-datepicker/dist/react-datepicker.css";
+import { v4 as uuidv4 } from "uuid";
+import { debounce } from "lodash";
 
-const RESTRICTED_ROLES = ["SUPER_ADMIN", "DEVELOPER", "ADMIN"];
 const { Text, Title } = Typography;
 const { Panel } = Collapse;
 const { Option } = Select;
 
-/* ────────────────────── Styled Components ────────────────────── */
+const RESTRICTED_ROLES = ["SUPER_ADMIN", "DEVELOPER", "ADMIN"];
+
+// ── Styled Components ────────────────────────────────────────────────
 const CompactCard = styled(Card)`
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -90,10 +99,10 @@ const CheckoutBtn = styled(Button)`
   }
 `;
 
-/* ────────────────────── Helpers ────────────────────── */
+// ── Helpers ──────────────────────────────────────────────────────────
 const momentToDate = (m) => (m ? m.toDate() : null);
 
-/* ────────────────────── Main Component ────────────────────── */
+// ── Main Component ───────────────────────────────────────────────────
 const QuotationForm = ({
   quotationData,
   setQuotationData,
@@ -102,15 +111,14 @@ const QuotationForm = ({
   setSelectedCustomer,
   addresses,
   addressesLoading,
-  addressesError,
   documentType,
-  setDocumentType,
-  cartItems, // full list (main + optional)
+  cartItems,
+  setCartItems,
   subTotal,
   shipping,
   tax,
-  discount, // item-level discount total
-  extraDiscount, // global discount
+  discount,
+  extraDiscount,
   gst,
   setGst,
   billingAddressId,
@@ -125,55 +133,218 @@ const QuotationForm = ({
   setPreviewVisible,
 }) => {
   const { auth } = useAuth();
-  const canCreatePurchaseOrder =
-    auth?.role && RESTRICTED_ROLES.includes(auth.role);
 
   const [isCreatingAddress, setIsCreatingAddress] = useState(false);
 
-  // ────────────────────────────────────────────────
-  //           PAGINATED CUSTOMER SELECT LOGIC
-  // ────────────────────────────────────────────────
-  const [customerSearch, setCustomerSearch] = useState("");
-  const [customerPage, setCustomerPage] = useState(1);
-  const [accumulatedCustomers, setAccumulatedCustomers] = useState([]);
+  const [floorModalVisible, setFloorModalVisible] = useState(false);
+  const [roomModal, setRoomModal] = useState({
+    visible: false,
+    floorNumber: null,
+  });
+
+  const [assignModal, setAssignModal] = useState({
+    visible: false,
+    itemId: null,
+  });
+
+  const [selectedFloor, setSelectedFloor] = useState(null);
+  const [selectedRoom, setSelectedRoom] = useState(null);
+
+  const [floorForm] = Form.useForm();
+  const [roomForm] = Form.useForm();
+
+  // Initialize floors if empty
+  useEffect(() => {
+    if (!quotationData.floors || quotationData.floors.length === 0) {
+      handleQuotationChange("floors", [
+        { number: 1, name: "Ground Floor", rooms: [] },
+      ]);
+    }
+  }, [quotationData.floors]);
+
+  // ── Floor & Room Handlers ──────────────────────────────────────
+  const addFloor = (values) => {
+    const currentFloors = quotationData.floors || [];
+    const newNumber = currentFloors.length + 1;
+    const newFloor = {
+      number: newNumber,
+      name:
+        values.name ||
+        (newNumber === 1
+          ? "Ground Floor"
+          : `${newNumber}${["st", "nd", "rd"][(newNumber - 2) % 3] || "th"} Floor`),
+      rooms: [],
+    };
+    handleQuotationChange("floors", [...currentFloors, newFloor]);
+    setFloorModalVisible(false);
+    floorForm.resetFields();
+    message.success("Floor added");
+  };
+
+  const addRoom = (values) => {
+    const updatedFloors = (quotationData.floors || []).map((floor) =>
+      floor.number === roomModal.floorNumber
+        ? {
+            ...floor,
+            rooms: [
+              ...(floor.rooms || []),
+              {
+                id: uuidv4(),
+                name: values.name,
+                type: values.type || null,
+              },
+            ],
+          }
+        : floor,
+    );
+    handleQuotationChange("floors", updatedFloors);
+    setRoomModal({ visible: false, floorNumber: null });
+    roomForm.resetFields();
+    message.success("Room added");
+  };
+
+  // ── Item Assignment ─────────────────────────────────────────────
+  const openAssignModal = (itemId) => {
+    const item = cartItems.find((i) => i.id === itemId);
+    if (!item) return;
+
+    setSelectedFloor(item.floor_number || null);
+    setSelectedRoom(item.room_id || null);
+    setAssignModal({ visible: true, itemId });
+  };
+
+  const assignItem = () => {
+    if (!selectedFloor) {
+      return message.error("Please select a floor");
+    }
+
+    const updatedItems = cartItems.map((item) =>
+      item.id === assignModal.itemId
+        ? {
+            ...item,
+            floor_number: selectedFloor,
+            room_id: selectedRoom || null,
+          }
+        : item,
+    );
+
+    setCartItems(updatedItems);
+    message.success("Item assigned successfully");
+
+    setAssignModal({ visible: false, itemId: null });
+    setSelectedFloor(null);
+    setSelectedRoom(null);
+  };
+
+  // ── Floor Summary ───────────────────────────────────────────────
+  const floorSummary = useMemo(() => {
+    const summary = {};
+    (quotationData.floors || []).forEach((f) => {
+      summary[f.number] = {
+        name: f.name,
+        count: 0,
+        total: 0,
+      };
+    });
+
+    cartItems.forEach((item) => {
+      if (item.floor_number && summary[item.floor_number]) {
+        summary[item.floor_number].count += item.quantity || 1;
+        const lineTotal =
+          (item.quantity || 1) *
+          (item.price || 0) *
+          (1 - (item.discount || 0) / 100);
+        summary[item.floor_number].total += lineTotal;
+      }
+    });
+
+    return Object.values(summary);
+  }, [cartItems, quotationData.floors]);
+
+  const unassignedCount = cartItems.filter((i) => !i.floor_number).length;
+
+  // ── Customer Search – FIXED MEMORY LEAK ─────────────────────────
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedTerm, setDebouncedTerm] = useState("");
+  const [page, setPage] = useState(1);
+  const [customers, setCustomers] = useState([]);
   const [hasMore, setHasMore] = useState(true);
 
-  const { data: pageData, isFetching: isPageFetching } = useGetCustomersQuery(
-    {
-      page: customerPage,
-      limit: 30,
-      search: customerSearch.trim() || undefined,
-    },
-    { skip: !hasMore },
+  const debouncedSetTerm = useMemo(
+    () =>
+      debounce((value) => {
+        const trimmed = value.trim();
+        setDebouncedTerm(trimmed);
+        if (trimmed !== debouncedTerm) {
+          setCustomers([]);
+          setPage(1);
+          setHasMore(true);
+        }
+      }, 450),
+    [debouncedTerm],
   );
 
   useEffect(() => {
-    if (!pageData?.data) return;
+    return () => debouncedSetTerm.cancel();
+  }, [debouncedSetTerm]);
 
-    setAccumulatedCustomers((prev) => {
-      const newCustomers = pageData.data.filter(
-        (newCust) => !prev.some((old) => old.customerId === newCust.customerId),
-      );
-      return [...prev, ...newCustomers];
-    });
-
-    const pagination = pageData.pagination;
-    if (
-      pageData.data.length < 30 ||
-      (pagination && pagination.page >= pagination.totalPages)
-    ) {
-      setHasMore(false);
-    }
-  }, [pageData]);
+  const { data, isFetching } = useGetCustomersQuery(
+    {
+      page,
+      limit: 30,
+      search: debouncedTerm || undefined,
+    },
+    {
+      skip: !debouncedTerm,
+    },
+  );
 
   useEffect(() => {
-    setAccumulatedCustomers([]);
-    setCustomerPage(1);
-    setHasMore(true);
-  }, [customerSearch]);
+    if (!data?.data || !debouncedTerm) return;
+
+    setCustomers((prev) => {
+      if (data.pagination?.page !== page) return prev;
+      const seen = new Set(prev.map((c) => c.customerId));
+      const newOnes = data.data.filter((c) => !seen.has(c.customerId));
+      return [...prev, ...newOnes];
+    });
+
+    const pagination = data.pagination;
+    if (pagination) {
+      setHasMore(
+        pagination.page < pagination.totalPages && data.data.length === 30,
+      );
+    } else {
+      setHasMore(data.data.length === 30);
+    }
+  }, [data, page, debouncedTerm]);
+
+  useEffect(() => {
+    if (!debouncedTerm) {
+      setCustomers([]);
+      setPage(1);
+      setHasMore(true);
+    }
+  }, [debouncedTerm]);
+
+  const handleSearchChange = (value) => {
+    setSearchTerm(value);
+    debouncedSetTerm(value);
+  };
+
+  const handlePopupScroll = (e) => {
+    const target = e.currentTarget;
+    if (
+      target.scrollTop + target.offsetHeight >= target.scrollHeight - 80 &&
+      !isFetching &&
+      hasMore
+    ) {
+      setPage((p) => p + 1);
+    }
+  };
 
   const customerOptions = useMemo(() => {
-    return accumulatedCustomers.map((cust) => ({
+    return customers.map((cust) => ({
       value: cust.customerId,
       label: (
         <div style={{ lineHeight: 1.3 }}>
@@ -190,18 +361,21 @@ const QuotationForm = ({
           )}
         </div>
       ),
-      title: `${cust.name || "Unnamed"}${cust.mobileNumber ? ` • ${cust.mobileNumber}` : ""}`,
-      searchText:
-        `${cust.name || ""} ${cust.mobileNumber || ""} ${cust.email || ""} ${cust.companyName || ""}`.toLowerCase(),
+      title: `${cust.name || "Unnamed"}${
+        cust.mobileNumber ? ` • ${cust.mobileNumber}` : ""
+      }`,
+      searchText: `${cust.name || ""} ${cust.mobileNumber || ""} ${
+        cust.email || ""
+      } ${cust.companyName || ""}`.toLowerCase(),
     }));
-  }, [accumulatedCustomers]);
+  }, [customers]);
 
-  // ────── Address logic ──────
   const selectedCustomerData = useMemo(
-    () => accumulatedCustomers.find((c) => c.customerId === selectedCustomer),
-    [accumulatedCustomers, selectedCustomer],
+    () => customers.find((c) => c.customerId === selectedCustomer),
+    [customers, selectedCustomer],
   );
 
+  // ── Address logic ──────────────────────────────────────────────
   const defaultAddress = useMemo(() => {
     const billing = addresses.find(
       (a) => a.customerId === selectedCustomer && a.status === "BILLING",
@@ -229,7 +403,7 @@ const QuotationForm = ({
       postalCode: parsed.zip || parsed.postalCode || "",
       country: parsed.country || "India",
     };
-  }, [addresses, selectedCustomerData, selectedCustomer]);
+  }, [addresses, selectedCustomer, selectedCustomerData]);
 
   const filteredAddresses = useMemo(
     () => addresses.filter((a) => a.customerId === selectedCustomer),
@@ -260,7 +434,7 @@ const QuotationForm = ({
     quotationData.shipTo,
   ]);
 
-  // ────── Follow-up dates handlers ──────
+  // ── Follow-up dates handlers ────────────────────────────────
   const handleFollowup = (index, date) => {
     const dates = [...quotationData.followupDates];
     dates[index] = date ? moment(date).format("YYYY-MM-DD") : "";
@@ -286,7 +460,7 @@ const QuotationForm = ({
       quotationData.followupDates.filter((_, i) => i !== index),
     );
 
-  /* ────── Render ────── */
+  // ── Render ─────────────────────────────────────────────────────
   if (!cartItems.length) {
     return (
       <CompactCard>
@@ -308,11 +482,10 @@ const QuotationForm = ({
 
   return (
     <Row gutter={[16, 16]}>
-      {/* Left Column - Form */}
       <Col xs={24} md={16}>
         <CompactCard title={<Title level={5}>Quotation Details</Title>}>
-          <Collapse defaultActiveKey={["1", "2", "3"]} ghost>
-            {/* Customer Panel */}
+          <Collapse defaultActiveKey={["1", "2", "4", "3"]} ghost>
+            {/* Customer & Address */}
             <Panel header="Customer & Address" key="1">
               <TightRow gutter={8}>
                 <Col span={8}>
@@ -332,34 +505,26 @@ const QuotationForm = ({
                         setUseBillingAddress(false);
                         setBillingAddressId(null);
                       }}
-                      onSearch={setCustomerSearch}
+                      onSearch={handleSearchChange}
                       filterOption={(input, option) =>
                         option?.searchText?.includes(input.toLowerCase())
                       }
-                      onPopupScroll={(e) => {
-                        const target = e.target;
-                        if (
-                          target.scrollTop + target.offsetHeight >=
-                            target.scrollHeight - 60 &&
-                          !isPageFetching &&
-                          hasMore
-                        ) {
-                          setCustomerPage((prev) => prev + 1);
-                        }
-                      }}
+                      onPopupScroll={handlePopupScroll}
                       options={customerOptions}
-                      loading={isPageFetching && customerPage === 1}
+                      loading={isFetching && page === 1}
                       notFoundContent={
-                        isPageFetching ? (
+                        isFetching ? (
                           <Spin size="small" tip="Loading customers..." />
-                        ) : (
+                        ) : debouncedTerm ? (
                           "No customers found"
+                        ) : (
+                          "Start typing to search customers"
                         )
                       }
                       dropdownRender={(menu) => (
                         <>
                           {menu}
-                          {hasMore && isPageFetching && (
+                          {hasMore && isFetching && (
                             <div
                               style={{
                                 textAlign: "center",
@@ -398,7 +563,6 @@ const QuotationForm = ({
                         if (v === "sameAsBilling") {
                           setUseBillingAddress(true);
                           setBillingAddressId(null);
-                          // Important: clear any previously selected address id
                           handleQuotationChange("shipTo", null);
                         } else {
                           setUseBillingAddress(false);
@@ -516,7 +680,81 @@ const QuotationForm = ({
               </TightRow>
             </Panel>
 
-            {/* Global Discount */}
+            {/* Site Layout */}
+            <Panel
+              header={
+                <Space>
+                  <ApartmentOutlined /> Site Layout (Floors & Rooms)
+                </Space>
+              }
+              key="4"
+            >
+              <Space style={{ marginBottom: 16 }}>
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={() => setFloorModalVisible(true)}
+                >
+                  Add Floor
+                </Button>
+              </Space>
+
+              <Collapse ghost>
+                {(quotationData.floors || []).map((floor) => (
+                  <Panel
+                    key={floor.number}
+                    header={
+                      <Space>
+                        <HomeOutlined />
+                        <Text strong>{floor.name}</Text>
+                        <Tag color="blue">{floor.rooms?.length || 0} rooms</Tag>
+                        <Tag color="default">
+                          {floorSummary.find((s) => s.name === floor.name)
+                            ?.count || 0}{" "}
+                          items
+                        </Tag>
+                      </Space>
+                    }
+                    extra={
+                      <Button
+                        size="small"
+                        icon={<PlusOutlined />}
+                        onClick={() =>
+                          setRoomModal({
+                            visible: true,
+                            floorNumber: floor.number,
+                          })
+                        }
+                      >
+                        Add Room
+                      </Button>
+                    }
+                  >
+                    <Space wrap size={[0, 8]}>
+                      {floor.rooms?.map((room) => (
+                        <Tag key={room.id} color="geekblue">
+                          {room.name} {room.type && `(${room.type})`}
+                        </Tag>
+                      ))}
+                      {(!floor.rooms || floor.rooms.length === 0) && (
+                        <Text type="secondary">No rooms added yet</Text>
+                      )}
+                    </Space>
+                  </Panel>
+                ))}
+              </Collapse>
+
+              {unassignedCount > 0 && (
+                <Alert
+                  style={{ marginTop: 16 }}
+                  message={`${unassignedCount} item${unassignedCount > 1 ? "s" : ""} not assigned to any floor/room`}
+                  type="warning"
+                  showIcon
+                />
+              )}
+            </Panel>
+
+            {/* Discount & Notes */}
             <Panel header="Discount & Notes" key="3">
               <TightRow gutter={16} align="middle">
                 <Col span={8}>
@@ -547,14 +785,65 @@ const QuotationForm = ({
             </Panel>
           </Collapse>
 
-          {/* Hint about optional items */}
-          {cartItems.some((item) => item.isOption) && (
+          <Divider orientation="left" style={{ margin: "24px 0 16px" }}>
+            Cart Items & Location Assignment
+          </Divider>
+
+          <Space direction="vertical" style={{ width: "100%" }} size="middle">
+            {cartItems.map((item) => (
+              <Card
+                key={item.id}
+                size="small"
+                title={
+                  <Space>
+                    <Text strong>{item.name}</Text>
+                    <Tag color="blue">×{item.quantity || 1}</Tag>
+                    {item.floor_number && (
+                      <Tag color="geekblue">
+                        {quotationData.floors?.find(
+                          (f) => f.number === item.floor_number,
+                        )?.name || `Floor ${item.floor_number}`}
+                        {item.room_id && (
+                          <>
+                            {" → "}
+                            {
+                              quotationData.floors
+                                ?.find((f) => f.number === item.floor_number)
+                                ?.rooms?.find((r) => r.id === item.room_id)
+                                ?.name
+                            }
+                          </>
+                        )}
+                      </Tag>
+                    )}
+                  </Space>
+                }
+                extra={
+                  <Button
+                    type="link"
+                    icon={<PushpinOutlined />}
+                    onClick={() => openAssignModal(item.id)}
+                  >
+                    {item.floor_number ? "Change" : "Assign"}
+                  </Button>
+                }
+              >
+                <Space split={<Divider type="vertical" />}>
+                  <Text>₹{(item.price || 0).toLocaleString()}</Text>
+                  {item.discount > 0 && (
+                    <Text type="secondary">-{item.discount}%</Text>
+                  )}
+                </Space>
+              </Card>
+            ))}
+          </Space>
+
+          {unassignedCount > 0 && (
             <Alert
-              message="Note"
-              description="Optional / add-on items are visible in cart but excluded from totals unless explicitly selected."
-              type="info"
-              showIcon
               style={{ marginTop: 16 }}
+              message={`${unassignedCount} item${unassignedCount > 1 ? "s" : ""} still unassigned`}
+              type="warning"
+              showIcon
             />
           )}
         </CompactCard>
@@ -568,15 +857,52 @@ const QuotationForm = ({
         >
           <OrderTotal
             subTotal={subTotal}
-            discount={discount} // item-level discounts total
-            extraDiscount={extraDiscount} // global discount
+            discount={discount}
+            extraDiscount={extraDiscount}
             tax={tax}
             shipping={shipping}
-            roundOff={0} // let OrderTotal handle auto-round
+            roundOff={0}
             autoRound={true}
           />
 
-          <Divider style={{ margin: "12px 0" }} />
+          <Divider style={{ margin: "16px 0 12px" }} />
+
+          <Title level={5} style={{ marginBottom: 12 }}>
+            Items by Floor
+          </Title>
+
+          {floorSummary.length > 0 ? (
+            floorSummary.map((f) => (
+              <div key={f.name} style={{ marginBottom: 12 }}>
+                <Space
+                  align="baseline"
+                  style={{ width: "100%", justifyContent: "space-between" }}
+                >
+                  <Text strong>{f.name}</Text>
+                  <Text style={{ color: "#52c41a" }}>
+                    ₹{Math.round(f.total).toLocaleString()}
+                  </Text>
+                </Space>
+                <div style={{ fontSize: 12, color: "#555", marginTop: 4 }}>
+                  {f.count} item{f.count !== 1 ? "s" : ""}
+                </div>
+              </div>
+            ))
+          ) : (
+            <Text type="secondary">No items assigned yet</Text>
+          )}
+
+          {unassignedCount > 0 && (
+            <Text
+              type="danger"
+              style={{ display: "block", marginTop: 8, fontSize: 13 }}
+            >
+              {unassignedCount} item{unassignedCount > 1 ? "s" : ""} still
+              unassigned
+            </Text>
+          )}
+
+          <Divider style={{ margin: "16px 0" }} />
 
           <Button
             type="default"
@@ -598,6 +924,11 @@ const QuotationForm = ({
                 return message.error("Please select a customer");
               if (!quotationData.dueDate)
                 return message.error("Please select due date");
+              if (unassignedCount > 0) {
+                message.warning(
+                  `${unassignedCount} item${unassignedCount > 1 ? "s are" : " is"} not assigned to any floor`,
+                );
+              }
 
               if (useBillingAddress && !billingAddressId) {
                 setIsCreatingAddress(true);
@@ -618,6 +949,124 @@ const QuotationForm = ({
           </Button>
         </CompactCard>
       </Col>
+
+      {/* ── Modals ──────────────────────────────────────────────────────── */}
+      <Modal
+        title="Add New Floor"
+        open={floorModalVisible}
+        onOk={() => floorForm.submit()}
+        onCancel={() => {
+          setFloorModalVisible(false);
+          floorForm.resetFields();
+        }}
+        okText="Add Floor"
+      >
+        <Form form={floorForm} onFinish={addFloor} layout="vertical">
+          <Form.Item
+            name="name"
+            label="Floor Name"
+            rules={[{ required: true, message: "Please enter floor name" }]}
+          >
+            <Input placeholder="e.g. First Floor, Terrace Level" />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title="Add Room"
+        open={roomModal.visible}
+        onOk={() => roomForm.submit()}
+        onCancel={() => {
+          setRoomModal({ visible: false, floorNumber: null });
+          roomForm.resetFields();
+        }}
+        okText="Add Room"
+      >
+        <Form form={roomForm} onFinish={addRoom} layout="vertical">
+          <Form.Item
+            name="name"
+            label="Room Name"
+            rules={[{ required: true, message: "Room name is required" }]}
+          >
+            <Input placeholder="e.g. Master Bedroom, Living Room, Kitchen" />
+          </Form.Item>
+          <Form.Item name="type" label="Room Type (optional)">
+            <Select placeholder="Select type">
+              <Option value="Bedroom">Bedroom</Option>
+              <Option value="Living">Living / Drawing Room</Option>
+              <Option value="Kitchen">Kitchen</Option>
+              <Option value="Bathroom">Bathroom</Option>
+              <Option value="Balcony">Balcony / Terrace</Option>
+              <Option value="Puja Room">Puja Room</Option>
+              <Option value="Other">Other</Option>
+            </Select>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title="Assign Item to Location"
+        open={assignModal.visible}
+        onOk={assignItem}
+        onCancel={() => {
+          setAssignModal({ visible: false, itemId: null });
+          setSelectedFloor(null);
+          setSelectedRoom(null);
+        }}
+        okText="Assign"
+        width={480}
+      >
+        <Space direction="vertical" style={{ width: "100%" }} size="middle">
+          <div>
+            <Text strong>Product:</Text>{" "}
+            <Text>
+              {cartItems.find((i) => i.id === assignModal.itemId)?.name || "—"}
+            </Text>
+          </div>
+
+          <div>
+            <Text strong>
+              Floor <span style={{ color: "red" }}>*</span>
+            </Text>
+            <Select
+              placeholder="Select floor"
+              style={{ width: "100%", marginTop: 8 }}
+              value={selectedFloor}
+              onChange={(v) => {
+                setSelectedFloor(v);
+                setSelectedRoom(null);
+              }}
+            >
+              {(quotationData.floors || []).map((f) => (
+                <Option key={f.number} value={f.number}>
+                  {f.name}
+                </Option>
+              ))}
+            </Select>
+          </div>
+
+          {selectedFloor && (
+            <div>
+              <Text strong>Room (optional – whole floor if empty)</Text>
+              <Select
+                placeholder="Whole floor / common area"
+                allowClear
+                style={{ width: "100%", marginTop: 8 }}
+                value={selectedRoom}
+                onChange={setSelectedRoom}
+              >
+                {(quotationData.floors || [])
+                  .find((f) => f.number === selectedFloor)
+                  ?.rooms?.map((r) => (
+                    <Option key={r.id} value={r.id}>
+                      {r.name} {r.type && `(${r.type})`}
+                    </Option>
+                  ))}
+              </Select>
+            </div>
+          )}
+        </Space>
+      </Modal>
     </Row>
   );
 };
