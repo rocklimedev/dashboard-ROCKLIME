@@ -16,14 +16,13 @@ import {
   Space,
   Tag,
   Select,
-  Form,
-  Input,
   message,
 } from "antd";
 import {
   ShoppingCartOutlined,
   CheckCircleOutlined,
   HomeOutlined,
+  PushpinOutlined,
 } from "@ant-design/icons";
 import {
   useGetCustomersQuery,
@@ -39,10 +38,7 @@ import {
 } from "../../api/cartApi";
 import { useGetProfileQuery } from "../../api/userApi";
 import { useCreateQuotationMutation } from "../../api/quotationApi";
-import {
-  useCreateOrderMutation,
-  useGetAllOrdersQuery,
-} from "../../api/orderApi";
+import { useCreateOrderMutation } from "../../api/orderApi";
 import {
   useGetAllAddressesQuery,
   useCreateAddressMutation,
@@ -56,12 +52,9 @@ import { useCreatePurchaseOrderMutation } from "../../api/poApi";
 import { useGetAllProductsQuery } from "../../api/productApi";
 import { v4 as uuidv4 } from "uuid";
 import { useDispatch } from "react-redux";
-import useUserAndCustomerData from "../../data/useUserAndCustomerData";
-import useProductsData from "../../data/useProductdata";
 import { debounce } from "lodash";
 import moment from "moment";
 import styled from "styled-components";
-import PropTypes from "prop-types";
 import CartTab from "./Cart";
 import QuotationForm from "./QuotationForm";
 import OrderForm from "./OrderForm";
@@ -74,8 +67,8 @@ import AddCustomerModal from "../Customers/AddCustomerModal";
 import PreviewQuotation from "../Quotation/PreviewQuotation";
 import { useAuth } from "../../context/AuthContext";
 import { skipToken } from "@reduxjs/toolkit/query";
-import { useCreateSiteMapMutation } from "../../api/siteMapApi";
-
+import useProductsData from "../../data/useProductdata";
+import useUserAndCustomerData from "../../data/useUserAndCustomerData";
 const { TabPane } = Tabs;
 const { Text } = Typography;
 
@@ -90,7 +83,7 @@ const PageWrapper = styled.div`
 
 const RESTRICTED_ROLES = ["SUPER_ADMIN", "DEVELOPER", "ADMIN"];
 
-const NewCart = ({ onConvertToOrder }) => {
+const NewCart = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { auth } = useAuth();
@@ -103,8 +96,6 @@ const NewCart = ({ onConvertToOrder }) => {
   const users = usersData?.users ?? [];
   const user = profileData?.user ?? {};
   const userId = user.userId;
-
-  const [createSiteMap] = useCreateSiteMapMutation();
 
   // ── State ──────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState("cart");
@@ -123,16 +114,17 @@ const NewCart = ({ onConvertToOrder }) => {
     visible: false,
     itemId: null,
   });
-  const [selectedFloorForAssign, setSelectedFloorForAssign] = useState(null);
-  const [selectedRoomForAssign, setSelectedRoomForAssign] = useState(null);
+  const [selectedFloorId, setSelectedFloorId] = useState(null);
+  const [selectedRoomId, setSelectedRoomId] = useState(null);
 
   const [quotationData, setQuotationData] = useState({
     quotationDate: new Date().toISOString().split("T")[0],
     dueDate: "",
     billTo: "",
     shipTo: null,
-    floors: [{ number: 1, name: "Ground Floor", rooms: [] }],
+    floors: [],
     signatureName: "CM TRADING CO",
+    signatureImage: "",
     discountType: "fixed",
     discountAmount: "",
     followupDates: [],
@@ -185,7 +177,6 @@ const NewCart = ({ onConvertToOrder }) => {
     { limit: 500 },
     { skip: activeTab !== "checkout" },
   );
-  const { data: allOrdersData } = useGetAllOrdersQuery();
   const { data: teamsData, refetch: refetchTeams } = useGetAllTeamsQuery();
   const { data: addressesData, refetch: refetchAddresses } =
     useGetAllAddressesQuery(selectedCustomer || skipToken, {
@@ -208,14 +199,7 @@ const NewCart = ({ onConvertToOrder }) => {
   // ── Memoized values ────────────────────────────────────────
   const allCartItems = useMemo(() => cartData?.cart?.items || [], [cartData]);
 
-  // ── Debounced product search (memory-leak fix) ─────────────
-  const debouncedSearchRef = useRef(null);
-
-  const handleProductSearch = useCallback((value) => {
-    debouncedSearchRef.current?.(value);
-  }, []);
-
-  // ── Sync local cart items (optimized) ──────────────────────
+  // ── Sync local cart items + migrate old number → floorId ──
   useEffect(() => {
     if (!allCartItems.length) return;
 
@@ -228,53 +212,78 @@ const NewCart = ({ onConvertToOrder }) => {
         const id = serverItem.id || serverItem.productId || uuidv4();
         const local = prevMap.get(id);
 
-        if (local) {
-          return {
-            ...serverItem,
-            id,
-            floor_number: local.floor_number ?? serverItem.floor_number ?? null,
-            room_id: local.room_id ?? serverItem.room_id ?? null,
-          };
+        // Migration helper: old number → new floorId style
+        let floorId = local?.floorId || serverItem.floorId;
+        let floorName = local?.floorName || serverItem.floorName;
+        let roomId = local?.roomId || serverItem.roomId;
+        let roomName = local?.roomName || serverItem.roomName;
+
+        // If still using old keys → convert
+        if (serverItem.floor_number && !floorId) {
+          floorId = `fl_${serverItem.floor_number}`;
+          floorName =
+            quotationData.floors.find(
+              (f) => f.number === serverItem.floor_number,
+            )?.name || `Floor ${serverItem.floor_number}`;
+        }
+        if (serverItem.room_id && !roomId) {
+          roomId = `${floorId || "rm_"}${serverItem.room_id}`;
+          roomName =
+            quotationData.floors
+              .find((f) => f.number === serverItem.floor_number)
+              ?.rooms?.find((r) => r.id === serverItem.room_id)?.name || "Room";
         }
 
         return {
           ...serverItem,
           id,
-          floor_number: serverItem.floor_number ?? null,
-          room_id: serverItem.room_id ?? null,
+          floorId,
+          floorName,
+          roomId,
+          roomName,
         };
       });
     });
-  }, [allCartItems]);
+  }, [allCartItems, quotationData.floors]);
 
   const customers = customerData?.data || [];
   const customerList = useMemo(() => customers, [customers]);
   const addresses = addressesData || [];
   const products = productsData?.data || productsData || [];
-  const teams = useMemo(() => teamsData?.teams || [], [teamsData]);
-  const vendors = useMemo(() => vendorsData || [], [vendorsData]);
-  useEffect(() => {
-    debouncedSearchRef.current = debounce((value) => {
-      setProductSearch(value);
-      if (value.trim()) {
-        const filtered = products
-          .filter(
-            (p) =>
-              p.productId &&
-              (p.name?.toLowerCase().includes(value.toLowerCase()) ||
-                p.product_code?.toLowerCase().includes(value.toLowerCase())),
-          )
-          .slice(0, 5);
-        setFilteredProducts(filtered);
-      } else {
-        setFilteredProducts([]);
-      }
-    }, 300);
-
-    return () => {
-      debouncedSearchRef.current?.cancel();
-    };
-  }, [products]);
+  const teams = teamsData?.teams || [];
+  const vendors = vendorsData || [];
+  const purchaseOrderTotal = useMemo(
+    () =>
+      purchaseOrderData.items
+        .reduce(
+          (sum, item) =>
+            sum + Number(item.total || 0) * (1 + (item.tax || 0) / 100),
+          0,
+        )
+        .toFixed(2),
+    [purchaseOrderData.items],
+  );
+  // ── Debounced product search ───────────────────────────────
+  const debouncedSearch = useMemo(
+    () =>
+      debounce((value) => {
+        setProductSearch(value);
+        if (value.trim()) {
+          const filtered = products
+            .filter(
+              (p) =>
+                p.productId &&
+                (p.name?.toLowerCase().includes(value.toLowerCase()) ||
+                  p.product_code?.toLowerCase().includes(value.toLowerCase())),
+            )
+            .slice(0, 5);
+          setFilteredProducts(filtered);
+        } else {
+          setFilteredProducts([]);
+        }
+      }, 300),
+    [products],
+  );
 
   // ── Calculations ───────────────────────────────────────────
   const calculationCartItems = useMemo(
@@ -379,13 +388,6 @@ const NewCart = ({ onConvertToOrder }) => {
   const totalAmount = parseFloat((roundedAmount + gstAmount).toFixed(2));
 
   // ── Handlers ───────────────────────────────────────────────
-  const handleProductSearchChange = useCallback(
-    (e) => {
-      handleProductSearch(e.target.value);
-    },
-    [handleProductSearch],
-  );
-
   const handleUpdateQuantity = useCallback(
     async (productId, newQty) => {
       if (!userId || newQty < 1) return;
@@ -408,10 +410,6 @@ const NewCart = ({ onConvertToOrder }) => {
     setShowAddTeamModal(showModal);
     if (!showModal) refetchTeams();
   };
-
-  const handleQuotationChange = useCallback((key, value) => {
-    setQuotationData((prev) => ({ ...prev, [key]: value }));
-  }, []);
 
   const handleRemoveItem = useCallback(
     async (e, productId) => {
@@ -441,29 +439,33 @@ const NewCart = ({ onConvertToOrder }) => {
         return rest;
       });
 
-      setUpdatingItems((prev) => ({ ...prev, [productId]: true }));
-
       try {
         await removeFromCart({ userId, productId }).unwrap();
       } catch (err) {
         message.error(err?.data?.message || "Failed to remove item");
-      } finally {
-        setUpdatingItems((prev) => ({ ...prev, [productId]: false }));
       }
     },
     [userId, dispatch, removeFromCart],
   );
 
   const assignItemToLocation = useCallback(() => {
-    if (!selectedFloorForAssign) return message.error("Please select a floor");
+    if (!selectedFloorId) return message.error("Please select a floor");
 
     setLocalCartItems((prev) =>
       prev.map((item) =>
         item.id === assignModal.itemId
           ? {
               ...item,
-              floor_number: selectedFloorForAssign,
-              room_id: selectedRoomForAssign || null,
+              floorId: selectedFloorId,
+              floorName:
+                quotationData.floors.find((f) => f.floorId === selectedFloorId)
+                  ?.floorName || `Floor ${selectedFloorId}`,
+              roomId: selectedRoomId || null,
+              roomName: selectedRoomId
+                ? quotationData.floors
+                    .find((f) => f.floorId === selectedFloorId)
+                    ?.rooms?.find((r) => r.roomId === selectedRoomId)?.roomName
+                : null,
             }
           : item,
       ),
@@ -471,9 +473,14 @@ const NewCart = ({ onConvertToOrder }) => {
 
     message.success("Item assigned successfully");
     setAssignModal({ visible: false, itemId: null });
-    setSelectedFloorForAssign(null);
-    setSelectedRoomForAssign(null);
-  }, [assignModal.itemId, selectedFloorForAssign, selectedRoomForAssign]);
+    setSelectedFloorId(null);
+    setSelectedRoomId(null);
+  }, [
+    assignModal.itemId,
+    selectedFloorId,
+    selectedRoomId,
+    quotationData.floors,
+  ]);
 
   // ... (rest of your handlers: handleMakeOption, handleClearCart, handleCreateDocument, resetForm, etc.)
   const handleMakeOption = (productId, optionType, parentProductId = null) => {
@@ -534,105 +541,10 @@ const NewCart = ({ onConvertToOrder }) => {
       message.error(e.data?.message || "Failed to clear cart");
     }
   };
-  const purchaseOrderTotal = useMemo(
-    () =>
-      purchaseOrderData.items
-        .reduce(
-          (sum, item) =>
-            sum + Number(item.total || 0) * (1 + (item.tax || 0) / 100),
-          0,
-        )
-        .toFixed(2),
-    [purchaseOrderData.items],
-  );
-  const debouncedSearch = useCallback(
-    debounce((value) => {
-      setProductSearch(value);
-      if (value) {
-        const filtered = products
-          .filter(
-            (p) =>
-              p.productId &&
-              (p.name?.toLowerCase().includes(value.toLowerCase()) ||
-                p.product_code?.toLowerCase().includes(value.toLowerCase())),
-          )
-          .slice(0, 5);
-        setFilteredProducts(filtered);
-      } else {
-        setFilteredProducts([]);
-      }
-    }, 300),
-    [products],
-  );
+
   const handleCreateDocument = async () => {
-    if (!userId) {
-      return message.error("User not logged in!");
-    }
+    if (!userId) return message.error("User not logged in!");
 
-    // ────────────────────────────────────────────────
-    // Helper: Clean invalid floor_number / room_id references
-    // ────────────────────────────────────────────────
-    // Helper: Remove references to floors/rooms that no longer exist
-    // Helper: Remove references to non-existent floors/rooms before sending to backend
-    const cleanItemAssignments = (items, floors) => {
-      if (!floors?.length || !items?.length) {
-        return items.map((item) => ({
-          ...item,
-          floor_number: null,
-          room_id: null,
-        }));
-      }
-
-      // Known good floors and their rooms
-      const validFloors = new Set(floors.map((f) => f.number));
-      const floorToRooms = new Map(
-        floors.map((floor) => [
-          floor.number,
-          new Set(floor.rooms?.map((r) => r.id) || []),
-        ]),
-      );
-
-      return items.map((item) => {
-        let { floor_number, room_id, ...rest } = item;
-
-        // 1. Floor no longer exists → clear both
-        if (floor_number && !validFloors.has(floor_number)) {
-          floor_number = null;
-          room_id = null;
-        }
-
-        // 2. Room no longer exists on that floor → keep floor, clear room
-        if (
-          room_id &&
-          floor_number &&
-          !floorToRooms.get(floor_number)?.has(room_id)
-        ) {
-          room_id = null;
-        }
-
-        return { ...rest, floor_number, room_id };
-      });
-    };
-    // Helper: Transform floors to match backend's expected room key (room_id instead of id)
-    // Helper: Transform floors → match backend DB structure + validation expectation
-    const normalizeFloorsForBackend = (floors) => {
-      if (!floors?.length) return [];
-
-      return floors.map((floor) => ({
-        floor_number: floor.number, // backend field
-        floor_name: floor.name, // backend field
-        rooms: (floor.rooms || []).map((room) => ({
-          room_id: room.id, // ← must match backend validation: r.room_id
-          name: room.name || room.room_name, // consistent
-          type: room.type || room.room_type,
-          // add size/details if you have them later
-        })),
-        // Do NOT include extra keys like number/name — keep only what DB expects
-      }));
-    };
-    // ────────────────────────────────────────────────
-    //  1. Common validations
-    // ────────────────────────────────────────────────
     if (localCartItems.length === 0) {
       return message.error("Cart is empty. Please add items.");
     }
@@ -641,6 +553,7 @@ const NewCart = ({ onConvertToOrder }) => {
       return message.error("Please select a customer.");
     }
 
+    // ── Common validation ───────────────────────────────────────
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
 
     if (documentType === "Quotation") {
@@ -657,14 +570,9 @@ const NewCart = ({ onConvertToOrder }) => {
       if (moment(orderData.dueDate).isBefore(moment(), "day")) {
         return message.error("Due date cannot be in the past.");
       }
-      if (orderData.followupDates?.length > 0 && !validateFollowupDates()) {
-        return message.error("Follow-up dates cannot be after the due date.");
-      }
     }
 
-    // ────────────────────────────────────────────────
-    //  2. Resolve final shipping address
-    // ────────────────────────────────────────────────
+    // ── Resolve shipping address ───────────────────────────────
     let finalShipTo = null;
 
     if (documentType !== "Purchase Order") {
@@ -672,10 +580,9 @@ const NewCart = ({ onConvertToOrder }) => {
         if (billingAddressId) {
           finalShipTo = billingAddressId;
         } else {
-          const customer = customerList.find(
+          const customer = customers.find(
             (c) => c.customerId === selectedCustomer,
           );
-
           if (!customer?.address) {
             message.error(
               "Customer has no default address. Please add one first.",
@@ -744,10 +651,6 @@ const NewCart = ({ onConvertToOrder }) => {
             message.error("Selected shipping address was deleted.");
             return;
           }
-          if (addr.customerId !== selectedCustomer) {
-            message.error("Selected address does not belong to this customer.");
-            return;
-          }
         }
       }
 
@@ -757,33 +660,14 @@ const NewCart = ({ onConvertToOrder }) => {
       }
     }
 
-    // ────────────────────────────────────────────────
-    //  3. Prepare & CLEAN common product payload
-    // ────────────────────────────────────────────────
-    const safeItems = cleanItemAssignments(
-      localCartItems,
-      quotationData.floors,
-    );
-
-    // Debug: Log how many assignments were cleaned (remove in production)
-    const cleanedCount = safeItems.filter((safe, idx) => {
-      const original = localCartItems[idx];
-      return (
-        safe.floor_number !== original?.floor_number ||
-        safe.room_id !== original?.room_id
-      );
-    }).length;
-
-    if (cleanedCount > 0) {
-      console.warn(
-        `Cleaned ${cleanedCount} invalid floor/room assignments before creation`,
-      );
-    }
-
-    // ────────────────────────────────────────────────
-    //  4. Document-type specific creation
-    // ────────────────────────────────────────────────
-
+    // ── Prepare items (already using floorId/roomId) ────────────
+    const safeItems = localCartItems.map((item) => ({
+      ...item,
+      floorId: item.floorId || null,
+      floorName: item.floorName || null,
+      roomId: item.roomId || null,
+      roomName: item.roomName || null,
+    }));
     if (documentType === "Purchase Order") {
       if (!selectedVendor) {
         return message.error("Please select a vendor.");
@@ -832,78 +716,113 @@ const NewCart = ({ onConvertToOrder }) => {
       return message.error("Selected customer not found.");
     }
 
-    // ────────────────────────────────────────────────
-    // Quotation Creation
-    // ────────────────────────────────────────────────
     if (documentType === "Quotation") {
+      // Inside handleCreateDocument() or wherever you prepare the payload
       const quotationPayload = {
-        quotationId: uuidv4(),
-        document_title: `Quotation for ${selectedCustomerData.name || "Customer"}`,
+        // Core identification & metadata
+        quotationId: uuidv4(), // or let backend generate if preferred
+        document_title: `Quotation for ${selectedCustomerData?.name || "Customer"} - ${moment().format("DD-MM-YYYY")}`,
         quotation_date:
           quotationData.quotationDate || moment().format("YYYY-MM-DD"),
         due_date: quotationData.dueDate,
+        reference_number: quotationData.reference_number || undefined, // optional - backend can generate
+
+        // Customer & address
+        customerId: selectedCustomer,
+        shipTo: finalShipTo, // resolved earlier (addressId string)
+
+        // Financials
         extraDiscount: Number(quotationData.discountAmount) || 0,
         extraDiscountType: quotationData.discountType || "fixed",
         shippingAmount: Number(shipping) || 0,
         gst: Number(gst) || 0,
-        finalAmount: totalAmount,
-        floors: quotationData.floors || [],
-        products: safeItems, // ← cleaned version
-        followupDates: quotationData.followupDates.filter(Boolean),
-        customerId: selectedCustomer,
-        shipTo: finalShipTo,
-        createdBy: userId,
-        signature_name: quotationData.signatureName || "CM TRADING CO",
-        signature_image: "",
-      };
 
-      let quotationId = null;
+        // Signature
+        signature_name: quotationData.signatureName || "CM TRADING CO",
+        signature_image: quotationData.signatureImage || "",
+
+        // Important: Floors – send complete structure with names
+        floors: (quotationData.floors || []).map((floor, index) => ({
+          floorId: floor.floorId,
+          floorName: floor.floorName?.trim()
+            ? floor.floorName.trim()
+            : `Floor ${index + 1}`,
+          sortOrder: floor.sortOrder ?? index,
+          rooms: (floor.rooms || []).map((room, roomIndex) => ({
+            roomId: room.roomId,
+            roomName: room.roomName?.trim()
+              ? room.roomName.trim()
+              : `Room ${roomIndex + 1}`,
+            sortOrder: room.sortOrder ?? roomIndex,
+            type: room.type || null, // Bedroom, Living, Kitchen, etc.
+          })),
+        })),
+
+        // Products – include floorName & roomName explicitly in EVERY item
+        products: localCartItems
+          .filter((item) => item.price > 0 && item.quantity > 0) // optional safety filter
+          .map((item) => {
+            // Find matching floor/room names from quotationData.floors
+            const matchedFloor = quotationData.floors?.find(
+              (f) => f.floorId === item.floorId,
+            );
+            const matchedRoom = matchedFloor?.rooms?.find(
+              (r) => r.roomId === item.roomId,
+            );
+
+            return {
+              productId: item.productId,
+              name: item.name || "Unnamed Product",
+              imageUrl: item.imageUrl || null,
+              productCode: item.productCode || null,
+              companyCode: item.companyCode || null,
+
+              quantity: Number(item.quantity) || 1,
+              price: Number(item.price) || 0,
+              discount: Number(item.discount) || 0,
+              discountType: item.discountType || "percent",
+              tax: Number(item.tax) || 0,
+
+              // ← Critical: include names here too
+              floorId: item.floorId || null,
+              floorName: matchedFloor?.floorName || null,
+              roomId: item.roomId || null,
+              roomName: matchedRoom?.roomName || null,
+
+              // If using options/groups
+              groupId: item.groupId || null,
+              isOptionFor: item.isOptionFor || null,
+              optionType: item.optionType || null,
+            };
+          }),
+
+        // Optional follow-ups
+        followupDates: (quotationData.followupDates || [])
+          .filter((date) => date && moment(date).isValid())
+          .map((date) => moment(date).format("YYYY-MM-DD")),
+
+        // Who created it
+        createdBy: auth?.userId || "system",
+
+        // Any other fields your backend accepts
+        // totalFloors: quotationData.floors?.length || 0,   // backend usually calculates
+        // finalAmount: totalAmount,                         // optional - backend recalculates
+      };
 
       try {
         const result = await createQuotation(quotationPayload).unwrap();
         message.success(
           `Quotation ${result.quotation?.reference_number} created!`,
         );
-        quotationId = result.quotation?.quotationId || result.quotation?.id;
+        await handleClearCart();
+        resetForm();
+        navigate("/quotations/list");
       } catch (err) {
         message.error(err?.data?.message || "Failed to create quotation.");
-        return;
       }
-
-      // Inside handleCreateDocument → site-map block
-      if (quotationId && quotationData.floors?.length > 0) {
-        try {
-          const normalizedFloorDetails = normalizeFloorsForBackend(
-            quotationData.floors,
-          );
-
-          await createSiteMap({
-            customerId: selectedCustomer,
-            name: `Site Map - ${selectedCustomerData?.name || "Customer"} - ${moment().format("DD-MM-YY")}`,
-            totalFloors: quotationData.floors.length,
-            floorDetails: normalizedFloorDetails, // ← KEY CHANGE: floorDetails, not floors
-            items: safeItems,
-            quotationId: quotationId,
-          }).unwrap();
-
-          message.success("Site Map created and linked to quotation!");
-        } catch (siteMapErr) {
-          console.error("Site Map creation failed:", siteMapErr);
-          message.warning(
-            "Quotation created, but Site Map failed – check console/network tab.",
-          );
-        }
-      }
-
-      await handleClearCart();
-      resetForm();
-      navigate("/quotations/list");
       return;
     }
 
-    // ────────────────────────────────────────────────
-    // Order Creation
-    // ────────────────────────────────────────────────
     if (documentType === "Order") {
       const taxableBase = subTotal - totalDiscount + tax;
       const afterTaxAndShipping = taxableBase + shipping;
@@ -961,12 +880,14 @@ const NewCart = ({ onConvertToOrder }) => {
       }
     }
   };
+
   const resetForm = () => {
     setQuotationData({
       quotationDate: new Date().toISOString().split("T")[0],
       dueDate: "",
       billTo: "",
       shipTo: null,
+      floors: [],
       signatureName: "CM TRADING CO",
       discountType: "fixed",
       discountAmount: "",
@@ -1031,19 +952,6 @@ const NewCart = ({ onConvertToOrder }) => {
   const handleAddAddress = () => setShowAddAddressModal(true);
 
   // ── Render ─────────────────────────────────────────────────
-  if (productErrors.length > 0) {
-    return (
-      <PageWrapper>
-        <Alert
-          message="Error loading cart products"
-          description={productErrors.map((e) => e.error).join(", ")}
-          type="error"
-          showIcon
-        />
-      </PageWrapper>
-    );
-  }
-
   return (
     <div className="page-wrapper">
       <div className="content">
@@ -1099,7 +1007,7 @@ const NewCart = ({ onConvertToOrder }) => {
               getParentName={getParentName}
               documentType={documentType}
               setDocumentType={setDocumentType}
-              setAssignModal={setAssignModal} // NEW - trigger assignment
+              setAssignModal={setAssignModal}
             />
           </TabPane>
 
@@ -1245,59 +1153,47 @@ const NewCart = ({ onConvertToOrder }) => {
               <QuotationForm
                 quotationData={quotationData}
                 setQuotationData={setQuotationData}
-                handleQuotationChange={handleQuotationChange}
+                handleQuotationChange={(key, value) =>
+                  setQuotationData((prev) => ({ ...prev, [key]: value }))
+                }
                 selectedCustomer={selectedCustomer}
-                onShippingChange={handleShippingChange}
                 setSelectedCustomer={setSelectedCustomer}
-                customers={customerList}
+                customers={customers}
                 addresses={addresses}
-                userMap={userMap}
-                customerMap={customerMap}
-                documentType={documentType}
-                setDocumentType={setDocumentType}
                 cartItems={localCartItems}
                 setCartItems={setLocalCartItems}
-                totalAmount={totalAmount}
-                gst={gst}
-                gstAmount={gstAmount}
-                setGst={setGst}
+                subTotal={subTotal}
                 shipping={shipping}
+                setShipping={setShipping}
                 tax={tax}
                 discount={totalDiscount}
                 extraDiscount={extraDiscount}
-                roundOff={roundOff}
-                subTotal={subTotal}
-                handleAddCustomer={handleAddCustomer}
-                handleAddAddress={handleAddAddress}
+                gst={gst}
+                setGst={setGst}
+                totalAmount={totalAmount}
+                handleAddCustomer={() => setShowAddCustomerModal(true)}
+                handleAddAddress={() => setShowAddAddressModal(true)}
                 setActiveTab={setActiveTab}
                 handleCreateDocument={handleCreateDocument}
                 useBillingAddress={useBillingAddress}
-                setBillingAddressId={setBillingAddressId}
                 setUseBillingAddress={setUseBillingAddress}
-                itemDiscounts={itemDiscounts}
-                itemTaxes={itemTaxes}
+                setBillingAddressId={setBillingAddressId}
                 previewVisible={previewVisible}
-                setPreviewVisible={setPreviewVisible} // ── These 6 lines were missing ────────────────────────────────
-                // assignModal={assignModal}
-                // setAssignModal={setAssignModal}
-                // selectedFloorForAssign={selectedFloorForAssign}
-                // setSelectedFloorForAssign={setSelectedFloorForAssign}
-                // selectedRoomForAssign={selectedRoomForAssign}
-                // setSelectedRoomForAssign={setSelectedRoomForAssign}
+                setPreviewVisible={setPreviewVisible}
               />
             )}
           </TabPane>
         </Tabs>
 
-        {/* Assignment Modal */}
+        {/* Assignment Modal – updated keys */}
         <Modal
           title="Assign Item to Floor / Room"
           open={assignModal.visible}
           onOk={assignItemToLocation}
           onCancel={() => {
             setAssignModal({ visible: false, itemId: null });
-            setSelectedFloorForAssign(null);
-            setSelectedRoomForAssign(null);
+            setSelectedFloorId(null);
+            setSelectedRoomId(null);
           }}
           okText="Assign"
           width={500}
@@ -1317,36 +1213,36 @@ const NewCart = ({ onConvertToOrder }) => {
               </Text>
               <Select
                 placeholder="Select floor"
-                value={selectedFloorForAssign}
+                value={selectedFloorId}
                 onChange={(v) => {
-                  setSelectedFloorForAssign(v);
-                  setSelectedRoomForAssign(null);
+                  setSelectedFloorId(v);
+                  setSelectedRoomId(null);
                 }}
                 style={{ width: "100%", marginTop: 8 }}
               >
                 {(quotationData.floors || []).map((floor) => (
-                  <Select.Option key={floor.number} value={floor.number}>
-                    {floor.name}
+                  <Select.Option key={floor.floorId} value={floor.floorId}>
+                    {floor.floorName}
                   </Select.Option>
                 ))}
               </Select>
             </div>
 
-            {selectedFloorForAssign && (
+            {selectedFloorId && (
               <div>
                 <Text strong>Room (optional)</Text>
                 <Select
                   placeholder="Whole floor / common area"
                   allowClear
-                  value={selectedRoomForAssign}
-                  onChange={setSelectedRoomForAssign}
+                  value={selectedRoomId}
+                  onChange={setSelectedRoomId}
                   style={{ width: "100%", marginTop: 8 }}
                 >
                   {(quotationData.floors || [])
-                    .find((f) => f.number === selectedFloorForAssign)
+                    .find((f) => f.floorId === selectedFloorId)
                     ?.rooms?.map((r) => (
-                      <Select.Option key={r.id} value={r.id}>
-                        {r.name} {r.type && `(${r.type})`}
+                      <Select.Option key={r.roomId} value={r.roomId}>
+                        {r.roomName} {r.type && `(${r.type})`}
                       </Select.Option>
                     ))}
                 </Select>
@@ -1355,7 +1251,7 @@ const NewCart = ({ onConvertToOrder }) => {
           </Space>
         </Modal>
 
-        {/* Your existing modals */}
+        {/* Clear Cart Modal */}
         <Modal
           title="Confirm Clear Cart"
           open={showClearCartModal}
@@ -1419,14 +1315,6 @@ const NewCart = ({ onConvertToOrder }) => {
       </div>
     </div>
   );
-};
-
-NewCart.propTypes = {
-  onConvertToOrder: PropTypes.func,
-};
-
-NewCart.defaultProps = {
-  onConvertToOrder: () => {},
 };
 
 export default NewCart;

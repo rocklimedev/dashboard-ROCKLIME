@@ -19,6 +19,7 @@ import {
   Divider,
   Statistic,
   Tag,
+  Cascader,
 } from "antd";
 import {
   ArrowLeftOutlined,
@@ -26,9 +27,11 @@ import {
   DeleteOutlined,
   SaveOutlined,
   SearchOutlined,
+  HomeOutlined,
+  ApartmentOutlined,
 } from "@ant-design/icons";
 import { debounce } from "lodash";
-import { format, isAfter, isBefore, startOfDay } from "date-fns";
+import { format } from "date-fns";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { v4 as uuidv4 } from "uuid";
@@ -91,7 +94,7 @@ const AddQuotation = () => {
     document_title: "",
     quotation_date: null,
     due_date: null,
-    gst: 18,
+    gst: 0, // Always 0
     shippingAmount: 0,
     extraDiscount: 0,
     extraDiscountType: "fixed",
@@ -102,11 +105,17 @@ const AddQuotation = () => {
     createdBy: userId,
     products: [],
     followupDates: [],
+    floors: [], // [{ floorId, floorName, sortOrder?, rooms: [{roomId, roomName}] }]
   };
 
   const [formData, setFormData] = useState(initialFormData);
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [showVersionsModal, setShowVersionsModal] = useState(false);
+
+  // Separate modals for floors and rooms
+  const [showFloorsModal, setShowFloorsModal] = useState(false);
+  const [showRoomsModal, setShowRoomsModal] = useState(false);
+  const [selectedFloorForRooms, setSelectedFloorForRooms] = useState(null);
 
   // Option modal state
   const [showAddOptionModal, setShowAddOptionModal] = useState(false);
@@ -128,11 +137,16 @@ const AddQuotation = () => {
     }
   };
 
+  // Generate short readable IDs
+  const generateFloorId = () => `fl_${uuidv4().slice(0, 8)}`;
+  const generateRoomId = (floorId) => `${floorId}_rm_${uuidv4().slice(0, 6)}`;
+
   // ── Load existing quotation ───────────────────────────────────────
   useEffect(() => {
     if (!isEditMode || !existingQuotation) return;
 
     const parsedProducts = safeJsonParse(existingQuotation.products, []);
+    const parsedFloors = safeJsonParse(existingQuotation.floors, []);
 
     const mappedProducts = parsedProducts.map((p) => ({
       productId: p.productId,
@@ -145,6 +159,10 @@ const AddQuotation = () => {
       isOptionFor: p.isOptionFor || null,
       optionType: p.optionType || null,
       groupId: p.groupId || null,
+      floorId: p.floorId || null,
+      floorName: p.floorName || null,
+      roomId: p.roomId || null,
+      roomName: p.roomName || null,
     }));
 
     setFormData({
@@ -157,7 +175,7 @@ const AddQuotation = () => {
       due_date: existingQuotation.due_date
         ? new Date(existingQuotation.due_date)
         : null,
-      gst: safeNum(existingQuotation.gst, 18),
+      gst: 0, // Force GST to 0 even when loading existing data
       shippingAmount: safeNum(existingQuotation.shippingAmount, 0),
       extraDiscount: safeNum(existingQuotation.extraDiscount, 0),
       extraDiscountType: existingQuotation.extraDiscountType || "fixed",
@@ -167,11 +185,111 @@ const AddQuotation = () => {
       shipTo: existingQuotation.shipTo || "",
       createdBy: userId,
       products: mappedProducts,
+      floors: parsedFloors,
       followupDates: safeJsonParse(existingQuotation.followupDates, [])
         .map((d) => (d ? new Date(d) : null))
         .filter(Boolean),
     });
   }, [isEditMode, existingQuotation, userId]);
+
+  // ── Floor / Room derived helpers ──────────────────────────────────
+  const floorOptions = useMemo(() => {
+    return formData.floors.map((f) => ({
+      value: f.floorId,
+      label: f.floorName,
+      children: (f.rooms || []).map((r) => ({
+        value: r.roomId,
+        label: r.roomName,
+      })),
+    }));
+  }, [formData.floors]);
+
+  const addFloor = (name) => {
+    if (!name.trim()) return message.error("Floor name is required");
+
+    const newFloor = {
+      floorId: generateFloorId(),
+      floorName: name.trim(),
+      sortOrder: formData.floors.length,
+      rooms: [],
+    };
+
+    setFormData((prev) => ({
+      ...prev,
+      floors: [...prev.floors, newFloor],
+    }));
+
+    message.success("Floor added successfully");
+  };
+
+  const addRoom = (floorId, name) => {
+    if (!name.trim()) return message.error("Room name is required");
+
+    setFormData((prev) => {
+      const updatedFloors = prev.floors.map((f) =>
+        f.floorId === floorId
+          ? {
+              ...f,
+              rooms: [
+                ...(f.rooms || []),
+                {
+                  roomId: generateRoomId(f.floorId),
+                  roomName: name.trim(),
+                },
+              ],
+            }
+          : f,
+      );
+      return { ...prev, floors: updatedFloors };
+    });
+
+    message.success("Room added successfully");
+  };
+
+  const openRoomsForFloor = (floorId) => {
+    setSelectedFloorForRooms(floorId);
+    setShowRoomsModal(true);
+  };
+
+  const assignFloorRoom = (productId, selectedPath) => {
+    if (!selectedPath || selectedPath.length === 0) {
+      // Clear assignment
+      setFormData((prev) => ({
+        ...prev,
+        products: prev.products.map((p) =>
+          p.productId === productId
+            ? {
+                ...p,
+                floorId: null,
+                floorName: null,
+                roomId: null,
+                roomName: null,
+              }
+            : p,
+        ),
+      }));
+      return;
+    }
+
+    const [floorId, roomId] = selectedPath;
+    const floor = formData.floors.find((f) => f.floorId === floorId);
+    const room = floor?.rooms?.find((r) => r.roomId === roomId);
+
+    setFormData((prev) => ({
+      ...prev,
+      products: prev.products.map((p) =>
+        p.productId === productId
+          ? {
+              ...p,
+              floorId,
+              floorName: floor?.floorName || null,
+              roomId: roomId || null,
+              roomName: room?.roomName || null,
+            }
+          : p,
+      ),
+    }));
+  };
 
   // ── Memoized data ─────────────────────────────────────────────────
   const { mainProducts, groupedItems } = useMemo(() => {
@@ -196,7 +314,7 @@ const AddQuotation = () => {
     };
   }, [formData.products]);
 
-  // ── Calculations (only main items affect final amount) ────────────
+  // ── Calculations (GST always 0) ───────────────────────────────────
   const calculations = useMemo(() => {
     let mainSubtotal = 0;
     let mainLineDiscount = 0;
@@ -229,8 +347,8 @@ const AddQuotation = () => {
         : extraDiscValue;
 
     const afterExtra = mainSubtotal - extraDiscAmt;
-    const gstRate = safeNum(formData.gst, 0);
-    const gstAmt = afterExtra * (gstRate / 100);
+    const gstRate = 0; // Always 0
+    const gstAmt = 0; // No GST
     const shipping = safeNum(formData.shippingAmount, 0);
     const totalBeforeRound = afterExtra + gstAmt + shipping;
 
@@ -241,7 +359,7 @@ const AddQuotation = () => {
       mainSubtotal: Number(mainSubtotal.toFixed(2)),
       mainLineDiscount: Number(mainLineDiscount.toFixed(2)),
       extraDiscAmt: Number(extraDiscAmt.toFixed(2)),
-      gstAmt: Number(gstAmt.toFixed(2)),
+      gstAmt: 0,
       shipping,
       roundOff: Number(roundOff.toFixed(2)),
       finalAmount: Number(rounded.toFixed(0)),
@@ -250,7 +368,6 @@ const AddQuotation = () => {
   }, [
     mainProducts,
     formData.products,
-    formData.gst,
     formData.shippingAmount,
     formData.extraDiscount,
     formData.extraDiscountType,
@@ -287,6 +404,10 @@ const AddQuotation = () => {
           isOptionFor: null,
           optionType: null,
           groupId: newGroupId,
+          floorId: null,
+          floorName: null,
+          roomId: null,
+          roomName: null,
         },
       ],
     }));
@@ -326,6 +447,10 @@ const AddQuotation = () => {
           isOptionFor: selectedParentId,
           optionType,
           groupId: parent.groupId,
+          floorId: parent.floorId,
+          floorName: parent.floorName,
+          roomId: parent.roomId,
+          roomName: parent.roomName,
         },
       ],
     }));
@@ -340,7 +465,6 @@ const AddQuotation = () => {
       const product = prev.products.find((p) => p.productId === productId);
       let updated = prev.products.filter((p) => p.productId !== productId);
 
-      // Remove options if this was a main product
       if (product && !product.isOptionFor) {
         updated = updated.filter((p) => p.isOptionFor !== productId);
       }
@@ -392,12 +516,12 @@ const AddQuotation = () => {
       const price = safeNum(p.sellingPrice, 0);
       const disc = safeNum(p.discount, 0);
       const discType = p.discountType || "fixed";
-      const tax = safeNum(p.tax, 0);
+      const tax = 0; // Force tax to 0
 
       const discAmt =
         discType === "percent" ? (price * qty * disc) / 100 : disc * qty;
       const taxable = price * qty - discAmt;
-      const lineTotal = taxable * (1 + tax / 100);
+      const lineTotal = taxable; // No tax added
 
       return {
         productId: p.productId,
@@ -406,11 +530,15 @@ const AddQuotation = () => {
         quantity: qty,
         discount: Number(disc.toFixed(2)),
         discountType: discType,
-        tax: Number(tax.toFixed(2)),
+        tax: 0,
         total: Number(lineTotal.toFixed(2)),
         isOptionFor: p.isOptionFor || null,
         optionType: p.optionType || null,
         groupId: p.groupId || null,
+        floorId: p.floorId || null,
+        floorName: p.floorName || null,
+        roomId: p.roomId || null,
+        roomName: p.roomName || null,
       };
     });
 
@@ -422,19 +550,20 @@ const AddQuotation = () => {
       due_date: formData.due_date
         ? format(formData.due_date, "yyyy-MM-dd")
         : null,
-      gst: safeNum(formData.gst),
+      gst: 0, // Always 0
       shippingAmount: safeNum(formData.shippingAmount),
       extraDiscount: safeNum(formData.extraDiscount),
       extraDiscountType: formData.extraDiscountType || "fixed",
       roundOff: calculations.roundOff,
       finalAmount: calculations.finalAmount,
       products: payloadProducts,
+      floors: formData.floors,
       followupDates: formData.followupDates
         .filter(Boolean)
         .map((d) => format(d, "yyyy-MM-dd")),
       shipTo: formData.shipTo || null,
     };
-
+    console.log(payload);
     try {
       if (isEditMode) {
         await updateQuotation({ id, updatedQuotation: payload }).unwrap();
@@ -446,6 +575,7 @@ const AddQuotation = () => {
       }
       navigate("/quotations/list");
     } catch (err) {
+      console.log(err);
       message.error(err?.data?.message || "Failed to save quotation");
     }
   };
@@ -453,8 +583,31 @@ const AddQuotation = () => {
   // ── Table Columns ─────────────────────────────────────────────────
   const columns = [
     {
+      title: "Floor / Room",
+      width: 220,
+      render: (_, record) => {
+        if (!record.floorId && !record.roomId)
+          return <Text type="secondary">Unassigned</Text>;
+
+        return (
+          <div>
+            {record.floorName && (
+              <div>
+                <HomeOutlined /> {record.floorName}
+              </div>
+            )}
+            {record.roomName && (
+              <div style={{ marginLeft: 16, color: "#555" }}>
+                <ApartmentOutlined /> {record.roomName}
+              </div>
+            )}
+          </div>
+        );
+      },
+    },
+    {
       title: "Type",
-      width: 120,
+      width: 110,
       render: (_, record) => {
         if (!record.isOptionFor) return <Tag color="blue">Main</Tag>;
 
@@ -530,14 +683,7 @@ const AddQuotation = () => {
     {
       title: "Tax %",
       width: 90,
-      render: (_, r) => (
-        <InputNumber
-          min={0}
-          max={100}
-          value={r.tax}
-          onChange={(v) => updateProductField(r.productId, "tax", v)}
-        />
-      ),
+      render: (_, r) => "0", // Always show 0
     },
     {
       title: "Line Total",
@@ -546,15 +692,34 @@ const AddQuotation = () => {
         const price = safeNum(r.sellingPrice, 0);
         const disc = safeNum(r.discount, 0);
         const discType = r.discountType || "fixed";
-        const tax = safeNum(r.tax, 0);
 
         const discAmt =
           discType === "percent" ? (price * qty * disc) / 100 : disc * qty;
-        const taxable = price * qty - discAmt;
-        const lineTotal = taxable * (1 + tax / 100);
+        const lineTotal = price * qty - discAmt; // No tax
 
         return lineTotal.toFixed(2);
       },
+    },
+    {
+      title: "Location",
+      width: 140,
+      render: (_, record) => (
+        <Cascader
+          options={floorOptions}
+          value={
+            record.floorId && record.roomId
+              ? [record.floorId, record.roomId]
+              : record.floorId
+                ? [record.floorId]
+                : undefined
+          }
+          onChange={(val) => assignFloorRoom(record.productId, val)}
+          placeholder="Assign floor / room"
+          allowClear
+          expandTrigger="hover"
+          style={{ width: "100%" }}
+        />
+      ),
     },
     {
       title: "",
@@ -686,7 +851,7 @@ const AddQuotation = () => {
             </Row>
 
             <Row gutter={16}>
-              <Col xs={24} md={8}>
+              <Col xs={24} md={12}>
                 <Form.Item label="Quotation Date *" required>
                   <DatePicker
                     selected={formData.quotation_date}
@@ -699,7 +864,7 @@ const AddQuotation = () => {
                   />
                 </Form.Item>
               </Col>
-              <Col xs={24} md={8}>
+              <Col xs={24} md={12}>
                 <Form.Item label="Due Date *" required>
                   <DatePicker
                     selected={formData.due_date}
@@ -742,6 +907,53 @@ const AddQuotation = () => {
                 </Button>
               </Space>
             </Form.Item>
+          </Card>
+
+          {/* Project Structure Card */}
+          <Card
+            title="Project Structure (Floors & Rooms)"
+            style={{ marginBottom: 24 }}
+            extra={
+              <Space>
+                <Button
+                  type="primary"
+                  icon={<HomeOutlined />}
+                  onClick={() => setShowFloorsModal(true)}
+                >
+                  Manage Floors
+                </Button>
+                {formData.floors.length > 0 && (
+                  <Button
+                    icon={<ApartmentOutlined />}
+                    onClick={() => setShowRoomsModal(true)}
+                  >
+                    Manage Rooms
+                  </Button>
+                )}
+              </Space>
+            }
+          >
+            {formData.floors.length === 0 ? (
+              <Text type="secondary">
+                No floors/rooms defined yet. Add them to organize products by
+                location.
+              </Text>
+            ) : (
+              <ul style={{ paddingLeft: 20 }}>
+                {formData.floors.map((floor) => (
+                  <li key={floor.floorId}>
+                    <strong>{floor.floorName}</strong>
+                    {floor.rooms?.length > 0 && (
+                      <ul style={{ paddingLeft: 30, marginTop: 4 }}>
+                        {floor.rooms.map((room) => (
+                          <li key={room.roomId}>{room.roomName}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
           </Card>
 
           {/* Products & Options */}
@@ -822,10 +1034,10 @@ const AddQuotation = () => {
             />
           </Card>
 
-          {/* Financial Summary */}
+          {/* Financial Summary (GST removed) */}
           <Card title="Financial Summary" style={{ marginBottom: 32 }}>
             <Row gutter={[16, 16]}>
-              <Col xs={24} sm={6}>
+              <Col xs={24} sm={8}>
                 <Statistic
                   title="Main Subtotal"
                   value={calculations.mainSubtotal}
@@ -833,7 +1045,7 @@ const AddQuotation = () => {
                   prefix="₹"
                 />
               </Col>
-              <Col xs={24} sm={6}>
+              <Col xs={24} sm={8}>
                 <Statistic
                   title="Line Discounts"
                   value={-calculations.mainLineDiscount}
@@ -842,7 +1054,7 @@ const AddQuotation = () => {
                   valueStyle={{ color: "#f5222d" }}
                 />
               </Col>
-              <Col xs={24} sm={6}>
+              <Col xs={24} sm={8}>
                 <Statistic
                   title="Extra Discount"
                   value={-calculations.extraDiscAmt}
@@ -851,30 +1063,9 @@ const AddQuotation = () => {
                   valueStyle={{ color: "#fa8c16" }}
                 />
               </Col>
-              <Col xs={24} sm={6}>
-                <Statistic
-                  title="GST"
-                  value={calculations.gstAmt}
-                  precision={2}
-                  prefix="₹"
-                />
-              </Col>
 
               <Divider />
 
-              <Col xs={24} sm={8}>
-                <Form.Item label="GST Rate (%)">
-                  <InputNumber
-                    min={0}
-                    max={100}
-                    step={0.1}
-                    value={formData.gst}
-                    onChange={(v) => setFormData({ ...formData, gst: v })}
-                    style={{ width: "100%" }}
-                    addonAfter="%"
-                  />
-                </Form.Item>
-              </Col>
               <Col xs={24} sm={8}>
                 <Form.Item label="Shipping">
                   <InputNumber
@@ -900,7 +1091,7 @@ const AddQuotation = () => {
 
               <Col xs={24}>
                 <Statistic
-                  title="FINAL AMOUNT (Main items only)"
+                  title="FINAL AMOUNT"
                   value={calculations.finalAmount}
                   precision={0}
                   prefix="₹"
@@ -981,7 +1172,176 @@ const AddQuotation = () => {
           </div>
         </Form>
 
-        {/* Modals */}
+        {/* Floors Management Modal */}
+        <Modal
+          title="Manage Floors"
+          open={showFloorsModal}
+          onCancel={() => setShowFloorsModal(false)}
+          footer={[
+            <Button key="close" onClick={() => setShowFloorsModal(false)}>
+              Close
+            </Button>,
+          ]}
+          width={600}
+        >
+          <Divider orientation="left">Add New Floor</Divider>
+          <Space.Compact style={{ width: "100%", marginBottom: 24 }}>
+            <Input
+              placeholder="Floor name (e.g. Ground Floor, First Floor, Basement)"
+              onPressEnter={(e) => {
+                addFloor(e.target.value);
+                e.target.value = "";
+              }}
+              style={{ flex: 1 }}
+            />
+            <Button
+              type="primary"
+              onClick={() => {
+                const input = document.querySelector(".ant-input");
+                if (input?.value?.trim()) {
+                  addFloor(input.value.trim());
+                  input.value = "";
+                }
+              }}
+            >
+              Add Floor
+            </Button>
+          </Space.Compact>
+
+          <Divider orientation="left">Existing Floors</Divider>
+          {formData.floors.length === 0 ? (
+            <Text type="secondary">No floors added yet.</Text>
+          ) : (
+            <ul style={{ paddingLeft: 0, listStyle: "none" }}>
+              {formData.floors.map((floor) => (
+                <li
+                  key={floor.floorId}
+                  style={{
+                    padding: "12px 16px",
+                    background: "#f9f9f9",
+                    borderRadius: 6,
+                    marginBottom: 12,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <strong>{floor.floorName}</strong>
+                  <Space>
+                    <Button
+                      type="link"
+                      onClick={() => openRoomsForFloor(floor.floorId)}
+                    >
+                      Rooms ({floor.rooms?.length || 0})
+                    </Button>
+                  </Space>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Modal>
+
+        {/* Rooms Management Modal */}
+        <Modal
+          title={
+            selectedFloorForRooms
+              ? `Manage Rooms - ${formData.floors.find((f) => f.floorId === selectedFloorForRooms)?.floorName || "Floor"}`
+              : "Manage Rooms"
+          }
+          open={showRoomsModal}
+          onCancel={() => {
+            setShowRoomsModal(false);
+            setSelectedFloorForRooms(null);
+          }}
+          footer={[
+            <Button
+              key="close"
+              onClick={() => {
+                setShowRoomsModal(false);
+                setSelectedFloorForRooms(null);
+              }}
+            >
+              Close
+            </Button>,
+          ]}
+          width={600}
+        >
+          {selectedFloorForRooms ? (
+            <>
+              <Divider orientation="left">Add New Room</Divider>
+              <Space.Compact style={{ width: "100%", marginBottom: 24 }}>
+                <Input
+                  placeholder="Room name (e.g. Master Bathroom, Living Room, Kitchen)"
+                  onPressEnter={(e) => {
+                    addRoom(selectedFloorForRooms, e.target.value);
+                    e.target.value = "";
+                  }}
+                  style={{ flex: 1 }}
+                />
+                <Button
+                  type="primary"
+                  onClick={() => {
+                    const input = document.querySelector(".ant-input");
+                    if (input?.value?.trim()) {
+                      addRoom(selectedFloorForRooms, input.value.trim());
+                      input.value = "";
+                    }
+                  }}
+                >
+                  Add Room
+                </Button>
+              </Space.Compact>
+
+              <Divider orientation="left">Existing Rooms</Divider>
+              {(() => {
+                const currentFloor = formData.floors.find(
+                  (f) => f.floorId === selectedFloorForRooms,
+                );
+                if (!currentFloor?.rooms?.length) {
+                  return (
+                    <Text type="secondary">
+                      No rooms added yet on this floor.
+                    </Text>
+                  );
+                }
+                return (
+                  <ul style={{ paddingLeft: 0, listStyle: "none" }}>
+                    {currentFloor.rooms.map((room) => (
+                      <li
+                        key={room.roomId}
+                        style={{
+                          padding: "8px 16px",
+                          background: "#f5f5f5",
+                          borderRadius: 4,
+                          marginBottom: 8,
+                        }}
+                      >
+                        {room.roomName}
+                      </li>
+                    ))}
+                  </ul>
+                );
+              })()}
+            </>
+          ) : (
+            <>
+              <Text strong>Select a floor to manage its rooms:</Text>
+              <Select
+                placeholder="Choose floor"
+                style={{ width: "100%", marginTop: 16 }}
+                onChange={(floorId) => setSelectedFloorForRooms(floorId)}
+              >
+                {formData.floors.map((f) => (
+                  <Option key={f.floorId} value={f.floorId}>
+                    {f.floorName}
+                  </Option>
+                ))}
+              </Select>
+            </>
+          )}
+        </Modal>
+
+        {/* Address Modal */}
         {showAddressModal && (
           <AddAddress
             onClose={() => setShowAddressModal(false)}
@@ -994,6 +1354,7 @@ const AddQuotation = () => {
           />
         )}
 
+        {/* Option Modal */}
         <Modal
           title="Add Option / Variant / Upgrade"
           open={showAddOptionModal}

@@ -55,7 +55,7 @@ const NewPageWrapper = () => {
   const userId = profile?.user?.userId;
 
   const { data: ordersResponse, refetch: refetchOrders } = useGetAllOrdersQuery(
-    undefined,
+    { limit: 50, page: 1 }, // ← increase limit to cover all (or remove limit if API allows)
     { pollingInterval: 30000 },
   );
 
@@ -74,9 +74,11 @@ const NewPageWrapper = () => {
     });
   }, [ordersResponse, THIRTY_DAYS_AGO]);
 
-  const { data: quotationsResponse } = useGetAllQuotationsQuery({ limit: 20 });
+  const { data: quotationsResponse } = useGetAllQuotationsQuery(
+    { limit: 200, page: 1 }, // 200 should cover 107; adjust higher if needed
+  );
   const quotations = quotationsResponse?.data || [];
-
+  console.log(quotations.length);
   const { data: productsResponse } = useGetAllProductsQuery({ limit: 10000 });
   const products = productsResponse?.data || [];
 
@@ -150,9 +152,14 @@ const NewPageWrapper = () => {
   /* ------------------------------------------------------------------ */
   /*  COUNTS                                                            */
   /* ------------------------------------------------------------------ */
-  const quotationCount = quotations.length;
-  const productCount = products.length;
 
+  const productCount = products.length;
+  const quotationCount =
+    quotationsResponse?.pagination?.total ||
+    quotationsResponse?.data?.length ||
+    0;
+  const orderCountForCard =
+    ordersResponse?.pagination?.total || recentOrders.length || 0;
   /* ------------------------------------------------------------------ */
   /*  CUSTOMER MAP                                                      */
   /* ------------------------------------------------------------------ */
@@ -223,7 +230,7 @@ const NewPageWrapper = () => {
                 <span className="stat-icon">
                   <i className="bi bi-bag-check"></i>
                 </span>
-                <span className="stat-number">{recentOrders.length}</span>
+                <span className="stat-number">{orderCountForCard}</span>
               </div>
 
               <div className="stat-label">Total Orders</div>

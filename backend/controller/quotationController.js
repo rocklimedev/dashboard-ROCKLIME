@@ -1,69 +1,86 @@
 const { v4: uuidv4 } = require("uuid");
 const moment = require("moment");
-const QuotationItem = require("../models/quotationItem");
-const QuotationVersion = require("../models/quotationVersion");
-const sequelize = require("../config/database");
-const { sendNotification } = require("./notificationController");
-const { Product, Quotation } = require("../models");
 const { Op } = require("sequelize");
+const sequelize = require("../config/database");
+const { Product, Quotation } = require("../models");
+const QuotationItem = require("../models/quotationItem"); // MongoDB model
+
+// ─────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────
+
 function generateGroupId() {
-  return "grp-" + uuidv4().slice(0, 8); // short & readable: grp-a1b2c3d4
+  return "grp-" + uuidv4().slice(0, 8);
 }
-// ---------------------------------------------------------------------
-// Helper: Calculate totals (unchanged)
-// ---------------------------------------------------------------------
-const calculateTotals = (
+
+function generateFloorId() {
+  return "fl_" + uuidv4().slice(0, 8);
+}
+
+function generateRoomId(floorId = "") {
+  return (floorId ? floorId + "_" : "rm_") + uuidv4().slice(0, 8);
+}
+
+function buildFloorsFromProducts(products) {
+  const floorMap = new Map();
+
+  products.forEach((item) => {
+    if (!item.floorId) return;
+
+    if (!floorMap.has(item.floorId)) {
+      floorMap.set(item.floorId, {
+        floorId: item.floorId,
+        floorName: item.floorName || `Floor ${floorMap.size + 1}`,
+        sortOrder: floorMap.size,
+        rooms: [],
+      });
+    }
+
+    const floor = floorMap.get(item.floorId);
+    if (item.roomId && !floor.rooms.some((r) => r.roomId === item.roomId)) {
+      floor.rooms.push({
+        roomId: item.roomId,
+        roomName: item.roomName || "Unnamed Room",
+        sortOrder: floor.rooms.length,
+      });
+    }
+  });
+
+  return Array.from(floorMap.values());
+}
+
+function calculateTotals(
   items = [],
   extraDiscount = 0,
   extraDiscountType = "percent",
   shippingAmount = 0,
-  gst = 0, // ← this is usually the output GST rate shown to customer
-) => {
-  // Only main (non-optional) items contribute to totals
+  gst = 0,
+) {
   const mainItems = items.filter((item) => !item.isOptionFor);
 
-  let subTotal = 0; // sum of (price × qty) before any discount
+  let subTotal = 0;
   let totalItemDiscount = 0;
-  let taxableAmount = 0; // after item-level discount, before extra disc & shipping
-  let itemTaxTotal = 0; // ← will stay 0 when prices are GST inclusive
+  let taxableAmount = 0;
 
   mainItems.forEach((p) => {
-    const price = Number(p.price) || 0; // ← GST-inclusive price
+    const price = Number(p.price) || 0;
     const qty = Number(p.quantity) || 1;
     const discount = Number(p.discount) || 0;
     const discountType = p.discountType || "percent";
 
-    // We do NOT use p.tax here anymore for calculation
-    // (because price already contains tax)
-
     const lineGross = price * qty;
-
     const discountAmount =
       discountType === "percent"
         ? lineGross * (discount / 100)
-        : discount * qty; // absolute discount per unit × qty
+        : discount * qty;
 
     const lineAfterDiscount = lineGross - discountAmount;
-
-    // ────────────────────────────────────────
-    // Most important change:
-    // itemTaxTotal += ...   →   comment out or set to 0
-    // ────────────────────────────────────────
-    // const taxRate = Number(p.tax) || 0;
-    // const taxAmount = lineAfterDiscount * (taxRate / 100);
-    // itemTaxTotal += taxAmount;
-
-    // Instead:
-    const taxAmount = 0; // ← explicit
-    itemTaxTotal += taxAmount;
 
     subTotal += lineGross;
     totalItemDiscount += discountAmount;
     taxableAmount += lineAfterDiscount;
   });
 
-  // Base for extra discount = discounted items + shipping
-  // (GST already inside price, so no item tax to add)
   const baseForExtraDiscount = taxableAmount + Number(shippingAmount || 0);
 
   const extraDiscountAmount =
@@ -73,28 +90,14 @@ const calculateTotals = (
 
   const amountBeforeGst = baseForExtraDiscount - extraDiscountAmount;
 
-  // Your paise rounding logic (unchanged)
-  const rupees = Math.floor(amountBeforeGst);
-  const paise = Math.round((amountBeforeGst - rupees) * 100);
-  let roundOff = 0;
-  if (paise > 0 && paise <= 50) {
-    roundOff = -paise / 100;
-  } else if (paise > 50) {
-    roundOff = (100 - paise) / 100;
-  }
+  // Simple round-off to nearest whole number
+  const roundedAmount = Math.round(amountBeforeGst);
+  const roundOff = roundedAmount - amountBeforeGst;
 
-  const roundedAmount = amountBeforeGst + roundOff;
-
-  // GST is usually **shown separately** even if price is inclusive
-  // Most common approach in India (B2B + many B2C):
   const gstAmount = roundedAmount * (Number(gst || 0) / 100);
-
-  // If you want to be very strict (price is inclusive → no extra GST):
-  // const gstAmount = 0;
-
   const finalAmount = roundedAmount + gstAmount;
 
-  // Optional items (display only)
+  // Optional items potential
   const optionalItems = items.filter((item) => !!item.isOptionFor);
   let optionalPotential = 0;
   optionalItems.forEach((p) => {
@@ -104,26 +107,22 @@ const calculateTotals = (
   return {
     subTotal: Number(subTotal.toFixed(2)),
     totalItemDiscount: Number(totalItemDiscount.toFixed(2)),
-    itemTax: Number(itemTaxTotal.toFixed(2)), // ← will be 0
+    taxableAmount: Number(taxableAmount.toFixed(2)),
     extraDiscountAmount: Number(extraDiscountAmount.toFixed(2)),
     shippingAmount: Number(shippingAmount || 0),
     amountBeforeGst: Number(amountBeforeGst.toFixed(2)),
     roundOff: Number(roundOff.toFixed(2)),
     gstAmount: Number(gstAmount.toFixed(2)),
     finalAmount: Number(finalAmount.toFixed(2)),
-
     optionalItemsCount: optionalItems.length,
     optionalPotentialTotal: Number(optionalPotential.toFixed(2)),
   };
-};
-// ---------------------------------------------------------------------
-// Helper: Generate next daily sequential reference_number (QUO + DDMMYY + seq)
-// Safe inside transaction — retries on collision
-// ---------------------------------------------------------------------
+}
+
 async function generateQuotationNumber(t) {
   const today = moment();
-  const prefixDate = today.format("DDMMYY"); // "150126" (no leading zeros)
-  const fullPrefix = `QUO${prefixDate}`; // "QUO150126" – always 9 chars
+  const prefixDate = today.format("DDMMYY");
+  const fullPrefix = `QUO${prefixDate}`;
   const todayStart = today.startOf("day").toDate();
   const todayEnd = today.endOf("day").toDate();
 
@@ -133,15 +132,10 @@ async function generateQuotationNumber(t) {
   while (attempt < MAX_ATTEMPTS) {
     attempt++;
 
-    // Find the highest existing number today
     const last = await Quotation.findOne({
       where: {
-        reference_number: {
-          [Op.like]: `${fullPrefix}%`,
-        },
-        createdAt: {
-          [Op.between]: [todayStart, todayEnd],
-        },
+        reference_number: { [Op.like]: `${fullPrefix}%` },
+        createdAt: { [Op.between]: [todayStart, todayEnd] },
       },
       attributes: ["reference_number"],
       order: [["reference_number", "DESC"]],
@@ -150,34 +144,29 @@ async function generateQuotationNumber(t) {
       lock: t.LOCK.UPDATE,
     });
 
-    let nextSeq = 101; // your starting number
-
+    let nextSeq = 101;
     if (last) {
-      const seqStr = last.reference_number.slice(fullPrefix.length); // ← correct: after 9 chars
+      const seqStr = last.reference_number.slice(fullPrefix.length);
       const parsed = parseInt(seqStr, 10);
       if (!isNaN(parsed) && parsed >= 100) {
-        // safety check
         nextSeq = parsed + 1;
       }
     }
 
     const candidate = `${fullPrefix}${nextSeq}`;
-
-    // Collision check (should be extremely rare with lock + transaction)
     const exists = await Quotation.findOne({
       where: { reference_number: candidate },
       transaction: t,
     });
 
-    if (!exists) {
-      return candidate;
-    }
+    if (!exists) return candidate;
   }
 
   throw new Error(
     `Could not generate unique quotation number after ${MAX_ATTEMPTS} attempts`,
   );
 }
+
 // ─────────────────────────────────────────────
 // CREATE QUOTATION
 // ─────────────────────────────────────────────
@@ -187,19 +176,27 @@ exports.createQuotation = async (req, res) => {
   try {
     let {
       products: incomingProducts,
+      floors: incomingFloors = [],
       extraDiscount = 0,
       extraDiscountType = "percent",
       shippingAmount = 0,
       gst = 0,
-      ...quotationData
+      customerId,
+      quotation_date,
+      due_date,
+      document_title = "Quotation",
+      shipTo,
+      signature_name = "",
+      signature_image = "",
+      ...rest
     } = req.body;
 
-    // Parse if string
+    // Parse products if sent as string (common with FormData)
     if (typeof incomingProducts === "string") {
       try {
         incomingProducts = JSON.parse(incomingProducts);
       } catch {
-        return res.status(400).json({ error: "Invalid products JSON" });
+        return res.status(400).json({ error: "Invalid products JSON format" });
       }
     }
 
@@ -208,11 +205,12 @@ exports.createQuotation = async (req, res) => {
         .status(400)
         .json({ error: "At least one product is required" });
     }
-    if (!quotationData.customerId) {
+
+    if (!customerId) {
       return res.status(400).json({ error: "Customer ID is required" });
     }
 
-    // Fetch product details
+    // ─── Fetch product master data ───
     const productIds = [
       ...new Set(
         incomingProducts.map((p) => p.productId || p.id).filter(Boolean),
@@ -237,12 +235,11 @@ exports.createQuotation = async (req, res) => {
 
       dbProducts.forEach((p) => {
         let imageUrl = null;
-        if (p.images) {
-          try {
-            const imgs = JSON.parse(p.images);
-            if (Array.isArray(imgs) && imgs.length) imageUrl = imgs[0];
-          } catch {}
-        }
+        try {
+          const imgs = JSON.parse(p.images || "[]");
+          imageUrl = Array.isArray(imgs) && imgs.length ? imgs[0] : null;
+        } catch {}
+
         productMap[p.productId] = {
           name: p.name?.trim() || "Unnamed Product",
           imageUrl,
@@ -254,7 +251,7 @@ exports.createQuotation = async (req, res) => {
       });
     }
 
-    // Enrich products & assign groups
+    // ─── Enrich incoming products ───
     const enrichedProducts = incomingProducts.map((p) => {
       const id = p.productId || p.id;
       const db = productMap[id] || {};
@@ -267,12 +264,6 @@ exports.createQuotation = async (req, res) => {
       const isOption = !!p.isOptionFor;
       const groupId = p.groupId || (isOption ? null : generateGroupId());
 
-      let lineTotalAfterDiscount =
-        discountType === "percent"
-          ? price * qty * (1 - discount / 100)
-          : (price - discount) * qty;
-
-      // Inside map()
       return {
         productId: id,
         name: p.name || db.name || "Unknown Product",
@@ -283,14 +274,29 @@ exports.createQuotation = async (req, res) => {
         price: Number(price.toFixed(2)),
         discount: Number(discount.toFixed(2)),
         discountType,
-        tax: 0, // ← force to 0
-        total: Number(lineTotalAfterDiscount.toFixed(2)),
+        tax: 0, // currently not applying line-level tax
+        total: Number(
+          discountType === "percent"
+            ? price * qty * (1 - discount / 100)
+            : (price - discount) * qty,
+        ).toFixed(2),
         isOptionFor: isOption ? p.isOptionFor : null,
         optionType: p.optionType || null,
         groupId: groupId || null,
+        floorId: p.floorId || null,
+        floorName: p.floorName || null,
+        roomId: p.roomId || null,
+        roomName: p.roomName || null,
       };
     });
 
+    // ─── Determine floors ───
+    const floors =
+      Array.isArray(incomingFloors) && incomingFloors.length > 0
+        ? incomingFloors
+        : buildFloorsFromProducts(enrichedProducts);
+
+    // ─── Calculate totals ───
     const totals = calculateTotals(
       enrichedProducts,
       Number(extraDiscount),
@@ -299,13 +305,21 @@ exports.createQuotation = async (req, res) => {
       Number(gst),
     );
 
+    // ─── Generate unique reference number ───
     const reference_number = await generateQuotationNumber(t);
 
+    // ─── Create PostgreSQL quotation ───
     const quotation = await Quotation.create(
       {
-        ...quotationData,
+        customerId,
         reference_number,
+        document_title,
+        quotation_date:
+          quotation_date || new Date().toISOString().split("T")[0],
+        due_date,
         products: enrichedProducts,
+        floors,
+        totalFloors: floors.length,
         extraDiscount: Number(extraDiscount) || 0,
         extraDiscountType: extraDiscountType || "percent",
         discountAmount: totals.extraDiscountAmount,
@@ -314,31 +328,22 @@ exports.createQuotation = async (req, res) => {
         gstAmount: totals.gstAmount,
         roundOff: totals.roundOff,
         finalAmount: totals.finalAmount,
+        shipTo: shipTo || null,
+        signature_name,
+        signature_image,
+        createdBy: req.user?.userId || "system",
+        ...rest,
       },
       { transaction: t },
     );
 
-    // When saving to QuotationItem
+    // ─── Create MongoDB line items (NO session) ───
     await QuotationItem.create({
       quotationId: quotation.quotationId,
-      items: enrichedProducts.map((item) => ({
-        productId: item.productId,
-        name: item.name,
-        imageUrl: item.imageUrl,
-        quantity: item.quantity,
-        price: item.price,
-        discount: item.discount,
-        discountType: item.discountType,
-        tax: item.tax,
-        total: item.total,
-        // These were missing!
-        isOptionFor: item.isOptionFor || null,
-        optionType: item.optionType || null,
-        groupId: item.groupId || null,
-        // optional: companyCode, productCode if you want them
-      })),
+      items: enrichedProducts,
     });
 
+    // ─── All good ───
     await t.commit();
 
     return res.status(201).json({
@@ -350,17 +355,16 @@ exports.createQuotation = async (req, res) => {
       calculated: totals,
     });
   } catch (error) {
-    await t.rollback();
+    await t.rollback().catch(() => {});
+    console.error("Create Quotation Error:", error);
 
     return res.status(500).json({
       error: "Failed to create quotation",
-      details: error.message,
+      message: error.message,
+      // stack: error.stack // uncomment only in development
     });
   }
 };
-
-// ─────────────────────────────────────────────
-// UPDATE QUOTATION
 // ─────────────────────────────────────────────
 // UPDATE QUOTATION
 // ─────────────────────────────────────────────
@@ -372,12 +376,12 @@ exports.updateQuotation = async (req, res) => {
 
     let {
       products: incomingProducts,
+      floors: incomingFloors = [],
       followupDates = [],
       extraDiscount = 0,
       extraDiscountType = "percent",
       shippingAmount = 0,
       gst = 0,
-      roundOff = 0, // client may send, but we override with calculated value
       ...quotationData
     } = req.body;
 
@@ -386,7 +390,6 @@ exports.updateQuotation = async (req, res) => {
       return res.status(400).json({ message: "Quotation ID is required" });
     }
 
-    // Fetch current quotation (PostgreSQL)
     const currentQuotation = await Quotation.findOne({
       where: { quotationId: id },
       transaction: t,
@@ -397,28 +400,19 @@ exports.updateQuotation = async (req, res) => {
       return res.status(404).json({ message: "Quotation not found" });
     }
 
-    // ─────────────────────────────────────────────
-    // VERSIONING – Mongoose (done OUTSIDE transaction)
-    // ─────────────────────────────────────────────
+    // ─── Versioning (outside transaction) ───
     let newVersionNumber = 1;
-
     try {
-      const latestVersionDoc = await QuotationVersion.findOne({
-        quotationId: id,
-      })
+      const latest = await QuotationVersion.findOne({ quotationId: id })
         .sort({ version: -1 })
         .lean();
 
-      if (latestVersionDoc) {
-        newVersionNumber = latestVersionDoc.version + 1;
-      }
+      if (latest) newVersionNumber = latest.version + 1;
 
-      // Fetch current items from MongoDB for versioning
       const currentMongoItems = await QuotationItem.findOne({
         quotationId: id,
       }).lean();
 
-      // Get plain quotation data for snapshot
       const rawQuotation = await Quotation.findOne({
         where: { quotationId: id },
         attributes: [
@@ -426,6 +420,8 @@ exports.updateQuotation = async (req, res) => {
           "reference_number",
           "customerId",
           "products",
+          "floors",
+          "totalFloors",
           "extraDiscount",
           "extraDiscountType",
           "discountAmount",
@@ -442,49 +438,27 @@ exports.updateQuotation = async (req, res) => {
         transaction: t,
       });
 
-      const safeQuotationData = {
-        quotationId: rawQuotation.quotationId,
-        reference_number: rawQuotation.reference_number,
-        customerId: rawQuotation.customerId,
-        products: rawQuotation.products || [],
-        extraDiscount: Number(rawQuotation.extraDiscount ?? 0),
-        extraDiscountType: rawQuotation.extraDiscountType || "percent",
-        discountAmount: Number(rawQuotation.discountAmount ?? 0),
-        shippingAmount: Number(rawQuotation.shippingAmount ?? 0),
-        gst: Number(rawQuotation.gst ?? 0),
-        gstAmount: Number(rawQuotation.gstAmount ?? 0),
-        roundOff: Number(rawQuotation.roundOff ?? 0),
-        finalAmount: Number(rawQuotation.finalAmount ?? 0),
-        followupDates: rawQuotation.followupDates || null,
-        createdAt: rawQuotation.createdAt
-          ? rawQuotation.createdAt.toISOString()
-          : null,
-        updatedAt: rawQuotation.updatedAt
-          ? rawQuotation.updatedAt.toISOString()
-          : null,
+      const safeData = {
+        ...rawQuotation,
+        createdAt: rawQuotation.createdAt?.toISOString() ?? null,
+        updatedAt: rawQuotation.updatedAt?.toISOString() ?? null,
       };
 
-      // Save version
       await QuotationVersion.create({
         quotationId: id,
         version: newVersionNumber,
-        quotationData: safeQuotationData,
+        quotationData: safeData,
         quotationItems: currentMongoItems?.items || [],
+        floors: safeData.floors || [],
+        totalFloors: safeData.totalFloors || 0,
         updatedBy: req.user?.userId || "System",
         updatedAt: new Date(),
       });
-    } catch (versionErr) {
-      console.error(
-        `Versioning failed for quotation ${id} (version ${newVersionNumber}):`,
-        {
-          message: versionErr.message,
-          stack: versionErr.stack,
-        },
-      );
-      // Continue – versioning is non-critical
+    } catch (err) {
+      console.error("Versioning failed:", err);
+      // non-fatal
     }
 
-    // ─── Validate incoming products ─────────────────────────────────────
     if (!Array.isArray(incomingProducts) || incomingProducts.length === 0) {
       await t.rollback();
       return res
@@ -492,7 +466,7 @@ exports.updateQuotation = async (req, res) => {
         .json({ error: "At least one product is required" });
     }
 
-    // ─── Fetch product master data ───────────────────────────────────────
+    // Fetch product master data (same as create)
     const productIds = [
       ...new Set(
         incomingProducts.map((p) => p.productId || p.id).filter(Boolean),
@@ -519,11 +493,9 @@ exports.updateQuotation = async (req, res) => {
         let imageUrl = null;
         if (p.images) {
           try {
-            const imgs = JSON.parse(p.images);
-            if (Array.isArray(imgs) && imgs.length) imageUrl = imgs[0];
+            imageUrl = JSON.parse(p.images)?.[0] ?? null;
           } catch {}
         }
-
         productMap[p.productId] = {
           name: p.name?.trim() || "Unnamed Product",
           imageUrl,
@@ -535,26 +507,28 @@ exports.updateQuotation = async (req, res) => {
       });
     }
 
-    // ─── Enrich products & recalculate line totals ───────────────────────
+    // Enrich products
     const enrichedProducts = incomingProducts.map((p) => {
-      const prodId = p.productId || p.id;
-      const db = productMap[prodId] || {};
+      const db = productMap[p.productId || p.id] || {};
 
       const price = Number(p.price || 0);
-      const qty = Number(p.quantity || 1);
+      const qty = Number(p.quantity) || 1;
       const discount = Number(p.discount || 0);
       const discountType = p.discountType || db.discountType || "percent";
 
       const isOption = !!p.isOptionFor;
       const groupId = p.groupId || (isOption ? null : generateGroupId());
 
-      let lineTotalAfterDiscount =
+      let floorId = p.floorId || null;
+      let roomId = p.roomId || null;
+
+      let lineTotal =
         discountType === "percent"
           ? price * qty * (1 - discount / 100)
           : (price - discount) * qty;
 
       return {
-        productId: prodId,
+        productId: p.productId || p.id,
         name: p.name || db.name || "Unknown Product",
         imageUrl: p.imageUrl || db.imageUrl || null,
         productCode: p.productCode || db.productCode || null,
@@ -563,15 +537,24 @@ exports.updateQuotation = async (req, res) => {
         price: Number(price.toFixed(2)),
         discount: Number(discount.toFixed(2)),
         discountType,
-        tax: 0, // GST-inclusive → force 0
-        total: Number(lineTotalAfterDiscount.toFixed(2)),
+        tax: 0,
+        total: Number(lineTotal.toFixed(2)),
         isOptionFor: isOption ? p.isOptionFor : null,
         optionType: p.optionType || null,
-        groupId: groupId || null,
+        groupId,
+        floorId,
+        floorName: p.floorName || null,
+        roomId,
+        roomName: p.roomName || null,
       };
     });
 
-    // ─── Recalculate totals ──────────────────────────────────────────────
+    // Floors: prefer incoming → fallback to derived
+    let floors =
+      Array.isArray(incomingFloors) && incomingFloors.length > 0
+        ? incomingFloors
+        : buildFloorsFromProducts(enrichedProducts);
+
     const totals = calculateTotals(
       enrichedProducts,
       Number(extraDiscount),
@@ -580,11 +563,12 @@ exports.updateQuotation = async (req, res) => {
       Number(gst),
     );
 
-    // ─── Update main quotation (PostgreSQL) ──────────────────────────────
     await Quotation.update(
       {
         ...quotationData,
         products: enrichedProducts,
+        floors,
+        totalFloors: floors.length,
         extraDiscount: Number(extraDiscount) || 0,
         extraDiscountType: extraDiscountType || "percent",
         discountAmount: totals.extraDiscountAmount,
@@ -598,7 +582,7 @@ exports.updateQuotation = async (req, res) => {
       { where: { quotationId: id }, transaction: t },
     );
 
-    // ─── Sync MongoDB items (OUTSIDE transaction) ────────────────────────
+    // Sync MongoDB items
     try {
       if (enrichedProducts.length > 0) {
         await QuotationItem.updateOne(
@@ -610,11 +594,9 @@ exports.updateQuotation = async (req, res) => {
         await QuotationItem.deleteOne({ quotationId: id });
       }
     } catch (mongoErr) {
-      console.error(`MongoDB items sync failed for quotation ${id}:`, mongoErr);
-      // Non-fatal – we already committed PostgreSQL changes
+      console.error("MongoDB sync failed:", mongoErr);
     }
 
-    // ─── Commit PostgreSQL transaction ───────────────────────────────────
     await t.commit();
 
     return res.status(200).json({
@@ -625,20 +607,21 @@ exports.updateQuotation = async (req, res) => {
     });
   } catch (error) {
     await t.rollback().catch(() => {});
-
     return res.status(500).json({
       error: "Failed to update quotation",
       details: error.message,
     });
   }
 };
-// EXPORT TO EXCEL – includes shippingAmount
+
+// EXPORT TO EXCEL – now grouped by floor → room
 exports.exportQuotation = async (req, res) => {
   try {
     const { id, version } = req.params;
 
     let quotation,
-      quotationItems = [];
+      quotationItems = [],
+      floors = [];
 
     if (version) {
       const versionData = await QuotationVersion.findOne({
@@ -649,29 +632,27 @@ exports.exportQuotation = async (req, res) => {
         return res.status(404).json({ message: "Version not found" });
       quotation = versionData.quotationData;
       quotationItems = versionData.quotationItems || [];
+      floors = versionData.floors || quotation.floors || [];
     } else {
       quotation = await Quotation.findByPk(id);
       if (!quotation)
         return res.status(404).json({ message: "Quotation not found" });
-      const items = await QuotationItem.findOne({ quotationId: id });
-      quotationItems = items ? items.items : [];
+      const itemsDoc = await QuotationItem.findOne({ quotationId: id });
+      quotationItems = itemsDoc ? itemsDoc.items : [];
+      floors = quotation.floors || [];
     }
 
+    // We still calculate totals from main (non-optional) items
     const {
       subTotal,
       totalItemDiscount,
-      totalTax,
+      itemTax: totalTax, // usually 0
       extraDiscountAmount,
       gstAmount,
     } = calculateTotals(
-      quotationItems.map((i) => ({
-        sellingPrice: i.rate || i.mrp || 0,
-        quantity: i.quantity || i.qty || 1,
-        discount: i.discount || 0,
-        tax: i.tax || 0,
-      })),
+      quotationItems,
       quotation.extraDiscount || 0,
-      quotation.extraDiscountType,
+      quotation.extraDiscountType || "percent",
       quotation.shippingAmount || 0,
       quotation.gst || 0,
     );
@@ -684,52 +665,125 @@ exports.exportQuotation = async (req, res) => {
       totalItemDiscount -
       extraDiscountAmount +
       (quotation.roundOff || 0);
+
+    // ─────────────────────────────────────────────
+    // Build grouped sheet data
+    // ─────────────────────────────────────────────
     const sheetData = [
       ["Estimate / Quotation", "", "", "", "GROHE / AMERICAN STANDARD"],
       [""],
       [
         "M/s",
-        quotation.companyName || quotation.customerId || "CHHABRA MARBLE",
+        quotation.companyName ||
+          quotation.customer?.name ||
+          quotation.customerId ||
+          "CUSTOMER NAME",
         "",
         "Date",
         quotation.quotation_date
-          ? new Date(quotation.quotation_date).toLocaleDateString()
-          : new Date().toLocaleDateString(),
+          ? new Date(quotation.quotation_date).toLocaleDateString("en-IN")
+          : new Date().toLocaleDateString("en-IN"),
       ],
-      ["Address", quotation.shipTo || "456, Park Avenue, New York, USA"],
-      [""],
       [
-        "S.No",
-        "Product Image",
-        "Product Name",
-        "Product Code",
-        "MRP",
-        "Discount",
-        "Rate",
-        "Unit",
-        "Total",
+        "Address",
+        quotation.shipTo || "—",
+        "",
+        "Quotation No",
+        quotation.reference_number || "—",
       ],
+      [""],
     ];
 
-    quotationItems.forEach((p, idx) => {
-      sheetData.push([
-        idx + 1,
-        p.imageUrl || "N/A",
-        p.name || "N/A",
-        p.product_code || "N/A",
-        Number(p.mrp) || 0,
-        p.discount
-          ? p.discountType === "percent"
-            ? `${Number(p.discount)}%`
-            : `₹${Number(p.discount)}`
-          : 0,
-        Number(p.rate) || Number(p.total) || 0,
-        p.quantity || p.qty || 1,
-        Number(p.total) || 0,
-      ]);
+    // Group items by floor → room
+    const groupedItems = {};
+
+    quotationItems.forEach((item) => {
+      const floorId = item.floorId || "no-floor";
+      const floorName =
+        item.floorName ||
+        floors.find((f) => f.floorId === floorId)?.floorName ||
+        "Unassigned Floor";
+      const roomId = item.roomId || "no-room";
+      const roomName = item.roomName || "Unassigned Room";
+
+      const floorKey = `${floorId}|${floorName}`;
+      if (!groupedItems[floorKey]) groupedItems[floorKey] = {};
+
+      const roomKey = `${roomId}|${roomName}`;
+      if (!groupedItems[floorKey][roomKey])
+        groupedItems[floorKey][roomKey] = [];
+
+      groupedItems[floorKey][roomKey].push(item);
     });
 
-    sheetData.push([]);
+    // Sort floors by sortOrder (if available) or by appearance
+    const sortedFloorKeys = Object.keys(groupedItems).sort((a, b) => {
+      const fa = floors.find((f) => f.floorId === a.split("|")[0]);
+      const fb = floors.find((f) => f.floorId === b.split("|")[0]);
+      return (fa?.sortOrder ?? 999) - (fb?.sortOrder ?? 999);
+    });
+
+    let rowIndex = 1;
+
+    for (const floorKey of sortedFloorKeys) {
+      const [floorId, floorName] = floorKey.split("|");
+
+      // Floor header
+      sheetData.push([`Floor: ${floorName}`, "", "", "", "", "", "", "", ""]);
+      rowIndex++;
+
+      const rooms = groupedItems[floorKey];
+      const sortedRoomKeys = Object.keys(rooms); // can sort by name or id if needed
+
+      for (const roomKey of sortedRoomKeys) {
+        const [roomId, roomName] = roomKey.split("|");
+
+        // Room header
+        sheetData.push([`  Room: ${roomName}`, "", "", "", "", "", "", "", ""]);
+        rowIndex++;
+
+        // Items header
+        sheetData.push([
+          "S.No",
+          "Product Image",
+          "Product Name",
+          "Product Code",
+          "MRP",
+          "Discount",
+          "Rate",
+          "Qty",
+          "Total",
+        ]);
+
+        const roomItems = rooms[roomKey];
+        roomItems.forEach((p, idx) => {
+          const discountDisplay = p.discount
+            ? p.discountType === "percent"
+              ? `${Number(p.discount).toFixed(1)}%`
+              : `₹${Number(p.discount).toFixed(2)}`
+            : "—";
+
+          sheetData.push([
+            rowIndex++,
+            p.imageUrl || "N/A",
+            p.name || "—",
+            p.productCode || p.product_code || "—",
+            Number(p.price * (1 + (p.discount || 0) / 100))?.toFixed(2) || "—", // approximate MRP
+            discountDisplay,
+            Number(p.price || p.total || 0).toFixed(2),
+            Number(p.quantity || 1),
+            Number(p.total || 0).toFixed(2),
+          ]);
+        });
+
+        sheetData.push([""]); // empty line between rooms
+      }
+
+      sheetData.push([""]); // empty line between floors
+    }
+
+    // Summary section
+    sheetData.push(["", "", "", "", "", "", "Summary", "", ""]);
     sheetData.push([
       "",
       "",
@@ -752,7 +806,8 @@ exports.exportQuotation = async (req, res) => {
       "",
       totalItemDiscount.toFixed(2),
     ]);
-    if (extraDiscountAmount) {
+
+    if (extraDiscountAmount > 0) {
       sheetData.push([
         "",
         "",
@@ -760,16 +815,12 @@ exports.exportQuotation = async (req, res) => {
         "",
         "",
         "",
-        `Extra Discount ${
-          quotation.extraDiscountType === "percent"
-            ? `(${quotation.extraDiscount}%)`
-            : ""
-        }`,
+        `Extra Discount ${quotation.extraDiscountType === "percent" ? `(${quotation.extraDiscount}%)` : ""}`,
         "",
         extraDiscountAmount.toFixed(2),
       ]);
     }
-    sheetData.push(["", "", "", "", "", "", "Tax", "", totalTax.toFixed(2)]);
+
     sheetData.push([
       "",
       "",
@@ -777,7 +828,18 @@ exports.exportQuotation = async (req, res) => {
       "",
       "",
       "",
-      "Shipping",
+      "Tax (if any)",
+      "",
+      totalTax.toFixed(2),
+    ]);
+    sheetData.push([
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "Shipping Charges",
       "",
       (quotation.shippingAmount || 0).toFixed(2),
     ]);
@@ -789,7 +851,7 @@ exports.exportQuotation = async (req, res) => {
       "",
       "",
       "",
-      "Round-off",
+      "Round Off",
       "",
       (quotation.roundOff || 0).toFixed(2),
     ]);
@@ -800,24 +862,29 @@ exports.exportQuotation = async (req, res) => {
       "",
       "",
       "",
-      "TOTAL",
+      "GRAND TOTAL",
       "",
       finalTotal.toFixed(2),
     ]);
 
+    // Create workbook
+    const XLSX = require("xlsx"); // make sure it's imported at top if not already
     const workbook = XLSX.utils.book_new();
     const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
+
+    // Column widths
     worksheet["!cols"] = [
-      { wch: 5 },
-      { wch: 20 },
-      { wch: 30 },
-      { wch: 15 },
-      { wch: 10 },
-      { wch: 10 },
-      { wch: 10 },
-      { wch: 10 },
-      { wch: 12 },
+      { wch: 6 }, // S.No
+      { wch: 25 }, // Image
+      { wch: 35 }, // Name
+      { wch: 15 }, // Code
+      { wch: 12 }, // MRP
+      { wch: 12 }, // Discount
+      { wch: 12 }, // Rate
+      { wch: 8 }, // Qty
+      { wch: 14 }, // Total
     ];
+
     XLSX.utils.book_append_sheet(workbook, worksheet, "Quotation");
 
     const buffer = XLSX.write(workbook, { bookType: "xlsx", type: "buffer" });
@@ -828,19 +895,18 @@ exports.exportQuotation = async (req, res) => {
     );
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename=quotation_${id}${
-        version ? `_v${version}` : ""
-      }.xlsx`,
+      `attachment; filename=Quotation_${quotation.reference_number || id}${version ? `_v${version}` : ""}.xlsx`,
     );
     res.send(buffer);
   } catch (error) {
+    console.error("Export error:", error);
     res
       .status(500)
       .json({ message: "Failed to export quotation", error: error.message });
   }
 };
 
-// CLONE QUOTATION – include shippingAmount
+// CLONE QUOTATION – now includes floors & totalFloors
 exports.cloneQuotation = async (req, res) => {
   try {
     const original = await Quotation.findByPk(req.params.id);
@@ -857,7 +923,7 @@ exports.cloneQuotation = async (req, res) => {
       document_title: `${original.document_title} (Copy)`,
       quotation_date: new Date(),
       due_date: original.due_date,
-      reference_number: original.reference_number,
+      reference_number: await generateQuotationNumber(), // better to generate new number
       customerId: original.customerId,
       createdBy: req.user.userId,
       shipTo: original.shipTo,
@@ -867,6 +933,8 @@ exports.cloneQuotation = async (req, res) => {
       shippingAmount: original.shippingAmount,
       gst: original.gst,
       products: original.products,
+      floors: original.floors || [], // ← new
+      totalFloors: original.totalFloors || 0, // ← new
       roundOff: original.roundOff,
       finalAmount: original.finalAmount,
       signature_name: original.signature_name,
@@ -898,7 +966,7 @@ exports.cloneQuotation = async (req, res) => {
   }
 };
 
-// RESTORE VERSION
+// RESTORE VERSION – now restores floors & totalFloors
 exports.restoreQuotationVersion = async (req, res) => {
   const t = await sequelize.transaction();
   try {
@@ -914,7 +982,11 @@ exports.restoreQuotationVersion = async (req, res) => {
     }
 
     await Quotation.update(
-      { ...versionData.quotationData },
+      {
+        ...versionData.quotationData,
+        floors: versionData.floors || [], // ← restored
+        totalFloors: versionData.totalFloors || 0, // ← restored
+      },
       { where: { quotationId: id }, transaction: t },
     );
 
@@ -946,7 +1018,6 @@ exports.restoreQuotationVersion = async (req, res) => {
       .json({ error: "Failed to restore quotation", details: error.message });
   }
 };
-
 // Get a single quotation by ID with items
 exports.getQuotationById = async (req, res) => {
   try {

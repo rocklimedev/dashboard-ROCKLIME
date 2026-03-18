@@ -1,0 +1,531 @@
+[
+  {
+    "images": "",
+    "name": "Eurosmart SLM Basin S",
+    "company_code": 332652433,
+    "selling_price": 17100,
+    "brandId": "GROHE"
+  },
+  {
+    "images": "",
+    "name": "Eurosmart SLM Basin xL Smth Body",
+    "company_code": 239712433,
+    "selling_price": 27550,
+    "brandId": "GROHE"
+  },
+  {
+    "images": "",
+    "name": "Eurosmart SLM Basin M",
+    "company_code": 233222433,
+    "selling_price": 17950,
+    "brandId": "GROHE"
+  },
+  {
+    "images": "",
+    "name": "Eurosmart SLM Basin S Smth Body",
+    "company_code": 324672433,
+    "selling_price": 15550,
+    "brandId": "GROHE"
+  },
+  {
+    "images": "",
+    "name": "Eurosmart SLM Basin M Smooth Body",
+    "company_code": 233242433,
+    "selling_price": 17100,
+    "brandId": "GROHE"
+  },
+  {
+    "images": "",
+    "name": "Eurosmart SLM Kitch Low",
+    "company_code": 332812433,
+    "selling_price": 27000,
+    "brandId": "GROHE"
+  },
+  {
+    "images": "",
+    "name": "urosmart SLM Kitch High CxSp",
+    "company_code": 332022433,
+    "selling_price": 30550,
+    "brandId": "GROHE"
+  },
+  {
+    "images": "",
+    "name": "Eurosmart SLM Kitch Low Dual Spray",
+    "company_code": 303052431,
+    "selling_price": 23100,
+    "brandId": "GROHE"
+  },
+  {
+    "images": "",
+    "name": "Eurosmart SLM Trim Basin 2H L",
+    "company_code": 293382433,
+    "selling_price": 21550,
+    "brandId": "GROHE"
+  },
+  {
+    "images": "",
+    "name": "NTempesta 210 Headshower Set 286mm 9,5l",
+    "company_code": 1022182430,
+    "selling_price": 20000,
+    "brandId": "GROHE"
+  },
+  {
+    "images": "",
+    "name": "Tempesta 250 Headshw Set 9,5l",
+    "company_code": 266682430,
+    "selling_price": 22000,
+    "brandId": "GROHE"
+  },
+  {
+    "images": "",
+    "name": "Tempesta 250 Headshw Set 9,5l",
+    "company_code": 266692430,
+    "selling_price": 22000,
+    "brandId": "GROHE"
+  },
+  {
+    "images": "",
+    "name": "Tempesta Cube 250x250 Headshower Set",
+    "company_code": 266872430,
+    "selling_price": 24000,
+    "brandId": "GROHE"
+  },
+  {
+    "images": "",
+    "name": "Tempesta Cube 250x250 Headshw Set 142mm",
+    "company_code": 266882430,
+    "selling_price": 24000,
+    "brandId": "GROHE"
+  },
+  {
+    "images": "",
+    "name": "Eurosmart SLM Trim Bath",
+    "company_code": 194502433,
+    "selling_price": 13400,
+    "brandId": "GROHE"
+  },
+  {
+    "images": "",
+    "name": "Eurosmart SLM Trim Shower",
+    "company_code": 194512433,
+    "selling_price": 10850,
+    "brandId": "GROHE"
+  },
+  {
+    "images": "",
+    "name": "Grohtherm THM Trim Shower Rd",
+    "company_code": 1022082430,
+    "selling_price": 36850,
+    "brandId": "GROHE"
+  },
+  {
+    "A": 18,
+    "images": "",
+    "name": "Grohtherm THM Trim Shower Square",
+    "company_code": 1022092430,
+    "selling_price": 42850,
+    "brandId": "GROHE"
+  },
+  {
+    "A": 19,
+    "images": "",
+    "name": "Grohtherm THM Trim Bath Rd",
+    "company_code": 1022102430,
+    "selling_price": 36850,
+    "brandId": "GROHE"
+  },
+  {
+    "A": 20,
+    "images": "",
+    "name": "Grohtherm THM Trim Bath Square",
+    "company_code": 1022112430,
+    "selling_price": 42850,
+    "brandId": "GROHE"
+  },
+  {
+    "A": 21,
+    "images": "",
+    "name": "Grohtherm THM Trim Shower Round 1 Flow",
+    "company_code": 1022122430,
+    "selling_price": 33850,
+    "brandId": "GROHE"
+  },
+  {
+    "A": 22,
+    "images": "",
+    "name": "Grohtherm THM Trim Shower Square 1 Flow",
+    "company_code": 1022152430,
+    "selling_price": 39850,
+    "brandId": "GROHE"
+  },
+  {
+    "A": 23,
+    "images": "",
+    "name": "Tempesta 110 Shw Rail Set 600mm 9,5l",
+    "company_code": 261622433,
+    "selling_price": 20550,
+    "brandId": "GROHE"
+  },
+  {
+    "A": 24,
+    "images": "",
+    "name": "Tempesta 110 II Handshower Set 9,5l",
+    "company_code": 264062433,
+    "selling_price": 12850,
+    "brandId": "GROHE"
+  },
+  {
+    "A": 25,
+    "images": "",
+    "name": "Tempesta 110 Shw Rail Set 900mm 9,5l",
+    "company_code": 261632433,
+    "selling_price": 22550,
+    "brandId": "GROHE"
+  },
+  {
+    "A": 26,
+    "images": "",
+    "name": "Tempesta Cube 110 Shw Rail Set 600mm",
+    "company_code": 267482433,
+    "selling_price": 21250,
+    "brandId": "GROHE"
+  },
+  {
+    "A": 27,
+    "images": "",
+    "name": "Tempesta Cube 110 II Handshower",
+    "company_code": 261302434,
+    "selling_price": 5500,
+    "brandId": "GROHE"
+  },
+  {
+    "A": 28,
+    "images": "",
+    "name": "Tempesta Cube 110 II Handshower 9,5l",
+    "company_code": 267462433,
+    "selling_price": 5600,
+    "brandId": "GROHE"
+  },
+  {
+    "A": 29,
+    "images": "",
+    "name": "Tempesta Cube 110 Shw Rail Set 900mm",
+    "company_code": 269082433,
+    "selling_price": 23250,
+    "brandId": "GROHE"
+  },
+  {
+    "A": 30,
+    "images": "",
+    "name": "Eurosmart Tub Spout Exposed",
+    "company_code": 134482433,
+    "selling_price": 8950,
+    "brandId": "GROHE"
+  },
+  {
+    "A": 33,
+    "images": "",
+    "name": "New TempestaxF Trigger Spray 30 Set 5,7l, wall holder, 1250mm",
+    "company_code": 1025302431,
+    "selling_price": 8000,
+    "brandId": "GROHE"
+  },
+  {
+    "A": 35,
+    "images": "",
+    "name": "Angle Valve",
+    "company_code": 1023422430,
+    "selling_price": 4950,
+    "brandId": "GROHE"
+  },
+  {
+    "A": 36,
+    "images": "",
+    "name": "Essentials Robe Hook",
+    "company_code": 1024602430,
+    "selling_price": 2750,
+    "brandId": "GROHE"
+  },
+  {
+    "A": 37,
+    "images": "",
+    "name": "Essentials Towel Ring",
+    "company_code": 1024612430,
+    "selling_price": 5100,
+    "brandId": "GROHE"
+  },
+  {
+    "A": 38,
+    "images": "",
+    "name": "Essentials Towel Bar",
+    "company_code": 1022512430,
+    "selling_price": 8150,
+    "brandId": "GROHE"
+  },
+  {
+    "A": 39,
+    "images": "",
+    "name": "Essentials Double Towel Bar",
+    "company_code": 1024732430,
+    "selling_price": 11350,
+    "brandId": "GROHE"
+  },
+  {
+    "A": 40,
+    "images": "",
+    "name": "Essentials Toilet Paper Holder w/o Cover",
+    "company_code": 1024722430,
+    "selling_price": 4850,
+    "brandId": "GROHE"
+  },
+  {
+    "A": 41,
+    "images": "",
+    "name": "Essentials Toilet Paper Holder w/Cover",
+    "company_code": 1024652430,
+    "selling_price": 6350,
+    "brandId": "GROHE"
+  },
+  {
+    "A": 42,
+    "images": "",
+    "name": "Essentials Holder f.Glass/Dish/Dispenser",
+    "company_code": 1024662430,
+    "selling_price": 3900,
+    "brandId": "GROHE"
+  },
+  {
+    "A": 43,
+    "images": "",
+    "name": "Essentials Double Towel Bar",
+    "company_code": 1024672430,
+    "selling_price": 7950,
+    "brandId": "GROHE"
+  },
+  {
+    "A": 44,
+    "images": "",
+    "name": "Essentials Toilet Brush Set",
+    "company_code": 1024682430,
+    "selling_price": 8000,
+    "brandId": "GROHE"
+  },
+  {
+    "A": 45,
+    "images": "",
+    "name": "Essentials Spare Toilet Paper Holder",
+    "company_code": 1024692430,
+    "selling_price": 4150,
+    "brandId": "GROHE"
+  },
+  {
+    "A": 46,
+    "images": "",
+    "name": "Essentials Soap Dispenser w/Holder",
+    "company_code": 1024702430,
+    "selling_price": 3100,
+    "brandId": "GROHE"
+  },
+  {
+    "A": 47,
+    "images": "",
+    "name": "Essentials Grab Bar",
+    "company_code": 1024712430,
+    "selling_price": 7750,
+    "brandId": "GROHE"
+  },
+  {
+    "A": 48,
+    "images": "",
+    "name": "Waste trap basin 1 1/4\"",
+    "company_code": 295032430,
+    "selling_price": 29050,
+    "brandId": "GROHE"
+  },
+  {
+    "A": 49,
+    "images": "",
+    "name": "Waste set PushOpen Basin",
+    "company_code": 1024642430,
+    "selling_price": 3600,
+    "brandId": "GROHE"
+  },
+  {
+    "images": "",
+    "name": "Talentofill trimset",
+    "company_code": 199522430,
+    "selling_price": 22800,
+    "brandId": "GROHE"
+  },
+  {
+    "images": "",
+    "name": "Essentials Glass w/Holder",
+    "company_code": 1022562430,
+    "selling_price": 5300,
+    "brandId": "GROHE"
+  },
+  {
+    "images": "",
+    "name": "Essentials Soap Dispenser w/Holder",
+    "company_code": 1022572430,
+    "selling_price": 7350,
+    "brandId": "GROHE"
+  },
+  {
+    "images": "",
+    "name": "Tempesta Wall Union w/Holder",
+    "company_code": 286282431,
+    "selling_price": 4000,
+    "brandId": "GROHE"
+  },
+  {
+    "images": "",
+    "name": "Tempesta Shower Rail 600mm",
+    "company_code": 275232431,
+    "selling_price": 12550,
+    "brandId": "GROHE"
+  },
+  {
+    "images": "",
+    "name": "Tempesta Shower Rail 900mm",
+    "company_code": 275242431,
+    "selling_price": 14550,
+    "brandId": "GROHE"
+  },
+  {
+    "images": "",
+    "name": "Tempesta Shower holder Adjust",
+    "company_code": 275952431,
+    "selling_price": 3500,
+    "brandId": "GROHE"
+  },
+  {
+    "images": "",
+    "name": "Neo Modern",
+    "company_code": "FF1-CN521-00000477",
+    "selling_price": 3150,
+    "brandId": "AMERICAN STANDARD"
+  },
+  {
+    "images": "",
+    "name": "RSH Aqua Mono Ceiling Shower Cover",
+    "company_code": "104986GN00",
+    "selling_price": 143850,
+    "brandId": "GROHE"
+  },
+  {
+    "name": "RSH Aqua Rough-In Mono un",
+    "company_code": 1049779990,
+    "selling_price": 66600,
+    "brandId": "GROHE"
+  },
+  {
+    "images": "",
+    "name": "RSH AQUA Cascade ceiling shw cove",
+    "company_code": "104988GN00",
+    "selling_price": 73050,
+    "brandId": "GROHE"
+  },
+  {
+    "name": "RSH AQUA Rough in Cascade unl.",
+    "company_code": 1049839990,
+    "selling_price": 31750,
+    "brandId": "GROHE"
+  },
+  {
+    "images": "",
+    "name": "AIRIO VESSEL BASIN 60",
+    "company_code": 1137972430,
+    "selling_price": 69000,
+    "brandId": "GROHE"
+  },
+  {
+    "images": "",
+    "name": "AIRIO VESSEL BASIN LOZENGE 60",
+    "company_code": 1138012430,
+    "selling_price": 69000,
+    "brandId": "GROHE"
+  },
+  {
+    "images": "",
+    "name": "AIRIO VESSEL BASIN ROUND  45",
+    "company_code": 1138042430,
+    "selling_price": 63000,
+    "brandId": "GROHE"
+  },
+  {
+    "images": "",
+    "name": "EUROSMART VESSEL BASIN 60",
+    "company_code": 1138082430,
+    "selling_price": 15450,
+    "brandId": "GROHE"
+  },
+  {
+    "images": "",
+    "name": "EUROSMART COUNTERTOP BASIN 60",
+    "company_code": 1138092430,
+    "selling_price": 16250,
+    "brandId": "GROHE"
+  },
+  {
+    "images": "",
+    "name": "EURO CERAMIC 2.0 VESSEL SQUARE",
+    "company_code": 1361472430,
+    "selling_price": 24250,
+    "brandId": "GROHE"
+  },
+  {
+    "images": "",
+    "name": "EUROSMART BASIN UNDER-COUNTER WITH OVERFLOW 55CM",
+    "company_code": 1138112430,
+    "selling_price": 11250,
+    "brandId": "GROHE"
+  },
+  {
+    "images": "",
+    "name": "EUROCUBE BASIN UNDERCOUNTER 60CM",
+    "company_code": 1138072430,
+    "selling_price": 15450,
+    "brandId": "GROHE"
+  },
+  {
+    "images": "",
+    "name": "ESSENCE WALL HUNG WC",
+    "company_code": 1136662430,
+    "selling_price": 41500,
+    "brandId": "GROHE"
+  },
+  {
+    "name": "SEAT COVER",
+    "company_code": 1137942430,
+    "selling_price": 10000,
+    "brandId": "GROHE"
+  },
+  {
+    "images": "",
+    "name": "EURO CERAMIC 2.0 WALL HUNG WC",
+    "company_code": 1136682430,
+    "selling_price": 30000,
+    "brandId": "GROHE"
+  },
+  {
+    "name": "SEAT COVER",
+    "company_code": 1137952430,
+    "selling_price": 9000,
+    "brandId": "GROHE"
+  },
+  {
+    "images": "",
+    "name": "EURO CEREMIC 2.0 SQUARE WALL- HUNG RIMLESS WITH SEAT COVER",
+    "company_code": 1137782430,
+    "selling_price": 48300,
+    "brandId": "GROHE"
+  },
+  {
+    "images": "",
+    "name": "Rectangle",
+    "company_code": "FF1-CN521-00000461",
+    "selling_price": 6900,
+    "brandId": "AMERICAN STANDARD"
+  }
+]

@@ -9,7 +9,7 @@ import { message } from "antd";
 /* ------------------------------------------------------------------ */
 /*                          UTILITY: Safe Filename Title              */
 /* ------------------------------------------------------------------ */
-const getSafeTitle = (quotation = {}) => {
+export const getSafeTitle = (quotation = {}) => {
   const rawTitle =
     quotation.quotation_title ||
     quotation.title ||

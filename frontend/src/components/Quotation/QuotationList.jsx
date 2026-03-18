@@ -33,6 +33,12 @@ import {
 } from "antd";
 import PageHeader from "../Common/PageHeader";
 import moment from "moment";
+import { FilePdfOutlined, FileExcelOutlined } from "@ant-design/icons";
+import { QuotationPagesRenderer } from "./QuotationPagesRenderer";
+import { useQuotationQuickExport } from "./hooks/useQuotationQuickExport";
+import { useRef } from "react";
+import { amountInWords } from "./hooks/calcHelpers";
+import { Tooltip } from "antd";
 import PermissionGate from "../../context/PermissionGate";
 const { RangePicker } = DatePicker;
 const { Option } = Select;
@@ -48,6 +54,12 @@ const QuotationList = () => {
   const [statusFilter, setStatusFilter] = useState("");
   const [dateRange, setDateRange] = useState([null, null]);
 
+  const hiddenRef = useRef < HTMLDivElement > null;
+  const [exportingRowId, setExportingRowId] = useState(null);
+  const [exportFormat, setExportFormat] = useState(null);
+  const { exportingId, hiddenContainerRef, exportQuotation } =
+    useQuotationQuickExport();
+
   const [showProductModal, setShowProductModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showDatesModal, setShowDatesModal] = useState(false);
@@ -55,7 +67,24 @@ const QuotationList = () => {
   const [selectedQuotationId, setSelectedQuotationId] = useState(null);
   const [quotationToDelete, setQuotationToDelete] = useState(null);
   const [selectedForDates, setSelectedForDates] = useState(null);
+  const handleExportRow = async (quotation, fmt) => {
+    setExportingRowId(quotation.quotationId);
+    setExportFormat(fmt);
 
+    // Here you would:
+    // 1. Fetch customer & address if not already available
+    // 2. Use the same renderPages logic (hidden div)
+    // 3. Call exportToPDF / exportToExcel
+    // 4. Clean up
+
+    // For simplicity you can create a temporary hidden container per export
+    // or reuse one global ref (but be careful with concurrent exports)
+
+    setTimeout(() => {
+      setExportingRowId(null);
+      setExportFormat(null);
+    }, 4500); // safety timeout
+  };
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -333,70 +362,116 @@ const QuotationList = () => {
       title: "Actions",
       key: "actions",
       fixed: "right",
-      width: 120,
-      render: (_, rec) => (
-        <div className="d-flex gap-2">
-          <PermissionGate api="edit" module="quotations">
-            <Button
-              type="text"
-              icon={<EditOutlined />}
-              onClick={() =>
-                navigate(`/quotation/${rec.quotationId}/edit`, {
-                  state: { quotation: rec },
-                })
+      width: 180, // increased width so icons have space
+      render: (_, rec) => {
+        const customer = customers.find((c) => c.customerId === rec.customerId);
+        const custName = customer?.name || "Dear Client";
+        const custPhone = customer?.mobileNumber || customer?.phone || "—";
+        const custAddress = "—"; // ← TODO: improve later
+
+        const mainProducts = Array.isArray(rec.items) ? rec.items : [];
+        const optionalProducts = []; // not in list usually
+        const subtotal = Number(rec.finalAmount || 0);
+        const discount = 0;
+        const extraDiscount = Number(rec.extraDiscount || 0);
+        const finalAmount = Number(rec.finalAmount || 0);
+        const roundOff = 0;
+        const amountWords = amountInWords(Math.round(finalAmount));
+
+        const isExporting = exportingId === rec.quotationId;
+
+        // ── THIS IS THE FIXED PART ──
+        return (
+          <div className="d-flex align-items-center gap-1">
+            <PermissionGate api="edit" module="quotations">
+              <Button
+                type="text"
+                icon={<EditOutlined />}
+                onClick={() =>
+                  navigate(`/quotation/${rec.quotationId}/edit`, {
+                    state: { quotation: rec },
+                  })
+                }
+              />
+            </PermissionGate>
+
+            <Tooltip title="Export PDF">
+              <Button
+                type="text"
+                icon={<FilePdfOutlined style={{ color: "#d32f2f" }} />}
+                loading={isExporting}
+                disabled={isExporting}
+                onClick={() =>
+                  exportQuotation({
+                    quotation: rec,
+                    customerName: custName,
+                    customerPhone: custPhone,
+                    customerAddress: custAddress,
+                    brandNames: "GROHE / AMERICAN STANDARD",
+                    mainProducts,
+                    optionalProducts,
+                    displaySubtotal: subtotal,
+                    displayProductDiscount: discount,
+                    backendExtraDiscount: extraDiscount,
+                    backendFinalAmount: finalAmount,
+                    backendRoundOff: roundOff,
+                    finalAmountInWords: amountWords,
+                    format: "pdf",
+                  })
+                }
+              />
+            </Tooltip>
+
+            <Dropdown
+              overlay={
+                <Menu>
+                  <Menu.Item key="view">
+                    <Link to={`/quotation/${rec.quotationId}`}>
+                      <EyeOutlined className="me-2" /> View
+                    </Link>
+                  </Menu.Item>
+
+                  <Menu.Item
+                    key="dates"
+                    onClick={() => handleOpenDatesModal(rec)}
+                  >
+                    <CalendarOutlined className="me-2" /> Dates
+                  </Menu.Item>
+
+                  <Menu.Item
+                    key="sitemap"
+                    onClick={() => handleGenerateSiteMap(rec)}
+                  >
+                    <HomeOutlined className="me-2" /> Site Map
+                  </Menu.Item>
+
+                  <PermissionGate api="write" module="quotations">
+                    <Menu.Item
+                      key="convert"
+                      onClick={() => handleConvertToOrder(rec)}
+                    >
+                      <FileAddOutlined className="me-2" /> Convert to Order
+                    </Menu.Item>
+                  </PermissionGate>
+
+                  <PermissionGate api="delete" module="quotations">
+                    <Menu.Item
+                      key="delete"
+                      danger
+                      onClick={() => handleDeleteClick(rec)}
+                    >
+                      <DeleteFilled className="me-2" /> Delete
+                    </Menu.Item>
+                  </PermissionGate>
+                </Menu>
               }
-            />
-          </PermissionGate>
-
-          <Dropdown
-            overlay={
-              <Menu>
-                <Menu.Item key="view">
-                  <Link to={`/quotation/${rec.quotationId}`}>
-                    <EyeOutlined className="me-2" /> View
-                  </Link>
-                </Menu.Item>
-
-                <Menu.Item
-                  key="dates"
-                  onClick={() => handleOpenDatesModal(rec)}
-                >
-                  <CalendarOutlined className="me-2" /> Dates
-                </Menu.Item>
-
-                <Menu.Item
-                  key="sitemap"
-                  onClick={() => handleGenerateSiteMap(rec)}
-                >
-                  <HomeOutlined className="me-2" /> Site Map
-                </Menu.Item>
-
-                <PermissionGate api="write" module="quotations">
-                  <Menu.Item
-                    key="convert"
-                    onClick={() => handleConvertToOrder(rec)}
-                  >
-                    <FileAddOutlined className="me-2" /> Convert to Order
-                  </Menu.Item>
-                </PermissionGate>
-
-                <PermissionGate api="delete" module="quotations">
-                  <Menu.Item
-                    key="delete"
-                    danger
-                    onClick={() => handleDeleteClick(rec)}
-                  >
-                    <DeleteFilled className="me-2" /> Delete
-                  </Menu.Item>
-                </PermissionGate>
-              </Menu>
-            }
-            trigger={["click"]}
-          >
-            <Button type="text" icon={<MoreOutlined />} />
-          </Dropdown>
-        </div>
-      ),
+              trigger={["click"]}
+            >
+              <Button type="text" icon={<MoreOutlined />} />
+            </Dropdown>
+          </div>
+        );
+      },
     },
   ];
   const tableDataForExport = useMemo(() => {
@@ -533,6 +608,18 @@ const QuotationList = () => {
           </div>
         </div>
 
+        <div
+          ref={hiddenContainerRef}
+          style={{
+            position: "absolute",
+            left: "-9999px",
+            top: "-9999px",
+            width: "210mm",
+            minHeight: "297mm",
+            background: "white",
+            zIndex: -1000,
+          }}
+        />
         {/* Modals */}
         <QuotationProductModal
           show={showProductModal}
@@ -542,7 +629,6 @@ const QuotationList = () => {
           }}
           quotationId={selectedQuotationId}
         />
-
         <DatesModal
           open={showDatesModal}
           onClose={() => {
@@ -552,7 +638,6 @@ const QuotationList = () => {
           dueDate={selectedForDates?.due_date}
           followupDates={selectedForDates?.followupDates || []}
         />
-
         <DeleteModal
           isVisible={showDeleteModal}
           onConfirm={handleConfirmDelete}

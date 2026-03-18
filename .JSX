@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Alert,
@@ -69,6 +75,7 @@ import PreviewQuotation from "../Quotation/PreviewQuotation";
 import { useAuth } from "../../context/AuthContext";
 import { skipToken } from "@reduxjs/toolkit/query";
 import { useCreateSiteMapMutation } from "../../api/siteMapApi";
+
 const { TabPane } = Tabs;
 const { Text } = Typography;
 
@@ -90,15 +97,16 @@ const NewCart = ({ onConvertToOrder }) => {
   const canCreatePurchaseOrder =
     auth?.role && RESTRICTED_ROLES.includes(auth.role);
 
-  // ────────────────────── PROFILE & USER ──────────────────────
+  // ── Profile & Users ───────────────────────────────────────
   const { data: profileData } = useGetProfileQuery();
   const { data: usersData } = useGetAllUsersQuery();
-  const users = Array.isArray(usersData?.users) ? usersData.users : [];
-  const user = profileData?.user || {};
+  const users = usersData?.users ?? [];
+  const user = profileData?.user ?? {};
   const userId = user.userId;
-  const [createSiteMap, { isLoading, isError, error }] =
-    useCreateSiteMapMutation();
-  // ────────────────────── STATE ──────────────────────
+
+  const [createSiteMap] = useCreateSiteMapMutation();
+
+  // ── State ──────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState("cart");
   const [selectedCustomer, setSelectedCustomer] = useState("");
   const [selectedVendor, setSelectedVendor] = useState("");
@@ -110,10 +118,7 @@ const NewCart = ({ onConvertToOrder }) => {
   const [documentType, setDocumentType] = useState("Quotation");
   const [useBillingAddress, setUseBillingAddress] = useState(false);
 
-  // Local cart state – allows mutating floor_number / room_id
   const [localCartItems, setLocalCartItems] = useState([]);
-
-  // Assignment modal state
   const [assignModal, setAssignModal] = useState({
     visible: false,
     itemId: null,
@@ -121,7 +126,6 @@ const NewCart = ({ onConvertToOrder }) => {
   const [selectedFloorForAssign, setSelectedFloorForAssign] = useState(null);
   const [selectedRoomForAssign, setSelectedRoomForAssign] = useState(null);
 
-  // Form data
   const [quotationData, setQuotationData] = useState({
     quotationDate: new Date().toISOString().split("T")[0],
     dueDate: "",
@@ -164,7 +168,6 @@ const NewCart = ({ onConvertToOrder }) => {
     status: "pending",
   });
 
-  // Per-item overrides
   const [itemDiscounts, setItemDiscounts] = useState({});
   const [itemTaxes, setItemTaxes] = useState({});
   const [itemDiscountTypes, setItemDiscountTypes] = useState({});
@@ -176,7 +179,7 @@ const NewCart = ({ onConvertToOrder }) => {
   const [gst, setGst] = useState(0);
   const [billingAddressId, setBillingAddressId] = useState(null);
 
-  // ────────────────────── QUERIES & MUTATIONS ──────────────────────
+  // ── Queries & Mutations ────────────────────────────────────
   const { data: cartData } = useGetCartQuery(userId, { skip: !userId });
   const { data: customerData } = useGetCustomersQuery(
     { limit: 500 },
@@ -202,64 +205,95 @@ const NewCart = ({ onConvertToOrder }) => {
   const [createAddress] = useCreateAddressMutation();
   const [createCustomer] = useCreateCustomerMutation();
 
-  // ────────────────────── MEMOIZED VALUES ──────────────────────
+  // ── Memoized values ────────────────────────────────────────
   const allCartItems = useMemo(() => cartData?.cart?.items || [], [cartData]);
 
-  // Sync local cart with server + ensure unique id
-  useEffect(() => {
-    if (allCartItems.length > 0) {
-      const synced = allCartItems.map((item) => ({
-        ...item,
-        id: item.id || item.productId || uuidv4(),
-        floor_number: item.floor_number ?? null,
-        room_id: item.room_id ?? null,
-      }));
+  // ── Debounced product search (memory-leak fix) ─────────────
+  const debouncedSearchRef = useRef(null);
 
-      setLocalCartItems((prev) => {
-        return synced.map((srv) => {
-          const local = prev.find((l) => l.id === srv.id);
-          return local
-            ? {
-                ...srv,
-                floor_number: local.floor_number,
-                room_id: local.room_id,
-              }
-            : srv;
-        });
+  const handleProductSearch = useCallback((value) => {
+    debouncedSearchRef.current?.(value);
+  }, []);
+
+  // ── Sync local cart items (optimized) ──────────────────────
+  useEffect(() => {
+    if (!allCartItems.length) return;
+
+    setLocalCartItems((prev) => {
+      const prevMap = new Map(
+        prev.map((item) => [item.id || item.productId, item]),
+      );
+
+      return allCartItems.map((serverItem) => {
+        const id = serverItem.id || serverItem.productId || uuidv4();
+        const local = prevMap.get(id);
+
+        if (local) {
+          return {
+            ...serverItem,
+            id,
+            floor_number: local.floor_number ?? serverItem.floor_number ?? null,
+            room_id: local.room_id ?? serverItem.room_id ?? null,
+          };
+        }
+
+        return {
+          ...serverItem,
+          id,
+          floor_number: serverItem.floor_number ?? null,
+          room_id: serverItem.room_id ?? null,
+        };
       });
-    }
+    });
   }, [allCartItems]);
 
   const customers = customerData?.data || [];
-  const customerList = useMemo(
-    () => (Array.isArray(customers) ? customers : []),
-    [customers],
-  );
-
+  const customerList = useMemo(() => customers, [customers]);
   const addresses = addressesData || [];
   const products = productsData?.data || productsData || [];
-
-  // ── Calculations ────────────────────────────────────────────────
-  const totalItems = useMemo(
-    () => localCartItems.reduce((a, i) => a + (i.quantity || 0), 0),
-    [localCartItems],
-  );
-  const teams = useMemo(
-    () => (Array.isArray(teamsData?.teams) ? teamsData.teams : []),
-    [teamsData],
-  );
+  const teams = useMemo(() => teamsData?.teams || [], [teamsData]);
   const vendors = useMemo(() => vendorsData || [], [vendorsData]);
+  useEffect(() => {
+    debouncedSearchRef.current = debounce((value) => {
+      setProductSearch(value);
+      if (value.trim()) {
+        const filtered = products
+          .filter(
+            (p) =>
+              p.productId &&
+              (p.name?.toLowerCase().includes(value.toLowerCase()) ||
+                p.product_code?.toLowerCase().includes(value.toLowerCase())),
+          )
+          .slice(0, 5);
+        setFilteredProducts(filtered);
+      } else {
+        setFilteredProducts([]);
+      }
+    }, 300);
+
+    return () => {
+      debouncedSearchRef.current?.cancel();
+    };
+  }, [products]);
+
+  // ── Calculations ───────────────────────────────────────────
   const calculationCartItems = useMemo(
     () => localCartItems.filter((i) => !i.isOption),
     [localCartItems],
   );
-  // Full list for UI rendering (main + optional)
   const displayCartItems = allCartItems;
 
   const { productsData: cartProductsData, errors: productErrors } =
     useProductsData(calculationCartItems);
 
-  // Add this
+  const subTotal = useMemo(
+    () =>
+      calculationCartItems.reduce(
+        (sum, i) => sum + (i.price || 0) * (i.quantity || 0),
+        0,
+      ),
+    [calculationCartItems],
+  );
   const debouncedAddresses = useMemo(() => {
     return addresses; // or use lodash debounce if needed
   }, [addresses]);
@@ -275,7 +309,6 @@ const NewCart = ({ onConvertToOrder }) => {
     ],
     [debouncedAddresses],
   );
-  // Only run when really needed (e.g. when rendering specific address details)
   const { userMap, customerMap } = useUserAndCustomerData(
     userIds,
     customerIds,
@@ -283,16 +316,6 @@ const NewCart = ({ onConvertToOrder }) => {
       skip: activeTab !== "checkout" || !addresses.length || !selectedCustomer,
     }, // Add !selectedCustomer
   );
-
-  const subTotal = useMemo(
-    () =>
-      calculationCartItems.reduce(
-        (a, i) => a + (i.price || 0) * (i.quantity || 0),
-        0,
-      ),
-    [calculationCartItems],
-  );
-
   const totalDiscount = useMemo(() => {
     return calculationCartItems.reduce((sum, item) => {
       const subtotal = (item.price || 0) * (item.quantity || 1);
@@ -308,26 +331,23 @@ const NewCart = ({ onConvertToOrder }) => {
 
   const tax = useMemo(() => {
     return calculationCartItems.reduce((acc, item) => {
-      const price = item.price || 0;
-      const qty = item.quantity || 1;
-      const subtotal = price * qty;
+      const subtotal = (item.price || 0) * (item.quantity || 1);
       const discVal = Number(itemDiscounts[item.productId]) || 0;
       const type = itemDiscountTypes[item.productId] || "percent";
-      const discAmt =
-        type === "percent" ? (subtotal * discVal) / 100 : discVal * qty;
+      const discAmt = type === "percent" ? (subtotal * discVal) / 100 : discVal;
       const taxable = subtotal - discAmt;
-      const itemTax = parseFloat(itemTaxes[item.productId]) || 0;
+      const itemTax = Number(itemTaxes[item.productId]) || 0;
       return acc + (taxable * itemTax) / 100;
     }, 0);
   }, [calculationCartItems, itemDiscounts, itemDiscountTypes, itemTaxes]);
 
   const extraDiscount = useMemo(() => {
-    const amount = parseFloat(quotationData.discountAmount) || 0;
+    const amount = Number(quotationData.discountAmount) || 0;
     if (!amount) return 0;
     const base = subTotal - totalDiscount + tax + shipping;
     return quotationData.discountType === "percent"
-      ? parseFloat(((base * amount) / 100).toFixed(2))
-      : parseFloat(amount.toFixed(2));
+      ? (base * amount) / 100
+      : amount;
   }, [
     quotationData.discountAmount,
     quotationData.discountType,
@@ -337,23 +357,125 @@ const NewCart = ({ onConvertToOrder }) => {
     shipping,
   ]);
 
-  const amountBeforeGstRaw =
-    subTotal - totalDiscount + tax + shipping - extraDiscount;
-  const amountBeforeGst = parseFloat(amountBeforeGstRaw.toFixed(2));
+  const amountBeforeGst = useMemo(
+    () =>
+      parseFloat(
+        (subTotal - totalDiscount + tax + shipping - extraDiscount).toFixed(2),
+      ),
+    [subTotal, totalDiscount, tax, shipping, extraDiscount],
+  );
 
-  const rupees = Math.floor(amountBeforeGst);
-  const paise = Math.round((amountBeforeGst - rupees) * 100);
-  let roundOff = 0;
-  if (paise > 0 && paise <= 50)
-    roundOff = parseFloat((-paise / 100).toFixed(2));
-  else if (paise > 50) roundOff = parseFloat(((100 - paise) / 100).toFixed(2));
+  const roundOff = useMemo(() => {
+    const rupees = Math.floor(amountBeforeGst);
+    const paise = Math.round((amountBeforeGst - rupees) * 100);
+    if (paise > 0 && paise <= 50) return -paise / 100;
+    if (paise > 50) return (100 - paise) / 100;
+    return 0;
+  }, [amountBeforeGst]);
 
-  const roundedAmount = parseFloat((amountBeforeGst + roundOff).toFixed(2));
+  const roundedAmount = amountBeforeGst + roundOff;
   const gstAmount =
     gst > 0 ? parseFloat(((roundedAmount * gst) / 100).toFixed(2)) : 0;
   const totalAmount = parseFloat((roundedAmount + gstAmount).toFixed(2));
 
-  // ── Handlers ────────────────────────────────────────────────────
+  // ── Handlers ───────────────────────────────────────────────
+  const handleProductSearchChange = useCallback(
+    (e) => {
+      handleProductSearch(e.target.value);
+    },
+    [handleProductSearch],
+  );
+
+  const handleUpdateQuantity = useCallback(
+    async (productId, newQty) => {
+      if (!userId || newQty < 1) return;
+      setUpdatingItems((prev) => ({ ...prev, [productId]: true }));
+      try {
+        await updateCart({
+          userId,
+          productId,
+          quantity: Number(newQty),
+        }).unwrap();
+      } catch (err) {
+        message.error(err?.data?.message || "Failed to update quantity");
+      } finally {
+        setUpdatingItems((prev) => ({ ...prev, [productId]: false }));
+      }
+    },
+    [userId, updateCart],
+  );
+  const handleTeamAdded = (showModal) => {
+    setShowAddTeamModal(showModal);
+    if (!showModal) refetchTeams();
+  };
+
+  const handleQuotationChange = useCallback((key, value) => {
+    setQuotationData((prev) => ({ ...prev, [key]: value }));
+  }, []);
+
+  const handleRemoveItem = useCallback(
+    async (e, productId) => {
+      e?.preventDefault?.();
+      e?.stopPropagation?.();
+
+      if (!userId) return message.error("User not logged in");
+
+      dispatch(
+        cartApi.util.updateQueryData("getCart", userId, (draft) => {
+          draft.cart.items = draft.cart.items.filter(
+            (i) => i.productId !== productId,
+          );
+        }),
+      );
+
+      setItemDiscounts((prev) => {
+        const { [productId]: _, ...rest } = prev;
+        return rest;
+      });
+      setItemTaxes((prev) => {
+        const { [productId]: _, ...rest } = prev;
+        return rest;
+      });
+      setItemDiscountTypes((prev) => {
+        const { [productId]: _, ...rest } = prev;
+        return rest;
+      });
+
+      setUpdatingItems((prev) => ({ ...prev, [productId]: true }));
+
+      try {
+        await removeFromCart({ userId, productId }).unwrap();
+      } catch (err) {
+        message.error(err?.data?.message || "Failed to remove item");
+      } finally {
+        setUpdatingItems((prev) => ({ ...prev, [productId]: false }));
+      }
+    },
+    [userId, dispatch, removeFromCart],
+  );
+
+  const assignItemToLocation = useCallback(() => {
+    if (!selectedFloorForAssign) return message.error("Please select a floor");
+
+    setLocalCartItems((prev) =>
+      prev.map((item) =>
+        item.id === assignModal.itemId
+          ? {
+              ...item,
+              floor_number: selectedFloorForAssign,
+              room_id: selectedRoomForAssign || null,
+            }
+          : item,
+      ),
+    );
+
+    message.success("Item assigned successfully");
+    setAssignModal({ visible: false, itemId: null });
+    setSelectedFloorForAssign(null);
+    setSelectedRoomForAssign(null);
+  }, [assignModal.itemId, selectedFloorForAssign, selectedRoomForAssign]);
+
+  // ... (rest of your handlers: handleMakeOption, handleClearCart, handleCreateDocument, resetForm, etc.)
   const handleMakeOption = (productId, optionType, parentProductId = null) => {
     if (!userId) return message.error("User not logged in");
 
@@ -382,12 +504,14 @@ const NewCart = ({ onConvertToOrder }) => {
         : "Item reset to main product",
     );
   };
-
   const getParentName = (parentProductId) => {
     if (!parentProductId) return "Unknown";
-    const parent = allCartItems.find((i) => i.productId === parentProductId);
-    return parent?.name || "Deleted/Unknown product";
+    const parentItem = allCartItems.find(
+      (i) => i.productId === parentProductId,
+    );
+    return parentItem?.name || "Deleted/Unknown product";
   };
+  // ────────────────────── HANDLERS ──────────────────────
   const handleShippingChange = useCallback((v) => setShipping(v), []);
 
   const handleDiscountChange = (productId, value) =>
@@ -410,81 +534,6 @@ const NewCart = ({ onConvertToOrder }) => {
       message.error(e.data?.message || "Failed to clear cart");
     }
   };
-
-  const handleRemoveItem = useCallback(
-    async (e, productId) => {
-      e?.preventDefault?.();
-      e?.stopPropagation?.();
-
-      if (!userId) return message.error("User not logged in!");
-
-      dispatch(
-        cartApi.util.updateQueryData("getCart", userId, (draft) => {
-          draft.cart.items = draft.cart.items.filter(
-            (i) => i.productId !== productId,
-          );
-        }),
-      );
-
-      setItemDiscounts((p) => {
-        const { [productId]: _, ...rest } = p;
-        return rest;
-      });
-      setItemTaxes((p) => {
-        const { [productId]: _, ...rest } = p;
-        return rest;
-      });
-      setItemDiscountTypes((p) => {
-        const { [productId]: _, ...rest } = p;
-        return rest;
-      });
-
-      setUpdatingItems((p) => ({ ...p, [productId]: true }));
-
-      try {
-        await removeFromCart({ userId, productId }).unwrap();
-      } catch (err) {
-        message.error(err?.data?.message || "Failed");
-        dispatch(
-          cartApi.util.updateQueryData("getCart", userId, () => ({
-            cart: { items: allCartItems },
-          })),
-        );
-      } finally {
-        setUpdatingItems((p) => ({ ...p, [productId]: false }));
-      }
-    },
-    [userId, allCartItems, dispatch, removeFromCart],
-  );
-
-  const handleUpdateQuantity = useCallback(
-    async (productId, newQty) => {
-      if (!userId || newQty < 1) return;
-      setUpdatingItems((p) => ({ ...p, [productId]: true }));
-      try {
-        await updateCart({
-          userId,
-          productId,
-          quantity: Number(newQty),
-        }).unwrap();
-      } catch (err) {
-        message.error(err?.data?.message || "Failed");
-      } finally {
-        setUpdatingItems((p) => ({ ...p, [productId]: false }));
-      }
-    },
-    [userId, updateCart],
-  );
-
-  const handleTeamAdded = (showModal) => {
-    setShowAddTeamModal(showModal);
-    if (!showModal) refetchTeams();
-  };
-
-  const handleQuotationChange = useCallback((key, value) => {
-    setQuotationData((prev) => ({ ...prev, [key]: value }));
-  }, []);
-
   const purchaseOrderTotal = useMemo(
     () =>
       purchaseOrderData.items
@@ -496,7 +545,6 @@ const NewCart = ({ onConvertToOrder }) => {
         .toFixed(2),
     [purchaseOrderData.items],
   );
-
   const debouncedSearch = useCallback(
     debounce((value) => {
       setProductSearch(value);
@@ -516,77 +564,72 @@ const NewCart = ({ onConvertToOrder }) => {
     }, 300),
     [products],
   );
-  const assignItemToLocation = () => {
-    if (!selectedFloorForAssign) {
-      return message.error("Please select a floor");
-    }
-
-    const updatedItems = localCartItems.map((item) =>
-      item.id === assignModal.itemId
-        ? {
-            ...item,
-            floor_number: selectedFloorForAssign,
-            room_id: selectedRoomForAssign || null,
-          }
-        : item,
-    );
-
-    setLocalCartItems(updatedItems);
-    message.success("Item assigned successfully");
-
-    setAssignModal({ visible: false, itemId: null });
-    setSelectedFloorForAssign(null);
-    setSelectedRoomForAssign(null);
-  };
-  const getFinalShipTo = () => {
-    if (!useBillingAddress) {
-      // user manually selected an existing address
-      return quotationData.shipTo || orderData.shipTo || null;
-    }
-
-    // ── useBillingAddress === true ──
-
-    if (billingAddressId) {
-      // user selected an existing BILLING address to use as shipping
-      return billingAddressId;
-    }
-
-    // No existing billing → we need to create one from customer's default address
-    const customer = customerList.find(
-      (c) => c.customerId === selectedCustomer,
-    );
-    if (!customer?.address) return null;
-
-    let defaultAddr;
-    try {
-      defaultAddr =
-        typeof customer.address === "string"
-          ? JSON.parse(customer.address)
-          : customer.address;
-    } catch {
-      return null;
-    }
-
-    if (!defaultAddr?.street || !defaultAddr?.city) return null;
-
-    return {
-      // flag telling backend or mutation: please create this address
-      createFromDefault: true,
-      addressDetails: {
-        street: defaultAddr.street?.trim() || "",
-        city: defaultAddr.city || "",
-        state: defaultAddr.state || "",
-        postalCode: defaultAddr.zip || defaultAddr.postalCode || "",
-        country: defaultAddr.country || "India",
-      },
-      status: "SHIPPING", // or "BILLING_AND_SHIPPING" if your backend supports it
-    };
-  };
   const handleCreateDocument = async () => {
     if (!userId) {
       return message.error("User not logged in!");
     }
 
+    // ────────────────────────────────────────────────
+    // Helper: Clean invalid floor_number / room_id references
+    // ────────────────────────────────────────────────
+    // Helper: Remove references to floors/rooms that no longer exist
+    // Helper: Remove references to non-existent floors/rooms before sending to backend
+    const cleanItemAssignments = (items, floors) => {
+      if (!floors?.length || !items?.length) {
+        return items.map((item) => ({
+          ...item,
+          floor_number: null,
+          room_id: null,
+        }));
+      }
+
+      // Known good floors and their rooms
+      const validFloors = new Set(floors.map((f) => f.number));
+      const floorToRooms = new Map(
+        floors.map((floor) => [
+          floor.number,
+          new Set(floor.rooms?.map((r) => r.id) || []),
+        ]),
+      );
+
+      return items.map((item) => {
+        let { floor_number, room_id, ...rest } = item;
+
+        // 1. Floor no longer exists → clear both
+        if (floor_number && !validFloors.has(floor_number)) {
+          floor_number = null;
+          room_id = null;
+        }
+
+        // 2. Room no longer exists on that floor → keep floor, clear room
+        if (
+          room_id &&
+          floor_number &&
+          !floorToRooms.get(floor_number)?.has(room_id)
+        ) {
+          room_id = null;
+        }
+
+        return { ...rest, floor_number, room_id };
+      });
+    };
+    // Helper: Transform floors to match backend's expected room key (room_id instead of id)
+    // Helper: Transform floors → match backend DB structure + validation expectation
+    const normalizeFloorsForBackend = (floors) => {
+      if (!floors?.length) return [];
+
+      return floors.map((floor) => ({
+        floor_number: floor.number, // backend field
+        floor_name: floor.name, // backend field
+        rooms: (floor.rooms || []).map((room) => ({
+          room_id: room.id, // ← must match backend validation: r.room_id
+          name: room.name || room.room_name, // consistent
+          type: room.type || room.room_type,
+          // add size/details if you have them later
+        })),
+        // Do NOT include extra keys like number/name — keep only what DB expects
+      }));
+    };
     // ────────────────────────────────────────────────
     //  1. Common validations
     // ────────────────────────────────────────────────
@@ -715,7 +758,30 @@ const NewCart = ({ onConvertToOrder }) => {
     }
 
     // ────────────────────────────────────────────────
-    //  3. Document-type specific creation
+    //  3. Prepare & CLEAN common product payload
+    // ────────────────────────────────────────────────
+    const safeItems = cleanItemAssignments(
+      localCartItems,
+      quotationData.floors,
+    );
+
+    // Debug: Log how many assignments were cleaned (remove in production)
+    const cleanedCount = safeItems.filter((safe, idx) => {
+      const original = localCartItems[idx];
+      return (
+        safe.floor_number !== original?.floor_number ||
+        safe.room_id !== original?.room_id
+      );
+    }).length;
+
+    if (cleanedCount > 0) {
+      console.warn(
+        `Cleaned ${cleanedCount} invalid floor/room assignments before creation`,
+      );
+    }
+
+    // ────────────────────────────────────────────────
+    //  4. Document-type specific creation
     // ────────────────────────────────────────────────
 
     if (documentType === "Purchase Order") {
@@ -767,42 +833,8 @@ const NewCart = ({ onConvertToOrder }) => {
     }
 
     // ────────────────────────────────────────────────
-    //  Prepare common product mapping (used for both Quotation & Order)
+    // Quotation Creation
     // ────────────────────────────────────────────────
-    const productsPayload = localCartItems.map((item) => {
-      const price = Number(item.price ?? 0);
-      const qty = Number(item.quantity ?? 1);
-      const discVal = Number(itemDiscounts[item.productId] ?? 0);
-      const discType = itemDiscountTypes[item.productId] ?? "percent";
-      const taxRate = Number(itemTaxes[item.productId] ?? 0);
-
-      const subtotal = price * qty;
-      const discountAmt =
-        discType === "percent" ? (subtotal * discVal) / 100 : discVal;
-      const afterDisc = subtotal - discountAmt;
-      const taxAmt = (afterDisc * taxRate) / 100;
-      const lineTotal = afterDisc + taxAmt;
-
-      return {
-        productId: item.productId,
-        name: item.name || "Unnamed Product",
-        imageUrl: item.imageUrl || "",
-        productCode: item.productCode ?? item.code ?? item.product_code ?? "",
-        companyCode: item.companyCode ?? item.company_code ?? "",
-        quantity: qty,
-        price: Number(price.toFixed(2)),
-        discount: Number(discVal.toFixed(2)),
-        discountType: discType,
-        tax: taxRate,
-        total: Number(lineTotal.toFixed(2)),
-        isOptionFor: item.parentProductId || null,
-        optionType: item.optionType || null,
-        groupId: item.groupId || null,
-        floor_number: item.floor_number || null, // ← Site map integration
-        room_id: item.room_id || null, // ← Site map integration
-      };
-    });
-
     if (documentType === "Quotation") {
       const quotationPayload = {
         quotationId: uuidv4(),
@@ -815,8 +847,8 @@ const NewCart = ({ onConvertToOrder }) => {
         shippingAmount: Number(shipping) || 0,
         gst: Number(gst) || 0,
         finalAmount: totalAmount,
-        floors: quotationData.floors || [], // ← Full site map structure
-        products: productsPayload,
+        floors: quotationData.floors || [],
+        products: safeItems, // ← cleaned version
         followupDates: quotationData.followupDates.filter(Boolean),
         customerId: selectedCustomer,
         shipTo: finalShipTo,
@@ -825,43 +857,53 @@ const NewCart = ({ onConvertToOrder }) => {
         signature_image: "",
       };
 
+      let quotationId = null;
+
       try {
         const result = await createQuotation(quotationPayload).unwrap();
         message.success(
           `Quotation ${result.quotation?.reference_number} created!`,
         );
-        // After successful quotation creation
-        const quotationId =
-          result.quotation?.quotationId || result.quotation?.id;
-
-        if (quotationId && quotationData.floors?.length > 0) {
-          try {
-            await createSiteMap({
-              customerId: selectedCustomer,
-              name: `Site Map - ${selectedCustomerData.name || "Customer"} - ${moment().format("DD-MM-YY")}`,
-              totalFloors: quotationData.floors.length,
-              floors: quotationData.floors,
-              items: productsPayload, // all items with floor_number & room_id
-              quotationId: quotationId,
-            }).unwrap();
-
-            message.success("Site Map created and linked to quotation!");
-          } catch (siteMapErr) {
-            console.error("Site Map creation failed:", siteMapErr);
-            message.warning(
-              "Quotation created, but Site Map failed to create.",
-            );
-          }
-        }
-        await handleClearCart();
-        resetForm();
-        navigate("/quotations/list");
+        quotationId = result.quotation?.quotationId || result.quotation?.id;
       } catch (err) {
         message.error(err?.data?.message || "Failed to create quotation.");
+        return;
       }
+
+      // Inside handleCreateDocument → site-map block
+      if (quotationId && quotationData.floors?.length > 0) {
+        try {
+          const normalizedFloorDetails = normalizeFloorsForBackend(
+            quotationData.floors,
+          );
+
+          await createSiteMap({
+            customerId: selectedCustomer,
+            name: `Site Map - ${selectedCustomerData?.name || "Customer"} - ${moment().format("DD-MM-YY")}`,
+            totalFloors: quotationData.floors.length,
+            floorDetails: normalizedFloorDetails, // ← KEY CHANGE: floorDetails, not floors
+            items: safeItems,
+            quotationId: quotationId,
+          }).unwrap();
+
+          message.success("Site Map created and linked to quotation!");
+        } catch (siteMapErr) {
+          console.error("Site Map creation failed:", siteMapErr);
+          message.warning(
+            "Quotation created, but Site Map failed – check console/network tab.",
+          );
+        }
+      }
+
+      await handleClearCart();
+      resetForm();
+      navigate("/quotations/list");
       return;
     }
 
+    // ────────────────────────────────────────────────
+    // Order Creation
+    // ────────────────────────────────────────────────
     if (documentType === "Order") {
       const taxableBase = subTotal - totalDiscount + tax;
       const afterTaxAndShipping = taxableBase + shipping;
@@ -899,8 +941,8 @@ const NewCart = ({ onConvertToOrder }) => {
         masterPipelineNo: orderData.masterPipelineNo || null,
         previousOrderNo: orderData.previousOrderNo || null,
         shipTo: finalShipTo,
-        floors: quotationData.floors || [], // ← Optional: send site map if order supports it
-        products: productsPayload,
+        floors: quotationData.floors || [],
+        products: safeItems, // ← cleaned version (if Order backend validates too)
       };
 
       try {
@@ -919,7 +961,6 @@ const NewCart = ({ onConvertToOrder }) => {
       }
     }
   };
-
   const resetForm = () => {
     setQuotationData({
       quotationDate: new Date().toISOString().split("T")[0],
@@ -965,7 +1006,6 @@ const NewCart = ({ onConvertToOrder }) => {
     setFilteredProducts([]);
     setUseBillingAddress(false);
   };
-
   const validateFollowupDates = () => {
     if (!orderData.dueDate || orderData.followupDates.length === 0) return true;
     const dueDate = moment(orderData.dueDate);
@@ -990,7 +1030,7 @@ const NewCart = ({ onConvertToOrder }) => {
 
   const handleAddAddress = () => setShowAddAddressModal(true);
 
-  // ────────────────────── RENDER ──────────────────────
+  // ── Render ─────────────────────────────────────────────────
   if (productErrors.length > 0) {
     return (
       <PageWrapper>
@@ -1003,7 +1043,7 @@ const NewCart = ({ onConvertToOrder }) => {
       </PageWrapper>
     );
   }
-  // ── RENDER ─────────────────────────────────────────────────────
+
   return (
     <div className="page-wrapper">
       <div className="content">

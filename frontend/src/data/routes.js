@@ -111,13 +111,6 @@ const masterRoutes = [
     element: <QuotationList />,
     isSidebarActive: true,
   },
-  {
-    path: "/site-map/list",
-    name: "Site Maps",
-    icon: <FaListUl />,
-    element: <SiteMapList />,
-    isSidebarActive: true,
-  },
 
   {
     path: "/purchase-manager",
@@ -205,7 +198,6 @@ const masterRoutes = [
     icon: <FaCheckCircle />,
     isSidebarActive: false,
     submenu: [
-      // ... (all your nested routes remain unchanged, only icons updated where needed)
       {
         path: "/site-map/add",
         name: "Add Site Map",
@@ -365,7 +357,7 @@ const masterRoutes = [
         path: "/quotation/add",
         name: "Add Quotations",
         icon: <FaTags />,
-        element: <CreateProject />,
+        element: <AddQuotation />,
         isSidebarActive: false,
         requiredPermission: { api: "write", module: "quotations" },
       },

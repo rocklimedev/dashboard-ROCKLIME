@@ -102,6 +102,10 @@ const CheckoutBtn = styled(Button)`
 // ── Helpers ──────────────────────────────────────────────────────────
 const momentToDate = (m) => (m ? m.toDate() : null);
 
+const generateFloorId = () => `fl_${uuidv4().slice(0, 8)}`;
+const generateRoomId = (floorId = "") =>
+  `${floorId ? floorId + "_" : "rm_"}${uuidv4().slice(0, 8)}`;
+
 // ── Main Component ───────────────────────────────────────────────────
 const QuotationForm = ({
   quotationData,
@@ -111,8 +115,8 @@ const QuotationForm = ({
   setSelectedCustomer,
   addresses,
   addressesLoading,
-  documentType,
-  cartItems,
+  documentType = "Quotation",
+  cartItems, // ← renamed from products → cartItems in many codebases
   setCartItems,
   subTotal,
   shipping,
@@ -137,45 +141,42 @@ const QuotationForm = ({
   const [isCreatingAddress, setIsCreatingAddress] = useState(false);
 
   const [floorModalVisible, setFloorModalVisible] = useState(false);
-  const [roomModal, setRoomModal] = useState({
-    visible: false,
-    floorNumber: null,
-  });
+  const [roomModal, setRoomModal] = useState({ visible: false, floorId: null });
 
   const [assignModal, setAssignModal] = useState({
     visible: false,
     itemId: null,
   });
 
-  const [selectedFloor, setSelectedFloor] = useState(null);
-  const [selectedRoom, setSelectedRoom] = useState(null);
+  const [selectedFloorId, setSelectedFloorId] = useState(null);
+  const [selectedRoomId, setSelectedRoomId] = useState(null);
 
   const [floorForm] = Form.useForm();
   const [roomForm] = Form.useForm();
 
-  // Initialize floors if empty
+  // Ensure floors always exist (minimal default)
   useEffect(() => {
-    if (!quotationData.floors || quotationData.floors.length === 0) {
-      handleQuotationChange("floors", [
-        { number: 1, name: "Ground Floor", rooms: [] },
-      ]);
+    if (!quotationData.floors?.length) {
+      const defaultFloor = {
+        floorId: generateFloorId(),
+        floorName: "Ground Floor",
+        sortOrder: 0,
+        rooms: [],
+      };
+      handleQuotationChange("floors", [defaultFloor]);
     }
-  }, [quotationData.floors]);
+  }, [quotationData.floors, handleQuotationChange]);
 
   // ── Floor & Room Handlers ──────────────────────────────────────
   const addFloor = (values) => {
-    const currentFloors = quotationData.floors || [];
-    const newNumber = currentFloors.length + 1;
+    const current = quotationData.floors || [];
     const newFloor = {
-      number: newNumber,
-      name:
-        values.name ||
-        (newNumber === 1
-          ? "Ground Floor"
-          : `${newNumber}${["st", "nd", "rd"][(newNumber - 2) % 3] || "th"} Floor`),
+      floorId: generateFloorId(),
+      floorName: values.name || `Floor ${current.length + 1}`,
+      sortOrder: current.length,
       rooms: [],
     };
-    handleQuotationChange("floors", [...currentFloors, newFloor]);
+    handleQuotationChange("floors", [...current, newFloor]);
     setFloorModalVisible(false);
     floorForm.resetFields();
     message.success("Floor added");
@@ -183,22 +184,23 @@ const QuotationForm = ({
 
   const addRoom = (values) => {
     const updatedFloors = (quotationData.floors || []).map((floor) =>
-      floor.number === roomModal.floorNumber
+      floor.floorId === roomModal.floorId
         ? {
             ...floor,
             rooms: [
               ...(floor.rooms || []),
               {
-                id: uuidv4(),
-                name: values.name,
-                type: values.type || null,
+                roomId: generateRoomId(floor.floorId),
+                roomName: values.name,
+                sortOrder: floor.rooms?.length || 0,
+                type: values.type || undefined,
               },
             ],
           }
         : floor,
     );
     handleQuotationChange("floors", updatedFloors);
-    setRoomModal({ visible: false, floorNumber: null });
+    setRoomModal({ visible: false, floorId: null });
     roomForm.resetFields();
     message.success("Room added");
   };
@@ -207,61 +209,53 @@ const QuotationForm = ({
   const openAssignModal = (itemId) => {
     const item = cartItems.find((i) => i.id === itemId);
     if (!item) return;
-
-    setSelectedFloor(item.floor_number || null);
-    setSelectedRoom(item.room_id || null);
+    setSelectedFloorId(item.floorId || null);
+    setSelectedRoomId(item.roomId || null);
     setAssignModal({ visible: true, itemId });
   };
 
   const assignItem = () => {
-    if (!selectedFloor) {
+    if (!selectedFloorId) {
       return message.error("Please select a floor");
     }
-
     const updatedItems = cartItems.map((item) =>
       item.id === assignModal.itemId
-        ? {
-            ...item,
-            floor_number: selectedFloor,
-            room_id: selectedRoom || null,
-          }
+        ? { ...item, floorId: selectedFloorId, roomId: selectedRoomId || null }
         : item,
     );
-
     setCartItems(updatedItems);
-    message.success("Item assigned successfully");
-
+    message.success("Item assigned");
     setAssignModal({ visible: false, itemId: null });
-    setSelectedFloor(null);
-    setSelectedRoom(null);
+    setSelectedFloorId(null);
+    setSelectedRoomId(null);
   };
 
-  // ── Floor Summary ───────────────────────────────────────────────
+  // ── Floor Summary (for display) ─────────────────────────────────
   const floorSummary = useMemo(() => {
     const summary = {};
     (quotationData.floors || []).forEach((f) => {
-      summary[f.number] = {
-        name: f.name,
+      summary[f.floorId] = {
+        name: f.floorName,
         count: 0,
         total: 0,
       };
     });
 
     cartItems.forEach((item) => {
-      if (item.floor_number && summary[item.floor_number]) {
-        summary[item.floor_number].count += item.quantity || 1;
-        const lineTotal =
+      if (item.floorId && summary[item.floorId]) {
+        summary[item.floorId].count += item.quantity || 1;
+        const line =
           (item.quantity || 1) *
           (item.price || 0) *
           (1 - (item.discount || 0) / 100);
-        summary[item.floor_number].total += lineTotal;
+        summary[item.floorId].total += line;
       }
     });
 
     return Object.values(summary);
   }, [cartItems, quotationData.floors]);
 
-  const unassignedCount = cartItems.filter((i) => !i.floor_number).length;
+  const unassignedCount = cartItems.filter((i) => !i.floorId).length;
 
   // ── Customer Search – FIXED MEMORY LEAK ─────────────────────────
   const [searchTerm, setSearchTerm] = useState("");
@@ -484,7 +478,8 @@ const QuotationForm = ({
     <Row gutter={[16, 16]}>
       <Col xs={24} md={16}>
         <CompactCard title={<Title level={5}>Quotation Details</Title>}>
-          <Collapse defaultActiveKey={["1", "2", "4", "3"]} ghost>
+          <Collapse defaultActiveKey={["1", "2", "4"]} ghost>
+            {/* Customer & Address – keep as is or minor tweaks */}
             {/* Customer & Address */}
             <Panel header="Customer & Address" key="1">
               <TightRow gutter={8}>
@@ -619,13 +614,31 @@ const QuotationForm = ({
               </TightRow>
             </Panel>
 
-            {/* Dates & Follow-ups */}
+            {/* Dates */}
             <Panel header="Dates & Follow-ups" key="2">
               <TightRow gutter={8}>
                 <Col span={8}>
-                  <Text strong>
-                    Due Date <span style={{ color: "red" }}>*</span>
-                  </Text>
+                  <Text strong>Quotation Date</Text>
+                </Col>
+                <Col span={16}>
+                  <MiniDate
+                    selected={momentToDate(
+                      moment(quotationData.quotation_date || new Date()),
+                    )}
+                    onChange={(d) =>
+                      handleQuotationChange(
+                        "quotation_date",
+                        d ? moment(d).format("YYYY-MM-DD") : "",
+                      )
+                    }
+                    dateFormat="dd/MM/yyyy"
+                  />
+                </Col>
+              </TightRow>
+
+              <TightRow gutter={8}>
+                <Col span={8}>
+                  <Text strong>Due Date *</Text>
                 </Col>
                 <Col span={16}>
                   <MiniDate
@@ -680,11 +693,11 @@ const QuotationForm = ({
               </TightRow>
             </Panel>
 
-            {/* Site Layout */}
+            {/* Site Layout – updated structure */}
             <Panel
               header={
                 <Space>
-                  <ApartmentOutlined /> Site Layout (Floors & Rooms)
+                  <ApartmentOutlined /> Site Layout
                 </Space>
               }
               key="4"
@@ -702,14 +715,14 @@ const QuotationForm = ({
               <Collapse ghost>
                 {(quotationData.floors || []).map((floor) => (
                   <Panel
-                    key={floor.number}
+                    key={floor.floorId}
                     header={
                       <Space>
                         <HomeOutlined />
-                        <Text strong>{floor.name}</Text>
+                        <Text strong>{floor.floorName}</Text>
                         <Tag color="blue">{floor.rooms?.length || 0} rooms</Tag>
                         <Tag color="default">
-                          {floorSummary.find((s) => s.name === floor.name)
+                          {floorSummary.find((s) => s.name === floor.floorName)
                             ?.count || 0}{" "}
                           items
                         </Tag>
@@ -722,7 +735,7 @@ const QuotationForm = ({
                         onClick={() =>
                           setRoomModal({
                             visible: true,
-                            floorNumber: floor.number,
+                            floorId: floor.floorId,
                           })
                         }
                       >
@@ -732,12 +745,12 @@ const QuotationForm = ({
                   >
                     <Space wrap size={[0, 8]}>
                       {floor.rooms?.map((room) => (
-                        <Tag key={room.id} color="geekblue">
-                          {room.name} {room.type && `(${room.type})`}
+                        <Tag key={room.roomId} color="geekblue">
+                          {room.roomName} {room.type && `(${room.type})`}
                         </Tag>
                       ))}
-                      {(!floor.rooms || floor.rooms.length === 0) && (
-                        <Text type="secondary">No rooms added yet</Text>
+                      {!floor.rooms?.length && (
+                        <Text type="secondary">No rooms yet</Text>
                       )}
                     </Space>
                   </Panel>
@@ -747,14 +760,14 @@ const QuotationForm = ({
               {unassignedCount > 0 && (
                 <Alert
                   style={{ marginTop: 16 }}
-                  message={`${unassignedCount} item${unassignedCount > 1 ? "s" : ""} not assigned to any floor/room`}
+                  message={`${unassignedCount} item${unassignedCount > 1 ? "s" : ""} not assigned to any floor`}
                   type="warning"
                   showIcon
                 />
               )}
             </Panel>
 
-            {/* Discount & Notes */}
+            {/* Discount – adjust field name if backend uses different one */}
             <Panel header="Discount & Notes" key="3">
               <TightRow gutter={16} align="middle">
                 <Col span={8}>
@@ -784,11 +797,9 @@ const QuotationForm = ({
               </TightRow>
             </Panel>
           </Collapse>
-
           <Divider orientation="left" style={{ margin: "24px 0 16px" }}>
             Cart Items & Location Assignment
           </Divider>
-
           <Space direction="vertical" style={{ width: "100%" }} size="middle">
             {cartItems.map((item) => (
               <Card
@@ -837,7 +848,6 @@ const QuotationForm = ({
               </Card>
             ))}
           </Space>
-
           {unassignedCount > 0 && (
             <Alert
               style={{ marginTop: 16 }}
@@ -845,11 +855,11 @@ const QuotationForm = ({
               type="warning"
               showIcon
             />
-          )}
+          )}{" "}
         </CompactCard>
       </Col>
 
-      {/* Right Column - Summary */}
+      {/* Right Column – Summary */}
       <Col xs={24} md={8}>
         <CompactCard
           title={<Text strong>Order Summary</Text>}
@@ -950,7 +960,7 @@ const QuotationForm = ({
         </CompactCard>
       </Col>
 
-      {/* ── Modals ──────────────────────────────────────────────────────── */}
+      {/* Modals – updated to use floorId / roomId */}
       <Modal
         title="Add New Floor"
         open={floorModalVisible}
@@ -965,9 +975,9 @@ const QuotationForm = ({
           <Form.Item
             name="name"
             label="Floor Name"
-            rules={[{ required: true, message: "Please enter floor name" }]}
+            rules={[{ required: true }]}
           >
-            <Input placeholder="e.g. First Floor, Terrace Level" />
+            <Input placeholder="e.g. First Floor, Terrace" />
           </Form.Item>
         </Form>
       </Modal>
@@ -977,41 +987,35 @@ const QuotationForm = ({
         open={roomModal.visible}
         onOk={() => roomForm.submit()}
         onCancel={() => {
-          setRoomModal({ visible: false, floorNumber: null });
+          setRoomModal({ visible: false, floorId: null });
           roomForm.resetFields();
         }}
         okText="Add Room"
       >
         <Form form={roomForm} onFinish={addRoom} layout="vertical">
-          <Form.Item
-            name="name"
-            label="Room Name"
-            rules={[{ required: true, message: "Room name is required" }]}
-          >
-            <Input placeholder="e.g. Master Bedroom, Living Room, Kitchen" />
+          <Form.Item name="name" label="Room Name" rules={[{ required: true }]}>
+            <Input placeholder="e.g. Master Bedroom, Kitchen" />
           </Form.Item>
           <Form.Item name="type" label="Room Type (optional)">
-            <Select placeholder="Select type">
+            <Select placeholder="Select type" allowClear>
               <Option value="Bedroom">Bedroom</Option>
-              <Option value="Living">Living / Drawing Room</Option>
+              <Option value="Living">Living Room</Option>
               <Option value="Kitchen">Kitchen</Option>
               <Option value="Bathroom">Bathroom</Option>
-              <Option value="Balcony">Balcony / Terrace</Option>
-              <Option value="Puja Room">Puja Room</Option>
-              <Option value="Other">Other</Option>
+              {/* ... */}
             </Select>
           </Form.Item>
         </Form>
       </Modal>
 
       <Modal
-        title="Assign Item to Location"
+        title="Assign Item"
         open={assignModal.visible}
         onOk={assignItem}
         onCancel={() => {
           setAssignModal({ visible: false, itemId: null });
-          setSelectedFloor(null);
-          setSelectedRoom(null);
+          setSelectedFloorId(null);
+          setSelectedRoomId(null);
         }}
         okText="Assign"
         width={480}
@@ -1020,46 +1024,44 @@ const QuotationForm = ({
           <div>
             <Text strong>Product:</Text>{" "}
             <Text>
-              {cartItems.find((i) => i.id === assignModal.itemId)?.name || "—"}
+              {cartItems.find((i) => i.id === assignModal.itemId)?.name}
             </Text>
           </div>
 
           <div>
-            <Text strong>
-              Floor <span style={{ color: "red" }}>*</span>
-            </Text>
+            <Text strong>Floor *</Text>
             <Select
-              placeholder="Select floor"
               style={{ width: "100%", marginTop: 8 }}
-              value={selectedFloor}
+              value={selectedFloorId}
               onChange={(v) => {
-                setSelectedFloor(v);
-                setSelectedRoom(null);
+                setSelectedFloorId(v);
+                setSelectedRoomId(null);
               }}
+              placeholder="Select floor"
             >
               {(quotationData.floors || []).map((f) => (
-                <Option key={f.number} value={f.number}>
-                  {f.name}
+                <Option key={f.floorId} value={f.floorId}>
+                  {f.floorName}
                 </Option>
               ))}
             </Select>
           </div>
 
-          {selectedFloor && (
+          {selectedFloorId && (
             <div>
-              <Text strong>Room (optional – whole floor if empty)</Text>
+              <Text strong>Room (optional)</Text>
               <Select
-                placeholder="Whole floor / common area"
-                allowClear
                 style={{ width: "100%", marginTop: 8 }}
-                value={selectedRoom}
-                onChange={setSelectedRoom}
+                value={selectedRoomId}
+                onChange={setSelectedRoomId}
+                allowClear
+                placeholder="Apply to whole floor"
               >
                 {(quotationData.floors || [])
-                  .find((f) => f.number === selectedFloor)
+                  .find((f) => f.floorId === selectedFloorId)
                   ?.rooms?.map((r) => (
-                    <Option key={r.id} value={r.id}>
-                      {r.name} {r.type && `(${r.type})`}
+                    <Option key={r.roomId} value={r.roomId}>
+                      {r.roomName} {r.type && `(${r.type})`}
                     </Option>
                   ))}
               </Select>

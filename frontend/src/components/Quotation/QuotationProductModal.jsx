@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   Modal,
   Table,
@@ -10,12 +10,17 @@ import {
   Tag,
   Divider,
   Alert,
+  Collapse,
 } from "antd";
-import { ExclamationCircleOutlined } from "@ant-design/icons";
+import {
+  ExclamationCircleOutlined,
+  HomeOutlined,
+  ApartmentOutlined,
+} from "@ant-design/icons";
 import { useGetQuotationByIdQuery } from "../../api/quotationApi";
-import { useMemo } from "react";
 
 const { Text, Title } = Typography;
+const { Panel } = Collapse;
 
 const safeParse = (data, fallback = []) => {
   if (Array.isArray(data)) return data;
@@ -41,34 +46,64 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
     skip: !quotationId,
   });
 
-  // Prefer products (PostgreSQL JSON) because it has correct isOptionFor
-  // items (MongoDB) currently missing these fields
+  // Prefer PostgreSQL JSON products (has isOptionFor, floorId, etc.)
   const allItems = useMemo(() => {
     const products = safeParse(q.products, []);
-    if (products.length > 0) {
-      return products;
-    }
+    if (products.length > 0) return products;
 
-    const items = q.items || [];
-    return items;
+    // Fallback to MongoDB items if needed
+    return q.items || [];
   }, [q.products, q.items]);
 
-  const mainItems = useMemo(
-    () => allItems.filter((item) => !item.isOptionFor),
-    [allItems],
-  );
+  const floors = useMemo(() => safeParse(q.floors, []), [q.floors]);
 
-  const optionalItems = useMemo(
-    () => allItems.filter((item) => !!item.isOptionFor),
-    [allItems],
-  );
+  // Group items by floor → room
+  const groupedItems = useMemo(() => {
+    const map = {};
 
-  const hasMainItems = mainItems.length > 0;
-  const hasOptionalItems = optionalItems.length > 0;
+    allItems.forEach((item) => {
+      const floorId = item.floorId || "unassigned";
+      const floorName =
+        floors.find((f) => f.floorId === floorId)?.floorName ||
+        item.floorName ||
+        "Unassigned Floor";
 
-  // ── Use the 'calculated' object which contains correct values ─────────────
+      const roomId = item.roomId || "unassigned";
+      const roomName = item.roomName || "Unassigned Room";
+
+      const floorKey = `${floorId}|${floorName}`;
+      if (!map[floorKey]) {
+        map[floorKey] = {
+          floorId,
+          floorName,
+          itemsByRoom: {},
+        };
+      }
+
+      const roomKey = `${roomId}|${roomName}`;
+      if (!map[floorKey].itemsByRoom[roomKey]) {
+        map[floorKey].itemsByRoom[roomKey] = {
+          roomId,
+          roomName,
+          items: [],
+        };
+      }
+
+      map[floorKey].itemsByRoom[roomKey].items.push(item);
+    });
+
+    // Sort floors by sortOrder if available, else by appearance
+    return Object.values(map).sort((a, b) => {
+      const fa = floors.find((f) => f.floorId === a.floorId);
+      const fb = floors.find((f) => f.floorId === b.floorId);
+      return (fa?.sortOrder ?? 999) - (fb?.sortOrder ?? 999);
+    });
+  }, [allItems, floors]);
+
+  const hasItems = allItems.length > 0;
+
+  // Financials from calculated object (backend-provided)
   const calculated = q.calculated || {};
-
   const subtotal = safeNum(calculated.subTotal);
   const extraDiscountAmount = safeNum(calculated.extraDiscountAmount);
   const extraDiscountType = q.extraDiscountType || "fixed";
@@ -78,10 +113,13 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
   const finalAmount = safeNum(calculated.finalAmount);
 
   const optionalPotential = useMemo(() => {
-    return optionalItems.reduce((sum, item) => {
-      return sum + safeNum(item.price) * safeNum(item.quantity, 1);
-    }, 0);
-  }, [optionalItems]);
+    return allItems
+      .filter((item) => !!item.isOptionFor)
+      .reduce(
+        (sum, item) => sum + safeNum(item.price) * safeNum(item.quantity, 1),
+        0,
+      );
+  }, [allItems]);
 
   const commonColumns = [
     {
@@ -261,27 +299,15 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
       </Table.Summary.Row>
 
       {optionalPotential > 0 && (
-        <>
-          <Table.Summary.Row>
-            <Table.Summary.Cell colSpan={7} align="center">
-              <Divider plain>
-                <Text type="secondary">
-                  Optional Items (not included in final amount)
-                </Text>
-              </Divider>
-            </Table.Summary.Cell>
-          </Table.Summary.Row>
-          <Table.Summary.Row>
-            <Table.Summary.Cell colSpan={6} align="right">
-              <Text type="secondary">Potential extra from options</Text>
-            </Table.Summary.Cell>
-            <Table.Summary.Cell align="right">
+        <Table.Summary.Row>
+          <Table.Summary.Cell colSpan={7} align="center">
+            <Divider plain>
               <Text type="secondary">
-                ₹{optionalPotential.toLocaleString("en-IN")}
+                Optional Items (not included in final amount)
               </Text>
-            </Table.Summary.Cell>
-          </Table.Summary.Row>
-        </>
+            </Divider>
+          </Table.Summary.Cell>
+        </Table.Summary.Row>
       )}
     </>
   );
@@ -327,158 +353,156 @@ const QuotationProductModal = ({ show, onHide, quotationId }) => {
           <Title level={4} style={{ margin: 0 }}>
             #{q.reference_number} {q.document_title}
           </Title>
+          <Text type="secondary">
+            {q.customer?.name || "Customer"} •{" "}
+            {q.quotation_date
+              ? new Date(q.quotation_date).toLocaleDateString("en-IN")
+              : "—"}
+          </Text>
         </div>
       }
     >
       <div style={{ padding: "16px 0" }}>
-        {!hasMainItems && !hasOptionalItems ? (
+        {!hasItems ? (
           <Card>
             <Empty description="No products found in this quotation." />
           </Card>
         ) : (
           <>
-            {/* Main Products */}
-            <Card title="Main Products" style={{ marginBottom: 24 }}>
-              {hasMainItems ? (
-                <Table
-                  columns={commonColumns}
-                  dataSource={mainItems}
-                  rowKey={(r, i) => r._id || r.productId || i}
-                  pagination={false}
-                  bordered
-                  size="middle"
-                  scroll={{ x: "max-content" }}
-                  summary={tableSummary}
-                />
-              ) : (
-                <Empty description="No main products found" />
-              )}
-            </Card>
+            <Collapse defaultActiveKey={["main"]} bordered={false}>
+              {groupedItems.map((floorGroup) => (
+                <Panel
+                  key={floorGroup.floorId}
+                  header={
+                    <span>
+                      <HomeOutlined style={{ marginRight: 8 }} />
+                      {floorGroup.floorName}
+                      <Text type="secondary" style={{ marginLeft: 12 }}>
+                        (
+                        {Object.values(floorGroup.itemsByRoom).reduce(
+                          (sum, r) => sum + r.items.length,
+                          0,
+                        )}{" "}
+                        items)
+                      </Text>
+                    </span>
+                  }
+                >
+                  {Object.values(floorGroup.itemsByRoom).map((roomGroup) => (
+                    <div key={roomGroup.roomId} style={{ marginBottom: 24 }}>
+                      <div style={{ marginBottom: 12 }}>
+                        <ApartmentOutlined style={{ marginRight: 8 }} />
+                        <Text strong>{roomGroup.roomName}</Text>
+                        <Text type="secondary" style={{ marginLeft: 8 }}>
+                          ({roomGroup.items.length} items)
+                        </Text>
+                      </div>
 
-            {/* Optional Items */}
-            {hasOptionalItems && (
-              <Card
-                title={
-                  <span>
-                    Optional Items{" "}
-                    <Text type="secondary">
-                      (Variants / Upgrades / Add-ons – reference only)
-                    </Text>
-                  </span>
-                }
-                extra={
-                  <Alert
-                    message="These items are NOT included in the final amount"
-                    type="info"
-                    showIcon
-                    banner
-                    style={{ marginBottom: 16 }}
-                  />
-                }
-              >
+                      <Table
+                        columns={commonColumns}
+                        dataSource={roomGroup.items}
+                        rowKey={(r, i) => r.productId || i}
+                        pagination={false}
+                        bordered
+                        size="middle"
+                        scroll={{ x: "max-content" }}
+                        summary={
+                          roomGroup.roomId === "unassigned"
+                            ? tableSummary
+                            : undefined
+                        }
+                      />
+
+                      {roomGroup.roomId === "unassigned" &&
+                        optionalPotential > 0 && (
+                          <div
+                            style={{
+                              marginTop: 16,
+                              padding: "12px 16px",
+                              background: "#f9f9f9",
+                              borderRadius: 4,
+                            }}
+                          >
+                            <Text type="secondary">
+                              Optional items potential (not included): ₹
+                              {optionalPotential.toLocaleString("en-IN")}
+                            </Text>
+                          </div>
+                        )}
+                    </div>
+                  ))}
+                </Panel>
+              ))}
+            </Collapse>
+
+            {/* Global Financial Summary (shown if no unassigned items or as fallback) */}
+            {groupedItems.every((g) => g.floorId !== "unassigned") && (
+              <Card title="Financial Summary" style={{ marginTop: 24 }}>
                 <Table
                   columns={[
-                    ...commonColumns.slice(0, 2), // # and Image
-                    {
-                      title: "Related to",
-                      width: 180,
-                      render: (_, record) => {
-                        const parent = allItems.find(
-                          (i) => i.productId === record.isOptionFor,
-                        );
-                        return parent ? (
-                          <Text type="secondary">{parent.name}</Text>
-                        ) : (
-                          <Text type="danger">Parent missing</Text>
-                        );
-                      },
-                    },
-                    ...commonColumns.slice(2),
+                    { title: "Description", dataIndex: "desc" },
+                    { title: "Amount", dataIndex: "amount", align: "right" },
                   ]}
-                  dataSource={optionalItems}
-                  rowKey={(r, i) => r._id || r.productId || i}
+                  dataSource={[
+                    {
+                      desc: "Main Subtotal",
+                      amount: `₹${subtotal.toLocaleString("en-IN")}`,
+                    },
+                    extraDiscountAmount > 0 && {
+                      desc: `Extra Discount ${extraDiscountType === "percent" ? `(${safeNum(q.extraDiscount || extraDiscountAmount)}%)` : ""}`,
+                      amount: (
+                        <Text type="danger">
+                          -₹{extraDiscountAmount.toLocaleString("en-IN")}
+                        </Text>
+                      ),
+                    },
+                    shippingAmount > 0 && {
+                      desc: "Shipping",
+                      amount: (
+                        <Text type="success">
+                          +₹{shippingAmount.toLocaleString("en-IN")}
+                        </Text>
+                      ),
+                    },
+                    gstAmount > 0 && {
+                      desc: "GST",
+                      amount: `₹${gstAmount.toLocaleString("en-IN")}`,
+                    },
+                    roundOff !== 0 && {
+                      desc: "Round Off",
+                      amount: (
+                        <Text type={roundOff >= 0 ? "success" : "danger"}>
+                          {roundOff >= 0 ? "+" : "-"}₹
+                          {Math.abs(roundOff).toLocaleString("en-IN")}
+                        </Text>
+                      ),
+                    },
+                    {
+                      desc: "Final Amount",
+                      amount: (
+                        <Text
+                          strong
+                          style={{ fontSize: "1.3em", color: "#3f8600" }}
+                        >
+                          ₹{finalAmount.toLocaleString("en-IN")}
+                        </Text>
+                      ),
+                    },
+                    optionalPotential > 0 && {
+                      desc: "Potential from options (not included)",
+                      amount: (
+                        <Text type="secondary">
+                          ₹{optionalPotential.toLocaleString("en-IN")}
+                        </Text>
+                      ),
+                    },
+                  ].filter(Boolean)}
                   pagination={false}
-                  bordered
-                  size="middle"
-                  scroll={{ x: "max-content" }}
+                  showHeader={false}
+                  size="small"
                 />
               </Card>
             )}
-
-            {/* Financial Summary (alternative compact view) */}
-            <Card title="Financial Summary" style={{ marginTop: 24 }}>
-              <Table
-                columns={[
-                  { title: "Description", dataIndex: "desc" },
-                  {
-                    title: "Amount",
-                    dataIndex: "amount",
-                    align: "right",
-                  },
-                ]}
-                dataSource={[
-                  {
-                    desc: "Main Subtotal",
-                    amount: `₹${subtotal.toLocaleString("en-IN")}`,
-                  },
-                  extraDiscountAmount > 0 && {
-                    desc: `Extra Discount ${
-                      extraDiscountType === "percent"
-                        ? `(${safeNum(q.extraDiscount || extraDiscountAmount)}%)`
-                        : ""
-                    }`,
-                    amount: (
-                      <Text type="danger">
-                        -₹{extraDiscountAmount.toLocaleString("en-IN")}
-                      </Text>
-                    ),
-                  },
-                  shippingAmount > 0 && {
-                    desc: "Shipping",
-                    amount: (
-                      <Text type="success">
-                        +₹{shippingAmount.toLocaleString("en-IN")}
-                      </Text>
-                    ),
-                  },
-                  gstAmount > 0 && {
-                    desc: "GST",
-                    amount: `₹${gstAmount.toLocaleString("en-IN")}`,
-                  },
-                  roundOff !== 0 && {
-                    desc: "Round Off",
-                    amount: (
-                      <Text type={roundOff >= 0 ? "success" : "danger"}>
-                        {roundOff >= 0 ? "+" : "-"}₹
-                        {Math.abs(roundOff).toLocaleString("en-IN")}
-                      </Text>
-                    ),
-                  },
-                  {
-                    desc: "Final Amount",
-                    amount: (
-                      <Text
-                        strong
-                        style={{ fontSize: "1.3em", color: "#3f8600" }}
-                      >
-                        ₹{finalAmount.toLocaleString("en-IN")}
-                      </Text>
-                    ),
-                  },
-                  optionalPotential > 0 && {
-                    desc: "Potential from options (not included)",
-                    amount: (
-                      <Text type="secondary">
-                        ₹{optionalPotential.toLocaleString("en-IN")}
-                      </Text>
-                    ),
-                  },
-                ].filter(Boolean)}
-                pagination={false}
-                showHeader={false}
-                size="small"
-              />
-            </Card>
           </>
         )}
       </div>

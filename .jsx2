@@ -1,1417 +1,1466 @@
-import React, {
-  useState,
-  useEffect,
-  useMemo,
-  useCallback,
-  useRef,
-} from "react";
-import { useNavigate } from "react-router-dom";
+// src/components/Quotation/AddQuotation.jsx
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import {
-  Alert,
-  Tabs,
-  Modal,
-  Button,
-  Typography,
-  Segmented,
-  Space,
-  Tag,
-  Select,
-  Form,
-  Input,
   message,
+  Input,
+  Select,
+  Table,
+  InputNumber,
+  Space,
+  Button,
+  Modal,
+  Typography,
+  Form,
+  Card,
+  Row,
+  Col,
+  Spin,
+  Divider,
+  Statistic,
+  Tag,
+  Cascader,
 } from "antd";
 import {
-  ShoppingCartOutlined,
-  CheckCircleOutlined,
+  ArrowLeftOutlined,
+  PlusOutlined,
+  DeleteOutlined,
+  SaveOutlined,
+  SearchOutlined,
   HomeOutlined,
+  ApartmentOutlined,
 } from "@ant-design/icons";
-import {
-  useGetCustomersQuery,
-  useCreateCustomerMutation,
-  customerApi,
-} from "../../api/customerApi";
-import {
-  useGetCartQuery,
-  useUpdateCartMutation,
-  useClearCartMutation,
-  useRemoveFromCartMutation,
-  cartApi,
-} from "../../api/cartApi";
-import { useGetProfileQuery } from "../../api/userApi";
-import { useCreateQuotationMutation } from "../../api/quotationApi";
-import {
-  useCreateOrderMutation,
-  useGetAllOrdersQuery,
-} from "../../api/orderApi";
-import {
-  useGetAllAddressesQuery,
-  useCreateAddressMutation,
-} from "../../api/addressApi";
-import { useGetAllTeamsQuery } from "../../api/teamApi";
-import {
-  useGetVendorsQuery,
-  useCreateVendorMutation,
-} from "../../api/vendorApi";
-import { useCreatePurchaseOrderMutation } from "../../api/poApi";
-import { useGetAllProductsQuery } from "../../api/productApi";
-import { v4 as uuidv4 } from "uuid";
-import { useDispatch } from "react-redux";
-import useUserAndCustomerData from "../../data/useUserAndCustomerData";
-import useProductsData from "../../data/useProductdata";
 import { debounce } from "lodash";
-import moment from "moment";
-import styled from "styled-components";
-import PropTypes from "prop-types";
-import CartTab from "./Cart";
-import QuotationForm from "./QuotationForm";
-import OrderForm from "./OrderForm";
-import PurchaseOrderForm from "./PurchaseOrderForm";
+import { format } from "date-fns";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { v4 as uuidv4 } from "uuid";
+
+import PageHeader from "../Common/PageHeader";
+import {
+  useCreateQuotationMutation,
+  useGetQuotationByIdQuery,
+  useUpdateQuotationMutation,
+  useGetQuotationVersionsQuery,
+} from "../../api/quotationApi";
+import { useSearchProductsQuery } from "../../api/productApi";
+import { useGetCustomersQuery } from "../../api/customerApi";
+import { useGetAllAddressesQuery } from "../../api/addressApi";
+import { useGetProfileQuery } from "../../api/userApi";
 import AddAddress from "../Address/AddAddressModal";
-import AddVendorModal from "./AddVendorModal";
-import AddNewTeam from "../Orders/AddNewTeam";
-import { useGetAllUsersQuery } from "../../api/userApi";
-import AddCustomerModal from "../Customers/AddCustomerModal";
-import PreviewQuotation from "../Quotation/PreviewQuotation";
-import { useAuth } from "../../context/AuthContext";
-import { skipToken } from "@reduxjs/toolkit/query";
-import { useCreateSiteMapMutation } from "../../api/siteMapApi";
 
-const { TabPane } = Tabs;
 const { Text } = Typography;
+const { Option } = Select;
 
-const PageWrapper = styled.div`
-  padding: 16px;
-  background-color: #f5f5f5;
-  min-height: 100vh;
-  @media (min-width: 768px) {
-    padding: 24px;
-  }
-`;
-
-const RESTRICTED_ROLES = ["SUPER_ADMIN", "DEVELOPER", "ADMIN"];
-
-const NewCart = ({ onConvertToOrder }) => {
+const AddQuotation = () => {
+  const { id } = useParams();
+  const isEditMode = Boolean(id);
   const navigate = useNavigate();
-  const dispatch = useDispatch();
-  const { auth } = useAuth();
-  const canCreatePurchaseOrder =
-    auth?.role && RESTRICTED_ROLES.includes(auth.role);
 
-  // ── Profile & Users ───────────────────────────────────────
-  const { data: profileData } = useGetProfileQuery();
-  const { data: usersData } = useGetAllUsersQuery();
-  const users = usersData?.users ?? [];
-  const user = profileData?.user ?? {};
-  const userId = user.userId;
+  // ── API Hooks ─────────────────────────────────────────────────────
+  const { data: existingQuotation, isLoading: loadingQuotation } =
+    useGetQuotationByIdQuery(id, { skip: !isEditMode });
 
-  const [createSiteMap] = useCreateSiteMapMutation();
-
-  // ── State ──────────────────────────────────────────────────
-  const [activeTab, setActiveTab] = useState("cart");
-  const [selectedCustomer, setSelectedCustomer] = useState("");
-  const [selectedVendor, setSelectedVendor] = useState("");
-  const [showClearCartModal, setShowClearCartModal] = useState(false);
-  const [showAddAddressModal, setShowAddAddressModal] = useState(false);
-  const [showAddVendorModal, setShowAddVendorModal] = useState(false);
-  const [showAddTeamModal, setShowAddTeamModal] = useState(false);
-  const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
-  const [documentType, setDocumentType] = useState("Quotation");
-  const [useBillingAddress, setUseBillingAddress] = useState(false);
-
-  const [localCartItems, setLocalCartItems] = useState([]);
-  const [assignModal, setAssignModal] = useState({
-    visible: false,
-    itemId: null,
-  });
-  const [selectedFloorForAssign, setSelectedFloorForAssign] = useState(null);
-  const [selectedRoomForAssign, setSelectedRoomForAssign] = useState(null);
-
-  const [quotationData, setQuotationData] = useState({
-    quotationDate: new Date().toISOString().split("T")[0],
-    dueDate: "",
-    billTo: "",
-    shipTo: null,
-    floors: [{ number: 1, name: "Ground Floor", rooms: [] }],
-    signatureName: "CM TRADING CO",
-    discountType: "fixed",
-    discountAmount: "",
-    followupDates: [],
+  const { data: versionsData = [] } = useGetQuotationVersionsQuery(id, {
+    skip: !isEditMode,
   });
 
-  const [orderData, setOrderData] = useState({
-    createdFor: "",
-    createdBy: userId || "",
-    assignedTeamId: "",
-    assignedUserId: "",
-    secondaryUserId: "",
-    pipeline: "",
-    status: "PREPARING",
-    dueDate: moment().add(1, "days").format("YYYY-MM-DD"),
-    followupDates: [],
-    source: "",
-    priority: "medium",
-    description: "",
-    invoiceLink: null,
-    orderNo: "",
-    quotationId: "",
-    masterPipelineNo: "",
-    previousOrderNo: "",
-    shipTo: "",
-  });
-
-  const [purchaseOrderData, setPurchaseOrderData] = useState({
-    vendorId: "",
-    orderDate: moment().format("YYYY-MM-DD"),
-    expectedDeliveryDate: null,
-    items: [],
-    totalAmount: 0,
-    status: "pending",
-  });
-
-  const [itemDiscounts, setItemDiscounts] = useState({});
-  const [itemTaxes, setItemTaxes] = useState({});
-  const [itemDiscountTypes, setItemDiscountTypes] = useState({});
-  const [previewVisible, setPreviewVisible] = useState(false);
-  const [updatingItems, setUpdatingItems] = useState({});
-  const [productSearch, setProductSearch] = useState("");
-  const [filteredProducts, setFilteredProducts] = useState([]);
-  const [shipping, setShipping] = useState(0);
-  const [gst, setGst] = useState(0);
-  const [billingAddressId, setBillingAddressId] = useState(null);
-
-  // ── Queries & Mutations ────────────────────────────────────
-  const { data: cartData } = useGetCartQuery(userId, { skip: !userId });
-  const { data: customerData } = useGetCustomersQuery(
-    { limit: 500 },
-    { skip: activeTab !== "checkout" },
-  );
-  const { data: allOrdersData } = useGetAllOrdersQuery();
-  const { data: teamsData, refetch: refetchTeams } = useGetAllTeamsQuery();
+  const { data: userData } = useGetProfileQuery();
+  const { data: customersData } = useGetCustomersQuery({ limit: 500 });
   const { data: addressesData, refetch: refetchAddresses } =
-    useGetAllAddressesQuery(selectedCustomer || skipToken, {
-      skip: !selectedCustomer || activeTab !== "checkout",
+    useGetAllAddressesQuery();
+
+  const [createQuotation, { isLoading: isCreating }] =
+    useCreateQuotationMutation();
+  const [updateQuotation, { isLoading: isUpdating }] =
+    useUpdateQuotationMutation();
+
+  // ── Product Search ────────────────────────────────────────────────
+  const [searchTerm, setSearchTerm] = useState("");
+  const { data: searchResult = [], isFetching: isSearching } =
+    useSearchProductsQuery(searchTerm.trim(), {
+      skip: searchTerm.trim().length < 2,
     });
-  const { data: productsData } = useGetAllProductsQuery();
-  const { data: vendorsData } = useGetVendorsQuery();
 
-  const [updateCart] = useUpdateCartMutation();
-  const [clearCart] = useClearCartMutation();
-  const [removeFromCart] = useRemoveFromCartMutation();
-  const [createQuotation] = useCreateQuotationMutation();
-  const [createOrder] = useCreateOrderMutation();
-  const [createPurchaseOrder] = useCreatePurchaseOrderMutation();
-  const [createVendor, { isLoading: isCreatingVendor }] =
-    useCreateVendorMutation();
-  const [createAddress] = useCreateAddressMutation();
-  const [createCustomer] = useCreateCustomerMutation();
+  const debouncedSearch = useCallback(
+    debounce((value) => setSearchTerm(value.trim()), 400),
+    [],
+  );
 
-  // ── Memoized values ────────────────────────────────────────
-  const allCartItems = useMemo(() => cartData?.cart?.items || [], [cartData]);
+  // ── State ─────────────────────────────────────────────────────────
+  const userId = userData?.user?.userId || "system";
 
-  // ── Debounced product search (memory-leak fix) ─────────────
-  const debouncedSearchRef = useRef(null);
+  const initialFormData = {
+    document_title: "",
+    quotation_date: null,
+    due_date: null,
+    gst: 0, // Always 0
+    shippingAmount: 0,
+    extraDiscount: 0,
+    extraDiscountType: "fixed",
+    signature_name: "",
+    signature_image: "",
+    customerId: "",
+    shipTo: "",
+    createdBy: userId,
+    products: [],
+    followupDates: [],
+    floors: [], // [{ floorId, floorName, sortOrder?, rooms: [{roomId, roomName}] }]
+  };
 
-  const handleProductSearch = useCallback((value) => {
-    debouncedSearchRef.current?.(value);
-  }, []);
+  const [formData, setFormData] = useState(initialFormData);
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [showVersionsModal, setShowVersionsModal] = useState(false);
 
-  // ── Sync local cart items (optimized) ──────────────────────
+  // Separate modals for floors and rooms
+  const [showFloorsModal, setShowFloorsModal] = useState(false);
+  const [showRoomsModal, setShowRoomsModal] = useState(false);
+  const [selectedFloorForRooms, setSelectedFloorForRooms] = useState(null);
+
+  // Option modal state
+  const [showAddOptionModal, setShowAddOptionModal] = useState(false);
+  const [selectedParentId, setSelectedParentId] = useState(null);
+  const [optionType, setOptionType] = useState("addon");
+
+  // ── Helpers ───────────────────────────────────────────────────────
+  const safeNum = (val, fallback = 0) =>
+    Number.isFinite(Number(val)) ? Number(val) : fallback;
+
+  const safeJsonParse = (value, fallback = []) => {
+    if (Array.isArray(value)) return value;
+    if (!value) return fallback;
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : fallback;
+    } catch {
+      return fallback;
+    }
+  };
+
+  // Generate short readable IDs
+  const generateFloorId = () => `fl_${uuidv4().slice(0, 8)}`;
+  const generateRoomId = (floorId) => `${floorId}_rm_${uuidv4().slice(0, 6)}`;
+
+  // ── Load existing quotation ───────────────────────────────────────
   useEffect(() => {
-    if (!allCartItems.length) return;
+    if (!isEditMode || !existingQuotation) return;
 
-    setLocalCartItems((prev) => {
-      const prevMap = new Map(
-        prev.map((item) => [item.id || item.productId, item]),
-      );
+    const parsedProducts = safeJsonParse(existingQuotation.products, []);
+    const parsedFloors = safeJsonParse(existingQuotation.floors, []);
 
-      return allCartItems.map((serverItem) => {
-        const id = serverItem.id || serverItem.productId || uuidv4();
-        const local = prevMap.get(id);
+    const mappedProducts = parsedProducts.map((p) => ({
+      productId: p.productId,
+      name: p.name || "Unknown",
+      qty: safeNum(p.quantity ?? p.qty, 1),
+      sellingPrice: safeNum(p.price ?? p.sellingPrice, 0),
+      discount: safeNum(p.discount, 0),
+      discountType: p.discountType || "fixed",
+      tax: safeNum(p.tax, 0),
+      isOptionFor: p.isOptionFor || null,
+      optionType: p.optionType || null,
+      groupId: p.groupId || null,
+      floorId: p.floorId || null,
+      floorName: p.floorName || null,
+      roomId: p.roomId || null,
+      roomName: p.roomName || null,
+    }));
 
-        if (local) {
-          return {
-            ...serverItem,
-            id,
-            floor_number: local.floor_number ?? serverItem.floor_number ?? null,
-            room_id: local.room_id ?? serverItem.room_id ?? null,
-          };
-        }
-
-        return {
-          ...serverItem,
-          id,
-          floor_number: serverItem.floor_number ?? null,
-          room_id: serverItem.room_id ?? null,
-        };
-      });
+    setFormData({
+      ...initialFormData,
+      quotationId: id,
+      document_title: existingQuotation.document_title || "",
+      quotation_date: existingQuotation.quotation_date
+        ? new Date(existingQuotation.quotation_date)
+        : null,
+      due_date: existingQuotation.due_date
+        ? new Date(existingQuotation.due_date)
+        : null,
+      gst: 0, // Force GST to 0 even when loading existing data
+      shippingAmount: safeNum(existingQuotation.shippingAmount, 0),
+      extraDiscount: safeNum(existingQuotation.extraDiscount, 0),
+      extraDiscountType: existingQuotation.extraDiscountType || "fixed",
+      signature_name: existingQuotation.signature_name || "",
+      signature_image: existingQuotation.signature_image || "",
+      customerId: existingQuotation.customerId || "",
+      shipTo: existingQuotation.shipTo || "",
+      createdBy: userId,
+      products: mappedProducts,
+      floors: parsedFloors,
+      followupDates: safeJsonParse(existingQuotation.followupDates, [])
+        .map((d) => (d ? new Date(d) : null))
+        .filter(Boolean),
     });
-  }, [allCartItems]);
+  }, [isEditMode, existingQuotation, userId]);
 
-  const customers = customerData?.data || [];
-  const customerList = useMemo(() => customers, [customers]);
-  const addresses = addressesData || [];
-  const products = productsData?.data || productsData || [];
-  const teams = useMemo(() => teamsData?.teams || [], [teamsData]);
-  const vendors = useMemo(() => vendorsData || [], [vendorsData]);
-  useEffect(() => {
-    debouncedSearchRef.current = debounce((value) => {
-      setProductSearch(value);
-      if (value.trim()) {
-        const filtered = products
-          .filter(
-            (p) =>
-              p.productId &&
-              (p.name?.toLowerCase().includes(value.toLowerCase()) ||
-                p.product_code?.toLowerCase().includes(value.toLowerCase())),
-          )
-          .slice(0, 5);
-        setFilteredProducts(filtered);
-      } else {
-        setFilteredProducts([]);
-      }
-    }, 300);
+  // ── Floor / Room derived helpers ──────────────────────────────────
+  const floorOptions = useMemo(() => {
+    return formData.floors.map((f) => ({
+      value: f.floorId,
+      label: f.floorName,
+      children: (f.rooms || []).map((r) => ({
+        value: r.roomId,
+        label: r.roomName,
+      })),
+    }));
+  }, [formData.floors]);
 
-    return () => {
-      debouncedSearchRef.current?.cancel();
+  const addFloor = (name) => {
+    if (!name.trim()) return message.error("Floor name is required");
+
+    const newFloor = {
+      floorId: generateFloorId(),
+      floorName: name.trim(),
+      sortOrder: formData.floors.length,
+      rooms: [],
     };
-  }, [products]);
 
-  // ── Calculations ───────────────────────────────────────────
-  const calculationCartItems = useMemo(
-    () => localCartItems.filter((i) => !i.isOption),
-    [localCartItems],
-  );
-  const displayCartItems = allCartItems;
+    setFormData((prev) => ({
+      ...prev,
+      floors: [...prev.floors, newFloor],
+    }));
 
-  const { productsData: cartProductsData, errors: productErrors } =
-    useProductsData(calculationCartItems);
+    message.success("Floor added successfully");
+  };
 
-  const subTotal = useMemo(
-    () =>
-      calculationCartItems.reduce(
-        (sum, i) => sum + (i.price || 0) * (i.quantity || 0),
-        0,
+  const addRoom = (floorId, name) => {
+    if (!name.trim()) return message.error("Room name is required");
+
+    setFormData((prev) => {
+      const updatedFloors = prev.floors.map((f) =>
+        f.floorId === floorId
+          ? {
+              ...f,
+              rooms: [
+                ...(f.rooms || []),
+                {
+                  roomId: generateRoomId(f.floorId),
+                  roomName: name.trim(),
+                },
+              ],
+            }
+          : f,
+      );
+      return { ...prev, floors: updatedFloors };
+    });
+
+    message.success("Room added successfully");
+  };
+
+  const openRoomsForFloor = (floorId) => {
+    setSelectedFloorForRooms(floorId);
+    setShowRoomsModal(true);
+  };
+
+  const assignFloorRoom = (productId, selectedPath) => {
+    if (!selectedPath || selectedPath.length === 0) {
+      // Clear assignment
+      setFormData((prev) => ({
+        ...prev,
+        products: prev.products.map((p) =>
+          p.productId === productId
+            ? {
+                ...p,
+                floorId: null,
+                floorName: null,
+                roomId: null,
+                roomName: null,
+              }
+            : p,
+        ),
+      }));
+      return;
+    }
+
+    const [floorId, roomId] = selectedPath;
+    const floor = formData.floors.find((f) => f.floorId === floorId);
+    const room = floor?.rooms?.find((r) => r.roomId === roomId);
+
+    setFormData((prev) => ({
+      ...prev,
+      products: prev.products.map((p) =>
+        p.productId === productId
+          ? {
+              ...p,
+              floorId,
+              floorName: floor?.floorName || null,
+              roomId: roomId || null,
+              roomName: room?.roomName || null,
+            }
+          : p,
       ),
-    [calculationCartItems],
-  );
-  const debouncedAddresses = useMemo(() => {
-    return addresses; // or use lodash debounce if needed
-  }, [addresses]);
+    }));
+  };
 
-  const userIds = useMemo(
-    () => [...new Set(debouncedAddresses.map((a) => a.userId).filter(Boolean))],
-    [debouncedAddresses],
-  );
+  // ── Memoized data ─────────────────────────────────────────────────
+  const { mainProducts, groupedItems } = useMemo(() => {
+    const main = [];
+    const groups = {};
 
-  const customerIds = useMemo(
-    () => [
-      ...new Set(debouncedAddresses.map((a) => a.customerId).filter(Boolean)),
-    ],
-    [debouncedAddresses],
-  );
-  const { userMap, customerMap } = useUserAndCustomerData(
-    userIds,
-    customerIds,
-    {
-      skip: activeTab !== "checkout" || !addresses.length || !selectedCustomer,
-    }, // Add !selectedCustomer
-  );
-  const totalDiscount = useMemo(() => {
-    return calculationCartItems.reduce((sum, item) => {
-      const subtotal = (item.price || 0) * (item.quantity || 1);
-      const discVal = Number(itemDiscounts[item.productId]) || 0;
-      const type = itemDiscountTypes[item.productId] || "percent";
-      const disc =
-        type === "percent"
-          ? (subtotal * discVal) / 100
-          : discVal * (item.quantity || 1);
-      return sum + disc;
-    }, 0);
-  }, [calculationCartItems, itemDiscounts, itemDiscountTypes]);
+    formData.products.forEach((p) => {
+      const gid = p.groupId || "ungrouped";
+      if (!groups[gid]) groups[gid] = { main: null, options: [] };
 
-  const tax = useMemo(() => {
-    return calculationCartItems.reduce((acc, item) => {
-      const subtotal = (item.price || 0) * (item.quantity || 1);
-      const discVal = Number(itemDiscounts[item.productId]) || 0;
-      const type = itemDiscountTypes[item.productId] || "percent";
-      const discAmt = type === "percent" ? (subtotal * discVal) / 100 : discVal;
-      const taxable = subtotal - discAmt;
-      const itemTax = Number(itemTaxes[item.productId]) || 0;
-      return acc + (taxable * itemTax) / 100;
-    }, 0);
-  }, [calculationCartItems, itemDiscounts, itemDiscountTypes, itemTaxes]);
+      if (!p.isOptionFor) {
+        main.push(p);
+        groups[gid].main = p;
+      } else {
+        groups[gid].options.push(p);
+      }
+    });
 
-  const extraDiscount = useMemo(() => {
-    const amount = Number(quotationData.discountAmount) || 0;
-    if (!amount) return 0;
-    const base = subTotal - totalDiscount + tax + shipping;
-    return quotationData.discountType === "percent"
-      ? (base * amount) / 100
-      : amount;
+    return {
+      mainProducts: main,
+      groupedItems: Object.values(groups),
+    };
+  }, [formData.products]);
+
+  // ── Calculations (GST always 0) ───────────────────────────────────
+  const calculations = useMemo(() => {
+    let mainSubtotal = 0;
+    let mainLineDiscount = 0;
+
+    mainProducts.forEach((p) => {
+      const qty = safeNum(p.qty, 1);
+      const price = safeNum(p.sellingPrice, 0);
+      const disc = safeNum(p.discount, 0);
+      const discType = p.discountType || "fixed";
+
+      const lineDisc =
+        discType === "percent" ? (price * qty * disc) / 100 : disc * qty;
+      const lineNet = price * qty - lineDisc;
+
+      mainSubtotal += lineNet;
+      mainLineDiscount += lineDisc;
+    });
+
+    let optionalPotential = 0;
+    formData.products.forEach((p) => {
+      if (p.isOptionFor) {
+        optionalPotential += safeNum(p.sellingPrice, 0) * safeNum(p.qty, 1);
+      }
+    });
+
+    const extraDiscValue = safeNum(formData.extraDiscount, 0);
+    const extraDiscAmt =
+      formData.extraDiscountType === "percent"
+        ? (mainSubtotal * extraDiscValue) / 100
+        : extraDiscValue;
+
+    const afterExtra = mainSubtotal - extraDiscAmt;
+    const gstRate = 0; // Always 0
+    const gstAmt = 0; // No GST
+    const shipping = safeNum(formData.shippingAmount, 0);
+    const totalBeforeRound = afterExtra + gstAmt + shipping;
+
+    const rounded = Math.round(totalBeforeRound);
+    const roundOff = rounded - totalBeforeRound;
+
+    return {
+      mainSubtotal: Number(mainSubtotal.toFixed(2)),
+      mainLineDiscount: Number(mainLineDiscount.toFixed(2)),
+      extraDiscAmt: Number(extraDiscAmt.toFixed(2)),
+      gstAmt: 0,
+      shipping,
+      roundOff: Number(roundOff.toFixed(2)),
+      finalAmount: Number(rounded.toFixed(0)),
+      optionalPotential: Number(optionalPotential.toFixed(2)),
+    };
   }, [
-    quotationData.discountAmount,
-    quotationData.discountType,
-    subTotal,
-    totalDiscount,
-    tax,
-    shipping,
+    mainProducts,
+    formData.products,
+    formData.shippingAmount,
+    formData.extraDiscount,
+    formData.extraDiscountType,
   ]);
 
-  const amountBeforeGst = useMemo(
-    () =>
-      parseFloat(
-        (subTotal - totalDiscount + tax + shipping - extraDiscount).toFixed(2),
+  // ── Product Handlers ──────────────────────────────────────────────
+  const addProduct = (productId) => {
+    const prod = searchResult.find((p) => (p.id || p.productId) === productId);
+    if (!prod) return message.warning("Product not found");
+
+    if (formData.products.some((item) => item.productId === productId)) {
+      return message.info("Product already added");
+    }
+
+    const price = safeNum(
+      prod.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"],
+      0,
+    );
+
+    const newGroupId = `grp-${uuidv4().slice(0, 8)}`;
+
+    setFormData((prev) => ({
+      ...prev,
+      products: [
+        ...prev.products,
+        {
+          productId: prod.id || prod.productId,
+          name: prod.name || "Unknown",
+          qty: 1,
+          sellingPrice: price,
+          discount: 0,
+          discountType: "fixed",
+          tax: 0,
+          isOptionFor: null,
+          optionType: null,
+          groupId: newGroupId,
+          floorId: null,
+          floorName: null,
+          roomId: null,
+          roomName: null,
+        },
+      ],
+    }));
+
+    setSearchTerm("");
+  };
+
+  const addOption = (productId) => {
+    if (!selectedParentId) return message.error("Select a main product first");
+
+    const prod = searchResult.find((p) => (p.id || p.productId) === productId);
+    if (!prod) return message.warning("Product not found");
+
+    const parent = formData.products.find(
+      (p) => p.productId === selectedParentId && !p.isOptionFor,
+    );
+
+    if (!parent) return message.error("Parent product not found");
+
+    const price = safeNum(
+      prod.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"],
+      0,
+    );
+
+    setFormData((prev) => ({
+      ...prev,
+      products: [
+        ...prev.products,
+        {
+          productId: prod.id || prod.productId,
+          name: prod.name || "Unknown",
+          qty: 1,
+          sellingPrice: price,
+          discount: 0,
+          discountType: "fixed",
+          tax: 0,
+          isOptionFor: selectedParentId,
+          optionType,
+          groupId: parent.groupId,
+          floorId: parent.floorId,
+          floorName: parent.floorName,
+          roomId: parent.roomId,
+          roomName: parent.roomName,
+        },
+      ],
+    }));
+
+    setShowAddOptionModal(false);
+    setSearchTerm("");
+    message.success(`Added ${optionType}`);
+  };
+
+  const removeProduct = (productId) => {
+    setFormData((prev) => {
+      const product = prev.products.find((p) => p.productId === productId);
+      let updated = prev.products.filter((p) => p.productId !== productId);
+
+      if (product && !product.isOptionFor) {
+        updated = updated.filter((p) => p.isOptionFor !== productId);
+      }
+
+      return { ...prev, products: updated };
+    });
+  };
+
+  const updateProductField = (productId, field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      products: prev.products.map((p) =>
+        p.productId === productId ? { ...p, [field]: value } : p,
       ),
-    [subTotal, totalDiscount, tax, shipping, extraDiscount],
-  );
-
-  const roundOff = useMemo(() => {
-    const rupees = Math.floor(amountBeforeGst);
-    const paise = Math.round((amountBeforeGst - rupees) * 100);
-    if (paise > 0 && paise <= 50) return -paise / 100;
-    if (paise > 50) return (100 - paise) / 100;
-    return 0;
-  }, [amountBeforeGst]);
-
-  const roundedAmount = amountBeforeGst + roundOff;
-  const gstAmount =
-    gst > 0 ? parseFloat(((roundedAmount * gst) / 100).toFixed(2)) : 0;
-  const totalAmount = parseFloat((roundedAmount + gstAmount).toFixed(2));
-
-  // ── Handlers ───────────────────────────────────────────────
-  const handleProductSearchChange = useCallback(
-    (e) => {
-      handleProductSearch(e.target.value);
-    },
-    [handleProductSearch],
-  );
-
-  const handleUpdateQuantity = useCallback(
-    async (productId, newQty) => {
-      if (!userId || newQty < 1) return;
-      setUpdatingItems((prev) => ({ ...prev, [productId]: true }));
-      try {
-        await updateCart({
-          userId,
-          productId,
-          quantity: Number(newQty),
-        }).unwrap();
-      } catch (err) {
-        message.error(err?.data?.message || "Failed to update quantity");
-      } finally {
-        setUpdatingItems((prev) => ({ ...prev, [productId]: false }));
-      }
-    },
-    [userId, updateCart],
-  );
-  const handleTeamAdded = (showModal) => {
-    setShowAddTeamModal(showModal);
-    if (!showModal) refetchTeams();
+    }));
   };
 
-  const handleQuotationChange = useCallback((key, value) => {
-    setQuotationData((prev) => ({ ...prev, [key]: value }));
-  }, []);
-
-  const handleRemoveItem = useCallback(
-    async (e, productId) => {
-      e?.preventDefault?.();
-      e?.stopPropagation?.();
-
-      if (!userId) return message.error("User not logged in");
-
-      dispatch(
-        cartApi.util.updateQueryData("getCart", userId, (draft) => {
-          draft.cart.items = draft.cart.items.filter(
-            (i) => i.productId !== productId,
-          );
-        }),
-      );
-
-      setItemDiscounts((prev) => {
-        const { [productId]: _, ...rest } = prev;
-        return rest;
-      });
-      setItemTaxes((prev) => {
-        const { [productId]: _, ...rest } = prev;
-        return rest;
-      });
-      setItemDiscountTypes((prev) => {
-        const { [productId]: _, ...rest } = prev;
-        return rest;
-      });
-
-      setUpdatingItems((prev) => ({ ...prev, [productId]: true }));
-
-      try {
-        await removeFromCart({ userId, productId }).unwrap();
-      } catch (err) {
-        message.error(err?.data?.message || "Failed to remove item");
-      } finally {
-        setUpdatingItems((prev) => ({ ...prev, [productId]: false }));
-      }
-    },
-    [userId, dispatch, removeFromCart],
-  );
-
-  const assignItemToLocation = useCallback(() => {
-    if (!selectedFloorForAssign) return message.error("Please select a floor");
-
-    setLocalCartItems((prev) =>
-      prev.map((item) =>
-        item.id === assignModal.itemId
-          ? {
-              ...item,
-              floor_number: selectedFloorForAssign,
-              room_id: selectedRoomForAssign || null,
-            }
-          : item,
-      ),
-    );
-
-    message.success("Item assigned successfully");
-    setAssignModal({ visible: false, itemId: null });
-    setSelectedFloorForAssign(null);
-    setSelectedRoomForAssign(null);
-  }, [assignModal.itemId, selectedFloorForAssign, selectedRoomForAssign]);
-
-  // ... (rest of your handlers: handleMakeOption, handleClearCart, handleCreateDocument, resetForm, etc.)
-  const handleMakeOption = (productId, optionType, parentProductId = null) => {
-    if (!userId) return message.error("User not logged in");
-
-    dispatch(
-      cartApi.util.updateQueryData("getCart", userId, (draft) => {
-        const item = draft.cart.items.find((i) => i.productId === productId);
-        if (item) {
-          if (optionType === null) {
-            item.isOption = false;
-            item.optionType = null;
-            item.parentProductId = null;
-            item.selected = true;
-          } else {
-            item.isOption = true;
-            item.optionType = optionType;
-            item.parentProductId = parentProductId || null;
-            item.selected = true;
-          }
-        }
-      }),
-    );
-
-    message.info(
-      optionType
-        ? `Item marked as ${optionType}${parentProductId ? ` for ${getParentName(parentProductId)}` : ""}`
-        : "Item reset to main product",
-    );
+  // ── Follow-up dates handlers ──────────────────────────────────────
+  const addFollowup = () => {
+    setFormData((prev) => ({
+      ...prev,
+      followupDates: [...prev.followupDates, null],
+    }));
   };
-  const getParentName = (parentProductId) => {
-    if (!parentProductId) return "Unknown";
-    const parentItem = allCartItems.find(
-      (i) => i.productId === parentProductId,
-    );
-    return parentItem?.name || "Deleted/Unknown product";
+
+  const removeFollowup = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      followupDates: prev.followupDates.filter((_, i) => i !== index),
+    }));
   };
-  // ────────────────────── HANDLERS ──────────────────────
-  const handleShippingChange = useCallback((v) => setShipping(v), []);
 
-  const handleDiscountChange = (productId, value) =>
-    setItemDiscounts((p) => ({ ...p, [productId]: value >= 0 ? value : 0 }));
-
-  const handleDiscountTypeChange = (productId, type) =>
-    setItemDiscountTypes((p) => ({ ...p, [productId]: type }));
-
-  const handleTaxChange = (productId, value) =>
-    setItemTaxes((p) => ({ ...p, [productId]: value >= 0 ? value : 0 }));
-
-  const handleClearCart = async () => {
-    if (!userId) return message.error("User not logged in!");
-    try {
-      await clearCart({ userId }).unwrap();
-      resetForm();
-      setShowClearCartModal(false);
-      setActiveTab("cart");
-    } catch (e) {
-      message.error(e.data?.message || "Failed to clear cart");
-    }
+  const changeFollowup = (index, date) => {
+    setFormData((prev) => {
+      const dates = [...prev.followupDates];
+      dates[index] = date;
+      return { ...prev, followupDates: dates };
+    });
   };
-  const purchaseOrderTotal = useMemo(
-    () =>
-      purchaseOrderData.items
-        .reduce(
-          (sum, item) =>
-            sum + Number(item.total || 0) * (1 + (item.tax || 0) / 100),
-          0,
-        )
-        .toFixed(2),
-    [purchaseOrderData.items],
-  );
-  const debouncedSearch = useCallback(
-    debounce((value) => {
-      setProductSearch(value);
-      if (value) {
-        const filtered = products
-          .filter(
-            (p) =>
-              p.productId &&
-              (p.name?.toLowerCase().includes(value.toLowerCase()) ||
-                p.product_code?.toLowerCase().includes(value.toLowerCase())),
-          )
-          .slice(0, 5);
-        setFilteredProducts(filtered);
-      } else {
-        setFilteredProducts([]);
-      }
-    }, 300),
-    [products],
-  );
-  const handleCreateDocument = async () => {
-    if (!userId) {
-      return message.error("User not logged in!");
-    }
 
-    // ────────────────────────────────────────────────
-    //  1. Common validations
-    // ────────────────────────────────────────────────
-    if (localCartItems.length === 0) {
-      return message.error("Cart is empty. Please add items.");
-    }
+  // ── Submit Handler ────────────────────────────────────────────────
+  const handleSubmit = async () => {
+    if (!formData.customerId) return message.error("Please select customer");
+    if (formData.products.length === 0)
+      return message.error("Add at least one product");
 
-    if (documentType !== "Purchase Order" && !selectedCustomer) {
-      return message.error("Please select a customer.");
-    }
+    const payloadProducts = formData.products.map((p) => {
+      const qty = safeNum(p.qty, 1);
+      const price = safeNum(p.sellingPrice, 0);
+      const disc = safeNum(p.discount, 0);
+      const discType = p.discountType || "fixed";
+      const tax = 0; // Force tax to 0
 
-    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-
-    if (documentType === "Quotation") {
-      if (!quotationData.dueDate || !dateRegex.test(quotationData.dueDate)) {
-        return message.error("Please select a valid due date (YYYY-MM-DD).");
-      }
-      if (moment(quotationData.dueDate).isBefore(moment(), "day")) {
-        return message.error("Due date cannot be in the past.");
-      }
-    } else if (documentType === "Order") {
-      if (!orderData.dueDate || !dateRegex.test(orderData.dueDate)) {
-        return message.error("Please select a valid due date (YYYY-MM-DD).");
-      }
-      if (moment(orderData.dueDate).isBefore(moment(), "day")) {
-        return message.error("Due date cannot be in the past.");
-      }
-      if (orderData.followupDates?.length > 0 && !validateFollowupDates()) {
-        return message.error("Follow-up dates cannot be after the due date.");
-      }
-    }
-
-    // ────────────────────────────────────────────────
-    //  2. Resolve final shipping address
-    // ────────────────────────────────────────────────
-    let finalShipTo = null;
-
-    if (documentType !== "Purchase Order") {
-      if (useBillingAddress) {
-        if (billingAddressId) {
-          finalShipTo = billingAddressId;
-        } else {
-          const customer = customerList.find(
-            (c) => c.customerId === selectedCustomer,
-          );
-
-          if (!customer?.address) {
-            message.error(
-              "Customer has no default address. Please add one first.",
-            );
-            return;
-          }
-
-          let parsedAddr;
-          try {
-            parsedAddr =
-              typeof customer.address === "string"
-                ? JSON.parse(customer.address)
-                : customer.address;
-          } catch {
-            message.error("Customer's default address format is invalid.");
-            return;
-          }
-
-          const street = (parsedAddr.street || "").trim();
-          const city = (parsedAddr.city || "").trim();
-          const state = (parsedAddr.state || "").trim();
-          const postalCode = (
-            parsedAddr.zip ||
-            parsedAddr.postalCode ||
-            ""
-          ).trim();
-          const country = (parsedAddr.country || "India").trim();
-
-          if (!street || !city || !state || !country) {
-            message.error("Default address is missing required fields.");
-            return;
-          }
-
-          const payload = {
-            customerId: selectedCustomer,
-            street,
-            city,
-            state,
-            postalCode,
-            country,
-            status: "SHIPPING",
-          };
-
-          try {
-            const response = await createAddress(payload).unwrap();
-            finalShipTo = response.addressId;
-            message.success(
-              "Shipping address created automatically from default.",
-            );
-          } catch (apiError) {
-            message.error(
-              apiError?.data?.message || "Failed to create shipping address.",
-            );
-            return;
-          }
-        }
-      } else {
-        finalShipTo =
-          documentType === "Quotation"
-            ? quotationData.shipTo
-            : orderData.shipTo;
-
-        if (finalShipTo) {
-          const addr = addresses.find((a) => a.addressId === finalShipTo);
-          if (!addr) {
-            message.error("Selected shipping address was deleted.");
-            return;
-          }
-          if (addr.customerId !== selectedCustomer) {
-            message.error("Selected address does not belong to this customer.");
-            return;
-          }
-        }
-      }
-
-      if (!finalShipTo) {
-        message.error("Please select or create a shipping address.");
-        return;
-      }
-    }
-
-    // ────────────────────────────────────────────────
-    //  3. Prepare common product payload
-    // ────────────────────────────────────────────────
-    const productsPayload = localCartItems.map((item) => {
-      const price = Number(item.price ?? 0);
-      const qty = Number(item.quantity ?? 1);
-      const discVal = Number(itemDiscounts[item.productId] ?? 0);
-      const discType = itemDiscountTypes[item.productId] ?? "percent";
-      const taxRate = Number(itemTaxes[item.productId] ?? 0);
-
-      const subtotal = price * qty;
-      const discountAmt =
-        discType === "percent" ? (subtotal * discVal) / 100 : discVal;
-      const afterDisc = subtotal - discountAmt;
-      const taxAmt = (afterDisc * taxRate) / 100;
-      const lineTotal = afterDisc + taxAmt;
+      const discAmt =
+        discType === "percent" ? (price * qty * disc) / 100 : disc * qty;
+      const taxable = price * qty - discAmt;
+      const lineTotal = taxable; // No tax added
 
       return {
-        productId: item.productId,
-        name: item.name || "Unnamed Product",
-        imageUrl: item.imageUrl || "",
-        productCode: item.productCode ?? item.code ?? item.product_code ?? "",
-        companyCode: item.companyCode ?? item.company_code ?? "",
-        quantity: qty,
+        productId: p.productId,
+        name: p.name,
         price: Number(price.toFixed(2)),
-        discount: Number(discVal.toFixed(2)),
+        quantity: qty,
+        discount: Number(disc.toFixed(2)),
         discountType: discType,
-        tax: taxRate,
+        tax: 0,
         total: Number(lineTotal.toFixed(2)),
-        isOptionFor: item.parentProductId || null,
-        optionType: item.optionType || null,
-        groupId: item.groupId || null,
-        floor_number: item.floor_number || null,
-        room_id: item.room_id || null,
+        isOptionFor: p.isOptionFor || null,
+        optionType: p.optionType || null,
+        groupId: p.groupId || null,
+        floorId: p.floorId || null,
+        floorName: p.floorName || null,
+        roomId: p.roomId || null,
+        roomName: p.roomName || null,
       };
     });
 
-    // ────────────────────────────────────────────────
-    //  4. Document-type specific creation
-    // ────────────────────────────────────────────────
-
-    if (documentType === "Purchase Order") {
-      if (!selectedVendor) {
-        return message.error("Please select a vendor.");
-      }
-
-      const formattedItems = purchaseOrderData.items.map((item) => ({
-        productId: item.productId,
-        quantity: Number(item.quantity) || 1,
-        unitPrice: Number(item.mrp) || Number(item.unitPrice) || 0.01,
-        mrp: Number(item.mrp) || 0.01,
-        tax: Number(item.tax) || 0,
-        discount: Number(item.discount) || 0,
-        discountType: item.discountType || "percent",
-      }));
-
-      if (formattedItems.some((i) => i.mrp <= 0)) {
-        return message.error("All items must have MRP > 0.");
-      }
-
-      const payload = {
-        vendorId: selectedVendor,
-        items: formattedItems,
-        expectDeliveryDate: purchaseOrderData.expectedDeliveryDate
-          ? moment(purchaseOrderData.expectedDeliveryDate).format("YYYY-MM-DD")
-          : null,
-      };
-
-      try {
-        const result = await createPurchaseOrder(payload).unwrap();
-        message.success(
-          `Purchase Order ${result.purchaseOrder?.poNumber} created!`,
-        );
-        await handleClearCart();
-        resetForm();
-        navigate("/purchase-manager");
-      } catch (err) {
-        message.error(err?.data?.message || "Failed to create Purchase Order.");
-      }
-      return;
-    }
-
-    const selectedCustomerData = customerList.find(
-      (c) => c.customerId === selectedCustomer,
-    );
-    if (!selectedCustomerData) {
-      return message.error("Selected customer not found.");
-    }
-
-    // ────────────────────────────────────────────────
-    //  Quotation Creation
-    // ────────────────────────────────────────────────
-    if (documentType === "Quotation") {
-      const quotationPayload = {
-        quotationId: uuidv4(),
-        document_title: `Quotation for ${selectedCustomerData.name || "Customer"}`,
-        quotation_date:
-          quotationData.quotationDate || moment().format("YYYY-MM-DD"),
-        due_date: quotationData.dueDate,
-        extraDiscount: Number(quotationData.discountAmount) || 0,
-        extraDiscountType: quotationData.discountType || "fixed",
-        shippingAmount: Number(shipping) || 0,
-        gst: Number(gst) || 0,
-        finalAmount: totalAmount,
-        floors: quotationData.floors || [],
-        products: productsPayload,
-        followupDates: quotationData.followupDates.filter(Boolean),
-        customerId: selectedCustomer,
-        shipTo: finalShipTo,
-        createdBy: userId,
-        signature_name: quotationData.signatureName || "CM TRADING CO",
-        signature_image: "",
-      };
-
-      let quotationId = null;
-
-      try {
-        const result = await createQuotation(quotationPayload).unwrap();
-        message.success(
-          `Quotation ${result.quotation?.reference_number} created!`,
-        );
-        quotationId = result.quotation?.quotationId || result.quotation?.id;
-      } catch (err) {
-        message.error(err?.data?.message || "Failed to create quotation.");
-        return;
-      }
-
-      // ── Site Map Creation (with cleaning) ────────────────────────────────
-      if (quotationId && quotationData.floors?.length > 0) {
-        // Clean invalid floor_number / room_id references
-        const validFloorNumbers = new Set(
-          quotationData.floors.map((f) => f.number),
-        );
-
-        const floorToValidRooms = new Map(
-          quotationData.floors.map((floor) => [
-            floor.number,
-            new Set(floor.rooms?.map((r) => r.id) || []),
-          ]),
-        );
-
-        const safeItems = productsPayload.map((item) => {
-          let { floor_number, room_id, ...rest } = item;
-
-          // Drop assignment if floor no longer exists
-          if (floor_number && !validFloorNumbers.has(floor_number)) {
-            floor_number = null;
-            room_id = null;
-          }
-
-          // Drop room_id if it no longer exists on that floor
-          if (room_id && floor_number) {
-            if (!floorToValidRooms.get(floor_number)?.has(room_id)) {
-              room_id = null;
-            }
-          }
-
-          return {
-            ...rest,
-            floor_number,
-            room_id,
-          };
-        });
-
-        try {
-          await createSiteMap({
-            customerId: selectedCustomer,
-            name: `Site Map - ${selectedCustomerData.name || "Customer"} - ${moment().format("DD-MM-YY")}`,
-            totalFloors: quotationData.floors.length,
-            floors: quotationData.floors,
-            items: safeItems, // ← cleaned version
-            quotationId: quotationId,
-          }).unwrap();
-
-          message.success("Site Map created and linked to quotation!");
-        } catch (siteMapErr) {
-          console.error("Site Map creation failed:", siteMapErr);
-          message.warning(
-            "Quotation was created successfully, but Site Map could not be linked " +
-              "(some floor/room assignments were invalid or removed).",
-          );
-        }
-      }
-
-      await handleClearCart();
-      resetForm();
-      navigate("/quotations/list");
-      return;
-    }
-
-    // ────────────────────────────────────────────────
-    //  Order Creation
-    // ────────────────────────────────────────────────
-    if (documentType === "Order") {
-      const taxableBase = subTotal - totalDiscount + tax;
-      const afterTaxAndShipping = taxableBase + shipping;
-      const extraDiscValue =
-        quotationData.discountType === "percent"
-          ? (afterTaxAndShipping * Number(quotationData.discountAmount || 0)) /
-            100
-          : Number(quotationData.discountAmount || 0);
-
-      const amountForGst =
-        subTotal + shipping + tax - totalDiscount - extraDiscValue;
-      const gstAmount = Math.round((amountForGst * gst) / 100);
-
-      const orderPayload = {
-        id: uuidv4(),
-        createdFor: selectedCustomer,
-        createdBy: userId,
-        assignedTeamId: orderData.assignedTeamId || null,
-        assignedUserId: orderData.assignedUserId || null,
-        secondaryUserId: orderData.secondaryUserId || null,
-        pipeline: orderData.pipeline || null,
-        status: orderData.status || "PREPARING",
-        gst: Number(gst),
-        gstValue: Number(gstAmount),
-        extraDiscount: Number(quotationData.discountAmount) || 0,
-        extraDiscountType: quotationData.discountType || "percent",
-        extraDiscountValue: Number(extraDiscValue.toFixed(2)),
-        dueDate: orderData.dueDate,
-        followupDates: orderData.followupDates?.filter(Boolean) || [],
-        source: orderData.source || null,
-        priority: orderData.priority || "medium",
-        description: orderData.description || null,
-        invoiceLink: null,
-        quotationId: orderData.quotationId || null,
-        masterPipelineNo: orderData.masterPipelineNo || null,
-        previousOrderNo: orderData.previousOrderNo || null,
-        shipTo: finalShipTo,
-        floors: quotationData.floors || [],
-        products: productsPayload,
-      };
-
-      try {
-        const result = await createOrder(orderPayload).unwrap();
-        message.success(`Order ${result.orderNo} created successfully!`);
-        await handleClearCart();
-        resetForm();
-        navigate("/orders/list");
-      } catch (err) {
-        const msg =
-          err?.data?.message ||
-          err?.data?.error ||
-          err?.data ||
-          "Unknown error – check network tab";
-        message.error(msg);
-      }
-    }
-  };
-  const resetForm = () => {
-    setQuotationData({
-      quotationDate: new Date().toISOString().split("T")[0],
-      dueDate: "",
-      billTo: "",
-      shipTo: null,
-      signatureName: "CM TRADING CO",
-      discountType: "fixed",
-      discountAmount: "",
-      followupDates: [],
-    });
-    setOrderData((prev) => ({
-      ...prev,
-      createdFor: "",
-      assignedTeamId: "",
-      assignedUserId: "",
-      secondaryUserId: "",
-      pipeline: "",
-      dueDate: moment().add(1, "days").format("YYYY-MM-DD"),
-      followupDates: [],
-      source: "",
-      priority: "medium",
-      description: "",
-      orderNo: "",
-      shipTo: null,
-    }));
-    setPurchaseOrderData({
-      vendorId: "",
-      orderDate: moment().format("YYYY-MM-DD"),
-      expectedDeliveryDate: null,
-      items: [],
-      totalAmount: 0,
-      status: "pending",
-    });
-    setSelectedCustomer("");
-    setSelectedVendor("");
-    setItemDiscounts({});
-    setItemTaxes({});
-    setItemDiscountTypes({});
-    setDocumentType("Quotation");
-    setActiveTab("cart");
-    setProductSearch("");
-    setFilteredProducts([]);
-    setUseBillingAddress(false);
-  };
-  const validateFollowupDates = () => {
-    if (!orderData.dueDate || orderData.followupDates.length === 0) return true;
-    const dueDate = moment(orderData.dueDate);
-    return orderData.followupDates.every((date) => {
-      if (!date || new Date(date).toString() === "Invalid Date") return true;
-      return moment(date).isSameOrBefore(dueDate, "day");
-    });
-  };
-
-  const handleAddCustomer = () => setShowAddCustomerModal(true);
-
-  const handleCustomerSave = async (newCustomer) => {
+    const payload = {
+      ...formData,
+      quotation_date: formData.quotation_date
+        ? format(formData.quotation_date, "yyyy-MM-dd")
+        : null,
+      due_date: formData.due_date
+        ? format(formData.due_date, "yyyy-MM-dd")
+        : null,
+      gst: 0, // Always 0
+      shippingAmount: safeNum(formData.shippingAmount),
+      extraDiscount: safeNum(formData.extraDiscount),
+      extraDiscountType: formData.extraDiscountType || "fixed",
+      roundOff: calculations.roundOff,
+      finalAmount: calculations.finalAmount,
+      products: payloadProducts,
+      floors: formData.floors,
+      followupDates: formData.followupDates
+        .filter(Boolean)
+        .map((d) => format(d, "yyyy-MM-dd")),
+      shipTo: formData.shipTo || null,
+    };
+    console.log(payload);
     try {
-      await createCustomer(newCustomer).unwrap();
-      dispatch(customerApi.util.invalidateTags(["Customer"]));
-      setSelectedCustomer(newCustomer.customerId || "");
-      setShowAddCustomerModal(false);
+      if (isEditMode) {
+        await updateQuotation({ id, updatedQuotation: payload }).unwrap();
+        message.success("Quotation updated successfully");
+      } else {
+        await createQuotation(payload).unwrap();
+        message.success("Quotation created successfully");
+        setFormData(initialFormData);
+      }
+      navigate("/quotations/list");
     } catch (err) {
-      message.error(err?.data?.message || "Failed to create customer.");
+      console.log(err);
+      message.error(err?.data?.message || "Failed to save quotation");
     }
   };
 
-  const handleAddAddress = () => setShowAddAddressModal(true);
+  // ── Table Columns ─────────────────────────────────────────────────
+  const columns = [
+    {
+      title: "Floor / Room",
+      width: 220,
+      render: (_, record) => {
+        if (!record.floorId && !record.roomId)
+          return <Text type="secondary">Unassigned</Text>;
 
-  // ── Render ─────────────────────────────────────────────────
-  if (productErrors.length > 0) {
-    return (
-      <PageWrapper>
-        <Alert
-          message="Error loading cart products"
-          description={productErrors.map((e) => e.error).join(", ")}
-          type="error"
-          showIcon
+        return (
+          <div>
+            {record.floorName && (
+              <div>
+                <HomeOutlined /> {record.floorName}
+              </div>
+            )}
+            {record.roomName && (
+              <div style={{ marginLeft: 16, color: "#555" }}>
+                <ApartmentOutlined /> {record.roomName}
+              </div>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      title: "Type",
+      width: 110,
+      render: (_, record) => {
+        if (!record.isOptionFor) return <Tag color="blue">Main</Tag>;
+
+        const colors = {
+          variant: "purple",
+          upgrade: "geekblue",
+          addon: "green",
+        };
+
+        return (
+          <Tag color={colors[record.optionType] || "default"}>
+            {record.optionType || "Option"}
+          </Tag>
+        );
+      },
+    },
+    {
+      title: "Product / Option",
+      dataIndex: "name",
+      key: "name",
+      render: (text, record) => {
+        const indent = record.isOptionFor ? 32 : 0;
+        return (
+          <div style={{ paddingLeft: indent }}>
+            {record.isOptionFor && (
+              <Text type="secondary" style={{ marginRight: 8 }}>
+                ↳
+              </Text>
+            )}
+            {text}
+          </div>
+        );
+      },
+    },
+    {
+      title: "Qty",
+      width: 90,
+      render: (_, record) => (
+        <InputNumber
+          min={1}
+          value={record.qty}
+          onChange={(v) => updateProductField(record.productId, "qty", v)}
         />
-      </PageWrapper>
+      ),
+    },
+    {
+      title: "Price (₹)",
+      width: 110,
+      render: (_, r) => safeNum(r.sellingPrice, 0).toFixed(2),
+    },
+    {
+      title: "Disc",
+      width: 160,
+      render: (_, r) => (
+        <Space.Compact>
+          <InputNumber
+            min={0}
+            value={r.discount}
+            onChange={(v) => updateProductField(r.productId, "discount", v)}
+            style={{ width: 90 }}
+          />
+          <Select
+            value={r.discountType || "fixed"}
+            onChange={(v) => updateProductField(r.productId, "discountType", v)}
+            style={{ width: 70 }}
+          >
+            <Option value="fixed">₹</Option>
+            <Option value="percent">%</Option>
+          </Select>
+        </Space.Compact>
+      ),
+    },
+    {
+      title: "Tax %",
+      width: 90,
+      render: (_, r) => "0", // Always show 0
+    },
+    {
+      title: "Line Total",
+      render: (_, r) => {
+        const qty = safeNum(r.qty, 1);
+        const price = safeNum(r.sellingPrice, 0);
+        const disc = safeNum(r.discount, 0);
+        const discType = r.discountType || "fixed";
+
+        const discAmt =
+          discType === "percent" ? (price * qty * disc) / 100 : disc * qty;
+        const lineTotal = price * qty - discAmt; // No tax
+
+        return lineTotal.toFixed(2);
+      },
+    },
+    {
+      title: "Location",
+      width: 140,
+      render: (_, record) => (
+        <Cascader
+          options={floorOptions}
+          value={
+            record.floorId && record.roomId
+              ? [record.floorId, record.roomId]
+              : record.floorId
+                ? [record.floorId]
+                : undefined
+          }
+          onChange={(val) => assignFloorRoom(record.productId, val)}
+          placeholder="Assign floor / room"
+          allowClear
+          expandTrigger="hover"
+          style={{ width: "100%" }}
+        />
+      ),
+    },
+    {
+      title: "",
+      width: 60,
+      render: (_, r) => (
+        <Button
+          danger
+          size="small"
+          icon={<DeleteOutlined />}
+          onClick={() => removeProduct(r.productId)}
+        />
+      ),
+    },
+  ];
+
+  if (loadingQuotation) {
+    return (
+      <Spin
+        tip="Loading quotation..."
+        size="large"
+        style={{ margin: "120px auto", display: "block" }}
+      />
     );
   }
 
   return (
     <div className="page-wrapper">
       <div className="content">
-        <Tabs
-          activeKey={activeTab}
-          onChange={setActiveTab}
-          type="card"
-          tabBarExtraContent={
-            <Segmented
-              value={documentType}
-              onChange={setDocumentType}
-              options={[
-                { label: "Quotation", value: "Quotation" },
-                { label: "Order", value: "Order" },
-                ...(canCreatePurchaseOrder
-                  ? [{ label: "Purchase Order", value: "Purchase Order" }]
-                  : []),
-              ]}
-            />
-          }
-        >
-          <TabPane
-            tab={
-              <span>
-                <ShoppingCartOutlined /> Cart ({localCartItems.length})
-              </span>
-            }
-            key="cart"
-          >
-            <CartTab
-              cartItems={localCartItems}
-              cartProductsData={cartProductsData}
-              totalItems={localCartItems.length}
-              shipping={shipping}
-              tax={tax}
-              discount={totalDiscount}
-              roundOff={roundOff}
-              subTotal={subTotal}
-              quotationData={quotationData}
-              itemDiscounts={itemDiscounts}
-              itemDiscountTypes={itemDiscountTypes}
-              itemTaxes={itemTaxes}
-              updatingItems={updatingItems}
-              handleUpdateQuantity={handleUpdateQuantity}
-              handleRemoveItem={handleRemoveItem}
-              handleDiscountChange={handleDiscountChange}
-              handleDiscountTypeChange={handleDiscountTypeChange}
-              handleTaxChange={handleTaxChange}
-              setShowClearCartModal={setShowClearCartModal}
-              setActiveTab={setActiveTab}
-              onShippingChange={(v) => setShipping(v)}
-              handleMakeOption={handleMakeOption}
-              getParentName={getParentName}
-              documentType={documentType}
-              setDocumentType={setDocumentType}
-              setAssignModal={setAssignModal} // NEW - trigger assignment
-            />
-          </TabPane>
+        <PageHeader
+          exportOptions={{ pdf: false, excel: false }}
+          title={isEditMode ? "Edit Quotation" : "Create Quotation"}
+          subtitle="Fill in all quotation details"
+        />
 
-          <TabPane
-            tab={
-              <span>
-                <CheckCircleOutlined /> Checkout
-              </span>
-            }
-            key="checkout"
+        <Space style={{ marginBottom: 24 }}>
+          <Button
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate("/quotations/list")}
           >
-            {documentType === "Purchase Order" ? (
-              <PurchaseOrderForm
-                purchaseOrderData={purchaseOrderData}
-                setPurchaseOrderData={setPurchaseOrderData}
-                selectedVendor={selectedVendor}
-                setSelectedVendor={setSelectedVendor}
-                vendors={vendors}
-                products={products}
-                productSearch={productSearch}
-                filteredProducts={filteredProducts}
-                debouncedSearch={debouncedSearch}
-                addPurchaseOrderProduct={(productId) => {
-                  const product = products.find(
-                    (p) => p.productId === productId,
-                  );
-                  if (
-                    !product ||
-                    purchaseOrderData.items.some(
-                      (i) => i.productId === productId,
-                    ) ||
-                    allCartItems.some((i) => i.productId === productId)
-                  ) {
-                    message.error(
-                      product ? "Product already added." : "Product not found.",
-                    );
-                    return;
-                  }
-                  const sellingPrice =
-                    product.metaDetails?.find((m) => m.slug === "sellingPrice")
-                      ?.value || 0;
-                  if (sellingPrice <= 0) {
-                    message.error(`Invalid MRP for ${product.name}`);
-                    return;
-                  }
-                  const quantity = 1;
-                  const total = quantity * sellingPrice;
-                  setPurchaseOrderData((prev) => {
-                    const newItems = [
-                      ...prev.items,
-                      {
-                        id: product.productId,
-                        productId: product.productId,
-                        name: product.name,
-                        quantity,
-                        mrp: sellingPrice,
-                        total,
-                        tax: 0,
-                      },
-                    ];
-                    const totalAmount = newItems
-                      .reduce((s, i) => s + i.total * (1 + i.tax / 100), 0)
-                      .toFixed(2);
-                    return { ...prev, items: newItems, totalAmount };
-                  });
-                  setProductSearch("");
-                  setFilteredProducts([]);
-                }}
-                removePurchaseOrderProduct={(index) => {
-                  setPurchaseOrderData((prev) => {
-                    const newItems = prev.items.filter((_, i) => i !== index);
-                    const totalAmount = newItems
-                      .reduce((s, i) => s + i.total * (1 + i.tax / 100), 0)
-                      .toFixed(2);
-                    return { ...prev, items: newItems, totalAmount };
-                  });
-                }}
-                updatePurchaseOrderProductField={(index, field, value) => {
-                  const items = [...purchaseOrderData.items];
-                  items[index][field] = value;
-                  if (["quantity", "mrp", "tax"].includes(field)) {
-                    const q = Number(items[index].quantity) || 1;
-                    const m = Number(items[index].mrp) || 0.01;
-                    const t = Number(items[index].tax) || 0;
-                    items[index].total = q * m * (1 + t / 100);
-                  }
-                  const totalAmount = items
-                    .reduce((s, i) => s + i.total * (1 + i.tax / 100), 0)
-                    .toFixed(2);
-                  setPurchaseOrderData({
-                    ...purchaseOrderData,
-                    items,
-                    totalAmount,
-                  });
-                }}
-                handlePurchaseOrderChange={(key, value) =>
-                  setPurchaseOrderData((prev) => ({ ...prev, [key]: value }))
-                }
-                purchaseOrderTotal={purchaseOrderTotal}
-                documentType={documentType}
-                setDocumentType={setDocumentType}
-                cartItems={displayCartItems}
-                setActiveTab={setActiveTab}
-                handleCreateDocument={handleCreateDocument}
-                setShowAddVendorModal={setShowAddVendorModal}
-              />
-            ) : documentType === "Order" ? (
-              <OrderForm
-                orderData={orderData}
-                setOrderData={setOrderData}
-                handleOrderChange={(key, value) =>
-                  setOrderData((prev) => ({ ...prev, [key]: value }))
-                }
-                selectedCustomer={selectedCustomer}
-                setSelectedCustomer={setSelectedCustomer}
-                customers={customerList}
-                shipping={shipping}
-                onShippingChange={handleShippingChange}
-                addresses={addresses}
-                userMap={userMap}
-                customerMap={customerMap}
-                teams={teams}
-                users={users}
-                documentType={documentType}
-                setDocumentType={setDocumentType}
-                cartItems={displayCartItems}
-                totalAmount={totalAmount}
-                tax={tax}
-                totalDiscount={totalDiscount}
-                extraDiscount={orderData.extraDiscount}
-                extraDiscountType={orderData.extraDiscountType}
-                roundOff={roundOff}
-                subTotal={subTotal}
-                handleAddCustomer={handleAddCustomer}
-                handleAddAddress={handleAddAddress}
-                setActiveTab={setActiveTab}
-                handleCreateDocument={handleCreateDocument}
-                handleTeamAdded={handleTeamAdded}
-                useBillingAddress={useBillingAddress}
-                setUseBillingAddress={setUseBillingAddress}
-              />
+            Back
+          </Button>
+          {isEditMode && versionsData.length > 0 && (
+            <Button onClick={() => setShowVersionsModal(true)}>
+              Versions ({versionsData.length})
+            </Button>
+          )}
+        </Space>
+
+        <Form layout="vertical">
+          {/* Customer & Shipping */}
+          <Card title="Customer & Shipping" style={{ marginBottom: 24 }}>
+            <Row gutter={16}>
+              <Col xs={24} md={12}>
+                <Form.Item label="Customer *" required>
+                  <Select
+                    showSearch
+                    value={formData.customerId}
+                    onChange={(v) =>
+                      setFormData({ ...formData, customerId: v, shipTo: "" })
+                    }
+                    placeholder="Select customer"
+                    filterOption={(input, option) =>
+                      option.children
+                        .toLowerCase()
+                        .includes(input.toLowerCase())
+                    }
+                  >
+                    {(customersData?.data || []).map((c) => (
+                      <Option key={c.customerId} value={c.customerId}>
+                        {c.name}
+                      </Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+              </Col>
+
+              <Col xs={24} md={12}>
+                <Form.Item label="Shipping Address">
+                  <Space.Compact style={{ width: "100%" }}>
+                    <Select
+                      placeholder="Select or add address"
+                      value={formData.shipTo}
+                      onChange={(v) => setFormData({ ...formData, shipTo: v })}
+                      disabled={!formData.customerId}
+                      style={{ flex: 1 }}
+                    >
+                      {(addressesData || [])
+                        .filter((a) => a.customerId === formData.customerId)
+                        .map((a) => (
+                          <Option key={a.addressId} value={a.addressId}>
+                            {a.street}, {a.city}, {a.state}
+                          </Option>
+                        ))}
+                    </Select>
+                    <Button
+                      type="primary"
+                      icon={<PlusOutlined />}
+                      onClick={() => setShowAddressModal(true)}
+                      disabled={!formData.customerId}
+                    />
+                  </Space.Compact>
+                </Form.Item>
+              </Col>
+            </Row>
+          </Card>
+
+          {/* Quotation Details */}
+          <Card title="Quotation Details" style={{ marginBottom: 24 }}>
+            <Row gutter={16}>
+              <Col xs={24} md={12}>
+                <Form.Item label="Title *" required>
+                  <Input
+                    value={formData.document_title}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        document_title: e.target.value,
+                      })
+                    }
+                    placeholder="e.g. Bathroom Fittings Quotation"
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12}>
+                <Form.Item label="Quotation Number">
+                  <Input value="Auto-generated" disabled />
+                </Form.Item>
+              </Col>
+            </Row>
+
+            <Row gutter={16}>
+              <Col xs={24} md={12}>
+                <Form.Item label="Quotation Date *" required>
+                  <DatePicker
+                    selected={formData.quotation_date}
+                    onChange={(d) =>
+                      setFormData({ ...formData, quotation_date: d })
+                    }
+                    dateFormat="dd/MM/yyyy"
+                    className="ant-input"
+                    wrapperClassName="full-width"
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12}>
+                <Form.Item label="Due Date *" required>
+                  <DatePicker
+                    selected={formData.due_date}
+                    onChange={(d) => setFormData({ ...formData, due_date: d })}
+                    dateFormat="dd/MM/yyyy"
+                    minDate={formData.quotation_date}
+                    className="ant-input"
+                    wrapperClassName="full-width"
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+
+            <Form.Item label="Follow-up Dates">
+              <Space direction="vertical" style={{ width: "100%" }}>
+                {formData.followupDates.map((date, i) => (
+                  <Space key={i} align="center">
+                    <DatePicker
+                      selected={date}
+                      onChange={(d) => changeFollowup(i, d)}
+                      dateFormat="dd/MM/yyyy"
+                      minDate={new Date()}
+                      maxDate={formData.due_date}
+                    />
+                    <Button
+                      danger
+                      size="small"
+                      icon={<DeleteOutlined />}
+                      onClick={() => removeFollowup(i)}
+                    />
+                  </Space>
+                ))}
+                <Button
+                  type="dashed"
+                  block
+                  icon={<PlusOutlined />}
+                  onClick={addFollowup}
+                >
+                  Add Follow-up Date
+                </Button>
+              </Space>
+            </Form.Item>
+          </Card>
+
+          {/* Project Structure Card */}
+          <Card
+            title="Project Structure (Floors & Rooms)"
+            style={{ marginBottom: 24 }}
+            extra={
+              <Space>
+                <Button
+                  type="primary"
+                  icon={<HomeOutlined />}
+                  onClick={() => setShowFloorsModal(true)}
+                >
+                  Manage Floors
+                </Button>
+                {formData.floors.length > 0 && (
+                  <Button
+                    icon={<ApartmentOutlined />}
+                    onClick={() => setShowRoomsModal(true)}
+                  >
+                    Manage Rooms
+                  </Button>
+                )}
+              </Space>
+            }
+          >
+            {formData.floors.length === 0 ? (
+              <Text type="secondary">
+                No floors/rooms defined yet. Add them to organize products by
+                location.
+              </Text>
             ) : (
-              <QuotationForm
-                quotationData={quotationData}
-                setQuotationData={setQuotationData}
-                handleQuotationChange={handleQuotationChange}
-                selectedCustomer={selectedCustomer}
-                onShippingChange={handleShippingChange}
-                setSelectedCustomer={setSelectedCustomer}
-                customers={customerList}
-                addresses={addresses}
-                userMap={userMap}
-                customerMap={customerMap}
-                documentType={documentType}
-                setDocumentType={setDocumentType}
-                cartItems={localCartItems}
-                setCartItems={setLocalCartItems}
-                totalAmount={totalAmount}
-                gst={gst}
-                gstAmount={gstAmount}
-                setGst={setGst}
-                shipping={shipping}
-                tax={tax}
-                discount={totalDiscount}
-                extraDiscount={extraDiscount}
-                roundOff={roundOff}
-                subTotal={subTotal}
-                handleAddCustomer={handleAddCustomer}
-                handleAddAddress={handleAddAddress}
-                setActiveTab={setActiveTab}
-                handleCreateDocument={handleCreateDocument}
-                useBillingAddress={useBillingAddress}
-                setBillingAddressId={setBillingAddressId}
-                setUseBillingAddress={setUseBillingAddress}
-                itemDiscounts={itemDiscounts}
-                itemTaxes={itemTaxes}
-                previewVisible={previewVisible}
-                setPreviewVisible={setPreviewVisible} // ── These 6 lines were missing ────────────────────────────────
-                // assignModal={assignModal}
-                // setAssignModal={setAssignModal}
-                // selectedFloorForAssign={selectedFloorForAssign}
-                // setSelectedFloorForAssign={setSelectedFloorForAssign}
-                // selectedRoomForAssign={selectedRoomForAssign}
-                // setSelectedRoomForAssign={setSelectedRoomForAssign}
-              />
+              <ul style={{ paddingLeft: 20 }}>
+                {formData.floors.map((floor) => (
+                  <li key={floor.floorId}>
+                    <strong>{floor.floorName}</strong>
+                    {floor.rooms?.length > 0 && (
+                      <ul style={{ paddingLeft: 30, marginTop: 4 }}>
+                        {floor.rooms.map((room) => (
+                          <li key={room.roomId}>{room.roomName}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                ))}
+              </ul>
             )}
-          </TabPane>
-        </Tabs>
+          </Card>
 
-        {/* Assignment Modal */}
-        <Modal
-          title="Assign Item to Floor / Room"
-          open={assignModal.visible}
-          onOk={assignItemToLocation}
-          onCancel={() => {
-            setAssignModal({ visible: false, itemId: null });
-            setSelectedFloorForAssign(null);
-            setSelectedRoomForAssign(null);
-          }}
-          okText="Assign"
-          width={500}
-        >
-          <Space direction="vertical" style={{ width: "100%" }} size="middle">
-            <div>
-              <Text strong>Product:</Text>{" "}
-              <Text>
-                {localCartItems.find((i) => i.id === assignModal.itemId)
-                  ?.name || "—"}
-              </Text>
-            </div>
+          {/* Products & Options */}
+          <Card
+            title="Products & Options"
+            style={{ marginBottom: 24 }}
+            extra={
+              <Space>
+                <Select
+                  showSearch
+                  prefix={<SearchOutlined />}
+                  placeholder="Add main product..."
+                  value={null}
+                  onSearch={debouncedSearch}
+                  onChange={addProduct}
+                  filterOption={false}
+                  notFoundContent={
+                    isSearching ? (
+                      <Spin size="small" />
+                    ) : searchTerm ? (
+                      "No products found"
+                    ) : (
+                      "Search products"
+                    )
+                  }
+                  style={{ width: 380 }}
+                >
+                  {searchResult.map((p) => {
+                    const price = safeNum(
+                      p.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"],
+                      0,
+                    );
+                    return (
+                      <Option
+                        key={p.id || p.productId}
+                        value={p.id || p.productId}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                          }}
+                        >
+                          <div>
+                            <strong>{p.name}</strong>
+                            <div style={{ fontSize: "0.9em", color: "#666" }}>
+                              {p.product_code || "—"}
+                            </div>
+                          </div>
+                          <div style={{ color: "#52c41a" }}>
+                            ₹{price.toFixed(2)}
+                          </div>
+                        </div>
+                      </Option>
+                    );
+                  })}
+                </Select>
 
-            <div>
-              <Text strong>
-                Floor <span style={{ color: "red" }}>*</span>
-              </Text>
-              <Select
-                placeholder="Select floor"
-                value={selectedFloorForAssign}
-                onChange={(v) => {
-                  setSelectedFloorForAssign(v);
-                  setSelectedRoomForAssign(null);
-                }}
-                style={{ width: "100%", marginTop: 8 }}
+                {mainProducts.length > 0 && (
+                  <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={() => setShowAddOptionModal(true)}
+                  >
+                    Add Option
+                  </Button>
+                )}
+              </Space>
+            }
+          >
+            <Table
+              columns={columns}
+              dataSource={formData.products}
+              rowKey={(record) => record.productId}
+              pagination={false}
+              scroll={{ y: 400 }}
+              locale={{ emptyText: "No products added yet" }}
+            />
+          </Card>
+
+          {/* Financial Summary (GST removed) */}
+          <Card title="Financial Summary" style={{ marginBottom: 32 }}>
+            <Row gutter={[16, 16]}>
+              <Col xs={24} sm={8}>
+                <Statistic
+                  title="Main Subtotal"
+                  value={calculations.mainSubtotal}
+                  precision={2}
+                  prefix="₹"
+                />
+              </Col>
+              <Col xs={24} sm={8}>
+                <Statistic
+                  title="Line Discounts"
+                  value={-calculations.mainLineDiscount}
+                  precision={2}
+                  prefix="₹"
+                  valueStyle={{ color: "#f5222d" }}
+                />
+              </Col>
+              <Col xs={24} sm={8}>
+                <Statistic
+                  title="Extra Discount"
+                  value={-calculations.extraDiscAmt}
+                  precision={2}
+                  prefix="₹"
+                  valueStyle={{ color: "#fa8c16" }}
+                />
+              </Col>
+
+              <Divider />
+
+              <Col xs={24} sm={8}>
+                <Form.Item label="Shipping">
+                  <InputNumber
+                    min={0}
+                    value={formData.shippingAmount}
+                    onChange={(v) =>
+                      setFormData({ ...formData, shippingAmount: v })
+                    }
+                    style={{ width: "100%" }}
+                    addonBefore="₹"
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={8}>
+                <Form.Item label="Round Off">
+                  <InputNumber
+                    disabled
+                    value={calculations.roundOff}
+                    style={{ width: "100%" }}
+                  />
+                </Form.Item>
+              </Col>
+
+              <Col xs={24}>
+                <Statistic
+                  title="FINAL AMOUNT"
+                  value={calculations.finalAmount}
+                  precision={0}
+                  prefix="₹"
+                  valueStyle={{
+                    color: "#1890ff",
+                    fontSize: 36,
+                    fontWeight: "bold",
+                  }}
+                />
+              </Col>
+
+              {calculations.optionalPotential > 0 && (
+                <Col xs={24}>
+                  <Statistic
+                    title="Optional Items Potential"
+                    value={calculations.optionalPotential}
+                    precision={2}
+                    prefix="₹"
+                    valueStyle={{ color: "#722ed1" }}
+                  />
+                  <Text type="secondary">(not included in final amount)</Text>
+                </Col>
+              )}
+            </Row>
+          </Card>
+
+          {/* Signature */}
+          <Card title="Authorized Signature" style={{ marginBottom: 32 }}>
+            <Row gutter={16}>
+              <Col xs={24} md={12}>
+                <Form.Item label="Name">
+                  <Input
+                    value={formData.signature_name}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        signature_name: e.target.value,
+                      })
+                    }
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12}>
+                <Form.Item label="Signature Image URL">
+                  <Input
+                    value={formData.signature_image}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        signature_image: e.target.value,
+                      })
+                    }
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+          </Card>
+
+          {/* Actions */}
+          <div style={{ textAlign: "right", marginTop: 40 }}>
+            <Space size="large">
+              <Button size="large" onClick={() => navigate("/quotations/list")}>
+                Cancel
+              </Button>
+              <Button
+                type="primary"
+                icon={<SaveOutlined />}
+                size="large"
+                loading={isCreating || isUpdating}
+                onClick={handleSubmit}
+                disabled={
+                  !formData.customerId || formData.products.length === 0
+                }
               >
-                {(quotationData.floors || []).map((floor) => (
-                  <Select.Option key={floor.number} value={floor.number}>
-                    {floor.name}
-                  </Select.Option>
+                {isEditMode ? "Update Quotation" : "Create Quotation"}
+              </Button>
+            </Space>
+          </div>
+        </Form>
+
+        {/* Floors Management Modal */}
+        <Modal
+          title="Manage Floors"
+          open={showFloorsModal}
+          onCancel={() => setShowFloorsModal(false)}
+          footer={[
+            <Button key="close" onClick={() => setShowFloorsModal(false)}>
+              Close
+            </Button>,
+          ]}
+          width={600}
+        >
+          <Divider orientation="left">Add New Floor</Divider>
+          <Space.Compact style={{ width: "100%", marginBottom: 24 }}>
+            <Input
+              placeholder="Floor name (e.g. Ground Floor, First Floor, Basement)"
+              onPressEnter={(e) => {
+                addFloor(e.target.value);
+                e.target.value = "";
+              }}
+              style={{ flex: 1 }}
+            />
+            <Button
+              type="primary"
+              onClick={() => {
+                const input = document.querySelector(".ant-input");
+                if (input?.value?.trim()) {
+                  addFloor(input.value.trim());
+                  input.value = "";
+                }
+              }}
+            >
+              Add Floor
+            </Button>
+          </Space.Compact>
+
+          <Divider orientation="left">Existing Floors</Divider>
+          {formData.floors.length === 0 ? (
+            <Text type="secondary">No floors added yet.</Text>
+          ) : (
+            <ul style={{ paddingLeft: 0, listStyle: "none" }}>
+              {formData.floors.map((floor) => (
+                <li
+                  key={floor.floorId}
+                  style={{
+                    padding: "12px 16px",
+                    background: "#f9f9f9",
+                    borderRadius: 6,
+                    marginBottom: 12,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <strong>{floor.floorName}</strong>
+                  <Space>
+                    <Button
+                      type="link"
+                      onClick={() => openRoomsForFloor(floor.floorId)}
+                    >
+                      Rooms ({floor.rooms?.length || 0})
+                    </Button>
+                  </Space>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Modal>
+
+        {/* Rooms Management Modal */}
+        <Modal
+          title={
+            selectedFloorForRooms
+              ? `Manage Rooms - ${formData.floors.find((f) => f.floorId === selectedFloorForRooms)?.floorName || "Floor"}`
+              : "Manage Rooms"
+          }
+          open={showRoomsModal}
+          onCancel={() => {
+            setShowRoomsModal(false);
+            setSelectedFloorForRooms(null);
+          }}
+          footer={[
+            <Button
+              key="close"
+              onClick={() => {
+                setShowRoomsModal(false);
+                setSelectedFloorForRooms(null);
+              }}
+            >
+              Close
+            </Button>,
+          ]}
+          width={600}
+        >
+          {selectedFloorForRooms ? (
+            <>
+              <Divider orientation="left">Add New Room</Divider>
+              <Space.Compact style={{ width: "100%", marginBottom: 24 }}>
+                <Input
+                  placeholder="Room name (e.g. Master Bathroom, Living Room, Kitchen)"
+                  onPressEnter={(e) => {
+                    addRoom(selectedFloorForRooms, e.target.value);
+                    e.target.value = "";
+                  }}
+                  style={{ flex: 1 }}
+                />
+                <Button
+                  type="primary"
+                  onClick={() => {
+                    const input = document.querySelector(".ant-input");
+                    if (input?.value?.trim()) {
+                      addRoom(selectedFloorForRooms, input.value.trim());
+                      input.value = "";
+                    }
+                  }}
+                >
+                  Add Room
+                </Button>
+              </Space.Compact>
+
+              <Divider orientation="left">Existing Rooms</Divider>
+              {(() => {
+                const currentFloor = formData.floors.find(
+                  (f) => f.floorId === selectedFloorForRooms,
+                );
+                if (!currentFloor?.rooms?.length) {
+                  return (
+                    <Text type="secondary">
+                      No rooms added yet on this floor.
+                    </Text>
+                  );
+                }
+                return (
+                  <ul style={{ paddingLeft: 0, listStyle: "none" }}>
+                    {currentFloor.rooms.map((room) => (
+                      <li
+                        key={room.roomId}
+                        style={{
+                          padding: "8px 16px",
+                          background: "#f5f5f5",
+                          borderRadius: 4,
+                          marginBottom: 8,
+                        }}
+                      >
+                        {room.roomName}
+                      </li>
+                    ))}
+                  </ul>
+                );
+              })()}
+            </>
+          ) : (
+            <>
+              <Text strong>Select a floor to manage its rooms:</Text>
+              <Select
+                placeholder="Choose floor"
+                style={{ width: "100%", marginTop: 16 }}
+                onChange={(floorId) => setSelectedFloorForRooms(floorId)}
+              >
+                {formData.floors.map((f) => (
+                  <Option key={f.floorId} value={f.floorId}>
+                    {f.floorName}
+                  </Option>
+                ))}
+              </Select>
+            </>
+          )}
+        </Modal>
+
+        {/* Address Modal */}
+        {showAddressModal && (
+          <AddAddress
+            onClose={() => setShowAddressModal(false)}
+            onSave={(addrId) => {
+              setFormData((prev) => ({ ...prev, shipTo: addrId }));
+              setShowAddressModal(false);
+              refetchAddresses();
+            }}
+            selectedCustomer={formData.customerId}
+          />
+        )}
+
+        {/* Option Modal */}
+        <Modal
+          title="Add Option / Variant / Upgrade"
+          open={showAddOptionModal}
+          onCancel={() => setShowAddOptionModal(false)}
+          footer={null}
+          width={600}
+        >
+          <Space direction="vertical" style={{ width: "100%" }} size="large">
+            <div>
+              <label style={{ display: "block", marginBottom: 8 }}>
+                Select parent product:
+              </label>
+              <Select
+                value={selectedParentId}
+                onChange={setSelectedParentId}
+                style={{ width: "100%" }}
+                placeholder="Choose main product"
+              >
+                {mainProducts.map((p) => (
+                  <Option key={p.productId} value={p.productId}>
+                    {p.name} — ₹{safeNum(p.sellingPrice, 0).toFixed(2)}
+                  </Option>
                 ))}
               </Select>
             </div>
 
-            {selectedFloorForAssign && (
-              <div>
-                <Text strong>Room (optional)</Text>
-                <Select
-                  placeholder="Whole floor / common area"
-                  allowClear
-                  value={selectedRoomForAssign}
-                  onChange={setSelectedRoomForAssign}
-                  style={{ width: "100%", marginTop: 8 }}
-                >
-                  {(quotationData.floors || [])
-                    .find((f) => f.number === selectedFloorForAssign)
-                    ?.rooms?.map((r) => (
-                      <Select.Option key={r.id} value={r.id}>
-                        {r.name} {r.type && `(${r.type})`}
-                      </Select.Option>
-                    ))}
-                </Select>
-              </div>
-            )}
+            <div>
+              <label style={{ display: "block", marginBottom: 8 }}>
+                Option type:
+              </label>
+              <Select
+                value={optionType}
+                onChange={setOptionType}
+                style={{ width: "100%" }}
+              >
+                <Option value="addon">Add-on (adds to total)</Option>
+                <Option value="upgrade">Upgrade (extra cost)</Option>
+                <Option value="variant">Variant (alternative)</Option>
+              </Select>
+            </div>
+
+            <div>
+              <label style={{ display: "block", marginBottom: 8 }}>
+                Search product:
+              </label>
+              <Select
+                showSearch
+                prefix={<SearchOutlined />}
+                placeholder={`Search ${optionType}...`}
+                onSearch={debouncedSearch}
+                onChange={addOption}
+                filterOption={false}
+                notFoundContent={
+                  isSearching ? (
+                    <Spin size="small" />
+                  ) : searchTerm ? (
+                    "No results"
+                  ) : (
+                    "Type to search"
+                  )
+                }
+                style={{ width: "100%" }}
+              >
+                {searchResult.map((p) => {
+                  const price = safeNum(
+                    p.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"],
+                    0,
+                  );
+                  return (
+                    <Option
+                      key={p.id || p.productId}
+                      value={p.id || p.productId}
+                    >
+                      {p.name} — ₹{price.toFixed(2)}
+                    </Option>
+                  );
+                })}
+              </Select>
+            </div>
           </Space>
         </Modal>
-
-        {/* Your existing modals */}
-        <Modal
-          title="Confirm Clear Cart"
-          open={showClearCartModal}
-          onOk={handleClearCart}
-          onCancel={() => setShowClearCartModal(false)}
-          okText="Clear"
-          okButtonProps={{ danger: true }}
-        >
-          <Text>Are you sure you want to clear all items from your cart?</Text>
-        </Modal>
-
-        {showAddAddressModal && (
-          <AddAddress
-            visible={true}
-            onClose={() => setShowAddAddressModal(false)}
-            onSave={(addressId) => {
-              if (documentType === "Order")
-                setOrderData((p) => ({ ...p, shipTo: addressId }));
-              setShowAddAddressModal(false);
-            }}
-            selectedCustomer={selectedCustomer}
-          />
-        )}
-
-        <AddVendorModal
-          show={showAddVendorModal}
-          onClose={() => setShowAddVendorModal(false)}
-          onSave={createVendor}
-          isCreatingVendor={isCreatingVendor}
-        />
-
-        {showAddTeamModal && (
-          <AddNewTeam
-            onClose={() => setShowAddTeamModal(false)}
-            visible={showAddTeamModal}
-          />
-        )}
-
-        {showAddCustomerModal && (
-          <AddCustomerModal
-            visible={showAddCustomerModal}
-            onClose={() => setShowAddCustomerModal(false)}
-            customer={null}
-            onSave={() => {}}
-          />
-        )}
-        <PreviewQuotation
-          visible={previewVisible}
-          onClose={() => setPreviewVisible(false)}
-          cartItems={calculationCartItems} // ← only main items
-          productsData={cartProductsData}
-          customer={customerList.find((c) => c.customerId === selectedCustomer)}
-          address={addresses.find((a) => a.addressId === quotationData.shipTo)}
-          quotationData={{ ...quotationData }}
-          itemDiscounts={itemDiscounts}
-          itemDiscountTypes={itemDiscountTypes}
-          itemTaxes={itemTaxes}
-          gstRate={gst}
-          includeGst
-        />
       </div>
+
+      {/* DatePicker Styles */}
+      <style jsx>{`
+        .full-width > div {
+          width: 100% !important;
+        }
+        .react-datepicker-wrapper,
+        .react-datepicker__input-container {
+          width: 100%;
+        }
+        .react-datepicker__input-container input {
+          width: 100%;
+          height: 32px;
+          padding: 4px 11px;
+          border: 1px solid #d9d9d9;
+          border-radius: 6px;
+        }
+        .react-datepicker__input-container input:focus {
+          border-color: #40a9ff;
+          box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+        }
+      `}</style>
     </div>
   );
 };
 
-NewCart.propTypes = {
-  onConvertToOrder: PropTypes.func,
-};
-
-NewCart.defaultProps = {
-  onConvertToOrder: () => {},
-};
-
-export default NewCart;
+export default AddQuotation;

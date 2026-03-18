@@ -30,6 +30,24 @@ module.exports = (sequelize, DataTypes) => {
       reference_number: {
         type: DataTypes.STRING(50),
       },
+
+      // ────────────────────────────────────────
+      //  NEW – Floor & Room structure
+      // ────────────────────────────────────────
+      totalFloors: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        defaultValue: 0,
+        comment: "Number of floors (cached / denormalized)",
+      },
+      floors: {
+        type: DataTypes.JSON,
+        allowNull: true,
+        defaultValue: [],
+        comment:
+          "Array of floors: [{floorId, floorName, sortOrder?, totalRooms, totalProducts?}]",
+      },
+
       products: {
         type: DataTypes.JSON,
         allowNull: false,
@@ -37,8 +55,7 @@ module.exports = (sequelize, DataTypes) => {
       discountAmount: {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: true,
-        comment:
-          "Stores either fixed amount or percentage; interpretation handled in frontend",
+        comment: "Legacy field – now mostly replaced by extraDiscountAmount",
       },
       roundOff: {
         type: DataTypes.DECIMAL(10, 2),
@@ -86,38 +103,26 @@ module.exports = (sequelize, DataTypes) => {
     {
       tableName: "quotations",
       timestamps: true,
-    }
+    },
   );
 
-  // ---------------------------------------
-  // Associations
-  // ---------------------------------------
   Quotation.associate = (models) => {
-    // Created by User
     Quotation.belongsTo(models.User, {
       foreignKey: "createdBy",
       as: "creator",
     });
-
-    // Customer
     Quotation.belongsTo(models.Customer, {
       foreignKey: "customerId",
       as: "customer",
     });
-
-    // Shipping Address
     Quotation.belongsTo(models.Address, {
       foreignKey: "shipTo",
       as: "shippingAddress",
     });
-
-    // Quotation → Order (1:M)
     Quotation.hasMany(models.Order, {
       foreignKey: "quotationId",
       as: "orders",
     });
-
-    // Quotation → Invoice (1:1)
     Quotation.hasOne(models.Invoice, {
       foreignKey: "quotationId",
       as: "invoice",
