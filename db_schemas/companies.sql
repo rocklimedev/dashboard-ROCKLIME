@@ -32,13 +32,7 @@ CREATE TABLE IF NOT EXISTS `companies` (
   CONSTRAINT `companies_ibfk_1` FOREIGN KEY (`parentCompanyId`) REFERENCES `companies` (`companyId`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Dumping data for table spsyn8lm_rocklime_dashboard.companies: ~5 rows (approximately)
-INSERT INTO `companies` (`companyId`, `name`, `address`, `website`, `createdDate`, `slug`, `parentCompanyId`, `createdAt`, `updatedAt`) VALUES
-	('3dec65cc-3d93-4b12-b060-6e0374f375d9', 'SP SYNDICATE PRIVATE LIMITED', '123, Main Street, Mumbai, India', 'https://spsyndicate.com', '2005-07-20', 'sp-syndicate-private-limited', NULL, '2025-03-12 10:57:43', '2025-03-12 10:57:43'),
-	('401df7ef-f350-4bc4-ba6f-bf36923af252', 'CHABBRA MARBEL', '123, Main Street, Mumbai, India', 'https://cmtradingco.com/', '2005-07-20', 'chabbra-marbel', NULL, '2025-03-12 11:03:07', '2025-03-12 11:03:07'),
-	('5f87b3a4-6b9b-4208-ad00-e197d5d19763', 'EMBARK ENTERPRISES', '123, Main Street, Mumbai, India', 'https://sarvesa.in', '2005-07-20', 'embark-enterprises', NULL, '2025-03-12 11:00:28', '2025-03-12 11:00:28'),
-	('5ffbaa43-2cea-410f-b604-8b6e5558b2e8', 'RIPPOTAI ARCHITECTURE', '123, Main Street, Mumbai, India', 'https://rippotaiarchitecture.com/', '2005-07-20', 'rippotai-architecture', NULL, '2025-03-12 11:01:37', '2025-03-12 11:01:37'),
-	('87a5c590-5a81-4893-985e-f19a0ad0b122', 'ROCKLIME', '123, Main Street, Mumbai, India', 'https://cmtradingco.com/', '2005-07-20', 'rocklime', NULL, '2025-03-12 11:04:18', '2025-03-12 11:04:18');
+-- Data exporting was unselected.
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

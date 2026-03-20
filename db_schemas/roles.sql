@@ -25,16 +25,7 @@ CREATE TABLE IF NOT EXISTS `roles` (
   UNIQUE KEY `roleName_2` (`roleName`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Dumping data for table spsyn8lm_rocklime_dashboard.roles: ~8 rows (approximately)
-INSERT INTO `roles` (`roleId`, `roleName`, `createdAt`, `updatedAt`) VALUES
-	('0c3392e0-f416-407c-8699-e8638554eba9', 'USERS', '2025-03-18 09:59:47', '2025-03-18 09:59:47'),
-	('5bb7eed4-1106-4b93-9218-ad733cfc7b12', 'DEVELOPER', '2025-03-18 09:59:47', '2025-03-18 09:59:47'),
-	('8c55352c-99a9-4554-a74e-cd0e81aa033d', 'HR', '2025-10-10 05:46:46', '2025-10-10 05:46:46'),
-	('c2eaf23a-765c-4ee5-91bf-cbc37fbdea21', 'SUPER_ADMIN', '2025-03-18 09:59:47', '2025-03-18 09:59:47'),
-	('c3893e5f-4b6c-43c5-83ec-bc74beecfb30', 'SALES', '2025-03-18 09:59:47', '2025-03-18 09:59:47'),
-	('cfbe02d3-c61d-4f09-9bc7-88fb2493f31d', 'ACCOUNTS', '2025-03-18 09:59:47', '2025-03-18 09:59:47'),
-	('faa429f2-b1c8-4534-a521-ad8f5a4104cc', 'OPS', '2025-04-24 09:39:42', '2025-04-24 09:39:42'),
-	('ffb71a9e-3f2e-4e26-97e4-8611591356b0', 'ADMIN', '2025-03-18 09:59:47', '2025-03-18 09:59:47');
+-- Data exporting was unselected.
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

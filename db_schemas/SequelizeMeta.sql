@@ -21,11 +21,7 @@ CREATE TABLE IF NOT EXISTS `SequelizeMeta` (
   UNIQUE KEY `name` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
--- Dumping data for table spsyn8lm_rocklime_dashboard.SequelizeMeta: ~0 rows (approximately)
-INSERT INTO `SequelizeMeta` (`name`) VALUES
-	('20251125-create-inventory-history.js'),
-	('20251126055421-add-variant-support.js'),
-	('20251204093129-create-site-maps.js');
+-- Data exporting was unselected.
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

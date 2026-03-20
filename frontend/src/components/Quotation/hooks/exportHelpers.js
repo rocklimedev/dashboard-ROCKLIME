@@ -43,27 +43,14 @@ export const exportToPDF = async (
   quotation = {},
   filename = "quotation.pdf",
 ) => {
-  if (!ref?.current) {
-    return;
-  }
+  if (!ref?.current) return;
 
-  // METHOD 1: Try .print-area
-  let printArea = ref.current.querySelector(".print-area");
-
-  // METHOD 2: Try data attribute (fallback)
-  if (!printArea) {
-    printArea = ref.current.querySelector("[data-print-root]");
-  }
-
-  // METHOD 3: If ref itself has the class, use it directly
-  if (!printArea && ref.current.classList.contains("print-area")) {
-    printArea = ref.current;
-  }
-
-  // METHOD 4: Last resort – use ref.current directly
-  if (!printArea) {
-    printArea = ref.current;
-  }
+  // -------- Resolve print root --------
+  let printArea =
+    ref.current.querySelector(".print-area") ||
+    ref.current.querySelector("[data-print-root]") ||
+    (ref.current.classList.contains("print-area") ? ref.current : null) ||
+    ref.current;
 
   if (!printArea) {
     message.error("Print area not found");
@@ -71,51 +58,53 @@ export const exportToPDF = async (
   }
 
   const nodeToPrint = printArea.cloneNode(true);
-  // ... rest of your function stays 100% the same
 
-  // FORCE ALL IMAGES TO HAVE crossOrigin AND BE LOADED
+  // -------- HARD FIX: preload images via CORS-safe proxy --------
   const images = nodeToPrint.querySelectorAll("img");
-  const imageLoadPromises = Array.from(images).map((img) => {
-    if (img.src && !img.crossOrigin && img.src.startsWith("http")) {
-      img.crossOrigin = "anonymous";
-    }
-    if (img.complete && img.naturalHeight !== 0) {
-      return Promise.resolve();
-    }
-    return new Promise((resolve, reject) => {
-      img.onload = resolve;
-      img.onerror = () => {
-        resolve(); // continue anyway
-      };
-      // Force reload to apply crossOrigin
-      if (img.src) img.src = img.src;
-    });
-  });
 
-  // Wait for all images
-  await Promise.all(imageLoadPromises);
+  await Promise.all(
+    Array.from(images).map((img) => {
+      return new Promise((resolve) => {
+        const src = img.getAttribute("src");
+        if (!src) return resolve();
 
-  // Temporarily inject cloned node into DOM (hidden) for accurate rendering
+        const cleanImg = new Image();
+        cleanImg.crossOrigin = "anonymous";
+
+        // critical: avoid cached tainted version
+        cleanImg.src =
+          src + (src.includes("?") ? "&" : "?") + "corsfix=" + Date.now();
+
+        cleanImg.onload = () => {
+          img.src = cleanImg.src;
+          resolve();
+        };
+
+        cleanImg.onerror = () => resolve();
+      });
+    }),
+  );
+
+  // -------- Inject into DOM (hidden) --------
   const container = document.createElement("div");
-  container.style.position = "absolute";
-  container.style.left = "-9999px";
+  container.style.position = "fixed";
+  container.style.left = "-99999px";
   container.style.top = "0";
-  container.style.width = "210mm"; // A4 width
-  container.style.background = "white";
+  container.style.width = "210mm";
+  container.style.background = "#fff";
+
   Object.assign(nodeToPrint.style, {
     width: "210mm",
     minHeight: "297mm",
-    pageBreakAfter: "always",
-    background: "white",
-    boxShadow: "none",
-    transform: "none",
+    background: "#fff",
   });
+
   container.appendChild(nodeToPrint);
   document.body.appendChild(container);
 
   try {
     const pages = nodeToPrint.querySelectorAll(".page");
-    if (pages.length === 0) throw new Error("No .page elements");
+    if (!pages.length) throw new Error("No .page elements");
 
     const pdf = new jsPDF("p", "mm", "a4");
     const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -124,21 +113,22 @@ export const exportToPDF = async (
     for (let i = 0; i < pages.length; i++) {
       const page = pages[i];
 
-      // Force page size
-      page.style.width = "210mm";
-      page.style.minHeight = "297mm";
-      page.style.background = "white";
+      Object.assign(page.style, {
+        width: "210mm",
+        minHeight: "297mm",
+        background: "#fff",
+      });
+
+      // wait a frame to ensure layout + images painted
+      await new Promise((r) => requestAnimationFrame(r));
 
       const canvas = await html2canvas(page, {
         scale: 2,
         useCORS: true,
-        allowTaint: false, // we handled CORS manually
+        allowTaint: false,
+        imageTimeout: 20000,
         backgroundColor: "#ffffff",
         logging: false,
-        windowWidth: 210 * 3.78, // ~A4 in pixels at 96dpi
-        windowHeight: 297 * 3.78,
-        scrollX: 0,
-        scrollY: 0,
       });
 
       const imgData = canvas.toDataURL("image/jpeg", 0.95);
@@ -156,27 +146,32 @@ export const exportToPDF = async (
       );
     }
 
-    // === Attach T&C (optional) ===
+    // -------- Attach T&C --------
     let finalPdfBytes = pdf.output("arraybuffer");
+
     try {
       const tncRes = await fetch(termsAndConditionsPdf);
       if (tncRes.ok) {
         const tncBuffer = await tncRes.arrayBuffer();
         const mainPdf = await PDFDocument.load(finalPdfBytes);
         const tncPdf = await PDFDocument.load(tncBuffer);
+
         const copied = await mainPdf.copyPages(tncPdf, tncPdf.getPageIndices());
+
         copied.forEach((p) => mainPdf.addPage(p));
         finalPdfBytes = await mainPdf.save();
       }
-    } catch (e) {}
+    } catch {}
 
-    // === Download ===
+    // -------- Download --------
     const blob = new Blob([finalPdfBytes], { type: "application/pdf" });
     const url = URL.createObjectURL(blob);
+
     const a = document.createElement("a");
     a.href = url;
     a.download = filename;
     a.click();
+
     URL.revokeObjectURL(url);
 
     message.success("PDF exported successfully!");

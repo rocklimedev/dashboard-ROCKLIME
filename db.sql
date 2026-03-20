@@ -538,6 +538,8 @@ CREATE TABLE IF NOT EXISTS `quotations` (
   `due_date` date NOT NULL,
   `followupDates` json DEFAULT NULL COMMENT 'Array of follow-up date objects or timestamps',
   `reference_number` varchar(50) DEFAULT NULL,
+  `totalFloors` int(11) DEFAULT '0' COMMENT 'Cached number of floors for quick filtering/display',
+  `floors` json DEFAULT NULL COMMENT 'Array of floors: [{floorId, floorName, sortOrder?, rooms: [{roomId, roomName}]}]',
   `products` json NOT NULL,
   `roundOff` decimal(10,2) DEFAULT NULL,
   `finalAmount` decimal(10,2) NOT NULL,
