@@ -38,7 +38,7 @@ export const otherRoutes = [
   {
     path: "/fgs/:id/edit",
     name: "Edit FGS",
-    element: <AddFieldGuidedSheet />,
+    element: <AddFieldgeneratedSheet />,
     isSidebarActive: false,
   },
   {

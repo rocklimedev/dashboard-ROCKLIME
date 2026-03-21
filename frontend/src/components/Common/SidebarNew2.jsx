@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { ChevronsLeft } from "react-feather";
-import masterRoutes from "../../data/routes";
+import masterRoutes from "../../router/routes";
 import logo from "../../assets/img/logo.png";
 import logo_small from "../../assets/img/fav_icon.png";
 import { DownCircleOutlined } from "@ant-design/icons";

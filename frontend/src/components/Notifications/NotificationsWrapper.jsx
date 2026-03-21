@@ -5,8 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 import { message } from "antd";
 import { io } from "socket.io-client";
 import { formatDistanceToNow, parseISO, differenceInSeconds } from "date-fns";
-import { API_URL } from "../../utils/config";
-
+import { API_URL } from "../../store/config";
 import {
   useGetNotificationsQuery,
   useMarkNotificationAsReadMutation,

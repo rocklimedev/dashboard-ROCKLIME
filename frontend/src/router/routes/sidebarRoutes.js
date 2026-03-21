@@ -2,9 +2,8 @@
 import { FaHome } from "react-icons/fa";
 import { FaTags } from "react-icons/fa";
 import { FaFileAlt, FaUsers } from "react-icons/fa";
-import { FaUsers } from "react-icons/fa";
 import { FaThLarge } from "react-icons/fa";
-import { FaUser, FaIdCard, FaUserCircle } from "react-icons/fa";
+import { FaUser, FaIdCard, FaUserCircle , FaBoxOpen} from "react-icons/fa";
 import { MdOutlineInventory2 } from "react-icons/md";
 
 import OrderWrapper from "../../concepts/Order/OrderWrapper";
