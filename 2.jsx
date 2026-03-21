@@ -1,5 +1,10 @@
-// src/pages/quotations/NewCart.jsx
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Alert,
@@ -9,9 +14,16 @@ import {
   Typography,
   Segmented,
   Space,
+  Tag,
+  Select,
   message,
 } from "antd";
-import { ShoppingCartOutlined, CheckCircleOutlined } from "@ant-design/icons";
+import {
+  ShoppingCartOutlined,
+  CheckCircleOutlined,
+  HomeOutlined,
+  PushpinOutlined,
+} from "@ant-design/icons";
 import {
   useGetCustomersQuery,
   useCreateCustomerMutation,
@@ -43,7 +55,6 @@ import { useDispatch } from "react-redux";
 import { debounce } from "lodash";
 import moment from "moment";
 import styled from "styled-components";
-
 import CartTab from "./Cart";
 import QuotationForm from "./QuotationForm";
 import OrderForm from "./OrderForm";
@@ -58,7 +69,6 @@ import { useAuth } from "../../context/AuthContext";
 import { skipToken } from "@reduxjs/toolkit/query";
 import useProductsData from "../../data/useProductdata";
 import useUserAndCustomerData from "../../data/useUserAndCustomerData";
-
 const { TabPane } = Tabs;
 const { Text } = Typography;
 
@@ -98,7 +108,6 @@ const NewCart = () => {
   const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
   const [documentType, setDocumentType] = useState("Quotation");
   const [useBillingAddress, setUseBillingAddress] = useState(false);
-  const [previewVisible, setPreviewVisible] = useState(false);
 
   const [localCartItems, setLocalCartItems] = useState([]);
   const [assignModal, setAssignModal] = useState({
@@ -107,16 +116,6 @@ const NewCart = () => {
   });
   const [selectedFloorId, setSelectedFloorId] = useState(null);
   const [selectedRoomId, setSelectedRoomId] = useState(null);
-
-  const [itemDiscounts, setItemDiscounts] = useState({});
-  const [itemTaxes, setItemTaxes] = useState({});
-  const [itemDiscountTypes, setItemDiscountTypes] = useState({});
-  const [updatingItems, setUpdatingItems] = useState({});
-  const [productSearch, setProductSearch] = useState("");
-  const [filteredProducts, setFilteredProducts] = useState([]);
-  const [shipping, setShipping] = useState(0);
-  const [gst, setGst] = useState(0);
-  const [billingAddressId, setBillingAddressId] = useState(null);
 
   const [quotationData, setQuotationData] = useState({
     quotationDate: new Date().toISOString().split("T")[0],
@@ -161,6 +160,17 @@ const NewCart = () => {
     status: "pending",
   });
 
+  const [itemDiscounts, setItemDiscounts] = useState({});
+  const [itemTaxes, setItemTaxes] = useState({});
+  const [itemDiscountTypes, setItemDiscountTypes] = useState({});
+  const [previewVisible, setPreviewVisible] = useState(false);
+  const [updatingItems, setUpdatingItems] = useState({});
+  const [productSearch, setProductSearch] = useState("");
+  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [shipping, setShipping] = useState(0);
+  const [gst, setGst] = useState(0);
+  const [billingAddressId, setBillingAddressId] = useState(null);
+
   // ── Queries & Mutations ────────────────────────────────────
   const { data: cartData } = useGetCartQuery(userId, { skip: !userId });
   const { data: customerData } = useGetCustomersQuery(
@@ -189,7 +199,7 @@ const NewCart = () => {
   // ── Memoized values ────────────────────────────────────────
   const allCartItems = useMemo(() => cartData?.cart?.items || [], [cartData]);
 
-  // Sync local cart items + migrate old keys
+  // ── Sync local cart items + migrate old number → floorId ──
   useEffect(() => {
     if (!allCartItems.length) return;
 
@@ -202,18 +212,17 @@ const NewCart = () => {
         const id = serverItem.id || serverItem.productId || uuidv4();
         const local = prevMap.get(id);
 
+        // Migration helper: old number → new floorId style
         let floorId = local?.floorId || serverItem.floorId;
         let floorName = local?.floorName || serverItem.floorName;
         let roomId = local?.roomId || serverItem.roomId;
         let roomName = local?.roomName || serverItem.roomName;
-        let areaId = local?.areaId || serverItem.areaId;
-        let areaName = local?.areaName || serverItem.areaName;
 
-        // Migration fallback (old keys)
+        // If still using old keys → convert
         if (serverItem.floor_number && !floorId) {
           floorId = `fl_${serverItem.floor_number}`;
           floorName =
-            quotationData.floors?.find(
+            quotationData.floors.find(
               (f) => f.number === serverItem.floor_number,
             )?.name || `Floor ${serverItem.floor_number}`;
         }
@@ -221,7 +230,7 @@ const NewCart = () => {
           roomId = `${floorId || "rm_"}${serverItem.room_id}`;
           roomName =
             quotationData.floors
-              ?.find((f) => f.number === serverItem.floor_number)
+              .find((f) => f.number === serverItem.floor_number)
               ?.rooms?.find((r) => r.id === serverItem.room_id)?.name || "Room";
         }
 
@@ -232,8 +241,6 @@ const NewCart = () => {
           floorName,
           roomId,
           roomName,
-          areaId,
-          areaName,
         };
       });
     });
@@ -242,7 +249,7 @@ const NewCart = () => {
   const customers = customerData?.data || [];
   const customerList = useMemo(() => customers, [customers]);
   const addresses = addressesData || [];
-  const products = productsData?.data || [];
+  const products = productsData?.data || productsData || [];
   const teams = teamsData?.teams || [];
   const vendors = vendorsData || [];
   const purchaseOrderTotal = useMemo(
@@ -256,7 +263,7 @@ const NewCart = () => {
         .toFixed(2),
     [purchaseOrderData.items],
   );
-
+  // ── Debounced product search ───────────────────────────────
   const debouncedSearch = useMemo(
     () =>
       debounce((value) => {
@@ -278,11 +285,12 @@ const NewCart = () => {
     [products],
   );
 
-  // ── Calculations (unchanged) ────────────────────────────────────────
+  // ── Calculations ───────────────────────────────────────────
   const calculationCartItems = useMemo(
     () => localCartItems.filter((i) => !i.isOption),
     [localCartItems],
   );
+  const displayCartItems = allCartItems;
 
   const { productsData: cartProductsData, errors: productErrors } =
     useProductsData(calculationCartItems);
@@ -317,35 +325,30 @@ const NewCart = () => {
       skip: activeTab !== "checkout" || !addresses.length || !selectedCustomer,
     }, // Add !selectedCustomer
   );
-  const totalDiscount = useMemo(
-    () =>
-      calculationCartItems.reduce((sum, item) => {
-        const subtotal = (item.price || 0) * (item.quantity || 1);
-        const discVal = Number(itemDiscounts[item.productId]) || 0;
-        const type = itemDiscountTypes[item.productId] || "percent";
-        const disc =
-          type === "percent"
-            ? (subtotal * discVal) / 100
-            : discVal * (item.quantity || 1);
-        return sum + disc;
-      }, 0),
-    [calculationCartItems, itemDiscounts, itemDiscountTypes],
-  );
+  const totalDiscount = useMemo(() => {
+    return calculationCartItems.reduce((sum, item) => {
+      const subtotal = (item.price || 0) * (item.quantity || 1);
+      const discVal = Number(itemDiscounts[item.productId]) || 0;
+      const type = itemDiscountTypes[item.productId] || "percent";
+      const disc =
+        type === "percent"
+          ? (subtotal * discVal) / 100
+          : discVal * (item.quantity || 1);
+      return sum + disc;
+    }, 0);
+  }, [calculationCartItems, itemDiscounts, itemDiscountTypes]);
 
-  const tax = useMemo(
-    () =>
-      calculationCartItems.reduce((acc, item) => {
-        const subtotal = (item.price || 0) * (item.quantity || 1);
-        const discVal = Number(itemDiscounts[item.productId]) || 0;
-        const type = itemDiscountTypes[item.productId] || "percent";
-        const discAmt =
-          type === "percent" ? (subtotal * discVal) / 100 : discVal;
-        const taxable = subtotal - discAmt;
-        const itemTax = Number(itemTaxes[item.productId]) || 0;
-        return acc + (taxable * itemTax) / 100;
-      }, 0),
-    [calculationCartItems, itemDiscounts, itemDiscountTypes, itemTaxes],
-  );
+  const tax = useMemo(() => {
+    return calculationCartItems.reduce((acc, item) => {
+      const subtotal = (item.price || 0) * (item.quantity || 1);
+      const discVal = Number(itemDiscounts[item.productId]) || 0;
+      const type = itemDiscountTypes[item.productId] || "percent";
+      const discAmt = type === "percent" ? (subtotal * discVal) / 100 : discVal;
+      const taxable = subtotal - discAmt;
+      const itemTax = Number(itemTaxes[item.productId]) || 0;
+      return acc + (taxable * itemTax) / 100;
+    }, 0);
+  }, [calculationCartItems, itemDiscounts, itemDiscountTypes, itemTaxes]);
 
   const extraDiscount = useMemo(() => {
     const amount = Number(quotationData.discountAmount) || 0;
@@ -444,6 +447,7 @@ const NewCart = () => {
     },
     [userId, dispatch, removeFromCart],
   );
+
   const assignItemToLocation = useCallback(() => {
     if (!selectedFloorId) return message.error("Please select a floor");
 
@@ -530,10 +534,9 @@ const NewCart = () => {
     if (!userId) return message.error("User not logged in!");
     try {
       await clearCart({ userId }).unwrap();
-      setLocalCartItems([]);
+      resetForm();
       setShowClearCartModal(false);
       setActiveTab("cart");
-      message.success("Cart cleared");
     } catch (e) {
       message.error(e.data?.message || "Failed to clear cart");
     }
@@ -550,13 +553,8 @@ const NewCart = () => {
       return message.error("Please select a customer.");
     }
 
+    // ── Common validation ───────────────────────────────────────
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    const selectedCustomerData = customerList.find(
-      (c) => c.customerId === selectedCustomer,
-    );
-    if (!selectedCustomerData) {
-      return message.error("Selected customer not found.");
-    }
 
     if (documentType === "Quotation") {
       if (!quotationData.dueDate || !dateRegex.test(quotationData.dueDate)) {
@@ -574,6 +572,7 @@ const NewCart = () => {
       }
     }
 
+    // ── Resolve shipping address ───────────────────────────────
     let finalShipTo = null;
 
     if (documentType !== "Purchase Order") {
@@ -661,14 +660,13 @@ const NewCart = () => {
       }
     }
 
+    // ── Prepare items (already using floorId/roomId) ────────────
     const safeItems = localCartItems.map((item) => ({
       ...item,
       floorId: item.floorId || null,
       floorName: item.floorName || null,
       roomId: item.roomId || null,
       roomName: item.roomName || null,
-      areaId: item.areaId || null,
-      areaName: item.areaName || null,
     }));
     if (documentType === "Purchase Order") {
       if (!selectedVendor) {
@@ -710,25 +708,105 @@ const NewCart = () => {
       }
       return;
     }
+
+    const selectedCustomerData = customerList.find(
+      (c) => c.customerId === selectedCustomer,
+    );
+    if (!selectedCustomerData) {
+      return message.error("Selected customer not found.");
+    }
+
     if (documentType === "Quotation") {
+      // Inside handleCreateDocument() or wherever you prepare the payload
       const quotationPayload = {
-        quotationId: uuidv4(),
-        document_title: `Quotation for ${customers.find((c) => c.customerId === selectedCustomer)?.name || "Customer"} - ${moment().format("DD-MM-YYYY")}`,
+        // Core identification & metadata
+        quotationId: uuidv4(), // or let backend generate if preferred
+        document_title: `Quotation for ${selectedCustomerData?.name || "Customer"} - ${moment().format("DD-MM-YYYY")}`,
         quotation_date:
           quotationData.quotationDate || moment().format("YYYY-MM-DD"),
         due_date: quotationData.dueDate,
+        reference_number: quotationData.reference_number || undefined, // optional - backend can generate
+
+        // Customer & address
         customerId: selectedCustomer,
-        shipTo: finalShipTo,
+        shipTo: finalShipTo, // resolved earlier (addressId string)
+
+        // Financials
         extraDiscount: Number(quotationData.discountAmount) || 0,
         extraDiscountType: quotationData.discountType || "fixed",
         shippingAmount: Number(shipping) || 0,
         gst: Number(gst) || 0,
+
+        // Signature
         signature_name: quotationData.signatureName || "CM TRADING CO",
         signature_image: quotationData.signatureImage || "",
-        floors: quotationData.floors || [],
-        products: safeItems,
-        followupDates: quotationData.followupDates?.filter(Boolean) || [],
-        createdBy: auth?.userId,
+
+        // Important: Floors – send complete structure with names
+        floors: (quotationData.floors || []).map((floor, index) => ({
+          floorId: floor.floorId,
+          floorName: floor.floorName?.trim()
+            ? floor.floorName.trim()
+            : `Floor ${index + 1}`,
+          sortOrder: floor.sortOrder ?? index,
+          rooms: (floor.rooms || []).map((room, roomIndex) => ({
+            roomId: room.roomId,
+            roomName: room.roomName?.trim()
+              ? room.roomName.trim()
+              : `Room ${roomIndex + 1}`,
+            sortOrder: room.sortOrder ?? roomIndex,
+            type: room.type || null, // Bedroom, Living, Kitchen, etc.
+          })),
+        })),
+
+        // Products – include floorName & roomName explicitly in EVERY item
+        products: localCartItems
+          .filter((item) => item.price > 0 && item.quantity > 0) // optional safety filter
+          .map((item) => {
+            // Find matching floor/room names from quotationData.floors
+            const matchedFloor = quotationData.floors?.find(
+              (f) => f.floorId === item.floorId,
+            );
+            const matchedRoom = matchedFloor?.rooms?.find(
+              (r) => r.roomId === item.roomId,
+            );
+
+            return {
+              productId: item.productId,
+              name: item.name || "Unnamed Product",
+              imageUrl: item.imageUrl || null,
+              productCode: item.productCode || null,
+              companyCode: item.companyCode || null,
+
+              quantity: Number(item.quantity) || 1,
+              price: Number(item.price) || 0,
+              discount: Number(item.discount) || 0,
+              discountType: item.discountType || "percent",
+              tax: Number(item.tax) || 0,
+
+              // ← Critical: include names here too
+              floorId: item.floorId || null,
+              floorName: matchedFloor?.floorName || null,
+              roomId: item.roomId || null,
+              roomName: matchedRoom?.roomName || null,
+
+              // If using options/groups
+              groupId: item.groupId || null,
+              isOptionFor: item.isOptionFor || null,
+              optionType: item.optionType || null,
+            };
+          }),
+
+        // Optional follow-ups
+        followupDates: (quotationData.followupDates || [])
+          .filter((date) => date && moment(date).isValid())
+          .map((date) => moment(date).format("YYYY-MM-DD")),
+
+        // Who created it
+        createdBy: auth?.userId || "system",
+
+        // Any other fields your backend accepts
+        // totalFloors: quotationData.floors?.length || 0,   // backend usually calculates
+        // finalAmount: totalAmount,                         // optional - backend recalculates
       };
 
       try {
@@ -737,6 +815,7 @@ const NewCart = () => {
           `Quotation ${result.quotation?.reference_number} created!`,
         );
         await handleClearCart();
+        resetForm();
         navigate("/quotations/list");
       } catch (err) {
         message.error(err?.data?.message || "Failed to create quotation.");
@@ -814,22 +893,21 @@ const NewCart = () => {
       discountAmount: "",
       followupDates: [],
     });
-    setOrderData({
+    setOrderData((prev) => ({
+      ...prev,
       createdFor: "",
-      createdBy: userId || "",
       assignedTeamId: "",
       assignedUserId: "",
       secondaryUserId: "",
       pipeline: "",
-      status: "PREPARING",
       dueDate: moment().add(1, "days").format("YYYY-MM-DD"),
       followupDates: [],
       source: "",
       priority: "medium",
       description: "",
       orderNo: "",
-      shipTo: "",
-    });
+      shipTo: null,
+    }));
     setPurchaseOrderData({
       vendorId: "",
       orderDate: moment().format("YYYY-MM-DD"),
@@ -919,20 +997,17 @@ const NewCart = () => {
               updatingItems={updatingItems}
               handleUpdateQuantity={handleUpdateQuantity}
               handleRemoveItem={handleRemoveItem}
-              handleDiscountChange={(id, val) =>
-                setItemDiscounts((prev) => ({ ...prev, [id]: val }))
-              }
-              handleDiscountTypeChange={(id, type) =>
-                setItemDiscountTypes((prev) => ({ ...prev, [id]: type }))
-              }
-              handleTaxChange={(id, val) =>
-                setItemTaxes((prev) => ({ ...prev, [id]: val }))
-              }
+              handleDiscountChange={handleDiscountChange}
+              handleDiscountTypeChange={handleDiscountTypeChange}
+              handleTaxChange={handleTaxChange}
               setShowClearCartModal={setShowClearCartModal}
               setActiveTab={setActiveTab}
-              onShippingChange={setShipping}
+              onShippingChange={(v) => setShipping(v)}
+              handleMakeOption={handleMakeOption}
+              getParentName={getParentName}
               documentType={documentType}
               setDocumentType={setDocumentType}
+              setAssignModal={setAssignModal}
             />
           </TabPane>
 
@@ -1034,7 +1109,7 @@ const NewCart = () => {
                 purchaseOrderTotal={purchaseOrderTotal}
                 documentType={documentType}
                 setDocumentType={setDocumentType}
-                cartItems={localCartItems}
+                cartItems={displayCartItems}
                 setActiveTab={setActiveTab}
                 handleCreateDocument={handleCreateDocument}
                 setShowAddVendorModal={setShowAddVendorModal}
@@ -1048,26 +1123,29 @@ const NewCart = () => {
                 }
                 selectedCustomer={selectedCustomer}
                 setSelectedCustomer={setSelectedCustomer}
-                customers={customers}
+                customers={customerList}
                 shipping={shipping}
-                onShippingChange={setShipping}
+                onShippingChange={handleShippingChange}
                 addresses={addresses}
+                userMap={userMap}
+                customerMap={customerMap}
                 teams={teams}
                 users={users}
                 documentType={documentType}
                 setDocumentType={setDocumentType}
-                cartItems={localCartItems}
+                cartItems={displayCartItems}
                 totalAmount={totalAmount}
                 tax={tax}
                 totalDiscount={totalDiscount}
-                extraDiscount={extraDiscount}
-                extraDiscountType={quotationData.discountType}
+                extraDiscount={orderData.extraDiscount}
+                extraDiscountType={orderData.extraDiscountType}
                 roundOff={roundOff}
                 subTotal={subTotal}
-                handleAddCustomer={() => setShowAddCustomerModal(true)}
-                handleAddAddress={() => setShowAddAddressModal(true)}
+                handleAddCustomer={handleAddCustomer}
+                handleAddAddress={handleAddAddress}
                 setActiveTab={setActiveTab}
                 handleCreateDocument={handleCreateDocument}
+                handleTeamAdded={handleTeamAdded}
                 useBillingAddress={useBillingAddress}
                 setUseBillingAddress={setUseBillingAddress}
               />
@@ -1082,10 +1160,6 @@ const NewCart = () => {
                 setSelectedCustomer={setSelectedCustomer}
                 customers={customers}
                 addresses={addresses}
-                userMap={userMap}
-                teams={teams}
-                users={users}
-                customerMap={customerMap}
                 cartItems={localCartItems}
                 setCartItems={setLocalCartItems}
                 subTotal={subTotal}
@@ -1111,7 +1185,73 @@ const NewCart = () => {
           </TabPane>
         </Tabs>
 
-        {/* ── Modals (only global ones) ─────────────────────────────────────── */}
+        {/* Assignment Modal – updated keys */}
+        <Modal
+          title="Assign Item to Floor / Room"
+          open={assignModal.visible}
+          onOk={assignItemToLocation}
+          onCancel={() => {
+            setAssignModal({ visible: false, itemId: null });
+            setSelectedFloorId(null);
+            setSelectedRoomId(null);
+          }}
+          okText="Assign"
+          width={500}
+        >
+          <Space direction="vertical" style={{ width: "100%" }} size="middle">
+            <div>
+              <Text strong>Product:</Text>{" "}
+              <Text>
+                {localCartItems.find((i) => i.id === assignModal.itemId)
+                  ?.name || "—"}
+              </Text>
+            </div>
+
+            <div>
+              <Text strong>
+                Floor <span style={{ color: "red" }}>*</span>
+              </Text>
+              <Select
+                placeholder="Select floor"
+                value={selectedFloorId}
+                onChange={(v) => {
+                  setSelectedFloorId(v);
+                  setSelectedRoomId(null);
+                }}
+                style={{ width: "100%", marginTop: 8 }}
+              >
+                {(quotationData.floors || []).map((floor) => (
+                  <Select.Option key={floor.floorId} value={floor.floorId}>
+                    {floor.floorName}
+                  </Select.Option>
+                ))}
+              </Select>
+            </div>
+
+            {selectedFloorId && (
+              <div>
+                <Text strong>Room (optional)</Text>
+                <Select
+                  placeholder="Whole floor / common area"
+                  allowClear
+                  value={selectedRoomId}
+                  onChange={setSelectedRoomId}
+                  style={{ width: "100%", marginTop: 8 }}
+                >
+                  {(quotationData.floors || [])
+                    .find((f) => f.floorId === selectedFloorId)
+                    ?.rooms?.map((r) => (
+                      <Select.Option key={r.roomId} value={r.roomId}>
+                        {r.roomName} {r.type && `(${r.type})`}
+                      </Select.Option>
+                    ))}
+                </Select>
+              </div>
+            )}
+          </Space>
+        </Modal>
+
+        {/* Clear Cart Modal */}
         <Modal
           title="Confirm Clear Cart"
           open={showClearCartModal}
@@ -1128,11 +1268,9 @@ const NewCart = () => {
             visible={true}
             onClose={() => setShowAddAddressModal(false)}
             onSave={(addressId) => {
-              if (documentType === "Order") {
+              if (documentType === "Order")
                 setOrderData((p) => ({ ...p, shipTo: addressId }));
-              }
               setShowAddAddressModal(false);
-              refetchAddresses();
             }}
             selectedCustomer={selectedCustomer}
           />
@@ -1160,13 +1298,12 @@ const NewCart = () => {
             onSave={() => {}}
           />
         )}
-
         <PreviewQuotation
           visible={previewVisible}
           onClose={() => setPreviewVisible(false)}
-          cartItems={calculationCartItems}
+          cartItems={calculationCartItems} // ← only main items
           productsData={cartProductsData}
-          customer={customers.find((c) => c.customerId === selectedCustomer)}
+          customer={customerList.find((c) => c.customerId === selectedCustomer)}
           address={addresses.find((a) => a.addressId === quotationData.shipTo)}
           quotationData={{ ...quotationData }}
           itemDiscounts={itemDiscounts}

@@ -47,6 +47,9 @@ const quotationItemSchema = new mongoose.Schema({
     type: String,
     default: null, // denormalized
   },
+  areaId: { type: String, default: null, index: true }, // references areas[].id in the room
+  areaName: { type: String, default: null }, // denormalized copy
+  areaValue: { type: String, default: null },
 });
 
 const quotationItemsSchema = new mongoose.Schema({
