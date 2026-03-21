@@ -43,7 +43,6 @@ import { useDispatch } from "react-redux";
 import { debounce } from "lodash";
 import moment from "moment";
 import styled from "styled-components";
-
 import CartTab from "./Cart";
 import QuotationForm from "./QuotationForm";
 import OrderForm from "./OrderForm";
@@ -58,7 +57,6 @@ import { useAuth } from "../../context/AuthContext";
 import { skipToken } from "@reduxjs/toolkit/query";
 import useProductsData from "../../data/useProductdata";
 import useUserAndCustomerData from "../../data/useUserAndCustomerData";
-
 const { TabPane } = Tabs;
 const { Text } = Typography;
 
@@ -248,7 +246,6 @@ const NewCart = () => {
         .toFixed(2),
     [purchaseOrderData.items],
   );
-
   const debouncedSearch = useMemo(
     () =>
       debounce((value) => {

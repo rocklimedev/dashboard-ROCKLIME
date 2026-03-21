@@ -35,7 +35,10 @@ import {
 } from "../../api/quotationApi";
 import { useGetCustomerByIdQuery } from "../../api/customerApi";
 import { useGetAddressByIdQuery } from "../../api/addressApi";
-import { exportToPDF, exportToExcel } from "../../components/Quotation/hooks/exportHelpers";
+import {
+  exportToPDF,
+  exportToExcel,
+} from "../../components/Quotation/hooks/exportHelpers";
 import { amountInWords } from "../../components/Quotation/hooks/calcHelpers";
 
 dayjs.extend(relativeTime);
@@ -221,7 +224,261 @@ const NewQuotationsDetails = () => {
     const ref = quotation.reference_number || id || "QID";
     return `${title.trim()} - ${ref}`;
   }, [quotation, id]);
+  // ── Helper: Group products by floor → room → area category ──────────────────
+  // Replace the hardcoded groupProductsByArea with this more dynamic version
 
+  const groupProductsByAreaName = (products = []) => {
+    const groups = {};
+
+    products.forEach((p) => {
+      const area = (p.areaName || "Unassigned").trim();
+      if (!groups[area]) {
+        groups[area] = [];
+      }
+      groups[area].push({
+        ...p,
+        locationLabel: [
+          p.floorName ? `Floor: ${p.floorName}` : null,
+          p.roomName ? `Room: ${p.roomName}` : null,
+          p.areaName ? `Area: ${p.areaName}` : null,
+        ]
+          .filter(Boolean)
+          .join(" → "),
+      });
+    });
+
+    return groups;
+  };
+
+  // ── Helper: Group all products by floor + room combinations ─────────────────
+  const groupProductsByFloorAndRoom = (products = []) => {
+    const map = new Map();
+
+    products.forEach((p) => {
+      const floor = (p.floorName || "Unspecified Floor").trim();
+      const room = (p.roomName || "Unspecified Room").trim();
+      const key = `${floor}|||${room}`;
+
+      if (!map.has(key)) {
+        map.set(key, {
+          floorName: floor,
+          roomName: room,
+          products: [],
+        });
+      }
+
+      map.get(key).products.push(p);
+    });
+
+    // Return sorted array
+    return Array.from(map.values()).sort((a, b) => {
+      const floorCmp = a.floorName.localeCompare(b.floorName);
+      return floorCmp !== 0 ? floorCmp : a.roomName.localeCompare(b.roomName);
+    });
+  };
+
+  // ── Single room/area-wise page renderer ─────────────────────────────────────
+  const renderAreaWisePageForRoom = (roomGroup, customerName, refNumber) => {
+    const { floorName, roomName, products } = roomGroup;
+
+    const areaGroups = groupProductsByAreaName(products);
+    const areaEntries = Object.entries(areaGroups).slice(0, 3); // max 3 areas
+
+    // Zones mapped by index (not by name)
+    const ZONE_LAYOUT = [
+      { top: "32%", left: "6%", width: "26%" }, // LEFT
+      { top: "30%", left: "37%", width: "26%" }, // CENTER
+      { top: "30%", right: "6%", width: "26%" }, // RIGHT
+    ];
+
+    return (
+      <div
+        key={`area-page-${floorName}-${roomName}`}
+        className="page"
+        style={{
+          position: "relative",
+          width: "210mm",
+          height: "297mm",
+          overflow: "hidden",
+          pageBreakBefore: "always",
+          pageBreakAfter: "always",
+        }}
+      >
+        {/* FULL PAGE IMAGE */}
+        <img
+          src={siteMapQuotation}
+          alt="Site Map"
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "fill", // exact A4 fit
+            zIndex: 0,
+          }}
+        />
+
+        {/* LIGHT OVERLAY */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 1,
+          }}
+        />
+
+        {/* CONTENT LAYER */}
+        <div
+          style={{
+            position: "relative",
+            zIndex: 2,
+            padding: "40px 30px",
+            height: "100%",
+          }}
+        >
+          {/* Header */}
+          <div style={{ textAlign: "center", marginBottom: 32 }}>
+            <h2 style={{ color: "#d32f2f", fontSize: "2.4em", margin: 0 }}>
+              {floorName.toUpperCase()}
+            </h2>
+            <h3
+              style={{ fontSize: "1.9em", color: "#222", margin: "8px 0 4px" }}
+            >
+              {roomName}
+            </h3>
+          </div>
+
+          {/* AREA ZONES */}
+          <div style={{ position: "absolute", inset: 0 }}>
+            {areaEntries.map(([areaName, items], index) => {
+              const zone = ZONE_LAYOUT[index];
+              if (!zone) return null;
+
+              return (
+                <div key={areaName} style={{ position: "absolute", ...zone }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 10,
+                    }}
+                  >
+                    {items.map((p, i) => (
+                      <div
+                        key={i}
+                        style={{
+                          display: "flex",
+                          gap: 10,
+                          background: "rgba(255,255,255,0.92)",
+                          padding: 8,
+                          borderRadius: 6,
+                        }}
+                      >
+                        {p.imageUrl ? (
+                          <img
+                            src={p.imageUrl}
+                            alt={p.name}
+                            style={{
+                              width: 60,
+                              height: 60,
+                              objectFit: "cover",
+                            }}
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              width: 60,
+                              height: 60,
+                              background: "#ddd",
+                            }}
+                          />
+                        )}
+
+                        <div style={{ fontSize: "0.85em" }}>
+                          <div style={{ fontWeight: 600 }}>{p.name}</div>
+                          {p.quantity > 1 && <div>× {p.quantity}</div>}
+                          {p.price && (
+                            <div>
+                              ₹{Number(p.price).toLocaleString("en-IN")}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ── In renderPages or wherever you build pages ────────────────────────────────
+  const areaPages = [];
+
+  const renderProductList = (items) => {
+    if (items.length === 0) {
+      return (
+        <div style={{ color: "#777", fontSize: "0.95em", padding: "8px 0" }}>
+          No products assigned
+        </div>
+      );
+    }
+
+    return (
+      <ul
+        style={{
+          margin: 0,
+          paddingLeft: "20px",
+          fontSize: "0.94em",
+          lineHeight: 1.45,
+        }}
+      >
+        {items.slice(0, 10).map(
+          (
+            p,
+            i, // reduced to 10 to avoid crowding
+          ) => (
+            <li
+              key={i}
+              style={{
+                marginBottom: "8px",
+                paddingBottom: "4px",
+                borderBottom: "1px dashed #eee",
+              }}
+            >
+              {/* Product name + qty */}
+              <div style={{ fontWeight: 500 }}>
+                {p.name}
+                {p.quantity > 1 && (
+                  <span style={{ color: "#777", fontSize: "0.92em" }}>
+                    {" "}
+                    × {p.quantity}
+                  </span>
+                )}
+              </div>
+            </li>
+          ),
+        )}
+
+        {items.length > 10 && (
+          <li
+            style={{
+              color: "#d32f2f",
+              fontStyle: "italic",
+              marginTop: "6px",
+              fontSize: "0.92em",
+            }}
+          >
+            + {items.length - 10} more items...
+          </li>
+        )}
+      </ul>
+    );
+  };
   // ── Export Handler ──────────────────────────────────────────────────────
   const handleExport = async () => {
     if (!quotationRef.current) return;
@@ -471,6 +728,7 @@ const NewQuotationsDetails = () => {
         </div>
       </div>,
     );
+    // ← Add here
 
     // MAIN PRODUCTS PAGES
     let remainingMain = [...mainProducts];
@@ -646,7 +904,21 @@ const NewQuotationsDetails = () => {
         </div>,
       );
     }
+    // Area-wise pages — one per floor-room combination
+    const roomGroups = groupProductsByFloorAndRoom(activeVersionData.products);
 
+    roomGroups.forEach((roomGroup) => {
+      // Only create page if this room actually has products
+      if (roomGroup.products.length > 0) {
+        pages.push(
+          renderAreaWisePageForRoom(
+            roomGroup,
+            customerName,
+            quotation.reference_number,
+          ),
+        );
+      }
+    });
     // SUMMARY ONLY (when optional items exist)
     if (mainProducts.length > 0 && optionalProducts.length > 0) {
       pages.push(

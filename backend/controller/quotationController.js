@@ -32,6 +32,7 @@ function buildFloorsFromProducts(products) {
         floorId: item.floorId,
         floorName: item.floorName || `Floor ${floorMap.size + 1}`,
         sortOrder: floorMap.size,
+        area: null,
         rooms: [],
       });
     }
@@ -41,6 +42,7 @@ function buildFloorsFromProducts(products) {
       floor.rooms.push({
         roomId: item.roomId,
         roomName: item.roomName || "Unnamed Room",
+        areas: [],
         sortOrder: floor.rooms.length,
       });
     }
@@ -287,6 +289,9 @@ exports.createQuotation = async (req, res) => {
         floorName: p.floorName || null,
         roomId: p.roomId || null,
         roomName: p.roomName || null,
+        areaId: p.areaId || null,
+        areaName: p.areaName || null,
+        areaValue: p.areaValue || null,
       };
     });
 
@@ -331,7 +336,7 @@ exports.createQuotation = async (req, res) => {
         shipTo: shipTo || null,
         signature_name,
         signature_image,
-        createdBy: req.user?.userId || "system",
+        createdBy: req.user?.userId,
         ...rest,
       },
       { transaction: t },
@@ -451,7 +456,7 @@ exports.updateQuotation = async (req, res) => {
         quotationItems: currentMongoItems?.items || [],
         floors: safeData.floors || [],
         totalFloors: safeData.totalFloors || 0,
-        updatedBy: req.user?.userId || "System",
+        updatedBy: req.user?.userId,
         updatedAt: new Date(),
       });
     } catch (err) {

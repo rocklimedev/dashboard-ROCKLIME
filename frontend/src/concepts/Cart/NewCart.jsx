@@ -69,7 +69,6 @@ const PageWrapper = styled.div`
     padding: 24px;
   }
 `;
-
 const RESTRICTED_ROLES = ["SUPER_ADMIN", "DEVELOPER", "ADMIN"];
 
 const NewCart = () => {

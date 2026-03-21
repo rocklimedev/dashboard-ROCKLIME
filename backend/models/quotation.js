@@ -45,9 +45,8 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
         defaultValue: [],
         comment:
-          "Array of floors: [{floorId, floorName, sortOrder?, totalRooms, totalProducts?}]",
+          "Array of floors: [{floorId, floorName, sortOrder?, area?, rooms: [{roomId, roomName, sortOrder?, areas: [{id, name?, value, remark?, sortOrder?}], ...}], totalRooms?, totalProducts?}]",
       },
-
       products: {
         type: DataTypes.JSON,
         allowNull: false,

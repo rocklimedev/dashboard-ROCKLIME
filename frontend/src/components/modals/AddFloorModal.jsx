@@ -1,12 +1,7 @@
 import React from "react";
 import { Modal, Form, Input } from "antd";
 
-export default function AddFloorModal({
-  visible,
-  onCancel,
-  onFinish,
-  form,
-}) {
+export default function AddFloorModal({ visible, onCancel, onFinish, form }) {
   return (
     <Modal
       title="Add New Floor"

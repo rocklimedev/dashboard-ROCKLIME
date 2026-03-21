@@ -214,14 +214,14 @@ const QuotationForm = ({
     const updated = (quotationData.floors || []).map((f) =>
       f.floorId === editFloorModal.floorId
         ? { ...f, floorName: values.name.trim() || f.floorName }
-        : f
+        : f,
     );
     handleQuotationChange("floors", updated);
 
     const updatedItems = cartItems.map((item) =>
       item.floorId === editFloorModal.floorId
         ? { ...item, floorName: values.name.trim() || item.floorName }
-        : item
+        : item,
     );
     setCartItems(updatedItems);
 
@@ -258,7 +258,7 @@ const QuotationForm = ({
                 areaName: null,
                 areaValue: null,
               }
-            : item
+            : item,
         );
 
         setCartItems(updatedItems);
@@ -285,7 +285,7 @@ const QuotationForm = ({
               },
             ],
           }
-        : floor
+        : floor,
     );
     handleQuotationChange("floors", updatedFloors);
     setRoomModal({ visible: false, floorId: null });
@@ -305,17 +305,17 @@ const QuotationForm = ({
                     roomName: values.name.trim(),
                     type: values.type || undefined,
                   }
-                : r
+                : r,
             ),
           }
-        : floor
+        : floor,
     );
     handleQuotationChange("floors", updatedFloors);
 
     const updatedItems = cartItems.map((item) =>
       item.roomId === editRoomModal.roomId
         ? { ...item, roomName: values.name.trim() }
-        : item
+        : item,
     );
     setCartItems(updatedItems);
 
@@ -344,7 +344,7 @@ const QuotationForm = ({
                   .filter((r) => r.roomId !== roomId)
                   .map((r, idx) => ({ ...r, sortOrder: idx })),
               }
-            : floor
+            : floor,
         );
 
         const updatedItems = cartItems.map((item) =>
@@ -357,7 +357,7 @@ const QuotationForm = ({
                 areaName: null,
                 areaValue: null,
               }
-            : item
+            : item,
         );
 
         setCartItems(updatedItems);
@@ -370,7 +370,7 @@ const QuotationForm = ({
   // ── Area Handlers ─────────────────────────────────────────────────
   const addArea = (values) => {
     const selectedArea = AREA_OPTIONS.find(
-      (opt) => opt.value === values.areaType
+      (opt) => opt.value === values.areaType,
     );
 
     if (!selectedArea) {
@@ -394,10 +394,10 @@ const QuotationForm = ({
                       },
                     ],
                   }
-                : room
+                : room,
             ),
           }
-        : floor
+        : floor,
     );
 
     handleQuotationChange("floors", updatedFloors);
@@ -422,13 +422,13 @@ const QuotationForm = ({
     }
 
     const matchedFloor = quotationData.floors?.find(
-      (f) => f.floorId === selectedFloorId
+      (f) => f.floorId === selectedFloorId,
     );
     const matchedRoom = matchedFloor?.rooms?.find(
-      (r) => r.roomId === selectedRoomId
+      (r) => r.roomId === selectedRoomId,
     );
     const matchedArea = matchedRoom?.areas?.find(
-      (a) => a.id === selectedAreaId
+      (a) => a.id === selectedAreaId,
     );
 
     const updatedItems = cartItems.map((item) =>
@@ -443,14 +443,14 @@ const QuotationForm = ({
             areaName: matchedArea?.name || null,
             areaValue: matchedArea?.value || null,
           }
-        : item
+        : item,
     );
 
     setCartItems(updatedItems);
     message.success(
       `Item assigned to ${matchedFloor?.floorName || "—"}` +
         (matchedRoom ? ` → ${matchedRoom.roomName}` : "") +
-        (matchedArea ? ` → ${matchedArea.name}` : "")
+        (matchedArea ? ` → ${matchedArea.name}` : ""),
     );
     setAssignModal({ visible: false, itemId: null });
     setSelectedFloorId(null);
@@ -517,7 +517,7 @@ const QuotationForm = ({
           setHasMore(true);
         }
       }, 450),
-    [debouncedTerm]
+    [debouncedTerm],
   );
 
   useEffect(() => {
@@ -530,7 +530,7 @@ const QuotationForm = ({
       limit: 30,
       search: debouncedTerm || undefined,
     },
-    { skip: !debouncedTerm }
+    { skip: !debouncedTerm },
   );
 
   useEffect(() => {
@@ -546,7 +546,7 @@ const QuotationForm = ({
     const pagination = data.pagination;
     if (pagination) {
       setHasMore(
-        pagination.page < pagination.totalPages && data.data.length === 30
+        pagination.page < pagination.totalPages && data.data.length === 30,
       );
     } else {
       setHasMore(data.data.length === 30);
@@ -607,7 +607,7 @@ const QuotationForm = ({
   // ── Address logic ─────────────────────────────────────────────────
   const defaultAddress = useMemo(() => {
     const billing = addresses.find(
-      (a) => a.customerId === selectedCustomer && a.status === "BILLING"
+      (a) => a.customerId === selectedCustomer && a.status === "BILLING",
     );
     if (billing) return billing;
 
@@ -636,15 +636,15 @@ const QuotationForm = ({
 
   const filteredAddresses = useMemo(
     () => addresses.filter((a) => a.customerId === selectedCustomer),
-    [addresses, selectedCustomer]
+    [addresses, selectedCustomer],
   );
 
   const hasBillingAddress = useMemo(
     () =>
       addresses.some(
-        (a) => a.customerId === selectedCustomer && a.status === "BILLING"
+        (a) => a.customerId === selectedCustomer && a.status === "BILLING",
       ),
-    [addresses, selectedCustomer]
+    [addresses, selectedCustomer],
   );
 
   const dropdownValue = useMemo(() => {
@@ -686,7 +686,7 @@ const QuotationForm = ({
   const removeFollowup = (index) =>
     handleQuotationChange(
       "followupDates",
-      quotationData.followupDates.filter((_, i) => i !== index)
+      quotationData.followupDates.filter((_, i) => i !== index),
     );
 
   // ── Render ────────────────────────────────────────────────────────
@@ -811,7 +811,8 @@ const QuotationForm = ({
                           disabled={isCreatingAddress}
                           title="Use default billing address as shipping"
                         >
-                          Same as Billing – {defaultAddress.street?.slice(0, 40)}
+                          Same as Billing –{" "}
+                          {defaultAddress.street?.slice(0, 40)}
                           ...
                         </Option>
                       )}
@@ -859,12 +860,12 @@ const QuotationForm = ({
                 <Col span={16}>
                   <MiniDate
                     selected={momentToDate(
-                      moment(quotationData.quotation_date || new Date())
+                      moment(quotationData.quotation_date || new Date()),
                     )}
                     onChange={(d) =>
                       handleQuotationChange(
                         "quotation_date",
-                        d ? moment(d).format("YYYY-MM-DD") : ""
+                        d ? moment(d).format("YYYY-MM-DD") : "",
                       )
                     }
                     dateFormat="dd/MM/yyyy"
@@ -879,12 +880,14 @@ const QuotationForm = ({
                 <Col span={16}>
                   <MiniDate
                     selected={momentToDate(
-                      quotationData.dueDate ? moment(quotationData.dueDate) : null
+                      quotationData.dueDate
+                        ? moment(quotationData.dueDate)
+                        : null,
                     )}
                     onChange={(d) =>
                       handleQuotationChange(
                         "dueDate",
-                        d ? moment(d).format("YYYY-MM-DD") : ""
+                        d ? moment(d).format("YYYY-MM-DD") : "",
                       )
                     }
                     minDate={new Date()}
@@ -984,7 +987,7 @@ const QuotationForm = ({
                           onClick={() =>
                             showDeleteFloorConfirm(
                               floor.floorId,
-                              floor.floorName
+                              floor.floorName,
                             )
                           }
                         />
@@ -1052,7 +1055,7 @@ const QuotationForm = ({
                                 showDeleteRoomConfirm(
                                   floor.floorId,
                                   room.roomId,
-                                  room.roomName
+                                  room.roomName,
                                 )
                               }
                             />
@@ -1100,17 +1103,17 @@ const QuotationForm = ({
                                                 ? {
                                                     ...r,
                                                     areas: r.areas.filter(
-                                                      (a) => a.id !== area.id
+                                                      (a) => a.id !== area.id,
                                                     ),
                                                   }
-                                                : r
+                                                : r,
                                             ),
                                           }
-                                        : f
+                                        : f,
                                     );
                                     handleQuotationChange(
                                       "floors",
-                                      updatedFloors
+                                      updatedFloors,
                                     );
 
                                     const updatedItems = cartItems.map(
@@ -1122,7 +1125,7 @@ const QuotationForm = ({
                                               areaName: null,
                                               areaValue: null,
                                             }
-                                          : item
+                                          : item,
                                     );
                                     setCartItems(updatedItems);
                                     message.success("Area removed");
@@ -1170,7 +1173,7 @@ const QuotationForm = ({
                     onChange={(val) =>
                       handleQuotationChange(
                         "discountAmount",
-                        val === null ? "" : val.toString()
+                        val === null ? "" : val.toString(),
                       )
                     }
                     placeholder="500"
@@ -1205,7 +1208,7 @@ const QuotationForm = ({
                     {item.floorId && (
                       <Tag color="geekblue">
                         {quotationData.floors?.find(
-                          (f) => f.floorId === item.floorId
+                          (f) => f.floorId === item.floorId,
                         )?.floorName || "—"}
                         {item.roomId && (
                           <>
@@ -1344,7 +1347,7 @@ const QuotationForm = ({
                 message.warning(
                   `${unassignedCount} item${
                     unassignedCount > 1 ? "s are" : " is"
-                  } not assigned to any floor`
+                  } not assigned to any floor`,
                 );
               }
 
@@ -1382,8 +1385,9 @@ const QuotationForm = ({
       <EditFloorModal
         visible={editFloorModal.visible}
         floorName={
-          quotationData.floors?.find((f) => f.floorId === editFloorModal.floorId)
-            ?.floorName
+          quotationData.floors?.find(
+            (f) => f.floorId === editFloorModal.floorId,
+          )?.floorName
         }
         onCancel={() => {
           setEditFloorModal({ visible: false, floorId: null });
@@ -1404,10 +1408,9 @@ const QuotationForm = ({
                     ?.find((f) => f.floorId === editRoomModal.floorId)
                     ?.rooms?.find((r) => r.roomId === editRoomModal.roomId)
                     ?.roomName || "",
-                type:
-                  quotationData.floors
-                    ?.find((f) => f.floorId === editRoomModal.floorId)
-                    ?.rooms?.find((r) => r.roomId === editRoomModal.roomId)?.type,
+                type: quotationData.floors
+                  ?.find((f) => f.floorId === editRoomModal.floorId)
+                  ?.rooms?.find((r) => r.roomId === editRoomModal.roomId)?.type,
               }
             : {}
         }

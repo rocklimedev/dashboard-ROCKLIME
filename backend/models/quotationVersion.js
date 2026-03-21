@@ -28,6 +28,9 @@ const quotationItemVersionSchema = new mongoose.Schema({
   floorName: { type: String, default: null },
   roomId: { type: String, default: null },
   roomName: { type: String, default: null },
+  areaId: { type: String, default: null, index: true }, // references areas[].id in the room
+  areaName: { type: String, default: null }, // denormalized copy
+  areaValue: { type: String, default: null },
 });
 
 const quotationVersionSchema = new mongoose.Schema(
