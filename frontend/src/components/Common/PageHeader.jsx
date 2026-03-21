@@ -29,7 +29,7 @@ const PageHeader = ({
     doc.text(`${title} Report`, 14, 20);
     const headers = Object.keys(tableData[0] || {});
     const rows = tableData.map((row) =>
-      headers.map((h) => String(row[h] ?? "—"))
+      headers.map((h) => String(row[h] ?? "—")),
     );
     doc.autoTable({
       head: [headers],
@@ -92,15 +92,16 @@ const PageHeader = ({
             <Tooltip
               title={viewToggle.viewMode === "card" ? "List View" : "Card View"}
             >
-          <Switch
-  checkedChildren={<AppstoreOutlined />}
-  unCheckedChildren={<UnorderedListOutlined />}
-  checked={viewToggle.viewMode === "card"}
-  onChange={viewToggle.onViewToggle}
-  style={{
-    backgroundColor: viewToggle.viewMode === "card" ? '#333333' : undefined, 
-  }}
-/>
+              <Switch
+                checkedChildren={<AppstoreOutlined />}
+                unCheckedChildren={<UnorderedListOutlined />}
+                checked={viewToggle.viewMode === "card"}
+                onChange={viewToggle.onViewToggle}
+                style={{
+                  backgroundColor:
+                    viewToggle.viewMode === "card" ? "#333333" : undefined,
+                }}
+              />
             </Tooltip>
           </li>
         )}

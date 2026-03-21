@@ -1,5 +1,5 @@
 // src/api/keywordApi.js
-import { baseApi } from "./baseApi";
+import { baseApi } from "../store/baseApi";
 
 export const keywordApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({

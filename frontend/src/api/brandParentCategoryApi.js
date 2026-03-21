@@ -1,4 +1,4 @@
-import { baseApi } from "./baseApi";
+import { baseApi } from "../store/baseApi";
 export const brandParentCategoryApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // POST /brand-parent

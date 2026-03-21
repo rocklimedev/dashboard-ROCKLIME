@@ -1,5 +1,5 @@
 import { toast } from "sonner";
-import { baseApi } from "./baseApi";
+import { baseApi } from "../store/baseApi";
 
 // Define the search API slice
 export const searchApi = baseApi.injectEndpoints({

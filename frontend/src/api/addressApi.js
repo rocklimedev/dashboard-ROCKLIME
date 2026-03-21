@@ -1,4 +1,4 @@
-import { baseApi } from "./baseApi";
+import { baseApi } from "../store/baseApi";
 export const addressApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     createAddress: builder.mutation({

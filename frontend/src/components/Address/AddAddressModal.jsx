@@ -1,3 +1,5 @@
+// src/components/addresses/AddAddress.jsx   (or wherever this component lives)
+
 import React, { useEffect, useState } from "react";
 import {
   useCreateAddressMutation,
@@ -9,47 +11,10 @@ import { useGetAllUsersQuery } from "../../api/userApi";
 import { v4 as uuidv4 } from "uuid";
 import { Modal, Button, Input, Select, Form, Radio, message } from "antd";
 
-const { Option } = Select;
+// Import the states list
+import { INDIAN_STATES } from "../../constants/statesConstants";  // adjust path as needed
 
-// Sorted Indian States
-const sortedStates = [
-  "Andaman and Nicobar Islands",
-  "Andhra Pradesh",
-  "Arunachal Pradesh",
-  "Assam",
-  "Bihar",
-  "Chandigarh",
-  "Chhattisgarh",
-  "Dadra and Nagar Haveli and Daman and Diu",
-  "Delhi",
-  "Goa",
-  "Gujarat",
-  "Haryana",
-  "Himachal Pradesh",
-  "Jammu and Kashmir",
-  "Jharkhand",
-  "Karnataka",
-  "Kerala",
-  "Ladakh",
-  "Lakshadweep",
-  "Madhya Pradesh",
-  "Maharashtra",
-  "Manipur",
-  "Meghalaya",
-  "Mizoram",
-  "Nagaland",
-  "Odisha",
-  "Puducherry",
-  "Punjab",
-  "Rajasthan",
-  "Sikkim",
-  "Tamil Nadu",
-  "Telangana",
-  "Tripura",
-  "Uttar Pradesh",
-  "Uttarakhand",
-  "West Bengal",
-].sort();
+const { Option } = Select;
 
 const AddAddress = ({
   visible,
@@ -70,11 +35,10 @@ const AddAddress = ({
     useGetCustomersQuery();
   const { data: usersData, isLoading: isUsersLoading } = useGetAllUsersQuery();
 
-  // Only fetch customer addresses if creating for a specific customer
   const { data: addressesData, isLoading: isAddressesLoading } =
     useGetAllAddressesQuery(
       { customerId: selectedCustomer },
-      { skip: !selectedCustomer || addressType !== "customer" },
+      { skip: !selectedCustomer || addressType !== "customer" }
     );
 
   const customers = customersData?.data || [];
@@ -88,23 +52,19 @@ const AddAddress = ({
     }
 
     const hasBilling = customerAddresses.some(
-      (a) =>
-        a.status === "BILLING" && a.addressId !== existingAddress?.addressId,
+      (a) => a.status === "BILLING" && a.addressId !== existingAddress?.addressId
     );
     const hasPrimary = customerAddresses.some(
-      (a) =>
-        a.status === "PRIMARY" && a.addressId !== existingAddress?.addressId,
+      (a) => a.status === "PRIMARY" && a.addressId !== existingAddress?.addressId
     );
 
     const options = ["ADDITIONAL"];
-
     if (!hasBilling) options.unshift("BILLING");
     if (!hasPrimary) options.unshift("PRIMARY");
 
     return options;
   };
 
-  // Initialize form on mount or when props change
   useEffect(() => {
     if (!visible) return;
 
@@ -148,6 +108,7 @@ const AddAddress = ({
       message.error("Please select either a Customer or a User");
       return;
     }
+
     const payload = {
       street: values.street.trim(),
       city: values.city.trim(),
@@ -288,7 +249,7 @@ const AddAddress = ({
             placeholder="Select state"
             optionFilterProp="children"
           >
-            {sortedStates.map((state) => (
+            {INDIAN_STATES.map((state) => (
               <Option key={state} value={state}>
                 {state}
               </Option>

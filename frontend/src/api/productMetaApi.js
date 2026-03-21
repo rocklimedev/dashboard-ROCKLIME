@@ -1,4 +1,4 @@
-import { baseApi } from "./baseApi";
+import { baseApi } from "../store/baseApi";
 export const productMetaApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // POST /
