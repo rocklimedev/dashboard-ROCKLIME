@@ -33,13 +33,13 @@ import {
   useGetCartQuery,
 } from "../../api/cartApi";
 import { message } from "antd";
-import "./productdetails.css";
+import "../../components/Product/productdetails.css";
 import DeleteModal from "../../components/Common/DeleteModal";
-import HistoryModalAntD from "../../components/Common/HistoryModal";
-import StockModal from "../../components/Common/StockModal";
+import HistoryModalAntD from "../../components/modals/HistoryModal";
+import StockModal from "../../components/modals/StockModal";
 import ProductCard from "../../components/Product/ProductCard";
 import PageHeader from "../../components/Common/PageHeader";
-import Breadcrumb from "../../components/Product/Breadcrumb";
+import Breadcrumb from "../../components/Common/Breadcrumb";
 import pos from "../../assets/img/default.png";
 import PermissionGate from "../../context/PermissionGate";
 import { debounce } from "lodash";

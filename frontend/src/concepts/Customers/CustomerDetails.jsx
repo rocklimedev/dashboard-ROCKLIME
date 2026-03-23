@@ -50,9 +50,8 @@ import {
 } from "antd";
 import { Helmet } from "react-helmet";
 import moment from "moment";
-
-import AddressModal from "../../components/AddressModal"; // ← Adjust path as needed
-import "./customerdetails.css";
+import AddressModal from "../../components/modals/AddAddressModal";
+import "../../components/Customers/customerdetails.css";
 
 const { Title, Text } = Typography;
 

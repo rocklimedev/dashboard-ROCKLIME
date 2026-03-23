@@ -1,3 +1,4 @@
+// src/components/Quotation/QuotationForm.jsx
 import React, { useState, useEffect, useMemo } from "react";
 import {
   Card,
@@ -28,6 +29,9 @@ import {
   HomeOutlined,
   ApartmentOutlined,
   PushpinOutlined,
+  RulerOutlined,
+  EditOutlined,
+  ExclamationCircleOutlined,
 } from "@ant-design/icons";
 import styled from "styled-components";
 import OrderTotal from "./OrderTotal";
@@ -39,13 +43,19 @@ import "react-datepicker/dist/react-datepicker.css";
 import { v4 as uuidv4 } from "uuid";
 import { debounce } from "lodash";
 
+import { AREA_OPTIONS } from "../modals/AddAreaModal";
+// ── Imported Modals ──────────────────────────────────────────────────
+import AddFloorModal from "../modals/AddFloorModal";
+import EditFloorModal from "../modals/EditFloorModal";
+import AddEditRoomModal from "../modals/AddEditRoomModal";
+import AddAreaModal from "../modals/AddAreaModal";
+import AssignItemModal from "../modals/AssignItemModal";
+
+// ── Styled Components ────────────────────────────────────────────────
 const { Text, Title } = Typography;
 const { Panel } = Collapse;
 const { Option } = Select;
 
-const RESTRICTED_ROLES = ["SUPER_ADMIN", "DEVELOPER", "ADMIN"];
-
-// ── Styled Components ────────────────────────────────────────────────
 const CompactCard = styled(Card)`
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -105,6 +115,7 @@ const momentToDate = (m) => (m ? m.toDate() : null);
 const generateFloorId = () => `fl_${uuidv4().slice(0, 8)}`;
 const generateRoomId = (floorId = "") =>
   `${floorId ? floorId + "_" : "rm_"}${uuidv4().slice(0, 8)}`;
+const generateAreaId = (roomId) => `${roomId}_ar_${uuidv4().slice(0, 6)}`;
 
 // ── Main Component ───────────────────────────────────────────────────
 const QuotationForm = ({
@@ -116,7 +127,7 @@ const QuotationForm = ({
   addresses,
   addressesLoading,
   documentType = "Quotation",
-  cartItems, // ← renamed from products → cartItems in many codebases
+  cartItems,
   setCartItems,
   subTotal,
   shipping,
@@ -140,21 +151,39 @@ const QuotationForm = ({
 
   const [isCreatingAddress, setIsCreatingAddress] = useState(false);
 
+  // ── Modal visibility states ───────────────────────────────────────
   const [floorModalVisible, setFloorModalVisible] = useState(false);
+  const [editFloorModal, setEditFloorModal] = useState({
+    visible: false,
+    floorId: null,
+  });
   const [roomModal, setRoomModal] = useState({ visible: false, floorId: null });
-
+  const [editRoomModal, setEditRoomModal] = useState({
+    visible: false,
+    floorId: null,
+    roomId: null,
+  });
+  const [areaModal, setAreaModal] = useState({
+    visible: false,
+    floorId: null,
+    roomId: null,
+  });
   const [assignModal, setAssignModal] = useState({
     visible: false,
     itemId: null,
   });
 
+  // ── Selection states for assignment ───────────────────────────────
   const [selectedFloorId, setSelectedFloorId] = useState(null);
   const [selectedRoomId, setSelectedRoomId] = useState(null);
+  const [selectedAreaId, setSelectedAreaId] = useState(null);
 
+  // ── Form instances ────────────────────────────────────────────────
   const [floorForm] = Form.useForm();
   const [roomForm] = Form.useForm();
+  const [areaForm] = Form.useForm();
 
-  // Ensure floors always exist (minimal default)
+  // Ensure there's always at least one floor
   useEffect(() => {
     if (!quotationData.floors?.length) {
       const defaultFloor = {
@@ -167,7 +196,7 @@ const QuotationForm = ({
     }
   }, [quotationData.floors, handleQuotationChange]);
 
-  // ── Floor & Room Handlers ──────────────────────────────────────
+  // ── Floor Handlers ────────────────────────────────────────────────
   const addFloor = (values) => {
     const current = quotationData.floors || [];
     const newFloor = {
@@ -182,6 +211,65 @@ const QuotationForm = ({
     message.success("Floor added");
   };
 
+  const editFloor = (values) => {
+    const updated = (quotationData.floors || []).map((f) =>
+      f.floorId === editFloorModal.floorId
+        ? { ...f, floorName: values.name.trim() || f.floorName }
+        : f,
+    );
+    handleQuotationChange("floors", updated);
+
+    const updatedItems = cartItems.map((item) =>
+      item.floorId === editFloorModal.floorId
+        ? { ...item, floorName: values.name.trim() || item.floorName }
+        : item,
+    );
+    setCartItems(updatedItems);
+
+    message.success("Floor name updated");
+    setEditFloorModal({ visible: false, floorId: null });
+    floorForm.resetFields();
+  };
+
+  const showDeleteFloorConfirm = (floorId, floorName) => {
+    const itemsInFloor = cartItems.filter((i) => i.floorId === floorId).length;
+
+    Modal.confirm({
+      title: `Delete floor "${floorName}"?`,
+      icon: <ExclamationCircleOutlined />,
+      content: itemsInFloor
+        ? `${itemsInFloor} item${itemsInFloor > 1 ? "s" : ""} will be unassigned.`
+        : "This floor has no assigned items.",
+      okText: "Delete",
+      okType: "danger",
+      onOk() {
+        const updatedFloors = (quotationData.floors || [])
+          .filter((f) => f.floorId !== floorId)
+          .map((f, idx) => ({ ...f, sortOrder: idx }));
+
+        const updatedItems = cartItems.map((item) =>
+          item.floorId === floorId
+            ? {
+                ...item,
+                floorId: null,
+                floorName: null,
+                roomId: null,
+                roomName: null,
+                areaId: null,
+                areaName: null,
+                areaValue: null,
+              }
+            : item,
+        );
+
+        setCartItems(updatedItems);
+        handleQuotationChange("floors", updatedFloors);
+        message.success("Floor deleted");
+      },
+    });
+  };
+
+  // ── Room Handlers ─────────────────────────────────────────────────
   const addRoom = (values) => {
     const updatedFloors = (quotationData.floors || []).map((floor) =>
       floor.floorId === roomModal.floorId
@@ -194,6 +282,7 @@ const QuotationForm = ({
                 roomName: values.name,
                 sortOrder: floor.rooms?.length || 0,
                 type: values.type || undefined,
+                areas: [],
               },
             ],
           }
@@ -205,12 +294,126 @@ const QuotationForm = ({
     message.success("Room added");
   };
 
-  // ── Item Assignment ─────────────────────────────────────────────
+  const editRoom = (values) => {
+    const updatedFloors = (quotationData.floors || []).map((floor) =>
+      floor.floorId === editRoomModal.floorId
+        ? {
+            ...floor,
+            rooms: floor.rooms.map((r) =>
+              r.roomId === editRoomModal.roomId
+                ? {
+                    ...r,
+                    roomName: values.name.trim(),
+                    type: values.type || undefined,
+                  }
+                : r,
+            ),
+          }
+        : floor,
+    );
+    handleQuotationChange("floors", updatedFloors);
+
+    const updatedItems = cartItems.map((item) =>
+      item.roomId === editRoomModal.roomId
+        ? { ...item, roomName: values.name.trim() }
+        : item,
+    );
+    setCartItems(updatedItems);
+
+    message.success("Room updated");
+    setEditRoomModal({ visible: false, floorId: null, roomId: null });
+    roomForm.resetFields();
+  };
+
+  const showDeleteRoomConfirm = (floorId, roomId, roomName) => {
+    const itemsInRoom = cartItems.filter((i) => i.roomId === roomId).length;
+
+    Modal.confirm({
+      title: `Delete room "${roomName}"?`,
+      icon: <ExclamationCircleOutlined />,
+      content: itemsInRoom
+        ? `${itemsInRoom} item${itemsInRoom > 1 ? "s" : ""} will lose room assignment.`
+        : "No items assigned to this room.",
+      okText: "Delete",
+      okType: "danger",
+      onOk() {
+        const updatedFloors = (quotationData.floors || []).map((floor) =>
+          floor.floorId === floorId
+            ? {
+                ...floor,
+                rooms: floor.rooms
+                  .filter((r) => r.roomId !== roomId)
+                  .map((r, idx) => ({ ...r, sortOrder: idx })),
+              }
+            : floor,
+        );
+
+        const updatedItems = cartItems.map((item) =>
+          item.roomId === roomId
+            ? {
+                ...item,
+                roomId: null,
+                roomName: null,
+                areaId: null,
+                areaName: null,
+                areaValue: null,
+              }
+            : item,
+        );
+
+        setCartItems(updatedItems);
+        handleQuotationChange("floors", updatedFloors);
+        message.success("Room deleted");
+      },
+    });
+  };
+
+  // ── Area Handlers ─────────────────────────────────────────────────
+  const addArea = (values) => {
+    const selectedArea = AREA_OPTIONS.find(
+      (opt) => opt.value === values.areaType,
+    );
+
+    if (!selectedArea) {
+      return message.error("Please select a valid area type");
+    }
+
+    const updatedFloors = (quotationData.floors || []).map((floor) =>
+      floor.floorId === areaModal.floorId
+        ? {
+            ...floor,
+            rooms: (floor.rooms || []).map((room) =>
+              room.roomId === areaModal.roomId
+                ? {
+                    ...room,
+                    areas: [
+                      ...(room.areas || []),
+                      {
+                        id: generateAreaId(room.roomId),
+                        name: selectedArea.label,
+                        value: selectedArea.value,
+                      },
+                    ],
+                  }
+                : room,
+            ),
+          }
+        : floor,
+    );
+
+    handleQuotationChange("floors", updatedFloors);
+    setAreaModal({ visible: false, floorId: null, roomId: null });
+    areaForm.resetFields();
+    message.success(`${selectedArea.label} added`);
+  };
+
+  // ── Item Assignment ───────────────────────────────────────────────
   const openAssignModal = (itemId) => {
     const item = cartItems.find((i) => i.id === itemId);
     if (!item) return;
     setSelectedFloorId(item.floorId || null);
     setSelectedRoomId(item.roomId || null);
+    setSelectedAreaId(item.areaId || null);
     setAssignModal({ visible: true, itemId });
   };
 
@@ -218,37 +421,77 @@ const QuotationForm = ({
     if (!selectedFloorId) {
       return message.error("Please select a floor");
     }
+
+    const matchedFloor = quotationData.floors?.find(
+      (f) => f.floorId === selectedFloorId,
+    );
+    const matchedRoom = matchedFloor?.rooms?.find(
+      (r) => r.roomId === selectedRoomId,
+    );
+    const matchedArea = matchedRoom?.areas?.find(
+      (a) => a.id === selectedAreaId,
+    );
+
     const updatedItems = cartItems.map((item) =>
       item.id === assignModal.itemId
-        ? { ...item, floorId: selectedFloorId, roomId: selectedRoomId || null }
+        ? {
+            ...item,
+            floorId: selectedFloorId,
+            floorName: matchedFloor?.floorName || null,
+            roomId: selectedRoomId || null,
+            roomName: matchedRoom?.roomName || null,
+            areaId: selectedAreaId || null,
+            areaName: matchedArea?.name || null,
+            areaValue: matchedArea?.value || null,
+          }
         : item,
     );
+
     setCartItems(updatedItems);
-    message.success("Item assigned");
+    message.success(
+      `Item assigned to ${matchedFloor?.floorName || "—"}` +
+        (matchedRoom ? ` → ${matchedRoom.roomName}` : "") +
+        (matchedArea ? ` → ${matchedArea.name}` : ""),
+    );
     setAssignModal({ visible: false, itemId: null });
     setSelectedFloorId(null);
     setSelectedRoomId(null);
+    setSelectedAreaId(null);
   };
 
-  // ── Floor Summary (for display) ─────────────────────────────────
+  // ── Floor / Room Summary (memoized) ───────────────────────────────
   const floorSummary = useMemo(() => {
     const summary = {};
     (quotationData.floors || []).forEach((f) => {
       summary[f.floorId] = {
         name: f.floorName,
-        count: 0,
+        itemCount: 0,
         total: 0,
+        rooms: (f.rooms || []).map((r) => ({
+          ...r,
+          itemCount: 0,
+          total: 0,
+        })),
       };
     });
 
     cartItems.forEach((item) => {
-      if (item.floorId && summary[item.floorId]) {
-        summary[item.floorId].count += item.quantity || 1;
-        const line =
-          (item.quantity || 1) *
-          (item.price || 0) *
-          (1 - (item.discount || 0) / 100);
-        summary[item.floorId].total += line;
+      if (!item.floorId || !summary[item.floorId]) return;
+
+      const floor = summary[item.floorId];
+      floor.itemCount += item.quantity || 1;
+      const line =
+        (item.quantity || 1) *
+        (item.price || 0) *
+        (1 - (item.discount || 0) / 100);
+      floor.total += line;
+
+      if (item.roomId) {
+        const room = floor.rooms.find((r) => r.roomId === item.roomId);
+        if (room) {
+          room.itemCount += item.quantity || 1;
+          room.total += line;
+        }
       }
     });
 
@@ -257,7 +500,7 @@ const QuotationForm = ({
 
   const unassignedCount = cartItems.filter((i) => !i.floorId).length;
 
-  // ── Customer Search – FIXED MEMORY LEAK ─────────────────────────
+  // ── Customer Search Logic ─────────────────────────────────────────
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedTerm, setDebouncedTerm] = useState("");
   const [page, setPage] = useState(1);
@@ -288,9 +531,7 @@ const QuotationForm = ({
       limit: 30,
       search: debouncedTerm || undefined,
     },
-    {
-      skip: !debouncedTerm,
-    },
+    { skip: !debouncedTerm },
   );
 
   useEffect(() => {
@@ -364,19 +605,14 @@ const QuotationForm = ({
     }));
   }, [customers]);
 
-  const selectedCustomerData = useMemo(
-    () => customers.find((c) => c.customerId === selectedCustomer),
-    [customers, selectedCustomer],
-  );
-
-  // ── Address logic ──────────────────────────────────────────────
+  // ── Address logic ─────────────────────────────────────────────────
   const defaultAddress = useMemo(() => {
     const billing = addresses.find(
       (a) => a.customerId === selectedCustomer && a.status === "BILLING",
     );
     if (billing) return billing;
 
-    const cust = selectedCustomerData;
+    const cust = customers.find((c) => c.customerId === selectedCustomer);
     if (!cust?.address) return null;
 
     let parsed;
@@ -397,7 +633,7 @@ const QuotationForm = ({
       postalCode: parsed.zip || parsed.postalCode || "",
       country: parsed.country || "India",
     };
-  }, [addresses, selectedCustomer, selectedCustomerData]);
+  }, [addresses, selectedCustomer, customers]);
 
   const filteredAddresses = useMemo(
     () => addresses.filter((a) => a.customerId === selectedCustomer),
@@ -428,7 +664,7 @@ const QuotationForm = ({
     quotationData.shipTo,
   ]);
 
-  // ── Follow-up dates handlers ────────────────────────────────
+  // ── Follow-up dates ───────────────────────────────────────────────
   const handleFollowup = (index, date) => {
     const dates = [...quotationData.followupDates];
     dates[index] = date ? moment(date).format("YYYY-MM-DD") : "";
@@ -454,7 +690,7 @@ const QuotationForm = ({
       quotationData.followupDates.filter((_, i) => i !== index),
     );
 
-  // ── Render ─────────────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────────
   if (!cartItems.length) {
     return (
       <CompactCard>
@@ -479,7 +715,6 @@ const QuotationForm = ({
       <Col xs={24} md={16}>
         <CompactCard title={<Title level={5}>Quotation Details</Title>}>
           <Collapse defaultActiveKey={["1", "2", "4"]} ghost>
-            {/* Customer & Address – keep as is or minor tweaks */}
             {/* Customer & Address */}
             <Panel header="Customer & Address" key="1">
               <TightRow gutter={8}>
@@ -578,7 +813,8 @@ const QuotationForm = ({
                           title="Use default billing address as shipping"
                         >
                           Same as Billing –{" "}
-                          {defaultAddress.street?.slice(0, 40)}...
+                          {defaultAddress.street?.slice(0, 40)}
+                          ...
                         </Option>
                       )}
 
@@ -592,7 +828,9 @@ const QuotationForm = ({
                         <Option
                           key={a.addressId}
                           value={a.addressId}
-                          title={`${a.street}, ${a.city}, ${a.state || ""} ${a.postalCode || ""} (${a.status})`}
+                          title={`${a.street}, ${a.city}, ${a.state || ""} ${
+                            a.postalCode || ""
+                          } (${a.status})`}
                         >
                           {a.street?.slice(0, 35)}
                           {a.street?.length > 35 ? "..." : ""}, {a.city} (
@@ -614,7 +852,7 @@ const QuotationForm = ({
               </TightRow>
             </Panel>
 
-            {/* Dates */}
+            {/* Dates & Follow-ups */}
             <Panel header="Dates & Follow-ups" key="2">
               <TightRow gutter={8}>
                 <Col span={8}>
@@ -693,11 +931,11 @@ const QuotationForm = ({
               </TightRow>
             </Panel>
 
-            {/* Site Layout – updated structure */}
+            {/* Site Layout */}
             <Panel
               header={
                 <Space>
-                  <ApartmentOutlined /> Site Layout
+                  <ApartmentOutlined /> Site Layout & Areas
                 </Space>
               }
               key="4"
@@ -723,36 +961,191 @@ const QuotationForm = ({
                         <Tag color="blue">{floor.rooms?.length || 0} rooms</Tag>
                         <Tag color="default">
                           {floorSummary.find((s) => s.name === floor.floorName)
-                            ?.count || 0}{" "}
+                            ?.itemCount || 0}{" "}
                           items
                         </Tag>
                       </Space>
                     }
                     extra={
-                      <Button
-                        size="small"
-                        icon={<PlusOutlined />}
-                        onClick={() =>
-                          setRoomModal({
-                            visible: true,
-                            floorId: floor.floorId,
-                          })
-                        }
-                      >
-                        Add Room
-                      </Button>
+                      <Space size="small">
+                        <Button
+                          size="small"
+                          icon={<EditOutlined />}
+                          onClick={() => {
+                            floorForm.setFieldsValue({ name: floor.floorName });
+                            setEditFloorModal({
+                              visible: true,
+                              floorId: floor.floorId,
+                            });
+                          }}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          size="small"
+                          danger
+                          icon={<DeleteOutlined />}
+                          onClick={() =>
+                            showDeleteFloorConfirm(
+                              floor.floorId,
+                              floor.floorName,
+                            )
+                          }
+                        />
+                        <Button
+                          size="small"
+                          icon={<PlusOutlined />}
+                          onClick={() =>
+                            setRoomModal({
+                              visible: true,
+                              floorId: floor.floorId,
+                            })
+                          }
+                        >
+                          Add Room
+                        </Button>
+                      </Space>
                     }
                   >
-                    <Space wrap size={[0, 8]}>
-                      {floor.rooms?.map((room) => (
-                        <Tag key={room.roomId} color="geekblue">
-                          {room.roomName} {room.type && `(${room.type})`}
-                        </Tag>
-                      ))}
-                      {!floor.rooms?.length && (
-                        <Text type="secondary">No rooms yet</Text>
-                      )}
-                    </Space>
+                    {floor.rooms?.map((room) => (
+                      <Card
+                        key={room.roomId}
+                        size="small"
+                        title={
+                          <Space>
+                            <ApartmentOutlined />
+                            {room.roomName} {room.type && `(${room.type})`}
+                            <Tag color="geekblue">
+                              {room.areas?.length || 0} areas
+                            </Tag>
+                            <Tag color="default">
+                              {
+                                floorSummary
+                                  .find((f) => f.name === floor.floorName)
+                                  ?.rooms?.find((r) => r.roomId === room.roomId)
+                                  ?.itemCount
+                              }{" "}
+                              items
+                            </Tag>
+                          </Space>
+                        }
+                        extra={
+                          <Space size="small">
+                            <Button
+                              size="small"
+                              icon={<EditOutlined />}
+                              onClick={() => {
+                                roomForm.setFieldsValue({
+                                  name: room.roomName,
+                                  type: room.type,
+                                });
+                                setEditRoomModal({
+                                  visible: true,
+                                  floorId: floor.floorId,
+                                  roomId: room.roomId,
+                                });
+                              }}
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              size="small"
+                              danger
+                              icon={<DeleteOutlined />}
+                              onClick={() =>
+                                showDeleteRoomConfirm(
+                                  floor.floorId,
+                                  room.roomId,
+                                  room.roomName,
+                                )
+                              }
+                            />
+                            <Button
+                              size="small"
+                              type="dashed"
+                              icon={<PlusOutlined />}
+                              onClick={() =>
+                                setAreaModal({
+                                  visible: true,
+                                  floorId: floor.floorId,
+                                  roomId: room.roomId,
+                                })
+                              }
+                            >
+                              Add Area
+                            </Button>
+                          </Space>
+                        }
+                        style={{ marginBottom: 12 }}
+                      >
+                        <Space wrap size={[0, 8]}>
+                          {room.areas?.map((area) => (
+                            <Tag
+                              key={area.id}
+                              color="cyan"
+                              closable
+                              onClose={(e) => {
+                                e.preventDefault();
+                                Modal.confirm({
+                                  title: `Remove "${area.name}"?`,
+                                  content:
+                                    "Items assigned here will remain assigned to the room (area info removed).",
+                                  okText: "Remove",
+                                  okType: "danger",
+                                  onOk() {
+                                    const updatedFloors = (
+                                      quotationData.floors || []
+                                    ).map((f) =>
+                                      f.floorId === floor.floorId
+                                        ? {
+                                            ...f,
+                                            rooms: f.rooms.map((r) =>
+                                              r.roomId === room.roomId
+                                                ? {
+                                                    ...r,
+                                                    areas: r.areas.filter(
+                                                      (a) => a.id !== area.id,
+                                                    ),
+                                                  }
+                                                : r,
+                                            ),
+                                          }
+                                        : f,
+                                    );
+                                    handleQuotationChange(
+                                      "floors",
+                                      updatedFloors,
+                                    );
+
+                                    const updatedItems = cartItems.map(
+                                      (item) =>
+                                        item.areaId === area.id
+                                          ? {
+                                              ...item,
+                                              areaId: null,
+                                              areaName: null,
+                                              areaValue: null,
+                                            }
+                                          : item,
+                                    );
+                                    setCartItems(updatedItems);
+                                    message.success("Area removed");
+                                  },
+                                });
+                              }}
+                            >
+                              {area.name}
+                            </Tag>
+                          ))}
+                          {!room.areas?.length && (
+                            <Text type="secondary">No areas yet</Text>
+                          )}
+                        </Space>
+                      </Card>
+                    ))}
+                    {!floor.rooms?.length && (
+                      <Text type="secondary">No rooms added yet</Text>
+                    )}
                   </Panel>
                 ))}
               </Collapse>
@@ -760,14 +1153,16 @@ const QuotationForm = ({
               {unassignedCount > 0 && (
                 <Alert
                   style={{ marginTop: 16 }}
-                  message={`${unassignedCount} item${unassignedCount > 1 ? "s" : ""} not assigned to any floor`}
+                  message={`${unassignedCount} item${
+                    unassignedCount > 1 ? "s" : ""
+                  } not assigned to any floor`}
                   type="warning"
                   showIcon
                 />
               )}
             </Panel>
 
-            {/* Discount – adjust field name if backend uses different one */}
+            {/* Discount & Notes */}
             <Panel header="Discount & Notes" key="3">
               <TightRow gutter={16} align="middle">
                 <Col span={8}>
@@ -797,9 +1192,11 @@ const QuotationForm = ({
               </TightRow>
             </Panel>
           </Collapse>
+
           <Divider orientation="left" style={{ margin: "24px 0 16px" }}>
             Cart Items & Location Assignment
           </Divider>
+
           <Space direction="vertical" style={{ width: "100%" }} size="middle">
             {cartItems.map((item) => (
               <Card
@@ -809,20 +1206,30 @@ const QuotationForm = ({
                   <Space>
                     <Text strong>{item.name}</Text>
                     <Tag color="blue">×{item.quantity || 1}</Tag>
-                    {item.floor_number && (
+                    {item.floorId && (
                       <Tag color="geekblue">
                         {quotationData.floors?.find(
-                          (f) => f.number === item.floor_number,
-                        )?.name || `Floor ${item.floor_number}`}
-                        {item.room_id && (
+                          (f) => f.floorId === item.floorId,
+                        )?.floorName || "—"}
+                        {item.roomId && (
                           <>
                             {" → "}
                             {
                               quotationData.floors
-                                ?.find((f) => f.number === item.floor_number)
-                                ?.rooms?.find((r) => r.id === item.room_id)
-                                ?.name
+                                ?.find((f) => f.floorId === item.floorId)
+                                ?.rooms?.find((r) => r.roomId === item.roomId)
+                                ?.roomName
                             }
+                            {item.areaId && (
+                              <>
+                                {" → "}
+                                {quotationData.floors
+                                  ?.find((f) => f.floorId === item.floorId)
+                                  ?.rooms?.find((r) => r.roomId === item.roomId)
+                                  ?.areas?.find((a) => a.id === item.areaId)
+                                  ?.name || "—"}
+                              </>
+                            )}
                           </>
                         )}
                       </Tag>
@@ -835,7 +1242,7 @@ const QuotationForm = ({
                     icon={<PushpinOutlined />}
                     onClick={() => openAssignModal(item.id)}
                   >
-                    {item.floor_number ? "Change" : "Assign"}
+                    {item.floorId ? "Change" : "Assign"}
                   </Button>
                 }
               >
@@ -848,14 +1255,17 @@ const QuotationForm = ({
               </Card>
             ))}
           </Space>
+
           {unassignedCount > 0 && (
             <Alert
               style={{ marginTop: 16 }}
-              message={`${unassignedCount} item${unassignedCount > 1 ? "s" : ""} still unassigned`}
+              message={`${unassignedCount} item${
+                unassignedCount > 1 ? "s" : ""
+              } still unassigned`}
               type="warning"
               showIcon
             />
-          )}{" "}
+          )}
         </CompactCard>
       </Col>
 
@@ -894,7 +1304,7 @@ const QuotationForm = ({
                   </Text>
                 </Space>
                 <div style={{ fontSize: 12, color: "#555", marginTop: 4 }}>
-                  {f.count} item{f.count !== 1 ? "s" : ""}
+                  {f.itemCount} item{f.itemCount !== 1 ? "s" : ""}
                 </div>
               </div>
             ))
@@ -936,7 +1346,9 @@ const QuotationForm = ({
                 return message.error("Please select due date");
               if (unassignedCount > 0) {
                 message.warning(
-                  `${unassignedCount} item${unassignedCount > 1 ? "s are" : " is"} not assigned to any floor`,
+                  `${unassignedCount} item${
+                    unassignedCount > 1 ? "s are" : " is"
+                  } not assigned to any floor`,
                 );
               }
 
@@ -960,115 +1372,86 @@ const QuotationForm = ({
         </CompactCard>
       </Col>
 
-      {/* Modals – updated to use floorId / roomId */}
-      <Modal
-        title="Add New Floor"
-        open={floorModalVisible}
-        onOk={() => floorForm.submit()}
+      {/* ── All Modals ──────────────────────────────────────────────────── */}
+      <AddFloorModal
+        visible={floorModalVisible}
         onCancel={() => {
           setFloorModalVisible(false);
           floorForm.resetFields();
         }}
-        okText="Add Floor"
-      >
-        <Form form={floorForm} onFinish={addFloor} layout="vertical">
-          <Form.Item
-            name="name"
-            label="Floor Name"
-            rules={[{ required: true }]}
-          >
-            <Input placeholder="e.g. First Floor, Terrace" />
-          </Form.Item>
-        </Form>
-      </Modal>
+        onFinish={addFloor}
+        form={floorForm}
+      />
 
-      <Modal
-        title="Add Room"
-        open={roomModal.visible}
-        onOk={() => roomForm.submit()}
+      <EditFloorModal
+        visible={editFloorModal.visible}
+        floorName={
+          quotationData.floors?.find(
+            (f) => f.floorId === editFloorModal.floorId,
+          )?.floorName
+        }
+        onCancel={() => {
+          setEditFloorModal({ visible: false, floorId: null });
+          floorForm.resetFields();
+        }}
+        onFinish={editFloor}
+        form={floorForm}
+      />
+
+      <AddEditRoomModal
+        visible={roomModal.visible || editRoomModal.visible}
+        isEdit={editRoomModal.visible}
+        initialValues={
+          editRoomModal.visible
+            ? {
+                name:
+                  quotationData.floors
+                    ?.find((f) => f.floorId === editRoomModal.floorId)
+                    ?.rooms?.find((r) => r.roomId === editRoomModal.roomId)
+                    ?.roomName || "",
+                type: quotationData.floors
+                  ?.find((f) => f.floorId === editRoomModal.floorId)
+                  ?.rooms?.find((r) => r.roomId === editRoomModal.roomId)?.type,
+              }
+            : {}
+        }
         onCancel={() => {
           setRoomModal({ visible: false, floorId: null });
+          setEditRoomModal({ visible: false, floorId: null, roomId: null });
           roomForm.resetFields();
         }}
-        okText="Add Room"
-      >
-        <Form form={roomForm} onFinish={addRoom} layout="vertical">
-          <Form.Item name="name" label="Room Name" rules={[{ required: true }]}>
-            <Input placeholder="e.g. Master Bedroom, Kitchen" />
-          </Form.Item>
-          <Form.Item name="type" label="Room Type (optional)">
-            <Select placeholder="Select type" allowClear>
-              <Option value="Bedroom">Bedroom</Option>
-              <Option value="Living">Living Room</Option>
-              <Option value="Kitchen">Kitchen</Option>
-              <Option value="Bathroom">Bathroom</Option>
-              {/* ... */}
-            </Select>
-          </Form.Item>
-        </Form>
-      </Modal>
+        onFinish={editRoomModal.visible ? editRoom : addRoom}
+        form={roomForm}
+      />
 
-      <Modal
-        title="Assign Item"
-        open={assignModal.visible}
-        onOk={assignItem}
+      <AddAreaModal
+        visible={areaModal.visible}
+        onCancel={() => {
+          setAreaModal({ visible: false, floorId: null, roomId: null });
+          areaForm.resetFields();
+        }}
+        onFinish={addArea}
+        form={areaForm}
+      />
+
+      <AssignItemModal
+        visible={assignModal.visible}
         onCancel={() => {
           setAssignModal({ visible: false, itemId: null });
           setSelectedFloorId(null);
           setSelectedRoomId(null);
+          setSelectedAreaId(null);
         }}
-        okText="Assign"
-        width={480}
-      >
-        <Space direction="vertical" style={{ width: "100%" }} size="middle">
-          <div>
-            <Text strong>Product:</Text>{" "}
-            <Text>
-              {cartItems.find((i) => i.id === assignModal.itemId)?.name}
-            </Text>
-          </div>
-
-          <div>
-            <Text strong>Floor *</Text>
-            <Select
-              style={{ width: "100%", marginTop: 8 }}
-              value={selectedFloorId}
-              onChange={(v) => {
-                setSelectedFloorId(v);
-                setSelectedRoomId(null);
-              }}
-              placeholder="Select floor"
-            >
-              {(quotationData.floors || []).map((f) => (
-                <Option key={f.floorId} value={f.floorId}>
-                  {f.floorName}
-                </Option>
-              ))}
-            </Select>
-          </div>
-
-          {selectedFloorId && (
-            <div>
-              <Text strong>Room (optional)</Text>
-              <Select
-                style={{ width: "100%", marginTop: 8 }}
-                value={selectedRoomId}
-                onChange={setSelectedRoomId}
-                allowClear
-                placeholder="Apply to whole floor"
-              >
-                {(quotationData.floors || [])
-                  .find((f) => f.floorId === selectedFloorId)
-                  ?.rooms?.map((r) => (
-                    <Option key={r.roomId} value={r.roomId}>
-                      {r.roomName} {r.type && `(${r.type})`}
-                    </Option>
-                  ))}
-              </Select>
-            </div>
-          )}
-        </Space>
-      </Modal>
+        onOk={assignItem}
+        item={cartItems.find((i) => i.id === assignModal.itemId)}
+        floors={quotationData.floors || []}
+        selectedFloorId={selectedFloorId}
+        selectedRoomId={selectedRoomId}
+        selectedAreaId={selectedAreaId}
+        setSelectedFloorId={setSelectedFloorId}
+        setSelectedRoomId={setSelectedRoomId}
+        setSelectedAreaId={setSelectedAreaId}
+      />
     </Row>
   );
 };

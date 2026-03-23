@@ -35,7 +35,7 @@ import {
   useGetProfileQuery,
 } from "../../api/userApi";
 
-import "./profileform.css";
+import "../../components/Profile/profileform.css";
 
 const { Title, Text } = Typography;
 const { Option } = Select;

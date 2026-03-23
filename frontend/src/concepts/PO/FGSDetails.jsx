@@ -8,7 +8,7 @@ import html2canvas from "html2canvas";
 import ExcelJS from "exceljs";
 import { LeftOutlined, PrinterOutlined } from "@ant-design/icons";
 import { Helmet } from "react-helmet";
-import "./fgs.css"; // You can reuse po.css or create a copy named fgs.css
+import "../../components/Orders/fgs.css"; // You can reuse po.css or create a copy named fgs.css
 import noimage from "../../assets/img/noimg.jpg";
 const FGSDetails = () => {
   const { id } = useParams();

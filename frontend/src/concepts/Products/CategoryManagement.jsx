@@ -40,7 +40,7 @@ import { useGetAllProductCodesQuery } from "../../api/productApi";
 import AddParentCategoryModal from "../../components/Categories/AddParentCategoryModal";
 import AddCategoryModal from "../../components/Categories/AddCategoryModal";
 import AddKeywordModal from "../../components/Categories/AddKeywordModal";
-import "./category.css";
+import "../../components/Categories/category.css";
 const { Search } = Input;
 
 const CategoryManagement = () => {

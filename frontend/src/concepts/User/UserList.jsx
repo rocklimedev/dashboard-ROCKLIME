@@ -21,10 +21,10 @@ import {
   MailOutlined,
 } from "@ant-design/icons";
 import { Dropdown, Menu, Button, Pagination, Tooltip } from "antd";
-import DeleteModal from "../Common/DeleteModal";
+import DeleteModal from "../../components/Common/DeleteModal";
 import { message } from "antd";
 import { useNavigate } from "react-router-dom";
-import PageHeader from "../Common/PageHeader";
+import PageHeader from "../../components/Common/PageHeader";
 import { useResendVerificationEmailMutation } from "../../api/authApi";
 
 const UserList = () => {

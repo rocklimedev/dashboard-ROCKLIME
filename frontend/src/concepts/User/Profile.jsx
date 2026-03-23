@@ -39,7 +39,7 @@ import { useGetAllOrdersQuery } from "../../api/orderApi";
 import { useGetPurchaseOrdersQuery } from "../../api/poApi";
 import { useGetAllUserAddressesQuery } from "../../api/addressApi";
 
-import "./profile.css";
+import "../../components/Profile/profile.css";
 
 const Profile = () => {
   const navigate = useNavigate();

@@ -33,9 +33,8 @@ import {
 } from "../../api/fgsApi";
 
 // ← New imports
-import PORow from "../../components/purchase/PORow";
-import FGSRow from "../../components/purchase/FGSRow";
-
+import FGSRow from "../../components/Orders/FgsRow";
+import PORow from "../../components/Orders/PoRow";
 const { TabPane } = Tabs;
 const { Option } = Select;
 

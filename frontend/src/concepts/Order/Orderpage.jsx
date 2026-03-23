@@ -48,11 +48,11 @@ import {
   SendOutlined,
 } from "@ant-design/icons";
 import { Document, Page, pdfjs } from "react-pdf";
-import useProductsData from "../../data/useProductdata";
+import useProductsData from "../../utils/useProductdata";
 import AddAddress from "../../components/Address/AddAddressModal";
-import CommentRow from "../../components/Common/CommentRow";
+import CommentRow from "../../components/Orders/CommentRow";
 import { Helmet } from "react-helmet";
-import "./orderpage.css"; // ← new / updated stylesheet
+import "../../components/Orders/orderpage.css"; // ← new / updated stylesheet
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`;
 

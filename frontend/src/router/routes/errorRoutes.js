@@ -1,7 +1,6 @@
 // src/routes/errorRoutes.js
 import { FaExclamationCircle } from "react-icons/fa";
-import NoAccess from "../../concepts/Common/NoAccess";
-
+import NoAccess from "../../concepts/Error/NoAccess";
 export const errorRoutes = [
   {
     path: "/no-access",

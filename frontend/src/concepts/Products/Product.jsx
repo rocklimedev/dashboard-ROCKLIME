@@ -2,8 +2,8 @@ import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Empty } from "antd";
 import { useGetBrandParentCategoriesQuery } from "../../api/brandParentCategoryApi";
-import Breadcrumb from "../../components/Product/Breadcrumb"; // Adjust the path as needed
-import "./productwrapper.css";
+import Breadcrumb from "../../components/Common/Breadcrumb";
+import "../../components/Product/productwrapper.css";
 import plumbing from "../../assets/img/plumbing.png";
 import accessories from "../../assets/img/accessories_add_ons.png";
 import adhesive from "../../assets/img/chemicals_adhesive.png";

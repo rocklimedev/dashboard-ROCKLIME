@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from "react";
 import { message } from "antd";
-import StockModal from "../../components/Common/StockModal";
 import {
   useGetAllProductsQuery,
   useGetTopSellingProductsQuery,
@@ -14,7 +13,8 @@ import { useUpdateOrderStatusMutation } from "../../api/orderApi";
 import "./pagewrapper.css";
 import { EditOutlined } from "@ant-design/icons";
 import { Dropdown, Menu } from "antd";
-import { EditOutlined } from "@ant-design/icons";
+import { useAuth } from "../../context/AuthContext";
+import StockModal from "../../components/modals/StockModal";
 // Fixed meta ID for selling price
 const SELLING_PRICE_META_ID = "9ba862ef-f993-4873-95ef-1fef10036aa5";
 

@@ -27,9 +27,9 @@ import {
 import { logout } from "../../api/userSlice";
 import { Link } from "react-router-dom";
 import PageHeader from "../../components/Common/PageHeader";
-import ChangePasswordModal from "../../components/settings/ChangePasswordModal"; // ← new import
+import ChangePasswordModal from "../../components/modals/ChangePasswordModal";
 import "./settingsWrapper.css";
-
+import { EyeOutlined } from "@ant-design/icons";
 const { Title, Text } = Typography;
 
 const GeneralSettings = () => {

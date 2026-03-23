@@ -1,8 +1,7 @@
 import React, { useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useGetBrandParentCategoryByIdQuery } from "../../api/brandParentCategoryApi";
-import Breadcrumb from "../../components/Product/Breadcrumb"; // Adjust the path as needed
-
+import Breadcrumb from "../../components/Common/Breadcrumb";
 const mainWrapper =
   "https://static.cmtradingco.com/brands/product_page_title.png";
 const americanStandard =

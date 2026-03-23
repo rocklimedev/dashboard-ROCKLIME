@@ -5,7 +5,7 @@ import { FaFileAlt, FaUsers } from "react-icons/fa";
 import { FaThLarge } from "react-icons/fa";
 import { FaUser, FaIdCard, FaUserCircle , FaBoxOpen} from "react-icons/fa";
 import { MdOutlineInventory2 } from "react-icons/md";
-
+import Product from "../../concepts/Products/Product";
 import OrderWrapper from "../../concepts/Order/OrderWrapper";
 import QuotationList from "../../concepts/Quotation/QuotationList";
 import InventoryWrapper from "../../concepts/Products/InventoryWrapper";
@@ -13,7 +13,6 @@ import UserList from "../../concepts/User/UserList";
 import RolePermission from "../../concepts/RBAC/RolePermission";
 import NewPageWrapper from "../../concepts/Home/NewPageWrapper";
 import CustomerList from "../../concepts/Customers/CustomerList";
-import Product from "../../concepts/Product/Product";
 export const sidebarRoutes = [
   {
     path: "/",

@@ -9,7 +9,7 @@ import html2canvas from "html2canvas";
 import ExcelJS from "exceljs";
 import { LeftOutlined, PrinterOutlined } from "@ant-design/icons";
 import { Helmet } from "react-helmet";
-import "./po.css";
+import "../../components/Orders/po.css";
 
 const PODetails = () => {
   const { id } = useParams();

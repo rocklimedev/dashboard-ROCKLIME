@@ -31,7 +31,7 @@ import {
   DownloadOutlined,
   ReloadOutlined,
 } from "@ant-design/icons";
-import StockModal from "../../components/Common/StockModal";
+import StockModal from "../../components/modals/StockModal";
 import {
   useGetAllProductsQuery,
   useAddStockMutation,
@@ -39,10 +39,9 @@ import {
 } from "../../api/productApi";
 import PageHeader from "../../components/Common/PageHeader";
 import pos from "../../assets/img/default.png";
-import HistoryModalAntD from "../../components/Common/HistoryModal";
-import ReportBuilderModal from "../../components/Common/ReportBuilderModal";
-import { generatePDF, generateExcel } from "../../data/helpers";
-
+import HistoryModalAntD from "../../components/modals/HistoryModal";
+import ReportBuilderModal from "../../components/modals/ReportBuilderModal";
+import { generatePDF, generateExcel } from "../../utils/helpers";
 const { TabPane } = Tabs;
 const { Text } = Typography;
 

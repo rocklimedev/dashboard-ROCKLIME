@@ -24,7 +24,7 @@ import {
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import { ShoppingCartOutlined } from "@ant-design/icons";
 import ProductCard from "../../components/Product/ProductCard";
-import styles from "./productdetails.module.css"; // ← CSS Modules
+import styles from "../../components/Product/productdetails.module.css"; // ← CSS Modules
 import noimage from "../../assets/img/default.png";
 import { Helmet } from "react-helmet";
 

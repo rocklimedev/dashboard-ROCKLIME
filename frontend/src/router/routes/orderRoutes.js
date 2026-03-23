@@ -1,10 +1,8 @@
 // src/routes/orderRoutes.js
 import { FaFileAlt, FaUsers } from "react-icons/fa";
-import OrderWrapper from "../../concepts/Orders/OrderWrapper";
-import AddNewOrder from "../../concepts/Orders/AddNewOrder";
-import OrderPage from "../../concepts/Orders/Orderpage";
-import TeamsList from "../../concepts/Orders/TeamsList";
-
+import AddNewOrder from "../../concepts/Order/AddNewOrder";
+import OrderPage from "../../concepts/Order/Orderpage";
+import OrderWrapper from "../../concepts/Order/OrderWrapper";
 export const orderRoutes = [
   {
     path: "/orders/list",
@@ -35,12 +33,5 @@ export const orderRoutes = [
     isSidebarActive: false,
     element: <AddNewOrder />,
     requiredPermission: { api: "edit", module: "orders" },
-  },
-  {
-    path: "/orders/teams",
-    name: "Teams",
-    icon: <FaUsers />,
-    element: <TeamsList />,
-    isSidebarActive: false,
   },
 ];
