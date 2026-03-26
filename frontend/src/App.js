@@ -15,7 +15,7 @@ function App() {
   const { auth, setAuth, authChecked, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-/** */
+
   const [isSidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 768);
   const [layoutMode] = useState("vertical");
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -148,7 +148,7 @@ function App() {
     if (!user.isEmailVerified || accessRoles.length === 0) {
       if (location.pathname !== "/no-access") {
         message.warning(
-          "Access restricted. Please verify your email or request access."
+          "Access restricted. Please verify your email or request access.",
         );
         navigate("/no-access", { replace: true });
       }

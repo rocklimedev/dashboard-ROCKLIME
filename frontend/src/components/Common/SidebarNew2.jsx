@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { ChevronsLeft } from "react-feather";
-import masterRoutes from "../../router/routes";
+import { sidebarRoutes } from "../../router/routes/sidebarRoutes";
 import logo from "../../assets/img/logo.png";
 import logo_small from "../../assets/img/fav_icon.png";
 import { DownCircleOutlined } from "@ant-design/icons";
@@ -47,18 +47,15 @@ const SidebarNew = ({
   // --------------------------------------------------------------
   // 2. Filter routes: hide Master Table & Purchase Orders if not allowed
   // --------------------------------------------------------------
-  const visibleRoutes = masterRoutes.filter((section) => {
-    // Hide "Master Table"
+  const visibleRoutes = sidebarRoutes.filter((section) => {
     if (section.name === "Master Table") {
       return canSeeMasterTable;
     }
 
-    // Hide "Purchase Orders" (top-level route)
     if (section.name === "Purchase Orders") {
       return canSeePurchaseOrders;
     }
 
-    // For any other section, respect isSidebarActive
     return section.isSidebarActive;
   });
 
