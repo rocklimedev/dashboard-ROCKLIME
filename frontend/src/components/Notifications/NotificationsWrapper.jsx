@@ -1,174 +1,20 @@
-// NotificationsOverlay.jsx (or NotificationsWrapper.jsx)
-import React, { useEffect, useRef, useState } from "react";
+// src/components/notifications/NotificationsOverlay.jsx  (or wherever you keep it)
+
+import React, { useEffect, useRef } from "react";
+import { useAuth } from "../../context/AuthContext";
+import { message } from "antd";
+import { io } from "socket.io-client";
+import { formatDistanceToNow, parseISO, differenceInSeconds } from "date-fns";
+import { API_URL } from "../../store/config";
 import {
   useGetNotificationsQuery,
   useMarkNotificationAsReadMutation,
   useClearAllNotificationsMutation,
   useDeleteNotificationMutation,
 } from "../../api/notificationApi";
-import { useAuth } from "../../context/AuthContext";
-import Avatar from "react-avatar";
-import { message } from "antd";
-import { formatDistanceToNow, parseISO, differenceInSeconds } from "date-fns";
-import { io } from "socket.io-client";
-import { API_URL } from "../../data/config";
 
-const SWIPE_THRESHOLD = 80;
-
-const NotificationItem = ({
-  notification,
-  onMarkRead,
-  onDelete,
-  canMarkManually,
-  onClickNotification,
-}) => {
-  const [touchStart, setTouchStart] = useState(null);
-  const [touchEnd, setTouchEnd] = useState(null);
-  const [translateX, setTranslateX] = useState(0);
-
-  const handleTouchStart = (e) => setTouchStart(e.changedTouches[0].clientX);
-  const handleTouchMove = (e) => setTouchEnd(e.changedTouches[0].clientX);
-
-  const handleTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
-    const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > SWIPE_THRESHOLD;
-
-    setTranslateX(isLeftSwipe ? -160 : 0);
-    setTouchStart(null);
-    setTouchEnd(null);
-  };
-
-  const resetSwipe = () => setTranslateX(0);
-
-  return (
-    <div className="position-relative overflow-hidden">
-      {/* Swipe Actions - Mobile Only */}
-      <div
-        className="d-md-none position-absolute top-0 end-0 h-100 d-flex align-items-center"
-        style={{
-          width: "160px",
-          background: "#dc3545",
-          transform: `translateX(${translateX + 160}px)`,
-          transition: "transform 0.3s ease",
-          zIndex: 1,
-        }}
-      >
-        <button
-          className="flex-fill h-100 text-white border-0 bg-success"
-          onClick={() => {
-            onMarkRead(notification._id);
-            resetSwipe();
-          }}
-        >
-          Mark Read
-        </button>
-        <button
-          className="flex-fill h-100 text-white border-0 bg-danger"
-          onClick={() => {
-            onDelete(notification._id);
-            resetSwipe();
-          }}
-        >
-          Delete
-        </button>
-      </div>
-
-      {/* Notification Card */}
-      <div
-        className={`bg-white border-bottom position-relative cursor-pointer ${
-          !notification.read ? "bg-light" : ""
-        }`}
-        style={{
-          transform: `translateX(${translateX}px)`,
-          transition: translateX === 0 ? "transform 0.3s ease" : "none",
-        }}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        onClick={(e) => {
-          if (translateX !== 0) {
-            e.stopPropagation();
-            resetSwipe();
-            return;
-          }
-          onClickNotification(notification);
-        }}
-      >
-        <div className="p-3">
-          <div className="d-flex align-items-start">
-            {/* Unread Dot */}
-            {!notification.read && (
-              <div
-                className="me-3 mt-1"
-                style={{
-                  width: 10,
-                  height: 10,
-                  backgroundColor: "#1890ff",
-                  borderRadius: "50%",
-                  flexShrink: 0,
-                }}
-              />
-            )}
-            {notification.read && (
-              <div className="me-3" style={{ width: 34 }} />
-            )}
-
-            <a
-              href={`/u/${notification.userId?._id || "#"}`}
-              onClick={(e) => e.stopPropagation()}
-              className="me-3 flex-shrink-0"
-            >
-              <Avatar
-                name={notification.userId?.username || "User"}
-                src={notification.userId?.profileImage}
-                size="40"
-                round={true}
-                color="#1890ff"
-                textSizeRatio={2}
-              />
-            </a>
-
-            <div className="flex-grow-1 min-width-0">
-              <p className="mb-1 text-sm">
-                <a
-                  href={`/u/${notification.userId?._id || "#"}`}
-                  onClick={(e) => e.stopPropagation()}
-                  className="text-decoration-none fw-medium text-dark"
-                >
-                  {notification.userId?.username || "Someone"}
-                </a>{" "}
-                <span className="text-dark">{notification.title}</span>
-              </p>
-              <p className="text-muted small mb-1 text-truncate">
-                {notification.message}
-              </p>
-              <small className="text-muted">
-                {formatDistanceToNow(parseISO(notification.createdAt), {
-                  addSuffix: true,
-                })}
-              </small>
-
-              {canMarkManually && (
-                <div className="d-none d-md-block mt-2">
-                  <button
-                    className="btn btn-link btn-sm p-0 text-primary"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onMarkRead(notification._id);
-                    }}
-                  >
-                    Mark as read
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
+// Import the extracted component
+import NotificationItem from "./NotificationItem";   // adjust path if needed
 
 const NotificationsOverlay = ({ isOpen, onClose }) => {
   const { auth } = useAuth();
@@ -199,23 +45,24 @@ const NotificationsOverlay = ({ isOpen, onClose }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen, onClose]);
 
-  // Real-time socket updates
+  // Socket.io real-time updates
   useEffect(() => {
     if (!userId || !isOpen) return;
 
     const socket = io(API_URL, { transports: ["websocket"] });
     socket.on("connect", () => socket.emit("join", userId));
-    socket.on("newNotification", () => refetch());
-    socket.on("notificationsCleared", () => refetch());
-    socket.on("notificationDeleted", () => refetch());
-    socket.on("notificationsDeleted", () => refetch());
+    socket.on("newNotification", refetch);
+    socket.on("notificationsCleared", refetch);
+    socket.on("notificationDeleted", refetch);
+    socket.on("notificationsDeleted", refetch);
 
     return () => socket.disconnect();
   }, [userId, isOpen, refetch]);
 
-  // Auto mark as read after 1 hour
+  // Auto-mark notifications older than 1 hour as read
   useEffect(() => {
     if (!notifications.length) return;
+
     const interval = setInterval(() => {
       const now = new Date();
       notifications.forEach((n) => {
@@ -226,7 +73,8 @@ const NotificationsOverlay = ({ isOpen, onClose }) => {
           markNotificationAsRead(n._id);
         }
       });
-    }, 60_000);
+    }, 60_000); // check every minute
+
     return () => clearInterval(interval);
   }, [notifications, markNotificationAsRead]);
 
@@ -261,10 +109,7 @@ const NotificationsOverlay = ({ isOpen, onClose }) => {
 
     if (notification.type === "like" || notification.type === "comment") {
       url = `/post/${notification.postId || ""}`;
-    } else if (
-      notification.type === "follow" ||
-      notification.type === "mention"
-    ) {
+    } else if (notification.type === "follow" || notification.type === "mention") {
       url = `/u/${notification.userId?._id}`;
     } else if (notification.url) {
       url = notification.url;
@@ -294,12 +139,11 @@ const NotificationsOverlay = ({ isOpen, onClose }) => {
         onClick={onClose}
       />
 
-      {/* Panel - Responsive Design */}
+      {/* Notification Panel */}
       <div
         ref={overlayRef}
         className="position-fixed bg-white shadow-lg d-flex flex-column"
         style={{
-          // Desktop & Tablet: Right-side narrow panel
           top: 0,
           bottom: 0,
           right: 0,
@@ -308,32 +152,23 @@ const NotificationsOverlay = ({ isOpen, onClose }) => {
           zIndex: 1050,
           borderTopLeftRadius: "12px",
           borderBottomLeftRadius: "12px",
-
-          // Mobile: Full-width bottom sheet
-          "@media (max-width: 767.98px)": {
-            top: "auto",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            width: "100%",
-            height: "90vh",
-            borderRadius: "16px 16px 0 0",
-            borderBottomLeftRadius: 0,
-            borderBottomRightRadius: 0,
-          },
-
-          // Animation
-          transform: isOpen ? "translateX(0)" : "translateX(100%)", // Desktop: slide from right
+          transform: isOpen ? "translateX(0)" : "translateX(100%)",
           transition: "transform 0.35s cubic-bezier(0.32, 0.72, 0, 1)",
         }}
       >
-        {/* Mobile Bottom Sheet Animation Override */}
+        {/* Mobile bottom sheet style override */}
         <style jsx>{`
           @media (max-width: 767.98px) {
             div[ref="overlayRef"] {
-              transform: ${isOpen
-                ? "translateY(0)"
-                : "translateY(100%)"} !important;
+              top: auto;
+              bottom: 0;
+              left: 0;
+              right: 0;
+              width: 100%;
+              height: 90vh;
+              border-radius: 16px 16px 0 0;
+              transform: ${isOpen ? "translateY(0)" : "translateY(100%)"} !important;
+              transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
             }
           }
         `}</style>
@@ -366,7 +201,7 @@ const NotificationsOverlay = ({ isOpen, onClose }) => {
           </div>
         </div>
 
-        {/* Body */}
+        {/* Notification List */}
         <div className="flex-grow-1 overflow-auto">
           {!userId ? (
             <div className="text-center py-5 text-muted">

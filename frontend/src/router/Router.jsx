@@ -1,7 +1,7 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
-import masterRoutes from "../data/routes";
+import masterRoutes from "./routes";
 import PrivateRoute from "./PrivateRoute";
 
 const RouteWithHelmet = ({ element, name }) => (
@@ -21,16 +21,18 @@ const generateRoutes = (routes) =>
 
     if (path && element) {
       if (requiredPermission) {
-        const { api, module } = requiredPermission;
-
         routesArray.push(
           <Route
             key={path}
-            element={<PrivateRoute api={api} module={module} />}
+            element={
+              <PrivateRoute requiredPermission={requiredPermission} />
+            }
           >
             <Route
               path={path}
-              element={<RouteWithHelmet element={element} name={name} />}
+              element={
+                <RouteWithHelmet element={element} name={name} />
+              }
             />
           </Route>
         );
@@ -39,7 +41,9 @@ const generateRoutes = (routes) =>
           <Route
             key={path}
             path={path}
-            element={<RouteWithHelmet element={element} name={name} />}
+            element={
+              <RouteWithHelmet element={element} name={name} />
+            }
           />
         );
       }

@@ -1,3 +1,4 @@
+// src/components/Quotation/QuotationForm.jsx
 import React, { useState, useEffect, useMemo } from "react";
 import {
   Card,
@@ -28,6 +29,9 @@ import {
   HomeOutlined,
   ApartmentOutlined,
   PushpinOutlined,
+  RulerOutlined,
+  EditOutlined,
+  ExclamationCircleOutlined,
 } from "@ant-design/icons";
 import styled from "styled-components";
 import OrderTotal from "./OrderTotal";
@@ -39,6 +43,14 @@ import "react-datepicker/dist/react-datepicker.css";
 import { v4 as uuidv4 } from "uuid";
 import { debounce } from "lodash";
 
+// ── Imported Modals ──────────────────────────────────────────────────
+import AddFloorModal from "./modals/AddFloorModal";
+import EditFloorModal from "./modals/EditFloorModal";
+import AddEditRoomModal from "./modals/AddEditRoomModal";
+import AddAreaModal from "./modals/AddAreaModal";
+import AssignItemModal from "./modals/AssignItemModal";
+
+// ── Styled Components ────────────────────────────────────────────────
 const { Text, Title } = Typography;
 const { Panel } = Collapse;
 const { Option } = Select;
@@ -105,6 +117,7 @@ const momentToDate = (m) => (m ? m.toDate() : null);
 const generateFloorId = () => `fl_${uuidv4().slice(0, 8)}`;
 const generateRoomId = (floorId = "") =>
   `${floorId ? floorId + "_" : "rm_"}${uuidv4().slice(0, 8)}`;
+const generateAreaId = (roomId) => `${roomId}_ar_${uuidv4().slice(0, 6)}`;
 
 // ── Main Component ───────────────────────────────────────────────────
 const QuotationForm = ({

@@ -1,5 +1,5 @@
 // src/services/api/jobApi.js
-import { baseApi } from "./baseApi";
+import { baseApi } from "../store/baseApi";
 
 export const jobApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({

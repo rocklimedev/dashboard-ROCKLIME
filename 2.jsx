@@ -447,7 +447,6 @@ const NewCart = () => {
     },
     [userId, dispatch, removeFromCart],
   );
-
   const assignItemToLocation = useCallback(() => {
     if (!selectedFloorId) return message.error("Please select a floor");
 
