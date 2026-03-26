@@ -103,8 +103,6 @@ const NewCart = () => {
     visible: false,
     itemId: null,
   });
-  const [selectedFloorId, setSelectedFloorId] = useState(null);
-  const [selectedRoomId, setSelectedRoomId] = useState(null);
 
   const [itemDiscounts, setItemDiscounts] = useState({});
   const [itemTaxes, setItemTaxes] = useState({});
@@ -442,39 +440,48 @@ const NewCart = () => {
     },
     [userId, dispatch, removeFromCart],
   );
-  const assignItemToLocation = useCallback(() => {
-    if (!selectedFloorId) return message.error("Please select a floor");
+  // Add this new handler in NewCart.jsx
+  const handleAssignItemToLocation = useCallback(
+    (itemId, floorId, roomId = null, areaId = null) => {
+      if (!floorId) return message.error("Please select a floor");
 
-    setLocalCartItems((prev) =>
-      prev.map((item) =>
-        item.id === assignModal.itemId
-          ? {
+      setLocalCartItems((prev) =>
+        prev.map((item) => {
+          if (item.id === itemId) {
+            const matchedFloor = quotationData.floors?.find(
+              (f) => f.floorId === floorId,
+            );
+            const matchedRoom = matchedFloor?.rooms?.find(
+              (r) => r.roomId === roomId,
+            );
+            const matchedArea = matchedRoom?.areas?.find(
+              (a) => a.id === areaId,
+            );
+
+            // NEW: Support assignedQuantity (default to full quantity if not set)
+            const currentAssignedQty =
+              item.assignedQuantity || item.quantity || 1;
+
+            return {
               ...item,
-              floorId: selectedFloorId,
-              floorName:
-                quotationData.floors.find((f) => f.floorId === selectedFloorId)
-                  ?.floorName || `Floor ${selectedFloorId}`,
-              roomId: selectedRoomId || null,
-              roomName: selectedRoomId
-                ? quotationData.floors
-                    .find((f) => f.floorId === selectedFloorId)
-                    ?.rooms?.find((r) => r.roomId === selectedRoomId)?.roomName
-                : null,
-            }
-          : item,
-      ),
-    );
+              floorId,
+              floorName: matchedFloor?.floorName || null,
+              roomId: roomId || null,
+              roomName: matchedRoom?.roomName || null,
+              areaId: areaId || null,
+              areaName: matchedArea?.name || null,
+              areaValue: matchedArea?.value || null,
+              assignedQuantity: currentAssignedQty, // ← Important
+            };
+          }
+          return item;
+        }),
+      );
 
-    message.success("Item assigned successfully");
-    setAssignModal({ visible: false, itemId: null });
-    setSelectedFloorId(null);
-    setSelectedRoomId(null);
-  }, [
-    assignModal.itemId,
-    selectedFloorId,
-    selectedRoomId,
-    quotationData.floors,
-  ]);
+      message.success("Item assigned successfully");
+    },
+    [quotationData.floors],
+  );
 
   // ... (rest of your handlers: handleMakeOption, handleClearCart, handleCreateDocument, resetForm, etc.)
   const handleMakeOption = (productId, optionType, parentProductId = null) => {
@@ -515,12 +522,41 @@ const NewCart = () => {
   // ────────────────────── HANDLERS ──────────────────────
   const handleShippingChange = useCallback((v) => setShipping(v), []);
 
-  const handleDiscountChange = (productId, value) =>
-    setItemDiscounts((p) => ({ ...p, [productId]: value >= 0 ? value : 0 }));
+  const handleDiscountChange = (productId, value) => {
+    setItemDiscounts((prev) => ({
+      ...prev,
+      [productId]: value ?? 0,
+    }));
+  };
+  // In your parent (where state lives - probably Cart or Order page)
+  // ✅ Corrected handleDiscountTypeChange
+  const handleDiscountTypeChange = (productId, newType) => {
+    setItemDiscountTypes((prev) => {
+      const currentType = prev[productId] || "percent";
+      const currentValue = itemDiscounts[productId] || 0;
 
-  const handleDiscountTypeChange = (productId, type) =>
-    setItemDiscountTypes((p) => ({ ...p, [productId]: type }));
+      let newValue = currentValue;
 
+      // Convert value when switching between % and ₹
+      if (currentType !== newType && currentValue > 0) {
+        const item = localCartItems.find((i) => i.productId === productId);
+
+        if (item) {
+          const subtotal = (item.price || 0) * (item.quantity || 1);
+
+          if (newType === "fixed" && currentType === "percent") {
+            // % → Fixed amount
+            newValue = (subtotal * currentValue) / 100;
+          } else if (newType === "percent" && currentType === "fixed") {
+            // Fixed → Percent
+            newValue = subtotal > 0 ? (currentValue / subtotal) * 100 : 0;
+          }
+        }
+      }
+
+      return { ...prev, [productId]: newType };
+    });
+  };
   const handleTaxChange = (productId, value) =>
     setItemTaxes((p) => ({ ...p, [productId]: value >= 0 ? value : 0 }));
 
@@ -709,6 +745,69 @@ const NewCart = () => {
       return;
     }
     if (documentType === "Quotation") {
+      let finalShipTo = null;
+
+      if (useBillingAddress) {
+        // Case 1: User chose "Same as Billing"
+        if (billingAddressId) {
+          finalShipTo = billingAddressId;
+        } else {
+          // Create shipping address from customer's default billing address
+          const customer = customers.find(
+            (c) => c.customerId === selectedCustomer,
+          );
+
+          if (!customer?.address) {
+            return message.error(
+              "Customer has no default billing address. Please add one.",
+            );
+          }
+
+          let parsedAddr;
+          try {
+            parsedAddr =
+              typeof customer.address === "string"
+                ? JSON.parse(customer.address)
+                : customer.address;
+          } catch {
+            return message.error("Invalid default address format.");
+          }
+
+          const payload = {
+            customerId: selectedCustomer,
+            street: parsedAddr.street || "",
+            city: parsedAddr.city || "",
+            state: parsedAddr.state || "",
+            postalCode: parsedAddr.zip || parsedAddr.postalCode || "",
+            country: parsedAddr.country || "India",
+            status: "SHIPPING",
+          };
+
+          try {
+            const response = await createAddress(payload).unwrap();
+            finalShipTo = response.addressId;
+            message.success("Shipping address created from billing address.");
+          } catch (apiError) {
+            return message.error(
+              apiError?.data?.message || "Failed to create shipping address.",
+            );
+          }
+        }
+      } else {
+        // Case 2: User selected a specific shipping address
+        finalShipTo = quotationData.shipTo;
+
+        if (finalShipTo) {
+          const addr = addresses.find((a) => a.addressId === finalShipTo);
+          if (!addr) {
+            return message.error("Selected shipping address was deleted.");
+          }
+        }
+      }
+
+      if (!finalShipTo) {
+        return message.error("Please select or create a shipping address.");
+      }
       const quotationPayload = {
         quotationId: uuidv4(),
         document_title: `Quotation for ${customers.find((c) => c.customerId === selectedCustomer)?.name || "Customer"} - ${moment().format("DD-MM-YYYY")}`,
@@ -917,12 +1016,8 @@ const NewCart = () => {
               updatingItems={updatingItems}
               handleUpdateQuantity={handleUpdateQuantity}
               handleRemoveItem={handleRemoveItem}
-              handleDiscountChange={(id, val) =>
-                setItemDiscounts((prev) => ({ ...prev, [id]: val }))
-              }
-              handleDiscountTypeChange={(id, type) =>
-                setItemDiscountTypes((prev) => ({ ...prev, [id]: type }))
-              }
+              handleDiscountChange={handleDiscountChange} // Use the one you defined
+              handleDiscountTypeChange={handleDiscountTypeChange}
               handleTaxChange={(id, val) =>
                 setItemTaxes((prev) => ({ ...prev, [id]: val }))
               }
@@ -1100,6 +1195,7 @@ const NewCart = () => {
                 setActiveTab={setActiveTab}
                 handleCreateDocument={handleCreateDocument}
                 useBillingAddress={useBillingAddress}
+                handleAssignItem={handleAssignItemToLocation}
                 setUseBillingAddress={setUseBillingAddress}
                 setBillingAddressId={setBillingAddressId}
                 previewVisible={previewVisible}

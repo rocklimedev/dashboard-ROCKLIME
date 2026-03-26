@@ -132,6 +132,7 @@ const QuotationForm = ({
   tax,
   discount,
   extraDiscount,
+  floors,
   gst,
   setGst,
   billingAddressId,
@@ -170,11 +171,6 @@ const QuotationForm = ({
     visible: false,
     itemId: null,
   });
-
-  // ── Selection states for assignment ───────────────────────────────
-  const [selectedFloorId, setSelectedFloorId] = useState(null);
-  const [selectedRoomId, setSelectedRoomId] = useState(null);
-  const [selectedAreaId, setSelectedAreaId] = useState(null);
 
   // ── Form instances ────────────────────────────────────────────────
   const [floorForm] = Form.useForm();
@@ -406,57 +402,57 @@ const QuotationForm = ({
   };
 
   // ── Item Assignment ───────────────────────────────────────────────
+  // In QuotationForm.jsx
+
   const openAssignModal = (itemId) => {
-    const item = cartItems.find((i) => i.id === itemId);
-    if (!item) return;
-    setSelectedFloorId(item.floorId || null);
-    setSelectedRoomId(item.roomId || null);
-    setSelectedAreaId(item.areaId || null);
     setAssignModal({ visible: true, itemId });
   };
 
-  const assignItem = () => {
-    if (!selectedFloorId) {
-      return message.error("Please select a floor");
-    }
+  // New handler that receives multiple assignments
+  // Replace your current handleMultiAssign with this fixed version
+  const handleMultiAssign = (itemId, assignments) => {
+    setCartItems((prev) =>
+      prev.map((item) => {
+        if (item.id === itemId) {
+          const locations = assignments.map((a) => {
+            const floorData = quotationData.floors?.find(
+              (f) => f.floorId === a.floorId,
+            );
+            const roomData = floorData?.rooms?.find(
+              (r) => r.roomId === a.roomId,
+            );
+            const areaData = roomData?.areas?.find((ar) => ar.id === a.areaId);
 
-    const matchedFloor = quotationData.floors?.find(
-      (f) => f.floorId === selectedFloorId,
-    );
-    const matchedRoom = matchedFloor?.rooms?.find(
-      (r) => r.roomId === selectedRoomId,
-    );
-    const matchedArea = matchedRoom?.areas?.find(
-      (a) => a.id === selectedAreaId,
-    );
+            return {
+              floorId: a.floorId,
+              floorName: floorData?.floorName || null,
+              roomId: a.roomId || null,
+              roomName: roomData?.roomName || null,
+              areaId: a.areaId || null,
+              areaName: areaData?.name || null,
+              assignedQuantity: Number(a.assignedQuantity) || 0,
+            };
+          });
 
-    const updatedItems = cartItems.map((item) =>
-      item.id === assignModal.itemId
-        ? {
+          return {
             ...item,
-            floorId: selectedFloorId,
-            floorName: matchedFloor?.floorName || null,
-            roomId: selectedRoomId || null,
-            roomName: matchedRoom?.roomName || null,
-            areaId: selectedAreaId || null,
-            areaName: matchedArea?.name || null,
-            areaValue: matchedArea?.value || null,
-          }
-        : item,
+            locations, // Full split data
+            // Backward compatibility (first location)
+            floorId: locations[0]?.floorId || null,
+            floorName: locations[0]?.floorName || null,
+            roomId: locations[0]?.roomId || null,
+            roomName: locations[0]?.roomName || null,
+            areaId: locations[0]?.areaId || null,
+            areaName: locations[0]?.areaName || null,
+            assignedQuantity: locations[0]?.assignedQuantity || item.quantity,
+          };
+        }
+        return item;
+      }),
     );
 
-    setCartItems(updatedItems);
-    message.success(
-      `Item assigned to ${matchedFloor?.floorName || "—"}` +
-        (matchedRoom ? ` → ${matchedRoom.roomName}` : "") +
-        (matchedArea ? ` → ${matchedArea.name}` : ""),
-    );
-    setAssignModal({ visible: false, itemId: null });
-    setSelectedFloorId(null);
-    setSelectedRoomId(null);
-    setSelectedAreaId(null);
+    message.success("Quantity successfully split and assigned to locations");
   };
-
   // ── Floor / Room Summary (memoized) ───────────────────────────────
   const floorSummary = useMemo(() => {
     const summary = {};
@@ -779,6 +775,7 @@ const QuotationForm = ({
                 </Col>
               </TightRow>
 
+              {/* Replace the entire Shipping Address TightRow */}
               <TightRow gutter={8}>
                 <Col span={8}>
                   <Text strong>Shipping Address</Text>
@@ -791,10 +788,10 @@ const QuotationForm = ({
                         if (v === "sameAsBilling") {
                           setUseBillingAddress(true);
                           setBillingAddressId(null);
-                          handleQuotationChange("shipTo", null);
+                          handleQuotationChange("shipTo", null); // Important: clear shipTo
                         } else {
                           setUseBillingAddress(false);
-                          setBillingAddressId(null);
+                          setBillingAddressId(v); // If real address selected
                           handleQuotationChange("shipTo", v);
                         }
                       }}
@@ -807,18 +804,9 @@ const QuotationForm = ({
                       {defaultAddress && !hasBillingAddress && (
                         <Option
                           value="sameAsBilling"
-                          disabled={isCreatingAddress}
-                          title="Use default billing address as shipping"
+                          title="Use customer's default billing address as shipping"
                         >
-                          Same as Billing –{" "}
-                          {defaultAddress.street?.slice(0, 40)}
-                          ...
-                        </Option>
-                      )}
-
-                      {isCreatingAddress && (
-                        <Option value="creating" disabled>
-                          Creating new address...
+                          Same as Billing Address
                         </Option>
                       )}
 
@@ -826,12 +814,10 @@ const QuotationForm = ({
                         <Option
                           key={a.addressId}
                           value={a.addressId}
-                          title={`${a.street}, ${a.city}, ${a.state || ""} ${
-                            a.postalCode || ""
-                          } (${a.status})`}
+                          title={`${a.street}, ${a.city}, ${a.state || ""} ${a.postalCode || ""} (${a.status})`}
                         >
-                          {a.street?.slice(0, 35)}
-                          {a.street?.length > 35 ? "..." : ""}, {a.city} (
+                          {a.street?.slice(0, 40)}
+                          {a.street?.length > 40 ? "..." : ""}, {a.city} (
                           {a.status})
                         </Option>
                       ))}
@@ -928,7 +914,35 @@ const QuotationForm = ({
                 </Col>
               </TightRow>
             </Panel>
-
+            {/* Discount & Notes */}
+            <Panel header="Discount & Notes" key="3">
+              <TightRow gutter={16} align="middle">
+                <Col span={8}>
+                  <Text strong>Global Discount</Text>
+                </Col>
+                <Col span={16}>
+                  <MiniNumber
+                    value={quotationData.discountAmount || ""}
+                    onChange={(val) =>
+                      handleQuotationChange(
+                        "discountAmount",
+                        val === null ? "" : val.toString(),
+                      )
+                    }
+                    placeholder="500"
+                    min={0}
+                    precision={2}
+                    addonBefore="₹"
+                  />
+                  <Text
+                    type="secondary"
+                    style={{ fontSize: 12, display: "block", marginTop: 4 }}
+                  >
+                    Fixed amount applied after subtotal, tax & shipping
+                  </Text>
+                </Col>
+              </TightRow>
+            </Panel>
             {/* Site Layout */}
             <Panel
               header={
@@ -1158,36 +1172,6 @@ const QuotationForm = ({
                   showIcon
                 />
               )}
-            </Panel>
-
-            {/* Discount & Notes */}
-            <Panel header="Discount & Notes" key="3">
-              <TightRow gutter={16} align="middle">
-                <Col span={8}>
-                  <Text strong>Global Discount</Text>
-                </Col>
-                <Col span={16}>
-                  <MiniNumber
-                    value={quotationData.discountAmount || ""}
-                    onChange={(val) =>
-                      handleQuotationChange(
-                        "discountAmount",
-                        val === null ? "" : val.toString(),
-                      )
-                    }
-                    placeholder="500"
-                    min={0}
-                    precision={2}
-                    addonBefore="₹"
-                  />
-                  <Text
-                    type="secondary"
-                    style={{ fontSize: 12, display: "block", marginTop: 4 }}
-                  >
-                    Fixed amount applied after subtotal, tax & shipping
-                  </Text>
-                </Col>
-              </TightRow>
             </Panel>
           </Collapse>
 
@@ -1432,23 +1416,13 @@ const QuotationForm = ({
         form={areaForm}
       />
 
+      {/* Replace the entire <AssignItemModal /> block at the bottom */}
       <AssignItemModal
         visible={assignModal.visible}
-        onCancel={() => {
-          setAssignModal({ visible: false, itemId: null });
-          setSelectedFloorId(null);
-          setSelectedRoomId(null);
-          setSelectedAreaId(null);
-        }}
-        onOk={assignItem}
+        onCancel={() => setAssignModal({ visible: false, itemId: null })}
         item={cartItems.find((i) => i.id === assignModal.itemId)}
         floors={quotationData.floors || []}
-        selectedFloorId={selectedFloorId}
-        selectedRoomId={selectedRoomId}
-        selectedAreaId={selectedAreaId}
-        setSelectedFloorId={setSelectedFloorId}
-        setSelectedRoomId={setSelectedRoomId}
-        setSelectedAreaId={setSelectedAreaId}
+        onAssign={handleMultiAssign}
       />
     </Row>
   );

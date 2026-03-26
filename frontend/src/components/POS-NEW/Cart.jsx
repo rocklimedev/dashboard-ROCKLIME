@@ -105,15 +105,19 @@ const CartTab = ({
     const subtotal = price * qty;
 
     const discVal = Number(itemDiscounts[item.productId]) || 0;
-    const disc =
-      itemDiscountTypes[item.productId] === "percent"
-        ? (subtotal * discVal) / 100
-        : discVal * qty;
+    const discType = itemDiscountTypes[item.productId] || "percent";
+
+    let discountAmount = 0;
+    if (discType === "percent") {
+      discountAmount = (subtotal * discVal) / 100;
+    } else {
+      discountAmount = discVal * qty; // fixed discount per unit × quantity
+    }
 
     const taxPct = Number(itemTaxes[item.productId]) || 0;
-    const tax = (subtotal * taxPct) / 100;
+    const taxAmount = (subtotal * taxPct) / 100; // tax on pre-discount subtotal (common)
 
-    return (subtotal - disc + tax).toFixed(2);
+    return (subtotal - discountAmount + taxAmount).toFixed(2);
   };
 
   // ────── Group items: main + their options ──────

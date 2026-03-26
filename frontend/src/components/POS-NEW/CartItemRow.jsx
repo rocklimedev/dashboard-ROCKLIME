@@ -214,9 +214,12 @@ const CartItemRow = ({
                     <InputNumber
                       size="small"
                       min={0}
+                      max={discType === "percent" ? 100 : undefined} // ← Add this
                       precision={discType === "percent" ? 1 : 2}
                       value={itemDiscounts[item.productId] ?? 0}
-                      onChange={(v) => handleDiscountChange(item.productId, v)}
+                      onChange={(v) =>
+                        handleDiscountChange(item.productId, v ?? 0)
+                      }
                       addonAfter={discType === "percent" ? "%" : "₹"}
                       style={{ width: 110 }}
                     />

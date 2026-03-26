@@ -131,7 +131,8 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
   );
 
   const cartItemCount = useMemo(() => cart?.cart?.items?.length || 0, [cart]);
-
+  const avatarSrc =
+    user?.user?.photo_thumbnail || user?.user?.profileImage || null;
   // User Dropdown Menu
   const userMenu = useMemo(
     () => (
@@ -389,9 +390,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                   >
                     <Avatar
                       name={user?.user?.name || user?.user?.username || "User"}
-                      src={
-                        user?.user?.photo_thumbnail || user?.user?.profileImage
-                      }
+                      {...(avatarSrc ? { src: avatarSrc } : {})}
                       size={36}
                       round={true}
                       className="circular-avatar"
