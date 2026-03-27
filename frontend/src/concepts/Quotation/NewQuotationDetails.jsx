@@ -291,9 +291,9 @@ const NewQuotationsDetails = () => {
 
     // Zones mapped by index (not by name)
     const ZONE_LAYOUT = [
-      { top: "32%", left: "6%", width: "26%" }, // LEFT
-      { top: "30%", left: "37%", width: "26%" }, // CENTER
-      { top: "30%", right: "2%", width: "26%" }, // RIGHT
+      { top: "25%", left: "6%", width: "26%" }, // LEFT
+      { top: "29%", left: "37%", width: "26%" }, // CENTER
+      { top: "28%", right: "2%", width: "26%" }, // RIGHT
     ];
 
     return (
@@ -366,7 +366,7 @@ const NewQuotationsDetails = () => {
                     style={{
                       display: "flex",
                       flexDirection: "column",
-                      gap: 10,
+                      gap: 1,
                     }}
                   >
                     {items.map((p, i) => (
@@ -376,7 +376,7 @@ const NewQuotationsDetails = () => {
                           display: "flex",
                           flexDirection: "column", // stack vertically
                           alignItems: "center", // center content
-                          gap: 6,
+                          gap: 1,
                           background: "rgba(255,255,255,0.92)",
                           padding: 10,
                           borderRadius: 8,
@@ -388,8 +388,8 @@ const NewQuotationsDetails = () => {
                             src={p.imageUrl}
                             alt={p.name}
                             style={{
-                              width: 100, // increased image size
-                              height: 100,
+                              width: 50, // increased image size
+                              height: 50,
                               objectFit: "cover",
                               borderRadius: 6,
                             }}

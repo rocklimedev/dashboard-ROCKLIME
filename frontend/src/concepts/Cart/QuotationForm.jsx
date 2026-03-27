@@ -32,21 +32,19 @@ import {
   ExclamationCircleOutlined,
 } from "@ant-design/icons";
 import styled from "styled-components";
-import OrderTotal from "./OrderTotal";
+import OrderTotal from "../../components/POS-NEW/OrderTotal";
 import { useGetCustomersQuery } from "../../api/customerApi";
 import moment from "moment";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { v4 as uuidv4 } from "uuid";
 import { debounce } from "lodash";
-import { AREA_OPTIONS } from "../modals/AddAreaModal";
-
-// Modals
-import AddFloorModal from "../modals/AddFloorModal";
-import EditFloorModal from "../modals/EditFloorModal";
-import AddEditRoomModal from "../modals/AddEditRoomModal";
-import AddAreaModal from "../modals/AddAreaModal";
-import AssignItemModal from "../modals/AssignItemLocation";
+import { AREA_OPTIONS } from "../../components/modals/AddAreaModal";
+import AddFloorModal from "../../components/modals/AddFloorModal";
+import EditFloorModal from "../../components/modals/EditFloorModal";
+import AddEditRoomModal from "../../components/modals/AddEditRoomModal";
+import AddAreaModal from "../../components/modals/AddAreaModal";
+import AssignItemModal from "../../components/modals/AssignItemLocation";
 
 const { Text, Title } = Typography;
 const { Panel } = Collapse;
@@ -114,6 +112,8 @@ const generateAreaId = (roomId) => `${roomId}_ar_${uuidv4().slice(0, 6)}`;
 
 const QuotationForm = ({
   // From CartLayout
+  cartItems,
+  setCartItems,
   calculationCartItems, // ← Use this instead of cartItems for calculations
   cartProductsData,
   subTotal,
@@ -140,10 +140,11 @@ const QuotationForm = ({
   handleQuotationChange,
   selectedCustomer,
   setSelectedCustomer,
-  customers,
+  addressesLoading,
   addresses,
   useBillingAddress,
   setUseBillingAddress,
+  billingAddressId,
   setBillingAddressId,
   previewVisible,
   setPreviewVisible,
@@ -189,6 +190,217 @@ const QuotationForm = ({
       handleQuotationChange("floors", [defaultFloor]);
     }
   }, [quotationData?.floors, handleQuotationChange]);
+
+  // ── Floor Handlers ────────────────────────────────────────────────
+  const addFloor = (values) => {
+    const current = quotationData.floors || [];
+    const newFloor = {
+      floorId: generateFloorId(),
+      floorName: values.name || `Floor ${current.length + 1}`,
+      sortOrder: current.length,
+      rooms: [],
+    };
+    handleQuotationChange("floors", [...current, newFloor]);
+    setFloorModalVisible(false);
+    floorForm.resetFields();
+    message.success("Floor added");
+  };
+
+  const editFloor = (values) => {
+    const updated = (quotationData.floors || []).map((f) =>
+      f.floorId === editFloorModal.floorId
+        ? { ...f, floorName: values.name.trim() || f.floorName }
+        : f,
+    );
+    handleQuotationChange("floors", updated);
+
+    const updatedItems = cartItems.map((item) =>
+      item.floorId === editFloorModal.floorId
+        ? { ...item, floorName: values.name.trim() || item.floorName }
+        : item,
+    );
+    setCartItems(updatedItems);
+
+    message.success("Floor name updated");
+    setEditFloorModal({ visible: false, floorId: null });
+    floorForm.resetFields();
+  };
+
+  const showDeleteFloorConfirm = (floorId, floorName) => {
+    const itemsInFloor = cartItems.filter((i) => i.floorId === floorId).length;
+
+    Modal.confirm({
+      title: `Delete floor "${floorName}"?`,
+      icon: <ExclamationCircleOutlined />,
+      content: itemsInFloor
+        ? `${itemsInFloor} item${itemsInFloor > 1 ? "s" : ""} will be unassigned.`
+        : "This floor has no assigned items.",
+      okText: "Delete",
+      okType: "danger",
+      onOk() {
+        const updatedFloors = (quotationData.floors || [])
+          .filter((f) => f.floorId !== floorId)
+          .map((f, idx) => ({ ...f, sortOrder: idx }));
+
+        const updatedItems = cartItems.map((item) =>
+          item.floorId === floorId
+            ? {
+                ...item,
+                floorId: null,
+                floorName: null,
+                roomId: null,
+                roomName: null,
+                areaId: null,
+                areaName: null,
+                areaValue: null,
+              }
+            : item,
+        );
+
+        setCartItems(updatedItems);
+        handleQuotationChange("floors", updatedFloors);
+        message.success("Floor deleted");
+      },
+    });
+  };
+
+  // ── Room Handlers ─────────────────────────────────────────────────
+  const addRoom = (values) => {
+    const updatedFloors = (quotationData.floors || []).map((floor) =>
+      floor.floorId === roomModal.floorId
+        ? {
+            ...floor,
+            rooms: [
+              ...(floor.rooms || []),
+              {
+                roomId: generateRoomId(floor.floorId),
+                roomName: values.name,
+                sortOrder: floor.rooms?.length || 0,
+                type: values.type || undefined,
+                areas: [],
+              },
+            ],
+          }
+        : floor,
+    );
+    handleQuotationChange("floors", updatedFloors);
+    setRoomModal({ visible: false, floorId: null });
+    roomForm.resetFields();
+    message.success("Room added");
+  };
+
+  const editRoom = (values) => {
+    const updatedFloors = (quotationData.floors || []).map((floor) =>
+      floor.floorId === editRoomModal.floorId
+        ? {
+            ...floor,
+            rooms: floor.rooms.map((r) =>
+              r.roomId === editRoomModal.roomId
+                ? {
+                    ...r,
+                    roomName: values.name.trim(),
+                    type: values.type || undefined,
+                  }
+                : r,
+            ),
+          }
+        : floor,
+    );
+    handleQuotationChange("floors", updatedFloors);
+
+    const updatedItems = cartItems.map((item) =>
+      item.roomId === editRoomModal.roomId
+        ? { ...item, roomName: values.name.trim() }
+        : item,
+    );
+    setCartItems(updatedItems);
+
+    message.success("Room updated");
+    setEditRoomModal({ visible: false, floorId: null, roomId: null });
+    roomForm.resetFields();
+  };
+
+  const showDeleteRoomConfirm = (floorId, roomId, roomName) => {
+    const itemsInRoom = cartItems.filter((i) => i.roomId === roomId).length;
+
+    Modal.confirm({
+      title: `Delete room "${roomName}"?`,
+      icon: <ExclamationCircleOutlined />,
+      content: itemsInRoom
+        ? `${itemsInRoom} item${itemsInRoom > 1 ? "s" : ""} will lose room assignment.`
+        : "No items assigned to this room.",
+      okText: "Delete",
+      okType: "danger",
+      onOk() {
+        const updatedFloors = (quotationData.floors || []).map((floor) =>
+          floor.floorId === floorId
+            ? {
+                ...floor,
+                rooms: floor.rooms
+                  .filter((r) => r.roomId !== roomId)
+                  .map((r, idx) => ({ ...r, sortOrder: idx })),
+              }
+            : floor,
+        );
+
+        const updatedItems = cartItems.map((item) =>
+          item.roomId === roomId
+            ? {
+                ...item,
+                roomId: null,
+                roomName: null,
+                areaId: null,
+                areaName: null,
+                areaValue: null,
+              }
+            : item,
+        );
+
+        setCartItems(updatedItems);
+        handleQuotationChange("floors", updatedFloors);
+        message.success("Room deleted");
+      },
+    });
+  };
+
+  // ── Area Handlers ─────────────────────────────────────────────────
+  const addArea = (values) => {
+    const selectedArea = AREA_OPTIONS.find(
+      (opt) => opt.value === values.areaType,
+    );
+
+    if (!selectedArea) {
+      return message.error("Please select a valid area type");
+    }
+
+    const updatedFloors = (quotationData.floors || []).map((floor) =>
+      floor.floorId === areaModal.floorId
+        ? {
+            ...floor,
+            rooms: (floor.rooms || []).map((room) =>
+              room.roomId === areaModal.roomId
+                ? {
+                    ...room,
+                    areas: [
+                      ...(room.areas || []),
+                      {
+                        id: generateAreaId(room.roomId),
+                        name: selectedArea.label,
+                        value: selectedArea.value,
+                      },
+                    ],
+                  }
+                : room,
+            ),
+          }
+        : floor,
+    );
+
+    handleQuotationChange("floors", updatedFloors);
+    setAreaModal({ visible: false, floorId: null, roomId: null });
+    areaForm.resetFields();
+    message.success(`${selectedArea.label} added`);
+  };
 
   // Safe floorSummary (this was causing the crash)
   const floorSummary = useMemo(() => {

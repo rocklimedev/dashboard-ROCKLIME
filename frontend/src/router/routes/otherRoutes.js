@@ -8,6 +8,9 @@ import FGSDetails from "../../concepts/PO/FGSDetails";
 import JobList from "../../concepts/Jobs/JobsList";
 import JobDetails from "../../concepts/Jobs/JobDetails";
 import GeneralSettings from "../../concepts/Settings/GeneralSettings";
+import NewQuotation from "../../concepts/Cart/NewQuotation";
+import NewOrder from "../../concepts/Cart/NewOrder";
+import NewPurchaseOrder from "../../concepts/Cart/NewPurchaseOrder";
 export const otherRoutes = [
   {
     path: "/cart",
@@ -15,6 +18,27 @@ export const otherRoutes = [
     icon: <FaShoppingCart />,
     isSidebarActive: false,
     element: <NewCart />,
+  },
+  {
+    path: "/quotations/new",
+    name: "Cart",
+    icon: <FaShoppingCart />,
+    isSidebarActive: false,
+    element: <NewQuotation />,
+  },
+  {
+    path: "/orders/new",
+    name: "Cart",
+    icon: <FaShoppingCart />,
+    isSidebarActive: false,
+    element: <NewOrder />,
+  },
+  {
+    path: "/purchase-orders/new",
+    name: "Cart",
+    icon: <FaShoppingCart />,
+    isSidebarActive: false,
+    element: <NewPurchaseOrder />,
   },
   {
     path: "/search",
