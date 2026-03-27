@@ -34,7 +34,6 @@ export const userRoutes = [
     icon: <FaUser />,
     isSidebarActive: false,
     element: <Permissions />,
-    requiredPermission: { api: "view", module: "rolepermissions" },
   },
   {
     path: "/u/:id",

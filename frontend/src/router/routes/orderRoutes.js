@@ -17,7 +17,6 @@ export const orderRoutes = [
     icon: <FaFileAlt />,
     isSidebarActive: false,
     element: <AddNewOrder />,
-    requiredPermission: { api: "write", module: "orders" },
   },
   {
     path: "/order/:id",
@@ -32,6 +31,5 @@ export const orderRoutes = [
     icon: <FaFileAlt />,
     isSidebarActive: false,
     element: <AddNewOrder />,
-    requiredPermission: { api: "edit", module: "orders" },
   },
 ];

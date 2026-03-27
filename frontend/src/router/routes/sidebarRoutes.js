@@ -3,8 +3,10 @@ import { FaHome } from "react-icons/fa";
 import { FaTags } from "react-icons/fa";
 import { FaFileAlt, FaUsers } from "react-icons/fa";
 import { FaThLarge } from "react-icons/fa";
-import { FaUser, FaIdCard, FaUserCircle , FaBoxOpen} from "react-icons/fa";
+import { FaUser, FaIdCard, FaUserCircle, FaBoxOpen } from "react-icons/fa";
 import { MdOutlineInventory2 } from "react-icons/md";
+import { FaShoppingCart } from "react-icons/fa";
+import PurchaseManagement from "../../concepts/PO/PurchaseManagement";
 import Product from "../../concepts/Products/Product";
 import OrderWrapper from "../../concepts/Order/OrderWrapper";
 import QuotationList from "../../concepts/Quotation/QuotationList";
@@ -41,6 +43,13 @@ export const sidebarRoutes = [
     name: "Orders",
     icon: <FaFileAlt />,
     element: <OrderWrapper />,
+    isSidebarActive: true,
+  },
+  {
+    path: "/purchase-manager",
+    name: "Purchase Manager",
+    icon: <FaShoppingCart />,
+    element: <PurchaseManagement />,
     isSidebarActive: true,
   },
   {

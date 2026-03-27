@@ -8,14 +8,12 @@ import BrandSelection from "../../concepts/Products/BrandSelection";
 import CategoryManagement from "../../concepts/Products/CategoryManagement";
 
 export const productRoutes = [
-
   {
     path: "/product/add",
     name: "Create Product",
     icon: <FaThLarge />,
     isSidebarActive: false,
     element: <CreateProduct />,
-    requiredPermission: { api: "write", module: "products" },
   },
   {
     path: "/product/:id",
@@ -30,7 +28,6 @@ export const productRoutes = [
     icon: <FaThLarge />,
     isSidebarActive: false,
     element: <CreateProduct />,
-    requiredPermission: { api: "edit", module: "products" },
   },
   {
     path: "/store/:id",
