@@ -1,4 +1,5 @@
 // src/pages/quotations/NewQuotationsDetails.jsx
+
 import React, { useRef, useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
@@ -212,7 +213,7 @@ const NewQuotationsDetails = () => {
 
   const finalAmountInWords = amountInWords(Math.round(backendFinalAmount));
 
-  // ── Floor-wise Totals ───────────────────────────────────────────────────
+  // ── Floor-wise & Room-wise Totals ───────────────────────────────────────
   const floorTotals = useMemo(() => {
     const floorMap = new Map();
 
@@ -231,13 +232,42 @@ const NewQuotationsDetails = () => {
     );
   }, [mainProducts]);
 
-  // Check if we have meaningful floor data (skip if only "Unspecified Floor")
+  const roomTotals = useMemo(() => {
+    const roomMap = new Map();
+
+    mainProducts.forEach((p) => {
+      const floor = (p.floorName || "Unspecified Floor").trim();
+      const room = (p.roomName || "Unspecified Room").trim();
+      const total = Number(p.total ?? 0);
+      const key = `${floor}|||${room}`;
+
+      if (!roomMap.has(key)) {
+        roomMap.set(key, { floorName: floor, roomName: room, total: 0 });
+      }
+      roomMap.get(key).total += total;
+    });
+
+    return Array.from(roomMap.values())
+      .sort((a, b) => {
+        const floorCmp = a.floorName.localeCompare(b.floorName);
+        return floorCmp !== 0 ? floorCmp : a.roomName.localeCompare(b.roomName);
+      })
+      .filter((r) => r.total > 0);
+  }, [mainProducts]);
+
   const hasFloorData = useMemo(() => {
-    if (!floorTotals || floorTotals.length === 0) return false;
     return floorTotals.some(
       (floor) => floor.floorName !== "Unspecified Floor" && floor.total > 0,
     );
   }, [floorTotals]);
+
+  const hasRoomData = useMemo(() => {
+    return roomTotals.some(
+      (room) =>
+        room.roomName !== "Unspecified Room" &&
+        room.floorName !== "Unspecified Floor",
+    );
+  }, [roomTotals]);
 
   // ── Site Layout Check ───────────────────────────────────────────────────
   const hasSiteLayout = useMemo(() => {
@@ -254,7 +284,7 @@ const NewQuotationsDetails = () => {
     });
   }, [activeVersionData.quotation, quotation, allProducts]);
 
-  // ── Grouping Helpers ────────────────────────────────────────────────────
+  // ── Grouping Helpers (unchanged) ────────────────────────────────────────
   const groupProductsByFloorAndRoom = (products = []) => {
     const map = new Map();
     products.forEach((p) => {
@@ -295,7 +325,7 @@ const NewQuotationsDetails = () => {
     return groups;
   };
 
-  // ── Render Area-wise Page ───────────────────────────────────────────────
+  // ── Render Area-wise Page (unchanged) ───────────────────────────────────
   const renderAreaWisePageForRoom = (roomGroup) => {
     const { floorName, roomName, products } = roomGroup;
     const areaGroups = groupProductsByAreaName(products);
@@ -426,7 +456,6 @@ const NewQuotationsDetails = () => {
 
     const MAX_PRODUCTS_NORMAL = 10;
 
-    // Reusable Product Table
     const renderProductTable = (items, title, startSno = 0) => {
       let localSno = startSno;
       return (
@@ -537,7 +566,6 @@ const NewQuotationsDetails = () => {
       );
     };
 
-    // ==================== COVER PAGE ====================
     pages.push(
       <div key="cover" className={`${styles.coverPage} page`}>
         <img src={coverImage} alt="Cover" className={styles.coverBg} />
@@ -549,7 +577,6 @@ const NewQuotationsDetails = () => {
       </div>,
     );
 
-    // ==================== LETTERHEAD PAGE ====================
     pages.push(
       <div key="letterhead" className={`${styles.letterheadPage} page`}>
         <img
@@ -584,13 +611,12 @@ const NewQuotationsDetails = () => {
       </div>,
     );
 
-    // ==================== MAIN PRODUCTS PAGES ====================
+    // Main Products Pages
     let remainingMain = [...mainProducts];
     let globalSno = 0;
 
     while (remainingMain.length > 0) {
       const itemsThisPage = remainingMain.slice(0, MAX_PRODUCTS_NORMAL);
-
       pages.push(
         <div
           key={`main-page-${globalSno}`}
@@ -611,16 +637,14 @@ const NewQuotationsDetails = () => {
               })}
             </div>
           </div>
-
-          {renderProductTable(itemsThisPage, "Main Items", globalSno)}
+          {renderProductTable(itemsThisPage, "", globalSno)}
         </div>,
       );
-
       globalSno += itemsThisPage.length;
       remainingMain = remainingMain.slice(itemsThisPage.length);
     }
 
-    // ==================== OPTIONAL PRODUCTS PAGE ====================
+    // Optional Products
     if (optionalProducts.length > 0) {
       pages.push(
         <div key="optional-page" className={`${styles.productPage} page`}>
@@ -639,9 +663,7 @@ const NewQuotationsDetails = () => {
               })}
             </div>
           </div>
-
           {renderProductTable(optionalProducts, "Optional Items / Add-ons")}
-
           <div
             style={{
               marginTop: 20,
@@ -657,7 +679,7 @@ const NewQuotationsDetails = () => {
       );
     }
 
-    // ==================== SITE LAYOUT PAGES ====================
+    // Site Layout Pages
     if (hasSiteLayout) {
       const roomGroups = groupProductsByFloorAndRoom(allProducts);
       roomGroups.forEach((roomGroup) => {
@@ -667,7 +689,7 @@ const NewQuotationsDetails = () => {
       });
     }
 
-    // ==================== SUMMARY PAGE (Smart) ====================
+    // ==================== SUMMARY PAGE (UPDATED WITH ROOM TOTALS) ====================
     pages.push(
       <div key="summary-page" className={`${styles.productPage} page`}>
         <div className={styles.pageTopHeader}>
@@ -696,7 +718,7 @@ const NewQuotationsDetails = () => {
           PROJECT SUMMARY
         </h2>
 
-        {/* Floor-wise Totals - Only if meaningful floor data exists */}
+        {/* Floor-wise Totals */}
         {hasFloorData && (
           <>
             <h3 style={{ color: "#d32f2f", margin: "25px 0 12px" }}>
@@ -724,10 +746,40 @@ const NewQuotationsDetails = () => {
           </>
         )}
 
+        {/* Room-wise Totals - NEW */}
+        {hasRoomData && (
+          <>
+            <h3 style={{ color: "#d32f2f", margin: "25px 0 12px" }}>
+              Room-wise Totals
+            </h3>
+            <table className={styles.productTable}>
+              <thead>
+                <tr>
+                  <th>Floor</th>
+                  <th>Room</th>
+                  <th style={{ textAlign: "right" }}>Amount (₹)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {roomTotals.map((room, index) => (
+                  <tr key={index}>
+                    <td>{room.floorName}</td>
+                    <td>{room.roomName}</td>
+                    <td style={{ textAlign: "right" }}>
+                      ₹{room.total.toLocaleString("en-IN")}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <Divider style={{ margin: "30px 0 25px" }} />
+          </>
+        )}
+
         {/* Final Financial Summary */}
         <div
           className={styles.finalSummaryWrapper}
-          style={{ marginTop: hasFloorData ? 10 : 40 }}
+          style={{ marginTop: hasFloorData || hasRoomData ? 10 : 40 }}
         >
           <div className={styles.finalSummarySection}>
             <div className={styles.summaryLeft}>
@@ -769,24 +821,13 @@ const NewQuotationsDetails = () => {
             </div>
           </div>
         </div>
-
-        <div
-          style={{
-            marginTop: 40,
-            textAlign: "center",
-            fontSize: "0.9em",
-            color: "#666",
-          }}
-        >
-          Thank you for your business. This quotation is valid for 15 days.
-        </div>
       </div>,
     );
 
     return pages;
   };
 
-  // ── Export Handler ──────────────────────────────────────────
+  // ── Export Handler (unchanged) ──────────────────────────────────────────
   const handleExport = async () => {
     if (!quotationRef.current) return;
     setIsExporting(true);

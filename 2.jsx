@@ -1,1113 +1,986 @@
-// src/pages/quotations/NewQuotationsDetails.jsx
-import React, { useRef, useState, useMemo } from "react";
-import { useParams, Link } from "react-router-dom";
+// src/components/Quotation/QuotationForm.jsx
+import React, { useState, useEffect, useMemo } from "react";
 import {
-  message,
+  Card,
   Button,
-  Space,
+  Select,
+  InputNumber,
+  Row,
+  Col,
+  Empty,
   Typography,
-  Spin,
-  Alert,
-  Tabs,
-  Checkbox,
-  Tag,
-  Tooltip,
+  Space,
   Divider,
+  Collapse,
+  Spin,
+  message,
+  Alert,
+  Tag,
+  Modal,
+  Form,
 } from "antd";
 import {
+  CheckCircleOutlined,
   ArrowLeftOutlined,
-  FilePdfFilled,
-  FileExcelFilled,
-  HistoryOutlined,
-  SettingOutlined,
+  DeleteOutlined,
+  PlusOutlined,
+  HomeOutlined,
+  ApartmentOutlined,
+  PushpinOutlined,
+  EditOutlined,
+  ExclamationCircleOutlined,
 } from "@ant-design/icons";
-import { Helmet } from "react-helmet";
-import dayjs from "dayjs";
-import relativeTime from "dayjs/plugin/relativeTime";
-import { Dropdown } from "antd";
-import logo from "../../assets/img/logo-quotation.png";
-import styles from "../../components/Quotation/quotationnew.module.css";
-import coverImage from "../../assets/img/quotation_first_page.jpeg";
-import quotationBgImage from "../../assets/img/quotation_letterhead.jpeg";
-import siteMapQuotation from "../../assets/img/quotation_sitemap.jpg";
-import {
-  useGetQuotationByIdQuery,
-  useGetQuotationVersionsQuery,
-} from "../../api/quotationApi";
-import { useGetCustomerByIdQuery } from "../../api/customerApi";
-import { useGetAddressByIdQuery } from "../../api/addressApi";
-import {
-  exportToPDF,
-  exportToExcel,
-} from "../../components/Quotation/hooks/exportHelpers";
-import { amountInWords } from "../../components/Quotation/hooks/calcHelpers";
+import styled from "styled-components";
+import OrderTotal from "../../components/POS-NEW/OrderTotal";
+import { useGetCustomersQuery } from "../../api/customerApi";
+import moment from "moment";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { debounce } from "lodash";
+import { AREA_OPTIONS } from "../../components/modals/AddAreaModal";
+import { v4 as uuidv4 } from "uuid";
 
-dayjs.extend(relativeTime);
+// Modals
+import AddFloorModal from "../../components/modals/AddFloorModal";
+import EditFloorModal from "../../components/modals/EditFloorModal";
+import AddEditRoomModal from "../../components/modals/AddEditRoomModal";
+import AddAreaModal from "../../components/modals/AddAreaModal";
+import AssignItemModal from "../../components/modals/AssignItemLocation";
 
-const { Title, Text } = Typography;
+const { Text, Title } = Typography;
+const { Panel } = Collapse;
+const { Option } = Select;
 
-const NewQuotationsDetails = () => {
-  const { id } = useParams();
-  const [activeVersion, setActiveVersion] = useState("current");
-  const [exportFormat, setExportFormat] = useState("pdf");
-  const [isExporting, setIsExporting] = useState(false);
+const CompactCard = styled(Card)`
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  .ant-card-body {
+    padding: 12px 16px;
+  }
+`;
 
-  const [visibleColumns, setVisibleColumns] = useState({
-    sno: true,
-    name: true,
-    code: true,
-    image: true,
-    unit: true,
-    mrp: true,
-    discount: true,
-    total: true,
+const TightRow = styled(Row)`
+  margin-bottom: 8px;
+  .ant-col {
+    padding: 0 6px;
+  }
+`;
+
+const MiniSelect = styled(Select)`
+  width: 100%;
+  .ant-select-selector {
+    padding: 0 8px;
+    height: 30px;
+  }
+`;
+
+const MiniNumber = styled(InputNumber)`
+  width: 100%;
+  height: 30px;
+  .ant-input-number-input {
+    height: 28px;
+  }
+`;
+
+const MiniDate = styled(DatePicker)`
+  width: 100%;
+  height: 30px;
+  .react-datepicker-wrapper,
+  input {
+    height: 30px;
+    padding: 4px 8px;
+  }
+`;
+
+const CheckoutBtn = styled(Button)`
+  height: 40px;
+  font-weight: 600;
+  background: #e31e24;
+  border-color: #e31e24;
+  color: white;
+  &:hover {
+    background: #ff4d4f;
+    border-color: #ff4d4f;
+  }
+`;
+
+// Helpers
+const momentToDate = (m) => (m ? m.toDate() : null);
+const generateFloorId = () => `fl_${uuidv4().slice(0, 8)}`;
+const generateRoomId = (floorId = "") =>
+  `${floorId ? floorId + "_" : "rm_"}${uuidv4().slice(0, 8)}`;
+const generateAreaId = (roomId) => `${roomId}_ar_${uuidv4().slice(0, 6)}`;
+
+const QuotationForm = ({
+  // From CartLayout
+  localCartItems = [],
+  calculationCartItems = [],
+  subTotal = 0,
+  totalDiscount: discount = 0,
+  tax = 0,
+  shipping = 0,
+  gst = 0,
+  itemDiscounts = {},
+  itemDiscountTypes = {},
+  itemTaxes = {},
+
+  // Quotation props
+  quotationData = {
+    floors: [],
+    followupDates: [],
+    discountAmount: "",
+    dueDate: "",
+  },
+  setQuotationData,
+  handleQuotationChange,
+  selectedCustomer = "",
+  setSelectedCustomer,
+  addresses = [],
+  useBillingAddress = false,
+  setUseBillingAddress,
+  billingAddressId = null,
+  setBillingAddressId,
+  previewVisible = false,
+  setPreviewVisible,
+  handleAddCustomer,
+  handleAddAddress,
+  setActiveTab,
+  handleCreateDocument,
+  documentType = "Quotation",
+  handleAssignItem,
+}) => {
+  const [isCreatingAddress, setIsCreatingAddress] = useState(false);
+
+  // Modal States
+  const [floorModalVisible, setFloorModalVisible] = useState(false);
+  const [editFloorModal, setEditFloorModal] = useState({
+    visible: false,
+    floorId: null,
+  });
+  const [roomModal, setRoomModal] = useState({ visible: false, floorId: null });
+  const [editRoomModal, setEditRoomModal] = useState({
+    visible: false,
+    floorId: null,
+    roomId: null,
+  });
+  const [areaModal, setAreaModal] = useState({
+    visible: false,
+    floorId: null,
+    roomId: null,
+  });
+  const [assignModal, setAssignModal] = useState({
+    visible: false,
+    itemId: null,
   });
 
-  const quotationRef = useRef(null);
+  const [floorForm] = Form.useForm();
+  const [roomForm] = Form.useForm();
+  const [areaForm] = Form.useForm();
 
-  // ── Data Fetching ───────────────────────────────────────────────────────
-  const {
-    data: quotation,
-    isLoading: qLoading,
-    error: qError,
-  } = useGetQuotationByIdQuery(id);
-
-  const { data: versionsData, isLoading: vLoading } =
-    useGetQuotationVersionsQuery(id);
-
-  const safeParse = (data) => {
-    if (!data) return [];
-    if (Array.isArray(data)) return data;
-    if (typeof data === "string") {
-      try {
-        return JSON.parse(data);
-      } catch {
-        return [];
-      }
-    }
-    return [];
-  };
-
-  // ── Versions Logic ──────────────────────────────────────────────────────
-  const versions = useMemo(() => {
-    const list = Array.isArray(versionsData) ? [...versionsData] : [];
-
-    if (quotation) {
-      list.unshift({
-        version: "current",
-        label: "Current Version (Latest)",
-        shortLabel: "Latest",
-        quotationData: quotation,
-        quotationItems: safeParse(quotation.products || quotation.items),
-        updatedAt: quotation.updatedAt || new Date().toISOString(),
-        updatedBy: quotation.updatedBy || quotation.createdBy || "System",
-        isCurrent: true,
-      });
-    }
-
-    return list
-      .map((v) => ({
-        ...v,
-        label:
-          v.version === "current" ? "Current Version" : `Version ${v.version}`,
-        shortLabel: v.version === "current" ? "Latest" : `V${v.version}`,
-        timeAgo: v.updatedAt ? dayjs(v.updatedAt).fromNow() : "—",
-      }))
-      .sort((a, b) =>
-        a.version === "current" ? -1 : (b.version || 0) - (a.version || 0),
-      );
-  }, [quotation, versionsData]);
-
-  const activeVersionObj = useMemo(
+  const safeCartItems = useMemo(
     () =>
-      versions.find((v) => v.version === activeVersion) || versions[0] || {},
-    [activeVersion, versions],
+      calculationCartItems.length > 0 ? calculationCartItems : localCartItems,
+    [calculationCartItems, localCartItems],
   );
 
-  const activeVersionData = useMemo(
-    () => ({
-      quotation: activeVersionObj.quotationData || quotation || {},
-      products: activeVersionObj.quotationItems || [],
-      updatedAt: activeVersionObj.updatedAt,
-    }),
-    [activeVersionObj, quotation],
+  // Auto-create default floor
+  useEffect(() => {
+    const currentFloors = quotationData.floors || [];
+    const hasAnyAssignment = safeCartItems.some((item) =>
+      Boolean(item?.floorId),
+    );
+
+    if (currentFloors.length === 0 && hasAnyAssignment) {
+      const defaultFloor = {
+        floorId: generateFloorId(),
+        floorName: "Ground Floor",
+        sortOrder: 0,
+        rooms: [],
+      };
+      handleQuotationChange("floors", [defaultFloor]);
+    }
+  }, [safeCartItems, quotationData.floors, handleQuotationChange]);
+
+  const getCleanFloorsForPayload = useMemo(() => {
+    const floors = quotationData.floors || [];
+    const hasAnyFloorAssignment = safeCartItems.some((item) =>
+      Boolean(item?.floorId),
+    );
+
+    if (!hasAnyFloorAssignment) return [];
+
+    return floors
+      .map((floor) => {
+        const assignedCount = safeCartItems.filter(
+          (i) => i.floorId === floor.floorId,
+        ).length;
+        if (floor.rooms?.length > 0 || assignedCount > 0) {
+          return {
+            ...floor,
+            rooms: (floor.rooms || []).map((room) => ({
+              ...room,
+              areas: room.areas || [],
+            })),
+          };
+        }
+        return null;
+      })
+      .filter(Boolean);
+  }, [quotationData.floors, safeCartItems]);
+
+  const unassignedCount = useMemo(
+    () => safeCartItems.filter((i) => !i?.floorId).length,
+    [safeCartItems],
   );
 
-  // ── Customer & Address ──────────────────────────────────────────────────
-  const customerId =
-    activeVersionData.quotation?.customerId || quotation?.customerId;
-  const shipToId = activeVersionData.quotation?.shipTo || quotation?.shipTo;
-
-  const { data: customerResponse, isFetching: custLoading } =
-    useGetCustomerByIdQuery(customerId, { skip: !customerId });
-
-  const { data: addressResponse, isFetching: addrLoading } =
-    useGetAddressByIdQuery(shipToId, { skip: !shipToId });
-
-  const customer = customerResponse?.data || {};
-  const address = addressResponse || {};
-
-  const customerName = customer?.name || "Dear Client";
-  const customerPhone =
-    customer?.mobileNumber || customer?.phone || "XXXXXXXXXX";
-  const customerAddress = address
-    ? `${address.street || ""}, ${address.city || ""}, ${address.state || ""} - ${address.postalCode || ""}`
-        .replace(/^,\s*|,*\s*$/g, "")
-        .trim()
-    : "--";
-
-  // ── Products ────────────────────────────────────────────────────────────
-  const allProducts = useMemo(() => {
-    const products = activeVersionData.products || [];
-    return products.map((p) => ({
-      ...p,
-      floorName: p.floorName || "",
-      roomName: p.roomName || "",
-      areaName: p.areaName || "",
-      imageUrl: p.imageUrl || "",
-      companyCode: p.companyCode || p.productCode || "—",
-    }));
-  }, [activeVersionData.products]);
-
-  const mainProducts = useMemo(
-    () => allProducts.filter((p) => p.isOptionFor == null),
-    [allProducts],
-  );
-
-  const optionalProducts = useMemo(
-    () => allProducts.filter((p) => p.isOptionFor != null),
-    [allProducts],
-  );
-
-  // ── Brand Names ─────────────────────────────────────────────────────────
-  const brandNames = useMemo(() => {
-    const brands = new Set();
-    mainProducts.forEach((p) => {
-      const name = (p.name || "").toLowerCase();
-      if (name.includes("grohe")) brands.add("GROHE");
-      if (name.includes("american standard")) brands.add("AMERICAN STANDARD");
-      if (name.includes("caesarstone")) brands.add("Caesarstone");
+  const floorSummary = useMemo(() => {
+    const summary = {};
+    (quotationData.floors || []).forEach((f) => {
+      summary[f.floorId] = {
+        name: f.floorName,
+        itemCount: 0,
+        total: 0,
+        rooms: (f.rooms || []).map((r) => ({ ...r, itemCount: 0, total: 0 })),
+      };
     });
-    return brands.size > 0
-      ? [...brands].join(" / ")
-      : "GROHE / AMERICAN STANDARD";
-  }, [mainProducts]);
 
-  // ── Calculations ────────────────────────────────────────────────────────
-  const backendFinalAmount = Number(quotation?.finalAmount ?? 0);
-  const backendRoundOff = Number(quotation?.roundOff ?? 0);
-  const backendExtraDiscount = Number(quotation?.extraDiscount ?? 0);
+    safeCartItems.forEach((item) => {
+      if (!item?.floorId || !summary[item.floorId]) return;
+      const floor = summary[item.floorId];
+      floor.itemCount += item.quantity || 1;
+      floor.total += (item.quantity || 1) * (item.price || 0);
 
-  const displaySubtotal = useMemo(() => {
-    return mainProducts.reduce((sum, p) => sum + Number(p.total ?? 0), 0);
-  }, [mainProducts]);
-
-  const displayProductDiscount = useMemo(() => {
-    return mainProducts.reduce((sum, p) => {
-      const orig = Number(p.price ?? 0) * Number(p.quantity ?? 1);
-      const discounted = Number(p.total ?? 0);
-      return sum + (orig - discounted);
-    }, 0);
-  }, [mainProducts]);
-
-  const finalAmountInWords = amountInWords(Math.round(backendFinalAmount));
-
-  // ── Floor-wise Totals for Summary Page ─────────────────────────────────
-  const floorTotals = useMemo(() => {
-    const floorMap = new Map();
-
-    mainProducts.forEach((p) => {
-      const floor = (p.floorName || "Unspecified Floor").trim();
-      const total = Number(p.total ?? 0);
-
-      if (!floorMap.has(floor)) {
-        floorMap.set(floor, { floorName: floor, total: 0 });
+      if (item.roomId) {
+        const room = floor.rooms.find((r) => r.roomId === item.roomId);
+        if (room) {
+          room.itemCount += item.quantity || 1;
+          room.total += (item.quantity || 1) * (item.price || 0);
+        }
       }
-      floorMap.get(floor).total += total;
     });
 
-    return Array.from(floorMap.values()).sort((a, b) =>
-      a.floorName.localeCompare(b.floorName),
-    );
-  }, [mainProducts]);
+    return Object.values(summary);
+  }, [safeCartItems, quotationData.floors]);
 
-  // ── Site Layout Check ───────────────────────────────────────────────────
-  const hasSiteLayout = useMemo(() => {
-    const floors =
-      activeVersionData.quotation?.floors || quotation?.floors || [];
-    if (!Array.isArray(floors) || floors.length === 0) return false;
+  // Customer Search Logic
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedTerm, setDebouncedTerm] = useState("");
+  const [page, setPage] = useState(1);
+  const [customers, setCustomers] = useState([]);
+  const [hasMore, setHasMore] = useState(true);
 
-    return floors.some((floor) => {
-      const hasRooms = floor.rooms && floor.rooms.length > 0;
-      const hasAssignedProducts = allProducts.some(
-        (p) => p.floorId === floor.floorId,
-      );
-      return hasRooms || hasAssignedProducts;
-    });
-  }, [activeVersionData.quotation, quotation, allProducts]);
-
-  // ── Grouping Helpers ────────────────────────────────────────────────────
-  const groupProductsByFloorAndRoom = (products = []) => {
-    const map = new Map();
-    products.forEach((p) => {
-      if (!p.floorId) return;
-      const locations =
-        Array.isArray(p.locations) && p.locations.length > 0
-          ? p.locations
-          : [
-              {
-                floorName: p.floorName || "Unspecified Floor",
-                roomName: p.roomName || "Unspecified Room",
-              },
-            ];
-
-      locations.forEach((loc) => {
-        const floor = (loc.floorName || "Unspecified Floor").trim();
-        const room = (loc.roomName || "Unspecified Room").trim();
-        const key = `${floor}|||${room}`;
-        if (!map.has(key)) {
-          map.set(key, { floorName: floor, roomName: room, products: [] });
+  const debouncedSetTerm = useMemo(
+    () =>
+      debounce((value) => {
+        const trimmed = value.trim();
+        setDebouncedTerm(trimmed);
+        if (trimmed !== debouncedTerm) {
+          setCustomers([]);
+          setPage(1);
+          setHasMore(true);
         }
-        map.get(key).products.push({ ...p, ...loc });
-      });
+      }, 450),
+    [debouncedTerm],
+  );
+
+  useEffect(() => {
+    return () => debouncedSetTerm.cancel();
+  }, [debouncedSetTerm]);
+
+  const { data, isFetching } = useGetCustomersQuery(
+    { page, limit: 30, search: debouncedTerm || undefined },
+    { skip: !debouncedTerm },
+  );
+
+  useEffect(() => {
+    if (!data?.data || !debouncedTerm) return;
+    setCustomers((prev) => {
+      if (data.pagination?.page !== page) return prev;
+      const seen = new Set(prev.map((c) => c.customerId));
+      const newOnes = data.data.filter((c) => !seen.has(c.customerId));
+      return [...prev, ...newOnes];
     });
-    return Array.from(map.values()).sort((a, b) => {
-      const floorCmp = a.floorName.localeCompare(b.floorName);
-      return floorCmp !== 0 ? floorCmp : a.roomName.localeCompare(b.roomName);
-    });
+    const pagination = data.pagination;
+    setHasMore(
+      pagination
+        ? pagination.page < pagination.totalPages && data.data.length === 30
+        : data.data.length === 30,
+    );
+  }, [data, page, debouncedTerm]);
+
+  const handleSearchChange = (value) => {
+    setSearchTerm(value);
+    debouncedSetTerm(value);
   };
 
-  const groupProductsByAreaName = (products = []) => {
-    const groups = {};
-    products.forEach((p) => {
-      const area = (p.areaName || "Unassigned").trim();
-      if (!groups[area]) groups[area] = [];
-      groups[area].push(p);
-    });
-    return groups;
-  };
-
-  // ── Render Area-wise Page (unchanged) ───────────────────────────────────
-  const renderAreaWisePageForRoom = (roomGroup) => {
-    const { floorName, roomName, products } = roomGroup;
-    const areaGroups = groupProductsByAreaName(products);
-    const areaEntries = Object.entries(areaGroups).slice(0, 3);
-
-    const ZONE_LAYOUT = [
-      { top: "25%", left: "6%", width: "26%" },
-      { top: "29%", left: "37%", width: "26%" },
-      { top: "28%", right: "2%", width: "26%" },
-    ];
-
-    return (
-      <div
-        key={`area-page-${floorName}-${roomName}`}
-        className="page"
-        style={{
-          position: "relative",
-          width: "210mm",
-          height: "297mm",
-          overflow: "hidden",
-          pageBreakBefore: "always",
-          pageBreakAfter: "always",
-        }}
-      >
-        <img
-          src={siteMapQuotation}
-          alt="Site Map"
-          style={{
-            position: "absolute",
-            inset: 0,
-            width: "100%",
-            height: "100%",
-            objectFit: "fill",
-            zIndex: 0,
-          }}
-        />
-        <div style={{ position: "absolute", inset: 0, zIndex: 1 }} />
-        <div
-          style={{
-            position: "relative",
-            zIndex: 2,
-            padding: "40px 30px",
-            height: "100%",
-          }}
-        >
-          <div style={{ textAlign: "center", marginBottom: 32 }}>
-            <h2 style={{ color: "#d32f2f", fontSize: "2.4em", margin: 0 }}>
-              {floorName.toUpperCase()}
-            </h2>
-            <h3
-              style={{ fontSize: "1.9em", color: "#222", margin: "8px 0 4px" }}
-            >
-              {roomName}
-            </h3>
-          </div>
-
-          <div style={{ position: "absolute", inset: 0 }}>
-            {areaEntries.map(([areaName, items], index) => {
-              const zone = ZONE_LAYOUT[index];
-              if (!zone) return null;
-              return (
-                <div key={areaName} style={{ position: "absolute", ...zone }}>
-                  <div
-                    style={{ display: "flex", flexDirection: "column", gap: 1 }}
-                  >
-                    {items.map((p, i) => (
-                      <div
-                        key={i}
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          gap: 1,
-                          background: "rgba(255,255,255,0.92)",
-                          padding: 10,
-                          borderRadius: 8,
-                          width: 120,
-                        }}
-                      >
-                        {p.imageUrl ? (
-                          <img
-                            src={p.imageUrl}
-                            alt={p.name}
-                            style={{
-                              width: 50,
-                              height: 50,
-                              objectFit: "cover",
-                              borderRadius: 6,
-                            }}
-                          />
-                        ) : (
-                          <div
-                            style={{
-                              width: 100,
-                              height: 100,
-                              background: "#ddd",
-                              borderRadius: 6,
-                            }}
-                          />
-                        )}
-                        <div
-                          style={{ fontSize: "0.75em", textAlign: "center" }}
-                        >
-                          <div style={{ fontWeight: 600 }}>{p.name}</div>
-                          {p.quantity > 1 && <div>× {p.quantity}</div>}
-                          {p.price && (
-                            <div>
-                              ₹{Number(p.price).toLocaleString("en-IN")}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // ── Render Pages ────────────────────────────────────────────────────────
-  const renderPages = (getShouldShowColumn) => {
-    const shouldShowColumn = getShouldShowColumn || (() => true);
-    const pages = [];
-
-    const MAX_PRODUCTS_NORMAL = 10;
-
-    // Reusable Product Table
-    const renderProductTable = (items, title, startSno = 0) => {
-      let localSno = startSno;
-      return (
-        <>
-          <h3 style={{ color: "#d32f2f", margin: "20px 0 10px" }}>{title}</h3>
-          <table className={styles.productTable}>
-            <colgroup>
-              {shouldShowColumn("sno") && <col className={styles.sno} />}
-              {shouldShowColumn("name") && <col className={styles.name} />}
-              {shouldShowColumn("code") && <col className={styles.code} />}
-              {shouldShowColumn("image") && <col className={styles.image} />}
-              {shouldShowColumn("unit") && <col className={styles.unit} />}
-              {shouldShowColumn("mrp") && <col className={styles.mrp} />}
-              {shouldShowColumn("discount") && (
-                <col className={styles.discount} />
-              )}
-              {shouldShowColumn("total") && <col className={styles.total} />}
-            </colgroup>
-
-            <thead>
-              <tr>
-                {shouldShowColumn("sno") && <th>S.No</th>}
-                {shouldShowColumn("name") && <th>Product Name</th>}
-                {shouldShowColumn("code") && <th>Code</th>}
-                {shouldShowColumn("image") && <th>Image</th>}
-                {shouldShowColumn("unit") && <th>Unit</th>}
-                {shouldShowColumn("mrp") && <th>MRP</th>}
-                {shouldShowColumn("discount") && <th>Discount</th>}
-                {shouldShowColumn("total") && <th>Total</th>}
-              </tr>
-            </thead>
-
-            <tbody>
-              {items.map((p) => {
-                const matchingItem =
-                  quotation?.products?.find(
-                    (it) => it.productId === p.productId,
-                  ) ||
-                  quotation?.items?.find(
-                    (it) => it.productId === p.productId,
-                  ) ||
-                  p;
-
-                const code =
-                  matchingItem?.companyCode ||
-                  matchingItem?.productCode ||
-                  p.companyCode ||
-                  "—";
-                const img = matchingItem?.imageUrl || p.imageUrl || "";
-                const mrp = Number(matchingItem?.price ?? p.price ?? 0);
-                const qty = Number(matchingItem?.quantity ?? p.quantity ?? 1);
-                const lineTotal = Number(matchingItem?.total ?? p.total ?? 0);
-                const discValue = Number(matchingItem?.discount ?? 0);
-                const discType = (
-                  matchingItem?.discountType ?? "percent"
-                ).toLowerCase();
-
-                let displayDiscount = "—";
-                if (discValue > 0) {
-                  displayDiscount =
-                    discType === "percent"
-                      ? `${discValue}%`
-                      : `₹${discValue.toFixed(0)}`;
-                }
-
-                localSno++;
-
-                return (
-                  <tr key={p.productId || `item-${localSno}`}>
-                    {shouldShowColumn("sno") && (
-                      <td className={styles.snoCell}>{localSno}.</td>
-                    )}
-                    {shouldShowColumn("name") && (
-                      <td className={styles.prodNameCell}>
-                        {matchingItem?.name || p.name || "—"}
-                      </td>
-                    )}
-                    {shouldShowColumn("code") && <td>{code}</td>}
-                    {shouldShowColumn("image") && (
-                      <td>
-                        {img && (
-                          <img
-                            src={img}
-                            alt={p.name}
-                            className={styles.prodImg}
-                          />
-                        )}
-                      </td>
-                    )}
-                    {shouldShowColumn("unit") && <td>{qty}</td>}
-                    {shouldShowColumn("mrp") && (
-                      <td>₹{mrp.toLocaleString("en-IN")}</td>
-                    )}
-                    {shouldShowColumn("discount") && (
-                      <td className={styles.discountCell}>{displayDiscount}</td>
-                    )}
-                    {shouldShowColumn("total") && (
-                      <td className={styles.totalCell}>
-                        ₹{lineTotal.toLocaleString("en-IN")}
-                      </td>
-                    )}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </>
-      );
-    };
-
-    // ==================== COVER PAGE ====================
-    pages.push(
-      <div key="cover" className={`${styles.coverPage} page`}>
-        <img src={coverImage} alt="Cover" className={styles.coverBg} />
-        <div className={styles.coverContent}>
-          <div className={styles.dynamicCustomerName}>
-            {customerName.toUpperCase()}
-          </div>
-        </div>
-      </div>,
-    );
-
-    // ==================== LETTERHEAD PAGE ====================
-    pages.push(
-      <div key="letterhead" className={`${styles.letterheadPage} page`}>
-        <img
-          src={quotationBgImage}
-          alt="Background"
-          className={styles.letterheadBg}
-        />
-        <div className={styles.letterheadContent}>
-          <div className={`${styles.clientField} ${styles.clientNameField}`}>
-            {customerName}
-          </div>
-          <div className={`${styles.clientField} ${styles.contactField}`}>
-            {customerPhone}
-          </div>
-          <div className={`${styles.clientField} ${styles.addressField}`}>
-            {customerAddress}
-          </div>
-          <div className={`${styles.clientField} ${styles.quotationNoField}`}>
-            {quotation.reference_number || "—"}
-          </div>
-        </div>
-        <div className={styles.letterheadFooter}>
-          <img src={logo} alt="Logo" />
-          <div>
-            487/65, National Market, Peera Garhi, Delhi, 110087
-            <br />
-            0991180605
-            <br />
-            www.cmtradingco.com
-          </div>
-        </div>
-      </div>,
-    );
-
-    // ==================== MAIN PRODUCTS PAGES ====================
-    let remainingMain = [...mainProducts];
-    let globalSno = 0;
-
-    while (remainingMain.length > 0) {
-      const itemsThisPage = remainingMain.slice(0, MAX_PRODUCTS_NORMAL);
-
-      pages.push(
-        <div
-          key={`main-page-${globalSno}`}
-          className={`${styles.productPage} page`}
-        >
-          <div className={styles.pageTopHeader}>
-            <div>
-              <div className={styles.clientName}>{customerName}</div>
-              <div className={styles.clientAddress}>{customerAddress}</div>
-            </div>
-            <div className={styles.pageDate}>
-              {new Date(
-                quotation.quotation_date || Date.now(),
-              ).toLocaleDateString("en-IN", {
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
-              })}
-            </div>
-          </div>
-
-          {renderProductTable(itemsThisPage, "Main Items", globalSno)}
-        </div>,
-      );
-
-      globalSno += itemsThisPage.length;
-      remainingMain = remainingMain.slice(itemsThisPage.length);
+  const handlePopupScroll = (e) => {
+    const target = e.currentTarget;
+    if (
+      target.scrollTop + target.offsetHeight >= target.scrollHeight - 80 &&
+      !isFetching &&
+      hasMore
+    ) {
+      setPage((p) => p + 1);
     }
-
-    // ==================== OPTIONAL PRODUCTS PAGE ====================
-    if (optionalProducts.length > 0) {
-      pages.push(
-        <div key="optional-page" className={`${styles.productPage} page`}>
-          <div className={styles.pageTopHeader}>
-            <div>
-              <div className={styles.clientName}>{customerName}</div>
-              <div className={styles.clientAddress}>{customerAddress}</div>
-            </div>
-            <div className={styles.pageDate}>
-              {new Date(
-                quotation.quotation_date || Date.now(),
-              ).toLocaleDateString("en-IN", {
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
-              })}
-            </div>
-          </div>
-
-          {renderProductTable(optionalProducts, "Optional Items / Add-ons")}
-
-          <div
-            style={{
-              marginTop: 20,
-              fontSize: "0.9em",
-              color: "#666",
-              textAlign: "center",
-            }}
-          >
-            * These are optional items. Final selection will be confirmed at the
-            time of order.
-          </div>
-        </div>,
-      );
-    }
-
-    // ==================== SITE LAYOUT PAGES ====================
-    if (hasSiteLayout) {
-      const roomGroups = groupProductsByFloorAndRoom(allProducts);
-      roomGroups.forEach((roomGroup) => {
-        if (roomGroup.products?.length > 0) {
-          pages.push(renderAreaWisePageForRoom(roomGroup));
-        }
-      });
-    }
-
-    // ==================== NEW SUMMARY PAGE (at the very end) ====================
-    pages.push(
-      <div key="summary-page" className={`${styles.productPage} page`}>
-        <div className={styles.pageTopHeader}>
-          <div>
-            <div className={styles.clientName}>{customerName}</div>
-            <div className={styles.clientAddress}>{customerAddress}</div>
-          </div>
-          <div className={styles.pageDate}>
-            {new Date(
-              quotation.quotation_date || Date.now(),
-            ).toLocaleDateString("en-IN", {
-              day: "2-digit",
-              month: "short",
-              year: "numeric",
-            })}
-          </div>
-        </div>
-
-        <h2
-          style={{
-            color: "#d32f2f",
-            textAlign: "center",
-            margin: "30px 0 20px",
-          }}
-        >
-          PROJECT SUMMARY
-        </h2>
-
-        {/* Floor-wise Breakdown */}
-        <h3 style={{ color: "#d32f2f", margin: "25px 0 10px" }}>
-          Floor-wise Totals
-        </h3>
-        <table className={styles.productTable}>
-          <thead>
-            <tr>
-              <th>Floor</th>
-              <th style={{ textAlign: "right" }}>Amount (₹)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {floorTotals.map((floor, index) => (
-              <tr key={index}>
-                <td>{floor.floorName}</td>
-                <td style={{ textAlign: "right" }}>
-                  ₹{floor.total.toLocaleString("en-IN")}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {/* Final Financial Summary */}
-        <div className={styles.finalSummaryWrapper} style={{ marginTop: 40 }}>
-          <div className={styles.finalSummarySection}>
-            <div className={styles.summaryLeft}>
-              <div className={styles.summaryRow}>
-                <span>Subtotal</span>
-                <span>₹{displaySubtotal.toLocaleString("en-IN")}</span>
-              </div>
-              {displayProductDiscount > 0 && (
-                <div className={styles.summaryRow}>
-                  <span>Total Discount</span>
-                  <span>
-                    -₹
-                    {Math.round(displayProductDiscount).toLocaleString("en-IN")}
-                  </span>
-                </div>
-              )}
-              {backendExtraDiscount > 0 && (
-                <div className={styles.summaryRow}>
-                  <span>Extra Discount</span>
-                  <span>
-                    -₹{Math.round(backendExtraDiscount).toLocaleString("en-IN")}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            <div className={styles.summaryRight}>
-              <div className={styles.totalAmount}>
-                <strong>Total Amount:</strong> ₹
-                {backendFinalAmount.toLocaleString("en-IN")}
-              </div>
-              <div className={styles.amountInWords}>{finalAmountInWords}</div>
-              {backendRoundOff !== 0 && (
-                <div className={styles.roundOffNote}>
-                  (Round off: {backendRoundOff >= 0 ? "+" : "-"}₹
-                  {Math.abs(backendRoundOff).toFixed(2)})
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div
-          style={{
-            marginTop: 30,
-            textAlign: "center",
-            fontSize: "0.9em",
-            color: "#666",
-          }}
-        >
-          Thank you for your business. This quotation is valid for 15 days.
-        </div>
-      </div>,
-    );
-
-    return pages;
   };
 
-  // ── Export Handler ──────────────────────────────────────────
-  const handleExport = async () => {
-    if (!quotationRef.current) return;
-    setIsExporting(true);
-    await new Promise((resolve) => setTimeout(resolve, 120));
+  const customerOptions = useMemo(
+    () =>
+      customers.map((cust) => ({
+        value: cust.customerId,
+        label: (
+          <div style={{ lineHeight: 1.3 }}>
+            <strong>{cust.name || "Unnamed"}</strong>
+            {cust.mobileNumber && (
+              <span style={{ marginLeft: 8, color: "#555" }}>
+                {cust.mobileNumber}
+              </span>
+            )}
+          </div>
+        ),
+        searchText:
+          `${cust.name || ""} ${cust.mobileNumber || ""}`.toLowerCase(),
+      })),
+    [customers],
+  );
+
+  // Address Logic
+  const defaultAddress = useMemo(() => {
+    const billing = addresses.find(
+      (a) => a.customerId === selectedCustomer && a.status === "BILLING",
+    );
+    if (billing) return billing;
+
+    const cust = customers.find((c) => c.customerId === selectedCustomer);
+    if (!cust?.address) return null;
 
     try {
-      const safeTitle = (quotation?.document_title || "Quotation")
-        .replace(/[\\/:*?"<>|]/g, "_")
-        .replace(/\s+/g, "_")
-        .substring(0, 50);
+      return typeof cust.address === "string"
+        ? JSON.parse(cust.address)
+        : cust.address;
+    } catch {
+      return null;
+    }
+  }, [addresses, selectedCustomer, customers]);
 
-      const versionLabel = activeVersionObj.shortLabel || "Latest";
-      const fileName = `${safeTitle}_${versionLabel}`;
+  const filteredAddresses = useMemo(
+    () => addresses.filter((a) => a.customerId === selectedCustomer),
+    [addresses, selectedCustomer],
+  );
 
-      if (exportFormat === "pdf") {
-        await exportToPDF(
-          quotationRef,
-          id,
-          activeVersion,
-          activeVersionData.quotation,
-          `${fileName}.pdf`,
-          { visibleColumns },
+  const hasBillingAddress = useMemo(
+    () =>
+      addresses.some(
+        (a) => a.customerId === selectedCustomer && a.status === "BILLING",
+      ),
+    [addresses, selectedCustomer],
+  );
+
+  const dropdownValue = useMemo(() => {
+    if (useBillingAddress) return billingAddressId || "sameAsBilling";
+    return quotationData.shipTo;
+  }, [useBillingAddress, billingAddressId, quotationData.shipTo]);
+
+  // Follow-up Handlers
+  const handleFollowup = (index, date) => {
+    const dates = [...(quotationData.followupDates || [])];
+    dates[index] = date ? moment(date).format("YYYY-MM-DD") : "";
+    handleQuotationChange("followupDates", dates);
+  };
+
+  const addFollowup = () =>
+    handleQuotationChange("followupDates", [
+      ...(quotationData.followupDates || []),
+      "",
+    ]);
+  const removeFollowup = (index) =>
+    handleQuotationChange(
+      "followupDates",
+      (quotationData.followupDates || []).filter((_, i) => i !== index),
+    );
+
+  // Floor Handlers
+  const addFloor = (values) => {
+    const current = quotationData.floors || [];
+    const newFloor = {
+      floorId: generateFloorId(),
+      floorName: values.name || `Floor ${current.length + 1}`,
+      sortOrder: current.length,
+      rooms: [],
+    };
+    handleQuotationChange("floors", [...current, newFloor]);
+    setFloorModalVisible(false);
+    floorForm.resetFields();
+    message.success("Floor added");
+  };
+
+  const editFloor = (values) => {
+    const updatedFloors = (quotationData.floors || []).map((f) =>
+      f.floorId === editFloorModal.floorId
+        ? { ...f, floorName: values.name.trim() || f.floorName }
+        : f,
+    );
+    handleQuotationChange("floors", updatedFloors);
+
+    const updatedItems = safeCartItems.map((item) =>
+      item.floorId === editFloorModal.floorId
+        ? { ...item, floorName: values.name.trim() || item.floorName }
+        : item,
+    );
+    // Note: setCartItems is not directly available, so we rely on parent if needed
+    message.success("Floor updated");
+    setEditFloorModal({ visible: false, floorId: null });
+    floorForm.resetFields();
+  };
+
+  const showDeleteFloorConfirm = (floorId, floorName) => {
+    const itemsInFloor = safeCartItems.filter(
+      (i) => i.floorId === floorId,
+    ).length;
+    Modal.confirm({
+      title: `Delete floor "${floorName}"?`,
+      icon: <ExclamationCircleOutlined />,
+      content: itemsInFloor
+        ? `${itemsInFloor} item(s) will be unassigned.`
+        : "No items assigned.",
+      okText: "Delete",
+      okType: "danger",
+      onOk() {
+        const updatedFloors = (quotationData.floors || [])
+          .filter((f) => f.floorId !== floorId)
+          .map((f, idx) => ({ ...f, sortOrder: idx }));
+
+        handleQuotationChange("floors", updatedFloors);
+        message.success("Floor deleted");
+      },
+    });
+  };
+
+  // Room Handlers
+  const addRoom = (values) => {
+    const updatedFloors = (quotationData.floors || []).map((floor) =>
+      floor.floorId === roomModal.floorId
+        ? {
+            ...floor,
+            rooms: [
+              ...(floor.rooms || []),
+              {
+                roomId: generateRoomId(floor.floorId),
+                roomName: values.name,
+                sortOrder: floor.rooms?.length || 0,
+                type: values.type,
+                areas: [],
+              },
+            ],
+          }
+        : floor,
+    );
+    handleQuotationChange("floors", updatedFloors);
+    setRoomModal({ visible: false, floorId: null });
+    roomForm.resetFields();
+    message.success("Room added");
+  };
+
+  const editRoom = (values) => {
+    const updatedFloors = (quotationData.floors || []).map((floor) =>
+      floor.floorId === editRoomModal.floorId
+        ? {
+            ...floor,
+            rooms: floor.rooms.map((r) =>
+              r.roomId === editRoomModal.roomId
+                ? { ...r, roomName: values.name.trim(), type: values.type }
+                : r,
+            ),
+          }
+        : floor,
+    );
+    handleQuotationChange("floors", updatedFloors);
+    message.success("Room updated");
+    setEditRoomModal({ visible: false, floorId: null, roomId: null });
+    roomForm.resetFields();
+  };
+
+  const showDeleteRoomConfirm = (floorId, roomId, roomName) => {
+    const itemsInRoom = safeCartItems.filter((i) => i.roomId === roomId).length;
+    Modal.confirm({
+      title: `Delete room "${roomName}"?`,
+      content: itemsInRoom
+        ? `${itemsInRoom} item(s) will lose room assignment.`
+        : "No items assigned.",
+      okText: "Delete",
+      okType: "danger",
+      onOk() {
+        const updatedFloors = (quotationData.floors || []).map((floor) =>
+          floor.floorId === floorId
+            ? {
+                ...floor,
+                rooms: floor.rooms
+                  .filter((r) => r.roomId !== roomId)
+                  .map((r, idx) => ({ ...r, sortOrder: idx })),
+              }
+            : floor,
         );
-      } else {
-        await exportToExcel(
-          mainProducts,
-          [],
-          customerName,
-          brandNames,
-          activeVersionData.quotation,
-          customerAddress,
-          logo,
-          {
-            bankName: "IDFC FIRST BANK",
-            accountNumber: "10179373657",
-            ifscCode: "IDFB0020149",
-            branch: "BHERA ENCLAVE PASCHIM VIHAR",
-          },
-          id,
-          activeVersion,
-          optionalProducts,
-          `${fileName}.xlsx`,
-          { visibleColumns },
-        );
-      }
-      message.success(`${exportFormat.toUpperCase()} exported successfully!`);
-    } catch (err) {
-      message.error("Export failed. Please try again.");
-    } finally {
-      setIsExporting(false);
+        handleQuotationChange("floors", updatedFloors);
+        message.success("Room deleted");
+      },
+    });
+  };
+
+  // Area Handlers
+  const addArea = (values) => {
+    const selectedArea = AREA_OPTIONS.find(
+      (opt) => opt.value === values.areaType,
+    );
+    if (!selectedArea) return message.error("Please select a valid area type");
+
+    const updatedFloors = (quotationData.floors || []).map((floor) =>
+      floor.floorId === areaModal.floorId
+        ? {
+            ...floor,
+            rooms: (floor.rooms || []).map((room) =>
+              room.roomId === areaModal.roomId
+                ? {
+                    ...room,
+                    areas: [
+                      ...(room.areas || []),
+                      {
+                        id: generateAreaId(room.roomId),
+                        name: selectedArea.label,
+                        value: selectedArea.value,
+                      },
+                    ],
+                  }
+                : room,
+            ),
+          }
+        : floor,
+    );
+
+    handleQuotationChange("floors", updatedFloors);
+    setAreaModal({ visible: false, floorId: null, roomId: null });
+    areaForm.resetFields();
+    message.success(`${selectedArea.label} added`);
+  };
+
+  // Item Assignment
+  const openAssignModal = (itemId) => setAssignModal({ visible: true, itemId });
+
+  const handleMultiAssign = (itemId, assignments) => {
+    if (handleAssignItem && assignments.length > 0) {
+      const first = assignments[0];
+      handleAssignItem(itemId, first.floorId, first.roomId, first.areaId);
+      message.success("Item assigned successfully");
     }
   };
 
-  // Loading & Error States
-  if (qLoading || vLoading || custLoading || addrLoading) {
+  if (!safeCartItems.length) {
     return (
-      <Spin
-        tip="Loading Quotation Details..."
-        size="large"
-        style={{ marginTop: 100, display: "block", textAlign: "center" }}
-      />
-    );
-  }
-
-  if (qError || !quotation) {
-    return (
-      <Alert
-        message="Quotation not found"
-        type="error"
-        showIcon
-        style={{ margin: "40px" }}
-      />
+      <CompactCard>
+        <Empty
+          description="Cart is empty"
+          image={<DeleteOutlined style={{ fontSize: 48 }} />}
+        />
+        <Button
+          type="primary"
+          icon={<ArrowLeftOutlined />}
+          onClick={() => setActiveTab("cart")}
+          block
+        >
+          Back to Cart
+        </Button>
+      </CompactCard>
     );
   }
 
   return (
-    <>
-      <Helmet>
-        <title>
-          {quotation.document_title || "Quotation"} -{" "}
-          {quotation.reference_number}
-        </title>
-      </Helmet>
+    <Row gutter={[16, 16]}>
+      <Col xs={24} md={16}>
+        <CompactCard title={<Title level={5}>Quotation Details</Title>}>
+          <Collapse defaultActiveKey={["1", "2", "4"]} ghost>
+            {/* Customer & Address */}
+            <Panel header="Customer & Address" key="1">
+              <TightRow gutter={8}>
+                <Col span={8}>
+                  <Text strong>
+                    Customer <span style={{ color: "red" }}>*</span>
+                  </Text>
+                </Col>
+                <Col span={16}>
+                  <Space.Compact style={{ width: "100%" }}>
+                    <Select
+                      showSearch
+                      placeholder="Search by name, phone..."
+                      value={selectedCustomer}
+                      onChange={setSelectedCustomer}
+                      onSearch={handleSearchChange}
+                      filterOption={(input, option) =>
+                        option?.searchText?.includes(input.toLowerCase())
+                      }
+                      onPopupScroll={handlePopupScroll}
+                      options={customerOptions}
+                      loading={isFetching}
+                      style={{ flex: 1 }}
+                      allowClear
+                    />
+                    <Button
+                      type="primary"
+                      icon={<PlusOutlined />}
+                      onClick={handleAddCustomer}
+                      style={{ minWidth: 40 }}
+                    />
+                  </Space.Compact>
+                </Col>
+              </TightRow>
 
-      <div
-        className="page-wrapper"
-        style={{ position: "relative", minHeight: "100vh" }}
-      >
-        <div className="content">
-          {/* TOP BAR */}
-          <div
-            style={{
-              padding: "16px 40px",
-              background: "#fff",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-            }}
-          >
-            <div
-              style={{
-                maxWidth: 1400,
-                margin: "0 auto",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                flexWrap: "wrap",
-                gap: 20,
-              }}
-            >
-              <div>
-                <Title level={3} style={{ margin: 0, color: "#E31E24" }}>
-                  {quotation.document_title || "Quotation"}
-                  {activeVersion !== "current" && (
-                    <Tag color="blue" style={{ marginLeft: 12 }}>
-                      Version {activeVersion}
-                    </Tag>
-                  )}
-                </Title>
-                <Text type="secondary">
-                  {quotation.reference_number || "—"} • {customerName} •{" "}
-                  {brandNames}
-                </Text>
-              </div>
-
-              <Space size="middle" wrap>
-                <Dropdown
-                  placement="bottomRight"
-                  trigger={["click"]}
-                  dropdownRender={() => (
-                    <div
-                      style={{
-                        padding: "16px 20px",
-                        background: "#fff",
-                        borderRadius: 8,
-                        boxShadow: "0 6px 16px rgba(0,0,0,0.12)",
-                        minWidth: 220,
+              <TightRow gutter={8}>
+                <Col span={8}>
+                  <Text strong>Shipping Address</Text>
+                </Col>
+                <Col span={16}>
+                  <Space.Compact style={{ width: "100%" }}>
+                    <MiniSelect
+                      value={dropdownValue}
+                      onChange={(v) => {
+                        if (v === "sameAsBilling") {
+                          setUseBillingAddress(true);
+                          setBillingAddressId(null);
+                          handleQuotationChange("shipTo", null);
+                        } else {
+                          setUseBillingAddress(false);
+                          setBillingAddressId(v);
+                          handleQuotationChange("shipTo", v);
+                        }
                       }}
+                      disabled={!selectedCustomer}
                     >
-                      <div
-                        style={{
-                          fontWeight: 600,
-                          marginBottom: 12,
-                          color: "#333",
-                        }}
-                      >
-                        Columns to include in export
-                      </div>
+                      {defaultAddress && !hasBillingAddress && (
+                        <Option value="sameAsBilling">
+                          Same as Billing Address
+                        </Option>
+                      )}
+                      {filteredAddresses.map((a) => (
+                        <Option key={a.addressId} value={a.addressId}>
+                          {a.street?.slice(0, 40)}
+                          {a.street?.length > 40 ? "..." : ""}, {a.city} (
+                          {a.status})
+                        </Option>
+                      ))}
+                    </MiniSelect>
+                    <Button
+                      type="primary"
+                      onClick={handleAddAddress}
+                      disabled={!selectedCustomer}
+                      style={{ minWidth: 40 }}
+                    >
+                      +
+                    </Button>
+                  </Space.Compact>
+                </Col>
+              </TightRow>
+            </Panel>
 
-                      <Checkbox.Group
-                        style={{ width: "100%" }}
-                        value={Object.keys(visibleColumns).filter(
-                          (k) => visibleColumns[k],
-                        )}
-                        onChange={(checkedValues) => {
-                          setVisibleColumns({
-                            sno: checkedValues.includes("sno"),
-                            name: checkedValues.includes("name"),
-                            code: checkedValues.includes("code"),
-                            image: checkedValues.includes("image"),
-                            unit: checkedValues.includes("unit"),
-                            mrp: checkedValues.includes("mrp"),
-                            discount: checkedValues.includes("discount"),
-                            total: checkedValues.includes("total"),
-                          });
-                        }}
-                      >
-                        <Space
-                          direction="vertical"
-                          size={10}
-                          style={{ width: "100%" }}
-                        >
-                          <Checkbox value="sno">S.No</Checkbox>
-                          <Checkbox value="name">Product Name</Checkbox>
-                          <Checkbox value="code">Code</Checkbox>
-                          <Checkbox value="image">Image</Checkbox>
-                          <Divider style={{ margin: "8px 0" }} />
-                          <Checkbox value="unit">Unit / Qty</Checkbox>
-                          <Checkbox value="mrp">MRP</Checkbox>
-                          <Checkbox value="discount">Discount</Checkbox>
-                          <Checkbox value="total">Total</Checkbox>
-                        </Space>
-                      </Checkbox.Group>
+            {/* Dates & Follow-ups */}
+            <Panel header="Dates & Follow-ups" key="2">
+              <TightRow gutter={8}>
+                <Col span={8}>
+                  <Text strong>Due Date *</Text>
+                </Col>
+                <Col span={16}>
+                  <MiniDate
+                    selected={momentToDate(
+                      quotationData.dueDate
+                        ? moment(quotationData.dueDate)
+                        : null,
+                    )}
+                    onChange={(d) =>
+                      handleQuotationChange(
+                        "dueDate",
+                        d ? moment(d).format("YYYY-MM-DD") : "",
+                      )
+                    }
+                    minDate={new Date()}
+                    dateFormat="dd/MM/yyyy"
+                  />
+                </Col>
+              </TightRow>
 
-                      <Divider style={{ margin: "12px 0 8px" }} />
+              <TightRow gutter={8}>
+                <Col span={8}>
+                  <Text strong>Follow-ups</Text>
+                </Col>
+                <Col span={16}>
+                  {(quotationData.followupDates || []).map((d, i) => (
+                    <Space key={i} style={{ width: "100%", marginBottom: 8 }}>
+                      <MiniDate
+                        selected={momentToDate(d ? moment(d) : null)}
+                        onChange={(date) => handleFollowup(i, date)}
+                        minDate={new Date()}
+                      />
+                      <Button
+                        danger
+                        size="small"
+                        icon={<DeleteOutlined />}
+                        onClick={() => removeFollowup(i)}
+                      />
+                    </Space>
+                  ))}
+                  <Button
+                    size="small"
+                    icon={<PlusOutlined />}
+                    onClick={addFollowup}
+                  >
+                    Add Follow-up
+                  </Button>
+                </Col>
+              </TightRow>
+            </Panel>
 
-                      <div style={{ textAlign: "right" }}>
+            {/* Site Layout Panel - Fully Integrated */}
+            <Panel
+              header={
+                <Space>
+                  <ApartmentOutlined /> Site Layout & Areas
+                </Space>
+              }
+              key="4"
+            >
+              <Space style={{ marginBottom: 16 }}>
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={() => setFloorModalVisible(true)}
+                >
+                  Add Floor
+                </Button>
+              </Space>
+
+              <Collapse ghost>
+                {(quotationData.floors || []).map((floor) => (
+                  <Panel
+                    key={floor.floorId}
+                    header={
+                      <Space>
+                        <HomeOutlined />
+                        <Text strong>{floor.floorName}</Text>
+                        <Tag color="blue">{floor.rooms?.length || 0} rooms</Tag>
+                        <Tag color="default">
+                          {floorSummary.find((s) => s.name === floor.floorName)
+                            ?.itemCount || 0}{" "}
+                          items
+                        </Tag>
+                      </Space>
+                    }
+                    extra={
+                      <Space size="small">
                         <Button
                           size="small"
-                          type="link"
+                          icon={<EditOutlined />}
+                          onClick={() => {
+                            floorForm.setFieldsValue({ name: floor.floorName });
+                            setEditFloorModal({
+                              visible: true,
+                              floorId: floor.floorId,
+                            });
+                          }}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          size="small"
+                          danger
+                          icon={<DeleteOutlined />}
                           onClick={() =>
-                            setVisibleColumns({
-                              sno: true,
-                              name: true,
-                              code: true,
-                              image: true,
-                              unit: true,
-                              mrp: true,
-                              discount: true,
-                              total: true,
+                            showDeleteFloorConfirm(
+                              floor.floorId,
+                              floor.floorName,
+                            )
+                          }
+                        />
+                        <Button
+                          size="small"
+                          icon={<PlusOutlined />}
+                          onClick={() =>
+                            setRoomModal({
+                              visible: true,
+                              floorId: floor.floorId,
                             })
                           }
                         >
-                          Reset to default
+                          Add Room
                         </Button>
-                      </div>
-                    </div>
-                  )}
-                >
-                  <Button icon={<SettingOutlined />}>
-                    Export Columns{" "}
-                    {Object.values(visibleColumns).filter(Boolean).length}/8
-                  </Button>
-                </Dropdown>
-
-                <Divider type="vertical" style={{ height: 120 }} />
-
-                <Space>
-                  <select
-                    value={exportFormat}
-                    onChange={(e) => setExportFormat(e.target.value)}
-                    style={{
-                      padding: "8px 14px",
-                      borderRadius: 6,
-                      borderColor: "#d9d9d9",
-                    }}
-                    disabled={isExporting}
-                  >
-                    <option value="pdf">Export as PDF</option>
-                    <option value="excel">Export as Excel</option>
-                  </select>
-
-                  <Button
-                    type="primary"
-                    size="large"
-                    loading={isExporting}
-                    onClick={handleExport}
-                    icon={
-                      exportFormat === "pdf" ? (
-                        <FilePdfFilled />
-                      ) : (
-                        <FileExcelFilled />
-                      )
-                    }
-                    style={{ background: "#E31E24", border: "none" }}
-                  >
-                    {isExporting ? "Exporting..." : "Export"}
-                  </Button>
-                </Space>
-
-                <Button
-                  icon={<ArrowLeftOutlined />}
-                  size="large"
-                  style={{
-                    background: "#E31E24",
-                    color: "#fff",
-                    border: "none",
-                  }}
-                >
-                  <Link to="/quotations/list" style={{ color: "#fff" }}>
-                    Back
-                  </Link>
-                </Button>
-              </Space>
-            </div>
-          </div>
-
-          {/* MAIN PREVIEW AREA */}
-          <div
-            style={{
-              padding: "32px 40px",
-              background: "#f9f9f9",
-              minHeight: "calc(100vh - 220px)",
-            }}
-          >
-            <div className={styles.printArea}>{renderPages(() => true)}</div>
-          </div>
-
-          {/* STICKY VERSION TABS */}
-          <div
-            style={{
-              position: "sticky",
-              bottom: 0,
-              left: 0,
-              right: 0,
-              background: "#fff",
-              borderTop: "1px solid #e8e8e8",
-              boxShadow: "0 -4px 16px rgba(0,0,0,0.08)",
-              zIndex: 1000,
-              padding: "12px 40px",
-            }}
-          >
-            <div style={{ maxWidth: 1400, margin: "0 auto" }}>
-              <Tabs
-                activeKey={activeVersion}
-                onChange={setActiveVersion}
-                tabBarExtraContent={
-                  <Tooltip title="Version history">
-                    <Button type="text" icon={<HistoryOutlined />}>
-                      History
-                    </Button>
-                  </Tooltip>
-                }
-                centered
-                size="default"
-              >
-                {versions.map((ver) => (
-                  <Tabs.TabPane
-                    key={ver.version}
-                    tab={
-                      <Space size={8}>
-                        <span>{ver.label}</span>
-                        {ver.isCurrent && <Tag color="green">Latest</Tag>}
-                        <Text type="secondary" style={{ fontSize: "0.85em" }}>
-                          {ver.timeAgo}
-                        </Text>
                       </Space>
                     }
-                  />
+                  >
+                    {floor.rooms?.map((room) => (
+                      <Card
+                        key={room.roomId}
+                        size="small"
+                        title={room.roomName}
+                        style={{ marginBottom: 12 }}
+                      >
+                        <Space wrap>
+                          {room.areas?.map((area) => (
+                            <Tag
+                              key={area.id}
+                              color="cyan"
+                              closable
+                              onClose={() => {
+                                // Area remove logic
+                                message.info(
+                                  "Area remove logic can be added here",
+                                );
+                              }}
+                            >
+                              {area.name}
+                            </Tag>
+                          ))}
+                        </Space>
+                        <Button
+                          size="small"
+                          type="dashed"
+                          icon={<PlusOutlined />}
+                          onClick={() =>
+                            setAreaModal({
+                              visible: true,
+                              floorId: floor.floorId,
+                              roomId: room.roomId,
+                            })
+                          }
+                        >
+                          Add Area
+                        </Button>
+                      </Card>
+                    ))}
+                  </Panel>
                 ))}
-              </Tabs>
-            </div>
-          </div>
+              </Collapse>
 
-          {/* Hidden export container */}
-          <div
-            ref={quotationRef}
-            style={{ position: "absolute", left: "-9999px", top: 0 }}
+              {unassignedCount > 0 && (
+                <Alert
+                  message={`${unassignedCount} item(s) not assigned`}
+                  type="warning"
+                  showIcon
+                  style={{ marginTop: 16 }}
+                />
+              )}
+            </Panel>
+          </Collapse>
+
+          {/* Cart Items */}
+          <Divider orientation="left">Cart Items & Location Assignment</Divider>
+          <Space direction="vertical" style={{ width: "100%" }} size="middle">
+            {safeCartItems.map((item) => (
+              <Card
+                key={item.id}
+                size="small"
+                title={
+                  <Space>
+                    <Text strong>{item.name}</Text>
+                    <Tag color="blue">×{item.quantity || 1}</Tag>
+                  </Space>
+                }
+                extra={
+                  <Button
+                    type="link"
+                    icon={<PushpinOutlined />}
+                    onClick={() => openAssignModal(item.id)}
+                  >
+                    {item.floorId ? "Change" : "Assign"}
+                  </Button>
+                }
+              >
+                <Text>₹{(item.price || 0).toLocaleString()}</Text>
+              </Card>
+            ))}
+          </Space>
+
+          <Divider />
+
+          <Button block size="large" onClick={() => setPreviewVisible(true)}>
+            Preview Quotation
+          </Button>
+
+          <CheckoutBtn
+            block
+            size="large"
+            icon={<CheckCircleOutlined />}
+            onClick={() => {
+              if (!selectedCustomer)
+                return message.error("Please select a customer");
+              if (!quotationData.dueDate)
+                return message.error("Please select due date");
+
+              const finalQuotationData = {
+                ...quotationData,
+                floors: getCleanFloorsForPayload,
+              };
+              handleCreateDocument(finalQuotationData);
+            }}
           >
-            {isExporting && (
-              <div className={styles.printArea}>
-                {renderPages((col) => visibleColumns[col] ?? true)}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </>
+            Create Quotation
+          </CheckoutBtn>
+        </CompactCard>
+      </Col>
+
+      <Col xs={24} md={8}>
+        <CompactCard
+          title="Order Summary"
+          style={{ position: "sticky", top: 16 }}
+        >
+          <OrderTotal
+            subTotal={subTotal}
+            discount={discount}
+            tax={tax}
+            shipping={shipping}
+          />
+        </CompactCard>
+      </Col>
+
+      {/* All Modals */}
+      <AddFloorModal
+        visible={floorModalVisible}
+        onCancel={() => setFloorModalVisible(false)}
+        onFinish={addFloor}
+        form={floorForm}
+      />
+      <EditFloorModal
+        visible={editFloorModal.visible}
+        onCancel={() => setEditFloorModal({ visible: false, floorId: null })}
+        onFinish={editFloor}
+        form={floorForm}
+        floorName={
+          quotationData.floors?.find(
+            (f) => f.floorId === editFloorModal.floorId,
+          )?.floorName
+        }
+      />
+      <AddEditRoomModal
+        visible={roomModal.visible || editRoomModal.visible}
+        isEdit={editRoomModal.visible}
+        onCancel={() => {
+          setRoomModal({ visible: false, floorId: null });
+          setEditRoomModal({ visible: false, floorId: null, roomId: null });
+        }}
+        onFinish={editRoomModal.visible ? editRoom : addRoom}
+        form={roomForm}
+      />
+      <AddAreaModal
+        visible={areaModal.visible}
+        onCancel={() =>
+          setAreaModal({ visible: false, floorId: null, roomId: null })
+        }
+        onFinish={addArea}
+        form={areaForm}
+      />
+      <AssignItemModal
+        visible={assignModal.visible}
+        onCancel={() => setAssignModal({ visible: false, itemId: null })}
+        item={safeCartItems.find((i) => i.id === assignModal.itemId)}
+        floors={quotationData.floors || []}
+        onAssign={handleMultiAssign}
+      />
+    </Row>
   );
 };
 
-export default NewQuotationsDetails;
+export default React.memo(QuotationForm);

@@ -3,83 +3,86 @@ import { useGetProductsByIdsQuery } from "../api/productApi";
 import { useMemo, useEffect } from "react";
 
 /**
- * Efficient hook that fetches product details in bulk using RTK Query.
- * Automatically caches results and avoids N+1 requests.
+ * Optimized hook to fetch product details for cart items in bulk.
+ * Uses stable product ID list + memoization to minimize re-renders and refetches.
  *
- * @param {Array<{ productId: string }>} rawProducts - Array of items with productId
+ * @param {Array} rawProducts - Array of cart items (each should have `productId`)
  * @returns {{ productsData: Array, loading: boolean, errors: Array }}
  */
 export default function useProductsData(rawProducts = []) {
-  // Extract unique, valid product IDs
+  // Step 1: Extract unique productIds — only when rawProducts actually changes
   const productIds = useMemo(() => {
-    const ids = rawProducts.map((item) => item?.productId).filter(Boolean);
+    if (!Array.isArray(rawProducts) || rawProducts.length === 0) return [];
 
-    return [...new Set(ids)]; // dedupe
+    const ids = rawProducts
+      .map((item) => item?.productId || item?.id)
+      .filter(Boolean);
+
+    return [...new Set(ids)]; // deduplicate
   }, [rawProducts]);
 
+  // Step 2: Fetch products only when productIds array is stable and non-empty
   const {
     data: fetchedProducts = [],
     isLoading,
     isFetching,
     isError,
     error,
-    isUninitialized,
   } = useGetProductsByIdsQuery(productIds, {
     skip: productIds.length === 0,
+    // Important: Only refetch if the ID list actually changes
+    refetchOnMountOrArgChange: true,
   });
+
+  // Optional: Log errors/warnings once
   useEffect(() => {
     if (isError) {
-      console.error("RTK Query error:", error);
+      console.error("useProductsData: Failed to fetch products", {
+        productIds,
+        error: error?.data || error,
+      });
+    } else if (
+      productIds.length > 0 &&
+      fetchedProducts.length === 0 &&
+      !isLoading
+    ) {
+      console.warn(
+        "useProductsData: No products returned for valid IDs",
+        productIds,
+      );
     }
-    if (productIds.length > 0 && !isLoading && fetchedProducts.length === 0) {
-      console.warn("EMPTY RESULT FOR VALID IDS → most likely backend issue");
-    }
-    console.groupEnd();
-  }, [
-    productIds,
-    fetchedProducts,
-    isLoading,
-    isFetching,
-    isError,
-    error,
-    isUninitialized,
-  ]);
-  // Map back to original order + include quantity if needed
+  }, [isError, error, productIds, fetchedProducts.length, isLoading]);
+
+  // Step 3: Map fetched products back to original cart items (preserving order + quantity)
   const productsData = useMemo(() => {
-    if (!Array.isArray(fetchedProducts)) return [];
+    if (!Array.isArray(fetchedProducts) || fetchedProducts.length === 0) {
+      return [];
+    }
 
-    const productMap = fetchedProducts.reduce((map, product) => {
-      map[product.productId] = product;
-      return map;
-    }, {});
+    const productMap = new Map(fetchedProducts.map((p) => [p.productId, p]));
 
-    // Preserve original order from input array
     return rawProducts
       .map((item) => {
-        const product = productMap[item.productId];
+        const product = productMap.get(item?.productId || item?.id);
         if (!product) return null;
+
         return {
           ...product,
-          quantity: item.quantity || 1, // useful for top products / carts
+          quantity: Number(item.quantity) || 1,
+          // You can add more cart-specific fields here if needed
+          // e.g. floorId, assignedQuantity, etc.
         };
       })
       .filter(Boolean);
   }, [fetchedProducts, rawProducts]);
-  // ← Add this
-  useEffect(() => {
-    if (isError) {
-      console.error("Failed to load products:", error);
-    } else if (productIds.length > 0 && fetchedProducts.length === 0) {
-      console.warn("No products returned for IDs:", productIds);
-    }
-  }, [isError, error, productIds, fetchedProducts]);
+
   const errors = isError
-    ? [{ error: error?.data?.message || "Failed to fetch products" }]
+    ? [{ message: error?.data?.message || "Failed to fetch product details" }]
     : [];
 
   return {
     productsData,
-    loading: isLoading,
+    loading: isLoading || isFetching,
     errors,
   };
 }

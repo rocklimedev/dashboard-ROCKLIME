@@ -6,7 +6,7 @@ import moment from "moment";
 import { v4 as uuidv4 } from "uuid";
 
 import CartLayout from "./CartLayout";
-import QuotationForm from "./QuotationForm";
+import QuotationForm from "./QuotationForm"; // Corrected path (adjust if needed)
 import PreviewQuotation from "../../components/Quotation/PreviewQuotation";
 import AddAddress from "../../components/Address/AddAddressModal";
 import AddCustomerModal from "../../components/Customers/AddCustomerModal";
@@ -49,7 +49,7 @@ const NewQuotation = () => {
   // ── Queries ──────────────────────────────────────────────────
   const { data: customersData } = useGetCustomersQuery({ limit: 500 });
   const { data: addressesData, refetch: refetchAddresses } =
-    useGetAllAddressesQuery(selectedCustomer, {
+    useGetAllAddressesQuery(selectedCustomer || undefined, {
       skip: !selectedCustomer,
     });
 
@@ -58,7 +58,15 @@ const NewQuotation = () => {
 
   // ── Create Quotation Handler ─────────────────────────────────
   const handleCreateQuotation = async (layoutProps) => {
-    const { localCartItems, shipping, gst } = layoutProps;
+    const {
+      localCartItems,
+      calculationCartItems,
+      shipping,
+      gst,
+      itemDiscounts,
+      itemDiscountTypes,
+      itemTaxes,
+    } = layoutProps;
 
     if (!selectedCustomer) {
       return message.error("Please select a customer.");
@@ -67,13 +75,13 @@ const NewQuotation = () => {
       return message.error("Cart is empty. Please add items.");
     }
     if (!quotationData.dueDate) {
-      return message.error("Please select a valid due date (YYYY-MM-DD).");
+      return message.error("Please select a valid due date.");
     }
     if (moment(quotationData.dueDate).isBefore(moment(), "day")) {
       return message.error("Due date cannot be in the past.");
     }
 
-    // Shipping Address Logic
+    // ── Shipping Address Logic ───────────────────────────────
     let finalShipTo = null;
 
     if (useBillingAddress) {
@@ -112,7 +120,9 @@ const NewQuotation = () => {
         try {
           const response = await createAddress(payload).unwrap();
           finalShipTo = response.addressId;
-          message.success("Shipping address created from default.");
+          message.success(
+            "Shipping address created from default billing address.",
+          );
         } catch (apiError) {
           return message.error(
             apiError?.data?.message || "Failed to create shipping address.",
@@ -121,6 +131,7 @@ const NewQuotation = () => {
       }
     } else {
       finalShipTo = quotationData.shipTo;
+
       if (finalShipTo) {
         const addr = addresses.find((a) => a.addressId === finalShipTo);
         if (!addr) {
@@ -133,16 +144,32 @@ const NewQuotation = () => {
       return message.error("Please select or create a shipping address.");
     }
 
-    // Prepare Items
-    const safeItems = localCartItems.map((item) => ({
-      ...item,
-      floorId: item.floorId || null,
-      floorName: item.floorName || null,
-      roomId: item.roomId || null,
-      roomName: item.roomName || null,
-      areaId: item.areaId || null,
-      areaName: item.areaName || null,
-    }));
+    // ── Enrich Items with Discounts & Taxes ───────────────────
+    const enrichedItems = calculationCartItems.map((item) => {
+      const productId = item.productId || item.id;
+      const subtotal = (item.price || 0) * (item.quantity || 1);
+      const discVal = Number(itemDiscounts[productId]) || 0;
+      const discType = itemDiscountTypes[productId] || "percent";
+      const discountAmount =
+        discType === "percent"
+          ? (subtotal * discVal) / 100
+          : discVal * (item.quantity || 1);
+
+      return {
+        ...item,
+        floorId: item.floorId || null,
+        floorName: item.floorName || null,
+        roomId: item.roomId || null,
+        roomName: item.roomName || null,
+        areaId: item.areaId || null,
+        areaName: item.areaName || null,
+        discount: discVal,
+        discountType: discType,
+        tax: Number(itemTaxes[productId]) || 0,
+        subtotal,
+        discountAmount,
+      };
+    });
 
     const quotationPayload = {
       quotationId: uuidv4(),
@@ -159,7 +186,7 @@ const NewQuotation = () => {
       signature_name: quotationData.signatureName || "CM TRADING CO",
       signature_image: quotationData.signatureImage || "",
       floors: quotationData.floors || [],
-      products: safeItems,
+      products: enrichedItems,
       followupDates: quotationData.followupDates?.filter(Boolean) || [],
       createdBy: auth?.userId,
     };
@@ -167,7 +194,7 @@ const NewQuotation = () => {
     try {
       const result = await createQuotation(quotationPayload).unwrap();
       message.success(
-        `Quotation ${result.quotation?.reference_number} created!`,
+        `Quotation ${result.quotation?.reference_number} created successfully!`,
       );
       navigate("/quotations/list");
     } catch (err) {
@@ -175,7 +202,7 @@ const NewQuotation = () => {
     }
   };
 
-  // Modal Handlers
+  // ── Modal Handlers ───────────────────────────────────────────
   const handleAddCustomer = () => setShowAddCustomerModal(true);
 
   const handleCustomerSave = (newCustomer) => {
@@ -195,7 +222,7 @@ const NewQuotation = () => {
 
   return (
     <>
-      <CartLayout documentType="Quotation">
+      <CartLayout>
         {(layoutProps) => (
           <>
             <QuotationForm
@@ -220,7 +247,7 @@ const NewQuotation = () => {
               handleAssignItem={layoutProps.handleAssignItemToLocation}
             />
 
-            {/* PreviewQuotation - Now fully connected with layoutProps */}
+            {/* Preview Modal */}
             <PreviewQuotation
               visible={previewVisible}
               onClose={() => setPreviewVisible(false)}

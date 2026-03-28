@@ -1,14 +1,12 @@
 // src/pages/quotations/CartLayout.jsx
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import { Tabs, Modal, Typography, message } from "antd";
+import { useNavigate, useLocation } from "react-router-dom";
+import { Tabs, Modal, Typography, Segmented, message } from "antd";
 import { ShoppingCartOutlined, CheckCircleOutlined } from "@ant-design/icons";
 import { useDispatch } from "react-redux";
 import { v4 as uuidv4 } from "uuid";
-import moment from "moment";
-import styled from "styled-components";
+import CartTab from "./CartTab";
 
-import CartTab from "../../components/POS-NEW/Cart";
 import {
   useGetCartQuery,
   useUpdateCartMutation,
@@ -17,93 +15,96 @@ import {
   cartApi,
 } from "../../api/cartApi";
 
-import useProductsData from "../../utils/useProductdata";
+import useProductsData from "../../utils/useProductdata"; // or useProductsData.js
 import { useAuth } from "../../context/AuthContext";
-
+import { useGetProfileQuery } from "../../api/userApi";
 const { TabPane } = Tabs;
 const { Text } = Typography;
 
-const PageWrapper = styled.div`
-  padding: 16px;
-  background-color: #f5f5f5;
-  min-height: 100vh;
-  @media (min-width: 768px) {
-    padding: 24px;
-  }
-`;
+const documentOptions = [
+  { label: "Quotation", value: "quotation" },
+  { label: "Order", value: "order" },
+  { label: "Purchase Order", value: "purchase-order" },
+];
 
-const CartLayout = ({ documentType, children }) => {
+const CartLayout = ({ children }) => {
   const { auth } = useAuth();
   const dispatch = useDispatch();
-  const userId = auth?.userId;
+  const navigate = useNavigate();
+  const { data: profileData } = useGetProfileQuery();
+  const location = useLocation();
+  const user = profileData?.user ?? {};
+  const userId = user.userId;
 
-  // ── Core Cart State ─────────────────────────────────────────────
+  // Determine document type from route
+  const getInitialDocumentType = () => {
+    const path = location.pathname.toLowerCase();
+    if (path.includes("purchase-order")) return "purchase-order";
+    if (path.includes("order")) return "order";
+    return "quotation";
+  };
+
   const [activeTab, setActiveTab] = useState("cart");
+  const [documentType, setDocumentType] = useState(getInitialDocumentType);
+
+  // ── Core State ─────────────────────────────────────────────
   const [localCartItems, setLocalCartItems] = useState([]);
   const [showClearCartModal, setShowClearCartModal] = useState(false);
 
-  // ── Item Level Adjustments ──────────────────────────────────────
+  // ── Item-level adjustments ────────────────────────────────
   const [itemDiscounts, setItemDiscounts] = useState({});
   const [itemTaxes, setItemTaxes] = useState({});
   const [itemDiscountTypes, setItemDiscountTypes] = useState({});
   const [updatingItems, setUpdatingItems] = useState({});
 
-  // ── Shared Document Fields ──────────────────────────────────────
+  // ── Common fields ─────────────────────────────────────────
   const [shipping, setShipping] = useState(0);
   const [gst, setGst] = useState(0);
 
-  // ── Queries & Mutations ─────────────────────────────────────────
+  // ── Queries & Mutations ───────────────────────────────────
   const { data: cartData } = useGetCartQuery(userId, { skip: !userId });
+
   const [updateCart] = useUpdateCartMutation();
   const [clearCart] = useClearCartMutation();
   const [removeFromCart] = useRemoveFromCartMutation();
 
   const allCartItems = useMemo(() => cartData?.cart?.items || [], [cartData]);
-
-  // ── Sync Local Cart + Migration ─────────────────────────────────
+  console.log(allCartItems);
+  // Sync local cart with server data + migration logic
+  // Sync local cart with server data + migration logic
   useEffect(() => {
-    if (!allCartItems.length) {
-      setLocalCartItems([]);
-      return;
-    }
+    // Only update when we actually have cartData (even if empty)
+    if (!cartData) return; // Wait for query to resolve at least once
 
     setLocalCartItems((prev) => {
       const prevMap = new Map(
         prev.map((item) => [item.id || item.productId, item]),
       );
 
+      // If server cart is empty, clear local cart
+      if (!allCartItems.length) {
+        return [];
+      }
+
       return allCartItems.map((serverItem) => {
         const id = serverItem.id || serverItem.productId || uuidv4();
         const local = prevMap.get(id);
 
-        let floorId = local?.floorId || serverItem.floorId;
-        let floorName = local?.floorName || serverItem.floorName;
-        let roomId = local?.roomId || serverItem.roomId;
-        let roomName = local?.roomName || serverItem.roomName;
-        let areaId = local?.areaId || serverItem.areaId;
-        let areaName = local?.areaName || serverItem.areaName;
-
-        // Migration for old keys
-        if (serverItem.floor_number && !floorId) {
-          floorId = `fl_${serverItem.floor_number}`;
-          floorName = `Floor ${serverItem.floor_number}`;
-        }
-
         return {
           ...serverItem,
           id,
-          floorId,
-          floorName,
-          roomId,
-          roomName,
-          areaId,
-          areaName,
+          floorId: local?.floorId || serverItem.floorId,
+          floorName: local?.floorName || serverItem.floorName,
+          roomId: local?.roomId || serverItem.roomId,
+          roomName: local?.roomName || serverItem.roomName,
+          areaId: local?.areaId || serverItem.areaId,
+          areaName: local?.areaName || serverItem.areaName,
+          assignedQuantity: local?.assignedQuantity || serverItem.quantity || 1,
         };
       });
     });
-  }, [allCartItems]);
-
-  // ── Calculations ────────────────────────────────────────────────
+  }, [allCartItems, cartData]); // ← Important: depend on cartData too
+  // ── Calculations ──────────────────────────────────────────
   const calculationCartItems = useMemo(
     () => localCartItems.filter((i) => !i.isOption),
     [localCartItems],
@@ -146,14 +147,9 @@ const CartLayout = ({ documentType, children }) => {
     }, 0);
   }, [calculationCartItems, itemDiscounts, itemDiscountTypes, itemTaxes]);
 
-  const extraDiscount = 0; // Can be overridden by child (Quotation/Order)
-
   const amountBeforeGst = useMemo(
-    () =>
-      parseFloat(
-        (subTotal - totalDiscount + tax + shipping - extraDiscount).toFixed(2),
-      ),
-    [subTotal, totalDiscount, tax, shipping, extraDiscount],
+    () => parseFloat((subTotal - totalDiscount + tax + shipping).toFixed(2)),
+    [subTotal, totalDiscount, tax, shipping],
   );
 
   const roundOff = useMemo(() => {
@@ -169,7 +165,18 @@ const CartLayout = ({ documentType, children }) => {
     gst > 0 ? parseFloat(((roundedAmount * gst) / 100).toFixed(2)) : 0;
   const totalAmount = parseFloat((roundedAmount + gstAmount).toFixed(2));
 
-  // ── Handlers ────────────────────────────────────────────────────
+  // ── Document Type Change Handler ─────────────────────────
+  const handleDocumentTypeChange = (newType) => {
+    setDocumentType(newType);
+    const routeMap = {
+      quotation: "/cart/quotation",
+      order: "/cart/order",
+      "purchase-order": "/cart/purchase-order",
+    };
+    navigate(routeMap[newType] || "/cart/quotation");
+  };
+
+  // ── Cart Handlers ─────────────────────────────────────────
   const handleUpdateQuantity = useCallback(
     async (productId, newQty) => {
       if (!userId || newQty < 1) return;
@@ -203,6 +210,7 @@ const CartLayout = ({ documentType, children }) => {
         }),
       );
 
+      // Clean up local adjustment states
       setItemDiscounts((prev) => {
         const { [productId]: _, ...rest } = prev;
         return rest;
@@ -279,9 +287,6 @@ const CartLayout = ({ documentType, children }) => {
     setItemTaxes((p) => ({ ...p, [productId]: value >= 0 ? value : 0 }));
   };
 
-  const handleShippingChange = (v) => setShipping(v);
-  const handleGstChange = (v) => setGst(Number(v) || 0);
-
   const handleClearCart = async () => {
     if (!userId) return message.error("User not logged in!");
     try {
@@ -295,7 +300,7 @@ const CartLayout = ({ documentType, children }) => {
     }
   };
 
-  // All props passed to child components
+  // Props to be passed down to QuotationForm / OrderForm / PurchaseOrderForm
   const layoutProps = {
     localCartItems,
     calculationCartItems,
@@ -307,21 +312,21 @@ const CartLayout = ({ documentType, children }) => {
     gst,
     totalAmount,
     roundOff,
-    extraDiscount,
     itemDiscounts,
     itemDiscountTypes,
     itemTaxes,
     updatingItems,
     activeTab,
     setActiveTab,
+    documentType,
     handleUpdateQuantity,
     handleRemoveItem,
     handleAssignItemToLocation,
     handleDiscountChange,
     handleDiscountTypeChange,
     handleTaxChange,
-    handleShippingChange,
-    handleGstChange,
+    setShipping,
+    setGst,
     setLocalCartItems,
     setShowClearCartModal,
     handleClearCart,
@@ -331,6 +336,17 @@ const CartLayout = ({ documentType, children }) => {
   return (
     <div className="page-wrapper">
       <div className="content">
+        {/* Document Type Switcher */}
+        <div style={{ marginBottom: 24 }}>
+          <Segmented
+            value={documentType}
+            onChange={handleDocumentTypeChange}
+            options={documentOptions}
+            block
+            size="large"
+          />
+        </div>
+
         <Tabs activeKey={activeTab} onChange={setActiveTab} type="card">
           <TabPane
             tab={
@@ -341,26 +357,10 @@ const CartLayout = ({ documentType, children }) => {
             key="cart"
           >
             <CartTab
-              cartItems={localCartItems}
-              cartProductsData={cartProductsData}
-              totalItems={localCartItems.length}
-              shipping={shipping}
-              tax={tax}
+              localCartItems={localCartItems} // ← Explicitly pass this
+              {...layoutProps} // You can keep spread if you want, but explicit is safer
               discount={totalDiscount}
-              roundOff={roundOff}
-              subTotal={subTotal}
-              itemDiscounts={itemDiscounts}
-              itemDiscountTypes={itemDiscountTypes}
-              itemTaxes={itemTaxes}
-              updatingItems={updatingItems}
-              handleUpdateQuantity={handleUpdateQuantity}
-              handleRemoveItem={handleRemoveItem}
-              handleDiscountChange={handleDiscountChange}
-              handleDiscountTypeChange={handleDiscountTypeChange}
-              handleTaxChange={handleTaxChange}
-              setShowClearCartModal={setShowClearCartModal}
-              setActiveTab={setActiveTab}
-              onShippingChange={handleShippingChange}
+              onShippingChange={setShipping}
               documentType={documentType}
             />
           </TabPane>
