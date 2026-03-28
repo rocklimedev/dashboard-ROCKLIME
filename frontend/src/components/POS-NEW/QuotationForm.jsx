@@ -178,8 +178,14 @@ const QuotationForm = ({
   const [areaForm] = Form.useForm();
 
   // Ensure there's always at least one floor
+  // ── Ensure there's always at least one floor ONLY if user starts using site layout ──
   useEffect(() => {
-    if (!quotationData.floors?.length) {
+    const currentFloors = quotationData.floors || [];
+
+    // Only add default floor if user has started assigning items OR manually added floors
+    const hasAnyAssignment = cartItems.some((item) => item.floorId);
+
+    if (currentFloors.length === 0 && hasAnyAssignment) {
       const defaultFloor = {
         floorId: generateFloorId(),
         floorName: "Ground Floor",
@@ -188,8 +194,39 @@ const QuotationForm = ({
       };
       handleQuotationChange("floors", [defaultFloor]);
     }
-  }, [quotationData.floors, handleQuotationChange]);
+  }, [cartItems, quotationData.floors, handleQuotationChange]);
+  // Helper: Clean floors before sending to backend
+  const getCleanFloorsForPayload = useMemo(() => {
+    const floors = quotationData.floors || [];
 
+    // If no items are assigned to any floor → user doesn't want site layout
+    const hasAnyFloorAssignment = cartItems.some((item) => item.floorId);
+
+    if (!hasAnyFloorAssignment) {
+      return []; // ← Don't send any floors
+    }
+
+    // Filter out empty floors (no rooms and no items assigned)
+    return floors
+      .map((floor) => {
+        const assignedItemsInFloor = cartItems.filter(
+          (item) => item.floorId === floor.floorId,
+        ).length;
+
+        // Keep floor only if it has rooms OR has assigned items
+        if (floor.rooms?.length > 0 || assignedItemsInFloor > 0) {
+          return {
+            ...floor,
+            rooms: (floor.rooms || []).map((room) => ({
+              ...room,
+              areas: room.areas || [], // ensure areas array exists
+            })),
+          };
+        }
+        return null;
+      })
+      .filter(Boolean); // remove null entries
+  }, [quotationData.floors, cartItems]);
   // ── Floor Handlers ────────────────────────────────────────────────
   const addFloor = (values) => {
     const current = quotationData.floors || [];
@@ -1322,28 +1359,44 @@ const QuotationForm = ({
             icon={<CheckCircleOutlined />}
             disabled={isCreatingAddress}
             onClick={() => {
-              if (!selectedCustomer)
+              if (!selectedCustomer) {
                 return message.error("Please select a customer");
-              if (!quotationData.dueDate)
+              }
+              if (!quotationData.dueDate) {
                 return message.error("Please select due date");
+              }
+
+              const cleanFloors = getCleanFloorsForPayload;
+
+              // Optional: Warn user if they have unassigned items
+              const unassignedCount = cartItems.filter(
+                (i) => !i.floorId,
+              ).length;
               if (unassignedCount > 0) {
                 message.warning(
-                  `${unassignedCount} item${
-                    unassignedCount > 1 ? "s are" : " is"
-                  } not assigned to any floor`,
+                  `${unassignedCount} item${unassignedCount > 1 ? "s are" : " is"} not assigned to any floor.`,
                 );
               }
+
+              // Pass clean floors to the parent handler
+              // We modify quotationData temporarily only for this call
+              const finalQuotationData = {
+                ...quotationData,
+                floors: cleanFloors, // ← Cleaned floors (empty array if no site layout)
+              };
 
               if (useBillingAddress && !billingAddressId) {
                 setIsCreatingAddress(true);
               }
 
-              handleCreateDocument().finally(() => setIsCreatingAddress(false));
+              // Call handleCreateDocument with updated data
+              handleCreateDocument(finalQuotationData).finally(() =>
+                setIsCreatingAddress(false),
+              );
             }}
           >
             Create {documentType}
           </CheckoutBtn>
-
           <Button
             block
             style={{ marginTop: 8 }}

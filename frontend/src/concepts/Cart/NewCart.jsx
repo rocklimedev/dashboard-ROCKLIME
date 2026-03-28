@@ -573,7 +573,9 @@ const NewCart = () => {
     }
   };
 
-  const handleCreateDocument = async () => {
+  const handleCreateDocument = async (passedQuotationData = null) => {
+    // Use passed data for Quotation, otherwise use current state
+    const currentQuotationData = passedQuotationData || quotationData;
     if (!userId) return message.error("User not logged in!");
 
     if (localCartItems.length === 0) {
@@ -695,15 +697,38 @@ const NewCart = () => {
       }
     }
 
-    const safeItems = localCartItems.map((item) => ({
-      ...item,
-      floorId: item.floorId || null,
-      floorName: item.floorName || null,
-      roomId: item.roomId || null,
-      roomName: item.roomName || null,
-      areaId: item.areaId || null,
-      areaName: item.areaName || null,
-    }));
+    // Inside handleCreateDocument(), before the if (documentType === "Quotation")
+    const enrichedItems = localCartItems.map((item) => {
+      const productId = item.productId || item.id;
+
+      return {
+        ...item,
+        floorId: item.floorId || null,
+        floorName: item.floorName || null,
+        roomId: item.roomId || null,
+        roomName: item.roomName || null,
+        areaId: item.areaId || null,
+        areaName: item.areaName || null,
+
+        // ← ADD THESE FIELDS
+        discount: Number(itemDiscounts[productId]) || 0,
+        discountType: itemDiscountTypes[productId] || "percent",
+        tax: Number(itemTaxes[productId]) || 0,
+
+        // Optional: also send calculated values for easier backend processing
+        subtotal: (item.price || 0) * (item.quantity || 1),
+        discountAmount: (() => {
+          const subtotal = (item.price || 0) * (item.quantity || 1);
+          const discVal = Number(itemDiscounts[productId]) || 0;
+          const discType = itemDiscountTypes[productId] || "percent";
+          return discType === "percent"
+            ? (subtotal * discVal) / 100
+            : discVal * (item.quantity || 1);
+        })(),
+      };
+    });
+
+    const safeItems = enrichedItems; // use this
     if (documentType === "Purchase Order") {
       if (!selectedVendor) {
         return message.error("Please select a vendor.");
@@ -822,7 +847,7 @@ const NewCart = () => {
         gst: Number(gst) || 0,
         signature_name: quotationData.signatureName || "CM TRADING CO",
         signature_image: quotationData.signatureImage || "",
-        floors: quotationData.floors || [],
+        floors: currentQuotationData.floors || [],
         products: safeItems,
         followupDates: quotationData.followupDates?.filter(Boolean) || [],
         createdBy: auth?.userId,

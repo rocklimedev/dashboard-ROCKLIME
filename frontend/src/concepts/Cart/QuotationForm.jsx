@@ -103,7 +103,6 @@ const CheckoutBtn = styled(Button)`
   }
 `;
 
-// Helpers
 const momentToDate = (m) => (m ? m.toDate() : null);
 const generateFloorId = () => `fl_${uuidv4().slice(0, 8)}`;
 const generateRoomId = (floorId = "") =>
@@ -111,10 +110,10 @@ const generateRoomId = (floorId = "") =>
 const generateAreaId = (roomId) => `${roomId}_ar_${uuidv4().slice(0, 6)}`;
 
 const QuotationForm = ({
-  // From CartLayout
-  cartItems,
-  setCartItems,
-  calculationCartItems, // ← Use this instead of cartItems for calculations
+  // Correct props from CartLayout
+  localCartItems,
+  calculationCartItems,
+  setLocalCartItems,
   cartProductsData,
   subTotal,
   tax,
@@ -214,12 +213,12 @@ const QuotationForm = ({
     );
     handleQuotationChange("floors", updated);
 
-    const updatedItems = cartItems.map((item) =>
+    const updatedItems = localCartItems.map((item) =>
       item.floorId === editFloorModal.floorId
         ? { ...item, floorName: values.name.trim() || item.floorName }
         : item,
     );
-    setCartItems(updatedItems);
+    setLocalCartItems(updatedItems);
 
     message.success("Floor name updated");
     setEditFloorModal({ visible: false, floorId: null });
@@ -227,7 +226,9 @@ const QuotationForm = ({
   };
 
   const showDeleteFloorConfirm = (floorId, floorName) => {
-    const itemsInFloor = cartItems.filter((i) => i.floorId === floorId).length;
+    const itemsInFloor = localCartItems.filter(
+      (i) => i.floorId === floorId,
+    ).length;
 
     Modal.confirm({
       title: `Delete floor "${floorName}"?`,
@@ -242,7 +243,7 @@ const QuotationForm = ({
           .filter((f) => f.floorId !== floorId)
           .map((f, idx) => ({ ...f, sortOrder: idx }));
 
-        const updatedItems = cartItems.map((item) =>
+        const updatedItems = localCartItems.map((item) =>
           item.floorId === floorId
             ? {
                 ...item,
@@ -257,7 +258,7 @@ const QuotationForm = ({
             : item,
         );
 
-        setCartItems(updatedItems);
+        setLocalCartItems(updatedItems);
         handleQuotationChange("floors", updatedFloors);
         message.success("Floor deleted");
       },
@@ -308,12 +309,12 @@ const QuotationForm = ({
     );
     handleQuotationChange("floors", updatedFloors);
 
-    const updatedItems = cartItems.map((item) =>
+    const updatedItems = localCartItems.map((item) =>
       item.roomId === editRoomModal.roomId
         ? { ...item, roomName: values.name.trim() }
         : item,
     );
-    setCartItems(updatedItems);
+    setLocalCartItems(updatedItems);
 
     message.success("Room updated");
     setEditRoomModal({ visible: false, floorId: null, roomId: null });
@@ -321,7 +322,9 @@ const QuotationForm = ({
   };
 
   const showDeleteRoomConfirm = (floorId, roomId, roomName) => {
-    const itemsInRoom = cartItems.filter((i) => i.roomId === roomId).length;
+    const itemsInRoom = localCartItems.filter(
+      (i) => i.roomId === roomId,
+    ).length;
 
     Modal.confirm({
       title: `Delete room "${roomName}"?`,
@@ -343,7 +346,7 @@ const QuotationForm = ({
             : floor,
         );
 
-        const updatedItems = cartItems.map((item) =>
+        const updatedItems = localCartItems.map((item) =>
           item.roomId === roomId
             ? {
                 ...item,
@@ -356,7 +359,7 @@ const QuotationForm = ({
             : item,
         );
 
-        setCartItems(updatedItems);
+        setLocalCartItems(updatedItems);
         handleQuotationChange("floors", updatedFloors);
         message.success("Room deleted");
       },
@@ -1076,17 +1079,18 @@ const QuotationForm = ({
                                     updatedFloors,
                                   );
 
-                                  const updatedItems = cartItems.map((item) =>
-                                    item.areaId === area.id
-                                      ? {
-                                          ...item,
-                                          areaId: null,
-                                          areaName: null,
-                                          areaValue: null,
-                                        }
-                                      : item,
+                                  const updatedItems = localCartItems.map(
+                                    (item) =>
+                                      item.areaId === area.id
+                                        ? {
+                                            ...item,
+                                            areaId: null,
+                                            areaName: null,
+                                            areaValue: null,
+                                          }
+                                        : item,
                                   );
-                                  setCartItems(updatedItems);
+                                  setLocalCartItems(updatedItems);
                                   message.success("Area removed");
                                 },
                               });
@@ -1122,11 +1126,11 @@ const QuotationForm = ({
           <Divider orientation="left" style={{ margin: "24px 0 16px" }}>
             Cart Items & Location Assignment
           </Divider>
-          {/* In the Cart Items section, use calculationCartItems */}
+
           <Space direction="vertical" style={{ width: "100%" }} size="middle">
             {calculationCartItems.map((item) => (
               <Card
-                key={item.id}
+                key={item.id || item.productId}
                 size="small"
                 title={
                   <Space>
@@ -1137,27 +1141,20 @@ const QuotationForm = ({
                         {quotationData.floors?.find(
                           (f) => f.floorId === item.floorId,
                         )?.floorName || "—"}
-                        {item.roomId && (
-                          <>
-                            {" → "}
-                            {
-                              quotationData.floors
-                                ?.find((f) => f.floorId === item.floorId)
-                                ?.rooms?.find((r) => r.roomId === item.roomId)
-                                ?.roomName
-                            }
-                            {item.areaId && (
-                              <>
-                                {" → "}
-                                {quotationData.floors
-                                  ?.find((f) => f.floorId === item.floorId)
-                                  ?.rooms?.find((r) => r.roomId === item.roomId)
-                                  ?.areas?.find((a) => a.id === item.areaId)
-                                  ?.name || "—"}
-                              </>
-                            )}
-                          </>
-                        )}
+                        {item.roomId &&
+                          ` → ${
+                            quotationData.floors
+                              ?.find((f) => f.floorId === item.floorId)
+                              ?.rooms?.find((r) => r.roomId === item.roomId)
+                              ?.roomName
+                          }`}
+                        {item.areaId &&
+                          ` → ${
+                            quotationData.floors
+                              ?.find((f) => f.floorId === item.floorId)
+                              ?.rooms?.find((r) => r.roomId === item.roomId)
+                              ?.areas?.find((a) => a.id === item.areaId)?.name
+                          }`}
                       </Tag>
                     )}
                   </Space>
@@ -1167,7 +1164,10 @@ const QuotationForm = ({
                     type="link"
                     icon={<PushpinOutlined />}
                     onClick={() =>
-                      setAssignModal({ visible: true, itemId: item.id })
+                      setAssignModal({
+                        visible: true,
+                        itemId: item.id || item.productId,
+                      })
                     }
                   >
                     {item.floorId ? "Change" : "Assign"}
@@ -1176,9 +1176,6 @@ const QuotationForm = ({
               >
                 <Space split={<Divider type="vertical" />}>
                   <Text>₹{(item.price || 0).toLocaleString()}</Text>
-                  {item.discount > 0 && (
-                    <Text type="secondary">-{item.discount}%</Text>
-                  )}
                 </Space>
               </Card>
             ))}
@@ -1187,9 +1184,7 @@ const QuotationForm = ({
           {unassignedCount > 0 && (
             <Alert
               style={{ marginTop: 16 }}
-              message={`${unassignedCount} item${
-                unassignedCount > 1 ? "s" : ""
-              } still unassigned`}
+              message={`${unassignedCount} item${unassignedCount > 1 ? "s" : ""} still unassigned`}
               type="warning"
               showIcon
             />
@@ -1326,15 +1321,14 @@ const QuotationForm = ({
         form={areaForm}
       />
 
-      {/* ... your modals (AddFloorModal, AssignItemModal, etc.) ... */}
       <AssignItemModal
         visible={assignModal.visible}
         onCancel={() => setAssignModal({ visible: false, itemId: null })}
-        item={calculationCartItems.find((i) => i.id === assignModal.itemId)}
+        item={calculationCartItems.find(
+          (i) => (i.id || i.productId) === assignModal.itemId,
+        )}
         floors={quotationData.floors || []}
-        onAssign={(itemId, assignments) => {
-          // Your handleMultiAssign logic here
-        }}
+        onAssign={handleAssignItemToLocation} // ← Important: Pass the handler directly
       />
     </Row>
   );

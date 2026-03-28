@@ -156,27 +156,17 @@ const NewQuotationsDetails = () => {
         .trim()
     : "--";
 
-  // ── Extract Products with proper imageUrl & companyCode ─────────────────
+  // ── Products ────────────────────────────────────────────────────────────
   const allProducts = useMemo(() => {
     const products = activeVersionData.products || [];
-
-    return products.map((p) => {
-      // Prefer data from locations if available, else fallback
-      const mainLocation =
-        Array.isArray(p.locations) && p.locations.length > 0
-          ? p.locations[0]
-          : p;
-
-      return {
-        ...p,
-        floorName: mainLocation.floorName || p.floorName,
-        roomName: mainLocation.roomName || p.roomName,
-        areaName: mainLocation.areaName || p.areaName,
-        // Ensure imageUrl and companyCode are always present
-        imageUrl: p.imageUrl || "",
-        companyCode: p.companyCode || p.productCode || "—",
-      };
-    });
+    return products.map((p) => ({
+      ...p,
+      floorName: p.floorName || "",
+      roomName: p.roomName || "",
+      areaName: p.areaName || "",
+      imageUrl: p.imageUrl || "",
+      companyCode: p.companyCode || p.productCode || "—",
+    }));
   }, [activeVersionData.products]);
 
   const mainProducts = useMemo(
@@ -221,35 +211,54 @@ const NewQuotationsDetails = () => {
   }, [mainProducts]);
 
   const finalAmountInWords = amountInWords(Math.round(backendFinalAmount));
-  const groupProductsByAreaName = (products = []) => {
-    const groups = {};
 
-    products.forEach((p) => {
-      const area = (p.areaName || "Unassigned").trim();
-      if (!groups[area]) {
-        groups[area] = [];
+  // ── Floor-wise Totals ───────────────────────────────────────────────────
+  const floorTotals = useMemo(() => {
+    const floorMap = new Map();
+
+    mainProducts.forEach((p) => {
+      const floor = (p.floorName || "Unspecified Floor").trim();
+      const total = Number(p.total ?? 0);
+
+      if (!floorMap.has(floor)) {
+        floorMap.set(floor, { floorName: floor, total: 0 });
       }
-      groups[area].push({
-        ...p,
-        locationLabel: [
-          p.floorName ? `Floor: ${p.floorName}` : null,
-          p.roomName ? `Room: ${p.roomName}` : null,
-          p.areaName ? `Area: ${p.areaName}` : null,
-        ]
-          .filter(Boolean)
-          .join(" → "),
-      });
+      floorMap.get(floor).total += total;
     });
 
-    return groups;
-  };
+    return Array.from(floorMap.values()).sort((a, b) =>
+      a.floorName.localeCompare(b.floorName),
+    );
+  }, [mainProducts]);
 
-  // ── Grouping Helpers (Support locations array) ──────────────────────────
+  // Check if we have meaningful floor data (skip if only "Unspecified Floor")
+  const hasFloorData = useMemo(() => {
+    if (!floorTotals || floorTotals.length === 0) return false;
+    return floorTotals.some(
+      (floor) => floor.floorName !== "Unspecified Floor" && floor.total > 0,
+    );
+  }, [floorTotals]);
+
+  // ── Site Layout Check ───────────────────────────────────────────────────
+  const hasSiteLayout = useMemo(() => {
+    const floors =
+      activeVersionData.quotation?.floors || quotation?.floors || [];
+    if (!Array.isArray(floors) || floors.length === 0) return false;
+
+    return floors.some((floor) => {
+      const hasRooms = floor.rooms && floor.rooms.length > 0;
+      const hasAssignedProducts = allProducts.some(
+        (p) => p.floorId === floor.floorId,
+      );
+      return hasRooms || hasAssignedProducts;
+    });
+  }, [activeVersionData.quotation, quotation, allProducts]);
+
+  // ── Grouping Helpers ────────────────────────────────────────────────────
   const groupProductsByFloorAndRoom = (products = []) => {
     const map = new Map();
-
     products.forEach((p) => {
-      // Handle new locations structure
+      if (!p.floorId) return;
       const locations =
         Array.isArray(p.locations) && p.locations.length > 0
           ? p.locations
@@ -264,36 +273,38 @@ const NewQuotationsDetails = () => {
         const floor = (loc.floorName || "Unspecified Floor").trim();
         const room = (loc.roomName || "Unspecified Room").trim();
         const key = `${floor}|||${room}`;
-
         if (!map.has(key)) {
-          map.set(key, {
-            floorName: floor,
-            roomName: room,
-            products: [],
-          });
+          map.set(key, { floorName: floor, roomName: room, products: [] });
         }
         map.get(key).products.push({ ...p, ...loc });
       });
     });
-
     return Array.from(map.values()).sort((a, b) => {
       const floorCmp = a.floorName.localeCompare(b.floorName);
       return floorCmp !== 0 ? floorCmp : a.roomName.localeCompare(b.roomName);
     });
   };
 
+  const groupProductsByAreaName = (products = []) => {
+    const groups = {};
+    products.forEach((p) => {
+      const area = (p.areaName || "Unassigned").trim();
+      if (!groups[area]) groups[area] = [];
+      groups[area].push(p);
+    });
+    return groups;
+  };
+
   // ── Render Area-wise Page ───────────────────────────────────────────────
-  const renderAreaWisePageForRoom = (roomGroup, customerName, refNumber) => {
+  const renderAreaWisePageForRoom = (roomGroup) => {
     const { floorName, roomName, products } = roomGroup;
-
     const areaGroups = groupProductsByAreaName(products);
-    const areaEntries = Object.entries(areaGroups).slice(0, 3); // max 3 areas
+    const areaEntries = Object.entries(areaGroups).slice(0, 3);
 
-    // Zones mapped by index (not by name)
     const ZONE_LAYOUT = [
-      { top: "25%", left: "6%", width: "26%" }, // LEFT
-      { top: "29%", left: "37%", width: "26%" }, // CENTER
-      { top: "28%", right: "2%", width: "26%" }, // RIGHT
+      { top: "25%", left: "6%", width: "26%" },
+      { top: "29%", left: "37%", width: "26%" },
+      { top: "28%", right: "2%", width: "26%" },
     ];
 
     return (
@@ -309,31 +320,19 @@ const NewQuotationsDetails = () => {
           pageBreakAfter: "always",
         }}
       >
-        {/* FULL PAGE IMAGE */}
         <img
           src={siteMapQuotation}
           alt="Site Map"
           style={{
             position: "absolute",
-            top: 0,
-            left: 0,
+            inset: 0,
             width: "100%",
             height: "100%",
-            objectFit: "fill", // exact A4 fit
+            objectFit: "fill",
             zIndex: 0,
           }}
         />
-
-        {/* LIGHT OVERLAY */}
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            zIndex: 1,
-          }}
-        />
-
-        {/* CONTENT LAYER */}
+        <div style={{ position: "absolute", inset: 0, zIndex: 1 }} />
         <div
           style={{
             position: "relative",
@@ -342,7 +341,6 @@ const NewQuotationsDetails = () => {
             height: "100%",
           }}
         >
-          {/* Header */}
           <div style={{ textAlign: "center", marginBottom: 32 }}>
             <h2 style={{ color: "#d32f2f", fontSize: "2.4em", margin: 0 }}>
               {floorName.toUpperCase()}
@@ -354,33 +352,27 @@ const NewQuotationsDetails = () => {
             </h3>
           </div>
 
-          {/* AREA ZONES */}
           <div style={{ position: "absolute", inset: 0 }}>
             {areaEntries.map(([areaName, items], index) => {
               const zone = ZONE_LAYOUT[index];
               if (!zone) return null;
-
               return (
                 <div key={areaName} style={{ position: "absolute", ...zone }}>
                   <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 1,
-                    }}
+                    style={{ display: "flex", flexDirection: "column", gap: 1 }}
                   >
                     {items.map((p, i) => (
                       <div
                         key={i}
                         style={{
                           display: "flex",
-                          flexDirection: "column", // stack vertically
-                          alignItems: "center", // center content
+                          flexDirection: "column",
+                          alignItems: "center",
                           gap: 1,
                           background: "rgba(255,255,255,0.92)",
                           padding: 10,
                           borderRadius: 8,
-                          width: 120, // optional: make a consistent width
+                          width: 120,
                         }}
                       >
                         {p.imageUrl ? (
@@ -388,7 +380,7 @@ const NewQuotationsDetails = () => {
                             src={p.imageUrl}
                             alt={p.name}
                             style={{
-                              width: 50, // increased image size
+                              width: 50,
                               height: 50,
                               objectFit: "cover",
                               borderRadius: 6,
@@ -404,7 +396,6 @@ const NewQuotationsDetails = () => {
                             }}
                           />
                         )}
-
                         <div
                           style={{ fontSize: "0.75em", textAlign: "center" }}
                         >
@@ -428,209 +419,125 @@ const NewQuotationsDetails = () => {
     );
   };
 
-  // ── Export Handler (unchanged) ──────────────────────────────────────────
-  const handleExport = async () => {
-    if (!quotationRef.current) return;
-    setIsExporting(true);
-    await new Promise((resolve) => setTimeout(resolve, 120));
-
-    try {
-      const safeTitle = (quotation?.document_title || "Quotation")
-        .replace(/[\\/:*?"<>|]/g, "_")
-        .replace(/\s+/g, "_")
-        .substring(0, 50);
-
-      const versionLabel = activeVersionObj.shortLabel || "Latest";
-      const fileName = `${safeTitle}_${versionLabel}`;
-
-      const exportOptions = { visibleColumns };
-
-      if (exportFormat === "pdf") {
-        await exportToPDF(
-          quotationRef,
-          id,
-          activeVersion,
-          activeVersionData.quotation,
-          `${fileName}.pdf`,
-          exportOptions,
-        );
-      } else {
-        await exportToExcel(
-          mainProducts,
-          [], // no productsData
-          customerName,
-          brandNames,
-          activeVersionData.quotation,
-          customerAddress,
-          logo,
-          {
-            bankName: "IDFC FIRST BANK",
-            accountNumber: "10179373657",
-            ifscCode: "IDFB0020149",
-            branch: "BHERA ENCLAVE PASCHIM VIHAR",
-          },
-          id,
-          activeVersion,
-          optionalProducts,
-          `${fileName}.xlsx`,
-          exportOptions,
-        );
-      }
-
-      message.success(`${exportFormat.toUpperCase()} exported successfully!`);
-    } catch (err) {
-      message.error("Export failed. Please try again.");
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
-  // ── Loading & Error States ──────────────────────────────────────────────
-  if (qLoading || vLoading || custLoading || addrLoading) {
-    return (
-      <Spin
-        tip="Loading Quotation Details..."
-        size="large"
-        style={{ marginTop: 100, display: "block", textAlign: "center" }}
-      />
-    );
-  }
-
-  if (qError || !quotation) {
-    return (
-      <Alert
-        message="Quotation not found"
-        type="error"
-        showIcon
-        style={{ margin: "40px" }}
-      />
-    );
-  }
-
-  // ── Render Pages ────────────────────────────────────────────────────────
   // ── Render Pages ────────────────────────────────────────────────────────
   const renderPages = (getShouldShowColumn) => {
     const shouldShowColumn = getShouldShowColumn || (() => true);
-
-    const roomGroups = groupProductsByFloorAndRoom(allProducts);
-
     const pages = [];
 
     const MAX_PRODUCTS_NORMAL = 10;
-    const MAX_PRODUCTS_WITH_SUMMARY = 8;
 
-    // Helper: Render Product Table
-    const renderProductTable = (items, isOptional = false, startSno = 0) => {
+    // Reusable Product Table
+    const renderProductTable = (items, title, startSno = 0) => {
       let localSno = startSno;
-
       return (
-        <table className={styles.productTable}>
-          <colgroup>
-            {shouldShowColumn("sno") && <col className={styles.sno} />}
-            {shouldShowColumn("name") && <col className={styles.name} />}
-            {shouldShowColumn("code") && <col className={styles.code} />}
-            {shouldShowColumn("image") && <col className={styles.image} />}
-            {shouldShowColumn("unit") && <col className={styles.unit} />}
-            {shouldShowColumn("mrp") && <col className={styles.mrp} />}
-            {shouldShowColumn("discount") && (
-              <col className={styles.discount} />
-            )}
-            {shouldShowColumn("total") && <col className={styles.total} />}
-          </colgroup>
+        <>
+          <h3 style={{ color: "#d32f2f", margin: "20px 0 10px" }}>{title}</h3>
+          <table className={styles.productTable}>
+            <colgroup>
+              {shouldShowColumn("sno") && <col className={styles.sno} />}
+              {shouldShowColumn("name") && <col className={styles.name} />}
+              {shouldShowColumn("code") && <col className={styles.code} />}
+              {shouldShowColumn("image") && <col className={styles.image} />}
+              {shouldShowColumn("unit") && <col className={styles.unit} />}
+              {shouldShowColumn("mrp") && <col className={styles.mrp} />}
+              {shouldShowColumn("discount") && (
+                <col className={styles.discount} />
+              )}
+              {shouldShowColumn("total") && <col className={styles.total} />}
+            </colgroup>
 
-          <thead>
-            <tr>
-              {shouldShowColumn("sno") && <th>S.No</th>}
-              {shouldShowColumn("name") && <th>Product Name</th>}
-              {shouldShowColumn("code") && <th>Code</th>}
-              {shouldShowColumn("image") && <th>Image</th>}
-              {shouldShowColumn("unit") && <th>Unit</th>}
-              {shouldShowColumn("mrp") && <th>MRP</th>}
-              {shouldShowColumn("discount") && <th>Discount</th>}
-              {shouldShowColumn("total") && <th>Total</th>}
-            </tr>
-          </thead>
+            <thead>
+              <tr>
+                {shouldShowColumn("sno") && <th>S.No</th>}
+                {shouldShowColumn("name") && <th>Product Name</th>}
+                {shouldShowColumn("code") && <th>Code</th>}
+                {shouldShowColumn("image") && <th>Image</th>}
+                {shouldShowColumn("unit") && <th>Unit</th>}
+                {shouldShowColumn("mrp") && <th>MRP</th>}
+                {shouldShowColumn("discount") && <th>Discount</th>}
+                {shouldShowColumn("total") && <th>Total</th>}
+              </tr>
+            </thead>
 
-          <tbody>
-            {items.map((p) => {
-              const matchingItem =
-                quotation?.products?.find(
-                  (it) => it.productId === p.productId,
-                ) ||
-                quotation?.items?.find((it) => it.productId === p.productId) ||
-                p;
+            <tbody>
+              {items.map((p) => {
+                const matchingItem =
+                  quotation?.products?.find(
+                    (it) => it.productId === p.productId,
+                  ) ||
+                  quotation?.items?.find(
+                    (it) => it.productId === p.productId,
+                  ) ||
+                  p;
 
-              const code =
-                matchingItem?.companyCode ||
-                matchingItem?.productCode ||
-                p.companyCode ||
-                "—";
-              const img = matchingItem?.imageUrl || p.imageUrl || "";
+                const code =
+                  matchingItem?.companyCode ||
+                  matchingItem?.productCode ||
+                  p.companyCode ||
+                  "—";
+                const img = matchingItem?.imageUrl || p.imageUrl || "";
+                const mrp = Number(matchingItem?.price ?? p.price ?? 0);
+                const qty = Number(matchingItem?.quantity ?? p.quantity ?? 1);
+                const lineTotal = Number(matchingItem?.total ?? p.total ?? 0);
+                const discValue = Number(matchingItem?.discount ?? 0);
+                const discType = (
+                  matchingItem?.discountType ?? "percent"
+                ).toLowerCase();
 
-              const mrp = Number(matchingItem?.price ?? p.price ?? 0);
-              const qty = Number(matchingItem?.quantity ?? p.quantity ?? 1);
-              const lineTotal = Number(matchingItem?.total ?? p.total ?? 0);
+                let displayDiscount = "—";
+                if (discValue > 0) {
+                  displayDiscount =
+                    discType === "percent"
+                      ? `${discValue}%`
+                      : `₹${discValue.toFixed(0)}`;
+                }
 
-              const discValue = Number(matchingItem?.discount ?? 0);
-              const discType = (
-                matchingItem?.discountType ?? "percent"
-              ).toLowerCase();
+                localSno++;
 
-              let displayDiscount = "—";
-              if (discValue > 0) {
-                displayDiscount =
-                  discType === "percent"
-                    ? `${discValue}%`
-                    : `₹${discValue.toFixed(0)}`;
-              }
-
-              localSno++;
-
-              return (
-                <tr key={p.productId || `item-${localSno}`}>
-                  {shouldShowColumn("sno") && (
-                    <td className={styles.snoCell}>
-                      {isOptional ? localSno - startSno : localSno}.
-                    </td>
-                  )}
-                  {shouldShowColumn("name") && (
-                    <td className={styles.prodNameCell}>
-                      {matchingItem?.name || p.name || "—"}
-                    </td>
-                  )}
-                  {shouldShowColumn("code") && <td>{code}</td>}
-                  {shouldShowColumn("image") && (
-                    <td>
-                      {img ? (
-                        <img
-                          src={img}
-                          alt={matchingItem?.name || p.name || "Product"}
-                          className={styles.prodImg}
-                        />
-                      ) : null}
-                    </td>
-                  )}
-                  {shouldShowColumn("unit") && <td>{qty}</td>}
-                  {shouldShowColumn("mrp") && (
-                    <td>₹{mrp.toLocaleString("en-IN")}</td>
-                  )}
-                  {shouldShowColumn("discount") && (
-                    <td className={styles.discountCell}>{displayDiscount}</td>
-                  )}
-                  {shouldShowColumn("total") && (
-                    <td className={styles.totalCell}>
-                      ₹{lineTotal.toLocaleString("en-IN")}
-                    </td>
-                  )}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                return (
+                  <tr key={p.productId || `item-${localSno}`}>
+                    {shouldShowColumn("sno") && (
+                      <td className={styles.snoCell}>{localSno}.</td>
+                    )}
+                    {shouldShowColumn("name") && (
+                      <td className={styles.prodNameCell}>
+                        {matchingItem?.name || p.name || "—"}
+                      </td>
+                    )}
+                    {shouldShowColumn("code") && <td>{code}</td>}
+                    {shouldShowColumn("image") && (
+                      <td>
+                        {img && (
+                          <img
+                            src={img}
+                            alt={p.name}
+                            className={styles.prodImg}
+                          />
+                        )}
+                      </td>
+                    )}
+                    {shouldShowColumn("unit") && <td>{qty}</td>}
+                    {shouldShowColumn("mrp") && (
+                      <td>₹{mrp.toLocaleString("en-IN")}</td>
+                    )}
+                    {shouldShowColumn("discount") && (
+                      <td className={styles.discountCell}>{displayDiscount}</td>
+                    )}
+                    {shouldShowColumn("total") && (
+                      <td className={styles.totalCell}>
+                        ₹{lineTotal.toLocaleString("en-IN")}
+                      </td>
+                    )}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </>
       );
     };
 
-    // ==================== PAGE 1: COVER ====================
+    // ==================== COVER PAGE ====================
     pages.push(
       <div key="cover" className={`${styles.coverPage} page`}>
         <img src={coverImage} alt="Cover" className={styles.coverBg} />
@@ -642,7 +549,7 @@ const NewQuotationsDetails = () => {
       </div>,
     );
 
-    // ==================== PAGE 2: LETTERHEAD ====================
+    // ==================== LETTERHEAD PAGE ====================
     pages.push(
       <div key="letterhead" className={`${styles.letterheadPage} page`}>
         <img
@@ -677,20 +584,12 @@ const NewQuotationsDetails = () => {
       </div>,
     );
 
-    // ==================== MAIN PRODUCT PAGES ====================
+    // ==================== MAIN PRODUCTS PAGES ====================
     let remainingMain = [...mainProducts];
     let globalSno = 0;
 
     while (remainingMain.length > 0) {
-      const isVeryLastChunk = remainingMain.length <= MAX_PRODUCTS_WITH_SUMMARY;
-      const canFitSummaryHere =
-        isVeryLastChunk && optionalProducts.length === 0;
-
-      const itemsThisPage = canFitSummaryHere
-        ? remainingMain
-        : remainingMain.slice(0, MAX_PRODUCTS_NORMAL);
-
-      const showSummaryThisPage = canFitSummaryHere;
+      const itemsThisPage = remainingMain.slice(0, MAX_PRODUCTS_NORMAL);
 
       pages.push(
         <div
@@ -713,66 +612,7 @@ const NewQuotationsDetails = () => {
             </div>
           </div>
 
-          {renderProductTable(itemsThisPage, false, globalSno)}
-
-          {showSummaryThisPage && (
-            <div className={styles.finalSummaryWrapper}>
-              {/* Your summary content */}
-              <div className={styles.finalSummarySection}>
-                <div className={styles.summaryLeft}>
-                  <div className={styles.summaryRow}>
-                    <span>Subtotal</span>
-                    <span>₹{displaySubtotal.toLocaleString("en-IN")}</span>
-                  </div>
-                  {displayProductDiscount > 0 && (
-                    <div className={styles.summaryRow}>
-                      <span>Total Discount</span>
-                      <span>
-                        -₹
-                        {Math.round(displayProductDiscount).toLocaleString(
-                          "en-IN",
-                        )}
-                      </span>
-                    </div>
-                  )}
-                  {backendExtraDiscount > 0 && (
-                    <div className={styles.summaryRow}>
-                      <span>Extra Discount</span>
-                      <span>
-                        -₹
-                        {Math.round(backendExtraDiscount).toLocaleString(
-                          "en-IN",
-                        )}
-                      </span>
-                    </div>
-                  )}
-                  <div className={styles.summaryRow}>
-                    <span>Taxable Value</span>
-                    <span>₹{displaySubtotal.toLocaleString("en-IN")}</span>
-                  </div>
-                </div>
-
-                <div className={styles.summaryRight}>
-                  <div className={styles.totalAmount}>
-                    <strong>Total Amount:</strong>
-                    <strong>
-                      {" "}
-                      ₹{backendFinalAmount.toLocaleString("en-IN")}
-                    </strong>
-                  </div>
-                  <div className={styles.amountInWords}>
-                    {finalAmountInWords}
-                  </div>
-                  {backendRoundOff !== 0 && (
-                    <div className={styles.roundOffNote}>
-                      (Round off: {backendRoundOff >= 0 ? "+" : "-"}₹
-                      {Math.abs(backendRoundOff).toFixed(2)})
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
+          {renderProductTable(itemsThisPage, "Main Items", globalSno)}
         </div>,
       );
 
@@ -780,38 +620,248 @@ const NewQuotationsDetails = () => {
       remainingMain = remainingMain.slice(itemsThisPage.length);
     }
 
-    // ==================== OPTIONAL ITEMS PAGE ====================
+    // ==================== OPTIONAL PRODUCTS PAGE ====================
     if (optionalProducts.length > 0) {
-      pages.push(/* your optional items page code */);
+      pages.push(
+        <div key="optional-page" className={`${styles.productPage} page`}>
+          <div className={styles.pageTopHeader}>
+            <div>
+              <div className={styles.clientName}>{customerName}</div>
+              <div className={styles.clientAddress}>{customerAddress}</div>
+            </div>
+            <div className={styles.pageDate}>
+              {new Date(
+                quotation.quotation_date || Date.now(),
+              ).toLocaleDateString("en-IN", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })}
+            </div>
+          </div>
+
+          {renderProductTable(optionalProducts, "Optional Items / Add-ons")}
+
+          <div
+            style={{
+              marginTop: 20,
+              fontSize: "0.9em",
+              color: "#666",
+              textAlign: "center",
+            }}
+          >
+            * These are optional items. Final selection will be confirmed at the
+            time of order.
+          </div>
+        </div>,
+      );
     }
 
     // ==================== SITE LAYOUT PAGES ====================
-    // ← ONLY SHOW IF PRODUCTS ARE ASSIGNED TO FLOORS
-    const hasAssignedProducts = roomGroups.some(
-      (group) => group.products.length > 0,
-    );
-
-    if (hasAssignedProducts) {
+    if (hasSiteLayout) {
+      const roomGroups = groupProductsByFloorAndRoom(allProducts);
       roomGroups.forEach((roomGroup) => {
-        if (roomGroup.products.length > 0) {
-          pages.push(
-            renderAreaWisePageForRoom(
-              roomGroup,
-              customerName,
-              quotation.reference_number,
-            ),
-          );
+        if (roomGroup.products?.length > 0) {
+          pages.push(renderAreaWisePageForRoom(roomGroup));
         }
       });
     }
 
-    // ==================== FINAL SUMMARY ====================
-    if (mainProducts.length > 0 && optionalProducts.length > 0) {
-      pages.push(/* your final summary page */);
-    }
+    // ==================== SUMMARY PAGE (Smart) ====================
+    pages.push(
+      <div key="summary-page" className={`${styles.productPage} page`}>
+        <div className={styles.pageTopHeader}>
+          <div>
+            <div className={styles.clientName}>{customerName}</div>
+            <div className={styles.clientAddress}>{customerAddress}</div>
+          </div>
+          <div className={styles.pageDate}>
+            {new Date(
+              quotation.quotation_date || Date.now(),
+            ).toLocaleDateString("en-IN", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })}
+          </div>
+        </div>
+
+        <h2
+          style={{
+            color: "#d32f2f",
+            textAlign: "center",
+            margin: "40px 0 30px",
+          }}
+        >
+          PROJECT SUMMARY
+        </h2>
+
+        {/* Floor-wise Totals - Only if meaningful floor data exists */}
+        {hasFloorData && (
+          <>
+            <h3 style={{ color: "#d32f2f", margin: "25px 0 12px" }}>
+              Floor-wise Totals
+            </h3>
+            <table className={styles.productTable}>
+              <thead>
+                <tr>
+                  <th>Floor</th>
+                  <th style={{ textAlign: "right" }}>Amount (₹)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {floorTotals.map((floor, index) => (
+                  <tr key={index}>
+                    <td>{floor.floorName}</td>
+                    <td style={{ textAlign: "right" }}>
+                      ₹{floor.total.toLocaleString("en-IN")}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <Divider style={{ margin: "30px 0 25px" }} />
+          </>
+        )}
+
+        {/* Final Financial Summary */}
+        <div
+          className={styles.finalSummaryWrapper}
+          style={{ marginTop: hasFloorData ? 10 : 40 }}
+        >
+          <div className={styles.finalSummarySection}>
+            <div className={styles.summaryLeft}>
+              <div className={styles.summaryRow}>
+                <span>Subtotal</span>
+                <span>₹{displaySubtotal.toLocaleString("en-IN")}</span>
+              </div>
+              {displayProductDiscount > 0 && (
+                <div className={styles.summaryRow}>
+                  <span>Total Discount</span>
+                  <span>
+                    -₹
+                    {Math.round(displayProductDiscount).toLocaleString("en-IN")}
+                  </span>
+                </div>
+              )}
+              {backendExtraDiscount > 0 && (
+                <div className={styles.summaryRow}>
+                  <span>Extra Discount</span>
+                  <span>
+                    -₹{Math.round(backendExtraDiscount).toLocaleString("en-IN")}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className={styles.summaryRight}>
+              <div className={styles.totalAmount}>
+                <strong>Total Amount:</strong> ₹
+                {backendFinalAmount.toLocaleString("en-IN")}
+              </div>
+              <div className={styles.amountInWords}>{finalAmountInWords}</div>
+              {backendRoundOff !== 0 && (
+                <div className={styles.roundOffNote}>
+                  (Round off: {backendRoundOff >= 0 ? "+" : "-"}₹
+                  {Math.abs(backendRoundOff).toFixed(2)})
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div
+          style={{
+            marginTop: 40,
+            textAlign: "center",
+            fontSize: "0.9em",
+            color: "#666",
+          }}
+        >
+          Thank you for your business. This quotation is valid for 15 days.
+        </div>
+      </div>,
+    );
 
     return pages;
   };
+
+  // ── Export Handler ──────────────────────────────────────────
+  const handleExport = async () => {
+    if (!quotationRef.current) return;
+    setIsExporting(true);
+    await new Promise((resolve) => setTimeout(resolve, 120));
+
+    try {
+      const safeTitle = (quotation?.document_title || "Quotation")
+        .replace(/[\\/:*?"<>|]/g, "_")
+        .replace(/\s+/g, "_")
+        .substring(0, 50);
+
+      const versionLabel = activeVersionObj.shortLabel || "Latest";
+      const fileName = `${safeTitle}_${versionLabel}`;
+
+      if (exportFormat === "pdf") {
+        await exportToPDF(
+          quotationRef,
+          id,
+          activeVersion,
+          activeVersionData.quotation,
+          `${fileName}.pdf`,
+          { visibleColumns },
+        );
+      } else {
+        await exportToExcel(
+          mainProducts,
+          [],
+          customerName,
+          brandNames,
+          activeVersionData.quotation,
+          customerAddress,
+          logo,
+          {
+            bankName: "IDFC FIRST BANK",
+            accountNumber: "10179373657",
+            ifscCode: "IDFB0020149",
+            branch: "BHERA ENCLAVE PASCHIM VIHAR",
+          },
+          id,
+          activeVersion,
+          optionalProducts,
+          `${fileName}.xlsx`,
+          { visibleColumns },
+        );
+      }
+      message.success(`${exportFormat.toUpperCase()} exported successfully!`);
+    } catch (err) {
+      message.error("Export failed. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Loading & Error States
+  if (qLoading || vLoading || custLoading || addrLoading) {
+    return (
+      <Spin
+        tip="Loading Quotation Details..."
+        size="large"
+        style={{ marginTop: 100, display: "block", textAlign: "center" }}
+      />
+    );
+  }
+
+  if (qError || !quotation) {
+    return (
+      <Alert
+        message="Quotation not found"
+        type="error"
+        showIcon
+        style={{ margin: "40px" }}
+      />
+    );
+  }
+
   return (
     <>
       <Helmet>
@@ -1059,6 +1109,7 @@ const NewQuotationsDetails = () => {
             </div>
           </div>
 
+          {/* Hidden export container */}
           <div
             ref={quotationRef}
             style={{ position: "absolute", left: "-9999px", top: 0 }}
