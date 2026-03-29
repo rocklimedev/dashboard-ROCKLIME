@@ -10,7 +10,7 @@ const orderItemsSchema = new mongoose.Schema(
         productId: { type: String, required: true },
         name: { type: String, required: true }, // ← NEW: cached name
         imageUrl: { type: String }, // ← NEW: first image
-          productCode: { type: String, trim: true },
+        productCode: { type: String, trim: true },
         companyCode: {
           // ← NEW
           type: String,
@@ -30,7 +30,7 @@ const orderItemsSchema = new mongoose.Schema(
       },
     ],
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 module.exports = mongoose.model("OrderItem", orderItemsSchema);

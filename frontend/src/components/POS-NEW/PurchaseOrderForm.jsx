@@ -1,4 +1,5 @@
-import React from "react";
+// src/pages/quotations/PurchaseOrderForm.jsx
+import React, { useEffect } from "react";
 import {
   Card,
   Button,
@@ -10,7 +11,6 @@ import {
   Empty,
   InputNumber,
   Typography,
-  Spin,
   Collapse,
   Space,
   Divider,
@@ -20,7 +20,6 @@ import {
   CheckCircleOutlined,
   ArrowLeftOutlined,
   DeleteOutlined,
-  PlusOutlined,
 } from "@ant-design/icons";
 import styled from "styled-components";
 import moment from "moment";
@@ -28,10 +27,6 @@ import moment from "moment";
 const { Text, Title } = Typography;
 const { Option } = Select;
 const { Panel } = Collapse;
-
-// ─────────────────────────────────────────────────────────────
-// Styled Components
-// ─────────────────────────────────────────────────────────────
 
 const CompactCard = styled(Card)`
   border-radius: 8px;
@@ -93,44 +88,56 @@ const CompactTable = styled(Table)`
   }
 `;
 
-// ─────────────────────────────────────────────────────────────
-// Main Component
-// ─────────────────────────────────────────────────────────────
-
 const PurchaseOrderForm = ({
   purchaseOrderData,
   setPurchaseOrderData,
   selectedVendor,
   setSelectedVendor,
-  vendors,
-  isVendorsLoading,
-  products,
-  isProductsLoading,
-  productSearch,
-  filteredProducts,
-  debouncedSearch,
-  addPurchaseOrderProduct,
-  removePurchaseOrderProduct,
-  updatePurchaseOrderProductField,
-  handlePurchaseOrderChange,
-  purchaseOrderTotal,
-  documentType,
-  setDocumentType,
-  cartItems,
+  vendors = [], // Default empty array
+  isVendorsLoading = false,
+  cartItems = [],
   setActiveTab,
   handleCreateDocument,
-  setShowAddVendorModal,
 }) => {
-  // ─────────────────────────────────────────────────────────────
-  // Helpers
-  // ─────────────────────────────────────────────────────────────
+  // Sync Cart Items → Purchase Order Items (runs when switching to checkout tab)
+  useEffect(() => {
+    if (!cartItems?.length || (purchaseOrderData?.items?.length || 0) > 0) {
+      return;
+    }
 
+    const mappedItems = cartItems.map((item) => {
+      const price = Number(item.price || item.mrp || item.unitPrice || 0.01);
+      return {
+        productId: item.productId || item.id,
+        name: item.name || "Unnamed Product",
+        quantity: Number(item.quantity) || 1,
+        unitPrice: price,
+        mrp: price,
+        tax: 0,
+        total: price * (Number(item.quantity) || 1),
+        imageUrl: item.imageUrl || item.images?.[0],
+        productCode: item.product_code || item.code || "",
+      };
+    });
+
+    const totalAmount = mappedItems
+      .reduce((sum, item) => sum + (item.total || 0), 0)
+      .toFixed(2);
+
+    setPurchaseOrderData((prev) => ({
+      ...prev,
+      items: mappedItems,
+      totalAmount,
+    }));
+  }, [cartItems, purchaseOrderData?.items?.length, setPurchaseOrderData]);
+
+  // Update single item field
   const updateItem = (index, field, value) => {
     setPurchaseOrderData((prev) => {
-      const items = [...prev.items];
+      const items = [...(prev.items || [])];
       items[index] = { ...items[index], [field]: value };
 
-      // Recalculate line total (client-side preview only)
+      // Recalculate line total
       if (["quantity", "unitPrice", "tax"].includes(field)) {
         const q = Number(items[index].quantity) || 1;
         const p = Number(items[index].unitPrice) || 0.01;
@@ -146,9 +153,10 @@ const PurchaseOrderForm = ({
     });
   };
 
-  const removeAndUpdate = (index) => {
+  // Remove item
+  const removeItem = (index) => {
     setPurchaseOrderData((prev) => {
-      const newItems = prev.items.filter((_, i) => i !== index);
+      const newItems = (prev.items || []).filter((_, i) => i !== index);
       const totalAmount = newItems
         .reduce((sum, item) => sum + (item.total || 0), 0)
         .toFixed(2);
@@ -157,16 +165,13 @@ const PurchaseOrderForm = ({
     });
   };
 
-  // ─────────────────────────────────────────────────────────────
   // Table Columns
-  // ─────────────────────────────────────────────────────────────
-
   const columns = [
     {
       title: "Product",
       dataIndex: "name",
       key: "name",
-      width: 180,
+      width: 200,
       render: (_, record) => (
         <Space>
           {record.imageUrl && (
@@ -179,14 +184,21 @@ const PurchaseOrderForm = ({
               fallback="/placeholder-product.png"
             />
           )}
-          {record.name}
+          <div>
+            {record.name}
+            {record.productCode && (
+              <div style={{ fontSize: 12, color: "#666" }}>
+                {record.productCode}
+              </div>
+            )}
+          </div>
         </Space>
       ),
     },
     {
       title: "Qty",
       key: "quantity",
-      width: 80,
+      width: 90,
       render: (_, record, index) => (
         <MiniNumber
           min={1}
@@ -198,7 +210,7 @@ const PurchaseOrderForm = ({
     {
       title: "Unit Price (₹)",
       key: "unitPrice",
-      width: 110,
+      width: 120,
       render: (_, record, index) => (
         <MiniNumber
           min={0.01}
@@ -212,7 +224,7 @@ const PurchaseOrderForm = ({
     {
       title: "Tax %",
       key: "tax",
-      width: 90,
+      width: 100,
       render: (_, record, index) => (
         <MiniNumber
           min={0}
@@ -227,7 +239,7 @@ const PurchaseOrderForm = ({
     {
       title: "Line Total (₹)",
       key: "total",
-      width: 110,
+      width: 120,
       render: (_, record) =>
         (
           record.quantity *
@@ -238,80 +250,33 @@ const PurchaseOrderForm = ({
     {
       title: "",
       key: "action",
-      width: 50,
+      width: 60,
       render: (_, __, index) => (
         <Button
           type="text"
           danger
           size="small"
           icon={<DeleteOutlined />}
-          onClick={() => removeAndUpdate(index)}
+          onClick={() => removeItem(index)}
         />
       ),
     },
   ];
 
-  // ─────────────────────────────────────────────────────────────
-  // Add Product from Search
-  // ─────────────────────────────────────────────────────────────
+  const hasItems = (purchaseOrderData?.items || []).length > 0;
 
-  const handleAddProduct = (productId) => {
-    const product = filteredProducts.find((p) => p.productId === productId);
-    if (!product) return;
-
-    // Prevent duplicates
-    if (purchaseOrderData.items.some((item) => item.productId === productId)) {
-      return;
-    }
-
-    const unitPrice = Number(product.price ?? product.mrp ?? 0.01);
-    if (unitPrice <= 0) {
-      return;
-    }
-
-    const quantity = 1;
-    const tax = 0; // default
-    const total = quantity * unitPrice * (1 + tax / 100);
-
-    const newItem = {
-      productId: product.productId,
-      name: product.name || "Unnamed Product",
-      unitPrice,
-      quantity,
-      tax,
-      total,
-      imageUrl: product.images?.[0] || null,
-      productCode: product.product_code || product.code || "",
-    };
-
-    setPurchaseOrderData((prev) => {
-      const newItems = [...prev.items, newItem];
-      const totalAmount = newItems
-        .reduce((sum, item) => sum + (item.total || 0), 0)
-        .toFixed(2);
-
-      return { ...prev, items: newItems, totalAmount };
-    });
-
-    // Clear search
-    debouncedSearch("");
-  };
-
-  // ─────────────────────────────────────────────────────────────
   // Empty State
-  // ─────────────────────────────────────────────────────────────
-
-  if (!cartItems.length && !purchaseOrderData.items.length) {
+  if (!hasItems) {
     return (
       <CompactCard>
         <Empty
-          description="No products selected for Purchase Order"
+          description="No items in cart for Purchase Order"
           image={<DeleteOutlined style={{ fontSize: 48 }} />}
         />
         <Button
           type="primary"
           icon={<ArrowLeftOutlined />}
-          onClick={() => setActiveTab("cart")}
+          onClick={() => setActiveTab?.("cart")}
           block
         >
           Back to Cart
@@ -320,17 +285,13 @@ const PurchaseOrderForm = ({
     );
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Render
-  // ─────────────────────────────────────────────────────────────
-
   return (
     <Row gutter={12}>
-      {/* LEFT: FORM */}
+      {/* LEFT: FORM SECTION */}
       <Col xs={24} md={16}>
         <CompactCard title={<Title level={5}>Create Purchase Order</Title>}>
           <Collapse defaultActiveKey={["1", "2"]} ghost>
-            {/* Vendor & Document */}
+            {/* Vendor & Basic Info */}
             <Panel header="Vendor & Basic Info" key="1">
               <TightRow gutter={8}>
                 <Col span={8}>
@@ -339,33 +300,25 @@ const PurchaseOrderForm = ({
                   </Text>
                 </Col>
                 <Col span={16}>
-                  <Space.Compact block style={{ width: "100%" }}>
-                    <MiniSelect
-                      value={selectedVendor}
-                      onChange={setSelectedVendor}
-                      loading={isVendorsLoading}
-                      showSearch
-                      placeholder="Select vendor"
-                      filterOption={(input, option) =>
-                        option.children
-                          .toLowerCase()
-                          .includes(input.toLowerCase())
-                      }
-                    >
-                      {vendors.map((v) => (
-                        <Option key={v.id} value={v.id}>
-                          {v.vendorName}
+                  <MiniSelect
+                    value={selectedVendor}
+                    onChange={setSelectedVendor}
+                    loading={isVendorsLoading}
+                    showSearch
+                    placeholder="Select vendor"
+                    filterOption={(input, option) =>
+                      (option?.children || "")
+                        .toLowerCase()
+                        .includes(input.toLowerCase())
+                    }
+                  >
+                    {Array.isArray(vendors) &&
+                      vendors.map((v) => (
+                        <Option key={v.id || v._id} value={v.id || v._id}>
+                          {v.vendorName || v.name || "Unnamed Vendor"}
                         </Option>
                       ))}
-                    </MiniSelect>
-                    <Button
-                      type="primary"
-                      size="small"
-                      onClick={() => setShowAddVendorModal(true)}
-                    >
-                      +
-                    </Button>
-                  </Space.Compact>
+                  </MiniSelect>
                 </Col>
               </TightRow>
 
@@ -375,7 +328,7 @@ const PurchaseOrderForm = ({
                 </Col>
                 <Col span={16}>
                   <MiniDate
-                    value={moment(purchaseOrderData.orderDate || new Date())}
+                    value={moment(purchaseOrderData.orderDate)}
                     disabled
                   />
                 </Col>
@@ -393,10 +346,12 @@ const PurchaseOrderForm = ({
                         : null
                     }
                     onChange={(date) =>
-                      handlePurchaseOrderChange(
-                        "expectDeliveryDate",
-                        date ? date.format("YYYY-MM-DD") : null,
-                      )
+                      setPurchaseOrderData((prev) => ({
+                        ...prev,
+                        expectDeliveryDate: date
+                          ? date.format("YYYY-MM-DD")
+                          : null,
+                      }))
                     }
                     disabledDate={(current) =>
                       current && current < moment().startOf("day")
@@ -406,46 +361,19 @@ const PurchaseOrderForm = ({
               </TightRow>
             </Panel>
 
-            {/* Products */}
+            {/* Products Table */}
             <Panel header="Products" key="2">
-              <TightRow gutter={8} style={{ marginBottom: 12 }}>
-                <Col span={24}>
-                  <MiniSelect
-                    showSearch
-                    placeholder="Search and add product..."
-                    onSearch={debouncedSearch}
-                    onChange={handleAddProduct}
-                    loading={isProductsLoading}
-                    filterOption={false}
-                    notFoundContent={
-                      isProductsLoading ? (
-                        <Spin size="small" />
-                      ) : (
-                        "No matching products"
-                      )
-                    }
-                  >
-                    {filteredProducts.map((p) => (
-                      <Option key={p.productId} value={p.productId}>
-                        {p.name} {p.product_code ? `(${p.product_code})` : ""}
-                      </Option>
-                    ))}
-                  </MiniSelect>
-                </Col>
-              </TightRow>
-
               <CompactTable
                 columns={columns}
-                dataSource={purchaseOrderData.items}
+                dataSource={purchaseOrderData?.items || []}
                 rowKey={(record, index) => `po-item-${index}`}
                 pagination={false}
-                locale={{ emptyText: "No items added yet" }}
                 size="small"
               />
 
-              {purchaseOrderData.items.length > 0 && (
+              {hasItems && (
                 <div style={{ marginTop: 12, textAlign: "right" }}>
-                  <Text strong>Total: ₹{purchaseOrderTotal}</Text>
+                  <Text strong>Total: ₹{purchaseOrderData.totalAmount}</Text>
                 </div>
               )}
             </Panel>
@@ -453,7 +381,7 @@ const PurchaseOrderForm = ({
         </CompactCard>
       </Col>
 
-      {/* RIGHT: SUMMARY */}
+      {/* RIGHT: SUMMARY SECTION */}
       <Col xs={24} md={8}>
         <CompactCard
           title={<Text strong>Order Summary</Text>}
@@ -463,8 +391,10 @@ const PurchaseOrderForm = ({
             <div>
               <Text type="secondary">Vendor</Text>
               <div>
-                {vendors.find((v) => v.id === selectedVendor)?.vendorName ||
-                  "Not selected"}
+                {Array.isArray(vendors)
+                  ? vendors.find((v) => (v.id || v._id) === selectedVendor)
+                      ?.vendorName || "Not selected"
+                  : "Not selected"}
               </div>
             </div>
 
@@ -472,13 +402,13 @@ const PurchaseOrderForm = ({
 
             <div>
               <Text type="secondary">Items</Text>
-              <div>{purchaseOrderData.items.length}</div>
+              <div>{(purchaseOrderData?.items || []).length}</div>
             </div>
 
             <div>
               <Text type="secondary">Grand Total</Text>
               <div style={{ fontSize: 18, fontWeight: 600 }}>
-                ₹{purchaseOrderTotal}
+                ₹{purchaseOrderData.totalAmount || 0}
               </div>
             </div>
 
@@ -489,15 +419,13 @@ const PurchaseOrderForm = ({
               icon={<CheckCircleOutlined />}
               onClick={handleCreateDocument}
               disabled={
-                !selectedVendor ||
-                purchaseOrderData.items.length === 0 ||
-                purchaseOrderData.items.some((item) => item.unitPrice <= 0)
+                !selectedVendor || (purchaseOrderData?.items || []).length === 0
               }
             >
               Create Purchase Order
             </CheckoutBtn>
 
-            <Button block onClick={() => setActiveTab("cart")}>
+            <Button block onClick={() => setActiveTab?.("cart")}>
               Back to Cart
             </Button>
           </Space>

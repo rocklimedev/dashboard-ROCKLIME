@@ -315,7 +315,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
               </Button>
 
               <PermissionsGate api="write" module="cart">
-                <Link to="/cart">
+                <Link to="/cart/quotation">
                   <Badge count={cartItemCount} size="small" offset={[-4, 4]}>
                     <ShoppingCartOutlined style={{ fontSize: 20 }} />
                   </Badge>
@@ -348,7 +348,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                     <PermissionsGate api="write" module="cart">
                       <Menu.Item key="cart" icon={<ShoppingCartOutlined />}>
                         <Link
-                          to="/cart"
+                          to="/cart/quotation"
                           className="d-flex justify-content-between w-100"
                         >
                           Cart{" "}

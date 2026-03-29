@@ -4,7 +4,7 @@ const quotationController = require("../controller/quotationController");
 const { auth } = require("../middleware/auth"); // Authentication middleware
 const checkPermission = require("../middleware/permission"); // Permission middleware
 
-router.use(auth);
+//router.use(auth);
 // ✅ Create a new quotation (Only Admins & Managers)
 router.post(
   "/add",

@@ -5,8 +5,7 @@ import { Tabs, Modal, Typography, Segmented, message } from "antd";
 import { ShoppingCartOutlined, CheckCircleOutlined } from "@ant-design/icons";
 import { useDispatch } from "react-redux";
 import { v4 as uuidv4 } from "uuid";
-import CartTab from "./CartTab";
-
+import CartTab from "../../components/POS-NEW/Cart";
 import {
   useGetCartQuery,
   useUpdateCartMutation,
@@ -15,9 +14,10 @@ import {
   cartApi,
 } from "../../api/cartApi";
 
-import useProductsData from "../../utils/useProductdata"; // or useProductsData.js
+import useProductsData from "../../utils/useProductdata";
 import { useAuth } from "../../context/AuthContext";
 import { useGetProfileQuery } from "../../api/userApi";
+
 const { TabPane } = Tabs;
 const { Text } = Typography;
 
@@ -31,37 +31,39 @@ const CartLayout = ({ children }) => {
   const { auth } = useAuth();
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { data: profileData } = useGetProfileQuery();
   const location = useLocation();
+
+  const { data: profileData } = useGetProfileQuery();
   const user = profileData?.user ?? {};
   const userId = user.userId;
 
-  // Determine document type from route
-  const getInitialDocumentType = () => {
+  // ==================== DOCUMENT TYPE LOGIC ====================
+  const getDocumentTypeFromPath = () => {
     const path = location.pathname.toLowerCase();
     if (path.includes("purchase-order")) return "purchase-order";
     if (path.includes("order")) return "order";
-    return "quotation";
+    if (path.includes("quotation")) return "quotation";
+    return "quotation"; // default
   };
 
+  const [documentType, setDocumentType] = useState(getDocumentTypeFromPath);
   const [activeTab, setActiveTab] = useState("cart");
-  const [documentType, setDocumentType] = useState(getInitialDocumentType);
 
-  // ── Core State ─────────────────────────────────────────────
+  // Core State
   const [localCartItems, setLocalCartItems] = useState([]);
   const [showClearCartModal, setShowClearCartModal] = useState(false);
 
-  // ── Item-level adjustments ────────────────────────────────
+  // Item-level adjustments
   const [itemDiscounts, setItemDiscounts] = useState({});
   const [itemTaxes, setItemTaxes] = useState({});
   const [itemDiscountTypes, setItemDiscountTypes] = useState({});
   const [updatingItems, setUpdatingItems] = useState({});
 
-  // ── Common fields ─────────────────────────────────────────
+  // Common fields
   const [shipping, setShipping] = useState(0);
   const [gst, setGst] = useState(0);
 
-  // ── Queries & Mutations ───────────────────────────────────
+  // Queries & Mutations
   const { data: cartData } = useGetCartQuery(userId, { skip: !userId });
 
   const [updateCart] = useUpdateCartMutation();
@@ -69,22 +71,33 @@ const CartLayout = ({ children }) => {
   const [removeFromCart] = useRemoveFromCartMutation();
 
   const allCartItems = useMemo(() => cartData?.cart?.items || [], [cartData]);
-  console.log(allCartItems);
-  // Sync local cart with server data + migration logic
-  // Sync local cart with server data + migration logic
+
+  // ==================== AUTO REDIRECT /cart → /cart/quotation ====================
   useEffect(() => {
-    // Only update when we actually have cartData (even if empty)
-    if (!cartData) return; // Wait for query to resolve at least once
+    if (location.pathname === "/cart" || location.pathname === "/cart/") {
+      navigate("/cart/quotation", { replace: true });
+    }
+  }, [location.pathname, navigate]);
+
+  // Update documentType when route changes
+  useEffect(() => {
+    const currentType = getDocumentTypeFromPath();
+    if (currentType !== documentType) {
+      setDocumentType(currentType);
+    }
+  }, [location.pathname]);
+
+  // Sync local cart with server data
+  useEffect(() => {
+    if (!allCartItems.length) {
+      setLocalCartItems([]);
+      return;
+    }
 
     setLocalCartItems((prev) => {
       const prevMap = new Map(
         prev.map((item) => [item.id || item.productId, item]),
       );
-
-      // If server cart is empty, clear local cart
-      if (!allCartItems.length) {
-        return [];
-      }
 
       return allCartItems.map((serverItem) => {
         const id = serverItem.id || serverItem.productId || uuidv4();
@@ -103,8 +116,9 @@ const CartLayout = ({ children }) => {
         };
       });
     });
-  }, [allCartItems, cartData]); // ← Important: depend on cartData too
-  // ── Calculations ──────────────────────────────────────────
+  }, [allCartItems]);
+
+  // ==================== CALCULATIONS ====================
   const calculationCartItems = useMemo(
     () => localCartItems.filter((i) => !i.isOption),
     [localCartItems],
@@ -165,7 +179,7 @@ const CartLayout = ({ children }) => {
     gst > 0 ? parseFloat(((roundedAmount * gst) / 100).toFixed(2)) : 0;
   const totalAmount = parseFloat((roundedAmount + gstAmount).toFixed(2));
 
-  // ── Document Type Change Handler ─────────────────────────
+  // ==================== HANDLERS ====================
   const handleDocumentTypeChange = (newType) => {
     setDocumentType(newType);
     const routeMap = {
@@ -173,14 +187,14 @@ const CartLayout = ({ children }) => {
       order: "/cart/order",
       "purchase-order": "/cart/purchase-order",
     };
-    navigate(routeMap[newType] || "/cart/quotation");
+    navigate(routeMap[newType], { replace: true });
   };
 
-  // ── Cart Handlers ─────────────────────────────────────────
   const handleUpdateQuantity = useCallback(
     async (productId, newQty) => {
       if (!userId || newQty < 1) return;
       setUpdatingItems((prev) => ({ ...prev, [productId]: true }));
+
       try {
         await updateCart({
           userId,
@@ -202,6 +216,7 @@ const CartLayout = ({ children }) => {
       e?.stopPropagation?.();
       if (!userId) return message.error("User not logged in");
 
+      // Optimistic update
       dispatch(
         cartApi.util.updateQueryData("getCart", userId, (draft) => {
           draft.cart.items = draft.cart.items.filter(
@@ -210,7 +225,7 @@ const CartLayout = ({ children }) => {
         }),
       );
 
-      // Clean up local adjustment states
+      // Clear local adjustments
       setItemDiscounts((prev) => {
         const { [productId]: _, ...rest } = prev;
         return rest;
@@ -233,34 +248,102 @@ const CartLayout = ({ children }) => {
     [userId, dispatch, removeFromCart],
   );
 
+  // ==================== LOCATION ASSIGNMENT HANDLER ====================
   const handleAssignItemToLocation = useCallback(
-    (itemId, floorId, roomId = null, areaId = null) => {
-      if (!floorId) return message.error("Please select a floor");
+    (
+      itemId,
+      floorId,
+      roomId = null,
+      areaId = null,
+      floorName = null,
+      roomName = null,
+      areaName = null,
+      assignedQuantity = null,
+    ) => {
+      if (!itemId) return;
 
       setLocalCartItems((prev) =>
-        prev.map((item) =>
-          item.id === itemId
-            ? {
-                ...item,
+        prev.map((item) => {
+          const currentId = item.id || item.productId;
+          if (currentId !== itemId) return item;
+
+          return {
+            ...item,
+            floorId,
+            roomId,
+            areaId,
+            // ← This is the critical part - save real names
+            floorName: floorName || item.floorName,
+            roomName: roomName || item.roomName,
+            areaName: areaName || item.areaName,
+            quantity: assignedQuantity || item.quantity,
+            // Optional: keep history of assignments
+            locations: [
+              ...(item.locations || []),
+              {
                 floorId,
-                floorName: null,
-                roomId: roomId || null,
-                roomName: null,
-                areaId: areaId || null,
-                areaName: null,
-                assignedQuantity: item.assignedQuantity || item.quantity || 1,
-              }
-            : item,
-        ),
+                roomId,
+                areaId,
+                floorName,
+                roomName,
+                areaName,
+                assignedQuantity: assignedQuantity || item.quantity,
+              },
+            ],
+          };
+        }),
       );
-      message.success("Item assigned successfully");
+
+      message.success("Item location assigned successfully");
     },
     [],
   );
 
-  const handleDiscountChange = (productId, value) => {
+  const handleMakeOption = useCallback(
+    (productId, optionType, parentProductId = null) => {
+      if (!userId) return message.error("User not logged in");
+
+      dispatch(
+        cartApi.util.updateQueryData("getCart", userId, (draft) => {
+          const item = draft.cart.items.find((i) => i.productId === productId);
+          if (item) {
+            if (optionType === null || optionType === "main") {
+              item.isOption = false;
+              item.optionType = null;
+              item.parentProductId = null;
+            } else {
+              item.isOption = true;
+              item.optionType = optionType;
+              item.parentProductId = parentProductId || null;
+            }
+          }
+        }),
+      );
+
+      message.info(
+        optionType
+          ? `Item marked as ${optionType}`
+          : "Item reset to main product",
+      );
+    },
+    [userId, dispatch],
+  );
+
+  const getParentName = useCallback(
+    (parentProductId) => {
+      if (!parentProductId) return "Unknown";
+      const parentItem = localCartItems.find(
+        (i) => i.productId === parentProductId,
+      );
+      return (
+        parentItem?.name || parentItem?.productId?.slice(0, 8) || "Unknown"
+      );
+    },
+    [localCartItems],
+  );
+
+  const handleDiscountChange = (productId, value) =>
     setItemDiscounts((prev) => ({ ...prev, [productId]: value ?? 0 }));
-  };
 
   const handleDiscountTypeChange = (productId, newType) => {
     setItemDiscountTypes((prev) => {
@@ -283,9 +366,8 @@ const CartLayout = ({ children }) => {
     });
   };
 
-  const handleTaxChange = (productId, value) => {
+  const handleTaxChange = (productId, value) =>
     setItemTaxes((p) => ({ ...p, [productId]: value >= 0 ? value : 0 }));
-  };
 
   const handleClearCart = async () => {
     if (!userId) return message.error("User not logged in!");
@@ -293,15 +375,58 @@ const CartLayout = ({ children }) => {
       await clearCart({ userId }).unwrap();
       setLocalCartItems([]);
       setShowClearCartModal(false);
-      setActiveTab("cart");
-      message.success("Cart cleared");
+      message.success("Cart cleared successfully");
     } catch (e) {
       message.error(e?.data?.message || "Failed to clear cart");
     }
   };
 
-  // Props to be passed down to QuotationForm / OrderForm / PurchaseOrderForm
-  const layoutProps = {
+  // Initialize item-level states when cart items change
+  useEffect(() => {
+    if (!localCartItems.length) return;
+
+    setItemDiscounts((prev) => {
+      const newDiscounts = { ...prev };
+      let changed = false;
+      localCartItems.forEach((item) => {
+        const pid = item.productId;
+        if (pid && !newDiscounts.hasOwnProperty(pid)) {
+          newDiscounts[pid] = 0;
+          changed = true;
+        }
+      });
+      return changed ? newDiscounts : prev;
+    });
+
+    setItemDiscountTypes((prev) => {
+      const newTypes = { ...prev };
+      let changed = false;
+      localCartItems.forEach((item) => {
+        const pid = item.productId;
+        if (pid && !newTypes.hasOwnProperty(pid)) {
+          newTypes[pid] = "percent";
+          changed = true;
+        }
+      });
+      return changed ? newTypes : prev;
+    });
+
+    setItemTaxes((prev) => {
+      const newTaxes = { ...prev };
+      let changed = false;
+      localCartItems.forEach((item) => {
+        const pid = item.productId;
+        if (pid && !newTaxes.hasOwnProperty(pid)) {
+          newTaxes[pid] = 0;
+          changed = true;
+        }
+      });
+      return changed ? newTaxes : prev;
+    });
+  }, [localCartItems]);
+
+  // Common props for CartTab and Checkout
+  const commonProps = {
     localCartItems,
     calculationCartItems,
     cartProductsData,
@@ -331,12 +456,14 @@ const CartLayout = ({ children }) => {
     setShowClearCartModal,
     handleClearCart,
     userId,
+    handleMakeOption,
+    getParentName,
   };
 
   return (
     <div className="page-wrapper">
       <div className="content">
-        {/* Document Type Switcher */}
+        {/* Document Type Selector */}
         <div style={{ marginBottom: 24 }}>
           <Segmented
             value={documentType}
@@ -356,13 +483,7 @@ const CartLayout = ({ children }) => {
             }
             key="cart"
           >
-            <CartTab
-              localCartItems={localCartItems} // ← Explicitly pass this
-              {...layoutProps} // You can keep spread if you want, but explicit is safer
-              discount={totalDiscount}
-              onShippingChange={setShipping}
-              documentType={documentType}
-            />
+            <CartTab {...commonProps} onShippingChange={setShipping} />
           </TabPane>
 
           <TabPane
@@ -373,7 +494,7 @@ const CartLayout = ({ children }) => {
             }
             key="checkout"
           >
-            {children(layoutProps)}
+            {children(commonProps)}
           </TabPane>
         </Tabs>
 

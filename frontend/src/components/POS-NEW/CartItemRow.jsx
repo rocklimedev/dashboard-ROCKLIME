@@ -1,4 +1,4 @@
-// CartItemRow.jsx
+// src/pages/quotations/CartItemRow.jsx
 import React from "react";
 import {
   Row,
@@ -57,53 +57,52 @@ const RemoveButton = styled(Button)`
 
 const CartItemRow = ({
   item,
-  itemDiscounts,
-  itemDiscountTypes,
-  itemTaxes,
-  updatingItems,
+  itemDiscounts = {},
+  itemDiscountTypes = {},
+  itemTaxes = {},
+  updatingItems = {},
   handleUpdateQuantity,
   handleRemoveItem,
   handleDiscountChange,
   handleDiscountTypeChange,
-  handleTaxChange,
+  handleTaxChange, // ← We have it but not using UI yet
   lineTotal,
   handleMakeOption,
   getParentName,
   documentType,
-  cartItems, // full list – used for parent selector
+  cartItems = [], // full list for parent selector
 }) => {
-  const { data: product, isLoading } = useGetProductByIdQuery(item.productId, {
-    skip: !item.productId,
+  const { data: product, isLoading } = useGetProductByIdQuery(item?.productId, {
+    skip: !item?.productId,
   });
 
-  const imageUrl = (() => {
-    if (!product?.images) return "https://via.placeholder.com/80";
-    if (Array.isArray(product.images) && product.images.length) {
-      return product.images[0];
-    }
-    try {
-      const parsed = JSON.parse(product.images);
-      return Array.isArray(parsed) && parsed.length
-        ? parsed[0]
-        : "https://via.placeholder.com/80";
-    } catch {
-      return "https://via.placeholder.com/80";
-    }
-  })();
+  const imageUrl =
+    product?.images?.[0] ||
+    (typeof product?.images === "string"
+      ? JSON.parse(product.images)[0]
+      : null) ||
+    "https://via.placeholder.com/80";
 
-  const discType = itemDiscountTypes[item.productId] || "percent";
+  const discType = itemDiscountTypes[item?.productId] || "percent";
+  const currentTax = itemTaxes[item?.productId] || 0;
 
-  const isQuotationMode = documentType === "Quotation";
-  const showDiscountAndTax = ["Quotation", "Order"].includes(documentType);
+  // With this:
+  const normalizedDocType = documentType?.toLowerCase() || "";
 
-  // Possible parents: all main (non-option) items except self
+  const isQuotationMode = normalizedDocType === "quotation";
+
+  const showDiscountAndTax =
+    normalizedDocType === "quotation" || normalizedDocType === "order";
+  // Possible parents for option
   const possibleParents = cartItems.filter(
-    (i) => i.productId !== item.productId && !i.isOption,
+    (i) => i.productId !== item?.productId && !i.isOption,
   );
 
   if (isLoading) {
     return (
-      <div style={{ padding: "20px 0", textAlign: "center" }}>Loading...</div>
+      <div style={{ padding: "20px 0", textAlign: "center" }}>
+        Loading product...
+      </div>
     );
   }
 
@@ -115,36 +114,35 @@ const CartItemRow = ({
           <Col flex="0 0 80px">
             <CartItemImage
               src={imageUrl}
-              alt={product?.name || item.name}
+              alt={product?.name || item?.name}
               effect="blur"
               placeholderSrc="https://via.placeholder.com/80?text=..."
             />
           </Col>
 
-          {/* Main content – name + controls */}
+          {/* Main Content */}
           <Col flex="1 1 auto">
             <div style={{ marginBottom: 4 }}>
-              <Text strong>{product?.name || item.name || "—"}</Text>
+              <Text strong>{product?.name || item?.name || "—"}</Text>
 
-              {item.isOption && item.parentProductId && (
+              {item?.isOption && item?.parentProductId && (
                 <Text
                   type="secondary"
                   style={{ fontSize: "0.9em", marginLeft: 12 }}
                 >
-                  ↳ for {getParentName(item.parentProductId)}
+                  ↳ for {getParentName?.(item.parentProductId) || "Unknown"}
                 </Text>
               )}
             </div>
 
             <Text type="success" strong>
-              ₹{(item.price || 0).toFixed(2)}
+              ₹{(item?.price || 0).toFixed(2)}
             </Text>
 
-            {/* Option Type + Parent Selector → Only in Quotation */}
-            {isQuotationMode && (
+            {/* Option Controls - Only for Quotation */}
+            {isQuotationMode && handleMakeOption && (
               <div style={{ marginTop: 12 }}>
                 <Space wrap size={[12, 8]}>
-                  {/* Option Type Selector */}
                   <Select
                     size="small"
                     value={item.optionType || "main"}
@@ -163,11 +161,10 @@ const CartItemRow = ({
                     <Option value="variant">Variant</Option>
                   </Select>
 
-                  {/* Parent selector – shown only when item is option */}
                   {item.isOption && (
                     <Select
                       size="small"
-                      placeholder="Select parent item"
+                      placeholder="Select parent"
                       value={item.parentProductId || undefined}
                       onChange={(parentId) =>
                         handleMakeOption(
@@ -184,7 +181,7 @@ const CartItemRow = ({
                     >
                       {possibleParents.map((p) => (
                         <Option key={p.productId} value={p.productId}>
-                          {p.name || p.productId.slice(0, 8)}
+                          {p.name || p.productId?.slice(0, 8)}
                         </Option>
                       ))}
                     </Select>
@@ -193,17 +190,17 @@ const CartItemRow = ({
               </div>
             )}
 
-            {/* Discount & Tax → Both Quotation and Order */}
+            {/* Discount & Tax Controls */}
+            {/* Discount & Tax Controls */}
             {showDiscountAndTax && (
               <div style={{ marginTop: 12 }}>
-                <Space wrap size={[12, 8]}>
-                  {/* Discount controls */}
+                <Space wrap size={[12, 8]} align="center">
                   <Space.Compact>
                     <Select
                       size="small"
                       value={discType}
                       onChange={(v) =>
-                        handleDiscountTypeChange(item.productId, v)
+                        handleDiscountTypeChange?.(item?.productId, v)
                       }
                       style={{ width: 70 }}
                     >
@@ -214,11 +211,11 @@ const CartItemRow = ({
                     <InputNumber
                       size="small"
                       min={0}
-                      max={discType === "percent" ? 100 : undefined} // ← Add this
+                      max={discType === "percent" ? 100 : undefined}
                       precision={discType === "percent" ? 1 : 2}
-                      value={itemDiscounts[item.productId] ?? 0}
+                      value={itemDiscounts[item?.productId] ?? 0}
                       onChange={(v) =>
-                        handleDiscountChange(item.productId, v ?? 0)
+                        handleDiscountChange?.(item?.productId, v ?? 0)
                       }
                       addonAfter={discType === "percent" ? "%" : "₹"}
                       style={{ width: 110 }}
@@ -229,17 +226,19 @@ const CartItemRow = ({
             )}
           </Col>
 
-          {/* Quantity */}
+          {/* Quantity Controls */}
           <Col flex="0 0 140px" style={{ textAlign: "center" }}>
             <Space size="small">
               <QuantityButton
                 onClick={() =>
                   handleUpdateQuantity(
                     item.productId,
-                    Math.max(1, item.quantity - 1),
+                    Math.max(1, (item.quantity || 1) - 1),
                   )
                 }
-                disabled={item.quantity <= 1 || updatingItems[item.productId]}
+                disabled={
+                  (item.quantity || 1) <= 1 || updatingItems[item.productId]
+                }
                 loading={updatingItems[item.productId]}
               >
                 −
@@ -247,7 +246,7 @@ const CartItemRow = ({
 
               <InputNumber
                 min={1}
-                value={item.quantity}
+                value={item.quantity || 1}
                 onChange={(v) =>
                   v && handleUpdateQuantity(item.productId, Number(v))
                 }
@@ -258,7 +257,7 @@ const CartItemRow = ({
 
               <QuantityButton
                 onClick={() =>
-                  handleUpdateQuantity(item.productId, item.quantity + 1)
+                  handleUpdateQuantity(item.productId, (item.quantity || 1) + 1)
                 }
                 disabled={updatingItems[item.productId]}
                 loading={updatingItems[item.productId]}
@@ -268,17 +267,15 @@ const CartItemRow = ({
             </Space>
           </Col>
 
-          {/* Total + Remove */}
+          {/* Line Total + Remove */}
           <Col flex="0 0 120px" style={{ textAlign: "right" }}>
-            <div>
-              <Text strong style={{ fontSize: "1.1em", color: "#52c41a" }}>
-                ₹{lineTotal(item)}
-              </Text>
-            </div>
+            <Text strong style={{ fontSize: "1.1em", color: "#52c41a" }}>
+              ₹{lineTotal ? lineTotal(item) : "0.00"}
+            </Text>
             <RemoveButton
               danger
               icon={<DeleteFilled />}
-              onClick={(e) => handleRemoveItem(e, item.productId)}
+              onClick={(e) => handleRemoveItem?.(e, item.productId)}
               disabled={updatingItems[item.productId]}
               loading={updatingItems[item.productId]}
               style={{ marginTop: 8 }}

@@ -648,8 +648,7 @@ exports.createOrder = async (req, res) => {
       source,
       priority,
       description,
-      orderNo: rawOrderNo, // ignored from client
-      quotationId,
+      quotationId, // can be null
       products = [],
       masterPipelineNo,
       previousOrderNo,
@@ -662,7 +661,7 @@ exports.createOrder = async (req, res) => {
       amountPaid = 0,
     } = req.body;
 
-    // ── BASIC REQUIRED FIELDS ──
+    // ── BASIC VALIDATION ──
     if (!createdFor || !createdBy) {
       return sendErrorResponse(
         res,
@@ -699,12 +698,6 @@ exports.createOrder = async (req, res) => {
           404,
           `Master order ${masterPipelineNo} not found`,
         );
-      if (masterPipelineNo === orderNo)
-        return sendErrorResponse(
-          res,
-          400,
-          "Master cannot be the same as current order",
-        );
     }
     if (previousOrderNo) {
       const p = await Order.findOne({
@@ -720,9 +713,6 @@ exports.createOrder = async (req, res) => {
     }
 
     // ── PRODUCTS VALIDATION + ENRICHMENT ──
-    let productUpdates = [];
-    let enrichedProducts = []; // what we save in Order.products
-
     if (products.length === 0) {
       return sendErrorResponse(
         res,
@@ -730,12 +720,11 @@ exports.createOrder = async (req, res) => {
         "Cannot create order without products",
       );
     }
-
     if (!Array.isArray(products)) {
       return sendErrorResponse(res, 400, "Products must be an array");
     }
 
-    // Fetch all relevant products in one query
+    // Fetch all products in one query
     const productIds = products.map((p) => p.id).filter(Boolean);
     const dbProducts = await Product.findAll({
       where: { productId: productIds },
@@ -758,9 +747,12 @@ exports.createOrder = async (req, res) => {
         name: p.name || "Unknown",
         imageUrl,
         productCode: p.product_code || "",
-        companyCode: p.meta?.["d11da9f9-3f2e-4536-8236-9671200cca4a"] || null,
+        companyCode: p.meta?.["d11da9f9-3f2e-4536-8236-9671200cca4a"] || "",
       };
     });
+
+    let productUpdates = [];
+    let enrichedProducts = [];
 
     for (const p of products) {
       const {
@@ -773,7 +765,6 @@ exports.createOrder = async (req, res) => {
         tax = 0,
       } = p;
 
-      // Required fields validation
       if (!id || !quantity || quantity < 1 || price == null || total == null) {
         return sendErrorResponse(
           res,
@@ -788,7 +779,7 @@ exports.createOrder = async (req, res) => {
       });
       if (!prod) return sendErrorResponse(res, 404, `Product not found: ${id}`);
 
-      // Validate calculated total
+      // Validate total
       const calculatedTotal =
         discountType === "percent"
           ? price * (1 - discount / 100) * quantity
@@ -817,7 +808,7 @@ exports.createOrder = async (req, res) => {
         productRecord: prod,
       });
 
-      // Enrich product data for saving
+      // Enrich using productMap
       const prodInfo = productMap[id] || {};
       enrichedProducts.push({
         id,
@@ -846,7 +837,7 @@ exports.createOrder = async (req, res) => {
     const parsedAmountPaid = parseFloat(amountPaid) || 0;
 
     const { gstValue, extraDiscountValue, finalAmount } = computeTotals({
-      products, // still use original for calculations
+      products,
       shipping: parsedShipping,
       gst: parsedGst,
       extraDiscount: parsedExtraDiscount,
@@ -866,7 +857,7 @@ exports.createOrder = async (req, res) => {
     // ── GENERATE ORDER NUMBER ──
     const orderNo = await generateDailyOrderNumber(t);
 
-    // ── CREATE ORDER (MySQL) ──
+    // ── CREATE ORDER IN MYSQL ──
     const order = await Order.create(
       {
         createdFor,
@@ -880,7 +871,7 @@ exports.createOrder = async (req, res) => {
         priority: priorityLower,
         description: description || null,
         orderNo,
-        quotationId: quotationId || null,
+        quotationId: quotationId || null, // can be null
         masterPipelineNo: masterPipelineNo || null,
         previousOrderNo: previousOrderNo || null,
         shipTo: shipTo || null,
@@ -895,7 +886,7 @@ exports.createOrder = async (req, res) => {
         extraDiscountValue,
         amountPaid: parsedAmountPaid,
         finalAmount,
-        products: enrichedProducts, // ← enriched version!
+        products: enrichedProducts,
       },
       { transaction: t },
     );
@@ -913,42 +904,53 @@ exports.createOrder = async (req, res) => {
 
     await t.commit();
 
-    // ── SAVE TO MONGODB (using enriched data) ──
+    // ── SAVE TO MONGODB USING productMap ──
     if (products.length > 0) {
       try {
-        // Reuse enrichedProducts (already contains name, imageUrl, etc.)
-        const mongoItems = enrichedProducts.map((p) => ({
-          productId: p.id,
-          name: p.name,
-          imageUrl: p.imageUrl,
-          productCode: p.productCode,
-          companyCode: p.companyCode,
-          quantity: p.quantity,
-          price: p.price,
-          discount: p.discount || 0,
-          discountType: p.discountType || "percent",
-          total: p.total,
-        }));
+        const mongoItems = products.map((p) => {
+          const prodInfo = productMap[p.id] || {};
+          return {
+            productId: p.id,
+            name: prodInfo.name || "Unknown Product",
+            imageUrl: prodInfo.imageUrl || "",
+            productCode: prodInfo.productCode || "",
+            companyCode: prodInfo.companyCode || "",
+            quantity: p.quantity,
+            price: p.price,
+            discount: p.discount || 0,
+            discountType: p.discountType || "percent",
+            tax: p.tax || 0,
+            total: p.total,
+          };
+        });
 
         await OrderItem.findOneAndUpdate(
           { orderId: order.id },
           { orderId: order.id, items: mongoItems },
           { upsert: true },
         );
-      } catch (mongoErr) {}
+
+        console.log(
+          `✅ MongoDB OrderItem saved successfully for order ${order.orderNo}`,
+        );
+      } catch (mongoErr) {
+        console.error("MongoDB save error (non-critical):", mongoErr);
+      }
     }
 
     // ── NOTIFICATIONS ──
     const recipients = new Set(
       [createdBy, assignedUserId, secondaryUserId].filter(Boolean),
     );
-    for (const userId of recipients) {
+
+    for (const uid of recipients) {
       await sendNotification({
-        userId,
+        userId: uid,
         title: `New Order #${order.orderNo}`,
         message: `Order #${order.orderNo} created for ${customer.name}.`,
       });
     }
+
     await sendNotification({
       userId: ADMIN_USER_ID,
       title: `New Order #${order.orderNo}`,
@@ -961,14 +963,11 @@ exports.createOrder = async (req, res) => {
       orderNo: order.orderNo,
     });
   } catch (err) {
-    try {
-      await t.rollback();
-    } catch (rollbackErr) {}
-
+    await t.rollback().catch(() => {});
+    console.error("Create Order Error:", err);
     return sendErrorResponse(res, 500, "Failed to create order", err.message);
   }
 };
-
 // ──────── UPDATE ORDER (by id) ────────
 // ──────── UPDATE ORDER (by id) ────────
 // ────────────────────────────────

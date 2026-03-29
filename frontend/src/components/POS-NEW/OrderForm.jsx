@@ -24,7 +24,7 @@ import {
   PlusOutlined,
 } from "@ant-design/icons";
 import styled from "styled-components";
-import OrderTotal from "./OrderTotal";
+import OrderTotal from "../../components/POS-NEW/OrderTotal";
 import moment from "moment";
 import { debounce } from "lodash";
 import { useCreateAddressMutation } from "../../api/addressApi";
@@ -32,8 +32,7 @@ import { useGetAllOrdersQuery } from "../../api/orderApi";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useAuth } from "../../context/AuthContext";
-import AddCustomerModal from "../Customers/AddCustomerModal";
-
+import AddCustomerModal from "../../components/Customers/AddCustomerModal";
 const { Text, Title } = Typography;
 const { Option } = Select;
 const { Panel } = Collapse;
@@ -155,6 +154,11 @@ const OrderForm = ({
   setUseBillingAddress,
   documentType,
   setDocumentType,
+  // ────── ADD THESE 4 PROPS ──────
+  itemDiscounts = {},
+  itemDiscountTypes = {},
+  itemTaxes = {},
+  handleClearCart,
 }) => {
   const { auth } = useAuth();
   const canCreatePurchaseOrder =
@@ -974,7 +978,16 @@ const OrderForm = ({
                 message.error("Please fix all required fields");
                 return;
               }
-              handleCreateDocument();
+
+              handleCreateDocument({
+                calculationCartItems: cartItems, // or effectiveCartItems if you add it
+                shipping,
+                gst,
+                itemDiscounts, // ← Now directly available
+                itemDiscountTypes, // ← Now directly available
+                itemTaxes, // ← Now directly available
+                handleClearCart,
+              });
             }}
             disabled={!canSubmit}
           >
