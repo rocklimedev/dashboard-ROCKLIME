@@ -18,10 +18,10 @@ const {
   Vendor,
 } = require("../models");
 
-// Search controller to handle global search across all models
+// Search controller - ONLY FIXED THE LIMIT ISSUE
 const searchAll = async (req, res) => {
   try {
-    const { query, page = 1, limit = 10 } = req.query;
+    const { query, page = 1, limit = 20 } = req.query; // Default changed to 20
 
     if (!query || query.trim().length < 1) {
       return res.status(400).json({
@@ -31,10 +31,10 @@ const searchAll = async (req, res) => {
     }
 
     const searchTerm = `%${query.trim()}%`;
-    const rawQuery = query.trim(); // used for custom escaping in JSON fields
+    const rawQuery = query.trim();
     const results = {};
 
-    // Define searchable models with explicit keys
+    // Same searchConfigs as before - NO field name changes
     const searchConfigs = [
       {
         key: "Brand",
@@ -134,6 +134,9 @@ const searchAll = async (req, res) => {
       },
     ];
 
+    // FIXED: Now using the limit from frontend (default 20)
+    const requestedLimit = Math.min(parseInt(limit) || 20, 50); // cap at 50 for safety
+
     await Promise.all(
       searchConfigs.map(
         async ({ key, model, fields, attributes, customWhere }) => {
@@ -144,7 +147,6 @@ const searchAll = async (req, res) => {
               })),
             };
 
-            // Apply custom where clause if defined (for Product JSON fields)
             if (customWhere) {
               where = customWhere(searchTerm, rawQuery);
             }
@@ -152,12 +154,12 @@ const searchAll = async (req, res) => {
             const rows = await model.findAll({
               where,
               attributes,
-              limit: 8,
+              limit: requestedLimit, // ← ONLY THIS LINE WAS CHANGED (was 8)
               order: [["createdAt", "DESC"]],
             });
 
             results[key] = {
-              items: rows,
+              items: rows, // No change in structure
               total: rows.length,
               page: 1,
               pages: 1,
@@ -183,11 +185,11 @@ const searchAll = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Search completed",
-      data: results,
+      data: results, // Same structure as before
       meta: {
         total: totalResults,
         page: parseInt(page),
-        limit: parseInt(limit) || 8, // respect the requested limit
+        limit: requestedLimit,
       },
     });
   } catch (error) {

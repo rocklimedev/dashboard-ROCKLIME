@@ -109,12 +109,29 @@ const SearchPage = () => {
           <Avatar icon={<UserOutlined />} {...commonProps} />
         );
 
-      case "product":
-        const img = Array.isArray(item.images)
-          ? item.images[0]
-          : item.images?.[0] || null;
-        return img ? (
-          <Avatar shape="square" src={img} {...commonProps} />
+      case "product": {
+        let productImage = null;
+
+        if (Array.isArray(item.images) && item.images.length > 0) {
+          productImage = item.images[0];
+        } else if (typeof item.images === "string") {
+          try {
+            const parsed = JSON.parse(item.images);
+            productImage =
+              Array.isArray(parsed) && parsed.length > 0 ? parsed[0] : null;
+          } catch (e) {
+            // invalid JSON → ignore
+          }
+        }
+
+        return productImage ? (
+          <Avatar
+            src={productImage}
+            shape="square"
+            {...commonProps}
+            style={{ objectFit: "cover" }}
+            alt={item.name || item.product_code}
+          />
         ) : (
           <Avatar
             shape="square"
@@ -122,7 +139,7 @@ const SearchPage = () => {
             {...commonProps}
           />
         );
-
+      }
       case "order":
       case "invoice":
       case "quotation":
