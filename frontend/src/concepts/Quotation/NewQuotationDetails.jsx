@@ -2,6 +2,7 @@
 
 import React, { useRef, useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
+import { useCallback } from "react";
 import {
   message,
   Button,
@@ -283,6 +284,92 @@ const NewQuotationsDetails = () => {
       return hasRooms || hasAssignedProducts;
     });
   }, [activeVersionData.quotation, quotation, allProducts]);
+  // Helper to enrich products with correct area info from floors structure
+  // ── Enriched Products for Area Layout ─────────────────────────────────────
+
+  // Make enrichProductsWithAreas stable (optional but recommended)
+  const enrichProductsWithAreas = useCallback((allProducts, floors) => {
+    const areaMap = new Map(); // roomId -> areaValue -> areaName
+
+    floors.forEach((floor) => {
+      floor.rooms?.forEach((room) => {
+        room.areas?.forEach((areaObj) => {
+          const areaValue = areaObj.value || areaObj.name?.toLowerCase();
+          if (areaValue) {
+            const key = `${room.roomId}_${areaValue}`;
+            areaMap.set(key, areaObj.name || areaObj.value || "Unassigned");
+          }
+        });
+      });
+    });
+
+    return allProducts.map((p) => {
+      // Strategy 1: Use areaValue/areaId if available (future-proof)
+      if (p.areaValue) {
+        const key = `${p.roomId}_${p.areaValue}`;
+        if (areaMap.has(key)) {
+          return { ...p, areaName: areaMap.get(key) };
+        }
+      }
+
+      // Strategy 2: Fallback - try to guess area from product name (common for Grohe)
+      // This is very useful when areaValue is not stored yet
+      let inferredArea = "Unassigned";
+
+      const productNameLower = (p.name || "").toLowerCase();
+
+      if (
+        productNameLower.includes("basin") ||
+        (productNameLower.includes("mixer") &&
+          (productNameLower.includes("basin") ||
+            productNameLower.includes("pop-up")))
+      ) {
+        inferredArea = "Basin Area";
+      } else if (
+        productNameLower.includes("shower") ||
+        productNameLower.includes("headshower") ||
+        productNameLower.includes("thermostatic") ||
+        productNameLower.includes("diverter")
+      ) {
+        inferredArea = "Shower Area";
+      } else if (
+        productNameLower.includes("wc") ||
+        productNameLower.includes("toilet") ||
+        productNameLower.includes("brush")
+      ) {
+        inferredArea = "WC Area";
+      } else if (
+        productNameLower.includes("spout") ||
+        productNameLower.includes("bath") ||
+        productNameLower.includes("cascade")
+      ) {
+        inferredArea = "Shower Area"; // or create "Bath Area" if needed
+      } else if (
+        productNameLower.includes("mirror") ||
+        productNameLower.includes("towel") ||
+        productNameLower.includes("holder") ||
+        productNameLower.includes("dispenser")
+      ) {
+        inferredArea = "Basin Area"; // most accessories go here
+      }
+
+      return {
+        ...p,
+        areaName: inferredArea,
+      };
+    });
+  }, []);
+  const enrichedProducts = useMemo(() => {
+    const floors =
+      activeVersionData.quotation?.floors || quotation?.floors || [];
+
+    return enrichProductsWithAreas(allProducts, floors);
+  }, [
+    allProducts,
+    activeVersionData.quotation,
+    quotation,
+    enrichProductsWithAreas,
+  ]);
 
   // ── Grouping Helpers (unchanged) ────────────────────────────────────────
   const groupProductsByFloorAndRoom = (products = []) => {
@@ -681,14 +768,14 @@ const NewQuotationsDetails = () => {
 
     // Site Layout Pages
     if (hasSiteLayout) {
-      const roomGroups = groupProductsByFloorAndRoom(allProducts);
+      const roomGroups = groupProductsByFloorAndRoom(enrichedProducts);
+
       roomGroups.forEach((roomGroup) => {
         if (roomGroup.products?.length > 0) {
           pages.push(renderAreaWisePageForRoom(roomGroup));
         }
       });
     }
-
     // ==================== SUMMARY PAGE (UPDATED WITH ROOM TOTALS) ====================
     pages.push(
       <div key="summary-page" className={`${styles.productPage} page`}>
