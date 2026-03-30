@@ -1,4 +1,4 @@
-// src/components/modals/AssignItemLocation.jsx  (or wherever it is)
+// src/components/modals/AssignItemLocation.jsx
 import React, { useState, useEffect } from "react";
 import {
   Modal,
@@ -19,20 +19,27 @@ const { Option } = Select;
 export default function AssignItemModal({
   visible,
   onCancel,
-  onOk,
+  onAssign,
   item, // the product being assigned
   floors,
-  // We will pass a callback instead of simple onOk
-  onAssign,
 }) {
   const [assignments, setAssignments] = useState([
-    { floorId: null, roomId: null, areaId: null, assignedQuantity: 1 },
+    {
+      floorId: null,
+      roomId: null,
+      areaId: null,
+      assignedQuantity: 1,
+      floorName: null,
+      roomName: null,
+      areaName: null,
+    },
   ]);
 
   const totalAssigned = assignments.reduce(
     (sum, a) => sum + (Number(a.assignedQuantity) || 0),
     0,
   );
+
   const remaining = (Number(item?.quantity) || 1) - totalAssigned;
 
   // Reset when modal opens
@@ -44,6 +51,9 @@ export default function AssignItemModal({
           roomId: null,
           areaId: null,
           assignedQuantity: Number(item.quantity) || 1,
+          floorName: null,
+          roomName: null,
+          areaName: null,
         },
       ]);
     }
@@ -58,21 +68,49 @@ export default function AssignItemModal({
         roomId: null,
         areaId: null,
         assignedQuantity: Math.min(remaining, 1),
+        floorName: null,
+        roomName: null,
+        areaName: null,
       },
     ]);
   };
 
   const updateAssignment = (index, field, value) => {
     const newAssignments = [...assignments];
+
     newAssignments[index][field] = value;
 
-    // Clear child selections when parent changes
+    // === Capture real names when selection changes ===
     if (field === "floorId") {
+      const selectedFloor = floors?.find((f) => f.floorId === value);
+      newAssignments[index].floorName = selectedFloor?.floorName || null;
+      // Clear child fields
       newAssignments[index].roomId = null;
+      newAssignments[index].roomName = null;
       newAssignments[index].areaId = null;
+      newAssignments[index].areaName = null;
     }
+
     if (field === "roomId") {
+      const floor = floors?.find(
+        (f) => f.floorId === newAssignments[index].floorId,
+      );
+      const selectedRoom = floor?.rooms?.find((r) => r.roomId === value);
+      newAssignments[index].roomName = selectedRoom?.roomName || null;
+      // Clear area
       newAssignments[index].areaId = null;
+      newAssignments[index].areaName = null;
+    }
+
+    if (field === "areaId") {
+      const floor = floors?.find(
+        (f) => f.floorId === newAssignments[index].floorId,
+      );
+      const room = floor?.rooms?.find(
+        (r) => r.roomId === newAssignments[index].roomId,
+      );
+      const selectedArea = room?.areas?.find((a) => a.id === value);
+      newAssignments[index].areaName = selectedArea?.name || null;
     }
 
     setAssignments(newAssignments);
@@ -93,7 +131,8 @@ export default function AssignItemModal({
       );
     }
 
-    onAssign(item.id, assignments); // Pass all assignments
+    // Pass assignments with names to parent
+    onAssign(item?.id, assignments);
     onCancel();
   };
 
@@ -101,12 +140,12 @@ export default function AssignItemModal({
 
   return (
     <Modal
-      title={`${item?.name || "Item"}`}
+      title={`${item?.name || "Item"} - Assign Location`}
       open={visible}
       onOk={handleSubmit}
       onCancel={onCancel}
       okText="Save Assignments"
-      width={600}
+      width={650}
     >
       <Space direction="vertical" style={{ width: "100%" }} size="large">
         <div>
@@ -131,8 +170,9 @@ export default function AssignItemModal({
               key={index}
               style={{
                 border: "1px solid #f0f0f0",
-                padding: 8,
+                padding: 12,
                 borderRadius: 8,
+                backgroundColor: "#fafafa",
               }}
             >
               <Space

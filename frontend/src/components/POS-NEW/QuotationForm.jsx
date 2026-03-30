@@ -476,13 +476,11 @@ const QuotationForm = ({
   const openAssignModal = (itemId) => setAssignModal({ visible: true, itemId });
 
   const handleMultiAssign = (itemId, assignments) => {
-    if (!assignments?.length) {
+    if (!assignments?.length)
       return message.error("No assignment data received");
-    }
 
-    const primary = assignments[0];
+    // Update floors (your existing code - it's fine)
 
-    // 1. Update floors structure with real names
     let updatedFloors = [...(quotationData.floors || [])];
 
     assignments.forEach((ass) => {
@@ -507,8 +505,7 @@ const QuotationForm = ({
 
     handleQuotationChange("floors", updatedFloors);
 
-    // 2. MOST IMPORTANT: Call handleAssignItem from CartLayout
-    // This is what actually updates the cart items with correct names
+    // Call handleAssignItem with names
     if (typeof handleAssignItem === "function") {
       assignments.forEach((ass) => {
         handleAssignItem(
@@ -516,20 +513,17 @@ const QuotationForm = ({
           ass.floorId,
           ass.roomId || null,
           ass.areaId || null,
-          ass.floorName || null, // ← Real floor name
-          ass.roomName || null, // ← Real room name
-          ass.areaName || null, // ← Real area name
+          ass.floorName || null,
+          ass.roomName || null,
+          ass.areaName || null,
           ass.assignedQuantity || 1,
         );
       });
-    } else {
-      console.warn("handleAssignItem is not provided from CartLayout");
     }
 
     setAssignModal({ visible: false, itemId: null });
-    message.success("Location assigned with correct names");
+    message.success("Location assigned successfully");
   };
-
   // ==================== EMPTY CART CHECK ====================
   if (!effectiveCartItems.length) {
     return (

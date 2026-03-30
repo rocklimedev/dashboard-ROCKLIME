@@ -88,6 +88,7 @@ const CartLayout = ({ children }) => {
   }, [location.pathname]);
 
   // Sync local cart with server data
+  // Sync local cart with server data - PRIORITIZE local location data
   useEffect(() => {
     if (!allCartItems.length) {
       setLocalCartItems([]);
@@ -106,18 +107,20 @@ const CartLayout = ({ children }) => {
         return {
           ...serverItem,
           id,
+          // PRIORITIZE local location data over server
           floorId: local?.floorId || serverItem.floorId,
-          floorName: local?.floorName || serverItem.floorName,
           roomId: local?.roomId || serverItem.roomId,
-          roomName: local?.roomName || serverItem.roomName,
           areaId: local?.areaId || serverItem.areaId,
+
+          floorName: local?.floorName || serverItem.floorName,
+          roomName: local?.roomName || serverItem.roomName,
           areaName: local?.areaName || serverItem.areaName,
+
           assignedQuantity: local?.assignedQuantity || serverItem.quantity || 1,
         };
       });
     });
   }, [allCartItems]);
-
   // ==================== CALCULATIONS ====================
   const calculationCartItems = useMemo(
     () => localCartItems.filter((i) => !i.isOption),
@@ -272,19 +275,20 @@ const CartLayout = ({ children }) => {
             floorId,
             roomId,
             areaId,
-            // ← This is the critical part - save real names
+            assignedQuantity: assignedQuantity || item.quantity,
+
+            // FORCE save the real names - this is the most important part
             floorName: floorName || item.floorName,
             roomName: roomName || item.roomName,
             areaName: areaName || item.areaName,
-            quantity: assignedQuantity || item.quantity,
-            // Optional: keep history of assignments
+
             locations: [
               ...(item.locations || []),
               {
                 floorId,
                 roomId,
                 areaId,
-                floorName,
+                floorName, // save name here too
                 roomName,
                 areaName,
                 assignedQuantity: assignedQuantity || item.quantity,
@@ -294,11 +298,10 @@ const CartLayout = ({ children }) => {
         }),
       );
 
-      message.success("Item location assigned successfully");
+      message.success(`Assigned to ${floorName || "floor"}`);
     },
     [],
   );
-
   const handleMakeOption = useCallback(
     (productId, optionType, parentProductId = null) => {
       if (!userId) return message.error("User not logged in");

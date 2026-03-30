@@ -28,7 +28,7 @@ const buildFloorsFromProducts = (products) => {
     if (!floorMap.has(item.floorId)) {
       floorMap.set(item.floorId, {
         floorId: item.floorId,
-        floorName: item.floorName || `Floor ${floorMap.size + 1}`, // ← Use real name
+        floorName: item.floorName || `Floor ${item.floorId}`, // fallback
         sortOrder: floorMap.size,
         rooms: [],
       });
@@ -41,7 +41,7 @@ const buildFloorsFromProducts = (products) => {
       if (!room) {
         room = {
           roomId: item.roomId,
-          roomName: item.roomName || "Unnamed Room", // ← Use real name
+          roomName: item.roomName || "Unnamed Room",
           sortOrder: floor.rooms.length,
           type: item.roomType || "other",
           areas: [],
@@ -49,12 +49,14 @@ const buildFloorsFromProducts = (products) => {
         floor.rooms.push(room);
       }
 
-      if (item.areaId && !room.areas.some((a) => a.id === item.areaId)) {
-        room.areas.push({
-          id: item.areaId,
-          name: item.areaName || "Area",
-          value: item.areaValue || "",
-        });
+      if (item.areaId) {
+        if (!room.areas.some((a) => a.id === item.areaId)) {
+          room.areas.push({
+            id: item.areaId,
+            name: item.areaName || "Area",
+            value: item.areaValue || "",
+          });
+        }
       }
     }
   });

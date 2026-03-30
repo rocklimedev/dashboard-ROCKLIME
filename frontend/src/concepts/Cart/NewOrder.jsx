@@ -1,4 +1,3 @@
-// src/pages/quotations/NewOrder.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { message } from "antd";
@@ -66,6 +65,10 @@ const NewOrder = () => {
     if (userId) setOrderData((prev) => ({ ...prev, createdBy: userId }));
   }, [userId]);
 
+  // ─────────────────────────────────────────────────────────────
+  // FIXED handleCreateOrder - receives cartProductsData from CartLayout
+  // ─────────────────────────────────────────────────────────────
+  // src/pages/quotations/NewOrder.jsx
   const handleCreateOrder = async (layoutProps = {}) => {
     const {
       calculationCartItems = [],
@@ -119,11 +122,10 @@ const NewOrder = () => {
 
     if (!finalShipTo) return message.error("Shipping address is required.");
 
-    // Simple enrichment - only what backend needs for validation
-    // In NewOrder.jsx → inside handleCreateOrder function
-
+    // Simple but reliable enrichment - use whatever is already in cart item
     const enrichedProducts = calculationCartItems.map((item) => {
       const productId = item.productId || item.id;
+
       const price = Number(item.price) || 0;
       const quantity = Number(item.quantity) || 1;
       const discount = Number(itemDiscounts[productId]) || 0;
@@ -136,13 +138,13 @@ const NewOrder = () => {
           ? (subtotal * discount) / 100
           : discount * quantity;
 
-      const total = subtotal - discountAmount;
+      const total = Number((subtotal - discountAmount).toFixed(2));
 
       return {
         id: productId,
         name: item.name || "Unknown Product",
 
-        // ← THESE 3 FIELDS WERE MISSING
+        // Use whatever the cart item already has (most reliable right now)
         imageUrl: item.imageUrl || "",
         productCode: item.productCode || "",
         companyCode: item.companyCode || "",
@@ -152,10 +154,12 @@ const NewOrder = () => {
         discount: Number(discount.toFixed(2)),
         discountType,
         tax,
-        total: Number(total.toFixed(2)),
+        total,
       };
     });
-    console.log("Enriched Products:", enrichedProducts);
+
+    console.log("✅ Enriched Products Sent:", enrichedProducts);
+
     const orderPayload = {
       createdFor: selectedCustomer,
       createdBy: userId,
@@ -181,7 +185,6 @@ const NewOrder = () => {
     try {
       const result = await createOrder(orderPayload).unwrap();
       message.success(`Order #${result.orderNo} created successfully!`);
-
       if (typeof handleClearCart === "function") handleClearCart();
       navigate("/orders/list");
     } catch (err) {
@@ -189,7 +192,6 @@ const NewOrder = () => {
       message.error(err?.data?.message || "Failed to create order.");
     }
   };
-
   return (
     <CartLayout>
       {(layoutProps) => (
