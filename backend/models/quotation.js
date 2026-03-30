@@ -19,7 +19,7 @@ module.exports = (sequelize, DataTypes) => {
       },
       due_date: {
         type: DataTypes.DATEONLY,
-        allowNull: false,
+        allowNull: true,
       },
       followupDates: {
         type: DataTypes.JSON,

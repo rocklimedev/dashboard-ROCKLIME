@@ -110,20 +110,11 @@ const NewQuotation = () => {
       handleClearCart,
     } = layoutProps;
 
-    // ==================== VALIDATIONS ====================
     if (!selectedCustomer) return message.error("Please select a customer.");
-
     if (calculationCartItems.length === 0)
       return message.error("Cart is empty.");
 
-    if (!quotationData.dueDate)
-      return message.error("Please select a valid due date.");
-
-    if (moment(quotationData.dueDate).isBefore(moment(), "day")) {
-      return message.error("Due date cannot be in the past.");
-    }
-
-    // ==================== SHIPPING ADDRESS LOGIC ====================
+    // Shipping Address - OPTIONAL
     let finalShipTo = quotationData.shipTo;
 
     if (useBillingAddress) {
@@ -133,49 +124,34 @@ const NewQuotation = () => {
         const customer = customers.find(
           (c) => c.customerId === selectedCustomer,
         );
-        if (!customer?.address) {
-          return message.error(
-            "Customer has no default address. Please add one first.",
-          );
-        }
+        if (customer?.address) {
+          try {
+            const parsedAddr =
+              typeof customer.address === "string"
+                ? JSON.parse(customer.address)
+                : customer.address;
 
-        let parsedAddr;
-        try {
-          parsedAddr =
-            typeof customer.address === "string"
-              ? JSON.parse(customer.address)
-              : customer.address;
-        } catch {
-          return message.error("Invalid default address format.");
-        }
+            const payload = {
+              customerId: selectedCustomer,
+              street: parsedAddr.street || "",
+              city: parsedAddr.city || "",
+              state: parsedAddr.state || "",
+              postalCode: parsedAddr.postalCode || parsedAddr.zip || "",
+              country: "India",
+              status: "SHIPPING",
+            };
 
-        const payload = {
-          customerId: selectedCustomer,
-          street: parsedAddr.street || "",
-          city: parsedAddr.city || "",
-          state: parsedAddr.state || "",
-          postalCode: parsedAddr.zip || parsedAddr.postalCode || "",
-          country: parsedAddr.country || "India",
-          status: "SHIPPING",
-        };
-
-        try {
-          const response = await createAddress(payload).unwrap();
-          finalShipTo = response.addressId;
-          message.success("Shipping address created successfully.");
-        } catch (apiError) {
-          return message.error(
-            apiError?.data?.message || "Failed to create shipping address.",
-          );
+            const response = await createAddress(payload).unwrap();
+            finalShipTo = response.addressId;
+          } catch (err) {
+            console.warn("Failed to auto-create shipping address:", err);
+            // Continue without address (optional)
+          }
         }
       }
     }
 
-    if (!finalShipTo) {
-      return message.error("Please select or create a shipping address.");
-    }
-
-    // ==================== CLEAN FLOORS ====================
+    // Clean floors
     const rawFloors = quotationData.floors || [];
     const cleanedFloors = rawFloors
       .map((floor) => ({
@@ -185,37 +161,32 @@ const NewQuotation = () => {
           areas: room.areas || [],
         })),
       }))
-      .filter((floor) => {
-        const hasRooms = floor.rooms && floor.rooms.length > 0;
-        const hasAssignedItems = calculationCartItems.some(
-          (item) => item.floorId === floor.floorId,
-        );
-        return hasRooms || hasAssignedItems;
-      });
+      .filter(
+        (floor) =>
+          (floor.rooms && floor.rooms.length > 0) ||
+          calculationCartItems.some((item) => item.floorId === floor.floorId),
+      );
 
     let finalFloors = cleanedFloors;
 
-    // Auto-build floors from assigned items if none exist
     if (finalFloors.length === 0) {
-      const hasAnyAssignment = calculationCartItems.some((item) =>
+      const hasAssignments = calculationCartItems.some((item) =>
         Boolean(item.floorId),
       );
-      if (hasAnyAssignment) {
+      if (hasAssignments) {
         finalFloors = buildFloorsFromProducts(calculationCartItems);
       }
     }
 
-    // ==================== ENRICH ITEMS WITH DISCOUNTS & TAXES ====================
+    // Enrich items
     const enrichedItems = calculationCartItems.map((item) => {
       const productId = item.productId || item.id;
       const price = Number(item.price) || 0;
       const qty = Number(item.quantity) || 1;
       const subtotal = price * qty;
 
-      // Get item-level discount
       const discVal = Number(itemDiscounts[productId]) || 0;
       const discType = itemDiscountTypes[productId] || "percent";
-
       const discountAmount =
         discType === "percent" ? (subtotal * discVal) / 100 : discVal * qty;
 
@@ -223,21 +194,14 @@ const NewQuotation = () => {
 
       return {
         ...item,
-        // Location names (preserve if already set)
         floorName: item.floorName || undefined,
         roomName: item.roomName || undefined,
         areaName: item.areaName || undefined,
-
-        // IMPORTANT: Item-level discount & tax
         discount: discVal,
         discountType: discType,
         tax: itemTax,
-
-        // Calculated values for backend
         subtotal: Number(subtotal.toFixed(2)),
         discountAmount: Number(discountAmount.toFixed(2)),
-
-        // Optional: You can also send line total if backend needs it
         lineTotal: Number(
           (
             subtotal -
@@ -248,17 +212,16 @@ const NewQuotation = () => {
       };
     });
 
-    // ==================== FINAL PAYLOAD ====================
     const quotationPayload = {
       quotationId: uuidv4(),
       document_title: `Quotation for ${customers.find((c) => c.customerId === selectedCustomer)?.name || "Customer"} - ${moment().format("DD-MM-YYYY")}`,
 
       quotation_date:
         quotationData.quotationDate || moment().format("YYYY-MM-DD"),
-      due_date: quotationData.dueDate,
+      due_date: quotationData.dueDate || null,
 
       customerId: selectedCustomer,
-      shipTo: finalShipTo,
+      shipTo: finalShipTo || null, // ← Now can be null
 
       extraDiscount: Number(quotationData.discountAmount) || 0,
       extraDiscountType: quotationData.discountType || "fixed",
@@ -280,13 +243,10 @@ const NewQuotation = () => {
       const result = await createQuotation(quotationPayload).unwrap();
 
       message.success(
-        `Quotation ${result.quotation?.reference_number || ""} created successfully!`,
+        `Quotation created successfully!${result.quotation?.reference_number ? ` Ref: ${result.quotation.reference_number}` : ""}`,
       );
 
-      // Clear cart after successful creation
-      if (typeof handleClearCart === "function") {
-        handleClearCart();
-      }
+      if (typeof handleClearCart === "function") handleClearCart();
 
       navigate("/quotations/list");
     } catch (err) {

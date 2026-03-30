@@ -520,20 +520,182 @@ const InventoryWrapper = () => {
   return (
     <div className="page-wrapper">
       <div className="content">
-        <div
-          style={{
-            padding: "0 16px 80px",
-            background: "#f9fafb",
-            minHeight: "100vh",
-          }}
-        >
-          <PageHeader
-            title="Inventory"
-            subtitle="Manage stock levels, update quantities, and generate reports"
-            exportOptions={{ pdf: false, excel: false }}
-          />
+        <PageHeader
+          title="Inventory"
+          subtitle="Manage stock levels, update quantities, and generate reports"
+          exportOptions={{ pdf: false, excel: false }}
+        />
 
-          {/* Filter Controls */}
+        {/* Filter Controls */}
+        <Card
+          bordered={false}
+          style={{
+            marginTop: 24,
+            borderRadius: 12,
+            boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
+            background: "white",
+          }}
+          bodyStyle={{ padding: isMobile ? "16px" : "24px" }}
+        >
+          <Row gutter={[12, 16]} align="middle">
+            <Col xs={24} sm={12} md={8} lg={6}>
+              <Input
+                prefix={<SearchOutlined />}
+                placeholder="Search by name, code..."
+                allowClear
+                size="large"
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="search-input"
+              />
+            </Col>
+
+            <Col xs={12} sm={6} md={5} lg={4}>
+              <InputNumber
+                placeholder="Low Stock ≤"
+                min={1}
+                size="large"
+                style={{ width: "100%" }}
+                value={lowStockThreshold}
+                onChange={(v) => setLowStockThreshold(v || 10)}
+              />
+            </Col>
+
+            <Col xs={12} sm={6} md={5} lg={4}>
+              <InputNumber
+                placeholder="Max Stock"
+                min={0}
+                size="large"
+                style={{ width: "100%" }}
+                value={maxStockFilter}
+                onChange={setMaxStockFilter}
+              />
+            </Col>
+
+            <Col xs={24} sm={12} md={6} lg={5}>
+              <Space.Compact style={{ width: "100%" }}>
+                <InputNumber
+                  placeholder="Min ₹"
+                  min={0}
+                  style={{ flex: 1 }}
+                  value={priceRange[0]}
+                  onChange={(v) => setPriceRange([v, priceRange[1]])}
+                />
+                <InputNumber
+                  placeholder="Max ₹"
+                  min={0}
+                  style={{ flex: 1 }}
+                  value={priceRange[1]}
+                  onChange={(v) => setPriceRange([priceRange[0], v])}
+                />
+              </Space.Compact>
+            </Col>
+
+            <Col
+              xs={24}
+              sm="auto"
+              style={{ textAlign: isMobile ? "center" : "right" }}
+            >
+              <Button
+                icon={<ReloadOutlined />}
+                onClick={() => {
+                  setSearch("");
+                  setPriceRange([null, null]);
+                  setMaxStockFilter(null);
+                  setCurrentPage(1);
+                }}
+              >
+                Reset Filters
+              </Button>
+            </Col>
+          </Row>
+
+          {/* Action Bar */}
+          <div
+            style={{
+              marginTop: 16,
+              textAlign: isMobile ? "center" : "right",
+            }}
+          >
+            <Space wrap size="middle">
+              <Button
+                type="primary"
+                icon={<FileTextOutlined />}
+                onClick={() => setReportModalOpen(true)}
+                className="report-btn"
+              >
+                Build Report
+              </Button>
+              <Button
+                icon={<DownloadOutlined />}
+                onClick={generateMonthlyReport}
+                loading={generatingMonthly}
+              >
+                Monthly Report
+              </Button>
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={() => navigate("/product/add")}
+                className="add-product-btn"
+              >
+                Add New Product
+              </Button>
+            </Space>
+          </div>
+        </Card>
+
+        {/* Status Chips */}
+        <div style={{ margin: "24px 0" }}>
+          <Space wrap size={[8, 12]}>
+            {[
+              {
+                key: "all",
+                label: "All",
+                count: counts.all,
+                color: "default",
+              },
+              {
+                key: "in-stock",
+                label: "In Stock",
+                count: counts.inStock,
+                color: "green",
+              },
+              {
+                key: "low-stock",
+                label: "Low Stock",
+                count: counts.lowStock,
+                color: "orange",
+              },
+              {
+                key: "out-of-stock",
+                label: "Out of Stock",
+                count: counts.outStock,
+                color: "red",
+              },
+            ].map((item) => (
+              <Tag
+                key={item.key}
+                color={activeTab === item.key ? item.color : "default"}
+                style={{
+                  padding: "8px 16px",
+                  fontSize: 14,
+                  cursor: "pointer",
+                  borderRadius: 20,
+                  fontWeight: activeTab === item.key ? 600 : 400,
+                }}
+                onClick={() => handleTabChange(item.key)}
+              >
+                {item.label} ({item.count})
+              </Tag>
+            ))}
+          </Space>
+        </div>
+
+        {tabFilteredProducts.length === 0 ? (
           <Card
             bordered={false}
             style={{
@@ -541,168 +703,20 @@ const InventoryWrapper = () => {
               borderRadius: 12,
               boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
               background: "white",
+              textAlign: "center",
+              padding: "60px 20px",
             }}
-            bodyStyle={{ padding: isMobile ? "16px" : "24px" }}
           >
-            <Row gutter={[12, 16]} align="middle">
-              <Col xs={24} sm={12} md={8} lg={6}>
-                <Input
-                  prefix={<SearchOutlined />}
-                  placeholder="Search by name, code..."
-                  allowClear
-                  size="large"
-                  value={search}
-                  onChange={(e) => {
-                    setSearch(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="search-input"
-                />
-              </Col>
-
-              <Col xs={12} sm={6} md={5} lg={4}>
-                <InputNumber
-                  placeholder="Low Stock ≤"
-                  min={1}
-                  size="large"
-                  style={{ width: "100%" }}
-                  value={lowStockThreshold}
-                  onChange={(v) => setLowStockThreshold(v || 10)}
-                />
-              </Col>
-
-              <Col xs={12} sm={6} md={5} lg={4}>
-                <InputNumber
-                  placeholder="Max Stock"
-                  min={0}
-                  size="large"
-                  style={{ width: "100%" }}
-                  value={maxStockFilter}
-                  onChange={setMaxStockFilter}
-                />
-              </Col>
-
-              <Col xs={24} sm={12} md={6} lg={5}>
-                <Space.Compact style={{ width: "100%" }}>
-                  <InputNumber
-                    placeholder="Min ₹"
-                    min={0}
-                    style={{ flex: 1 }}
-                    value={priceRange[0]}
-                    onChange={(v) => setPriceRange([v, priceRange[1]])}
-                  />
-                  <InputNumber
-                    placeholder="Max ₹"
-                    min={0}
-                    style={{ flex: 1 }}
-                    value={priceRange[1]}
-                    onChange={(v) => setPriceRange([priceRange[0], v])}
-                  />
-                </Space.Compact>
-              </Col>
-
-              <Col
-                xs={24}
-                sm="auto"
-                style={{ textAlign: isMobile ? "center" : "right" }}
-              >
-                <Button
-                  icon={<ReloadOutlined />}
-                  onClick={() => {
-                    setSearch("");
-                    setPriceRange([null, null]);
-                    setMaxStockFilter(null);
-                    setCurrentPage(1);
-                  }}
-                >
-                  Reset Filters
-                </Button>
-              </Col>
-            </Row>
-
-            {/* Action Bar */}
-            <div
-              style={{
-                marginTop: 16,
-                textAlign: isMobile ? "center" : "right",
-              }}
-            >
-              <Space wrap size="middle">
-                <Button
-                  type="primary"
-                  icon={<FileTextOutlined />}
-                  onClick={() => setReportModalOpen(true)}
-                  className="report-btn"
-                >
-                  Build Report
-                </Button>
-                <Button
-                  icon={<DownloadOutlined />}
-                  onClick={generateMonthlyReport}
-                  loading={generatingMonthly}
-                >
-                  Monthly Report
-                </Button>
-                <Button
-                  type="primary"
-                  icon={<PlusOutlined />}
-                  onClick={() => navigate("/product/add")}
-                  className="add-product-btn"
-                >
-                  Add New Product
-                </Button>
-              </Space>
-            </div>
+            <Empty
+              description={
+                search || maxStockFilter || priceRange[0] || priceRange[1]
+                  ? "No products match your filters"
+                  : "No products in this category"
+              }
+            />
           </Card>
-
-          {/* Status Chips */}
-          <div style={{ margin: "24px 0" }}>
-            <Space wrap size={[8, 12]}>
-              {[
-                {
-                  key: "all",
-                  label: "All",
-                  count: counts.all,
-                  color: "default",
-                },
-                {
-                  key: "in-stock",
-                  label: "In Stock",
-                  count: counts.inStock,
-                  color: "green",
-                },
-                {
-                  key: "low-stock",
-                  label: "Low Stock",
-                  count: counts.lowStock,
-                  color: "orange",
-                },
-                {
-                  key: "out-of-stock",
-                  label: "Out of Stock",
-                  count: counts.outStock,
-                  color: "red",
-                },
-              ].map((item) => (
-                <Tag
-                  key={item.key}
-                  color={activeTab === item.key ? item.color : "default"}
-                  style={{
-                    padding: "8px 16px",
-                    fontSize: 14,
-                    cursor: "pointer",
-                    borderRadius: 20,
-                    fontWeight: activeTab === item.key ? 600 : 400,
-                  }}
-                  onClick={() => handleTabChange(item.key)}
-                >
-                  {item.label} ({item.count})
-                </Tag>
-              ))}
-            </Space>
-          </div>
-
-          {tabFilteredProducts.length === 0 ? (
+        ) : (
+          <>
             <Card
               bordered={false}
               style={{
@@ -710,102 +724,80 @@ const InventoryWrapper = () => {
                 borderRadius: 12,
                 boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
                 background: "white",
-                textAlign: "center",
-                padding: "60px 20px",
+                overflow: "hidden",
               }}
             >
-              <Empty
-                description={
-                  search || maxStockFilter || priceRange[0] || priceRange[1]
-                    ? "No products match your filters"
-                    : "No products in this category"
-                }
+              <Table
+                columns={columns}
+                dataSource={tabFilteredProducts}
+                rowKey="productId"
+                pagination={false}
+                loading={isFetching}
+                className="modern-inventory-table"
+                scroll={{ x: isMobile ? "max-content" : undefined }}
+                rowClassName={(record) => {
+                  if (record.quantity === 0) return "stock-critical";
+                  if (record.quantity <= lowStockThreshold)
+                    return "stock-warning";
+                  return "stock-ok";
+                }}
               />
             </Card>
-          ) : (
-            <>
-              <Card
-                bordered={false}
-                style={{
-                  marginTop: 24,
-                  borderRadius: 12,
-                  boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
-                  background: "white",
-                  overflow: "hidden",
-                }}
-              >
-                <Table
-                  columns={columns}
-                  dataSource={tabFilteredProducts}
-                  rowKey="productId"
-                  pagination={false}
-                  loading={isFetching}
-                  className="modern-inventory-table"
-                  scroll={{ x: isMobile ? "max-content" : undefined }}
-                  rowClassName={(record) => {
-                    if (record.quantity === 0) return "stock-critical";
-                    if (record.quantity <= lowStockThreshold)
-                      return "stock-warning";
-                    return "stock-ok";
-                  }}
-                />
-              </Card>
 
-              <div
-                style={{
-                  marginTop: 24,
-                  padding: "16px 0",
-                  textAlign: "center",
-                }}
-              >
-                <Pagination
-                  current={currentPage}
-                  pageSize={pageSize}
-                  total={paginationInfo.total}
-                  onChange={handlePageChange}
-                  onShowSizeChange={handlePageChange}
-                  showSizeChanger
-                  pageSizeOptions={["10", "25", "50", "100"]}
-                  showTotal={(total, range) =>
-                    `${range[0]}-${range[1]} of ${total} products`
-                  }
-                />
-              </div>
-            </>
-          )}
+            <div
+              style={{
+                marginTop: 24,
+                padding: "16px 0",
+                textAlign: "center",
+              }}
+            >
+              <Pagination
+                current={currentPage}
+                pageSize={pageSize}
+                total={paginationInfo.total}
+                onChange={handlePageChange}
+                onShowSizeChange={handlePageChange}
+                showSizeChanger
+                pageSizeOptions={["10", "25", "50", "100"]}
+                showTotal={(total, range) =>
+                  `${range[0]}-${range[1]} of ${total} products`
+                }
+              />
+            </div>
+          </>
+        )}
 
-          {/* Modals */}
-          <ReportBuilderModal
-            open={reportModalOpen}
-            onClose={() => setReportModalOpen(false)}
-            products={products}
-            getCompanyCode={getCompanyCode}
-            getSellingPrice={getSellingPrice}
-            generatePDF={generatePDF}
-            generateExcel={generateExcel}
-            onGenerate={generateCustomReport}
-            selectedProducts={selectedReportProducts}
-            setSelectedProducts={setSelectedReportProducts}
-          />
-          <StockModal
-            open={stockModalOpen}
-            onCancel={() => {
-              setStockModalOpen(false);
-              setSelectedProduct(null);
-            }}
-            product={selectedProduct}
-            action={stockAction}
-            onSubmit={handleStockSubmit}
-          />
-          <HistoryModalAntD
-            open={historyModalOpen}
-            onCancel={() => {
-              setHistoryModalOpen(false);
-              setSelectedProduct(null);
-            }}
-            product={selectedProduct}
-          />
-        </div>
+        {/* Modals */}
+        <ReportBuilderModal
+          open={reportModalOpen}
+          onClose={() => setReportModalOpen(false)}
+          products={products}
+          getCompanyCode={getCompanyCode}
+          getSellingPrice={getSellingPrice}
+          generatePDF={generatePDF}
+          generateExcel={generateExcel}
+          onGenerate={generateCustomReport}
+          selectedProducts={selectedReportProducts}
+          setSelectedProducts={setSelectedReportProducts}
+        />
+        <StockModal
+          open={stockModalOpen}
+          onCancel={() => {
+            setStockModalOpen(false);
+            setSelectedProduct(null);
+          }}
+          product={selectedProduct}
+          action={stockAction}
+          onSubmit={handleStockSubmit}
+        />
+        <HistoryModalAntD
+          open={historyModalOpen}
+          onCancel={() => {
+            setHistoryModalOpen(false);
+            setSelectedProduct(null);
+          }}
+          product={selectedProduct}
+        />
       </div>
     </div>
   );

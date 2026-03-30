@@ -188,7 +188,7 @@ const NewQuotationsDetails = () => {
       const name = (p.name || "").toLowerCase();
       if (name.includes("grohe")) brands.add("GROHE");
       if (name.includes("american standard")) brands.add("AMERICAN STANDARD");
-      if (name.includes("caesarstone")) brands.add("Caesarstone");
+      if (name.includes("colston")) brands.add("COLSTON");
     });
     return brands.size > 0
       ? [...brands].join(" / ")

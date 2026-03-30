@@ -629,11 +629,11 @@ const QuotationForm = ({
             </Panel>
 
             {/* Dates & Follow-ups Panel */}
+            {/* Dates & Follow-ups Panel */}
             <Panel header="Dates & Follow-ups" key="2">
-              {/* Your existing dates & follow-up code - keep it as is */}
               <TightRow gutter={8}>
                 <Col span={8}>
-                  <Text strong>Due Date *</Text>
+                  <Text strong>Due Date</Text> {/* Removed red * */}
                 </Col>
                 <Col span={16}>
                   <MiniDate
@@ -650,6 +650,7 @@ const QuotationForm = ({
                     }
                     minDate={new Date()}
                     dateFormat="dd/MM/yyyy"
+                    isClearable // Allows user to clear the date
                   />
                 </Col>
               </TightRow>
@@ -665,6 +666,7 @@ const QuotationForm = ({
                         selected={momentToDate(d ? moment(d) : null)}
                         onChange={(date) => handleFollowup(i, date)}
                         minDate={new Date()}
+                        isClearable
                       />
                       <Button
                         danger
@@ -684,7 +686,6 @@ const QuotationForm = ({
                 </Col>
               </TightRow>
             </Panel>
-
             {/* Site Layout Panel - keep your existing code */}
             <Panel
               header={
@@ -872,8 +873,6 @@ const QuotationForm = ({
             onClick={() => {
               if (!selectedCustomer)
                 return message.error("Please select a customer");
-              if (!quotationData.dueDate)
-                return message.error("Please select due date");
 
               handleCreateDocument({
                 calculationCartItems: effectiveCartItems,

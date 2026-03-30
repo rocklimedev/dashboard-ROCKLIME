@@ -214,7 +214,10 @@ exports.createQuotation = async (req, res) => {
         .status(400)
         .json({ error: "At least one product is required" });
     }
-
+    // Normalize due_date
+    if (!due_date || due_date === "" || due_date === "null") {
+      due_date = null;
+    }
     if (!customerId) {
       return res.status(400).json({ error: "Customer ID is required" });
     }
