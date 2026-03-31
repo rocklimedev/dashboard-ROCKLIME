@@ -344,7 +344,7 @@
 .productTable td {
   border: 1px solid #d8d8d8;
   /* light gray – elegant, not harsh */
-  padding: 12px 10px;
+  padding: 10px 4px;
   vertical-align: middle;
 }
 
@@ -354,7 +354,7 @@
 }
 
 .productTable col.name {
-  width: 33%;
+  width: 25%;
 }
 
 .productTable col.code {
@@ -374,7 +374,7 @@
 }
 
 .productTable col.discount {
-  width: 9%;
+  width: 11%;
 }
 
 .productTable col.total {

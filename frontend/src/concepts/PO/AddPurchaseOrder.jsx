@@ -43,27 +43,23 @@ import {
 const { Option } = Select;
 const { Text } = Typography;
 
-// Known meta key for selling price (adjust if needed)
 const SELLING_PRICE_META_KEY = "9ba862ef-f993-4873-95ef-1fef10036aa5";
 
 const getUnitPrice = (product) => {
   if (!product) return 0;
 
-  // Priority 1: Direct meta lookup
   const metaPrice = product.meta?.[SELLING_PRICE_META_KEY];
   if (metaPrice && !isNaN(Number(metaPrice)) && Number(metaPrice) > 0) {
     return Number(metaPrice);
   }
 
-  // Priority 2: Fallback to any reasonable numeric meta value
   if (product.metaDetails?.length) {
     for (const m of product.metaDetails) {
       const val = Number(m?.value);
-      if (!isNaN(val) && val > 10) return val; // avoid IDs or small numbers
+      if (!isNaN(val) && val > 10) return val;
     }
   }
 
-  // Priority 3: Direct fields
   return Number(product.unitPrice || product.mrp || product.sellingPrice || 0);
 };
 
@@ -73,17 +69,19 @@ const AddPurchaseOrder = () => {
   const navigate = useNavigate();
   const [form] = Form.useForm();
 
-  // API hooks
+  // API Hooks
   const {
     data: poData,
     isLoading: isLoadingPO,
     error: poError,
   } = useGetPurchaseOrderByIdQuery(id, { skip: !isEditMode });
 
-  const { data: productsRes } = useGetAllProductsQuery();
+  const { data: productsRes, isLoading: isLoadingProducts } =
+    useGetAllProductsQuery();
   const products = productsRes?.data || [];
 
-  const { data: vendorsRes } = useGetVendorsQuery();
+  const { data: vendorsRes, isLoading: isLoadingVendors } =
+    useGetVendorsQuery();
   const vendors = vendorsRes || [];
 
   const [createPO, { isLoading: creating }] = useCreatePurchaseOrderMutation();
@@ -96,10 +94,10 @@ const AddPurchaseOrder = () => {
   const { data: searchRes = [], isFetching: isSearching } =
     useSearchProductsQuery(searchTerm.trim(), { skip: !searchTerm.trim() });
 
-  // Form state
+  // Form State
   const [formValues, setFormValues] = useState({
     vendorId: "",
-    orderDate: moment(), // Default to current date/time
+    orderDate: moment(),
     expectDeliveryDate: null,
     status: "pending",
     items: [],
@@ -109,68 +107,64 @@ const AddPurchaseOrder = () => {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   // ───────────────────────────────────────
-  // Populate form in Edit mode
+  // Populate form in Edit mode (Improved)
   // ───────────────────────────────────────
   useEffect(() => {
-    if (!isEditMode || !poData || !products.length || !vendors.length) return;
+    if (!isEditMode || !poData) return;
 
-    const po = poData;
+    const po = poData; // assuming poData is the full object like in your JSON
 
-    const items = (po.items || []).map((item) => {
+    const mappedItems = (po.items || []).map((item) => {
       const product = products.find(
         (p) => p.id === item.productId || p.productId === item.productId,
       );
-      const unitPrice = Number(item.unitPrice) || getUnitPrice(product) || 0;
+
+      const unitPrice = Number(item.unitPrice) || getUnitPrice(product) || 0.01;
       const quantity = Number(item.quantity) || 1;
 
       return {
-        key: item.productId,
+        key: item.productId || item._id,
         productId: item.productId,
-        name: product?.name || `Product ${item.productId} (missing)`,
+        name: product?.name || item.productName || `Product ${item.productId}`,
         quantity,
-        unitPrice: unitPrice > 0 ? unitPrice : 0.01,
+        unitPrice,
         total: quantity * unitPrice,
       };
     });
 
-    const total = items.reduce((sum, i) => sum + i.total, 0).toFixed(2);
-
-    const newValues = {
-      vendorId: vendors.some((v) => v.id === po.vendorId) ? po.vendorId : "",
+    const newFormValues = {
+      vendorId: po.vendorId || "",
       orderDate: po.orderDate ? moment(po.orderDate) : moment(),
       expectDeliveryDate: po.expectDeliveryDate
         ? moment(po.expectDeliveryDate)
         : null,
       status: po.status || "pending",
-      items,
-      totalAmount: total,
+      items: mappedItems,
     };
 
-    setFormValues(newValues);
+    setFormValues(newFormValues);
+
+    // Set AntD form fields
     form.setFieldsValue({
-      vendorId: newValues.vendorId,
-      orderDate: newValues.orderDate,
-      expectDeliveryDate: newValues.expectDeliveryDate,
-      status: newValues.status,
+      vendorId: newFormValues.vendorId,
+      orderDate: newFormValues.orderDate,
+      expectDeliveryDate: newFormValues.expectDeliveryDate,
+      status: newFormValues.status,
     });
 
-    if (!newValues.vendorId) {
-      message.warning("The vendor for this PO no longer exists.");
+    if (po.vendorId && !vendors.some((v) => v.id === po.vendorId)) {
+      message.warning("Vendor for this PO no longer exists in the system.");
     }
   }, [poData, isEditMode, products, vendors, form]);
 
-  // ───────────────────────────────────────
-  // Computed total
-  // ───────────────────────────────────────
+  // Computed Total
   const totalAmount = useMemo(() => {
     return formValues.items
       .reduce((sum, item) => sum + (Number(item.total) || 0), 0)
       .toFixed(2);
   }, [formValues.items]);
 
-  // ───────────────────────────────────────
-  // Product search options
-  // ───────────────────────────────────────
+  // Search Options
   const searchOptions = useMemo(() => {
     const source = searchTerm.trim() ? searchRes : products;
 
@@ -188,10 +182,10 @@ const AddPurchaseOrder = () => {
           >
             <div>
               <div style={{ fontWeight: 500 }}>
-                {p.name || p.product_code || "Unnamed"}
+                {p.name || p.productName || p.product_code || "Unnamed"}
               </div>
               <Text type="secondary" style={{ fontSize: 12 }}>
-                {p.product_code || "—"}
+                {p.productCode || p.product_code || "—"}
               </Text>
             </div>
             <Text strong style={{ color: "#52c41a" }}>
@@ -203,9 +197,7 @@ const AddPurchaseOrder = () => {
     });
   }, [searchRes, products, searchTerm]);
 
-  // ───────────────────────────────────────
-  // Add product to list
-  // ───────────────────────────────────────
+  // Add Product
   const handleAddProduct = (productId) => {
     const product =
       searchRes.find((p) => (p.id || p.productId) === productId) ||
@@ -217,20 +209,20 @@ const AddPurchaseOrder = () => {
     }
 
     if (formValues.items.some((i) => i.productId === productId)) {
-      message.warning("This product is already added");
+      message.warning("Product already added");
       return;
     }
 
     const unitPrice = getUnitPrice(product);
     if (unitPrice <= 0) {
-      message.error(`Product ${product.name} has no valid price`);
+      message.error(`Product "${product.name}" has no valid price`);
       return;
     }
 
     const newItem = {
       key: productId,
       productId,
-      name: product.name || product.product_code || "Unnamed Product",
+      name: product.name || product.productName || "Unnamed Product",
       quantity: 1,
       unitPrice,
       total: unitPrice,
@@ -244,9 +236,7 @@ const AddPurchaseOrder = () => {
     setSearchTerm("");
   };
 
-  // ───────────────────────────────────────
-  // Update item quantity / price
-  // ───────────────────────────────────────
+  // Update Item
   const updateItem = (index, field, value) => {
     const updated = [...formValues.items];
     updated[index][field] = value;
@@ -260,28 +250,21 @@ const AddPurchaseOrder = () => {
     setFormValues({ ...formValues, items: updated });
   };
 
-  // ───────────────────────────────────────
-  // Remove item
-  // ───────────────────────────────────────
+  // Remove Item
   const removeItem = (index) => {
-    const updated = formValues.items.filter((_, i) => i !== index);
-    setFormValues({ ...formValues, items: updated });
+    setFormValues((prev) => ({
+      ...prev,
+      items: prev.items.filter((_, i) => i !== index),
+    }));
   };
 
-  // ───────────────────────────────────────
   // Submit
-  // ───────────────────────────────────────
   const handleSubmit = async () => {
     try {
       await form.validateFields();
 
       if (formValues.items.length === 0) {
-        message.error("Add at least one product");
-        return;
-      }
-
-      if (formValues.items.some((i) => i.unitPrice <= 0)) {
-        message.error("All products must have a price > 0");
+        message.error("Please add at least one product");
         return;
       }
 
@@ -295,14 +278,18 @@ const AddPurchaseOrder = () => {
         expectDeliveryDate: formValues.expectDeliveryDate
           ? formValues.expectDeliveryDate.format("YYYY-MM-DD")
           : null,
+        // orderDate is usually set by backend on creation
+        // status is handled by backend or only in edit
       };
 
       if (isEditMode) {
         await updatePO({ id, ...payload }).unwrap();
-        message.success("Purchase order updated");
+        message.success("Purchase order updated successfully");
       } else {
         await createPO(payload).unwrap();
-        message.success("Purchase order created");
+        message.success("Purchase order created successfully");
+
+        // Reset form
         setFormValues({
           vendorId: "",
           orderDate: moment(),
@@ -319,12 +306,18 @@ const AddPurchaseOrder = () => {
     }
   };
 
-  if (isLoadingPO) return <Spin tip="Loading purchase order..." />;
+  // Loading State
+  if (isEditMode && (isLoadingPO || isLoadingProducts || isLoadingVendors)) {
+    return <Spin tip="Loading purchase order data..." size="large" />;
+  }
+
   if (poError) {
     return (
       <Alert
-        message="Error"
-        description="Could not load purchase order data"
+        message="Error Loading Purchase Order"
+        description={
+          poError?.data?.message || "Could not load the purchase order"
+        }
         type="error"
         showIcon
       />
@@ -362,7 +355,7 @@ const AddPurchaseOrder = () => {
       title: "Total (₹)",
       key: "total",
       width: 120,
-      render: (_, r) => Number(r.total || 0).toFixed(2),
+      render: (_, record) => Number(record.total || 0).toFixed(2),
     },
     {
       title: "",
@@ -394,20 +387,17 @@ const AddPurchaseOrder = () => {
               <Link to="/purchase-manager">
                 <Button icon={<ArrowLeftOutlined />}>Back</Button>
               </Link>
-              <Button onClick={() => setShowClearConfirm(true)}>Clear</Button>
+              <Button onClick={() => setShowClearConfirm(true)}>
+                Clear Form
+              </Button>
             </div>
 
             <Form form={form} layout="vertical" onFinish={handleSubmit}>
               <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
                 {/* Vendor */}
                 <Form.Item
-                  label={
-                    <>
-                      Vendor <span className="required-star">*</span>
-                    </>
-                  }
+                  label="Vendor *"
                   name="vendorId"
-                  required
                   rules={[{ required: true, message: "Vendor is required" }]}
                   style={{ flex: 1, minWidth: 300 }}
                 >
@@ -417,11 +407,12 @@ const AddPurchaseOrder = () => {
                       placeholder="Select vendor"
                       value={formValues.vendorId}
                       onChange={(v) => {
-                        setFormValues({ ...formValues, vendorId: v });
+                        setFormValues((prev) => ({ ...prev, vendorId: v }));
                         form.setFieldsValue({ vendorId: v });
                       }}
                       showSearch
                       optionFilterProp="children"
+                      loading={isLoadingVendors}
                     >
                       {vendors.map((v) => (
                         <Option key={v.id} value={v.id}>
@@ -438,13 +429,9 @@ const AddPurchaseOrder = () => {
                   </div>
                 </Form.Item>
 
-                {/* Order Date - restricted to today and future */}
+                {/* Order Date */}
                 <Form.Item
-                  label={
-                    <>
-                      Order Date <span className="required-star">*</span>
-                    </>
-                  }
+                  label="Order Date *"
                   name="orderDate"
                   rules={[
                     { required: true, message: "Order date is required" },
@@ -454,15 +441,15 @@ const AddPurchaseOrder = () => {
                   <DatePicker
                     selected={formValues.orderDate?.toDate()}
                     onChange={(date) =>
-                      setFormValues({
-                        ...formValues,
+                      setFormValues((prev) => ({
+                        ...prev,
                         orderDate: date ? moment(date) : moment(),
-                      })
+                      }))
                     }
                     dateFormat="dd/MM/yyyy"
                     className="ant-input"
-                    minDate={new Date()} // ← Prevents past dates
-                    maxDate={new Date(2030, 11, 31)} // optional reasonable future limit
+                    minDate={new Date()}
+                    maxDate={new Date(2030, 11, 31)}
                     showMonthDropdown
                     showYearDropdown
                     dropdownMode="select"
@@ -479,10 +466,10 @@ const AddPurchaseOrder = () => {
                   <DatePicker
                     selected={formValues.expectDeliveryDate?.toDate()}
                     onChange={(date) =>
-                      setFormValues({
-                        ...formValues,
+                      setFormValues((prev) => ({
+                        ...prev,
                         expectDeliveryDate: date ? moment(date) : null,
-                      })
+                      }))
                     }
                     dateFormat="dd/MM/yyyy"
                     minDate={new Date()}
@@ -491,7 +478,7 @@ const AddPurchaseOrder = () => {
                   />
                 </Form.Item>
 
-                {/* Status (only editable in edit mode) */}
+                {/* Status */}
                 <Form.Item
                   label="Status"
                   name="status"
@@ -501,7 +488,7 @@ const AddPurchaseOrder = () => {
                     disabled={!isEditMode}
                     value={formValues.status}
                     onChange={(v) =>
-                      setFormValues({ ...formValues, status: v })
+                      setFormValues((prev) => ({ ...prev, status: v }))
                     }
                   >
                     {["pending", "confirmed", "delivered", "cancelled"].map(
@@ -515,7 +502,7 @@ const AddPurchaseOrder = () => {
                 </Form.Item>
               </div>
 
-              {/* Product Search + Add */}
+              {/* Product Search */}
               <div style={{ margin: "32px 0 16px" }}>
                 <Select
                   showSearch
@@ -538,6 +525,7 @@ const AddPurchaseOrder = () => {
                     )
                   }
                   dropdownStyle={{ maxHeight: 420 }}
+                  disabled={isLoadingProducts}
                 />
               </div>
 
@@ -547,7 +535,10 @@ const AddPurchaseOrder = () => {
                 dataSource={formValues.items}
                 rowKey="key"
                 pagination={false}
-                locale={{ emptyText: "No products added yet" }}
+                locale={{
+                  emptyText:
+                    "No products added yet. Search and add products above.",
+                }}
               />
 
               {/* Total */}
@@ -607,7 +598,7 @@ const AddPurchaseOrder = () => {
           setShowClearConfirm(false);
         }}
         onCancel={() => setShowClearConfirm(false)}
-        okText="Clear"
+        okText="Yes, Clear"
         cancelText="Cancel"
       >
         <p>All entered data will be lost. Are you sure?</p>
