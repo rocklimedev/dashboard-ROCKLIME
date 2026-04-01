@@ -146,12 +146,30 @@ const ProductDetails = () => {
   };
 
   // ── Cart ───────────────────────────────────────────────────
+  // ── Cart Handler ───────────────────────────────────────────────────
   const handleAddToCart = async () => {
-    if (!userId) return message.error("Please login first");
-    if (quantity < 1 || quantity > (product?.quantity || 1)) {
-      return message.error("Invalid quantity");
+    if (!userId) {
+      return message.error("Please login first");
     }
-    if (!sellingPrice || isNaN(sellingPrice)) {
+
+    const availableStock = product?.quantity || 0;
+
+    // Better quantity validation
+    if (availableStock <= 0) {
+      return message.error("This product is out of stock");
+    }
+
+    if (quantity < 1) {
+      return message.error("Quantity must be at least 1");
+    }
+
+    if (quantity > availableStock) {
+      return message.error(
+        `Only ${availableStock} unit${availableStock > 1 ? "s" : ""} available in stock`,
+      );
+    }
+
+    if (!sellingPrice || isNaN(sellingPrice) || sellingPrice <= 0) {
       return message.error("Invalid price");
     }
 
@@ -161,13 +179,13 @@ const ProductDetails = () => {
         productId: product.productId,
         quantity,
       }).unwrap();
-      message.success("Added to cart!");
-      setQuantity(1);
+
+      message.success("Added to cart successfully!");
+      setQuantity(1); // Reset quantity after successful add
     } catch (err) {
       message.error(err?.data?.message || "Failed to add to cart");
     }
   };
-
   // ── Related products ───────────────────────────────────────
   const relatedProducts = React.useMemo(() => {
     if (!product?.productId) return []; // ← early return if product not loaded
@@ -295,10 +313,15 @@ const ProductDetails = () => {
                   size="large"
                   onClick={handleAddToCart}
                   loading={isCartLoading}
-                  disabled={product.quantity <= 0 || !sellingPrice}
+                  disabled={
+                    product?.quantity <= 0 ||
+                    !sellingPrice ||
+                    isNaN(sellingPrice) ||
+                    sellingPrice <= 0
+                  }
                   className={styles.addToCartBtn}
                 >
-                  Add to Cart
+                  {product?.quantity <= 0 ? "Out of Stock" : "Add to Cart"}
                 </Button>
               </div>
 

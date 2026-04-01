@@ -150,14 +150,11 @@ const NewQuotationsDetails = () => {
   const address = addressResponse || {};
 
   const customerName = customer?.name || "Dear Client";
-  const customerPhone =
-    customer?.mobileNumber || customer?.phone || "XXXXXXXXXX";
+  const customerPhone = customer?.mobileNumber || customer?.phone || "";
   const customerAddress = address
-    ? `${address.street || ""}, ${address.city || ""}, ${address.state || ""} - ${address.postalCode || ""}`
-        .replace(/^,\s*|,*\s*$/g, "")
-        .trim()
+    ? [address.street, address.city, address.state].filter(Boolean).join(", ") +
+      (address.postalCode ? ` - ${address.postalCode}` : "")
     : "--";
-
   // ── Products ────────────────────────────────────────────────────────────
   const allProducts = useMemo(() => {
     const products = activeVersionData.products || [];
@@ -518,11 +515,11 @@ const NewQuotationsDetails = () => {
                         >
                           <div style={{ fontWeight: 600 }}>{p.name}</div>
                           {p.quantity > 1 && <div>× {p.quantity}</div>}
-                          {p.price && (
+                          {/* {p.price && (
                             <div>
                               ₹{Number(p.price).toLocaleString("en-IN")}
                             </div>
-                          )}
+                          )} */}
                         </div>
                       </div>
                     ))}
@@ -777,6 +774,9 @@ const NewQuotationsDetails = () => {
       });
     }
     // ==================== SUMMARY PAGE (UPDATED WITH ROOM TOTALS) ====================
+    {
+      /* ==================== SUMMARY PAGE (WITH FLOOR & ROOM DISCOUNTS) ==================== */
+    }
     pages.push(
       <div key="summary-page" className={`${styles.productPage} page`}>
         <div className={styles.pageTopHeader}>
@@ -802,10 +802,10 @@ const NewQuotationsDetails = () => {
             margin: "40px 0 30px",
           }}
         >
-          PROJECT SUMMARY
+          SUMMARY
         </h2>
 
-        {/* Floor-wise Totals */}
+        {/* Floor-wise Totals + Discounts */}
         {hasFloorData && (
           <>
             <h3 style={{ color: "#d32f2f", margin: "25px 0 12px" }}>
@@ -815,25 +815,58 @@ const NewQuotationsDetails = () => {
               <thead>
                 <tr>
                   <th>Floor</th>
-                  <th style={{ textAlign: "right" }}>Amount (₹)</th>
+                  <th style={{ textAlign: "right" }}>Subtotal (₹)</th>
+                  <th style={{ textAlign: "right" }}>Discount (₹)</th>
+                  <th style={{ textAlign: "right" }}>Net Amount (₹)</th>
                 </tr>
               </thead>
               <tbody>
-                {floorTotals.map((floor, index) => (
-                  <tr key={index}>
-                    <td>{floor.floorName}</td>
-                    <td style={{ textAlign: "right" }}>
-                      ₹{floor.total.toLocaleString("en-IN")}
-                    </td>
-                  </tr>
-                ))}
+                {floorTotals.map((floor, index) => {
+                  // Calculate discount for this floor
+                  const floorDiscount = mainProducts
+                    .filter(
+                      (p) =>
+                        (p.floorName || "Unspecified Floor").trim() ===
+                        floor.floorName,
+                    )
+                    .reduce((sum, p) => {
+                      const orig =
+                        Number(p.price ?? 0) * Number(p.quantity ?? 1);
+                      const lineTotal = Number(p.total ?? 0);
+                      return sum + (orig - lineTotal);
+                    }, 0);
+
+                  const netAmount = floor.total - floorDiscount;
+
+                  return (
+                    <tr key={index}>
+                      <td>{floor.floorName}</td>
+                      <td style={{ textAlign: "right" }}>
+                        ₹{floor.total.toLocaleString("en-IN")}
+                      </td>
+                      <td
+                        style={{
+                          textAlign: "right",
+                          color: floorDiscount > 0 ? "#f5222d" : "#666",
+                        }}
+                      >
+                        {floorDiscount > 0
+                          ? `-₹${Math.round(floorDiscount).toLocaleString("en-IN")}`
+                          : "—"}
+                      </td>
+                      <td style={{ textAlign: "right", fontWeight: 600 }}>
+                        ₹{Math.round(netAmount).toLocaleString("en-IN")}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
             <Divider style={{ margin: "30px 0 25px" }} />
           </>
         )}
 
-        {/* Room-wise Totals - NEW */}
+        {/* Room-wise Totals + Discounts */}
         {hasRoomData && (
           <>
             <h3 style={{ color: "#d32f2f", margin: "25px 0 12px" }}>
@@ -844,19 +877,54 @@ const NewQuotationsDetails = () => {
                 <tr>
                   <th>Floor</th>
                   <th>Room</th>
-                  <th style={{ textAlign: "right" }}>Amount (₹)</th>
+                  <th style={{ textAlign: "right" }}>Subtotal (₹)</th>
+                  <th style={{ textAlign: "right" }}>Discount (₹)</th>
+                  <th style={{ textAlign: "right" }}>Net Amount (₹)</th>
                 </tr>
               </thead>
               <tbody>
-                {roomTotals.map((room, index) => (
-                  <tr key={index}>
-                    <td>{room.floorName}</td>
-                    <td>{room.roomName}</td>
-                    <td style={{ textAlign: "right" }}>
-                      ₹{room.total.toLocaleString("en-IN")}
-                    </td>
-                  </tr>
-                ))}
+                {roomTotals.map((room, index) => {
+                  // Calculate discount for this room
+                  const roomDiscount = mainProducts
+                    .filter(
+                      (p) =>
+                        (p.floorName || "Unspecified Floor").trim() ===
+                          room.floorName &&
+                        (p.roomName || "Unspecified Room").trim() ===
+                          room.roomName,
+                    )
+                    .reduce((sum, p) => {
+                      const orig =
+                        Number(p.price ?? 0) * Number(p.quantity ?? 1);
+                      const lineTotal = Number(p.total ?? 0);
+                      return sum + (orig - lineTotal);
+                    }, 0);
+
+                  const netAmount = room.total - roomDiscount;
+
+                  return (
+                    <tr key={index}>
+                      <td>{room.floorName}</td>
+                      <td>{room.roomName}</td>
+                      <td style={{ textAlign: "right" }}>
+                        ₹{room.total.toLocaleString("en-IN")}
+                      </td>
+                      <td
+                        style={{
+                          textAlign: "right",
+                          color: roomDiscount > 0 ? "#f5222d" : "#666",
+                        }}
+                      >
+                        {roomDiscount > 0
+                          ? `-₹${Math.round(roomDiscount).toLocaleString("en-IN")}`
+                          : "—"}
+                      </td>
+                      <td style={{ textAlign: "right", fontWeight: 600 }}>
+                        ₹{Math.round(netAmount).toLocaleString("en-IN")}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
             <Divider style={{ margin: "30px 0 25px" }} />
@@ -874,19 +942,21 @@ const NewQuotationsDetails = () => {
                 <span>Subtotal</span>
                 <span>₹{displaySubtotal.toLocaleString("en-IN")}</span>
               </div>
+
               {displayProductDiscount > 0 && (
                 <div className={styles.summaryRow}>
-                  <span>Total Discount</span>
-                  <span>
+                  <span>Total Product Discount</span>
+                  <span style={{ color: "#f5222d" }}>
                     -₹
                     {Math.round(displayProductDiscount).toLocaleString("en-IN")}
                   </span>
                 </div>
               )}
+
               {backendExtraDiscount > 0 && (
                 <div className={styles.summaryRow}>
                   <span>Extra Discount</span>
-                  <span>
+                  <span style={{ color: "#fa8c16" }}>
                     -₹{Math.round(backendExtraDiscount).toLocaleString("en-IN")}
                   </span>
                 </div>
@@ -910,7 +980,6 @@ const NewQuotationsDetails = () => {
         </div>
       </div>,
     );
-
     return pages;
   };
 

@@ -431,19 +431,37 @@ const AddQuotation = () => {
   ]);
 
   // ── Submit ────────────────────────────────────────────────────────
+  // ── Submit ────────────────────────────────────────────────────────
+  // ── Submit ────────────────────────────────────────────────────────
+  // ── Submit ────────────────────────────────────────────────────────
   const handleSubmit = async () => {
-    if (!formData.customerId) return message.error("Please select customer");
+    if (!formData.customerId) return message.error("Please select a customer");
+
     if (formData.products.length === 0)
-      return message.error("Add at least one product");
+      return message.error("Please add at least one product");
+
+    // Safe date formatter
+    const formatDateSafe = (date) => {
+      if (!date) return null;
+      if (!(date instanceof Date) || isNaN(date.getTime())) return null;
+      try {
+        return format(date, "yyyy-MM-dd");
+      } catch {
+        return null;
+      }
+    };
+
+    // Clean shipTo - Make sure empty values become null (very important)
+    const finalShipTo =
+      formData.shipTo && formData.shipTo.trim() !== "" ? formData.shipTo : null;
 
     const payload = {
       ...formData,
-      quotation_date: formData.quotation_date
-        ? format(formData.quotation_date, "yyyy-MM-dd")
-        : null,
-      due_date: formData.due_date
-        ? format(formData.due_date, "yyyy-MM-dd")
-        : null,
+      shipTo: finalShipTo, // ← This fixes the FK error
+
+      quotation_date: formatDateSafe(formData.quotation_date),
+      due_date: formatDateSafe(formData.due_date),
+
       products: formData.products.map((p) => ({
         ...p,
         price: safeNum(p.sellingPrice),
@@ -460,26 +478,28 @@ const AddQuotation = () => {
           ).toFixed(2),
         ),
       })),
-      floors: formData.floors,
+
+      floors: formData.floors || [],
       followupDates: formData.followupDates
         .filter(Boolean)
-        .map((d) => format(d, "yyyy-MM-dd")),
+        .map((d) => formatDateSafe(d))
+        .filter(Boolean),
     };
 
     try {
       if (isEditMode) {
         await updateQuotation({ id, updatedQuotation: payload }).unwrap();
-        message.success("Quotation updated");
+        message.success("Quotation updated successfully");
       } else {
         await createQuotation(payload).unwrap();
-        message.success("Quotation created");
+        message.success("Quotation created successfully");
       }
       navigate("/quotations/list");
     } catch (err) {
-      message.error(err?.data?.message || "Failed to save");
+      console.error("Quotation save error:", err);
+      message.error(err?.data?.message || "Failed to save quotation");
     }
   };
-
   // ── Table Columns ─────────────────────────────────────────────────
   const columns = [
     {
@@ -602,7 +622,11 @@ const AddQuotation = () => {
                     showSearch
                     value={formData.customerId}
                     onChange={(v) =>
-                      setFormData({ ...formData, customerId: v, shipTo: "" })
+                      setFormData({
+                        ...formData,
+                        customerId: v,
+                        shipTo: null, // ← Clear shipTo when customer changes
+                      })
                     }
                     placeholder="Select customer"
                     filterOption={(input, option) =>
@@ -621,14 +645,20 @@ const AddQuotation = () => {
               </Col>
 
               <Col xs={24} md={12}>
-                <Form.Item label="Shipping Address">
+                <Form.Item label="Shipping Address (Optional)">
                   <Space.Compact style={{ width: "100%" }}>
                     <Select
-                      placeholder="Select or add address"
-                      value={formData.shipTo}
-                      onChange={(v) => setFormData({ ...formData, shipTo: v })}
+                      placeholder="Select shipping address (optional)"
+                      value={formData.shipTo || undefined} // ← Important
+                      onChange={(v) =>
+                        setFormData({
+                          ...formData,
+                          shipTo: v || null,
+                        })
+                      }
                       disabled={!formData.customerId}
                       style={{ flex: 1 }}
+                      allowClear // Allows clearing
                     >
                       {(addressesData || [])
                         .filter((a) => a.customerId === formData.customerId)
@@ -685,11 +715,13 @@ const AddQuotation = () => {
                     dateFormat="dd/MM/yyyy"
                     className="ant-input"
                     wrapperClassName="full-width"
+                    isClearable
                   />
                 </Form.Item>
               </Col>
               <Col xs={24} md={12}>
-                <Form.Item label="Due Date *" required>
+                {/* Due Date - Optional */}
+                <Form.Item label="Due Date">
                   <DatePicker
                     selected={formData.due_date}
                     onChange={(d) => setFormData({ ...formData, due_date: d })}
@@ -697,6 +729,8 @@ const AddQuotation = () => {
                     minDate={formData.quotation_date}
                     className="ant-input"
                     wrapperClassName="full-width"
+                    isClearable // Allows user to clear the date
+                    placeholderText="Select due date (optional)"
                   />
                 </Form.Item>
               </Col>
