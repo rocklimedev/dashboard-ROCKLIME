@@ -409,130 +409,200 @@ const NewQuotationsDetails = () => {
     return groups;
   };
 
-  // ── Render Area-wise Page (unchanged) ───────────────────────────────────
+  // ── Render Area-wise Page (All 3 Areas on ONE page | Max 8 products per area) ──
   const renderAreaWisePageForRoom = (roomGroup) => {
     const { floorName, roomName, products } = roomGroup;
     const areaGroups = groupProductsByAreaName(products);
-    const areaEntries = Object.entries(areaGroups).slice(0, 3);
+
+    const allAreaEntries = Object.entries(areaGroups);
+    const mainAreas = allAreaEntries.slice(0, 3); // Basin, Shower, WC
 
     const ZONE_LAYOUT = [
-      { top: "25%", left: "6%", width: "26%" },
-      { top: "29%", left: "37%", width: "26%" },
-      { top: "28%", right: "2%", width: "26%" },
+      { top: "26%", left: "2%", width: "29%" }, // SHOWER AREA
+      { top: "26%", right: "2%", width: "29%" }, // WC AREA
+      { top: "28%", left: "37%", width: "29%" }, // BASIN AREA
     ];
 
-    return (
-      <div
-        key={`area-page-${floorName}-${roomName}`}
-        className="page"
-        style={{
-          position: "relative",
-          width: "210mm",
-          height: "297mm",
-          overflow: "hidden",
-          pageBreakBefore: "always",
-          pageBreakAfter: "always",
-        }}
-      >
-        <img
-          src={siteMapQuotation}
-          alt="Site Map"
-          style={{
-            position: "absolute",
-            inset: 0,
-            width: "100%",
-            height: "100%",
-            objectFit: "fill",
-            zIndex: 0,
-          }}
-        />
-        <div style={{ position: "absolute", inset: 0, zIndex: 1 }} />
+    const pages = [];
+
+    // Calculate max chunks needed across all areas
+    const maxChunks = Math.max(
+      ...mainAreas.map(([_, items]) => Math.ceil(items.length / 8)),
+      1,
+    );
+
+    // Create one page per chunk (so all 3 areas stay together)
+    for (let chunkIndex = 0; chunkIndex < maxChunks; chunkIndex++) {
+      const isContinuation = chunkIndex > 0;
+
+      pages.push(
         <div
+          key={`room-area-page-${floorName}-${roomName}-${chunkIndex}`}
+          className="page"
           style={{
             position: "relative",
-            zIndex: 2,
-            padding: "40px 30px",
-            height: "100%",
+            width: "210mm",
+            height: "297mm",
+            overflow: "hidden",
+            pageBreakBefore: "always",
+            pageBreakAfter: "always",
+            background: "#fff",
           }}
         >
-          <div style={{ textAlign: "center", marginBottom: 32 }}>
-            <h2 style={{ color: "#d32f2f", fontSize: "2.4em", margin: 0 }}>
-              {floorName.toUpperCase()}
-            </h2>
-            <h3
-              style={{ fontSize: "1.9em", color: "#222", margin: "8px 0 4px" }}
-            >
-              {roomName}
-            </h3>
-          </div>
+          <img
+            src={siteMapQuotation}
+            alt="Site Map"
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              objectFit: "fill",
+              zIndex: 0,
+            }}
+          />
 
-          <div style={{ position: "absolute", inset: 0 }}>
-            {areaEntries.map(([areaName, items], index) => {
-              const zone = ZONE_LAYOUT[index];
-              if (!zone) return null;
-              return (
-                <div key={areaName} style={{ position: "absolute", ...zone }}>
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+
+              zIndex: 1,
+            }}
+          />
+
+          <div
+            style={{
+              position: "relative",
+              zIndex: 2,
+              padding: "35px 30px",
+              height: "100%",
+            }}
+          >
+            {/* Header */}
+            <div style={{ textAlign: "center", marginBottom: 25 }}>
+              <h2
+                style={{
+                  color: "#d32f2f",
+                  fontSize: "2.5em",
+                  margin: "0 0 8px 0",
+                }}
+              >
+                {floorName.toUpperCase()}
+              </h2>
+              <h3
+                style={{
+                  fontSize: "1.95em",
+                  color: "#222",
+                  margin: 0,
+                  fontWeight: 500,
+                }}
+              >
+                {roomName}
+                {isContinuation && " (Continued)"}
+              </h3>
+            </div>
+
+            {/* Three Areas Layout */}
+            <div style={{ position: "absolute", inset: 0 }}>
+              {mainAreas.map(([areaName, allItems], areaIndex) => {
+                const zone = ZONE_LAYOUT[areaIndex];
+                if (!zone) return null;
+
+                // Get only 8 products for current chunk
+                const start = chunkIndex * 8;
+                const items = allItems.slice(start, start + 8);
+
+                return (
                   <div
-                    style={{ display: "flex", flexDirection: "column", gap: 1 }}
+                    key={areaName}
+                    style={{
+                      position: "absolute",
+                      ...zone,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "12px",
+                    }}
                   >
-                    {items.map((p, i) => (
+                    {/* Products Grid - 2 products per row */}
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: "10px",
+                      }}
+                    >
+                      {items.map((p, i) => (
+                        <div
+                          key={i}
+                          style={{
+                            padding: "10px 8px",
+
+                            textAlign: "center",
+
+                            flexDirection: "column",
+                            alignItems: "center",
+                            gap: "6px",
+                          }}
+                        >
+                          {p.imageUrl ? (
+                            <img
+                              src={p.imageUrl}
+                              alt={p.name}
+                              style={{
+                                width: "68px",
+                                height: "68px",
+                                objectFit: "contain",
+                                borderRadius: "6px",
+                              }}
+                            />
+                          ) : (
+                            <div
+                              style={{
+                                width: "68px",
+                                height: "68px",
+                                background: "#f0f0f0",
+                                borderRadius: "6px",
+                              }}
+                            />
+                          )}
+
+                          <div style={{ fontSize: "0.77em", lineHeight: 1.3 }}>
+                            <div style={{ fontWeight: 600 }}>{p.name}</div>
+                            {p.quantity > 1 && (
+                              <div style={{ color: "#666" }}>
+                                × {p.quantity}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Remaining count indicator */}
+                    {chunkIndex === 0 && allItems.length > 8 && (
                       <div
-                        key={i}
                         style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          gap: 1,
-                          background: "rgba(255,255,255,0.92)",
-                          padding: 10,
-                          borderRadius: 8,
-                          width: 120,
+                          textAlign: "center",
+                          fontSize: "0.82em",
+                          color: "#d32f2f",
+                          marginTop: "6px",
                         }}
                       >
-                        {p.imageUrl ? (
-                          <img
-                            src={p.imageUrl}
-                            alt={p.name}
-                            style={{
-                              width: 50,
-                              height: 50,
-                              objectFit: "cover",
-                              borderRadius: 6,
-                            }}
-                          />
-                        ) : (
-                          <div
-                            style={{
-                              width: 100,
-                              height: 100,
-                              background: "#ddd",
-                              borderRadius: 6,
-                            }}
-                          />
-                        )}
-                        <div
-                          style={{ fontSize: "0.75em", textAlign: "center" }}
-                        >
-                          <div style={{ fontWeight: 600 }}>{p.name}</div>
-                          {p.quantity > 1 && <div>× {p.quantity}</div>}
-                          {/* {p.price && (
-                            <div>
-                              ₹{Number(p.price).toLocaleString("en-IN")}
-                            </div>
-                          )} */}
-                        </div>
+                        + {allItems.length - 8} more on next page
                       </div>
-                    ))}
+                    )}
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        </div>
-      </div>
-    );
-  };
+        </div>,
+      );
+    }
 
+    return pages;
+  };
   // ── Render Pages ────────────────────────────────────────────────────────
   const renderPages = (getShouldShowColumn) => {
     const shouldShowColumn = getShouldShowColumn || (() => true);
@@ -764,12 +834,15 @@ const NewQuotationsDetails = () => {
     }
 
     // Site Layout Pages
+    // Site Layout Pages
+    // Site Layout Pages
     if (hasSiteLayout) {
       const roomGroups = groupProductsByFloorAndRoom(enrichedProducts);
 
       roomGroups.forEach((roomGroup) => {
         if (roomGroup.products?.length > 0) {
-          pages.push(renderAreaWisePageForRoom(roomGroup));
+          const areaPages = renderAreaWisePageForRoom(roomGroup);
+          pages.push(...areaPages); // This is correct
         }
       });
     }
