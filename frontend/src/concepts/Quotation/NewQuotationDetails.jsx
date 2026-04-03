@@ -1143,7 +1143,7 @@ const NewQuotationsDetails = () => {
 
       <div
         className="page-wrapper"
-        style={{ position: "relative", minHeight: "100vh" }}
+
       >
         <div className="content">
           {/* TOP BAR */}
