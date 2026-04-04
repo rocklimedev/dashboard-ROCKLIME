@@ -24,7 +24,7 @@ import {
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import { ShoppingCartOutlined } from "@ant-design/icons";
 import ProductCard from "../../components/Product/ProductCard";
-import styles from "../../components/Product/productdetails.module.css"; // ← CSS Modules
+import styles from "../../components/Product/productdetails.module.css";
 import noimage from "../../assets/img/default.png";
 import { Helmet } from "react-helmet";
 
@@ -74,6 +74,7 @@ const ProductDetails = () => {
   const [activeImage, setActiveImage] = useState(0);
   const barcodeRef = useRef(null);
   const [cartLoadingStates, setCartLoadingStates] = useState({});
+
   // ── Helpers ────────────────────────────────────────────────
   const safeParseImages = (images) => {
     if (Array.isArray(images)) return images.filter(Boolean);
@@ -145,33 +146,22 @@ const ProductDetails = () => {
     };
   };
 
-  // ── Cart ───────────────────────────────────────────────────
-  // ── Cart Handler ───────────────────────────────────────────────────
+  // ── Cart Handler - NO STOCK CHECK ─────────────────────────────
   const handleAddToCart = async () => {
     if (!userId) {
       return message.error("Please login first");
-    }
-
-    const availableStock = product?.quantity || 0;
-
-    // Better quantity validation
-    if (availableStock <= 0) {
-      return message.error("This product is out of stock");
     }
 
     if (quantity < 1) {
       return message.error("Quantity must be at least 1");
     }
 
-    if (quantity > availableStock) {
-      return message.error(
-        `Only ${availableStock} unit${availableStock > 1 ? "s" : ""} available in stock`,
-      );
-    }
-
     if (!sellingPrice || isNaN(sellingPrice) || sellingPrice <= 0) {
       return message.error("Invalid price");
     }
+
+    // STOCK CHECKS COMPLETELY REMOVED
+    // No longer checking product.quantity
 
     try {
       await addToCart({
@@ -180,15 +170,18 @@ const ProductDetails = () => {
         quantity,
       }).unwrap();
 
-      message.success("Added to cart successfully!");
+      message.success(
+        `Added ${quantity} unit${quantity > 1 ? "s" : ""} to cart successfully!`
+      );
       setQuantity(1); // Reset quantity after successful add
     } catch (err) {
       message.error(err?.data?.message || "Failed to add to cart");
     }
   };
+
   // ── Related products ───────────────────────────────────────
   const relatedProducts = React.useMemo(() => {
-    if (!product?.productId) return []; // ← early return if product not loaded
+    if (!product?.productId) return [];
 
     let candidates = [];
 
@@ -199,10 +192,11 @@ const ProductDetails = () => {
     }
 
     return candidates
-      .filter((p) => p?.productId && p.productId !== product.productId) // ← safe check
-      .filter((p) => !product.brandId || p.brandId === product.brandId) // optional brand filter
+      .filter((p) => p?.productId && p.productId !== product.productId)
+      .filter((p) => !product.brandId || p.brandId === product.brandId)
       .slice(0, 4);
   }, [product, recommendedProducts, allProducts]);
+
   // ── Loading / Error states ─────────────────────────────────
   if (isProductLoading) {
     return (
@@ -301,9 +295,9 @@ const ProductDetails = () => {
                 <span className={styles.quantityLabel}>Quantity:</span>
                 <InputNumber
                   min={1}
-                  max={product.quantity || 1}
+                  // max removed - allow any quantity
                   value={quantity}
-                  onChange={(v) => setQuantity(v)}
+                  onChange={(v) => setQuantity(v || 1)}
                   className={styles.quantityInput}
                 />
                 <Button
@@ -313,15 +307,10 @@ const ProductDetails = () => {
                   size="large"
                   onClick={handleAddToCart}
                   loading={isCartLoading}
-                  disabled={
-                    product?.quantity <= 0 ||
-                    !sellingPrice ||
-                    isNaN(sellingPrice) ||
-                    sellingPrice <= 0
-                  }
+                  disabled={!sellingPrice || isNaN(sellingPrice) || sellingPrice <= 0}
                   className={styles.addToCartBtn}
                 >
-                  {product?.quantity <= 0 ? "Out of Stock" : "Add to Cart"}
+                  Add to Cart
                 </Button>
               </div>
 

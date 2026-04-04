@@ -1,6 +1,6 @@
 const Cart = require("../models/carts");
-
 const { Quotation, User, Product } = require("../models");
+
 // ──────────────────────────────────────────────────────
 // META SLUGS – these UUIDs are the same for ALL products
 // ──────────────────────────────────────────────────────
@@ -22,7 +22,6 @@ const getSellingPrice = (meta) => {
     try {
       parsedMeta = JSON.parse(meta);
     } catch (e) {
-      // If parsing fails, it's corrupted → fallback later
       parsedMeta = {};
     }
   }
@@ -64,7 +63,7 @@ const getSellingPrice = (meta) => {
 };
 
 // ──────────────────────────────────────────────────────
-// Add Single Product to Cart
+// Add Single Product to Cart - NO STOCK CHECK
 // ──────────────────────────────────────────────────────
 exports.addProductToCart = async (req, res) => {
   try {
@@ -85,24 +84,20 @@ exports.addProductToCart = async (req, res) => {
         .status(404)
         .json({ message: `Product not found: ${productId}` });
 
-    const sellingPrice = getSellingPrice(product.meta); // Fixed
+    const sellingPrice = getSellingPrice(product.meta);
     if (!sellingPrice) {
       return res.status(400).json({
         message: `Invalid or missing sellingPrice for product: ${productId}`,
       });
     }
 
-    if (product.quantity < quantity) {
-      return res
-        .status(400)
-        .json({ message: `Insufficient stock for product: ${productId}` });
-    }
+    // STOCK CHECK REMOVED - Allow adding even if out of stock
 
     let cart = await Cart.findOne({ userId });
     if (!cart) cart = new Cart({ userId, items: [] });
 
     const existingItem = cart.items.find(
-      (i) => i.productId.toString() === productId.toString(),
+      (i) => i.productId.toString() === productId.toString()
     );
 
     if (existingItem) {
@@ -121,14 +116,19 @@ exports.addProductToCart = async (req, res) => {
     }
 
     await cart.save();
-    res.status(200).json({ message: "Product added to cart", cart });
+
+    const message = product.quantity < quantity 
+      ? "Product added to cart (even though stock is insufficient)" 
+      : "Product added to cart";
+
+    res.status(200).json({ message, cart });
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 
 // ──────────────────────────────────────────────────────
-// Bulk Add to Cart
+// Bulk Add to Cart - NO STOCK CHECK
 // ──────────────────────────────────────────────────────
 exports.addToCart = async (req, res) => {
   try {
@@ -150,6 +150,7 @@ exports.addToCart = async (req, res) => {
     for (const item of items) {
       const { productId, quantity, discount = 0, tax = 0 } = item;
       const qty = Number(quantity);
+
       if (!productId || isNaN(qty) || qty < 1) {
         return res.status(400).json({ message: "Invalid item data" });
       }
@@ -160,22 +161,19 @@ exports.addToCart = async (req, res) => {
           .status(404)
           .json({ message: `Product not found: ${productId}` });
 
-      const sellingPrice = getSellingPrice(product.meta); // Fixed
+      const sellingPrice = getSellingPrice(product.meta);
       if (!sellingPrice) {
         return res
           .status(400)
           .json({ message: `Invalid sellingPrice for product: ${productId}` });
       }
 
-      if (product.quantity < qty) {
-        return res
-          .status(400)
-          .json({ message: `Insufficient stock for product: ${productId}` });
-      }
+      // STOCK CHECK REMOVED - Allow adding even if out of stock
 
       const existing = cart.items.find(
-        (i) => i.productId.toString() === productId.toString(),
+        (i) => i.productId.toString() === productId.toString()
       );
+
       if (existing) {
         existing.quantity += qty;
         existing.total = existing.price * existing.quantity;
@@ -193,11 +191,15 @@ exports.addToCart = async (req, res) => {
     }
 
     await cart.save();
-    res.status(200).json({ message: "Items added to cart", cart });
+    res.status(200).json({ 
+      message: "Items added to cart successfully (stock check disabled)", 
+      cart 
+    });
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
+
 // ✅ Get Cart by User ID
 exports.getCart = async (req, res) => {
   try {
@@ -237,7 +239,7 @@ exports.removeFromCart = async (req, res) => {
 
     const initialLength = cart.items.length;
     cart.items = cart.items.filter(
-      (item) => item.productId.toString() !== productId.toString(),
+      (item) => item.productId.toString() !== productId.toString()
     );
 
     if (cart.items.length === initialLength) {
@@ -253,7 +255,7 @@ exports.removeFromCart = async (req, res) => {
   }
 };
 
-// ✅ Update Cart
+// ✅ Update Cart - NO STOCK CHECK
 exports.updateCart = async (req, res) => {
   try {
     const { userId, productId, quantity, discount = 0, tax = 0 } = req.body;
@@ -268,29 +270,18 @@ exports.updateCart = async (req, res) => {
     }
 
     const existingItem = cart.items.find(
-      (item) => item.productId.toString() === productId.toString(),
+      (item) => item.productId.toString() === productId.toString()
     );
     if (!existingItem) {
       return res.status(404).json({ message: "Product not found in cart" });
     }
 
-    // Check stock availability
-    const product = await Product.findOne({ where: { productId } });
-    if (!product) {
-      return res
-        .status(404)
-        .json({ message: `Product not found: ${productId}` });
-    }
-    if (product.quantity < quantity) {
-      return res
-        .status(400)
-        .json({ message: `Insufficient stock for product: ${productId}` });
-    }
+    // STOCK CHECK REMOVED
 
     existingItem.quantity = quantity;
     existingItem.discount = Number(discount);
     existingItem.tax = Number(tax);
-    existingItem.total = existingItem.price * quantity - discount + tax;
+    existingItem.total = existingItem.price * quantity - Number(discount) + Number(tax);
 
     cart.updatedAt = new Date();
     await cart.save();
@@ -326,7 +317,7 @@ exports.clearCart = async (req, res) => {
   }
 };
 
-// ✅ Convert Quotation to Cart
+// ✅ Convert Quotation to Cart - NO STOCK CHECK
 exports.convertQuotationToCart = async (req, res) => {
   try {
     const { userId, quotationId } = req.body;
@@ -360,18 +351,17 @@ exports.convertQuotationToCart = async (req, res) => {
       if (!product) {
         continue; // Skip if product no longer exists
       }
-      if (product.quantity < item.quantity) {
-        continue; // Skip if insufficient stock
-      }
 
-      const sellingPrice = getSellingPrice(product.meta, item.id);
+      // STOCK CHECK REMOVED
+
+      const sellingPrice = getSellingPrice(product.meta);
       if (sellingPrice === null) {
         console.warn(`Skipping product ${item.id} due to invalid sellingPrice`);
         continue;
       }
 
       const existingItem = cart.items.find(
-        (cartItem) => cartItem.productId.toString() === item.id.toString(),
+        (cartItem) => cartItem.productId.toString() === item.id.toString()
       );
 
       if (existingItem) {
@@ -425,10 +415,10 @@ exports.getCartById = async (req, res) => {
           return null;
         }
 
-        const sellingPrice = getSellingPrice(product.meta, item.productId);
+        const sellingPrice = getSellingPrice(product.meta);
         if (sellingPrice === null) {
           console.warn(
-            `Removing item ${item.productId} from cart due to invalid sellingPrice`,
+            `Removing item ${item.productId} from cart due to invalid sellingPrice`
           );
           return null;
         }
@@ -442,7 +432,7 @@ exports.getCartById = async (req, res) => {
           tax: item.tax || 0,
           total: sellingPrice * item.quantity,
         };
-      }),
+      })
     );
 
     cart.items = updatedItems.filter((item) => item !== null);
@@ -481,7 +471,7 @@ exports.reduceQuantity = async (req, res) => {
     }
 
     const existingItem = cart.items.find(
-      (item) => item.productId.toString() === productId.toString(),
+      (item) => item.productId.toString() === productId.toString()
     );
     if (!existingItem) {
       return res.status(404).json({ message: "Item not found in cart" });
@@ -492,7 +482,7 @@ exports.reduceQuantity = async (req, res) => {
       existingItem.total = existingItem.price * existingItem.quantity;
     } else {
       cart.items = cart.items.filter(
-        (item) => item.productId.toString() !== productId.toString(),
+        (item) => item.productId.toString() !== productId.toString()
       );
     }
 
