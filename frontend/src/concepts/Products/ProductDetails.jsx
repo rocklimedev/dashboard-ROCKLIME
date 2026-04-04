@@ -20,13 +20,15 @@ import {
   Spin,
   Tabs,
   Menu,
+  Tooltip,
 } from "antd";
 import { LazyLoadImage } from "react-lazy-load-image-component";
-import { ShoppingCartOutlined } from "@ant-design/icons";
+import { ShoppingCartOutlined, EditOutlined } from "@ant-design/icons";
 import ProductCard from "../../components/Product/ProductCard";
 import styles from "../../components/Product/productdetails.module.css";
 import noimage from "../../assets/img/default.png";
 import { Helmet } from "react-helmet";
+import PermissionGate from "../../context/PermissionGate";   // ← Added for permission control
 
 const ProductDetails = () => {
   const { id } = useParams();
@@ -160,9 +162,6 @@ const ProductDetails = () => {
       return message.error("Invalid price");
     }
 
-    // STOCK CHECKS COMPLETELY REMOVED
-    // No longer checking product.quantity
-
     try {
       await addToCart({
         userId,
@@ -173,7 +172,7 @@ const ProductDetails = () => {
       message.success(
         `Added ${quantity} unit${quantity > 1 ? "s" : ""} to cart successfully!`
       );
-      setQuantity(1); // Reset quantity after successful add
+      setQuantity(1);
     } catch (err) {
       message.error(err?.data?.message || "Failed to add to cart");
     }
@@ -276,7 +275,25 @@ const ProductDetails = () => {
 
             {/* Summary */}
             <div className={styles.summary}>
-              <h1 className={styles.title}>{product.name}</h1>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <h1 className={styles.title}>{product.name}</h1>
+
+                {/* EDIT BUTTON */}
+                <PermissionGate api="edit" module="products">
+                  <Tooltip title="Edit Product">
+                    <Link to={`/product/${product.productId}/edit`}>
+                      <Button
+                        type="default"
+                        icon={<EditOutlined />}
+                        size="large"
+                        style={{ borderColor: "#1890ff", color: "#1890ff" }}
+                      >
+                        Edit
+                      </Button>
+                    </Link>
+                  </Tooltip>
+                </PermissionGate>
+              </div>
 
               <div className={styles.priceContainer}>
                 {mrp && mrp !== sellingPrice && (
@@ -295,7 +312,6 @@ const ProductDetails = () => {
                 <span className={styles.quantityLabel}>Quantity:</span>
                 <InputNumber
                   min={1}
-                  // max removed - allow any quantity
                   value={quantity}
                   onChange={(v) => setQuantity(v || 1)}
                   className={styles.quantityInput}
@@ -388,9 +404,7 @@ const ProductDetails = () => {
                     getCategoryName={getCategoryName}
                     formatPrice={(fallback, metaDetails) => {
                       if (!Array.isArray(metaDetails)) return "N/A";
-                      const sp = metaDetails.find(
-                        (m) => m.slug === "sellingPrice",
-                      );
+                      const sp = metaDetails.find((m) => m.slug === "sellingPrice");
                       const price = sp ? parseFloat(sp.value) : null;
                       return price != null && !isNaN(price)
                         ? `₹${price.toFixed(2)}`
