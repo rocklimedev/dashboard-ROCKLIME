@@ -409,13 +409,13 @@ exports.createProduct = async (req, res) => {
 
 // ==================== UPDATE PRODUCT ====================
 // ==================== UPDATE PRODUCT ====================
+// ==================== UPDATE PRODUCT ====================
 exports.updateProduct = async (req, res) => {
   const t = await sequelize.transaction();
 
   try {
     const { productId } = req.params;
 
-    // Fetch existing product
     const product = await Product.findByPk(productId, { transaction: t });
     if (!product) {
       await t.rollback();
@@ -439,10 +439,6 @@ exports.updateProduct = async (req, res) => {
       ...restFields
     } = req.body;
 
-    // Debug logs (remove after testing)
-    // console.log("Update Request - Body:", JSON.stringify(req.body, null, 2));
-    // console.log("Files received:", req.files?.length || 0);
-
     // ────────────────────────────────────────────────
     // 1. Parse meta safely
     // ────────────────────────────────────────────────
@@ -452,7 +448,7 @@ exports.updateProduct = async (req, res) => {
     }
 
     // ────────────────────────────────────────────────
-    // 2. Handle images + imagesToDelete (FIXED PART)
+    // 2. Handle images (using product_images folder only)
     // ────────────────────────────────────────────────
     let currentImages = [];
     if (product.images) {
@@ -471,34 +467,34 @@ exports.updateProduct = async (req, res) => {
         }
       } catch (e) {
         console.error("Failed to parse imagesToDelete:", deleteInput);
-        imagesToDelete = []; // Prevent crash
+        imagesToDelete = [];
       }
     }
 
-    // Remove images marked for deletion
+    // Remove deleted images
     currentImages = currentImages.filter(
       (url) => !imagesToDelete.includes(url)
     );
 
-    // Upload new images
+    // Upload new images → ONLY to "product_images" folder
     if (req.files?.length > 0) {
       for (const file of req.files) {
         try {
           const url = await uploadToFtp(
             file.buffer,
             file.originalname,
-            "/product_images"
+            "/product_images"        // ← Fixed: always use this folder
           );
           currentImages.push(url);
         } catch (uploadErr) {
-          console.error("Image upload failed for file:", file.originalname, uploadErr);
-          // Continue instead of failing the whole request
+          console.error("Image upload failed:", file.originalname, uploadErr);
+          // Continue with other images
         }
       }
     }
 
     // ────────────────────────────────────────────────
-    // 3. Prepare base update data
+    // 3. Prepare update data
     // ────────────────────────────────────────────────
     const isMaster = isMasterInput === "true" || isMasterInput === true;
 
@@ -522,10 +518,9 @@ exports.updateProduct = async (req, res) => {
     };
 
     // ────────────────────────────────────────────────
-    // 4. Handle Master / Variant Logic
+    // 4. Master / Variant Logic
     // ────────────────────────────────────────────────
     if (isMaster && !product.isMaster) {
-      // Converting to master
       const hasVariants = await Product.count({
         where: { masterProductId: product.productId },
         transaction: t,
@@ -547,7 +542,6 @@ exports.updateProduct = async (req, res) => {
       });
 
     } else if (!isMaster && newMasterId && newMasterId !== product.masterProductId) {
-      // Converting to variant of another master
       const master = await Product.findOne({
         where: { productId: newMasterId, isMaster: true },
         transaction: t,
@@ -579,7 +573,6 @@ exports.updateProduct = async (req, res) => {
       });
 
     } else {
-      // Normal update (neither changing to master nor to a new variant)
       updateData.isMaster = isMaster;
 
       if (!isMaster) {
@@ -608,7 +601,7 @@ exports.updateProduct = async (req, res) => {
     }
 
     // ────────────────────────────────────────────────
-    // 5. Perform the update
+    // 5. Update product
     // ────────────────────────────────────────────────
     await product.update(updateData, { transaction: t });
 
@@ -626,7 +619,7 @@ exports.updateProduct = async (req, res) => {
     await t.commit();
 
     // ────────────────────────────────────────────────
-    // 7. Return fresh updated product
+    // 7. Return updated product with relations
     // ────────────────────────────────────────────────
     const updated = await Product.findByPk(productId, {
       include: [
@@ -679,7 +672,6 @@ exports.updateProduct = async (req, res) => {
     return res.status(500).json({
       message: "Failed to update product",
       error: error.message,
-      // stack: error.stack,   // Uncomment only during debugging
     });
   }
 };
