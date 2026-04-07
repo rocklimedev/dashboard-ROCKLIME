@@ -604,6 +604,7 @@ const NewQuotationsDetails = () => {
     return pages;
   };
   // ── Render Pages ────────────────────────────────────────────────────────
+  // ── Render Pages ────────────────────────────────────────────────────────
   const renderPages = (getShouldShowColumn) => {
     const shouldShowColumn = getShouldShowColumn || (() => true);
     const pages = [];
@@ -720,6 +721,7 @@ const NewQuotationsDetails = () => {
       );
     };
 
+    // Cover Page
     pages.push(
       <div key="cover" className={`${styles.coverPage} page`}>
         <img src={coverImage} alt="Cover" className={styles.coverBg} />
@@ -731,6 +733,7 @@ const NewQuotationsDetails = () => {
       </div>,
     );
 
+    // Letterhead Page
     pages.push(
       <div key="letterhead" className={`${styles.letterheadPage} page`}>
         <img
@@ -834,22 +837,98 @@ const NewQuotationsDetails = () => {
     }
 
     // Site Layout Pages
-    // Site Layout Pages
-    // Site Layout Pages
     if (hasSiteLayout) {
       const roomGroups = groupProductsByFloorAndRoom(enrichedProducts);
 
       roomGroups.forEach((roomGroup) => {
         if (roomGroup.products?.length > 0) {
           const areaPages = renderAreaWisePageForRoom(roomGroup);
-          pages.push(...areaPages); // This is correct
+          pages.push(...areaPages);
         }
       });
     }
-    // ==================== SUMMARY PAGE (UPDATED WITH ROOM TOTALS) ====================
-    {
-      /* ==================== SUMMARY PAGE (WITH FLOOR & ROOM DISCOUNTS) ==================== */
+
+    // ==================== 1. PRODUCT-WISE DISCOUNT DETAILS (FIRST) ====================
+    if (displayProductDiscount > 0) {
+      pages.push(
+        <div
+          key="discount-details-page"
+          className={`${styles.productPage} page`}
+        >
+          <div className={styles.pageTopHeader}>
+            <div>
+              <div className={styles.clientName}>{customerName}</div>
+              <div className={styles.clientAddress}>{customerAddress}</div>
+            </div>
+            <div className={styles.pageDate}>
+              {new Date(
+                quotation.quotation_date || Date.now(),
+              ).toLocaleDateString("en-IN", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })}
+            </div>
+          </div>
+
+          <h2
+            style={{
+              color: "#d32f2f",
+              textAlign: "center",
+              margin: "40px 0 25px",
+            }}
+          >
+            PRODUCT-WISE DISCOUNT DETAILS
+          </h2>
+
+          <table className={styles.productTable}>
+            <thead>
+              <tr>
+                <th style={{ textAlign: "left", width: "48%" }}>
+                  Product Name
+                </th>
+                <th>MRP (₹)</th>
+                <th>Discount (₹)</th>
+                <th style={{ textAlign: "right" }}>Net Amount (₹)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {mainProducts.map((p) => {
+                const mrp = Number(p.price || 0) * Number(p.quantity || 1);
+                const net = Number(p.total || 0);
+                const disc = mrp - net;
+
+                return (
+                  <tr key={p.productId}>
+                    <td style={{ textAlign: "left" }}>{p.name}</td>
+                    <td>₹{mrp.toLocaleString("en-IN")}</td>
+                    <td style={{ color: "#f5222d" }}>
+                      {disc > 0 ? `-₹${disc.toLocaleString("en-IN")}` : "—"}
+                    </td>
+                    <td style={{ textAlign: "right", fontWeight: 500 }}>
+                      ₹{net.toLocaleString("en-IN")}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+
+          <div
+            style={{
+              marginTop: 30,
+              textAlign: "center",
+              color: "#666",
+              fontSize: "0.9em",
+            }}
+          >
+            * Final Amount after all discounts is shown on the next page
+          </div>
+        </div>,
+      );
     }
+
+    // ==================== 2. FINANCIAL SUMMARY (SECOND) ====================
     pages.push(
       <div key="summary-page" className={`${styles.productPage} page`}>
         <div className={styles.pageTopHeader}>
@@ -875,150 +954,26 @@ const NewQuotationsDetails = () => {
             margin: "40px 0 30px",
           }}
         >
-          SUMMARY
+          QUOTATION SUMMARY
         </h2>
 
-        {/* Floor-wise Totals + Discounts */}
-        {hasFloorData && (
-          <>
-            <h3 style={{ color: "#d32f2f", margin: "25px 0 12px" }}>
-              Floor-wise Totals
-            </h3>
-            <table className={styles.productTable}>
-              <thead>
-                <tr>
-                  <th>Floor</th>
-                  <th style={{ textAlign: "right" }}>Subtotal (₹)</th>
-                  <th style={{ textAlign: "right" }}>Discount (₹)</th>
-                  <th style={{ textAlign: "right" }}>Net Amount (₹)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {floorTotals.map((floor, index) => {
-                  // Calculate discount for this floor
-                  const floorDiscount = mainProducts
-                    .filter(
-                      (p) =>
-                        (p.floorName || "Unspecified Floor").trim() ===
-                        floor.floorName,
-                    )
-                    .reduce((sum, p) => {
-                      const orig =
-                        Number(p.price ?? 0) * Number(p.quantity ?? 1);
-                      const lineTotal = Number(p.total ?? 0);
-                      return sum + (orig - lineTotal);
-                    }, 0);
-
-                  const netAmount = floor.total - floorDiscount;
-
-                  return (
-                    <tr key={index}>
-                      <td>{floor.floorName}</td>
-                      <td style={{ textAlign: "right" }}>
-                        ₹{floor.total.toLocaleString("en-IN")}
-                      </td>
-                      <td
-                        style={{
-                          textAlign: "right",
-                          color: floorDiscount > 0 ? "#f5222d" : "#666",
-                        }}
-                      >
-                        {floorDiscount > 0
-                          ? `-₹${Math.round(floorDiscount).toLocaleString("en-IN")}`
-                          : "—"}
-                      </td>
-                      <td style={{ textAlign: "right", fontWeight: 600 }}>
-                        ₹{Math.round(netAmount).toLocaleString("en-IN")}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            <Divider style={{ margin: "30px 0 25px" }} />
-          </>
-        )}
-
-        {/* Room-wise Totals + Discounts */}
-        {hasRoomData && (
-          <>
-            <h3 style={{ color: "#d32f2f", margin: "25px 0 12px" }}>
-              Room-wise Totals
-            </h3>
-            <table className={styles.productTable}>
-              <thead>
-                <tr>
-                  <th>Floor</th>
-                  <th>Room</th>
-                  <th style={{ textAlign: "right" }}>Subtotal (₹)</th>
-                  <th style={{ textAlign: "right" }}>Discount (₹)</th>
-                  <th style={{ textAlign: "right" }}>Net Amount (₹)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {roomTotals.map((room, index) => {
-                  // Calculate discount for this room
-                  const roomDiscount = mainProducts
-                    .filter(
-                      (p) =>
-                        (p.floorName || "Unspecified Floor").trim() ===
-                          room.floorName &&
-                        (p.roomName || "Unspecified Room").trim() ===
-                          room.roomName,
-                    )
-                    .reduce((sum, p) => {
-                      const orig =
-                        Number(p.price ?? 0) * Number(p.quantity ?? 1);
-                      const lineTotal = Number(p.total ?? 0);
-                      return sum + (orig - lineTotal);
-                    }, 0);
-
-                  const netAmount = room.total - roomDiscount;
-
-                  return (
-                    <tr key={index}>
-                      <td>{room.floorName}</td>
-                      <td>{room.roomName}</td>
-                      <td style={{ textAlign: "right" }}>
-                        ₹{room.total.toLocaleString("en-IN")}
-                      </td>
-                      <td
-                        style={{
-                          textAlign: "right",
-                          color: roomDiscount > 0 ? "#f5222d" : "#666",
-                        }}
-                      >
-                        {roomDiscount > 0
-                          ? `-₹${Math.round(roomDiscount).toLocaleString("en-IN")}`
-                          : "—"}
-                      </td>
-                      <td style={{ textAlign: "right", fontWeight: 600 }}>
-                        ₹{Math.round(netAmount).toLocaleString("en-IN")}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            <Divider style={{ margin: "30px 0 25px" }} />
-          </>
-        )}
-
         {/* Final Financial Summary */}
-        <div
-          className={styles.finalSummaryWrapper}
-          style={{ marginTop: hasFloorData || hasRoomData ? 10 : 40 }}
-        >
+        <div className={styles.finalSummaryWrapper} style={{ marginTop: 20 }}>
           <div className={styles.finalSummarySection}>
+            {/* Left Side - Breakdown */}
             <div className={styles.summaryLeft}>
               <div className={styles.summaryRow}>
-                <span>Subtotal</span>
+                <span>
+                  <strong>Gross Total (MRP)</strong>
+                </span>
                 <span>₹{displaySubtotal.toLocaleString("en-IN")}</span>
               </div>
 
               {displayProductDiscount > 0 && (
                 <div className={styles.summaryRow}>
-                  <span>Total Product Discount</span>
+                  <span style={{ color: "#f5222d" }}>
+                    Less: Product Discount
+                  </span>
                   <span style={{ color: "#f5222d" }}>
                     -₹
                     {Math.round(displayProductDiscount).toLocaleString("en-IN")}
@@ -1028,31 +983,70 @@ const NewQuotationsDetails = () => {
 
               {backendExtraDiscount > 0 && (
                 <div className={styles.summaryRow}>
-                  <span>Extra Discount</span>
+                  <span style={{ color: "#fa8c16" }}>Less: Extra Discount</span>
                   <span style={{ color: "#fa8c16" }}>
                     -₹{Math.round(backendExtraDiscount).toLocaleString("en-IN")}
                   </span>
                 </div>
               )}
-            </div>
 
-            <div className={styles.summaryRight}>
-              <div className={styles.totalAmount}>
-                <strong>Total Amount:</strong> ₹
-                {backendFinalAmount.toLocaleString("en-IN")}
+              <Divider style={{ margin: "18px 0 12px" }} />
+
+              <div
+                className={styles.summaryRow}
+                style={{ fontSize: "1.12em", fontWeight: 600 }}
+              >
+                <span>Net Amount (Before Round Off)</span>
+                <span>
+                  ₹
+                  {Math.round(
+                    backendFinalAmount - backendRoundOff,
+                  ).toLocaleString("en-IN")}
+                </span>
               </div>
-              <div className={styles.amountInWords}>{finalAmountInWords}</div>
+
               {backendRoundOff !== 0 && (
-                <div className={styles.roundOffNote}>
-                  (Round off: {backendRoundOff >= 0 ? "+" : "-"}₹
-                  {Math.abs(backendRoundOff).toFixed(2)})
+                <div className={styles.summaryRow}>
+                  <span>Round Off</span>
+                  <span>
+                    {backendRoundOff >= 0 ? "+" : "-"}₹
+                    {Math.abs(backendRoundOff).toFixed(2)}
+                  </span>
                 </div>
               )}
+            </div>
+
+            {/* Right Side - Final Total */}
+            <div className={styles.summaryRight}>
+              <div
+                className={styles.totalAmount}
+                style={{
+                  fontSize: "1.25em",
+                  color: "#d32f2f",
+                  marginBottom: "8px",
+                }}
+              >
+                <strong>FINAL AMOUNT</strong>
+              </div>
+
+              <div
+                style={{ fontSize: "2.35em", fontWeight: 700, color: "#000" }}
+              >
+                ₹{backendFinalAmount.toLocaleString("en-IN")}
+              </div>
+
+              <div
+                className={styles.amountInWords}
+                style={{ marginTop: 12, fontSize: "1.05em" }}
+              >
+                {finalAmountInWords}
+              </div>
             </div>
           </div>
         </div>
       </div>,
     );
+
     return pages;
   };
 
@@ -1141,10 +1135,7 @@ const NewQuotationsDetails = () => {
         </title>
       </Helmet>
 
-      <div
-        className="page-wrapper"
-
-      >
+      <div className="page-wrapper">
         <div className="content">
           {/* TOP BAR */}
           <div

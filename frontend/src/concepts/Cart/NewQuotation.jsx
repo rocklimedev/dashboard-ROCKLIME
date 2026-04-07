@@ -1,10 +1,12 @@
 // src/pages/quotations/NewQuotation.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { message } from "antd";
+import { message, Button, Modal, Descriptions, Typography, Space } from "antd";
+import { DeleteOutlined, SaveOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import moment from "moment";
 import { v4 as uuidv4 } from "uuid";
 import { useOutletContext } from "react-router-dom";
+
 import CartLayout from "./CartLayout";
 import QuotationForm from "../../components/POS-NEW/QuotationForm";
 import PreviewQuotation from "../../components/Quotation/PreviewQuotation";
@@ -18,6 +20,9 @@ import {
   useCreateAddressMutation,
 } from "../../api/addressApi";
 import { useAuth } from "../../context/AuthContext";
+import useAutoSave from "../../utils/useAutoSave";
+
+const { Text } = Typography;
 
 const buildFloorsFromProducts = (products) => {
   const floorMap = new Map();
@@ -28,7 +33,7 @@ const buildFloorsFromProducts = (products) => {
     if (!floorMap.has(item.floorId)) {
       floorMap.set(item.floorId, {
         floorId: item.floorId,
-        floorName: item.floorName || `Floor ${item.floorId}`, // fallback
+        floorName: item.floorName || `Floor ${item.floorId}`,
         sortOrder: floorMap.size,
         rooms: [],
       });
@@ -68,9 +73,11 @@ const NewQuotation = () => {
   const navigate = useNavigate();
   const { auth } = useAuth();
   const commonProps = useOutletContext();
+
   const [createQuotation] = useCreateQuotationMutation();
   const [createAddress] = useCreateAddressMutation();
 
+  // ==================== MAIN STATE ====================
   const [quotationData, setQuotationData] = useState({
     quotationDate: new Date().toISOString().split("T")[0],
     dueDate: "",
@@ -86,10 +93,16 @@ const NewQuotation = () => {
   const [selectedCustomer, setSelectedCustomer] = useState("");
   const [useBillingAddress, setUseBillingAddress] = useState(false);
   const [billingAddressId, setBillingAddressId] = useState(null);
+
   const [previewVisible, setPreviewVisible] = useState(false);
   const [showAddAddressModal, setShowAddAddressModal] = useState(false);
   const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
 
+  // AutoSave Checker Modal State
+  const [showDraftModal, setShowDraftModal] = useState(false);
+  const [currentDraft, setCurrentDraft] = useState(null);
+
+  // ==================== DATA FETCHING ====================
   const { data: customersData } = useGetCustomersQuery({ limit: 500 });
   const { data: addressesData, refetch: refetchAddresses } =
     useGetAllAddressesQuery(selectedCustomer || undefined, {
@@ -99,6 +112,64 @@ const NewQuotation = () => {
   const customers = customersData?.data || [];
   const addresses = addressesData || [];
 
+  // ==================== AUTOSAVE SETUP ====================
+  const draftKey = `draft_quotation_${auth?.userId || "guest"}`;
+
+  const draftData = useMemo(() => ({
+    quotationData,
+    selectedCustomer,
+    useBillingAddress,
+    billingAddressId,
+    lastSaved: new Date().toISOString(),
+  }), [
+    quotationData,
+    selectedCustomer,
+    useBillingAddress,
+    billingAddressId,
+  ]);
+
+  const { loadDraft, clearDraft } = useAutoSave(draftKey, draftData, 2500);
+
+  // Load draft when component mounts
+  useEffect(() => {
+    const savedDraft = loadDraft();
+    if (savedDraft) {
+      if (savedDraft.quotationData) {
+        setQuotationData((prev) => ({ ...prev, ...savedDraft.quotationData }));
+      }
+      if (savedDraft.selectedCustomer) {
+        setSelectedCustomer(savedDraft.selectedCustomer);
+      }
+      if (savedDraft.useBillingAddress !== undefined) {
+        setUseBillingAddress(savedDraft.useBillingAddress);
+      }
+      if (savedDraft.billingAddressId) {
+        setBillingAddressId(savedDraft.billingAddressId);
+      }
+
+      message.info("Previous draft has been restored", 2);
+    }
+  }, [loadDraft]);
+
+  // ==================== DRAFT CHECKER FUNCTIONS ====================
+  const checkCurrentDraft = () => {
+    const saved = loadDraft();
+    if (saved) {
+      setCurrentDraft(saved);
+      setShowDraftModal(true);
+    } else {
+      message.info("No saved draft found.");
+    }
+  };
+
+  const handleDeleteDraft = () => {
+    clearDraft();
+    setShowDraftModal(false);
+    setCurrentDraft(null);
+    message.success("Draft has been deleted successfully");
+  };
+
+  // ==================== CREATE QUOTATION ====================
   const handleCreateQuotation = async (layoutProps = {}) => {
     const {
       calculationCartItems = [],
@@ -110,20 +181,21 @@ const NewQuotation = () => {
       handleClearCart,
     } = layoutProps;
 
-    if (!selectedCustomer) return message.error("Please select a customer.");
-    if (calculationCartItems.length === 0)
+    if (!selectedCustomer) {
+      return message.error("Please select a customer.");
+    }
+    if (calculationCartItems.length === 0) {
       return message.error("Cart is empty.");
+    }
 
-    // Shipping Address - OPTIONAL
+    // Handle Shipping Address
     let finalShipTo = quotationData.shipTo;
 
     if (useBillingAddress) {
       if (billingAddressId) {
         finalShipTo = billingAddressId;
       } else {
-        const customer = customers.find(
-          (c) => c.customerId === selectedCustomer,
-        );
+        const customer = customers.find((c) => c.customerId === selectedCustomer);
         if (customer?.address) {
           try {
             const parsedAddr =
@@ -144,41 +216,23 @@ const NewQuotation = () => {
             const response = await createAddress(payload).unwrap();
             finalShipTo = response.addressId;
           } catch (err) {
-            console.warn("Failed to auto-create shipping address:", err);
-            // Continue without address (optional)
+            console.warn("Failed to create shipping address automatically:", err);
           }
         }
       }
     }
 
-    // Clean floors
-    const rawFloors = quotationData.floors || [];
-    const cleanedFloors = rawFloors
-      .map((floor) => ({
-        ...floor,
-        rooms: (floor.rooms || []).map((room) => ({
-          ...room,
-          areas: room.areas || [],
-        })),
-      }))
-      .filter(
-        (floor) =>
-          (floor.rooms && floor.rooms.length > 0) ||
-          calculationCartItems.some((item) => item.floorId === floor.floorId),
-      );
-
-    let finalFloors = cleanedFloors;
+    // Build floors from assigned locations if none exist
+    let finalFloors = quotationData.floors || [];
 
     if (finalFloors.length === 0) {
-      const hasAssignments = calculationCartItems.some((item) =>
-        Boolean(item.floorId),
-      );
+      const hasAssignments = calculationCartItems.some((item) => Boolean(item.floorId));
       if (hasAssignments) {
         finalFloors = buildFloorsFromProducts(calculationCartItems);
       }
     }
 
-    // Enrich items
+    // Enrich cart items
     const enrichedItems = calculationCartItems.map((item) => {
       const productId = item.productId || item.id;
       const price = Number(item.price) || 0;
@@ -207,7 +261,7 @@ const NewQuotation = () => {
             subtotal -
             discountAmount +
             ((subtotal - discountAmount) * itemTax) / 100
-          ).toFixed(2),
+          ).toFixed(2)
         ),
       };
     });
@@ -216,12 +270,11 @@ const NewQuotation = () => {
       quotationId: uuidv4(),
       document_title: `Quotation for ${customers.find((c) => c.customerId === selectedCustomer)?.name || "Customer"} - ${moment().format("DD-MM-YYYY")}`,
 
-      quotation_date:
-        quotationData.quotationDate || moment().format("YYYY-MM-DD"),
+      quotation_date: quotationData.quotationDate || moment().format("YYYY-MM-DD"),
       due_date: quotationData.dueDate || null,
 
       customerId: selectedCustomer,
-      shipTo: finalShipTo || null, // ← Now can be null
+      shipTo: finalShipTo || null,
 
       extraDiscount: Number(quotationData.discountAmount) || 0,
       extraDiscountType: quotationData.discountType || "fixed",
@@ -243,9 +296,10 @@ const NewQuotation = () => {
       const result = await createQuotation(quotationPayload).unwrap();
 
       message.success(
-        `Quotation created successfully!${result.quotation?.reference_number ? ` Ref: ${result.quotation.reference_number}` : ""}`,
+        `Quotation created successfully!${result.quotation?.reference_number ? ` Ref: ${result.quotation.reference_number}` : ""}`
       );
 
+      clearDraft();
       if (typeof handleClearCart === "function") handleClearCart();
 
       navigate("/quotations/list");
@@ -255,7 +309,9 @@ const NewQuotation = () => {
     }
   };
 
+  // ==================== HANDLERS ====================
   const handleAddCustomer = () => setShowAddCustomerModal(true);
+
   const handleCustomerSave = (newCustomer) => {
     setSelectedCustomer(newCustomer.customerId || "");
     setShowAddCustomerModal(false);
@@ -276,8 +332,19 @@ const NewQuotation = () => {
       <CartLayout>
         {(layoutProps) => (
           <>
+            {/* Draft Management Button */}
+            <div style={{ marginBottom: 16, textAlign: "right" }}>
+              <Button
+                icon={<InfoCircleOutlined />}
+                onClick={checkCurrentDraft}
+                type="default"
+              >
+                Manage Draft
+              </Button>
+            </div>
+
             <QuotationForm
-              {...layoutProps} // This already includes itemDiscounts, itemTaxes, etc.
+              {...layoutProps}
               quotationData={quotationData}
               setQuotationData={setQuotationData}
               handleQuotationChange={(key, value) =>
@@ -296,7 +363,6 @@ const NewQuotation = () => {
               handleAddAddress={handleAddAddress}
               handleCreateDocument={handleCreateQuotation}
               handleAssignItem={layoutProps.handleAssignItemToLocation}
-              // Explicitly pass these for safety
               itemDiscounts={layoutProps.itemDiscounts}
               itemDiscountTypes={layoutProps.itemDiscountTypes}
               itemTaxes={layoutProps.itemTaxes}
@@ -308,13 +374,9 @@ const NewQuotation = () => {
               onClose={() => setPreviewVisible(false)}
               cartItems={layoutProps.calculationCartItems}
               productsData={layoutProps.cartProductsData}
-              customer={customers.find(
-                (c) => c.customerId === selectedCustomer,
-              )}
-              address={addresses.find(
-                (a) => a.addressId === quotationData.shipTo,
-              )}
-              quotationData={{ ...quotationData }}
+              customer={customers.find((c) => c.customerId === selectedCustomer)}
+              address={addresses.find((a) => a.addressId === quotationData.shipTo)}
+              quotationData={quotationData}
               itemDiscounts={layoutProps.itemDiscounts}
               itemDiscountTypes={layoutProps.itemDiscountTypes}
               itemTaxes={layoutProps.itemTaxes}
@@ -325,6 +387,56 @@ const NewQuotation = () => {
         )}
       </CartLayout>
 
+      {/* Draft Info Modal */}
+      <Modal
+        title={
+          <Space>
+            <SaveOutlined />
+            Draft Information
+          </Space>
+        }
+        open={showDraftModal}
+        onCancel={() => setShowDraftModal(false)}
+        footer={[
+          <Button key="close" onClick={() => setShowDraftModal(false)}>
+            Close
+          </Button>,
+          <Button
+            key="delete"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={handleDeleteDraft}
+          >
+            Delete Draft
+          </Button>,
+        ]}
+      >
+        {currentDraft ? (
+          <Descriptions column={1} bordered>
+            <Descriptions.Item label="Customer">
+              {customers.find((c) => c.customerId === currentDraft.selectedCustomer)?.name || "Not selected"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Quotation Date">
+              {currentDraft.quotationData?.quotationDate || "-"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Due Date">
+              {currentDraft.quotationData?.dueDate || "-"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Last Saved">
+              {currentDraft.lastSaved
+                ? moment(currentDraft.lastSaved).fromNow()
+                : "-"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Status">
+              <Text type="success">Draft Saved Automatically</Text>
+            </Descriptions.Item>
+          </Descriptions>
+        ) : (
+          <p>No draft data available.</p>
+        )}
+      </Modal>
+
+      {/* Other Modals */}
       {showAddAddressModal && (
         <AddAddress
           visible={true}
