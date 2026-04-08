@@ -48,12 +48,20 @@ async function uploadToFtp(buffer, filename, options = {}) {
   const ext = path.extname(filename) || ".bin";
   const uniqueName = `${uuidv4()}${ext}`;
 
-  // Normalize remoteDir (default to root if not provided)
-  let remoteDir =
-    typeof options.remoteDir === "string" ? options.remoteDir.trim() : "/";
-  if (!remoteDir.startsWith("/")) remoteDir = "/" + remoteDir;
+  // Support both old string call and new object call for backward compatibility
+  let remoteDir = "/";
+  let chmod = undefined;
 
-  const chmod = options.chmod;
+  if (typeof options === "string") {
+    remoteDir = options; // e.g. "/product_images"
+  } else if (options && typeof options === "object") {
+    remoteDir = options.remoteDir || "/";
+    chmod = options.chmod;
+  }
+
+  // Normalize remoteDir
+  if (!remoteDir.startsWith("/")) remoteDir = "/" + remoteDir;
+  remoteDir = remoteDir.replace(/\/+$/, ""); // remove trailing slashes if any
 
   try {
     await client.access({
@@ -74,29 +82,24 @@ async function uploadToFtp(buffer, filename, options = {}) {
       await client.send(`SITE CHMOD ${chmod} ${uniqueName}`);
     }
 
-    // ──────── CLEAN URL CONSTRUCTION ────────
-    let baseUrl = (
-      process.env.FTP_BASE_URL || "https://static.cmtradingco.com"
-    ).trim();
+    // ──────── CLEAN URL (This fixes the double slash) ────────
+    let baseUrl = (process.env.FTP_BASE_URL || "https://static.cmtradingco.com")
+      .trim()
+      .replace(/\/$/, "");
 
-    // Remove trailing slash from base
-    if (baseUrl.endsWith("/")) {
-      baseUrl = baseUrl.slice(0, -1);
-    }
-
-    // Remove leading slash from remoteDir (we'll add one clean slash)
     let cleanDir = remoteDir.replace(/^\/+/, "");
 
-    const finalUrl = `${baseUrl}/${cleanDir ? cleanDir + "/" : ""}${uniqueName}`;
+    const finalUrl = cleanDir
+      ? `${baseUrl}/${cleanDir}/${uniqueName}`
+      : `${baseUrl}/${uniqueName}`;
+
+    console.log("Uploaded image URL:", finalUrl); // ← Helpful for debugging
 
     return finalUrl;
   } finally {
     client.close();
   }
 }
-
-module.exports = { uploadToFtp };
-
 /**
  * Download file from FTP
  * @param {string} ftpPath - either full URL or remote path
