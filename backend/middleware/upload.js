@@ -27,20 +27,11 @@ function bufferToStream(buffer) {
 }
 
 /**
- * Upload buffer to FTP and return public URL
- * @param {Buffer} buffer - file buffer
- * @param {string} originalName - original filename
- * @param {string} remoteDir - remote directory, e.g., "/product_images"
- */
-
-/**
  * Upload buffer to FTP.
  * @param {Buffer} buffer
  * @param {string} filename
  * @param {object} options { remoteDir: string, chmod: string }
  */
-// middleware/upload.js
-
 async function uploadToFtp(buffer, filename, options = {}) {
   const client = new ftp.Client();
   client.ftp.verbose = process.env.NODE_ENV === "development";
@@ -48,20 +39,9 @@ async function uploadToFtp(buffer, filename, options = {}) {
   const ext = path.extname(filename) || ".bin";
   const uniqueName = `${uuidv4()}${ext}`;
 
-  // Support both old string call and new object call for backward compatibility
-  let remoteDir = "/";
-  let chmod = undefined;
-
-  if (typeof options === "string") {
-    remoteDir = options; // e.g. "/product_images"
-  } else if (options && typeof options === "object") {
-    remoteDir = options.remoteDir || "/";
-    chmod = options.chmod;
-  }
-
-  // Normalize remoteDir
-  if (!remoteDir.startsWith("/")) remoteDir = "/" + remoteDir;
-  remoteDir = remoteDir.replace(/\/+$/, ""); // remove trailing slashes if any
+  const remoteDir =
+    typeof options.remoteDir === "string" ? options.remoteDir : "/";
+  const chmod = options.chmod;
 
   try {
     await client.access({
@@ -73,33 +53,24 @@ async function uploadToFtp(buffer, filename, options = {}) {
       timeout: 0,
     });
 
+    // Ensure directory exists (string required)
     await client.ensureDir(remoteDir);
     await client.cd(remoteDir);
 
+    // Upload
     await client.uploadFrom(bufferToStream(buffer), uniqueName);
 
+    // Set permissions if provided
     if (chmod) {
       await client.send(`SITE CHMOD ${chmod} ${uniqueName}`);
     }
 
-    // ──────── CLEAN URL (This fixes the double slash) ────────
-    let baseUrl = (process.env.FTP_BASE_URL || "https://static.cmtradingco.com")
-      .trim()
-      .replace(/\/$/, "");
-
-    let cleanDir = remoteDir.replace(/^\/+/, "");
-
-    const finalUrl = cleanDir
-      ? `${baseUrl}/${cleanDir}/${uniqueName}`
-      : `${baseUrl}/${uniqueName}`;
-
-    console.log("Uploaded image URL:", finalUrl); // ← Helpful for debugging
-
-    return finalUrl;
+    return `${process.env.FTP_BASE_URL}${remoteDir}/${uniqueName}`;
   } finally {
     client.close();
   }
 }
+
 /**
  * Download file from FTP
  * @param {string} ftpPath - either full URL or remote path
