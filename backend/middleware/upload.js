@@ -39,6 +39,8 @@ function bufferToStream(buffer) {
  * @param {string} filename
  * @param {object} options { remoteDir: string, chmod: string }
  */
+// middleware/upload.js
+
 async function uploadToFtp(buffer, filename, options = {}) {
   const client = new ftp.Client();
   client.ftp.verbose = process.env.NODE_ENV === "development";
@@ -46,8 +48,11 @@ async function uploadToFtp(buffer, filename, options = {}) {
   const ext = path.extname(filename) || ".bin";
   const uniqueName = `${uuidv4()}${ext}`;
 
-  const remoteDir =
-    typeof options.remoteDir === "string" ? options.remoteDir : "/";
+  // Normalize remoteDir (default to root if not provided)
+  let remoteDir =
+    typeof options.remoteDir === "string" ? options.remoteDir.trim() : "/";
+  if (!remoteDir.startsWith("/")) remoteDir = "/" + remoteDir;
+
   const chmod = options.chmod;
 
   try {
@@ -60,19 +65,31 @@ async function uploadToFtp(buffer, filename, options = {}) {
       timeout: 0,
     });
 
-    // Ensure directory exists (string required)
     await client.ensureDir(remoteDir);
     await client.cd(remoteDir);
 
-    // Upload
     await client.uploadFrom(bufferToStream(buffer), uniqueName);
 
-    // Set permissions if provided
     if (chmod) {
       await client.send(`SITE CHMOD ${chmod} ${uniqueName}`);
     }
 
-    return `${process.env.FTP_BASE_URL}${remoteDir}/${uniqueName}`;
+    // ──────── CLEAN URL CONSTRUCTION ────────
+    let baseUrl = (
+      process.env.FTP_BASE_URL || "https://static.cmtradingco.com"
+    ).trim();
+
+    // Remove trailing slash from base
+    if (baseUrl.endsWith("/")) {
+      baseUrl = baseUrl.slice(0, -1);
+    }
+
+    // Remove leading slash from remoteDir (we'll add one clean slash)
+    let cleanDir = remoteDir.replace(/^\/+/, "");
+
+    const finalUrl = `${baseUrl}/${cleanDir ? cleanDir + "/" : ""}${uniqueName}`;
+
+    return finalUrl;
   } finally {
     client.close();
   }
