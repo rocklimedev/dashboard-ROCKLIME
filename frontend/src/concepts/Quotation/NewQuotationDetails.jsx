@@ -208,8 +208,34 @@ const NewQuotationsDetails = () => {
       return sum + (orig - discounted);
     }, 0);
   }, [mainProducts]);
+  // ── Calculations ────────────────────────────────────────────────────────
 
-  const finalAmountInWords = amountInWords(Math.round(backendFinalAmount));
+  // 1. Gross Total BEFORE any discount (This is what you want as "Total")
+  const grossTotalBeforeDiscount = useMemo(() => {
+    return mainProducts.reduce((sum, p) => {
+      const mrp = Number(p.price ?? 0);
+      const qty = Number(p.quantity ?? 1);
+      return sum + mrp * qty;
+    }, 0);
+  }, [mainProducts]);
+
+  // 2. Total Discount given on products
+  const totalProductDiscount = useMemo(() => {
+    return mainProducts.reduce((sum, p) => {
+      const mrp = Number(p.price ?? 0);
+      const qty = Number(p.quantity ?? 1);
+      const grossLine = mrp * qty;
+      const discountedLine = Number(p.total ?? 0);
+      return sum + (grossLine - discountedLine);
+    }, 0);
+  }, [mainProducts]);
+
+  // Backend values (keep as they are)
+  const extraDiscount = Number(quotation?.extraDiscount ?? 0);
+  const roundOff = Number(quotation?.roundOff ?? 0);
+  const finalAmount = Number(quotation?.finalAmount ?? 0);
+
+  const finalAmountInWords = amountInWords(Math.round(finalAmount));
 
   // ── Floor-wise & Room-wise Totals ───────────────────────────────────────
   const floorTotals = useMemo(() => {
@@ -849,6 +875,7 @@ const NewQuotationsDetails = () => {
     }
 
     // ==================== 2. FINANCIAL SUMMARY (SECOND) ====================
+    // ==================== FINANCIAL SUMMARY ====================
     pages.push(
       <div key="summary-page" className={`${styles.productPage} page`}>
         <div className={styles.pageTopHeader}>
@@ -874,63 +901,34 @@ const NewQuotationsDetails = () => {
             margin: "40px 0 30px",
           }}
         >
-          QUOTATION SUMMARY
+          SUMMARY
         </h2>
 
-        {/* Final Financial Summary */}
         <div className={styles.finalSummaryWrapper} style={{ marginTop: 20 }}>
           <div className={styles.finalSummarySection}>
             {/* Left Side - Breakdown */}
             <div className={styles.summaryLeft}>
               <div className={styles.summaryRow}>
                 <span>
-                  <strong>Gross Total (MRP)</strong>
+                  <strong>Total</strong>
                 </span>
-                <span>₹{displaySubtotal.toLocaleString("en-IN")}</span>
+                <span>₹{grossTotalBeforeDiscount.toLocaleString("en-IN")}</span>
               </div>
 
-              {displayProductDiscount > 0 && (
+              {totalProductDiscount > 0 && (
                 <div className={styles.summaryRow}>
+                  <span style={{ color: "#f5222d" }}>Discount</span>
                   <span style={{ color: "#f5222d" }}>
-                    Less: Product Discount
-                  </span>
-                  <span style={{ color: "#f5222d" }}>
-                    -₹
-                    {Math.round(displayProductDiscount).toLocaleString("en-IN")}
+                    -₹{Math.round(totalProductDiscount).toLocaleString("en-IN")}
                   </span>
                 </div>
               )}
 
-              {backendExtraDiscount > 0 && (
+              {extraDiscount > 0 && (
                 <div className={styles.summaryRow}>
-                  <span style={{ color: "#fa8c16" }}>Less: Extra Discount</span>
+                  <span style={{ color: "#fa8c16" }}>Extra Discount</span>
                   <span style={{ color: "#fa8c16" }}>
-                    -₹{Math.round(backendExtraDiscount).toLocaleString("en-IN")}
-                  </span>
-                </div>
-              )}
-
-              <Divider style={{ margin: "18px 0 12px" }} />
-
-              <div
-                className={styles.summaryRow}
-                style={{ fontSize: "1.12em", fontWeight: 600 }}
-              >
-                <span>Net Amount (Before Round Off)</span>
-                <span>
-                  ₹
-                  {Math.round(
-                    backendFinalAmount - backendRoundOff,
-                  ).toLocaleString("en-IN")}
-                </span>
-              </div>
-
-              {backendRoundOff !== 0 && (
-                <div className={styles.summaryRow}>
-                  <span>Round Off</span>
-                  <span>
-                    {backendRoundOff >= 0 ? "+" : "-"}₹
-                    {Math.abs(backendRoundOff).toFixed(2)}
+                    -₹{Math.round(extraDiscount).toLocaleString("en-IN")}
                   </span>
                 </div>
               )}
@@ -946,13 +944,13 @@ const NewQuotationsDetails = () => {
                   marginBottom: "8px",
                 }}
               >
-                <strong>FINAL AMOUNT</strong>
+                <strong>GRAND TOTAL</strong>
               </div>
 
               <div
                 style={{ fontSize: "2.35em", fontWeight: 700, color: "#000" }}
               >
-                ₹{backendFinalAmount.toLocaleString("en-IN")}
+                ₹{finalAmount.toLocaleString("en-IN")}
               </div>
 
               <div
