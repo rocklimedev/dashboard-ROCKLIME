@@ -172,14 +172,27 @@ exports.createProduct = async (req, res) => {
     }
 
     // Upload images
+    // Upload images — ALWAYS to product_images folder (like in orderController)
     let imageUrls = [];
     if (req.files?.length > 0) {
       for (const file of req.files) {
-        const url = await uploadToFtp(file.buffer, file.originalname);
-        imageUrls.push(url);
+        try {
+          const url = await uploadToFtp(
+            file.buffer,
+            file.originalname,
+            "/product_images", // ← This was the missing piece
+          );
+          imageUrls.push(url);
+        } catch (uploadErr) {
+          console.error(
+            "Image upload failed for:",
+            file.originalname,
+            uploadErr,
+          );
+          // Continue with other files instead of failing the whole request
+        }
       }
     }
-
     // ────────────────────────────────────────────────
     // 1. Prepare base product data
     // ────────────────────────────────────────────────
@@ -473,26 +486,26 @@ exports.updateProduct = async (req, res) => {
 
     // Remove deleted images
     currentImages = currentImages.filter(
-      (url) => !imagesToDelete.includes(url)
+      (url) => !imagesToDelete.includes(url),
     );
 
     // Upload new images → ONLY to "product_images" folder
+    // Inside updateProduct, replace the upload block with:
     if (req.files?.length > 0) {
       for (const file of req.files) {
         try {
           const url = await uploadToFtp(
             file.buffer,
             file.originalname,
-            "/product_images"        // ← Fixed: always use this folder
+            "/product_images", // ← Ensure this is always used
           );
           currentImages.push(url);
         } catch (uploadErr) {
           console.error("Image upload failed:", file.originalname, uploadErr);
-          // Continue with other images
+          // Don't throw — continue uploading other files
         }
       }
     }
-
     // ────────────────────────────────────────────────
     // 3. Prepare update data
     // ────────────────────────────────────────────────
@@ -501,20 +514,25 @@ exports.updateProduct = async (req, res) => {
     let updateData = {
       name: name?.trim() || product.name,
       product_code: product_code?.trim() || product.product_code,
-      quantity: quantity !== undefined ? parseInt(quantity, 10) : product.quantity,
+      quantity:
+        quantity !== undefined ? parseInt(quantity, 10) : product.quantity,
       images: JSON.stringify(currentImages),
       meta: Object.keys(metaObj).length > 0 ? metaObj : null,
-      isFeatured: isFeatured === "true" || isFeatured === true || product.isFeatured,
+      isFeatured:
+        isFeatured === "true" || isFeatured === true || product.isFeatured,
       status: status || product.status,
       description: restFields.description?.trim() || product.description,
-      tax: restFields.tax !== undefined ? parseFloat(restFields.tax) : product.tax,
-      alert_quantity: restFields.alert_quantity !== undefined 
-        ? parseInt(restFields.alert_quantity, 10) 
-        : product.alert_quantity,
+      tax:
+        restFields.tax !== undefined ? parseFloat(restFields.tax) : product.tax,
+      alert_quantity:
+        restFields.alert_quantity !== undefined
+          ? parseInt(restFields.alert_quantity, 10)
+          : product.alert_quantity,
       categoryId: restFields.categoryId || product.categoryId,
       brandId: restFields.brandId || product.brandId,
       vendorId: restFields.vendorId || product.vendorId,
-      brand_parentcategoriesId: restFields.brand_parentcategoriesId || product.brand_parentcategoriesId,
+      brand_parentcategoriesId:
+        restFields.brand_parentcategoriesId || product.brand_parentcategoriesId,
     };
 
     // ────────────────────────────────────────────────
@@ -528,8 +546,8 @@ exports.updateProduct = async (req, res) => {
 
       if (hasVariants > 0) {
         await t.rollback();
-        return res.status(400).json({ 
-          message: "Cannot convert to master product: it already has variants" 
+        return res.status(400).json({
+          message: "Cannot convert to master product: it already has variants",
         });
       }
 
@@ -540,8 +558,11 @@ exports.updateProduct = async (req, res) => {
         variantKey: null,
         skuSuffix: null,
       });
-
-    } else if (!isMaster && newMasterId && newMasterId !== product.masterProductId) {
+    } else if (
+      !isMaster &&
+      newMasterId &&
+      newMasterId !== product.masterProductId
+    ) {
       const master = await Product.findOne({
         where: { productId: newMasterId, isMaster: true },
         transaction: t,
@@ -571,13 +592,13 @@ exports.updateProduct = async (req, res) => {
         categoryId: restFields.categoryId || master.categoryId,
         brandId: restFields.brandId || master.brandId,
       });
-
     } else {
       updateData.isMaster = isMaster;
 
       if (!isMaster) {
-        const finalKey = variantKey || 
-          (variantOptionsInput 
+        const finalKey =
+          variantKey ||
+          (variantOptionsInput
             ? Object.values(parseJsonSafely(variantOptionsInput, {}))
                 .filter(Boolean)
                 .join(" ")
@@ -611,7 +632,10 @@ exports.updateProduct = async (req, res) => {
     const cleanKeywordIds = Array.isArray(keywordIds)
       ? keywordIds.filter(Boolean)
       : typeof keywordIds === "string"
-        ? keywordIds.split(",").map((id) => id.trim()).filter(Boolean)
+        ? keywordIds
+            .split(",")
+            .map((id) => id.trim())
+            .filter(Boolean)
         : [];
 
     await product.setKeywords(cleanKeywordIds, { transaction: t });
@@ -664,7 +688,6 @@ exports.updateProduct = async (req, res) => {
         isVariant: !!updated.masterProductId,
       },
     });
-
   } catch (error) {
     await t.rollback();
     console.error("Update Product Error:", error);
