@@ -80,9 +80,9 @@ async function uploadToFtp(buffer, filename, options = {}) {
       );
       // Don't fail the upload if chmod fails
     }
-
+    const FTP_BASE_URL = "https://media.cmtradingco.com";
     // Clean URL construction (prevents double slash)
-    const baseUrl = process.env.FTP_BASE_URL.replace(/\/$/, "");
+    const baseUrl = FTP_BASE_URL.replace(/\/$/, "");
     const cleanUrl = `${baseUrl}${remoteDir}/${uniqueName}`.replace(
       /\/+/g,
       "/",

@@ -724,7 +724,7 @@ exports.uploadUserPhoto = async (req, res) => {
       await client.uploadFrom(bufferToStream(req.file.buffer), originalName);
       // Make it readable by Nginx
       await client.send(`SITE CHMOD 644 ${originalName}`);
-      originalUrl = `${process.env.FTP_BASE_URL}${uploadDir}/${originalName}`;
+      originalUrl = `https://media.cmtradingco.com${uploadDir}/${originalName}`;
 
       // ---- Create & upload thumbnail ----
       const thumbBuffer = await sharp(req.file.buffer)
@@ -733,7 +733,7 @@ exports.uploadUserPhoto = async (req, res) => {
 
       await client.uploadFrom(bufferToStream(thumbBuffer), thumbName);
       await client.send(`SITE CHMOD 644 ${thumbName}`);
-      thumbUrl = `${process.env.FTP_BASE_URL}${uploadDir}/${thumbName}`;
+      thumbUrl = `https://media.cmtradingco.com${uploadDir}/${thumbName}`;
     } catch (ftpErr) {
       console.error("FTP upload failed:", ftpErr);
       return res

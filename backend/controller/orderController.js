@@ -79,7 +79,7 @@ const uploadToCDN = async (file) => {
     const ext = path.extname(file.originalname);
     const uniqueName = `${uuidv4()}-${Date.now()}${ext}`;
     await client.uploadFrom(bufferToStream(file.buffer), uniqueName);
-    const fileUrl = `${process.env.FTP_BASE_URL}/invoice_pdfs/${uniqueName}`;
+    const fileUrl = `https://media.cmtradingco.com/invoice_pdfs/${uniqueName}`;
     return fileUrl;
   } catch (err) {
     throw new Error(`FTP upload failed: ${err.message}`);
@@ -2477,7 +2477,7 @@ exports.uploadInvoiceAndLinkOrder = async (req, res) => {
       // Make file world-readable
       await client.send(`SITE CHMOD 644 ${uniqueName}`);
 
-      fileUrl = `${process.env.FTP_BASE_URL}${uploadDir}/${uniqueName}`;
+      fileUrl = `https://media.cmtradingco.com${uploadDir}/${uniqueName}`;
     } catch (ftpErr) {
       return res
         .status(500)

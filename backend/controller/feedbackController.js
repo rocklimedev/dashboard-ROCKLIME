@@ -43,7 +43,7 @@ exports.uploadFeedbackImages = async (req, res) => {
         const stream = bufferToStream(file.buffer);
         await client.uploadFrom(stream, uniqueName);
 
-        const fileUrl = `${process.env.FTP_BASE_URL}/feedback_images/${uniqueName}`;
+        const fileUrl = `https://media.cmtradingco.com/feedback_images/${uniqueName}`;
         uploadedUrls.push(fileUrl);
       }
     } catch (ftpErr) {
@@ -137,7 +137,7 @@ exports.getAllFeedback = async (req, res) => {
 exports.getFeedbackById = async (req, res) => {
   const feedback = await Feedback.findById(req.params.id).populate(
     "userId",
-    "username email"
+    "username email",
   );
 
   if (!feedback) {
@@ -173,7 +173,7 @@ exports.updateFeedbackStatus = async (req, res) => {
   const feedback = await Feedback.findByIdAndUpdate(
     req.params.id,
     { status, updatedAt: Date.now() },
-    { new: true, runValidators: true }
+    { new: true, runValidators: true },
   );
 
   if (!feedback) {
