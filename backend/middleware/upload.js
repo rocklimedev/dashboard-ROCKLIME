@@ -1,4 +1,4 @@
-// middleware/upload.js or utils/ftpUpload.js
+// middleware/upload.js
 const ftp = require("basic-ftp");
 const { Readable, Writable } = require("stream");
 const { v4: uuidv4 } = require("uuid");
@@ -27,10 +27,10 @@ function bufferToStream(buffer) {
 }
 
 /**
- * Upload buffer to FTP.
+ * Upload buffer to FTP with 775 permissions
  * @param {Buffer} buffer
  * @param {string} filename
- * @param {object} options { remoteDir: string, chmod: string }
+ * @param {object|string} options { remoteDir: string } or just string path
  */
 async function uploadToFtp(buffer, filename, options = {}) {
   const client = new ftp.Client();
@@ -39,9 +39,18 @@ async function uploadToFtp(buffer, filename, options = {}) {
   const ext = path.extname(filename) || ".bin";
   const uniqueName = `${uuidv4()}${ext}`;
 
-  const remoteDir =
-    typeof options.remoteDir === "string" ? options.remoteDir : "/";
-  const chmod = options.chmod;
+  // Handle both string and object input for backward compatibility
+  let remoteDir = "/";
+  if (typeof options === "string") {
+    remoteDir = options;
+  } else if (typeof options?.remoteDir === "string") {
+    remoteDir = options.remoteDir;
+  }
+
+  // Ensure remoteDir starts with /
+  if (!remoteDir.startsWith("/")) {
+    remoteDir = "/" + remoteDir;
+  }
 
   try {
     await client.access({
@@ -53,19 +62,36 @@ async function uploadToFtp(buffer, filename, options = {}) {
       timeout: 0,
     });
 
-    // Ensure directory exists (string required)
+    // Ensure directory exists and navigate
     await client.ensureDir(remoteDir);
     await client.cd(remoteDir);
 
-    // Upload
+    // Upload the file
     await client.uploadFrom(bufferToStream(buffer), uniqueName);
 
-    // Set permissions if provided
-    if (chmod) {
-      await client.send(`SITE CHMOD ${chmod} ${uniqueName}`);
+    // 🔥 Always set 775 permissions
+    try {
+      await client.send(`SITE CHMOD 775 ${uniqueName}`);
+      console.log(`✓ Uploaded with 775: ${uniqueName}`);
+    } catch (chmodErr) {
+      console.warn(
+        `⚠️ Failed to set CHMOD 775 on ${uniqueName}:`,
+        chmodErr.message,
+      );
+      // Don't fail the upload if chmod fails
     }
 
-    return `${process.env.FTP_BASE_URL}${remoteDir}/${uniqueName}`;
+    // Clean URL construction (prevents double slash)
+    const baseUrl = process.env.FTP_BASE_URL.replace(/\/$/, "");
+    const cleanUrl = `${baseUrl}${remoteDir}/${uniqueName}`.replace(
+      /\/+/g,
+      "/",
+    );
+
+    return cleanUrl;
+  } catch (error) {
+    console.error("FTP Upload Error:", error);
+    throw new Error(`FTP upload failed: ${error.message}`);
   } finally {
     client.close();
   }
@@ -73,7 +99,6 @@ async function uploadToFtp(buffer, filename, options = {}) {
 
 /**
  * Download file from FTP
- * @param {string} ftpPath - either full URL or remote path
  */
 async function downloadFromFtp(ftpPath) {
   const client = new ftp.Client();
@@ -83,7 +108,7 @@ async function downloadFromFtp(ftpPath) {
     let remotePath = ftpPath;
     if (ftpPath.startsWith("http")) {
       const url = new URL(ftpPath);
-      remotePath = url.pathname; // extract path from URL
+      remotePath = url.pathname;
     }
 
     await client.access({

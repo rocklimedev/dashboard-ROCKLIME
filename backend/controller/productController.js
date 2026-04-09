@@ -180,7 +180,7 @@ exports.createProduct = async (req, res) => {
           const url = await uploadToFtp(
             file.buffer,
             file.originalname,
-            "/product_images", // ← This was the missing piece
+            { remoteDir: "/product_images" }, // ← object
           );
           imageUrls.push(url);
         } catch (uploadErr) {
@@ -423,12 +423,14 @@ exports.createProduct = async (req, res) => {
 // ==================== UPDATE PRODUCT ====================
 // ==================== UPDATE PRODUCT ====================
 // ==================== UPDATE PRODUCT ====================
+// ==================== UPDATE PRODUCT ====================
 exports.updateProduct = async (req, res) => {
   const t = await sequelize.transaction();
 
   try {
     const { productId } = req.params;
 
+    // Fetch existing product
     const product = await Product.findByPk(productId, { transaction: t });
     if (!product) {
       await t.rollback();
@@ -452,35 +454,30 @@ exports.updateProduct = async (req, res) => {
       ...restFields
     } = req.body;
 
-    // ────────────────────────────────────────────────
     // 1. Parse meta safely
-    // ────────────────────────────────────────────────
     let metaObj = {};
     if (metaInput) {
       metaObj = parseJsonSafely(metaInput, {}, "meta");
     }
 
-    // ────────────────────────────────────────────────
-    // 2. Handle images (using product_images folder only)
-    // ────────────────────────────────────────────────
+    // 2. Handle images
     let currentImages = [];
     if (product.images) {
       currentImages = parseJsonSafely(product.images, [], "existing images");
     }
 
-    // Safely parse imagesToDelete
+    // Parse imagesToDelete
     let imagesToDelete = [];
     if (deleteInput) {
       try {
-        if (typeof deleteInput === "string") {
-          const parsed = JSON.parse(deleteInput);
-          imagesToDelete = Array.isArray(parsed) ? parsed : [];
-        } else if (Array.isArray(deleteInput)) {
-          imagesToDelete = deleteInput;
-        }
+        imagesToDelete =
+          typeof deleteInput === "string"
+            ? JSON.parse(deleteInput)
+            : Array.isArray(deleteInput)
+              ? deleteInput
+              : [];
       } catch (e) {
         console.error("Failed to parse imagesToDelete:", deleteInput);
-        imagesToDelete = [];
       }
     }
 
@@ -489,26 +486,21 @@ exports.updateProduct = async (req, res) => {
       (url) => !imagesToDelete.includes(url),
     );
 
-    // Upload new images → ONLY to "product_images" folder
-    // Inside updateProduct, replace the upload block with:
+    // Upload new images
     if (req.files?.length > 0) {
       for (const file of req.files) {
         try {
-          const url = await uploadToFtp(
-            file.buffer,
-            file.originalname,
-            "/product_images", // ← Ensure this is always used
-          );
+          const url = await uploadToFtp(file.buffer, file.originalname, {
+            remoteDir: "/product_images",
+          });
           currentImages.push(url);
         } catch (uploadErr) {
           console.error("Image upload failed:", file.originalname, uploadErr);
-          // Don't throw — continue uploading other files
         }
       }
     }
-    // ────────────────────────────────────────────────
+
     // 3. Prepare update data
-    // ────────────────────────────────────────────────
     const isMaster = isMasterInput === "true" || isMasterInput === true;
 
     let updateData = {
@@ -535,9 +527,7 @@ exports.updateProduct = async (req, res) => {
         restFields.brand_parentcategoriesId || product.brand_parentcategoriesId,
     };
 
-    // ────────────────────────────────────────────────
     // 4. Master / Variant Logic
-    // ────────────────────────────────────────────────
     if (isMaster && !product.isMaster) {
       const hasVariants = await Product.count({
         where: { masterProductId: product.productId },
@@ -621,14 +611,10 @@ exports.updateProduct = async (req, res) => {
       }
     }
 
-    // ────────────────────────────────────────────────
-    // 5. Update product
-    // ────────────────────────────────────────────────
+    // 5. Update the product
     await product.update(updateData, { transaction: t });
 
-    // ────────────────────────────────────────────────
     // 6. Update keywords
-    // ────────────────────────────────────────────────
     const cleanKeywordIds = Array.isArray(keywordIds)
       ? keywordIds.filter(Boolean)
       : typeof keywordIds === "string"
@@ -640,12 +626,9 @@ exports.updateProduct = async (req, res) => {
 
     await product.setKeywords(cleanKeywordIds, { transaction: t });
 
-    await t.commit();
-
-    // ────────────────────────────────────────────────
-    // 7. Return updated product with relations
-    // ────────────────────────────────────────────────
+    // 7. Fetch updated product BEFORE committing transaction
     const updated = await Product.findByPk(productId, {
+      transaction: t,
       include: [
         {
           model: Keyword,
@@ -654,7 +637,7 @@ exports.updateProduct = async (req, res) => {
           include: [
             {
               model: Category,
-              as: "categories",
+              as: "category",
               attributes: ["categoryId", "name", "slug"],
             },
           ],
@@ -662,6 +645,10 @@ exports.updateProduct = async (req, res) => {
       ],
     });
 
+    // Commit transaction
+    await t.commit();
+
+    // Prepare keywords for response
     const keywords = (updated.keywords || []).map((k) => ({
       id: k.id,
       keyword: k.keyword,
@@ -689,9 +676,14 @@ exports.updateProduct = async (req, res) => {
       },
     });
   } catch (error) {
-    await t.rollback();
-    console.error("Update Product Error:", error);
+    // Safe rollback - prevents the "Transaction cannot be rolled back" error
+    if (t && !t.finished) {
+      await t.rollback().catch((rollbackErr) => {
+        console.error("Rollback error:", rollbackErr);
+      });
+    }
 
+    console.error("Update Product Error:", error);
     return res.status(500).json({
       message: "Failed to update product",
       error: error.message,

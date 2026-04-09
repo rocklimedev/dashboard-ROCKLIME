@@ -538,7 +538,6 @@ const CreateProduct = ({
       }
 
       message.success(isEditMode ? "Product updated!" : "Product created!");
-      if (!isBulkMode) navigate(-1);
     } catch (err) {
       message.error(err?.data?.message || "Failed to save product");
     }
