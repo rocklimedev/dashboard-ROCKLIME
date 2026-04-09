@@ -191,99 +191,63 @@ const NewQuotationsDetails = () => {
       ? [...brands].join(" / ")
       : "GROHE / AMERICAN STANDARD";
   }, [mainProducts]);
-
-  // ── Calculations ────────────────────────────────────────────────────────
-  const backendFinalAmount = Number(quotation?.finalAmount ?? 0);
-  const backendRoundOff = Number(quotation?.roundOff ?? 0);
-  const backendExtraDiscount = Number(quotation?.extraDiscount ?? 0);
-
-  const displaySubtotal = useMemo(() => {
-    return mainProducts.reduce((sum, p) => sum + Number(p.total ?? 0), 0);
-  }, [mainProducts]);
-
-  const displayProductDiscount = useMemo(() => {
-    return mainProducts.reduce((sum, p) => {
-      const orig = Number(p.price ?? 0) * Number(p.quantity ?? 1);
-      const discounted = Number(p.total ?? 0);
-      return sum + (orig - discounted);
-    }, 0);
-  }, [mainProducts]);
-
-  const finalAmountInWords = amountInWords(Math.round(backendFinalAmount));
-
-  // ── Floor-wise & Room-wise Totals ───────────────────────────────────────
-  const floorTotals = useMemo(() => {
-    const floorMap = new Map();
+  // ── Floor-wise with Discount ────────────────────────────────────────────
+  const floorWiseDetailed = useMemo(() => {
+    const map = new Map();
 
     mainProducts.forEach((p) => {
       const floor = (p.floorName || "Unspecified Floor").trim();
-      const total = Number(p.total ?? 0);
+      const listPrice = Number(p.price ?? 0) * Number(p.quantity ?? 1);
+      const netTotal = Number(p.total ?? 0);
+      const disc = listPrice - netTotal;
 
-      if (!floorMap.has(floor)) {
-        floorMap.set(floor, { floorName: floor, total: 0 });
+      if (!map.has(floor)) {
+        map.set(floor, { floorName: floor, gross: 0, discount: 0, net: 0 });
       }
-      floorMap.get(floor).total += total;
+      const item = map.get(floor);
+      item.gross += listPrice;
+      item.discount += disc;
+      item.net += netTotal;
     });
 
-    return Array.from(floorMap.values()).sort((a, b) =>
+    return Array.from(map.values()).sort((a, b) =>
       a.floorName.localeCompare(b.floorName),
     );
   }, [mainProducts]);
 
-  const roomTotals = useMemo(() => {
-    const roomMap = new Map();
+  // ── Room-wise with Discount ─────────────────────────────────────────────
+  const roomWiseDetailed = useMemo(() => {
+    const map = new Map();
 
     mainProducts.forEach((p) => {
       const floor = (p.floorName || "Unspecified Floor").trim();
       const room = (p.roomName || "Unspecified Room").trim();
-      const total = Number(p.total ?? 0);
       const key = `${floor}|||${room}`;
 
-      if (!roomMap.has(key)) {
-        roomMap.set(key, { floorName: floor, roomName: room, total: 0 });
+      const listPrice = Number(p.price ?? 0) * Number(p.quantity ?? 1);
+      const netTotal = Number(p.total ?? 0);
+      const disc = listPrice - netTotal;
+
+      if (!map.has(key)) {
+        map.set(key, {
+          floorName: floor,
+          roomName: room,
+          gross: 0,
+          discount: 0,
+          net: 0,
+        });
       }
-      roomMap.get(key).total += total;
+      const item = map.get(key);
+      item.gross += listPrice;
+      item.discount += disc;
+      item.net += netTotal;
     });
 
-    return Array.from(roomMap.values())
-      .sort((a, b) => {
-        const floorCmp = a.floorName.localeCompare(b.floorName);
-        return floorCmp !== 0 ? floorCmp : a.roomName.localeCompare(b.roomName);
-      })
-      .filter((r) => r.total > 0);
+    return Array.from(map.values()).sort((a, b) => {
+      const floorCmp = a.floorName.localeCompare(b.floorName);
+      return floorCmp !== 0 ? floorCmp : a.roomName.localeCompare(b.roomName);
+    });
   }, [mainProducts]);
-
-  const hasFloorData = useMemo(() => {
-    return floorTotals.some(
-      (floor) => floor.floorName !== "Unspecified Floor" && floor.total > 0,
-    );
-  }, [floorTotals]);
-
-  const hasRoomData = useMemo(() => {
-    return roomTotals.some(
-      (room) =>
-        room.roomName !== "Unspecified Room" &&
-        room.floorName !== "Unspecified Floor",
-    );
-  }, [roomTotals]);
-
-  // ── Site Layout Check ───────────────────────────────────────────────────
-  const hasSiteLayout = useMemo(() => {
-    const floors =
-      activeVersionData.quotation?.floors || quotation?.floors || [];
-    if (!Array.isArray(floors) || floors.length === 0) return false;
-
-    return floors.some((floor) => {
-      const hasRooms = floor.rooms && floor.rooms.length > 0;
-      const hasAssignedProducts = allProducts.some(
-        (p) => p.floorId === floor.floorId,
-      );
-      return hasRooms || hasAssignedProducts;
-    });
-  }, [activeVersionData.quotation, quotation, allProducts]);
-  // Helper to enrich products with correct area info from floors structure
-  // ── Enriched Products for Area Layout ─────────────────────────────────────
-
   // Make enrichProductsWithAreas stable (optional but recommended)
   const enrichProductsWithAreas = useCallback((allProducts, floors) => {
     const areaMap = new Map(); // roomId -> areaValue -> areaName
@@ -367,6 +331,131 @@ const NewQuotationsDetails = () => {
     quotation,
     enrichProductsWithAreas,
   ]);
+
+  // ── Area-wise with Discount (using enrichedProducts) ────────────────────
+  const areaWiseDetailed = useMemo(() => {
+    const map = new Map();
+
+    enrichedProducts.forEach((p) => {
+      const area = (p.areaName || "Unassigned").trim();
+      const listPrice = Number(p.price ?? 0) * Number(p.quantity ?? 1);
+      const netTotal = Number(p.total ?? 0);
+      const disc = listPrice - netTotal;
+
+      if (!map.has(area)) {
+        map.set(area, { areaName: area, gross: 0, discount: 0, net: 0 });
+      }
+      const item = map.get(area);
+      item.gross += listPrice;
+      item.discount += disc;
+      item.net += netTotal;
+    });
+
+    return Array.from(map.values()).sort((a, b) =>
+      a.areaName.localeCompare(b.areaName),
+    );
+  }, [enrichedProducts]);
+  // ── Enhanced Financial Calculations ─────────────────────────────────────
+  const calculated =
+    activeVersionData.quotation?.calculated || quotation?.calculated || {};
+
+  const grossTotal = useMemo(() => {
+    // Ultimate total before ANY discount = Sum of (price × quantity) for all main products
+    return mainProducts.reduce((sum, p) => {
+      return sum + Number(p.price ?? 0) * Number(p.quantity ?? 1);
+    }, 0);
+  }, [mainProducts]);
+
+  const totalProductDiscount = useMemo(() => {
+    return mainProducts.reduce((sum, p) => {
+      const listPrice = Number(p.price ?? 0) * Number(p.quantity ?? 1);
+      const netTotal = Number(p.total ?? 0);
+      return sum + (listPrice - netTotal);
+    }, 0);
+  }, [mainProducts]);
+
+  const finalAmount = Number(
+    calculated.finalAmount ?? quotation?.finalAmount ?? 0,
+  );
+  const roundOff = Number(calculated.roundOff ?? quotation?.roundOff ?? 0);
+  const extraDiscount = Number(
+    calculated.extraDiscountAmount ?? quotation?.extraDiscount ?? 0,
+  );
+
+  const finalAmountInWords = amountInWords(Math.round(finalAmount));
+
+  // ── Floor-wise & Room-wise Totals ───────────────────────────────────────
+  const floorTotals = useMemo(() => {
+    const floorMap = new Map();
+
+    mainProducts.forEach((p) => {
+      const floor = (p.floorName || "Unspecified Floor").trim();
+      const total = Number(p.total ?? 0);
+
+      if (!floorMap.has(floor)) {
+        floorMap.set(floor, { floorName: floor, total: 0 });
+      }
+      floorMap.get(floor).total += total;
+    });
+
+    return Array.from(floorMap.values()).sort((a, b) =>
+      a.floorName.localeCompare(b.floorName),
+    );
+  }, [mainProducts]);
+
+  const roomTotals = useMemo(() => {
+    const roomMap = new Map();
+
+    mainProducts.forEach((p) => {
+      const floor = (p.floorName || "Unspecified Floor").trim();
+      const room = (p.roomName || "Unspecified Room").trim();
+      const total = Number(p.total ?? 0);
+      const key = `${floor}|||${room}`;
+
+      if (!roomMap.has(key)) {
+        roomMap.set(key, { floorName: floor, roomName: room, total: 0 });
+      }
+      roomMap.get(key).total += total;
+    });
+
+    return Array.from(roomMap.values())
+      .sort((a, b) => {
+        const floorCmp = a.floorName.localeCompare(b.floorName);
+        return floorCmp !== 0 ? floorCmp : a.roomName.localeCompare(b.roomName);
+      })
+      .filter((r) => r.total > 0);
+  }, [mainProducts]);
+
+  const hasFloorData = useMemo(() => {
+    return floorTotals.some(
+      (floor) => floor.floorName !== "Unspecified Floor" && floor.total > 0,
+    );
+  }, [floorTotals]);
+
+  const hasRoomData = useMemo(() => {
+    return roomTotals.some(
+      (room) =>
+        room.roomName !== "Unspecified Room" &&
+        room.floorName !== "Unspecified Floor",
+    );
+  }, [roomTotals]);
+
+  // ── Site Layout Check ───────────────────────────────────────────────────
+  const hasSiteLayout = useMemo(() => {
+    const floors =
+      activeVersionData.quotation?.floors || quotation?.floors || [];
+    if (!Array.isArray(floors) || floors.length === 0) return false;
+
+    return floors.some((floor) => {
+      const hasRooms = floor.rooms && floor.rooms.length > 0;
+      const hasAssignedProducts = allProducts.some(
+        (p) => p.floorId === floor.floorId,
+      );
+      return hasRooms || hasAssignedProducts;
+    });
+  }, [activeVersionData.quotation, quotation, allProducts]);
+  // Helper to enrich products with correct area info from floors structure
+  // ── Enriched Products for Area Layout ─────────────────────────────────────
 
   // ── Grouping Helpers (unchanged) ────────────────────────────────────────
   const groupProductsByFloorAndRoom = (products = []) => {
@@ -850,6 +939,10 @@ const NewQuotationsDetails = () => {
     {
       /* ==================== SUMMARY PAGE (WITH FLOOR & ROOM DISCOUNTS) ==================== */
     }
+    {
+      /* ==================== SUMMARY PAGE ==================== */
+    }
+    // ==================== SUMMARY PAGE (with Gross, Product-wise Discount, Floor/Room/Area) ====================
     pages.push(
       <div key="summary-page" className={`${styles.productPage} page`}>
         <div className={styles.pageTopHeader}>
@@ -878,159 +971,140 @@ const NewQuotationsDetails = () => {
           SUMMARY
         </h2>
 
-        {/* Floor-wise Totals + Discounts */}
-        {hasFloorData && (
+        {/* Floor-wise Breakdown */}
+        {floorWiseDetailed.length > 0 && (
           <>
             <h3 style={{ color: "#d32f2f", margin: "25px 0 12px" }}>
-              Floor-wise Totals
+              Floor-wise Breakdown
             </h3>
             <table className={styles.productTable}>
               <thead>
                 <tr>
                   <th>Floor</th>
-                  <th style={{ textAlign: "right" }}>Subtotal (₹)</th>
+                  <th style={{ textAlign: "right" }}>List Price (₹)</th>
                   <th style={{ textAlign: "right" }}>Discount (₹)</th>
                   <th style={{ textAlign: "right" }}>Net Amount (₹)</th>
                 </tr>
               </thead>
               <tbody>
-                {floorTotals.map((floor, index) => {
-                  // Calculate discount for this floor
-                  const floorDiscount = mainProducts
-                    .filter(
-                      (p) =>
-                        (p.floorName || "Unspecified Floor").trim() ===
-                        floor.floorName,
-                    )
-                    .reduce((sum, p) => {
-                      const orig =
-                        Number(p.price ?? 0) * Number(p.quantity ?? 1);
-                      const lineTotal = Number(p.total ?? 0);
-                      return sum + (orig - lineTotal);
-                    }, 0);
-
-                  const netAmount = floor.total - floorDiscount;
-
-                  return (
-                    <tr key={index}>
-                      <td>{floor.floorName}</td>
-                      <td style={{ textAlign: "right" }}>
-                        ₹{floor.total.toLocaleString("en-IN")}
-                      </td>
-                      <td
-                        style={{
-                          textAlign: "right",
-                          color: floorDiscount > 0 ? "#f5222d" : "#666",
-                        }}
-                      >
-                        {floorDiscount > 0
-                          ? `-₹${Math.round(floorDiscount).toLocaleString("en-IN")}`
-                          : "—"}
-                      </td>
-                      <td style={{ textAlign: "right", fontWeight: 600 }}>
-                        ₹{Math.round(netAmount).toLocaleString("en-IN")}
-                      </td>
-                    </tr>
-                  );
-                })}
+                {floorWiseDetailed.map((f, i) => (
+                  <tr key={i}>
+                    <td>{f.floorName}</td>
+                    <td style={{ textAlign: "right" }}>
+                      ₹{f.gross.toLocaleString("en-IN")}
+                    </td>
+                    <td style={{ textAlign: "right", color: "#f5222d" }}>
+                      -₹{Math.round(f.discount).toLocaleString("en-IN")}
+                    </td>
+                    <td style={{ textAlign: "right", fontWeight: 600 }}>
+                      ₹{Math.round(f.net).toLocaleString("en-IN")}
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
             <Divider style={{ margin: "30px 0 25px" }} />
           </>
         )}
 
-        {/* Room-wise Totals + Discounts */}
-        {hasRoomData && (
+        {/* Room-wise Breakdown */}
+        {roomWiseDetailed.length > 0 && (
           <>
             <h3 style={{ color: "#d32f2f", margin: "25px 0 12px" }}>
-              Room-wise Totals
+              Room-wise Breakdown
             </h3>
             <table className={styles.productTable}>
               <thead>
                 <tr>
                   <th>Floor</th>
                   <th>Room</th>
-                  <th style={{ textAlign: "right" }}>Subtotal (₹)</th>
+                  <th style={{ textAlign: "right" }}>List Price (₹)</th>
                   <th style={{ textAlign: "right" }}>Discount (₹)</th>
                   <th style={{ textAlign: "right" }}>Net Amount (₹)</th>
                 </tr>
               </thead>
               <tbody>
-                {roomTotals.map((room, index) => {
-                  // Calculate discount for this room
-                  const roomDiscount = mainProducts
-                    .filter(
-                      (p) =>
-                        (p.floorName || "Unspecified Floor").trim() ===
-                          room.floorName &&
-                        (p.roomName || "Unspecified Room").trim() ===
-                          room.roomName,
-                    )
-                    .reduce((sum, p) => {
-                      const orig =
-                        Number(p.price ?? 0) * Number(p.quantity ?? 1);
-                      const lineTotal = Number(p.total ?? 0);
-                      return sum + (orig - lineTotal);
-                    }, 0);
-
-                  const netAmount = room.total - roomDiscount;
-
-                  return (
-                    <tr key={index}>
-                      <td>{room.floorName}</td>
-                      <td>{room.roomName}</td>
-                      <td style={{ textAlign: "right" }}>
-                        ₹{room.total.toLocaleString("en-IN")}
-                      </td>
-                      <td
-                        style={{
-                          textAlign: "right",
-                          color: roomDiscount > 0 ? "#f5222d" : "#666",
-                        }}
-                      >
-                        {roomDiscount > 0
-                          ? `-₹${Math.round(roomDiscount).toLocaleString("en-IN")}`
-                          : "—"}
-                      </td>
-                      <td style={{ textAlign: "right", fontWeight: 600 }}>
-                        ₹{Math.round(netAmount).toLocaleString("en-IN")}
-                      </td>
-                    </tr>
-                  );
-                })}
+                {roomWiseDetailed.map((r, i) => (
+                  <tr key={i}>
+                    <td>{r.floorName}</td>
+                    <td>{r.roomName}</td>
+                    <td style={{ textAlign: "right" }}>
+                      ₹{r.gross.toLocaleString("en-IN")}
+                    </td>
+                    <td style={{ textAlign: "right", color: "#f5222d" }}>
+                      -₹{Math.round(r.discount).toLocaleString("en-IN")}
+                    </td>
+                    <td style={{ textAlign: "right", fontWeight: 600 }}>
+                      ₹{Math.round(r.net).toLocaleString("en-IN")}
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
             <Divider style={{ margin: "30px 0 25px" }} />
           </>
         )}
 
+        {/* Area-wise Breakdown (Shower / Basin / WC) */}
+        {areaWiseDetailed.length > 0 && (
+          <>
+            <h3 style={{ color: "#d32f2f", margin: "25px 0 12px" }}>
+              Area-wise Breakdown
+            </h3>
+            <table className={styles.productTable}>
+              <thead>
+                <tr>
+                  <th>Area</th>
+                  <th style={{ textAlign: "right" }}>List Price (₹)</th>
+                  <th style={{ textAlign: "right" }}>Discount (₹)</th>
+                  <th style={{ textAlign: "right" }}>Net Amount (₹)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {areaWiseDetailed.map((a, i) => (
+                  <tr key={i}>
+                    <td>{a.areaName}</td>
+                    <td style={{ textAlign: "right" }}>
+                      ₹{a.gross.toLocaleString("en-IN")}
+                    </td>
+                    <td style={{ textAlign: "right", color: "#f5222d" }}>
+                      -₹{Math.round(a.discount).toLocaleString("en-IN")}
+                    </td>
+                    <td style={{ textAlign: "right", fontWeight: 600 }}>
+                      ₹{Math.round(a.net).toLocaleString("en-IN")}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
+        )}
+
         {/* Final Financial Summary */}
-        <div
-          className={styles.finalSummaryWrapper}
-          style={{ marginTop: hasFloorData || hasRoomData ? 10 : 40 }}
-        >
+        <div className={styles.finalSummaryWrapper}>
           <div className={styles.finalSummarySection}>
             <div className={styles.summaryLeft}>
               <div className={styles.summaryRow}>
-                <span>Subtotal</span>
-                <span>₹{displaySubtotal.toLocaleString("en-IN")}</span>
+                <span>
+                  <strong>Total List Price (Before Discount)</strong>
+                </span>
+                <span>₹{grossTotal.toLocaleString("en-IN")}</span>
               </div>
 
-              {displayProductDiscount > 0 && (
+              {totalProductDiscount > 0 && (
                 <div className={styles.summaryRow}>
                   <span>Total Product Discount</span>
                   <span style={{ color: "#f5222d" }}>
-                    -₹
-                    {Math.round(displayProductDiscount).toLocaleString("en-IN")}
+                    -₹{Math.round(totalProductDiscount).toLocaleString("en-IN")}
                   </span>
                 </div>
               )}
 
-              {backendExtraDiscount > 0 && (
+              {extraDiscount > 0 && (
                 <div className={styles.summaryRow}>
                   <span>Extra Discount</span>
                   <span style={{ color: "#fa8c16" }}>
-                    -₹{Math.round(backendExtraDiscount).toLocaleString("en-IN")}
+                    -₹{Math.round(extraDiscount).toLocaleString("en-IN")}
                   </span>
                 </div>
               )}
@@ -1038,14 +1112,15 @@ const NewQuotationsDetails = () => {
 
             <div className={styles.summaryRight}>
               <div className={styles.totalAmount}>
-                <strong>Total Amount:</strong> ₹
-                {backendFinalAmount.toLocaleString("en-IN")}
+                <strong>Final Amount:</strong> ₹
+                {finalAmount.toLocaleString("en-IN")}
               </div>
               <div className={styles.amountInWords}>{finalAmountInWords}</div>
-              {backendRoundOff !== 0 && (
+
+              {roundOff !== 0 && (
                 <div className={styles.roundOffNote}>
-                  (Round off: {backendRoundOff >= 0 ? "+" : "-"}₹
-                  {Math.abs(backendRoundOff).toFixed(2)})
+                  (Round off: {roundOff >= 0 ? "+" : "-"} ₹
+                  {Math.abs(roundOff).toFixed(2)})
                 </div>
               )}
             </div>

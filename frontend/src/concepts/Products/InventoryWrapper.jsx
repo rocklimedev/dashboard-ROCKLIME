@@ -1,4 +1,3 @@
-// src/pages/InventoryWrapper.jsx
 import React, { useState, useMemo, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
@@ -17,10 +16,10 @@ import {
   Pagination,
   Tag,
   Card,
-  Badge,
   Spin,
   Tooltip,
-  ConfigProvider,
+  Dropdown,
+  Menu,
 } from "antd";
 import {
   SearchOutlined,
@@ -30,18 +29,23 @@ import {
   FileTextOutlined,
   DownloadOutlined,
   ReloadOutlined,
+  MoreOutlined,
 } from "@ant-design/icons";
 import StockModal from "../../components/modals/StockModal";
 import {
   useGetAllProductsQuery,
   useAddStockMutation,
   useRemoveStockMutation,
+  useDeleteProductMutation,
 } from "../../api/productApi";
 import PageHeader from "../../components/Common/PageHeader";
 import pos from "../../assets/img/default.png";
 import HistoryModalAntD from "../../components/modals/HistoryModal";
 import ReportBuilderModal from "../../components/modals/ReportBuilderModal";
+import DeleteModal from "../../components/Common/DeleteModal";
+import PermissionGate from "../../context/PermissionGate";
 import { generatePDF, generateExcel } from "../../utils/helpers";
+
 const { TabPane } = Tabs;
 const { Text } = Typography;
 
@@ -73,6 +77,7 @@ const InventoryWrapper = () => {
   const [stockModalOpen, setStockModalOpen] = useState(false);
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [stockAction, setStockAction] = useState("add");
   const [selectedReportProducts, setSelectedReportProducts] = useState([]);
@@ -102,6 +107,7 @@ const InventoryWrapper = () => {
 
   const [addStock] = useAddStockMutation();
   const [removeStock] = useRemoveStockMutation();
+  const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation();
 
   const products = useMemo(() => response?.data || [], [response?.data]);
   const paginationInfo = response?.pagination || {
@@ -272,6 +278,25 @@ const InventoryWrapper = () => {
     setHistoryModalOpen(true);
   };
 
+  const handleDeleteClick = (product) => {
+    setSelectedProduct(product);
+    setDeleteModalVisible(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedProduct?.productId) return;
+    try {
+      await deleteProduct(selectedProduct.productId).unwrap();
+      message.success("Product deleted successfully");
+      refetch();
+    } catch (err) {
+      message.error(err?.data?.message || "Failed to delete product");
+    } finally {
+      setDeleteModalVisible(false);
+      setSelectedProduct(null);
+    }
+  };
+
   const handleStockSubmit = async (values) => {
     try {
       if (stockAction === "add") {
@@ -370,6 +395,25 @@ const InventoryWrapper = () => {
     );
   };
 
+  // More Options Menu (Edit + Delete)
+  const moreMenu = (record) => (
+    <Menu>
+      <Menu.Item key="edit">
+        <Link to={`/product/${record.productId}/edit`}>Edit Product</Link>
+      </Menu.Item>
+      <PermissionGate api="delete" module="products">
+        <Menu.Item
+          danger
+          key="delete"
+          onClick={() => handleDeleteClick(record)}
+        >
+          Delete Product
+        </Menu.Item>
+      </PermissionGate>
+    </Menu>
+  );
+
+  // Table Columns
   const columns = [
     {
       title: "Image",
@@ -456,7 +500,7 @@ const InventoryWrapper = () => {
     {
       title: "Actions",
       key: "actions",
-      width: 140,
+      width: 200,
       fixed: isMobile ? false : "right",
       align: "center",
       render: (_, record) => (
@@ -481,6 +525,13 @@ const InventoryWrapper = () => {
             onClick={() => openHistoryModal(record)}
             className="action-btn history"
           />
+
+          {/* Edit & Delete Dropdown */}
+          <PermissionGate api="edit|delete" module="products">
+            <Dropdown overlay={moreMenu(record)} trigger={["click"]}>
+              <Button type="text" icon={<MoreOutlined />} />
+            </Dropdown>
+          </PermissionGate>
         </Space>
       ),
     },
@@ -652,12 +703,7 @@ const InventoryWrapper = () => {
         <div style={{ margin: "24px 0" }}>
           <Space wrap size={[8, 12]}>
             {[
-              {
-                key: "all",
-                label: "All",
-                count: counts.all,
-                color: "default",
-              },
+              { key: "all", label: "All", count: counts.all, color: "default" },
               {
                 key: "in-stock",
                 label: "In Stock",
@@ -780,6 +826,7 @@ const InventoryWrapper = () => {
           selectedProducts={selectedReportProducts}
           setSelectedProducts={setSelectedReportProducts}
         />
+
         <StockModal
           open={stockModalOpen}
           onCancel={() => {
@@ -790,6 +837,7 @@ const InventoryWrapper = () => {
           action={stockAction}
           onSubmit={handleStockSubmit}
         />
+
         <HistoryModalAntD
           open={historyModalOpen}
           onCancel={() => {
@@ -797,6 +845,18 @@ const InventoryWrapper = () => {
             setSelectedProduct(null);
           }}
           product={selectedProduct}
+        />
+
+        <DeleteModal
+          isVisible={deleteModalVisible}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => {
+            setDeleteModalVisible(false);
+            setSelectedProduct(null);
+          }}
+          item={selectedProduct}
+          itemType="Product"
+          isLoading={isDeleting}
         />
       </div>
     </div>
