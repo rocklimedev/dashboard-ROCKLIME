@@ -27,13 +27,6 @@ function bufferToStream(buffer) {
 }
 
 /**
- * Upload buffer to FTP and return public URL
- * @param {Buffer} buffer - file buffer
- * @param {string} originalName - original filename
- * @param {string} remoteDir - remote directory, e.g., "/product_images"
- */
-
-/**
  * Upload buffer to FTP.
  * @param {Buffer} buffer
  * @param {string} filename
@@ -77,8 +70,6 @@ async function uploadToFtp(buffer, filename, options = {}) {
     client.close();
   }
 }
-
-module.exports = { uploadToFtp };
 
 /**
  * Download file from FTP

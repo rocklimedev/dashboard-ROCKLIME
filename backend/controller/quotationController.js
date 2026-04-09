@@ -4,7 +4,30 @@ const { Op } = require("sequelize");
 const sequelize = require("../config/database");
 const { Product, Quotation } = require("../models");
 const QuotationItem = require("../models/quotationItem"); // MongoDB model
+// META_SLUGS (same as you have in your Cart controller)
+const META_SLUGS = {
+  sellingPrice: "9ba862ef-f993-4873-95ef-1fef10036aa5",
+  companyCode: "d11da9f9-3f2e-4536-8236-9671200cca4a",
+  barcode: "4ded1cb3-5d31-42e8-90ec-a381a6ab1e35",
+  productGroup: "81cd6d76-d7d2-4226-b48e-6704e6224c2b",
+};
 
+// Safe meta value extractor (reuse from your cart code)
+const getMetaValue = (meta, uuid) => {
+  if (!meta || !uuid) return null;
+
+  let parsed = meta;
+  if (typeof meta === "string") {
+    try {
+      parsed = JSON.parse(meta);
+    } catch {
+      return null;
+    }
+  }
+  if (!parsed || typeof parsed !== "object") return null;
+
+  return parsed[uuid] || null;
+};
 // ─────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────
@@ -57,7 +80,48 @@ function buildFloorsFromProducts(products) {
 
   return Array.from(floorMap.values());
 }
+// Add this helper function at the top
+const extractFirstImageUrl = (imagesField) => {
+  if (!imagesField) return null;
 
+  try {
+    // Case 1: Already an array
+    if (Array.isArray(imagesField)) {
+      return imagesField[0] || null;
+    }
+
+    // Case 2: String that might be JSON
+    if (typeof imagesField === "string") {
+      const trimmed = imagesField.trim();
+
+      // If it looks like a direct URL (not starting with [ or {)
+      if (trimmed.startsWith("http")) {
+        return trimmed;
+      }
+
+      // Try parsing as JSON
+      const parsed = JSON.parse(trimmed);
+
+      if (Array.isArray(parsed)) {
+        return parsed[0] || null;
+      }
+
+      if (typeof parsed === "string" && parsed.startsWith("http")) {
+        return parsed;
+      }
+    }
+
+    return null;
+  } catch (err) {
+    // Last resort: if it's a plain URL string with quotes or garbage
+    const str = String(imagesField).trim();
+    if (str.startsWith("http")) {
+      return str.replace(/^["']|["']$/g, ""); // remove wrapping quotes
+    }
+    console.warn(`Failed to parse images for product: ${imagesField}`);
+    return null;
+  }
+};
 function calculateTotals(
   items = [],
   extraDiscount = 0,
@@ -246,17 +310,13 @@ exports.createQuotation = async (req, res) => {
       });
 
       dbProducts.forEach((p) => {
-        let imageUrl = null;
-        try {
-          const imgs = JSON.parse(p.images || "[]");
-          imageUrl = Array.isArray(imgs) && imgs.length ? imgs[0] : null;
-        } catch {}
+        const imageUrl = extractFirstImageUrl(p.images);
 
         productMap[p.productId] = {
           name: p.name?.trim() || "Unnamed Product",
-          imageUrl,
+          imageUrl, // Much more reliable now
           productCode: p.product_code || null,
-          companyCode: p.meta?.["d11da9f9-3f2e-4536-8236-9671200cca4a"] || null,
+          companyCode: getMetaValue(p.meta, META_SLUGS.companyCode), // optional improvement
           tax: p.tax || 0,
           discountType: p.discountType || "percent",
         };
@@ -325,7 +385,11 @@ exports.createQuotation = async (req, res) => {
         name: p.name || db.name || "Unknown Product",
 
         // ← FIXED: Now properly saving imageUrl and companyCode
-        imageUrl: p.imageUrl || db.imageUrl || null,
+        // ← Improved image handling
+        imageUrl:
+          p.imageUrl && p.imageUrl.trim() !== ""
+            ? p.imageUrl
+            : db.imageUrl || null,
         companyCode: p.companyCode || db.companyCode || null,
         productCode: p.productCode || db.productCode || null,
 

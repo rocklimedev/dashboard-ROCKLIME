@@ -423,6 +423,7 @@ const ProductsList = () => {
           <span style={{ color: "#ff4d4f" }}>Out of stock</span>
         ),
     },
+    // Inside the columns array → Actions column
     {
       title: "Actions",
       key: "actions",
@@ -435,11 +436,9 @@ const ProductsList = () => {
             <PermissionGate api="write" module="cart">
               <Tooltip
                 title={
-                  record.quantity <= 0
-                    ? "Out of stock"
-                    : !priceValid
-                      ? "Price not available"
-                      : "Add to cart"
+                  !priceValid
+                    ? "Price not available"
+                    : "Add to cart (even if out of stock)"
                 }
               >
                 <Button
@@ -451,11 +450,7 @@ const ProductsList = () => {
                     )
                   }
                   onClick={() => handleAddToCart(record)}
-                  disabled={
-                    cartLoadingStates[record.productId] ||
-                    record.quantity <= 0 ||
-                    !priceValid
-                  }
+                  disabled={cartLoadingStates[record.productId] || !priceValid}
                 >
                   Add to Cart
                 </Button>
@@ -510,6 +505,7 @@ const ProductsList = () => {
   // ── Handlers ───────────────────────────────────────────
   const handleAddToCart = async (product) => {
     if (!userId) return message.error("Please log in");
+
     const price = getNumericPrice(product);
     if (price === null) return message.error("Price not available");
 
@@ -521,7 +517,13 @@ const ProductsList = () => {
         productId: product.productId,
         quantity: 1,
       }).unwrap();
-      message.success("Added to cart");
+
+      message.success(
+        product.quantity <= 0
+          ? "Added to cart"
+          : "Added to cart",
+      );
+
       refetchCart();
     } catch (err) {
       message.error(err?.data?.message || "Failed to add to cart");
@@ -529,7 +531,6 @@ const ProductsList = () => {
       setCartLoadingStates((prev) => ({ ...prev, [product.productId]: false }));
     }
   };
-
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isDeleteModalVisible, setDeleteModalVisible] = useState(false);
   const [stockModalOpen, setStockModalOpen] = useState(false);

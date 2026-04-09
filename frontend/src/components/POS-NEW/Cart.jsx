@@ -94,7 +94,6 @@ const CartTab = ({
   getParentName,
   documentType = "quotation",
 }) => {
-  console.log(localCartItems);
   // Use localCartItems with fallback (most reliable)
   const safeCartItems = useMemo(() => {
     return Array.isArray(localCartItems)
@@ -103,7 +102,7 @@ const CartTab = ({
         ? cartItems
         : [];
   }, [localCartItems, cartItems]);
-  console.log(safeCartItems);
+
   const isQuotationMode =
     documentType === "Quotation" ||
     documentType === "quotation" ||

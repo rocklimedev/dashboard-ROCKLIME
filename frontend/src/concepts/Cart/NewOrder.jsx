@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from "react";
+// src/pages/quotations/NewOrder.jsx
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { message } from "antd";
+import { message, Button, Modal, Descriptions, Space } from "antd";
+import { DeleteOutlined, SaveOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import moment from "moment";
 
 import CartLayout from "./CartLayout";
 import OrderForm from "../../components/POS-NEW/OrderForm";
+
 import { useCreateOrderMutation } from "../../api/orderApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
 import {
@@ -14,7 +17,9 @@ import {
 import { useGetAllTeamsQuery } from "../../api/teamApi";
 import { useGetAllUsersQuery } from "../../api/userApi";
 import { useGetProfileQuery } from "../../api/userApi";
+
 import { useAuth } from "../../context/AuthContext";
+import useAutoSave from "../../utils/useAutoSave";
 
 const NewOrder = () => {
   const navigate = useNavigate();
@@ -23,6 +28,7 @@ const NewOrder = () => {
   const [createOrder] = useCreateOrderMutation();
   const [createAddress] = useCreateAddressMutation();
 
+  // ==================== ORDER STATE ====================
   const [orderData, setOrderData] = useState({
     createdFor: "",
     createdBy: "",
@@ -44,13 +50,18 @@ const NewOrder = () => {
   const [useBillingAddress, setUseBillingAddress] = useState(false);
   const [billingAddressId, setBillingAddressId] = useState(null);
 
+  // ==================== DRAFT CHECKER STATE ====================
+  const [showDraftModal, setShowDraftModal] = useState(false);
+  const [currentDraft, setCurrentDraft] = useState(null);
+
+  // ==================== QUERIES ====================
   const { data: profileData } = useGetProfileQuery();
   const userId = profileData?.user?.userId || auth?.userId;
 
   const { data: customersData } = useGetCustomersQuery({ limit: 500 });
   const { data: addressesData } = useGetAllAddressesQuery(
     selectedCustomer || undefined,
-    { skip: !selectedCustomer },
+    { skip: !selectedCustomer }
   );
 
   const { data: teamsData } = useGetAllTeamsQuery();
@@ -61,14 +72,66 @@ const NewOrder = () => {
   const teams = teamsData?.teams || [];
   const users = usersData?.users || [];
 
+  // Set createdBy when userId is available
   useEffect(() => {
-    if (userId) setOrderData((prev) => ({ ...prev, createdBy: userId }));
+    if (userId) {
+      setOrderData((prev) => ({ ...prev, createdBy: userId }));
+    }
   }, [userId]);
 
-  // ─────────────────────────────────────────────────────────────
-  // FIXED handleCreateOrder - receives cartProductsData from CartLayout
-  // ─────────────────────────────────────────────────────────────
-  // src/pages/quotations/NewOrder.jsx
+  // ==================== AUTOSAVE SETUP ====================
+  const draftKey = `draft_order_${auth?.userId || "guest"}`;
+
+  const draftData = useMemo(() => ({
+    orderData,
+    selectedCustomer,
+    useBillingAddress,
+    billingAddressId,
+    lastSaved: new Date().toISOString(),
+  }), [orderData, selectedCustomer, useBillingAddress, billingAddressId]);
+
+  const { loadDraft, clearDraft } = useAutoSave(draftKey, draftData, 2500);
+
+  // Load draft on component mount
+  useEffect(() => {
+    const savedDraft = loadDraft();
+    if (savedDraft) {
+      if (savedDraft.orderData) {
+        setOrderData((prev) => ({ ...prev, ...savedDraft.orderData }));
+      }
+      if (savedDraft.selectedCustomer) {
+        setSelectedCustomer(savedDraft.selectedCustomer);
+      }
+      if (savedDraft.useBillingAddress !== undefined) {
+        setUseBillingAddress(savedDraft.useBillingAddress);
+      }
+      if (savedDraft.billingAddressId) {
+        setBillingAddressId(savedDraft.billingAddressId);
+      }
+
+      message.info("Previous Order draft has been restored", 2);
+    }
+  }, [loadDraft]);
+
+  // ==================== DRAFT CHECKER FUNCTIONS ====================
+  const checkCurrentDraft = () => {
+    const saved = loadDraft();
+    if (saved) {
+      setCurrentDraft(saved);
+      setShowDraftModal(true);
+    } else {
+      message.info("No saved draft found.");
+    }
+  };
+
+  const handleDeleteDraft = () => {
+    clearDraft();
+    setShowDraftModal(false);
+    setCurrentDraft(null);
+    message.success("Draft has been deleted successfully");
+  };
+
+  // ==================== CREATE ORDER ====================
   const handleCreateOrder = async (layoutProps = {}) => {
     const {
       calculationCartItems = [],
@@ -85,8 +148,9 @@ const NewOrder = () => {
       return message.error("Cart is empty.");
     if (!orderData.dueDate) return message.error("Please select a due date.");
 
-    // Shipping Address
+    // Shipping Address Logic
     let finalShipTo = orderData.shipTo;
+
     if (useBillingAddress && !billingAddressId) {
       const customer = customers.find((c) => c.customerId === selectedCustomer);
       if (!customer?.address)
@@ -114,18 +178,15 @@ const NewOrder = () => {
         }).unwrap();
         finalShipTo = res.addressId;
       } catch (e) {
-        return message.error(
-          e?.data?.message || "Failed to create shipping address.",
-        );
+        return message.error(e?.data?.message || "Failed to create shipping address.");
       }
     }
 
     if (!finalShipTo) return message.error("Shipping address is required.");
 
-    // Simple but reliable enrichment - use whatever is already in cart item
+    // Enrich products with discount and tax info
     const enrichedProducts = calculationCartItems.map((item) => {
       const productId = item.productId || item.id;
-
       const price = Number(item.price) || 0;
       const quantity = Number(item.quantity) || 1;
       const discount = Number(itemDiscounts[productId]) || 0;
@@ -138,17 +199,16 @@ const NewOrder = () => {
           ? (subtotal * discount) / 100
           : discount * quantity;
 
-      const total = Number((subtotal - discountAmount).toFixed(2));
+      const total = Number(
+        (subtotal - discountAmount + (subtotal - discountAmount) * tax / 100).toFixed(2)
+      );
 
       return {
         id: productId,
         name: item.name || "Unknown Product",
-
-        // Use whatever the cart item already has (most reliable right now)
         imageUrl: item.imageUrl || "",
         productCode: item.productCode || "",
         companyCode: item.companyCode || "",
-
         quantity,
         price: Number(price.toFixed(2)),
         discount: Number(discount.toFixed(2)),
@@ -157,8 +217,6 @@ const NewOrder = () => {
         total,
       };
     });
-
-    console.log("✅ Enriched Products Sent:", enrichedProducts);
 
     const orderPayload = {
       createdFor: selectedCustomer,
@@ -184,43 +242,117 @@ const NewOrder = () => {
 
     try {
       const result = await createOrder(orderPayload).unwrap();
-      message.success(`Order #${result.orderNo} created successfully!`);
+
+      message.success(`Order #${result.orderNo || ""} created successfully!`);
+
+      // Clear draft and cart on success
+      clearDraft();
       if (typeof handleClearCart === "function") handleClearCart();
+
       navigate("/orders/list");
     } catch (err) {
       console.error("Create Order Error:", err);
       message.error(err?.data?.message || "Failed to create order.");
     }
   };
+
   return (
-    <CartLayout>
-      {(layoutProps) => (
-        <OrderForm
-          {...layoutProps}
-          orderData={orderData}
-          setOrderData={setOrderData}
-          handleOrderChange={(key, value) =>
-            setOrderData((prev) => ({ ...prev, [key]: value }))
-          }
-          selectedCustomer={selectedCustomer}
-          setSelectedCustomer={setSelectedCustomer}
-          customers={customers}
-          addresses={addresses}
-          teams={teams}
-          users={users}
-          useBillingAddress={useBillingAddress}
-          setUseBillingAddress={setUseBillingAddress}
-          setBillingAddressId={setBillingAddressId}
-          handleAddCustomer={() => {}}
-          handleAddAddress={() => {}}
-          handleCreateDocument={handleCreateOrder}
-          cartItems={layoutProps.calculationCartItems || []}
-          itemDiscounts={layoutProps.itemDiscounts}
-          itemDiscountTypes={layoutProps.itemDiscountTypes}
-          itemTaxes={layoutProps.itemTaxes}
-        />
-      )}
-    </CartLayout>
+    <>
+      <CartLayout>
+        {(layoutProps) => (
+          <>
+            {/* Manage Draft Button */}
+            <div style={{ marginBottom: 16, textAlign: "right" }}>
+              <Button
+                icon={<InfoCircleOutlined />}
+                onClick={checkCurrentDraft}
+                type="default"
+              >
+                Manage Draft
+              </Button>
+            </div>
+
+            <OrderForm
+              {...layoutProps}
+              orderData={orderData}
+              setOrderData={setOrderData}
+              handleOrderChange={(key, value) =>
+                setOrderData((prev) => ({ ...prev, [key]: value }))
+              }
+              selectedCustomer={selectedCustomer}
+              setSelectedCustomer={setSelectedCustomer}
+              customers={customers}
+              addresses={addresses}
+              teams={teams}
+              users={users}
+              useBillingAddress={useBillingAddress}
+              setUseBillingAddress={setUseBillingAddress}
+              setBillingAddressId={setBillingAddressId}
+              handleAddCustomer={() => {}}
+              handleAddAddress={() => {}}
+              handleCreateDocument={handleCreateOrder}
+              cartItems={layoutProps.calculationCartItems || []}
+              itemDiscounts={layoutProps.itemDiscounts}
+              itemDiscountTypes={layoutProps.itemDiscountTypes}
+              itemTaxes={layoutProps.itemTaxes}
+            />
+          </>
+        )}
+      </CartLayout>
+
+      {/* Draft Info Modal */}
+      <Modal
+        title={
+          <Space>
+            <SaveOutlined />
+            Sales Order Draft Information
+          </Space>
+        }
+        open={showDraftModal}
+        onCancel={() => setShowDraftModal(false)}
+        footer={[
+          <Button key="close" onClick={() => setShowDraftModal(false)}>
+            Close
+          </Button>,
+          <Button
+            key="delete"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={handleDeleteDraft}
+          >
+            Delete Draft
+          </Button>,
+        ]}
+      >
+        {currentDraft ? (
+          <Descriptions column={1} bordered>
+            <Descriptions.Item label="Customer">
+              {customers.find((c) => c.customerId === currentDraft.selectedCustomer)?.name || 
+               "Not selected"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Due Date">
+              {currentDraft.orderData?.dueDate || "-"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Priority">
+              {currentDraft.orderData?.priority || "medium"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Status">
+              {currentDraft.orderData?.status || "PREPARING"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Last Saved">
+              {currentDraft.lastSaved
+                ? moment(currentDraft.lastSaved).fromNow()
+                : "-"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Status">
+              <span style={{ color: "#52c41a" }}>✓ Draft Saved Automatically</span>
+            </Descriptions.Item>
+          </Descriptions>
+        ) : (
+          <p>No draft data available.</p>
+        )}
+      </Modal>
+    </>
   );
 };
 

@@ -1457,7 +1457,7 @@
   },
   {
     "A": 211,
-    "B": "66791000-  INSPETION CHAMBER",
+    "B": "66791000  INSPETION CHAMBER",
     "C": 1,
     "D": 1,
     "E": 0
@@ -1470,13 +1470,13 @@
   },
   {
     "A": 213,
-    "B": "A8 WALL HUNG BKT. ADUSTABLE",
+    "B": "A-8_Wall_Hung_Bracket A8 WALL HUNG BKT. ADUSTABLE",
     "C": 10,
     "E": -10
   },
   {
     "A": 214,
-    "B": "AAVA GOLD BODY JET",
+    "B": "8925 AAVA GOLD BODY JET",
     "C": 1,
     "E": -1
   },
@@ -1500,7 +1500,7 @@
   },
   {
     "A": 218,
-    "B": "AXN00578 TOILET BRUSH HOLDER",
+    "B": "AXN-00578 TOILET BRUSH HOLDER",
     "C": -2,
     "E": 2
   },
@@ -1572,7 +1572,7 @@
   },
   {
     "A": 230,
-    "B": "CCAS31205W20410F0 ACACIA SUPERSLEEK",
+    "B": "CCAS3120-5W20410F0 ACACIA SUPERSLEEK",
     "C": 2,
     "E": -2
   },
@@ -1596,7 +1596,7 @@
   },
   {
     "A": 234,
-    "B": "CCAS3140 3W20400 signature wc",
+    "B": "CCAS3140-3W20400F0 signature wc",
     "C": 3,
     "E": -3
   },
@@ -1656,19 +1656,19 @@
   },
   {
     "A": 244,
-    "B": "CCASF650-1000410 MILANO VESSEL 550MM",
+    "B": "CCASF650-1000410F0 MILANO VESSEL 550MM",
     "C": 6,
     "E": -6
   },
   {
     "A": 245,
-    "B": "CF070001 6DF00 N WINSTON SEAT COVER",
+    "B": "CF070001-6DF00-N WINSTON SEAT COVER",
     "C": 1,
     "E": -1
   },
   {
     "A": 246,
-    "B": "CFB10400-FAST3-FB104 BIDET SEAT COVER",
+    "B": "CFB10400-FAST3 FB104 BIDET SEAT COVER",
     "C": 5,
     "E": -5
   },
@@ -1680,7 +1680,7 @@
   },
   {
     "A": 248,
-    "B": "CL3119B wc double vortex acacia",
+    "B": "CL3119B-6DACTPTY wc double vortex acacia",
     "C": 2,
     "E": -2
   },
@@ -1704,14 +1704,14 @@
   },
   {
     "A": 252,
-    "B": "CONCEALED BASIN MIXER 32635000",
+    "B": "32635000 CONCEALED BASIN MIXER ",
     "C": 11,
     "D": 11,
     "E": 0
   },
   {
     "A": 253,
-    "B": "Concealed  CBK 005",
+    "B": "CBK 005 Concealed  ",
     "C": 1,
     "E": -1
   },
@@ -1723,31 +1723,31 @@
   },
   {
     "A": 255,
-    "B": "CROWN  BATH TUB SPOUT WITH WALL FLAGE",
+    "B": "COL-2020 CROWN  BATH TUB SPOUT WITH WALL FLAGE",
     "C": 1,
     "E": -1
   },
   {
     "A": 256,
-    "B": "CROWN CONCEALED STOP COCK 20MM",
+    "B": "COL-2012 CROWN CONCEALED STOP COCK 20MM",
     "C": 1,
     "E": -1
   },
   {
     "A": 257,
-    "B": "CROWN SINGLE LEVER CONCEALED DIVERTER",
+    "B": "COL-2022 CROWN SINGLE LEVER CONCEALED DIVERTER",
     "C": 1,
     "E": -1
   },
   {
     "A": 258,
-    "B": "CROWN SINK MIXER",
+    "B": "COL-2017 CROWN SINK MIXER",
     "C": 1,
     "E": -1
   },
   {
     "A": 259,
-    "B": "CROWN WALL MOUNT SINGLE LEVER BASIN MIXER BODY",
+    "B": "COL-2001 CROWN WALL MOUNT SINGLE LEVER BASIN MIXER BODY",
     "C": 1,
     "E": -1
   },
@@ -2175,7 +2175,7 @@
   },
   {
     "A": 329,
-    "B": "24094000 Eurocube OHM trimset 3-way",
+    "B": " 24094000 Eurocube OHM trimset 3-way",
     "C": 1,
     "D": 1,
     "E": 0,
@@ -2189,7 +2189,7 @@
   },
   {
     "A": 331,
-    "B": "24155000 GRT Cube THM trimset bath",
+    "B": " 24155000 GRT Cube THM trimset bath",
     "C": 1,
     "E": -1
   },
@@ -2225,7 +2225,7 @@
   },
   {
     "A": 337,
-    "B": "26250000 RSH SMARTCONTROL 360 DUO SHOWER SYSTEM",
+    "B": " 26250000 RSH SMARTCONTROL 360 DUO SHOWER SYSTEM",
     "C": 1,
     "E": -1
   },
@@ -2527,7 +2527,7 @@
   },
   {
     "A": 386,
-    "B": "29126GLC GRT SMARTCONTROL THM TRIM SQU CN",
+    "B": "29126GLC-GRT SMARTCONTROL THM TRIM SQU CN",
     "C": 1,
     "E": -1
   },
@@ -2667,7 +2667,7 @@
   },
   {
     "A": 409,
-    "B": "38732SHO - GROHE (SQUARE ALPINE WHITE)",
+    "B": " 38732SHO GROHE (SQUARE ALPINE WHITE)",
     "C": 1,
     "E": -1
   },
@@ -2763,7 +2763,7 @@
   },
   {
     "A": 425,
-    "B": " 3996100H    AIRIO  VSL BASIN",
+    "B": "3996100H    AIRIO  VSL BASIN",
     "C": 1,
     "E": -1
   },
@@ -2901,7 +2901,7 @@
   },
   {
     "A": 447,
-    "B": "ACTIVE VESSEL 50CM WT CL0950 6DACTLA",
+    "B": "CL0950-6DACTLA ACTIVE VESSEL 50CM WT ",
     "C": 1,
     "E": -1
   },
@@ -2961,7 +2961,7 @@
   },
   {
     "A": 457,
-    "B": "AXN-1801 ROLL HOLDR WITH COVER GG",
+    "B": "Axn-1801 ROLL HOLDR WITH COVER GG",
     "C": 1,
     "E": -1
   },
@@ -3027,7 +3027,7 @@
   },
   {
     "A": 468,
-    "B": "13255000 Bath Inlet , Spout (N)",
+    "B": "13255000 Bath Inlet , Spout  (N)",
     "C": 1,
     "E": -1
   },
@@ -3039,55 +3039,55 @@
   },
   {
     "A": 470,
-    "B": "13425001 BAUCOSMOPOLITAN BATH SPOUT  (N)",
+    "B": "13425001 BAUCOSMOPOLITAN BATH SPOUT(N)",
     "C": 1,
     "E": -1
   },
   {
     "A": 471,
-    "B": "13255001 BAUCOSMOPOLITAN BATH SPOUT EXP",
+    "B": "13255001 BAUCOSMOPOLITAN BATH SPOUT EXP ()",
     "C": 1,
     "E": -1
   },
   {
     "A": 472,
-    "B": "1339000 BAUCOSMOPOLITAN BATH SPOUT EXP",
+    "B": "1339000 BAUCOSMOPOLITAN BATH SPOUT EXP ()",
     "C": 1,
     "E": -1
   },
   {
     "A": 473,
-    "B": "20288000 BAUCURVE OHM TRIMSET  BASIN 2-H WALL",
+    "B": "20288000 BAUCURVE OHM TRIMSET  BASIN 2-H WALL ()",
     "C": 1,
     "E": -1
   },
   {
     "A": 474,
-    "B": "20474001 BAUEDGE OHM SET BASIN 2-HM",
+    "B": "20474001 BAUEDGE OHM SET BASIN 2-HM()",
     "C": 1,
     "E": -1
   },
   {
     "A": 475,
-    "B": "29063001 BAUEDGE OHM SET BATH IN",
+    "B": "29063001 BAUEDGE OHM SET BATH IN ()",
     "C": 2,
     "E": -2
   },
   {
     "A": 476,
-    "B": "29353001 BAUEDGE OHM SET BATH SQUARE",
+    "B": "29353001 BAUEDGE OHM SET BATH SQUARE ()",
     "C": 1,
     "E": -1
   },
   {
     "A": 477,
-    "B": "31233001 BAU EDGE OHM SET C -SPOUT",
+    "B": "31233001 BAU EDGE OHM SET C -SPOUT ()",
     "C": 1,
     "E": -1
   },
   {
     "A": 478,
-    "B": "32860001 BAUFLOW OHM VESSEL BASIN SMTH XL",
+    "B": "32860001 BAUFLOW OHM VESSEL BASIN SMTH XL ()",
     "C": 1,
     "E": -1
   },
@@ -3105,7 +3105,7 @@
   },
   {
     "A": 481,
-    "B": "CCAS3140-3W20400F0 SIGNATURE",
+    "B": "CCAS3140-3W20400 F0 SIGNATURE",
     "C": 1,
     "E": -1
   },
@@ -3117,7 +3117,7 @@
   },
   {
     "A": 483,
-    "B": "CCASF650-1000410C0 MILANO VESSEL 550MM",
+    "B": "13250 MILANO VESSEL 550MM",
     "C": 1,
     "E": -1
   },
@@ -3153,13 +3153,13 @@
   },
   {
     "A": 489,
-    "B": "F78006-CHADYN",
+    "B": "F78006-CHADY",
     "C": 1,
     "E": -1
   },
   {
     "A": 490,
-    "B": "FF1-CN521X00000477 NEO MODERN SPOUT",
+    "B": "FF1-CN521X0000477 NEO MODERN SPOUT",
     "C": 1,
     "E": -1
   },
@@ -3221,7 +3221,7 @@
   },
   {
     "A": 500,
-    "B": "FFAS5634 -5015L0BF0 MULTI FUNCTN KITCHEN MIXER",
+    "B": "FFAS5634-5015L0BF0 MULTI FUNCTN KITCHEN MIXER",
     "C": 1,
     "E": -1
   },
@@ -3287,7 +3287,7 @@
   },
   {
     "A": 511,
-    "B": "CEAS7SL1-0100510A0 PRISTINE",
+    "B": "CEAS7SL1-0100510A0 PRISTINE  ()",
     "C": 1,
     "E": -1
   },
@@ -3335,42 +3335,42 @@
   },
   {
     "A": 519,
-    "B": "FFAS1306",
+    "B": "FFAS1306-1T1440BFO",
     "C": 1,
     "D": 1,
     "E": 0
   },
   {
     "A": 520,
-    "B": "FFAS1704-FFAS1704-1015L0BC0 WOUNTED BASIN MIXER",
+    "B": "FFAS1704-1015L0BC0 WOUNTED BASIN MIXER",
     "C": 2,
     "D": 1,
     "E": -1
   },
   {
     "A": 521,
-    "B": "FFAS4609",
+    "B": "FFAS4609-101500BF0",
     "C": 1,
     "D": 1,
     "E": 0
   },
   {
     "A": 522,
-    "B": "FFASB221",
+    "B": "FFASB221-609500BF0",
     "C": 1,
     "D": 1,
     "E": 0
   },
   {
     "A": 523,
-    "B": " FFASS054-000500BC0",
+    "B": "FFASS054-000500BC0",
     "C": 2,
     "D": 1,
     "E": -1
   },
   {
     "A": 524,
-    "B": "- FFAST707",
+    "B": "FFAST707-501500BF0",
     "C": 1,
     "D": 1,
     "E": 0
@@ -3389,13 +3389,13 @@
   },
   {
     "A": 527,
-    "B": "EUROSTYLE 39216000",
+    "B": "39216000 EUROSTYLE ",
     "C": 3,
     "E": -3
   },
   {
     "A": 528,
-    "B": "F11 WASTE PIPE CONNECTOR (4''X6'')",
+    "B": "M11494 F11 WASTE PIPE CONNECTOR (4''X6'')",
     "C": 6,
     "E": -6
   },
@@ -3420,7 +3420,7 @@
   },
   {
     "A": 532,
-    "B": "F54400-CHACT-angle vavle",
+    "B": "F54400-CHACT angle vavle",
     "C": 3,
     "D": 3,
     "E": 0
@@ -3434,14 +3434,14 @@
   },
   {
     "A": 534,
-    "B": "F78107 BOTTLE TRAP 25CM BRASS",
+    "B": "F78107-CHADYBR BOTTLE TRAP 25CM BRASS",
     "C": 2,
     "E": -2,
     "F": "2 pc sunny bhaiya bill"
   },
   {
     "A": 535,
-    "B": "FA4305A0 AMERICAN STD.PUSH PLATE",
+    "B": "FA4305A0-CH AMERICAN STD.PUSH PLATE",
     "C": 5,
     "D": 7,
     "E": 2,
@@ -3449,14 +3449,14 @@
   },
   {
     "A": 536,
-    "B": "FF163505050- shower arm big size",
+    "B": "FF163505050 shower arm big size",
     "C": 3,
     "D": 3,
     "E": 0
   },
   {
     "A": 537,
-    "B": "FF1-CN521X00000477NEO MODERN",
+    "B": "FF1-CN521X00000477 NEO MODERN",
     "C": 1,
     "D": 1,
     "E": 0
@@ -3533,7 +3533,7 @@
   },
   {
     "A": 548,
-    "B": "FFAS0701-151500BA0- NEO MODN SINGLE HOLE",
+    "B": "FFAS0701-151500BA0 NEO MODN SINGLE HOLE",
     "C": 4,
     "D": 3,
     "E": -1,
@@ -3541,7 +3541,7 @@
   },
   {
     "A": 549,
-    "B": "FFAS0703 - 151500BA0 neo morden tall body",
+    "B": "FFAS0703-151500BA0 neo morden tall body",
     "C": 1,
     "D": 1,
     "E": 0
@@ -3611,7 +3611,7 @@
   },
   {
     "A": 559,
-    "B": "FFAS1604",
+    "B": "FFAS1604-101501BF0",
     "C": 1,
     "D": 1,
     "E": 0
@@ -3837,7 +3837,7 @@
   },
   {
     "A": 591,
-    "B": "FFASTS28-000090BF0BF0 DUO HYGIENE SPRAY",
+    "B": "FFASTS28-000090BF0 DUO HYGIENE SPRAY",
     "C": 7,
     "D": 7,
     "E": 0
@@ -3863,25 +3863,25 @@
   },
   {
     "A": 595,
-    "B": "FFASTS28-000GL0BF0-DUROSTIX COOLSUNRISE",
+    "B": "FFASTS28-000GL0BF0 DUROSTIX COOLSUNRISE",
     "C": 7,
     "E": -7
   },
   {
     "A": 596,
-    "B": "FK303D01 AMERICAN STD.CON.CISTERN",
+    "B": "FK303D01-AASI1 AMERICAN STD.CON.CISTERN",
     "C": 15,
     "E": -15
   },
   {
     "A": 597,
-    "B": "FRENCH BIB COCK TWO WAY",
+    "B": "COL-3005 FRENCH BIB COCK TWO WAY",
     "C": 1,
     "E": -1
   },
   {
     "A": 598,
-    "B": "GROHE CLEAN 48166000",
+    "B": "48166000 GROHE CLEAN",
     "C": 2,
     "D": 1,
     "E": -1,
@@ -3953,19 +3953,19 @@
   },
   {
     "A": 609,
-    "B": "LUXUM FLUSH PLATE GOLD",
+    "B": "1451 LUXUM FLUSH PLATE GOLD",
     "C": 2,
     "E": -2
   },
   {
     "A": 610,
-    "B": "Meta Ceiling Faucet Wall Mounted  Handle BG",
+    "B": "META Deck Mount Mixer - BRUSHED GOLD",
     "C": 1,
     "E": -1
   },
   {
     "A": 611,
-    "B": "Meta Ceiling Faucet Wall Mounted Handle Rose Gold",
+    "B": "META Deck Mount Mixer - ROSE GOLD",
     "C": 2,
     "E": -2
   },
@@ -3996,13 +3996,13 @@
   },
   {
     "A": 616,
-    "B": "RETRO  MAXX  3+ DIVERTER  BODY",
+    "B": "8101 RETRO  MAXX  3+ DIVERTER  BODY",
     "C": 5,
     "E": -5
   },
   {
     "A": 617,
-    "B": "RETRO  MAXX 3+ DIVERTER CHROME TRIM",
+    "B": "8103 RETRO  MAXX 3+ DIVERTER CHROME TRIM",
     "C": 2,
     "E": -2
   },
@@ -4014,19 +4014,19 @@
   },
   {
     "A": 619,
-    "B": "RETRO  MAXX 4+  DIVERTER  BODY",
+    "B": "7884 RETRO  MAXX 4+  DIVERTER  BODY",
     "C": 5,
     "E": -5
   },
   {
     "A": 620,
-    "B": "RETRO  MAXX  4+ DIVERTER CHROME TRIM",
+    "B": "7809 RETRO  MAXX  4+ DIVERTER CHROME TRIM",
     "C": 1,
     "E": -1
   },
   {
     "A": 621,
-    "B": "RETRO  MAXX 4+ DIVERTER  ROSE GOLD TRIM",
+    "B": "7827 RETRO  MAXX 4+ DIVERTER  ROSE GOLD TRIM",
     "C": 2,
     "E": -2
   },
@@ -4038,13 +4038,13 @@
   },
   {
     "A": 623,
-    "B": "ROOT WHITE  WALL HUNG SEAT",
+    "B": "2001 ROOT WHITE  WALL HUNG SEAT",
     "C": 2,
     "E": -2
   },
   {
     "A": 624,
-    "B": "RSH RUSTIC 130 SHOWER RAIL SET 600- (L) 27139000",
+    "B": "27139000 RSH RUSTIC 130 SHOWER RAIL SET 600- (L) ",
     "C": 2,
     "D": 2,
     "E": 0
@@ -4079,19 +4079,19 @@
   },
   {
     "A": 629,
-    "B": "SMART STEAM  GENERATOR   6.0 KW",
+    "B": "671 SMART STEAM  GENERATOR   6.0 KW",
     "C": 4,
     "E": -4
   },
   {
     "A": 630,
-    "B": "SPRIT  LX SHOWER   SHR-SPT0",
+    "B": "SPRITE LX SIZE (ABS BODY)",
     "C": 3,
     "E": -3
   },
   {
     "A": 631,
-    "B": "STG-SMT-TCHPD SMART CONTROL TOUCH PAD",
+    "B": "29124DC0 STG-SMT-TCHPD SMART CONTROL TOUCH PAD",
     "C": 5,
     "E": -5
   },
@@ -4121,7 +4121,7 @@
   },
   {
     "A": 636,
-    "B": "Theo Ceiling Faucet Brush Gold Diverter",
+    "B": "THEO Ceiling Mounted Faucet - BRUSHED GOLD",
     "C": 1,
     "E": -1
   },
@@ -4139,7 +4139,7 @@
   },
   {
     "A": 639,
-    "B": "VASCO  BATH TUB WITH GOLD LEGS",
+    "B": "618 VASCO  BATH TUB WITH GOLD LEGS",
     "C": 1,
     "E": -1
   },
@@ -4205,19 +4205,19 @@
   },
   {
     "A": 650,
-    "B": "WOW HEALTH FAUCET GOLD",
+    "B": "4533 WOW HEALTH FAUCET GOLD",
     "C": 1,
     "E": -1
   },
   {
     "A": 651,
-    "B": "WOW HEALTH FAUCET GUN METAL",
+    "B": "4534 WOW HEALTH FAUCET GUN METAL",
     "C": 1,
     "E": -1
   },
   {
     "A": 652,
-    "B": "WOW HELATH FAUCET ROSE GOLD",
+    "B": "4532 WOW HELATH FAUCET ROSE GOLD",
     "C": 1,
     "E": -1
   },
@@ -4265,7 +4265,7 @@
   },
   {
     "A": 660,
-    "B": "X - HUBB CONCEALED COCK  - XHUB -MB-CC0",
+    "B": " CONCEALED COCK  - XHUB -MB-CC0",
     "C": 1,
     "E": -1
   },

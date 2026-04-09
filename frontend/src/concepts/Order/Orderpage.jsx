@@ -380,7 +380,7 @@ const OrderPage = () => {
   return (
     <div className="page-wrapper">
       <div className="content">
-        <div className="order-page-modern">
+
           <Helmet>
             <title>Order #{order.orderNo} | CM Trading</title>
           </Helmet>
@@ -767,7 +767,7 @@ const OrderPage = () => {
               selectedCustomer={order.createdFor}
             />
           )}
-        </div>
+
       </div>
     </div>
   );

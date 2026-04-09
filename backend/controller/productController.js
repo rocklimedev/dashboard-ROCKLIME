@@ -15,9 +15,6 @@ const {
 } = require("../models");
 // ─────────────────────────────────────────────────────────────────────────────
 // Create a product with meta data
-// ─────────────────────────────────────────────────────────────────────────────
-// controllers/productController.js
-// controllers/productController.js
 
 // Correct import
 const { uploadToFtp } = require("../middleware/upload"); // ← this is where it really is
@@ -175,14 +172,27 @@ exports.createProduct = async (req, res) => {
     }
 
     // Upload images
+    // Upload images — ALWAYS to product_images folder (like in orderController)
     let imageUrls = [];
     if (req.files?.length > 0) {
       for (const file of req.files) {
-        const url = await uploadToFtp(file.buffer, file.originalname);
-        imageUrls.push(url);
+        try {
+          const url = await uploadToFtp(
+            file.buffer,
+            file.originalname,
+            "/product_images", // ← This was the missing piece
+          );
+          imageUrls.push(url);
+        } catch (uploadErr) {
+          console.error(
+            "Image upload failed for:",
+            file.originalname,
+            uploadErr,
+          );
+          // Continue with other files instead of failing the whole request
+        }
       }
     }
-
     // ────────────────────────────────────────────────
     // 1. Prepare base product data
     // ────────────────────────────────────────────────
@@ -411,11 +421,14 @@ exports.createProduct = async (req, res) => {
 };
 
 // ==================== UPDATE PRODUCT ====================
+// ==================== UPDATE PRODUCT ====================
+// ==================== UPDATE PRODUCT ====================
 exports.updateProduct = async (req, res) => {
   const t = await sequelize.transaction();
 
   try {
     const { productId } = req.params;
+
     const product = await Product.findByPk(productId, { transaction: t });
     if (!product) {
       await t.rollback();
@@ -439,40 +452,63 @@ exports.updateProduct = async (req, res) => {
       ...restFields
     } = req.body;
 
-    // --- Parse meta safely ---
+    // ────────────────────────────────────────────────
+    // 1. Parse meta safely
+    // ────────────────────────────────────────────────
     let metaObj = {};
     if (metaInput) {
+      metaObj = parseJsonSafely(metaInput, {}, "meta");
+    }
+
+    // ────────────────────────────────────────────────
+    // 2. Handle images (using product_images folder only)
+    // ────────────────────────────────────────────────
+    let currentImages = [];
+    if (product.images) {
+      currentImages = parseJsonSafely(product.images, [], "existing images");
+    }
+
+    // Safely parse imagesToDelete
+    let imagesToDelete = [];
+    if (deleteInput) {
       try {
-        metaObj =
-          typeof metaInput === "string" ? JSON.parse(metaInput) : metaInput;
+        if (typeof deleteInput === "string") {
+          const parsed = JSON.parse(deleteInput);
+          imagesToDelete = Array.isArray(parsed) ? parsed : [];
+        } else if (Array.isArray(deleteInput)) {
+          imagesToDelete = deleteInput;
+        }
       } catch (e) {
-        await t.rollback();
-        return res.status(400).json({ message: "Invalid meta JSON" });
+        console.error("Failed to parse imagesToDelete:", deleteInput);
+        imagesToDelete = [];
       }
     }
 
-    // --- Handle images ---
-    let currentImages = product.images ? JSON.parse(product.images) : [];
-    const imagesToDelete = deleteInput
-      ? typeof deleteInput === "string"
-        ? JSON.parse(deleteInput)
-        : deleteInput
-      : [];
+    // Remove deleted images
     currentImages = currentImages.filter(
       (url) => !imagesToDelete.includes(url),
     );
 
+    // Upload new images → ONLY to "product_images" folder
+    // Inside updateProduct, replace the upload block with:
     if (req.files?.length > 0) {
       for (const file of req.files) {
-        const url = await uploadToFtp(
-          file.buffer,
-          file.originalname,
-          "/product_images",
-        );
-        currentImages.push(url);
+        try {
+          const url = await uploadToFtp(
+            file.buffer,
+            file.originalname,
+            "/product_images", // ← Ensure this is always used
+          );
+          currentImages.push(url);
+        } catch (uploadErr) {
+          console.error("Image upload failed:", file.originalname, uploadErr);
+          // Don't throw — continue uploading other files
+        }
       }
     }
-
+    // ────────────────────────────────────────────────
+    // 3. Prepare update data
+    // ────────────────────────────────────────────────
     const isMaster = isMasterInput === "true" || isMasterInput === true;
 
     let updateData = {
@@ -481,15 +517,17 @@ exports.updateProduct = async (req, res) => {
       quantity:
         quantity !== undefined ? parseInt(quantity, 10) : product.quantity,
       images: JSON.stringify(currentImages),
-      meta: Object.keys(metaObj).length ? metaObj : null,
+      meta: Object.keys(metaObj).length > 0 ? metaObj : null,
       isFeatured:
-        isFeatured === true || isFeatured === "true" || product.isFeatured,
+        isFeatured === "true" || isFeatured === true || product.isFeatured,
       status: status || product.status,
       description: restFields.description?.trim() || product.description,
-      tax: restFields.tax ? parseFloat(restFields.tax) : product.tax,
-      alert_quantity: restFields.alert_quantity
-        ? parseInt(restFields.alert_quantity, 10)
-        : product.alert_quantity,
+      tax:
+        restFields.tax !== undefined ? parseFloat(restFields.tax) : product.tax,
+      alert_quantity:
+        restFields.alert_quantity !== undefined
+          ? parseInt(restFields.alert_quantity, 10)
+          : product.alert_quantity,
       categoryId: restFields.categoryId || product.categoryId,
       brandId: restFields.brandId || product.brandId,
       vendorId: restFields.vendorId || product.vendorId,
@@ -497,18 +535,22 @@ exports.updateProduct = async (req, res) => {
         restFields.brand_parentcategoriesId || product.brand_parentcategoriesId,
     };
 
-    // --- Variant / Master logic ---
+    // ────────────────────────────────────────────────
+    // 4. Master / Variant Logic
+    // ────────────────────────────────────────────────
     if (isMaster && !product.isMaster) {
       const hasVariants = await Product.count({
         where: { masterProductId: product.productId },
         transaction: t,
       });
+
       if (hasVariants > 0) {
         await t.rollback();
-        return res
-          .status(400)
-          .json({ message: "Cannot convert to master: has variants" });
+        return res.status(400).json({
+          message: "Cannot convert to master product: it already has variants",
+        });
       }
+
       Object.assign(updateData, {
         isMaster: true,
         masterProductId: null,
@@ -525,63 +567,51 @@ exports.updateProduct = async (req, res) => {
         where: { productId: newMasterId, isMaster: true },
         transaction: t,
       });
+
       if (!master) {
         await t.rollback();
         return res.status(400).json({ message: "Master product not found" });
       }
 
-      let variantOpts = {};
-      try {
-        variantOpts = variantOptionsInput
-          ? typeof variantOptionsInput === "string"
-            ? JSON.parse(variantOptionsInput)
-            : variantOptionsInput
-          : {};
-      } catch (err) {
-        await t.rollback();
-        return res.status(400).json({ message: "Invalid variant options" });
-      }
+      const variantOpts = parseJsonSafely(variantOptionsInput, {});
+      const generatedVariantKey = Object.values(variantOpts)
+        .filter(Boolean)
+        .join(" ");
 
-      const key = Object.values(variantOpts).filter(Boolean).join(" ");
-      const suffix = key ? `-${key.toUpperCase().replace(/\s+/g, "-")}` : "";
+      const generatedSkuSuffix = generatedVariantKey
+        ? `-${generatedVariantKey.toUpperCase().replace(/\s+/g, "-")}`
+        : "";
 
       Object.assign(updateData, {
         masterProductId: master.productId,
         isMaster: false,
         variantOptions: Object.keys(variantOpts).length ? variantOpts : null,
-        variantKey: key || null,
-        skuSuffix: suffix || null,
-        product_code: product_code || `${master.product_code}${suffix}`,
-        name: name || `${master.name} - ${key}`,
+        variantKey: generatedVariantKey || variantKey || null,
+        skuSuffix: generatedSkuSuffix || skuSuffix || null,
+        name: name?.trim() || `${master.name} - ${generatedVariantKey}`.trim(),
         categoryId: restFields.categoryId || master.categoryId,
         brandId: restFields.brandId || master.brandId,
-        images: currentImages.length
-          ? JSON.stringify(currentImages)
-          : master.images,
-        meta: Object.keys(metaObj).length ? metaObj : master.meta,
       });
     } else {
+      updateData.isMaster = isMaster;
+
       if (!isMaster) {
         const finalKey =
           variantKey ||
           (variantOptionsInput
-            ? Object.values(
-                typeof variantOptionsInput === "string"
-                  ? JSON.parse(variantOptionsInput)
-                  : variantOptionsInput,
-              )
+            ? Object.values(parseJsonSafely(variantOptionsInput, {}))
                 .filter(Boolean)
                 .join(" ")
             : product.variantKey);
+
         const finalSuffix = finalKey
           ? `-${finalKey.toUpperCase().replace(/\s+/g, "-")}`
           : product.skuSuffix;
+
         updateData.variantKey = finalKey;
         updateData.skuSuffix = finalSuffix;
         updateData.variantOptions = variantOptionsInput
-          ? typeof variantOptionsInput === "string"
-            ? JSON.parse(variantOptionsInput)
-            : variantOptionsInput
+          ? parseJsonSafely(variantOptionsInput, {})
           : product.variantOptions;
       } else {
         updateData.variantOptions = null;
@@ -589,12 +619,16 @@ exports.updateProduct = async (req, res) => {
         updateData.skuSuffix = null;
         updateData.masterProductId = null;
       }
-      updateData.isMaster = isMaster;
     }
 
+    // ────────────────────────────────────────────────
+    // 5. Update product
+    // ────────────────────────────────────────────────
     await product.update(updateData, { transaction: t });
 
-    // --- Update keywords ---
+    // ────────────────────────────────────────────────
+    // 6. Update keywords
+    // ────────────────────────────────────────────────
     const cleanKeywordIds = Array.isArray(keywordIds)
       ? keywordIds.filter(Boolean)
       : typeof keywordIds === "string"
@@ -603,11 +637,14 @@ exports.updateProduct = async (req, res) => {
             .map((id) => id.trim())
             .filter(Boolean)
         : [];
+
     await product.setKeywords(cleanKeywordIds, { transaction: t });
 
     await t.commit();
 
-    // --- Return updated product ---
+    // ────────────────────────────────────────────────
+    // 7. Return updated product with relations
+    // ────────────────────────────────────────────────
     const updated = await Product.findByPk(productId, {
       include: [
         {
@@ -653,12 +690,14 @@ exports.updateProduct = async (req, res) => {
     });
   } catch (error) {
     await t.rollback();
-    return res
-      .status(500)
-      .json({ message: "Failed to update product", error: error.message });
+    console.error("Update Product Error:", error);
+
+    return res.status(500).json({
+      message: "Failed to update product",
+      error: error.message,
+    });
   }
 };
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Get all products (paginated, searchable, enriched meta & keywords)
 // ─────────────────────────────────────────────────────────────────────────────

@@ -51,28 +51,26 @@ const ProductCard = ({ product, handleAddToCart, cartLoadingStates, menu }) => {
     : "Price not set";
 
   const canAddToCart = auth?.permissions?.some(
-    (p) => p.action === "write" && p.module === "cart",
+    (p) => p.action === "write" && p.module === "cart"
   );
 
   const canEditOrDelete = auth?.permissions?.some(
-    (p) => ["edit", "delete"].includes(p.action) && p.module === "products",
+    (p) => ["edit", "delete"].includes(p.action) && p.module === "products"
   );
 
   const isOutOfStock = product.quantity <= 0;
 
-  // AUTO UPDATE CART QUANTITY
+  // UPDATED: Allow any quantity (no stock limit)
   const updateCartQuantity = (newQty) => {
     if (newQty < 1) return;
-    if (newQty > product.quantity) return;
+    // Removed: if (newQty > product.quantity) return;
 
     setQuantity(newQty);
-    handleAddToCart(product, newQty);
+    handleAddToCart(product, newQty);   // Pass custom quantity
   };
 
   const handleIncrement = () => {
-    if (quantity < product.quantity) {
-      updateCartQuantity(quantity + 1);
-    }
+    updateCartQuantity(quantity + 1);
   };
 
   const handleDecrement = () => {
@@ -83,7 +81,7 @@ const ProductCard = ({ product, handleAddToCart, cartLoadingStates, menu }) => {
 
   const handleQuantityChange = (e) => {
     const num = parseInt(e.target.value, 10);
-    if (!isNaN(num)) {
+    if (!isNaN(num) && num >= 1) {
       updateCartQuantity(num);
     }
   };
@@ -123,7 +121,7 @@ const ProductCard = ({ product, handleAddToCart, cartLoadingStates, menu }) => {
         <Link to={`/product/${product.productId}`}>{product.name}</Link>
       </h6>
 
-      {/* COMPANY CODE + PRICE – placed side by side, code on left */}
+      {/* COMPANY CODE + PRICE */}
       <div
         className="meta-row"
         style={{
@@ -165,14 +163,14 @@ const ProductCard = ({ product, handleAddToCart, cartLoadingStates, menu }) => {
               type="primary"
               className="cart-button"
               icon={<ShoppingCartOutlined />}
-              disabled={isOutOfStock || isNaN(priceValue)}
+              disabled={isNaN(priceValue)}   // Only disable if no price
               block
               onClick={() => {
                 setIsSelectingQty(true);
-                updateCartQuantity(1); // ADD TO CART IMMEDIATELY
+                updateCartQuantity(1); // Add with default quantity 1
               }}
             >
-              {isOutOfStock ? "Out of Stock" : "Add to Cart"}
+              Add to Cart
             </Button>
           ) : (
             <div
@@ -186,7 +184,7 @@ const ProductCard = ({ product, handleAddToCart, cartLoadingStates, menu }) => {
                 background: "#f7f7f7",
                 padding: "8px",
                 borderRadius: "8px",
-                border: "1px solid #ddd",
+                border: "11px solid #ddd",
                 gap: "10px",
               }}
             >
@@ -230,7 +228,6 @@ const ProductCard = ({ product, handleAddToCart, cartLoadingStates, menu }) => {
                   border: "1px solid #ccc",
                 }}
                 onClick={handleIncrement}
-                disabled={quantity >= product.quantity}
               >
                 <PlusOutlined />
               </button>
