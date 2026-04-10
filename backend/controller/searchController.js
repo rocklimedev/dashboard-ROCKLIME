@@ -16,12 +16,12 @@ const {
   Quotation,
   Team,
   Vendor,
+  PurchaseOrder, // ← Make sure this is imported from models
 } = require("../models");
 
-// Search controller - ONLY FIXED THE LIMIT ISSUE
 const searchAll = async (req, res) => {
   try {
-    const { query, page = 1, limit = 20 } = req.query; // Default changed to 20
+    const { query, page = 1, limit = 20 } = req.query;
 
     if (!query || query.trim().length < 1) {
       return res.status(400).json({
@@ -32,9 +32,12 @@ const searchAll = async (req, res) => {
 
     const searchTerm = `%${query.trim()}%`;
     const rawQuery = query.trim();
+    const currentPage = parseInt(page);
+    const pageSize = Math.min(parseInt(limit) || 20, 50); // Cap at 50 for performance
+    const offset = (currentPage - 1) * pageSize;
+
     const results = {};
 
-    // Same searchConfigs as before - NO field name changes
     const searchConfigs = [
       {
         key: "Brand",
@@ -73,7 +76,6 @@ const searchAll = async (req, res) => {
         attributes: ["productId", "name", "product_code", "images", "meta"],
         customWhere: (searchTerm, rawQuery) => {
           const escapedSearch = rawQuery.replace(/'/g, "''");
-
           const castMeta = sequelize.cast(
             sequelize.col("meta"),
             "CHAR CHARACTER SET utf8mb4",
@@ -132,11 +134,28 @@ const searchAll = async (req, res) => {
         fields: ["vendorId", "vendorName"],
         attributes: ["id", "vendorId", "vendorName", "brandSlug"],
       },
+      // ==================== NEW: PurchaseOrder ====================
+      {
+        key: "PurchaseOrder",
+        model: PurchaseOrder,
+        fields: ["poNumber", "status"],
+        attributes: [
+          "id",
+          "poNumber",
+          "status",
+          "orderDate",
+          "expectDeliveryDate",
+          "totalAmount",
+          "vendorId",
+          "userId",
+          "fgsId",
+        ],
+        // Optional: You can add customWhere if you want to search in more JSON fields later
+      },
+      // Add other models (Invoice, Company, etc.) here if needed in the future
     ];
 
-    // FIXED: Now using the limit from frontend (default 20)
-    const requestedLimit = Math.min(parseInt(limit) || 20, 50); // cap at 50 for safety
-
+    // Run searches in parallel
     await Promise.all(
       searchConfigs.map(
         async ({ key, model, fields, attributes, customWhere }) => {
@@ -151,25 +170,30 @@ const searchAll = async (req, res) => {
               where = customWhere(searchTerm, rawQuery);
             }
 
-            const rows = await model.findAll({
+            const { rows, count } = await model.findAndCountAll({
               where,
               attributes,
-              limit: requestedLimit, // ← ONLY THIS LINE WAS CHANGED (was 8)
+              limit: pageSize,
+              offset,
               order: [["createdAt", "DESC"]],
+              // distinct: true, // Uncomment if you use includes later
             });
 
             results[key] = {
-              items: rows, // No change in structure
-              total: rows.length,
-              page: 1,
-              pages: 1,
+              items: rows,
+              total: count,
+              page: currentPage,
+              totalPages: Math.ceil(count / pageSize),
+              limit: pageSize,
             };
           } catch (error) {
+            console.error(`Search error for ${key}:`, error);
             results[key] = {
               items: [],
               total: 0,
-              page: 1,
-              pages: 0,
+              page: currentPage,
+              totalPages: 0,
+              limit: pageSize,
               error: `Failed to search ${key}`,
             };
           }
@@ -177,22 +201,25 @@ const searchAll = async (req, res) => {
       ),
     );
 
+    // Calculate overall stats
     const totalResults = Object.values(results).reduce(
-      (sum, { total }) => sum + total,
+      (sum, cat) => sum + (cat.total || 0),
       0,
     );
 
     return res.status(200).json({
       success: true,
       message: "Search completed",
-      data: results, // Same structure as before
+      data: results,
       meta: {
         total: totalResults,
-        page: parseInt(page),
-        limit: requestedLimit,
+        page: currentPage,
+        limit: pageSize,
+        totalPages: Math.ceil(totalResults / pageSize), // overall approximate
       },
     });
   } catch (error) {
+    console.error("Global search error:", error);
     return res.status(500).json({
       success: false,
       message: error.message || "An error occurred during search",

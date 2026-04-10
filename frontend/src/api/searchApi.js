@@ -5,44 +5,38 @@ import { baseApi } from "../store/baseApi";
 export const searchApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     searchAll: builder.query({
-      query: ({ query, page = 1, limit = 10 }) => ({
+      query: ({ query, page = 1, limit = 20 }) => ({
         url: "/search/",
         params: { query, page, limit },
       }),
+
       transformResponse: (response) => {
         if (!response.success) {
           throw new Error(response.message || "Search failed");
         }
 
-        const results = Object.entries(response.data).reduce(
-          (acc, [modelName, result]) => ({
-            ...acc,
-            [modelName]: {
-              items: result.items,
-              total: result.total,
-              page: result.page,
-              pages: result.pages,
-              error: result.error || null,
-            },
-          }),
-          {}
-        );
-
         return {
-          results,
-          meta: response.meta,
+          // Pass through exactly what the backend returns
+          data: response.data, // { Brand: {...}, Category: {...}, Product: {...}, PurchaseOrder: {...} }
+          meta: response.meta || {
+            total: 0,
+            page: 1,
+            limit: 20,
+            totalPages: 0,
+          },
         };
       },
+
       transformErrorResponse: (error) => {
         const message =
           error.data?.message || "An error occurred during search";
         toast.error(message);
         return { message };
       },
-      providesTags: ["Search"], // Added tag to allow invalidation if needed
+
+      providesTags: ["Search"],
     }),
   }),
 });
 
-// Export the auto-generated hook for the searchAll query
 export const { useSearchAllQuery } = searchApi;

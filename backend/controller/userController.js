@@ -389,6 +389,7 @@ exports.getUserById = async (req, res) => {
 
 // Update User
 // Update User (Admin / SuperAdmin only)
+// Update User (Admin / SuperAdmin only)
 exports.updateUser = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -405,24 +406,25 @@ exports.updateUser = async (req, res) => {
       shiftTo,
       addressId,
       status,
-      isEmailVerified, // ← NEW: Allow updating email verification status
+      isEmailVerified,
       about,
     } = req.body;
 
-    // Find the user to update
+    // Find the user
     const user = await User.findByPk(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Prevent self-modification of critical fields (optional security)
-    if (req.user.userId === userId) {
+    // Prevent self-modification of critical fields via admin endpoint
+    if (req.user.userId === parseInt(userId)) {
       return res.status(403).json({
-        message: "You cannot modify your own account via this endpoint",
+        message:
+          "You cannot modify your own account via the admin update endpoint. Use /profile for self-updates.",
       });
     }
 
-    // === 1. Check duplicate username/email (excluding current user) ===
+    // === 1. Check duplicate username/email ===
     if (username || email) {
       const existingUser = await User.findOne({
         where: {
@@ -440,7 +442,7 @@ exports.updateUser = async (req, res) => {
       }
     }
 
-    // === 2. Validate addressId if provided ===
+    // === 2. Validate addressId ===
     if (addressId) {
       const address = await Address.findByPk(addressId);
       if (!address) {
@@ -448,35 +450,21 @@ exports.updateUser = async (req, res) => {
       }
     }
 
-    // === 3. Handle Role Update (with SuperAdmin protection) ===
+    // === 3. Handle Role Update ===
     if (roleId) {
       const roleData = await Role.findOne({ where: { roleId } });
       if (!roleData) {
         return res.status(400).json({ message: "Invalid role specified" });
       }
 
-      // Prevent assigning SuperAdmin if one already exists (except current)
-      if (roleData.roleName === "SUPER_ADMIN") {
-        const existingSuperAdmin = await User.findOne({
-          where: {
-            roles: { [Op.like]: `%SUPER_ADMIN%` },
-            userId: { [Op.ne]: userId },
-          },
-        });
-        if (existingSuperAdmin) {
-          return res
-            .status(400)
-            .json({ message: "A SuperAdmin already exists" });
-        }
-      }
-
       user.roleId = roleData.roleId;
       user.roles = roleData.roleName;
-      // Auto-set status based on role (optional)
+
+      // Auto-set status based on role
       user.status = roleData.roleName === "Users" ? "inactive" : "active";
     }
 
-    // === 4. Update Basic Fields (only if provided) ===
+    // === 4. Update basic fields (only if explicitly provided) ===
     if (username !== undefined) user.username = username;
     if (name !== undefined) user.name = name;
     if (email !== undefined) user.email = email;
@@ -490,7 +478,7 @@ exports.updateUser = async (req, res) => {
     if (addressId !== undefined) user.addressId = addressId || null;
     if (about !== undefined) user.about = about || null;
 
-    // === 5. Update Status (active/inactive/restricted) ===
+    // === 5. Update Status ===
     if (status !== undefined) {
       const validStatuses = ["active", "inactive", "restricted"];
       if (!validStatuses.includes(status)) {
@@ -499,38 +487,38 @@ exports.updateUser = async (req, res) => {
         });
       }
 
-      // Prevent deactivating/restricting the last SuperAdmin
+      // Only prevent deactivating the *last* SuperAdmin if trying to change it
       if (
         user.roles.includes("SUPER_ADMIN") &&
         status !== "active" &&
         (await User.count({
-          where: { roles: { [Op.like]: `%SUPER_ADMIN%` } },
+          where: { roles: { [Op.like]: "%SUPER_ADMIN%" } },
         })) <= 1
       ) {
         return res.status(400).json({
-          message: "Cannot deactivate or restrict the only SuperAdmin",
+          message: "Cannot deactivate the only remaining SuperAdmin",
         });
       }
 
       user.status = status;
     }
 
-    // === 6. Update Email Verification Status (Admin only) ===
+    // === 6. Update Email Verification (Admin/SuperAdmin only) ===
     if (isEmailVerified !== undefined) {
-      // Optional: Restrict to Admin/SuperAdmin only
       const requester = await User.findByPk(req.user.userId);
       if (!requester || !["ADMIN", "SUPER_ADMIN"].includes(requester.roles)) {
         return res.status(403).json({
-          message: "Only Admin or SuperAdmin can verify email",
+          message:
+            "Only Admin or SuperAdmin can change email verification status",
         });
       }
       user.isEmailVerified = Boolean(isEmailVerified);
     }
 
-    // === 7. Save Updated User ===
+    // Save changes
     await user.save();
 
-    // === 8. Return Safe User Data (without password) ===
+    // Return safe data
     const updatedUser = await User.findByPk(user.userId, {
       ...excludeSensitiveFields,
       include: [
@@ -547,14 +535,12 @@ exports.updateUser = async (req, res) => {
       data: updatedUser,
     });
   } catch (err) {
+    console.error("Update User Error:", err);
     return res.status(500).json({
-      message: `Failed to update user: ${
-        err.message || "Unknown server error"
-      }`,
+      message: `Failed to update user: ${err.message || "Unknown server error"}`,
     });
   }
 };
-
 // Change Status to Inactive
 exports.changeStatusToInactive = async (req, res) => {
   try {
@@ -592,24 +578,13 @@ exports.assignRole = async (req, res) => {
       return res.status(400).json({ message: "Invalid role specified" });
     }
 
-    // Check for existing SuperAdmin
-    if (roleData.roleName === "SUPER_ADMIN") {
-      const existingSuperAdmin = await User.findOne({
-        where: {
-          roles: { [Op.like]: `%SUPER_ADMIN%` },
-          userId: { [Op.ne]: userId },
-        },
-      });
-      if (existingSuperAdmin) {
-        return res.status(400).json({ message: "A SuperAdmin already exists" });
-      }
-    }
-
+    // Removed restriction → Multiple Super Admins are now allowed
     user.roles = roleData.roleName;
     user.roleId = roleData.roleId;
     user.status = roleData.roleName === "Users" ? "inactive" : "active";
 
     await user.save();
+
     res.status(200).json({
       message: `Role ${roleData.roleName} assigned successfully`,
       user: await User.findByPk(user.userId, excludeSensitiveFields),

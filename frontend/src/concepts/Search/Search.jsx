@@ -13,6 +13,7 @@ import {
   Col,
   Typography,
   Result,
+  Pagination,
 } from "antd";
 import {
   SearchOutlined,
@@ -26,7 +27,7 @@ import {
 } from "@ant-design/icons";
 import { Link } from "react-router-dom";
 import { useSearchAllQuery } from "../../api/searchApi";
-import { debounce } from "lodash"; // ← add lodash or implement your own
+import { debounce } from "lodash";
 
 const { Title, Text, Paragraph } = Typography;
 const { Search: AntSearch } = Input;
@@ -37,34 +38,45 @@ const SearchPage = () => {
 
   const [query, setQuery] = useState(initialQuery);
   const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const {
-    data: searchData,
+    data: searchResponse,
     isLoading,
     isFetching,
     isError,
+    refetch,
   } = useSearchAllQuery(
-    { query: debouncedQuery.trim(), limit: 20 },
+    {
+      query: debouncedQuery.trim(),
+      page: currentPage,
+      limit: 20,
+    },
     { skip: !debouncedQuery.trim() },
   );
 
-  // Debounce search input (prevents too many API calls while typing)
+  // Debounce search input
   const debouncedSetQuery = useCallback(
     debounce((value) => {
       const trimmed = value?.trim();
       if (trimmed) {
         setSearchParams({ q: trimmed });
+        setCurrentPage(1); // Reset to first page on new search
       }
-      setDebouncedQuery(trimmed);
+      setDebouncedQuery(trimmed || "");
     }, 350),
     [setSearchParams],
   );
 
-  const results = searchData?.results || {};
-  const resultGroups = useMemo(
-    () => Object.entries(results).filter(([_, v]) => v?.items?.length > 0),
-    [results],
-  );
+  const results = searchResponse?.data || {};
+  const meta = searchResponse?.meta || {};
+
+  // Filter categories that have results
+  const resultGroups = useMemo(() => {
+    return Object.entries(results).filter(
+      ([_, group]) => group?.items?.length > 0,
+    );
+  }, [results]);
 
   const hasResults = resultGroups.length > 0;
 
@@ -73,7 +85,13 @@ const SearchPage = () => {
     if (trimmed) {
       setSearchParams({ q: trimmed });
       setDebouncedQuery(trimmed);
+      setCurrentPage(1);
     }
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const highlight = (text, term) => {
@@ -84,7 +102,11 @@ const SearchPage = () => {
         regex.test(part) ? (
           <mark
             key={i}
-            style={{ backgroundColor: "#ffe58f", padding: "0 2px" }}
+            style={{
+              backgroundColor: "#ffe58f",
+              padding: "0 2px",
+              borderRadius: 2,
+            }}
           >
             {part}
           </mark>
@@ -111,17 +133,14 @@ const SearchPage = () => {
 
       case "product": {
         let productImage = null;
-
         if (Array.isArray(item.images) && item.images.length > 0) {
           productImage = item.images[0];
-        } else if (typeof item.images === "string") {
+        } else if (typeof item.images === "string" && item.images.trim()) {
           try {
             const parsed = JSON.parse(item.images);
             productImage =
               Array.isArray(parsed) && parsed.length > 0 ? parsed[0] : null;
-          } catch (e) {
-            // invalid JSON → ignore
-          }
+          } catch (e) {}
         }
 
         return productImage ? (
@@ -130,7 +149,6 @@ const SearchPage = () => {
             shape="square"
             {...commonProps}
             style={{ objectFit: "cover" }}
-            alt={item.name || item.product_code}
           />
         ) : (
           <Avatar
@@ -140,6 +158,16 @@ const SearchPage = () => {
           />
         );
       }
+
+      case "purchaseorder":
+        return (
+          <Avatar
+            icon={<FileTextOutlined />}
+            {...commonProps}
+            style={{ backgroundColor: "#722ed1" }}
+          />
+        );
+
       case "order":
       case "invoice":
       case "quotation":
@@ -152,6 +180,7 @@ const SearchPage = () => {
         return <Avatar icon={<TagsOutlined />} {...commonProps} />;
 
       case "vendor":
+      case "team":
       case "company":
         return <Avatar icon={<TeamOutlined />} {...commonProps} />;
 
@@ -164,17 +193,23 @@ const SearchPage = () => {
     switch (model.toLowerCase()) {
       case "user":
       case "customer":
-        return item.email || item.mobileNumber || item.phone || null;
+        return item.email || item.mobileNumber || null;
       case "product":
-        return item.product_code || (item.price && `$${item.price}`);
+        return item.product_code || null;
       case "order":
-        return item.customer_name || (item.total && `Total: $${item.total}`);
-      case "invoice":
-        return item.amount || item.total
-          ? `$${item.amount || item.total}`
-          : null;
+        return item.status ? `Status: ${item.status}` : null;
       case "quotation":
-        return item.customer_name || item.reference_number || null;
+        return (
+          item.reference_number || (item.finalAmount && `₹${item.finalAmount}`)
+        );
+      case "purchaseorder":
+        return item.status
+          ? `Status: ${item.status}`
+          : item.totalAmount
+            ? `₹${item.totalAmount}`
+            : null;
+      case "category":
+        return item.parentCategoryId ? "Sub Category" : "Main Category";
       default:
         return null;
     }
@@ -184,11 +219,11 @@ const SearchPage = () => {
     const map = {
       user: {
         to: `/u/${item.userId || item.id}`,
-        title: item.name || item.username || item.email || "User",
+        title: item.name || item.username || "User",
       },
       customer: {
         to: `/customer/${item.customerId || item.id}`,
-        title: item.name || item.companyName || "Customer",
+        title: item.name || "Customer",
       },
       product: {
         to: `/product/${item.productId || item.id}`,
@@ -196,45 +231,43 @@ const SearchPage = () => {
       },
       order: {
         to: `/order/${item.id || item.orderId}`,
-        title: `Order #${item.orderNo || item.id || "—"}`,
-      },
-      invoice: {
-        to: `/invoice/${item.invoiceId || item.id}`,
-        title: `Invoice #${item.invoiceNo || item.id || "—"}`,
+        title: `Order #${item.orderNo || item.id}`,
       },
       quotation: {
         to: `/quotation/${item.quotationId || item.id}`,
-        title: item.document_title || item.reference_number || "Quotation",
+        title: item.document_title || `Quotation #${item.reference_number}`,
       },
       brand: { to: `/store/${item.id}`, title: item.brandName || "Brand" },
       category: {
         to: `/inventory/categories-keywords?category=${item.categoryId || item.id}`,
         title: item.name || "Category",
       },
-      vendor: { to: `/vendors/${item.id}`, title: item.vendorName || "Vendor" },
-      company: {
-        to: `/companies/${item.companyId || item.id}`,
-        title: item.name || "Company",
+      vendor: {
+        to: `/vendors/${item.id || item.vendorId}`,
+        title: item.vendorName || "Vendor",
+      },
+      purchaseorder: {
+        to: `/purchase-order/${item.id || item.poNumber}`,
+        title: `PO #${item.poNumber}`,
       },
     };
 
     const key = model.toLowerCase();
-    return map[key] || { to: "#", title: "Unknown" };
+    return map[key] || { to: "#", title: "Item" };
   };
 
   return (
     <div className="page-wrapper">
       <div className="content">
-        <Title level={3} style={{ marginBottom: 8 }}>
-          Search
-        </Title>
+        <Title level={3}>Global Search</Title>
         <Paragraph type="secondary" style={{ marginBottom: 32 }}>
-          Find users, products, orders, customers, quotations and more
+          Search across Users, Products, Orders, Customers, Quotations, Purchase
+          Orders, and more
         </Paragraph>
 
         <Card style={{ marginBottom: 32, borderRadius: 12 }}>
           <AntSearch
-            placeholder="Search users, products, orders, invoices..."
+            placeholder="Search users, products, orders, purchase orders..."
             enterButton={
               <Space>
                 <SearchOutlined /> Search
@@ -255,13 +288,13 @@ const SearchPage = () => {
         {isError ? (
           <Result
             status="error"
-            title="Something went wrong"
-            subTitle="We couldn't load search results. Please try again."
+            title="Search Failed"
+            subTitle="Something went wrong while fetching results."
             extra={
               <Button
                 type="primary"
                 icon={<ReloadOutlined />}
-                onClick={() => window.location.reload()}
+                onClick={refetch}
               >
                 Retry
               </Button>
@@ -276,79 +309,120 @@ const SearchPage = () => {
               justifyContent: "center",
             }}
           >
-            <Spin size="large" tip="Searching..." />
+            <Spin size="large" tip="Searching across all modules..." />
           </div>
         ) : query.trim() ? (
           hasResults ? (
-            resultGroups.map(([modelName, { items }]) => (
-              <section key={modelName} style={{ marginBottom: 48 }}>
-                <Space align="center" style={{ marginBottom: 16 }}>
-                  <Title level={5} style={{ margin: 0 }}>
-                    {modelName}s
-                  </Title>
-                  <Tag
-                    color="geekblue"
-                    style={{ fontSize: 14, padding: "4px 12px" }}
-                  >
-                    {items.length}
-                  </Tag>
-                </Space>
+            <>
+              {resultGroups.map(([modelName, group]) => {
+                const { items, total, totalPages, page } = group;
 
-                <Row gutter={[16, 24]}>
-                  {items.map((item) => {
-                    const { to, title } = getLinkProps(modelName, item);
-                    const subtitle = getSubtitle(modelName, item);
-
-                    return (
-                      <Col
-                        xs={24}
-                        sm={12}
-                        lg={8}
-                        xl={6}
-                        key={item.id || `${modelName}-${Math.random()}`}
+                return (
+                  <section key={modelName} style={{ marginBottom: 48 }}>
+                    <Space align="center" style={{ marginBottom: 16 }}>
+                      <Title
+                        level={5}
+                        style={{ margin: 0, textTransform: "capitalize" }}
                       >
-                        <Card
-                          hoverable
-                          bodyStyle={{ padding: 16 }}
-                          style={{ height: "100%", borderRadius: 10 }}
-                        >
-                          <Space
-                            align="start"
-                            size={16}
-                            style={{ width: "100%" }}
+                        {modelName}s
+                      </Title>
+                      <Tag
+                        color="geekblue"
+                        style={{ fontSize: 14, padding: "4px 12px" }}
+                      >
+                        {total} found
+                      </Tag>
+                      {totalPages > 1 && (
+                        <Text type="secondary" style={{ fontSize: 13 }}>
+                          Page {page} of {totalPages}
+                        </Text>
+                      )}
+                    </Space>
+
+                    <Row gutter={[16, 24]}>
+                      {items.map((item) => {
+                        const { to, title } = getLinkProps(modelName, item);
+                        const subtitle = getSubtitle(modelName, item);
+
+                        return (
+                          <Col
+                            xs={24}
+                            sm={12}
+                            lg={8}
+                            xl={6}
+                            key={
+                              item.id ||
+                              item.userId ||
+                              item.productId ||
+                              item.categoryId ||
+                              Math.random()
+                            }
                           >
-                            {getIcon(modelName, item)}
-
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <Title
-                                level={5}
-                                style={{ margin: "0 0 4px 0", fontSize: 16 }}
+                            <Card
+                              hoverable
+                              bodyStyle={{ padding: 16 }}
+                              style={{ height: "100%", borderRadius: 10 }}
+                            >
+                              <Space
+                                align="start"
+                                size={16}
+                                style={{ width: "100%" }}
                               >
-                                <Link
-                                  to={to}
-                                  style={{
-                                    color: "#000",
-                                    textDecoration: "none",
-                                  }}
-                                >
-                                  {highlight(title, debouncedQuery)}
-                                </Link>
-                              </Title>
+                                {getIcon(modelName, item)}
 
-                              {subtitle && (
-                                <Text type="secondary" style={{ fontSize: 13 }}>
-                                  {highlight(subtitle, debouncedQuery)}
-                                </Text>
-                              )}
-                            </div>
-                          </Space>
-                        </Card>
-                      </Col>
-                    );
-                  })}
-                </Row>
-              </section>
-            ))
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <Title
+                                    level={5}
+                                    style={{
+                                      margin: "0 0 4px 0",
+                                      fontSize: 16,
+                                    }}
+                                  >
+                                    <Link
+                                      to={to}
+                                      style={{
+                                        color: "#000",
+                                        textDecoration: "none",
+                                      }}
+                                    >
+                                      {highlight(title, debouncedQuery)}
+                                    </Link>
+                                  </Title>
+
+                                  {subtitle && (
+                                    <Text
+                                      type="secondary"
+                                      style={{ fontSize: 13 }}
+                                    >
+                                      {highlight(subtitle, debouncedQuery)}
+                                    </Text>
+                                  )}
+                                </div>
+                              </Space>
+                            </Card>
+                          </Col>
+                        );
+                      })}
+                    </Row>
+                  </section>
+                );
+              })}
+
+              {/* Global Pagination */}
+              {meta.totalPages > 1 && (
+                <div style={{ textAlign: "center", margin: "50px 0 30px 0" }}>
+                  <Pagination
+                    current={currentPage}
+                    total={meta.total || 0}
+                    pageSize={20}
+                    onChange={handlePageChange}
+                    showSizeChanger={false}
+                    showQuickJumper
+                    showTotal={(total) => `Total ${total} results`}
+                  />
+                </div>
+              )}
+            </>
           ) : (
             <Empty
               image={Empty.PRESENTED_IMAGE_SIMPLE}
@@ -356,7 +430,7 @@ const SearchPage = () => {
                 <div style={{ marginTop: 16 }}>
                   <Paragraph strong>No results found for "{query}"</Paragraph>
                   <Text type="secondary">
-                    Try different keywords or check your spelling
+                    Try different keywords or check spelling
                   </Text>
                 </div>
               }
@@ -367,9 +441,12 @@ const SearchPage = () => {
           <Empty
             description={
               <div style={{ marginTop: 16 }}>
-                <Paragraph strong>Start typing to search</Paragraph>
+                <Paragraph strong>
+                  Start typing to search the entire system
+                </Paragraph>
                 <Text type="secondary">
-                  Users, products, orders, quotations, customers...
+                  Users • Products • Orders • Purchase Orders • Quotations •
+                  Customers • Vendors...
                 </Text>
               </div>
             }

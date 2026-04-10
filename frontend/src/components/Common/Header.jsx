@@ -28,6 +28,7 @@ import { useAuth } from "../../context/AuthContext";
 import PermissionsGate from "../../context/PermissionGate";
 import { useSearchAllQuery } from "../../api/searchApi";
 import NotificationsOverlay from "../Notifications/NotificationsWrapper";
+import { debounce } from "lodash";
 
 const Header = ({ toggleSidebar, isSidebarOpen }) => {
   const navigate = useNavigate();
@@ -42,8 +43,6 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
 
   const userId = user?.user?.userId;
   const userRoles = user?.user?.roles || [];
-  const hasAdminOrDevAccess =
-    userRoles.includes("SUPER_ADMIN") || userRoles.includes("DEVELOPER");
 
   const { data: cart } = useGetCartQuery(userId, { skip: !userId });
 
@@ -53,28 +52,30 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
 
   const [logoutMutation, { isLoading: isLoggingOut }] = useLogoutMutation();
 
-  // === State ===
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
-
-  // Mobile Search States
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-
+  // === States ===
+  const [searchQuery, setSearchQuery] = useState(""); // Raw input
+  const [debouncedQuery, setDebouncedQuery] = useState(""); // Debounced for API
   const [showSearchOverlay, setShowSearchOverlay] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false); // ← FIXED: Missing state
 
   const searchRef = useRef(null);
   const mobileSearchInputRef = useRef(null);
 
-  const {
-    data: searchData,
-    isLoading: searchLoading,
-    isFetching: searchFetching,
-  } = useSearchAllQuery(
-    { query: searchQuery, limit: 8 },
-    { skip: !searchQuery.trim() },
+  // Search API Call with debounced query
+  const { data: searchResponse, isFetching: searchFetching } =
+    useSearchAllQuery(
+      { query: debouncedQuery, limit: 8 },
+      { skip: !debouncedQuery.trim() },
+    );
+
+  // Debounce search input
+  const debouncedSetQuery = useCallback(
+    debounce((value) => {
+      setDebouncedQuery(value.trim());
+    }, 300),
+    [],
   );
-  const searchResults = searchData?.results || null;
 
   // Auto-focus mobile search
   useEffect(() => {
@@ -83,10 +84,10 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
     }
   }, [mobileSearchOpen]);
 
-  // Show overlay when typing
+  // Show search overlay when query exists
   useEffect(() => {
-    setShowSearchOverlay(!!searchQuery.trim());
-  }, [searchQuery]);
+    setShowSearchOverlay(!!debouncedQuery.trim());
+  }, [debouncedQuery]);
 
   // Click outside to close search
   useEffect(() => {
@@ -95,22 +96,29 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
         setShowSearchOverlay(false);
         setMobileSearchOpen(false);
         setSearchQuery("");
+        setDebouncedQuery("");
       }
     };
+
     if (mobileSearchOpen || showSearchOverlay) {
       document.addEventListener("mousedown", handleClickOutside);
     }
+
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [mobileSearchOpen, showSearchOverlay]);
 
   // Handlers
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    debouncedSetQuery(value);
+  };
+
   const handleFullscreenToggle = useCallback(() => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen?.();
-      setIsFullscreen(true);
     } else {
       document.exitFullscreen?.();
-      setIsFullscreen(false);
     }
   }, []);
 
@@ -133,6 +141,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
   const cartItemCount = useMemo(() => cart?.cart?.items?.length || 0, [cart]);
   const avatarSrc =
     user?.user?.photo_thumbnail || user?.user?.profileImage || null;
+
   // User Dropdown Menu
   const userMenu = useMemo(
     () => (
@@ -177,26 +186,18 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
         </Menu.Item>
       </Menu>
     ),
-    [
-      user?.user?.username,
-      userId,
-      navigate,
-      handleLogout,
-      isLoggingOut,
-      hasAdminOrDevAccess,
-    ],
+    [user?.user?.username, userId, navigate, handleLogout, isLoggingOut],
   );
 
   return (
     <>
       <header className="header bg-white shadow-sm">
         <div className="main-header d-flex align-items-center justify-content-between px-3 px-md-4 py-2">
-          {/* Left: Hamburger (mobile) */}
+          {/* Left: Hamburger */}
           <div className="d-flex align-items-center">
             <a
               className="mobile_btn me-3 d-lg-none"
               onClick={() => toggleSidebar(!isSidebarOpen)}
-              id="mobile_btn"
             >
               <span className="bar-icon">
                 <span></span>
@@ -222,9 +223,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
 
               {/* Mobile Full-width Search */}
               <div
-                className={`mobile-search-container d-md-none ${
-                  mobileSearchOpen ? "open" : ""
-                }`}
+                className={`mobile-search-container d-md-none ${mobileSearchOpen ? "open" : ""}`}
                 style={{
                   position: mobileSearchOpen ? "fixed" : "absolute",
                   top: 0,
@@ -239,25 +238,10 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                 <Input
                   ref={mobileSearchInputRef}
                   prefix={<SearchOutlined />}
-                  suffix={
-                    searchFetching ? (
-                      <Spin size="small" />
-                    ) : (
-                      <Button
-                        type="text"
-                        icon={<CloseOutlined />}
-                        onClick={() => {
-                          setMobileSearchOpen(false);
-                          setSearchQuery("");
-                          setShowSearchOverlay(false);
-                        }}
-                        size="small"
-                      />
-                    )
-                  }
+                  suffix={searchFetching ? <Spin size="small" /> : null}
                   placeholder="Search products, users, orders..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={handleSearchChange}
                   allowClear
                   size="large"
                 />
@@ -270,9 +254,9 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                   suffix={searchFetching ? <Spin size="small" /> : null}
                   placeholder="Search products, users, orders..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={handleSearchChange}
                   onFocus={() =>
-                    searchQuery.trim() && setShowSearchOverlay(true)
+                    debouncedQuery.trim() && setShowSearchOverlay(true)
                   }
                   allowClear
                   size="large"
@@ -280,29 +264,22 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                 />
               </div>
 
-              {/* Search Results Overlay */}
+              {/* Search Overlay */}
               <SearchOverlay
                 visible={showSearchOverlay}
-                loading={searchLoading || searchFetching}
-                results={searchResults}
-                query={searchQuery}
-                onClose={() => {
-                  setShowSearchOverlay(false);
-                  if (window.innerWidth < 992) setMobileSearchOpen(false);
-                }}
+                loading={searchFetching}
+                results={searchResponse?.data || {}}
+                query={debouncedQuery}
+                onClose={() => setShowSearchOverlay(false)}
               />
             </div>
           </div>
 
           {/* Right: Actions + User */}
           <div className="d-flex align-items-center gap-2 gap-md-3">
-            {/* Desktop-only icons */}
+            {/* Desktop Icons */}
             <div className="d-none d-md-flex align-items-center gap-3">
-              <Button
-                type="link"
-                onClick={handleFullscreenToggle}
-                title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
-              >
+              <Button type="link" onClick={handleFullscreenToggle}>
                 <FullscreenOutlined
                   style={{ fontSize: 18, color: "#333333" }}
                 />
@@ -333,7 +310,9 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                       onClick={handleFullscreenToggle}
                       icon={<FullscreenOutlined />}
                     >
-                      {isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+                      {document.fullscreenElement
+                        ? "Exit Fullscreen"
+                        : "Enter Fullscreen"}
                     </Menu.Item>
                     <Menu.Item
                       key="notifications"
@@ -390,7 +369,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                   >
                     <Avatar
                       name={user?.user?.name || user?.user?.username || "User"}
-                      {...(avatarSrc ? { src: avatarSrc } : {})}
+                      src={avatarSrc}
                       size={36}
                       round={true}
                       className="circular-avatar"
@@ -405,6 +384,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
         </div>
       </header>
 
+      {/* Notifications Overlay */}
       <NotificationsOverlay
         isOpen={showNotifications}
         onClose={() => setShowNotifications(false)}
