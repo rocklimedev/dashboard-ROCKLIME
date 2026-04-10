@@ -89,11 +89,10 @@ const CreateProduct = ({
     useGetBrandParentCategoriesQuery();
   const { data: productMetas = [] } = useGetAllProductMetaQuery();
 
-  const { data: allProductsResponse, isLoading: isAllProductsLoading } =
-    useGetAllProductsQuery(
-      { limit: 5000 },
-      { skip: !isEditMode || isBulkMode },
-    );
+  const { data: allProductsResponse } = useGetAllProductsQuery(
+    { limit: 5000 },
+    { skip: !isEditMode || isBulkMode },
+  );
 
   const allProducts = useMemo(
     () =>
@@ -118,6 +117,19 @@ const CreateProduct = ({
   const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
 
   // ────────────────────────────────────────────────
+  // Default values for NEW product → Master Product
+  // ────────────────────────────────────────────────
+  useEffect(() => {
+    if (isEditMode || isBulkMode) return;
+
+    form.setFieldsValue({
+      isMaster: "true",
+      isFeatured: "false",
+      status: "active",
+    });
+  }, [form, isEditMode, isBulkMode]);
+
+  // ────────────────────────────────────────────────
   // BULK MODE: Pre-fill from CSV/initialData
   // ────────────────────────────────────────────────
   useEffect(() => {
@@ -138,6 +150,7 @@ const CreateProduct = ({
       brandId: initialData.brandId,
       vendorId: initialData.vendorId,
       brand_parentcategoriesId: initialData.brand_parentcategoriesId,
+      sellingPrice: initialData.sellingPrice || undefined,
     });
 
     if (Array.isArray(initialData.images) && initialData.images.length > 0) {
@@ -206,6 +219,7 @@ const CreateProduct = ({
       vendorId: existingProduct.vendorId || undefined,
       brand_parentcategoriesId:
         existingProduct.brand_parentcategoriesId || undefined,
+      sellingPrice: existingProduct.sellingPrice || undefined,
     };
 
     form.setFieldsValue(formValues);
@@ -326,7 +340,7 @@ const CreateProduct = ({
             keywordIds: [...selectedKeywords.map((k) => k.id), newKeyword.id],
           }).unwrap();
         } catch (err) {
-          // silent – fixed on full save
+          // silent – will be fixed on full save
         }
       }
     } catch (err) {
@@ -446,7 +460,7 @@ const CreateProduct = ({
   };
 
   const onFinish = async (values) => {
-    const required = ["name", "quantity"];
+    const required = ["name", "quantity", "sellingPrice"];
     if (required.some((f) => !values[f])) {
       message.warning("Please fill all required fields");
       return;
@@ -473,6 +487,7 @@ const CreateProduct = ({
       "masterProductId",
       "variantKey",
       "skuSuffix",
+      "sellingPrice", // ← Added
     ];
 
     fields.forEach((k) => {
@@ -538,6 +553,9 @@ const CreateProduct = ({
       }
 
       message.success(isEditMode ? "Product updated!" : "Product created!");
+      if (!isEditMode && !isBulkMode) {
+        navigate(-1); // Optional: go back after successful creation
+      }
     } catch (err) {
       message.error(err?.data?.message || "Failed to save product");
     }
@@ -582,6 +600,24 @@ const CreateProduct = ({
                     rules={[{ required: true }]}
                   >
                     <Input />
+                  </Form.Item>
+                </Col>
+
+                <Col xs={24} md={12}>
+                  <Form.Item
+                    name="sellingPrice"
+                    label="Selling Price"
+                    rules={[
+                      { required: true, message: "Selling price is required" },
+                    ]}
+                  >
+                    <InputNumber
+                      min={0}
+                      step={0.01}
+                      style={{ width: "100%" }}
+                      placeholder="Enter selling price"
+                      addonAfter="₹"
+                    />
                   </Form.Item>
                 </Col>
 
