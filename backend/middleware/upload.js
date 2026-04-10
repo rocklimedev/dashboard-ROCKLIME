@@ -1,24 +1,13 @@
 // middleware/upload.js
 const ftp = require("basic-ftp");
-const { Readable, Writable } = require("stream");
+const { Readable } = require("stream");
 const { v4: uuidv4 } = require("uuid");
 const path = require("path");
 require("dotenv").config();
 
-// Helper: Create a writable stream that collects data into a Buffer
-function createBufferWritable() {
-  const chunks = [];
-  const writable = new Writable({
-    write(chunk, encoding, callback) {
-      chunks.push(Buffer.from(chunk));
-      callback();
-    },
-  });
-
-  writable.getBuffer = () => Buffer.concat(chunks);
-  return writable;
-}
-
+/**
+ * Convert Buffer to Readable Stream
+ */
 function bufferToStream(buffer) {
   const stream = new Readable();
   stream.push(buffer);
@@ -27,32 +16,39 @@ function bufferToStream(buffer) {
 }
 
 /**
- * Upload buffer to FTP with 775 permissions
- * @param {Buffer} buffer
- * @param {string} filename
- * @param {object|string} options { remoteDir: string } or just string path
+ * Upload file to FTP and return public URL
+ * @param {Buffer} buffer - File buffer
+ * @param {string} filename - Original filename
+ * @param {object|string} options - { remoteDir: string } or just string path
+ * @returns {Promise<string>} Public URL of uploaded image
  */
 async function uploadToFtp(buffer, filename, options = {}) {
   const client = new ftp.Client();
   client.ftp.verbose = process.env.NODE_ENV === "development";
 
-  const ext = path.extname(filename) || ".bin";
-  const uniqueName = `${uuidv4()}${ext}`;
-
-  // Handle both string and object input for backward compatibility
-  let remoteDir = "/";
-  if (typeof options === "string") {
-    remoteDir = options;
-  } else if (typeof options?.remoteDir === "string") {
-    remoteDir = options.remoteDir;
-  }
-
-  // Ensure remoteDir starts with /
-  if (!remoteDir.startsWith("/")) {
-    remoteDir = "/" + remoteDir;
-  }
-
   try {
+    // Get environment-based base URL (Most Important Fix)
+    const MEDIA_BASE_URL = "https://media.cmtradingco.com";
+
+    // Generate unique filename
+    const ext = path.extname(filename) || ".jpg";
+    const uniqueName = `${uuidv4()}${ext}`;
+
+    // Handle remote directory
+    let remoteDir = "/product_images"; // Default folder
+
+    if (typeof options === "string") {
+      remoteDir = options;
+    } else if (options?.remoteDir) {
+      remoteDir = options.remoteDir;
+    }
+
+    // Ensure directory starts with /
+    if (!remoteDir.startsWith("/")) {
+      remoteDir = "/" + remoteDir;
+    }
+
+    // Connect to FTP
     await client.access({
       host: process.env.FTP_HOST,
       port: process.env.FTP_PORT || 21,
@@ -66,27 +62,25 @@ async function uploadToFtp(buffer, filename, options = {}) {
     await client.ensureDir(remoteDir);
     await client.cd(remoteDir);
 
-    // Upload the file
+    // Upload file
     await client.uploadFrom(bufferToStream(buffer), uniqueName);
 
-    // 🔥 Always set 775 permissions
+    // Set proper permissions (775)
     try {
       await client.send(`SITE CHMOD 775 ${uniqueName}`);
-      console.log(`✓ Uploaded with 775: ${uniqueName}`);
+      console.log(`✓ Uploaded with 775 permissions: ${uniqueName}`);
     } catch (chmodErr) {
-      console.warn(
-        `⚠️ Failed to set CHMOD 775 on ${uniqueName}:`,
-        chmodErr.message,
-      );
-      // Don't fail the upload if chmod fails
+      console.warn(`⚠️ CHMOD failed for ${uniqueName}:`, chmodErr.message);
     }
-    const FTP_BASE_URL = "https://media.cmtradingco.com";
-    // Clean URL construction (prevents double slash)
-    const baseUrl = FTP_BASE_URL.replace(/\/$/, "");
+
+    // Generate final public URL
+    const baseUrl = MEDIA_BASE_URL.replace(/\/$/, "");
     const cleanUrl = `${baseUrl}${remoteDir}/${uniqueName}`.replace(
       /\/+/g,
       "/",
     );
+
+    console.log("✅ Image uploaded successfully:", cleanUrl);
 
     return cleanUrl;
   } catch (error) {
@@ -98,7 +92,7 @@ async function uploadToFtp(buffer, filename, options = {}) {
 }
 
 /**
- * Download file from FTP
+ * Download file from FTP (Optional - if you need it)
  */
 async function downloadFromFtp(ftpPath) {
   const client = new ftp.Client();
@@ -117,16 +111,21 @@ async function downloadFromFtp(ftpPath) {
       user: process.env.FTP_USER,
       password: process.env.FTP_PASSWORD,
       secure: process.env.FTP_SECURE === "true",
-      timeout: 0,
     });
 
-    const bufferWritable = createBufferWritable();
-    await client.downloadTo(bufferWritable, remotePath);
+    const chunks = [];
+    const writable = new (require("stream").Writable)({
+      write(chunk, encoding, callback) {
+        chunks.push(Buffer.from(chunk));
+        callback();
+      },
+    });
 
-    return bufferWritable.getBuffer();
+    await client.downloadTo(writable, remotePath);
+    return Buffer.concat(chunks);
   } catch (err) {
-    console.error("FTP download error:", err);
-    throw new Error(`Failed to download file from FTP: ${err.message}`);
+    console.error("FTP Download Error:", err);
+    throw new Error(`Failed to download file: ${err.message}`);
   } finally {
     client.close();
   }
