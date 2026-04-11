@@ -2,7 +2,11 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { message, Button, Modal, Descriptions, Typography, Space } from "antd";
-import { DeleteOutlined, SaveOutlined, InfoCircleOutlined } from "@ant-design/icons";
+import {
+  DeleteOutlined,
+  SaveOutlined,
+  InfoCircleOutlined,
+} from "@ant-design/icons";
 import moment from "moment";
 import { v4 as uuidv4 } from "uuid";
 import { useOutletContext } from "react-router-dom";
@@ -115,18 +119,16 @@ const NewQuotation = () => {
   // ==================== AUTOSAVE SETUP ====================
   const draftKey = `draft_quotation_${auth?.userId || "guest"}`;
 
-  const draftData = useMemo(() => ({
-    quotationData,
-    selectedCustomer,
-    useBillingAddress,
-    billingAddressId,
-    lastSaved: new Date().toISOString(),
-  }), [
-    quotationData,
-    selectedCustomer,
-    useBillingAddress,
-    billingAddressId,
-  ]);
+  const draftData = useMemo(
+    () => ({
+      quotationData,
+      selectedCustomer,
+      useBillingAddress,
+      billingAddressId,
+      lastSaved: new Date().toISOString(),
+    }),
+    [quotationData, selectedCustomer, useBillingAddress, billingAddressId],
+  );
 
   const { loadDraft, clearDraft } = useAutoSave(draftKey, draftData, 2500);
 
@@ -170,6 +172,7 @@ const NewQuotation = () => {
   };
 
   // ==================== CREATE QUOTATION ====================
+  // ==================== CREATE QUOTATION ====================
   const handleCreateQuotation = async (layoutProps = {}) => {
     const {
       calculationCartItems = [],
@@ -184,18 +187,21 @@ const NewQuotation = () => {
     if (!selectedCustomer) {
       return message.error("Please select a customer.");
     }
+
     if (calculationCartItems.length === 0) {
       return message.error("Cart is empty.");
     }
 
-    // Handle Shipping Address
+    // ==================== HANDLE SHIPPING ADDRESS ====================
     let finalShipTo = quotationData.shipTo;
 
     if (useBillingAddress) {
       if (billingAddressId) {
         finalShipTo = billingAddressId;
       } else {
-        const customer = customers.find((c) => c.customerId === selectedCustomer);
+        const customer = customers.find(
+          (c) => c.customerId === selectedCustomer,
+        );
         if (customer?.address) {
           try {
             const parsedAddr =
@@ -216,23 +222,34 @@ const NewQuotation = () => {
             const response = await createAddress(payload).unwrap();
             finalShipTo = response.addressId;
           } catch (err) {
-            console.warn("Failed to create shipping address automatically:", err);
+            console.warn(
+              "Failed to create shipping address automatically:",
+              err,
+            );
+            // Continue without failing the whole quotation
           }
         }
       }
     }
 
-    // Build floors from assigned locations if none exist
+    // ==================== FIXED FLOOR & ROOM LOGIC ====================
     let finalFloors = quotationData.floors || [];
 
+    // Only auto-build floors from products IF user has NOT manually added any floors/rooms
+    // This fixes the issue where manually added floors were being ignored
     if (finalFloors.length === 0) {
-      const hasAssignments = calculationCartItems.some((item) => Boolean(item.floorId));
-      if (hasAssignments) {
+      const hasAnyLocationAssignment = calculationCartItems.some(
+        (item) =>
+          Boolean(item.floorId) || Boolean(item.roomId) || Boolean(item.areaId),
+      );
+
+      if (hasAnyLocationAssignment) {
         finalFloors = buildFloorsFromProducts(calculationCartItems);
       }
     }
+    // If user has manually added floors → we respect `quotationData.floors` (priority)
 
-    // Enrich cart items
+    // ==================== ENRICH CART ITEMS ====================
     const enrichedItems = calculationCartItems.map((item) => {
       const productId = item.productId || item.id;
       const price = Number(item.price) || 0;
@@ -248,9 +265,11 @@ const NewQuotation = () => {
 
       return {
         ...item,
+        // Location fields (keep original if assigned)
         floorName: item.floorName || undefined,
         roomName: item.roomName || undefined,
         areaName: item.areaName || undefined,
+
         discount: discVal,
         discountType: discType,
         tax: itemTax,
@@ -261,16 +280,21 @@ const NewQuotation = () => {
             subtotal -
             discountAmount +
             ((subtotal - discountAmount) * itemTax) / 100
-          ).toFixed(2)
+          ).toFixed(2),
         ),
       };
     });
 
+    // ==================== BUILD PAYLOAD ====================
     const quotationPayload = {
       quotationId: uuidv4(),
-      document_title: `Quotation for ${customers.find((c) => c.customerId === selectedCustomer)?.name || "Customer"} - ${moment().format("DD-MM-YYYY")}`,
+      document_title: `${
+        customers.find((c) => c.customerId === selectedCustomer)?.name ||
+        "Customer"
+      } - ${moment().format("DD-MM-YYYY")}`,
 
-      quotation_date: quotationData.quotationDate || moment().format("YYYY-MM-DD"),
+      quotation_date:
+        quotationData.quotationDate || moment().format("YYYY-MM-DD"),
       due_date: quotationData.dueDate || null,
 
       customerId: selectedCustomer,
@@ -285,7 +309,7 @@ const NewQuotation = () => {
       signature_name: quotationData.signatureName || "CM TRADING CO",
       signature_image: quotationData.signatureImage || "",
 
-      floors: finalFloors,
+      floors: finalFloors, // ← Now correctly respects manual floors
       products: enrichedItems,
 
       followupDates: quotationData.followupDates?.filter(Boolean) || [],
@@ -296,9 +320,14 @@ const NewQuotation = () => {
       const result = await createQuotation(quotationPayload).unwrap();
 
       message.success(
-        `Quotation created successfully!${result.quotation?.reference_number ? ` Ref: ${result.quotation.reference_number}` : ""}`
+        `Quotation created successfully!${
+          result.quotation?.reference_number
+            ? ` Ref: ${result.quotation.reference_number}`
+            : ""
+        }`,
       );
 
+      // Clear draft and cart after successful creation
       clearDraft();
       if (typeof handleClearCart === "function") handleClearCart();
 
@@ -374,8 +403,12 @@ const NewQuotation = () => {
               onClose={() => setPreviewVisible(false)}
               cartItems={layoutProps.calculationCartItems}
               productsData={layoutProps.cartProductsData}
-              customer={customers.find((c) => c.customerId === selectedCustomer)}
-              address={addresses.find((a) => a.addressId === quotationData.shipTo)}
+              customer={customers.find(
+                (c) => c.customerId === selectedCustomer,
+              )}
+              address={addresses.find(
+                (a) => a.addressId === quotationData.shipTo,
+              )}
               quotationData={quotationData}
               itemDiscounts={layoutProps.itemDiscounts}
               itemDiscountTypes={layoutProps.itemDiscountTypes}
@@ -414,7 +447,9 @@ const NewQuotation = () => {
         {currentDraft ? (
           <Descriptions column={1} bordered>
             <Descriptions.Item label="Customer">
-              {customers.find((c) => c.customerId === currentDraft.selectedCustomer)?.name || "Not selected"}
+              {customers.find(
+                (c) => c.customerId === currentDraft.selectedCustomer,
+              )?.name || "Not selected"}
             </Descriptions.Item>
             <Descriptions.Item label="Quotation Date">
               {currentDraft.quotationData?.quotationDate || "-"}

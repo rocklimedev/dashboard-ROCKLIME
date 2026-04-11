@@ -873,9 +873,309 @@ const NewQuotationsDetails = () => {
         }
       });
     }
+    // ==================== 2. SITE LAYOUT SUMMARY (NEW - TABULAR) ====================
+    if (hasSiteLayout && (floorTotals.length > 0 || roomTotals.length > 0)) {
+      pages.push(
+        <div
+          key="site-layout-summary"
+          className={`${styles.productPage} page`}
+          style={{ pageBreakBefore: "always" }}
+        >
+          <div className={styles.pageTopHeader}>
+            <div>
+              <div className={styles.clientName}>{customerName}</div>
+              <div className={styles.clientAddress}>{customerAddress}</div>
+            </div>
+            <div className={styles.pageDate}>
+              {new Date(
+                quotation.quotation_date || Date.now(),
+              ).toLocaleDateString("en-IN", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })}
+            </div>
+          </div>
 
+          <h2
+            style={{
+              color: "#d32f2f",
+              textAlign: "center",
+              margin: "40px 0 30px",
+            }}
+          >
+            SITE SUMMARY
+          </h2>
+
+          <div style={{ padding: "0 20px" }}>
+            {/* 1. Floor-wise Totals - Table */}
+            {floorTotals.length > 0 && (
+              <>
+                <h3
+                  style={{
+                    color: "#222",
+                    borderBottom: "2px solid #d32f2f",
+                    paddingBottom: "8px",
+                    marginBottom: "18px",
+                  }}
+                >
+                  Floor-wise Cost Breakdown
+                </h3>
+                <table
+                  style={{
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    marginBottom: "45px",
+                    fontSize: "0.95em",
+                  }}
+                >
+                  <thead>
+                    <tr style={{ background: "#f5f5f5" }}>
+                      <th
+                        style={{
+                          padding: "14px 16px",
+                          textAlign: "left",
+                          border: "1px solid #ddd",
+                          fontWeight: 600,
+                        }}
+                      >
+                        Floor
+                      </th>
+                      <th
+                        style={{
+                          padding: "14px 16px",
+                          textAlign: "right",
+                          border: "1px solid #ddd",
+                          fontWeight: 600,
+                        }}
+                      >
+                        Total Amount (₹)
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {floorTotals.map((floor, idx) => (
+                      <tr key={idx} style={{ borderBottom: "1px solid #eee" }}>
+                        <td
+                          style={{
+                            padding: "14px 16px",
+                            border: "1px solid #ddd",
+                            fontWeight:
+                              floor.floorName !== "Unspecified Floor"
+                                ? "600"
+                                : "normal",
+                          }}
+                        >
+                          {floor.floorName}
+                        </td>
+                        <td
+                          style={{
+                            padding: "14px 16px",
+                            textAlign: "right",
+                            border: "1px solid #ddd",
+                            fontWeight: "600",
+                            color: "#d32f2f",
+                          }}
+                        >
+                          ₹{floor.total.toLocaleString("en-IN")}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
+            )}
+
+            {/* 2. Room-wise Totals - Table */}
+            {roomTotals.length > 0 && (
+              <>
+                <h3
+                  style={{
+                    color: "#222",
+                    borderBottom: "2px solid #d32f2f",
+                    paddingBottom: "8px",
+                    marginBottom: "18px",
+                  }}
+                >
+                  Room-wise Cost Breakdown
+                </h3>
+                <table
+                  style={{
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    marginBottom: "45px",
+                    fontSize: "0.95em",
+                  }}
+                >
+                  <thead>
+                    <tr style={{ background: "#f5f5f5" }}>
+                      <th
+                        style={{
+                          padding: "14px 16px",
+                          textAlign: "left",
+                          border: "1px solid #ddd",
+                          fontWeight: 600,
+                        }}
+                      >
+                        Floor
+                      </th>
+                      <th
+                        style={{
+                          padding: "14px 16px",
+                          textAlign: "left",
+                          border: "1px solid #ddd",
+                          fontWeight: 600,
+                        }}
+                      >
+                        Room
+                      </th>
+                      <th
+                        style={{
+                          padding: "14px 16px",
+                          textAlign: "right",
+                          border: "1px solid #ddd",
+                          fontWeight: 600,
+                        }}
+                      >
+                        Total Amount (₹)
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {roomTotals.map((room, idx) => (
+                      <tr key={idx} style={{ borderBottom: "1px solid #eee" }}>
+                        <td
+                          style={{
+                            padding: "14px 16px",
+                            border: "1px solid #ddd",
+                          }}
+                        >
+                          {room.floorName}
+                        </td>
+                        <td
+                          style={{
+                            padding: "14px 16px",
+                            border: "1px solid #ddd",
+                            fontWeight: "500",
+                          }}
+                        >
+                          {room.roomName}
+                        </td>
+                        <td
+                          style={{
+                            padding: "14px 16px",
+                            textAlign: "right",
+                            border: "1px solid #ddd",
+                            fontWeight: "600",
+                            color: "#d32f2f",
+                          }}
+                        >
+                          ₹{room.total.toLocaleString("en-IN")}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
+            )}
+
+            {/* 3. Area-wise Totals - Table */}
+            {enrichedProducts.length > 0 && (
+              <>
+                <h3
+                  style={{
+                    color: "#222",
+                    borderBottom: "2px solid #d32f2f",
+                    paddingBottom: "8px",
+                    marginBottom: "18px",
+                  }}
+                >
+                  Area-wise Cost Breakdown
+                </h3>
+
+                {(() => {
+                  const areaGroups = groupProductsByAreaName(enrichedProducts);
+                  return (
+                    <table
+                      style={{
+                        width: "100%",
+                        borderCollapse: "collapse",
+                        marginBottom: "40px",
+                        fontSize: "0.95em",
+                      }}
+                    >
+                      <thead>
+                        <tr style={{ background: "#f5f5f5" }}>
+                          <th
+                            style={{
+                              padding: "14px 16px",
+                              textAlign: "left",
+                              border: "1px solid #ddd",
+                              fontWeight: 600,
+                            }}
+                          >
+                            Area
+                          </th>
+                          <th
+                            style={{
+                              padding: "14px 16px",
+                              textAlign: "right",
+                              border: "1px solid #ddd",
+                              fontWeight: 600,
+                            }}
+                          >
+                            Total Amount (₹)
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Object.entries(areaGroups).map(([areaName, items]) => {
+                          const areaTotal = items.reduce(
+                            (sum, p) => sum + Number(p.total || 0),
+                            0,
+                          );
+
+                          return (
+                            <tr
+                              key={areaName}
+                              style={{ borderBottom: "1px solid #eee" }}
+                            >
+                              <td
+                                style={{
+                                  padding: "14px 16px",
+                                  border: "1px solid #ddd",
+                                  fontWeight: "500",
+                                }}
+                              >
+                                {areaName}
+                              </td>
+                              <td
+                                style={{
+                                  padding: "14px 16px",
+                                  textAlign: "right",
+                                  border: "1px solid #ddd",
+                                  fontWeight: "600",
+                                  color: "#d32f2f",
+                                }}
+                              >
+                                ₹{areaTotal.toLocaleString("en-IN")}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  );
+                })()}
+              </>
+            )}
+          </div>
+        </div>,
+      );
+    }
     // ==================== 2. FINANCIAL SUMMARY (SECOND) ====================
     // ==================== FINANCIAL SUMMARY ====================
+    // ==================== 1. MAIN FINANCIAL SUMMARY ====================
     pages.push(
       <div key="summary-page" className={`${styles.productPage} page`}>
         <div className={styles.pageTopHeader}>
