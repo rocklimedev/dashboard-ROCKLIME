@@ -50,13 +50,11 @@ const { TextArea } = Input;
 const { Panel } = Collapse;
 const { Text } = Typography;
 
+// Meta Field IDs
 const COMPANY_CODE_META_ID = "d11da9f9-3f2e-4536-8236-9671200cca4a";
+const SELLING_PRICE_META_ID = "9ba862ef-f993-4873-95ef-1fef10036aa5";
 
-const CreateProduct = ({
-  initialData, // From bulk import
-  isBulkMode = false,
-  onUpdate, // Callback to notify BulkProductImport of changes
-}) => {
+const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
   const { productId } = useParams();
   const navigate = useNavigate();
 
@@ -116,9 +114,7 @@ const CreateProduct = ({
   const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
   const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
 
-  // ────────────────────────────────────────────────
-  // Default values for NEW product → Master Product
-  // ────────────────────────────────────────────────
+  // Default values for NEW product
   useEffect(() => {
     if (isEditMode || isBulkMode) return;
 
@@ -129,9 +125,7 @@ const CreateProduct = ({
     });
   }, [form, isEditMode, isBulkMode]);
 
-  // ────────────────────────────────────────────────
-  // BULK MODE: Pre-fill from CSV/initialData
-  // ────────────────────────────────────────────────
+  // BULK MODE: Pre-fill from CSV
   useEffect(() => {
     if (!initialData || isEditMode) return;
 
@@ -150,7 +144,6 @@ const CreateProduct = ({
       brandId: initialData.brandId,
       vendorId: initialData.vendorId,
       brand_parentcategoriesId: initialData.brand_parentcategoriesId,
-      sellingPrice: initialData.sellingPrice || undefined,
     });
 
     if (Array.isArray(initialData.images) && initialData.images.length > 0) {
@@ -194,9 +187,7 @@ const CreateProduct = ({
     }
   }, [initialData, isEditMode, form, productMetaData]);
 
-  // ────────────────────────────────────────────────
-  // EDIT MODE: Load existing product data
-  // ────────────────────────────────────────────────
+  // EDIT MODE: Load existing product
   useEffect(() => {
     if (!existingProduct || !isEditMode) return;
 
@@ -219,11 +210,11 @@ const CreateProduct = ({
       vendorId: existingProduct.vendorId || undefined,
       brand_parentcategoriesId:
         existingProduct.brand_parentcategoriesId || undefined,
-      sellingPrice: existingProduct.sellingPrice || undefined,
     };
 
     form.setFieldsValue(formValues);
 
+    // Load Images
     let imagesArray = [];
     try {
       imagesArray =
@@ -235,6 +226,7 @@ const CreateProduct = ({
     } catch (e) {}
     setExistingImages(Array.isArray(imagesArray) ? imagesArray : []);
 
+    // Load Meta Data (including Selling Price)
     let metaObj = {};
     try {
       if (typeof existingProduct.meta === "string") {
@@ -245,15 +237,12 @@ const CreateProduct = ({
       ) {
         metaObj = existingProduct.meta;
       }
-      const valid = {};
-      Object.entries(metaObj).forEach(([k, v]) => {
-        if (productMetaData.some((m) => m.id === k)) valid[k] = v;
-      });
-      setMetaData(valid);
+      setMetaData(metaObj);
     } catch (e) {
       message.error("Failed to load specifications");
     }
 
+    // Load Keywords
     if (existingProduct.keywords) {
       try {
         const keywords =
@@ -272,6 +261,7 @@ const CreateProduct = ({
       } catch (e) {}
     }
 
+    // Load Variant Options
     if (existingProduct.variantOptions) {
       try {
         const opts =
@@ -290,7 +280,7 @@ const CreateProduct = ({
         });
       } catch (e) {}
     }
-  }, [existingProduct, productMetaData, form, isEditMode]);
+  }, [existingProduct, form, isEditMode]);
 
   const handleValuesChange = () => {
     if (isBulkMode && onUpdate) {
@@ -325,7 +315,6 @@ const CreateProduct = ({
           name:
             categories.find((c) => c.categoryId === categoryId)?.name ||
             "Unknown",
-          slug: categories.find((c) => c.categoryId === categoryId)?.slug,
         },
       };
 
@@ -339,9 +328,7 @@ const CreateProduct = ({
             productId,
             keywordIds: [...selectedKeywords.map((k) => k.id), newKeyword.id],
           }).unwrap();
-        } catch (err) {
-          // silent – will be fixed on full save
-        }
+        } catch (err) {}
       }
     } catch (err) {
       message.error("Failed to create keyword");
@@ -358,9 +345,10 @@ const CreateProduct = ({
       if (cleanKey && cleanValue) jsonObj[cleanKey] = cleanValue;
     });
 
-    const jsonString =
-      Object.keys(jsonObj).length > 0 ? JSON.stringify(jsonObj, null, 2) : "";
-    form.setFieldsValue({ variantOptions: jsonString });
+    form.setFieldsValue({
+      variantOptions:
+        Object.keys(jsonObj).length > 0 ? JSON.stringify(jsonObj, null, 2) : "",
+    });
   }, [form]);
 
   useEffect(() => {
@@ -404,6 +392,7 @@ const CreateProduct = ({
     onDrop,
   });
 
+  // Paste image support
   useEffect(() => {
     const handlePaste = async (event) => {
       const items = event.clipboardData?.items;
@@ -414,11 +403,7 @@ const CreateProduct = ({
         const item = items[i];
         if (item.type.indexOf("image") !== -1) {
           const file = item.getAsFile();
-          if (file) {
-            if (file.size > 5 * 1024 * 1024) {
-              message.warning(`${file.name || "Image"} is larger than 5MB`);
-              continue;
-            }
+          if (file && file.size <= 5 * 1024 * 1024) {
             pastedFiles.push(file);
           }
         }
@@ -460,7 +445,7 @@ const CreateProduct = ({
   };
 
   const onFinish = async (values) => {
-    const required = ["name", "quantity", "sellingPrice"];
+    const required = ["name", "quantity"];
     if (required.some((f) => !values[f])) {
       message.warning("Please fill all required fields");
       return;
@@ -487,7 +472,6 @@ const CreateProduct = ({
       "masterProductId",
       "variantKey",
       "skuSuffix",
-      "sellingPrice", // ← Added
     ];
 
     fields.forEach((k) => {
@@ -498,6 +482,7 @@ const CreateProduct = ({
 
     formData.append("quantity", Number(values.quantity) || 0);
     formData.append("isFeatured", values.isFeatured === "true");
+
     if (values.tax !== undefined)
       formData.append("tax", Number(values.tax) || 0);
     if (values.alert_quantity !== undefined)
@@ -509,6 +494,7 @@ const CreateProduct = ({
       },
     );
 
+    // Handle Variant Options
     if (values.variantOptions) {
       try {
         const json = JSON.parse(values.variantOptions);
@@ -519,10 +505,12 @@ const CreateProduct = ({
       }
     }
 
+    // Attach all meta data (including Selling Price)
     if (Object.keys(metaData).length > 0) {
       formData.append("meta", JSON.stringify(metaData));
     }
 
+    // Images
     newImages.forEach((img) => formData.append("images", img.file));
 
     if (isEditMode && imagesToDelete.length > 0) {
@@ -542,19 +530,23 @@ const CreateProduct = ({
         if (!finalProductId) throw new Error("No product ID returned");
       }
 
+      // Update Keywords
       const keywordIds = selectedKeywords.map((k) => k.id).filter(Boolean);
-
       if (keywordIds.length > 0) {
         await replaceAllKeywordsForProduct({
           productId: finalProductId,
           keywordIds,
         }).unwrap();
-        message.success("Keywords updated successfully");
       }
 
-      message.success(isEditMode ? "Product updated!" : "Product created!");
+      message.success(
+        isEditMode
+          ? "Product updated successfully!"
+          : "Product created successfully!",
+      );
+
       if (!isEditMode && !isBulkMode) {
-        navigate(-1); // Optional: go back after successful creation
+        navigate(-1);
       }
     } catch (err) {
       message.error(err?.data?.message || "Failed to save product");
@@ -603,24 +595,24 @@ const CreateProduct = ({
                   </Form.Item>
                 </Col>
 
+                {/* Selling Price - Now properly saved in meta */}
                 <Col xs={24} md={12}>
-                  <Form.Item
-                    name="sellingPrice"
-                    label="Selling Price"
-                    rules={[
-                      { required: true, message: "Selling price is required" },
-                    ]}
-                  >
+                  <Form.Item label="Selling Price" required>
                     <InputNumber
                       min={0}
                       step={0.01}
                       style={{ width: "100%" }}
-                      placeholder="Enter selling price"
+                      value={metaData[SELLING_PRICE_META_ID] ?? ""}
+                      onChange={(val) =>
+                        handleMetaChange(SELLING_PRICE_META_ID, val)
+                      }
                       addonAfter="₹"
+                      placeholder="Enter selling price"
                     />
                   </Form.Item>
                 </Col>
 
+                {/* Company / Batch Code */}
                 {productMetaData.some((m) => m.id === COMPANY_CODE_META_ID) && (
                   <Col xs={24} md={12}>
                     <Form.Item label="Company / Batch Code">
