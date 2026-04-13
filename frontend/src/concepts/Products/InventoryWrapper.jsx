@@ -2,7 +2,6 @@ import React, { useState, useMemo, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   Table,
-  Tabs,
   Input,
   InputNumber,
   Button,
@@ -31,6 +30,7 @@ import {
   ReloadOutlined,
   MoreOutlined,
 } from "@ant-design/icons";
+
 import StockModal from "../../components/modals/StockModal";
 import {
   useGetAllProductsQuery,
@@ -38,6 +38,7 @@ import {
   useRemoveStockMutation,
   useDeleteProductMutation,
 } from "../../api/productApi";
+
 import PageHeader from "../../components/Common/PageHeader";
 import pos from "../../assets/img/default.png";
 import HistoryModalAntD from "../../components/modals/HistoryModal";
@@ -46,7 +47,6 @@ import DeleteModal from "../../components/Common/DeleteModal";
 import PermissionGate from "../../context/PermissionGate";
 import { generatePDF, generateExcel } from "../../utils/helpers";
 
-const { TabPane } = Tabs;
 const { Text } = Typography;
 
 const InventoryWrapper = () => {
@@ -55,6 +55,7 @@ const InventoryWrapper = () => {
   const screens = Grid.useBreakpoint();
   const isMobile = !screens.md;
 
+  // Initial values from URL
   const queryParams = new URLSearchParams(location.search);
   const urlTab = queryParams.get("tab");
   const validTabs = ["all", "in-stock", "low-stock", "out-of-stock"];
@@ -70,7 +71,9 @@ const InventoryWrapper = () => {
   });
 
   const [search, setSearch] = useState(queryParams.get("search") || "");
-  const [lowStockThreshold, setLowStockThreshold] = useState(10);
+  const [lowStockThreshold, setLowStockThreshold] = useState(
+    Number(queryParams.get("lowStockThreshold")) || 10,
+  );
   const [maxStockFilter, setMaxStockFilter] = useState(null);
   const [priceRange, setPriceRange] = useState([null, null]);
 
@@ -83,14 +86,17 @@ const InventoryWrapper = () => {
   const [selectedReportProducts, setSelectedReportProducts] = useState([]);
   const [generatingMonthly, setGeneratingMonthly] = useState(false);
 
+  // Main Inventory Query
   const queryArgs = useMemo(
     () => ({
       page: currentPage,
       limit: pageSize,
       search: search.trim() || undefined,
       tab: activeTab,
+      lowStockThreshold:
+        activeTab === "low-stock" ? lowStockThreshold : undefined,
     }),
-    [currentPage, pageSize, search, activeTab],
+    [currentPage, pageSize, search, activeTab, lowStockThreshold],
   );
 
   const {
@@ -100,10 +106,6 @@ const InventoryWrapper = () => {
     isFetching,
     refetch,
   } = useGetAllProductsQuery(queryArgs, { refetchOnMountOrArgChange: true });
-
-  useEffect(() => {
-    refetch();
-  }, [activeTab, refetch]);
 
   const [addStock] = useAddStockMutation();
   const [removeStock] = useRemoveStockMutation();
@@ -116,57 +118,15 @@ const InventoryWrapper = () => {
     limit: 50,
   };
 
-  // Auto-switch to low-stock from dashboard
-  useEffect(() => {
-    if (queryParams.has("low_stock") && activeTab === "all") {
-      setActiveTab("low-stock");
-      const newParams = new URLSearchParams(location.search);
-      newParams.delete("low_stock");
-      newParams.set("tab", "low-stock");
-      navigate(`${location.pathname}?${newParams}`, { replace: true });
-    }
-  }, [location.search, activeTab, navigate]);
-
-  // URL sync
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    if (activeTab === "all") params.delete("tab");
-    else params.set("tab", activeTab);
-    if (currentPage <= 1) params.delete("page");
-    else params.set("page", currentPage);
-    if (pageSize === 50) params.delete("limit");
-    else params.set("limit", pageSize);
-
-    const newSearch = params.toString();
-    if (newSearch !== location.search.slice(1)) {
-      navigate(`${location.pathname}${newSearch ? `?${newSearch}` : ""}`, {
-        replace: true,
-      });
-    }
-  }, [activeTab, currentPage, pageSize, location.pathname, navigate]);
-
-  const handleTabChange = (key) => {
-    setCurrentPage(1);
-    setActiveTab(key);
-  };
-
-  const handlePageChange = (page, size) => {
-    setCurrentPage(page);
-    if (size) setPageSize(size);
-  };
-
-  const parseImages = (images) => {
-    try {
-      if (typeof images === "string") {
-        const parsed = JSON.parse(images);
-        return Array.isArray(parsed) && parsed.length ? parsed : [pos];
-      }
-      return Array.isArray(images) && images.length ? images : [pos];
-    } catch {
-      return [pos];
-    }
-  };
-
+  // Separate query for Monthly Report - ENABLED (No skip)
+  const {
+    data: allProductsResponse,
+    isFetching: isFetchingAll,
+    refetch: refetchAllProducts,
+  } = useGetAllProductsQuery(
+    { page: 1, limit: 1000, tab: "all", search: undefined },
+    { skip: false },
+  );
   const getCompanyCode = (metaDetails) => {
     if (!Array.isArray(metaDetails) || !metaDetails.length) return "N/A";
     const last = metaDetails[metaDetails.length - 1];
@@ -198,73 +158,190 @@ const InventoryWrapper = () => {
     }
     return null;
   };
-
+  // Client-side extra filters
   const filteredProducts = useMemo(() => {
-    const term = search.toLowerCase().trim();
     return products.filter((p) => {
-      const matchesSearch =
-        !term ||
-        p.name?.toLowerCase().includes(term) ||
-        p.product_code?.toLowerCase().includes(term) ||
-        getCompanyCode(p.metaDetails).toLowerCase().includes(term);
-
       const matchesMax =
         maxStockFilter === null || p.quantity <= maxStockFilter;
-
       const price = getSellingPrice(p.metaDetails);
       const matchesPrice =
         (priceRange[0] == null || price >= priceRange[0]) &&
         (priceRange[1] == null || price <= priceRange[1]);
-
-      return matchesSearch && matchesMax && matchesPrice;
+      return matchesMax && matchesPrice;
     });
-  }, [products, search, maxStockFilter, priceRange]);
+  }, [products, maxStockFilter, priceRange]);
 
-  const tabFilteredProducts = useMemo(() => {
-    if (activeTab === "in-stock")
-      return filteredProducts.filter((p) => p.quantity > 0);
-    if (activeTab === "low-stock")
-      return filteredProducts.filter(
-        (p) => p.quantity > 0 && p.quantity <= lowStockThreshold,
-      );
-    if (activeTab === "out-of-stock")
-      return filteredProducts.filter((p) => p.quantity === 0);
-    return filteredProducts;
-  }, [filteredProducts, activeTab, lowStockThreshold]);
-
+  // Fixed Tab Counts
   const counts = useMemo(() => {
-    const hasClientFilter =
+    const hasExtraFilter =
       maxStockFilter !== null ||
       priceRange[0] !== null ||
-      priceRange[1] !== null ||
-      search.trim();
-    if (hasClientFilter) {
-      return {
-        all: tabFilteredProducts.length,
-        inStock: tabFilteredProducts.filter((p) => p.quantity > 0).length,
-        lowStock: tabFilteredProducts.filter(
-          (p) => p.quantity > 0 && p.quantity <= lowStockThreshold,
-        ).length,
-        outStock: tabFilteredProducts.filter((p) => p.quantity === 0).length,
-      };
+      priceRange[1] !== null;
+
+    if (hasExtraFilter) {
+      const inStock = filteredProducts.filter((p) => p.quantity > 0).length;
+      const lowStock = filteredProducts.filter(
+        (p) => p.quantity > 0 && p.quantity <= lowStockThreshold,
+      ).length;
+      const outStock = filteredProducts.filter((p) => p.quantity === 0).length;
+
+      return { all: filteredProducts.length, inStock, lowStock, outStock };
     }
+
+    const currentInStock = products.filter((p) => p.quantity > 0).length;
+    const currentLowStock = products.filter(
+      (p) => p.quantity > 0 && p.quantity <= lowStockThreshold,
+    ).length;
+    const currentOutStock = products.filter((p) => p.quantity === 0).length;
+
     return {
       all: paginationInfo.total,
-      inStock: products.filter((p) => p.quantity > 0).length,
-      lowStock: products.filter(
-        (p) => p.quantity > 0 && p.quantity <= lowStockThreshold,
-      ).length,
-      outStock: products.filter((p) => p.quantity === 0).length,
+      inStock: activeTab === "in-stock" ? paginationInfo.total : currentInStock,
+      lowStock:
+        activeTab === "low-stock" ? paginationInfo.total : currentLowStock,
+      outStock:
+        activeTab === "out-of-stock" ? paginationInfo.total : currentOutStock,
     };
   }, [
-    paginationInfo.total,
+    filteredProducts,
     products,
-    tabFilteredProducts,
+    paginationInfo.total,
+    activeTab,
     maxStockFilter,
     priceRange,
     lowStockThreshold,
-    search,
   ]);
+
+  // URL Sync
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+
+    if (activeTab === "all") params.delete("tab");
+    else params.set("tab", activeTab);
+    if (currentPage <= 1) params.delete("page");
+    else params.set("page", currentPage);
+    if (pageSize === 50) params.delete("limit");
+    else params.set("limit", pageSize);
+
+    if (search.trim()) params.set("search", search.trim());
+    else params.delete("search");
+
+    if (activeTab === "low-stock" && lowStockThreshold !== 10) {
+      params.set("lowStockThreshold", lowStockThreshold);
+    } else {
+      params.delete("lowStockThreshold");
+    }
+
+    const newSearch = params.toString();
+    if (newSearch !== location.search.slice(1)) {
+      navigate(`${location.pathname}${newSearch ? `?${newSearch}` : ""}`, {
+        replace: true,
+      });
+    }
+  }, [
+    activeTab,
+    currentPage,
+    pageSize,
+    search,
+    lowStockThreshold,
+    location.pathname,
+    navigate,
+  ]);
+
+  // Auto-switch to low-stock from dashboard
+  useEffect(() => {
+    if (queryParams.has("low_stock") && activeTab === "all") {
+      setActiveTab("low-stock");
+      const newParams = new URLSearchParams(location.search);
+      newParams.delete("low_stock");
+      newParams.set("tab", "low-stock");
+      navigate(`${location.pathname}?${newParams}`, { replace: true });
+    }
+  }, [location.search, activeTab, navigate]);
+
+  const handleTabChange = (key) => {
+    setCurrentPage(1);
+    setActiveTab(key);
+  };
+
+  const handlePageChange = (page, size) => {
+    setCurrentPage(page);
+    if (size) setPageSize(size);
+  };
+
+  // Helper Functions
+  const parseImages = (images) => {
+    try {
+      if (typeof images === "string") {
+        const parsed = JSON.parse(images);
+        return Array.isArray(parsed) && parsed.length ? parsed : [pos];
+      }
+      return Array.isArray(images) && images.length ? images : [pos];
+    } catch {
+      return [pos];
+    }
+  };
+
+  // ==================== FIXED MONTHLY REPORT ====================
+  const generateMonthlyReport = async () => {
+    setGeneratingMonthly(true);
+
+    try {
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const monthName = now.toLocaleString("default", {
+        month: "long",
+        year: "numeric",
+      });
+
+      // Use refetch to get fresh data
+      const freshResponse = await refetchAllProducts().unwrap();
+      const allProducts =
+        freshResponse?.data || allProductsResponse?.data || [];
+
+      const updatedThisMonth = allProducts.filter((p) => {
+        if (!p.updatedAt) return false;
+        return new Date(p.updatedAt) >= startOfMonth;
+      });
+
+      if (updatedThisMonth.length === 0) {
+        message.info("No products were updated this month");
+        setGeneratingMonthly(false);
+        return;
+      }
+
+      // New Monthly Report Format
+      const reportData = updatedThisMonth.map((p, index) => {
+        const companyCode = getCompanyCode(p.metaDetails);
+        const currentQty = Number(p.quantity) || 0;
+        const difference = 0; // TODO: Add real difference from history later
+        const netQuantity = currentQty + difference;
+
+        return {
+          "S.No": index + 1,
+          "Company Code": companyCode || "—",
+          Name: p.name || "Unnamed Product",
+          Quantity: currentQty,
+          Difference: difference,
+          "Net Quantity": netQuantity,
+        };
+      });
+
+      generatePDF(
+        reportData,
+        `Monthly Stock Report - ${monthName} (${updatedThisMonth.length} updated)`,
+      );
+
+      message.success(
+        `Monthly report generated – ${updatedThisMonth.length} products`,
+      );
+    } catch (err) {
+      console.error(err);
+      message.error("Failed to generate monthly report. Please try again.");
+    } finally {
+      setGeneratingMonthly(false);
+    }
+  };
 
   // Handlers
   const openStockModal = (product, action) => {
@@ -340,7 +417,9 @@ const InventoryWrapper = () => {
             ? "Low Stock"
             : "In Stock",
     }));
-    const title = `Custom Inventory Report - ${new Date().toLocaleDateString("en-IN")}`;
+    const title = `Custom Inventory Report - ${new Date().toLocaleDateString(
+      "en-IN",
+    )}`;
     if (format === "pdf") generatePDF(reportData, title);
     else generateExcel(reportData, title);
     setReportModalOpen(false);
@@ -348,54 +427,6 @@ const InventoryWrapper = () => {
     message.success("Report generated successfully!");
   };
 
-  const generateMonthlyReport = () => {
-    setGeneratingMonthly(true);
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const monthName = now.toLocaleString("default", {
-      month: "long",
-      year: "numeric",
-    });
-
-    const updatedThisMonth = products.filter((p) => {
-      if (!p.updatedAt) return false;
-      return new Date(p.updatedAt) >= startOfMonth;
-    });
-
-    if (updatedThisMonth.length === 0) {
-      message.info("No products updated this month");
-      setGeneratingMonthly(false);
-      return;
-    }
-
-    const reportData = updatedThisMonth.map((p) => ({
-      Name: p.name || "Unnamed Product",
-      "Product Code": p.product_code || "—",
-      "Company Code": getCompanyCode(p.metaDetails),
-      "Selling Price": getSellingPrice(p.metaDetails)
-        ? `₹${getSellingPrice(p.metaDetails).toLocaleString("en-IN")}`
-        : "—",
-      Stock: p.quantity,
-      Status:
-        p.quantity === 0
-          ? "Out of Stock"
-          : p.quantity <= lowStockThreshold
-            ? "Low Stock"
-            : "In Stock",
-      "Last Updated": new Date(p.updatedAt).toLocaleDateString("en-IN"),
-    }));
-
-    generatePDF(
-      reportData,
-      `Monthly Report - ${monthName} (${updatedThisMonth.length} updated)`,
-    );
-    setGeneratingMonthly(false);
-    message.success(
-      `Monthly report generated – ${updatedThisMonth.length} products`,
-    );
-  };
-
-  // More Options Menu (Edit + Delete)
   const moreMenu = (record) => (
     <Menu>
       <Menu.Item key="edit">
@@ -509,7 +540,6 @@ const InventoryWrapper = () => {
             type="text"
             icon={<PlusOutlined />}
             onClick={() => openStockModal(record, "add")}
-            className="action-btn add"
           />
           <Button
             type="text"
@@ -517,16 +547,13 @@ const InventoryWrapper = () => {
             icon={<MinusOutlined />}
             disabled={record.quantity === 0}
             onClick={() => openStockModal(record, "remove")}
-            className="action-btn remove"
           />
           <Button
             type="text"
             icon={<HistoryOutlined />}
             onClick={() => openHistoryModal(record)}
-            className="action-btn history"
           />
 
-          {/* Edit & Delete Dropdown */}
           <PermissionGate api="edit|delete" module="products">
             <Dropdown overlay={moreMenu(record)} trigger={["click"]}>
               <Button type="text" icon={<MoreOutlined />} />
@@ -600,7 +627,6 @@ const InventoryWrapper = () => {
                   setSearch(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="search-input"
               />
             </Col>
 
@@ -656,6 +682,7 @@ const InventoryWrapper = () => {
                   setSearch("");
                   setPriceRange([null, null]);
                   setMaxStockFilter(null);
+                  setLowStockThreshold(10);
                   setCurrentPage(1);
                 }}
               >
@@ -666,24 +693,21 @@ const InventoryWrapper = () => {
 
           {/* Action Bar */}
           <div
-            style={{
-              marginTop: 16,
-              textAlign: isMobile ? "center" : "right",
-            }}
+            style={{ marginTop: 16, textAlign: isMobile ? "center" : "right" }}
           >
             <Space wrap size="middle">
               <Button
                 type="primary"
                 icon={<FileTextOutlined />}
                 onClick={() => setReportModalOpen(true)}
-                className="report-btn"
               >
                 Build Report
               </Button>
               <Button
                 icon={<DownloadOutlined />}
                 onClick={generateMonthlyReport}
-                loading={generatingMonthly}
+                loading={generatingMonthly || isFetchingAll}
+                disabled={isFetchingAll}
               >
                 Monthly Report
               </Button>
@@ -691,7 +715,6 @@ const InventoryWrapper = () => {
                 type="primary"
                 icon={<PlusOutlined />}
                 onClick={() => navigate("/product/add")}
-                className="add-product-btn"
               >
                 Add New Product
               </Button>
@@ -741,7 +764,7 @@ const InventoryWrapper = () => {
           </Space>
         </div>
 
-        {tabFilteredProducts.length === 0 ? (
+        {filteredProducts.length === 0 ? (
           <Card
             bordered={false}
             style={{
@@ -753,13 +776,7 @@ const InventoryWrapper = () => {
               padding: "60px 20px",
             }}
           >
-            <Empty
-              description={
-                search || maxStockFilter || priceRange[0] || priceRange[1]
-                  ? "No products match your filters"
-                  : "No products in this category"
-              }
-            />
+            <Empty description="No products match your filters" />
           </Card>
         ) : (
           <>
@@ -775,34 +792,29 @@ const InventoryWrapper = () => {
             >
               <Table
                 columns={columns}
-                dataSource={tabFilteredProducts}
+                dataSource={filteredProducts}
                 rowKey="productId"
                 pagination={false}
                 loading={isFetching}
-                className="modern-inventory-table"
                 scroll={{ x: isMobile ? "max-content" : undefined }}
-                rowClassName={(record) => {
-                  if (record.quantity === 0) return "stock-critical";
-                  if (record.quantity <= lowStockThreshold)
-                    return "stock-warning";
-                  return "stock-ok";
-                }}
+                rowClassName={(record) =>
+                  record.quantity === 0
+                    ? "stock-critical"
+                    : record.quantity <= lowStockThreshold
+                      ? "stock-warning"
+                      : "stock-ok"
+                }
               />
             </Card>
 
             <div
-              style={{
-                marginTop: 24,
-                padding: "16px 0",
-                textAlign: "center",
-              }}
+              style={{ marginTop: 24, padding: "16px 0", textAlign: "center" }}
             >
               <Pagination
                 current={currentPage}
                 pageSize={pageSize}
                 total={paginationInfo.total}
                 onChange={handlePageChange}
-                onShowSizeChange={handlePageChange}
                 showSizeChanger
                 pageSizeOptions={["10", "25", "50", "100"]}
                 showTotal={(total, range) =>

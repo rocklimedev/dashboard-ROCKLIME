@@ -7,7 +7,6 @@ const emails = require("../middleware/sendMail");
 const ROLES = require("../config/constant");
 require("dotenv").config();
 
-// Login, Logout, Refresh Token, and Resend Verification Email remain unchanged
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -403,7 +402,6 @@ exports.validateResetToken = async (req, res) => {
     res.status(500).json({ message: "Server error during token validation" });
   }
 };
-// Login, Logout, Refresh Token, and Resend Verification Email remain unchanged
 
 exports.logout = async (req, res) => {
   try {
@@ -582,7 +580,6 @@ exports.changePassword = async (req, res, next) => {
  * Assumes: req.user is populated by authentication middleware
  *          req.user.roleId exists
  */
-// CONTROLLER - getAllPermissionsOfLoggedInUser
 exports.getAllPermissionsOfLoggedInUser = async (req, res) => {
   try {
     const { roleId, name, email } = req.user;
@@ -683,7 +680,6 @@ exports.validateToken = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
-// authController.js (or userController.js)
 
 exports.deactivateAccount = async (req, res, next) => {
   try {

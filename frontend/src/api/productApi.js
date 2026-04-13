@@ -83,10 +83,23 @@ export const productApi = baseApi.injectEndpoints({
 
     // GET ALL PRODUCTS — NOW PAGINATED!
     getAllProducts: builder.query({
-      query: ({ page = 1, limit = 20, search } = {}) => ({
+      query: ({
+        page = 1,
+        limit = 50,
+        search,
+        tab = "all",
+        lowStockThreshold,
+      } = {}) => ({
         url: "/products",
-        params: { page, limit, search },
+        params: {
+          page,
+          limit,
+          search: search?.trim() || undefined,
+          tab,
+          ...(lowStockThreshold && { lowStockThreshold }), // only send when needed
+        },
       }),
+
       providesTags: (result) =>
         result?.data
           ? [
@@ -97,6 +110,9 @@ export const productApi = baseApi.injectEndpoints({
               { type: "Product", id: "LIST" },
             ]
           : [{ type: "Product", id: "LIST" }],
+
+      // Optional: Keep data fresh when switching tabs or filters
+      keepUnusedDataFor: 30, // seconds
     }),
     // GET SINGLE PRODUCT
     getProductById: builder.query({

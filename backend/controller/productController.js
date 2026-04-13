@@ -697,73 +697,81 @@ exports.getAllProducts = async (req, res) => {
   try {
     ensureAssociations();
 
-    // Pagination parameters
+    // ── Pagination ─────────────────────────────────────
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 50;
     const offset = (page - 1) * limit;
 
-    // ── Search support (MySQL compatible – case-insensitive) ────────────
+    // ── Filters from Frontend ───────────────────────────
     const searchTerm = req.query.search?.trim();
-    let whereClause = {};
+    const tab = req.query.tab || "all"; // all | in-stock | low-stock | out-of-stock
+    const lowStockThreshold = parseInt(req.query.lowStockThreshold) || 10;
 
+    let whereClause = {};
+    let havingClause = {}; // For stock-based filtering after joins
+
+    // Search support (name, company code in meta, keywords, categories)
     if (searchTerm) {
       const pattern = `%${searchTerm.toLowerCase()}%`;
 
       whereClause = {
         [Op.or]: [
-          // Product name
           sequelize.where(
             sequelize.fn("LOWER", sequelize.col("Product.name")),
             Op.like,
             pattern,
           ),
-
-          // Company code in JSON meta (using the UUID from your frontend logic)
-          // Inside the Op.or array, replace the company code line with:
-
           sequelize.where(
             sequelize.fn(
               "LOWER",
               sequelize.fn(
                 "JSON_EXTRACT",
                 sequelize.col("Product.meta"),
-                // ── This is the corrected version ────────────────────────────────
                 sequelize.literal(`'$."d11da9f9-3f2e-4536-8236-9671200cca4a"'`),
-                // ─────────────────────────────────────────────────────────────────
               ),
             ),
             Op.like,
             pattern,
           ),
-
-          // Keywords
           sequelize.where(
             sequelize.fn("LOWER", sequelize.col("keywords.keyword")),
             Op.like,
             pattern,
           ),
-
-          // Category names (via keyword → category)
           sequelize.where(
             sequelize.fn("LOWER", sequelize.col("keywords.categories.name")),
             Op.like,
             pattern,
           ),
-
-          // Optional: if you have product_code / sku as real columns
-          // sequelize.where(sequelize.fn('LOWER', sequelize.col('Product.product_code')), Op.like, pattern),
+          // Optional: direct product_code column
+          // { product_code: { [Op.like]: pattern } }
         ],
       };
     }
-    // ────────────────────────────────────────────────────────────────────
 
-    // Use findAndCountAll for efficient pagination + total count
+    // Tab-based stock filtering
+    if (tab === "in-stock") {
+      whereClause.quantity = { [Op.gt]: 0 };
+    } else if (tab === "out-of-stock") {
+      whereClause.quantity = 0;
+    } else if (tab === "low-stock") {
+      whereClause.quantity = {
+        [Op.gt]: 0,
+        [Op.lte]: lowStockThreshold,
+      };
+    }
+    // "all" = no stock filter
+
+    // ── Main Query with findAndCountAll ─────────────────────
     const { count: totalProducts, rows: products } =
       await Product.findAndCountAll({
         where: whereClause,
         order: [["name", "ASC"]],
         offset,
         limit,
+        distinct: true, // Important when using includes with many-to-many
+        subQuery: false,
+
         include: [
           {
             model: Keyword,
@@ -779,22 +787,16 @@ exports.getAllProducts = async (req, res) => {
             ],
           },
         ],
-        subQuery: false,
       });
 
     if (totalProducts === 0) {
       return res.json({
         data: [],
-        pagination: {
-          total: 0,
-          page,
-          limit,
-          totalPages: 0,
-        },
+        pagination: { total: 0, page, limit, totalPages: 0 },
       });
     }
 
-    // Collect all meta IDs used across products (your original efficient approach)
+    // ── Enrich Meta (same as before) ───────────────────────
     const metaIds = new Set();
     products.forEach((product) => {
       const meta = parseJsonSafely(
@@ -807,7 +809,6 @@ exports.getAllProducts = async (req, res) => {
       }
     });
 
-    // Fetch meta definitions once
     const metaDefs =
       metaIds.size > 0
         ? await ProductMeta.findAll({
@@ -818,11 +819,10 @@ exports.getAllProducts = async (req, res) => {
 
     const metaMap = Object.fromEntries(metaDefs.map((m) => [m.id, m.toJSON()]));
 
-    // Transform and enrich products
+    // ── Transform & Enrich Products ───────────────────────
     const enrichedProducts = products.map((product) => {
       const raw = product.toJSON();
 
-      // Safely parse meta and images
       const metaObj = parseJsonSafely(
         raw.meta,
         {},
@@ -834,7 +834,6 @@ exports.getAllProducts = async (req, res) => {
         `product ID ${raw.id} images`,
       );
 
-      // Build detailed meta with titles, units, etc.
       const metaDetails = Object.entries(metaObj).map(([idStr, value]) => {
         const id = parseInt(idStr, 10);
         const def = metaMap[id] || {};
@@ -848,7 +847,6 @@ exports.getAllProducts = async (req, res) => {
         };
       });
 
-      // Clean keyword structure
       const keywords = (raw.keywords || []).map((k) => ({
         id: k.id,
         keyword: k.keyword,
@@ -873,6 +871,8 @@ exports.getAllProducts = async (req, res) => {
         isMaster: !!raw.isMaster,
         isVariant: !!raw.masterProductId,
         masterProductId: raw.masterProductId || raw.id,
+        // Ensure quantity is always a number
+        quantity: Number(raw.quantity) || 0,
       };
     });
 
@@ -888,6 +888,7 @@ exports.getAllProducts = async (req, res) => {
       },
     });
   } catch (error) {
+    console.error("getAllProducts error:", error);
     res.status(500).json({
       message: "Failed to fetch products",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,

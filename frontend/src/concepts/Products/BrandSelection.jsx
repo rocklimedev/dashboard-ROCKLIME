@@ -3,24 +3,24 @@ import { useParams, Link } from "react-router-dom";
 import { useGetBrandParentCategoryByIdQuery } from "../../api/brandParentCategoryApi";
 import Breadcrumb from "../../components/Common/Breadcrumb";
 const mainWrapper =
-  "https://static.cmtradingco.com/brands/product_page_title.png";
+  "https://media.cmtradingco.com/brands/product_page_title.png";
 const americanStandard =
-  "https://static.cmtradingco.com/brands/american_standard.png?v=2";
-const grohe = "https://static.cmtradingco.com/brands/grohe_bau.png";
-const colston = "https://static.cmtradingco.com/brands/colston-logo_black.png";
-const groheBau = "https://static.cmtradingco.com/brands/grohe.png";
-const jk = "https://static.cmtradingco.com/brands/jk_cement.png";
-const addons = "https://static.cmtradingco.com/brands/addons.png";
-const walplast = "https://static.cmtradingco.com/brands/walplast.png";
-const shivceramics = "https://static.cmtradingco.com/brands/shiv_ceremic.png";
-const sunheart = "https://static.cmtradingco.com/brands/sunheart.jpg";
-const subway = "https://static.cmtradingco.com/brands/subway.webp";
-const ibis = "https://static.cmtradingco.com/brands/ibis.avif";
-const sgt = "https://static.cmtradingco.com/brands/sgt.jpg";
-const plumbing = "https://static.cmtradingco.com/brands/plumbing.jpg";
+  "https://media.cmtradingco.com/brands/american_standard.png?v=2";
+const grohe = "https://media.cmtradingco.com/brands/grohe_bau.png";
+const colston = "https://media.cmtradingco.com/brands/colston-logo_black.png";
+const groheBau = "https://media.cmtradingco.com/brands/grohe.png";
+const jk = "https://media.cmtradingco.com/brands/jk_cement.png";
+const addons = "https://media.cmtradingco.com/brands/addons.png";
+const walplast = "https://media.cmtradingco.com/brands/walplast.png";
+const shivceramics = "https://media.cmtradingco.com/brands/shiv_ceremic.png";
+const sunheart = "https://media.cmtradingco.com/brands/sunheart.jpg";
+const subway = "https://media.cmtradingco.com/brands/subway.webp";
+const ibis = "https://media.cmtradingco.com/brands/ibis.avif";
+const sgt = "https://media.cmtradingco.com/brands/sgt.jpg";
+const plumbing = "https://media.cmtradingco.com/brands/plumbing.jpg";
 const jayna = "https://via.placeholder.com/300";
-const grohe_pr = "https://static.cmtradingco.com/brands/grohe_premium.png";
-const perk = "https://static.cmtradingco.com/brands/perk.png";
+const grohe_pr = "https://media.cmtradingco.com/brands/grohe_premium.png";
+const perk = "https://media.cmtradingco.com/brands/perk.png";
 const BrandSelection = () => {
   const { bpcId } = useParams();
 

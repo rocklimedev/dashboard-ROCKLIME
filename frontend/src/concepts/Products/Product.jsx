@@ -9,7 +9,7 @@ import accessories from "../../assets/img/accessories_add_ons.png";
 import adhesive from "../../assets/img/chemicals_adhesive.png";
 import fittings from "../../assets/img/cp_fittings_sanitary.png";
 import tiles from "../../assets/img/tiles.png";
-const surfaces = "https://static.cmtradingco.com/brands/SIURFACE.png";
+const surfaces = "https://media.cmtradingco.com/brands/SIURFACE.png";
 
 const Product = () => {
   const { data: bpcList, error } = useGetBrandParentCategoriesQuery();
