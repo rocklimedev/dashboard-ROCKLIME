@@ -1,8 +1,7 @@
 // src/pages/quotations/NewQuotationsDetails.jsx
 
-import React, { useRef, useState, useMemo } from "react";
+import React, { useRef, useState, useMemo, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
-import { useCallback } from "react";
 import {
   message,
   Button,
@@ -27,11 +26,13 @@ import { Helmet } from "react-helmet";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { Dropdown } from "antd";
+
 import logo from "../../assets/img/logo-quotation.png";
 import styles from "../../components/Quotation/quotationnew.module.css";
 import coverImage from "../../assets/img/quotation_first_page.jpeg";
 import quotationBgImage from "../../assets/img/quotation_letterhead.jpeg";
 import siteMapQuotation from "../../assets/img/quotation_sitemap.jpg";
+
 import {
   useGetQuotationByIdQuery,
   useGetQuotationVersionsQuery,
@@ -155,6 +156,7 @@ const NewQuotationsDetails = () => {
     ? [address.street, address.city, address.state].filter(Boolean).join(", ") +
       (address.postalCode ? ` - ${address.postalCode}` : "")
     : "--";
+
   // ── Products ────────────────────────────────────────────────────────────
   const allProducts = useMemo(() => {
     const products = activeVersionData.products || [];
@@ -193,24 +195,6 @@ const NewQuotationsDetails = () => {
   }, [mainProducts]);
 
   // ── Calculations ────────────────────────────────────────────────────────
-  const backendFinalAmount = Number(quotation?.finalAmount ?? 0);
-  const backendRoundOff = Number(quotation?.roundOff ?? 0);
-  const backendExtraDiscount = Number(quotation?.extraDiscount ?? 0);
-
-  const displaySubtotal = useMemo(() => {
-    return mainProducts.reduce((sum, p) => sum + Number(p.total ?? 0), 0);
-  }, [mainProducts]);
-
-  const displayProductDiscount = useMemo(() => {
-    return mainProducts.reduce((sum, p) => {
-      const orig = Number(p.price ?? 0) * Number(p.quantity ?? 1);
-      const discounted = Number(p.total ?? 0);
-      return sum + (orig - discounted);
-    }, 0);
-  }, [mainProducts]);
-  // ── Calculations ────────────────────────────────────────────────────────
-
-  // 1. Gross Total BEFORE any discount (This is what you want as "Total")
   const grossTotalBeforeDiscount = useMemo(() => {
     return mainProducts.reduce((sum, p) => {
       const mrp = Number(p.price ?? 0);
@@ -219,7 +203,6 @@ const NewQuotationsDetails = () => {
     }, 0);
   }, [mainProducts]);
 
-  // 2. Total Discount given on products
   const totalProductDiscount = useMemo(() => {
     return mainProducts.reduce((sum, p) => {
       const mrp = Number(p.price ?? 0);
@@ -230,27 +213,21 @@ const NewQuotationsDetails = () => {
     }, 0);
   }, [mainProducts]);
 
-  // Backend values (keep as they are)
   const extraDiscount = Number(quotation?.extraDiscount ?? 0);
   const roundOff = Number(quotation?.roundOff ?? 0);
   const finalAmount = Number(quotation?.finalAmount ?? 0);
-
   const finalAmountInWords = amountInWords(Math.round(finalAmount));
 
-  // ── Floor-wise & Room-wise Totals ───────────────────────────────────────
+  // ── Floor & Room Totals ─────────────────────────────────────────────────
   const floorTotals = useMemo(() => {
     const floorMap = new Map();
-
     mainProducts.forEach((p) => {
       const floor = (p.floorName || "Unspecified Floor").trim();
       const total = Number(p.total ?? 0);
-
-      if (!floorMap.has(floor)) {
+      if (!floorMap.has(floor))
         floorMap.set(floor, { floorName: floor, total: 0 });
-      }
       floorMap.get(floor).total += total;
     });
-
     return Array.from(floorMap.values()).sort((a, b) =>
       a.floorName.localeCompare(b.floorName),
     );
@@ -258,13 +235,11 @@ const NewQuotationsDetails = () => {
 
   const roomTotals = useMemo(() => {
     const roomMap = new Map();
-
     mainProducts.forEach((p) => {
       const floor = (p.floorName || "Unspecified Floor").trim();
       const room = (p.roomName || "Unspecified Room").trim();
       const total = Number(p.total ?? 0);
       const key = `${floor}|||${room}`;
-
       if (!roomMap.has(key)) {
         roomMap.set(key, { floorName: floor, roomName: room, total: 0 });
       }
@@ -279,40 +254,14 @@ const NewQuotationsDetails = () => {
       .filter((r) => r.total > 0);
   }, [mainProducts]);
 
-  const hasFloorData = useMemo(() => {
-    return floorTotals.some(
-      (floor) => floor.floorName !== "Unspecified Floor" && floor.total > 0,
-    );
-  }, [floorTotals]);
-
-  const hasRoomData = useMemo(() => {
-    return roomTotals.some(
-      (room) =>
-        room.roomName !== "Unspecified Room" &&
-        room.floorName !== "Unspecified Floor",
-    );
-  }, [roomTotals]);
-
-  // ── Site Layout Check ───────────────────────────────────────────────────
   const hasSiteLayout = useMemo(() => {
     const floors =
       activeVersionData.quotation?.floors || quotation?.floors || [];
-    if (!Array.isArray(floors) || floors.length === 0) return false;
-
-    return floors.some((floor) => {
-      const hasRooms = floor.rooms && floor.rooms.length > 0;
-      const hasAssignedProducts = allProducts.some(
-        (p) => p.floorId === floor.floorId,
-      );
-      return hasRooms || hasAssignedProducts;
-    });
-  }, [activeVersionData.quotation, quotation, allProducts]);
-  // Helper to enrich products with correct area info from floors structure
-  // ── Enriched Products for Area Layout ─────────────────────────────────────
-
-  // Make enrichProductsWithAreas stable (optional but recommended)
+    return Array.isArray(floors) && floors.length > 0;
+  }, [activeVersionData.quotation, quotation]);
+  // ── Enrich Products with Areas ──────────────────────────────────────────
   const enrichProductsWithAreas = useCallback((allProducts, floors) => {
-    const areaMap = new Map(); // roomId -> areaValue -> areaName
+    const areaMap = new Map();
 
     floors.forEach((floor) => {
       floor.rooms?.forEach((room) => {
@@ -327,65 +276,50 @@ const NewQuotationsDetails = () => {
     });
 
     return allProducts.map((p) => {
-      // Strategy 1: Use areaValue/areaId if available (future-proof)
-      if (p.areaValue) {
-        const key = `${p.roomId}_${p.areaValue}`;
-        if (areaMap.has(key)) {
-          return { ...p, areaName: areaMap.get(key) };
-        }
+      let areaName = "Unassigned";
+
+      // Priority 1: Explicit from payload
+      if (p.areaValue || p.areaId) {
+        const key = `${p.roomId}_${p.areaValue || p.areaId}`;
+        if (areaMap.has(key)) areaName = areaMap.get(key);
+      }
+      // Priority 2: Already assigned
+      else if (p.areaName && p.areaName !== "Unassigned") {
+        areaName = p.areaName;
+      }
+      // Priority 3: Inference (fallback)
+      else {
+        const productNameLower = (p.name || "").toLowerCase();
+        if (
+          productNameLower.includes("basin") ||
+          productNameLower.includes("mixer")
+        )
+          areaName = "Basin Area";
+        else if (
+          productNameLower.includes("shower") ||
+          productNameLower.includes("thermostatic") ||
+          productNameLower.includes("diverter")
+        )
+          areaName = "Shower Area";
+        else if (
+          productNameLower.includes("wc") ||
+          productNameLower.includes("toilet")
+        )
+          areaName = "WC Area";
+        else if (
+          productNameLower.includes("spout") ||
+          productNameLower.includes("bath")
+        )
+          areaName = "Shower Area";
       }
 
-      // Strategy 2: Fallback - try to guess area from product name (common for Grohe)
-      // This is very useful when areaValue is not stored yet
-      let inferredArea = "Unassigned";
-
-      const productNameLower = (p.name || "").toLowerCase();
-
-      if (
-        productNameLower.includes("basin") ||
-        (productNameLower.includes("mixer") &&
-          (productNameLower.includes("basin") ||
-            productNameLower.includes("pop-up")))
-      ) {
-        inferredArea = "Basin Area";
-      } else if (
-        productNameLower.includes("shower") ||
-        productNameLower.includes("headshower") ||
-        productNameLower.includes("thermostatic") ||
-        productNameLower.includes("diverter")
-      ) {
-        inferredArea = "Shower Area";
-      } else if (
-        productNameLower.includes("wc") ||
-        productNameLower.includes("toilet") ||
-        productNameLower.includes("brush")
-      ) {
-        inferredArea = "WC Area";
-      } else if (
-        productNameLower.includes("spout") ||
-        productNameLower.includes("bath") ||
-        productNameLower.includes("cascade")
-      ) {
-        inferredArea = "Shower Area"; // or create "Bath Area" if needed
-      } else if (
-        productNameLower.includes("mirror") ||
-        productNameLower.includes("towel") ||
-        productNameLower.includes("holder") ||
-        productNameLower.includes("dispenser")
-      ) {
-        inferredArea = "Basin Area"; // most accessories go here
-      }
-
-      return {
-        ...p,
-        areaName: inferredArea,
-      };
+      return { ...p, areaName };
     });
   }, []);
+
   const enrichedProducts = useMemo(() => {
     const floors =
       activeVersionData.quotation?.floors || quotation?.floors || [];
-
     return enrichProductsWithAreas(allProducts, floors);
   }, [
     allProducts,
@@ -393,8 +327,23 @@ const NewQuotationsDetails = () => {
     quotation,
     enrichProductsWithAreas,
   ]);
+  // ── Check if products have proper area assignment (Key Fix) ─────────────
+  const hasProperAreaAssignment = useMemo(() => {
+    return enrichedProducts.some((p) => {
+      return (
+        p.areaValue ||
+        p.areaId ||
+        (p.areaName &&
+          p.areaName !== "Unassigned" &&
+          p.areaName !== "Unassigned Area" &&
+          !["Basin Area", "Shower Area", "WC Area", "Unassigned"].includes(
+            p.areaName,
+          ))
+      );
+    });
+  }, [enrichedProducts]);
 
-  // ── Grouping Helpers (unchanged) ────────────────────────────────────────
+  // ── Grouping Helpers ────────────────────────────────────────────────────
   const groupProductsByFloorAndRoom = (products = []) => {
     const map = new Map();
     products.forEach((p) => {
@@ -435,32 +384,26 @@ const NewQuotationsDetails = () => {
     return groups;
   };
 
-  // ── Render Area-wise Page (All 3 Areas on ONE page | Max 8 products per area) ──
+  // ── Render Area-wise Page ───────────────────────────────────────────────
   const renderAreaWisePageForRoom = (roomGroup) => {
     const { floorName, roomName, products } = roomGroup;
     const areaGroups = groupProductsByAreaName(products);
-
-    const allAreaEntries = Object.entries(areaGroups);
-    const mainAreas = allAreaEntries.slice(0, 3); // Basin, Shower, WC
+    const mainAreas = Object.entries(areaGroups).slice(0, 3);
 
     const ZONE_LAYOUT = [
-      { top: "26%", left: "2%", width: "29%" }, // SHOWER AREA
-      { top: "26%", right: "2%", width: "29%" }, // WC AREA
-      { top: "28%", left: "37%", width: "29%" }, // BASIN AREA
+      { top: "26%", left: "2%", width: "29%" }, // Shower
+      { top: "26%", right: "2%", width: "29%" }, // WC
+      { top: "28%", left: "37%", width: "29%" }, // Basin
     ];
 
     const pages = [];
-
-    // Calculate max chunks needed across all areas
     const maxChunks = Math.max(
       ...mainAreas.map(([_, items]) => Math.ceil(items.length / 8)),
       1,
     );
 
-    // Create one page per chunk (so all 3 areas stay together)
     for (let chunkIndex = 0; chunkIndex < maxChunks; chunkIndex++) {
       const isContinuation = chunkIndex > 0;
-
       pages.push(
         <div
           key={`room-area-page-${floorName}-${roomName}-${chunkIndex}`}
@@ -490,22 +433,12 @@ const NewQuotationsDetails = () => {
 
           <div
             style={{
-              position: "absolute",
-              inset: 0,
-
-              zIndex: 1,
-            }}
-          />
-
-          <div
-            style={{
               position: "relative",
               zIndex: 2,
               padding: "35px 30px",
               height: "100%",
             }}
           >
-            {/* Header */}
             <div style={{ textAlign: "center", marginBottom: 25 }}>
               <h2
                 style={{
@@ -529,13 +462,11 @@ const NewQuotationsDetails = () => {
               </h3>
             </div>
 
-            {/* Three Areas Layout */}
             <div style={{ position: "absolute", inset: 0 }}>
               {mainAreas.map(([areaName, allItems], areaIndex) => {
                 const zone = ZONE_LAYOUT[areaIndex];
                 if (!zone) return null;
 
-                // Get only 8 products for current chunk
                 const start = chunkIndex * 8;
                 const items = allItems.slice(start, start + 8);
 
@@ -550,7 +481,6 @@ const NewQuotationsDetails = () => {
                       gap: "12px",
                     }}
                   >
-                    {/* Products Grid - 2 products per row */}
                     <div
                       style={{
                         display: "grid",
@@ -561,15 +491,7 @@ const NewQuotationsDetails = () => {
                       {items.map((p, i) => (
                         <div
                           key={i}
-                          style={{
-                            padding: "10px 8px",
-
-                            textAlign: "center",
-
-                            flexDirection: "column",
-                            alignItems: "center",
-                            gap: "6px",
-                          }}
+                          style={{ padding: "10px 8px", textAlign: "center" }}
                         >
                           {p.imageUrl ? (
                             <img
@@ -592,8 +514,13 @@ const NewQuotationsDetails = () => {
                               }}
                             />
                           )}
-
-                          <div style={{ fontSize: "0.77em", lineHeight: 1.3 }}>
+                          <div
+                            style={{
+                              fontSize: "0.77em",
+                              lineHeight: 1.3,
+                              marginTop: "6px",
+                            }}
+                          >
                             <div style={{ fontWeight: 600 }}>{p.name}</div>
                             {p.quantity > 1 && (
                               <div style={{ color: "#666" }}>
@@ -604,20 +531,6 @@ const NewQuotationsDetails = () => {
                         </div>
                       ))}
                     </div>
-
-                    {/* Remaining count indicator */}
-                    {chunkIndex === 0 && allItems.length > 8 && (
-                      <div
-                        style={{
-                          textAlign: "center",
-                          fontSize: "0.82em",
-                          color: "#d32f2f",
-                          marginTop: "6px",
-                        }}
-                      >
-                        + {allItems.length - 8} more on next page
-                      </div>
-                    )}
                   </div>
                 );
               })}
@@ -626,11 +539,10 @@ const NewQuotationsDetails = () => {
         </div>,
       );
     }
-
     return pages;
   };
-  // ── Render Pages ────────────────────────────────────────────────────────
-  // ── Render Pages ────────────────────────────────────────────────────────
+
+  // ── Render All Pages ────────────────────────────────────────────────────
   const renderPages = (getShouldShowColumn) => {
     const shouldShowColumn = getShouldShowColumn || (() => true);
     const pages = [];
@@ -641,8 +553,11 @@ const NewQuotationsDetails = () => {
       let localSno = startSno;
       return (
         <>
-          <h3 style={{ color: "#d32f2f", margin: "20px 0 10px" }}>{title}</h3>
+          {title && (
+            <h3 style={{ color: "#d32f2f", margin: "20px 0 10px" }}>{title}</h3>
+          )}
           <table className={styles.productTable}>
+            {/* Table content - same as before */}
             <colgroup>
               {shouldShowColumn("sno") && <col className={styles.sno} />}
               {shouldShowColumn("name") && <col className={styles.name} />}
@@ -655,7 +570,6 @@ const NewQuotationsDetails = () => {
               )}
               {shouldShowColumn("total") && <col className={styles.total} />}
             </colgroup>
-
             <thead>
               <tr>
                 {shouldShowColumn("sno") && <th>S.No</th>}
@@ -668,27 +582,15 @@ const NewQuotationsDetails = () => {
                 {shouldShowColumn("total") && <th>Total</th>}
               </tr>
             </thead>
-
             <tbody>
               {items.map((p) => {
-                const matchingItem =
-                  quotation?.products?.find(
-                    (it) => it.productId === p.productId,
-                  ) ||
-                  quotation?.items?.find(
-                    (it) => it.productId === p.productId,
-                  ) ||
-                  p;
-
+                const matchingItem = p;
                 const code =
-                  matchingItem?.companyCode ||
-                  matchingItem?.productCode ||
-                  p.companyCode ||
-                  "—";
-                const img = matchingItem?.imageUrl || p.imageUrl || "";
-                const mrp = Number(matchingItem?.price ?? p.price ?? 0);
-                const qty = Number(matchingItem?.quantity ?? p.quantity ?? 1);
-                const lineTotal = Number(matchingItem?.total ?? p.total ?? 0);
+                  matchingItem?.companyCode || matchingItem?.productCode || "—";
+                const img = matchingItem?.imageUrl || "";
+                const mrp = Number(matchingItem?.price ?? 0);
+                const qty = Number(matchingItem?.quantity ?? 1);
+                const lineTotal = Number(matchingItem?.total ?? 0);
                 const discValue = Number(matchingItem?.discount ?? 0);
                 const discType = (
                   matchingItem?.discountType ?? "percent"
@@ -703,7 +605,6 @@ const NewQuotationsDetails = () => {
                 }
 
                 localSno++;
-
                 return (
                   <tr key={p.productId || `item-${localSno}`}>
                     {shouldShowColumn("sno") && (
@@ -711,7 +612,7 @@ const NewQuotationsDetails = () => {
                     )}
                     {shouldShowColumn("name") && (
                       <td className={styles.prodNameCell}>
-                        {matchingItem?.name || p.name || "—"}
+                        {matchingItem?.name || p.name}
                       </td>
                     )}
                     {shouldShowColumn("code") && <td>{code}</td>}
@@ -747,7 +648,7 @@ const NewQuotationsDetails = () => {
       );
     };
 
-    // Cover Page
+    // Cover & Letterhead Pages (unchanged)
     pages.push(
       <div key="cover" className={`${styles.coverPage} page`}>
         <img src={coverImage} alt="Cover" className={styles.coverBg} />
@@ -759,7 +660,6 @@ const NewQuotationsDetails = () => {
       </div>,
     );
 
-    // Letterhead Page
     pages.push(
       <div key="letterhead" className={`${styles.letterheadPage} page`}>
         <img
@@ -794,7 +694,7 @@ const NewQuotationsDetails = () => {
       </div>,
     );
 
-    // Main Products Pages
+    // Main Products & Optional Items (unchanged)
     let remainingMain = [...mainProducts];
     let globalSno = 0;
 
@@ -827,7 +727,6 @@ const NewQuotationsDetails = () => {
       remainingMain = remainingMain.slice(itemsThisPage.length);
     }
 
-    // Optional Products
     if (optionalProducts.length > 0) {
       pages.push(
         <div key="optional-page" className={`${styles.productPage} page`}>
@@ -847,25 +746,13 @@ const NewQuotationsDetails = () => {
             </div>
           </div>
           {renderProductTable(optionalProducts, "Optional Items / Add-ons")}
-          <div
-            style={{
-              marginTop: 20,
-              fontSize: "0.9em",
-              color: "#666",
-              textAlign: "center",
-            }}
-          >
-            * These are optional items. Final selection will be confirmed at the
-            time of order.
-          </div>
         </div>,
       );
     }
 
-    // Site Layout Pages
-    if (hasSiteLayout) {
+    // ==================== SITE LAYOUT VISUAL PAGES (Only if properly assigned) ====================
+    if (hasProperAreaAssignment && hasSiteLayout) {
       const roomGroups = groupProductsByFloorAndRoom(enrichedProducts);
-
       roomGroups.forEach((roomGroup) => {
         if (roomGroup.products?.length > 0) {
           const areaPages = renderAreaWisePageForRoom(roomGroup);
@@ -873,7 +760,8 @@ const NewQuotationsDetails = () => {
         }
       });
     }
-    // ==================== 2. SITE LAYOUT SUMMARY (NEW - TABULAR) ====================
+
+    // ==================== SITE SUMMARY (Tabular) ====================
     if (hasSiteLayout && (floorTotals.length > 0 || roomTotals.length > 0)) {
       pages.push(
         <div
@@ -881,6 +769,7 @@ const NewQuotationsDetails = () => {
           className={`${styles.productPage} page`}
           style={{ pageBreakBefore: "always" }}
         >
+          {/* Your existing summary tables for Floor-wise, Room-wise, Area-wise */}
           <div className={styles.pageTopHeader}>
             <div>
               <div className={styles.clientName}>{customerName}</div>
@@ -1173,9 +1062,8 @@ const NewQuotationsDetails = () => {
         </div>,
       );
     }
-    // ==================== 2. FINANCIAL SUMMARY (SECOND) ====================
+
     // ==================== FINANCIAL SUMMARY ====================
-    // ==================== 1. MAIN FINANCIAL SUMMARY ====================
     pages.push(
       <div key="summary-page" className={`${styles.productPage} page`}>
         <div className={styles.pageTopHeader}>
@@ -1204,9 +1092,8 @@ const NewQuotationsDetails = () => {
           SUMMARY
         </h2>
 
-        <div className={styles.finalSummaryWrapper} style={{ marginTop: 20 }}>
+        <div className={styles.finalSummaryWrapper}>
           <div className={styles.finalSummarySection}>
-            {/* Left Side - Breakdown */}
             <div className={styles.summaryLeft}>
               <div className={styles.summaryRow}>
                 <span>
@@ -1214,7 +1101,6 @@ const NewQuotationsDetails = () => {
                 </span>
                 <span>₹{grossTotalBeforeDiscount.toLocaleString("en-IN")}</span>
               </div>
-
               {totalProductDiscount > 0 && (
                 <div className={styles.summaryRow}>
                   <span style={{ color: "#f5222d" }}>Discount</span>
@@ -1223,7 +1109,6 @@ const NewQuotationsDetails = () => {
                   </span>
                 </div>
               )}
-
               {extraDiscount > 0 && (
                 <div className={styles.summaryRow}>
                   <span style={{ color: "#fa8c16" }}>Extra Discount</span>
@@ -1234,31 +1119,14 @@ const NewQuotationsDetails = () => {
               )}
             </div>
 
-            {/* Right Side - Final Total */}
             <div className={styles.summaryRight}>
-              <div
-                className={styles.totalAmount}
-                style={{
-                  fontSize: "1.25em",
-                  color: "#d32f2f",
-                  marginBottom: "8px",
-                }}
-              >
+              <div className={styles.totalAmount}>
                 <strong>GRAND TOTAL</strong>
               </div>
-
-              <div
-                style={{ fontSize: "2.35em", fontWeight: 700, color: "#000" }}
-              >
+              <div style={{ fontSize: "2.35em", fontWeight: 700 }}>
                 ₹{finalAmount.toLocaleString("en-IN")}
               </div>
-
-              <div
-                className={styles.amountInWords}
-                style={{ marginTop: 12, fontSize: "1.05em" }}
-              >
-                {finalAmountInWords}
-              </div>
+              <div className={styles.amountInWords}>{finalAmountInWords}</div>
             </div>
           </div>
         </div>
@@ -1268,7 +1136,7 @@ const NewQuotationsDetails = () => {
     return pages;
   };
 
-  // ── Export Handler (unchanged) ──────────────────────────────────────────
+  // Export Handler (unchanged)
   const handleExport = async () => {
     if (!quotationRef.current) return;
     setIsExporting(true);
@@ -1322,7 +1190,6 @@ const NewQuotationsDetails = () => {
     }
   };
 
-  // Loading & Error States
   if (qLoading || vLoading || custLoading || addrLoading) {
     return (
       <Spin
@@ -1542,53 +1409,7 @@ const NewQuotationsDetails = () => {
             <div className={styles.printArea}>{renderPages(() => true)}</div>
           </div>
 
-          {/* STICKY VERSION TABS */}
-          <div
-            style={{
-              position: "sticky",
-              bottom: 0,
-              left: 0,
-              right: 0,
-              background: "#fff",
-              borderTop: "1px solid #e8e8e8",
-              boxShadow: "0 -4px 16px rgba(0,0,0,0.08)",
-              zIndex: 1000,
-              padding: "12px 40px",
-            }}
-          >
-            <div style={{ maxWidth: 1400, margin: "0 auto" }}>
-              <Tabs
-                activeKey={activeVersion}
-                onChange={setActiveVersion}
-                tabBarExtraContent={
-                  <Tooltip title="Version history">
-                    <Button type="text" icon={<HistoryOutlined />}>
-                      History
-                    </Button>
-                  </Tooltip>
-                }
-                centered
-                size="default"
-              >
-                {versions.map((ver) => (
-                  <Tabs.TabPane
-                    key={ver.version}
-                    tab={
-                      <Space size={8}>
-                        <span>{ver.label}</span>
-                        {ver.isCurrent && <Tag color="green">Latest</Tag>}
-                        <Text type="secondary" style={{ fontSize: "0.85em" }}>
-                          {ver.timeAgo}
-                        </Text>
-                      </Space>
-                    }
-                  />
-                ))}
-              </Tabs>
-            </div>
-          </div>
-
-          {/* Hidden export container */}
+          {/* Hidden Export Container */}
           <div
             ref={quotationRef}
             style={{ position: "absolute", left: "-9999px", top: 0 }}

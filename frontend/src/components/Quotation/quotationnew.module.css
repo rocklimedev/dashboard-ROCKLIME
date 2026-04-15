@@ -341,7 +341,7 @@
 
 /* All cells get clean internal borders */
 .productTable th,
-.productTable td {
+.productTable td { text-align: right;
   border: 1px solid #d8d8d8;
   /* light gray – elegant, not harsh */
   padding: 10px 4px;
@@ -633,4 +633,10 @@ td.image {
 /* Hover */
 .version-tabs .ant-tabs-tab:hover {
   color: #000000;
+}
+
+.productTable th:nth-child(7),  /* Adjust index based on your column order */
+.productTable td:nth-child(7) {
+  text-align: right;
+  font-weight: 600;
 }

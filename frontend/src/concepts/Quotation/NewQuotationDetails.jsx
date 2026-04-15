@@ -62,6 +62,7 @@ const NewQuotationsDetails = () => {
     image: true,
     unit: true,
     mrp: true,
+    unitPrice: true, // ← New Column
     discount: true,
     total: true,
   });
@@ -259,6 +260,7 @@ const NewQuotationsDetails = () => {
       activeVersionData.quotation?.floors || quotation?.floors || [];
     return Array.isArray(floors) && floors.length > 0;
   }, [activeVersionData.quotation, quotation]);
+
   // ── Enrich Products with Areas ──────────────────────────────────────────
   const enrichProductsWithAreas = useCallback((allProducts, floors) => {
     const areaMap = new Map();
@@ -277,18 +279,12 @@ const NewQuotationsDetails = () => {
 
     return allProducts.map((p) => {
       let areaName = "Unassigned";
-
-      // Priority 1: Explicit from payload
       if (p.areaValue || p.areaId) {
         const key = `${p.roomId}_${p.areaValue || p.areaId}`;
         if (areaMap.has(key)) areaName = areaMap.get(key);
-      }
-      // Priority 2: Already assigned
-      else if (p.areaName && p.areaName !== "Unassigned") {
+      } else if (p.areaName && p.areaName !== "Unassigned") {
         areaName = p.areaName;
-      }
-      // Priority 3: Inference (fallback)
-      else {
+      } else {
         const productNameLower = (p.name || "").toLowerCase();
         if (
           productNameLower.includes("basin") ||
@@ -312,7 +308,6 @@ const NewQuotationsDetails = () => {
         )
           areaName = "Shower Area";
       }
-
       return { ...p, areaName };
     });
   }, []);
@@ -327,7 +322,7 @@ const NewQuotationsDetails = () => {
     quotation,
     enrichProductsWithAreas,
   ]);
-  // ── Check if products have proper area assignment (Key Fix) ─────────────
+
   const hasProperAreaAssignment = useMemo(() => {
     return enrichedProducts.some((p) => {
       return (
@@ -391,9 +386,9 @@ const NewQuotationsDetails = () => {
     const mainAreas = Object.entries(areaGroups).slice(0, 3);
 
     const ZONE_LAYOUT = [
-      { top: "26%", left: "2%", width: "29%" }, // Shower
-      { top: "26%", right: "2%", width: "29%" }, // WC
-      { top: "28%", left: "37%", width: "29%" }, // Basin
+      { top: "26%", left: "2%", width: "29%" },
+      { top: "26%", right: "2%", width: "29%" },
+      { top: "28%", left: "37%", width: "29%" },
     ];
 
     const pages = [];
@@ -542,7 +537,7 @@ const NewQuotationsDetails = () => {
     return pages;
   };
 
-  // ── Render All Pages ────────────────────────────────────────────────────
+  // ── Render All Pages with Unit Price Column ─────────────────────────────
   const renderPages = (getShouldShowColumn) => {
     const shouldShowColumn = getShouldShowColumn || (() => true);
     const pages = [];
@@ -557,7 +552,6 @@ const NewQuotationsDetails = () => {
             <h3 style={{ color: "#d32f2f", margin: "20px 0 10px" }}>{title}</h3>
           )}
           <table className={styles.productTable}>
-            {/* Table content - same as before */}
             <colgroup>
               {shouldShowColumn("sno") && <col className={styles.sno} />}
               {shouldShowColumn("name") && <col className={styles.name} />}
@@ -565,6 +559,9 @@ const NewQuotationsDetails = () => {
               {shouldShowColumn("image") && <col className={styles.image} />}
               {shouldShowColumn("unit") && <col className={styles.unit} />}
               {shouldShowColumn("mrp") && <col className={styles.mrp} />}
+              {shouldShowColumn("unitPrice") && (
+                <col style={{ width: "95px" }} />
+              )}
               {shouldShowColumn("discount") && (
                 <col className={styles.discount} />
               )}
@@ -578,23 +575,31 @@ const NewQuotationsDetails = () => {
                 {shouldShowColumn("image") && <th>Image</th>}
                 {shouldShowColumn("unit") && <th>Unit</th>}
                 {shouldShowColumn("mrp") && <th>MRP</th>}
+                {shouldShowColumn("unitPrice") && <th>Unit Price</th>}
                 {shouldShowColumn("discount") && <th>Discount</th>}
                 {shouldShowColumn("total") && <th>Total</th>}
               </tr>
             </thead>
             <tbody>
               {items.map((p) => {
-                const matchingItem = p;
-                const code =
-                  matchingItem?.companyCode || matchingItem?.productCode || "—";
-                const img = matchingItem?.imageUrl || "";
-                const mrp = Number(matchingItem?.price ?? 0);
-                const qty = Number(matchingItem?.quantity ?? 1);
-                const lineTotal = Number(matchingItem?.total ?? 0);
-                const discValue = Number(matchingItem?.discount ?? 0);
-                const discType = (
-                  matchingItem?.discountType ?? "percent"
-                ).toLowerCase();
+                const code = p.companyCode || p.productCode || "—";
+                const img = p.imageUrl || "";
+                const mrp = Number(p.price ?? 0);
+                const qty = Number(p.quantity ?? 1);
+                const lineTotal = Number(p.total ?? 0);
+                const discValue = Number(p.discount ?? 0);
+                const discType = (p.discountType ?? "percent").toLowerCase();
+
+                // Calculate Unit Price after discount
+                let unitPrice = mrp;
+                if (discValue > 0) {
+                  if (discType === "percent") {
+                    unitPrice = mrp * (1 - discValue / 100);
+                  } else {
+                    unitPrice = mrp - discValue;
+                  }
+                }
+                unitPrice = Math.round(unitPrice * 100) / 100;
 
                 let displayDiscount = "—";
                 if (discValue > 0) {
@@ -611,9 +616,7 @@ const NewQuotationsDetails = () => {
                       <td className={styles.snoCell}>{localSno}.</td>
                     )}
                     {shouldShowColumn("name") && (
-                      <td className={styles.prodNameCell}>
-                        {matchingItem?.name || p.name}
-                      </td>
+                      <td className={styles.prodNameCell}>{p.name}</td>
                     )}
                     {shouldShowColumn("code") && <td>{code}</td>}
                     {shouldShowColumn("image") && (
@@ -630,6 +633,11 @@ const NewQuotationsDetails = () => {
                     {shouldShowColumn("unit") && <td>{qty}</td>}
                     {shouldShowColumn("mrp") && (
                       <td>₹{mrp.toLocaleString("en-IN")}</td>
+                    )}
+                    {shouldShowColumn("unitPrice") && (
+                      <td style={{ fontWeight: 600, color: "#d32f2f" }}>
+                        ₹{unitPrice.toLocaleString("en-IN")}
+                      </td>
                     )}
                     {shouldShowColumn("discount") && (
                       <td className={styles.discountCell}>{displayDiscount}</td>
@@ -648,7 +656,7 @@ const NewQuotationsDetails = () => {
       );
     };
 
-    // Cover & Letterhead Pages (unchanged)
+    // Cover & Letterhead Pages
     pages.push(
       <div key="cover" className={`${styles.coverPage} page`}>
         <img src={coverImage} alt="Cover" className={styles.coverBg} />
@@ -694,7 +702,7 @@ const NewQuotationsDetails = () => {
       </div>,
     );
 
-    // Main Products & Optional Items (unchanged)
+    // Main Products
     let remainingMain = [...mainProducts];
     let globalSno = 0;
 
@@ -727,6 +735,7 @@ const NewQuotationsDetails = () => {
       remainingMain = remainingMain.slice(itemsThisPage.length);
     }
 
+    // Optional Items
     if (optionalProducts.length > 0) {
       pages.push(
         <div key="optional-page" className={`${styles.productPage} page`}>
@@ -750,7 +759,7 @@ const NewQuotationsDetails = () => {
       );
     }
 
-    // ==================== SITE LAYOUT VISUAL PAGES (Only if properly assigned) ====================
+    // Site Layout Visual Pages
     if (hasProperAreaAssignment && hasSiteLayout) {
       const roomGroups = groupProductsByFloorAndRoom(enrichedProducts);
       roomGroups.forEach((roomGroup) => {
@@ -761,7 +770,7 @@ const NewQuotationsDetails = () => {
       });
     }
 
-    // ==================== SITE SUMMARY (Tabular) ====================
+    // Site Summary
     if (hasSiteLayout && (floorTotals.length > 0 || roomTotals.length > 0)) {
       pages.push(
         <div
@@ -1063,7 +1072,7 @@ const NewQuotationsDetails = () => {
       );
     }
 
-    // ==================== FINANCIAL SUMMARY ====================
+    // Financial Summary
     pages.push(
       <div key="summary-page" className={`${styles.productPage} page`}>
         <div className={styles.pageTopHeader}>
@@ -1136,7 +1145,7 @@ const NewQuotationsDetails = () => {
     return pages;
   };
 
-  // Export Handler (unchanged)
+  // Export Handler
   const handleExport = async () => {
     if (!quotationRef.current) return;
     setIsExporting(true);
@@ -1267,7 +1276,7 @@ const NewQuotationsDetails = () => {
                         background: "#fff",
                         borderRadius: 8,
                         boxShadow: "0 6px 16px rgba(0,0,0,0.12)",
-                        minWidth: 220,
+                        minWidth: 240,
                       }}
                     >
                       <div
@@ -1279,7 +1288,6 @@ const NewQuotationsDetails = () => {
                       >
                         Columns to include in export
                       </div>
-
                       <Checkbox.Group
                         style={{ width: "100%" }}
                         value={Object.keys(visibleColumns).filter(
@@ -1293,6 +1301,7 @@ const NewQuotationsDetails = () => {
                             image: checkedValues.includes("image"),
                             unit: checkedValues.includes("unit"),
                             mrp: checkedValues.includes("mrp"),
+                            unitPrice: checkedValues.includes("unitPrice"),
                             discount: checkedValues.includes("discount"),
                             total: checkedValues.includes("total"),
                           });
@@ -1307,16 +1316,18 @@ const NewQuotationsDetails = () => {
                           <Checkbox value="name">Product Name</Checkbox>
                           <Checkbox value="code">Code</Checkbox>
                           <Checkbox value="image">Image</Checkbox>
-                          <Divider style={{ margin: "8px 0" }} />
                           <Checkbox value="unit">Unit / Qty</Checkbox>
                           <Checkbox value="mrp">MRP</Checkbox>
+                          <Checkbox value="unitPrice">
+                            Unit Price (After Discount)
+                          </Checkbox>
+                          <Divider style={{ margin: "8px 0" }} />
                           <Checkbox value="discount">Discount</Checkbox>
                           <Checkbox value="total">Total</Checkbox>
                         </Space>
                       </Checkbox.Group>
 
                       <Divider style={{ margin: "12px 0 8px" }} />
-
                       <div style={{ textAlign: "right" }}>
                         <Button
                           size="small"
@@ -1329,6 +1340,7 @@ const NewQuotationsDetails = () => {
                               image: true,
                               unit: true,
                               mrp: true,
+                              unitPrice: true,
                               discount: true,
                               total: true,
                             })
@@ -1342,7 +1354,7 @@ const NewQuotationsDetails = () => {
                 >
                   <Button icon={<SettingOutlined />}>
                     Export Columns{" "}
-                    {Object.values(visibleColumns).filter(Boolean).length}/8
+                    {Object.values(visibleColumns).filter(Boolean).length}/9
                   </Button>
                 </Dropdown>
 
