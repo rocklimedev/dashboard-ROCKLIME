@@ -69,7 +69,6 @@
   letter-spacing: 12px;
   text-transform: uppercase;
   margin: 351px 0;
-
 }
 
 /* ======================= PAGE 2: LETTERHEAD ======================= */
@@ -261,7 +260,7 @@
 }
 
 /* Text block – right */
-.letterheadFooter>div {
+.letterheadFooter > div {
   text-align: left;
   /* NOT center */
   font-size: 14px;
@@ -269,7 +268,7 @@
 }
 
 /* Optional: slightly mute phone + website */
-.letterheadFooter>div span {
+.letterheadFooter > div span {
   color: #444;
 }
 
@@ -320,34 +319,27 @@
   font-size: 13px;
   color: #222;
   table-layout: fixed;
-  /* very important for stable columns */
-  border: 1px solid #d8d8d8;
-  /* outer frame – subtle luxury look */
+  border: 2px solid #e31e24; /* Outer border - strong red */
   background: white;
 }
 
+/* All cells get clean internal borders */
 .productTable thead th {
   background: #e31e24;
   color: white;
   font-weight: 700;
   font-size: 13px;
-  padding: 14px 8px;
-  text-align: center;
+  text-align: center; /* Already centered - good */
   letter-spacing: 0.4px;
-  text-transform: uppercase;
   border-bottom: 2px solid #c00;
-  /* slightly darker red bottom edge */
 }
-
-/* All cells get clean internal borders */
 .productTable th,
-.productTable td { text-align: right;
-  border: 1px solid #d8d8d8;
-  /* light gray – elegant, not harsh */
-  padding: 10px 4px;
+.productTable td {
+  border: 1px solid #333; /* Darker, clear table lines */
+  padding: 10px 6px;
   vertical-align: middle;
+  text-align: center !important;
 }
-
 /* Column-specific tweaks */
 .productTable col.sno {
   width: 6.5%;
@@ -390,29 +382,26 @@
 }
 
 .prodNameCell {
-  text-align: left;
+  text-align: left !important; /* Product name left-aligned (recommended) */
+  padding: 12px 14px !important;
   font-weight: 500;
   line-height: 1.38;
   font-size: 13px;
-  padding: 12px 14px !important;
   hyphens: auto;
   word-break: break-word;
-  white-space: normal;
 }
 
 /* Product image cell */
 td.image {
+  text-align: center !important;
   padding: 8px !important;
-  text-align: center;
 }
 
 .prodImg {
   max-height: 68px;
   max-width: 100%;
   object-fit: contain;
-  /* border: 1px solid #eee;
   border-radius: 4px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.08); */
 }
 
 /* Right-aligned numeric cells */
@@ -431,15 +420,12 @@ td.image {
   background-color: #fdfdfd;
 }
 
-/* Hover (screen only) */
 @media screen {
   .productTable tbody tr:hover {
     background-color: #fff5f5;
-    /* very light red tint */
     transition: background-color 0.12s;
   }
 }
-
 
 /* LONG PRODUCT NAMES – NEVER BREAK THE LAYOUT */
 .prodNameCell {
@@ -468,16 +454,14 @@ td.image {
   border: 0px solid #eee;
 }
 
-.snoCell {
-  font-weight: bold;
-  font-size: 16px;
-  color: #333;
-}
-
-.discountCell, .totalCell {
-  color: #333;
-  /* font-weight: bold; */
-  font-size: 13px;
+.snoCell,
+.totalCell,
+.discountCell,
+.mrpCell {
+  text-align: right !important;
+  font-weight: 600;
+  color: #111;
+  font-size: 13.5px;
 }
 
 /* REPLACE THE OLD .finalSummarySection COMPLETELY WITH THIS */
@@ -539,7 +523,7 @@ td.image {
 
 /* PAGE NUMBER – LUXURY TOUCH */
 .productPage::after {
-  content: "Page "counter(page);
+  content: "Page " counter(page);
   counter-increment: page;
   position: absolute;
   bottom: 20px;
@@ -551,7 +535,8 @@ td.image {
 
 /* ======================= PRINT – PERFECT MATCH ======================= */
 @media print {
-  body, html {
+  body,
+  html {
     margin: 0 !important;
     padding: 0 !important;
     background: white !important;
@@ -564,7 +549,9 @@ td.image {
     box-shadow: none !important;
   }
 
-  .coverPage, .letterheadPage, .productPage {
+  .coverPage,
+  .letterheadPage,
+  .productPage {
     margin: 0 !important;
     box-shadow: none !important;
     border-radius: 0 !important;
@@ -635,9 +622,8 @@ td.image {
   color: #000000;
 }
 
-.productTable th:nth-child(7),  /* Adjust index based on your column order */
-.productTable td:nth-child(7) {
-  text-align: right;
+/* Unit Price Column (new) */
+.productTable td:nth-child(7),
+.productTable th:nth-child(7) {
   font-weight: 600;
 }
-/**/
