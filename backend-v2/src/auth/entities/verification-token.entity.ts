@@ -13,26 +13,27 @@ import {
 @Index(['expiresAt'])
 export class VerificationToken {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
-  @Column({ type: 'char', length: 36 })
-  userId: string;
+  @Column({ type: 'uuid' })
+  userId!: string;
 
-  @Column()
-  token: string;
+  // ⚠️ Store HASHED token
+  @Column({ type: 'varchar', length: 255 })
+  token!: string;
 
-  @Column()
-  email: string;
+  @Column({ type: 'varchar', length: 255 })
+  email!: string;
 
   @Column({ default: false })
-  isVerified: boolean;
+  isVerified!: boolean;
 
-  @Column({ type: 'datetime' })
-  expiresAt: Date;
+  @Column({ type: 'timestamp' })
+  expiresAt!: Date;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }

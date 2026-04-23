@@ -1,13 +1,15 @@
-// src/carts/dto/add-single-product.dto.ts
-import { IsUUID, IsInt, Min } from 'class-validator';
+import { IsUUID, IsInt, Min, IsOptional } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class AddSingleProductDto {
   @IsUUID()
-  userId: string;
+  userId!: string;
 
   @IsUUID()
-  productId: string;
+  productId!: string;
 
+  @IsOptional()
+  @Type(() => Number)
   @IsInt()
   @Min(1)
   quantity?: number = 1;

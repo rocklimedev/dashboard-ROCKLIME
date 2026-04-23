@@ -5,15 +5,15 @@ import { AddressStatus } from '../entities/address.entity';
 export class CreateAddressDto {
   @IsString()
   @IsNotEmpty()
-  street: string;
+  street?: string;
 
   @IsString()
   @IsNotEmpty()
-  city: string;
+  city?: string;
 
   @IsString()
   @IsNotEmpty()
-  state: string;
+  state?: string;
 
   @IsString()
   @IsOptional()
@@ -21,7 +21,7 @@ export class CreateAddressDto {
 
   @IsString()
   @IsNotEmpty()
-  country: string;
+  country?: string;
 
   @IsUUID()
   @IsOptional()
