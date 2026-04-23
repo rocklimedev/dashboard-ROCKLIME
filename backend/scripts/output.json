@@ -1,3317 +1,2052 @@
 [
   {
+    "company_code": "1007372080",
+    "name": "SMART WASHER MANUAL BIDET",
+    "stock": 0
+  },
+  {
     "company_code": "100983SH00",
     "name": "euro 2.0 counter top basin",
-    "quantity": 0
+    "stock": 1
   },
   {
     "company_code": "100987SH00",
     "name": "EUROCOSMO VESSEL ROUND_CN",
-    "quantity": 0
+    "stock": 1
   },
   {
     "company_code": "101001SH00",
     "name": "euro ceramic 2.0 wc",
-    "quantity": 0
-  },
-  {
-    "company_code": "1013962080",
-    "name": "LOVEN WH TOLET W/O SC VN",
-    "quantity": 0
+    "stock": 1
   },
   {
     "company_code": "1023422430",
     "name": "ANGLE VALVE",
-    "quantity": 8
-  },
-  {
-    "company_code": "1024362430",
-    "name": "Stop Valve Ceramic Matte Black",
-    "quantity": 1
+    "stock": 8
   },
   {
     "company_code": "1024642430",
     "name": "WASTE SET BASIN",
-    "quantity": 2
+    "stock": 2
   },
   {
-    "company_code": "1025302431",
+    "company_code": "1025302431-",
     "name": "New Tempesta-F Trigger Spray Set",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "1029950200",
     "name": "LOW-COST FLUSHING CABLE SET",
-    "quantity": 5
+    "stock": 4
   },
   {
     "company_code": "103035BL00",
     "name": "aero-lite wc",
-    "quantity": 0
+    "stock": 4
   },
   {
     "company_code": "103650A001",
     "name": "STOP VALVE",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "103650AL01",
     "name": "",
-    "quantity": 4
+    "stock": 4
   },
   {
     "company_code": "103650DA01",
     "name": "STOP VALVE CERAMIC 901/2''",
-    "quantity": 10
+    "stock": 10
   },
   {
     "company_code": "103650GL01",
     "name": "angle valve cool sunrise",
-    "quantity": 6
+    "stock": 6
   },
   {
     "company_code": "103835AL01",
     "name": "simplicity square bath spout graphite",
-    "quantity": 0
+    "stock": 1
   },
   {
     "company_code": "103835DA01",
     "name": "SIMPLICITY SQUARE BATH SPOUT",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "103835GL01",
     "name": "SPOUT COOL SUNRISE",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "104583SH00",
     "name": "Euro Ceramics 2.0 W/H Toilet SQ 2/4L",
-    "quantity": 0
+    "stock": 1
   },
   {
     "company_code": "104590SH00",
     "name": "GROHE WASH BASIN TABLE TOP",
-    "quantity": 0
+    "stock": 1
   },
   {
     "company_code": "106868DL00",
     "name": "GRT AQUA TILES",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "1068690000",
     "name": "AQUA TILES",
-    "quantity": 3
+    "stock": 3
   },
   {
     "company_code": "1068810000",
     "name": "Aqua Tiles 4SC",
-    "quantity": 1
-  },
-  {
-    "company_code": "1068820000",
-    "name": "GRT AQUA TILES THM",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "107056DL00",
     "name": "HEAD SHOWER",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "1070580000",
     "name": "HEAD SHOWER",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "13255001",
     "name": "bau loop spout",
-    "quantity": 5
-  },
-  {
-    "company_code": "13262000",
-    "name": "Eurosmart Cosmo Button Spout",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "13303000",
     "name": "euro cube spout",
-    "quantity": 3
+    "stock": 2
   },
   {
     "company_code": "13304000",
     "name": "euro cube diverter spout",
-    "quantity": 4
+    "stock": 2
   },
   {
     "company_code": "134482433",
     "name": "Eurosmart Tub Spout",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "13449A01",
     "name": "ESSENCE NEW BATH SPOUT EXP.",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "19285001",
     "name": "Trimset Bath",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "19382000",
     "name": "euro smart cosmo diverter",
-    "quantity": 5
+    "stock": 5
   },
   {
     "company_code": "19409001",
     "name": "linear wall mounted basin mixer 149mm",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "19450003",
     "name": "euro smart new 2021 diverter",
-    "quantity": 5
+    "stock": 5
   },
   {
     "company_code": "194502433",
     "name": "Eurosmart SLM Trim Bath",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "19808001",
     "name": "costa concealed upper part",
-    "quantity": 7
+    "stock": 2
   },
   {
     "company_code": "19896000",
     "name": "euro cube diverter",
-    "quantity": 0
+    "stock": 2
   },
   {
     "company_code": "19917000",
     "name": "baucosmopolitan concealed upper part",
-    "quantity": 1
+    "stock": 21
   },
   {
     "company_code": "19917A00",
     "name": "VOLUME CONTROL TRIM",
-    "quantity": 6
+    "stock": 5
   },
   {
     "company_code": "19917ALO",
     "name": "VOLUME CONTROL TRIM",
-    "quantity": 5
+    "stock": 5
   },
   {
     "company_code": "19917DA0",
     "name": "CONCEALED VALVE",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "19917DA0",
     "name": "VOLUME CONTROL TRIM",
-    "quantity": 6
+    "stock": 6
   },
   {
     "company_code": "19917DL0",
     "name": "CONCEALED VALVE",
-    "quantity": 8
+    "stock": 8
   },
   {
     "company_code": "19917GL0",
     "name": "VOLUME CONTROL TRIM",
-    "quantity": 6
+    "stock": 6
   },
   {
     "company_code": "19917GN0",
     "name": "VOLUME CONTROL TRIM",
-    "quantity": 4
+    "stock": 4
   },
   {
     "company_code": "19967001",
     "name": "Basin 2-H Wall",
-    "quantity": 1
+    "stock": 2
   },
   {
     "company_code": "20235000",
     "name": "BAUFLOW BIB TAP",
-    "quantity": 3
+    "stock": 3
   },
   {
     "company_code": "20237001",
     "name": "bau loop bib tap",
-    "quantity": 4
+    "stock": 4
   },
   {
     "company_code": "20287000",
     "name": "bau flow wall mounted basin mixer",
-    "quantity": 4
+    "stock": 4
   },
   {
     "company_code": "20289001",
     "name": "bau loop wall mounted basin mixer",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "20474001",
     "name": "bau edge wall mounted basin mixer",
-    "quantity": 4
+    "stock": 4
   },
   {
     "company_code": "2201100M",
     "name": "TRIANGLE ANGLE WALL",
-    "quantity": 123
+    "stock": 85
   },
   {
     "company_code": "2201600M",
     "name": "(N) GROHE - ANGLE VALVE",
-    "quantity": 51
+    "stock": 46
   },
   {
     "company_code": "22037A00",
     "name": "ANGLE VALVE",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "22041001",
     "name": "ANGLE VALVE 1/2'' X 1/2''",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "22041AL0",
     "name": "ANGLE VALVE 1/2''X1/2''",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "22041DA0",
     "name": "ANGLR VALVE 1/2''X1/2''",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "22041GN0",
     "name": "ANGLE VALVE 1/2''X1/2''",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "22074KF0",
     "name": "ANGLE VALUE 1/2\"*3/8\"",
-    "quantity": 15
+    "stock": 15
   },
   {
     "company_code": "22940000",
     "name": "ANGLE VALUE , MINI TDL",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "23200000",
     "name": "OHM Roungh Inst. 2-H Wall GROHE",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "23303DA0",
     "name": "Grander OHM Basin",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "23319000",
     "name": "Basin 2 H Wall",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "23405001",
     "name": "Lineare Ohm",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "23447000",
     "name": "Eurocube",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "24068DA0",
     "name": "Grander OHM Trimset Bath",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "24077000",
     "name": "THERMOSTATE BATH MIXER",
-    "quantity": 5
+    "stock": 3
   },
   {
     "company_code": "24080000",
     "name": "SMART CONTROL TRIMSET",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "24092001",
     "name": "ESSENCE 3-WAY diverter",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "24095001",
     "name": "linear 3 way diverter",
-    "quantity": 2
+    "stock": 1
   },
   {
     "company_code": "24155000",
     "name": "Grt Cube Thm Trimset Bath",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "24247001",
     "name": "ALIRA OHM BASIN SMTH B M IN",
-    "quantity": 4
+    "stock": 4
   },
   {
     "company_code": "24249001",
     "name": "ALIRA OHM VESSEL BASIN SMTH",
-    "quantity": 4
+    "stock": 4
   },
   {
     "company_code": "24254001",
     "name": "ALIRA OHM SET BASIN 2-H M IN",
-    "quantity": 7
+    "stock": 1
   },
   {
     "company_code": "24260DA0",
     "name": "GRANDERA OHM TRIMSET BATH",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "24356000",
     "name": "ARTIO NEW OHM TRIM SHW.",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "26259000",
     "name": "RSH F-SERIES 10 '' HEADSHOWER SET (L)",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "26352000",
     "name": "Grohe health faucet",
-    "quantity": 12
+    "stock": 4
   },
   {
     "company_code": "26481000",
     "name": "RSH SMARTACTIVE 310",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "26508000",
     "name": "SHOWER SYSTEM",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "26554LS0",
     "name": "RSH SMARTACTIVE HANDSHOWER WHITE",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "26574000",
     "name": "3 spray hand shower 130mm",
-    "quantity": 3
+    "stock": 3
   },
   {
     "company_code": "26574LS0",
     "name": "RSH SMARTACTIVE HANDSHOWER WHITE",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "26582000",
     "name": "3 spray hand shower cube 130mm",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "26582LS0",
     "name": "RHS SMARTACTIVE CUBE HANDSHOWER",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "26658DL0",
     "name": "Rainshower Wall Union W/Holder",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "26663000",
     "name": "head shower with shower arm",
-    "quantity": 4
-  },
-  {
-    "company_code": "26664000",
-    "name": "250MM +142MM ARM",
-    "quantity": 1
+    "stock": 2
   },
   {
     "company_code": "266682430",
     "name": "Tempesta Headshower",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "26682000",
     "name": "TEMPESTA CUBE 250 H/S ST",
-    "quantity": 3
+    "stock": 3
   },
   {
     "company_code": "26683000",
     "name": "head shower with sealing shower arm",
-    "quantity": 4
+    "stock": 2
   },
   {
     "company_code": "266872430",
     "name": "HEADSHOWER",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "26731000",
     "name": "RSH AQUA MONO CEILING SHW",
-    "quantity": 0
+    "stock": 0
   },
   {
     "company_code": "26734000",
     "name": "RSH AQUA CASCADE CEILING SHW",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "26735000",
     "name": "RSH AQUA MIST CEILING SHW",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "26739000",
     "name": "concealed body for rain shower",
-    "quantity": 0
+    "stock": 0
   },
   {
     "company_code": "26746003",
     "name": "TEMPESTA CUBE 110 II HANDSHOWER WS8",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "26801DL0",
     "name": "SIDE SHOWER RSH AQUA",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "26802000",
     "name": "body jet 2 spray square",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "26866DA0",
     "name": "RSH AQUA STICK HANDSHOWER 6, 6I",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "26885DL0",
     "name": "RSH Aqua Stick Handshower 9.5l",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "27367000",
     "name": "EUPH COSMOPOLITAN STICK HANDSHOWER",
-    "quantity": 7
+    "stock": 2
   },
   {
     "company_code": "27369000",
     "name": "1SPRAY",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "27513A01",
     "name": "TRIGGER SPRAY SET",
-    "quantity": 4
+    "stock": 3
   },
   {
     "company_code": "27513AL1",
     "name": "NEW TEMPESTA-F TRIGGER SPRAY SET",
-    "quantity": 8
+    "stock": 8
   },
   {
     "company_code": "27513DA1",
     "name": "NEW TEMPESTA SPRAY SET",
-    "quantity": 3
+    "stock": 3
   },
   {
     "company_code": "27513DL1",
     "name": "TRIGGER SPRAY SET",
-    "quantity": 4
+    "stock": 4
   },
   {
     "company_code": "27513GL1",
     "name": "NEW TEMPESTA-F",
-    "quantity": 7
+    "stock": 7
   },
   {
     "company_code": "27513GN1",
     "name": "NEW TEMPESTA-F TRIGGER SPRAY SET",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "27541001",
     "name": "N Tempesta Cosmopolitan",
-    "quantity": 7
+    "stock": 5
   },
   {
     "company_code": "27572003",
     "name": "HANDSHOWER",
-    "quantity": 4
+    "stock": 3
   },
   {
     "company_code": "27573ALC",
     "name": "HANDSHOWER",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "27595001",
     "name": "SHOWER HOLDER ADJUST",
-    "quantity": 5
+    "stock": 5
   },
   {
     "company_code": "27693000",
     "name": "hand shower holder",
-    "quantity": 9
+    "stock": 9
   },
   {
     "company_code": "27698000",
     "name": "EUPHORIA CUBE STICK HANDSHOWER",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "27704000",
     "name": "SHOWER OUTLET ELBOW,1/2''",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "27799001",
     "name": "2 hand shower 2 spray with holder",
-    "quantity": 2
+    "stock": 2
+  },
+  {
+    "company_code": "27799003",
+    "name": "Tempesta 110 wall holder set",
+    "stock": 0
   },
   {
     "company_code": "27812IL1",
     "name": "Grohe health foucet",
-    "quantity": 7
+    "stock": 7
   },
   {
     "company_code": "27851000",
     "name": "GROHE SHOWER ARM",
-    "quantity": 6
+    "stock": 4
   },
   {
     "company_code": "27869001",
     "name": "head shower 100mm 4\"",
-    "quantity": 3
+    "stock": 3
   },
   {
     "company_code": "27969DA0",
     "name": "Grandera Shower Holder",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "2797DA0",
     "name": "Grandera Wall Union",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "28105001",
     "name": "METALL SHOWER HOSE 1500MM",
-    "quantity": 0
+    "stock": 0
   },
   {
     "company_code": "28143LS1",
     "name": "METAL SHOWER HOSE 150MM",
-    "quantity": 0
-  },
-  {
-    "company_code": "28151002",
-    "name": "RELAXAFLEX SHOWER HOSE",
-    "quantity": 1
+    "stock": 0
   },
   {
     "company_code": "28362001",
     "name": "SHOWER HOSE 1250 MM",
-    "quantity": 8
+    "stock": 8
   },
   {
     "company_code": "28388001",
     "name": "hand shower pipe 1750mm",
-    "quantity": 7
+    "stock": 7
   },
   {
     "company_code": "28409002",
     "name": "Shower Hose 1500mm",
-    "quantity": 13
+    "stock": 13
   },
   {
     "company_code": "28419003",
     "name": "Tempesta 110 Hand Shower 3-Spray, 9.5I",
-    "quantity": 4
+    "stock": 2
   },
   {
     "company_code": "28605000",
     "name": "hand shower holder",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "28605001",
     "name": "TEMPESTA SHOWER HOLDER",
-    "quantity": 1
+    "stock": 33
   },
   {
     "company_code": "28628000",
     "name": "WALL UNION",
-    "quantity": 2
+    "stock": 0
   },
   {
     "company_code": "28628001",
     "name": "Tempesta Wall Union W.Shw.Hold",
-    "quantity": 10
+    "stock": 8
   },
   {
     "company_code": "29049000",
     "name": "CONNECTION TUBE",
-    "quantity": 7
+    "stock": 7
   },
   {
     "company_code": "29058000",
     "name": "Waste Trap Basin 1 1/4''",
-    "quantity": 6
+    "stock": 2
   },
   {
     "company_code": "29062001",
     "name": "BAULOOP OHM SET BATH IN",
-    "quantity": 1
-  },
-  {
-    "company_code": "29063001",
-    "name": "bau edge diverter small plate",
-    "quantity": 1
+    "stock": 4
   },
   {
     "company_code": "29065000",
     "name": "bau flow diverter",
-    "quantity": 2
+    "stock": 5
   },
   {
     "company_code": "29121000",
     "name": "smart control with thermostate round 3 way",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "29121A00",
     "name": "SMART CONTROL TRIMSET 3SC",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "29126000",
     "name": "smart control with thermostate square 3 way",
-    "quantity": 4
+    "stock": 2
   },
   {
     "company_code": "29149000",
     "name": "SMARTCONTROL MIXER TRIMSET SQUARE 3SC",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "29338003",
     "name": "EUROSMART",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "293382433",
     "name": "Eurosmart SLM Trim",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "29353001",
     "name": "bau edge diverter square plate",
-    "quantity": 3
+    "stock": 3
   },
   {
     "company_code": "29375001",
     "name": "alira diverter",
-    "quantity": 17
+    "stock": 11
   },
   {
     "company_code": "29800000",
     "name": "concealed inner part",
-    "quantity": 19
+    "stock": 15
   },
   {
     "company_code": "30551000",
     "name": "kitchen mixer pull out",
-    "quantity": 2
+    "stock": 1
   },
   {
     "company_code": "31191001",
     "name": "wall mounted kitchen mixer",
-    "quantity": 0
+    "stock": 0
   },
   {
     "company_code": "31220000",
     "name": "BAU FLOW PILLAR TAP SINK",
-    "quantity": 1
+    "stock": 1
+  },
+  {
+    "company_code": "31233001",
+    "name": "bau edge kitchen faucet c spout",
+    "stock": 1
   },
   {
     "company_code": "32750000",
     "name": "Eureco Ohm Sink",
-    "quantity": 3
+    "stock": 3
   },
   {
     "company_code": "32851000",
     "name": "Bauflow Ohm Basin Smooth Body",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "32856001",
     "name": "bauloop tall body",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "32860001",
     "name": "bau edge tall body",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "32901A01",
     "name": "ESSENCE NEW OHM XL BASIN MIX",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "33963000",
     "name": "concealed for single lever diverter",
-    "quantity": 30
-  },
-  {
-    "company_code": "35600000",
-    "name": "smart box grohe",
-    "quantity": 1
+    "stock": 14
   },
   {
     "company_code": "37601AL0",
     "name": "NOVA COSMOPOLITAN WC WALL PLATE S",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "38505000",
     "name": "Flush Plate Skate Air",
-    "quantity": 23
+    "stock": 23
   },
   {
     "company_code": "38505SHO",
     "name": "white flush plate",
-    "quantity": 3
+    "stock": 3
   },
   {
     "company_code": "38536001",
     "name": "RAPID SL, WC, 1 , 13 M",
-    "quantity": 0
+    "stock": 4
   },
   {
     "company_code": "3855800M",
     "name": "RAPID SL WALL BRACKETS",
-    "quantity": 0
+    "stock": 0
   },
   {
     "company_code": "38732000",
     "name": "arena cosmopolitan flush plate",
-    "quantity": 101
+    "stock": 51
   },
   {
     "company_code": "38732A00",
     "name": "gloss hard graphite flush plate",
-    "quantity": 8
+    "stock": 5
   },
   {
     "company_code": "38732ALO",
     "name": "\"Brushed Hard Graphite flush plate \"",
-    "quantity": 14
+    "stock": 14
   },
   {
     "company_code": "38732DA0",
     "name": "Skate Comsmopolitan Wall Plate",
-    "quantity": 6
+    "stock": 5
   },
   {
     "company_code": "38732DL0",
     "name": "SKATE COSMOPOLITAN WALL PALTE",
-    "quantity": 6
+    "stock": 6
   },
   {
     "company_code": "38732GL0",
     "name": "FLUSH PLATE",
-    "quantity": 12
+    "stock": 12
   },
   {
     "company_code": "38732GN0",
     "name": "WALL PLATE",
-    "quantity": 6
+    "stock": 6
   },
   {
     "company_code": "38732KF0",
     "name": "SKATE COSMOPOLITAN WALL PLATE",
-    "quantity": 5
+    "stock": 5
   },
   {
     "company_code": "38732SHO",
     "name": "- GROHE (SQUARE ALPINE WHITE)",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "38765000",
     "name": "Nova Cosmopolitan Flush Plate",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "38844000",
     "name": "arena cosmopolitan flush plate",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "38986000",
     "name": "GROHE CISTERN 77MM",
-    "quantity": 0
+    "stock": 4
   },
   {
     "company_code": "3898700IGD2",
     "name": "gd2 concealed tank",
-    "quantity": 0
-  },
-  {
-    "company_code": "39125001",
-    "name": "Eurosmart Basin, UnderxCounter, 60cm",
-    "quantity": 0
+    "stock": 8
   },
   {
     "company_code": "3916500I",
     "name": "GROHE UNISET 6I",
-    "quantity": 0
+    "stock": 12
   },
   {
     "company_code": "39205000",
     "name": "EUROSMART WC WALL HUNG",
-    "quantity": 0
+    "stock": 2
   },
   {
     "company_code": "39234000",
     "name": "Eurocube Counter Top Basin",
-    "quantity": 0
+    "stock": 2
   },
   {
     "company_code": "39311000",
     "name": "EUROCUBE",
-    "quantity": 0
+    "stock": 2
   },
   {
     "company_code": "39321000",
     "name": "PROJECTLINE WH WITH SC",
-    "quantity": 0
+    "stock": 2
   },
   {
     "company_code": "39328I0H",
     "name": "EURO CERAMIC TOILET WH",
-    "quantity": 0
+    "stock": 1
   },
   {
     "company_code": "39330002",
     "name": "EURO CERRMIC TOILET SEAT SOFT",
-    "quantity": 0
+    "stock": 1
   },
   {
     "company_code": "3948100H",
     "name": "CUBE CERAMIC BASIN",
-    "quantity": 0
+    "stock": 2
   },
   {
     "company_code": "3948200H",
     "name": "CUBE CERAMIC",
-    "quantity": 0
+    "stock": 3
   },
   {
     "company_code": "3957100H",
     "name": "essence rim less wall hung wc",
-    "quantity": 0
+    "stock": 2
   },
   {
     "company_code": "39577000",
     "name": "essence seat cover",
-    "quantity": 0
+    "stock": 2
   },
   {
     "company_code": "39596000",
     "name": "Rapid Slx Wc 3-6 I 1, 13m",
-    "quantity": 0
+    "stock": 7
   },
   {
     "company_code": "39682000",
     "name": "concealed tank slim body",
-    "quantity": 0
+    "stock": 7
   },
   {
     "company_code": "39706000",
     "name": "BAU CERAMIC WC WALL HUNG RIMLESS",
-    "quantity": 0
-  },
-  {
-    "company_code": "3971100H",
-    "name": "BAU UC BASIN 55 CM",
-    "quantity": 0
+    "stock": 2
   },
   {
     "company_code": "3995700H",
     "name": "airio counter top basin",
-    "quantity": 0
-  },
-  {
-    "company_code": "3996500h",
-    "name": "Airio Vsl Basin Lz 60 W/push-Open IN",
-    "quantity": 0
+    "stock": 1
   },
   {
     "company_code": "40339GN1",
     "name": "ALLURE NEW TOWEL RING",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "40340GN1",
     "name": "ALLURE NEW TOILET BRUSH SET",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "40364GL1",
     "name": "ESSENTIALS ROBE HOOK",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "40365AL1",
     "name": "ESSENTIALS TOWEL RING",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "40366GL1",
     "name": "ESSENTIALS TOWEL RAIL 600MM",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "40366GN1",
     "name": "ESSENTIALS TOWEL RAIL 600MM",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "40367001",
     "name": "ESSENTIALS TOILET PAPER HOLDER W/COVER",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "40374001",
     "name": "TOILET BRUSH SET",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "40374AL1",
     "name": "ESSENTIALS TOILET BRUSH SET",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "40507AL1",
     "name": "CUBE PAPE HOLDER",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "40689001",
     "name": "TOILET PAPER HOLDER",
-    "quantity": 1
-  },
-  {
-    "company_code": "43207000",
-    "name": "Flush Plate Frame",
-    "quantity": 0
+    "stock": 1
   },
   {
     "company_code": "45565000",
     "name": "EXTENSION FOR VOLUME CONTROL",
-    "quantity": 0
+    "stock": 0
   },
   {
     "company_code": "46905000",
     "name": "ESCUTCHEON",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "65807AL0",
     "name": "WASTE SET",
-    "quantity": 3
+    "stock": 3
   },
   {
     "company_code": "65807GL0",
     "name": "WASTE SET",
-    "quantity": 1
+    "stock": 1
   },
   {
-    "company_code": "66791000",
+    "company_code": "66791000-",
     "name": "INSPETION CHAMBER",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "9003",
     "name": "SS GRATING ROUND PLAIN 125MM",
-    "quantity": 0
+    "stock": 0
   },
   {
-    "company_code": "A-8_Wall_Hung_Bracket",
-    "name": "A8 WALL HUNG BKT. ADUSTABLE",
-    "quantity": 0
+    "company_code": "A8",
+    "name": "WALL HUNG BKT. ADUSTABLE",
+    "stock": 9
   },
   {
-    "company_code": "8925",
-    "name": "AAVA GOLD BODY JET",
-    "quantity": 0
+    "company_code": "AAVA",
+    "name": "GOLD BODY JET",
+    "stock": 1
   },
   {
     "company_code": "ANITILLA",
     "name": "WASH BASIN SKU-WB-ANTL",
-    "quantity": 0
+    "stock": 1
   },
   {
-    "company_code": "AXN-00178",
-    "name": "TOWEL BAR 600MM (MB)",
-    "quantity": 0
+    "company_code": "Aura",
+    "name": "Platinum Black Wall Mounted Conce Basin Mixer",
+    "stock": 1
   },
   {
-    "company_code": "AXN-00478",
-    "name": "TOWEL RING (MB)",
-    "quantity": 0
+    "company_code": "AXN",
+    "name": "-00178 TOWEL BAR 600MM (MB)",
+    "stock": 2
   },
   {
-    "company_code": "AXN-00578",
-    "name": "TOILET BRUSH HOLDER",
-    "quantity": 0
+    "company_code": "AXN",
+    "name": "-00478 TOWEL RING (MB)",
+    "stock": 0
   },
   {
     "company_code": "AXN-00578",
     "name": "TOILET BRUSH HOLDER (MB)",
-    "quantity": 0
+    "stock": 2
   },
   {
     "company_code": "AXN-00578",
     "name": "TOILET BRUSH HOLDER (RG)",
-    "quantity": 0
+    "stock": 0
   },
   {
     "company_code": "AXN-1801",
     "name": "ROLL HOLDER WITH COVER (RG)",
-    "quantity": 0
+    "stock": 2
   },
   {
     "company_code": "AXN-6278",
     "name": "DOB TOWEL RACK",
-    "quantity": 0
+    "stock": 1
   },
   {
-    "company_code": "AXN-71000",
-    "name": "LONG HOOK",
-    "quantity": 0
+    "company_code": "AXN-71010",
+    "name": "SINGLE ROBE HOOK ( R G )",
+    "stock": 1
   },
   {
-    "company_code": "CCAS0420-101041F0",
-    "name": "SIGNATURE 550MM COUNTER TOP",
-    "quantity": 0
+    "company_code": "CCAS0420-101041F0SIGNATURE",
+    "name": "550MM COUNTER TOP",
+    "stock": 2
   },
   {
-    "company_code": "CCAS0426-1000410F0",
-    "name": "active under counter basin",
-    "quantity": 0
+    "company_code": "CCAS0426",
+    "name": "-1000410F0-active under counter basin",
+    "stock": 2
   },
   {
     "company_code": "CCAS0428-1000410F0",
     "name": "LUXUS VESSEL",
-    "quantity": 0
+    "stock": 1
   },
   {
     "company_code": "CCAS0440-1000410F0",
     "name": "ACTIVA",
-    "quantity": 0
+    "stock": 1
   },
   {
-    "company_code": "CCAS1862-1320411A0",
-    "name": "LOVEN",
-    "quantity": 0
+    "company_code": "CCAS3105-4W20410A0-CONCEPT",
+    "name": "WC",
+    "stock": 10
   },
   {
-    "company_code": "CCAS3105-4W20410A0",
-    "name": "CONCEPT WC",
-    "quantity": 0
-  },
-  {
-    "company_code": "CCAS3120-5W20410F0",
+    "company_code": "CCAS31205W20410F0",
     "name": "ACACIA SUPERSLEEK",
-    "quantity": 0
+    "stock": 2
   },
   {
     "company_code": "CCAS3128-3W20410A0",
     "name": "WC CADET",
-    "quantity": 0
+    "stock": 0
   },
   {
-    "company_code": "CCAS3130-3W20410A0",
-    "name": "WINSTON WC",
-    "quantity": 0
+    "company_code": "CCAS3130-3W20410A0WINSTON",
+    "name": "WC",
+    "stock": 1
   },
   {
     "company_code": "CCAS3131-3W20400F0",
     "name": "KASTELLO WC",
-    "quantity": 0
+    "stock": 6
   },
   {
-    "company_code": "CCAS3140-3W20400F0",
-    "name": "signature wc",
-    "quantity": 0
+    "company_code": "CCAS3140",
+    "name": "3W20400 signature wc",
+    "stock": 3
   },
   {
     "company_code": "CCAS3207-3W2041F0",
     "name": "COMPACT WC",
-    "quantity": 0
-  },
-  {
-    "company_code": "CCASC105-0200410A0",
-    "name": "concept seat cover",
-    "quantity": 0
-  },
-  {
-    "company_code": "CCASC119-U20U420C0",
-    "name": "signature wh seat cover",
-    "quantity": 0
-  },
-  {
-    "company_code": "CCASC120-U200410F0",
-    "name": "ACACIA SUPASLEEK",
-    "quantity": 0
-  },
-  {
-    "company_code": "CCASC131-U200410F0",
-    "name": "KASTELLO SEAT COVER",
-    "quantity": 0
-  },
-  {
-    "company_code": "CCASC162-0200410F0",
-    "name": "LOVEN SEAT COVER",
-    "quantity": 0
-  },
-  {
-    "company_code": "CCASF411-1000410F0",
-    "name": "SUPER SLEEK",
-    "quantity": 0
-  },
-  {
-    "company_code": "CCASF412-100410F0",
-    "name": "acacia supasleeek counter top basin",
-    "quantity": 0
-  },
-  {
-    "company_code": "CCASF602-1000410F0",
-    "name": "LA MODA VESSEL",
-    "quantity": 0
-  },
-  {
-    "company_code": "CCASF650-1000410F0",
-    "name": "MILANO VESSEL 550MM",
-    "quantity": 0
-  },
-  {
-    "company_code": "CF070001-6DF00-N",
-    "name": "WINSTON SEAT COVER",
-    "quantity": 0
-  },
-  {
-    "company_code": "CFB10400-FAST3",
-    "name": "FB104 BIDET SEAT COVER",
-    "quantity": 0
-  },
-  {
-    "company_code": "CL0470I-6DAWDLU",
-    "name": "OVALYN UNDER COUNTER",
-    "quantity": 0
-  },
-  {
-    "company_code": "CL3119B-6DACTPTY",
-    "name": "wc double vortex acacia",
-    "quantity": 0
-  },
-  {
-    "company_code": "CL6104M-6D",
-    "name": "FLEXIO OP SEAT COVER",
-    "quantity": 0
-  },
-  {
-    "company_code": "CL6117M-6D",
-    "name": "",
-    "quantity": 0
-  },
-  {
-    "company_code": "CL6151M-6D",
-    "name": "CRYSTA SLEEK S & C WT",
-    "quantity": 0
-  },
-  {
-    "company_code": "32635000",
-    "name": "CONCEALED BASIN MIXER",
-    "quantity": 11
-  },
-  {
-    "company_code": "CBK",
-    "name": "005 Concealed",
-    "quantity": 0
-  },
-  {
-    "company_code": "CR-CSC-TH",
-    "name": "CROWN COANCEALED STOP COCK UPPER PART",
-    "quantity": 0
-  },
-  {
-    "company_code": "COL-2020",
-    "name": "CROWN BATH TUB SPOUT WITH WALL FLAGE",
-    "quantity": 0
-  },
-  {
-    "company_code": "COL-2012",
-    "name": "CROWN CONCEALED STOP COCK 20MM",
-    "quantity": 0
-  },
-  {
-    "company_code": "COL-2022",
-    "name": "CROWN SINGLE LEVER CONCEALED DIVERTER",
-    "quantity": 0
-  },
-  {
-    "company_code": "COL-2017",
-    "name": "CROWN SINK MIXER",
-    "quantity": 0
-  },
-  {
-    "company_code": "COL-2001",
-    "name": "CROWN WALL MOUNT SINGLE LEVER BASIN MIXER BODY",
-    "quantity": 0
-  },
-  {
-    "company_code": "1007372080",
-    "name": "SMART WASHER MANUAL BIDET",
-    "quantity": 0
-  },
-  {
-    "company_code": "100983SH00",
-    "name": "Euro Ceramic Vessel",
-    "quantity": 0
-  },
-  {
-    "company_code": "100987SH00",
-    "name": "Eurocosmo Vessel Round_CN",
-    "quantity": 0
-  },
-  {
-    "company_code": "101001SH00",
-    "name": "Euro Ceramic Toilet WH",
-    "quantity": 0
-  },
-  {
-    "company_code": "101037SH00",
-    "name": "Euro Ceramic Toilet Seat",
-    "quantity": 0
-  },
-  {
-    "company_code": "1013962080",
-    "name": "LOVEN WH TOLET W/O SC VN",
-    "quantity": 0
-  },
-  {
-    "company_code": "101729000",
-    "name": "GROHE CUBEO SLM BASIN XL",
-    "quantity": 1
-  },
-  {
-    "company_code": "1017550000",
-    "name": "CUBEO SLM BASIN MIXER",
-    "quantity": 1
-  },
-  {
-    "company_code": "1017780000",
-    "name": "GROHE CUBEO",
-    "quantity": 1
-  },
-  {
-    "company_code": "1022112430",
-    "name": "GROHTERM THM TRIM BATH SQU",
-    "quantity": 0
-  },
-  {
-    "company_code": "102382SH00",
-    "name": "Urinal - AC/DC/ AC+DC_APAC",
-    "quantity": 0
-  },
-  {
-    "company_code": "1025302431",
-    "name": "New Tempesta-F Trigger",
-    "quantity": 0
-  },
-  {
-    "company_code": "102915SH00",
-    "name": "IGINA WH APAC auto open & close",
-    "quantity": 0
-  },
-  {
-    "company_code": "1029950200",
-    "name": "Low-cost flushing cable set for",
-    "quantity": 0
-  },
-  {
-    "company_code": "103034SH00",
-    "name": "AERO LITE WHITE FLUSH PLATE",
-    "quantity": 0
-  },
-  {
-    "company_code": "103035BL00",
-    "name": "AERO-LITE WH SHOWER TOILET",
-    "quantity": 0
-  },
-  {
-    "company_code": "1035319990",
-    "name": "Battery box",
-    "quantity": 0
-  },
-  {
-    "company_code": "103650DA01",
-    "name": "STOP VALVE CERAMIC 901/2''",
-    "quantity": 0
-  },
-  {
-    "company_code": "103650GL01",
-    "name": "",
-    "quantity": 0
-  },
-  {
-    "company_code": "103835AL01",
-    "name": "",
-    "quantity": 0
-  },
-  {
-    "company_code": "103835GL01",
-    "name": "",
-    "quantity": 0
-  },
-  {
-    "company_code": "104583SH00",
-    "name": "EURO CERMAIC 2.0 WH TOILET SQ",
-    "quantity": 0
-  },
-  {
-    "company_code": "13261000",
-    "name": "Eurosmart Cosmopolitan bath",
-    "quantity": 0
-  },
-  {
-    "company_code": "13276002",
-    "name": "Eurostyle Cosmopolitan bath",
-    "quantity": 0
-  },
-  {
-    "company_code": "13278002",
-    "name": "Eurodisc Cosmopolitan bath",
-    "quantity": 0
-  },
-  {
-    "company_code": "13303000",
-    "name": "Universal Cube bath spout",
-    "quantity": 0
-  },
-  {
-    "company_code": "13303GL0",
-    "name": "Universal Cube bath spout exp",
-    "quantity": 0
-  },
-  {
-    "company_code": "13383001",
-    "name": "Lineare Bath Spout Exp",
-    "quantity": 0
-  },
-  {
-    "company_code": "13448003",
-    "name": "eurosmart spout",
-    "quantity": 0
-  },
-  {
-    "company_code": "134482433",
-    "name": "EUROSMART TUB SPOUT EXP",
-    "quantity": 0
-  },
-  {
-    "company_code": "19381000",
-    "name": "EUROSMART COSMOPOLITAN TRIM BASIN",
-    "quantity": 0
-  },
-  {
-    "company_code": "19386GN2",
-    "name": "Allure New trimset basin",
-    "quantity": 0
-  },
-  {
-    "company_code": "19409001",
-    "name": "Lineare OHM trimset basin 2-h",
-    "quantity": 0
-  },
-  {
-    "company_code": "19450003",
-    "name": "Eurosmart OHM trimset bath",
-    "quantity": 0
-  },
-  {
-    "company_code": "19548002",
-    "name": "Eurodisc Cosmopolitan OHM",
-    "quantity": 0
-  },
-  {
-    "company_code": "19571002",
-    "name": "Eurostyle Cosmopolitan OHM",
-    "quantity": 0
-  },
-  {
-    "company_code": "19573002",
-    "name": "Eurodisc",
-    "quantity": 0
-  },
-  {
-    "company_code": "19575001",
-    "name": "Concetto OHM trimset basin",
-    "quantity": 0
-  },
-  {
-    "company_code": "19967001",
-    "name": "Essence New OHM Basin",
-    "quantity": 0
-  },
-  {
-    "company_code": "19998000",
-    "name": "Eurocube Joy Basin",
-    "quantity": 0
-  },
-  {
-    "company_code": "22041AL0",
-    "name": "ANGLE VALUE 1/2\"*1/2\"",
-    "quantity": 0
-  },
-  {
-    "company_code": "22041DA0",
-    "name": "ANGLE VALUE 1/2\" *1/2\"",
-    "quantity": 0
-  },
-  {
-    "company_code": "22041GN0",
-    "name": "ANGLE VALVE",
-    "quantity": 0
-  },
-  {
-    "company_code": "22074KF0",
-    "name": "angle valve 1/2\" x 3/8\"",
-    "quantity": 0
-  },
-  {
-    "company_code": "22117KF0",
-    "name": "Rainshower shower holder",
-    "quantity": 0
-  },
-  {
-    "company_code": "22118KF0",
-    "name": "RAINSHOWER WALL UNION",
-    "quantity": 0
-  },
-  {
-    "company_code": "22121KF0",
-    "name": "RSH Mono 310 headshower",
-    "quantity": 0
-  },
-  {
-    "company_code": "22127KF0",
-    "name": "RSH SmartActive 130",
-    "quantity": 0
-  },
-  {
-    "company_code": "23106001",
-    "name": "LINEARE OHM BASIN PUSHOPENS",
-    "quantity": 0
-  },
-  {
-    "company_code": "23200000",
-    "name": "OHM rough inst. 2-h wall",
-    "quantity": 0
-  },
-  {
-    "company_code": "23296001",
-    "name": "Lineare Ohm Basin L",
-    "quantity": 0
-  },
-  {
-    "company_code": "23319000",
-    "name": "OHM rough inst. basin 2-h wall",
-    "quantity": 0
-  },
-  {
-    "company_code": "23325ALC",
-    "name": "Eurosmart Cosmopolitan OHM",
-    "quantity": 0
-  },
-  {
-    "company_code": "2338220E",
-    "name": "Eurodisc Cosmopolitan OHM",
-    "quantity": 0
-  },
-  {
-    "company_code": "23406000",
-    "name": "Eurocube OHM vessel fitting",
-    "quantity": 0
-  },
-  {
-    "company_code": "23429000",
-    "name": "OHM ROUGH INST. BASIN",
-    "quantity": 0
-  },
-  {
-    "company_code": "23432000",
-    "name": "EURODISC COSMOPOLITAN OHM VESSEL BASIN",
-    "quantity": 0
-  },
-  {
-    "company_code": "23445000",
-    "name": "Eurocube Ohm Basin M",
-    "quantity": 0
-  },
-  {
-    "company_code": "23445GLC",
-    "name": "Eurocube OHM basin M",
-    "quantity": 0
-  },
-  {
-    "company_code": "23462A01",
-    "name": "Essence New OHM basin",
-    "quantity": 0
-  },
-  {
-    "company_code": "23570LS3",
-    "name": "EUROSTYLE 2015 OHM VESSEL BASIN SMTH B",
-    "quantity": 0
-  },
-  {
-    "company_code": "23571000",
-    "name": "OHM rough inst. basin 2-h",
-    "quantity": 1
-  },
-  {
-    "company_code": "23709003",
-    "name": "Eurostyle 2015 Solid OHM",
-    "quantity": 0
-  },
-  {
-    "company_code": "23959003",
-    "name": "GROHE Plus basin",
-    "quantity": 0
-  },
-  {
-    "company_code": "23971003",
-    "name": "Eurosmart OHM vessel basin",
-    "quantity": 0
-  },
-  {
-    "company_code": "239712433",
-    "name": "EUROSMART SLM BASIN XL SMTH BOD",
-    "quantity": 0
-  },
-  {
-    "company_code": "24045AL0",
-    "name": "Eurosmart Cosmopolitan OHM",
-    "quantity": 0
-  },
-  {
-    "company_code": "24077000",
-    "name": "GROHTHERM THM TRIMSET BATH ROUND",
-    "quantity": 0
-  },
-  {
-    "company_code": "24080000",
-    "name": "Grohtherm THM trimset bath",
-    "quantity": 0
-  },
-  {
-    "company_code": "24094000",
-    "name": "Eurocube OHM trimset 3-way",
-    "quantity": 1
-  },
-  {
-    "company_code": "24095001",
-    "name": "Lineare OHM TRIM 3 WAY",
-    "quantity": 0
-  },
-  {
-    "company_code": "24155000",
-    "name": "GRT Cube THM trimset bath",
-    "quantity": 0
-  },
-  {
-    "company_code": "24170KF1",
-    "name": "Essence OHM vessel basin",
-    "quantity": 0
-  },
-  {
-    "company_code": "24247001",
-    "name": "ALIRA BASIN SMTH",
-    "quantity": 0
-  },
-  {
-    "company_code": "24249001",
-    "name": "Alira OHM vessel basin smth",
-    "quantity": 0
-  },
-  {
-    "company_code": "24260DA0",
-    "name": "Grandera OHM trimset bath",
-    "quantity": 0
-  },
-  {
-    "company_code": "26066DA0",
-    "name": "RSH COSMOPOLITAN 310 HEADSHOWER SET 9, 5",
-    "quantity": 0
-  },
-  {
-    "company_code": "26250000",
-    "name": "RSH SMARTCONTROL 360 DUO SHOWER SYSTEM",
-    "quantity": 0
-  },
-  {
-    "company_code": "26370GL0",
-    "name": "Euphoria Cube wall union",
-    "quantity": 0
-  },
-  {
-    "company_code": "26370GN0",
-    "name": "EUPHORIA CUBE WALL UNION",
-    "quantity": 0
-  },
-  {
-    "company_code": "26411000",
-    "name": "NTEMPESTA 210 HEADSHOWER SET 286MM",
-    "quantity": 0
-  },
-  {
-    "company_code": "26450LS0",
-    "name": "RSH SMART ONTROL HEADSHOWER",
-    "quantity": 0
-  },
-  {
-    "company_code": "26479000",
-    "name": "RSH SmartActive 310",
-    "quantity": 0
-  },
-  {
-    "company_code": "26479GL0",
-    "name": "RSH SmartActive 310",
-    "quantity": 1
-  },
-  {
-    "company_code": "26554LS0",
-    "name": "RSH SMARTACTIVE",
-    "quantity": 0
-  },
-  {
-    "company_code": "26557000",
-    "name": "RSH 310 Mono headshw set",
-    "quantity": 0
-  },
-  {
-    "company_code": "26558000",
-    "name": "RSH 310 Mono headshw set",
-    "quantity": 0
-  },
-  {
-    "company_code": "26564GL0",
-    "name": "RSH Mono 310 Headshw Set 9,5",
-    "quantity": 0
-  },
-  {
-    "company_code": "26564GN0",
-    "name": "RSH 310 Mono Cube",
-    "quantity": 0
-  },
-  {
-    "company_code": "26574A00",
-    "name": "RSH SmartActive 130",
-    "quantity": 0
-  },
-  {
-    "company_code": "26582000",
-    "name": "RSH SMARTACTIVE CUBE 130 HANDSHOWER 9, 5",
-    "quantity": 0
-  },
-  {
-    "company_code": "26582GLC",
-    "name": "RSH SmartActive 130",
-    "quantity": 0
-  },
-  {
-    "company_code": "26582GN0",
-    "name": "RSH SmartActive 130 handshower 9,5l",
-    "quantity": 0
-  },
-  {
-    "company_code": "26590000",
-    "name": "RSH SmartActive 150",
-    "quantity": 0
-  },
-  {
-    "company_code": "26663000",
-    "name": "Tempesta 250 headshw. set",
-    "quantity": 0
-  },
-  {
-    "company_code": "26668AL0",
-    "name": "TEMPESTA 250 HEADSHOWER SET 9,5I",
-    "quantity": 0
-  },
-  {
-    "company_code": "266872430",
-    "name": "TEMPESTA CUBE 250 HEADSHOWER SET",
-    "quantity": 0
-  },
-  {
-    "company_code": "26731000",
-    "name": "RSH AQUA Mono ceiling shw",
-    "quantity": 0
-  },
-  {
-    "company_code": "26733000",
-    "name": "RSH AQUA Duo ceiling shw",
-    "quantity": 0
-  },
-  {
-    "company_code": "26735000",
-    "name": "RSH AQUA MIST CEILING SHW",
-    "quantity": 0
-  },
-  {
-    "company_code": "26737000",
-    "name": "RSH AQUA Pure ceiling shw",
-    "quantity": 0
-  },
-  {
-    "company_code": "26739000",
-    "name": "RSH AQUA Rough in small",
-    "quantity": 0
-  },
-  {
-    "company_code": "26786000",
-    "name": "RSH AQUA ceiling shower",
-    "quantity": 0
-  },
-  {
-    "company_code": "26802000",
-    "name": "RSH AQUA 75x75 sideshw 3,3l square",
-    "quantity": 0
-  },
-  {
-    "company_code": "26802GN0",
-    "name": "RSH AQUA 75x75 sideshw",
-    "quantity": 0
-  },
-  {
-    "company_code": "26866DA0",
-    "name": "RSH Aqua Stick handshower",
-    "quantity": 0
-  },
-  {
-    "company_code": "26879000",
-    "name": "GROHTHERM F CONCEALED VALUE TRIMSET",
-    "quantity": 0
-  },
-  {
-    "company_code": "26896DA0",
-    "name": "Grandera shower holder",
-    "quantity": 0
-  },
-  {
-    "company_code": "26897DA0",
-    "name": "Grandera wall union",
-    "quantity": 0
-  },
-  {
-    "company_code": "27057ALC",
-    "name": "RAINSHOWER WALL UNION",
-    "quantity": 1
-  },
-  {
-    "company_code": "27057LS0",
-    "name": "RAINSHOWER WALL UNION",
-    "quantity": 0
-  },
-  {
-    "company_code": "27074AL0",
-    "name": "RAIN SHOWER WALL HAND SHOWER HOLDER ROUN",
-    "quantity": 1
-  },
-  {
-    "company_code": "27074LS0",
-    "name": "SHOWER HOLDER",
-    "quantity": 0
-  },
-  {
-    "company_code": "27513DA1",
-    "name": "New Tempesta-F Trigger Spray Set",
-    "quantity": 0
-  },
-  {
-    "company_code": "27513GN1",
-    "name": "NEW TEMPESTA-F TIGGER SPRAY SET",
-    "quantity": 0
-  },
-  {
-    "company_code": "27698000",
-    "name": "EUPHORIA CUBE STICK HANDSHOWER",
-    "quantity": 0
-  },
-  {
-    "company_code": "27812L1",
-    "name": "GROHE HEALTH FOUCET",
-    "quantity": 0
-  },
-  {
-    "company_code": "27869001",
-    "name": "Ntempcosmopolitan 100 Iv Headshw Set 9,5",
-    "quantity": 0
-  },
-  {
-    "company_code": "28105001",
-    "name": "METALL SHOWER HOSE 1500MM",
-    "quantity": 0
-  },
-  {
-    "company_code": "28362KF1",
-    "name": "SILVERFLEX SHOWER HOSE 1250MM",
-    "quantity": 0
-  },
-  {
-    "company_code": "28388A00",
-    "name": "Silverflex shower hose 1750",
-    "quantity": 1
-  },
-  {
-    "company_code": "28388DA0",
-    "name": "Silverflex shower hose 1750 MM",
-    "quantity": 0
-  },
-  {
-    "company_code": "28388GL0",
-    "name": "Silverflex shower hose 1750",
-    "quantity": 0
-  },
-  {
-    "company_code": "28628000",
-    "name": "Relexa wall union w.shw.hold",
-    "quantity": 0
-  },
-  {
-    "company_code": "29099003",
-    "name": "Eurostyle 2015 Solid OHM",
-    "quantity": 0
-  },
-  {
-    "company_code": "29126000",
-    "name": "GRT SmartControl THM",
-    "quantity": 0
-  },
-  {
-    "company_code": "29126GLC-GRT",
-    "name": "SMARTCONTROL THM TRIM SQU CN",
-    "quantity": 0
-  },
-  {
-    "company_code": "29126GN0",
-    "name": "SMARTCONTROL THM TRIMSET SQUARE 3SC",
-    "quantity": 0
-  },
-  {
-    "company_code": "29127000",
-    "name": "GRT SMARTCONTROL 3SC",
-    "quantity": 0
-  },
-  {
-    "company_code": "29144000",
-    "name": "SMARTCONTROL MIXER TRIMSET ROUND",
-    "quantity": 0
-  },
-  {
-    "company_code": "29146000",
-    "name": "SMARTCONTRL MIXER TRIMSET ROUND",
-    "quantity": 0
-  },
-  {
-    "company_code": "29148000",
-    "name": "SMARTCONTROL MIXER TRIMSET SQAURE",
-    "quantity": 0
-  },
-  {
-    "company_code": "29156LS0",
-    "name": "SMARTCONTROL 2SC",
-    "quantity": 0
-  },
-  {
-    "company_code": "29306003",
-    "name": "GROHE Plus SLM Trim Basin",
-    "quantity": 0
-  },
-  {
-    "company_code": "29375001",
-    "name": "Alira OHM trimset bath IN",
-    "quantity": 0
-  },
-  {
-    "company_code": "29403000",
-    "name": "Allure Brilliant OHM trimset",
-    "quantity": 0
-  },
-  {
-    "company_code": "29416DA0",
-    "name": "GRANDERA OHM TRIMSET BASIN 2-H M",
-    "quantity": 0
-  },
-  {
-    "company_code": "29507KF0",
-    "name": "GRT SmartControl THM",
-    "quantity": 0
-  },
-  {
-    "company_code": "32467003",
-    "name": "Eurosmart OHM basin smth b",
-    "quantity": 0
-  },
-  {
-    "company_code": "32635000",
-    "name": "Concealed body for 2-h wall",
-    "quantity": 0
-  },
-  {
-    "company_code": "33963000",
-    "name": "BODY CONCEALED",
-    "quantity": 0
-  },
-  {
-    "company_code": "35600000",
-    "name": "GROHE Rapido SmartBox",
-    "quantity": 0
-  },
-  {
-    "company_code": "36445000",
-    "name": "Essence E Basin 6v L",
-    "quantity": 0
-  },
-  {
-    "company_code": "37624KF0",
-    "name": "ARENA COSMOPOLITAN WALL PLATE",
-    "quantity": 1
-  },
-  {
-    "company_code": "38528001",
-    "name": "RAPID SL, WC, 1,13M 3-6I",
-    "quantity": 0
-  },
-  {
-    "company_code": "38732A00",
-    "name": "",
-    "quantity": 0
-  },
-  {
-    "company_code": "38732ALO",
-    "name": "SKATE COSMOPOLITAN",
-    "quantity": 0
-  },
-  {
-    "company_code": "38732DA0",
-    "name": "Skate Cosmopolitan wall plate",
-    "quantity": 0
-  },
-  {
-    "company_code": "38732GN0",
-    "name": "SKATE COSMOPOLITAN WALL PLATE",
-    "quantity": 0
-  },
-  {
-    "company_code": "38732SHO",
-    "name": "GROHE (SQUARE ALPINE WHITE)",
-    "quantity": 0
-  },
-  {
-    "company_code": "38765000",
-    "name": "Nova Cosmopolitan",
-    "quantity": 0
-  },
-  {
-    "company_code": "38844000",
-    "name": "Arena Cosmopolitan",
-    "quantity": 0
-  },
-  {
-    "company_code": "39122001",
-    "name": "eurocosmo counter top basin",
-    "quantity": 0
-  },
-  {
-    "company_code": "39198000",
-    "name": "Eurosmart Counter top basin",
-    "quantity": 0
-  },
-  {
-    "company_code": "39205000",
-    "name": "EUROSMART WC WALL HUNG",
-    "quantity": 0
-  },
-  {
-    "company_code": "39216000",
-    "name": "Eurostyle Vessel basin 50",
-    "quantity": 0
-  },
-  {
-    "company_code": "39244000",
-    "name": "Eurocube WC wall hung",
-    "quantity": 0
-  },
-  {
-    "company_code": "39296000",
-    "name": "Eurocosmo WC wall hung",
-    "quantity": 0
-  },
-  {
-    "company_code": "39311000",
-    "name": "Eurocube Counter Basin Built-in 60",
-    "quantity": 0
-  },
-  {
-    "company_code": "39321000",
-    "name": "PROJECTLINE TOILET WH WITH SC",
-    "quantity": 0
-  },
-  {
-    "company_code": "3948200H",
-    "name": "CUBE CERAMIC VESSEL BASIN",
-    "quantity": 0
-  },
-  {
-    "company_code": "3957100H",
-    "name": "Essence WC wall hung",
-    "quantity": 0
-  },
-  {
-    "company_code": "39577001",
-    "name": "Essence Toilet Seat Soft",
-    "quantity": 0
-  },
-  {
-    "company_code": "3960900H",
-    "name": "ESSENCE VESSEL BASIN OVERFLOW 45",
-    "quantity": 0
-  },
-  {
-    "company_code": "3995700H",
-    "name": "AIRIO VSL BASIN 45 W/PUSH OPEN IN",
-    "quantity": 0
-  },
-  {
-    "company_code": "3996100H",
-    "name": "AIRIO VSL BASIN",
-    "quantity": 0
-  },
-  {
-    "company_code": "3996600H",
-    "name": "AIRIO VESSEL BASIN W/0 OVERFLOW 60",
-    "quantity": 0
-  },
-  {
-    "company_code": "40364001",
-    "name": "Essentials Robe Hook",
-    "quantity": 0
-  },
-  {
-    "company_code": "40365001",
-    "name": "Essentials Towel Ring",
-    "quantity": 0
-  },
-  {
-    "company_code": "40365DA1",
-    "name": "Essentials Towel Ring",
-    "quantity": 0
-  },
-  {
-    "company_code": "40365GN1",
-    "name": "ESSENTIALS TOWEL RING",
-    "quantity": 0
-  },
-  {
-    "company_code": "40366001",
-    "name": "Essentials Towel Rail 600mm",
-    "quantity": 0
-  },
-  {
-    "company_code": "40367001",
-    "name": "ESSENTIALS TOLIET PAPER HOLDER W/COVER",
-    "quantity": 0
-  },
-  {
-    "company_code": "40367DA1",
-    "name": "ESSENTIALS TOILET PAPER HOLDER",
-    "quantity": 0
-  },
-  {
-    "company_code": "40367GN1",
-    "name": "ESSENTIALS TOILET PAPER HOLDER W/COVER",
-    "quantity": 1
-  },
-  {
-    "company_code": "40368001",
-    "name": "Essentials Soap Dish",
-    "quantity": 0
-  },
-  {
-    "company_code": "40369001",
-    "name": "Essentials holder",
-    "quantity": 0
-  },
-  {
-    "company_code": "40369GN1",
-    "name": "ESSENTIALS HOLDER",
-    "quantity": 0
-  },
-  {
-    "company_code": "40372001",
-    "name": "Essentials Glass",
-    "quantity": 0
-  },
-  {
-    "company_code": "40374001",
-    "name": "ESSENTIALS TOILET BRUSH SET",
-    "quantity": 0
-  },
-  {
-    "company_code": "40394001",
-    "name": "Essentials Soap Dispenser",
-    "quantity": 0
-  },
-  {
-    "company_code": "40507AL1",
-    "name": "Essentials Cube Paper Holder",
-    "quantity": 0
-  },
-  {
-    "company_code": "40510AL1",
-    "name": "Essentials Cube Towel Ring",
-    "quantity": 0
-  },
-  {
-    "company_code": "40802A01",
-    "name": "Essentials Double Towel Bar",
-    "quantity": 1
-  },
-  {
-    "company_code": "40802DA1",
-    "name": "Essentials Double Towel Bar 600mm",
-    "quantity": 1
-  },
-  {
-    "company_code": "65807A00",
-    "name": "WASTE SET",
-    "quantity": 0
-  },
-  {
-    "company_code": "65807GL0",
-    "name": "WASTE SET",
-    "quantity": 0
-  },
-  {
-    "company_code": "CL0950-6DACTLA",
-    "name": "ACTIVE VESSEL 50CM WT",
-    "quantity": 0
-  },
-  {
-    "company_code": "AXN-00478",
-    "name": "TOWEL RING GG",
-    "quantity": 0
-  },
-  {
-    "company_code": "AXN-00478",
-    "name": "TOWEL RING MG",
-    "quantity": 0
-  },
-  {
-    "company_code": "AXN-00578",
-    "name": "TOLIET SOAP DISPENSER MG",
-    "quantity": 0
-  },
-  {
-    "company_code": "AXN-0058",
-    "name": "TOLIET BRUSH HOLDER GG",
-    "quantity": 0
-  },
-  {
-    "company_code": "AXN-00678",
-    "name": "TUMBLER HOLDER GG",
-    "quantity": 0
-  },
-  {
-    "company_code": "AXN-00678",
-    "name": "TUMBLER HOLDER MG",
-    "quantity": 0
-  },
-  {
-    "company_code": "AXN-1199",
-    "name": "LIQUID SOAP DISPENSER GG",
-    "quantity": 0
-  },
-  {
-    "company_code": "AXN-1199",
-    "name": "LIQUID SOAP DISPENSER MG",
-    "quantity": 0
-  },
-  {
-    "company_code": "AXN-1801",
-    "name": "HOLDER WITH COVER",
-    "quantity": 0
-  },
-  {
-    "company_code": "Axn-1801",
-    "name": "ROLL HOLDR WITH COVER GG",
-    "quantity": 0
-  },
-  {
-    "company_code": "AXN-6278",
-    "name": "TOWEL RACK GG",
-    "quantity": 0
-  },
-  {
-    "company_code": "AXN-6278",
-    "name": "TOWEL RACK MG",
-    "quantity": 0
-  },
-  {
-    "company_code": "AXN-71000",
-    "name": "LONG HHOOK MB",
-    "quantity": 0
-  },
-  {
-    "company_code": "AXN-71000",
-    "name": "LONG HOOK",
-    "quantity": 0
-  },
-  {
-    "company_code": "AXN-71000",
-    "name": "LONG HOOK BB",
-    "quantity": 0
-  },
-  {
-    "company_code": "AXN-71000",
-    "name": "LONG HOOK G",
-    "quantity": 0
-  },
-  {
-    "company_code": "AXN-71000",
-    "name": "LONG HOOK GG",
-    "quantity": 0
-  },
-  {
-    "company_code": "AXN-7100",
-    "name": "LONG HOOK RG",
-    "quantity": 0
-  },
-  {
-    "company_code": "AXN-71210",
-    "name": "TWO ROBE HOOK MG",
-    "quantity": 0
-  },
-  {
-    "company_code": "1325200",
-    "name": "BATH INLET ,SPOUT (N)",
-    "quantity": 0
-  },
-  {
-    "company_code": "13255000",
-    "name": "Bath Inlet , Spout (N)",
-    "quantity": 0
-  },
-  {
-    "company_code": "3970600",
-    "name": "BAU CERAMIC WC WALL HUNG RIMIL SOFT CI.",
-    "quantity": 0
-  },
-  {
-    "company_code": "13425001",
-    "name": "BAUCOSMOPOLITAN BATH SPOUT(N)",
-    "quantity": 0
-  },
-  {
-    "company_code": "13255001",
-    "name": "BAUCOSMOPOLITAN BATH SPOUT EXP ()",
-    "quantity": 0
-  },
-  {
-    "company_code": "1339000",
-    "name": "BAUCOSMOPOLITAN BATH SPOUT EXP ()",
-    "quantity": 0
-  },
-  {
-    "company_code": "20288000",
-    "name": "BAUCURVE OHM TRIMSET BASIN 2-H WALL ()",
-    "quantity": 0
-  },
-  {
-    "company_code": "20474001",
-    "name": "BAUEDGE OHM SET BASIN 2-HM()",
-    "quantity": 0
-  },
-  {
-    "company_code": "29063001",
-    "name": "BAUEDGE OHM SET BATH IN ()",
-    "quantity": 0
-  },
-  {
-    "company_code": "29353001",
-    "name": "BAUEDGE OHM SET BATH SQUARE ()",
-    "quantity": 0
-  },
-  {
-    "company_code": "31233001",
-    "name": "BAU EDGE OHM SET C -SPOUT ()",
-    "quantity": 0
-  },
-  {
-    "company_code": "32860001",
-    "name": "BAUFLOW OHM VESSEL BASIN SMTH XL ()",
-    "quantity": 0
-  },
-  {
-    "company_code": "CCAS1862-1320411A0",
-    "name": "LOVEN",
-    "quantity": 0
-  },
-  {
-    "company_code": "CCAS3120-5W20410F0",
-    "name": "ACACIA SUPERSLEEK",
-    "quantity": 0
-  },
-  {
-    "company_code": "CCAS3140-3W20400",
-    "name": "F0 SIGNATURE",
-    "quantity": 0
-  },
-  {
-    "company_code": "CCASF521-1010410F0",
-    "name": "FECILITY COUNTERTOP LAVA",
-    "quantity": 0
-  },
-  {
-    "company_code": "13250",
-    "name": "MILANO VESSEL 550MM",
-    "quantity": 0
-  },
-  {
-    "company_code": "CL0509I-6DACTLA",
-    "name": "ACACIA ROUND",
-    "quantity": 0
-  },
-  {
-    "company_code": "CL20075-1MA21",
-    "name": "FLEXIO OP W/P TRAP",
-    "quantity": 0
-  },
-  {
-    "company_code": "CL3119B-6DACTPT",
-    "name": "ACACIA E VORTEX BTW 3/4.5L CBRWT",
-    "quantity": 0
-  },
-  {
-    "company_code": "CL3229B-6DACTCB",
-    "name": "ACACIA E VORTEX BTW 3/4.5L CBRWT",
-    "quantity": 0
-  },
-  {
-    "company_code": "F15",
-    "name": "12X180MM FASTNERS WITH ABS CAP",
-    "quantity": 0
-  },
-  {
-    "company_code": "F78006-CHADY",
-    "name": "",
-    "quantity": 0
-  },
-  {
-    "company_code": "FF1-CN521X0000477",
-    "name": "NEO MODERN SPOUT",
-    "quantity": 0
-  },
-  {
-    "company_code": "FFAS0104-101500BC0",
-    "name": "LUXUS INWALL BASIN MIXTURE",
-    "quantity": 0
-  },
-  {
-    "company_code": "FFAS0930-000500BC0",
-    "name": "ONCEAL THERMOSTAT",
-    "quantity": 0
-  },
-  {
-    "company_code": "FFAS1301-101ALOBFO",
-    "name": "",
-    "quantity": 0
-  },
-  {
-    "company_code": "FFAS1302-101ALOBFO",
-    "name": "",
-    "quantity": 0
-  },
-  {
-    "company_code": "FFAS1304-101GLOBFO",
-    "name": "",
-    "quantity": 0
-  },
-  {
-    "company_code": "FFAS1321-608ALOBFO",
-    "name": "",
-    "quantity": 0
-  },
-  {
-    "company_code": "FFAS1621-608500ZF0",
-    "name": "KASTELLO CONCEALED",
-    "quantity": 0
-  },
-  {
-    "company_code": "FFAS1704-101DA0BF0",
-    "name": "S-T WALL MOUNTED BASIN MIXER",
-    "quantity": 1
-  },
-  {
-    "company_code": "FFAS4956-601500BC0",
-    "name": "EASY SET EXP. BLACK",
-    "quantity": 0
-  },
-  {
-    "company_code": "FFAS5634-5015L0BF0",
-    "name": "MULTI FUNCTN KITCHEN MIXER",
-    "quantity": 0
-  },
-  {
-    "company_code": "FFAS9909-000DA0BF0",
-    "name": "WALL MOUNTED SHOWER ARM",
-    "quantity": 0
-  },
-  {
-    "company_code": "FFASS034-000500",
-    "name": "BC0 SQUARE RAIN SHOWER HEAD",
-    "quantity": 0
-  },
-  {
-    "company_code": "FFASS515-000DA0BF0",
-    "name": "12'' HEAD SHOWER FOR EXPOSED",
-    "quantity": 0
-  },
-  {
-    "company_code": "FFASTS03-006500BF0",
-    "name": "10\" ROUND BRASS RAIN SHOWER",
-    "quantity": 0
-  },
-  {
-    "company_code": "FFASTS28-000441BF0",
-    "name": "DUOSTICK SPRAY BLACK",
-    "quantity": 0
-  },
-  {
-    "company_code": "FFASTS28-000DA0BF0",
-    "name": "DUOSTIX HYGIENE SPRAY",
-    "quantity": 0
-  },
-  {
-    "company_code": "FFASTS28-000GL0BF0",
-    "name": "DUROSTIX COOLSUNRISE",
-    "quantity": 0
-  },
-  {
-    "company_code": "GROHCLEAN",
-    "name": "",
-    "quantity": 0
-  },
-  {
-    "company_code": "DP-8823",
-    "name": "GRAB BAR",
-    "quantity": 0
-  },
-  {
-    "company_code": "DP-8825",
-    "name": "GRAB BAR",
-    "quantity": 0
-  },
-  {
-    "company_code": "CEAS7SL1-0100510A0",
-    "name": "PRISTINE ()",
-    "quantity": 0
-  },
-  {
-    "company_code": "CCAS6401-3200410F0",
-    "name": "MINI WASH URINAL BALCK",
-    "quantity": 0
+    "stock": 2
   },
   {
     "company_code": "CCAS6519-3110410F0",
     "name": "LYNBROOK",
-    "quantity": 0
+    "stock": 1
   },
   {
-    "company_code": "CCAS6737-3100410F0",
+    "company_code": "CCASC105-0200410A0",
+    "name": "concept seat cover",
+    "stock": 14
+  },
+  {
+    "company_code": "CCASC119-U20U420C0",
+    "name": "signature wh seat cover",
+    "stock": 3
+  },
+  {
+    "company_code": "CCASC120-U200410F0",
+    "name": "ACACIA SUPASLEEK",
+    "stock": 2
+  },
+  {
+    "company_code": "CCASC131-U200410F0",
+    "name": "KASTELLO SEAT COVER",
+    "stock": 6
+  },
+  {
+    "company_code": "CCASC162-0200410F0",
+    "name": "LOVEN SEAT COVER",
+    "stock": 12
+  },
+  {
+    "company_code": "CCASF411-1000410F0",
+    "name": "SUPER SLEEK",
+    "stock": 2
+  },
+  {
+    "company_code": "CCASF412-100410F0",
+    "name": "acacia supasleeek counter top basin",
+    "stock": 2
+  },
+  {
+    "company_code": "CCASF602-1000410F0-LA",
+    "name": "MODA VESSEL",
+    "stock": 1
+  },
+  {
+    "company_code": "CCASF650-1000410",
+    "name": "MILANO VESSEL 550MM",
+    "stock": 6
+  },
+  {
+    "company_code": "CF070001",
+    "name": "6DF00 N WINSTON SEAT COVER",
+    "stock": 1
+  },
+  {
+    "company_code": "CFB10400-FAST3-FB104",
+    "name": "BIDET SEAT COVER",
+    "stock": 4
+  },
+  {
+    "company_code": "CL0470I-6DAWDLU-",
+    "name": "OVALYN UNDER COUNTER",
+    "stock": 1
+  },
+  {
+    "company_code": "CL3119B",
+    "name": "wc double vortex acacia",
+    "stock": 2
+  },
+  {
+    "company_code": "CL6104M-6D",
+    "name": "FLEXIO OP SEAT COVER",
+    "stock": 1
+  },
+  {
+    "company_code": "CL6117M-6D",
     "name": "",
-    "quantity": 0
+    "stock": 1
   },
   {
-    "company_code": "CCASF523-1000410C0",
+    "company_code": "CL6151M-6D",
+    "name": "CRYSTA SLEEK S & C WT",
+    "stock": 1
+  },
+  {
+    "company_code": "Concealed",
+    "name": "CBK 005",
+    "stock": 0
+  },
+  {
+    "company_code": "CR-CSC-TH",
+    "name": "CROWN COANCEALED STOP COCK UPPER PART",
+    "stock": 1
+  },
+  {
+    "company_code": "CROWN",
+    "name": "BATH TUB SPOUT WITH WALL FLAGE",
+    "stock": 1
+  },
+  {
+    "company_code": "CROWN",
+    "name": "CONCEALED STOP COCK 20MM",
+    "stock": 0
+  },
+  {
+    "company_code": "CROWN",
+    "name": "SINGLE LEVER CONCEALED DIVERTER",
+    "stock": 0
+  },
+  {
+    "company_code": "CROWN",
+    "name": "SINK MIXER",
+    "stock": 1
+  },
+  {
+    "company_code": "CROWN",
+    "name": "WALL MOUNT SINGLE LEVER BASIN MIXER BODY",
+    "stock": 0
+  },
+  {
+    "company_code": "Dolce",
+    "name": "Brush Gold Wall Mounted Concealed Basin Mixer",
+    "stock": 1
+  },
+  {
+    "company_code": "DS-CCAS6401-3200410F0",
+    "name": "MINI WASH URINAL BALCK",
+    "stock": 1
+  },
+  {
+    "company_code": "DS-CCAS6737",
     "name": "",
-    "quantity": 0
+    "stock": 0
   },
   {
-    "company_code": "CCASF606-0000410F0",
+    "company_code": "DS-CCASF523",
     "name": "",
-    "quantity": 0
+    "stock": 0
   },
   {
-    "company_code": "CL0741PI1-1MA00",
-    "name": "WINSTON SEMI PEDESTRAL",
-    "quantity": 0
-  },
-  {
-    "company_code": "CL900PI1-1MA00",
-    "name": "UNIVERSAL FULL PEDESTRAL",
-    "quantity": 0
-  },
-  {
-    "company_code": "FFAS1306-1T1440BFO",
+    "company_code": "DS-CCASF606",
     "name": "",
-    "quantity": 1
+    "stock": 1
   },
   {
-    "company_code": "FFAS1704-1015L0BC0",
+    "company_code": "DS-",
+    "name": "CL0741PI1-1MA00 WINSTON SEMI PEDESTRAL",
+    "stock": 1
+  },
+  {
+    "company_code": "DS-",
+    "name": "CL900PI1-1MA00 UNIVERSAL FULL PEDESTRAL",
+    "stock": 1
+  },
+  {
+    "company_code": "DS-FFAS1306",
+    "name": "",
+    "stock": 1
+  },
+  {
+    "company_code": "DS-FFAS1704-FFAS1704-1015L0BC0",
     "name": "WOUNTED BASIN MIXER",
-    "quantity": 1
+    "stock": 1
   },
   {
-    "company_code": "FFAS4609-101500BF0",
+    "company_code": "DS-FFAS4609",
     "name": "",
-    "quantity": 1
+    "stock": 1
   },
   {
-    "company_code": "FFASB221-609500BF0",
+    "company_code": "DS-FFASB221",
     "name": "",
-    "quantity": 1
+    "stock": 1
   },
   {
-    "company_code": "FFASS054-000500BC0",
-    "name": "",
-    "quantity": 1
+    "company_code": "DS-",
+    "name": "FFASS054-000500BC0",
+    "stock": 1
   },
   {
-    "company_code": "FFAST707-501500BF0",
-    "name": "",
-    "quantity": 1
+    "company_code": "DS--",
+    "name": "FFAST707",
+    "stock": 0
   },
   {
     "company_code": "EAGLE",
     "name": "- ROUND FLOOR DRAIN (WIFI)",
-    "quantity": 0
+    "stock": 0
   },
   {
     "company_code": "EAGLE",
     "name": "- ROUND FLOOR DRAIN (WIFI) HOLE",
-    "quantity": 0
+    "stock": 0
   },
   {
-    "company_code": "39216000",
-    "name": "EUROSTYLE",
-    "quantity": 0
+    "company_code": "EUROSTYLE",
+    "name": "39216000",
+    "stock": 2
   },
   {
-    "company_code": "M11494",
-    "name": "F11 WASTE PIPE CONNECTOR (4''X6'')",
-    "quantity": 0
+    "company_code": "F11",
+    "name": "WASTE PIPE CONNECTOR (4''X6'')",
+    "stock": 3
   },
   {
     "company_code": "F14",
     "name": "16MM BOLT WITH ABS CAP",
-    "quantity": 0
+    "stock": 10
   },
   {
     "company_code": "F15",
     "name": "12X180MM FASTNERS WITH ABS CAP",
-    "quantity": 0
+    "stock": 11
   },
   {
     "company_code": "F46022-CHACT",
     "name": "SHOWER ARM",
-    "quantity": 2
+    "stock": 2
   },
   {
-    "company_code": "F54400-CHACT",
-    "name": "angle vavle",
-    "quantity": 3
+    "company_code": "F54400-CHACT-angle",
+    "name": "vavle",
+    "stock": 3
   },
   {
     "company_code": "F78006-CHADY",
     "name": "",
-    "quantity": 2
+    "stock": 2
   },
   {
-    "company_code": "F78107-CHADYBR",
+    "company_code": "F78107",
     "name": "BOTTLE TRAP 25CM BRASS",
-    "quantity": 0
+    "stock": 0
   },
   {
-    "company_code": "FA4305A0-CH",
+    "company_code": "FA4305A0",
     "name": "AMERICAN STD.PUSH PLATE",
-    "quantity": 7
+    "stock": 6
   },
   {
-    "company_code": "FF163505050",
+    "company_code": "FF163505050-",
     "name": "shower arm big size",
-    "quantity": 3
+    "stock": 3
   },
   {
-    "company_code": "FF1-CN521X00000477",
-    "name": "NEO MODERN",
-    "quantity": 1
+    "company_code": "FF1-CN521X00000477NEO",
+    "name": "MODERN",
+    "stock": 1
   },
   {
     "company_code": "FF1-CN521X00000478",
     "name": "CYGNET BATH SPOUT CHROME",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "FF1-CN521X00000480",
     "name": "SIMPLICITY SQUARE BATH SPOUT",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "FF1-CN521X44000480",
     "name": "SIMPLICITY BATH SPOUT",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "FFAS0481-908500BF0",
     "name": "DOUBLE HOOK",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "FFAS0481-908ALOBF0",
     "name": "CONCEPT SQ ROBE HOOK ALO",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "FFAS0481-908GL0BF0",
     "name": "ROBE HOOK",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "FFAS0495-908ALOBF0",
     "name": "SQ TOWEL SHELF ALO",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "FFAS0495-908GL0BF0",
     "name": "CONCEPT SQUARE",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "FFAS0498-908ALOBF0",
     "name": "SINGLE TISSUE",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "FFAS0498-908GL0BF0",
     "name": "TISSUE HOLDER",
-    "quantity": 2
+    "stock": 2
   },
   {
-    "company_code": "FFAS0701-151500BA0",
+    "company_code": "FFAS0701-151500BA0-",
     "name": "NEO MODN SINGLE HOLE",
-    "quantity": 3
+    "stock": 2
   },
   {
-    "company_code": "FFAS0703-151500BA0",
-    "name": "neo morden tall body",
-    "quantity": 1
+    "company_code": "FFAS0703",
+    "name": "- 151500BA0 neo morden tall body",
+    "stock": 1
   },
   {
     "company_code": "FFAS0721-659500BA0",
     "name": "NEO MODERN CONCEALED",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "FFAS0904-102501BF0",
     "name": "Milano In-wall Basin Mixer w/o PUW",
-    "quantity": 5
+    "stock": 5
   },
   {
     "company_code": "FFAS0921-609500BF",
     "name": "MILANO CONCEALED B & S",
-    "quantity": 8
+    "stock": 8
   },
   {
     "company_code": "FFAS1301-101ALOBFO",
     "name": "acacia basin mixer short body brushed hard graphite",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "FFAS1302-101ALOBFO",
     "name": "acacia basin mixer brushed hard graphite",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "FFAS1304-101440BF0",
     "name": "WALL VESSEL MIXER",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "FFAS1321-608440BF0",
     "name": "ACACIA E-CONCEALEALED BNS",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "FFAS1321-608500BF0",
     "name": "milano diverter",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "FFAS1393-908440BF0",
     "name": "ACACIA E TOWEL RACK",
-    "quantity": 3
+    "stock": 3
   },
   {
-    "company_code": "FFAS1604-101501BF0",
+    "company_code": "FFAS1604",
     "name": "",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "FFAS1702-1015L0BC0",
     "name": "SIGNATURE S/H BASIN MIXTURE",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "FFAS4956-601440BF0",
     "name": "EASY SET EXPOSED",
-    "quantity": 1
-  },
-  {
-    "company_code": "FFAS4956-601DA0BF0",
-    "name": "EASY SET EXPOSED 3WAY",
-    "quantity": 1
+    "stock": 2
   },
   {
     "company_code": "FFAS9036-000500BC0",
     "name": "CELIA IN WALL SHOWER HEAD",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "FFAS9127-000440BF0",
     "name": "1.5M PVC TWIST-FREE FLEXIBLE",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "FFAS9127-000AL0BF0",
     "name": "",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "FFAS9127-000DA0BF0",
     "name": "1.5M PVC TWIST-FREE FLEXIBLE",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "FFAS9143-000440BF0",
     "name": "SQUARE WALL OUTLET WITH HOLDER",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "FFAS9143-000AL0BF0",
     "name": "",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "FFAS9714-000500BF0",
     "name": "ACACIA E MILANO",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "FFAS9908-000440BF0",
     "name": "TOP INSTALLATION SHOWER ARM_MATT",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "FFAS9908-000DA0BF0",
     "name": "TOP INSTALLATION SHOWER",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "FFAS9908-000GL0BF0",
     "name": "TOP INSTALLATION SHOWER ARM_CS",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "FFAS9909-000440BF0",
     "name": "WALL MOUNTED SHOWER ARM",
-    "quantity": 4
+    "stock": 4
   },
   {
     "company_code": "FFAS9909-000ALOBFO",
     "name": "",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "FFAS9909-000DA0BF0",
     "name": "WALL MOUNTED SHOWER ARM",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "FFAS9909-000GL0BF0",
     "name": "WALL MOUNTED SHOWER ARM",
-    "quantity": 4
+    "stock": 4
   },
   {
     "company_code": "FFAS9H11-000440BF0",
     "name": "RAINCLICK 130 ROUND 3F",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "FFAS9H11-000AL0BF0",
     "name": "",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "FFAS9H11-000DA0BF0",
     "name": "RAINCLICK 130 ROUND 3F HAND",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "FFASS055-000500BC0",
     "name": "spectra duo head shower with hand shower",
-    "quantity": 6
+    "stock": 6
   },
   {
     "company_code": "FFASS505-000440BA0",
     "name": "GENIEN HAND SHOWER",
-    "quantity": 7
+    "stock": 7
   },
   {
     "company_code": "FFASS515-000440BF0",
     "name": "12'' HEAD SHOWER",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "FFASS515-000DA0BF0",
     "name": "12'' HEAD SHOWER FOR EXPOSED",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "FFAST501-151500BF0",
     "name": "simplicity square short body",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "FFAST603-601500BF0",
     "name": "WINSTON EXPOSED B&S MONO",
-    "quantity": 2
+    "stock": 2
   },
   {
     "company_code": "FFAST604-701500BF0",
     "name": "winston angle valve lever handle",
-    "quantity": 5
+    "stock": 5
   },
   {
     "company_code": "FFAST605-709500BF0",
     "name": "concealed winston lever handle",
-    "quantity": 3
+    "stock": 3
   },
   {
     "company_code": "FFAST606-501500BFO",
     "name": "WINSTON DECK MOUNTED KITCHEN",
-    "quantity": 1
+    "stock": 2
   },
   {
     "company_code": "FFAST705-709500NF0",
     "name": "WINSTON CONCEALED SHOWER",
-    "quantity": 0
+    "stock": 0
   },
   {
     "company_code": "FFAST707-501500BFO",
     "name": "WINSTON WALL",
-    "quantity": 1
+    "stock": 1
   },
   {
-    "company_code": "FFASTS28-000090BF0",
+    "company_code": "FFASTS28-000090BF0BF0",
     "name": "DUO HYGIENE SPRAY",
-    "quantity": 7
+    "stock": 0
   },
   {
     "company_code": "FFASTS28-000440bf0",
     "name": "Duostix Hygiene Spray",
-    "quantity": 0
+    "stock": 0
   },
   {
     "company_code": "FFASTS28-000441BF0",
     "name": "DUOSTICK SPRAY BLACK",
-    "quantity": 0
+    "stock": 0
   },
   {
     "company_code": "FFASTS28-000DA0BF0",
     "name": "DUOSTIX HYGIENE SPRAY",
-    "quantity": 0
+    "stock": 0
   },
   {
-    "company_code": "FFASTS28-000GL0BF0",
-    "name": "DUROSTIX COOLSUNRISE",
-    "quantity": 0
+    "company_code": "FFASTS28-000GL0BF0-DUROSTIX",
+    "name": "COOLSUNRISE",
+    "stock": 0
   },
   {
-    "company_code": "FK303D01-AASI1",
+    "company_code": "FK303D01",
     "name": "AMERICAN STD.CON.CISTERN",
-    "quantity": 0
+    "stock": 14
   },
   {
-    "company_code": "COL-3005",
-    "name": "FRENCH BIB COCK TWO WAY",
-    "quantity": 0
+    "company_code": "Flyn",
+    "name": "Urinal",
+    "stock": 0
   },
   {
-    "company_code": "48166000",
-    "name": "GROHE CLEAN",
-    "quantity": 1
+    "company_code": "FRENCH",
+    "name": "BIB COCK TWO WAY",
+    "stock": 1
+  },
+  {
+    "company_code": "GROHE",
+    "name": "CLEAN 48166000",
+    "stock": 1
   },
   {
     "company_code": "H7",
     "name": "12 X 180MM CONCEALED W.H.WCS",
-    "quantity": 0
+    "stock": 8
   },
   {
     "company_code": "HUBB",
     "name": "ANGLE VALUE ROSE GOLD",
-    "quantity": 0
+    "stock": 0
   },
   {
     "company_code": "HUBB-CC-BD",
     "name": "HUBB CONCEALED COCK BODY",
-    "quantity": 0
+    "stock": 0
   },
   {
     "company_code": "HUBLET",
     "name": "ANGE VALUE GUN METAL",
-    "quantity": 0
+    "stock": 0
   },
   {
     "company_code": "HUBLET",
     "name": "ANGLE VALUE GOLD",
-    "quantity": 0
+    "stock": 0
   },
   {
     "company_code": "HUBLET",
     "name": "ANGLE VALUE NICKLE",
-    "quantity": 0
+    "stock": 1
+  },
+  {
+    "company_code": "ICONIC",
+    "name": "CONCEALED BOX WITHOUT LIGHT",
+    "stock": 0
+  },
+  {
+    "company_code": "ICONIC",
+    "name": "WAVE BODY JET WITHOUT LIGHT BLACK TRIM",
+    "stock": 2
+  },
+  {
+    "company_code": "Iconic",
+    "name": "Wave Body Jet Without Light Gold Trim",
+    "stock": 0
   },
   {
     "company_code": "KX",
     "name": "003 BK BIB COCK LONG BODY BLACK",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "KX",
     "name": "003 GD BIB COCK LONG BODY GOLD",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "KX",
     "name": "-005 GD KUTEX CONCEALED STOP COCK GOLD",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "KX-005",
     "name": "KUTEX CONCEALED STOP COCK 15/20MM",
-    "quantity": 4
+    "stock": 4
   },
   {
-    "company_code": "1451",
-    "name": "LUXUM FLUSH PLATE GOLD",
-    "quantity": 0
+    "company_code": "LUXUM",
+    "name": "FLUSH PLATE GOLD",
+    "stock": 3
   },
   {
-    "company_code": "META",
-    "name": "Deck Mount Mixer - BRUSHED GOLD",
-    "quantity": 0
+    "company_code": "Meta",
+    "name": "Ceiling Faucet Wall Mounted Handle BG",
+    "stock": 0
   },
   {
-    "company_code": "META",
-    "name": "Deck Mount Mixer - ROSE GOLD",
-    "quantity": 0
+    "company_code": "Meta",
+    "name": "Ceiling Faucet Wall Mounted Handle Rose Gold",
+    "stock": 1
   },
   {
     "company_code": "NEET",
     "name": "FLOSY WHITE URINAL SKU UR-NST",
-    "quantity": 0
+    "stock": 1
+  },
+  {
+    "company_code": "Net",
+    "name": "Glossy White Urinal",
+    "stock": 1
   },
   {
     "company_code": "OMASA",
     "name": "WC-OMS00",
-    "quantity": 0
+    "stock": 1
   },
   {
     "company_code": "PRO",
     "name": "HEALTH FAUCET",
-    "quantity": 0
+    "stock": 2
   },
   {
     "company_code": "PTFE",
     "name": "THREAD SEAL TAPE 10MTR",
-    "quantity": 701
+    "stock": 691
   },
   {
-    "company_code": "8101",
-    "name": "RETRO MAXX 3+ DIVERTER BODY",
-    "quantity": 0
+    "company_code": "RETRO",
+    "name": "MAXX 3+ DIVERTER BODY",
+    "stock": 5
   },
   {
-    "company_code": "8103",
-    "name": "RETRO MAXX 3+ DIVERTER CHROME TRIM",
-    "quantity": 0
+    "company_code": "RETRO",
+    "name": "MAXX 3+ DIVERTER CHROME TRIM",
+    "stock": 2
   },
   {
     "company_code": "RETRO",
     "name": "MAXX 3+ DIVERTER GOLD TRIM",
-    "quantity": 0
+    "stock": 0
   },
   {
-    "company_code": "7884",
-    "name": "RETRO MAXX 4+ DIVERTER BODY",
-    "quantity": 0
+    "company_code": "RETRO",
+    "name": "MAXX 4+ DIVERTER BODY",
+    "stock": 5
   },
   {
-    "company_code": "7809",
-    "name": "RETRO MAXX 4+ DIVERTER CHROME TRIM",
-    "quantity": 0
+    "company_code": "RETRO",
+    "name": "MAXX 4+ DIVERTER CHROME TRIM",
+    "stock": 1
   },
   {
-    "company_code": "7827",
-    "name": "RETRO MAXX 4+ DIVERTER ROSE GOLD TRIM",
-    "quantity": 0
+    "company_code": "Retro",
+    "name": "Maxx 4+Diverter Matte Black Trim",
+    "stock": 1
+  },
+  {
+    "company_code": "RETRO",
+    "name": "MAXX 4+ DIVERTER ROSE GOLD TRIM",
+    "stock": 2
   },
   {
     "company_code": "RING",
     "name": "WHITE WALL HANG TOILET",
-    "quantity": 0
+    "stock": 1
   },
   {
-    "company_code": "2001",
-    "name": "ROOT WHITE WALL HUNG SEAT",
-    "quantity": 0
+    "company_code": "ROOT",
+    "name": "WHITE WALL HUNG SEAT",
+    "stock": 2
   },
   {
-    "company_code": "27139000",
-    "name": "RSH RUSTIC 130 SHOWER RAIL SET 600- (L)",
-    "quantity": 2
+    "company_code": "RSH",
+    "name": "RUSTIC 130 SHOWER RAIL SET 600- (L) 27139000",
+    "stock": 2
   },
   {
     "company_code": "S.L.B.M.",
     "name": "EXT. BODY OPELL-PRIMA MATT BLACK 1719-MB",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "S.L.B.M.",
     "name": "EXT.BODY OPELL-PRIMA MATT WHITE 1719-MW",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "S.L.B.M.",
     "name": "OPELL-PRIMA MATT BLACK 1718-MB",
-    "quantity": 1
+    "stock": 1
   },
   {
     "company_code": "S.L.B.M.",
     "name": "OPELL-PRIMA MATT WHITE 1718-MW",
-    "quantity": 1
+    "stock": 1
   },
   {
-    "company_code": "671",
-    "name": "SMART STEAM GENERATOR 6.0 KW",
-    "quantity": 0
+    "company_code": "SMART",
+    "name": "STEAM GENERATOR 6.0 KW",
+    "stock": 4
   },
   {
-    "company_code": "SPRITE",
-    "name": "LX SIZE (ABS BODY)",
-    "quantity": 0
+    "company_code": "Spinner",
+    "name": "Matt Black Hand Shower",
+    "stock": 1
   },
   {
-    "company_code": "29124DC0",
-    "name": "STG-SMT-TCHPD SMART CONTROL TOUCH PAD",
-    "quantity": 0
+    "company_code": "SPRIT",
+    "name": "LX SHOWER SHR-SPT0",
+    "stock": 1
+  },
+  {
+    "company_code": "STG-SMT-TCHPD",
+    "name": "SMART CONTROL TOUCH PAD",
+    "stock": 5
   },
   {
     "company_code": "Super-03",
     "name": "Cover",
-    "quantity": 0
+    "stock": 0
   },
   {
     "company_code": "SVEL-055",
     "name": "",
-    "quantity": 0
+    "stock": 0
   },
   {
     "company_code": "Tasmaina",
     "name": "Shower Frame",
-    "quantity": 0
+    "stock": 1
   },
   {
     "company_code": "TGT",
     "name": "2074 SPL. GT COVER HEAVY DUTY COMMERCIAL",
-    "quantity": 0
+    "stock": 0
   },
   {
-    "company_code": "THEO",
-    "name": "Ceiling Mounted Faucet - BRUSHED GOLD",
-    "quantity": 0
+    "company_code": "Theo",
+    "name": "Ceiling Faucet Brush Gold Diverter",
+    "stock": 0
   },
   {
     "company_code": "TM",
     "name": "SLSM S/H ANG SPOUT OPELL-PRIMA MATT BLACK 1730-M",
-    "quantity": 0
+    "stock": 1
   },
   {
     "company_code": "TM",
     "name": "SLSM S/H RND SPOUT OPELL-PRIMAMATT BLACK 1727-MB",
-    "quantity": 0
+    "stock": 1
   },
   {
-    "company_code": "618",
-    "name": "VASCO BATH TUB WITH GOLD LEGS",
-    "quantity": 0
+    "company_code": "TURRO",
+    "name": "8MM FROSTED FIX PARTITION",
+    "stock": 0
+  },
+  {
+    "company_code": "VASCO",
+    "name": "BATH TUB WITH GOLD LEGS",
+    "stock": 0
   },
   {
     "company_code": "VCLD-412",
     "name": "",
-    "quantity": 0
+    "stock": 0
   },
   {
     "company_code": "VCLD-418",
     "name": "",
-    "quantity": 0
+    "stock": 0
   },
   {
     "company_code": "VCLD-424",
     "name": "S/H",
-    "quantity": 0
+    "stock": 0
   },
   {
     "company_code": "VCLG-055",
     "name": "",
-    "quantity": 0
+    "stock": 0
+  },
+  {
+    "company_code": "Vegas",
+    "name": "Wall Mounted Concealed Basin Mixer",
+    "stock": 1
   },
   {
     "company_code": "VFG-055",
     "name": "",
-    "quantity": 0
+    "stock": 0
   },
   {
     "company_code": "VTD-424",
     "name": "",
-    "quantity": 0
+    "stock": 0
   },
   {
     "company_code": "VTD-436",
     "name": "",
-    "quantity": 0
+    "stock": 0
   },
   {
     "company_code": "VWAG-055",
     "name": "",
-    "quantity": 0
+    "stock": 0
+  },
+  {
+    "company_code": "Wall",
+    "name": "Mist (Matte Gold)",
+    "stock": 1
   },
   {
     "company_code": "WOW",
     "name": "HEALTH FAUCET BLACK",
-    "quantity": 0
+    "stock": 1
   },
   {
     "company_code": "WOW",
     "name": "HEALTH FAUCET BRUSHED MATT GOLD",
-    "quantity": 0
+    "stock": 0
   },
   {
-    "company_code": "4533",
-    "name": "WOW HEALTH FAUCET GOLD",
-    "quantity": 0
+    "company_code": "WOW",
+    "name": "HEALTH FAUCET GOLD",
+    "stock": 1
   },
   {
-    "company_code": "4534",
-    "name": "WOW HEALTH FAUCET GUN METAL",
-    "quantity": 0
+    "company_code": "WOW",
+    "name": "HEALTH FAUCET GUN METAL",
+    "stock": 1
   },
   {
-    "company_code": "4532",
-    "name": "WOW HELATH FAUCET ROSE GOLD",
-    "quantity": 0
+    "company_code": "WOW",
+    "name": "HELATH FAUCET ROSE GOLD",
+    "stock": 1
+  },
+  {
+    "company_code": "X-Hubb",
+    "name": "Black Wall Mounted Conceald Basin Mixer",
+    "stock": 1
+  },
+  {
+    "company_code": "X-Hubb",
+    "name": "Black Wall Mounted Conceald Basin Mixer Body",
+    "stock": 1
+  },
+  {
+    "company_code": "X-Hubb",
+    "name": "Brush Gold Bathtub Spout",
+    "stock": 1
+  },
+  {
+    "company_code": "X-Hubb",
+    "name": "Brush Gold Bib Cock",
+    "stock": 1
+  },
+  {
+    "company_code": "X-Hubb",
+    "name": "Brush Gold Wall Mount Trim & Handle",
+    "stock": 1
   },
   {
     "company_code": "X-HUBB",
     "name": "CONCEALED COCK MATT BLACK",
-    "quantity": 0
+    "stock": 3
   },
   {
     "company_code": "X",
     "name": "- HUBB CONCEALED COCK - XHUB -MB-CC0",
-    "quantity": 0
+    "stock": 0
   },
   {
     "company_code": "X-HUBLET",
     "name": "GOLD BIB COCK TWO WAY SKU-HUB-G-2WY0",
-    "quantity": 0
+    "stock": 1
   },
   {
     "company_code": "X-HUBLET",
     "name": "GUN METAL BIB COCK SKU-HUB-GM-BIBCO",
-    "quantity": 0
+    "stock": 1
   },
   {
     "company_code": "X-HUBLET",
     "name": "ROSE GOLD CONCEALED COCK 20MM SKU-HUB-RG-C",
-    "quantity": 0
+    "stock": 1
   },
   {
-    "company_code": "Xtream",
-    "name": "Whirlpool Massage System",
-    "quantity": 0
-  },
-  {
-    "company_code": "X-HUBB",
-    "name": "CONCEALED COCK MATT BLACK",
-    "quantity": 0
-  },
-  {
-    "company_code": "CONCEALED",
-    "name": "COCK - XHUB -MB-CC0",
-    "quantity": 0
-  },
-  {
-    "company_code": "X-HUBLET",
-    "name": "GUN METAL BIB COCK SKU-HUB-GM-BIBCO",
-    "quantity": 0
-  },
-  {
-    "company_code": "X-HUBLET",
-    "name": "ROSE GOLD CONCEALED COCK 20MM SKU-HUB-RG-C",
-    "quantity": 0
-  },
-  {
-    "company_code": "Xtream",
-    "name": "Whirlpool Massage System",
-    "quantity": 0
+    "company_code": "Grand",
+    "name": "Total",
+    "stock": 1903
   }
 ]
