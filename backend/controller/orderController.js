@@ -729,18 +729,21 @@ exports.createOrder = async (req, res) => {
     });
 
     const productMap = {};
+    // Inside the productMap creation
     dbProducts.forEach((p) => {
       let imageUrl = "";
 
-      // Try to extract first image
       if (p.images) {
         try {
           const imgs =
             typeof p.images === "string" ? JSON.parse(p.images) : p.images;
+
           if (Array.isArray(imgs) && imgs.length > 0) {
-            imageUrl = imgs[0] || "";
+            imageUrl = imgs[0]?.url || imgs[0] || ""; // ← Handle possible {url: "..."} format
           }
-        } catch (_) {}
+        } catch (e) {
+          console.warn(`Failed to parse images for product ${p.productId}`, e);
+        }
       }
 
       productMap[p.productId] = {
@@ -802,7 +805,11 @@ exports.createOrder = async (req, res) => {
       const finalImageUrl = p.imageUrl || prodInfo.imageUrl || "";
       const finalProductCode = p.productCode || prodInfo.productCode || "";
       const finalCompanyCode = p.companyCode || prodInfo.companyCode || "";
-
+      console.log(`Product ${productId} image:`, {
+        fromFrontend: p.imageUrl,
+        fromDB: prodInfo.imageUrl,
+        final: finalImageUrl,
+      });
       const enrichedItem = {
         productId,
         name: p.name || prodInfo.name || prod.name || "Unknown Product",
@@ -1951,15 +1958,17 @@ exports.getOrderDetails = async (req, res) => {
     // ────────────────────────────────────────────────
     if (orderWithDetails.products && Array.isArray(orderWithDetails.products)) {
       orderWithDetails.products = orderWithDetails.products.map((item) => ({
-        productId: item.id || item.productId, // support both keys if needed
-        name: item.name || "Unknown Product", // if you saved name during creation
+        productId: item.id || item.productId,
+        name: item.name || "Unknown Product",
+        imageUrl: item.imageUrl || "", // ✅ ADD THIS
+        productCode: item.productCode || "", // optional but useful
+        companyCode: item.companyCode || "", // optional
         quantity: item.quantity || 1,
         price: item.price || 0,
         discount: item.discount || 0,
         discountType: item.discountType || "percent",
         tax: item.tax || 0,
         total: item.total || item.price * (item.quantity || 1),
-        // No productDetails, no sellingPrice
       }));
     } else {
       orderWithDetails.products = [];

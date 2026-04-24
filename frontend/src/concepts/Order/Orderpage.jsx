@@ -83,7 +83,7 @@ const OrderPage = () => {
     refetch: refetchOrder,
   } = useGetOrderDetailsQuery(id);
   const order = orderData?.order || {};
-
+  console.log(order);
   const { data: commentData, isLoading: commentLoading } = useGetCommentsQuery(
     {
       resourceId: id,
@@ -380,394 +380,386 @@ const OrderPage = () => {
   return (
     <div className="page-wrapper">
       <div className="content">
+        <Helmet>
+          <title>Order #{order.orderNo} | CM Trading</title>
+        </Helmet>
 
-          <Helmet>
-            <title>Order #{order.orderNo} | CM Trading</title>
-          </Helmet>
-
-          <Row gutter={[24, 24]}>
-            {/* ── MAIN CONTENT ──────────────────────────────────────────────── */}
-            <Col xs={24} lg={16} xl={18}>
-              {/* Products Card */}
-              <Card className="section-card products-card">
-                <Title level={3} style={{ margin: 0 }}>
-                  Order #{order.orderNo}{" "}
-                  <Badge
-                    status={
-                      order.status === "DRAFT"
-                        ? "warning"
-                        : order.status === "ONHOLD"
-                          ? "error"
-                          : "success"
-                    }
-                    text={order.status}
-                  />
-                </Title>
-
-                <Table
-                  dataSource={mergedProducts}
-                  rowKey="productId"
-                  pagination={false}
-                  scroll={{ x: "max-content" }}
-                  columns={[
-                    {
-                      title: "Product",
-                      key: "product",
-                      render: (_, record) => (
-                        <div className="product-cell">
-                          <img
-                            src={record.image}
-                            alt={record.name}
-                            className="product-thumb"
-                            onError={(e) =>
-                              (e.target.src = "https://via.placeholder.com/64")
-                            }
-                          />
-                          <div>
-                            <div className="product-name">{record.name}</div>
-                            <div className="product-meta">{record.sku}</div>
-                          </div>
-                        </div>
-                      ),
-                    },
-                    {
-                      title: "Qty",
-                      dataIndex: "quantity",
-                      width: 80,
-                      align: "center",
-                    },
-                    {
-                      title: "Price",
-                      dataIndex: "price",
-                      width: 100,
-                      render: (v) => `₹${parseFloat(v).toFixed(2)}`,
-                    },
-                    {
-                      title: "Total",
-                      key: "total",
-                      width: 120,
-                      align: "right",
-                      render: (_, r) => (
-                        <strong>₹{parseFloat(r.total).toFixed(2)}</strong>
-                      ),
-                    },
-                  ]}
-                  footer={() => (
-                    <div className="table-summary">
-                      <div className="summary-row">
-                        <span>Subtotal</span>
-                        <strong>₹{lineItemsTotal.toFixed(2)}</strong>
-                      </div>
-                      {order.shipping > 0 && (
-                        <div className="summary-row">
-                          <span>Shipping</span>
-                          <span>+₹{parseFloat(order.shipping).toFixed(2)}</span>
-                        </div>
-                      )}
-                      {order.extraDiscountValue > 0 && (
-                        <div className="summary-row discount">
-                          <span>Extra Discount</span>
-                          <span className="negative">
-                            -₹{parseFloat(order.extraDiscountValue).toFixed(2)}
-                          </span>
-                        </div>
-                      )}
-                      <div className="summary-row final">
-                        <span>Final Amount</span>
-                        <strong className="final-amount">
-                          ₹{finalAmount.toFixed(2)}
-                        </strong>
-                      </div>
-                    </div>
-                  )}
+        <Row gutter={[24, 24]}>
+          {/* ── MAIN CONTENT ──────────────────────────────────────────────── */}
+          <Col xs={24} lg={16} xl={18}>
+            {/* Products Card */}
+            <Card className="section-card products-card">
+              <Title level={3} style={{ margin: 0 }}>
+                Order #{order.orderNo}{" "}
+                <Badge
+                  status={
+                    order.status === "DRAFT"
+                      ? "warning"
+                      : order.status === "ONHOLD"
+                        ? "error"
+                        : "success"
+                  }
+                  text={order.status}
                 />
+              </Title>
+
+              <Table
+                dataSource={mergedProducts}
+                rowKey="productId"
+                pagination={false}
+                scroll={{ x: "max-content" }}
+                columns={[
+                  {
+                    title: "Product",
+                    key: "product",
+                    render: (_, record) => (
+                      <div className="product-cell">
+                        <img
+                          src={record.image}
+                          alt={record.name}
+                          className="product-thumb"
+                          onError={(e) =>
+                            (e.target.src = "https://via.placeholder.com/64")
+                          }
+                        />
+                        <div>
+                          <div className="product-name">{record.name}</div>
+                          <div className="product-meta">{record.sku}</div>
+                        </div>
+                      </div>
+                    ),
+                  },
+                  {
+                    title: "Qty",
+                    dataIndex: "quantity",
+                    width: 80,
+                    align: "center",
+                  },
+                  {
+                    title: "Price",
+                    dataIndex: "price",
+                    width: 100,
+                    render: (v) => `₹${parseFloat(v).toFixed(2)}`,
+                  },
+                  {
+                    title: "Total",
+                    key: "total",
+                    width: 120,
+                    align: "right",
+                    render: (_, r) => (
+                      <strong>₹{parseFloat(r.total).toFixed(2)}</strong>
+                    ),
+                  },
+                ]}
+                footer={() => (
+                  <div className="table-summary">
+                    <div className="summary-row">
+                      <span>Subtotal</span>
+                      <strong>₹{lineItemsTotal.toFixed(2)}</strong>
+                    </div>
+                    {order.shipping > 0 && (
+                      <div className="summary-row">
+                        <span>Shipping</span>
+                        <span>+₹{parseFloat(order.shipping).toFixed(2)}</span>
+                      </div>
+                    )}
+                    {order.extraDiscountValue > 0 && (
+                      <div className="summary-row discount">
+                        <span>Extra Discount</span>
+                        <span className="negative">
+                          -₹{parseFloat(order.extraDiscountValue).toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+                    <div className="summary-row final">
+                      <span>Final Amount</span>
+                      <strong className="final-amount">
+                        ₹{finalAmount.toFixed(2)}
+                      </strong>
+                    </div>
+                  </div>
+                )}
+              />
+            </Card>
+
+            {/* Addresses */}
+            <Row gutter={16}>
+              <Col xs={24} md={12}>
+                <Card
+                  title="Billing Address"
+                  extra={
+                    <Button
+                      type="link"
+                      icon={<EditOutlined />}
+                      onClick={() => setIsBillingModalVisible(true)}
+                    >
+                      {billingAddress ? "Edit" : "Add"}
+                    </Button>
+                  }
+                  className="address-card"
+                >
+                  {billingAddress ? (
+                    <div className="address-content">
+                      <div className="address-name">{customer.name || "—"}</div>
+                      <div>{billingAddress.street || "—"}</div>
+                      <div>
+                        {billingAddress.city}, {billingAddress.state}{" "}
+                        {billingAddress.postalCode}
+                      </div>
+                      <div>{billingAddress.country || "India"}</div>
+                    </div>
+                  ) : (
+                    <Text type="secondary">No billing address set</Text>
+                  )}
+                </Card>
+              </Col>
+
+              <Col xs={24} md={12}>
+                <Card
+                  title="Shipping Address"
+                  extra={
+                    <Button
+                      type="link"
+                      icon={<EditOutlined />}
+                      onClick={() => setIsShippingModalVisible(true)}
+                    >
+                      {shippingAddress ? "Edit" : "Add"}
+                    </Button>
+                  }
+                  className="address-card"
+                >
+                  {shippingAddress ? (
+                    <div className="address-content">
+                      <div className="address-name">{customer.name || "—"}</div>
+                      <div>
+                        {shippingAddress.street ||
+                          shippingAddress.address ||
+                          "—"}
+                      </div>
+                      <div>
+                        {shippingAddress.city}, {shippingAddress.state}{" "}
+                        {shippingAddress.postalCode}
+                      </div>
+                      <div>{shippingAddress.country || "India"}</div>
+                    </div>
+                  ) : (
+                    <Text type="secondary">No shipping address set</Text>
+                  )}
+                </Card>
+              </Col>
+            </Row>
+          </Col>
+
+          {/* ── SIDEBAR ───────────────────────────────────────────────────── */}
+          <Col xs={24} lg={8} xl={6}>
+            <Space direction="vertical" size={20} style={{ width: "100%" }}>
+              {/* Customer */}
+              <Card title="Customer" className="info-card">
+                <div className="customer-info">
+                  <div className="avatar-circle">
+                    {customer.name?.[0]?.toUpperCase() || "?"}
+                  </div>
+                  <div>
+                    <div className="customer-name">{customer.name || "—"}</div>
+                    <div className="customer-contact">
+                      {customer.email || "—"}
+                    </div>
+                    <div className="customer-contact">
+                      {customer.mobileNumber || "—"}
+                    </div>
+                  </div>
+                </div>
               </Card>
 
-              {/* Addresses */}
-              <Row gutter={16}>
-                <Col xs={24} md={12}>
-                  <Card
-                    title="Billing Address"
-                    extra={
-                      <Button
-                        type="link"
-                        icon={<EditOutlined />}
-                        onClick={() => setIsBillingModalVisible(true)}
-                      >
-                        {billingAddress ? "Edit" : "Add"}
-                      </Button>
-                    }
-                    className="address-card"
-                  >
-                    {billingAddress ? (
-                      <div className="address-content">
-                        <div className="address-name">
-                          {customer.name || "—"}
-                        </div>
-                        <div>{billingAddress.street || "—"}</div>
-                        <div>
-                          {billingAddress.city}, {billingAddress.state}{" "}
-                          {billingAddress.postalCode}
-                        </div>
-                        <div>{billingAddress.country || "India"}</div>
-                      </div>
-                    ) : (
-                      <Text type="secondary">No billing address set</Text>
-                    )}
-                  </Card>
-                </Col>
+              {/* Order Summary */}
+              <Card title="Order Summary" className="info-card">
+                <dl className="summary-list">
+                  <dt>Order No</dt>
+                  <dd>{order.orderNo}</dd>
+                  <dt>Created</dt>
+                  <dd>{new Date(order.createdAt).toLocaleDateString()}</dd>
+                  <dt>Final Amount</dt>
+                  <dd className="highlight">₹{finalAmount.toFixed(2)}</dd>
+                </dl>
+              </Card>
 
-                <Col xs={24} md={12}>
-                  <Card
-                    title="Shipping Address"
-                    extra={
-                      <Button
-                        type="link"
-                        icon={<EditOutlined />}
-                        onClick={() => setIsShippingModalVisible(true)}
-                      >
-                        {shippingAddress ? "Edit" : "Add"}
-                      </Button>
-                    }
-                    className="address-card"
-                  >
-                    {shippingAddress ? (
-                      <div className="address-content">
-                        <div className="address-name">
-                          {customer.name || "—"}
-                        </div>
-                        <div>
-                          {shippingAddress.street ||
-                            shippingAddress.address ||
-                            "—"}
-                        </div>
-                        <div>
-                          {shippingAddress.city}, {shippingAddress.state}{" "}
-                          {shippingAddress.postalCode}
-                        </div>
-                        <div>{shippingAddress.country || "India"}</div>
-                      </div>
-                    ) : (
-                      <Text type="secondary">No shipping address set</Text>
-                    )}
-                  </Card>
-                </Col>
-              </Row>
-            </Col>
-
-            {/* ── SIDEBAR ───────────────────────────────────────────────────── */}
-            <Col xs={24} lg={8} xl={6}>
-              <Space direction="vertical" size={20} style={{ width: "100%" }}>
-                {/* Customer */}
-                <Card title="Customer" className="info-card">
-                  <div className="customer-info">
-                    <div className="avatar-circle">
-                      {customer.name?.[0]?.toUpperCase() || "?"}
-                    </div>
-                    <div>
-                      <div className="customer-name">
-                        {customer.name || "—"}
-                      </div>
-                      <div className="customer-contact">
-                        {customer.email || "—"}
-                      </div>
-                      <div className="customer-contact">
-                        {customer.mobileNumber || "—"}
-                      </div>
-                    </div>
+              {/* Documents */}
+              <Card title="Documents" className="documents-card">
+                <div className="document-item">
+                  <div className="document-label">
+                    <FilePdfOutlined /> Invoice
                   </div>
-                </Card>
-
-                {/* Order Summary */}
-                <Card title="Order Summary" className="info-card">
-                  <dl className="summary-list">
-                    <dt>Order No</dt>
-                    <dd>{order.orderNo}</dd>
-                    <dt>Created</dt>
-                    <dd>{new Date(order.createdAt).toLocaleDateString()}</dd>
-                    <dt>Final Amount</dt>
-                    <dd className="highlight">₹{finalAmount.toFixed(2)}</dd>
-                  </dl>
-                </Card>
-
-                {/* Documents */}
-                <Card title="Documents" className="documents-card">
-                  <div className="document-item">
-                    <div className="document-label">
-                      <FilePdfOutlined /> Invoice
-                    </div>
-                    {invoiceUrl ? (
-                      <Space>
-                        <a
-                          href={invoiceUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          View
-                        </a>
-                        <Button
-                          icon={<DownloadOutlined />}
-                          size="small"
-                          onClick={() => handleDownloadFile("invoice")}
-                        >
-                          Download
-                        </Button>
-                      </Space>
-                    ) : (
-                      <Upload
-                        accept="application/pdf"
-                        beforeUpload={() => false}
-                        onChange={handleInvoiceChange}
-                        fileList={
-                          invoiceFile
-                            ? [{ name: invoiceFile.name, status: "done" }]
-                            : []
-                        }
+                  {invoiceUrl ? (
+                    <Space>
+                      <a
+                        href={invoiceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
                       >
-                        <Button size="small">Upload Invoice</Button>
-                      </Upload>
-                    )}
-                    {invoiceFile && (
+                        View
+                      </a>
                       <Button
-                        type="primary"
+                        icon={<DownloadOutlined />}
                         size="small"
-                        onClick={handleInvoiceSubmit}
-                        loading={isUploading}
-                        style={{ marginTop: 8 }}
+                        onClick={() => handleDownloadFile("invoice")}
                       >
-                        Confirm Upload
+                        Download
                       </Button>
-                    )}
-                  </div>
+                    </Space>
+                  ) : (
+                    <Upload
+                      accept="application/pdf"
+                      beforeUpload={() => false}
+                      onChange={handleInvoiceChange}
+                      fileList={
+                        invoiceFile
+                          ? [{ name: invoiceFile.name, status: "done" }]
+                          : []
+                      }
+                    >
+                      <Button size="small">Upload Invoice</Button>
+                    </Upload>
+                  )}
+                  {invoiceFile && (
+                    <Button
+                      type="primary"
+                      size="small"
+                      onClick={handleInvoiceSubmit}
+                      loading={isUploading}
+                      style={{ marginTop: 8 }}
+                    >
+                      Confirm Upload
+                    </Button>
+                  )}
+                </div>
 
-                  <div className="document-item" style={{ marginTop: 16 }}>
-                    <div className="document-label">
-                      <FilePdfOutlined /> Gate Pass
-                    </div>
-                    {gatePassUrl ? (
-                      <Space>
-                        <a
-                          href={gatePassUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          View
-                        </a>
-                        <Button
-                          icon={<DownloadOutlined />}
-                          size="small"
-                          onClick={() => handleDownloadFile("gatepass")}
-                        >
-                          Download
-                        </Button>
-                      </Space>
-                    ) : isDispatched ? (
-                      <Text type="secondary">Dispatched – cannot modify</Text>
-                    ) : (
-                      <Upload
-                        accept="application/pdf,image/*"
-                        beforeUpload={() => false}
-                        onChange={handleGatePassChange}
-                        fileList={
-                          gatePassFile
-                            ? [{ name: gatePassFile.name, status: "done" }]
-                            : []
-                        }
+                <div className="document-item" style={{ marginTop: 16 }}>
+                  <div className="document-label">
+                    <FilePdfOutlined /> Gate Pass
+                  </div>
+                  {gatePassUrl ? (
+                    <Space>
+                      <a
+                        href={gatePassUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
                       >
-                        <Button size="small">Upload Gate Pass</Button>
-                      </Upload>
-                    )}
-                    {gatePassFile && !isDispatched && (
+                        View
+                      </a>
                       <Button
-                        type="primary"
+                        icon={<DownloadOutlined />}
                         size="small"
-                        onClick={handleGatePassSubmit}
-                        loading={isGatePassUploading}
-                        style={{ marginTop: 8 }}
+                        onClick={() => handleDownloadFile("gatepass")}
                       >
-                        Confirm Upload
+                        Download
                       </Button>
-                    )}
-                  </div>
-                </Card>
-              </Space>
-            </Col>
-          </Row>
+                    </Space>
+                  ) : isDispatched ? (
+                    <Text type="secondary">Dispatched – cannot modify</Text>
+                  ) : (
+                    <Upload
+                      accept="application/pdf,image/*"
+                      beforeUpload={() => false}
+                      onChange={handleGatePassChange}
+                      fileList={
+                        gatePassFile
+                          ? [{ name: gatePassFile.name, status: "done" }]
+                          : []
+                      }
+                    >
+                      <Button size="small">Upload Gate Pass</Button>
+                    </Upload>
+                  )}
+                  {gatePassFile && !isDispatched && (
+                    <Button
+                      type="primary"
+                      size="small"
+                      onClick={handleGatePassSubmit}
+                      loading={isGatePassUploading}
+                      style={{ marginTop: 8 }}
+                    >
+                      Confirm Upload
+                    </Button>
+                  )}
+                </div>
+              </Card>
+            </Space>
+          </Col>
+        </Row>
 
-          {/* ── COMMENTS ──────────────────────────────────────────────────── */}
-          <Card
-            title="Comments"
-            className="comments-section"
-            style={{ marginTop: 32 }}
-          >
-            <Form layout="inline" style={{ marginBottom: 24 }}>
-              <Form.Item style={{ flex: 1 }}>
-                <Input.TextArea
-                  rows={2}
-                  placeholder="Write a comment..."
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                />
-              </Form.Item>
-              <Form.Item>
-                <Button
-                  type="primary"
-                  icon={<SendOutlined />}
-                  onClick={handleAddComment}
-                  disabled={!newComment.trim()}
-                >
-                  Send
-                </Button>
-              </Form.Item>
-            </Form>
-
-            {commentLoading ? (
-              <Spin />
-            ) : comments.length === 0 ? (
-              <Text
-                type="secondary"
-                style={{
-                  display: "block",
-                  textAlign: "center",
-                  padding: "32px 0",
-                }}
+        {/* ── COMMENTS ──────────────────────────────────────────────────── */}
+        <Card
+          title="Comments"
+          className="comments-section"
+          style={{ marginTop: 32 }}
+        >
+          <Form layout="inline" style={{ marginBottom: 24 }}>
+            <Form.Item style={{ flex: 1 }}>
+              <Input.TextArea
+                rows={2}
+                placeholder="Write a comment..."
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+              />
+            </Form.Item>
+            <Form.Item>
+              <Button
+                type="primary"
+                icon={<SendOutlined />}
+                onClick={handleAddComment}
+                disabled={!newComment.trim()}
               >
-                No comments yet.
-              </Text>
-            ) : (
-              <div className="comments-list">
-                {commentData?.comments?.map((c) => (
-                  <CommentRow
-                    key={c._id}
-                    comment={c}
-                    onDelete={handleDeleteComment}
-                    currentUserId={String(user.userId || "").trim()}
-                  />
-                ))}
-              </div>
-            )}
-          </Card>
+                Send
+              </Button>
+            </Form.Item>
+          </Form>
 
-          {/* MODALS */}
-          {isBillingModalVisible && (
-            <AddAddress
-              visible={isBillingModalVisible}
-              onClose={() => setIsBillingModalVisible(false)}
-              onSave={refetchAddresses}
-              existingAddress={billingAddress}
-              selectedCustomer={order.createdFor}
-            />
+          {commentLoading ? (
+            <Spin />
+          ) : comments.length === 0 ? (
+            <Text
+              type="secondary"
+              style={{
+                display: "block",
+                textAlign: "center",
+                padding: "32px 0",
+              }}
+            >
+              No comments yet.
+            </Text>
+          ) : (
+            <div className="comments-list">
+              {commentData?.comments?.map((c) => (
+                <CommentRow
+                  key={c._id}
+                  comment={c}
+                  onDelete={handleDeleteComment}
+                  currentUserId={String(user.userId || "").trim()}
+                />
+              ))}
+            </div>
           )}
-          {isShippingModalVisible && (
-            <AddAddress
-              visible={isShippingModalVisible}
-              onClose={() => setIsShippingModalVisible(false)}
-              onSave={refetchAddresses}
-              existingAddress={shippingAddress}
-              selectedCustomer={order.createdFor}
-            />
-          )}
+        </Card>
 
+        {/* MODALS */}
+        {isBillingModalVisible && (
+          <AddAddress
+            visible={isBillingModalVisible}
+            onClose={() => setIsBillingModalVisible(false)}
+            onSave={refetchAddresses}
+            existingAddress={billingAddress}
+            selectedCustomer={order.createdFor}
+          />
+        )}
+        {isShippingModalVisible && (
+          <AddAddress
+            visible={isShippingModalVisible}
+            onClose={() => setIsShippingModalVisible(false)}
+            onSave={refetchAddresses}
+            existingAddress={shippingAddress}
+            selectedCustomer={order.createdFor}
+          />
+        )}
       </div>
     </div>
   );

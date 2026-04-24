@@ -197,6 +197,7 @@ const NewOrder = () => {
     if (!finalShipTo) return message.error("Shipping address is required.");
 
     // Enrich products with discount and tax info
+    // Replace the enrichedProducts map with this improved version
     const enrichedProducts = calculationCartItems.map((item) => {
       const productId = item.productId || item.id;
       const price = Number(item.price) || 0;
@@ -220,9 +221,10 @@ const NewOrder = () => {
       );
 
       return {
-        id: productId,
+        // Use "productId" consistently (better than "id")
+        productId: productId,
         name: item.name || "Unknown Product",
-        imageUrl: item.imageUrl || "",
+        imageUrl: item.imageUrl || item.images?.[0] || "", // ← Extra safety
         productCode: item.productCode || "",
         companyCode: item.companyCode || "",
         quantity,
@@ -233,7 +235,6 @@ const NewOrder = () => {
         total,
       };
     });
-
     const orderPayload = {
       createdFor: selectedCustomer,
       createdBy: userId,
