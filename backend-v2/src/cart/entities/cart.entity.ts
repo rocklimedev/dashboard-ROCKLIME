@@ -1,4 +1,3 @@
-// src/carts/entities/cart.entity.ts
 import {
   Entity,
   Column,
@@ -6,28 +5,45 @@ import {
   OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
+
 import { CartItem } from './cart-item.entity';
+
 @Entity('carts')
+@Index(['userId'], { unique: true }) // ✅ one cart per user
+@Index(['customerId'])
 export class Cart {
+  // ─────────────────────────────
+  // Primary Key
+  // ─────────────────────────────
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
+
+  // ─────────────────────────────
+  // Ownership
+  // ─────────────────────────────
+  @Column({ type: 'uuid', nullable: false })
+  userId!: string;
 
   @Column({ type: 'uuid', nullable: true })
-  customerId: string;
+  customerId?: string;
 
-  @Column({ type: 'uuid', nullable: false })
-  userId: string;
-
+  // ─────────────────────────────
+  // Relations
+  // ─────────────────────────────
   @OneToMany(() => CartItem, (item) => item.cart, {
     cascade: true,
     eager: false,
   })
-  items: CartItem[];
+  items!: CartItem[];
 
+  // ─────────────────────────────
+  // Timestamps
+  // ─────────────────────────────
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }

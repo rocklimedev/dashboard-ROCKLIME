@@ -6,11 +6,13 @@ import {
   OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 
 import { Customer } from 'src/customers/entities/customer.entity';
 import { User } from 'src/users/entities/user.entity';
 import { Order } from 'src/orders/entities/order.entity';
+
 export enum AddressStatus {
   BILLING = 'BILLING',
   PRIMARY = 'PRIMARY',
@@ -18,64 +20,68 @@ export enum AddressStatus {
 }
 
 @Entity('addresses')
+@Entity('addresses')
 export class Address {
   @PrimaryGeneratedColumn('uuid')
-  addressId: string;
+  addressId!: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  street: string;
+  // ─────────────────────────────
+  // Basic Fields (now REQUIRED)
+  // ─────────────────────────────
+  @Column({ type: 'varchar', length: 255 })
+  street!: string;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
-  city: string;
+  @Column({ type: 'varchar', length: 100 })
+  city!: string;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
-  state: string;
+  @Column({ type: 'varchar', length: 100 })
+  state!: string;
 
   @Column({ type: 'varchar', length: 20, nullable: true })
-  postalCode: string;
+  postalCode?: string;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
-  country: string;
+  @Column({ type: 'varchar', length: 100 })
+  country!: string;
 
   @Column({
     type: 'enum',
     enum: AddressStatus,
     default: AddressStatus.ADDITIONAL,
   })
-  status: AddressStatus;
+  status!: AddressStatus;
 
   // ─────────────────────────────
   // Relations
   // ─────────────────────────────
-
-  @ManyToOne(() => User, (user) => user.addresses, {
+  @ManyToOne(() => User, (user) => user.address, {
     nullable: true,
     onDelete: 'SET NULL',
   })
-  user: User;
+  user?: User;
 
+  @Index()
   @Column({ type: 'uuid', nullable: true })
-  userId: string;
+  userId?: string;
 
   @ManyToOne(() => Customer, (customer) => customer.addresses, {
     nullable: true,
     onDelete: 'SET NULL',
   })
-  customer: Customer;
+  customer?: Customer;
 
+  @Index()
   @Column({ type: 'uuid', nullable: true })
-  customerId: string;
+  customerId?: string;
 
   @OneToMany(() => Order, (order) => order.shippingAddress)
-  orders: Order[];
+  orders?: Order[];
 
   // ─────────────────────────────
   // Timestamps
   // ─────────────────────────────
-
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }

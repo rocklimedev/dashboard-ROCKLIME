@@ -2,7 +2,7 @@
 -- Host:                         119.18.54.11
 -- Server version:               5.7.23-23 - Percona Server (GPL), Release 23, Revision 500fcf5
 -- Server OS:                    Linux
--- HeidiSQL Version:             12.11.0.7065
+-- HeidiSQL Version:             12.17.0.7270
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -16,12 +16,10 @@
 
 
 -- Dumping database structure for spsyn8lm_rocklime_dashboard
-DROP DATABASE IF EXISTS `spsyn8lm_rocklime_dashboard`;
 CREATE DATABASE IF NOT EXISTS `spsyn8lm_rocklime_dashboard` /*!40100 DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci */;
 USE `spsyn8lm_rocklime_dashboard`;
 
 -- Dumping structure for table spsyn8lm_rocklime_dashboard.addresses
-DROP TABLE IF EXISTS `addresses`;
 CREATE TABLE IF NOT EXISTS `addresses` (
   `addressId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `street` varchar(255) DEFAULT NULL,
@@ -43,25 +41,7 @@ CREATE TABLE IF NOT EXISTS `addresses` (
 
 -- Data exporting was unselected.
 
--- Dumping structure for table spsyn8lm_rocklime_dashboard.brands
-DROP TABLE IF EXISTS `brands`;
-CREATE TABLE IF NOT EXISTS `brands` (
-  `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-  `brandSlug` varchar(255) NOT NULL,
-  `brandName` varchar(100) NOT NULL,
-  `createdAt` datetime NOT NULL,
-  `updatedAt` datetime NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `brands_brand_name` (`brandName`),
-  UNIQUE KEY `brands_brand_slug` (`brandSlug`),
-  UNIQUE KEY `brandSlug` (`brandSlug`),
-  UNIQUE KEY `brandName` (`brandName`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- Data exporting was unselected.
-
 -- Dumping structure for table spsyn8lm_rocklime_dashboard.brand_parentcategories
-DROP TABLE IF EXISTS `brand_parentcategories`;
 CREATE TABLE IF NOT EXISTS `brand_parentcategories` (
   `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -82,7 +62,6 @@ CREATE TABLE IF NOT EXISTS `brand_parentcategories` (
 -- Data exporting was unselected.
 
 -- Dumping structure for table spsyn8lm_rocklime_dashboard.brand_parentcategory_brands
-DROP TABLE IF EXISTS `brand_parentcategory_brands`;
 CREATE TABLE IF NOT EXISTS `brand_parentcategory_brands` (
   `brandParentCategoryId` char(36) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
   `brandId` char(36) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
@@ -93,8 +72,23 @@ CREATE TABLE IF NOT EXISTS `brand_parentcategory_brands` (
 
 -- Data exporting was unselected.
 
+-- Dumping structure for table spsyn8lm_rocklime_dashboard.brands
+CREATE TABLE IF NOT EXISTS `brands` (
+  `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `brandSlug` varchar(255) NOT NULL,
+  `brandName` varchar(100) NOT NULL,
+  `createdAt` datetime NOT NULL,
+  `updatedAt` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `brands_brand_name` (`brandName`),
+  UNIQUE KEY `brands_brand_slug` (`brandSlug`),
+  UNIQUE KEY `brandSlug` (`brandSlug`),
+  UNIQUE KEY `brandName` (`brandName`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Data exporting was unselected.
+
 -- Dumping structure for table spsyn8lm_rocklime_dashboard.cart
-DROP TABLE IF EXISTS `cart`;
 CREATE TABLE IF NOT EXISTS `cart` (
   `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `user_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
@@ -109,7 +103,6 @@ CREATE TABLE IF NOT EXISTS `cart` (
 -- Data exporting was unselected.
 
 -- Dumping structure for table spsyn8lm_rocklime_dashboard.categories
-DROP TABLE IF EXISTS `categories`;
 CREATE TABLE IF NOT EXISTS `categories` (
   `categoryId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `name` varchar(100) NOT NULL,
@@ -133,7 +126,6 @@ CREATE TABLE IF NOT EXISTS `categories` (
 -- Data exporting was unselected.
 
 -- Dumping structure for table spsyn8lm_rocklime_dashboard.comments
-DROP TABLE IF EXISTS `comments`;
 CREATE TABLE IF NOT EXISTS `comments` (
   `id` char(36) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
   `orderId` char(36) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
@@ -146,7 +138,6 @@ CREATE TABLE IF NOT EXISTS `comments` (
 -- Data exporting was unselected.
 
 -- Dumping structure for table spsyn8lm_rocklime_dashboard.companies
-DROP TABLE IF EXISTS `companies`;
 CREATE TABLE IF NOT EXISTS `companies` (
   `companyId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `name` varchar(255) NOT NULL,
@@ -167,7 +158,6 @@ CREATE TABLE IF NOT EXISTS `companies` (
 -- Data exporting was unselected.
 
 -- Dumping structure for table spsyn8lm_rocklime_dashboard.customers
-DROP TABLE IF EXISTS `customers`;
 CREATE TABLE IF NOT EXISTS `customers` (
   `customerId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `name` varchar(100) NOT NULL,
@@ -196,7 +186,6 @@ CREATE TABLE IF NOT EXISTS `customers` (
 -- Data exporting was unselected.
 
 -- Dumping structure for table spsyn8lm_rocklime_dashboard.field_guided_sheets
-DROP TABLE IF EXISTS `field_guided_sheets`;
 CREATE TABLE IF NOT EXISTS `field_guided_sheets` (
   `id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
   `fgsNumber` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -224,7 +213,6 @@ CREATE TABLE IF NOT EXISTS `field_guided_sheets` (
 -- Data exporting was unselected.
 
 -- Dumping structure for table spsyn8lm_rocklime_dashboard.import_jobs
-DROP TABLE IF EXISTS `import_jobs`;
 CREATE TABLE IF NOT EXISTS `import_jobs` (
   `id` char(36) COLLATE utf8_unicode_ci NOT NULL,
   `userId` char(36) COLLATE utf8_unicode_ci DEFAULT NULL,
@@ -249,7 +237,6 @@ CREATE TABLE IF NOT EXISTS `import_jobs` (
 -- Data exporting was unselected.
 
 -- Dumping structure for table spsyn8lm_rocklime_dashboard.inventory_history
-DROP TABLE IF EXISTS `inventory_history`;
 CREATE TABLE IF NOT EXISTS `inventory_history` (
   `id` char(36) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   `productId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
@@ -273,7 +260,6 @@ CREATE TABLE IF NOT EXISTS `inventory_history` (
 -- Data exporting was unselected.
 
 -- Dumping structure for table spsyn8lm_rocklime_dashboard.invoices
-DROP TABLE IF EXISTS `invoices`;
 CREATE TABLE IF NOT EXISTS `invoices` (
   `invoiceId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `billTo` text NOT NULL,
@@ -308,7 +294,6 @@ CREATE TABLE IF NOT EXISTS `invoices` (
 -- Data exporting was unselected.
 
 -- Dumping structure for table spsyn8lm_rocklime_dashboard.jobs
-DROP TABLE IF EXISTS `jobs`;
 CREATE TABLE IF NOT EXISTS `jobs` (
   `id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
   `type` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -329,7 +314,6 @@ CREATE TABLE IF NOT EXISTS `jobs` (
 -- Data exporting was unselected.
 
 -- Dumping structure for table spsyn8lm_rocklime_dashboard.keywords
-DROP TABLE IF EXISTS `keywords`;
 CREATE TABLE IF NOT EXISTS `keywords` (
   `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `keyword` varchar(100) NOT NULL,
@@ -346,7 +330,6 @@ CREATE TABLE IF NOT EXISTS `keywords` (
 -- Data exporting was unselected.
 
 -- Dumping structure for table spsyn8lm_rocklime_dashboard.orders
-DROP TABLE IF EXISTS `orders`;
 CREATE TABLE IF NOT EXISTS `orders` (
   `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `status` enum('DRAFT','PREPARING','CHECKING','INVOICE','DISPATCHED','PARTIALLY_DELIVERED','DELIVERED','ONHOLD','CANCELED','CLOSED') NOT NULL DEFAULT 'DRAFT',
@@ -411,7 +394,6 @@ CREATE TABLE IF NOT EXISTS `orders` (
 -- Data exporting was unselected.
 
 -- Dumping structure for table spsyn8lm_rocklime_dashboard.parentcategories
-DROP TABLE IF EXISTS `parentcategories`;
 CREATE TABLE IF NOT EXISTS `parentcategories` (
   `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `name` varchar(100) NOT NULL,
@@ -431,7 +413,6 @@ CREATE TABLE IF NOT EXISTS `parentcategories` (
 -- Data exporting was unselected.
 
 -- Dumping structure for table spsyn8lm_rocklime_dashboard.permissions
-DROP TABLE IF EXISTS `permissions`;
 CREATE TABLE IF NOT EXISTS `permissions` (
   `permissionId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `createdAt` datetime NOT NULL,
@@ -447,8 +428,21 @@ CREATE TABLE IF NOT EXISTS `permissions` (
 
 -- Data exporting was unselected.
 
+-- Dumping structure for table spsyn8lm_rocklime_dashboard.product_metas
+CREATE TABLE IF NOT EXISTS `product_metas` (
+  `id` char(36) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `title` varchar(255) COLLATE utf8_unicode_ci NOT NULL COMMENT 'Label for the metadata field (e.g., Selling Price, MRP)',
+  `slug` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `fieldType` varchar(255) COLLATE utf8_unicode_ci NOT NULL COMMENT 'Type of data (e.g., string, number, mm, inch, pcs, box, feet)',
+  `unit` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL COMMENT 'Optional unit of measurement (e.g., inch, mm, pcs)',
+  `createdAt` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_slug` (`slug`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+-- Data exporting was unselected.
+
 -- Dumping structure for table spsyn8lm_rocklime_dashboard.products
-DROP TABLE IF EXISTS `products`;
 CREATE TABLE IF NOT EXISTS `products` (
   `productId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `name` varchar(255) NOT NULL,
@@ -493,7 +487,6 @@ CREATE TABLE IF NOT EXISTS `products` (
 -- Data exporting was unselected.
 
 -- Dumping structure for table spsyn8lm_rocklime_dashboard.products_keywords
-DROP TABLE IF EXISTS `products_keywords`;
 CREATE TABLE IF NOT EXISTS `products_keywords` (
   `productId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `keywordId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
@@ -509,23 +502,7 @@ CREATE TABLE IF NOT EXISTS `products_keywords` (
 
 -- Data exporting was unselected.
 
--- Dumping structure for table spsyn8lm_rocklime_dashboard.product_metas
-DROP TABLE IF EXISTS `product_metas`;
-CREATE TABLE IF NOT EXISTS `product_metas` (
-  `id` char(36) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
-  `title` varchar(255) COLLATE utf8_unicode_ci NOT NULL COMMENT 'Label for the metadata field (e.g., Selling Price, MRP)',
-  `slug` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `fieldType` varchar(255) COLLATE utf8_unicode_ci NOT NULL COMMENT 'Type of data (e.g., string, number, mm, inch, pcs, box, feet)',
-  `unit` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL COMMENT 'Optional unit of measurement (e.g., inch, mm, pcs)',
-  `createdAt` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_slug` (`slug`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
--- Data exporting was unselected.
-
 -- Dumping structure for table spsyn8lm_rocklime_dashboard.purchase_orders
-DROP TABLE IF EXISTS `purchase_orders`;
 CREATE TABLE IF NOT EXISTS `purchase_orders` (
   `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `vendorId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
@@ -554,12 +531,11 @@ CREATE TABLE IF NOT EXISTS `purchase_orders` (
 -- Data exporting was unselected.
 
 -- Dumping structure for table spsyn8lm_rocklime_dashboard.quotations
-DROP TABLE IF EXISTS `quotations`;
 CREATE TABLE IF NOT EXISTS `quotations` (
   `quotationId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `document_title` varchar(255) NOT NULL,
   `quotation_date` date NOT NULL,
-  `due_date` date NOT NULL,
+  `due_date` date DEFAULT NULL,
   `followupDates` json DEFAULT NULL COMMENT 'Array of follow-up date objects or timestamps',
   `reference_number` varchar(50) DEFAULT NULL,
   `totalFloors` int(11) DEFAULT '0' COMMENT 'Cached number of floors for quick filtering/display',
@@ -591,7 +567,6 @@ CREATE TABLE IF NOT EXISTS `quotations` (
 -- Data exporting was unselected.
 
 -- Dumping structure for table spsyn8lm_rocklime_dashboard.rolepermissions
-DROP TABLE IF EXISTS `rolepermissions`;
 CREATE TABLE IF NOT EXISTS `rolepermissions` (
   `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `createdAt` datetime NOT NULL,
@@ -610,7 +585,6 @@ CREATE TABLE IF NOT EXISTS `rolepermissions` (
 -- Data exporting was unselected.
 
 -- Dumping structure for table spsyn8lm_rocklime_dashboard.roles
-DROP TABLE IF EXISTS `roles`;
 CREATE TABLE IF NOT EXISTS `roles` (
   `roleId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `roleName` varchar(100) NOT NULL,
@@ -624,7 +598,6 @@ CREATE TABLE IF NOT EXISTS `roles` (
 -- Data exporting was unselected.
 
 -- Dumping structure for table spsyn8lm_rocklime_dashboard.SequelizeMeta
-DROP TABLE IF EXISTS `SequelizeMeta`;
 CREATE TABLE IF NOT EXISTS `SequelizeMeta` (
   `name` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
   PRIMARY KEY (`name`),
@@ -634,7 +607,6 @@ CREATE TABLE IF NOT EXISTS `SequelizeMeta` (
 -- Data exporting was unselected.
 
 -- Dumping structure for table spsyn8lm_rocklime_dashboard.signatures
-DROP TABLE IF EXISTS `signatures`;
 CREATE TABLE IF NOT EXISTS `signatures` (
   `signatureId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `signature_name` varchar(255) NOT NULL,
@@ -657,7 +629,6 @@ CREATE TABLE IF NOT EXISTS `signatures` (
 -- Data exporting was unselected.
 
 -- Dumping structure for table spsyn8lm_rocklime_dashboard.site_maps
-DROP TABLE IF EXISTS `site_maps`;
 CREATE TABLE IF NOT EXISTS `site_maps` (
   `id` char(36) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
   `name` varchar(255) COLLATE utf8_unicode_ci NOT NULL COMMENT 'e.g., Dhruv Verma Residence, Galaxy Mall Project',
@@ -681,7 +652,6 @@ CREATE TABLE IF NOT EXISTS `site_maps` (
 -- Data exporting was unselected.
 
 -- Dumping structure for table spsyn8lm_rocklime_dashboard.teammembers
-DROP TABLE IF EXISTS `teammembers`;
 CREATE TABLE IF NOT EXISTS `teammembers` (
   `id` char(36) COLLATE utf8mb4_bin NOT NULL,
   `teamId` char(36) COLLATE utf8mb4_bin NOT NULL,
@@ -701,7 +671,6 @@ CREATE TABLE IF NOT EXISTS `teammembers` (
 -- Data exporting was unselected.
 
 -- Dumping structure for table spsyn8lm_rocklime_dashboard.teams
-DROP TABLE IF EXISTS `teams`;
 CREATE TABLE IF NOT EXISTS `teams` (
   `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `adminId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
@@ -716,7 +685,6 @@ CREATE TABLE IF NOT EXISTS `teams` (
 -- Data exporting was unselected.
 
 -- Dumping structure for table spsyn8lm_rocklime_dashboard.users
-DROP TABLE IF EXISTS `users`;
 CREATE TABLE IF NOT EXISTS `users` (
   `userId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `username` varchar(50) NOT NULL,
@@ -752,7 +720,6 @@ CREATE TABLE IF NOT EXISTS `users` (
 -- Data exporting was unselected.
 
 -- Dumping structure for table spsyn8lm_rocklime_dashboard.vendors
-DROP TABLE IF EXISTS `vendors`;
 CREATE TABLE IF NOT EXISTS `vendors` (
   `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `vendorId` varchar(255) DEFAULT NULL,

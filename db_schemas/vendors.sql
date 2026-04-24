@@ -2,7 +2,7 @@
 -- Host:                         119.18.54.11
 -- Server version:               5.7.23-23 - Percona Server (GPL), Release 23, Revision 500fcf5
 -- Server OS:                    Linux
--- HeidiSQL Version:             12.11.0.7065
+-- HeidiSQL Version:             12.17.0.7270
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -40,6 +40,8 @@ INSERT INTO `vendors` (`id`, `vendorId`, `vendorName`, `brandId`, `brandSlug`, `
 	('3a4df5ea-e679-4882-8e3e-16004e9c11ce', 'V_1', 'Arth Tiles', '4e3acf32-1e47-4d38-a6bb-417addd52ac0', 'AS_001', '2025-03-01 10:12:41', '2025-03-01 10:12:41'),
 	('919d22fa-911c-4ae9-a7c5-34fc6d400ebe', 'V_747109', 'Unknown', NULL, NULL, '2026-01-30 06:15:47', '2026-01-30 06:15:47'),
 	('982b40c6-06b0-4c8e-9d50-ae9b9377f902', 'V_45456', 'YUBB', '39fd411d-7c06-11f0-9e84-52540021303b', 'extras', '2025-10-14 05:07:48', '2025-10-14 05:07:48'),
+	('a9ee30d5-efdb-439d-bcfb-386e675a91b8', 'GROHE', 'G3', NULL, NULL, '2026-03-30 13:44:18', '2026-03-30 13:44:18'),
+	('d44ad799-e58a-43f2-8c4b-48b64f0c085e', 'GROHE_v1', 'grohe', 'd642a7f4-9bb9-4d91-bcf3-fd63b438b85e', 'GB_004', '2026-03-31 05:13:40', '2026-03-31 05:13:40'),
 	('d56421ab-772d-4894-8bb5-a675d41cdc76', 'V_3', 'Groha', '13847c2c-3c91-4bb2-a130-f94928658237', 'GP_002', '2025-03-01 10:12:42', '2025-03-01 10:12:42');
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;

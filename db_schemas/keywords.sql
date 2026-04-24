@@ -2,7 +2,7 @@
 -- Host:                         119.18.54.11
 -- Server version:               5.7.23-23 - Percona Server (GPL), Release 23, Revision 500fcf5
 -- Server OS:                    Linux
--- HeidiSQL Version:             12.11.0.7065
+-- HeidiSQL Version:             12.17.0.7270
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -160,6 +160,7 @@ INSERT INTO `keywords` (`id`, `keyword`, `createdAt`, `updatedAt`, `categoryId`)
 	('deb10648-fd14-4531-8978-db5754bffc7a', 'EUROSMART COSMO E', '2025-04-07 12:33:27', '2025-04-07 12:33:27', 'f37610fb-528b-44e1-9581-a8c16ddecdea'),
 	('e1a296f6-78b3-46f2-934d-8c4a248620c6', 'NEO NOBILE OP TOILET', '2025-04-07 12:21:08', '2025-04-07 12:21:08', 'a9951ad6-11ab-414d-9845-86277fa27a4d'),
 	('e2053826-595d-494e-9daf-3f987fd3d126', 'EUROCOSMO RIM LESS', '2025-04-07 12:33:20', '2025-04-07 12:33:20', '85a9ea31-be88-4ca6-af6d-52a897d5ba1f'),
+	('e2cf5aa6-b133-4031-ba61-e15b8038b816', 'urinal', '2026-04-09 11:42:50', '2026-04-09 11:42:50', 'a6e1475b-84b2-4da2-a5fe-6d1042770e70'),
 	('e377e99e-32a0-426c-8035-f6c4946daba7', 'WINSTON FAUCETS', '2025-04-07 12:21:14', '2025-04-07 12:21:14', '7aa16462-414b-4882-914a-74635e75c1b6'),
 	('e3ae61a1-5d6e-46d0-b21b-fec0fe9906a4', 'sauna generator', '2025-12-17 10:07:20', '2025-12-17 10:07:20', 'cca34206-478c-468f-b2a2-11bd0091b104'),
 	('e3f7ddbd-a998-4635-9ab2-e2474190a22c', 'bathtubs', '2025-12-18 06:39:41', '2025-12-18 06:39:41', '6a1d7c3d-9138-456e-aae6-4ad872ffd29d'),

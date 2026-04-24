@@ -2,7 +2,7 @@
 -- Host:                         119.18.54.11
 -- Server version:               5.7.23-23 - Percona Server (GPL), Release 23, Revision 500fcf5
 -- Server OS:                    Linux
--- HeidiSQL Version:             12.11.0.7065
+-- HeidiSQL Version:             12.17.0.7270
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -43,6 +43,7 @@ INSERT INTO `brands` (`id`, `brandSlug`, `brandName`, `createdAt`, `updatedAt`) 
 	('501083c0-7686-11f0-9e84-52540021303b', 'ibis', 'IBIS', '2025-08-11 13:09:28', '2025-08-11 13:09:28'),
 	('70a6bfc1-7bf3-11f0-9e84-52540021303b', 'jk_adhesive', 'JK_ADHESIVE', '2025-08-18 10:53:14', '2025-08-18 10:53:14'),
 	('70b2c3f3-7bf3-11f0-9e84-52540021303b', 'walplast', 'WALPLAST', '2025-08-18 10:53:14', '2025-08-18 10:53:14'),
+	('8b00e9ad-3e28-11f1-97e0-52540021303b', 'vista', 'VISTA', '2026-04-22 14:22:07', '2026-04-22 14:22:07'),
 	('987bb747-773d-11f0-9e84-52540021303b', 'subway', 'SUBWAY', '2025-08-12 11:01:28', '2025-08-12 11:01:28'),
 	('acbe7061-9b76-47d1-a509-e4b1f982a36f', 'colston', 'Colston', '2025-07-30 07:59:10', '2025-07-30 07:59:10'),
 	('c69121e3-7686-11f0-9e84-52540021303b', 'sunheart', 'SUNHEART', '2025-08-11 13:12:47', '2025-08-11 13:12:47'),

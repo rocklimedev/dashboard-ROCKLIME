@@ -2,7 +2,11 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { message, Button, Modal, Descriptions, Space } from "antd";
-import { DeleteOutlined, SaveOutlined, InfoCircleOutlined } from "@ant-design/icons";
+import {
+  DeleteOutlined,
+  SaveOutlined,
+  InfoCircleOutlined,
+} from "@ant-design/icons";
 import moment from "moment";
 
 import CartLayout from "./CartLayout";
@@ -20,7 +24,7 @@ import { useGetProfileQuery } from "../../api/userApi";
 
 import { useAuth } from "../../context/AuthContext";
 import useAutoSave from "../../utils/useAutoSave";
-
+import AddCustomerModal from "../../components/Customers/AddCustomerModal";
 const NewOrder = () => {
   const navigate = useNavigate();
   const { auth } = useAuth();
@@ -50,6 +54,9 @@ const NewOrder = () => {
   const [useBillingAddress, setUseBillingAddress] = useState(false);
   const [billingAddressId, setBillingAddressId] = useState(null);
 
+  // ==================== ADD CUSTOMER MODAL STATE ====================
+  const [addCustomerModalVisible, setAddCustomerModalVisible] = useState(false);
+
   // ==================== DRAFT CHECKER STATE ====================
   const [showDraftModal, setShowDraftModal] = useState(false);
   const [currentDraft, setCurrentDraft] = useState(null);
@@ -61,7 +68,7 @@ const NewOrder = () => {
   const { data: customersData } = useGetCustomersQuery({ limit: 500 });
   const { data: addressesData } = useGetAllAddressesQuery(
     selectedCustomer || undefined,
-    { skip: !selectedCustomer }
+    { skip: !selectedCustomer },
   );
 
   const { data: teamsData } = useGetAllTeamsQuery();
@@ -82,13 +89,16 @@ const NewOrder = () => {
   // ==================== AUTOSAVE SETUP ====================
   const draftKey = `draft_order_${auth?.userId || "guest"}`;
 
-  const draftData = useMemo(() => ({
-    orderData,
-    selectedCustomer,
-    useBillingAddress,
-    billingAddressId,
-    lastSaved: new Date().toISOString(),
-  }), [orderData, selectedCustomer, useBillingAddress, billingAddressId]);
+  const draftData = useMemo(
+    () => ({
+      orderData,
+      selectedCustomer,
+      useBillingAddress,
+      billingAddressId,
+      lastSaved: new Date().toISOString(),
+    }),
+    [orderData, selectedCustomer, useBillingAddress, billingAddressId],
+  );
 
   const { loadDraft, clearDraft } = useAutoSave(draftKey, draftData, 2500);
 
@@ -178,7 +188,9 @@ const NewOrder = () => {
         }).unwrap();
         finalShipTo = res.addressId;
       } catch (e) {
-        return message.error(e?.data?.message || "Failed to create shipping address.");
+        return message.error(
+          e?.data?.message || "Failed to create shipping address.",
+        );
       }
     }
 
@@ -200,7 +212,11 @@ const NewOrder = () => {
           : discount * quantity;
 
       const total = Number(
-        (subtotal - discountAmount + (subtotal - discountAmount) * tax / 100).toFixed(2)
+        (
+          subtotal -
+          discountAmount +
+          ((subtotal - discountAmount) * tax) / 100
+        ).toFixed(2),
       );
 
       return {
@@ -288,8 +304,9 @@ const NewOrder = () => {
               useBillingAddress={useBillingAddress}
               setUseBillingAddress={setUseBillingAddress}
               setBillingAddressId={setBillingAddressId}
-              handleAddCustomer={() => {}}
-              handleAddAddress={() => {}}
+              // ✅ Fixed: Proper handler to open Add Customer Modal
+              handleAddCustomer={() => setAddCustomerModalVisible(true)}
+              handleAddAddress={() => {}} // You can implement this later
               handleCreateDocument={handleCreateOrder}
               cartItems={layoutProps.calculationCartItems || []}
               itemDiscounts={layoutProps.itemDiscounts}
@@ -327,8 +344,9 @@ const NewOrder = () => {
         {currentDraft ? (
           <Descriptions column={1} bordered>
             <Descriptions.Item label="Customer">
-              {customers.find((c) => c.customerId === currentDraft.selectedCustomer)?.name || 
-               "Not selected"}
+              {customers.find(
+                (c) => c.customerId === currentDraft.selectedCustomer,
+              )?.name || "Not selected"}
             </Descriptions.Item>
             <Descriptions.Item label="Due Date">
               {currentDraft.orderData?.dueDate || "-"}
@@ -345,13 +363,21 @@ const NewOrder = () => {
                 : "-"}
             </Descriptions.Item>
             <Descriptions.Item label="Status">
-              <span style={{ color: "#52c41a" }}>✓ Draft Saved Automatically</span>
+              <span style={{ color: "#52c41a" }}>
+                ✓ Draft Saved Automatically
+              </span>
             </Descriptions.Item>
           </Descriptions>
         ) : (
           <p>No draft data available.</p>
         )}
       </Modal>
+
+      {/* Add Customer Modal */}
+      <AddCustomerModal
+        visible={addCustomerModalVisible}
+        onClose={() => setAddCustomerModalVisible(false)}
+      />
     </>
   );
 };

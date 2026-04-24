@@ -1,14 +1,24 @@
-// src/brands/dto/create-brand.dto.ts
-import { IsString, IsNotEmpty, MinLength } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  MinLength,
+  Matches,
+} from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class CreateBrandDto {
+  @Transform(({ value }) => value?.trim())
   @IsString()
   @IsNotEmpty()
   @MinLength(2)
-  brandName: string;
+  brandName!: string;
 
+  @Transform(({ value }) => value?.toLowerCase().trim())
   @IsString()
   @IsNotEmpty()
   @MinLength(2)
-  brandSlug: string;
+  @Matches(/^[a-z0-9-]+$/, {
+    message: 'Slug must contain only lowercase letters, numbers, and hyphens',
+  })
+  brandSlug!: string;
 }

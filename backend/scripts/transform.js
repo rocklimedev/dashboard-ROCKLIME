@@ -55,6 +55,6 @@ fs.readFile(inputFilePath, "utf8", (err, data) => {
       } else {
         console.log(`✅ Successfully grouped and saved: ${outputFilePath}`);
       }
-    }
+    },
   );
 });

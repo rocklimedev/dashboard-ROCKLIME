@@ -1,20 +1,31 @@
-// src/carts/dto/update-cart-item.dto.ts
-import { IsUUID, IsInt, Min, IsOptional } from 'class-validator';
+import {
+  IsUUID,
+  IsInt,
+  Min,
+  IsOptional,
+  IsNumber,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class UpdateCartItemDto {
-  @IsUUID()
-  userId: string;
+  // ❌ REMOVE userId → get from JWT
 
   @IsUUID()
-  productId: string;
-
-  @IsInt()
-  @Min(1)
-  quantity: number;
+  productId!: string;
 
   @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  quantity?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
   discount?: number;
 
   @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
   tax?: number;
 }

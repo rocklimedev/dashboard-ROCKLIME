@@ -1,45 +1,69 @@
-// src/carts/entities/cart-item.entity.ts
 import {
   Entity,
   Column,
   PrimaryGeneratedColumn,
   ManyToOne,
   JoinColumn,
+  Index,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
+
 import { Cart } from './cart.entity';
 
 @Entity('cart_items')
+@Index(['cartId'])
+@Index(['productId'])
 export class CartItem {
+  // ─────────────────────────────
+  // Primary Key
+  // ─────────────────────────────
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
+  // ─────────────────────────────
+  // Product Info (snapshot)
+  // ─────────────────────────────
   @Column({ type: 'uuid' })
-  productId: string;
+  productId!: string;
 
   @Column({ nullable: true })
-  name: string;
+  name?: string;
 
+  // ⚠️ decimal comes as string → use string type
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
-  price: number;
+  price?: string;
 
   @Column({ type: 'int', default: 1 })
-  quantity: number;
+  quantity!: number;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
-  discount: number;
+  discount!: string;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
-  tax: number;
+  tax!: string;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
-  total: number;
+  total?: string;
 
+  // ─────────────────────────────
+  // Relations
+  // ─────────────────────────────
   @ManyToOne(() => Cart, (cart) => cart.items, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'cartId' })
-  cart: Cart;
+  cart!: Cart;
 
   @Column({ type: 'uuid' })
-  cartId: string;
+  cartId!: string;
+
+  // ─────────────────────────────
+  // Timestamps
+  // ─────────────────────────────
+  @CreateDateColumn()
+  createdAt!: Date;
+
+  @UpdateDateColumn()
+  updatedAt!: Date;
 }

@@ -1,5 +1,9 @@
 // src/carts/carts.service.ts
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Cart } from './entities/cart.entity';
@@ -7,7 +11,7 @@ import { CartItem } from './entities/cart-item.entity';
 import { Product } from '../products/entities/product.entity';
 import { User } from '../users/entities/user.entity';
 import { Quotation } from '../quotations/entities/quotation.entity';
-import { getSellingPrice } from './helpers/get-selling-price';
+import { getSellingPrice } from '../common/helpers/get-selling-price';
 import { AddSingleProductDto } from './dto/add-single-product.dto';
 import { AddToCartDto } from './dto/add-to-cart.dto';
 import { UpdateCartItemDto } from './dto/update-cart-item.dto';
@@ -31,14 +35,21 @@ export class CartsService {
     private quotationRepository: Repository<Quotation>,
   ) {}
 
-  private async findOrCreateCart(userId: string, customerId?: string): Promise<Cart> {
+  private async findOrCreateCart(
+    userId: string,
+    customerId?: string,
+  ): Promise<Cart> {
     let cart = await this.cartRepository.findOne({
       where: { userId, customerId: customerId || null },
       relations: ['items'],
     });
 
     if (!cart) {
-      cart = this.cartRepository.create({ userId, customerId: customerId || null, items: [] });
+      cart = this.cartRepository.create({
+        userId,
+        customerId: customerId || null,
+        items: [],
+      });
       await this.cartRepository.save(cart);
     }
     return cart;
@@ -51,16 +62,19 @@ export class CartsService {
     if (!user) throw new NotFoundException('User not found');
 
     const product = await this.productRepository.findOneBy({ productId });
-    if (!product) throw new NotFoundException(`Product not found: ${productId}`);
+    if (!product)
+      throw new NotFoundException(`Product not found: ${productId}`);
 
     const sellingPrice = getSellingPrice(product.meta);
     if (!sellingPrice) {
-      throw new BadRequestException(`Invalid or missing sellingPrice for product: ${productId}`);
+      throw new BadRequestException(
+        `Invalid or missing sellingPrice for product: ${productId}`,
+      );
     }
 
     const cart = await this.findOrCreateCart(userId);
 
-    const existing = cart.items.find(i => i.productId === productId);
+    const existing = cart.items.find((i) => i.productId === productId);
 
     if (existing) {
       existing.quantity += quantity;
@@ -82,9 +96,10 @@ export class CartsService {
     await this.cartRepository.save(cart);
 
     return {
-      message: product.quantity < quantity 
-        ? "Product added to cart (even though stock is insufficient)" 
-        : "Product added to cart",
+      message:
+        product.quantity < quantity
+          ? 'Product added to cart (even though stock is insufficient)'
+          : 'Product added to cart',
       cart,
     };
   }
@@ -102,14 +117,17 @@ export class CartsService {
       const qty = Number(quantity);
 
       const product = await this.productRepository.findOneBy({ productId });
-      if (!product) throw new NotFoundException(`Product not found: ${productId}`);
+      if (!product)
+        throw new NotFoundException(`Product not found: ${productId}`);
 
       const sellingPrice = getSellingPrice(product.meta);
       if (!sellingPrice) {
-        throw new BadRequestException(`Invalid sellingPrice for product: ${productId}`);
+        throw new BadRequestException(
+          `Invalid sellingPrice for product: ${productId}`,
+        );
       }
 
-      const existing = cart.items.find(i => i.productId === productId);
+      const existing = cart.items.find((i) => i.productId === productId);
 
       if (existing) {
         existing.quantity += qty;
@@ -130,7 +148,10 @@ export class CartsService {
     }
 
     await this.cartRepository.save(cart);
-    return { message: "Items added to cart successfully (stock check disabled)", cart };
+    return {
+      message: 'Items added to cart successfully (stock check disabled)',
+      cart,
+    };
   }
 
   async getCart(userId: string) {
@@ -151,7 +172,7 @@ export class CartsService {
     if (!cart) throw new NotFoundException('Cart not found');
 
     const initialLength = cart.items.length;
-    cart.items = cart.items.filter(item => item.productId !== productId);
+    cart.items = cart.items.filter((item) => item.productId !== productId);
 
     if (cart.items.length === initialLength) {
       throw new NotFoundException('Product not found in cart');
@@ -171,7 +192,7 @@ export class CartsService {
 
     if (!cart) throw new NotFoundException('Cart not found');
 
-    const item = cart.items.find(i => i.productId === productId);
+    const item = cart.items.find((i) => i.productId === productId);
     if (!item) throw new NotFoundException('Product not found in cart');
 
     item.quantity = quantity;
@@ -206,13 +227,17 @@ export class CartsService {
     const cart = await this.findOrCreateCart(userId);
 
     for (const qItem of quotation.items || []) {
-      const product = await this.productRepository.findOneBy({ productId: qItem.id || qItem.productId });
+      const product = await this.productRepository.findOneBy({
+        productId: qItem.id || qItem.productId,
+      });
       if (!product) continue;
 
       const sellingPrice = getSellingPrice(product.meta);
       if (!sellingPrice) continue;
 
-      const existing = cart.items.find(i => i.productId === product.productId);
+      const existing = cart.items.find(
+        (i) => i.productId === product.productId,
+      );
 
       if (existing) {
         existing.quantity += qItem.quantity;
@@ -244,7 +269,7 @@ export class CartsService {
 
     if (!cart) throw new NotFoundException('Cart not found');
 
-    const itemIndex = cart.items.findIndex(i => i.productId === productId);
+    const itemIndex = cart.items.findIndex((i) => i.productId === productId);
     if (itemIndex === -1) throw new NotFoundException('Item not found in cart');
 
     const item = cart.items[itemIndex];
@@ -258,7 +283,8 @@ export class CartsService {
 
     await this.cartRepository.save(cart);
     return {
-      message: item.quantity > 0 ? 'Quantity reduced' : 'Item removed from cart',
+      message:
+        item.quantity > 0 ? 'Quantity reduced' : 'Item removed from cart',
       cart,
     };
   }
@@ -273,7 +299,9 @@ export class CartsService {
 
     const updatedItems = await Promise.all(
       cart.items.map(async (item) => {
-        const product = await this.productRepository.findOneBy({ productId: item.productId });
+        const product = await this.productRepository.findOneBy({
+          productId: item.productId,
+        });
         if (!product) return null;
 
         const sellingPrice = getSellingPrice(product.meta);
@@ -288,7 +316,7 @@ export class CartsService {
           tax: item.tax || 0,
           total: sellingPrice * item.quantity,
         };
-      })
+      }),
     );
 
     cart.items = updatedItems.filter(Boolean) as any;

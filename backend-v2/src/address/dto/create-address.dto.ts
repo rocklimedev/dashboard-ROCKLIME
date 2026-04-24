@@ -1,19 +1,25 @@
-// src/addresses/dto/create-address.dto.ts
-import { IsString, IsNotEmpty, IsOptional, IsUUID, IsEnum, ValidateIf } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsUUID,
+  IsEnum,
+  ValidateIf,
+} from 'class-validator';
 import { AddressStatus } from '../entities/address.entity';
 
 export class CreateAddressDto {
   @IsString()
   @IsNotEmpty()
-  street: string;
+  street!: string;
 
   @IsString()
   @IsNotEmpty()
-  city: string;
+  city!: string;
 
   @IsString()
   @IsNotEmpty()
-  state: string;
+  state!: string;
 
   @IsString()
   @IsOptional()
@@ -21,16 +27,16 @@ export class CreateAddressDto {
 
   @IsString()
   @IsNotEmpty()
-  country: string;
+  country!: string;
 
+  @ValidateIf((o: CreateAddressDto) => o.customerId == null)
   @IsUUID()
-  @IsOptional()
-  @ValidateIf((o) => !o.customerId)
+  @IsNotEmpty()
   userId?: string;
 
+  @ValidateIf((o: CreateAddressDto) => o.userId == null)
   @IsUUID()
-  @IsOptional()
-  @ValidateIf((o) => !o.userId)
+  @IsNotEmpty()
   customerId?: string;
 
   @IsEnum(AddressStatus)

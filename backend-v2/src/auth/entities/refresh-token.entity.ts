@@ -12,17 +12,18 @@ import {
 @Index(['expiresAt'])
 export class RefreshToken {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
-  @Column({ type: 'char', length: 36 })
-  userId: string;
+  @Column({ type: 'uuid' })
+  userId!: string;
 
-  @Column()
-  token: string;
+  // ⚠️ Store HASHED token, not raw token
+  @Column({ type: 'varchar', length: 255 })
+  token!: string;
 
-  @Column({ type: 'datetime' })
-  expiresAt: Date;
+  @Column({ type: 'timestamp' })
+  expiresAt!: Date;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 }
