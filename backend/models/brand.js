@@ -28,7 +28,7 @@ module.exports = (sequelize, DataTypes) => {
         { unique: true, fields: ["brandName"] },
         { unique: true, fields: ["brandSlug"] },
       ],
-    }
+    },
   );
 
   // --------------------------------------------------
