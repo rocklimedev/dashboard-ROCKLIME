@@ -1,4 +1,5 @@
 import { baseApi } from "../store/baseApi";
+
 export const brandParentCategoryApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // POST /brand-parent
@@ -27,6 +28,19 @@ export const brandParentCategoryApi = baseApi.injectEndpoints({
     getBrandParentCategoryById: builder.query({
       query: (id) => `/brand-parent/${id}`,
       providesTags: (result, error, id) => [{ type: "BPC", id }],
+    }),
+
+    // ✅ NEW: UPDATE Brand Parent Category
+    updateBrandParentCategory: builder.mutation({
+      query: ({ id, name, slug }) => ({
+        url: `/brand-parent/${id}`,
+        method: "PUT",
+        body: { name, slug },
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "BPC", id }, // Invalidate specific category
+        { type: "BPC", id: "LIST" }, // Invalidate the list
+      ],
     }),
 
     // DELETE /brand-parent/:id
@@ -66,7 +80,7 @@ export const brandParentCategoryApi = baseApi.injectEndpoints({
       ],
     }),
 
-    // OPTIONAL: GET /brand-parent/:id/tree  (add this route in your server if needed)
+    // OPTIONAL: GET /brand-parent/:id/tree
     getBpcTree: builder.query({
       query: (id) => `/brand-parent/${id}/tree`,
       providesTags: (result, error, id) => [
@@ -81,8 +95,9 @@ export const {
   useCreateBrandParentCategoryMutation,
   useGetBrandParentCategoriesQuery,
   useGetBrandParentCategoryByIdQuery,
+  useUpdateBrandParentCategoryMutation, // ← Added
   useDeleteBrandParentCategoryMutation,
   useAttachBrandsToBpcMutation,
   useDetachBrandFromBpcMutation,
-  useGetBpcTreeQuery, // only use if you implemented the /tree route
+  useGetBpcTreeQuery,
 } = brandParentCategoryApi;

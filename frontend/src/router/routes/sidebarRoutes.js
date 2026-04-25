@@ -1,9 +1,10 @@
-// src/routes/dashboardRoutes.js
+// src/routes/sidebarRoutes.js
 import { FaHome } from "react-icons/fa";
 import { FaTags } from "react-icons/fa";
 import { FaFileAlt, FaUsers } from "react-icons/fa";
 import { FaThLarge } from "react-icons/fa";
 import { FaUser, FaIdCard, FaUserCircle, FaBoxOpen } from "react-icons/fa";
+import { FaCog } from "react-icons/fa";
 import { MdOutlineInventory2 } from "react-icons/md";
 import { FaShoppingCart } from "react-icons/fa";
 import PurchaseManagement from "../../concepts/PO/PurchaseManagement";
@@ -15,6 +16,7 @@ import UserList from "../../concepts/User/UserList";
 import RolePermission from "../../concepts/RBAC/RolePermission";
 import NewPageWrapper from "../../concepts/Home/NewPageWrapper";
 import CustomerList from "../../concepts/Customers/CustomerList";
+import BrandList from "../../concepts/Brands/BrandsList";
 export const sidebarRoutes = [
   {
     path: "/",
@@ -79,6 +81,13 @@ export const sidebarRoutes = [
         icon: <FaUser />,
         isSidebarActive: true,
         element: <UserList />,
+      },
+      {
+        path: "/brands/list",
+        name: "Brands",
+        isSidebarActive: true,
+        icon: <FaCog />,
+        element: <BrandList />,
       },
       {
         path: "/roles-permission/list",
