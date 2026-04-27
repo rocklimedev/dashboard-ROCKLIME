@@ -728,7 +728,16 @@ INSERT INTO `inventory_history` (`id`, `productId`, `change`, `quantityAfter`, `
 	('019dbdd8-594f-741a-a495-6f50cceac4b1', 'fc7d1d62-7bd1-4ae3-8d1e-ab06aeb5f745', 2, 2, 'add-stock', NULL, NULL, 'Stock added by unknown', '2026-04-24 04:56:05', '2026-04-24 04:56:05'),
 	('019dbdd9-6a30-7021-afe2-57fff62d63c4', 'dd16e06f-96e4-4f7c-8d73-f919ff55095b', 1, 1, 'add-stock', NULL, NULL, 'Stock added by unknown', '2026-04-24 04:57:15', '2026-04-24 04:57:15'),
 	('019dbdda-3e48-709e-b501-2dc0a4073799', '44a4ea5c-928a-41e7-b52e-a0f22df305e3', 2, 2, 'add-stock', NULL, NULL, 'Stock added by unknown', '2026-04-24 04:58:09', '2026-04-24 04:58:09'),
-	('019dbdda-aa33-77d2-87a9-1a3efad9d404', '6c31566d-bf13-437d-9528-9e7c5a4b3fbe', 1, 1, 'add-stock', NULL, NULL, 'Stock added by unknown', '2026-04-24 04:58:37', '2026-04-24 04:58:37');
+	('019dbdda-aa33-77d2-87a9-1a3efad9d404', '6c31566d-bf13-437d-9528-9e7c5a4b3fbe', 1, 1, 'add-stock', NULL, NULL, 'Stock added by unknown', '2026-04-24 04:58:37', '2026-04-24 04:58:37'),
+	('019dbe2e-96ed-7201-aac6-1b76f5d38668', '49d373b1-1c69-41b5-8179-59baa3b66759', 1, 1, 'add-stock', NULL, NULL, 'Stock added by unknown', '2026-04-24 06:30:17', '2026-04-24 06:30:17'),
+	('019dbe2e-e75c-76ad-b7a9-2af468204d82', '4dcaf95c-d9d1-41b2-9fe5-cf5b796886d5', -1, 100, 'sale', '240426101', 'ce2549ac-ec37-4201-946c-625725114c6a', 'Stock removed by aditya26 (Order #240426101)', '2026-04-24 06:30:38', '2026-04-24 06:30:38'),
+	('019dbe2e-e76b-7166-b5c6-b765fe13e148', '47607891-c10f-4fc1-9af5-fd30607b35ad', -1, 4, 'sale', '240426101', 'ce2549ac-ec37-4201-946c-625725114c6a', 'Stock removed by aditya26 (Order #240426101)', '2026-04-24 06:30:38', '2026-04-24 06:30:38'),
+	('019dbe2e-e783-7723-b3fc-9feca4e6cbb9', '49d373b1-1c69-41b5-8179-59baa3b66759', -1, 0, 'sale', '240426101', 'ce2549ac-ec37-4201-946c-625725114c6a', 'Stock removed by aditya26 (Order #240426101)', '2026-04-24 06:30:38', '2026-04-24 06:30:38'),
+	('019dbe32-f204-7477-88b2-5e83baeb5909', '49d373b1-1c69-41b5-8179-59baa3b66759', 1, 1, 'add-stock', NULL, NULL, 'Stock added by unknown', '2026-04-24 06:35:03', '2026-04-24 06:35:03'),
+	('019dbe3e-97fe-716d-aca6-aadcd088fbb5', '4b4070c2-e391-49a8-a56c-6ca01a576201', -1, 0, 'sale', '240426102', '5ee872f3-a316-4de6-a55e-959a762f2327', 'Stock removed by d.verma (Order #240426102)', '2026-04-24 06:47:46', '2026-04-24 06:47:46'),
+	('019dbe3e-99a1-7046-a3d7-33c27d730109', '7aad648b-66aa-4925-82d6-3c9c61902ecd', -1, 0, 'sale', '240426102', '5ee872f3-a316-4de6-a55e-959a762f2327', 'Stock removed by d.verma (Order #240426102)', '2026-04-24 06:47:46', '2026-04-24 06:47:46'),
+	('019dbe40-c9c6-71ff-8c53-3f606ccebc5a', '4574ea60-1d4a-4056-8dc0-bf76f5632a64', 1, 1, 'add-stock', NULL, NULL, 'Stock added by unknown', '2026-04-24 06:50:10', '2026-04-24 06:50:10'),
+	('019dbe43-b876-755b-bb76-1a86d828b84f', '4574ea60-1d4a-4056-8dc0-bf76f5632a64', -1, 0, 'sale', '240426103', '5ee872f3-a316-4de6-a55e-959a762f2327', 'Stock removed by d.verma (Order #240426103)', '2026-04-24 06:53:22', '2026-04-24 06:53:22');
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

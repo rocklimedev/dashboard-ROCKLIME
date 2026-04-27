@@ -1,226 +1,187 @@
-import React, { useState, useMemo } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import {
-  Avatar,
-  Card,
-  Tabs,
-  Tag,
-  Space,
+  Form,
+  Input,
+  Button,
+  DatePicker,
+  Select,
   Row,
   Col,
-  Statistic,
+  Space,
+  Typography,
+  Upload,
+  Avatar,
+  message,
   Divider,
-  Button,
-  Empty,
+  Modal,
+  Slider,
+  Card,
   Spin,
-  Skeleton,
-  Badge,
 } from "antd";
 import {
-  EditOutlined,
-  PlusOutlined,
-  TeamOutlined,
-  CalendarOutlined,
-  EnvironmentOutlined,
+  UploadOutlined,
+  UserOutlined,
   MailOutlined,
   PhoneOutlined,
-  FileTextOutlined,
-  ShoppingCartOutlined,
-  DollarCircleOutlined,
-  UserOutlined,
-  ClockCircleOutlined,
+  CalendarOutlined,
+  HomeOutlined,
+  SafetyCertificateOutlined,
 } from "@ant-design/icons";
 import moment from "moment";
-import DataTable from "../../components/Profile/DataTable";
-import AddAddress from "../../components/Address/AddAddressModal";
-import { useGetProfileQuery } from "../../api/userApi";
-import { useGetAllQuotationsQuery } from "../../api/quotationApi";
-import { useGetAllOrdersQuery } from "../../api/orderApi";
-import { useGetPurchaseOrdersQuery } from "../../api/poApi";
-import { useGetAllUserAddressesQuery } from "../../api/addressApi";
+import Cropper from "react-easy-crop";
+import {
+  useUpdateProfileMutation,
+  useUploadPhotoMutation,
+  useGetProfileQuery,
+} from "../../api/userApi";
 
-import "../../components/Profile/profile.css";
+import "../../components/Profile/profileform.css";
 
-const Profile = () => {
-  const navigate = useNavigate();
-  const [addressModalOpen, setAddressModalOpen] = useState(false);
+const { Title, Text } = Typography;
+const { Option } = Select;
 
-  const { data: profile, isLoading: isProfileLoading } = useGetProfileQuery();
-  const user = profile?.user;
-  const userId = user?.userId;
+const getCroppedImg = (imageSrc, pixelCrop) => {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.src = imageSrc;
+    image.onload = () => {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return reject(new Error("Canvas context not available"));
 
-  const skip = !userId;
+      canvas.width = 400;
+      canvas.height = 400;
 
-  const { data: quotationsData, isLoading: quotationsLoading } =
-    useGetAllQuotationsQuery({ userId }, { skip });
-  const { data: ordersData, isLoading: ordersLoading } = useGetAllOrdersQuery(
-    { userId },
-    { skip },
-  );
-  const { data: purchaseOrdersData, isLoading: posLoading } =
-    useGetPurchaseOrdersQuery({ userId }, { skip });
-  const {
-    data: addressesData,
-    isLoading: addressesLoading,
-    refetch: refetchAddresses,
-  } = useGetAllUserAddressesQuery(undefined, { skip });
+      ctx.drawImage(
+        image,
+        pixelCrop.x,
+        pixelCrop.y,
+        pixelCrop.width,
+        pixelCrop.height,
+        0,
+        0,
+        400,
+        400,
+      );
 
-  const myAddresses = useMemo(() => {
-    if (!addressesData?.data || !userId) return [];
-    const currentUser = addressesData.data.find((u) => u.userId === userId);
-    return currentUser?.addresses || [];
-  }, [addressesData, userId]);
+      canvas.toBlob(
+        (blob) =>
+          blob ? resolve(blob) : reject(new Error("Blob creation failed")),
+        "image/jpeg",
+        0.92,
+      );
+    };
+    image.onerror = reject;
+  });
+};
 
-  const myQuotations = useMemo(
-    () => quotationsData?.data?.filter((q) => q.createdBy === userId) || [],
-    [quotationsData],
-  );
-  const myOrders = useMemo(
-    () =>
-      ordersData?.orders?.filter(
-        (o) => o.createdBy === userId || o.assignedUserId === userId,
-      ) || [],
-    [ordersData],
-  );
-  const myPOs = useMemo(
-    () =>
-      purchaseOrdersData?.data?.filter((po) => po.createdBy === userId) || [],
-    [purchaseOrdersData],
-  );
+const Profile = ({ onSuccess, onCancel }) => {
+  const [form] = Form.useForm();
+  const { data: profileData, isLoading: profileLoading } = useGetProfileQuery();
+  const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
+  const [uploadPhoto, { isLoading: isUploading }] = useUploadPhotoMutation();
 
-  const formatDate = (date) =>
-    date ? moment(date).format("DD MMM YYYY") : "—";
+  const [avatarUrl, setAvatarUrl] = useState("");
+  const [cropModalVisible, setCropModalVisible] = useState(false);
+  const [cropImage, setCropImage] = useState(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
 
-  const primaryAddress =
-    myAddresses.find((a) => a.status === "PRIMARY") || myAddresses[0];
+  const user = profileData?.user;
 
-  const tabItems = [
-    {
-      key: "overview",
-      label: (
-        <Badge count={myQuotations.length} showZero overflowCount={99}>
-          Overview
-        </Badge>
-      ),
-      children: quotationsLoading ? (
-        <Skeleton active paragraph={{ rows: 6 }} />
-      ) : myQuotations.length === 0 ? (
-        <Empty
-          description="No quotations created yet"
-          image={Empty.PRESENTED_IMAGE_SIMPLE}
-        />
-      ) : (
-        <div className="quotation-grid">
-          {myQuotations.slice(0, 6).map((q) => (
-            <Card
-              key={q.quotationId}
-              hoverable
-              className="quotation-card"
-              bodyStyle={{ padding: "16px" }}
-            >
-              <div className="flex justify-between items-start">
-                <div>
-                  <h4 className="quotation-title">
-                    {q.document_title || "Quotation"}
-                  </h4>
-                  <p className="quotation-ref">
-                    Ref: {q.reference_number || "—"}
-                  </p>
-                  <p className="quotation-due">Due: {formatDate(q.due_date)}</p>
-                </div>
-                <div className="quotation-amount">
-                  ₹{Number(q.finalAmount || 0).toLocaleString("en-IN")}
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
-      ),
-    },
-    {
-      key: "orders",
-      label: (
-        <Badge count={myOrders.length} showZero overflowCount={99}>
-          Orders
-        </Badge>
-      ),
-      children: ordersLoading ? (
-        <Skeleton active />
-      ) : (
-        <DataTable
-          dataSource={myOrders}
-          columns={[
-            {
-              title: "Order #",
-              dataIndex: "orderNo",
-              render: (text) => <strong>{text}</strong>,
-            },
-            { title: "Customer", render: (r) => r.customers?.name || "—" },
-            {
-              title: "Status",
-              render: (r) => (
-                <Tag
-                  color={
-                    r.status === "DELIVERED"
-                      ? "success"
-                      : r.status === "CANCELED"
-                        ? "error"
-                        : "processing"
-                  }
-                >
-                  {r.status}
-                </Tag>
-              ),
-            },
-            {
-              title: "Total",
-              render: (r) =>
-                `₹${Number(r.finalAmount || 0).toLocaleString("en-IN")}`,
-            },
-            {
-              title: "Date",
-              render: (r) => formatDate(r.orderDate || r.createdAt),
-            },
-          ]}
-          rowKey="id"
-          pagination={{ pageSize: 8 }}
-        />
-      ),
-    },
-    {
-      key: "purchaseorders",
-      label: (
-        <Badge count={myPOs.length} showZero overflowCount={99}>
-          Purchase Orders
-        </Badge>
-      ),
-      children: posLoading ? (
-        <Skeleton active />
-      ) : (
-        <DataTable
-          dataSource={myPOs}
-          columns={[
-            { title: "PO #", dataIndex: "poNumber" },
-            { title: "Vendor", render: (r) => r.Vendor?.vendorName || "—" },
-            {
-              title: "Status",
-              dataIndex: "status",
-              render: (t) => <Tag color="default">{t}</Tag>,
-            },
-            {
-              title: "Amount",
-              render: (r) =>
-                `₹${Number(r.totalAmount || 0).toLocaleString("en-IN")}`,
-            },
-          ]}
-          rowKey="id"
-          pagination={{ pageSize: 8 }}
-        />
-      ),
-    },
-  ];
+  useEffect(() => {
+    if (user) {
+      form.setFieldsValue({
+        username: user.username || "",
+        name: user.name || "",
+        email: user.email || "",
+        mobileNumber: user.mobileNumber || "",
+        dateOfBirth: user.dateOfBirth ? moment(user.dateOfBirth) : null,
+        bloodGroup: user.bloodGroup || undefined,
+        emergencyNumber: user.emergencyNumber || "",
+        shiftFrom: user.shiftFrom ? moment(user.shiftFrom, "HH:mm:ss") : null,
+        shiftTo: user.shiftTo ? moment(user.shiftTo, "HH:mm:ss") : null,
+        street: user.address?.street || "",
+        city: user.address?.city || "",
+        state: user.address?.state || "",
+        postalCode: user.address?.postalCode || "",
+        country: user.address?.country || "India",
+      });
+      setAvatarUrl(user.photo_thumbnail || "");
+    }
+  }, [user, form]);
 
-  if (isProfileLoading) {
+  const beforeUpload = (file) => {
+    const isValidType = /image\/(jpeg|png|webp)/.test(file.type);
+    const isLt5M = file.size / 1024 / 1024 < 5;
+
+    if (!isValidType) {
+      message.error("Only JPG, PNG, or WebP files are allowed");
+      return Upload.LIST_IGNORE;
+    }
+    if (!isLt5M) {
+      message.error("Image must be smaller than 5MB");
+      return Upload.LIST_IGNORE;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setCropImage(e.target.result);
+      setCropModalVisible(true);
+      setZoom(1);
+      setCrop({ x: 0, y: 0 });
+    };
+    reader.readAsDataURL(file);
+    return false;
+  };
+
+  const onCropComplete = useCallback((_, croppedAreaPixels) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }, []);
+
+  const handleCropSave = async () => {
+    if (!croppedAreaPixels) return;
+
+    try {
+      const croppedBlob = await getCroppedImg(cropImage, croppedAreaPixels);
+      const result = await uploadPhoto(croppedBlob).unwrap();
+
+      setAvatarUrl(result.photo_thumbnail);
+      message.success("Profile photo updated");
+      setCropModalVisible(false);
+      setCropImage(null);
+    } catch (err) {
+      message.error("Failed to upload photo");
+    }
+  };
+
+  const onFinish = async (values) => {
+    const payload = {
+      ...values,
+      dateOfBirth: values.dateOfBirth?.format("YYYY-MM-DD") || null,
+      shiftFrom: values.shiftFrom?.format("HH:mm:ss") || null,
+      shiftTo: values.shiftTo?.format("HH:mm:ss") || null,
+      photo_thumbnail: avatarUrl || null,
+      address: {
+        street: values.street?.trim() || "",
+        city: values.city?.trim() || "",
+        state: values.state?.trim() || "",
+        postalCode: values.postalCode?.trim() || "",
+        country: values.country?.trim() || "India",
+      },
+    };
+
+    try {
+      await updateProfile(payload).unwrap();
+      message.success("Profile updated successfully");
+      onSuccess?.();
+    } catch (err) {
+      message.error(err?.data?.message || "Failed to update profile");
+    }
+  };
+
+  if (profileLoading) {
     return (
       <div className="profile-loading">
         <Spin size="large" />
@@ -231,187 +192,271 @@ const Profile = () => {
   return (
     <div className="page-wrapper">
       <div className="content">
-        <div className="profile-page">
-          <div className="profile-container">
-            {/* Hero Header */}
-            <Card className="profile-hero">
-              <div className="hero-content">
-                <Avatar
-                  size={140}
-                  src={user?.avatarUrl || user?.photo_thumbnail}
-                  icon={<UserOutlined />}
-                  className="hero-avatar"
-                />
+        <div className="profile-form-page">
+          <Card className="profile-form-card">
+            <div className="form-header">
+              <Title level={3}>Edit Your Profile</Title>
+              <Text type="secondary">Keep your information up to date</Text>
+            </div>
 
-                <div className="hero-info">
-                  <h1 className="hero-name">{user?.name || "User"}</h1>
-                  <p className="hero-username">@{user?.username || "—"}</p>
+            <Row gutter={[32, 32]}>
+              {/* Avatar Column */}
+              <Col xs={24} md={8}>
+                <Card className="avatar-card">
+                  <div className="avatar-preview">
+                    <Avatar
+                      size={180}
+                      src={avatarUrl}
+                      icon={<UserOutlined />}
+                      className="avatar-main"
+                    />
+                  </div>
 
-                  <Space wrap size="small" className="hero-roles">
-                    {user?.roles?.map((role) => (
-                      <Tag key={role} className="role-tag">
-                        {role.replace(/_/g, " ")}
-                      </Tag>
-                    ))}
-                  </Space>
-                </div>
-
-                <Button
-                  type="primary"
-                  icon={<EditOutlined />}
-                  onClick={() => navigate(`/u/${userId}/edit`)}
-                  className="edit-profile-btn"
-                >
-                  Edit Profile
-                </Button>
-              </div>
-
-              <Divider />
-
-              <Row gutter={[16, 16]} className="hero-stats">
-                <Col xs={12} sm={6}>
-                  <Statistic
-                    title="Quotations"
-                    value={myQuotations.length}
-                    prefix={<FileTextOutlined />}
-                  />
-                </Col>
-                <Col xs={12} sm={6}>
-                  <Statistic
-                    title="Active Orders"
-                    value={
-                      myOrders.filter((o) => o.status !== "DELIVERED").length
-                    }
-                    prefix={<ShoppingCartOutlined />}
-                  />
-                </Col>
-                <Col xs={12} sm={6}>
-                  <Statistic
-                    title="Purchase Orders"
-                    value={myPOs.length}
-                    prefix={<DollarCircleOutlined />}
-                  />
-                </Col>
-                <Col xs={12} sm={6}>
-                  <Statistic
-                    title="Team"
-                    value={user?.team || "Individual"}
-                    prefix={<TeamOutlined />}
-                  />
-                </Col>
-              </Row>
-            </Card>
-
-            <Row gutter={[24, 24]}>
-              {/* Left Column – Personal Info + Address */}
-              <Col xs={24} lg={8}>
-                <Card title="Personal Information" className="info-card">
-                  <Space direction="vertical" size="middle" className="w-full">
-                    <div className="info-row">
-                      <MailOutlined className="info-icon" />
-                      <div>
-                        <div className="info-label">Email</div>
-                        <a
-                          href={`mailto:${user?.email}`}
-                          className="info-value"
-                        >
-                          {user?.email || "—"}
-                        </a>
-                      </div>
-                    </div>
-
-                    <div className="info-row">
-                      <PhoneOutlined className="info-icon" />
-                      <div>
-                        <div className="info-label">Phone</div>
-                        <div className="info-value">
-                          {user?.mobileNumber || "Not added"}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="info-row">
-                      <CalendarOutlined className="info-icon" />
-                      <div>
-                        <div className="info-label">Birthday</div>
-                        <div className="info-value">
-                          {formatDate(user?.dateOfBirth)}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="info-row">
-                      <ClockCircleOutlined className="info-icon" />
-                      <div>
-                        <div className="info-label">Joined</div>
-                        <div className="info-value">
-                          {formatDate(user?.createdAt)}
-                        </div>
-                      </div>
-                    </div>
-                  </Space>
-                </Card>
-
-                <Card
-                  title="Primary Address"
-                  className="address-card mt-6"
-                  loading={addressesLoading}
-                  extra={
+                  <Upload showUploadList={false} beforeUpload={beforeUpload}>
                     <Button
-                      type="text"
-                      icon={<PlusOutlined />}
-                      onClick={() => setAddressModalOpen(true)}
+                      type="primary"
+                      icon={<UploadOutlined />}
+                      loading={isUploading}
+                      block
+                      size="large"
+                      className="upload-btn"
                     >
-                      {myAddresses.length > 0 ? "Manage" : "Add"}
+                      Change Photo
                     </Button>
-                  }
-                >
-                  {primaryAddress ? (
-                    <div className="address-content">
-                      <EnvironmentOutlined className="address-icon" />
-                      <div>
-                        <div className="address-street">
-                          {primaryAddress.street}
-                        </div>
-                        <div className="address-city">
-                          {primaryAddress.city}, {primaryAddress.state}{" "}
-                          {primaryAddress.postalCode &&
-                            `(${primaryAddress.postalCode})`}
-                        </div>
-                        <div className="address-country">
-                          {primaryAddress.country || "India"}
-                        </div>
-                        {primaryAddress.status === "PRIMARY" && (
-                          <Tag color="blue" className="mt-2">
-                            Primary
-                          </Tag>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <Empty description="No address added yet" />
-                  )}
+                  </Upload>
+
+                  <Text type="secondary" className="upload-hint">
+                    JPG, PNG, WebP • Max 5 MB
+                  </Text>
                 </Card>
               </Col>
 
-              {/* Right Column – Tabs */}
-              <Col xs={24} lg={16}>
-                <Card className="tabs-card">
-                  <Tabs items={tabItems} size="large" />
-                </Card>
+              {/* Form Column */}
+              <Col xs={24} md={16}>
+                <Form form={form} layout="vertical" onFinish={onFinish}>
+                  {/* Personal Information */}
+                  <Divider orientation="left" plain>
+                    <Space>
+                      <UserOutlined className="section-icon" />
+                      Personal Information
+                    </Space>
+                  </Divider>
+
+                  <Row gutter={16}>
+                    <Col xs={24} sm={12}>
+                      <Form.Item
+                        label="Full Name"
+                        name="name"
+                        rules={[
+                          { required: true, message: "Please enter your name" },
+                        ]}
+                      >
+                        <Input size="large" placeholder="John Doe" />
+                      </Form.Item>
+                    </Col>
+
+                    <Col xs={24} sm={12}>
+                      <Form.Item
+                        label="Username"
+                        name="username"
+                        rules={[
+                          { required: true, message: "Username is required" },
+                        ]}
+                      >
+                        <Input size="large" placeholder="@johndoe" />
+                      </Form.Item>
+                    </Col>
+
+                    <Col xs={24} sm={12}>
+                      <Form.Item
+                        label="Email Address"
+                        name="email"
+                        rules={[
+                          { required: true, message: "Email is required" },
+                          { type: "email", message: "Invalid email format" },
+                        ]}
+                      >
+                        <Input
+                          size="large"
+                          prefix={<MailOutlined />}
+                          disabled
+                        />
+                      </Form.Item>
+                    </Col>
+
+                    <Col xs={24} sm={12}>
+                      <Form.Item
+                        label="Phone Number"
+                        name="mobileNumber"
+                        rules={[
+                          {
+                            pattern: /^[0-9]{10}$/,
+                            message: "Enter a valid 10-digit number",
+                          },
+                        ]}
+                      >
+                        <Input
+                          size="large"
+                          prefix={<PhoneOutlined />}
+                          placeholder="9876543210"
+                        />
+                      </Form.Item>
+                    </Col>
+
+                    <Col xs={24} sm={12}>
+                      <Form.Item label="Date of Birth" name="dateOfBirth">
+                        <DatePicker size="large" style={{ width: "100%" }} />
+                      </Form.Item>
+                    </Col>
+
+                    <Col xs={24} sm={12}>
+                      <Form.Item label="Blood Group" name="bloodGroup">
+                        <Select
+                          size="large"
+                          allowClear
+                          placeholder="Select blood group"
+                        >
+                          {[
+                            "A+",
+                            "A-",
+                            "B+",
+                            "B-",
+                            "AB+",
+                            "AB-",
+                            "O+",
+                            "O-",
+                          ].map((g) => (
+                            <Option key={g} value={g}>
+                              {g}
+                            </Option>
+                          ))}
+                        </Select>
+                      </Form.Item>
+                    </Col>
+
+                    <Col xs={24} sm={12}>
+                      <Form.Item
+                        label="Emergency Contact"
+                        name="emergencyNumber"
+                      >
+                        <Input size="large" placeholder="9876543210" />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+
+                  {/* Address Section */}
+                  <Divider orientation="left" plain>
+                    <Space>
+                      <HomeOutlined className="section-icon" />
+                      Address Information
+                    </Space>
+                  </Divider>
+
+                  <Row gutter={16}>
+                    <Col span={24}>
+                      <Form.Item label="Street Address" name="street">
+                        <Input
+                          size="large"
+                          placeholder="123 Main Street, Apt 4B"
+                        />
+                      </Form.Item>
+                    </Col>
+
+                    <Col xs={24} sm={12}>
+                      <Form.Item label="City" name="city">
+                        <Input size="large" placeholder="Mumbai" />
+                      </Form.Item>
+                    </Col>
+
+                    <Col xs={24} sm={12}>
+                      <Form.Item label="State / Province" name="state">
+                        <Input size="large" placeholder="Maharashtra" />
+                      </Form.Item>
+                    </Col>
+
+                    <Col xs={24} sm={12}>
+                      <Form.Item label="Postal Code" name="postalCode">
+                        <Input size="large" placeholder="400001" />
+                      </Form.Item>
+                    </Col>
+
+                    <Col xs={24} sm={12}>
+                      <Form.Item label="Country" name="country">
+                        <Input size="large" placeholder="India" />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+
+                  {/* Form Actions */}
+                  <div className="form-actions">
+                    <Button size="large" onClick={onCancel}>
+                      Cancel
+                    </Button>
+                    <Button
+                      type="primary"
+                      size="large"
+                      htmlType="submit"
+                      loading={isUpdating}
+                      className="submit-btn"
+                    >
+                      Save Changes
+                    </Button>
+                  </div>
+                </Form>
               </Col>
             </Row>
+          </Card>
 
-            <AddAddress
-              visible={addressModalOpen}
-              onClose={() => setAddressModalOpen(false)}
-              onSave={() => {
-                refetchAddresses();
-                setAddressModalOpen(false);
-              }}
-              selectedCustomer={null}
-            />
-          </div>
+          {/* Crop Modal */}
+          <Modal
+            title={<Title level={4}>Crop & Adjust Avatar</Title>}
+            open={cropModalVisible}
+            onCancel={() => {
+              setCropModalVisible(false);
+              setCropImage(null);
+            }}
+            footer={null}
+            width={640}
+            destroyOnClose
+            className="crop-modal"
+          >
+            <div className="crop-container">
+              <Cropper
+                image={cropImage}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
+                cropShape="round"
+                showGrid={false}
+              />
+            </div>
+
+            <div className="crop-controls">
+              <Text strong>Zoom</Text>
+              <Slider
+                min={1}
+                max={3}
+                step={0.05}
+                value={zoom}
+                onChange={setZoom}
+                tooltip={{ open: false }}
+              />
+            </div>
+
+            <div className="crop-actions">
+              <Button onClick={() => setCropModalVisible(false)}>Cancel</Button>
+              <Button
+                type="primary"
+                loading={isUploading}
+                onClick={handleCropSave}
+              >
+                Apply Photo
+              </Button>
+            </div>
+          </Modal>
         </div>
       </div>
     </div>

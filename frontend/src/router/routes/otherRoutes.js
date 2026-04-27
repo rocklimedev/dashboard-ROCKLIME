@@ -10,6 +10,7 @@ import GeneralSettings from "../../concepts/Settings/GeneralSettings";
 import NewQuotation from "../../concepts/Cart/NewQuotation";
 import NewOrder from "../../concepts/Cart/NewOrder";
 import NewPurchaseOrder from "../../concepts/Cart/NewPurchaseOrder";
+
 export const otherRoutes = [
   {
     path: "/cart/quotation",
