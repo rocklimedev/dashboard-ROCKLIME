@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS `brand_parentcategory_brands` (
   UNIQUE KEY `brand_parentcategory_brands_brand_parent_category_id_brand_id` (`brandParentCategoryId`,`brandId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
--- Dumping data for table spsyn8lm_rocklime_dashboard.brand_parentcategory_brands: ~27 rows (approximately)
+-- Dumping data for table spsyn8lm_rocklime_dashboard.brand_parentcategory_brands: ~34 rows (approximately)
 INSERT INTO `brand_parentcategory_brands` (`brandParentCategoryId`, `brandId`) VALUES
 	('158dd2fa-7421-11f0-9e84-52540021303b', 'f84227c5-9852-11f0-ac50-52540021303b'),
 	('1a76fdf5-a380-4a62-867c-ca32f6bd7f29', '13847c2c-3c91-4bb2-a130-f94928658237'),

@@ -1,9 +1,9 @@
-const { sendNotification } = require("./notificationController"); // Import sendNotification
+const { sendNotification } = require("./notificationController");
 const { Brand, Product } = require("../models");
-// Assume an admin user ID or system channel for notifications
-const ADMIN_USER_ID = "2ef0f07a-a275-4fe1-832d-fe9a5d145f60"; // Replace with actual admin user ID or channel
 
-// Get total products of a brand (no notification needed)
+const ADMIN_USER_ID = "2ef0f07a-a275-4fe1-832d-fe9a5d145f60";
+
+// Get total products of a brand
 const getTotalProductOfBrand = async (req, res) => {
   try {
     const { brandId } = req.params;
@@ -21,10 +21,14 @@ const getTotalProductOfBrand = async (req, res) => {
 // Create a new brand
 const createBrand = async (req, res) => {
   try {
-    const { brandName, brandSlug } = req.body;
-    const brand = await Brand.create({ brandName, brandSlug });
+    const { brandName, brandSlug, logo } = req.body;
 
-    // Send notification to admin or system channel
+    const brand = await Brand.create({
+      brandName,
+      brandSlug,
+      logo: logo || null, // Allow null if no logo provided
+    });
+
     await sendNotification({
       userId: ADMIN_USER_ID,
       title: "New Brand Created",
@@ -37,17 +41,19 @@ const createBrand = async (req, res) => {
   }
 };
 
-// Get all brands (no notification needed)
+// Get all brands
 const getBrands = async (req, res) => {
   try {
-    const brands = await Brand.findAll();
+    const brands = await Brand.findAll({
+      order: [["brandName", "ASC"]],
+    });
     res.status(200).json(brands);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-// Get a brand by ID (no notification needed)
+// Get a brand by ID
 const getBrandById = async (req, res) => {
   try {
     const brand = await Brand.findByPk(req.params.id);
@@ -65,23 +71,31 @@ const getBrandById = async (req, res) => {
 const updateBrand = async (req, res) => {
   try {
     const { id } = req.params;
-    const { brandName, brandSlug } = req.body;
+    const { brandName, brandSlug, logo } = req.body;
+
     const brand = await Brand.findByPk(id);
 
     if (!brand) {
       return res.status(404).json({ message: "Brand not found." });
     }
 
-    await brand.update({ brandName, brandSlug });
+    const updateData = {};
+    if (brandName !== undefined) updateData.brandName = brandName;
+    if (brandSlug !== undefined) updateData.brandSlug = brandSlug;
+    if (logo !== undefined) updateData.logo = logo;
 
-    // Send notification to admin or system channel
+    await brand.update(updateData);
+
     await sendNotification({
       userId: ADMIN_USER_ID,
       title: "Brand Updated",
-      message: `The brand "${brandName}" with slug "${brandSlug}" has been updated.`,
+      message: `The brand "${brand.brandName || brandName}" has been updated.`,
     });
 
-    res.json({ message: "Brand updated successfully.", brand });
+    res.json({
+      message: "Brand updated successfully.",
+      brand: brand,
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -92,7 +106,6 @@ const deleteBrand = async (req, res) => {
   try {
     const brand = await Brand.findByPk(req.params.id);
     if (brand) {
-      // Send notification to admin or system channel before deletion
       await sendNotification({
         userId: ADMIN_USER_ID,
         title: "Brand Deleted",

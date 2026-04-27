@@ -38,15 +38,5 @@ router.delete(
   // checkPermission("delete", "delete_customer", "customers", "/customers/:id"),
   customerController.deleteCustomer,
 );
-router.get(
-  "/:id/invoices",
-  // checkPermission(
-  //   "view",
-  //   "get_invoices_by_customer_id",
-  //   "customers",
-  //   "/customers/:id/invoices"
-  // ),
-  customerController.getInvoicesByCustomerId,
-);
 
 module.exports = router;

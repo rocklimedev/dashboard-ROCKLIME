@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS `categories` (
   CONSTRAINT `categories_ibfk_1380` FOREIGN KEY (`brandId`) REFERENCES `brands` (`id`) ON DELETE NO ACTION ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Dumping data for table spsyn8lm_rocklime_dashboard.categories: ~337 rows (approximately)
+-- Dumping data for table spsyn8lm_rocklime_dashboard.categories: ~346 rows (approximately)
 INSERT INTO `categories` (`categoryId`, `name`, `parentCategoryId`, `createdAt`, `updatedAt`, `slug`, `brandId`) VALUES
 	('02cb1e04-2620-4998-9653-c81e576b9ade', 'TAP CONNECTOR HOSE PIPE', 'd18dd89c-90d2-44dd-8ba4-16783d58bd5e', '2025-08-08 08:00:16', '2025-08-08 08:00:16', 'tap-connector-hose-pipe', 'acbe7061-9b76-47d1-a509-e4b1f982a36f'),
 	('034c7cfb-a607-49d0-a061-9f38dac1cca8', 'THM –ROUND', '80afdfa6-2124-4c58-8d1e-116f9f7d8c56', '2025-04-07 12:33:05', '2025-04-07 12:33:05', 'cat-034c7cfba60749d0a0619f38dac1cca8', '13847c2c-3c91-4bb2-a130-f94928658237'),

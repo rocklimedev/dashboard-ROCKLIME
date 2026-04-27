@@ -1,3 +1,4 @@
+// src/components/Layout/Header.jsx
 import React, {
   useState,
   useEffect,
@@ -9,7 +10,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useGetProfileQuery } from "../../api/userApi";
 import { useGetCartQuery } from "../../api/cartApi";
 import { useGetNotificationsQuery } from "../../api/notificationApi";
-import { Dropdown, Button, Menu, Badge, Input, Spin } from "antd";
+import { Dropdown, Button, Menu, Badge, Input, Spin, message } from "antd";
 import {
   BellOutlined,
   ShoppingCartOutlined,
@@ -18,10 +19,8 @@ import {
   UserOutlined,
   SettingOutlined,
   SearchOutlined,
-  CloseOutlined,
 } from "@ant-design/icons";
 import SearchOverlay from "./SearchOverlay";
-import { message } from "antd";
 import Avatar from "react-avatar";
 import { useLogoutMutation } from "../../api/authApi";
 import { useAuth } from "../../context/AuthContext";
@@ -40,12 +39,9 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
     isLoading: isProfileLoading,
     error: profileError,
   } = useGetProfileQuery();
-
   const userId = user?.user?.userId;
-  const userRoles = user?.user?.roles || [];
 
   const { data: cart } = useGetCartQuery(userId, { skip: !userId });
-
   const { data: notifications = [] } = useGetNotificationsQuery(undefined, {
     skip: !userId,
   });
@@ -53,16 +49,16 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
   const [logoutMutation, { isLoading: isLoggingOut }] = useLogoutMutation();
 
   // === States ===
-  const [searchQuery, setSearchQuery] = useState(""); // Raw input
-  const [debouncedQuery, setDebouncedQuery] = useState(""); // Debounced for API
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [showSearchOverlay, setShowSearchOverlay] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false); // ← FIXED: Missing state
+  const [showNotifications, setShowNotifications] = useState(false);
 
   const searchRef = useRef(null);
   const mobileSearchInputRef = useRef(null);
 
-  // Search API Call with debounced query
+  // Search API
   const { data: searchResponse, isFetching: searchFetching } =
     useSearchAllQuery(
       { query: debouncedQuery, limit: 8 },
@@ -84,12 +80,12 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
     }
   }, [mobileSearchOpen]);
 
-  // Show search overlay when query exists
+  // Show overlay when there's a debounced query
   useEffect(() => {
     setShowSearchOverlay(!!debouncedQuery.trim());
   }, [debouncedQuery]);
 
-  // Click outside to close search
+  // Click outside handler
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (searchRef.current && !searchRef.current.contains(e.target)) {
@@ -107,7 +103,25 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [mobileSearchOpen, showSearchOverlay]);
 
-  // Handlers
+  // === NEW: Handle Enter Key Press ===
+  const handleSearchSubmit = (e) => {
+    if (e.key === "Enter" && searchQuery.trim()) {
+      const query = searchQuery.trim();
+
+      // Close overlays
+      setShowSearchOverlay(false);
+      setMobileSearchOpen(false);
+
+      // Navigate to search page with query
+      navigate(`/search?q=${encodeURIComponent(query)}`);
+
+      // Optional: Clear the search input after navigation
+      // setSearchQuery("");
+      // setDebouncedQuery("");
+    }
+  };
+
+  // Search input change handler
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchQuery(value);
@@ -242,6 +256,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                   placeholder="Search products, users, orders..."
                   value={searchQuery}
                   onChange={handleSearchChange}
+                  onKeyDown={handleSearchSubmit} // ← Enter key handler
                   allowClear
                   size="large"
                 />
@@ -255,6 +270,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                   placeholder="Search products, users, orders..."
                   value={searchQuery}
                   onChange={handleSearchChange}
+                  onKeyDown={handleSearchSubmit} // ← Enter key handler
                   onFocus={() =>
                     debouncedQuery.trim() && setShowSearchOverlay(true)
                   }
@@ -264,7 +280,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                 />
               </div>
 
-              {/* Search Overlay */}
+              {/* Search Overlay (Live suggestions) */}
               <SearchOverlay
                 visible={showSearchOverlay}
                 loading={searchFetching}

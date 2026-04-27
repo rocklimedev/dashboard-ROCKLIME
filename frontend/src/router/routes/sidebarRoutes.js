@@ -1,12 +1,20 @@
 // src/routes/sidebarRoutes.js
-import { FaHome } from "react-icons/fa";
-import { FaTags } from "react-icons/fa";
-import { FaFileAlt, FaUsers } from "react-icons/fa";
-import { FaThLarge } from "react-icons/fa";
-import { FaUser, FaIdCard, FaUserCircle, FaBoxOpen } from "react-icons/fa";
-import { FaCog } from "react-icons/fa";
-import { MdOutlineInventory2 } from "react-icons/md";
-import { FaShoppingCart } from "react-icons/fa";
+import {
+  FaHome,
+  FaTags,
+  FaFileAlt,
+  FaUsers,
+  FaThLarge,
+  FaUser,
+  FaIdCard,
+  FaCog,
+  FaBoxOpen,
+} from "react-icons/fa";
+
+import { MdOutlineInventory2, MdOutlineCategory } from "react-icons/md";
+
+import { FaShoppingCart, FaStore } from "react-icons/fa";
+
 import PurchaseManagement from "../../concepts/PO/PurchaseManagement";
 import Product from "../../concepts/Products/Product";
 import OrderWrapper from "../../concepts/Order/OrderWrapper";
@@ -17,6 +25,7 @@ import RolePermission from "../../concepts/RBAC/RolePermission";
 import NewPageWrapper from "../../concepts/Home/NewPageWrapper";
 import CustomerList from "../../concepts/Customers/CustomerList";
 import BrandList from "../../concepts/Brands/BrandsList";
+
 export const sidebarRoutes = [
   {
     path: "/",
@@ -71,7 +80,7 @@ export const sidebarRoutes = [
 
   {
     path: "#",
-    name: "Master Table",
+    name: "Master Data",
     icon: <FaBoxOpen />,
     isSidebarActive: true,
     submenu: [
@@ -85,16 +94,16 @@ export const sidebarRoutes = [
       {
         path: "/brands/list",
         name: "Brands",
+        icon: <FaStore />, // ✅ Better icon for Brands
         isSidebarActive: true,
-        icon: <FaCog />,
         element: <BrandList />,
       },
       {
         path: "/roles-permission/list",
-        name: "Roles",
+        name: "Roles & Permissions",
         icon: <FaIdCard />,
-        element: <RolePermission />,
         isSidebarActive: true,
+        element: <RolePermission />,
       },
     ],
   },

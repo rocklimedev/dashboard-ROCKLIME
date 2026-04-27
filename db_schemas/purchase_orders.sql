@@ -40,8 +40,9 @@ CREATE TABLE IF NOT EXISTS `purchase_orders` (
   CONSTRAINT `purchase_orders_ibfk_1` FOREIGN KEY (`vendorId`) REFERENCES `vendors` (`id`) ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
--- Dumping data for table spsyn8lm_rocklime_dashboard.purchase_orders: ~4 rows (approximately)
+-- Dumping data for table spsyn8lm_rocklime_dashboard.purchase_orders: ~5 rows (approximately)
 INSERT INTO `purchase_orders` (`id`, `vendorId`, `userId`, `fgsId`, `status`, `orderDate`, `totalAmount`, `mongoItemsId`, `createdAt`, `updatedAt`, `poNumber`, `expectDeliveryDate`) VALUES
+	('1ab991b1-2c8c-4be0-8050-44202e7a1eec', '3a4df5ea-e679-4882-8e3e-16004e9c11ce', 'ce2549ac-ec37-4201-946c-625725114c6a', NULL, 'pending', '2026-04-24 11:01:16', 36350.00, '69eb4d7ccaf6050e33e9f0a5', '2026-04-24 11:01:16', '2026-04-25 05:35:26', 'PO240426101', '2026-04-25 00:00:00'),
 	('4002ef1d-2beb-46b7-b6e7-199e5e7f4088', '26264130-b469-4194-a7ca-ce13a0c38225', '12c1816f-87f3-4dc6-9432-942a007b6a4b', NULL, 'confirmed', '2026-03-31 05:10:42', 849000.00, '69cb57520f0316e909b94d84', '2026-03-31 05:10:42', '2026-03-31 05:11:31', 'PO310326101', '2026-04-18 00:00:00'),
 	('5a9cc676-b6b3-4774-8ea1-a1709939fa12', '3a4df5ea-e679-4882-8e3e-16004e9c11ce', '12c1816f-87f3-4dc6-9432-942a007b6a4b', NULL, 'pending', '2026-04-11 07:16:42', 202800.00, '69d9f55aafbbeb0666d2d8d4', '2026-04-11 07:16:42', '2026-04-11 07:27:40', 'PO110426102', '2026-04-11 00:00:00'),
 	('6d9c8cc6-1832-4934-9306-cd56426d0f85', '26264130-b469-4194-a7ca-ce13a0c38225', '12c1816f-87f3-4dc6-9432-942a007b6a4b', NULL, 'pending', '2026-04-09 11:43:40', 115300.00, '69d790ec8782c8216bd25594', '2026-04-09 11:43:40', '2026-04-09 11:43:40', 'PO090426101', '2026-04-09 00:00:00'),

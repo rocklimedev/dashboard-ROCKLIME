@@ -122,10 +122,6 @@ module.exports = (sequelize, DataTypes) => {
       foreignKey: "quotationId",
       as: "orders",
     });
-    Quotation.hasOne(models.Invoice, {
-      foreignKey: "quotationId",
-      as: "invoice",
-    });
   };
 
   return Quotation;
