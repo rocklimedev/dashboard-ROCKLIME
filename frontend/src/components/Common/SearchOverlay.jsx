@@ -223,15 +223,6 @@ const SearchOverlay = ({ visible, loading, results, onClose, query }) => {
     return base[modelName] || { link: "#", title: "Unknown Item" };
   };
 
-  const handleViewAllResults = () => {
-    onClose();
-    if (query?.trim()) {
-      navigate(`/search?q=${encodeURIComponent(query.trim())}`);
-    } else {
-      navigate("/search");
-    }
-  };
-
   return (
     <div className="search-overlay-backdrop" onClick={onClose}>
       <div
@@ -239,28 +230,6 @@ const SearchOverlay = ({ visible, loading, results, onClose, query }) => {
         onClick={(e) => e.stopPropagation()}
         ref={overlayRef}
       >
-        <div className="search-overlay-header">
-          <span className="search-query-text">
-            {query ? (
-              <>
-                Results for "<strong>{query}</strong>"
-              </>
-            ) : (
-              "Type to search users, products, orders, purchase orders..."
-            )}
-          </span>
-
-          {query?.trim() && hasResults && (
-            <Button
-              type="link"
-              onClick={handleViewAllResults}
-              className="view-all-link"
-            >
-              View all results <DownOutlined />
-            </Button>
-          )}
-        </div>
-
         <Spin spinning={loading}>
           <div className="search-results-wrapper">
             {loading ? (

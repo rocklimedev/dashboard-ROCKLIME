@@ -1,19 +1,28 @@
 const express = require("express");
 const router = express.Router();
 
-const bpc = require("../controller/brandParentCategoryController"); // uses the normalized controller
+const bpc = require("../controller/brandParentCategoryController");
 const checkPermission = require("../middleware/permission");
 const { auth } = require("../middleware/auth");
+
 router.use(auth);
+
 // ---------------------------------------------
 // BrandParentCategory (Entity) CRUD
 // ---------------------------------------------
 
-// Create a BrandParentCategory (e.g., "CP Fitting", "Wellness")
+// Create a BrandParentCategory
 router.post(
   "/",
   // checkPermission("write", "create_brand_parent_category", "brand_parentcategories", "/"),
   bpc.create,
+);
+
+// ✅ Update a BrandParentCategory
+router.put(
+  "/:id",
+  // checkPermission("write", "update_brand_parent_category", "brand_parentcategories", "/:id"),
+  bpc.update,
 );
 
 // List all BrandParentCategories with their attached brands
@@ -23,14 +32,14 @@ router.get(
   bpc.list,
 );
 
-// Get one BrandParentCategory by id (optional endpoint if you added it)
+// Get one BrandParentCategory by ID
 router.get(
   "/:id",
   // checkPermission("view", "get_brand_parent_category", "brand_parentcategories", "/:id"),
-  bpc.getById, // <-- implement in controller if you want a simple fetch-by-id
+  bpc.getById,
 );
 
-// Delete a BrandParentCategory (does not delete brands)
+// Delete a BrandParentCategory
 router.delete(
   "/:id",
   // checkPermission("delete", "delete_brand_parent_category", "brand_parentcategories", "/:id"),
@@ -38,26 +47,30 @@ router.delete(
 );
 
 // ---------------------------------------------
-// Attach Brands to a BrandParentCategory (M:N via junction)
+// Attach / Detach Brands (M:N Relationship)
 // ---------------------------------------------
 
-// Attach one or many brands (body: { brandIds: string[] })
+// Attach one or many brands to a BrandParentCategory
 router.post(
   "/:id/brands",
   // checkPermission("write", "attach_brands_to_bpc", "brand_parentcategories", "/:id/brands"),
   bpc.attachBrands,
 );
 
-// (Optional) Detach a single brand from a BPC
+// Detach a single brand from a BrandParentCategory
 router.delete(
   "/:id/brands/:brandId",
   // checkPermission("delete", "detach_brand_from_bpc", "brand_parentcategories", "/:id/brands/:brandId"),
-  bpc.detachBrand, // <-- implement in controller if you want fine-grained detach
+  bpc.detachBrand,
 );
 
 // ---------------------------------------------
-// Tree for a BrandParentCategory
+// Tree Structure for a BrandParentCategory
 // ---------------------------------------------
-// Returns: BPC -> Brands (M:N) AND ParentCategories (1:M) -> Categories -> Keywords
+router.get(
+  "/:id/tree",
+  // checkPermission("view", "get_bpc_tree", "brand_parentcategories", "/:id/tree"),
+  bpc.getBpcTree,
+);
 
 module.exports = router;

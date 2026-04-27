@@ -20,6 +20,12 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         unique: true,
       },
+      // ✅ NEW: Logo field
+      logo: {
+        type: DataTypes.STRING(500), // URL or file path
+        allowNull: true,
+        defaultValue: null,
+      },
     },
     {
       tableName: "brands",
@@ -32,7 +38,7 @@ module.exports = (sequelize, DataTypes) => {
   );
 
   // --------------------------------------------------
-  // ⭐ Correct associations go inside associate()
+  // ⭐ Associations
   // --------------------------------------------------
   Brand.associate = (models) => {
     // Brand → Vendor (1:N)

@@ -3,23 +3,13 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import {
-  message,
-  Modal,
-  Button,
-  Typography,
-  Space,
-  Tag,
-} from "antd";
+import { message, Modal, Button, Typography, Space, Tag } from "antd";
 import {
   MailOutlined,
   UserDeleteOutlined,
   EditOutlined,
 } from "@ant-design/icons";
-import {
-  useDeleteUserMutation,
-  useGetProfileQuery,
-} from "../../api/userApi";
+import { useDeleteUserMutation, useGetProfileQuery } from "../../api/userApi";
 import {
   useResendVerificationEmailMutation,
   useDeactivateAccountMutation,
@@ -60,31 +50,23 @@ const GeneralSettings = () => {
       message.success("Verification email sent successfully!");
     } catch (error) {
       message.error(
-        error?.data?.message || "Failed to send verification email"
+        error?.data?.message || "Failed to send verification email",
       );
     }
-  };
-
-  const handleLogout = () => {
-    setConfirmMessage("Are you sure you want to log out?");
-    setConfirmAction(() => () => {
-      dispatch(logout());
-      navigate("/login");
-    });
-    setShowConfirmModal(true);
   };
 
   const handleDeactivateAccount = async () => {
     try {
       await deactivateAccount().unwrap();
       message.success(
-        "Account deactivated successfully. You can reactivate by logging in again."
+        "Account deactivated successfully. You can reactivate by logging in again.",
       );
       dispatch(logout());
       navigate("/login");
     } catch (error) {
       message.error(
-        error?.data?.message || "Failed to deactivate account. Please try again."
+        error?.data?.message ||
+          "Failed to deactivate account. Please try again.",
       );
     }
   };
@@ -108,7 +90,7 @@ const GeneralSettings = () => {
 
   const handleInitiateDelete = () => {
     setConfirmMessage(
-      "Are you sure you want to permanently delete your account? This action cannot be undone."
+      "Are you sure you want to permanently delete your account? This action cannot be undone.",
     );
     setConfirmAction(() => handleDeleteAccount);
     setShowConfirmModal(true);
@@ -142,31 +124,6 @@ const GeneralSettings = () => {
           </div>
 
           <div className="card-body">
-            {/* Edit Profile */}
-            <div className="d-flex align-items-center justify-content-between flex-wrap border-bottom pb-4 mb-4">
-              <Space size={16}>
-                <div className="avatar avatar-lg border bg-light d-flex align-items-center justify-content-center">
-                  <EditOutlined style={{ fontSize: 24, color: "#e31e24" }} />
-                </div>
-                <div>
-                  <Title level={5} style={{ margin: 0 }}>
-                    Edit Profile
-                  </Title>
-                  <Text type="secondary">
-                    Update your personal information, avatar, and other profile
-                    details.
-                  </Text>
-                </div>
-              </Space>
-              <Button
-                type="primary"
-                style={{ background: "#E31E24", color: "#fff" }}
-                onClick={() => navigate(`/u/${user.userId}/edit`)}
-              >
-                Edit Profile
-              </Button>
-            </div>
-
             {/* Email Verification */}
             <div className="d-flex align-items-center justify-content-between flex-wrap border-bottom pb-4 mb-4">
               <Space size={16}>

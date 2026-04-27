@@ -77,6 +77,7 @@ CREATE TABLE IF NOT EXISTS `brands` (
   `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `brandSlug` varchar(255) NOT NULL,
   `brandName` varchar(100) NOT NULL,
+  `logo` varchar(500) DEFAULT NULL COMMENT 'Brand logo image URL or file path',
   `createdAt` datetime NOT NULL,
   `updatedAt` datetime NOT NULL,
   PRIMARY KEY (`id`),

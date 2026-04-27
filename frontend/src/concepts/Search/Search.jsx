@@ -1,8 +1,7 @@
-import React, { useState, useMemo, useCallback } from "react";
+// src/pages/SearchPage.jsx
+import React, { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
-  Input,
-  Button,
   Card,
   Empty,
   Spin,
@@ -14,32 +13,30 @@ import {
   Typography,
   Result,
   Pagination,
+  Button,
 } from "antd";
 import {
-  SearchOutlined,
   ReloadOutlined,
   UserOutlined,
   ShoppingCartOutlined,
   FileTextOutlined,
   TagsOutlined,
   ShopOutlined,
+  SearchOutlined,
   TeamOutlined,
 } from "@ant-design/icons";
 import { Link } from "react-router-dom";
 import { useSearchAllQuery } from "../../api/searchApi";
-import { debounce } from "lodash";
 
 const { Title, Text, Paragraph } = Typography;
-const { Search: AntSearch } = Input;
 
 const SearchPage = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const initialQuery = searchParams.get("q") || "";
+  const [searchParams] = useSearchParams();
+  const queryFromUrl = searchParams.get("q") || "";
 
-  const [query, setQuery] = useState(initialQuery);
-  const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
   const [currentPage, setCurrentPage] = useState(1);
 
+  // Fetch results based on URL query parameter
   const {
     data: searchResponse,
     isLoading,
@@ -48,30 +45,17 @@ const SearchPage = () => {
     refetch,
   } = useSearchAllQuery(
     {
-      query: debouncedQuery.trim(),
+      query: queryFromUrl.trim(),
       page: currentPage,
       limit: 20,
     },
-    { skip: !debouncedQuery.trim() },
-  );
-
-  // Debounce search input
-  const debouncedSetQuery = useCallback(
-    debounce((value) => {
-      const trimmed = value?.trim();
-      if (trimmed) {
-        setSearchParams({ q: trimmed });
-        setCurrentPage(1); // Reset to first page on new search
-      }
-      setDebouncedQuery(trimmed || "");
-    }, 350),
-    [setSearchParams],
+    { skip: !queryFromUrl.trim() },
   );
 
   const results = searchResponse?.data || {};
   const meta = searchResponse?.meta || {};
 
-  // Filter categories that have results
+  // Filter groups that actually have results
   const resultGroups = useMemo(() => {
     return Object.entries(results).filter(
       ([_, group]) => group?.items?.length > 0,
@@ -79,15 +63,6 @@ const SearchPage = () => {
   }, [results]);
 
   const hasResults = resultGroups.length > 0;
-
-  const handleSearch = (value) => {
-    const trimmed = value?.trim();
-    if (trimmed) {
-      setSearchParams({ q: trimmed });
-      setDebouncedQuery(trimmed);
-      setCurrentPage(1);
-    }
-  };
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -140,7 +115,7 @@ const SearchPage = () => {
             const parsed = JSON.parse(item.images);
             productImage =
               Array.isArray(parsed) && parsed.length > 0 ? parsed[0] : null;
-          } catch (e) {}
+          } catch {}
         }
 
         return productImage ? (
@@ -256,33 +231,44 @@ const SearchPage = () => {
     return map[key] || { to: "#", title: "Item" };
   };
 
+  // If no query in URL, show empty state
+  if (!queryFromUrl.trim()) {
+    return (
+      <div className="page-wrapper">
+        <div className="content">
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description={
+              <div style={{ marginTop: 16 }}>
+                <Paragraph strong>No search query provided</Paragraph>
+                <Text type="secondary">
+                  Use the search bar in the header to search the system
+                </Text>
+              </div>
+            }
+            style={{ margin: "140px 0" }}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="page-wrapper">
       <div className="content">
-        <Title level={3}>Global Search</Title>
-        <Paragraph type="secondary" style={{ marginBottom: 32 }}>
-          Search across Users, Products, Orders, Customers, Quotations, Purchase
-          Orders, and more
-        </Paragraph>
-
-        <Card style={{ marginBottom: 32, borderRadius: 12 }}>
-          <AntSearch
-            placeholder="Search users, products, orders, purchase orders..."
-            enterButton={
-              <Space>
-                <SearchOutlined /> Search
-              </Space>
-            }
-            size="large"
-            allowClear
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              debouncedSetQuery(e.target.value);
-            }}
-            onSearch={handleSearch}
-            style={{ maxWidth: 720 }}
-          />
+        <Card style={{ marginBottom: 24 }}>
+          <Space align="center">
+            <Title level={4} style={{ margin: 0 }}>
+              Search Results for "{queryFromUrl}"
+            </Title>
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={refetch}
+              loading={isFetching}
+            >
+              Refresh
+            </Button>
+          </Space>
         </Card>
 
         {isError ? (
@@ -296,7 +282,7 @@ const SearchPage = () => {
                 icon={<ReloadOutlined />}
                 onClick={refetch}
               >
-                Retry
+                Retry Search
               </Button>
             }
           />
@@ -311,146 +297,122 @@ const SearchPage = () => {
           >
             <Spin size="large" tip="Searching across all modules..." />
           </div>
-        ) : query.trim() ? (
-          hasResults ? (
-            <>
-              {resultGroups.map(([modelName, group]) => {
-                const { items, total, totalPages, page } = group;
+        ) : hasResults ? (
+          <>
+            {resultGroups.map(([modelName, group]) => {
+              const { items, total } = group;
 
-                return (
-                  <section key={modelName} style={{ marginBottom: 48 }}>
-                    <Space align="center" style={{ marginBottom: 16 }}>
-                      <Title
-                        level={5}
-                        style={{ margin: 0, textTransform: "capitalize" }}
-                      >
-                        {modelName}s
-                      </Title>
-                      <Tag
-                        color="geekblue"
-                        style={{ fontSize: 14, padding: "4px 12px" }}
-                      >
-                        {total} found
-                      </Tag>
-                      {totalPages > 1 && (
-                        <Text type="secondary" style={{ fontSize: 13 }}>
-                          Page {page} of {totalPages}
-                        </Text>
-                      )}
-                    </Space>
+              return (
+                <section key={modelName} style={{ marginBottom: 48 }}>
+                  <Space align="center" style={{ marginBottom: 16 }}>
+                    <Title
+                      level={5}
+                      style={{ margin: 0, textTransform: "capitalize" }}
+                    >
+                      {modelName}s
+                    </Title>
+                    <Tag
+                      color="geekblue"
+                      style={{ fontSize: 14, padding: "4px 12px" }}
+                    >
+                      {total} found
+                    </Tag>
+                  </Space>
 
-                    <Row gutter={[16, 24]}>
-                      {items.map((item) => {
-                        const { to, title } = getLinkProps(modelName, item);
-                        const subtitle = getSubtitle(modelName, item);
+                  <Row gutter={[16, 24]}>
+                    {items.map((item) => {
+                      const { to, title } = getLinkProps(modelName, item);
+                      const subtitle = getSubtitle(modelName, item);
 
-                        return (
-                          <Col
-                            xs={24}
-                            sm={12}
-                            lg={8}
-                            xl={6}
-                            key={
-                              item.id ||
-                              item.userId ||
-                              item.productId ||
-                              item.categoryId ||
-                              Math.random()
-                            }
+                      return (
+                        <Col
+                          xs={24}
+                          sm={12}
+                          lg={8}
+                          xl={6}
+                          key={
+                            item.id ||
+                            item.userId ||
+                            item.productId ||
+                            Math.random()
+                          }
+                        >
+                          <Card
+                            hoverable
+                            bodyStyle={{ padding: 16 }}
+                            style={{ height: "100%", borderRadius: 10 }}
                           >
-                            <Card
-                              hoverable
-                              bodyStyle={{ padding: 16 }}
-                              style={{ height: "100%", borderRadius: 10 }}
+                            <Space
+                              align="start"
+                              size={16}
+                              style={{ width: "100%" }}
                             >
-                              <Space
-                                align="start"
-                                size={16}
-                                style={{ width: "100%" }}
-                              >
-                                {getIcon(modelName, item)}
+                              {getIcon(modelName, item)}
 
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <Title
-                                    level={5}
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <Title
+                                  level={5}
+                                  style={{ margin: "0 0 4px 0", fontSize: 16 }}
+                                >
+                                  <Link
+                                    to={to}
                                     style={{
-                                      margin: "0 0 4px 0",
-                                      fontSize: 16,
+                                      color: "#000",
+                                      textDecoration: "none",
                                     }}
                                   >
-                                    <Link
-                                      to={to}
-                                      style={{
-                                        color: "#000",
-                                        textDecoration: "none",
-                                      }}
-                                    >
-                                      {highlight(title, debouncedQuery)}
-                                    </Link>
-                                  </Title>
+                                    {highlight(title, queryFromUrl)}
+                                  </Link>
+                                </Title>
 
-                                  {subtitle && (
-                                    <Text
-                                      type="secondary"
-                                      style={{ fontSize: 13 }}
-                                    >
-                                      {highlight(subtitle, debouncedQuery)}
-                                    </Text>
-                                  )}
-                                </div>
-                              </Space>
-                            </Card>
-                          </Col>
-                        );
-                      })}
-                    </Row>
-                  </section>
-                );
-              })}
+                                {subtitle && (
+                                  <Text
+                                    type="secondary"
+                                    style={{ fontSize: 13 }}
+                                  >
+                                    {highlight(subtitle, queryFromUrl)}
+                                  </Text>
+                                )}
+                              </div>
+                            </Space>
+                          </Card>
+                        </Col>
+                      );
+                    })}
+                  </Row>
+                </section>
+              );
+            })}
 
-              {/* Global Pagination */}
-              {meta.totalPages > 1 && (
-                <div style={{ textAlign: "center", margin: "50px 0 30px 0" }}>
-                  <Pagination
-                    current={currentPage}
-                    total={meta.total || 0}
-                    pageSize={20}
-                    onChange={handlePageChange}
-                    showSizeChanger={false}
-                    showQuickJumper
-                    showTotal={(total) => `Total ${total} results`}
-                  />
-                </div>
-              )}
-            </>
-          ) : (
-            <Empty
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-              description={
-                <div style={{ marginTop: 16 }}>
-                  <Paragraph strong>No results found for "{query}"</Paragraph>
-                  <Text type="secondary">
-                    Try different keywords or check spelling
-                  </Text>
-                </div>
-              }
-              style={{ margin: "120px 0" }}
-            />
-          )
+            {/* Pagination */}
+            {meta.totalPages > 1 && (
+              <div style={{ textAlign: "center", margin: "60px 0 40px 0" }}>
+                <Pagination
+                  current={currentPage}
+                  total={meta.total || 0}
+                  pageSize={20}
+                  onChange={handlePageChange}
+                  showSizeChanger={false}
+                  showQuickJumper
+                  showTotal={(total) => `Total ${total} results`}
+                />
+              </div>
+            )}
+          </>
         ) : (
           <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
             description={
               <div style={{ marginTop: 16 }}>
                 <Paragraph strong>
-                  Start typing to search the entire system
+                  No results found for "{queryFromUrl}"
                 </Paragraph>
                 <Text type="secondary">
-                  Users • Products • Orders • Purchase Orders • Quotations •
-                  Customers • Vendors...
+                  Try different keywords or check your spelling
                 </Text>
               </div>
             }
-            style={{ margin: "140px 0" }}
+            style={{ margin: "120px 0" }}
           />
         )}
       </div>
