@@ -131,7 +131,6 @@ app.use("/api", apiLimiter);
 app.use("/api/carts", burstLimiter);
 app.use("/api/order", burstLimiter);
 app.use("/api/quotation", burstLimiter);
-
 app.use("/api/auth", routes.auth);
 app.use("/api/user", routes.user);
 app.use("/api/order", routes.order);
