@@ -100,11 +100,6 @@ module.exports = (sequelize, DataTypes) => {
       as: "addresses",
     });
 
-    Customer.hasMany(models.Invoice, {
-      foreignKey: "customerId",
-      onDelete: "CASCADE",
-    });
-
     Customer.belongsTo(models.Vendor, {
       foreignKey: "vendorId",
       as: "vendor",

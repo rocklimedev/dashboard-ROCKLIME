@@ -17,7 +17,6 @@ const {
   User,
   Order,
   Team,
-  Invoice,
   Customer,
   Quotation,
   Address,

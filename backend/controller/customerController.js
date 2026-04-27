@@ -1,35 +1,7 @@
 const { sendNotification } = require("./notificationController"); // Import sendNotification
-const { Invoice, Customer } = require("../models");
+const { Customer } = require("../models");
 const ADMIN_USER_ID = "2ef0f07a-a275-4fe1-832d-fe9a5d145f60"; // Replace with actual admin user ID or channel
 const { Op } = require("sequelize");
-// Get invoices by customer ID (no notification needed)
-exports.getInvoicesByCustomerId = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const customer = await Customer.findByPk(id);
-    if (!customer) {
-      return res.status(404).json({
-        success: false,
-        message: "Customer not found",
-      });
-    }
-
-    const invoices = await Invoice.findAll({
-      where: { customerId: id },
-    });
-
-    res.status(200).json({
-      success: true,
-      data: invoices,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
 
 // Create a new customer
 exports.createCustomer = async (req, res) => {

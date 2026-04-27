@@ -6,6 +6,7 @@ import ProductDetails from "../../concepts/Products/ProductDetails";
 import BulkProductImport from "../../concepts/Products/BulkProductImport";
 import BrandSelection from "../../concepts/Products/BrandSelection";
 import CategoryManagement from "../../concepts/Products/CategoryManagement";
+import BulkProductImportJob from "../../concepts/Products/ImportJob";
 
 export const productRoutes = [
   {
@@ -51,9 +52,15 @@ export const productRoutes = [
     isSidebarActive: true,
   },
   {
-    path: "/job/add",
+    path: "/bulk-import",
     name: "Bulk Product Import",
     element: <BulkProductImport />,
+    isSidebarActive: false,
+  },
+  {
+    path: "/import-job",
+    name: "Bulk Product Import",
+    element: <BulkProductImportJob />,
     isSidebarActive: false,
   },
 ];

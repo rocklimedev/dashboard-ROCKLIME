@@ -1,366 +1,265 @@
-// src/components/JobList.jsx
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import {
+  EyeOutlined,
+  DeleteOutlined,
+  StopOutlined,
+  MoreOutlined,
+} from "@ant-design/icons";
 import {
   useGetAllJobsQuery,
   useCancelJobMutation,
   useDeleteJobMutation,
 } from "../../api/jobsApi";
+
 import {
-  Table,
-  Tag,
+  Dropdown,
+  Menu,
   Button,
-  Space,
-  Modal,
-  Progress,
-  Tooltip,
-  Spin,
-  Badge,
-  Card,
-  Typography,
-  Row,
-  Col,
-  Select,
   Pagination,
+  Tooltip,
+  message,
+  Input,
+  Select,
 } from "antd";
-import {
-  ReloadOutlined,
-  StopOutlined,
-  DeleteOutlined,
-  EyeOutlined,
-  ClockCircleOutlined,
-  CheckCircleOutlined,
-  CloseCircleOutlined,
-  PlusOutlined,
-  WarningOutlined,
-} from "@ant-design/icons";
 
-const { Title, Text } = Typography;
+import PageHeader from "../../components/Common/PageHeader";
+import DeleteModal from "../../components/Common/DeleteModal";
+
+const { Search } = Input;
 const { Option } = Select;
-
-const statusColors = {
-  pending: "default",
-  processing: "processing",
-  completed: "success",
-  failed: "error",
-  cancelled: "warning",
-};
-
-const statusIcons = {
-  pending: <ClockCircleOutlined />,
-  processing: <ReloadOutlined spin />,
-  completed: <CheckCircleOutlined />,
-  failed: <CloseCircleOutlined />,
-  cancelled: <WarningOutlined />,
-};
 
 const JobList = () => {
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [statusFilter, setStatusFilter] = useState(undefined);
-  const [typeFilter, setTypeFilter] = useState(undefined);
-  const navigate = useNavigate();
-  const {
-    data: jobsData,
-    isLoading,
-    isFetching,
-    refetch,
-  } = useGetAllJobsQuery({
+  const [statusFilter, setStatusFilter] = useState();
+  const [typeFilter, setTypeFilter] = useState();
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const [deleteId, setDeleteId] = useState(null);
+  const [deleteModal, setDeleteModal] = useState(false);
+
+  const { data, refetch, isFetching } = useGetAllJobsQuery({
     page,
-    limit: pageSize,
+    limit: 10,
     status: statusFilter,
     type: typeFilter,
   });
 
-  const [cancelJob, { isLoading: isCancelling }] = useCancelJobMutation();
+  const [cancelJob] = useCancelJobMutation();
   const [deleteJob, { isLoading: isDeleting }] = useDeleteJobMutation();
 
-  const jobs = jobsData?.data || [];
-  const paginationInfo = jobsData?.pagination || {
-    total: 0,
-    page,
-    limit: pageSize,
+  const jobs = data?.data || [];
+  const pagination = data?.pagination || {};
+
+  const handleCancel = async (id) => {
+    try {
+      await cancelJob(id).unwrap();
+      message.success("Job cancelled");
+      refetch();
+    } catch {
+      message.error("Failed to cancel job");
+    }
   };
 
-  const handleCancel = (jobId) => {
-    Modal.confirm({
-      title: "Cancel Job",
-      content:
-        "Are you sure you want to cancel this job? It may stop processing soon.",
-      okText: "Yes, Cancel",
-      cancelText: "No",
-      okButtonProps: { danger: true },
-      onOk: async () => {
-        try {
-          await cancelJob(jobId).unwrap();
-          refetch();
-        } catch (err) {
-          Modal.error({
-            title: "Failed to cancel job",
-            content: err?.data?.message || "Unknown error",
-          });
-        }
-      },
-    });
+  const handleDelete = async () => {
+    try {
+      await deleteJob(deleteId).unwrap();
+      message.success("Job deleted");
+      refetch();
+    } catch {
+      message.error("Delete failed");
+    } finally {
+      setDeleteModal(false);
+      setDeleteId(null);
+    }
   };
 
-  const handleDelete = (jobId) => {
-    Modal.confirm({
-      title: "Delete Job",
-      content: "This action cannot be undone. Delete this job record?",
-      okText: "Delete",
-      okButtonProps: { danger: true },
-      onOk: async () => {
-        try {
-          await deleteJob(jobId).unwrap();
-          refetch();
-        } catch (err) {
-          Modal.error({
-            title: "Failed to delete job",
-            content: err?.data?.message || "Unknown error",
-          });
-        }
-      },
-    });
+  const getStatusBadge = (status) => {
+    const map = {
+      pending: "secondary",
+      processing: "info",
+      completed: "success",
+      failed: "danger",
+      cancelled: "warning",
+    };
+    return `badge bg-${map[status] || "secondary"}`;
   };
 
-  const columns = [
-    {
-      title: "Type",
-      dataIndex: "type",
-      key: "type",
-      render: (text) => (
-        <Tag color="blue" className="text-capitalize">
-          {text.replace(/-/g, " ")}
-        </Tag>
-      ),
-    },
-    {
-      title: "Status",
-      dataIndex: "status",
-      key: "status",
-      width: 140,
-      render: (status) => (
-        <Badge
-          status={statusColors[status]}
-          text={
-            <Space>
-              {statusIcons[status]}
-              <span className="text-capitalize">{status}</span>
-            </Space>
-          }
-        />
-      ),
-    },
-    {
-      title: "Progress",
-      key: "progress",
-      width: 220,
-      render: (_, record) => {
-        if (!record.progress) return <Text type="secondary">—</Text>;
+  const renderProgress = (progress) => {
+    if (!progress) return "—";
 
-        const {
-          totalRows = 0,
-          processedRows = 0,
-          successCount = 0,
-          failedCount = 0,
-        } = record.progress;
-        const percent =
-          totalRows > 0 ? Math.round((processedRows / totalRows) * 100) : 0;
+    const { totalRows = 0, processedRows = 0 } = progress;
+    const percent =
+      totalRows > 0 ? Math.round((processedRows / totalRows) * 100) : 0;
 
-        return (
-          <Space direction="vertical" size="small" style={{ width: "100%" }}>
-            <Progress
-              percent={percent}
-              size="small"
-              status={failedCount > 0 ? "exception" : undefined}
-            />
-            <Text type="secondary" style={{ fontSize: "0.85rem" }}>
-              {processedRows} / {totalRows || "?"} rows • {successCount} ok •{" "}
-              {failedCount} failed
-            </Text>
-          </Space>
-        );
-      },
-    },
-    {
-      title: "Results",
-      key: "results",
-      render: (_, record) => {
-        if (!record.results) return null;
-        const {
-          newCategoriesCount = 0,
-          newBrandsCount = 0,
-          newVendorsCount = 0,
-        } = record.results;
-        if (newCategoriesCount + newBrandsCount + newVendorsCount === 0)
-          return <Text type="secondary">—</Text>;
-
-        return (
-          <Space size="small">
-            {newCategoriesCount > 0 && (
-              <Tag color="cyan">+{newCategoriesCount} Categories</Tag>
-            )}
-            {newBrandsCount > 0 && (
-              <Tag color="geekblue">+{newBrandsCount} Brands</Tag>
-            )}
-            {newVendorsCount > 0 && (
-              <Tag color="purple">+{newVendorsCount} Vendors</Tag>
-            )}
-          </Space>
-        );
-      },
-    },
-    {
-      title: "Created",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      width: 160,
-      render: (date) =>
-        new Date(date).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }),
-    },
-    {
-      title: "Actions",
-      key: "actions",
-      width: 180,
-      fixed: "right",
-      render: (_, record) => (
-        <Space size="middle">
-          <Tooltip title="View Details">
-            <Button
-              type="text"
-              icon={<EyeOutlined />}
-              onClick={() => window.open(`/job/${record.id}`, "_blank")}
-            />
-          </Tooltip>
-
-          {["pending", "processing"].includes(record.status) && (
-            <Tooltip title="Cancel Job">
-              <Button
-                type="text"
-                danger
-                icon={<StopOutlined />}
-                loading={isCancelling}
-                onClick={() => handleCancel(record.id)}
-              />
-            </Tooltip>
-          )}
-
-          {["completed", "failed", "cancelled"].includes(record.status) && (
-            <Tooltip title="Delete Job">
-              <Button
-                type="text"
-                danger
-                icon={<DeleteOutlined />}
-                loading={isDeleting}
-                onClick={() => handleDelete(record.id)}
-              />
-            </Tooltip>
-          )}
-        </Space>
-      ),
-    },
-  ];
+    return (
+      <div style={{ minWidth: 120 }}>
+        <div className="progress" style={{ height: 6 }}>
+          <div className="progress-bar" style={{ width: `${percent}%` }} />
+        </div>
+        <small className="text-muted">
+          {processedRows}/{totalRows}
+        </small>
+      </div>
+    );
+  };
 
   return (
     <div className="page-wrapper">
       <div className="content">
-        <Card className="shadow-sm border-0">
-          <Row justify="space-between" align="middle" className="mb-4">
-            <Col>
-              <Title level={4} className="mb-0">
-                Background Jobs
-              </Title>
-              <Text type="secondary">
-                Monitor import, report generation, and other background tasks
-              </Text>
-            </Col>
-            <Col>
-              <Space>
-                <Button
-                  type="primary"
-                  icon={<PlusOutlined />}
-                  onClick={() => navigate("/job/add")} // already at step 0
+        <div className="card">
+          <PageHeader
+            title="Jobs Management"
+            subtitle="Monitor background jobs"
+            onAdd={() => (window.location.href = "/import-job")}
+          />
+
+          <div className="card-body">
+            {/* Filters */}
+            <div className="row mb-4 align-items-center">
+              <div className="col-lg-6 d-flex gap-2 flex-wrap">
+                <Select
+                  placeholder="Status"
+                  allowClear
+                  style={{ width: 150 }}
+                  onChange={setStatusFilter}
                 >
-                  Create Job
-                </Button>
-                <Button
-                  icon={<ReloadOutlined />}
-                  onClick={() => refetch()}
-                  loading={isFetching}
+                  <Option value="pending">Pending</Option>
+                  <Option value="processing">Processing</Option>
+                  <Option value="completed">Completed</Option>
+                  <Option value="failed">Failed</Option>
+                  <Option value="cancelled">Cancelled</Option>
+                </Select>
+
+                <Select
+                  placeholder="Type"
+                  allowClear
+                  style={{ width: 180 }}
+                  onChange={setTypeFilter}
                 >
-                  Refresh
-                </Button>
-              </Space>
-            </Col>
-          </Row>
-
-          <Row gutter={[16, 16]} className="mb-4">
-            <Col xs={24} sm={12} md={8} lg={6}>
-              <Select
-                placeholder="Filter by Status"
-                allowClear
-                style={{ width: "100%" }}
-                onChange={(val) => setStatusFilter(val)}
-                value={statusFilter}
-              >
-                <Option value="pending">Pending</Option>
-                <Option value="processing">Processing</Option>
-                <Option value="completed">Completed</Option>
-                <Option value="failed">Failed</Option>
-                <Option value="cancelled">Cancelled</Option>
-              </Select>
-            </Col>
-
-            <Col xs={24} sm={12} md={8} lg={6}>
-              <Select
-                placeholder="Filter by Type"
-                allowClear
-                style={{ width: "100%" }}
-                onChange={(val) => setTypeFilter(val)}
-                value={typeFilter}
-              >
-                <Option value="bulk-import">Bulk Import</Option>
-                <Option value="report-generation">Report Generation</Option>
-                {/* Add more types as you implement them */}
-              </Select>
-            </Col>
-          </Row>
-
-          {isLoading ? (
-            <div className="text-center py-5">
-              <Spin size="large" />
-            </div>
-          ) : (
-            <>
-              <Table
-                columns={columns}
-                dataSource={jobs}
-                rowKey="id"
-                pagination={false}
-                loading={isFetching && !isLoading}
-                scroll={{ x: 1200 }}
-                bordered
-                size="middle"
-              />
-
-              <div className="d-flex justify-content-center mt-4">
-                <Pagination
-                  current={paginationInfo.page}
-                  pageSize={paginationInfo.limit}
-                  total={paginationInfo.total}
-                  showSizeChanger
-                  showQuickJumper
-                  showTotal={(total) => `Total ${total} jobs`}
-                  onChange={(p, ps) => {
-                    setPage(p);
-                    setPageSize(ps);
-                  }}
-                />
+                  <Option value="bulk-import">Bulk Import</Option>
+                  <Option value="report-generation">Report Generation</Option>
+                </Select>
               </div>
-            </>
-          )}
-        </Card>
+
+              <div className="col-lg-6 text-end">
+                <div style={{ maxWidth: 280, marginLeft: "auto" }}>
+                  <Search
+                    placeholder="Search jobs..."
+                    allowClear
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Table */}
+            <div className="table-responsive">
+              <table className="table table-hover align-middle">
+                <thead className="table-light">
+                  <tr>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Progress</th>
+                    <th>Results</th>
+                    <th>Created</th>
+                    <th style={{ width: 120 }}>Actions</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {jobs.map((job) => {
+                    const menu = (
+                      <Menu>
+                        <Menu.Item
+                          onClick={() =>
+                            window.open(`/job/${job.id}`, "_blank")
+                          }
+                        >
+                          <EyeOutlined /> View
+                        </Menu.Item>
+
+                        {["pending", "processing"].includes(job.status) && (
+                          <Menu.Item onClick={() => handleCancel(job.id)}>
+                            <StopOutlined /> Cancel
+                          </Menu.Item>
+                        )}
+
+                        {["completed", "failed", "cancelled"].includes(
+                          job.status,
+                        ) && (
+                          <Menu.Item
+                            danger
+                            onClick={() => {
+                              setDeleteId(job.id);
+                              setDeleteModal(true);
+                            }}
+                          >
+                            <DeleteOutlined /> Delete
+                          </Menu.Item>
+                        )}
+                      </Menu>
+                    );
+
+                    return (
+                      <tr key={job.id}>
+                        <td className="text-capitalize">
+                          {job.type?.replace(/-/g, " ")}
+                        </td>
+
+                        <td>
+                          <span className={getStatusBadge(job.status)}>
+                            {job.status}
+                          </span>
+                        </td>
+
+                        <td>{renderProgress(job.progress)}</td>
+
+                        <td>
+                          {job.results ? (
+                            <span className="badge bg-light text-dark">
+                              +{job.results.newBrandsCount || 0} Brands
+                            </span>
+                          ) : (
+                            "—"
+                          )}
+                        </td>
+
+                        <td className="text-muted">
+                          {new Date(job.createdAt).toLocaleString()}
+                        </td>
+
+                        <td>
+                          <Dropdown overlay={menu} trigger={["click"]}>
+                            <Button type="text" icon={<MoreOutlined />} />
+                          </Dropdown>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
+            <div className="d-flex justify-content-end mt-4">
+              <Pagination
+                current={pagination.page}
+                total={pagination.total}
+                pageSize={pagination.limit}
+                onChange={setPage}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Delete Modal */}
+        <DeleteModal
+          isVisible={deleteModal}
+          onCancel={() => setDeleteModal(false)}
+          onConfirm={handleDelete}
+          itemType="Job"
+          isLoading={isDeleting}
+        />
       </div>
     </div>
   );

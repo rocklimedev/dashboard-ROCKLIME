@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   SearchOutlined,
   EyeOutlined,
@@ -28,19 +28,25 @@ import {
   Input,
 } from "antd";
 import DeleteModal from "../../components/Common/DeleteModal";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import PageHeader from "../../components/Common/PageHeader";
 
 // Import Modals
 import BrandFormModal from "../../components/Brands/BrandFormModal";
 import BrandParentCategoryFormModal from "../../components/Brands/BrandParentCategoryFormModal";
+
 const { TabPane } = Tabs;
 const { Search } = Input;
 
 const BrandList = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+
+  // Get tab from URL params, default to "brands"
+  const currentTab = searchParams.get("tab") || "brands";
+
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeMainTab, setActiveMainTab] = useState("brands");
   const [activeBrandTab, setActiveBrandTab] = useState("All");
 
   const itemsPerPage = 20;
@@ -53,10 +59,8 @@ const BrandList = () => {
   const [editingCategory, setEditingCategory] = useState(null);
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deleteType, setDeleteType] = useState(null); // 'brand' or 'category'
+  const [deleteType, setDeleteType] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
-
-  const navigate = useNavigate();
 
   // Queries
   const { data: brandsData, refetch: refetchBrands } = useGetAllBrandsQuery();
@@ -119,6 +123,18 @@ const BrandList = () => {
     );
   }, [brandParentCategories, searchTerm]);
 
+  // Sync activeMainTab with URL
+  const activeMainTab = currentTab === "categories" ? "categories" : "brands";
+
+  // Handle Tab Change (update URL)
+  const handleTabChange = (key) => {
+    setSearchParams({ tab: key });
+    // Reset search when switching main tabs
+    if (key !== activeMainTab) {
+      setSearchTerm("");
+    }
+  };
+
   // Modal Handlers
   const openBrandModal = (brand = null) => {
     setEditingBrand(brand);
@@ -162,13 +178,12 @@ const BrandList = () => {
   };
 
   // Navigation
-  const handleViewBrand = (brand) => navigate(`/brand/${brand.id}`);
-  const handleEditBrand = (brand) => openBrandModal(brand); // Now opens modal instead of navigate
-
+  const handleViewBrand = (brand) => navigate(`/store/${brand.id}`);
+  const handleEditBrand = (brand) => openBrandModal(brand);
   const handleViewCategory = (category) =>
-    navigate(`/brand-parent-category/${category.id}`);
+    navigate(`/category-selector/${category.id}`);
   const handleEditCategory = (category) => openCategoryModal(category);
-
+  const handleViewBulkImport = (brand) => navigate(`/bulk-import/`);
   return (
     <div className="page-wrapper">
       <div className="content">
@@ -184,10 +199,10 @@ const BrandList = () => {
           />
 
           <div className="card-body">
-            {/* Main Tabs */}
+            {/* Main Tabs with URL Sync */}
             <Tabs
               activeKey={activeMainTab}
-              onChange={setActiveMainTab}
+              onChange={handleTabChange}
               className="mb-4"
             >
               <TabPane tab="Brands" key="brands" />
@@ -199,7 +214,6 @@ const BrandList = () => {
               <div className="col-lg-6">
                 {activeMainTab === "brands" && (
                   <div className="d-flex align-items-center gap-3 flex-wrap">
-                    <h6 className="mb-0">Category Filter:</h6>
                     <div className="btn-group flex-wrap">
                       {["All", ...brandParentCategories.map((c) => c.name)].map(
                         (tab) => (
@@ -232,23 +246,22 @@ const BrandList = () => {
                     allowClear
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    prefix={<SearchOutlined />}
                   />
                 </div>
               </div>
             </div>
 
-            {/* ==================== BRANDS TABLE ==================== */}
+            {/* Brands Table */}
             {activeMainTab === "brands" && (
               <div className="table-responsive">
                 <table className="table table-hover align-middle">
                   <thead className="table-light">
                     <tr>
-                      <th>Logo</th>
+                      <th style={{ width: 70 }}>Logo</th>
                       <th>Brand Name</th>
                       <th>Slug</th>
                       <th>Parent Categories</th>
-                      <th>Actions</th>
+                      <th style={{ width: 120 }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -256,8 +269,8 @@ const BrandList = () => {
                       <tr key={brand.id}>
                         <td>
                           <Avatar
-                            src={brand.logo || brand.image}
-                            name={brand.brandName}
+                            src={brand.logo || undefined}
+                            name={brand.brandName || "No Logo"}
                             size="40"
                             round
                           />
@@ -288,7 +301,6 @@ const BrandList = () => {
                               onClick={() => handleEditBrand(brand)}
                             />
                           </Tooltip>
-
                           <Dropdown
                             overlay={
                               <Menu>
@@ -296,6 +308,11 @@ const BrandList = () => {
                                   onClick={() => handleViewBrand(brand)}
                                 >
                                   <EyeOutlined /> View
+                                </Menu.Item>
+                                <Menu.Item
+                                  onClick={() => handleViewBulkImport(brand)}
+                                >
+                                  <EyeOutlined /> Bulk Import
                                 </Menu.Item>
                                 <Menu.Item
                                   danger
@@ -322,7 +339,7 @@ const BrandList = () => {
               </div>
             )}
 
-            {/* ==================== BRAND CATEGORIES TABLE ==================== */}
+            {/* Brand Categories Table */}
             {activeMainTab === "categories" && (
               <div className="table-responsive">
                 <table className="table table-hover align-middle">
@@ -331,7 +348,7 @@ const BrandList = () => {
                       <th>Name</th>
                       <th>Slug</th>
                       <th>Attached Brands</th>
-                      <th>Actions</th>
+                      <th style={{ width: 120 }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -354,7 +371,6 @@ const BrandList = () => {
                               onClick={() => handleEditCategory(category)}
                             />
                           </Tooltip>
-
                           <Dropdown
                             overlay={
                               <Menu>
@@ -388,7 +404,7 @@ const BrandList = () => {
               </div>
             )}
 
-            {/* Pagination - Only for Brands */}
+            {/* Pagination */}
             {activeMainTab === "brands" && allBrands.length > itemsPerPage && (
               <div className="d-flex justify-content-end mt-4">
                 <Pagination
@@ -424,7 +440,6 @@ const BrandList = () => {
           onSuccess={handleModalSuccess}
         />
 
-        {/* Delete Confirmation Modal */}
         <DeleteModal
           isVisible={showDeleteModal}
           onCancel={() => {

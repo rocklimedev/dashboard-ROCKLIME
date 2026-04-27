@@ -23,10 +23,8 @@ const routes = {
   roles: require("./routes/roles"),
   permission: require("./routes/permission"),
   address: require("./routes/address"),
-  signature: require("./routes/signature"),
   category: require("./routes/category"),
   parentCategory: require("./routes/parentController"),
-  import: require("./routes/import"),
   customer: require("./routes/customer"),
   brand: require("./routes/brands"),
   keyword: require("./routes/keyword"),
@@ -35,17 +33,13 @@ const routes = {
   rolePermission: require("./routes/rolePermission"),
   search: require("./routes/search"),
   jobs: require("./routes/jobs"),
-  contact: require("./routes/contact"),
   cart: require("./routes/cart"),
-  company: require("./routes/company"),
   quotation: require("./routes/quotation"),
-  invoice: require("./routes/invoices"),
   team: require("./routes/teams"),
   productMeta: require("./routes/productMeta"),
   purchaseOrder: require("./routes/purchaseOrder"),
   notification: require("./routes/notification"),
   cachedPermission: require("./routes/cachedPermission"),
-  siteMap: require("./routes/siteMap"),
 };
 
 // ------------------- Express App -------------------
@@ -128,18 +122,14 @@ app.use((req, res, next) => {
 
 // ------------------- Route Mounting -------------------
 app.use("/api", apiLimiter);
-app.use("/api/carts", burstLimiter);
 app.use("/api/order", burstLimiter);
 app.use("/api/quotation", burstLimiter);
-
 app.use("/api/auth", routes.auth);
 app.use("/api/user", routes.user);
 app.use("/api/order", routes.order);
 app.use("/api/roles", routes.roles);
 app.use("/api/permission", routes.permission);
 app.use("/api/address", routes.address);
-app.use("/api/contact", routes.contact);
-app.use("/api/signature", routes.signature);
 app.use("/api/category", routes.category);
 app.use("/api/vendors", routes.vendor);
 app.use("/api/parent-categories", routes.parentCategory);
@@ -148,8 +138,6 @@ app.use("/api/customers", routes.customer);
 app.use("/api/brands", routes.brand);
 app.use("/api/keyword", routes.keyword);
 app.use("/api/products", routes.product);
-app.use("/api/carts", routes.cart);
-app.use("/api/companies", routes.company);
 app.use("/api/quotation", routes.quotation);
 app.use("/api/role-permissions", routes.rolePermission);
 app.use("/api/teams", routes.team);
@@ -158,8 +146,6 @@ app.use("/api/purchase-orders", routes.purchaseOrder);
 app.use("/api/product-meta", routes.productMeta);
 app.use("/api/notifications", routes.notification);
 app.use("/api/cached-permissions", routes.cachedPermission);
-app.use("/api/site-maps", routes.siteMap);
-app.use("/api/imports", routes.import);
 app.use("/api/fgs", routes.fgs);
 app.use("/api/jobs", routes.jobs);
 // ------------------- Health Check -------------------

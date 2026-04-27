@@ -3,7 +3,6 @@ import { FaUser, FaIdCard, FaUserCircle } from "react-icons/fa";
 import NewAddUser from "../../concepts/User/NewAddUser";
 import UserPage from "../../concepts/User/UserPage";
 import Profile from "../../concepts/User/Profile";
-import ProfileForm from "../../concepts/User/ProfileForm";
 import Permissions from "../../concepts/RBAC/Permissions";
 
 export const userRoutes = [
@@ -41,12 +40,5 @@ export const userRoutes = [
     icon: <FaUserCircle />,
     isSidebarActive: false,
     element: <Profile />,
-  },
-  {
-    path: "/u/:id/edit",
-    name: "Edit Profile",
-    icon: <FaUserCircle />,
-    isSidebarActive: false,
-    element: <ProfileForm />,
   },
 ];
