@@ -122,6 +122,7 @@ app.use((req, res, next) => {
 
 // ------------------- Route Mounting -------------------
 app.use("/api", apiLimiter);
+app.use("/api/carts", burstLimiter);
 app.use("/api/order", burstLimiter);
 app.use("/api/quotation", burstLimiter);
 app.use("/api/auth", routes.auth);
@@ -130,6 +131,7 @@ app.use("/api/order", routes.order);
 app.use("/api/roles", routes.roles);
 app.use("/api/permission", routes.permission);
 app.use("/api/address", routes.address);
+app.use("/api/carts", routes.cart);
 app.use("/api/category", routes.category);
 app.use("/api/vendors", routes.vendor);
 app.use("/api/parent-categories", routes.parentCategory);
