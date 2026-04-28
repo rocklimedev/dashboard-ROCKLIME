@@ -1,6 +1,6 @@
-// src/hooks/useAutoSave.js
-import { useEffect, useRef, useCallback } from 'react';
-import { message } from 'antd';
+// src/utils/useAutoSave.js
+import { useEffect, useRef, useCallback } from "react";
+import { message } from "antd";
 
 const useAutoSave = (key, data, delay = 3000, enabled = true) => {
   const timeoutRef = useRef(null);
@@ -20,7 +20,7 @@ const useAutoSave = (key, data, delay = 3000, enabled = true) => {
       // Optional: show subtle message (can be turned off in production)
       // message.success('Draft saved', 1);
     } catch (err) {
-      console.warn('AutoSave failed:', err);
+      console.warn("AutoSave failed:", err);
     }
   }, [key, data, enabled]);
 
@@ -51,7 +51,7 @@ const useAutoSave = (key, data, delay = 3000, enabled = true) => {
       const saved = localStorage.getItem(key);
       return saved ? JSON.parse(saved) : null;
     } catch (err) {
-      console.warn('Failed to load draft:', err);
+      console.warn("Failed to load draft:", err);
       return null;
     }
   }, [key]);
