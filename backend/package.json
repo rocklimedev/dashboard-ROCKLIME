@@ -30,7 +30,7 @@
     "express-rate-limit": "^8.2.1",
     "express-validator": "^7.2.1",
     "fs": "^0.0.1-security",
-    "fs-extra": "^11.3.0",
+    "fs-extra": "^11.3.4",
     "ftp": "^0.3.10",
     "helmet": "^8.0.0",
     "ioredis": "^5.9.2",
@@ -49,6 +49,7 @@
     "sharp": "^0.34.1",
     "slugify": "^1.6.6",
     "socket.io": "^4.8.1",
+    "string-similarity": "^4.0.4",
     "uuid": "^11.1.0",
     "xlsx": "^0.18.5"
   },

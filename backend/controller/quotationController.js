@@ -378,8 +378,7 @@ exports.createQuotation = async (req, res) => {
         locations = null;
       }
 
-      const isOption = !!p.isOptionFor;
-
+      const isOption = Boolean(p.isOption) || Boolean(p.isOptionFor);
       return {
         productId: id,
         name: p.name || db.name || "Unknown Product",
@@ -405,7 +404,7 @@ exports.createQuotation = async (req, res) => {
             : (price - discount) * totalQuantity,
         ).toFixed(2),
 
-        isOptionFor: isOption ? p.isOptionFor : null,
+        isOptionFor: isOption ? p.parentProductId || p.isOptionFor : null,
         optionType: p.optionType || null,
         groupId: p.groupId || (isOption ? null : generateGroupId()),
 
@@ -417,6 +416,7 @@ exports.createQuotation = async (req, res) => {
         roomName: locations?.[0]?.roomName || null,
       };
     });
+
     // ─── Determine floors ───
     const floors =
       Array.isArray(incomingFloors) && incomingFloors.length > 0

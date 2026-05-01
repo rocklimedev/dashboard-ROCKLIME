@@ -5,7 +5,8 @@ import { Tabs, Modal, Typography, Segmented, message } from "antd";
 import { ShoppingCartOutlined, CheckCircleOutlined } from "@ant-design/icons";
 import { useDispatch } from "react-redux";
 import { v4 as uuidv4 } from "uuid";
-import CartTab from "../../components/POS-NEW/Cart";
+
+import CartTab from "../../components/POS-NEW/Cart"; // Correct import
 import {
   useGetCartQuery,
   useUpdateCartMutation,
@@ -27,9 +28,6 @@ const documentOptions = [
   { label: "Purchase Order", value: "purchase-order" },
 ];
 
-// ─────────────────────────────────────────────────────────────────
-// Helper: derive document type from current pathname
-// ─────────────────────────────────────────────────────────────────
 const getDocumentTypeFromPath = (pathname) => {
   const path = pathname.toLowerCase();
   if (path.includes("purchase-order")) return "purchase-order";
@@ -38,41 +36,35 @@ const getDocumentTypeFromPath = (pathname) => {
   return "quotation";
 };
 
-// ─────────────────────────────────────────────────────────────────
-// Component
-// ─────────────────────────────────────────────────────────────────
 const CartLayout = ({ children }) => {
   const { auth } = useAuth();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ── Profile / User ───────────────────────────────────────────
+  // User Info
   const { data: profileData } = useGetProfileQuery();
   const user = profileData?.user ?? {};
   const userId = user.userId;
 
-  // ── Document Type ────────────────────────────────────────────
+  // State
   const [documentType, setDocumentType] = useState(() =>
     getDocumentTypeFromPath(location.pathname),
   );
   const [activeTab, setActiveTab] = useState("cart");
 
-  // ── Core Cart State ──────────────────────────────────────────
   const [localCartItems, setLocalCartItems] = useState([]);
   const [showClearCartModal, setShowClearCartModal] = useState(false);
 
-  // ── Item-Level Adjustments ───────────────────────────────────
   const [itemDiscounts, setItemDiscounts] = useState({});
   const [itemDiscountTypes, setItemDiscountTypes] = useState({});
   const [itemTaxes, setItemTaxes] = useState({});
   const [updatingItems, setUpdatingItems] = useState({});
 
-  // ── Order-Level Fields ───────────────────────────────────────
   const [shipping, setShipping] = useState(0);
   const [gst, setGst] = useState(0);
 
-  // ── Server Queries & Mutations ───────────────────────────────
+  // API
   const { data: cartData } = useGetCartQuery(userId, { skip: !userId });
   const [updateCart] = useUpdateCartMutation();
   const [clearCart] = useClearCartMutation();
@@ -80,10 +72,7 @@ const CartLayout = ({ children }) => {
 
   const allCartItems = useMemo(() => cartData?.cart?.items || [], [cartData]);
 
-  // ─────────────────────────────────────────────────────────────
-  // AUTO-SAVE: persist item-level adjustments + shipping/gst
-  // Key is scoped per user so multiple accounts don't bleed.
-  // ─────────────────────────────────────────────────────────────
+  // Auto Save Draft
   const DRAFT_KEY = userId ? `cart-draft-${userId}` : null;
 
   const draftData = useMemo(
@@ -100,11 +89,11 @@ const CartLayout = ({ children }) => {
   const { forceSave, loadDraft, clearDraft } = useAutoSave(
     DRAFT_KEY,
     draftData,
-    2000, // 2 s debounce — fast enough, not spammy
-    !!DRAFT_KEY, // disabled until userId is known
+    2000,
+    !!DRAFT_KEY,
   );
 
-  // ── Restore draft once userId resolves ───────────────────────
+  // Restore Draft
   useEffect(() => {
     if (!userId) return;
     const draft = loadDraft();
@@ -115,32 +104,24 @@ const CartLayout = ({ children }) => {
     if (draft.itemTaxes) setItemTaxes(draft.itemTaxes);
     if (draft.shipping != null) setShipping(Number(draft.shipping) || 0);
     if (draft.gst != null) setGst(Number(draft.gst) || 0);
-  }, [userId]); // intentionally run once when userId becomes available
+  }, [userId]);
 
-  // ─────────────────────────────────────────────────────────────
-  // ROUTING
-  // ─────────────────────────────────────────────────────────────
-
-  // Auto-redirect bare /cart → /cart/quotation
+  // Routing
   useEffect(() => {
     if (location.pathname === "/cart" || location.pathname === "/cart/") {
       navigate("/cart/quotation", { replace: true });
     }
   }, [location.pathname, navigate]);
 
-  // Keep documentType in sync when user navigates between tabs
   useEffect(() => {
     const currentType = getDocumentTypeFromPath(location.pathname);
     if (currentType !== documentType) {
       setDocumentType(currentType);
     }
-  }, [location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
 
-  // ─────────────────────────────────────────────────────────────
-  // SYNC: server cart → local cart
-  // Prioritise locally-set location data over whatever the server
-  // returns (it might not persist locations yet).
-  // ─────────────────────────────────────────────────────────────
+  // Initialize discount/tax for new items
+  // Sync Server Cart to Local — PRESERVE OPTION FLAGS
   useEffect(() => {
     if (!allCartItems.length) {
       setLocalCartItems([]);
@@ -159,7 +140,7 @@ const CartLayout = ({ children }) => {
         return {
           ...serverItem,
           id,
-          // Prefer local location metadata over server copy
+          // Preserve location fields
           floorId: local?.floorId || serverItem.floorId,
           roomId: local?.roomId || serverItem.roomId,
           areaId: local?.areaId || serverItem.areaId,
@@ -167,100 +148,57 @@ const CartLayout = ({ children }) => {
           roomName: local?.roomName || serverItem.roomName,
           areaName: local?.areaName || serverItem.areaName,
           assignedQuantity: local?.assignedQuantity || serverItem.quantity || 1,
+
+          // CRITICAL: Preserve option-related fields
+          isOption: local?.isOption ?? serverItem.isOption ?? false,
+          isOptionFor: local?.isOptionFor ?? serverItem.isOptionFor ?? null,
+          optionType: local?.optionType ?? serverItem.optionType ?? null,
+          parentProductId:
+            local?.parentProductId ?? serverItem.parentProductId ?? null,
         };
       });
     });
   }, [allCartItems]);
-
-  // ─────────────────────────────────────────────────────────────
-  // INITIALIZE per-item discount / tax state for new items
-  // ─────────────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!localCartItems.length) return;
-
-    setItemDiscounts((prev) => {
-      const next = { ...prev };
-      let changed = false;
-      localCartItems.forEach(({ productId }) => {
-        if (
-          productId &&
-          !Object.prototype.hasOwnProperty.call(next, productId)
-        ) {
-          next[productId] = 0;
-          changed = true;
-        }
-      });
-      return changed ? next : prev;
-    });
-
-    setItemDiscountTypes((prev) => {
-      const next = { ...prev };
-      let changed = false;
-      localCartItems.forEach(({ productId }) => {
-        if (
-          productId &&
-          !Object.prototype.hasOwnProperty.call(next, productId)
-        ) {
-          next[productId] = "percent";
-          changed = true;
-        }
-      });
-      return changed ? next : prev;
-    });
-
-    setItemTaxes((prev) => {
-      const next = { ...prev };
-      let changed = false;
-      localCartItems.forEach(({ productId }) => {
-        if (
-          productId &&
-          !Object.prototype.hasOwnProperty.call(next, productId)
-        ) {
-          next[productId] = 0;
-          changed = true;
-        }
-      });
-      return changed ? next : prev;
-    });
-  }, [localCartItems]);
-
   // ─────────────────────────────────────────────────────────────
   // CALCULATIONS
-  // Option items are excluded from totals
   // ─────────────────────────────────────────────────────────────
-  const calculationCartItems = useMemo(
-    () => localCartItems.filter((i) => !i.isOption),
-    [localCartItems],
-  );
+
+  // For UI Totals → Exclude optional items
+  const calculationCartItems = useMemo(() => {
+    return localCartItems.filter((i) => !i?.isOption);
+  }, [localCartItems]);
+
+  // For Quotation Payload → Include all items (main + optional)
+  const payloadCartItems = useMemo(() => {
+    return localCartItems;
+  }, [localCartItems]);
 
   const { productsData: cartProductsData } =
     useProductsData(calculationCartItems);
 
-  const subTotal = useMemo(
-    () =>
-      calculationCartItems.reduce(
-        (sum, i) => sum + (i.price || 0) * (i.quantity || 0),
-        0,
-      ),
-    [calculationCartItems],
-  );
+  const subTotal = useMemo(() => {
+    return calculationCartItems.reduce(
+      (sum, i) => sum + (Number(i.price) || 0) * (Number(i.quantity) || 0),
+      0,
+    );
+  }, [calculationCartItems]);
 
   const totalDiscount = useMemo(() => {
     return calculationCartItems.reduce((sum, item) => {
-      const subtotal = (item.price || 0) * (item.quantity || 1);
+      const subtotal = (Number(item.price) || 0) * (Number(item.quantity) || 1);
       const discVal = Number(itemDiscounts[item.productId]) || 0;
       const type = itemDiscountTypes[item.productId] || "percent";
       const disc =
         type === "percent"
           ? (subtotal * discVal) / 100
-          : discVal * (item.quantity || 1);
+          : discVal * (Number(item.quantity) || 1);
       return sum + disc;
     }, 0);
   }, [calculationCartItems, itemDiscounts, itemDiscountTypes]);
 
   const tax = useMemo(() => {
     return calculationCartItems.reduce((acc, item) => {
-      const subtotal = (item.price || 0) * (item.quantity || 1);
+      const subtotal = (Number(item.price) || 0) * (Number(item.quantity) || 1);
       const discVal = Number(itemDiscounts[item.productId]) || 0;
       const type = itemDiscountTypes[item.productId] || "percent";
       const discAmt = type === "percent" ? (subtotal * discVal) / 100 : discVal;
@@ -330,7 +268,6 @@ const CartLayout = ({ children }) => {
       e?.stopPropagation?.();
       if (!userId) return message.error("User not logged in");
 
-      // Optimistic update
       dispatch(
         cartApi.util.updateQueryData("getCart", userId, (draft) => {
           draft.cart.items = draft.cart.items.filter(
@@ -339,7 +276,6 @@ const CartLayout = ({ children }) => {
         }),
       );
 
-      // Clear local adjustments for removed item
       setItemDiscounts((prev) => {
         const { [productId]: _, ...rest } = prev;
         return rest;
@@ -417,16 +353,43 @@ const CartLayout = ({ children }) => {
       dispatch(
         cartApi.util.updateQueryData("getCart", userId, (draft) => {
           const item = draft.cart.items.find((i) => i.productId === productId);
-          if (item) {
-            if (optionType === null || optionType === "main") {
-              item.isOption = false;
-              item.optionType = null;
-              item.parentProductId = null;
-            } else {
-              item.isOption = true;
-              item.optionType = optionType;
-              item.parentProductId = parentProductId || null;
-            }
+          if (!item) return;
+
+          if (optionType === null || optionType === "main") {
+            item.isOption = false;
+            item.isOptionFor = null;
+            item.optionType = null;
+            item.parentProductId = null;
+          } else {
+            item.isOption = true;
+            item.isOptionFor = parentProductId || null;
+            item.optionType = optionType;
+            item.parentProductId = parentProductId || null;
+          }
+        }),
+      );
+
+      // Also update localCartItems immediately so UI and payload stay in sync
+      setLocalCartItems((prev) =>
+        prev.map((item) => {
+          if (item.productId !== productId) return item;
+
+          if (optionType === null || optionType === "main") {
+            return {
+              ...item,
+              isOption: false,
+              isOptionFor: null,
+              optionType: null,
+              parentProductId: null,
+            };
+          } else {
+            return {
+              ...item,
+              isOption: true,
+              isOptionFor: parentProductId || null,
+              optionType: optionType,
+              parentProductId: parentProductId || null,
+            };
           }
         }),
       );
@@ -439,7 +402,6 @@ const CartLayout = ({ children }) => {
     },
     [userId, dispatch],
   );
-
   const getParentName = useCallback(
     (parentProductId) => {
       if (!parentProductId) return "Unknown";
@@ -453,8 +415,6 @@ const CartLayout = ({ children }) => {
     [localCartItems],
   );
 
-  // ── Discount / Tax Handlers ──────────────────────────────────
-
   const handleDiscountChange = useCallback(
     (productId, value) =>
       setItemDiscounts((prev) => ({ ...prev, [productId]: value ?? 0 })),
@@ -466,9 +426,8 @@ const CartLayout = ({ children }) => {
       setItemDiscountTypes((prev) => {
         const currentType = prev[productId] || "percent";
         const currentValue = itemDiscounts[productId] || 0;
-
-        // Convert existing discount value to new type
         let newValue = currentValue;
+
         if (currentType !== newType && currentValue > 0) {
           const item = localCartItems.find((i) => i.productId === productId);
           if (item) {
@@ -481,9 +440,7 @@ const CartLayout = ({ children }) => {
           }
         }
 
-        // Apply converted discount value
         setItemDiscounts((d) => ({ ...d, [productId]: newValue }));
-
         return { ...prev, [productId]: newType };
       });
     },
@@ -499,8 +456,6 @@ const CartLayout = ({ children }) => {
     [],
   );
 
-  // ── Clear Cart ───────────────────────────────────────────────
-
   const handleClearCart = useCallback(async () => {
     if (!userId) return message.error("User not logged in!");
     try {
@@ -511,7 +466,7 @@ const CartLayout = ({ children }) => {
       setItemTaxes({});
       setShipping(0);
       setGst(0);
-      clearDraft(); // wipe localStorage draft too
+      clearDraft();
       setShowClearCartModal(false);
       message.success("Cart cleared successfully");
     } catch (e) {
@@ -519,14 +474,11 @@ const CartLayout = ({ children }) => {
     }
   }, [userId, clearCart, clearDraft]);
 
-  // ─────────────────────────────────────────────────────────────
-  // COMMON PROPS — passed to CartTab and Checkout child
-  // clearDraft is exposed so the checkout page can call it after
-  // a successful submission.
-  // ─────────────────────────────────────────────────────────────
+  // Common Props
   const commonProps = {
     localCartItems,
     calculationCartItems,
+    payloadCartItems,
     cartProductsData,
     subTotal,
     totalDiscount,
@@ -556,18 +508,13 @@ const CartLayout = ({ children }) => {
     userId,
     handleMakeOption,
     getParentName,
-    // Draft helpers for checkout page
     forceSave,
     clearDraft,
   };
 
-  // ─────────────────────────────────────────────────────────────
-  // RENDER
-  // ─────────────────────────────────────────────────────────────
   return (
     <div className="page-wrapper">
       <div className="content">
-        {/* Document Type Selector */}
         <div style={{ marginBottom: 24 }}>
           <Segmented
             value={documentType}
@@ -602,7 +549,6 @@ const CartLayout = ({ children }) => {
           </TabPane>
         </Tabs>
 
-        {/* Clear Cart Confirmation Modal */}
         <Modal
           title="Confirm Clear Cart"
           open={showClearCartModal}

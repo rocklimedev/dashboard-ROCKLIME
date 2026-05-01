@@ -172,9 +172,9 @@ const NewQuotation = () => {
   };
 
   // ==================== CREATE QUOTATION ====================
-  // ==================== CREATE QUOTATION ====================
   const handleCreateQuotation = async (layoutProps = {}) => {
     const {
+      payloadCartItems = [], // ← Use this for payload (includes options)
       calculationCartItems = [],
       shipping = 0,
       gst = 0,
@@ -188,7 +188,7 @@ const NewQuotation = () => {
       return message.error("Please select a customer.");
     }
 
-    if (calculationCartItems.length === 0) {
+    if (payloadCartItems.length === 0) {
       return message.error("Cart is empty.");
     }
 
@@ -226,31 +226,28 @@ const NewQuotation = () => {
               "Failed to create shipping address automatically:",
               err,
             );
-            // Continue without failing the whole quotation
           }
         }
       }
     }
 
-    // ==================== FIXED FLOOR & ROOM LOGIC ====================
+    // ==================== FLOOR & ROOM LOGIC ====================
     let finalFloors = quotationData.floors || [];
 
-    // Only auto-build floors from products IF user has NOT manually added any floors/rooms
-    // This fixes the issue where manually added floors were being ignored
     if (finalFloors.length === 0) {
-      const hasAnyLocationAssignment = calculationCartItems.some(
+      const hasAnyLocationAssignment = payloadCartItems.some(
         (item) =>
           Boolean(item.floorId) || Boolean(item.roomId) || Boolean(item.areaId),
       );
 
       if (hasAnyLocationAssignment) {
-        finalFloors = buildFloorsFromProducts(calculationCartItems);
+        finalFloors = buildFloorsFromProducts(payloadCartItems);
       }
     }
-    // If user has manually added floors → we respect `quotationData.floors` (priority)
 
-    // ==================== ENRICH CART ITEMS ====================
-    const enrichedItems = calculationCartItems.map((item) => {
+    // ==================== ENRICH ALL ITEMS (Main + Optional) ====================
+    // ==================== ENRICH ALL ITEMS (Main + Optional) ====================
+    const enrichedItems = payloadCartItems.map((item) => {
       const productId = item.productId || item.id;
       const price = Number(item.price) || 0;
       const qty = Number(item.quantity) || 1;
@@ -263,9 +260,10 @@ const NewQuotation = () => {
 
       const itemTax = Number(itemTaxes[productId]) || 0;
 
+      const isOptional = Boolean(item.isOption) || Boolean(item.isOptionFor);
+
       return {
         ...item,
-        // Location fields (keep original if assigned)
         floorName: item.floorName || undefined,
         roomName: item.roomName || undefined,
         areaName: item.areaName || undefined,
@@ -273,18 +271,24 @@ const NewQuotation = () => {
         discount: discVal,
         discountType: discType,
         tax: itemTax,
+
         subtotal: Number(subtotal.toFixed(2)),
         discountAmount: Number(discountAmount.toFixed(2)),
         lineTotal: Number(
-          (
-            subtotal -
+          subtotal -
             discountAmount +
-            ((subtotal - discountAmount) * itemTax) / 100
-          ).toFixed(2),
-        ),
+            ((subtotal - discountAmount) * itemTax) / 100,
+        ).toFixed(2),
+
+        // Final safety net
+        isOption: isOptional,
+        isOptionFor: isOptional
+          ? item.parentProductId || item.isOptionFor || null
+          : null,
+        optionType: item.optionType || null,
+        parentProductId: item.parentProductId || null,
       };
     });
-
     // ==================== BUILD PAYLOAD ====================
     const quotationPayload = {
       quotationId: uuidv4(),
@@ -309,8 +313,8 @@ const NewQuotation = () => {
       signature_name: quotationData.signatureName || "CM TRADING CO",
       signature_image: quotationData.signatureImage || "",
 
-      floors: finalFloors, // ← Now correctly respects manual floors
-      products: enrichedItems,
+      floors: finalFloors,
+      products: enrichedItems, // ← Now includes optional products
 
       followupDates: quotationData.followupDates?.filter(Boolean) || [],
       createdBy: auth?.userId,
@@ -327,7 +331,6 @@ const NewQuotation = () => {
         }`,
       );
 
-      // Clear draft and cart after successful creation
       clearDraft();
       if (typeof handleClearCart === "function") handleClearCart();
 
@@ -401,7 +404,7 @@ const NewQuotation = () => {
             <PreviewQuotation
               visible={previewVisible}
               onClose={() => setPreviewVisible(false)}
-              cartItems={layoutProps.calculationCartItems}
+              cartItems={layoutProps.calculationCartItems} // Use calculation items for preview totals
               productsData={layoutProps.cartProductsData}
               customer={customers.find(
                 (c) => c.customerId === selectedCustomer,

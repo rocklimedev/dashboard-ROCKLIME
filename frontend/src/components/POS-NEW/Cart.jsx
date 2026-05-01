@@ -1,4 +1,4 @@
-// src/components/POS-NEW/CartTab.jsx
+// src/components/POS-NEW/Cart.jsx
 import React, { useMemo } from "react";
 import {
   Card,
@@ -69,19 +69,21 @@ const OptionGroupWrapper = styled.div`
 
 /* ────────────────────── Component ────────────────────── */
 const CartTab = ({
-  // Main props from CartLayout
-  localCartItems = [], // ← Use this instead of cartItems
-  cartItems, // Keep for backward compatibility (optional)
+  // Props from CartLayout
+  localCartItems = [],
+  cartItems, // backward compatibility
 
-  totalItems,
-  shipping = 0,
+  // Totals (passed from CartLayout - these exclude optional items)
+  subTotal = 0,
   discount = 0,
   roundOff = 0,
-  subTotal = 0,
+  shipping = 0,
+
   itemDiscounts = {},
   itemDiscountTypes = {},
   itemTaxes = {},
   updatingItems = {},
+
   handleUpdateQuantity,
   handleRemoveItem,
   handleDiscountChange,
@@ -93,22 +95,22 @@ const CartTab = ({
   handleMakeOption,
   getParentName,
   documentType = "quotation",
+
+  // New: Pass calculationCartItems if needed for OrderTotal
+  calculationCartItems = [],
 }) => {
-  // Use localCartItems with fallback (most reliable)
+  // Use localCartItems as the source of truth
   const safeCartItems = useMemo(() => {
-    return Array.isArray(localCartItems)
+    return Array.isArray(localCartItems) && localCartItems.length > 0
       ? localCartItems
       : Array.isArray(cartItems)
         ? cartItems
         : [];
   }, [localCartItems, cartItems]);
 
-  const isQuotationMode =
-    documentType === "Quotation" ||
-    documentType === "quotation" ||
-    documentType === "Quotation";
+  const isQuotationMode = documentType?.toLowerCase() === "quotation";
 
-  // Calculate line total for each item
+  // Calculate line total for each item (used in CartItemRow)
   const lineTotal = (item) => {
     if (!item) return "0.00";
     const price = Number(item.price) || 0;
@@ -132,7 +134,7 @@ const CartTab = ({
     return (subtotal - discountAmount + taxAmount).toFixed(2);
   };
 
-  // Group main items + their options
+  // Group main items with their options
   const groupedItems = useMemo(() => {
     const mains = safeCartItems.filter((item) => !item?.isOption);
     const options = safeCartItems.filter((item) => item?.isOption === true);
@@ -174,6 +176,7 @@ const CartTab = ({
         {/* Main Items + Their Options */}
         {groupedItems.grouped.map(({ main, options }) => (
           <React.Fragment key={main?.productId || main?.id || Math.random()}>
+            {/* Main Product */}
             <CartItemRow
               item={main}
               itemDiscounts={itemDiscounts}
@@ -192,6 +195,7 @@ const CartTab = ({
               lineTotal={lineTotal}
             />
 
+            {/* Optional Items under this main product */}
             {options.map((opt) => (
               <OptionGroupWrapper
                 key={opt?.productId || opt?.id || Math.random()}
@@ -286,10 +290,10 @@ const CartTab = ({
 
           <OrderTotal
             shipping={shipping}
-            tax={0}
+            tax={0} // You can pass actual tax if needed
             discount={discount}
             roundOff={roundOff}
-            subTotal={subTotal}
+            subTotal={subTotal} // This comes from calculationCartItems (excludes options)
             onShippingChange={onShippingChange}
           />
 

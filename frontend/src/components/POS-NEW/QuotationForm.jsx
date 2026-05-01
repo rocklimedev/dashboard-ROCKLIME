@@ -871,17 +871,20 @@ const QuotationForm = ({
             size="large"
             icon={<CheckCircleOutlined />}
             onClick={() => {
-              if (!selectedCustomer)
+              if (!selectedCustomer) {
                 return message.error("Please select a customer");
+              }
 
+              // Pass the correct key: payloadCartItems
               handleCreateDocument({
-                calculationCartItems: effectiveCartItems,
+                payloadCartItems: localCartItems, // ← Changed from calculationCartItems
+                calculationCartItems: calculationCartItems, // for totals
                 shipping,
                 gst,
-                itemDiscounts, // ← Now correctly passed
-                itemDiscountTypes, // ← Now correctly passed
-                itemTaxes, // ← Now correctly passed
-                handleClearCart, // ← Now available
+                itemDiscounts,
+                itemDiscountTypes,
+                itemTaxes,
+                handleClearCart,
               });
             }}
           >
