@@ -1,0 +1,1770 @@
+[
+  {
+    "name": "Endless",
+    "category": "Without Mesh (Thickness 6 mm)",
+    "variants": [
+      {
+        "size_mm": "1200x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 170,
+        "ex_factory_per_sft": 74,
+        "pcs_per_box": 1,
+        "sft_per_box": 30.92,
+        "kg_per_box": 60.33,
+        "mrp_per_box": 5255
+      },
+      {
+        "size_mm": "800x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 150,
+        "ex_factory_per_sft": 68,
+        "pcs_per_box": 3,
+        "sft_per_box": 61.8,
+        "kg_per_box": 80.22,
+        "mrp_per_box": 9270
+      },
+      {
+        "size_mm": "600x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 95,
+        "ex_factory_per_sft": 40,
+        "pcs_per_box": 3,
+        "sft_per_box": 23.13,
+        "kg_per_box": 30.09,
+        "mrp_per_box": 2195
+      }
+    ]
+  },
+  {
+    "name": "Runa",
+    "category": "Without Mesh (Thickness 6 mm)",
+    "variants": [
+      {
+        "size_mm": "1200x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 170,
+        "ex_factory_per_sft": 74,
+        "pcs_per_box": 1,
+        "sft_per_box": 30.92,
+        "kg_per_box": 60.33,
+        "mrp_per_box": 5255
+      },
+      {
+        "size_mm": "800x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 150,
+        "ex_factory_per_sft": 68,
+        "pcs_per_box": 3,
+        "sft_per_box": 61.8,
+        "kg_per_box": 80.22,
+        "mrp_per_box": 9270
+      },
+      {
+        "size_mm": "600x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 95,
+        "ex_factory_per_sft": 40,
+        "pcs_per_box": 3,
+        "sft_per_box": 23.13,
+        "kg_per_box": 30.09,
+        "mrp_per_box": 2195
+      }
+    ]
+  },
+  {
+    "name": "Lithic",
+    "category": "Without Mesh (Thickness 6 mm)",
+    "variants": [
+      {
+        "size_mm": "1200x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 170,
+        "ex_factory_per_sft": 74,
+        "pcs_per_box": 1,
+        "sft_per_box": 30.92,
+        "kg_per_box": 60.33,
+        "mrp_per_box": 5255
+      },
+      {
+        "size_mm": "800x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 150,
+        "ex_factory_per_sft": 68,
+        "pcs_per_box": 3,
+        "sft_per_box": 61.8,
+        "kg_per_box": 80.22,
+        "mrp_per_box": 9270
+      },
+      {
+        "size_mm": "600x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 95,
+        "ex_factory_per_sft": 40,
+        "pcs_per_box": 3,
+        "sft_per_box": 23.13,
+        "kg_per_box": 30.09,
+        "mrp_per_box": 2195
+      }
+    ]
+  },
+  {
+    "name": "Endless",
+    "category": "Facade Panel with Safety Mesh (Thickness 6mm+)",
+    "variants": [
+      {
+        "size_mm": "1200x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 195,
+        "ex_factory_per_sft": 90,
+        "pcs_per_box": 1,
+        "sft_per_box": 30.92,
+        "kg_per_box": 60.33,
+        "mrp_per_box": 6030
+      },
+      {
+        "size_mm": "800x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 175,
+        "ex_factory_per_sft": 84,
+        "pcs_per_box": 3,
+        "sft_per_box": 61.8,
+        "kg_per_box": 80.22,
+        "mrp_per_box": 10815
+      }
+    ]
+  },
+  {
+    "name": "Runa",
+    "category": "Facade Panel with Safety Mesh (Thickness 6mm+)",
+    "variants": [
+      {
+        "size_mm": "1200x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 195,
+        "ex_factory_per_sft": 90,
+        "pcs_per_box": 1,
+        "sft_per_box": 30.92,
+        "kg_per_box": 60.33,
+        "mrp_per_box": 6030
+      },
+      {
+        "size_mm": "800x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 175,
+        "ex_factory_per_sft": 84,
+        "pcs_per_box": 3,
+        "sft_per_box": 61.8,
+        "kg_per_box": 80.22,
+        "mrp_per_box": 10815
+      }
+    ]
+  },
+  {
+    "name": "Ambient",
+    "category": "Facade Panel with Safety Mesh (Thickness 6mm+)",
+    "variants": [
+      {
+        "size_mm": "1200x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 195,
+        "ex_factory_per_sft": 90,
+        "pcs_per_box": 1,
+        "sft_per_box": 30.92,
+        "kg_per_box": 60.33,
+        "mrp_per_box": 6030
+      },
+      {
+        "size_mm": "800x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 175,
+        "ex_factory_per_sft": 84,
+        "pcs_per_box": 3,
+        "sft_per_box": 61.8,
+        "kg_per_box": 80.22,
+        "mrp_per_box": 10815
+      }
+    ]
+  },
+  {
+    "name": "Lithic",
+    "category": "Facade Panel with Safety Mesh (Thickness 6mm+)",
+    "variants": [
+      {
+        "size_mm": "1200x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 195,
+        "ex_factory_per_sft": 90,
+        "pcs_per_box": 1,
+        "sft_per_box": 30.92,
+        "kg_per_box": 60.33,
+        "mrp_per_box": 6030
+      },
+      {
+        "size_mm": "800x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 175,
+        "ex_factory_per_sft": 84,
+        "pcs_per_box": 3,
+        "sft_per_box": 61.8,
+        "kg_per_box": 80.22,
+        "mrp_per_box": 10815
+      }
+    ]
+  },
+  {
+    "name": "Terracotta",
+    "category": "Facade Panel with Safety Mesh (Thickness 6mm+)",
+    "variants": [
+      {
+        "size_mm": "1200x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 195,
+        "ex_factory_per_sft": 90,
+        "pcs_per_box": 1,
+        "sft_per_box": 30.92,
+        "kg_per_box": 60.33,
+        "mrp_per_box": 6030
+      },
+      {
+        "size_mm": "800x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 175,
+        "ex_factory_per_sft": 84,
+        "pcs_per_box": 3,
+        "sft_per_box": 61.8,
+        "kg_per_box": 80.22,
+        "mrp_per_box": 10815
+      }
+    ]
+  },
+  {
+    "name": "Travertine Veincut Beige Spazzolato",
+    "category": "Facade Panel with Safety Mesh (Thickness 6mm+)",
+    "variants": [
+      {
+        "size_mm": "1200x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 195,
+        "ex_factory_per_sft": 90,
+        "pcs_per_box": 1,
+        "sft_per_box": 30.92,
+        "kg_per_box": 60.33,
+        "mrp_per_box": 6030
+      },
+      {
+        "size_mm": "800x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 175,
+        "ex_factory_per_sft": 84,
+        "pcs_per_box": 3,
+        "sft_per_box": 61.8,
+        "kg_per_box": 80.22,
+        "mrp_per_box": 10815
+      }
+    ]
+  },
+
+  {
+    "name": "Endless",
+    "category": "ENDLESS/AMBIENT/RUNA/LITHIC/TERRAELINO/PLANUM (Thickness 9 mm)",
+    "colors": [
+      "Nero",
+      "Grigio",
+      "Bianco",
+      "Avorio",
+      "Beige",
+      "Taupe",
+      "Argento"
+    ],
+    "variants": [
+      {
+        "size_mm": "1200x1800",
+        "caliber": 8,
+        "retail_mrp_per_sft": 275,
+        "ex_factory_per_sft": 140,
+        "pcs_per_box": 2,
+        "sft_per_box": 46.37,
+        "kg_per_box": 91.0,
+        "mrp_per_box": 12750
+      },
+      {
+        "size_mm": "1200x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 275,
+        "ex_factory_per_sft": 140,
+        "pcs_per_box": 2,
+        "sft_per_box": 30.89,
+        "kg_per_box": 60.28,
+        "mrp_per_box": 8495
+      },
+      {
+        "size_mm": "800x1600",
+        "caliber": 8,
+        "retail_mrp_per_sft": 245,
+        "ex_factory_per_sft": 122,
+        "pcs_per_box": 2,
+        "sft_per_box": 27.46,
+        "kg_per_box": 53.56,
+        "mrp_per_box": 6730
+      },
+      {
+        "size_mm": "600x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 210,
+        "ex_factory_per_sft": 101,
+        "pcs_per_box": 2,
+        "sft_per_box": 15.42,
+        "kg_per_box": 30.09,
+        "mrp_per_box": 3240
+      },
+      {
+        "size_mm": "600x600",
+        "caliber": 8,
+        "retail_mrp_per_sft": 210,
+        "ex_factory_per_sft": 101,
+        "pcs_per_box": 4,
+        "sft_per_box": 15.4,
+        "kg_per_box": 30.04,
+        "mrp_per_box": 3235
+      },
+      {
+        "size_mm": "300x600",
+        "caliber": 8,
+        "retail_mrp_per_sft": 210,
+        "ex_factory_per_sft": 101,
+        "pcs_per_box": 6,
+        "sft_per_box": 11.51,
+        "kg_per_box": 22.45,
+        "mrp_per_box": 2415
+      }
+    ]
+  },
+  {
+    "name": "Runa",
+    "category": "ENDLESS/AMBIENT/RUNA/LITHIC/TERRAELINO/PLANUM (Thickness 9 mm)",
+    "colors": ["Beige", "Nero", "Grigio Chiaro", "Grigio Scuro"],
+    "variants": [
+      {
+        "size_mm": "1200x1800",
+        "caliber": 8,
+        "retail_mrp_per_sft": 275,
+        "ex_factory_per_sft": 140,
+        "pcs_per_box": 2,
+        "sft_per_box": 46.37,
+        "kg_per_box": 91.0,
+        "mrp_per_box": 12750
+      },
+      {
+        "size_mm": "1200x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 275,
+        "ex_factory_per_sft": 140,
+        "pcs_per_box": 2,
+        "sft_per_box": 30.89,
+        "kg_per_box": 60.28,
+        "mrp_per_box": 8495
+      },
+      {
+        "size_mm": "800x1600",
+        "caliber": 8,
+        "retail_mrp_per_sft": 245,
+        "ex_factory_per_sft": 122,
+        "pcs_per_box": 2,
+        "sft_per_box": 27.46,
+        "kg_per_box": 53.56,
+        "mrp_per_box": 6730
+      },
+      {
+        "size_mm": "600x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 210,
+        "ex_factory_per_sft": 101,
+        "pcs_per_box": 2,
+        "sft_per_box": 15.42,
+        "kg_per_box": 30.09,
+        "mrp_per_box": 3240
+      },
+      {
+        "size_mm": "600x600",
+        "caliber": 8,
+        "retail_mrp_per_sft": 210,
+        "ex_factory_per_sft": 101,
+        "pcs_per_box": 4,
+        "sft_per_box": 15.4,
+        "kg_per_box": 30.04,
+        "mrp_per_box": 3235
+      },
+      {
+        "size_mm": "300x600",
+        "caliber": 8,
+        "retail_mrp_per_sft": 210,
+        "ex_factory_per_sft": 101,
+        "pcs_per_box": 6,
+        "sft_per_box": 11.51,
+        "kg_per_box": 22.45,
+        "mrp_per_box": 2415
+      }
+    ]
+  },
+  {
+    "name": "Ambient",
+    "category": "ENDLESS/AMBIENT/RUNA/LITHIC/TERRAELINO/PLANUM (Thickness 9 mm)",
+    "colors": [
+      "Grigio Chiaro",
+      "Grigio Scuro",
+      "Grigio Medio",
+      "Beige Chiaro",
+      "Beige Scuro",
+      "Beige Medio"
+    ],
+    "variants": [
+      {
+        "size_mm": "1200x1800",
+        "caliber": 8,
+        "retail_mrp_per_sft": 275,
+        "ex_factory_per_sft": 140,
+        "pcs_per_box": 2,
+        "sft_per_box": 46.37,
+        "kg_per_box": 91.0,
+        "mrp_per_box": 12750
+      },
+      {
+        "size_mm": "1200x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 275,
+        "ex_factory_per_sft": 140,
+        "pcs_per_box": 2,
+        "sft_per_box": 30.89,
+        "kg_per_box": 60.28,
+        "mrp_per_box": 8495
+      },
+      {
+        "size_mm": "800x1600",
+        "caliber": 8,
+        "retail_mrp_per_sft": 245,
+        "ex_factory_per_sft": 122,
+        "pcs_per_box": 2,
+        "sft_per_box": 27.46,
+        "kg_per_box": 53.56,
+        "mrp_per_box": 6730
+      },
+      {
+        "size_mm": "600x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 210,
+        "ex_factory_per_sft": 101,
+        "pcs_per_box": 2,
+        "sft_per_box": 15.42,
+        "kg_per_box": 30.09,
+        "mrp_per_box": 3240
+      },
+      {
+        "size_mm": "600x600",
+        "caliber": 8,
+        "retail_mrp_per_sft": 210,
+        "ex_factory_per_sft": 101,
+        "pcs_per_box": 4,
+        "sft_per_box": 15.4,
+        "kg_per_box": 30.04,
+        "mrp_per_box": 3235
+      },
+      {
+        "size_mm": "300x600",
+        "caliber": 8,
+        "retail_mrp_per_sft": 210,
+        "ex_factory_per_sft": 101,
+        "pcs_per_box": 6,
+        "sft_per_box": 11.51,
+        "kg_per_box": 22.45,
+        "mrp_per_box": 2415
+      }
+    ]
+  },
+  {
+    "name": "Terraelino",
+    "category": "ENDLESS/AMBIENT/RUNA/LITHIC/TERRAELINO/PLANUM (Thickness 9 mm)",
+    "colors": ["Gesso", "Calce", "Sabbia", "Argilla", "Fango", "Pepe"],
+    "variants": [
+      {
+        "size_mm": "1200x1800",
+        "caliber": 8,
+        "retail_mrp_per_sft": 275,
+        "ex_factory_per_sft": 140,
+        "pcs_per_box": 2,
+        "sft_per_box": 46.37,
+        "kg_per_box": 91.0,
+        "mrp_per_box": 12750
+      },
+      {
+        "size_mm": "1200x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 275,
+        "ex_factory_per_sft": 140,
+        "pcs_per_box": 2,
+        "sft_per_box": 30.89,
+        "kg_per_box": 60.28,
+        "mrp_per_box": 8495
+      },
+      {
+        "size_mm": "800x1600",
+        "caliber": 8,
+        "retail_mrp_per_sft": 245,
+        "ex_factory_per_sft": 122,
+        "pcs_per_box": 2,
+        "sft_per_box": 27.46,
+        "kg_per_box": 53.56,
+        "mrp_per_box": 6730
+      },
+      {
+        "size_mm": "600x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 210,
+        "ex_factory_per_sft": 101,
+        "pcs_per_box": 2,
+        "sft_per_box": 15.42,
+        "kg_per_box": 30.09,
+        "mrp_per_box": 3240
+      },
+      {
+        "size_mm": "600x600",
+        "caliber": 8,
+        "retail_mrp_per_sft": 210,
+        "ex_factory_per_sft": 101,
+        "pcs_per_box": 4,
+        "sft_per_box": 15.4,
+        "kg_per_box": 30.04,
+        "mrp_per_box": 3235
+      },
+      {
+        "size_mm": "300x600",
+        "caliber": 8,
+        "retail_mrp_per_sft": 210,
+        "ex_factory_per_sft": 101,
+        "pcs_per_box": 6,
+        "sft_per_box": 11.51,
+        "kg_per_box": 22.45,
+        "mrp_per_box": 2415
+      }
+    ]
+  },
+  {
+    "name": "Lithic",
+    "category": "ENDLESS/AMBIENT/RUNA/LITHIC/TERRAELINO/PLANUM (Thickness 9 mm)",
+    "colors": [
+      "Roccia Portoghese",
+      "Vicenza Beige",
+      "Basalto Grigio",
+      "Gabbro Sfumato",
+      "Kilkenny Nero",
+      "Pannonia",
+      "Pietra Piasentina",
+      "Alpi Argento"
+    ],
+    "variants": [
+      {
+        "size_mm": "1200x1800",
+        "caliber": 8,
+        "retail_mrp_per_sft": 275,
+        "ex_factory_per_sft": 140,
+        "pcs_per_box": 2,
+        "sft_per_box": 46.37,
+        "kg_per_box": 91.0,
+        "mrp_per_box": 12750
+      },
+      {
+        "size_mm": "1200x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 275,
+        "ex_factory_per_sft": 140,
+        "pcs_per_box": 2,
+        "sft_per_box": 30.89,
+        "kg_per_box": 60.28,
+        "mrp_per_box": 8495
+      },
+      {
+        "size_mm": "800x1600",
+        "caliber": 8,
+        "retail_mrp_per_sft": 245,
+        "ex_factory_per_sft": 122,
+        "pcs_per_box": 2,
+        "sft_per_box": 27.46,
+        "kg_per_box": 53.56,
+        "mrp_per_box": 6730
+      },
+      {
+        "size_mm": "600x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 210,
+        "ex_factory_per_sft": 101,
+        "pcs_per_box": 2,
+        "sft_per_box": 15.42,
+        "kg_per_box": 30.09,
+        "mrp_per_box": 3240
+      },
+      {
+        "size_mm": "600x600",
+        "caliber": 8,
+        "retail_mrp_per_sft": 210,
+        "ex_factory_per_sft": 101,
+        "pcs_per_box": 4,
+        "sft_per_box": 15.4,
+        "kg_per_box": 30.04,
+        "mrp_per_box": 3235
+      },
+      {
+        "size_mm": "300x600",
+        "caliber": 8,
+        "retail_mrp_per_sft": 210,
+        "ex_factory_per_sft": 101,
+        "pcs_per_box": 6,
+        "sft_per_box": 11.51,
+        "kg_per_box": 22.45,
+        "mrp_per_box": 2415
+      }
+    ]
+  },
+  {
+    "name": "Planum",
+    "category": "ENDLESS/AMBIENT/RUNA/LITHIC/TERRAELINO/PLANUM (Thickness 9 mm)",
+    "colors": [
+      "Avorio",
+      "Bianco",
+      "Beige",
+      "Grigio Chiaro",
+      "Grigio Scuro",
+      "Nero"
+    ],
+    "variants": [
+      {
+        "size_mm": "1200x1800",
+        "caliber": 8,
+        "retail_mrp_per_sft": 275,
+        "ex_factory_per_sft": 140,
+        "pcs_per_box": 2,
+        "sft_per_box": 46.37,
+        "kg_per_box": 91.0,
+        "mrp_per_box": 12750
+      },
+      {
+        "size_mm": "1200x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 275,
+        "ex_factory_per_sft": 140,
+        "pcs_per_box": 2,
+        "sft_per_box": 30.89,
+        "kg_per_box": 60.28,
+        "mrp_per_box": 8495
+      },
+      {
+        "size_mm": "800x1600",
+        "caliber": 8,
+        "retail_mrp_per_sft": 245,
+        "ex_factory_per_sft": 122,
+        "pcs_per_box": 2,
+        "sft_per_box": 27.46,
+        "kg_per_box": 53.56,
+        "mrp_per_box": 6730
+      },
+      {
+        "size_mm": "600x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 210,
+        "ex_factory_per_sft": 101,
+        "pcs_per_box": 2,
+        "sft_per_box": 15.42,
+        "kg_per_box": 30.09,
+        "mrp_per_box": 3240
+      },
+      {
+        "size_mm": "600x600",
+        "caliber": 8,
+        "retail_mrp_per_sft": 210,
+        "ex_factory_per_sft": 101,
+        "pcs_per_box": 4,
+        "sft_per_box": 15.4,
+        "kg_per_box": 30.04,
+        "mrp_per_box": 3235
+      },
+      {
+        "size_mm": "300x600",
+        "caliber": 8,
+        "retail_mrp_per_sft": 210,
+        "ex_factory_per_sft": 101,
+        "pcs_per_box": 6,
+        "sft_per_box": 11.51,
+        "kg_per_box": 22.45,
+        "mrp_per_box": 2415
+      }
+    ]
+  },
+  {
+    "name": "Terraelino",
+    "category": "TERRAELINO (Thickness 9 mm)",
+    "colors": ["Menta", "Ginepro"],
+    "variants": [
+      {
+        "size_mm": "1200x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 390,
+        "ex_factory_per_sft": 195,
+        "pcs_per_box": 1,
+        "sft_per_box": 30.92,
+        "kg_per_box": 60.33,
+        "mrp_per_box": 12060
+      },
+      {
+        "size_mm": "1200x1800",
+        "caliber": 8,
+        "retail_mrp_per_sft": 295,
+        "ex_factory_per_sft": 150,
+        "pcs_per_box": 2,
+        "sft_per_box": 46.37,
+        "kg_per_box": 91.0,
+        "mrp_per_box": 13680
+      },
+      {
+        "size_mm": "1200x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 295,
+        "ex_factory_per_sft": 150,
+        "pcs_per_box": 2,
+        "sft_per_box": 30.89,
+        "kg_per_box": 60.28,
+        "mrp_per_box": 9115
+      },
+      {
+        "size_mm": "800x1600",
+        "caliber": 8,
+        "retail_mrp_per_sft": 265,
+        "ex_factory_per_sft": 132,
+        "pcs_per_box": 2,
+        "sft_per_box": 27.46,
+        "kg_per_box": 53.56,
+        "mrp_per_box": 7275
+      },
+      {
+        "size_mm": "600x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 225,
+        "ex_factory_per_sft": 111,
+        "pcs_per_box": 2,
+        "sft_per_box": 15.42,
+        "kg_per_box": 30.09,
+        "mrp_per_box": 3470
+      },
+      {
+        "size_mm": "600x600",
+        "caliber": 8,
+        "retail_mrp_per_sft": 225,
+        "ex_factory_per_sft": 111,
+        "pcs_per_box": 4,
+        "sft_per_box": 15.4,
+        "kg_per_box": 30.04,
+        "mrp_per_box": 3465
+      },
+      {
+        "size_mm": "300x600",
+        "caliber": 8,
+        "retail_mrp_per_sft": 225,
+        "ex_factory_per_sft": 111,
+        "pcs_per_box": 6,
+        "sft_per_box": 11.51,
+        "kg_per_box": 22.45,
+        "mrp_per_box": 2590
+      }
+    ]
+  },
+  {
+    "name": "Terraelino",
+    "category": "TERRAELINO/TERRACOTTA/PICHHE (Thickness 9 mm)",
+    "colors": ["Melograno"],
+    "variants": [
+      {
+        "size_mm": "1200x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 410,
+        "ex_factory_per_sft": 205,
+        "pcs_per_box": 1,
+        "sft_per_box": 30.92,
+        "kg_per_box": 60.33,
+        "mrp_per_box": 12675
+      },
+      {
+        "size_mm": "1200x1800",
+        "caliber": 8,
+        "retail_mrp_per_sft": 315,
+        "ex_factory_per_sft": 160,
+        "pcs_per_box": 2,
+        "sft_per_box": 46.37,
+        "kg_per_box": 91.0,
+        "mrp_per_box": 14605
+      },
+      {
+        "size_mm": "1200x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 315,
+        "ex_factory_per_sft": 160,
+        "pcs_per_box": 2,
+        "sft_per_box": 30.89,
+        "kg_per_box": 60.28,
+        "mrp_per_box": 9730
+      },
+      {
+        "size_mm": "800x1600",
+        "caliber": 8,
+        "retail_mrp_per_sft": 285,
+        "ex_factory_per_sft": 142,
+        "pcs_per_box": 2,
+        "sft_per_box": 27.46,
+        "kg_per_box": 53.56,
+        "mrp_per_box": 7825
+      },
+      {
+        "size_mm": "600x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 245,
+        "ex_factory_per_sft": 121,
+        "pcs_per_box": 2,
+        "sft_per_box": 15.42,
+        "kg_per_box": 30.09,
+        "mrp_per_box": 3780
+      },
+      {
+        "size_mm": "600x600",
+        "caliber": 8,
+        "retail_mrp_per_sft": 245,
+        "ex_factory_per_sft": 121,
+        "pcs_per_box": 4,
+        "sft_per_box": 15.4,
+        "kg_per_box": 30.04,
+        "mrp_per_box": 3775
+      },
+      {
+        "size_mm": "300x600",
+        "caliber": 8,
+        "retail_mrp_per_sft": 245,
+        "ex_factory_per_sft": 121,
+        "pcs_per_box": 6,
+        "sft_per_box": 11.51,
+        "kg_per_box": 22.45,
+        "mrp_per_box": 2820
+      }
+    ]
+  },
+  {
+    "name": "Terracotta",
+    "category": "TERRAELINO/TERRACOTTA/PICHHE (Thickness 9 mm)",
+    "colors": ["Chiaro", "Scuro"],
+    "variants": [
+      {
+        "size_mm": "1200x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 410,
+        "ex_factory_per_sft": 205,
+        "pcs_per_box": 1,
+        "sft_per_box": 30.92,
+        "kg_per_box": 60.33,
+        "mrp_per_box": 12675
+      },
+      {
+        "size_mm": "1200x1800",
+        "caliber": 8,
+        "retail_mrp_per_sft": 315,
+        "ex_factory_per_sft": 160,
+        "pcs_per_box": 2,
+        "sft_per_box": 46.37,
+        "kg_per_box": 91.0,
+        "mrp_per_box": 14605
+      },
+      {
+        "size_mm": "1200x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 315,
+        "ex_factory_per_sft": 160,
+        "pcs_per_box": 2,
+        "sft_per_box": 30.89,
+        "kg_per_box": 60.28,
+        "mrp_per_box": 9730
+      },
+      {
+        "size_mm": "800x1600",
+        "caliber": 8,
+        "retail_mrp_per_sft": 285,
+        "ex_factory_per_sft": 142,
+        "pcs_per_box": 2,
+        "sft_per_box": 27.46,
+        "kg_per_box": 53.56,
+        "mrp_per_box": 7825
+      },
+      {
+        "size_mm": "600x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 245,
+        "ex_factory_per_sft": 121,
+        "pcs_per_box": 2,
+        "sft_per_box": 15.42,
+        "kg_per_box": 30.09,
+        "mrp_per_box": 3780
+      },
+      {
+        "size_mm": "600x600",
+        "caliber": 8,
+        "retail_mrp_per_sft": 245,
+        "ex_factory_per_sft": 121,
+        "pcs_per_box": 4,
+        "sft_per_box": 15.4,
+        "kg_per_box": 30.04,
+        "mrp_per_box": 3775
+      },
+      {
+        "size_mm": "300x600",
+        "caliber": 8,
+        "retail_mrp_per_sft": 245,
+        "ex_factory_per_sft": 121,
+        "pcs_per_box": 6,
+        "sft_per_box": 11.51,
+        "kg_per_box": 22.45,
+        "mrp_per_box": 2820
+      }
+    ]
+  },
+  {
+    "name": "Picche",
+    "category": "TERRAELINO/TERRACOTTA/PICHHE (Thickness 9 mm)",
+    "colors": ["All Colours"],
+    "variants": [
+      {
+        "size_mm": "1200x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 410,
+        "ex_factory_per_sft": 205,
+        "pcs_per_box": 1,
+        "sft_per_box": 30.92,
+        "kg_per_box": 60.33,
+        "mrp_per_box": 12675
+      },
+      {
+        "size_mm": "1200x1800",
+        "caliber": 8,
+        "retail_mrp_per_sft": 315,
+        "ex_factory_per_sft": 160,
+        "pcs_per_box": 2,
+        "sft_per_box": 46.37,
+        "kg_per_box": 91.0,
+        "mrp_per_box": 14605
+      },
+      {
+        "size_mm": "1200x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 315,
+        "ex_factory_per_sft": 160,
+        "pcs_per_box": 2,
+        "sft_per_box": 30.89,
+        "kg_per_box": 60.28,
+        "mrp_per_box": 9730
+      },
+      {
+        "size_mm": "800x1600",
+        "caliber": 8,
+        "retail_mrp_per_sft": 285,
+        "ex_factory_per_sft": 142,
+        "pcs_per_box": 2,
+        "sft_per_box": 27.46,
+        "kg_per_box": 53.56,
+        "mrp_per_box": 7825
+      },
+      {
+        "size_mm": "600x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 245,
+        "ex_factory_per_sft": 121,
+        "pcs_per_box": 2,
+        "sft_per_box": 15.42,
+        "kg_per_box": 30.09,
+        "mrp_per_box": 3780
+      },
+      {
+        "size_mm": "600x600",
+        "caliber": 8,
+        "retail_mrp_per_sft": 245,
+        "ex_factory_per_sft": 121,
+        "pcs_per_box": 4,
+        "sft_per_box": 15.4,
+        "kg_per_box": 30.04,
+        "mrp_per_box": 3775
+      },
+      {
+        "size_mm": "300x600",
+        "caliber": 8,
+        "retail_mrp_per_sft": 245,
+        "ex_factory_per_sft": 121,
+        "pcs_per_box": 6,
+        "sft_per_box": 11.51,
+        "kg_per_box": 22.45,
+        "mrp_per_box": 2820
+      }
+    ]
+  },
+  {
+    "name": "Riga",
+    "category": "RIGA/OMBRE (Thickness 9mm)",
+    "colors": ["All Colours & Structures"],
+    "variants": [
+      {
+        "size_mm": "1200x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 455,
+        "ex_factory_per_sft": 231,
+        "pcs_per_box": 1,
+        "sft_per_box": 30.92,
+        "kg_per_box": 60.33,
+        "mrp_per_box": 14070
+      },
+      {
+        "size_mm": "600x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 315,
+        "ex_factory_per_sft": 158,
+        "pcs_per_box": 2,
+        "sft_per_box": 15.42,
+        "kg_per_box": 30.0,
+        "mrp_per_box": 4855
+      }
+    ]
+  },
+  {
+    "name": "Ombre",
+    "category": "RIGA/OMBRE (Thickness 9mm)",
+    "colors": ["All Colours & Structures"],
+    "variants": [
+      {
+        "size_mm": "1200x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 455,
+        "ex_factory_per_sft": 231,
+        "pcs_per_box": 1,
+        "sft_per_box": 30.92,
+        "kg_per_box": 60.33,
+        "mrp_per_box": 14070
+      },
+      {
+        "size_mm": "600x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 315,
+        "ex_factory_per_sft": 158,
+        "pcs_per_box": 2,
+        "sft_per_box": 15.42,
+        "kg_per_box": 30.0,
+        "mrp_per_box": 4855
+      }
+    ]
+  },
+  {
+    "name": "Coniwood",
+    "category": "CONIWOOD/ESSENZE (Thickness 9 mm)",
+    "colors": [
+      "Cedro Sbiancato",
+      "Pino",
+      "Abete",
+      "Larice",
+      "Larice Ossidato",
+      "Abete Tinto"
+    ],
+    "variants": [
+      {
+        "size_mm": "200x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 225,
+        "ex_factory_per_sft": 111,
+        "pcs_per_box": 6,
+        "sft_per_box": 15.31,
+        "kg_per_box": 30.04,
+        "mrp_per_box": 3445
+      }
+    ]
+  },
+  {
+    "name": "Essenze",
+    "category": "CONIWOOD/ESSENZE (Thickness 9 mm)",
+    "colors": ["Eucalipto", "Noce", "Rovere Tortora", "Rovere Chiaro"],
+    "variants": [
+      {
+        "size_mm": "200x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 225,
+        "ex_factory_per_sft": 111,
+        "pcs_per_box": 6,
+        "sft_per_box": 15.31,
+        "kg_per_box": 30.04,
+        "mrp_per_box": 3445
+      }
+    ]
+  },
+  {
+    "name": "Bocciardato / Pettinato & Rigato",
+    "category": "TEXTURE / SPAZZOLATO (Thickness 9 mm)",
+    "colors": [
+      "Statuario",
+      "Crema Europa",
+      "Pulpis Grigio",
+      "Calacatta",
+      "Frappuccino",
+      "Port Lorent"
+    ],
+    "variants": [
+      {
+        "size_mm": "1200x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 455,
+        "ex_factory_per_sft": 231,
+        "pcs_per_box": 1,
+        "sft_per_box": 30.92,
+        "kg_per_box": 60.33,
+        "mrp_per_box": 14070
+      },
+      {
+        "size_mm": "1200x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 370,
+        "ex_factory_per_sft": 190,
+        "pcs_per_box": 2,
+        "sft_per_box": 30.89,
+        "kg_per_box": 60.28,
+        "mrp_per_box": 11430
+      },
+      {
+        "size_mm": "800x1600",
+        "caliber": 8,
+        "retail_mrp_per_sft": 345,
+        "ex_factory_per_sft": 176,
+        "pcs_per_box": 2,
+        "sft_per_box": 27.46,
+        "kg_per_box": 53.56,
+        "mrp_per_box": 9475
+      },
+      {
+        "size_mm": "600x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 315,
+        "ex_factory_per_sft": 158,
+        "pcs_per_box": 2,
+        "sft_per_box": 15.42,
+        "kg_per_box": 30.0,
+        "mrp_per_box": 4855
+      }
+    ]
+  },
+  {
+    "name": "Spazzolato",
+    "category": "TEXTURE / SPAZZOLATO (Thickness 9 mm)",
+    "colors": [
+      "Pulpis Grigio",
+      "Calacatta",
+      "Statuario",
+      "Travertine Veincut Beige",
+      "Grigio Avio",
+      "Calacatta Bronzo"
+    ],
+    "variants": [
+      {
+        "size_mm": "1200x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 455,
+        "ex_factory_per_sft": 231,
+        "pcs_per_box": 1,
+        "sft_per_box": 30.92,
+        "kg_per_box": 60.33,
+        "mrp_per_box": 14070
+      },
+      {
+        "size_mm": "1200x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 370,
+        "ex_factory_per_sft": 190,
+        "pcs_per_box": 2,
+        "sft_per_box": 30.89,
+        "kg_per_box": 60.28,
+        "mrp_per_box": 11430
+      },
+      {
+        "size_mm": "800x1600",
+        "caliber": 8,
+        "retail_mrp_per_sft": 345,
+        "ex_factory_per_sft": 176,
+        "pcs_per_box": 2,
+        "sft_per_box": 27.46,
+        "kg_per_box": 53.56,
+        "mrp_per_box": 9475
+      },
+      {
+        "size_mm": "600x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 315,
+        "ex_factory_per_sft": 158,
+        "pcs_per_box": 2,
+        "sft_per_box": 15.42,
+        "kg_per_box": 30.0,
+        "mrp_per_box": 4855
+      }
+    ]
+  },
+  {
+    "name": "Full Lappato / Lappato Matt",
+    "category": "Thickness 9 mm / Full Lappato / Lappato Matt",
+    "colors": [
+      "Statuario",
+      "Calacatta",
+      "Crema Europa",
+      "Botticino",
+      "Bianco Lasa",
+      "Onice Persiano",
+      "Michelangelo",
+      "Rosso Levanto",
+      "Statuario Freddo",
+      "Calacatta Bronzo",
+      "Onice Aria Beige",
+      "Onice Nero",
+      "Quarzo Verde Aqua",
+      "Carrara Delicato",
+      "Statuario Caldo",
+      "Marquinia Intenso",
+      "Patagonia Prezioso"
+    ],
+    "variants": [
+      {
+        "size_mm": "1200x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 455,
+        "ex_factory_per_sft": 231,
+        "pcs_per_box": 1,
+        "sft_per_box": 30.92,
+        "kg_per_box": 60.33,
+        "mrp_per_box": 14070
+      },
+      {
+        "size_mm": "1200x1800",
+        "caliber": 8,
+        "retail_mrp_per_sft": 365,
+        "ex_factory_per_sft": 190,
+        "pcs_per_box": 2,
+        "sft_per_box": 46.37,
+        "kg_per_box": 91.0,
+        "mrp_per_box": 16925
+      },
+      {
+        "size_mm": "1200x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 365,
+        "ex_factory_per_sft": 190,
+        "pcs_per_box": 2,
+        "sft_per_box": 30.89,
+        "kg_per_box": 60.28,
+        "mrp_per_box": 11275
+      },
+      {
+        "size_mm": "800x1600",
+        "caliber": 8,
+        "retail_mrp_per_sft": 345,
+        "ex_factory_per_sft": 176,
+        "pcs_per_box": 2,
+        "sft_per_box": 27.46,
+        "kg_per_box": 53.56,
+        "mrp_per_box": 9475
+      },
+      {
+        "size_mm": "600x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 315,
+        "ex_factory_per_sft": 158,
+        "pcs_per_box": 2,
+        "sft_per_box": 15.42,
+        "kg_per_box": 30.0,
+        "mrp_per_box": 4855
+      }
+    ]
+  },
+  {
+    "name": "Full Lappato / Lappato Matt",
+    "category": "Thickness 9 mm / Full Lappato / Lappato Matt",
+    "colors": [
+      "Pulpis Grigio",
+      "Corinthian Beige",
+      "Frappuccino",
+      "Antique Black",
+      "Port Lorent",
+      "Emperador Grigio",
+      "Amani Bronze",
+      "Travertine Veincut Beige",
+      "Travertine Veincut Silver Grey",
+      "Grigio Avio",
+      "Calacatta Nero",
+      "Pietra Grey"
+    ],
+    "variants": [
+      {
+        "size_mm": "1200x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 440,
+        "ex_factory_per_sft": 221,
+        "pcs_per_box": 1,
+        "sft_per_box": 30.92,
+        "kg_per_box": 60.33,
+        "mrp_per_box": 13605
+      },
+      {
+        "size_mm": "1200x1800",
+        "caliber": 8,
+        "retail_mrp_per_sft": 350,
+        "ex_factory_per_sft": 180,
+        "pcs_per_box": 2,
+        "sft_per_box": 46.37,
+        "kg_per_box": 91.0,
+        "mrp_per_box": 16230
+      },
+      {
+        "size_mm": "1200x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 350,
+        "ex_factory_per_sft": 180,
+        "pcs_per_box": 2,
+        "sft_per_box": 30.89,
+        "kg_per_box": 60.28,
+        "mrp_per_box": 10810
+      },
+      {
+        "size_mm": "800x1600",
+        "caliber": 8,
+        "retail_mrp_per_sft": 330,
+        "ex_factory_per_sft": 166,
+        "pcs_per_box": 2,
+        "sft_per_box": 27.46,
+        "kg_per_box": 53.56,
+        "mrp_per_box": 9060
+      },
+      {
+        "size_mm": "600x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 295,
+        "ex_factory_per_sft": 148,
+        "pcs_per_box": 2,
+        "sft_per_box": 15.42,
+        "kg_per_box": 30.0,
+        "mrp_per_box": 4550
+      }
+    ]
+  },
+  {
+    "name": "Naturale / Soft Naturale I",
+    "category": "Naturale / Soft Naturale I (Thickness 9 mm)",
+    "colors": [
+      "Pulpis Grigio",
+      "Corinthian Beige",
+      "Frappuccino",
+      "Antique Black",
+      "Port Lorent",
+      "Emperador Grigio",
+      "Amani Bronze",
+      "Travertine Veincut Beige",
+      "Travertine Veincut Silver Grey",
+      "Grigio Avio",
+      "Calacatta Nero",
+      "Pietra Grey"
+    ],
+
+    "variants": [
+      {
+        "size_mm": "1200x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 375,
+        "ex_factory_per_sft": 185,
+        "pcs_per_box": 1,
+        "sft_per_box": 30.92,
+        "kg_per_box": 60.33,
+        "mrp_per_box": 11595
+      },
+      {
+        "size_mm": "1200x1800",
+        "caliber": 8,
+        "retail_mrp_per_sft": 275,
+        "ex_factory_per_sft": 140,
+        "pcs_per_box": 2,
+        "sft_per_box": 46.37,
+        "kg_per_box": 91.0,
+        "mrp_per_box": 12750
+      },
+      {
+        "size_mm": "1200x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 275,
+        "ex_factory_per_sft": 140,
+        "pcs_per_box": 2,
+        "sft_per_box": 30.89,
+        "kg_per_box": 60.28,
+        "mrp_per_box": 8495
+      },
+      {
+        "size_mm": "800x1600",
+        "caliber": 8,
+        "retail_mrp_per_sft": 245,
+        "ex_factory_per_sft": 122,
+        "pcs_per_box": 2,
+        "sft_per_box": 27.46,
+        "kg_per_box": 53.56,
+        "mrp_per_box": 6730
+      },
+      {
+        "size_mm": "600x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 210,
+        "ex_factory_per_sft": 101,
+        "pcs_per_box": 2,
+        "sft_per_box": 15.42,
+        "kg_per_box": 30.09,
+        "mrp_per_box": 3240
+      }
+    ]
+  },
+  {
+    "name": "Naturale / Soft Naturale II",
+    "category": "Naturale / Soft Naturale II (Thickness 9 mm)",
+    "colors": [
+      "Statuario",
+      "Calacatta",
+      "Crema Europa",
+      "Botticino",
+      "Bianco Lasa",
+      "Onice Persiano",
+      "Michelangelo",
+      "Rosso Levanto",
+      "Statuario Freddo",
+      "Calacatta Bronzo",
+      "Onice Aria Beige",
+      "Onice Nero",
+      "Quarzo Verde Aqua",
+      "Carrara Delicato",
+      "Statuario Caldo",
+      "Marquinia Intenso",
+      "Patagonia Prezioso"
+    ],
+
+    "variants": [
+      {
+        "size_mm": "1200x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 390,
+        "ex_factory_per_sft": 195,
+        "pcs_per_box": 1,
+        "sft_per_box": 30.92,
+        "kg_per_box": 60.33,
+        "mrp_per_box": 12060
+      },
+      {
+        "size_mm": "1200x1800",
+        "caliber": 8,
+        "retail_mrp_per_sft": 295,
+        "ex_factory_per_sft": 150,
+        "pcs_per_box": 2,
+        "sft_per_box": 46.37,
+        "kg_per_box": 91.0,
+        "mrp_per_box": 13680
+      },
+      {
+        "size_mm": "1200x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 295,
+        "ex_factory_per_sft": 150,
+        "pcs_per_box": 2,
+        "sft_per_box": 30.89,
+        "kg_per_box": 60.28,
+        "mrp_per_box": 9115
+      },
+      {
+        "size_mm": "800x1600",
+        "caliber": 8,
+        "retail_mrp_per_sft": 265,
+        "ex_factory_per_sft": 132,
+        "pcs_per_box": 2,
+        "sft_per_box": 27.46,
+        "kg_per_box": 53.56,
+        "mrp_per_box": 7275
+      },
+      {
+        "size_mm": "600x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 225,
+        "ex_factory_per_sft": 111,
+        "pcs_per_box": 2,
+        "sft_per_box": 15.42,
+        "kg_per_box": 30.09,
+        "mrp_per_box": 3470
+      }
+    ]
+  },
+  {
+    "name": "Endless",
+    "category": "Without Mesh (Thickness 6 mm)",
+
+    "variants": [
+      {
+        "size_mm": "1200x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 375,
+        "ex_factory_per_sft": 185,
+        "pcs_per_box": 1,
+        "sft_per_box": 30.92,
+        "kg_per_box": 44.0,
+        "mrp_per_box": 11595
+      },
+      {
+        "size_mm": "800x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 335,
+        "ex_factory_per_sft": 169,
+        "pcs_per_box": 3,
+        "sft_per_box": 61.8,
+        "kg_per_box": 80.22,
+        "mrp_per_box": 20705
+      },
+      {
+        "size_mm": "600x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 210,
+        "ex_factory_per_sft": 101,
+        "pcs_per_box": 3,
+        "sft_per_box": 23.13,
+        "kg_per_box": 30.09,
+        "mrp_per_box": 4855
+      }
+    ]
+  },
+  {
+    "name": "Runa",
+    "category": "Without Mesh (Thickness 6 mm)",
+
+    "variants": [
+      {
+        "size_mm": "1200x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 375,
+        "ex_factory_per_sft": 185,
+        "pcs_per_box": 1,
+        "sft_per_box": 30.92,
+        "kg_per_box": 44.0,
+        "mrp_per_box": 11595
+      },
+      {
+        "size_mm": "800x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 335,
+        "ex_factory_per_sft": 169,
+        "pcs_per_box": 3,
+        "sft_per_box": 61.8,
+        "kg_per_box": 80.22,
+        "mrp_per_box": 20705
+      },
+      {
+        "size_mm": "600x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 210,
+        "ex_factory_per_sft": 101,
+        "pcs_per_box": 3,
+        "sft_per_box": 23.13,
+        "kg_per_box": 30.09,
+        "mrp_per_box": 4855
+      }
+    ]
+  },
+  {
+    "name": "Lithic",
+    "category": "Without Mesh (Thickness 6 mm)",
+
+    "variants": [
+      {
+        "size_mm": "1200x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 375,
+        "ex_factory_per_sft": 185,
+        "pcs_per_box": 1,
+        "sft_per_box": 30.92,
+        "kg_per_box": 44.0,
+        "mrp_per_box": 11595
+      },
+      {
+        "size_mm": "800x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 335,
+        "ex_factory_per_sft": 169,
+        "pcs_per_box": 3,
+        "sft_per_box": 61.8,
+        "kg_per_box": 80.22,
+        "mrp_per_box": 20705
+      },
+      {
+        "size_mm": "600x1200",
+        "caliber": 8,
+        "retail_mrp_per_sft": 210,
+        "ex_factory_per_sft": 101,
+        "pcs_per_box": 3,
+        "sft_per_box": 23.13,
+        "kg_per_box": 30.09,
+        "mrp_per_box": 4855
+      }
+    ]
+  },
+  {
+    "name": "Endless",
+    "category": "Façade Panel with Safety Mesh (Thickness 6mm+)",
+    "variants": [
+      {
+        "size_mm": "1200x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 450,
+        "ex_factory_per_sft": 225,
+        "pcs_per_box": 1,
+        "sft_per_box": 30.92,
+        "kg_per_box": 44.0,
+        "mrp_per_box": 13915
+      },
+      {
+        "size_mm": "800x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 405,
+        "ex_factory_per_sft": 209,
+        "pcs_per_box": 3,
+        "sft_per_box": 61.8,
+        "kg_per_box": 80.22,
+        "mrp_per_box": 25030
+      }
+    ]
+  },
+  {
+    "name": "Runa",
+    "category": "Façade Panel with Safety Mesh (Thickness 6mm+)",
+    "variants": [
+      {
+        "size_mm": "1200x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 450,
+        "ex_factory_per_sft": 225,
+        "pcs_per_box": 1,
+        "sft_per_box": 30.92,
+        "kg_per_box": 44.0,
+        "mrp_per_box": 13915
+      },
+      {
+        "size_mm": "800x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 405,
+        "ex_factory_per_sft": 209,
+        "pcs_per_box": 3,
+        "sft_per_box": 61.8,
+        "kg_per_box": 80.22,
+        "mrp_per_box": 25030
+      }
+    ]
+  },
+  {
+    "name": "Ambient",
+    "category": "Façade Panel with Safety Mesh (Thickness 6mm+)",
+    "variants": [
+      {
+        "size_mm": "1200x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 450,
+        "ex_factory_per_sft": 225,
+        "pcs_per_box": 1,
+        "sft_per_box": 30.92,
+        "kg_per_box": 44.0,
+        "mrp_per_box": 13915
+      },
+      {
+        "size_mm": "800x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 405,
+        "ex_factory_per_sft": 209,
+        "pcs_per_box": 3,
+        "sft_per_box": 61.8,
+        "kg_per_box": 80.22,
+        "mrp_per_box": 25030
+      }
+    ]
+  },
+  {
+    "name": "Lithic",
+    "category": "Façade Panel with Safety Mesh (Thickness 6mm+)",
+    "variants": [
+      {
+        "size_mm": "1200x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 450,
+        "ex_factory_per_sft": 225,
+        "pcs_per_box": 1,
+        "sft_per_box": 30.92,
+        "kg_per_box": 44.0,
+        "mrp_per_box": 13915
+      },
+      {
+        "size_mm": "800x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 405,
+        "ex_factory_per_sft": 209,
+        "pcs_per_box": 3,
+        "sft_per_box": 61.8,
+        "kg_per_box": 80.22,
+        "mrp_per_box": 25030
+      }
+    ]
+  },
+  {
+    "name": "Terracotta",
+    "category": "Façade Panel with Safety Mesh (Thickness 6mm+)",
+    "variants": [
+      {
+        "size_mm": "1200x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 485,
+        "ex_factory_per_sft": 245,
+        "pcs_per_box": 1,
+        "sft_per_box": 30.92,
+        "kg_per_box": 44.0,
+        "mrp_per_box": 14995
+      },
+      {
+        "size_mm": "800x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 445,
+        "ex_factory_per_sft": 229,
+        "pcs_per_box": 3,
+        "sft_per_box": 61.8,
+        "kg_per_box": 80.22,
+        "mrp_per_box": 27500
+      }
+    ]
+  },
+  {
+    "name": "Travertine Veincut Beige Spazzolato",
+    "category": "Façade Panel with Safety Mesh (Thickness 6mm+)",
+    "variants": [
+      {
+        "size_mm": "1200x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 530,
+        "ex_factory_per_sft": 271,
+        "pcs_per_box": 1,
+        "sft_per_box": 30.92,
+        "kg_per_box": 44.0,
+        "mrp_per_box": 16390
+      },
+      {
+        "size_mm": "800x2400",
+        "caliber": 8,
+        "retail_mrp_per_sft": 490,
+        "ex_factory_per_sft": 255,
+        "pcs_per_box": 3,
+        "sft_per_box": 61.8,
+        "kg_per_box": 80.22,
+        "mrp_per_box": 30280
+      }
+    ]
+  }
+]

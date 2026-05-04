@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from "react";
-import { Spin, Empty, Avatar, Button } from "antd";
+import React, { useEffect, useRef, useState } from "react";
+import { Spin, Empty, Avatar, Button, message } from "antd";
 import { Link, useNavigate } from "react-router-dom";
 import {
   SearchOutlined,
@@ -7,14 +7,26 @@ import {
   ShoppingOutlined,
   FileTextOutlined,
   DownOutlined,
+  ShoppingCartOutlined,
 } from "@ant-design/icons";
+
+// Cart & User APIs
+import { useAddProductToCartMutation } from "../../api/cartApi";
+import { useGetProfileQuery } from "../../api/userApi";
 
 const SearchOverlay = ({ visible, loading, results, onClose, query }) => {
   const overlayRef = useRef(null);
   const highlightedIndex = useRef(-1);
   const navigate = useNavigate();
 
-  // Keyboard navigation
+  // ==================== CART FUNCTIONALITY ====================
+  const { data: user } = useGetProfileQuery();
+  const userId = user?.user?.userId;
+  const [addToCart, { isLoading: isCartLoadingGlobal }] =
+    useAddProductToCartMutation();
+  const [cartLoadingStates, setCartLoadingStates] = useState({});
+
+  // Keyboard navigation (unchanged)
   useEffect(() => {
     if (!visible) return;
 
@@ -44,6 +56,36 @@ const SearchOverlay = ({ visible, loading, results, onClose, query }) => {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [visible, onClose]);
 
+  // Add to Cart Handler
+  const handleAddToCart = async (e, product) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!userId) {
+      return message.error("Please login first");
+    }
+    if (!product?.productId) {
+      return message.error("Invalid product");
+    }
+
+    const productKey = product.productId;
+    setCartLoadingStates((prev) => ({ ...prev, [productKey]: true }));
+
+    try {
+      await addToCart({
+        userId,
+        productId: product.productId,
+        quantity: 1,
+      }).unwrap();
+
+      message.success(`Added ${product.name || "item"} to cart`);
+    } catch (err) {
+      message.error(err?.data?.message || "Failed to add to cart");
+    } finally {
+      setCartLoadingStates((prev) => ({ ...prev, [productKey]: false }));
+    }
+  };
+
   if (!visible) return null;
 
   // Get groups that have at least one result
@@ -51,7 +93,7 @@ const SearchOverlay = ({ visible, loading, results, onClose, query }) => {
     ? Object.entries(results).filter(([_, group]) => group?.items?.length > 0)
     : [];
 
-  // Prioritize important categories: Product → PurchaseOrder → Order → Quotation → others
+  // Prioritize important categories (unchanged)
   const prioritizedGroups = [...resultGroups].sort((a, b) => {
     const order = [
       "Product",
@@ -71,7 +113,7 @@ const SearchOverlay = ({ visible, loading, results, onClose, query }) => {
 
   const hasResults = prioritizedGroups.length > 0;
 
-  // Safe text highlighter
+  // Safe text highlighter (unchanged)
   const highlightText = (text, highlight) => {
     if (!highlight?.trim() || typeof text !== "string") return text || "";
     try {
@@ -86,7 +128,7 @@ const SearchOverlay = ({ visible, loading, results, onClose, query }) => {
     }
   };
 
-  // Avatar / Icon logic
+  // All other functions (getIconAndAvatar, getSecondaryText, getLinkAndTitle) remain unchanged
   const getIconAndAvatar = (modelName, item) => {
     switch (modelName) {
       case "User":
@@ -277,6 +319,8 @@ const SearchOverlay = ({ visible, loading, results, onClose, query }) => {
                     {items.map((item) => {
                       const { link, title } = getLinkAndTitle(modelName, item);
                       const secondary = getSecondaryText(modelName, item);
+                      const isProduct = modelName === "Product";
+                      const isAdding = cartLoadingStates[item.productId];
 
                       const key =
                         item.userId ||
@@ -288,28 +332,51 @@ const SearchOverlay = ({ visible, loading, results, onClose, query }) => {
                         Math.random().toString();
 
                       return (
-                        <Link
+                        <div
                           key={key}
-                          to={link}
-                          className="search-result-item d-flex align-items-center"
-                          onClick={onClose}
-                          tabIndex={0}
+                          className="search-result-item-wrapper d-flex align-items-center"
                         >
-                          <div className="result-avatar me-3">
-                            {getIconAndAvatar(modelName, item)}
-                          </div>
-
-                          <div className="result-content flex-grow-1">
-                            <div className="result-title">
-                              {highlightText(title, query)}
+                          <Link
+                            to={link}
+                            className="search-result-item flex-grow-1 d-flex align-items-center"
+                            onClick={onClose}
+                            tabIndex={0}
+                          >
+                            <div className="result-avatar me-3">
+                              {getIconAndAvatar(modelName, item)}
                             </div>
-                            {secondary && (
-                              <div className="result-meta text-muted small">
-                                {highlightText(secondary, query)}
+
+                            <div className="result-content flex-grow-1">
+                              <div className="result-title">
+                                {highlightText(title, query)}
                               </div>
-                            )}
-                          </div>
-                        </Link>
+                              {secondary && (
+                                <div className="result-meta text-muted small">
+                                  {highlightText(secondary, query)}
+                                </div>
+                              )}
+                            </div>
+                          </Link>
+
+                          {/* Add to Cart Button - Only for Products */}
+                          {isProduct && (
+                            <Button
+                              type="primary"
+                              size="small"
+                              icon={<ShoppingCartOutlined />}
+                              loading={isAdding}
+                              disabled={isCartLoadingGlobal}
+                              onClick={(e) => handleAddToCart(e, item)}
+                              style={{
+                                backgroundColor: "#e31e24",
+                                borderColor: "#e31e24",
+                              }}
+                              className="me-3"
+                            >
+                              Add
+                            </Button>
+                          )}
+                        </div>
                       );
                     })}
                   </div>

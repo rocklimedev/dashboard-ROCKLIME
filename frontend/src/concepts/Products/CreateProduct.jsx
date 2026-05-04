@@ -1000,6 +1000,7 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
                   mode="multiple"
                   allowClear
                   showSearch
+                  filterOption={false} // ← THIS IS THE KEY FIX
                   style={{ width: "100%" }}
                   placeholder="Search or add new keywords..."
                   value={selectedKeywords.map((k) => k.id)}
@@ -1010,6 +1011,7 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
                         selectedIds.includes(kw.id) &&
                         !selectedKeywords.some((s) => s.id === kw.id),
                     );
+
                     const updated = [
                       ...selectedKeywords.filter((k) =>
                         selectedIds.includes(k.id),
@@ -1022,7 +1024,7 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
                   dropdownRender={(menu) => (
                     <>
                       {menu}
-                      {searchKeyword &&
+                      {searchKeyword?.trim() &&
                         !allKeywords.some(
                           (kw) =>
                             kw.keyword.toLowerCase() ===
@@ -1039,17 +1041,15 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
                               type="text"
                               size="small"
                               icon={<PlusCircleOutlined />}
-                              onMouseDown={(e) => e.preventDefault()}
+                              onMouseDown={(e) => e.preventDefault()} // Important!
                               onClick={() =>
                                 handleCreateKeyword(searchKeyword.trim())
                               }
                               style={{ width: "100%", textAlign: "left" }}
                             >
                               <div>
-                                <div>
-                                  <strong>Add new:</strong> "
-                                  {searchKeyword.trim()}"
-                                </div>
+                                <strong>Add new:</strong> "
+                                {searchKeyword.trim()}"
                                 <div
                                   style={{
                                     fontSize: 12,
@@ -1062,7 +1062,7 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
                                     {categoryId
                                       ? categories.find(
                                           (c) => c.categoryId === categoryId,
-                                        )?.name || "Loading..."
+                                        )?.name || "Selected Category"
                                       : "Select a category first"}
                                   </strong>
                                 </div>
@@ -1084,10 +1084,7 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
                         <Space>
                           <span>{kw.keyword}</span>
                           {kw.categories && (
-                            <Tag
-                              color="blue"
-                              style={{ marginLeft: 8, fontSize: 10 }}
-                            >
+                            <Tag color="blue" style={{ fontSize: 10 }}>
                               {kw.categories.name}
                             </Tag>
                           )}
@@ -1095,7 +1092,6 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
                       </Option>
                     ))}
                 </Select>
-
                 <Space wrap>
                   {selectedKeywords.map((kw) => (
                     <Tag

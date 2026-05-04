@@ -1,4 +1,3 @@
-// src/pages/SearchPage.jsx
 import React, { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
@@ -14,6 +13,7 @@ import {
   Result,
   Pagination,
   Button,
+  message,
 } from "antd";
 import {
   ReloadOutlined,
@@ -26,7 +26,11 @@ import {
   TeamOutlined,
 } from "@ant-design/icons";
 import { Link } from "react-router-dom";
+
+// API Hooks
 import { useSearchAllQuery } from "../../api/searchApi";
+import { useAddProductToCartMutation } from "../../api/cartApi";
+import { useGetProfileQuery } from "../../api/userApi";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -35,6 +39,13 @@ const SearchPage = () => {
   const queryFromUrl = searchParams.get("q") || "";
 
   const [currentPage, setCurrentPage] = useState(1);
+
+  // ==================== CART FUNCTIONALITY ====================
+  const { data: user } = useGetProfileQuery();
+  const userId = user?.user?.userId;
+  const [addToCart, { isLoading: isCartLoadingGlobal }] =
+    useAddProductToCartMutation();
+  const [cartLoadingStates, setCartLoadingStates] = useState({});
 
   // Fetch results based on URL query parameter
   const {
@@ -55,7 +66,6 @@ const SearchPage = () => {
   const results = searchResponse?.data || {};
   const meta = searchResponse?.meta || {};
 
-  // Filter groups that actually have results
   const resultGroups = useMemo(() => {
     return Object.entries(results).filter(
       ([_, group]) => group?.items?.length > 0,
@@ -67,6 +77,38 @@ const SearchPage = () => {
   const handlePageChange = (page) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // Add to Cart Handler
+  const handleAddToCart = async (e, product) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!userId) {
+      return message.error("Please login first");
+    }
+    if (!product?.productId) {
+      return message.error("Invalid product");
+    }
+
+    const productKey = product.productId;
+    setCartLoadingStates((prev) => ({ ...prev, [productKey]: true }));
+
+    try {
+      await addToCart({
+        userId,
+        productId: product.productId,
+        quantity: 1,
+      }).unwrap();
+
+      message.success(
+        `Added ${product.name || "product"} to cart successfully!`,
+      );
+    } catch (err) {
+      message.error(err?.data?.message || "Failed to add to cart");
+    } finally {
+      setCartLoadingStates((prev) => ({ ...prev, [productKey]: false }));
+    }
   };
 
   const highlight = (text, term) => {
@@ -93,6 +135,8 @@ const SearchPage = () => {
       return text;
     }
   };
+
+  // ... (getIcon, getSubtitle, getLinkProps functions remain unchanged)
 
   const getIcon = (modelName, item) => {
     const commonProps = { size: 48 };
@@ -231,7 +275,6 @@ const SearchPage = () => {
     return map[key] || { to: "#", title: "Item" };
   };
 
-  // If no query in URL, show empty state
   if (!queryFromUrl.trim()) {
     return (
       <div className="page-wrapper">
@@ -323,6 +366,8 @@ const SearchPage = () => {
                     {items.map((item) => {
                       const { to, title } = getLinkProps(modelName, item);
                       const subtitle = getSubtitle(modelName, item);
+                      const isProduct = modelName.toLowerCase() === "product";
+                      const isAdding = cartLoadingStates[item.productId];
 
                       return (
                         <Col
@@ -372,6 +417,25 @@ const SearchPage = () => {
                                   >
                                     {highlight(subtitle, queryFromUrl)}
                                   </Text>
+                                )}
+
+                                {/* Add to Cart Button for Products */}
+                                {isProduct && (
+                                  <Button
+                                    type="primary"
+                                    icon={<ShoppingCartOutlined />}
+                                    loading={isAdding}
+                                    disabled={isCartLoadingGlobal}
+                                    onClick={(e) => handleAddToCart(e, item)}
+                                    style={{
+                                      marginTop: 12,
+                                      backgroundColor: "#e31e24",
+                                      borderColor: "#e31e24",
+                                      width: "100%",
+                                    }}
+                                  >
+                                    Add to Cart
+                                  </Button>
                                 )}
                               </div>
                             </Space>
