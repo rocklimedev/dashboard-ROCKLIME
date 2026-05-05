@@ -6,8 +6,8 @@ const path = require("path");
 //   CONFIGURATION – ADJUST THESE FOR YOUR BRAND
 // ────────────────────────────────────────────────
 const BRAND = {
-  shortCode: "GR", // "GR" for GROHE
-  namePrefix: "GROHE", // used in readable name if needed
+  shortCode: "CL", // "GR" for GROHE
+  namePrefix: "COLSTON", // used in readable name if needed
 };
 
 const MODEL_META_KEY = "1e19b647-1138-11f1-b773-52540021303b"; // ← your model number key

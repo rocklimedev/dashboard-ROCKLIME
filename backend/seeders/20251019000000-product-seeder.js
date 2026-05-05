@@ -20,7 +20,7 @@ module.exports = {
           console.warn(
             `⚠️ Missing productId detected. Generated new UUID for: ${
               item.name || "Unnamed Product"
-            } -> ${item.productId}`
+            } -> ${item.productId}`,
           );
         }
 
@@ -28,7 +28,7 @@ module.exports = {
           console.warn(
             `⚠️ Skipping product with missing product_code: ${
               item.name || "Unnamed Product"
-            }`
+            }`,
           );
           continue;
         }
@@ -43,7 +43,7 @@ module.exports = {
 
           if (!parentCategory) {
             console.warn(
-              `⚠️ Parent category not found for ${item.name} (${item.product_code}). Skipping category creation to maintain data integrity.`
+              `⚠️ Parent category not found for ${item.name} (${item.product_code}). Skipping category creation to maintain data integrity.`,
             );
           }
         }
@@ -101,12 +101,12 @@ module.exports = {
         if (existingProduct) {
           await existingProduct.update(productData, { transaction });
           console.log(
-            `🔄 Updated: ${productData.name} (${productData.product_code})`
+            `🔄 Updated: ${productData.name} (${productData.product_code})`,
           );
         } else {
           await Product.create(productData, { transaction });
           console.log(
-            `✨ Created: ${productData.name} (${productData.product_code})`
+            `✨ Created: ${productData.name} (${productData.product_code})`,
           );
         }
       }
@@ -126,7 +126,7 @@ module.exports = {
       await queryInterface.bulkDelete(
         "products",
         { productId: productIds },
-        {}
+        {},
       );
       console.log("🧹 Seeded products removed successfully!");
     } catch (error) {

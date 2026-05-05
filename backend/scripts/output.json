@@ -1,562 +1,376 @@
 [
   {
-    "A": 1,
-    "name": "Euro Ceramic 2.0 Wall hung WC set soft square",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "B": 1,
+    "C": "#VALUE!",
     "meta": {
-      "company_code": "104583SH00",
-      "selling_price": 42000
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "AXN-00178",
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 4299
     },
-    "product_code": "EGR00003279"
+    "name": "TOWEL BAR 600 MM (Matt\r\nBlack)",
+
+    "brandId": "1e19b647-1138-11f1-b773-52540021303b",
+    "brand_parentcategoriesId": "a733afe9-78ee-11f0-9e84-52540021303b",
+    "product_code": "EPRPE00006529"
   },
   {
-    "A": 2,
-    "name": "Euphoria Cosmopolitan Stick Hand Shower",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "B": 2,
+    "C": "#VALUE!",
     "meta": {
-      "company_code": 27367000,
-      "selling_price": 8850
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "AXN-6278",
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 14546
     },
-    "product_code": "EGR00003642"
+    "name": "DOUBLE TOWEL RACK",
+
+    "brandId": "1e19b647-1138-11f1-b773-52540021303b",
+    "brand_parentcategoriesId": "a733afe9-78ee-11f0-9e84-52540021303b",
+    "product_code": "EPRPE00001168"
   },
   {
-    "A": 3,
-    "name": "Tempesta Trigger Spray Set, Warm Sunset",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "B": 3,
+    "C": "#VALUE!",
     "meta": {
-      "company_code": "27513DL1",
-      "selling_price": 15550
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "AXN-00178",
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 4448
     },
-    "product_code": "EGR00006061"
+    "name": "TOWEL BAR 600 MM",
+
+    "brandId": "1e19b647-1138-11f1-b773-52540021303b",
+    "brand_parentcategoriesId": "a733afe9-78ee-11f0-9e84-52540021303b",
+    "product_code": "EPRPE00002628"
   },
   {
-    "A": 4,
-    "name": "Tempesta 110 Cube hand shower 3-spray",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "B": 4,
+    "C": "#VALUE!",
     "meta": {
-      "company_code": 27572003,
-      "selling_price": 4350
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "AXN-71000",
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 1024
     },
-    "product_code": "EGR00008200"
+    "name": "LONG HOOK",
+
+    "brandId": "1e19b647-1138-11f1-b773-52540021303b",
+    "brand_parentcategoriesId": "a733afe9-78ee-11f0-9e84-52540021303b",
+    "product_code": "EPRPE00005606"
   },
   {
-    "A": 5,
-    "name": "Relexa Handshower Holder",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "B": 5,
+    "C": "#VALUE!",
     "meta": {
-      "company_code": 28605000,
-      "selling_price": 2300
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "AXN-00678",
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 1535
     },
-    "product_code": "EGR00003228"
+    "name": "TUMBLER HOLDER (Graphite\r\nGrey)",
+
+    "brandId": "1e19b647-1138-11f1-b773-52540021303b",
+    "brand_parentcategoriesId": "a733afe9-78ee-11f0-9e84-52540021303b",
+    "product_code": "EPRPE00001449"
   },
   {
-    "A": 6,
-    "name": "Rapid SL Concealed Cistern with\r\nFull Frame, 6x9L, Pneumatic",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "B": 6,
+    "C": "#VALUE!",
     "meta": {
-      "company_code": 38536001,
-      "selling_price": 14250
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "AXN-00678",
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 1535
     },
-    "product_code": "EGR00004865"
+    "name": "TUMBLER HOLDER (MG)",
+
+    "brandId": "1e19b647-1138-11f1-b773-52540021303b",
+    "brand_parentcategoriesId": "a733afe9-78ee-11f0-9e84-52540021303b",
+    "product_code": "EPRPE00004796"
   },
   {
-    "A": 7,
-    "name": "Skate Cosmopolitan Flush Plate, Brushed Warm Sunset",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "B": 7,
+    "C": "#VALUE!",
     "meta": {
-      "company_code": "38732DL0",
-      "selling_price": 12350
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "AXN-1801",
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 4761
     },
-    "product_code": "EGR00001240"
+    "name": "ROLL HOLDER WITH COVER  (Graphite\r\nGrey)",
+
+    "brandId": "1e19b647-1138-11f1-b773-52540021303b",
+    "brand_parentcategoriesId": "a733afe9-78ee-11f0-9e84-52540021303b",
+    "product_code": "EPRPE00006991"
   },
   {
-    "A": 8,
-    "name": "Cubeo Single lever Basin Mixer wihout pop-up, XL-Size",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "B": 8,
+    "C": "#VALUE!",
     "meta": {
-      "company_code": 1017290000,
-      "selling_price": 34950
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "AXN-6278",
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 21820
     },
-    "product_code": "EGR00006781"
+    "name": "DOUBLE TOWEL RACK (Graphite\r\nGrey)",
+
+    "brandId": "1e19b647-1138-11f1-b773-52540021303b",
+    "brand_parentcategoriesId": "a733afe9-78ee-11f0-9e84-52540021303b",
+    "product_code": "EPRPE00003982"
   },
   {
-    "A": 9,
-    "name": "Urinal - AC/DC/ AC+DC_India",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "B": 9,
+    "C": "#VALUE!",
     "meta": {
-      "company_code": "102382SH00",
-      "selling_price": 65000
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "AXN-6278",
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 21820
     },
-    "product_code": "EGR00005785"
+    "name": "DOUBLE TOWEL RACK (Brush\r\nGold)",
+
+    "brandId": "1e19b647-1138-11f1-b773-52540021303b",
+    "brand_parentcategoriesId": "a733afe9-78ee-11f0-9e84-52540021303b",
+    "product_code": "EPRPE00007747"
   },
   {
-    "A": 10,
-    "name": "Euro Ceramic 2.0 Wall hung WC set soft square",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "B": 10,
+    "C": "#VALUE!",
     "meta": {
-      "company_code": "104583SH00",
-      "selling_price": 42000
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "AXN-71000",
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 1525
     },
-    "product_code": "EGR00007877"
+    "name": "LONG HOOK (Matt\r\nBlack)",
+
+    "brandId": "1e19b647-1138-11f1-b773-52540021303b",
+    "brand_parentcategoriesId": "a733afe9-78ee-11f0-9e84-52540021303b",
+    "product_code": "EPRPE00007365"
   },
   {
-    "A": 11,
-    "name": "Eurocube Joy Two-hole basin mixer L-Size",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "B": 11,
+    "C": "#VALUE!",
     "meta": {
-      "company_code": 19998000,
-      "selling_price": 56650
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "AXN-71001",
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 1525
     },
-    "product_code": "EGR00008641"
+    "name": "LONG HOOK (Brushed\r\nBronze)",
+
+    "brandId": "1e19b647-1138-11f1-b773-52540021303b",
+    "brand_parentcategoriesId": "a733afe9-78ee-11f0-9e84-52540021303b",
+    "product_code": "EPRPE00009578"
   },
   {
-    "A": 12,
-    "name": "Rainshower 360 Mono Headshower Set, 450mm",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "B": 12,
+    "C": "#VALUE!",
     "meta": {
-      "company_code": "26450LS0",
-      "selling_price": 94650
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "AXN-71001",
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 1525
     },
-    "product_code": "EGR00002072"
+    "name": "LONG HOOK (LONG HOOK)",
+
+    "brandId": "1e19b647-1138-11f1-b773-52540021303b",
+    "brand_parentcategoriesId": "a733afe9-78ee-11f0-9e84-52540021303b",
+    "product_code": "EPRPE00001924"
   },
   {
-    "A": 13,
-    "name": "Bath Spout",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "B": 13,
+    "C": "#VALUE!",
     "meta": {
-      "company_code": 13252000,
-      "selling_price": 3000
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "AXN-71001",
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 1525
     },
-    "product_code": "EGR00007422"
+    "name": "LONG HOOK (Graphite\r\nGrey)",
+
+    "brandId": "1e19b647-1138-11f1-b773-52540021303b",
+    "brand_parentcategoriesId": "a733afe9-78ee-11f0-9e84-52540021303b",
+    "product_code": "EPRPE00003949"
   },
   {
-    "A": 14,
-    "name": "Bau Ceramic WC wall hung Rimless",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "B": 14,
+    "C": "#VALUE!",
     "meta": {
-      "company_code": 39706000,
-      "selling_price": 14960
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "AXN-71001",
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 1525
     },
-    "product_code": "EGR00005741"
+    "name": "LONG HOOK (Rose\r\nGold)",
+
+    "brandId": "1e19b647-1138-11f1-b773-52540021303b",
+    "brand_parentcategoriesId": "a733afe9-78ee-11f0-9e84-52540021303b",
+    "product_code": "EPRPE00006775"
   },
   {
-    "A": 15,
-    "name": "BauCosmopolitan Concealed Valve Trimset",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "B": 15,
+    "C": "#VALUE!",
     "meta": {
-      "company_code": "19917AL0",
-      "selling_price": 3450
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": "AXN-71210",
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 2611
     },
-    "product_code": "EGR00001382"
+    "name": "TWO ROBE HOOK (Brush\r\nGold)",
+
+    "brandId": "1e19b647-1138-11f1-b773-52540021303b",
+    "brand_parentcategoriesId": "a733afe9-78ee-11f0-9e84-52540021303b",
+    "product_code": "EPRPE00003723"
   },
   {
-    "A": 16,
-    "name": "BauContemporary Bath Spout",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "B": 16,
+    "C": "#VALUE!",
     "meta": {
-      "company_code": 13390000,
-      "selling_price": 4450
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": 2900,
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 1898
     },
-    "product_code": "EGR00002363"
+    "name": "Angular Stop Cock",
+
+    "brandId": "acbe7061-9b76-47d1-a509-e4b1f982a36f",
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "product_code": "ECLCO00009061"
   },
   {
-    "A": 48,
-    "name": "Skate Cosmopolitan Wall Plate",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "B": 17,
+    "C": "#VALUE!",
     "meta": {
-      "company_code": "38732AL0",
-      "selling_price": 12350
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": 1451,
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 5000
     },
-    "product_code": "EGR00009460"
+    "name": "LUXUM - GOLD",
+
+    "brandId": "acbe7061-9b76-47d1-a509-e4b1f982a36f",
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "product_code": "ECLCO00004028"
   },
   {
-    "A": 49,
-    "name": "Skate Air Flush Plate Vertical, Alpine White",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "B": 18,
+    "C": "#VALUE!",
     "meta": {
-      "company_code": "38505SH0",
-      "selling_price": 4450
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": 8101,
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 39998
     },
-    "product_code": "EGR00005625"
+    "name": "Diverter Body - Thermostatic with 3 outlet & volume control",
+
+    "brandId": "acbe7061-9b76-47d1-a509-e4b1f982a36f",
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "product_code": "ECLCO00005259"
   },
   {
-    "A": 50,
-    "name": "Skate Cosmo Flush Plate, Dual Flush, Alpine White",
-    "brandId": "13847c2c-3c91-4bb2-a130-f94928658237",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "B": 19,
+    "C": "#VALUE!",
     "meta": {
-      "company_code": "38732SH0",
-      "selling_price": 5150
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": 8103,
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 12998
     },
-    "product_code": "EGR00003060"
+    "name": "RETRO MAXX - Thermostatic with 3 outlet & volume control - CHROME",
+
+    "brandId": "acbe7061-9b76-47d1-a509-e4b1f982a36f",
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "product_code": "ECLCO00002232"
   },
   {
-    "A": 17,
-    "name": "Signature",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "B": 20,
+    "C": "#VALUE!",
     "meta": {
-      "company_code": "CCAS3140-3W20400F0",
-      "selling_price": 23250
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": 8105,
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 25998
     },
-    "product_code": "EAM00003619"
+    "name": "RETRO MAXX - Thermostatic with 3 outlet & volume control - BRUSHED GOLD",
+
+    "brandId": "acbe7061-9b76-47d1-a509-e4b1f982a36f",
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "product_code": "ECLCO00008276"
   },
   {
-    "A": 18,
-    "name": "Signature WH seat cover",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "B": 21,
+    "C": "#VALUE!",
     "meta": {
-      "company_code": "CCASC119-U20U420C0",
-      "selling_price": 9800
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": 7884,
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 43998
     },
-    "product_code": "EAM00009143"
+    "name": "Diverter Body - Thermostatic with 4 outlet & volume control",
+
+    "brandId": "acbe7061-9b76-47d1-a509-e4b1f982a36f",
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "product_code": "ECLCO00003588"
   },
   {
-    "A": 19,
-    "name": "Waste & Over\u001fow For Lavatory",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "B": 22,
+    "C": "#VALUE!",
     "meta": {
-      "company_code": "F78006-CHADYN",
-      "selling_price": 2100
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": 7809,
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 14998
     },
-    "product_code": "EAM00003129"
+    "name": "RETRO MAXX - Thermostatic with 4 outlet & volume control - CHROME",
+
+    "brandId": "acbe7061-9b76-47d1-a509-e4b1f982a36f",
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "product_code": "ECLCO00009538"
   },
   {
-    "A": 20,
-    "name": "Signature Wall Mounted Basin Mixer",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "B": 23,
+    "C": "#VALUE!",
     "meta": {
-      "company_code": "FFAS1704-101DA0BF0",
-      "selling_price": 28100
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": 7593,
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 26998
     },
-    "product_code": "EAM00009993"
+    "name": "RETRO MAXX - Thermostatic with 4 outlet & volume control - BRUSHED GOLD",
+
+    "brandId": "acbe7061-9b76-47d1-a509-e4b1f982a36f",
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "product_code": "ECLCO00008887"
   },
   {
-    "A": 21,
-    "name": "Super Thin 300mm Square Rain Shower Head",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "B": 24,
+    "C": "#VALUE!",
     "meta": {
-      "company_code": "FFASS034-000500BC0",
-      "selling_price": 23200
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": 6944,
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 27998
     },
-    "product_code": "EAM00006623"
+    "name": "RING",
+
+    "brandId": "acbe7061-9b76-47d1-a509-e4b1f982a36f",
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "product_code": "ECLCO00009558"
   },
   {
-    "A": 22,
-    "name": "DuoSTix™ Hygiene Spray",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "B": 25,
+    "C": "#VALUE!",
+    "meta": { "9ba862ef-f993-4873-95ef-1fef10036aa5": 13998 },
+    "name": "ROOT WHITE",
+
+    "brandId": "acbe7061-9b76-47d1-a509-e4b1f982a36f",
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "company_code": "FFASTS28-000DA0BF0",
-      "selling_price": 3700
-    },
-    "product_code": "EAM00003431"
+    "product_code": "ECLCO00002296"
   },
   {
-    "A": 23,
-    "name": "EasySet Headshower",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "B": 26,
+    "C": "#VALUE!",
     "meta": {
-      "company_code": "FFASS515-000DA0BF0",
-      "selling_price": 8300
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": 4533,
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 3998
     },
-    "product_code": "EAM00005013"
+    "name": "WOW - HEALTH FAUCET - GOLD",
+
+    "brandId": "acbe7061-9b76-47d1-a509-e4b1f982a36f",
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "product_code": "ECLCO00008539"
   },
   {
-    "A": 24,
-    "name": "Concept Square Towel Shelf",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "B": 27,
+    "C": "#VALUE!",
     "meta": {
-      "company_code": "FFAS0495-908AL0BF0",
-      "selling_price": 21950
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": 4534,
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 3998
     },
-    "product_code": "EAM00006362"
+    "name": "WOW - HEALTH FAUCET - GUN METAL",
+
+    "brandId": "acbe7061-9b76-47d1-a509-e4b1f982a36f",
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "product_code": "ECLCO00001237"
   },
   {
-    "A": 25,
-    "name": "Concept Square Single Tissue Holder",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "B": 28,
+    "C": "#VALUE!",
     "meta": {
-      "company_code": "FFAS0498-908AL0BF0",
-      "selling_price": 7100
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": 4532,
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 3998
     },
-    "product_code": "EAM00006969"
+    "name": "WOW - HEALTH FAUCET - ROSE GOLD",
+
+    "brandId": "acbe7061-9b76-47d1-a509-e4b1f982a36f",
+    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "product_code": "ECLCO00005934"
   },
   {
-    "A": 26,
-    "name": "Neo Modern Single Hole Extended",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
+    "B": 29,
+    "C": "#VALUE!",
     "meta": {
-      "company_code": "FFAS0703-151500BA0",
-      "selling_price": 9600
+      "d11da9f9-3f2e-4536-8236-9671200cca4a": 4531,
+      "9ba862ef-f993-4873-95ef-1fef10036aa5": 3998
     },
-    "product_code": "EAM00004646"
-  },
-  {
-    "A": 27,
-    "name": "Milano Concealed",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
+    "name": "WOW - HEALTH FAUCET - BLACK",
+
+    "brandId": "acbe7061-9b76-47d1-a509-e4b1f982a36f",
     "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "company_code": "FFAS0921-609500BF0",
-      "selling_price": 16600
-    },
-    "product_code": "EAM00004427"
-  },
-  {
-    "A": 28,
-    "name": "Acacia E SH SL basin mixerxC1_Brushed Hard Graphite",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "company_code": "FFAS1301-101AL0BF0",
-      "selling_price": 17450
-    },
-    "product_code": "EAM00009726"
-  },
-  {
-    "A": 29,
-    "name": "Acacia E SH SL vessel mixerxF_Brushed Hard Graphite",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "company_code": "FFAS1302-101AL0BF0",
-      "selling_price": 23500
-    },
-    "product_code": "EAM00002676"
-  },
-  {
-    "A": 30,
-    "name": "EasySET Exposed Auto Temperature Shower",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "company_code": "FFAS4956-601DA0BF0",
-      "selling_price": 101400
-    },
-    "product_code": "EAM00002121"
-  },
-  {
-    "A": 31,
-    "name": "1.5m PVC Twistxfree Flexible Hose",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "company_code": "FFAS9127-000DA0BF0",
-      "selling_price": 2600
-    },
-    "product_code": "EAM00003594"
-  },
-  {
-    "A": 32,
-    "name": "Top Installation Shower Arm",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "company_code": "FFAS9908-000DA0BF0",
-      "selling_price": 4350
-    },
-    "product_code": "EAM00001837"
-  },
-  {
-    "A": 33,
-    "name": "Wall Mounted Shower ArmxC1_Brushed Hard Graphite",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "company_code": "FFAS9909-000AL0BF0",
-      "selling_price": 5100
-    },
-    "product_code": "EAM00001699"
-  },
-  {
-    "A": 34,
-    "name": "Wall Mounted Shower Arm",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "company_code": "FFAS9909-000DA0BF0",
-      "selling_price": 5050
-    },
-    "product_code": "EAM00004279"
-  },
-  {
-    "A": 35,
-    "name": "RainClick 130 Round 3F Hand Shower",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "company_code": "FFAS9H11-000DA0BF0",
-      "selling_price": 8150
-    },
-    "product_code": "EAM00009690"
-  },
-  {
-    "A": 36,
-    "name": "EasySet Headshower",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "company_code": "FFASS515-000DA0BF0",
-      "selling_price": 8300
-    },
-    "product_code": "EAM00006755"
-  },
-  {
-    "A": 37,
-    "name": "Winston Deck Mounted Kitchen",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "company_code": "FFAST606-501500BF0",
-      "selling_price": 4550
-    },
-    "product_code": "EAM00006070"
-  },
-  {
-    "A": 38,
-    "name": "Winston Wall Mounted Kitchen Tap (Cross)",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "company_code": "FFAST707-501500BF0",
-      "selling_price": 4000
-    },
-    "product_code": "EAM00006805"
-  },
-  {
-    "A": 39,
-    "name": "DuoSTix Hygiene Spray (Chrome & Matte Black)",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "company_code": "FFASTS28-000440BF0",
-      "selling_price": 3200
-    },
-    "product_code": "EAM00002832"
-  },
-  {
-    "A": 40,
-    "name": "DuoSTix™ Hygiene Spray",
-    "brandId": "4e3acf32-1e47-4d38-a6bb-417addd52ac0",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "company_code": "FFASTS28-000DA0BF0",
-      "selling_price": 3700
-    },
-    "product_code": "EAM00003602"
-  },
-  {
-    "A": 41,
-    "name": "FLOOR DRAINER WITH BORDER 12 Inch",
-    "brandId": "8b00e9ad-3e28-11f1-97e0-52540021303b",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "company_code": "VCLD-412",
-      "selling_price": 2598
-    },
-    "product_code": "EVIS00002777"
-  },
-  {
-    "A": 42,
-    "name": "FLOOR DRAINER WITH BORDER 18 Inch",
-    "brandId": "8b00e9ad-3e28-11f1-97e0-52540021303b",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "company_code": "VCLD-418",
-      "selling_price": 3596
-    },
-    "product_code": "EVIS00004256"
-  },
-  {
-    "A": 43,
-    "name": "FLOOR DRAINER WITH BORDER 24 Inch",
-    "brandId": "8b00e9ad-3e28-11f1-97e0-52540021303b",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "company_code": "VCLD-424",
-      "selling_price": 4796
-    },
-    "product_code": "EVIS00001602"
-  },
-  {
-    "A": 44,
-    "name": "FLOOR GRATING WITH BORDER",
-    "brandId": "8b00e9ad-3e28-11f1-97e0-52540021303b",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "company_code": "VCLG-055 (5” x 5”)",
-      "selling_price": 2580
-    },
-    "product_code": "EVIS00001200"
-  },
-  {
-    "A": 45,
-    "brandId": "8b00e9ad-3e28-11f1-97e0-52540021303b",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "company_code": "VFG-055 (5” x 5”)",
-      "selling_price": 1716
-    },
-    "product_code": "EVIS00002312"
-  },
-  {
-    "A": 46,
-    "name": "FLOOR TILE DRAINER WIDTH  (4”)",
-    "brandId": "8b00e9ad-3e28-11f1-97e0-52540021303b",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "company_code": "VTD 424",
-      "selling_price": 5834
-    },
-    "product_code": "EVIS00001644"
-  },
-  {
-    "A": 47,
-    "name": "FLOOR TILE DRAINER WIDTH  (4”)",
-    "brandId": "8b00e9ad-3e28-11f1-97e0-52540021303b",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "company_code": "VTD 436",
-      "selling_price": 8751
-    },
-    "product_code": "EVIS00006961"
-  },
-  {
-    "A": 48,
-    "name": "FLOOR GRATING WITH BORDER",
-    "brandId": "8b00e9ad-3e28-11f1-97e0-52540021303b",
-    "brand_parentcategoriesId": "f7940b5e-8d97-43be-b37b-0fd6b56e431a",
-    "meta": {
-      "company_code": "VWAG-055",
-      "selling_price": 2580
-    },
-    "product_code": "EVIS00004756"
+    "product_code": "ECLCO00002613"
   }
 ]
