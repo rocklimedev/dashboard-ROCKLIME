@@ -22,6 +22,7 @@ const jayna = "https://via.placeholder.com/300";
 const grohe_pr = "https://media.cmtradingco.com/brands/grohe_premium.png";
 const perk = "https://media.cmtradingco.com/brands/perk.png";
 const vistas = "https://media.cmtradingco.com/brands/vistas.jpg";
+const nexion = "https://media.cmtradingco.com/brands/nexion.png";
 const BrandSelection = () => {
   const { bpcId } = useParams();
 
@@ -48,7 +49,8 @@ const BrandSelection = () => {
       jk_adhesive: jk,
       plumbing: plumbing,
       perk: perk,
-      vistas: vistas,
+      vista: vistas,
+      nexion: nexion,
     };
 
     const mappedBrands = Array.isArray(bpc?.brands)

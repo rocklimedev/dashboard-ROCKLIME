@@ -1,489 +1,1274 @@
-// src/pages/quotations/NewQuotation.jsx
-import React, { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
-import { message, Button, Modal, Descriptions, Typography, Space } from "antd";
+// src/pages/quotations/NewQuotationsDetails.jsx
+
+import React, { useRef, useState, useMemo, useCallback } from "react";
+import { useParams, Link } from "react-router-dom";
 import {
-  DeleteOutlined,
-  SaveOutlined,
-  InfoCircleOutlined,
-  PlusOutlined,
+  message,
+  Button,
+  Space,
+  Typography,
+  Spin,
+  Alert,
+  Tabs,
+  Checkbox,
+  Tag,
+  Tooltip,
+  Divider,
+} from "antd";
+import {
+  ArrowLeftOutlined,
+  FilePdfFilled,
+  FileExcelFilled,
+  HistoryOutlined,
+  SettingOutlined,
+  TableOutlined,
 } from "@ant-design/icons";
-import moment from "moment";
-import { v4 as uuidv4 } from "uuid";
-import { useOutletContext } from "react-router-dom";
+import { Helmet } from "react-helmet";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+import { Dropdown } from "antd";
 
-import CartLayout from "./CartLayout";
-import QuotationForm from "../../components/POS-NEW/QuotationForm";
-import PreviewQuotation from "../../components/Quotation/PreviewQuotation";
-import AddAddress from "../../components/Address/AddAddressModal";
-import AddCustomerModal from "../../components/Customers/AddCustomerModal";
-import CreateProductModal from "../../components/Products/CreateProductModal"; // ← Added
+/** Assets */
+import logo from "../../assets/img/logo-quotation.png";
+import styles from "../../components/Quotation/quotationnew.module.css";
+import coverImage from "../../assets/img/quotation_first_page.jpeg";
+import quotationBgImage from "../../assets/img/quotation_letterhead.jpeg";
+import siteMapQuotation from "../../assets/img/quotation_sitemap.jpg";
 
-import { useCreateQuotationMutation } from "../../api/quotationApi";
-import { useGetCustomersQuery } from "../../api/customerApi";
+/** API Hooks */
 import {
-  useGetAllAddressesQuery,
-  useCreateAddressMutation,
-} from "../../api/addressApi";
-import { useAuth } from "../../context/AuthContext";
-import useAutoSave from "../../utils/useAutoSave";
+  useGetQuotationByIdQuery,
+  useGetQuotationVersionsQuery,
+} from "../../api/quotationApi";
+import { useGetCustomerByIdQuery } from "../../api/customerApi";
+import { useGetAddressByIdQuery } from "../../api/addressApi";
+import {
+  exportToPDF,
+  exportToExcel,
+} from "../../components/Quotation/hooks/exportHelpers";
+import { amountInWords } from "../../components/Quotation/hooks/calcHelpers";
 
-const { Text } = Typography;
+dayjs.extend(relativeTime);
 
-const buildFloorsFromProducts = (products) => {
-  const floorMap = new Map();
+const { Title, Text } = Typography;
 
-  products.forEach((item) => {
-    if (!item?.floorId) return;
+const NewQuotationsDetails = () => {
+  const { id } = useParams();
+  const [activeVersion, setActiveVersion] = useState("current");
+  const [exportFormat, setExportFormat] = useState("pdf");
+  const [isExporting, setIsExporting] = useState(false);
 
-    if (!floorMap.has(item.floorId)) {
-      floorMap.set(item.floorId, {
-        floorId: item.floorId,
-        floorName: item.floorName || `Floor ${item.floorId}`,
-        sortOrder: floorMap.size,
-        rooms: [],
+  // New Toggle State
+  const [useTabularLayout, setUseTabularLayout] = useState(false);
+
+  const [visibleColumns, setVisibleColumns] = useState({
+    sno: true,
+    name: true,
+    code: true,
+    image: true,
+    unit: true,
+    mrp: true,
+    unitPrice: true,
+    discount: true,
+    total: true,
+  });
+
+  const quotationRef = useRef(null);
+
+  // ── Data Fetching ───────────────────────────────────────────────────────
+  const {
+    data: quotation,
+    isLoading: qLoading,
+    error: qError,
+  } = useGetQuotationByIdQuery(id);
+
+  const { data: versionsData, isLoading: vLoading } =
+    useGetQuotationVersionsQuery(id);
+
+  const safeParse = (data) => {
+    if (!data) return [];
+    if (Array.isArray(data)) return data;
+    if (typeof data === "string") {
+      try {
+        return JSON.parse(data);
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  };
+
+  // ── Versions Logic ──────────────────────────────────────────────────────
+  const versions = useMemo(() => {
+    const list = Array.isArray(versionsData) ? [...versionsData] : [];
+
+    if (quotation) {
+      list.unshift({
+        version: "current",
+        label: "Current Version (Latest)",
+        shortLabel: "Latest",
+        quotationData: quotation,
+        quotationItems: safeParse(quotation.products || quotation.items),
+        updatedAt: quotation.updatedAt || new Date().toISOString(),
+        updatedBy: quotation.updatedBy || quotation.createdBy || "System",
+        isCurrent: true,
       });
     }
 
-    const floor = floorMap.get(item.floorId);
+    return list
+      .map((v) => ({
+        ...v,
+        label:
+          v.version === "current" ? "Current Version" : `Version ${v.version}`,
+        shortLabel: v.version === "current" ? "Latest" : `V${v.version}`,
+        timeAgo: v.updatedAt ? dayjs(v.updatedAt).fromNow() : "—",
+      }))
+      .sort((a, b) =>
+        a.version === "current" ? -1 : (b.version || 0) - (a.version || 0),
+      );
+  }, [quotation, versionsData]);
 
-    if (item.roomId) {
-      let room = floor.rooms.find((r) => r.roomId === item.roomId);
-      if (!room) {
-        room = {
-          roomId: item.roomId,
-          roomName: item.roomName || "Unnamed Room",
-          sortOrder: floor.rooms.length,
-          type: item.roomType || "other",
-          areas: [],
-        };
-        floor.rooms.push(room);
-      }
-
-      if (item.areaId) {
-        if (!room.areas.some((a) => a.id === item.areaId)) {
-          room.areas.push({
-            id: item.areaId,
-            name: item.areaName || "Area",
-            value: item.areaValue || "",
-          });
-        }
-      }
-    }
-  });
-
-  return Array.from(floorMap.values());
-};
-
-const NewQuotation = () => {
-  const navigate = useNavigate();
-  const { auth } = useAuth();
-  const commonProps = useOutletContext();
-
-  const [createQuotation] = useCreateQuotationMutation();
-  const [createAddress] = useCreateAddressMutation();
-
-  // ==================== MODAL STATES ====================
-  const [showCreateProductModal, setShowCreateProductModal] = useState(false);
-
-  // ==================== MAIN STATE ====================
-  const [quotationData, setQuotationData] = useState({
-    quotationDate: new Date().toISOString().split("T")[0],
-    dueDate: "",
-    shipTo: null,
-    floors: [],
-    signatureName: "CM TRADING CO",
-    signatureImage: "",
-    discountType: "fixed",
-    discountAmount: "",
-    followupDates: [],
-  });
-
-  const [selectedCustomer, setSelectedCustomer] = useState("");
-  const [useBillingAddress, setUseBillingAddress] = useState(false);
-  const [billingAddressId, setBillingAddressId] = useState(null);
-
-  const [previewVisible, setPreviewVisible] = useState(false);
-  const [showAddAddressModal, setShowAddAddressModal] = useState(false);
-  const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
-
-  // AutoSave Checker Modal State
-  const [showDraftModal, setShowDraftModal] = useState(false);
-  const [currentDraft, setCurrentDraft] = useState(null);
-
-  // ==================== DATA FETCHING ====================
-  const { data: customersData } = useGetCustomersQuery({ limit: 500 });
-  const { data: addressesData, refetch: refetchAddresses } =
-    useGetAllAddressesQuery(selectedCustomer || undefined, {
-      skip: !selectedCustomer,
-    });
-
-  const customers = customersData?.data || [];
-  const addresses = addressesData || [];
-
-  // ==================== AUTOSAVE SETUP ====================
-  const draftKey = `draft_quotation_${auth?.userId || "guest"}`;
-
-  const draftData = useMemo(
-    () => ({
-      quotationData,
-      selectedCustomer,
-      useBillingAddress,
-      billingAddressId,
-      lastSaved: new Date().toISOString(),
-    }),
-    [quotationData, selectedCustomer, useBillingAddress, billingAddressId],
+  const activeVersionObj = useMemo(
+    () =>
+      versions.find((v) => v.version === activeVersion) || versions[0] || {},
+    [activeVersion, versions],
   );
 
-  const { loadDraft, clearDraft } = useAutoSave(draftKey, draftData, 2500);
+  const activeVersionData = useMemo(
+    () => ({
+      quotation: activeVersionObj.quotationData || quotation || {},
+      products: activeVersionObj.quotationItems || [],
+      updatedAt: activeVersionObj.updatedAt,
+    }),
+    [activeVersionObj, quotation],
+  );
 
-  // Load draft when component mounts
-  useEffect(() => {
-    const savedDraft = loadDraft();
-    if (savedDraft) {
-      if (savedDraft.quotationData) {
-        setQuotationData((prev) => ({ ...prev, ...savedDraft.quotationData }));
-      }
-      if (savedDraft.selectedCustomer) {
-        setSelectedCustomer(savedDraft.selectedCustomer);
-      }
-      if (savedDraft.useBillingAddress !== undefined) {
-        setUseBillingAddress(savedDraft.useBillingAddress);
-      }
-      if (savedDraft.billingAddressId) {
-        setBillingAddressId(savedDraft.billingAddressId);
-      }
-      message.info("Previous draft has been restored", 2);
-    }
-  }, [loadDraft]);
+  // ── Customer & Address ──────────────────────────────────────────────────
+  const customerId =
+    activeVersionData.quotation?.customerId || quotation?.customerId;
+  const shipToId = activeVersionData.quotation?.shipTo || quotation?.shipTo;
 
-  // ==================== DRAFT CHECKER FUNCTIONS ====================
-  const checkCurrentDraft = () => {
-    const saved = loadDraft();
-    if (saved) {
-      setCurrentDraft(saved);
-      setShowDraftModal(true);
-    } else {
-      message.info("No saved draft found.");
-    }
-  };
+  const { data: customerResponse, isFetching: custLoading } =
+    useGetCustomerByIdQuery(customerId, { skip: !customerId });
 
-  const handleDeleteDraft = () => {
-    clearDraft();
-    setShowDraftModal(false);
-    setCurrentDraft(null);
-    message.success("Draft has been deleted successfully");
-  };
+  const { data: addressResponse, isFetching: addrLoading } =
+    useGetAddressByIdQuery(shipToId, { skip: !shipToId });
 
-  // ==================== CREATE QUOTATION ====================
-  const handleCreateQuotation = async (layoutProps = {}) => {
-    // ... (your existing logic remains unchanged)
-    const {
-      payloadCartItems = [],
-      calculationCartItems = [],
-      shipping = 0,
-      gst = 0,
-      itemDiscounts = {},
-      itemDiscountTypes = {},
-      itemTaxes = {},
-      handleClearCart,
-    } = layoutProps;
+  const customer = customerResponse?.data || {};
+  const address = addressResponse || {};
 
-    if (!selectedCustomer) {
-      return message.error("Please select a customer.");
-    }
+  const customerName = customer?.name || "Dear Client";
+  const customerPhone = customer?.mobileNumber || customer?.phone || "";
+  const customerAddress =
+    [address.street, address.city, address.state].filter(Boolean).join(", ") +
+      (address.postalCode ? ` - ${address.postalCode}` : "") || "--";
 
-    if (payloadCartItems.length === 0) {
-      return message.error("Cart is empty.");
-    }
+  // ── Products ────────────────────────────────────────────────────────────
+  const allProducts = useMemo(() => {
+    const products = activeVersionData.products || [];
+    return products.map((p) => ({
+      ...p,
+      floorName: p.floorName || "",
+      roomName: p.roomName || "",
+      areaName: p.areaName || "",
+      imageUrl: p.imageUrl || "",
+      companyCode: p.companyCode || p.productCode || "—",
+    }));
+  }, [activeVersionData.products]);
 
-    // ... rest of your handleCreateQuotation logic (unchanged)
-    let finalShipTo = quotationData.shipTo;
-    // ... (keeping your full logic intact)
+  const mainProducts = useMemo(
+    () => allProducts.filter((p) => p.isOptionFor == null),
+    [allProducts],
+  );
 
-    // ==================== FLOOR & ROOM LOGIC ====================
-    let finalFloors = quotationData.floors || [];
+  const optionalProducts = useMemo(
+    () => allProducts.filter((p) => p.isOptionFor != null),
+    [allProducts],
+  );
 
-    if (finalFloors.length === 0) {
-      const hasAnyLocationAssignment = payloadCartItems.some(
-        (item) =>
-          Boolean(item.floorId) || Boolean(item.roomId) || Boolean(item.areaId),
-      );
-
-      if (hasAnyLocationAssignment) {
-        finalFloors = buildFloorsFromProducts(payloadCartItems);
-      }
-    }
-
-    const enrichedItems = payloadCartItems.map((item) => {
-      // ... your existing enrichment logic
-      const productId = item.productId || item.id;
-      const price = Number(item.price) || 0;
-      const qty = Number(item.quantity) || 1;
-      const subtotal = price * qty;
-
-      const discVal = Number(itemDiscounts[productId]) || 0;
-      const discType = itemDiscountTypes[productId] || "percent";
-      const discountAmount =
-        discType === "percent" ? (subtotal * discVal) / 100 : discVal * qty;
-
-      const itemTax = Number(itemTaxes[productId]) || 0;
-
-      const isOptional = Boolean(item.isOption) || Boolean(item.isOptionFor);
-
-      return {
-        ...item,
-        floorName: item.floorName || undefined,
-        roomName: item.roomName || undefined,
-        areaName: item.areaName || undefined,
-        discount: discVal,
-        discountType: discType,
-        tax: itemTax,
-        subtotal: Number(subtotal.toFixed(2)),
-        discountAmount: Number(discountAmount.toFixed(2)),
-        lineTotal: Number(
-          subtotal -
-            discountAmount +
-            ((subtotal - discountAmount) * itemTax) / 100,
-        ).toFixed(2),
-        isOption: isOptional,
-        isOptionFor: isOptional
-          ? item.parentProductId || item.isOptionFor || null
-          : null,
-        optionType: item.optionType || null,
-        parentProductId: item.parentProductId || null,
-      };
+  const groupedProductsWithOptions = useMemo(() => {
+    const optionMap = new Map();
+    optionalProducts.forEach((opt) => {
+      if (!optionMap.has(opt.isOptionFor)) optionMap.set(opt.isOptionFor, []);
+      optionMap.get(opt.isOptionFor).push(opt);
     });
 
-    const quotationPayload = {
-      quotationId: uuidv4(),
-      document_title: `${
-        customers.find((c) => c.customerId === selectedCustomer)?.name ||
-        "Customer"
-      } - ${moment().format("DD-MM-YYYY")}`,
+    return mainProducts.map((mainItem) => ({
+      ...mainItem,
+      options: optionMap.get(mainItem.productId) || [],
+    }));
+  }, [mainProducts, optionalProducts]);
 
-      quotation_date:
-        quotationData.quotationDate || moment().format("YYYY-MM-DD"),
-      due_date: quotationData.dueDate || null,
+  // ── Brand Names ─────────────────────────────────────────────────────────
+  const brandNames = useMemo(() => {
+    const brands = new Set();
+    mainProducts.forEach((p) => {
+      const name = (p.name || "").toLowerCase();
+      if (name.includes("grohe")) brands.add("GROHE");
+      if (name.includes("american standard")) brands.add("AMERICAN STANDARD");
+      if (name.includes("colston")) brands.add("COLSTON");
+    });
+    return brands.size > 0
+      ? [...brands].join(" / ")
+      : "GROHE / AMERICAN STANDARD";
+  }, [mainProducts]);
 
-      customerId: selectedCustomer,
-      shipTo: finalShipTo || null,
+  // ── Calculations ────────────────────────────────────────────────────────
+  const grossTotalBeforeDiscount = useMemo(() => {
+    return mainProducts.reduce((sum, p) => {
+      const mrp = Number(p.price ?? 0);
+      const qty = Number(p.quantity ?? 1);
+      return sum + mrp * qty;
+    }, 0);
+  }, [mainProducts]);
 
-      extraDiscount: Number(quotationData.discountAmount) || 0,
-      extraDiscountType: quotationData.discountType || "fixed",
+  const totalProductDiscount = useMemo(() => {
+    return mainProducts.reduce((sum, p) => {
+      const mrp = Number(p.price ?? 0);
+      const qty = Number(p.quantity ?? 1);
+      const grossLine = mrp * qty;
+      const discountedLine = Number(p.total ?? 0);
+      return sum + (grossLine - discountedLine);
+    }, 0);
+  }, [mainProducts]);
 
-      shippingAmount: Number(shipping) || 0,
-      gst: Number(gst) || 0,
+  const extraDiscount = Number(quotation?.extraDiscount ?? 0);
+  const roundOff = Number(quotation?.roundOff ?? 0);
+  const finalAmount = Number(quotation?.finalAmount ?? 0);
+  const finalAmountInWords = amountInWords(Math.round(finalAmount));
 
-      signature_name: quotationData.signatureName || "CM TRADING CO",
-      signature_image: quotationData.signatureImage || "",
+  const floorTotals = useMemo(() => {
+    const floorMap = new Map();
+    mainProducts.forEach((p) => {
+      const floor = (p.floorName || "Unspecified Floor").trim();
+      const total = Number(p.total ?? 0);
+      if (!floorMap.has(floor))
+        floorMap.set(floor, { floorName: floor, total: 0 });
+      floorMap.get(floor).total += total;
+    });
+    return Array.from(floorMap.values()).sort((a, b) =>
+      a.floorName.localeCompare(b.floorName),
+    );
+  }, [mainProducts]);
 
-      floors: finalFloors,
-      products: enrichedItems,
+  const roomTotals = useMemo(() => {
+    const roomMap = new Map();
+    mainProducts.forEach((p) => {
+      const floor = (p.floorName || "Unspecified Floor").trim();
+      const room = (p.roomName || "Unspecified Room").trim();
+      const total = Number(p.total ?? 0);
+      const key = `${floor}|||${room}`;
+      if (!roomMap.has(key)) {
+        roomMap.set(key, { floorName: floor, roomName: room, total: 0 });
+      }
+      roomMap.get(key).total += total;
+    });
 
-      followupDates: quotationData.followupDates?.filter(Boolean) || [],
-      createdBy: auth?.userId,
-    };
+    return Array.from(roomMap.values())
+      .sort((a, b) => {
+        const floorCmp = a.floorName.localeCompare(b.floorName);
+        return floorCmp !== 0 ? floorCmp : a.roomName.localeCompare(b.roomName);
+      })
+      .filter((r) => r.total > 0);
+  }, [mainProducts]);
+
+  const hasSiteLayout = useMemo(() => {
+    const floors =
+      activeVersionData.quotation?.floors || quotation?.floors || [];
+    return Array.isArray(floors) && floors.length > 0;
+  }, [activeVersionData.quotation, quotation]);
+
+  // ── Area Enrichment ─────────────────────────────────────────────────────
+  const enrichProductsWithAreas = useCallback((allProducts, floors) => {
+    const areaMap = new Map();
+    floors.forEach((floor) => {
+      floor.rooms?.forEach((room) => {
+        room.areas?.forEach((areaObj) => {
+          const areaValue = areaObj.value || areaObj.name?.toLowerCase();
+          if (areaValue) {
+            const key = `${room.roomId}_${areaValue}`;
+            areaMap.set(key, areaObj.name || areaObj.value || "Unassigned");
+          }
+        });
+      });
+    });
+
+    return allProducts.map((p) => {
+      let areaName = "Unassigned";
+      if (p.areaValue || p.areaId) {
+        const key = `${p.roomId}_${p.areaValue || p.areaId}`;
+        if (areaMap.has(key)) areaName = areaMap.get(key);
+      } else if (p.areaName && p.areaName !== "Unassigned") {
+        areaName = p.areaName;
+      }
+      return { ...p, areaName };
+    });
+  }, []);
+
+  const enrichedProducts = useMemo(() => {
+    const floors =
+      activeVersionData.quotation?.floors || quotation?.floors || [];
+    return enrichProductsWithAreas(allProducts, floors);
+  }, [
+    allProducts,
+    activeVersionData.quotation,
+    quotation,
+    enrichProductsWithAreas,
+  ]);
+
+  const hasProperAreaAssignment = useMemo(() => {
+    return enrichedProducts.some(
+      (p) =>
+        p.areaValue ||
+        p.areaId ||
+        (p.areaName &&
+          p.areaName !== "Unassigned" &&
+          !["Basin Area", "Shower Area", "WC Area", "Unassigned"].includes(
+            p.areaName,
+          )),
+    );
+  }, [enrichedProducts]);
+
+  // ── Grouping Helpers ────────────────────────────────────────────────────
+  const groupProductsByFloorAndRoom = (products = []) => {
+    const map = new Map();
+    products.forEach((p) => {
+      if (!p.floorId) return;
+      const locations =
+        Array.isArray(p.locations) && p.locations.length > 0
+          ? p.locations
+          : [
+              {
+                floorName: p.floorName || "Unspecified Floor",
+                roomName: p.roomName || "Unspecified Room",
+              },
+            ];
+
+      locations.forEach((loc) => {
+        const floor = (loc.floorName || "Unspecified Floor").trim();
+        const room = (loc.roomName || "Unspecified Room").trim();
+        const key = `${floor}|||${room}`;
+        if (!map.has(key)) {
+          map.set(key, { floorName: floor, roomName: room, products: [] });
+        }
+        map.get(key).products.push({ ...p, ...loc });
+      });
+    });
+    return Array.from(map.values()).sort((a, b) => {
+      const floorCmp = a.floorName.localeCompare(b.floorName);
+      return floorCmp !== 0 ? floorCmp : a.roomName.localeCompare(b.roomName);
+    });
+  };
+
+  const groupProductsByAreaName = (products = []) => {
+    const groups = {};
+    products.forEach((p) => {
+      const area = (p.areaName || "Unassigned").trim();
+      if (!groups[area]) groups[area] = [];
+      groups[area].push(p);
+    });
+    return groups;
+  };
+
+  // ── Render Area-wise Site Map (Existing) ───────────────────────────────
+  const renderAreaWisePageForRoom = (roomGroup) => {
+    const { floorName, roomName, products } = roomGroup;
+    const areaGroups = groupProductsByAreaName(products);
+    const mainAreas = Object.entries(areaGroups).slice(0, 3);
+
+    const ZONE_LAYOUT = [
+      { top: "26%", left: "2%", width: "29%" },
+      { top: "26%", right: "2%", width: "29%" },
+      { top: "28%", left: "37%", width: "29%" },
+    ];
+
+    const pages = [];
+    const maxChunks = Math.max(
+      ...mainAreas.map(([_, items]) => Math.ceil(items.length / 8)),
+      1,
+    );
+
+    for (let chunkIndex = 0; chunkIndex < maxChunks; chunkIndex++) {
+      const isContinuation = chunkIndex > 0;
+      pages.push(
+        <div
+          key={`room-area-page-${floorName}-${roomName}-${chunkIndex}`}
+          className="page"
+          style={{
+            position: "relative",
+            width: "210mm",
+            height: "297mm",
+            overflow: "hidden",
+            pageBreakBefore: "always",
+            pageBreakAfter: "always",
+            background: "#fff",
+          }}
+        >
+          <img
+            src={siteMapQuotation}
+            alt="Site Map"
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              objectFit: "fill",
+              zIndex: 0,
+            }}
+          />
+
+          <div
+            style={{
+              position: "relative",
+              zIndex: 2,
+              padding: "35px 30px",
+              height: "100%",
+            }}
+          >
+            <div style={{ textAlign: "center", marginBottom: 25 }}>
+              <h2
+                style={{
+                  color: "#d32f2f",
+                  fontSize: "2.5em",
+                  margin: "0 0 8px 0",
+                }}
+              >
+                {floorName.toUpperCase()}
+              </h2>
+              <h3
+                style={{
+                  fontSize: "1.95em",
+                  color: "#222",
+                  margin: 0,
+                  fontWeight: 500,
+                }}
+              >
+                {roomName}
+                {isContinuation && " (Continued)"}
+              </h3>
+            </div>
+
+            <div style={{ position: "absolute", inset: 0 }}>
+              {mainAreas.map(([areaName, allItems], areaIndex) => {
+                const zone = ZONE_LAYOUT[areaIndex];
+                if (!zone) return null;
+
+                const start = chunkIndex * 8;
+                const items = allItems.slice(start, start + 8);
+
+                return (
+                  <div
+                    key={areaName}
+                    style={{
+                      position: "absolute",
+                      ...zone,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "12px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: "10px",
+                      }}
+                    >
+                      {items.map((p, i) => (
+                        <div
+                          key={i}
+                          style={{ padding: "10px 8px", textAlign: "center" }}
+                        >
+                          {p.imageUrl ? (
+                            <img
+                              src={p.imageUrl}
+                              alt={p.name}
+                              style={{
+                                width: "68px",
+                                height: "68px",
+                                objectFit: "contain",
+                                borderRadius: "6px",
+                              }}
+                            />
+                          ) : (
+                            <div
+                              style={{
+                                width: "68px",
+                                height: "68px",
+                                background: "#f0f0f0",
+                                borderRadius: "6px",
+                              }}
+                            />
+                          )}
+                          <div
+                            style={{
+                              fontSize: "0.77em",
+                              lineHeight: 1.3,
+                              marginTop: "6px",
+                            }}
+                          >
+                            <div style={{ fontWeight: 600 }}>{p.name}</div>
+                            {p.quantity > 1 && (
+                              <div style={{ color: "#666" }}>
+                                × {p.quantity}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>,
+      );
+    }
+    return pages;
+  };
+
+  // ── NEW: Tabular Floor & Room Summary ───────────────────────────────────
+  const renderTabularFloorRoomSummary = () => {
+    const roomGroups = groupProductsByFloorAndRoom(enrichedProducts);
+
+    return (
+      <div key="tabular-floor-room" className={`${styles.productPage} page`}>
+        <div className={styles.pageTopHeader}>
+          <div>
+            <div className={styles.clientName}>{customerName}</div>
+            <div className={styles.clientAddress}>{customerAddress}</div>
+          </div>
+          <div className={styles.pageDate}>
+            {new Date(
+              quotation.quotation_date || Date.now(),
+            ).toLocaleDateString("en-IN", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })}
+          </div>
+        </div>
+
+        <h2
+          style={{
+            color: "#d32f2f",
+            textAlign: "center",
+            margin: "40px 0 30px",
+          }}
+        >
+          FLOOR & ROOM WISE SUMMARY
+        </h2>
+
+        <table className={styles.productTable} style={{ marginTop: 20 }}>
+          <thead>
+            <tr>
+              <th style={{ width: "8%" }}>S.No</th>
+              <th style={{ width: "25%" }}>Floor</th>
+              <th style={{ width: "30%" }}>Room</th>
+              <th style={{ width: "22%" }}>Items</th>
+              <th style={{ width: "15%", textAlign: "right" }}>Total Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {roomGroups.map((group, index) => {
+              const itemCount = group.products.length;
+              const roomTotal = group.products.reduce(
+                (sum, p) => sum + Number(p.total || 0),
+                0,
+              );
+
+              return (
+                <tr key={`${group.floorName}-${group.roomName}`}>
+                  <td style={{ textAlign: "center" }}>{index + 1}.</td>
+                  <td style={{ fontWeight: 600 }}>{group.floorName}</td>
+                  <td>{group.roomName}</td>
+                  <td>
+                    {itemCount} item{itemCount !== 1 ? "s" : ""}
+                  </td>
+                  <td style={{ textAlign: "right", fontWeight: 600 }}>
+                    ₹{roomTotal.toLocaleString("en-IN")}
+                  </td>
+                </tr>
+              );
+            })}
+
+            {roomGroups.length > 1 && (
+              <tr style={{ background: "#f0f0f0", fontWeight: 700 }}>
+                <td colSpan={4} style={{ textAlign: "right" }}>
+                  GRAND TOTAL
+                </td>
+                <td style={{ textAlign: "right" }}>
+                  ₹
+                  {roomTotals
+                    .reduce((sum, r) => sum + r.total, 0)
+                    .toLocaleString("en-IN")}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
+  // ── Render Product Table ────────────────────────────────────────────────
+  const renderProductTable = (
+    itemsWithOptions,
+    title = "",
+    startSno = 0,
+    shouldShowColumn,
+  ) => {
+    let localSno = startSno;
+    const showCol = shouldShowColumn || (() => true);
+
+    return (
+      <>
+        {title && (
+          <h3 style={{ color: "#d32f2f", margin: "20px 0 10px" }}>{title}</h3>
+        )}
+        <table className={styles.productTable}>
+          <colgroup>
+            {showCol("sno") && <col className={styles.sno} />}
+            {showCol("name") && <col className={styles.name} />}
+            {showCol("code") && <col className={styles.code} />}
+            {showCol("image") && <col className={styles.image} />}
+            {showCol("unit") && <col className={styles.unit} />}
+            {showCol("mrp") && <col className={styles.mrp} />}
+            {showCol("unitPrice") && <col style={{ width: "95px" }} />}
+            {showCol("discount") && <col className={styles.discount} />}
+            {showCol("total") && <col className={styles.total} />}
+          </colgroup>
+          <thead>
+            <tr>
+              {showCol("sno") && <th>S.No</th>}
+              {showCol("name") && <th>Product Name</th>}
+              {showCol("code") && <th>Code</th>}
+              {showCol("image") && <th>Image</th>}
+              {showCol("unit") && <th>Unit</th>}
+              {showCol("mrp") && <th>MRP</th>}
+              {showCol("unitPrice") && <th>Unit Price</th>}
+              {showCol("discount") && <th>Discount</th>}
+              {showCol("total") && <th>Total</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {itemsWithOptions.map((mainItem) => {
+              // ... (Your existing product table logic remains unchanged)
+              // I'll keep it short here for brevity. Paste your full renderProductTable body here.
+              const code = mainItem.companyCode || mainItem.productCode || "—";
+              const img = mainItem.imageUrl || "";
+              const mrp = Number(mainItem.price ?? 0);
+              const qty = Number(mainItem.quantity ?? 1);
+              const lineTotal = Number(mainItem.total ?? 0);
+              const discValue = Number(mainItem.discount ?? 0);
+              const discType = (
+                mainItem.discountType ?? "percent"
+              ).toLowerCase();
+
+              let unitPrice = mrp;
+              if (discValue > 0) {
+                unitPrice =
+                  discType === "percent"
+                    ? mrp * (1 - discValue / 100)
+                    : mrp - discValue;
+              }
+              unitPrice = Math.round(unitPrice * 100) / 100;
+
+              const displayDiscount =
+                discValue > 0
+                  ? discType === "percent"
+                    ? `${discValue}%`
+                    : `₹${discValue.toFixed(0)}`
+                  : "—";
+
+              localSno++;
+
+              return (
+                <React.Fragment key={mainItem.productId}>
+                  <tr>
+                    {showCol("sno") && (
+                      <td className={styles.snoCell}>{localSno}.</td>
+                    )}
+                    {showCol("name") && (
+                      <td className={styles.prodNameCell}>{mainItem.name}</td>
+                    )}
+                    {showCol("code") && <td>{code}</td>}
+                    {showCol("image") && (
+                      <td>
+                        {img && (
+                          <img
+                            src={img}
+                            alt={mainItem.name}
+                            className={styles.prodImg}
+                          />
+                        )}
+                      </td>
+                    )}
+                    {showCol("unit") && <td>{qty}</td>}
+                    {showCol("mrp") && <td>₹{mrp.toLocaleString("en-IN")}</td>}
+                    {showCol("unitPrice") && (
+                      <td style={{ fontWeight: 600, color: "#d32f2f" }}>
+                        ₹{unitPrice.toLocaleString("en-IN")}
+                      </td>
+                    )}
+                    {showCol("discount") && (
+                      <td className={styles.discountCell}>{displayDiscount}</td>
+                    )}
+                    {showCol("total") && (
+                      <td className={styles.totalCell}>
+                        ₹{lineTotal.toLocaleString("en-IN")}
+                      </td>
+                    )}
+                  </tr>
+
+                  {/* Optional Items - same as before */}
+                  {mainItem.options?.length > 0 &&
+                    mainItem.options.map((opt, idx) => {
+                      const optCode = opt.companyCode || opt.productCode || "—";
+                      const optMrp = Number(opt.price ?? 0);
+                      const optQty = Number(opt.quantity ?? 1);
+                      const optTotal = Number(opt.total ?? 0);
+                      const optDisc = Number(opt.discount ?? 0);
+                      const optDiscType = (
+                        opt.discountType ?? "percent"
+                      ).toLowerCase();
+
+                      let optUnitPrice = optMrp;
+                      if (optDisc > 0) {
+                        optUnitPrice =
+                          optDiscType === "percent"
+                            ? optMrp * (1 - optDisc / 100)
+                            : optMrp - optDisc;
+                      }
+                      optUnitPrice = Math.round(optUnitPrice * 100) / 100;
+
+                      const optDisplayDisc =
+                        optDisc > 0
+                          ? optDiscType === "percent"
+                            ? `${optDisc}%`
+                            : `₹${optDisc.toFixed(0)}`
+                          : "—";
+
+                      return (
+                        <tr
+                          key={opt.productId || `opt-${idx}`}
+                          style={{ background: "#f9f9f9" }}
+                        >
+                          {shouldShowColumn("sno") && <td></td>}
+                          {shouldShowColumn("name") && (
+                            <td
+                              className={styles.prodNameCell}
+                              style={{ paddingLeft: "40px", color: "#444" }}
+                            >
+                              ↳ {opt.name}{" "}
+                              <span
+                                style={{ fontSize: "0.85em", color: "#666" }}
+                              >
+                                (Optional)
+                              </span>
+                            </td>
+                          )}
+                          {shouldShowColumn("code") && <td>{optCode}</td>}
+                          {shouldShowColumn("image") && (
+                            <td>
+                              {opt.imageUrl && (
+                                <img
+                                  src={opt.imageUrl}
+                                  alt={opt.name}
+                                  className={styles.prodImg}
+                                />
+                              )}
+                            </td>
+                          )}
+                          {shouldShowColumn("unit") && <td>{optQty}</td>}
+                          {shouldShowColumn("mrp") && (
+                            <td>₹{optMrp.toLocaleString("en-IN")}</td>
+                          )}
+                          {shouldShowColumn("unitPrice") && (
+                            <td style={{ fontWeight: 600, color: "#d32f2f" }}>
+                              ₹{optUnitPrice.toLocaleString("en-IN")}
+                            </td>
+                          )}
+                          {shouldShowColumn("discount") && (
+                            <td className={styles.discountCell}>
+                              {optDisplayDisc}
+                            </td>
+                          )}
+                          {shouldShowColumn("total") && (
+                            <td className={styles.totalCell}>
+                              ₹{optTotal.toLocaleString("en-IN")}
+                            </td>
+                          )}
+                        </tr>
+                      );
+                    })}
+                </React.Fragment>
+              );
+            })}
+          </tbody>
+        </table>
+      </>
+    );
+  };
+
+  // ── Render All Pages ────────────────────────────────────────────────────
+  const renderPages = (getShouldShowColumn) => {
+    const shouldShowColumn = getShouldShowColumn || (() => true);
+    const pages = [];
+    const MAX_PRODUCTS_NORMAL = 10;
+
+    // Cover Page
+    pages.push(
+      <div key="cover" className={`${styles.coverPage} page`}>
+        <img src={coverImage} alt="Cover" className={styles.coverBg} />
+        <div className={styles.coverContent}>
+          <div className={styles.dynamicCustomerName}>
+            {customerName.toUpperCase()}
+          </div>
+        </div>
+      </div>,
+    );
+
+    // Letterhead Page
+    pages.push(
+      <div key="letterhead" className={`${styles.letterheadPage} page`}>
+        <img
+          src={quotationBgImage}
+          alt="Background"
+          className={styles.letterheadBg}
+        />
+        <div className={styles.letterheadContent}>
+          <div className={`${styles.clientField} ${styles.clientNameField}`}>
+            {customerName}
+          </div>
+          <div className={`${styles.clientField} ${styles.contactField}`}>
+            {customerPhone}
+          </div>
+          <div className={`${styles.clientField} ${styles.addressField}`}>
+            {customerAddress}
+          </div>
+          <div className={`${styles.clientField} ${styles.quotationNoField}`}>
+            {quotation.reference_number || "—"}
+          </div>
+        </div>
+        <div className={styles.letterheadFooter}>
+          <img src={logo} alt="Logo" />
+          <div>
+            487/65, National Market, Peera Garhi, Delhi, 110087
+            <br />
+            0991180605
+            <br />
+            www.cmtradingco.com
+          </div>
+        </div>
+      </div>,
+    );
+
+    // Main Product Table with Pagination
+    let remainingItems = [...groupedProductsWithOptions];
+    let globalSno = 0;
+
+    while (remainingItems.length > 0) {
+      const itemsThisPage = remainingItems.slice(0, MAX_PRODUCTS_NORMAL);
+      pages.push(
+        <div
+          key={`main-page-${globalSno}`}
+          className={`${styles.productPage} page`}
+        >
+          <div className={styles.pageTopHeader}>
+            <div>
+              <div className={styles.clientName}>{customerName}</div>
+              <div className={styles.clientAddress}>{customerAddress}</div>
+            </div>
+            <div className={styles.pageDate}>
+              {new Date(
+                quotation.quotation_date || Date.now(),
+              ).toLocaleDateString("en-IN", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })}
+            </div>
+          </div>
+          {renderProductTable(itemsThisPage, "", globalSno, shouldShowColumn)}
+        </div>,
+      );
+      globalSno += itemsThisPage.length;
+      remainingItems = remainingItems.slice(itemsThisPage.length);
+    }
+
+    // ==================== FLOOR & ROOM SECTION WITH TOGGLE ====================
+    if (hasSiteLayout) {
+      if (useTabularLayout) {
+        pages.push(renderTabularFloorRoomSummary());
+      } else {
+        const roomGroups = groupProductsByFloorAndRoom(enrichedProducts);
+        roomGroups.forEach((roomGroup) => {
+          if (roomGroup.products?.length > 0) {
+            const areaPages = renderAreaWisePageForRoom(roomGroup);
+            pages.push(...areaPages);
+          }
+        });
+      }
+    }
+
+    // Final Summary Page
+    pages.push(
+      <div key="summary-page" className={`${styles.productPage} page`}>
+        <div className={styles.pageTopHeader}>
+          <div>
+            <div className={styles.clientName}>{customerName}</div>
+            <div className={styles.clientAddress}>{customerAddress}</div>
+          </div>
+          <div className={styles.pageDate}>
+            {new Date(
+              quotation.quotation_date || Date.now(),
+            ).toLocaleDateString("en-IN", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })}
+          </div>
+        </div>
+
+        <h2
+          style={{
+            color: "#d32f2f",
+            textAlign: "center",
+            margin: "40px 0 30px",
+          }}
+        >
+          SUMMARY
+        </h2>
+
+        <div className={styles.finalSummaryWrapper}>
+          <div className={styles.finalSummarySection}>
+            <div className={styles.summaryLeft}>
+              <div className={styles.summaryRow}>
+                <span>
+                  <strong>Total</strong>
+                </span>
+                <span>₹{grossTotalBeforeDiscount.toLocaleString("en-IN")}</span>
+              </div>
+              {totalProductDiscount > 0 && (
+                <div className={styles.summaryRow}>
+                  <span style={{ color: "#f5222d" }}>Discount</span>
+                  <span style={{ color: "#f5222d" }}>
+                    -₹{Math.round(totalProductDiscount).toLocaleString("en-IN")}
+                  </span>
+                </div>
+              )}
+              {extraDiscount > 0 && (
+                <div className={styles.summaryRow}>
+                  <span style={{ color: "#fa8c16" }}>Extra Discount</span>
+                  <span style={{ color: "#fa8c16" }}>
+                    -₹{Math.round(extraDiscount).toLocaleString("en-IN")}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className={styles.summaryRight}>
+              <div className={styles.totalAmount}>
+                <strong>GRAND TOTAL</strong>
+              </div>
+              <div style={{ fontSize: "2.35em", fontWeight: 700 }}>
+                ₹{finalAmount.toLocaleString("en-IN")}
+              </div>
+              <div className={styles.amountInWords}>{finalAmountInWords}</div>
+            </div>
+          </div>
+        </div>
+      </div>,
+    );
+
+    return pages;
+  };
+
+  // Export Handler
+  const handleExport = async () => {
+    if (!quotationRef.current) return;
+    setIsExporting(true);
+    await new Promise((resolve) => setTimeout(resolve, 120));
 
     try {
-      const result = await createQuotation(quotationPayload).unwrap();
-      message.success(
-        `Quotation created successfully!${result.quotation?.reference_number ? ` Ref: ${result.quotation.reference_number}` : ""}`,
-      );
+      const safeTitle = (quotation?.document_title || "Quotation")
+        .replace(/[\\/:*?"<>|]/g, "_")
+        .replace(/\s+/g, "_")
+        .substring(0, 50);
 
-      clearDraft();
-      if (typeof handleClearCart === "function") handleClearCart();
-      navigate("/quotations/list");
+      const versionLabel = activeVersionObj.shortLabel || "Latest";
+      const fileName = `${safeTitle}_${versionLabel}`;
+
+      if (exportFormat === "pdf") {
+        await exportToPDF(
+          quotationRef,
+          id,
+          activeVersion,
+          activeVersionData.quotation,
+          `${fileName}.pdf`,
+          { visibleColumns },
+        );
+      } else {
+        await exportToExcel(/* ... your existing params */);
+      }
+      message.success(`${exportFormat.toUpperCase()} exported successfully!`);
     } catch (err) {
-      console.error("Create Quotation Error:", err);
-      message.error(err?.data?.message || "Failed to create quotation.");
+      message.error("Export failed. Please try again.");
+    } finally {
+      setIsExporting(false);
     }
   };
 
-  // ==================== HANDLERS ====================
-  const handleAddCustomer = () => setShowAddCustomerModal(true);
+  if (qLoading || vLoading || custLoading || addrLoading) {
+    return (
+      <Spin
+        tip="Loading Quotation Details..."
+        size="large"
+        style={{ marginTop: 100, display: "block", textAlign: "center" }}
+      />
+    );
+  }
 
-  const handleCustomerSave = (newCustomer) => {
-    setSelectedCustomer(newCustomer.customerId || "");
-    setShowAddCustomerModal(false);
-    message.success("Customer created successfully");
-  };
-
-  const handleAddAddress = () => setShowAddAddressModal(true);
-
-  const handleAddressSave = (addressId) => {
-    setQuotationData((prev) => ({ ...prev, shipTo: addressId }));
-    setShowAddAddressModal(false);
-    refetchAddresses();
-    message.success("Address added successfully");
-  };
-
-  // New: Handle product created (you can refresh cart or show message)
-  const handleProductCreated = (newProduct) => {
-    message.success(`Product "${newProduct.name}" created successfully!`);
-    // You can optionally auto-add it to cart here if needed
-  };
+  if (qError || !quotation) {
+    return (
+      <Alert
+        message="Quotation not found"
+        type="error"
+        showIcon
+        style={{ margin: "40px" }}
+      />
+    );
+  }
 
   return (
     <>
-      <CartLayout>
-        {(layoutProps) => (
-          <>
-            {/* Action Buttons */}
+      <Helmet>
+        <title>
+          {quotation.document_title || "Quotation"} -{" "}
+          {quotation.reference_number}
+        </title>
+      </Helmet>
+
+      <div className="page-wrapper">
+        <div className="content">
+          {/* TOP BAR */}
+          <div
+            style={{
+              padding: "16px 40px",
+              background: "#fff",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+            }}
+          >
             <div
               style={{
-                marginBottom: 16,
-                textAlign: "right",
+                maxWidth: 1400,
+                margin: "0 auto",
                 display: "flex",
-                gap: 12,
-                justifyContent: "flex-end",
+                justifyContent: "space-between",
+                alignItems: "center",
                 flexWrap: "wrap",
+                gap: 20,
               }}
             >
-              <Button
-                icon={<PlusOutlined />}
-                onClick={() => setShowCreateProductModal(true)}
-                type="primary"
-              >
-                Add Optional Product
-              </Button>
+              <div>
+                <Title level={3} style={{ margin: 0, color: "#E31E24" }}>
+                  {quotation.document_title || "Quotation"}
+                  {activeVersion !== "current" && (
+                    <Tag color="blue" style={{ marginLeft: 12 }}>
+                      Version {activeVersion}
+                    </Tag>
+                  )}
+                </Title>
+                <Text type="secondary">
+                  {quotation.reference_number || "—"} • {customerName} •{" "}
+                  {brandNames}
+                </Text>
+              </div>
 
-              <Button
-                icon={<InfoCircleOutlined />}
-                onClick={checkCurrentDraft}
-                type="default"
-              >
-                Manage Draft
-              </Button>
+              <Space size="middle" wrap>
+                {/* Column Selector */}
+                <Dropdown
+                  placement="bottomRight"
+                  trigger={["click"]}
+                  dropdownRender={() => (
+                    <div
+                      style={{
+                        padding: "16px 20px",
+                        background: "#fff",
+                        borderRadius: 8,
+                        boxShadow: "0 6px 16px rgba(0,0,0,0.12)",
+                        minWidth: 240,
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontWeight: 600,
+                          marginBottom: 12,
+                          color: "#333",
+                        }}
+                      >
+                        Columns to include in export
+                      </div>
+                      <Checkbox.Group
+                        style={{ width: "100%" }}
+                        value={Object.keys(visibleColumns).filter(
+                          (k) => visibleColumns[k],
+                        )}
+                        onChange={(checkedValues) => {
+                          setVisibleColumns({
+                            sno: checkedValues.includes("sno"),
+                            name: checkedValues.includes("name"),
+                            code: checkedValues.includes("code"),
+                            image: checkedValues.includes("image"),
+                            unit: checkedValues.includes("unit"),
+                            mrp: checkedValues.includes("mrp"),
+                            unitPrice: checkedValues.includes("unitPrice"),
+                            discount: checkedValues.includes("discount"),
+                            total: checkedValues.includes("total"),
+                          });
+                        }}
+                      >
+                        <Space
+                          direction="vertical"
+                          size={10}
+                          style={{ width: "100%" }}
+                        >
+                          <Checkbox value="sno">S.No</Checkbox>
+                          <Checkbox value="name">Product Name</Checkbox>
+                          <Checkbox value="code">Code</Checkbox>
+                          <Checkbox value="image">Image</Checkbox>
+                          <Checkbox value="unit">Unit / Qty</Checkbox>
+                          <Checkbox value="mrp">MRP</Checkbox>
+                          <Checkbox value="unitPrice">
+                            Unit Price (After Discount)
+                          </Checkbox>
+                          <Divider style={{ margin: "8px 0" }} />
+                          <Checkbox value="discount">Discount</Checkbox>
+                          <Checkbox value="total">Total</Checkbox>
+                        </Space>
+                      </Checkbox.Group>
+
+                      <Divider style={{ margin: "12px 0 8px" }} />
+                      <div style={{ textAlign: "right" }}>
+                        <Button
+                          size="small"
+                          type="link"
+                          onClick={() =>
+                            setVisibleColumns({
+                              sno: true,
+                              name: true,
+                              code: true,
+                              image: true,
+                              unit: true,
+                              mrp: true,
+                              unitPrice: true,
+                              discount: true,
+                              total: true,
+                            })
+                          }
+                        >
+                          Reset to default
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                >
+                  <Button icon={<SettingOutlined />}>
+                    Export Columns{" "}
+                    {Object.values(visibleColumns).filter(Boolean).length}/9
+                  </Button>
+                </Dropdown>
+
+                {/* NEW TOGGLE BUTTON */}
+                <Button
+                  icon={
+                    useTabularLayout ? <TableOutlined /> : <HistoryOutlined />
+                  }
+                  onClick={() => setUseTabularLayout(!useTabularLayout)}
+                  type={useTabularLayout ? "default" : "primary"}
+                >
+                  {useTabularLayout ? "Show Site Map" : "Show Tabular Summary"}
+                </Button>
+
+                {/* Export Options */}
+                <Space>
+                  <select
+                    value={exportFormat}
+                    onChange={(e) => setExportFormat(e.target.value)}
+                    style={{
+                      padding: "8px 14px",
+                      borderRadius: 6,
+                      borderColor: "#d9d9d9",
+                    }}
+                    disabled={isExporting}
+                  >
+                    <option value="pdf">Export as PDF</option>
+                    <option value="excel">Export as Excel</option>
+                  </select>
+
+                  <Button
+                    type="primary"
+                    size="large"
+                    loading={isExporting}
+                    onClick={handleExport}
+                    icon={
+                      exportFormat === "pdf" ? (
+                        <FilePdfFilled />
+                      ) : (
+                        <FileExcelFilled />
+                      )
+                    }
+                    style={{ background: "#E31E24", border: "none" }}
+                  >
+                    {isExporting ? "Exporting..." : "Export"}
+                  </Button>
+                </Space>
+
+                <Button
+                  icon={<ArrowLeftOutlined />}
+                  size="large"
+                  style={{
+                    background: "#E31E24",
+                    color: "#fff",
+                    border: "none",
+                  }}
+                >
+                  <Link to="/quotations/list" style={{ color: "#fff" }}>
+                    Back
+                  </Link>
+                </Button>
+              </Space>
             </div>
+          </div>
 
-            <QuotationForm
-              {...layoutProps}
-              quotationData={quotationData}
-              setQuotationData={setQuotationData}
-              handleQuotationChange={(key, value) =>
-                setQuotationData((prev) => ({ ...prev, [key]: value }))
-              }
-              selectedCustomer={selectedCustomer}
-              setSelectedCustomer={setSelectedCustomer}
-              customers={customers}
-              addresses={addresses}
-              useBillingAddress={useBillingAddress}
-              setUseBillingAddress={setUseBillingAddress}
-              setBillingAddressId={setBillingAddressId}
-              previewVisible={previewVisible}
-              setPreviewVisible={setPreviewVisible}
-              handleAddCustomer={handleAddCustomer}
-              handleAddAddress={handleAddAddress}
-              handleCreateDocument={handleCreateQuotation}
-              handleAssignItem={layoutProps.handleAssignItemToLocation}
-              itemDiscounts={layoutProps.itemDiscounts}
-              itemDiscountTypes={layoutProps.itemDiscountTypes}
-              itemTaxes={layoutProps.itemTaxes}
-              handleClearCart={layoutProps.handleClearCart}
-            />
-
-            {/* Other components remain same */}
-            <PreviewQuotation
-              visible={previewVisible}
-              onClose={() => setPreviewVisible(false)}
-              cartItems={layoutProps.calculationCartItems}
-              productsData={layoutProps.cartProductsData}
-              customer={customers.find(
-                (c) => c.customerId === selectedCustomer,
-              )}
-              address={addresses.find(
-                (a) => a.addressId === quotationData.shipTo,
-              )}
-              quotationData={quotationData}
-              itemDiscounts={layoutProps.itemDiscounts}
-              itemDiscountTypes={layoutProps.itemDiscountTypes}
-              itemTaxes={layoutProps.itemTaxes}
-              gstRate={layoutProps.gst}
-              includeGst
-            />
-          </>
-        )}
-      </CartLayout>
-
-      {/* Create Optional Product Modal */}
-      <CreateProductModal
-        open={showCreateProductModal}
-        onClose={() => setShowCreateProductModal(false)}
-        onSuccess={handleProductCreated}
-      />
-
-      {/* Draft Info Modal */}
-      <Modal
-        title={
-          <Space>
-            <SaveOutlined />
-            Draft Information
-          </Space>
-        }
-        open={showDraftModal}
-        onCancel={() => setShowDraftModal(false)}
-        footer={[
-          <Button key="close" onClick={() => setShowDraftModal(false)}>
-            Close
-          </Button>,
-          <Button
-            key="delete"
-            danger
-            icon={<DeleteOutlined />}
-            onClick={handleDeleteDraft}
+          {/* MAIN PREVIEW AREA */}
+          <div
+            style={{
+              padding: "32px 40px",
+              background: "#f9f9f9",
+              minHeight: "calc(100vh - 220px)",
+            }}
           >
-            Delete Draft
-          </Button>,
-        ]}
-      >
-        {currentDraft ? (
-          <Descriptions column={1} bordered>
-            <Descriptions.Item label="Customer">
-              {customers.find(
-                (c) => c.customerId === currentDraft.selectedCustomer,
-              )?.name || "Not selected"}
-            </Descriptions.Item>
-            <Descriptions.Item label="Quotation Date">
-              {currentDraft.quotationData?.quotationDate || "-"}
-            </Descriptions.Item>
-            <Descriptions.Item label="Due Date">
-              {currentDraft.quotationData?.dueDate || "-"}
-            </Descriptions.Item>
-            <Descriptions.Item label="Last Saved">
-              {currentDraft.lastSaved
-                ? moment(currentDraft.lastSaved).fromNow()
-                : "-"}
-            </Descriptions.Item>
-            <Descriptions.Item label="Status">
-              <Text type="success">Draft Saved Automatically</Text>
-            </Descriptions.Item>
-          </Descriptions>
-        ) : (
-          <p>No draft data available.</p>
-        )}
-      </Modal>
+            <div className={styles.printArea}>{renderPages(() => true)}</div>
+          </div>
 
-      {/* Other Modals */}
-      {showAddAddressModal && (
-        <AddAddress
-          visible={true}
-          onClose={() => setShowAddAddressModal(false)}
-          onSave={handleAddressSave}
-          selectedCustomer={selectedCustomer}
-        />
-      )}
-
-      {showAddCustomerModal && (
-        <AddCustomerModal
-          visible={showAddCustomerModal}
-          onClose={() => setShowAddCustomerModal(false)}
-          customer={null}
-          onSave={handleCustomerSave}
-        />
-      )}
+          {/* Hidden Export Container */}
+          <div
+            ref={quotationRef}
+            style={{ position: "absolute", left: "-9999px", top: 0 }}
+          >
+            {isExporting && (
+              <div className={styles.printArea}>
+                {renderPages((col) => visibleColumns[col] ?? true)}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </>
   );
 };
 
-export default NewQuotation;
+export default NewQuotationsDetails;
