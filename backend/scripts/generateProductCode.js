@@ -6,8 +6,8 @@ const path = require("path");
 //   CONFIGURATION – ADJUST THESE FOR YOUR BRAND
 // ────────────────────────────────────────────────
 const BRAND = {
-  shortCode: "GR", // "GR" for GROHE
-  namePrefix: "GROHE", // used in readable name if needed
+  shortCode: "NX", // "GR" for GROHE
+  namePrefix: "NEXION", // used in readable name if needed
 };
 
 const MODEL_META_KEY = "1e19b647-1138-11f1-b773-52540021303b"; // ← your model number key
@@ -17,10 +17,7 @@ const MODEL_META_KEY = "1e19b647-1138-11f1-b773-52540021303b"; // ← your model
 async function main() {
   try {
     // Load the actual file – update path/filename if needed
-    const inputFile = path.join(
-      __dirname,
-      "./json-outputs/all_sheets_data.json",
-    ); // or "duplicate_products.json"
+    const inputFile = path.join(__dirname, "./normalized.json"); // or "duplicate_products.json"
     const jsonData = require(inputFile);
 
     console.log(`Loaded ${jsonData.length} products`);

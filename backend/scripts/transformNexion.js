@@ -1,104 +1,51 @@
-// smart-normalizer.js
+// transform-products.js
 
-const crypto = require("crypto");
 const fs = require("fs");
-const path = require("path");
+
+// UUID regex (strict enough)
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-9][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 /**
- * Input file
+ * Transform a single product
  */
-const input = require("./nexion.json");
+function transformProduct(product) {
+  const meta = {};
+  const cleaned = {};
 
-/**
- * Detect product type automatically
- */
-function hasColors(product) {
-  return Array.isArray(product.colors) && product.colors.length > 0;
-}
+  Object.keys(product).forEach((key) => {
+    const value = product[key];
 
-/**
- * Normalize entire dataset
- */
-function normalizeProducts(data) {
-  const result = [];
-
-  data.forEach((product) => {
-    const { name, category } = product;
-
-    if (hasColors(product)) {
-      // TYPE 1: Color-based
-      product.colors.forEach((color) => {
-        product.variants.forEach((variant) => {
-          result.push(buildProduct({ name, category, color, variant }));
-        });
-      });
+    if (UUID_REGEX.test(key)) {
+      // Move UUID fields into meta
+      meta[key] = value;
     } else {
-      // TYPE 2: No colors
-      product.variants.forEach((variant) => {
-        result.push(buildProduct({ name, category, color: null, variant }));
-      });
+      cleaned[key] = value;
     }
   });
 
-  return result;
+  // Attach meta
+  cleaned.meta = meta;
+
+  return cleaned;
 }
 
 /**
- * Build normalized product
+ * Transform array
  */
-function buildProduct({ name, category, color, variant }) {
-  const cleanName = name.trim();
-  const cleanColor = color ? color.trim() : null;
-
-  // 👇 Add color to name
-  const finalName = cleanColor
-    ? `${cleanName} - ${cleanColor} - ${variant.size_mm}`
-    : `${cleanName} - ${variant.size_mm}`;
-  const slug = `${cleanName}-${cleanColor || "NA"}-${variant.size_mm}`
-    .toLowerCase()
-    .replace(/\s+/g, "-");
-
-  const sku = `${cleanName}-${cleanColor || "NA"}-${variant.size_mm}`
-    .toUpperCase()
-    .replace(/\s+/g, "");
-
-  return {
-    id: crypto.randomUUID(),
-
-    name: finalName, // 👈 updated here
-    category,
-
-    colors: cleanColor ? [cleanColor] : [],
-
-    size_mm: variant.size_mm,
-    caliber: variant.caliber,
-
-    retail_mrp_per_sft: variant.retail_mrp_per_sft,
-    ex_factory_per_sft: variant.ex_factory_per_sft,
-
-    pcs_per_box: variant.pcs_per_box,
-    sft_per_box: variant.sft_per_box,
-    kg_per_box: variant.kg_per_box,
-    mrp_per_box: variant.mrp_per_box,
-
-    sku,
-    slug,
-  };
+function transformProducts(data) {
+  return data.map(transformProduct);
 }
 
-/**
- * Run normalization
- */
-const output = normalizeProducts(input);
+// === USAGE ===
 
-/**
- * Output file path
- */
-const outputPath = path.join(__dirname, "normalized.json");
+// Load input JSON
+const input = require("./normalized.json");
 
-/**
- * Write file
- */
-fs.writeFileSync(outputPath, JSON.stringify(output, null, 2), "utf-8");
+// Transform
+const output = transformProducts(input);
 
-console.log(`✅ Normalized JSON saved at: ${outputPath}`);
+// Save output
+fs.writeFileSync("./output.json", JSON.stringify(output, null, 2), "utf-8");
+
+console.log("✅ Transformation complete");
