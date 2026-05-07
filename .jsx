@@ -9,8 +9,10 @@ import {
   Typography,
   Spin,
   Alert,
+  Tabs,
   Checkbox,
   Tag,
+  Tooltip,
   Divider,
 } from "antd";
 import {
@@ -56,7 +58,7 @@ const NewQuotationsDetails = () => {
   const [exportFormat, setExportFormat] = useState("pdf");
   const [isExporting, setIsExporting] = useState(false);
 
-  // Toggle between Site Map (Visual) and Tabular Floor/Room View
+  // New Toggle State
   const [useTabularLayout, setUseTabularLayout] = useState(false);
 
   const [visibleColumns, setVisibleColumns] = useState({
@@ -147,14 +149,10 @@ const NewQuotationsDetails = () => {
   const shipToId = activeVersionData.quotation?.shipTo || quotation?.shipTo;
 
   const { data: customerResponse, isFetching: custLoading } =
-    useGetCustomerByIdQuery(customerId, {
-      skip: !customerId,
-    });
+    useGetCustomerByIdQuery(customerId, { skip: !customerId });
 
   const { data: addressResponse, isFetching: addrLoading } =
-    useGetAddressByIdQuery(shipToId, {
-      skip: !shipToId,
-    });
+    useGetAddressByIdQuery(shipToId, { skip: !shipToId });
 
   const customer = customerResponse?.data || {};
   const address = addressResponse || {};
@@ -182,6 +180,7 @@ const NewQuotationsDetails = () => {
     () => allProducts.filter((p) => p.isOptionFor == null),
     [allProducts],
   );
+
   const optionalProducts = useMemo(
     () => allProducts.filter((p) => p.isOptionFor != null),
     [allProducts],
@@ -216,22 +215,62 @@ const NewQuotationsDetails = () => {
 
   // ── Calculations ────────────────────────────────────────────────────────
   const grossTotalBeforeDiscount = useMemo(() => {
-    return mainProducts.reduce(
-      (sum, p) => sum + Number(p.price ?? 0) * Number(p.quantity ?? 1),
-      0,
-    );
+    return mainProducts.reduce((sum, p) => {
+      const mrp = Number(p.price ?? 0);
+      const qty = Number(p.quantity ?? 1);
+      return sum + mrp * qty;
+    }, 0);
   }, [mainProducts]);
 
   const totalProductDiscount = useMemo(() => {
     return mainProducts.reduce((sum, p) => {
-      const gross = Number(p.price ?? 0) * Number(p.quantity ?? 1);
-      return sum + (gross - Number(p.total ?? 0));
+      const mrp = Number(p.price ?? 0);
+      const qty = Number(p.quantity ?? 1);
+      const grossLine = mrp * qty;
+      const discountedLine = Number(p.total ?? 0);
+      return sum + (grossLine - discountedLine);
     }, 0);
   }, [mainProducts]);
 
   const extraDiscount = Number(quotation?.extraDiscount ?? 0);
+  const roundOff = Number(quotation?.roundOff ?? 0);
   const finalAmount = Number(quotation?.finalAmount ?? 0);
   const finalAmountInWords = amountInWords(Math.round(finalAmount));
+
+  const floorTotals = useMemo(() => {
+    const floorMap = new Map();
+    mainProducts.forEach((p) => {
+      const floor = (p.floorName || "Unspecified Floor").trim();
+      const total = Number(p.total ?? 0);
+      if (!floorMap.has(floor))
+        floorMap.set(floor, { floorName: floor, total: 0 });
+      floorMap.get(floor).total += total;
+    });
+    return Array.from(floorMap.values()).sort((a, b) =>
+      a.floorName.localeCompare(b.floorName),
+    );
+  }, [mainProducts]);
+
+  const roomTotals = useMemo(() => {
+    const roomMap = new Map();
+    mainProducts.forEach((p) => {
+      const floor = (p.floorName || "Unspecified Floor").trim();
+      const room = (p.roomName || "Unspecified Room").trim();
+      const total = Number(p.total ?? 0);
+      const key = `${floor}|||${room}`;
+      if (!roomMap.has(key)) {
+        roomMap.set(key, { floorName: floor, roomName: room, total: 0 });
+      }
+      roomMap.get(key).total += total;
+    });
+
+    return Array.from(roomMap.values())
+      .sort((a, b) => {
+        const floorCmp = a.floorName.localeCompare(b.floorName);
+        return floorCmp !== 0 ? floorCmp : a.roomName.localeCompare(b.roomName);
+      })
+      .filter((r) => r.total > 0);
+  }, [mainProducts]);
 
   const hasSiteLayout = useMemo(() => {
     const floors =
@@ -240,25 +279,30 @@ const NewQuotationsDetails = () => {
   }, [activeVersionData.quotation, quotation]);
 
   // ── Area Enrichment ─────────────────────────────────────────────────────
-  const enrichProductsWithAreas = useCallback((products, floors) => {
+  const enrichProductsWithAreas = useCallback((allProducts, floors) => {
     const areaMap = new Map();
     floors.forEach((floor) => {
       floor.rooms?.forEach((room) => {
         room.areas?.forEach((areaObj) => {
-          const key = `${room.roomId}_${areaObj.value || areaObj.name?.toLowerCase()}`;
-          if (key)
+          const areaValue = areaObj.value || areaObj.name?.toLowerCase();
+          if (areaValue) {
+            const key = `${room.roomId}_${areaValue}`;
             areaMap.set(key, areaObj.name || areaObj.value || "Unassigned");
+          }
         });
       });
     });
 
-    return products.map((p) => ({
-      ...p,
-      areaName:
-        p.areaValue || p.areaId
-          ? areaMap.get(`${p.roomId}_${p.areaValue || p.areaId}`) || p.areaName
-          : p.areaName || "Unassigned",
-    }));
+    return allProducts.map((p) => {
+      let areaName = "Unassigned";
+      if (p.areaValue || p.areaId) {
+        const key = `${p.roomId}_${p.areaValue || p.areaId}`;
+        if (areaMap.has(key)) areaName = areaMap.get(key);
+      } else if (p.areaName && p.areaName !== "Unassigned") {
+        areaName = p.areaName;
+      }
+      return { ...p, areaName };
+    });
   }, []);
 
   const enrichedProducts = useMemo(() => {
@@ -272,10 +316,24 @@ const NewQuotationsDetails = () => {
     enrichProductsWithAreas,
   ]);
 
+  const hasProperAreaAssignment = useMemo(() => {
+    return enrichedProducts.some(
+      (p) =>
+        p.areaValue ||
+        p.areaId ||
+        (p.areaName &&
+          p.areaName !== "Unassigned" &&
+          !["Basin Area", "Shower Area", "WC Area", "Unassigned"].includes(
+            p.areaName,
+          )),
+    );
+  }, [enrichedProducts]);
+
   // ── Grouping Helpers ────────────────────────────────────────────────────
   const groupProductsByFloorAndRoom = (products = []) => {
     const map = new Map();
     products.forEach((p) => {
+      if (!p.floorId) return;
       const locations =
         Array.isArray(p.locations) && p.locations.length > 0
           ? p.locations
@@ -290,12 +348,12 @@ const NewQuotationsDetails = () => {
         const floor = (loc.floorName || "Unspecified Floor").trim();
         const room = (loc.roomName || "Unspecified Room").trim();
         const key = `${floor}|||${room}`;
-        if (!map.has(key))
+        if (!map.has(key)) {
           map.set(key, { floorName: floor, roomName: room, products: [] });
+        }
         map.get(key).products.push({ ...p, ...loc });
       });
     });
-
     return Array.from(map.values()).sort((a, b) => {
       const floorCmp = a.floorName.localeCompare(b.floorName);
       return floorCmp !== 0 ? floorCmp : a.roomName.localeCompare(b.roomName);
@@ -470,80 +528,88 @@ const NewQuotationsDetails = () => {
     return pages;
   };
 
-  // ── NEW: Detailed Tabular Floor & Room Wise (Full Products) ─────────────
-  const renderDetailedTabularFloorRoom = () => {
-    const floorRoomGroups = groupProductsByFloorAndRoom(enrichedProducts);
-    const floorMap = new Map();
+  // ── NEW: Tabular Floor & Room Summary ───────────────────────────────────
+  const renderTabularFloorRoomSummary = () => {
+    const roomGroups = groupProductsByFloorAndRoom(enrichedProducts);
 
-    floorRoomGroups.forEach((group) => {
-      if (!floorMap.has(group.floorName)) floorMap.set(group.floorName, []);
-      floorMap.get(group.floorName).push(group);
-    });
-
-    const pages = [];
-    let globalSno = 0;
-
-    floorMap.forEach((roomsInFloor, floorName) => {
-      pages.push(
-        <div
-          key={`floor-page-${floorName}`}
-          className={`${styles.productPage} page`}
-          style={{ pageBreakBefore: "always" }}
-        >
-          <div className={styles.pageTopHeader}>
-            <div>
-              <div className={styles.clientName}>{customerName}</div>
-              <div className={styles.clientAddress}>{customerAddress}</div>
-            </div>
-            <div className={styles.pageDate}>
-              {new Date(
-                quotation.quotation_date || Date.now(),
-              ).toLocaleDateString("en-IN", {
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
-              })}
-            </div>
+    return (
+      <div key="tabular-floor-room" className={`${styles.productPage} page`}>
+        <div className={styles.pageTopHeader}>
+          <div>
+            <div className={styles.clientName}>{customerName}</div>
+            <div className={styles.clientAddress}>{customerAddress}</div>
           </div>
+          <div className={styles.pageDate}>
+            {new Date(
+              quotation.quotation_date || Date.now(),
+            ).toLocaleDateString("en-IN", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })}
+          </div>
+        </div>
 
-          <h2
-            style={{
-              color: "#d32f2f",
-              textAlign: "center",
-              margin: "40px 0 30px",
-            }}
-          >
-            {floorName.toUpperCase()}
-          </h2>
+        <h2
+          style={{
+            color: "#d32f2f",
+            textAlign: "center",
+            margin: "40px 0 30px",
+          }}
+        >
+          FLOOR & ROOM WISE SUMMARY
+        </h2>
 
-          {roomsInFloor.map((roomGroup) => {
-            const roomMainItems = groupedProductsWithOptions.filter((main) =>
-              roomGroup.products.some((p) => p.productId === main.productId),
-            );
+        <table className={styles.productTable} style={{ marginTop: 20 }}>
+          <thead>
+            <tr>
+              <th style={{ width: "8%" }}>S.No</th>
+              <th style={{ width: "25%" }}>Floor</th>
+              <th style={{ width: "30%" }}>Room</th>
+              <th style={{ width: "22%" }}>Items</th>
+              <th style={{ width: "15%", textAlign: "right" }}>Total Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {roomGroups.map((group, index) => {
+              const itemCount = group.products.length;
+              const roomTotal = group.products.reduce(
+                (sum, p) => sum + Number(p.total || 0),
+                0,
+              );
 
-            if (roomMainItems.length === 0) return null;
+              return (
+                <tr key={`${group.floorName}-${group.roomName}`}>
+                  <td style={{ textAlign: "center" }}>{index + 1}.</td>
+                  <td style={{ fontWeight: 600 }}>{group.floorName}</td>
+                  <td>{group.roomName}</td>
+                  <td>
+                    {itemCount} item{itemCount !== 1 ? "s" : ""}
+                  </td>
+                  <td style={{ textAlign: "right", fontWeight: 600 }}>
+                    ₹{roomTotal.toLocaleString("en-IN")}
+                  </td>
+                </tr>
+              );
+            })}
 
-            return (
-              <div key={roomGroup.roomName} style={{ marginBottom: 50 }}>
-                <h3
-                  style={{
-                    color: "#222",
-                    margin: "25px 0 15px",
-                    borderBottom: "2px solid #d32f2f",
-                    paddingBottom: 8,
-                  }}
-                >
-                  {roomGroup.roomName}
-                </h3>
-                {renderProductTable(roomMainItems, "", globalSno, () => true)}
-              </div>
-            );
-          })}
-        </div>,
-      );
-    });
-
-    return pages;
+            {roomGroups.length > 1 && (
+              <tr style={{ background: "#f0f0f0", fontWeight: 700 }}>
+                <td colSpan={4} style={{ textAlign: "right" }}>
+                  GRAND TOTAL
+                </td>
+                <td style={{ textAlign: "right" }}>
+                  ₹
+                  {roomTotals
+                    .reduce((sum, r) => sum + r.total, 0)
+                    .toLocaleString("en-IN")}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    );
   };
 
   // ── Render Product Table ────────────────────────────────────────────────
@@ -588,6 +654,8 @@ const NewQuotationsDetails = () => {
           </thead>
           <tbody>
             {itemsWithOptions.map((mainItem) => {
+              // ... (Your existing product table logic remains unchanged)
+              // I'll keep it short here for brevity. Paste your full renderProductTable body here.
               const code = mainItem.companyCode || mainItem.productCode || "—";
               const img = mainItem.imageUrl || "";
               const mrp = Number(mainItem.price ?? 0);
@@ -654,84 +722,87 @@ const NewQuotationsDetails = () => {
                     )}
                   </tr>
 
-                  {mainItem.options?.map((opt, idx) => {
-                    // Optional items logic (same as your original)
-                    const optCode = opt.companyCode || opt.productCode || "—";
-                    const optMrp = Number(opt.price ?? 0);
-                    const optQty = Number(opt.quantity ?? 1);
-                    const optTotal = Number(opt.total ?? 0);
-                    const optDisc = Number(opt.discount ?? 0);
-                    const optDiscType = (
-                      opt.discountType ?? "percent"
-                    ).toLowerCase();
+                  {/* Optional Items - same as before */}
+                  {mainItem.options?.length > 0 &&
+                    mainItem.options.map((opt, idx) => {
+                      const optCode = opt.companyCode || opt.productCode || "—";
+                      const optMrp = Number(opt.price ?? 0);
+                      const optQty = Number(opt.quantity ?? 1);
+                      const optTotal = Number(opt.total ?? 0);
+                      const optDisc = Number(opt.discount ?? 0);
+                      const optDiscType = (
+                        opt.discountType ?? "percent"
+                      ).toLowerCase();
 
-                    let optUnitPrice = optMrp;
-                    if (optDisc > 0) {
-                      optUnitPrice =
-                        optDiscType === "percent"
-                          ? optMrp * (1 - optDisc / 100)
-                          : optMrp - optDisc;
-                    }
-                    optUnitPrice = Math.round(optUnitPrice * 100) / 100;
+                      let optUnitPrice = optMrp;
+                      if (optDisc > 0) {
+                        optUnitPrice =
+                          optDiscType === "percent"
+                            ? optMrp * (1 - optDisc / 100)
+                            : optMrp - optDisc;
+                      }
+                      optUnitPrice = Math.round(optUnitPrice * 100) / 100;
 
-                    const optDisplayDisc =
-                      optDisc > 0
-                        ? optDiscType === "percent"
-                          ? `${optDisc}%`
-                          : `₹${optDisc.toFixed(0)}`
-                        : "—";
+                      const optDisplayDisc =
+                        optDisc > 0
+                          ? optDiscType === "percent"
+                            ? `${optDisc}%`
+                            : `₹${optDisc.toFixed(0)}`
+                          : "—";
 
-                    return (
-                      <tr
-                        key={opt.productId || `opt-${idx}`}
-                        style={{ background: "#f9f9f9" }}
-                      >
-                        {showCol("sno") && <td></td>}
-                        {showCol("name") && (
-                          <td
-                            className={styles.prodNameCell}
-                            style={{ paddingLeft: "40px", color: "#444" }}
-                          >
-                            ↳ {opt.name}{" "}
-                            <span style={{ fontSize: "0.85em", color: "#666" }}>
-                              (Optional)
-                            </span>
-                          </td>
-                        )}
-                        {showCol("code") && <td>{optCode}</td>}
-                        {showCol("image") && (
-                          <td>
-                            {opt.imageUrl && (
-                              <img
-                                src={opt.imageUrl}
-                                alt={opt.name}
-                                className={styles.prodImg}
-                              />
-                            )}
-                          </td>
-                        )}
-                        {showCol("unit") && <td>{optQty}</td>}
-                        {showCol("mrp") && (
-                          <td>₹{optMrp.toLocaleString("en-IN")}</td>
-                        )}
-                        {showCol("unitPrice") && (
-                          <td style={{ fontWeight: 600, color: "#d32f2f" }}>
-                            ₹{optUnitPrice.toLocaleString("en-IN")}
-                          </td>
-                        )}
-                        {showCol("discount") && (
-                          <td className={styles.discountCell}>
-                            {optDisplayDisc}
-                          </td>
-                        )}
-                        {showCol("total") && (
-                          <td className={styles.totalCell}>
-                            ₹{optTotal.toLocaleString("en-IN")}
-                          </td>
-                        )}
-                      </tr>
-                    );
-                  })}
+                      return (
+                        <tr
+                          key={opt.productId || `opt-${idx}`}
+                          style={{ background: "#f9f9f9" }}
+                        >
+                          {shouldShowColumn("sno") && <td></td>}
+                          {shouldShowColumn("name") && (
+                            <td
+                              className={styles.prodNameCell}
+                              style={{ paddingLeft: "40px", color: "#444" }}
+                            >
+                              ↳ {opt.name}{" "}
+                              <span
+                                style={{ fontSize: "0.85em", color: "#666" }}
+                              >
+                                (Optional)
+                              </span>
+                            </td>
+                          )}
+                          {shouldShowColumn("code") && <td>{optCode}</td>}
+                          {shouldShowColumn("image") && (
+                            <td>
+                              {opt.imageUrl && (
+                                <img
+                                  src={opt.imageUrl}
+                                  alt={opt.name}
+                                  className={styles.prodImg}
+                                />
+                              )}
+                            </td>
+                          )}
+                          {shouldShowColumn("unit") && <td>{optQty}</td>}
+                          {shouldShowColumn("mrp") && (
+                            <td>₹{optMrp.toLocaleString("en-IN")}</td>
+                          )}
+                          {shouldShowColumn("unitPrice") && (
+                            <td style={{ fontWeight: 600, color: "#d32f2f" }}>
+                              ₹{optUnitPrice.toLocaleString("en-IN")}
+                            </td>
+                          )}
+                          {shouldShowColumn("discount") && (
+                            <td className={styles.discountCell}>
+                              {optDisplayDisc}
+                            </td>
+                          )}
+                          {shouldShowColumn("total") && (
+                            <td className={styles.totalCell}>
+                              ₹{optTotal.toLocaleString("en-IN")}
+                            </td>
+                          )}
+                        </tr>
+                      );
+                    })}
                 </React.Fragment>
               );
             })}
@@ -794,7 +865,7 @@ const NewQuotationsDetails = () => {
       </div>,
     );
 
-    // Main Product Pages
+    // Main Product Table with Pagination
     let remainingItems = [...groupedProductsWithOptions];
     let globalSno = 0;
 
@@ -827,21 +898,22 @@ const NewQuotationsDetails = () => {
       remainingItems = remainingItems.slice(itemsThisPage.length);
     }
 
-    // Floor & Room Section with Toggle
+    // ==================== FLOOR & ROOM SECTION WITH TOGGLE ====================
     if (hasSiteLayout) {
       if (useTabularLayout) {
-        pages.push(...renderDetailedTabularFloorRoom());
+        pages.push(renderTabularFloorRoomSummary());
       } else {
         const roomGroups = groupProductsByFloorAndRoom(enrichedProducts);
         roomGroups.forEach((roomGroup) => {
           if (roomGroup.products?.length > 0) {
-            pages.push(...renderAreaWisePageForRoom(roomGroup));
+            const areaPages = renderAreaWisePageForRoom(roomGroup);
+            pages.push(...areaPages);
           }
         });
       }
     }
 
-    // Final Summary
+    // Final Summary Page
     pages.push(
       <div key="summary-page" className={`${styles.productPage} page`}>
         <div className={styles.pageTopHeader}>
@@ -896,6 +968,7 @@ const NewQuotationsDetails = () => {
                 </div>
               )}
             </div>
+
             <div className={styles.summaryRight}>
               <div className={styles.totalAmount}>
                 <strong>GRAND TOTAL</strong>
@@ -938,7 +1011,7 @@ const NewQuotationsDetails = () => {
           { visibleColumns },
         );
       } else {
-        await exportToExcel(/* your existing excel params */);
+        await exportToExcel(/* ... your existing params */);
       }
       message.success(`${exportFormat.toUpperCase()} exported successfully!`);
     } catch (err) {
@@ -980,7 +1053,7 @@ const NewQuotationsDetails = () => {
 
       <div className="page-wrapper">
         <div className="content">
-          {/* Top Bar */}
+          {/* TOP BAR */}
           <div
             style={{
               padding: "16px 40px",
@@ -1015,6 +1088,7 @@ const NewQuotationsDetails = () => {
               </div>
 
               <Space size="middle" wrap>
+                {/* Column Selector */}
                 <Dropdown
                   placement="bottomRight"
                   trigger={["click"]}
@@ -1107,6 +1181,7 @@ const NewQuotationsDetails = () => {
                   </Button>
                 </Dropdown>
 
+                {/* NEW TOGGLE BUTTON */}
                 <Button
                   icon={
                     useTabularLayout ? <TableOutlined /> : <HistoryOutlined />
@@ -1114,9 +1189,10 @@ const NewQuotationsDetails = () => {
                   onClick={() => setUseTabularLayout(!useTabularLayout)}
                   type={useTabularLayout ? "default" : "primary"}
                 >
-                  {useTabularLayout ? "Show Site Map" : "Show Tabular"}
+                  {useTabularLayout ? "Show Site Map" : "Show Tabular Summary"}
                 </Button>
 
+                {/* Export Options */}
                 <Space>
                   <select
                     value={exportFormat}
@@ -1167,7 +1243,7 @@ const NewQuotationsDetails = () => {
             </div>
           </div>
 
-          {/* Preview */}
+          {/* MAIN PREVIEW AREA */}
           <div
             style={{
               padding: "32px 40px",

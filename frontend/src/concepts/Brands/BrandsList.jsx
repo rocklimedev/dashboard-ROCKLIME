@@ -1,12 +1,12 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import {
-  SearchOutlined,
   EyeOutlined,
   EditOutlined,
   DeleteOutlined,
   MoreOutlined,
 } from "@ant-design/icons";
 import Avatar from "react-avatar";
+
 import {
   useGetAllBrandsQuery,
   useDeleteBrandMutation,
@@ -16,6 +16,12 @@ import {
   useGetBrandParentCategoriesQuery,
   useDeleteBrandParentCategoryMutation,
 } from "../../api/brandParentCategoryApi";
+
+// Product Meta API
+import {
+  useGetAllProductMetaQuery,
+  useDeleteProductMetaMutation,
+} from "../../api/productMetaApi";
 
 import {
   Dropdown,
@@ -31,10 +37,10 @@ import DeleteModal from "../../components/Common/DeleteModal";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import PageHeader from "../../components/Common/PageHeader";
 
-// Import Modals
+// Modals
 import BrandFormModal from "../../components/Brands/BrandFormModal";
 import BrandParentCategoryFormModal from "../../components/Brands/BrandParentCategoryFormModal";
-
+import ProductMetaFormModal from "../../components/modals/ProductMetaModal";
 const { TabPane } = Tabs;
 const { Search } = Input;
 
@@ -42,7 +48,6 @@ const BrandList = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  // Get tab from URL params, default to "brands"
   const currentTab = searchParams.get("tab") || "brands";
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -58,6 +63,9 @@ const BrandList = () => {
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
 
+  const [metaModalVisible, setMetaModalVisible] = useState(false);
+  const [editingMeta, setEditingMeta] = useState(null);
+
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteType, setDeleteType] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
@@ -66,17 +74,20 @@ const BrandList = () => {
   const { data: brandsData, refetch: refetchBrands } = useGetAllBrandsQuery();
   const { data: categoriesData, refetch: refetchCategories } =
     useGetBrandParentCategoriesQuery();
+  const { data: metaData, refetch: refetchMeta } = useGetAllProductMetaQuery();
 
   const allBrands = brandsData?.brands || brandsData || [];
   const brandParentCategories = categoriesData || [];
+  const allMetaFields = metaData || [];
 
   // Mutations
   const [deleteBrand, { isLoading: isDeletingBrand }] =
     useDeleteBrandMutation();
   const [deleteBrandParentCategory, { isLoading: isDeletingCategory }] =
     useDeleteBrandParentCategoryMutation();
+  const [deleteProductMeta, { isLoading: isDeletingMeta }] =
+    useDeleteProductMetaMutation();
 
-  // Helpers
   const safeJoin = (items) =>
     Array.isArray(items)
       ? items.map((i) => i?.name || i?.brandName || i).join(", ")
@@ -123,13 +134,26 @@ const BrandList = () => {
     );
   }, [brandParentCategories, searchTerm]);
 
-  // Sync activeMainTab with URL
-  const activeMainTab = currentTab === "categories" ? "categories" : "brands";
+  const filteredMeta = useMemo(() => {
+    if (!searchTerm.trim()) return allMetaFields;
+    const term = searchTerm.toLowerCase();
+    return allMetaFields.filter((meta) =>
+      [meta.title, meta.slug, meta.fieldType, meta.unit]
+        .filter(Boolean)
+        .some((field) => field.toString().toLowerCase().includes(term)),
+    );
+  }, [allMetaFields, searchTerm]);
 
-  // Handle Tab Change (update URL)
+  const activeMainTab =
+    currentTab === "categories"
+      ? "categories"
+      : currentTab === "meta"
+        ? "meta"
+        : "brands";
+
+  // Handle Tab Change
   const handleTabChange = (key) => {
     setSearchParams({ tab: key });
-    // Reset search when switching main tabs
     if (key !== activeMainTab) {
       setSearchTerm("");
     }
@@ -144,6 +168,11 @@ const BrandList = () => {
   const openCategoryModal = (category = null) => {
     setEditingCategory(category);
     setCategoryModalVisible(true);
+  };
+
+  const openMetaModal = (meta = null) => {
+    setEditingMeta(meta);
+    setMetaModalVisible(true);
   };
 
   const openDeleteModal = (type, id) => {
@@ -162,6 +191,10 @@ const BrandList = () => {
         await deleteBrandParentCategory(deleteId).unwrap();
         message.success("Brand Category deleted successfully");
         refetchCategories();
+      } else if (deleteType === "meta") {
+        await deleteProductMeta(deleteId).unwrap();
+        message.success("Meta field deleted successfully");
+        refetchMeta();
       }
     } catch (err) {
       message.error(`Failed to delete ${deleteType}`);
@@ -174,32 +207,34 @@ const BrandList = () => {
 
   const handleModalSuccess = () => {
     if (activeMainTab === "brands") refetchBrands();
-    else refetchCategories();
+    else if (activeMainTab === "categories") refetchCategories();
+    else refetchMeta();
   };
 
-  // Navigation
   const handleViewBrand = (brand) => navigate(`/store/${brand.id}`);
   const handleEditBrand = (brand) => openBrandModal(brand);
   const handleViewCategory = (category) =>
     navigate(`/category-selector/${category.id}`);
   const handleEditCategory = (category) => openCategoryModal(category);
-  const handleViewBulkImport = (brand) => navigate(`/bulk-import/`);
+
   return (
     <div className="page-wrapper">
       <div className="content">
         <div className="card">
           <PageHeader
-            title="Brands Management"
-            subtitle="Manage Brands and Brand Categories"
+            title="Brands & Meta Management"
+            subtitle="Manage Brands, Categories and Product Meta Fields"
             onAdd={() =>
               activeMainTab === "brands"
                 ? openBrandModal()
-                : openCategoryModal()
+                : activeMainTab === "categories"
+                  ? openCategoryModal()
+                  : openMetaModal()
             }
           />
 
           <div className="card-body">
-            {/* Main Tabs with URL Sync */}
+            {/* Main Tabs */}
             <Tabs
               activeKey={activeMainTab}
               onChange={handleTabChange}
@@ -207,9 +242,10 @@ const BrandList = () => {
             >
               <TabPane tab="Brands" key="brands" />
               <TabPane tab="Brand Categories" key="categories" />
+              <TabPane tab="Meta Fields" key="meta" />
             </Tabs>
 
-            {/* Search & Category Filter */}
+            {/* Search & Filter */}
             <div className="row mb-4 align-items-center">
               <div className="col-lg-6">
                 {activeMainTab === "brands" && (
@@ -236,12 +272,14 @@ const BrandList = () => {
               </div>
 
               <div className="col-lg-6 text-lg-end">
-                <div style={{ maxWidth: "320px", marginLeft: "auto" }}>
+                <div style={{ maxWidth: "340px", marginLeft: "auto" }}>
                   <Search
                     placeholder={
                       activeMainTab === "brands"
                         ? "Search by brand name or slug..."
-                        : "Search categories..."
+                        : activeMainTab === "categories"
+                          ? "Search categories..."
+                          : "Search meta fields by title, slug or type..."
                     }
                     allowClear
                     value={searchTerm}
@@ -310,7 +348,7 @@ const BrandList = () => {
                                   <EyeOutlined /> View
                                 </Menu.Item>
                                 <Menu.Item
-                                  onClick={() => handleViewBulkImport(brand)}
+                                  onClick={() => navigate(`/bulk-import/`)}
                                 >
                                   <EyeOutlined /> Bulk Import
                                 </Menu.Item>
@@ -385,7 +423,7 @@ const BrandList = () => {
                                     openDeleteModal("category", category.id)
                                   }
                                 >
-                                  <DeleteOutlined /> Delete Category
+                                  <DeleteOutlined /> Delete
                                 </Menu.Item>
                               </Menu>
                             }
@@ -404,7 +442,76 @@ const BrandList = () => {
               </div>
             )}
 
-            {/* Pagination */}
+            {/* Meta Fields Table */}
+            {activeMainTab === "meta" && (
+              <div className="table-responsive">
+                <table className="table table-hover align-middle">
+                  <thead className="table-light">
+                    <tr>
+                      <th>Title</th>
+                      <th>Slug</th>
+                      <th>Field Type</th>
+                      <th>Unit</th>
+                      <th style={{ width: 140 }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredMeta.map((meta) => (
+                      <tr key={meta.id}>
+                        <td>
+                          <strong>{meta.title}</strong>
+                        </td>
+                        <td className="text-muted">{meta.slug || "—"}</td>
+                        <td>
+                          <span className="badge bg-info">
+                            {meta.fieldType}
+                          </span>
+                        </td>
+                        <td>{meta.unit || "—"}</td>
+                        <td>
+                          <Tooltip title="Edit">
+                            <EditOutlined
+                              className="me-3 text-primary"
+                              style={{ cursor: "pointer", fontSize: 18 }}
+                              onClick={() => openMetaModal(meta)}
+                            />
+                          </Tooltip>
+
+                          <Dropdown
+                            overlay={
+                              <Menu>
+                                <Menu.Item
+                                  danger
+                                  onClick={() =>
+                                    openDeleteModal("meta", meta.id)
+                                  }
+                                >
+                                  <DeleteOutlined /> Delete
+                                </Menu.Item>
+                              </Menu>
+                            }
+                            trigger={["click"]}
+                          >
+                            <Button
+                              type="text"
+                              icon={<MoreOutlined style={{ fontSize: 18 }} />}
+                            />
+                          </Dropdown>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                {filteredMeta.length === 0 && (
+                  <p className="text-center text-muted py-5">
+                    No meta fields found.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Pagination - Only for Brands */}
             {activeMainTab === "brands" && allBrands.length > itemsPerPage && (
               <div className="d-flex justify-content-end mt-4">
                 <Pagination
@@ -440,6 +547,16 @@ const BrandList = () => {
           onSuccess={handleModalSuccess}
         />
 
+        <ProductMetaFormModal
+          visible={metaModalVisible}
+          onCancel={() => {
+            setMetaModalVisible(false);
+            setEditingMeta(null);
+          }}
+          editingMeta={editingMeta}
+          onSuccess={handleModalSuccess}
+        />
+
         <DeleteModal
           isVisible={showDeleteModal}
           onCancel={() => {
@@ -448,9 +565,19 @@ const BrandList = () => {
             setDeleteType(null);
           }}
           onConfirm={handleConfirmDelete}
-          itemType={deleteType === "brand" ? "Brand" : "Brand Category"}
+          itemType={
+            deleteType === "brand"
+              ? "Brand"
+              : deleteType === "category"
+                ? "Brand Category"
+                : "Meta Field"
+          }
           isLoading={
-            deleteType === "brand" ? isDeletingBrand : isDeletingCategory
+            deleteType === "brand"
+              ? isDeletingBrand
+              : deleteType === "category"
+                ? isDeletingCategory
+                : isDeletingMeta
           }
         />
       </div>
