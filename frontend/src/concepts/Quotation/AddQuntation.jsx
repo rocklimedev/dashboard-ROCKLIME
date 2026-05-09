@@ -828,7 +828,8 @@ const AddQuotation = () => {
               <Space>
                 <Select
                   showSearch
-                  style={{ width: 380 }}
+                  style={{ width: 720 }} // increased width
+                  size="large" // optional: increases height too
                   placeholder="Search and add main product"
                   onSearch={debouncedSearch}
                   onChange={addProduct}
