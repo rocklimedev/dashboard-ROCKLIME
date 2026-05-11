@@ -32,7 +32,7 @@ import { format } from "date-fns";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { v4 as uuidv4 } from "uuid";
-
+import AddCustomerModal from "../../components/Customers/AddCustomerModal";
 import PageHeader from "../../components/Common/PageHeader";
 import {
   useCreateQuotationMutation,
@@ -60,7 +60,8 @@ const AddQuotation = () => {
   const { id } = useParams();
   const isEditMode = Boolean(id);
   const navigate = useNavigate();
-
+  // After other modal states
+  const [showCustomerModal, setShowCustomerModal] = useState(false);
   // ── API Hooks ─────────────────────────────────────────────────────
   const { data: existingQuotation, isLoading: loadingQuotation } =
     useGetQuotationByIdQuery(id, { skip: !isEditMode });
@@ -618,29 +619,38 @@ const AddQuotation = () => {
             <Row gutter={16}>
               <Col xs={24} md={12}>
                 <Form.Item label="Customer *" required>
-                  <Select
-                    showSearch
-                    value={formData.customerId}
-                    onChange={(v) =>
-                      setFormData({
-                        ...formData,
-                        customerId: v,
-                        shipTo: null, // ← Clear shipTo when customer changes
-                      })
-                    }
-                    placeholder="Select customer"
-                    filterOption={(input, option) =>
-                      option.children
-                        .toLowerCase()
-                        .includes(input.toLowerCase())
-                    }
-                  >
-                    {(customersData?.data || []).map((c) => (
-                      <Option key={c.customerId} value={c.customerId}>
-                        {c.name}
-                      </Option>
-                    ))}
-                  </Select>
+                  <Space.Compact style={{ width: "100%" }}>
+                    <Select
+                      showSearch
+                      value={formData.customerId}
+                      onChange={(v) =>
+                        setFormData({
+                          ...formData,
+                          customerId: v,
+                          shipTo: null, // Clear shipTo when customer changes
+                        })
+                      }
+                      placeholder="Select customer"
+                      filterOption={(input, option) =>
+                        option.children
+                          .toLowerCase()
+                          .includes(input.toLowerCase())
+                      }
+                      style={{ flex: 1 }}
+                    >
+                      {(customersData?.data || []).map((c) => (
+                        <Option key={c.customerId} value={c.customerId}>
+                          {c.name} {c.companyName ? `(${c.companyName})` : ""}
+                        </Option>
+                      ))}
+                    </Select>
+
+                    <Button
+                      type="primary"
+                      icon={<PlusOutlined />}
+                      onClick={() => setShowCustomerModal(true)}
+                    />
+                  </Space.Compact>
                 </Form.Item>
               </Col>
 
@@ -1132,7 +1142,13 @@ const AddQuotation = () => {
               </div>
             </Space>
           </Modal>
-
+          {/* Add Customer Modal */}
+          <AddCustomerModal
+            visible={showCustomerModal}
+            onClose={() => setShowCustomerModal(false)}
+            // Optional: if you want to pass customer for editing later
+            // customer={null}
+          />
           {/* Add Address Modal */}
           {showAddressModal && (
             <AddAddress

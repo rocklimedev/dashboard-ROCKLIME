@@ -471,76 +471,196 @@ const NewQuotationsDetails = () => {
   };
 
   // ── NEW: Detailed Tabular Floor & Room Wise (Full Products) ─────────────
+
   const renderDetailedTabularFloorRoom = () => {
     const floorRoomGroups = groupProductsByFloorAndRoom(enrichedProducts);
+
     const floorMap = new Map();
 
     floorRoomGroups.forEach((group) => {
-      if (!floorMap.has(group.floorName)) floorMap.set(group.floorName, []);
+      if (!floorMap.has(group.floorName)) {
+        floorMap.set(group.floorName, []);
+      }
+
       floorMap.get(group.floorName).push(group);
     });
 
     const pages = [];
     let globalSno = 0;
 
-    floorMap.forEach((roomsInFloor, floorName) => {
-      pages.push(
-        <div
-          key={`floor-page-${floorName}`}
-          className={`${styles.productPage} page`}
-          style={{ pageBreakBefore: "always" }}
-        >
-          <div className={styles.pageTopHeader}>
-            <div>
-              <div className={styles.clientName}>{customerName}</div>
-              <div className={styles.clientAddress}>{customerAddress}</div>
-            </div>
-            <div className={styles.pageDate}>
-              {new Date(
-                quotation.quotation_date || Date.now(),
-              ).toLocaleDateString("en-IN", {
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
-              })}
-            </div>
-          </div>
+    // =========================================================
+    // SAFE VISUAL LIMIT
+    // (accounts for images + optional rows + headings)
+    // =========================================================
+    const MAX_VISUAL_ROWS = 9;
 
-          <h2
+    // Estimate row count including options
+    const getVisualRowCount = (items) => {
+      return items.reduce((sum, item) => {
+        return sum + 1 + (item.options?.length || 0);
+      }, 0);
+    };
+
+    floorMap.forEach((roomsInFloor, floorName) => {
+      let roomIndex = 0;
+
+      while (roomIndex < roomsInFloor.length) {
+        const currentPageRooms = [];
+
+        let visualRowsUsed = 0;
+
+        while (roomIndex < roomsInFloor.length) {
+          const roomGroup = roomsInFloor[roomIndex];
+
+          const roomMainItems = groupedProductsWithOptions.filter((main) =>
+            roomGroup.products.some((p) => p.productId === main.productId),
+          );
+
+          const roomVisualRows = getVisualRowCount(roomMainItems);
+
+          // =====================================================
+          // IF ROOM DOESN'T FIT → NEXT PAGE
+          // =====================================================
+          if (
+            visualRowsUsed > 0 &&
+            visualRowsUsed + roomVisualRows > MAX_VISUAL_ROWS
+          ) {
+            break;
+          }
+
+          // =====================================================
+          // HUGE ROOM → SPLIT SAFELY
+          // =====================================================
+          if (roomVisualRows > MAX_VISUAL_ROWS) {
+            const splitItems = [];
+
+            let tempRows = visualRowsUsed;
+
+            for (const item of roomMainItems) {
+              const itemRows = 1 + (item.options?.length || 0);
+
+              if (
+                tempRows + itemRows > MAX_VISUAL_ROWS &&
+                splitItems.length > 0
+              ) {
+                break;
+              }
+
+              splitItems.push(item);
+
+              tempRows += itemRows;
+            }
+
+            currentPageRooms.push({
+              roomGroup,
+              roomMainItems: splitItems,
+            });
+
+            // Remaining items stay for next page
+            const remainingIds = splitItems.map((x) => x.productId);
+
+            roomsInFloor[roomIndex] = {
+              ...roomGroup,
+              products: roomGroup.products.filter(
+                (p) => !remainingIds.includes(p.productId),
+              ),
+            };
+
+            visualRowsUsed = tempRows;
+
+            break;
+          }
+
+          // =====================================================
+          // NORMAL ROOM
+          // =====================================================
+          currentPageRooms.push({
+            roomGroup,
+            roomMainItems,
+          });
+
+          visualRowsUsed += roomVisualRows;
+
+          roomIndex++;
+        }
+
+        if (currentPageRooms.length === 0) {
+          break;
+        }
+
+        // =========================================================
+        // PAGE
+        // =========================================================
+        pages.push(
+          <div
+            key={`floor-page-${floorName}-${pages.length}`}
+            className={`${styles.productPage} page`}
             style={{
-              color: "#d32f2f",
-              textAlign: "center",
-              margin: "40px 0 30px",
+              pageBreakBefore: pages.length === 0 ? "auto" : "always",
             }}
           >
-            {floorName.toUpperCase()}
-          </h2>
+            {/* HEADER */}
+            <div className={styles.pageTopHeader}>
+              <div>
+                <div className={styles.clientName}>{customerName}</div>
 
-          {roomsInFloor.map((roomGroup) => {
-            const roomMainItems = groupedProductsWithOptions.filter((main) =>
-              roomGroup.products.some((p) => p.productId === main.productId),
-            );
+                <div className={styles.clientAddress}>{customerAddress}</div>
 
-            if (roomMainItems.length === 0) return null;
+                <div className={styles.clientAddress}>
+                  {floorName.toUpperCase()}
+                  {pages.length > 1 && " (Continued)"}
+                </div>
+              </div>
 
-            return (
-              <div key={roomGroup.roomName} style={{ marginBottom: 50 }}>
-                <h3
+              <div className={styles.pageDate}>
+                {new Date(
+                  quotation.quotation_date || Date.now(),
+                ).toLocaleDateString("en-IN", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                })}
+              </div>
+            </div>
+
+            {/* ROOMS */}
+            {currentPageRooms.map(({ roomGroup, roomMainItems }, idx) => {
+              if (roomMainItems.length === 0) {
+                return null;
+              }
+
+              return (
+                <div
+                  key={roomGroup.roomName + idx}
                   style={{
-                    color: "#222",
-                    margin: "25px 0 15px",
-                    borderBottom: "2px solid #d32f2f",
-                    paddingBottom: 8,
+                    marginBottom: 40,
+                    breakInside: "avoid",
+                    pageBreakInside: "avoid",
                   }}
                 >
-                  {roomGroup.roomName}
-                </h3>
-                {renderProductTable(roomMainItems, "", globalSno, () => true)}
-              </div>
-            );
-          })}
-        </div>,
-      );
+                  <h3
+                    style={{
+                      color: "#222",
+                      margin: "25px 0 15px",
+                      borderBottom: "2px solid #d32f2f",
+                      paddingBottom: 8,
+                    }}
+                  >
+                    {roomGroup.roomName}
+                  </h3>
+
+                  {renderProductTable(roomMainItems, "", globalSno, () => true)}
+                </div>
+              );
+            })}
+          </div>,
+        );
+
+        globalSno += currentPageRooms.reduce(
+          (sum, { roomMainItems }) => sum + roomMainItems.length,
+          0,
+        );
+      }
     });
 
     return pages;
