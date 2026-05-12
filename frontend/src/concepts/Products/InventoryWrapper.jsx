@@ -710,6 +710,13 @@ const InventoryWrapper = () => {
                 disabled={isFetchingAll}
               >
                 Monthly Report
+              </Button>{" "}
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={() => navigate("/inventory/import?tab=inventory")}
+              >
+                Update Inventory
               </Button>
               <Button
                 type="primary"

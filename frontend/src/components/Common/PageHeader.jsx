@@ -2,35 +2,33 @@ import React from "react";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
 import * as XLSX from "xlsx";
-import {
-  FilePdfFilled,
-  FileExcelFilled,
-  AppstoreOutlined,
-  UnorderedListOutlined,
-} from "@ant-design/icons";
-import { Switch, Tooltip } from "antd";
-
+import { FilePdfFilled, FileExcelFilled } from "@ant-design/icons";
+import { Tooltip, Switch } from "antd";
+import { AppstoreOutlined, UnorderedListOutlined } from "@ant-design/icons";
 const PageHeader = ({
   title,
   subtitle,
   onAdd,
   tableData = [],
-  extra, // ← This will now accept any JSX (buttons, etc.)
   exportOptions = { pdf: true, excel: true },
+  extra, // ← Accepts any JSX (buttons, toggles, etc.)
+  viewToggle, // ← Optional: For card/list toggle
 }) => {
   const handleDownloadPDF = () => {
     if (tableData.length === 0) {
       alert("No data available to export");
       return;
     }
-    // ... your PDF logic
+
     const doc = new jsPDF();
     doc.setFontSize(16);
     doc.text(`${title} Report`, 14, 20);
+
     const headers = Object.keys(tableData[0] || {});
     const rows = tableData.map((row) =>
       headers.map((h) => String(row[h] ?? "—")),
     );
+
     doc.autoTable({
       head: [headers],
       body: rows,
@@ -38,7 +36,8 @@ const PageHeader = ({
       styles: { fontSize: 8 },
       headStyles: { fillColor: [60, 141, 188] },
     });
-    doc.save(`${title}.pdf`);
+
+    doc.save(`${title.toLowerCase().replace(/\s+/g, "_")}.pdf`);
   };
 
   const handleDownloadExcel = () => {
@@ -49,76 +48,82 @@ const PageHeader = ({
     const worksheet = XLSX.utils.json_to_sheet(tableData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
-    XLSX.writeFile(workbook, `${title}.xlsx`);
+    XLSX.writeFile(
+      workbook,
+      `${title.toLowerCase().replace(/\s+/g, "_")}.xlsx`,
+    );
   };
 
-  // Extract view toggle if provided
-  const viewToggle =
-    extra && typeof extra === "object" && "viewMode" in extra
-      ? {
-          viewMode: extra.viewMode,
-          onViewToggle: extra.onViewToggle,
-          showViewToggle: extra.showViewToggle,
-        }
-      : null;
-
   return (
-    <div className="page-header">
-      <div className="add-item d-flex">
+    <div className="page-header d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+      {/* Left Side - Title & Subtitle */}
+      <div className="add-item">
         <div className="page-title">
-          <h4 className="fw-bold">{title}</h4>
-          {subtitle && <h6>{subtitle}</h6>}
+          <h4 className="fw-bold mb-1">{title}</h4>
+          {subtitle && <h6 className="text-muted mb-0">{subtitle}</h6>}
         </div>
       </div>
 
-      {/* Export Buttons */}
-      <ul className="table-top-head d-flex align-items-center">
-        {exportOptions.pdf && (
-          <li title="Download PDF" onClick={handleDownloadPDF}>
-            <a href="#" onClick={(e) => e.preventDefault()}>
-              <FilePdfFilled style={{ fontSize: 22, color: "#e74c3c" }} />
-            </a>
-          </li>
-        )}
-        {exportOptions.excel && (
-          <li title="Download Excel" onClick={handleDownloadExcel}>
-            <a href="#" onClick={(e) => e.preventDefault()}>
-              <FileExcelFilled style={{ fontSize: 22, color: "#27ae60" }} />
-            </a>
-          </li>
-        )}
-        {viewToggle?.showViewToggle && (
-          <li>
-            <Tooltip
-              title={viewToggle.viewMode === "card" ? "List View" : "Card View"}
-            >
-              <Switch
-                checkedChildren={<AppstoreOutlined />}
-                unCheckedChildren={<UnorderedListOutlined />}
-                checked={viewToggle.viewMode === "card"}
-                onChange={viewToggle.onViewToggle}
-                style={{
-                  backgroundColor:
-                    viewToggle.viewMode === "card" ? "#333333" : undefined,
-                }}
-              />
-            </Tooltip>
-          </li>
-        )}
-      </ul>
+      {/* Right Side - Actions */}
+      <div className="d-flex align-items-center gap-3">
+        {/* Export Buttons */}
+        <ul className="table-top-head d-flex align-items-center gap-2 mb-0">
+          {exportOptions.pdf && (
+            <li>
+              <Tooltip title="Download PDF">
+                <a
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleDownloadPDF();
+                  }}
+                  style={{ fontSize: 24, color: "#e74c3c", cursor: "pointer" }}
+                >
+                  <FilePdfFilled />
+                </a>
+              </Tooltip>
+            </li>
+          )}
 
-      {/* Custom Extra Buttons (This is what was missing!) */}
-      <div className="page-btn">
-        {/* First: Render custom extra (your buttons) */}
-        {extra && typeof extra !== "object" && extra} {/* If extra is JSX */}
-        {extra &&
-          typeof extra === "object" &&
-          !("viewMode" in extra) &&
-          extra.children}
-        {/* Then: Default "Add" button */}
+          {exportOptions.excel && (
+            <li>
+              <Tooltip title="Download Excel">
+                <a
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleDownloadExcel();
+                  }}
+                  style={{ fontSize: 24, color: "#27ae60", cursor: "pointer" }}
+                >
+                  <FileExcelFilled />
+                </a>
+              </Tooltip>
+            </li>
+          )}
+        </ul>
+
+        {/* View Toggle (Card/List) - Optional */}
+        {viewToggle && (
+          <Tooltip
+            title={viewToggle.viewMode === "card" ? "List View" : "Card View"}
+          >
+            <Switch
+              checkedChildren={<AppstoreOutlined />}
+              unCheckedChildren={<UnorderedListOutlined />}
+              checked={viewToggle.viewMode === "card"}
+              onChange={viewToggle.onChange}
+            />
+          </Tooltip>
+        )}
+
+        {/* Custom Extra Content (Book Mode Toggle, Filters, etc.) */}
+        {extra && <div className="d-flex align-items-center">{extra}</div>}
+
+        {/* Add Button */}
         {onAdd && (
-          <button onClick={onAdd} className="btn btn-primary ms-2">
-            Add {title}
+          <button onClick={onAdd} className="btn btn-primary">
+            + Add {title}
           </button>
         )}
       </div>

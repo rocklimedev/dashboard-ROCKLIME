@@ -5,17 +5,17 @@ import {
   useDeleteQuotationMutation,
 } from "../../api/quotationApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
-import { useGetAllUsersQuery } from "../../api/userApi";
 import {
   SearchOutlined,
   EyeOutlined,
   DeleteFilled,
   FileAddOutlined,
-  WhatsAppOutlined,
   MoreOutlined,
   CalendarOutlined,
   EditOutlined,
   HomeOutlined,
+  BookOutlined,
+  UnorderedListOutlined,
 } from "@ant-design/icons";
 import QuotationProductModal from "../../components/Quotation/QuotationProductModal";
 import DeleteModal from "../../components/Common/DeleteModal";
@@ -30,22 +30,29 @@ import {
   Menu,
   DatePicker,
   Table,
+  Collapse,
+  Card,
+  Statistic,
 } from "antd";
 import PageHeader from "../../components/Common/PageHeader";
 import moment from "moment";
-import { FilePdfOutlined, FileExcelOutlined } from "@ant-design/icons";
-import { QuotationPagesRenderer } from "../../components/Quotation/QuotationPagesRenderer";
+import { FilePdfOutlined } from "@ant-design/icons";
 import { useQuotationQuickExport } from "../../components/Quotation/hooks/useQuotationQuickExport";
 import { useRef } from "react";
 import { amountInWords } from "../../components/Quotation/hooks/calcHelpers";
 import { Tooltip } from "antd";
 import PermissionGate from "../../context/PermissionGate";
+
 const { RangePicker } = DatePicker;
 const { Option } = Select;
+const { Panel } = Collapse;
+
 const QuotationList = () => {
   const navigate = useNavigate();
 
-  // State
+  // ==================== STATE ====================
+  const [viewMode, setViewMode] = useState("list"); // "list" | "book"
+
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [searchTerm, setSearchTerm] = useState("");
@@ -54,9 +61,7 @@ const QuotationList = () => {
   const [statusFilter, setStatusFilter] = useState("");
   const [dateRange, setDateRange] = useState([null, null]);
 
-  const hiddenRef = useRef < HTMLDivElement > null;
-  const [exportingRowId, setExportingRowId] = useState(null);
-  const [exportFormat, setExportFormat] = useState(null);
+  const hiddenRef = useRef(null);
   const { exportingId, hiddenContainerRef, exportQuotation } =
     useQuotationQuickExport();
 
@@ -67,25 +72,8 @@ const QuotationList = () => {
   const [selectedQuotationId, setSelectedQuotationId] = useState(null);
   const [quotationToDelete, setQuotationToDelete] = useState(null);
   const [selectedForDates, setSelectedForDates] = useState(null);
-  const handleExportRow = async (quotation, fmt) => {
-    setExportingRowId(quotation.quotationId);
-    setExportFormat(fmt);
 
-    // Here you would:
-    // 1. Fetch customer & address if not already available
-    // 2. Use the same renderPages logic (hidden div)
-    // 3. Call exportToPDF / exportToExcel
-    // 4. Clean up
-
-    // For simplicity you can create a temporary hidden container per export
-    // or reuse one global ref (but be careful with concurrent exports)
-
-    setTimeout(() => {
-      setExportingRowId(null);
-      setExportFormat(null);
-    }, 4500); // safety timeout
-  };
-  // Debounce search
+  // ==================== DEBOUNCE SEARCH ====================
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchTerm);
@@ -94,7 +82,7 @@ const QuotationList = () => {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Format date range for API (YYYY-MM-DD)
+  // ==================== DATE RANGE ====================
   const formattedDateRange = useMemo(() => {
     if (!dateRange[0] || !dateRange[1]) return undefined;
     return [
@@ -103,7 +91,7 @@ const QuotationList = () => {
     ];
   }, [dateRange]);
 
-  // Fetch quotations with server-side pagination
+  // ==================== API QUERY ====================
   const {
     data: response,
     isLoading,
@@ -111,34 +99,50 @@ const QuotationList = () => {
     isError,
     error,
   } = useGetAllQuotationsQuery({
-    page: currentPage,
-    limit: pageSize,
+    page: viewMode === "book" ? 1 : currentPage, // Fetch all in one go for Book mode
+    limit: viewMode === "book" ? 1000 : pageSize, // Large limit for grouping
     search: debouncedSearch.trim() === "" ? undefined : debouncedSearch.trim(),
     customerId: customerFilter === "" ? undefined : customerFilter,
     status: statusFilter === "" ? undefined : statusFilter,
-    dateRange:
-      formattedDateRange && formattedDateRange[0] && formattedDateRange[1]
-        ? formattedDateRange
-        : undefined,
-
-    // ──────────────── Add sorting ────────────────
-    sortBy: "createdAt", // or "quotation_date" depending on your backend
-    order: "desc", // desc = newest first
+    dateRange: formattedDateRange,
+    sortBy: "quotation_date",
+    order: "desc",
   });
 
   const quotations = Array.isArray(response?.data) ? response?.data : [];
-  const sortedQuotations = useMemo(() => {
-    if (!quotations?.length) return [];
 
-    return [...quotations].sort((a, b) => {
-      // createdAt is ISO string → can be compared directly or parsed
-      return new Date(b.createdAt) - new Date(a.createdAt);
-      // Alternative if you want to fall back to quotation_date:
-      // const dateA = new Date(a.createdAt || a.quotation_date || 0);
-      // const dateB = new Date(b.createdAt || b.quotation_date || 0);
-      // return dateB - dateA;
+  // ==================== GROUP BY MONTH (Book Mode) ====================
+  const monthlyGroups = useMemo(() => {
+    if (viewMode !== "book") return [];
+
+    const groups = {};
+
+    quotations.forEach((q) => {
+      const date = q.quotation_date || q.createdAt;
+      if (!date) return;
+
+      const monthKey = moment(date).format("YYYY-MM"); // e.g., "2026-05"
+      const monthLabel = moment(date).format("MMMM YYYY");
+
+      if (!groups[monthKey]) {
+        groups[monthKey] = {
+          key: monthKey,
+          label: monthLabel,
+          quotations: [],
+          totalAmount: 0,
+          count: 0,
+        };
+      }
+
+      groups[monthKey].quotations.push(q);
+      groups[monthKey].totalAmount += Number(q.finalAmount || 0);
+      groups[monthKey].count += 1;
     });
-  }, [quotations]);
+
+    // Sort months descending
+    return Object.values(groups).sort((a, b) => b.key.localeCompare(a.key));
+  }, [quotations, viewMode]);
+
   const pagination = response?.pagination || {
     total: 0,
     page: 1,
@@ -146,14 +150,13 @@ const QuotationList = () => {
     totalPages: 0,
   };
 
-  // Supporting data
-  const { data: customersData } = useGetCustomersQuery({ limit: 1000 }); // fetch all for filter
+  const { data: customersData } = useGetCustomersQuery({ limit: 1000 });
   const customers = customersData?.data || [];
 
   const [deleteQuotation, { isLoading: isDeleting }] =
     useDeleteQuotationMutation();
 
-  // Helper
+  // ==================== HELPERS ====================
   const getProductCount = (items) => {
     if (!items) return 0;
     if (Array.isArray(items)) return items.length;
@@ -164,7 +167,7 @@ const QuotationList = () => {
     }
   };
 
-  // Handlers
+  // ==================== HANDLERS (same as before) ====================
   const handleOpenProductModal = (id) => {
     setSelectedQuotationId(id);
     setShowProductModal(true);
@@ -185,9 +188,6 @@ const QuotationList = () => {
     try {
       await deleteQuotation(quotationToDelete.quotationId).unwrap();
       message.success("Quotation deleted successfully");
-      if (quotations.length === 1 && currentPage > 1) {
-        setCurrentPage(currentPage - 1);
-      }
     } catch (e) {
       message.error(e?.data?.message || "Delete failed");
     } finally {
@@ -196,6 +196,13 @@ const QuotationList = () => {
     }
   };
 
+  const clearFilters = () => {
+    setSearchTerm("");
+    setCustomerFilter("");
+    setStatusFilter("");
+    setDateRange([null, null]);
+    setCurrentPage(1);
+  };
   const handleGenerateSiteMap = (q) => {
     const rawItems = q.items || [];
     if (rawItems.length === 0) {
@@ -224,7 +231,6 @@ const QuotationList = () => {
       },
     });
   };
-
   const handleConvertToOrder = (q) => {
     const rawItems = q.items || [];
     if (rawItems.length === 0) {
@@ -283,15 +289,7 @@ const QuotationList = () => {
     }
   };
 
-  const clearFilters = () => {
-    setSearchTerm("");
-    setCustomerFilter("");
-    setStatusFilter("");
-    setDateRange([null, null]);
-    setCurrentPage(1);
-  };
-
-  // Table columns
+  // ==================== COLUMNS (same as before) ====================
   const columns = [
     {
       title: "S.No.",
@@ -497,10 +495,29 @@ const QuotationList = () => {
         <div className="card">
           <PageHeader
             title="Quotations"
-            subtitle="Manage your quotations"
+            subtitle={
+              viewMode === "book"
+                ? "Book View - Monthly"
+                : "Manage your quotations"
+            }
             onAdd={() => navigate("/quotation/add")}
-            tableData={tableDataForExport}
-            exportOptions={{ pdf: true, excel: true }}
+            extra={
+              <Button
+                icon={
+                  viewMode === "list" ? (
+                    <BookOutlined />
+                  ) : (
+                    <UnorderedListOutlined />
+                  )
+                }
+                onClick={() =>
+                  setViewMode(viewMode === "list" ? "book" : "list")
+                }
+                type={viewMode === "book" ? "primary" : "default"}
+              >
+                {viewMode === "book" ? "List Mode" : "Book Mode"}
+              </Button>
+            }
           />
 
           <div className="card-body">
@@ -521,10 +538,7 @@ const QuotationList = () => {
                   <Select
                     placeholder="Customer"
                     value={customerFilter || undefined}
-                    onChange={(val) => {
-                      setCustomerFilter(val || "");
-                      setCurrentPage(1);
-                    }}
+                    onChange={(val) => setCustomerFilter(val || "")}
                     allowClear
                     style={{ width: 200 }}
                     size="large"
@@ -538,10 +552,7 @@ const QuotationList = () => {
 
                   <RangePicker
                     value={dateRange}
-                    onChange={(dates) => {
-                      setDateRange(dates || [null, null]);
-                      setCurrentPage(1);
-                    }}
+                    onChange={(dates) => setDateRange(dates || [null, null])}
                     size="large"
                   />
                 </div>
@@ -554,60 +565,115 @@ const QuotationList = () => {
               </div>
             </div>
 
-            {/* Loading */}
-            {isFetching && !isLoading && (
-              <div className="text-center my-3 text-muted">Updating...</div>
-            )}
-
-            {/* Table */}
-            {isLoading ? (
-              <div className="text-center py-5">
-                <div className="spinner-border text-primary" role="status" />
-              </div>
-            ) : isError ? (
-              <div className="alert alert-danger">
-                Error: {error?.data?.message || "Failed to load quotations"}
-              </div>
-            ) : quotations.length === 0 ? (
-              <div className="text-center py-5 text-muted">
-                No quotations found
-              </div>
-            ) : (
-              <>
-                <div className="table-responsive">
-                  <Table
-                    columns={columns}
-                    dataSource={sortedQuotations} // ← changed here
-                    rowKey="quotationId"
-                    pagination={false}
-                    scroll={{ x: "max-content" }}
-                  />
+            {/* BOOK MODE */}
+            {viewMode === "book" ? (
+              isLoading ? (
+                <div className="text-center py-5">Loading book view...</div>
+              ) : monthlyGroups.length === 0 ? (
+                <div className="text-center py-5 text-muted">
+                  No quotations found
                 </div>
-
-                {/* Pagination */}
-                {pagination.total > 0 && (
-                  <div className="mt-4 d-flex justify-content-between align-items-center">
-                    <div className="text-muted small">
-                      Showing {(currentPage - 1) * pageSize + 1}–
-                      {Math.min(currentPage * pageSize, pagination.total)} of{" "}
-                      {pagination.total} quotations
-                    </div>
-                    <Pagination
-                      current={currentPage}
-                      pageSize={pageSize}
-                      total={pagination.total}
-                      onChange={handlePageChange}
-                      showSizeChanger
-                      pageSizeOptions={["10", "20", "50", "100"]}
-                      disabled={isFetching}
+              ) : (
+                <Collapse accordion defaultActiveKey={monthlyGroups[0]?.key}>
+                  {monthlyGroups.map((month) => (
+                    <Panel
+                      header={
+                        <div className="d-flex justify-content-between align-items-center w-100">
+                          <span>
+                            <strong>{month.label}</strong>
+                          </span>
+                          <div className="d-flex gap-4">
+                            <Statistic
+                              title="Quotations"
+                              value={month.count}
+                              valueStyle={{ fontSize: "16px" }}
+                            />
+                            <Statistic
+                              title="Total Amount"
+                              value={month.totalAmount}
+                              precision={2}
+                              prefix="₹"
+                              valueStyle={{
+                                fontSize: "16px",
+                                color: "#3f8600",
+                              }}
+                            />
+                          </div>
+                        </div>
+                      }
+                      key={month.key}
+                    >
+                      <Table
+                        columns={columns}
+                        dataSource={month.quotations}
+                        rowKey="quotationId"
+                        pagination={false}
+                        scroll={{ x: "max-content" }}
+                        size="small"
+                      />
+                    </Panel>
+                  ))}
+                </Collapse>
+              )
+            ) : (
+              /* ==================== LIST MODE (Original) ==================== */
+              <>
+                {/* Your existing Table + Pagination code */}
+                {isLoading ? (
+                  <div className="text-center py-5">
+                    <div
+                      className="spinner-border text-primary"
+                      role="status"
                     />
                   </div>
+                ) : isError ? (
+                  <div className="alert alert-danger">
+                    Error: {error?.data?.message || "Failed to load quotations"}
+                  </div>
+                ) : quotations.length === 0 ? (
+                  <div className="text-center py-5 text-muted">
+                    No quotations found
+                  </div>
+                ) : (
+                  <>
+                    <div className="table-responsive">
+                      <Table
+                        columns={columns}
+                        dataSource={quotations}
+                        rowKey="quotationId"
+                        pagination={false}
+                        scroll={{ x: "max-content" }}
+                      />
+                    </div>
+
+                    {pagination.total > 0 && (
+                      <div className="mt-4 d-flex justify-content-between align-items-center">
+                        <div className="text-muted small">
+                          Showing {(currentPage - 1) * pageSize + 1}–
+                          {Math.min(currentPage * pageSize, pagination.total)}{" "}
+                          of {pagination.total} quotations
+                        </div>
+                        <Pagination
+                          current={currentPage}
+                          pageSize={pageSize}
+                          total={pagination.total}
+                          onChange={(page, size) => {
+                            setCurrentPage(page);
+                            if (size !== pageSize) setPageSize(size);
+                          }}
+                          showSizeChanger
+                          pageSizeOptions={["10", "20", "50", "100"]}
+                        />
+                      </div>
+                    )}
+                  </>
                 )}
               </>
             )}
           </div>
         </div>
 
+        {/* Hidden container for export */}
         <div
           ref={hiddenContainerRef}
           style={{
@@ -615,11 +681,10 @@ const QuotationList = () => {
             left: "-9999px",
             top: "-9999px",
             width: "210mm",
-            minHeight: "297mm",
             background: "white",
-            zIndex: -1000,
           }}
         />
+
         {/* Modals */}
         <QuotationProductModal
           show={showProductModal}

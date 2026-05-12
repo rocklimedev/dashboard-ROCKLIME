@@ -206,15 +206,14 @@ const BulkProductImport = () => {
     } else {
       // Inventory Import Fields
       return [
+        { value: "name", label: "Name *", required: true },
         { value: "product_code", label: "Product Code *", required: true },
         { value: "quantity", label: "Quantity *", required: true },
         { value: "warehouse", label: "Warehouse / Location" },
-        { value: "batch_number", label: "Batch Number" },
-        { value: "expiry_date", label: "Expiry Date (YYYY-MM-DD)" },
-        { value: "purchase_price", label: "Purchase Price (INR)" },
         { value: "selling_price", label: "Selling Price (INR)" },
-        { value: "mrp", label: "MRP (INR)" },
-        { value: "notes", label: "Notes / Remarks" },
+        { value: "brand", label: "Brand", required: true },
+        { value: "tally_code", label: "Tally Code" },
+        { value: "tally_stock", label: "Tally Stock" },
       ];
     }
   }, [activeTab]);
@@ -359,12 +358,10 @@ const BulkProductImport = () => {
           "product_code",
           "quantity",
           "warehouse",
-          "batch_number",
-          "expiry_date",
-          "purchase_price",
           "selling_price",
-          "mrp",
-          "notes",
+          "brand",
+          "tally_code",
+          "tally_stock",
         ],
       ];
     }

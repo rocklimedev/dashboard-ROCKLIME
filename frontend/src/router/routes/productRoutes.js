@@ -58,7 +58,7 @@ export const productRoutes = [
     isSidebarActive: false,
   },
   {
-    path: "/import-job",
+    path: "/inventory/import",
     name: "Bulk Product Import",
     element: <BulkProductImportJob />,
     isSidebarActive: false,

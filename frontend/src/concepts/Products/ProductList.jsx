@@ -519,9 +519,7 @@ const ProductsList = () => {
       }).unwrap();
 
       message.success(
-        product.quantity <= 0
-          ? "Added to cart"
-          : "Added to cart",
+        product.quantity <= 0 ? "Added to cart" : "Added to cart",
       );
 
       refetchCart();
@@ -607,12 +605,13 @@ const ProductsList = () => {
           title={pageTitle}
           subtitle="Explore our product collection"
           exportOptions={{ pdf: false, excel: false }}
-          extra={{
-            viewMode,
-            onViewToggle: (c) => setViewMode(c ? "card" : "list"),
-            showViewToggle: true,
-            cartItems: cartData?.cart?.items || [],
+          /* ✅ Use viewToggle prop for the switch */
+          viewToggle={{
+            viewMode: viewMode,
+            onChange: (checked) => setViewMode(checked ? "card" : "list"),
           }}
+          /* Optional: Use extra only for additional JSX buttons if needed */
+          extra={null} // or any JSX like <Button>Filter</Button>
         />
 
         <div className="filter-bar bg-white p-3 shadow-sm mb-4">
