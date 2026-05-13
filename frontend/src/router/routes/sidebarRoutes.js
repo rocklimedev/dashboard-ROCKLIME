@@ -6,6 +6,7 @@ import {
   FaUsers,
   FaThLarge,
   FaUser,
+  FaListUl,
   FaIdCard,
   FaCog,
   FaBoxOpen,
@@ -25,6 +26,7 @@ import RolePermission from "../../concepts/RBAC/RolePermission";
 import NewPageWrapper from "../../concepts/Home/NewPageWrapper";
 import CustomerList from "../../concepts/Customers/CustomerList";
 import BrandList from "../../concepts/Brands/BrandsList";
+import ReportsPage from "../../concepts/Reports/page";
 
 export const sidebarRoutes = [
   {
@@ -77,7 +79,13 @@ export const sidebarRoutes = [
     isSidebarActive: true,
     element: <CustomerList />,
   },
-
+  {
+    path: "/reports/list",
+    name: "Reports",
+    icon: <FaListUl />,
+    isSidebarActive: true,
+    element: <ReportsPage />,
+  },
   {
     path: "#",
     name: "Master Data",

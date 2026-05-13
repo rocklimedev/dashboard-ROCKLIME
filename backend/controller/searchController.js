@@ -2,231 +2,191 @@ const { Op } = require("sequelize");
 
 const {
   sequelize,
-  User,
-  Role,
-  Address,
   Brand,
   Category,
-  Company,
   Customer,
-  Invoice,
-  Keyword,
   Order,
   Product,
   Quotation,
+  Role,
   Team,
+  User,
   Vendor,
-  PurchaseOrder, // ← Make sure this is imported from models
+  PurchaseOrder,
 } = require("../models");
 
 const searchAll = async (req, res) => {
   try {
     const { query, page = 1, limit = 20 } = req.query;
 
-    if (!query || query.trim().length < 1) {
+    if (!query || query.trim().length < 2) {
       return res.status(400).json({
         success: false,
-        message: "Search query is required",
+        message: "Search query must be at least 2 characters long",
       });
     }
 
     const searchTerm = `%${query.trim()}%`;
-    const rawQuery = query.trim();
+    const rawQuery = query.trim().toLowerCase();
     const currentPage = parseInt(page);
-    const pageSize = Math.min(parseInt(limit) || 20, 50); // Cap at 50 for performance
-    const offset = (currentPage - 1) * pageSize;
+    const pageSize = Math.min(parseInt(limit) || 20, 50);
+    const globalOffset = (currentPage - 1) * pageSize;
 
     const results = {};
 
     const searchConfigs = [
       {
-        key: "Brand",
-        model: Brand,
-        fields: ["brandSlug", "brandName"],
-        attributes: ["id", "brandSlug", "brandName"],
-      },
-      {
-        key: "Category",
-        model: Category,
-        fields: ["name"],
-        attributes: ["categoryId", "name", "parentCategoryId"],
+        key: "Product",
+        model: Product,
+        attributes: [
+          "productId",
+          "name",
+          "product_code",
+          "quantity",
+          "images",
+          "meta",
+          "updatedAt",
+        ],
+        limit: pageSize,
+        order: [
+          ["updatedAt", "DESC"],
+          ["name", "ASC"],
+        ],
+        customWhere: () => ({
+          [Op.or]: [
+            { name: { [Op.like]: searchTerm } },
+            { product_code: { [Op.like]: searchTerm } },
+            sequelize.where(
+              sequelize.fn(
+                "LOWER",
+                sequelize.cast(sequelize.col("meta"), "CHAR"),
+              ),
+              Op.like,
+              `%${rawQuery}%`,
+            ),
+          ],
+        }),
       },
       {
         key: "Customer",
         model: Customer,
-        fields: ["name", "email", "customerType", "mobileNumber"],
         attributes: [
           "customerId",
           "name",
           "email",
-          "customerType",
           "mobileNumber",
+          "customerType",
+        ],
+      },
+      {
+        key: "Quotation",
+        model: Quotation,
+        attributes: [
+          "quotationId",
+          "document_title",
+          "reference_number",
+          "finalAmount",
+          "quotation_date",
         ],
       },
       {
         key: "Order",
         model: Order,
-        fields: ["orderNo", "status"],
-        attributes: ["id", "orderNo", "status", "dueDate", "priority"],
+        attributes: ["id", "orderNo", "status", "finalAmount", "createdAt"],
       },
       {
-        key: "Product",
-        model: Product,
-        fields: ["name", "product_code"],
-        attributes: ["productId", "name", "product_code", "images", "meta"],
-        customWhere: (searchTerm, rawQuery) => {
-          const escapedSearch = rawQuery.replace(/'/g, "''");
-          const castMeta = sequelize.cast(
-            sequelize.col("meta"),
-            "CHAR CHARACTER SET utf8mb4",
-          );
-          const castImages = sequelize.cast(
-            sequelize.col("images"),
-            "CHAR CHARACTER SET utf8mb4",
-          );
-
-          return {
-            [Op.or]: [
-              { name: { [Op.like]: searchTerm } },
-              { product_code: { [Op.like]: searchTerm } },
-              sequelize.where(castMeta, {
-                [Op.like]: sequelize.literal(`'%${escapedSearch}%'`),
-              }),
-              sequelize.where(castImages, {
-                [Op.like]: sequelize.literal(`'%${escapedSearch}%'`),
-              }),
-            ],
-          };
-        },
+        key: "Brand",
+        model: Brand,
+        attributes: ["id", "brandName", "brandSlug"],
       },
       {
-        key: "Quotation",
-        model: Quotation,
-        fields: ["document_title", "reference_number"],
-        attributes: [
-          "quotationId",
-          "document_title",
-          "quotation_date",
-          "finalAmount",
-        ],
-      },
-      {
-        key: "Role",
-        model: Role,
-        fields: ["roleName"],
-        attributes: ["roleId", "roleName"],
-      },
-      {
-        key: "Team",
-        model: Team,
-        fields: ["teamName", "adminName"],
-        attributes: ["id", "teamName", "adminName"],
-      },
-      {
-        key: "User",
-        model: User,
-        fields: ["username", "name", "email", "mobileNumber"],
-        attributes: ["userId", "username", "name", "email", "status"],
+        key: "Category",
+        model: Category,
+        attributes: ["categoryId", "name"],
       },
       {
         key: "Vendor",
         model: Vendor,
-        fields: ["vendorId", "vendorName"],
-        attributes: ["id", "vendorId", "vendorName", "brandSlug"],
+        attributes: ["id", "vendorName"],
       },
-      // ==================== NEW: PurchaseOrder ====================
       {
         key: "PurchaseOrder",
         model: PurchaseOrder,
-        fields: ["poNumber", "status"],
-        attributes: [
-          "id",
-          "poNumber",
-          "status",
-          "orderDate",
-          "expectDeliveryDate",
-          "totalAmount",
-          "vendorId",
-          "userId",
-          "fgsId",
-        ],
-        // Optional: You can add customWhere if you want to search in more JSON fields later
+        attributes: ["id", "poNumber", "status", "totalAmount", "orderDate"],
       },
-      // Add other models (Invoice, Company, etc.) here if needed in the future
     ];
 
     // Run searches in parallel
     await Promise.all(
-      searchConfigs.map(
-        async ({ key, model, fields, attributes, customWhere }) => {
-          try {
-            let where = {
-              [Op.or]: fields.map((field) => ({
-                [field]: { [Op.like]: searchTerm },
-              })),
-            };
+      searchConfigs.map(async (config) => {
+        try {
+          const whereClause = config.customWhere
+            ? config.customWhere()
+            : {
+                [Op.or]:
+                  config.fields?.map((field) => ({
+                    [field]: { [Op.like]: searchTerm },
+                  })) || [],
+              };
 
-            if (customWhere) {
-              where = customWhere(searchTerm, rawQuery);
-            }
+          const limitToUse = config.limit || pageSize;
+          const offsetToUse =
+            config.key === "Product"
+              ? globalOffset // Use real pagination for Product
+              : globalOffset;
 
-            const { rows, count } = await model.findAndCountAll({
-              where,
-              attributes,
-              limit: pageSize,
-              offset,
-              order: [["createdAt", "DESC"]],
-              // distinct: true, // Uncomment if you use includes later
-            });
+          const { rows, count } = await config.model.findAndCountAll({
+            where: whereClause,
+            attributes: config.attributes,
+            limit: limitToUse,
+            offset: offsetToUse,
+            order: config.order || [["createdAt", "DESC"]],
+          });
 
-            results[key] = {
-              items: rows,
-              total: count,
-              page: currentPage,
-              totalPages: Math.ceil(count / pageSize),
-              limit: pageSize,
-            };
-          } catch (error) {
-            console.error(`Search error for ${key}:`, error);
-            results[key] = {
-              items: [],
-              total: 0,
-              page: currentPage,
-              totalPages: 0,
-              limit: pageSize,
-              error: `Failed to search ${key}`,
-            };
-          }
-        },
-      ),
+          results[config.key] = {
+            items: rows,
+            total: count,
+            page: currentPage,
+            limit: limitToUse,
+            totalPages: Math.ceil(count / limitToUse),
+          };
+        } catch (err) {
+          console.error(`Search error in ${config.key}:`, err);
+          results[config.key] = {
+            items: [],
+            total: 0,
+            page: currentPage,
+            limit: pageSize,
+            totalPages: 0,
+          };
+        }
+      }),
     );
 
-    // Calculate overall stats
     const totalResults = Object.values(results).reduce(
       (sum, cat) => sum + (cat.total || 0),
       0,
     );
 
-    return res.status(200).json({
+    return res.json({
       success: true,
-      message: "Search completed",
+      message: `Found ${totalResults} results for "${rawQuery}"`,
       data: results,
       meta: {
-        total: totalResults,
-        page: currentPage,
-        limit: pageSize,
-        totalPages: Math.ceil(totalResults / pageSize), // overall approximate
+        totalResults,
+        query: rawQuery,
+        currentPage,
+        pageSize,
+        totalPages: Math.ceil(totalResults / pageSize),
       },
     });
   } catch (error) {
     console.error("Global search error:", error);
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
-      message: error.message || "An error occurred during search",
+      message: "An error occurred while searching",
     });
   }
 };
 
-module.exports = {
-  searchAll,
-};
+module.exports = { searchAll };

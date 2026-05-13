@@ -159,6 +159,12 @@ export const productApi = baseApi.injectEndpoints({
         { type: "Product", id: "LIST" },
       ],
     }),
+    /** Get only total product count - Very fast */
+    getProductCount: builder.query({
+      query: () => "/products/count",
+      providesTags: ["ProductCount"],
+      keepUnusedDataFor: 60, // Cache for 1 minute
+    }),
 
     // BULK FETCH BY IDS (for top products, etc.)
     getProductsByIds: builder.query({
@@ -260,4 +266,5 @@ export const {
   useAddKeywordsToProductMutation,
   useUpdateProductFeaturedMutation,
   useGetAllProductsByCategoryQuery,
+  useGetProductCountQuery,
 } = productApi;

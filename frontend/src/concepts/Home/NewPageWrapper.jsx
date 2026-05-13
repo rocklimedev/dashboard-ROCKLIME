@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from "react";
 import { message } from "antd";
 import {
-  useGetAllProductsQuery,
-  useGetTopSellingProductsQuery,
+  useGetProductCountQuery,
+  useGetLowStockProductsQuery,
 } from "../../api/productApi";
 import { useGetAllQuotationsQuery } from "../../api/quotationApi";
 import { useGetProfileQuery } from "../../api/userApi";
@@ -10,13 +10,12 @@ import { useGetAllOrdersQuery } from "../../api/orderApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
 import { useAddProductToCartMutation } from "../../api/cartApi";
 import { useUpdateOrderStatusMutation } from "../../api/orderApi";
+
 import "./pagewrapper.css";
 import { EditOutlined } from "@ant-design/icons";
 import { Dropdown, Menu } from "antd";
 import { useAuth } from "../../context/AuthContext";
 import StockModal from "../../components/modals/StockModal";
-// Fixed meta ID for selling price
-const SELLING_PRICE_META_ID = "9ba862ef-f993-4873-95ef-1fef10036aa5";
 
 const NewPageWrapper = () => {
   /* ------------------------------------------------------------------ */
@@ -26,11 +25,6 @@ const NewPageWrapper = () => {
   const [editingOrderId, setEditingOrderId] = useState(null);
   const [stockModalOpen, setStockModalOpen] = useState(false);
   const [selectedProductForStock, setSelectedProductForStock] = useState(null);
-
-  const toggleEdit = (id) => {
-    setEditingOrderId((prev) => (prev === id ? null : id));
-  };
-
   const statuses = [
     "PREPARING",
     "CHECKING",
@@ -42,27 +36,52 @@ const NewPageWrapper = () => {
     "DRAFT",
     "ONHOLD",
   ];
-  const { auth } = useAuth(); // if you use same context
+  const { auth } = useAuth();
   const canUpdateOrderStatus =
     auth?.permissions?.some(
       (p) => p.module === "orders" && p.action === "write",
     ) ?? true;
+
   const handleProductClick = (p) => {
     setSelectedProductForStock(p);
     setStockModalOpen(true);
   };
 
   /* ------------------------------------------------------------------ */
-  /*  RTK-QUERY HOOKS                                                   */
+  /*  RTK-QUERY HOOKS - OPTIMIZED                                       */
   /* ------------------------------------------------------------------ */
   const [addProductToCart] = useAddProductToCartMutation();
   const { data: profile } = useGetProfileQuery();
   const userId = profile?.user?.userId;
 
+  // Optimized Dashboard Queries
+  const { data: countData } = useGetProductCountQuery();
+  const { data: lowStockData, isLoading: lowStockLoading } =
+    useGetLowStockProductsQuery({
+      threshold: 20,
+      limit: 20,
+    });
+
   const { data: ordersResponse, refetch: refetchOrders } = useGetAllOrdersQuery(
-    { limit: 50, page: 1 }, // ← increase limit to cover all (or remove limit if API allows)
+    { limit: 50, page: 1 },
     { pollingInterval: 30000 },
   );
+
+  const { data: quotationsResponse } = useGetAllQuotationsQuery({
+    limit: 200,
+    page: 1,
+  });
+
+  const { data: customersResponse } = useGetCustomersQuery({ limit: 1000 });
+
+  /* ------------------------------------------------------------------ */
+  /*  DATA PROCESSING                                                   */
+  /* ------------------------------------------------------------------ */
+  const productCount = countData?.totalProducts || 0;
+  const lowStockProducts = lowStockData?.products || [];
+
+  const quotations = quotationsResponse?.data || [];
+  const customersData = customersResponse?.data || [];
 
   const THIRTY_DAYS_AGO = useMemo(() => {
     const d = new Date();
@@ -73,98 +92,17 @@ const NewPageWrapper = () => {
 
   const recentOrders = useMemo(() => {
     const allOrders = ordersResponse?.data || [];
-    return allOrders.filter((order) => {
-      const orderDate = new Date(order.createdAt);
-      return orderDate >= THIRTY_DAYS_AGO;
-    });
+    return allOrders.filter(
+      (order) => new Date(order.createdAt) >= THIRTY_DAYS_AGO,
+    );
   }, [ordersResponse, THIRTY_DAYS_AGO]);
 
-  const { data: quotationsResponse } = useGetAllQuotationsQuery(
-    { limit: 200, page: 1 }, // 200 should cover 107; adjust higher if needed
-  );
-  const quotations = quotationsResponse?.data || [];
+  const lastFiveQuotations = useMemo(() => {
+    return [...quotations]
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 5);
+  }, [quotations]);
 
-  const { data: productsResponse } = useGetAllProductsQuery({ limit: 10000 });
-  const products = productsResponse?.data || [];
-
-  const { data: customersResponse } = useGetCustomersQuery({ limit: 1000 });
-  const customersData = customersResponse?.data || [];
-
-  const { data: topSellingData, isLoading: topProductsLoading } =
-    useGetTopSellingProductsQuery(10);
-  const topProducts = topSellingData?.data || [];
-  const lastFiveQuotations = [...quotations]
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-    .slice(0, 5);
-
-  /* ------------------------------------------------------------------ */
-  /*  CART & HELPERS                                                    */
-  /* ------------------------------------------------------------------ */
-  const handleAddToCart = async (product) => {
-    if (!userId) return message.error("User not logged in!");
-
-    const priceEntry = product.metaDetails?.find(
-      (d) => d.id === SELLING_PRICE_META_ID,
-    );
-    const price = priceEntry ? parseFloat(priceEntry.value) : null;
-    if (!price || isNaN(price)) return message.error("Invalid price");
-
-    const qty = 1;
-
-    setCartLoadingStates((s) => ({ ...s, [product.productId]: true }));
-    try {
-      await addProductToCart({
-        userId,
-        productId: product.productId,
-        quantity: qty,
-      }).unwrap();
-      message.success("Added to cart");
-    } catch (e) {
-      message.error(e?.data?.message || "Add to cart failed");
-    } finally {
-      setCartLoadingStates((s) => ({ ...s, [product.productId]: false }));
-    }
-  };
-
-  /* ------------------------------------------------------------------ */
-  /*  LOW STOCK                                                         */
-  /* ------------------------------------------------------------------ */
-  const lowStockProducts = useMemo(
-    () => products.filter((p) => p.quantity < (p.alert_quantity || 20)),
-    [products],
-  );
-
-  const displayedLowStock = useMemo(
-    () => lowStockProducts.slice(0, 10),
-    [lowStockProducts],
-  );
-
-  /* ------------------------------------------------------------------ */
-  /*  STATUS UPDATE                                                     */
-  /* ------------------------------------------------------------------ */
-  const [updateOrderStatus] = useUpdateOrderStatusMutation();
-  const handleStatusChange = async (orderId, newStatus) => {
-    try {
-      await updateOrderStatus({ orderId, status: newStatus }).unwrap();
-      refetchOrders();
-      message.success("Status updated");
-      setEditingOrderId(null);
-    } catch (e) {
-      message.error(e?.data?.message || "Status update failed");
-    }
-  };
-
-  /* ------------------------------------------------------------------ */
-  /*  COUNTS                                                            */
-  /* ------------------------------------------------------------------ */
-
-  const productCount = products.length;
-  const quotationCount =
-    quotationsResponse?.pagination?.total ||
-    quotationsResponse?.data?.length ||
-    0;
-  const orderCountForCard =
-    ordersResponse?.pagination?.total || recentOrders.length || 0;
   /* ------------------------------------------------------------------ */
   /*  CUSTOMER MAP                                                      */
   /* ------------------------------------------------------------------ */
@@ -178,29 +116,46 @@ const NewPageWrapper = () => {
   const getCustomerName = (customerId) => customerMap[customerId] || "Unknown";
 
   /* ------------------------------------------------------------------ */
-  /*  UI HELPERS                                                        */
+  /*  HANDLERS                                                          */
   /* ------------------------------------------------------------------ */
-  const getImageUrl = (images) => {
-    if (!images || images.length === 0) return null;
-    if (Array.isArray(images)) return images[0];
+  const handleAddToCart = async (product) => {
+    if (!userId) return message.error("User not logged in!");
+
+    const price =
+      product.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"] ||
+      product.metaDetails?.find(
+        (d) => d.id === "9ba862ef-f993-4873-95ef-1fef10036aa5",
+      )?.value;
+
+    if (!price) return message.error("Invalid price");
+
+    setCartLoadingStates((s) => ({ ...s, [product.productId]: true }));
+
     try {
-      const parsed = JSON.parse(images);
-      return Array.isArray(parsed) && parsed[0] ? parsed[0] : null;
-    } catch {
-      return null;
+      await addProductToCart({
+        userId,
+        productId: product.productId,
+        quantity: 1,
+      }).unwrap();
+      message.success("Added to cart");
+    } catch (e) {
+      message.error(e?.data?.message || "Add to cart failed");
+    } finally {
+      setCartLoadingStates((s) => ({ ...s, [product.productId]: false }));
     }
   };
 
-  const getSellingPrice = (product) => {
-    const metaValue = product.meta?.[SELLING_PRICE_META_ID];
-    if (metaValue != null) return String(metaValue);
+  const [updateOrderStatus] = useUpdateOrderStatusMutation();
 
-    const entry = product.metaDetails?.find(
-      (m) => m.id === SELLING_PRICE_META_ID,
-    );
-    if (entry?.value) return entry.value;
-
-    return "0";
+  const handleStatusChange = async (orderId, newStatus) => {
+    try {
+      await updateOrderStatus({ orderId, status: newStatus }).unwrap();
+      refetchOrders();
+      message.success("Status updated");
+      setEditingOrderId(null);
+    } catch (e) {
+      message.error(e?.data?.message || "Status update failed");
+    }
   };
 
   /* ------------------------------------------------------------------ */
@@ -210,41 +165,37 @@ const NewPageWrapper = () => {
     <div className="page-wrapper">
       <div className="content">
         {/* Top Statistics Row */}
-        {/* Top Statistics Row */}
         <div className="row gx-3 gy-3 mb-4">
-          {/* Total Quotations */}
           <div className="col-12 col-md-4">
             <div className="dashboard-stat-card">
               <div className="stat-header">
                 <span className="stat-icon">
                   <i className="bi bi-receipt"></i>
                 </span>
-                <span className="stat-number">{quotationCount}</span>
+                <span className="stat-number">
+                  {quotationsResponse?.pagination?.total || quotations.length}
+                </span>
               </div>
-
               <div className="stat-label">Total Quotations</div>
-
               <div className="stat-line"></div>
             </div>
           </div>
 
-          {/* Total Orders */}
           <div className="col-12 col-md-4">
             <div className="dashboard-stat-card">
               <div className="stat-header">
                 <span className="stat-icon">
                   <i className="bi bi-bag-check"></i>
                 </span>
-                <span className="stat-number">{orderCountForCard}</span>
+                <span className="stat-number">
+                  {ordersResponse?.pagination?.total || recentOrders.length}
+                </span>
               </div>
-
               <div className="stat-label">Total Orders</div>
-
               <div className="stat-line"></div>
             </div>
           </div>
 
-          {/* Total Products */}
           <div className="col-12 col-md-4">
             <div className="dashboard-stat-card">
               <div className="stat-header">
@@ -253,9 +204,7 @@ const NewPageWrapper = () => {
                 </span>
                 <span className="stat-number">{productCount}</span>
               </div>
-
               <div className="stat-label">Total Products</div>
-
               <div className="stat-line"></div>
             </div>
           </div>
@@ -263,12 +212,12 @@ const NewPageWrapper = () => {
 
         {/* Main Content - 3 Columns */}
         <div className="row gx-3 gy-3">
-          {/* LEFT: Top Selling Products */}
+          {/* LEFT: Recent Quotations */}
           <div className="col-12 col-lg-4">
             <div className="card-header bg-light fw-semibold">
-              TOTAL QUOTATIONS{" "}
+              RECENT QUOTATIONS{" "}
               <span className="text-danger fw-semibold">
-                ({quotationCount})
+                ({lastFiveQuotations.length})
               </span>
             </div>
             <div className="card-body p-0">
@@ -395,7 +344,7 @@ const NewPageWrapper = () => {
                               {o.status.replace("_", " ")}
                             </span>
 
-                            {canUpdateOrderStatus && ( // ← add permission check if you have it
+                            {canUpdateOrderStatus && (
                               <Dropdown
                                 trigger={["click"]}
                                 placement="bottomRight"
@@ -440,7 +389,7 @@ const NewPageWrapper = () => {
             </div>
           </div>
 
-          {/* RIGHT: Low in Stock */}
+          {/* RIGHT: Low in Stock - OPTIMIZED */}
           <div className="col-12 col-lg-4">
             <div className="card shadow-sm rounded-3 h-100">
               <div className="card-header bg-light fw-semibold d-flex justify-content-between align-items-center">
@@ -457,7 +406,7 @@ const NewPageWrapper = () => {
               >
                 {lowStockProducts.length > 0 ? (
                   <ul className="list-unstyled m-0">
-                    {displayedLowStock.map((p) => (
+                    {lowStockProducts.map((p) => (
                       <li
                         key={p.productId}
                         onClick={() => handleProductClick(p)}
@@ -472,7 +421,9 @@ const NewPageWrapper = () => {
                   </ul>
                 ) : (
                   <div className="d-flex align-items-center justify-content-center h-100 text-muted">
-                    <p className="mb-0">No low stock products</p>
+                    <p className="mb-0">
+                      {lowStockLoading ? "Loading..." : "No low stock products"}
+                    </p>
                   </div>
                 )}
               </div>
