@@ -165,6 +165,14 @@ const AddQuotation = () => {
       sellingPrice: safeNum(p.price ?? p.sellingPrice, 0),
       discount: safeNum(p.discount, 0),
       discountType: p.discountType || "fixed",
+
+      // Explicitly ensure location fields
+      floorId: p.floorId || null,
+      floorName: p.floorName || null,
+      roomId: p.roomId || null,
+      roomName: p.roomName || null,
+      areaId: p.areaId || null,
+      areaName: p.areaName || null,
     }));
 
     setFormData({
@@ -251,26 +259,35 @@ const AddQuotation = () => {
   };
 
   const handleAssignLocation = (productId, assignments) => {
+    if (!assignments || assignments.length === 0) {
+      message.warning("No location selected");
+      setShowAssignModal(false);
+      return;
+    }
+
+    const primary = assignments[0]; // or handle multiple if needed
+
     setFormData((prev) => ({
       ...prev,
       products: prev.products.map((p) => {
         if (p.productId === productId) {
-          const primary = assignments[0] || {};
           return {
             ...p,
-            floorId: primary.floorId,
-            floorName: primary.floorName,
-            roomId: primary.roomId,
-            roomName: primary.roomName,
-            areaId: primary.areaId,
-            areaName: primary.areaName,
+            floorId: primary.floorId || null,
+            floorName: primary.floorName || null,
+            roomId: primary.roomId || null,
+            roomName: primary.roomName || null,
+            areaId: primary.areaId || null,
+            areaName: primary.areaName || null,
           };
         }
         return p;
       }),
     }));
-    message.success("Location assigned");
+
+    message.success(`Assigned to ${primary.roomName || primary.floorName}`);
     setShowAssignModal(false);
+    setItemToAssign(null);
   };
 
   // ── Product Handlers ──────────────────────────────────────────────
@@ -464,20 +481,25 @@ const AddQuotation = () => {
       due_date: formatDateSafe(formData.due_date),
 
       products: formData.products.map((p) => ({
-        ...p,
-        price: safeNum(p.sellingPrice),
-        quantity: safeNum(p.qty),
-        total: Number(
-          (
-            safeNum(p.sellingPrice) * safeNum(p.qty) -
-            (p.discountType === "percent"
-              ? (safeNum(p.sellingPrice) *
-                  safeNum(p.qty) *
-                  safeNum(p.discount)) /
-                100
-              : safeNum(p.discount) * safeNum(p.qty))
-          ).toFixed(2),
-        ),
+        productId: p.productId,
+        name: p.name,
+        qty: safeNum(p.qty),
+        sellingPrice: safeNum(p.sellingPrice),
+        discount: safeNum(p.discount),
+        discountType: p.discountType || "fixed",
+        isOptionFor: p.isOptionFor,
+        groupId: p.groupId,
+        optionType: p.optionType,
+
+        // ← Explicitly include location fields
+        floorId: p.floorId || null,
+        floorName: p.floorName || null,
+        roomId: p.roomId || null,
+        roomName: p.roomName || null,
+        areaId: p.areaId || null,
+        areaName: p.areaName || null,
+
+        total: Number(/* your total calculation */),
       })),
 
       floors: formData.floors || [],
