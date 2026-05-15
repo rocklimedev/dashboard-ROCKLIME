@@ -35,10 +35,12 @@ import { useGetProfileQuery } from "../../api/userApi";
 const { Title, Text, Paragraph } = Typography;
 
 const SearchPage = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const queryFromUrl = searchParams.get("q") || "";
 
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(
+    Number(searchParams.get("page")) || 1,
+  );
 
   // ==================== CART FUNCTIONALITY ====================
   const { data: user } = useGetProfileQuery();
@@ -76,6 +78,12 @@ const SearchPage = () => {
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
+
+    setSearchParams({
+      q: queryFromUrl,
+      page: page.toString(),
+    });
+
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -207,7 +215,10 @@ const SearchPage = () => {
         return <Avatar icon={<SearchOutlined />} {...commonProps} />;
     }
   };
-
+  useEffect(() => {
+    const pageFromUrl = Number(searchParams.get("page")) || 1;
+    setCurrentPage(pageFromUrl);
+  }, [searchParams]);
   const getSubtitle = (model, item) => {
     switch (model.toLowerCase()) {
       case "user":
@@ -453,7 +464,7 @@ const SearchPage = () => {
               <div style={{ textAlign: "center", margin: "60px 0 40px 0" }}>
                 <Pagination
                   current={currentPage}
-                  total={meta.total || 0}
+                  total={meta.totalResults || 0}
                   pageSize={20}
                   onChange={handlePageChange}
                   showSizeChanger={false}

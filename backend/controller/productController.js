@@ -691,85 +691,87 @@ exports.updateProduct = async (req, res) => {
   }
 };
 // ─────────────────────────────────────────────────────────────────────────────
-// Get all products (paginated, searchable, enriched meta & keywords)
+// Get all products - OPTIMIZED FOR INVENTORY
 // ─────────────────────────────────────────────────────────────────────────────
 exports.getAllProducts = async (req, res) => {
   try {
     ensureAssociations();
 
-    // ── Pagination ─────────────────────────────────────
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 50;
     const offset = (page - 1) * limit;
 
-    // ── Filters from Frontend ───────────────────────────
     const searchTerm = req.query.search?.trim();
-    const tab = req.query.tab || "all"; // all | in-stock | low-stock | out-of-stock
+    const tab = req.query.tab || "all";
     const lowStockThreshold = parseInt(req.query.lowStockThreshold) || 10;
 
     let whereClause = {};
-    let havingClause = {}; // For stock-based filtering after joins
 
-    // Search support (name, company code in meta, keywords, categories)
+    // Search
     if (searchTerm) {
       const pattern = `%${searchTerm.toLowerCase()}%`;
-
-      whereClause = {
-        [Op.or]: [
-          sequelize.where(
-            sequelize.fn("LOWER", sequelize.col("Product.name")),
-            Op.like,
-            pattern,
-          ),
-          sequelize.where(
+      whereClause[Op.or] = [
+        sequelize.where(
+          sequelize.fn("LOWER", sequelize.col("Product.name")),
+          Op.like,
+          pattern,
+        ),
+        sequelize.where(
+          sequelize.fn(
+            "LOWER",
             sequelize.fn(
-              "LOWER",
-              sequelize.fn(
-                "JSON_EXTRACT",
-                sequelize.col("Product.meta"),
-                sequelize.literal(`'$."d11da9f9-3f2e-4536-8236-9671200cca4a"'`),
-              ),
+              "JSON_EXTRACT",
+              sequelize.col("Product.meta"),
+              sequelize.literal(`'$."d11da9f9-3f2e-4536-8236-9671200cca4a"'`),
             ),
-            Op.like,
-            pattern,
           ),
-          sequelize.where(
-            sequelize.fn("LOWER", sequelize.col("keywords.keyword")),
-            Op.like,
-            pattern,
-          ),
-          sequelize.where(
-            sequelize.fn("LOWER", sequelize.col("keywords.categories.name")),
-            Op.like,
-            pattern,
-          ),
-          // Optional: direct product_code column
-          // { product_code: { [Op.like]: pattern } }
-        ],
-      };
+          Op.like,
+          pattern,
+        ),
+        sequelize.where(
+          sequelize.fn("LOWER", sequelize.col("keywords.keyword")),
+          Op.like,
+          pattern,
+        ),
+        sequelize.where(
+          sequelize.fn("LOWER", sequelize.col("keywords.categories.name")),
+          Op.like,
+          pattern,
+        ),
+        { product_code: { [Op.like]: pattern } },
+      ];
     }
 
-    // Tab-based stock filtering
+    // Tab filtering
     if (tab === "in-stock") {
       whereClause.quantity = { [Op.gt]: 0 };
     } else if (tab === "out-of-stock") {
       whereClause.quantity = 0;
     } else if (tab === "low-stock") {
-      whereClause.quantity = {
-        [Op.gt]: 0,
-        [Op.lte]: lowStockThreshold,
-      };
+      whereClause.quantity = { [Op.gt]: 0, [Op.lte]: lowStockThreshold };
     }
-    // "all" = no stock filter
 
-    // ── Main Query with findAndCountAll ─────────────────────
+    // ─────────────────────────────────────────────────────────────
+    // INVENTORY SORTING: Stock first → Latest updated first
+    // ─────────────────────────────────────────────────────────────
+    const order = [
+      [
+        sequelize.literal(
+          `CASE WHEN \`Product\`.\`quantity\` > 0 THEN 0 ELSE 1 END`,
+        ),
+        "ASC",
+      ],
+      ["updatedAt", "DESC"],
+      ["name", "ASC"],
+    ];
+
     const { count: totalProducts, rows: products } =
       await Product.findAndCountAll({
         where: whereClause,
-        order: [["name", "ASC"]],
+        order,
         offset,
         limit,
-        distinct: true, // Important when using includes with many-to-many
+        distinct: true,
         subQuery: false,
 
         include: [
@@ -796,14 +798,10 @@ exports.getAllProducts = async (req, res) => {
       });
     }
 
-    // ── Enrich Meta (same as before) ───────────────────────
+    // Meta Enrichment
     const metaIds = new Set();
-    products.forEach((product) => {
-      const meta = parseJsonSafely(
-        product.meta,
-        null,
-        `product ID ${product.id} meta`,
-      );
+    products.forEach((p) => {
+      const meta = parseJsonSafely(p.meta, null);
       if (meta && typeof meta === "object") {
         Object.keys(meta).forEach((id) => metaIds.add(id));
       }
@@ -819,20 +817,12 @@ exports.getAllProducts = async (req, res) => {
 
     const metaMap = Object.fromEntries(metaDefs.map((m) => [m.id, m.toJSON()]));
 
-    // ── Transform & Enrich Products ───────────────────────
+    // Enrich Products
     const enrichedProducts = products.map((product) => {
       const raw = product.toJSON();
 
-      const metaObj = parseJsonSafely(
-        raw.meta,
-        {},
-        `product ID ${raw.id} meta`,
-      );
-      const images = parseJsonSafely(
-        raw.images,
-        [],
-        `product ID ${raw.id} images`,
-      );
+      const metaObj = parseJsonSafely(raw.meta, {});
+      const images = parseJsonSafely(raw.images, []);
 
       const metaDetails = Object.entries(metaObj).map(([idStr, value]) => {
         const id = parseInt(idStr, 10);
@@ -870,13 +860,9 @@ exports.getAllProducts = async (req, res) => {
         skuSuffix: raw.skuSuffix || null,
         isMaster: !!raw.isMaster,
         isVariant: !!raw.masterProductId,
-        masterProductId: raw.masterProductId || raw.id,
-        // Ensure quantity is always a number
         quantity: Number(raw.quantity) || 0,
       };
     });
-
-    const totalPages = Math.ceil(totalProducts / limit);
 
     res.json({
       data: enrichedProducts,
@@ -884,7 +870,7 @@ exports.getAllProducts = async (req, res) => {
         total: totalProducts,
         page,
         limit,
-        totalPages,
+        totalPages: Math.ceil(totalProducts / limit),
       },
     });
   } catch (error) {
@@ -2470,6 +2456,75 @@ exports.replaceAllKeywordsForProduct = async (req, res) => {
     await t.rollback();
 
     res.status(500).json({ message: "Failed to update keywords" });
+  }
+};
+// GET /api/products/count
+exports.getProductCount = async (req, res) => {
+  try {
+    const count = await Product.count();
+
+    res.json({
+      success: true,
+      totalProducts: count,
+    });
+  } catch (error) {
+    console.error("Product count error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch product count",
+    });
+  }
+};
+// GET /api/products/low-stock
+exports.getLowStockProducts = async (req, res) => {
+  try {
+    const threshold = parseInt(req.query.threshold) || 20;
+    const limit = parseInt(req.query.limit) || 20;
+
+    const lowStockProducts = await Product.findAll({
+      where: {
+        quantity: {
+          [Op.lte]: threshold, // quantity <= threshold
+        },
+      },
+      attributes: [
+        "productId",
+        "name",
+        "quantity",
+        "alert_quantity",
+        "product_code",
+        "images",
+        "status",
+      ],
+      order: [["quantity", "ASC"]], // Most critical first
+      limit: limit,
+      raw: true, // Faster - no Sequelize overhead
+    });
+
+    // Optional: enrich images safely
+    const enriched = lowStockProducts.map((p) => ({
+      ...p,
+      images: p.images
+        ? typeof p.images === "string"
+          ? JSON.parse(p.images)
+          : p.images
+        : [],
+      quantity: Number(p.quantity),
+      alert_quantity: Number(p.alert_quantity || 20),
+    }));
+
+    res.json({
+      success: true,
+      totalLowStock: enriched.length,
+      threshold,
+      products: enriched,
+    });
+  } catch (error) {
+    console.error("Low stock fetch error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch low stock products",
+    });
   }
 };
 // controller/productController.js

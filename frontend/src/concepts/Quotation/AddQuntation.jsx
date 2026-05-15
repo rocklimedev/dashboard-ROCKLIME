@@ -649,24 +649,32 @@ const AddQuotation = () => {
                         setFormData({
                           ...formData,
                           customerId: v,
-                          shipTo: null, // Clear shipTo when customer changes
+                          shipTo: null,
                         })
                       }
                       placeholder="Select customer"
                       filterOption={(input, option) =>
-                        option.children
+                        (option?.label ?? "")
                           .toLowerCase()
                           .includes(input.toLowerCase())
                       }
                       style={{ flex: 1 }}
                     >
-                      {(customersData?.data || []).map((c) => (
-                        <Option key={c.customerId} value={c.customerId}>
-                          {c.name} {c.companyName ? `(${c.companyName})` : ""}
-                        </Option>
-                      ))}
-                    </Select>
+                      {(customersData?.data || []).map((c) => {
+                        const displayName =
+                          `${c.name} ${c.companyName ? `(${c.companyName})` : ""}`.trim();
 
+                        return (
+                          <Option
+                            key={c.customerId}
+                            value={c.customerId}
+                            label={displayName} // ← Important for filtering
+                          >
+                            {displayName}
+                          </Option>
+                        );
+                      })}
+                    </Select>
                     <Button
                       type="primary"
                       icon={<PlusOutlined />}
