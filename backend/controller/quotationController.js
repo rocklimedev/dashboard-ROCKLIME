@@ -4,6 +4,7 @@ const { Op } = require("sequelize");
 const sequelize = require("../config/database");
 const { Product, Quotation } = require("../models");
 const QuotationItem = require("../models/quotationItem"); // MongoDB model
+const QuotationVersion = require("../models/quotationVersion");
 // META_SLUGS (same as you have in your Cart controller)
 const META_SLUGS = {
   sellingPrice: "9ba862ef-f993-4873-95ef-1fef10036aa5",

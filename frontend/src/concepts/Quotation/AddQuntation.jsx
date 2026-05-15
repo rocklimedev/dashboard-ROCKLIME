@@ -253,6 +253,7 @@ const AddQuotation = () => {
   };
 
   // ── Assign Location ───────────────────────────────────────────────
+  // ── Assign Location ───────────────────────────────────────────────
   const openAssignModal = (product) => {
     setItemToAssign(product);
     setShowAssignModal(true);
@@ -265,7 +266,7 @@ const AddQuotation = () => {
       return;
     }
 
-    const primary = assignments[0]; // or handle multiple if needed
+    const primary = assignments[assignments.length - 1] || assignments[0];
 
     setFormData((prev) => ({
       ...prev,
@@ -285,7 +286,11 @@ const AddQuotation = () => {
       }),
     }));
 
-    message.success(`Assigned to ${primary.roomName || primary.floorName}`);
+    const loc = [primary.floorName, primary.roomName, primary.areaName]
+      .filter(Boolean)
+      .join(" → ");
+
+    message.success(`Assigned to ${loc}`);
     setShowAssignModal(false);
     setItemToAssign(null);
   };
@@ -454,14 +459,12 @@ const AddQuotation = () => {
   // ── Submit ────────────────────────────────────────────────────────
   const handleSubmit = async () => {
     if (!formData.customerId) return message.error("Please select a customer");
-
     if (formData.products.length === 0)
       return message.error("Please add at least one product");
 
-    // Safe date formatter
     const formatDateSafe = (date) => {
-      if (!date) return null;
-      if (!(date instanceof Date) || isNaN(date.getTime())) return null;
+      if (!date || !(date instanceof Date) || isNaN(date.getTime()))
+        return null;
       try {
         return format(date, "yyyy-MM-dd");
       } catch {
@@ -469,29 +472,55 @@ const AddQuotation = () => {
       }
     };
 
-    // Clean shipTo - Make sure empty values become null (very important)
     const finalShipTo =
       formData.shipTo && formData.shipTo.trim() !== "" ? formData.shipTo : null;
 
-    const payload = {
-      ...formData,
-      shipTo: finalShipTo, // ← This fixes the FK error
+    // Build clean products payload
+    const cleanProducts = formData.products.map((p) => {
+      const qty = safeNum(p.qty, 1);
+      const sellingPrice = safeNum(p.sellingPrice, 0);
+      const discount = safeNum(p.discount, 0);
+      const discountType = p.discountType || "fixed";
 
-      quotation_date: formatDateSafe(formData.quotation_date),
-      due_date: formatDateSafe(formData.due_date),
+      const lineDiscount =
+        discountType === "percent"
+          ? (sellingPrice * qty * discount) / 100
+          : discount * qty;
 
-      products: formData.products.map((p) => ({
+      const lineTotal = sellingPrice * qty - lineDiscount;
+
+      // Build locations array (This is what backend prefers)
+      const locations =
+        p.areaId || p.roomId || p.floorId
+          ? [
+              {
+                floorId: p.floorId || null,
+                floorName: p.floorName || null,
+                roomId: p.roomId || null,
+                roomName: p.roomName || null,
+                areaId: p.areaId || null,
+                areaName: p.areaName || null,
+                assignedQuantity: qty,
+              },
+            ]
+          : [];
+
+      return {
         productId: p.productId,
         name: p.name,
-        qty: safeNum(p.qty),
-        sellingPrice: safeNum(p.sellingPrice),
-        discount: safeNum(p.discount),
-        discountType: p.discountType || "fixed",
-        isOptionFor: p.isOptionFor,
+        quantity: qty,
+        price: sellingPrice,
+        sellingPrice: sellingPrice,
+        discount: discount,
+        discountType: discountType,
+        isOptionFor: p.isOptionFor || null,
+        optionType: p.optionType || null,
         groupId: p.groupId,
-        optionType: p.optionType,
 
-        // ← Explicitly include location fields
+        // === NEW: Send locations array (Critical for Area) ===
+        locations: locations,
+
+        // Backward compatibility (keep these)
         floorId: p.floorId || null,
         floorName: p.floorName || null,
         roomId: p.roomId || null,
@@ -499,15 +528,34 @@ const AddQuotation = () => {
         areaId: p.areaId || null,
         areaName: p.areaName || null,
 
-        total: Number(/* your total calculation */),
-      })),
+        total: Number(lineTotal.toFixed(2)),
+      };
+    });
 
+    const payload = {
+      document_title: formData.document_title,
+      customerId: formData.customerId,
+      shipTo: finalShipTo,
+      quotation_date: formatDateSafe(formData.quotation_date),
+      due_date: formatDateSafe(formData.due_date),
+      shippingAmount: safeNum(formData.shippingAmount),
+      extraDiscount: safeNum(formData.extraDiscount),
+      extraDiscountType: formData.extraDiscountType || "fixed",
+      signature_name: formData.signature_name || "",
+      signature_image: formData.signature_image || "",
+      createdBy: formData.createdBy,
+
+      products: cleanProducts,
       floors: formData.floors || [],
       followupDates: formData.followupDates
         .filter(Boolean)
         .map((d) => formatDateSafe(d))
         .filter(Boolean),
     };
+
+    // DEBUG: Remove after testing
+    console.log("Final Payload:", payload);
+    console.log("Products being sent:", cleanProducts);
 
     try {
       if (isEditMode) {
@@ -574,20 +622,27 @@ const AddQuotation = () => {
     },
     {
       title: "Location",
-      width: 280,
-      render: (_, record) => (
-        <Button
-          type="link"
-          onClick={() => openAssignModal(record)}
-          style={{ padding: 0 }}
-        >
-          {record.floorName
-            ? `${record.floorName}${record.roomName ? ` → ${record.roomName}` : ""}${
-                record.areaName ? ` → ${record.areaName}` : ""
-              }`
-            : "Assign Location"}
-        </Button>
-      ),
+      width: 300,
+      render: (_, record) => {
+        const location = [record.floorName, record.roomName, record.areaName]
+          .filter(Boolean)
+          .join(" → ");
+
+        return (
+          <Button
+            type="link"
+            onClick={() => openAssignModal(record)}
+            style={{
+              padding: 0,
+              textAlign: "left",
+              height: "auto",
+              whiteSpace: "normal",
+            }}
+          >
+            {location || "Assign Location"}
+          </Button>
+        );
+      },
     },
     {
       title: "",
