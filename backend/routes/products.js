@@ -93,9 +93,5 @@ router.delete(
   productController.removeAllKeywordsFromProduct,
 );
 // routes/productRoutes.js
-router.post(
-  "/bulk-inventory-update",
-  authenticate,
-  productController.bulkInventoryUpdate,
-);
+router.post("/bulk-inventory-update", productController.bulkInventoryUpdate);
 module.exports = router;
