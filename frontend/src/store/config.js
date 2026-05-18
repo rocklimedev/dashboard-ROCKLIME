@@ -1,5 +1,5 @@
-// export const API_URL =
-//   process.env.NODE_ENV === "production"
-//     ? "https://api.cmtradingco.com/api"
-//     : "http://localhost:4000/api";
-export const API_URL = "https://api.cmtradingco.com/api";
+export const API_URL =
+  process.env.NODE_ENV === "production"
+    ? "https://api.cmtradingco.com/api"
+    : "http://localhost:4000/api";
+//export const API_URL = "https://api.cmtradingco.com/api";
