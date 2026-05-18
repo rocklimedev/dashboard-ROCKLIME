@@ -238,6 +238,28 @@ export const productApi = baseApi.injectEndpoints({
         { type: "Product", id: "LIST" },
       ],
     }),
+    // ─────────────────────────────────────────────
+    // NEW: BULK INVENTORY UPDATE
+    // ─────────────────────────────────────────────
+    bulkInventoryUpdate: builder.mutation({
+      query: (payload) => ({
+        url: "/products/bulk-inventory-update",
+        method: "POST",
+        body: payload, // { updates: [{ product_code, quantity, warehouse?, message?, userId? }, ...] }
+      }),
+      invalidatesTags: [
+        "Product",
+        { type: "Product", id: "LIST" },
+        "ProductCount",
+        // Optionally invalidate specific products if you return their IDs
+      ],
+      // Optional: transform response for better usability
+      transformResponse: (response) => ({
+        ...response,
+        successCount: response.success?.length || 0,
+        failedCount: response.failed?.length || 0,
+      }),
+    }),
   }),
 });
 
@@ -265,6 +287,7 @@ export const {
   useReplaceAllKeywordsForProductMutation,
   useAddKeywordsToProductMutation,
   useUpdateProductFeaturedMutation,
+  useBulkInventoryUpdateMutation,
   useGetAllProductsByCategoryQuery,
   useGetProductCountQuery,
 } = productApi;

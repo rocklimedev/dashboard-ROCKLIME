@@ -3005,6 +3005,120 @@ exports.bulkImportProducts = async (req, res) => {
     });
   }
 };
+// ==================== BULK INVENTORY UPDATE ====================
+exports.bulkInventoryUpdate = async (req, res) => {
+  const t = await sequelize.transaction();
 
+  try {
+    const { updates } = req.body; // array of { product_code, quantity, warehouse?, message?, userId? }
+
+    if (!Array.isArray(updates) || updates.length === 0) {
+      await t.rollback();
+      return res.status(400).json({ message: "updates array is required" });
+    }
+
+    if (updates.length > 500) {
+      await t.rollback();
+      return res
+        .status(400)
+        .json({ message: "Maximum 500 records per request" });
+    }
+
+    const results = {
+      success: [],
+      failed: [],
+      totalUpdated: 0,
+    };
+
+    for (const item of updates) {
+      const {
+        product_code,
+        quantity,
+        warehouse,
+        message: customMessage,
+        userId,
+      } = item;
+
+      try {
+        if (!product_code?.trim() || !quantity || isNaN(quantity)) {
+          throw new Error("product_code and valid quantity are required");
+        }
+
+        const qty = Number(quantity);
+        if (qty <= 0) throw new Error("Quantity must be positive");
+
+        const product = await Product.findOne({
+          where: { product_code: product_code.trim() },
+          transaction: t,
+          lock: t.LOCK.UPDATE,
+        });
+
+        if (!product) {
+          throw new Error(`Product with code ${product_code} not found`);
+        }
+
+        const oldQuantity = product.quantity;
+        const newQuantity = oldQuantity + qty;
+
+        // Update product stock
+        await product.update({ quantity: newQuantity }, { transaction: t });
+
+        // Create inventory history
+        let username = "System";
+        if (userId) {
+          const user = await User.findByPk(userId, {
+            attributes: ["username"],
+            transaction: t,
+          });
+          if (user) username = user.username;
+        }
+
+        const finalMessage =
+          customMessage?.trim() ||
+          `Bulk stock update (+${qty}) ${warehouse ? `at ${warehouse}` : ""} by ${username}`;
+
+        await InventoryHistory.create(
+          {
+            productId: product.productId,
+            change: qty,
+            quantityAfter: newQuantity,
+            action: "add-stock",
+            orderNo: null,
+            userId: userId || null,
+            message: finalMessage,
+          },
+          { transaction: t },
+        );
+
+        results.success.push({
+          product_code,
+          oldQuantity,
+          added: qty,
+          newQuantity,
+        });
+        results.totalUpdated++;
+      } catch (err) {
+        results.failed.push({
+          product_code: item.product_code,
+          error: err.message,
+        });
+      }
+    }
+
+    await t.commit();
+
+    res.status(200).json({
+      message: `Bulk inventory update completed. ${results.totalUpdated} products updated.`,
+      ...results,
+    });
+  } catch (error) {
+    await t.rollback();
+    console.error("Bulk Inventory Update Error:", error);
+    res.status(500).json({
+      message: "Bulk inventory update failed",
+      error: error.message,
+    });
+  }
+};
 // Export the reusable batch function so worker can use it
 exports.processProductBatch = processProductBatch;
