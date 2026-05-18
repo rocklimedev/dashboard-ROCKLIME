@@ -27,27 +27,30 @@ import {
 } from "@ant-design/icons";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
+import { useSearchParams } from "react-router-dom";
+
 import {
   useStartBulkImportMutation,
   useGetJobStatusQuery,
 } from "../../api/jobsApi";
+
 import { useGetAllBrandsQuery } from "../../api/brandsApi";
+import { useBulkInventoryUpdateMutation } from "../../api/productApi"; // ← Added
+
 import AddBrandModal from "../../components/Brands/AddBrandModal";
-import { useSearchParams } from "react-router-dom"; // ← Added for URL params
 
 const { Step } = Steps;
 const { Option } = Select;
 const { Title, Text } = Typography;
 
 const BulkProductImport = () => {
-  const [searchParams, setSearchParams] = useSearchParams(); // ← URL Params
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  // Get initial tab from URL or default to "products"
   const initialTab =
     searchParams.get("tab") === "inventory" ? "inventory" : "products";
 
   const [currentStep, setCurrentStep] = useState(0);
-  const [activeTab, setActiveTab] = useState(initialTab); // "products" or "inventory"
+  const [activeTab, setActiveTab] = useState(initialTab);
 
   const [file, setFile] = useState(null);
   const [headers, setHeaders] = useState([]);
@@ -57,11 +60,14 @@ const BulkProductImport = () => {
   const [selectedBrandId, setSelectedBrandId] = useState(null);
   const [showAddBrandModal, setShowAddBrandModal] = useState(false);
 
+  // Mutations
   const [startBulkImport, { isLoading: isStarting }] =
     useStartBulkImportMutation();
+  const [bulkInventoryUpdate, { isLoading: isUpdatingInventory }] =
+    useBulkInventoryUpdateMutation();
 
   const { data: jobStatus } = useGetJobStatusQuery(jobId, {
-    skip: !jobId,
+    skip: !jobId || activeTab === "inventory",
     pollingInterval: 5000,
   });
 
@@ -71,10 +77,9 @@ const BulkProductImport = () => {
     isLoading: brandsLoading,
     refetch: refetchBrands,
   } = useGetAllBrandsQuery();
-
   const brands = brandsData || [];
 
-  // ── Time estimation logic ─────────────────────────────────────
+  // Time estimation (for background product import)
   const [startTime, setStartTime] = useState(null);
   const [processedHistory, setProcessedHistory] = useState([]);
 
@@ -118,7 +123,7 @@ const BulkProductImport = () => {
     return `${Math.round(secondsLeft / 3600)} hours +`;
   }, [processedHistory, jobStatus]);
 
-  // ── Field mapping options based on active tab ─────────────────────────────────────
+  // Field Options
   const fieldOptions = useMemo(() => {
     if (activeTab === "products") {
       return [
@@ -141,7 +146,7 @@ const BulkProductImport = () => {
         { value: "is_variant", label: "Is Variant? (yes/no/true/false)" },
         { value: "variant_name", label: "Variant Name" },
         { value: "variant_value", label: "Variant Value" },
-        // Meta fields
+        // Meta fields...
         {
           value: "meta_0f429633-220c-478b-972e-817193a527f2",
           label: "Size (mm)",
@@ -204,46 +209,104 @@ const BulkProductImport = () => {
         },
       ];
     } else {
-      // Inventory Import Fields
       return [
-        { value: "name", label: "Name *", required: true },
-        { value: "product_code", label: "Product Code *", required: true },
-        { value: "quantity", label: "Quantity *", required: true },
+        { value: "name", label: "Name" }, // optional
+        {
+          value: "meta_d11da9f9-3f2e-4536-8236-9671200cca4a",
+          label: "Company Code *",
+          required: true,
+        },
+        {
+          value: "product_code",
+          label: "Product Code (optional)",
+        },
+        {
+          value: "quantity",
+          label: "Quantity *",
+          required: true,
+        },
         { value: "warehouse", label: "Warehouse / Location" },
         { value: "selling_price", label: "Selling Price (INR)" },
-        { value: "brand", label: "Brand", required: true },
+        { value: "brand", label: "Brand" },
         { value: "tally_code", label: "Tally Code" },
         { value: "tally_stock", label: "Tally Stock" },
       ];
     }
   }, [activeTab]);
 
-  const requiredFields = fieldOptions
-    .filter((f) => f.required)
-    .map((f) => f.value);
+  // Dynamic required fields based on tab
+  const getRequiredFields = () => {
+    if (activeTab === "products") {
+      return ["name", "product_code"];
+    } else {
+      // For inventory: company_code is priority, product_code is fallback
+      return ["meta_d11da9f9-3f2e-4536-8236-9671200cca4a", "quantity"];
+    }
+  };
+
+  const requiredFields = getRequiredFields();
 
   const isMappingValid = requiredFields.every((field) =>
     Object.values(mapping).includes(field),
   );
-
-  // ── Update URL when tab changes ───────────────────────────────────────────
   const handleTabChange = (key) => {
     setActiveTab(key);
-    setSearchParams({ tab: key }); // ← Update URL param
-    handleReset(); // Reset form when switching tabs
+    setSearchParams({ tab: key });
+    handleReset();
   };
 
-  // ── File upload & parse ───────────────────────────────────────────────────
+  // Parse file to JSON with mapping
+  const parseFileToJson = async (uploadedFile, currentMapping) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      const isCsv = uploadedFile.name.toLowerCase().endsWith(".csv");
+
+      reader.onload = (e) => {
+        try {
+          let data = [];
+          if (isCsv) {
+            const result = Papa.parse(e.target.result, {
+              header: true,
+              skipEmptyLines: true,
+            });
+            data = result.data;
+          } else {
+            const workbook = XLSX.read(e.target.result, { type: "array" });
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+            data = XLSX.utils.sheet_to_json(sheet);
+          }
+
+          const mappedData = data.map((row) => {
+            const mappedRow = {};
+            Object.entries(currentMapping).forEach(([colIndex, field]) => {
+              const colName = headers[parseInt(colIndex)];
+              if (colName) mappedRow[field] = row[colName];
+            });
+            return mappedRow;
+          });
+
+          resolve(mappedData);
+        } catch (err) {
+          reject(err);
+        }
+      };
+
+      if (isCsv) reader.readAsText(uploadedFile);
+      else reader.readAsArrayBuffer(uploadedFile);
+    });
+  };
+
   const handleFileUpload = (uploadedFile) => {
     if (activeTab === "products" && !selectedBrandId) {
       message.error("Please select a brand first");
       return false;
     }
 
-    const isCsv = uploadedFile.name.toLowerCase().endsWith(".csv");
-    const isExcel = /\.(xlsx|xls)$/.test(uploadedFile.name);
+    const isValidFile =
+      uploadedFile.name.toLowerCase().endsWith(".csv") ||
+      /\.(xlsx|xls)$/.test(uploadedFile.name);
 
-    if (!isCsv && !isExcel) {
+    if (!isValidFile) {
       message.error("Only CSV or Excel files are allowed");
       return false;
     }
@@ -254,10 +317,11 @@ const BulkProductImport = () => {
     setCurrentStep(1);
 
     const reader = new FileReader();
-
     reader.onload = (e) => {
       try {
         let parsedHeaders = [];
+        const isCsv = uploadedFile.name.toLowerCase().endsWith(".csv");
+
         if (isCsv) {
           const result = Papa.parse(e.target.result, { skipEmptyLines: true });
           if (result.data.length > 0) parsedHeaders = result.data[0];
@@ -271,7 +335,6 @@ const BulkProductImport = () => {
         const cleanHeaders = parsedHeaders
           .map((h) => (h || "").toString().trim())
           .filter(Boolean);
-
         setHeaders(cleanHeaders);
         message.success("File loaded successfully. Now map columns.");
       } catch (err) {
@@ -279,13 +342,15 @@ const BulkProductImport = () => {
       }
     };
 
-    if (isCsv) reader.readAsText(uploadedFile);
-    else reader.readAsArrayBuffer(uploadedFile);
+    if (uploadedFile.name.toLowerCase().endsWith(".csv")) {
+      reader.readAsText(uploadedFile);
+    } else {
+      reader.readAsArrayBuffer(uploadedFile);
+    }
 
     return false;
   };
 
-  // ── Start import with proper params ───────────────────────────────────────
   const handleStartImport = async () => {
     if (!isMappingValid) {
       message.warning("Please map all required fields");
@@ -299,32 +364,88 @@ const BulkProductImport = () => {
     setImporting(true);
 
     try {
-      const payload = {
-        file,
-        mapping,
-        importType: activeTab, // ← Tab type sent to backend
-        selectedBrandId:
-          activeTab === "products" ? String(selectedBrandId) : null,
-      };
+      if (activeTab === "inventory") {
+        // === Inventory Update (Immediate) ===
+        const parsedData = await parseFileToJson(file, mapping);
 
-      const result = await startBulkImport(payload).unwrap();
+        const updates = parsedData
+          .map((row) => {
+            const companyCode =
+              row["meta_d11da9f9-3f2e-4536-8236-9671200cca4a"] ||
+              row.company_code;
+            const productCode = row.product_code;
 
-      message.success(
-        `${activeTab === "products" ? "Product" : "Inventory"} import job started successfully!`,
-      );
+            return {
+              company_code: companyCode?.toString().trim(),
+              product_code: productCode?.toString().trim(),
+              quantity: Number(row.quantity),
+              warehouse: row.warehouse || null,
+              selling_price: row.selling_price
+                ? Number(row.selling_price)
+                : undefined,
+              brand: row.brand,
+            };
+          })
+          .filter((item) => {
+            const hasIdentifier = item.company_code || item.product_code;
+            const hasValidQty = !isNaN(item.quantity) && item.quantity > 0;
+            return hasIdentifier && hasValidQty;
+          });
+        const result = await bulkInventoryUpdate({ updates }).unwrap();
 
-      setJobId(result.jobId);
-      setCurrentStep(2);
-      setStartTime(Date.now());
-      setProcessedHistory([]);
+        message.success(
+          `Inventory Update Completed! ${result.successCount} successful, ${result.failedCount} failed`,
+        );
+
+        setJobId(`inventory-${Date.now()}`);
+        setCurrentStep(2);
+
+        // Store result for display
+        setJobStatusManually(result);
+      } else {
+        // === Product Import (Background Job) ===
+        const payload = {
+          file,
+          mapping,
+          importType: "products",
+          selectedBrandId: String(selectedBrandId),
+        };
+
+        const result = await startBulkImport(payload).unwrap();
+        message.success("Product import job started successfully!");
+        setJobId(result.jobId);
+        setCurrentStep(2);
+        setStartTime(Date.now());
+        setProcessedHistory([]);
+      }
     } catch (err) {
-      message.error(err?.data?.message || "Failed to queue import job");
+      message.error(
+        err?.data?.message || err?.message || "Failed to start import",
+      );
     } finally {
       setImporting(false);
     }
   };
 
-  // ── Reset ────────────────────────────────────────────────────────────────
+  const [manualJobStatus, setManualJobStatus] = useState(null);
+
+  const setJobStatusManually = (result) => {
+    setManualJobStatus({
+      status: "completed",
+      progress: {
+        totalRows: result.successCount + result.failedCount,
+        processedRows: result.successCount + result.failedCount,
+        successCount: result.successCount,
+        failedCount: result.failedCount,
+      },
+      errorLog:
+        result.failed?.map((f, i) => ({
+          row: i + 1,
+          message: f.error || "Unknown error",
+        })) || [],
+    });
+  };
+
   const handleReset = () => {
     setCurrentStep(0);
     setFile(null);
@@ -333,9 +454,9 @@ const BulkProductImport = () => {
     setJobId(null);
     setStartTime(null);
     setProcessedHistory([]);
+    setManualJobStatus(null);
   };
 
-  // ── Download Template ─────────────────────────────────────────────────────
   const downloadTemplate = () => {
     let templateData = [];
 
@@ -401,6 +522,9 @@ const BulkProductImport = () => {
     },
   ];
 
+  const currentJobStatus =
+    activeTab === "inventory" ? manualJobStatus : jobStatus;
+
   return (
     <div className="page-wrapper">
       <div className="content container-fluid">
@@ -423,10 +547,9 @@ const BulkProductImport = () => {
             style={{ marginBottom: 32 }}
           />
 
-          {/* Tabs with URL Params Support */}
           <Tabs
             activeKey={activeTab}
-            onChange={handleTabChange} // ← Updated to use handleTabChange
+            onChange={handleTabChange}
             items={tabItems}
             style={{ marginBottom: 32 }}
           />
@@ -460,7 +583,6 @@ const BulkProductImport = () => {
                       value={selectedBrandId}
                       onChange={setSelectedBrandId}
                       loading={brandsLoading}
-                      disabled={brandsLoading}
                       filterOption={(input, option) =>
                         (option?.children ?? "")
                           .toLowerCase()
@@ -589,86 +711,91 @@ const BulkProductImport = () => {
                   type="primary"
                   size="large"
                   onClick={handleStartImport}
-                  loading={isStarting || importing}
+                  loading={isStarting || importing || isUpdatingInventory}
                   disabled={
                     !file ||
                     !isMappingValid ||
                     (activeTab === "products" && !selectedBrandId)
                   }
                 >
-                  Start Background Import
+                  {activeTab === "inventory"
+                    ? "Update Inventory Now"
+                    : "Start Background Import"}
                 </Button>
               </div>
             </Card>
           )}
 
           {/* Step 2: Progress */}
-          {currentStep === 2 && jobId && (
+          {currentStep === 2 && (
             <Card
-              title={`Import Job #${jobId.slice(0, 8)}... - ${activeTab.toUpperCase()}`}
+              title={`Import Job #${(jobId || "").slice(0, 8)}... - ${activeTab.toUpperCase()}`}
             >
-              {jobStatus ? (
+              {currentJobStatus ? (
                 <Space
                   direction="vertical"
                   style={{ width: "100%" }}
                   size="middle"
                 >
                   <Alert
-                    message={`Status: ${jobStatus.status.toUpperCase()}`}
+                    message={`Status: ${currentJobStatus.status?.toUpperCase()}`}
                     type={
-                      jobStatus.status === "completed"
+                      currentJobStatus.status === "completed"
                         ? "success"
-                        : jobStatus.status === "failed"
+                        : currentJobStatus.status === "failed"
                           ? "error"
-                          : jobStatus.status === "cancelled"
-                            ? "warning"
-                            : "info"
+                          : "info"
                     }
                     showIcon
                   />
 
                   <Progress
                     percent={
-                      jobStatus.progress?.totalRows
+                      currentJobStatus.progress?.totalRows
                         ? Math.round(
-                            (jobStatus.progress.processedRows /
-                              jobStatus.progress.totalRows) *
+                            (currentJobStatus.progress.processedRows /
+                              currentJobStatus.progress.totalRows) *
                               100,
                           )
                         : 0
                     }
                     status={
-                      jobStatus.progress?.failedCount > 0
+                      currentJobStatus.progress?.failedCount > 0
                         ? "exception"
                         : "active"
                     }
                   />
 
                   <Text strong>
-                    Progress: {jobStatus.progress?.processedRows || 0} /{" "}
-                    {jobStatus.progress?.totalRows || "?"} rows
+                    Progress: {currentJobStatus.progress?.processedRows || 0} /{" "}
+                    {currentJobStatus.progress?.totalRows || "?"} rows
                   </Text>
 
-                  {jobStatus.status === "processing" && (
-                    <Text type="secondary">
-                      Estimated time remaining:{" "}
-                      <strong>{estimatedTimeLeft}</strong>
-                    </Text>
-                  )}
+                  {activeTab === "products" &&
+                    currentJobStatus.status === "processing" && (
+                      <Text type="secondary">
+                        Estimated time remaining:{" "}
+                        <strong>{estimatedTimeLeft}</strong>
+                      </Text>
+                    )}
 
                   <Text>
                     Success:{" "}
-                    <strong>{jobStatus.progress?.successCount || 0}</strong> |
-                    Failed:{" "}
-                    <strong>{jobStatus.progress?.failedCount || 0}</strong>
+                    <strong>
+                      {currentJobStatus.progress?.successCount || 0}
+                    </strong>{" "}
+                    | Failed:{" "}
+                    <strong>
+                      {currentJobStatus.progress?.failedCount || 0}
+                    </strong>
                   </Text>
 
-                  {jobStatus.errorLog?.length > 0 && (
+                  {currentJobStatus.errorLog?.length > 0 && (
                     <>
                       <Title level={5}>Failed Rows</Title>
                       <Table
                         size="small"
-                        dataSource={jobStatus.errorLog}
+                        dataSource={currentJobStatus.errorLog}
                         columns={[
                           { title: "Row", dataIndex: "row", width: 80 },
                           { title: "Error Message", dataIndex: "message" },
@@ -678,7 +805,7 @@ const BulkProductImport = () => {
                     </>
                   )}
 
-                  {jobStatus.status === "completed" && (
+                  {currentJobStatus.status === "completed" && (
                     <Result
                       status="success"
                       title="Import Completed Successfully"
@@ -690,19 +817,10 @@ const BulkProductImport = () => {
                       ]}
                     />
                   )}
-
-                  {jobStatus.status === "processing" && (
-                    <Alert
-                      message="Processing in Background"
-                      description="This job is running on the server. You can safely leave this page."
-                      type="info"
-                      showIcon
-                    />
-                  )}
                 </Space>
               ) : (
                 <div style={{ textAlign: "center", padding: "100px 0" }}>
-                  <Spin tip="Initializing import job..." size="large" />
+                  <Spin tip="Processing..." size="large" />
                 </div>
               )}
             </Card>
@@ -710,7 +828,6 @@ const BulkProductImport = () => {
         </Card>
       </div>
 
-      {/* Add Brand Modal */}
       {showAddBrandModal && (
         <AddBrandModal
           onClose={() => setShowAddBrandModal(false)}

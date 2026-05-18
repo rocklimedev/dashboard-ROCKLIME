@@ -3009,73 +3009,183 @@ exports.bulkImportProducts = async (req, res) => {
 exports.bulkInventoryUpdate = async (req, res) => {
   const t = await sequelize.transaction();
 
+  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+  console.log("🚀 BULK INVENTORY UPDATE STARTED");
+  console.log("Time:", new Date().toISOString());
+  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
   try {
-    const { updates } = req.body; // array of { product_code, quantity, warehouse?, message?, userId? }
+    const { updates } = req.body;
+
+    console.log("📦 Raw Request Body:", JSON.stringify(req.body, null, 2));
 
     if (!Array.isArray(updates) || updates.length === 0) {
+      console.log("❌ updates array missing or invalid");
+
       await t.rollback();
-      return res.status(400).json({ message: "updates array is required" });
+
+      return res.status(400).json({
+        message: "updates array is required",
+      });
     }
 
+    console.log(`📊 Total Updates Received: ${updates.length}`);
+
     if (updates.length > 500) {
+      console.log("❌ Too many records");
+
       await t.rollback();
-      return res
-        .status(400)
-        .json({ message: "Maximum 500 records per request" });
+
+      return res.status(400).json({
+        message: "Maximum 500 records per request",
+      });
     }
 
     const results = {
+      successCount: 0,
+      failedCount: 0,
       success: [],
       failed: [],
-      totalUpdated: 0,
     };
 
-    for (const item of updates) {
-      const {
-        product_code,
-        quantity,
-        warehouse,
-        message: customMessage,
-        userId,
-      } = item;
+    // UUID of Company Code meta field
+    const COMPANY_CODE_META_ID = "d11da9f9-3f2e-4536-8236-9671200cca4a";
+
+    for (let index = 0; index < updates.length; index++) {
+      const item = updates[index];
+
+      console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      console.log(`🔄 Processing Item ${index + 1}/${updates.length}`);
+      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
+      let identifier = null;
 
       try {
-        if (!product_code?.trim() || !quantity || isNaN(quantity)) {
-          throw new Error("product_code and valid quantity are required");
+        console.log("📥 Incoming Item:", JSON.stringify(item, null, 2));
+
+        const {
+          company_code,
+          product_code,
+          quantity,
+          warehouse,
+          selling_price,
+          message: customMessage,
+          userId,
+        } = item;
+
+        identifier = (company_code || product_code || "").toString().trim();
+
+        console.log("🆔 Identifier:", identifier);
+
+        if (!identifier) {
+          throw new Error("Product Code / Company Code is required");
+        }
+
+        console.log("📦 Quantity Received:", quantity);
+
+        if (quantity === undefined || quantity === null || isNaN(quantity)) {
+          throw new Error("Valid quantity is required");
         }
 
         const qty = Number(quantity);
-        if (qty <= 0) throw new Error("Quantity must be positive");
+
+        console.log("🔢 Parsed Quantity:", qty);
+
+        if (qty <= 0) {
+          throw new Error("Quantity must be positive");
+        }
+
+        console.log("🔍 Searching Product...");
+
+        // Enable SQL logging temporarily
+        sequelize.options.logging = console.log;
 
         const product = await Product.findOne({
-          where: { product_code: product_code.trim() },
+          where: {
+            [Op.or]: [
+              // Direct product code search
+              {
+                product_code: identifier,
+              },
+
+              // Search inside meta JSON
+              sequelize.literal(`
+                JSON_UNQUOTE(
+                  JSON_EXTRACT(
+                    meta,
+                    '$."${COMPANY_CODE_META_ID}"'
+                  )
+                ) = ${sequelize.escape(identifier)}
+              `),
+            ],
+          },
+
           transaction: t,
           lock: t.LOCK.UPDATE,
         });
 
+        console.log(
+          "📄 Product Search Result:",
+          product ? "FOUND" : "NOT FOUND",
+        );
+
         if (!product) {
-          throw new Error(`Product with code ${product_code} not found`);
+          console.log("❌ Product not found for identifier:", identifier);
+
+          throw new Error(`Product with code "${identifier}" not found`);
         }
 
-        const oldQuantity = product.quantity;
+        console.log("✅ Product Found:", {
+          id: product.productId,
+          product_code: product.product_code,
+          current_quantity: product.quantity,
+        });
+
+        const oldQuantity = Number(product.quantity || 0);
         const newQuantity = oldQuantity + qty;
 
-        // Update product stock
-        await product.update({ quantity: newQuantity }, { transaction: t });
+        console.log("📊 Quantity Calculation:", {
+          oldQuantity,
+          qtyAdded: qty,
+          newQuantity,
+        });
 
-        // Create inventory history
-        let username = "System";
-        if (userId) {
-          const user = await User.findByPk(userId, {
-            attributes: ["username"],
-            transaction: t,
-          });
-          if (user) username = user.username;
+        const updateData = {
+          quantity: newQuantity,
+        };
+
+        if (
+          selling_price !== undefined &&
+          selling_price !== null &&
+          !isNaN(selling_price)
+        ) {
+          updateData.selling_price = Number(selling_price);
+
+          console.log("💰 Updating Selling Price:", updateData.selling_price);
         }
+
+        console.log(
+          "📝 Final Update Data:",
+          JSON.stringify(updateData, null, 2),
+        );
+
+        console.log("💾 Updating Product...");
+
+        await product.update(updateData, {
+          transaction: t,
+        });
+
+        console.log("✅ Product Updated Successfully");
 
         const finalMessage =
           customMessage?.trim() ||
-          `Bulk stock update (+${qty}) ${warehouse ? `at ${warehouse}` : ""} by ${username}`;
+          `Bulk stock update (+${qty}) ${
+            warehouse ? `at ${warehouse}` : ""
+          } by System`;
+
+        console.log("🧾 Inventory Message:", finalMessage);
+
+        console.log("📜 Creating Inventory History...");
 
         await InventoryHistory.create(
           {
@@ -3086,38 +3196,85 @@ exports.bulkInventoryUpdate = async (req, res) => {
             orderNo: null,
             userId: userId || null,
             message: finalMessage,
+            warehouse: warehouse || null,
           },
-          { transaction: t },
+          {
+            transaction: t,
+          },
         );
 
+        console.log("✅ Inventory History Created");
+
         results.success.push({
-          product_code,
+          productId: product.productId,
+          product_code: product.product_code,
+          company_code: identifier,
           oldQuantity,
           added: qty,
           newQuantity,
         });
-        results.totalUpdated++;
+
+        results.successCount++;
+
+        console.log("✅ ITEM SUCCESS");
       } catch (err) {
+        console.log("❌ ITEM FAILED");
+        console.log("Identifier:", identifier);
+        console.log("Error Message:", err.message);
+        console.log("Stack Trace:", err.stack);
+
         results.failed.push({
-          product_code: item.product_code,
+          identifier: identifier || "Unknown",
           error: err.message,
         });
+
+        results.failedCount++;
       }
     }
 
+    console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    console.log("📊 FINAL RESULTS");
+    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    console.log("✅ Success Count:", results.successCount);
+    console.log("❌ Failed Count:", results.failedCount);
+
+    console.log("💾 Committing Transaction...");
+
     await t.commit();
 
-    res.status(200).json({
-      message: `Bulk inventory update completed. ${results.totalUpdated} products updated.`,
-      ...results,
+    console.log("✅ TRANSACTION COMMITTED");
+
+    return res.status(200).json({
+      message: `Bulk inventory update completed. ${results.successCount} successful, ${results.failedCount} failed.`,
+      successCount: results.successCount,
+      failedCount: results.failedCount,
+      success: results.success,
+      failed: results.failed,
     });
   } catch (error) {
+    console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    console.log("🔥 FATAL ERROR");
+    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
+    console.error(error);
+
+    console.log("↩️ Rolling Back Transaction...");
+
     await t.rollback();
-    console.error("Bulk Inventory Update Error:", error);
-    res.status(500).json({
+
+    console.log("❌ TRANSACTION ROLLED BACK");
+
+    return res.status(500).json({
       message: "Bulk inventory update failed",
       error: error.message,
     });
+  } finally {
+    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    console.log("🏁 BULK INVENTORY UPDATE ENDED");
+    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+
+    // disable SQL logging again
+    sequelize.options.logging = false;
   }
 };
 // Export the reusable batch function so worker can use it

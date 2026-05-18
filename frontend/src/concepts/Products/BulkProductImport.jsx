@@ -1,4 +1,3 @@
-// src/pages/products/BulkProductImport.jsx
 import React, { useState, useMemo, useEffect } from "react";
 import {
   Steps,
@@ -8,9 +7,7 @@ import {
   Card,
   Table,
   Tag,
-  Spin,
   Space,
-  Progress,
   Typography,
   Alert,
   Result,
@@ -31,16 +28,16 @@ import {
   useStartBulkImportMutation,
   useGetJobStatusQuery,
 } from "../../api/jobsApi";
-import { useBulkInventoryUpdateMutation } from "../../api/productApi"; // ← NEW
+import { useBulkInventoryUpdateMutation } from "../../api/productApi";
 import { useGetAllBrandsQuery } from "../../api/brandsApi";
 import AddBrandModal from "../../components/Brands/AddBrandModal";
 
 const { Step } = Steps;
 const { Option } = Select;
-const { Title, Text } = Typography;
+const { Title } = Typography;
 
 const BulkProductImport = () => {
-  const [activeTab, setActiveTab] = useState("products"); // "products" | "inventory"
+  const [activeTab, setActiveTab] = useState("products");
   const [currentStep, setCurrentStep] = useState(0);
   const [file, setFile] = useState(null);
   const [headers, setHeaders] = useState([]);
@@ -50,9 +47,7 @@ const BulkProductImport = () => {
   const [selectedBrandId, setSelectedBrandId] = useState(null);
   const [showAddBrandModal, setShowAddBrandModal] = useState(false);
 
-  // Mutations
-  const [startBulkImport, { isLoading: isStarting }] =
-    useStartBulkImportMutation();
+  const [startBulkImport] = useStartBulkImportMutation();
   const [bulkInventoryUpdate] = useBulkInventoryUpdateMutation();
 
   const { data: jobStatus } = useGetJobStatusQuery(jobId, {
@@ -60,18 +55,26 @@ const BulkProductImport = () => {
     pollingInterval: 5000,
   });
 
-  // Brands (only needed for Product Import)
   const {
     data: brandsData = [],
     isLoading: brandsLoading,
     refetch: refetchBrands,
   } = useGetAllBrandsQuery();
 
-  const brands = brandsData || [];
-
-  // ── Time estimation logic ─────────────────────────────────────
   const [startTime, setStartTime] = useState(null);
   const [processedHistory, setProcessedHistory] = useState([]);
+
+  // Reset everything when tab changes
+  useEffect(() => {
+    setCurrentStep(0);
+    setFile(null);
+    setHeaders([]);
+    setMapping({});
+    setJobId(null);
+    setSelectedBrandId(null);
+    setStartTime(null);
+    setProcessedHistory([]);
+  }, [activeTab]);
 
   useEffect(() => {
     if (
@@ -113,15 +116,11 @@ const BulkProductImport = () => {
     return `${Math.round(secondsLeft / 3600)} hours +`;
   }, [processedHistory, jobStatus]);
 
-  // ── Dynamic Field Options ─────────────────────────────────────
   const fieldOptions = useMemo(() => {
     if (activeTab === "products") {
       return [
-        // ── Core required fields ─────────────────────────────────────────────
         { value: "name", label: "Product Name *", required: true },
         { value: "product_code", label: "Product Code *", required: true },
-
-        // ── Standard product fields ──────────────────────────────────────────
         { value: "description", label: "Description" },
         { value: "quantity", label: "Initial Quantity" },
         { value: "alert_quantity", label: "Low Stock Alert Quantity" },
@@ -131,118 +130,43 @@ const BulkProductImport = () => {
         { value: "vendor", label: "Vendor Name" },
         {
           value: "brand_parentcategoriesId",
-          label: "Brand Parent Category ID (UUID)",
+          label: "Brand Parent Category ID (Optional)",
         },
         { value: "keywords", label: "Keywords (comma separated)" },
         { value: "images", label: "Image URLs (comma separated)" },
-
-        // ── Variant / Master fields (optional) ───────────────────────────────
-        { value: "is_master", label: "Is Master Product? (yes/no/true/false)" },
-        { value: "is_variant", label: "Is Variant? (yes/no/true/false)" },
-        { value: "variant_name", label: "Variant Name (e.g. Color)" },
-        { value: "variant_value", label: "Variant Value (e.g. Red)" },
-
-        // ── Meta fields using REAL UUIDs from product_metas table ─────────────
-        {
-          value: "meta_0f429633-220c-478b-972e-817193a527f2",
-          label: "Size (mm)",
-        },
-        {
-          value: "meta_16ffa365-3b25-4230-a8f5-73ba5b8ac5a1",
-          label: "Product Segment",
-        },
-        {
-          value: "meta_32cef946-b417-4acf-a342-58e6c60f5aa4",
-          label: "Area Covered per Box (sqft)",
-        },
-        {
-          value: "meta_4ded1cb3-5d31-42e8-90ec-a381a6ab1e35",
-          label: "Barcode",
-        },
-        {
-          value: "meta_73c6caff-3b7d-4eae-bb7a-dfd176d130c7",
-          label: "MRP per Pcs (INR)",
-        },
-        {
-          value: "meta_7687da21-9173-4172-9371-51aa426de108",
-          label: "Purchasing Price (INR)",
-        },
-        {
-          value: "meta_7e2b4efb-4ff2-4e4d-9b08-82559a7e3cd0",
-          label: "Size (inches/feet)",
-        },
-        {
-          value: "meta_81cd6d76-d7d2-4226-b48e-6704e6224c2b",
-          label: "Product Group",
-        },
-        {
-          value: "meta_963ad7fb-734b-41d7-a95a-27a84e068ae0",
-          label: "MRP per Box (INR)",
-        },
-        {
-          value: "meta_9ba862ef-f993-4873-95ef-1fef10036aa5",
-          label: "Selling Price (INR)",
-        },
-        {
-          value: "meta_af3b4db4-6365-4dbc-b46b-4c9a744b1b4e",
-          label: "Length (inch)",
-        },
-        {
-          value: "meta_d11da9f9-3f2e-4536-8236-9671200cca4a",
-          label: "Company Code",
-        },
-        {
-          value: "meta_d3d3bd17-86fd-4390-83ea-8822755b8de9",
-          label: "Width (inch)",
-        },
-        {
-          value: "meta_e926224f-7ca6-4e28-b28c-69f0162d57c4",
-          label: "Area Covered per Pcs (sqft)",
-        },
-        {
-          value: "meta_ff53919e-40ac-4cb9-9b8e-d159547901f7",
-          label: "Pcs per Box",
-        },
       ];
     } else {
-      // Inventory Update
       return [
-        { value: "product_code", label: "Product Code *", required: true },
+        {
+          value: "company_code",
+          label: "Company Code / Product Code *",
+          required: true,
+        },
         { value: "quantity", label: "Quantity to Add *", required: true },
         { value: "warehouse", label: "Warehouse / Location" },
+        { value: "selling_price", label: "Selling Price (INR)" },
         { value: "message", label: "Custom Note / Remark" },
+        { value: "product_code", label: "Product Code (Fallback)" },
       ];
     }
   }, [activeTab]);
 
-  const requiredFields = fieldOptions
-    .filter((f) => f.required)
-    .map((f) => f.value);
+  const requiredFields = useMemo(() => {
+    return fieldOptions.filter((f) => f.required).map((f) => f.value);
+  }, [fieldOptions]);
+
   const isMappingValid = requiredFields.every((field) =>
     Object.values(mapping).includes(field),
   );
 
-  // ── File Upload ───────────────────────────────────────────────────
   const handleFileUpload = (uploadedFile) => {
-    if (activeTab === "products" && !selectedBrandId) {
-      message.error("Please select a brand first");
-      return false;
-    }
-
-    const isCsv = uploadedFile.name.toLowerCase().endsWith(".csv");
-    const isExcel = /\.(xlsx|xls)$/.test(uploadedFile.name);
-
-    if (!isCsv && !isExcel) {
-      message.error("Only CSV or Excel files are allowed");
-      return false;
-    }
-
     setFile(uploadedFile);
     setHeaders([]);
-    setMapping({});
+    setMapping({}); // Clear previous mapping
     setCurrentStep(1);
 
     const reader = new FileReader();
+    const isCsv = uploadedFile.name.toLowerCase().endsWith(".csv");
 
     reader.onload = (e) => {
       try {
@@ -260,6 +184,7 @@ const BulkProductImport = () => {
         const cleanHeaders = parsedHeaders
           .map((h) => (h || "").toString().trim())
           .filter(Boolean);
+
         setHeaders(cleanHeaders);
         message.success("File loaded successfully. Now map columns.");
       } catch (err) {
@@ -273,11 +198,9 @@ const BulkProductImport = () => {
     return false;
   };
 
-  // ── Parse File Data with Mapping ─────────────────────────────────
   const parseFileData = (fileToParse, colMapping) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-
       reader.onload = (e) => {
         try {
           const isCsv = fileToParse.name.toLowerCase().endsWith(".csv");
@@ -299,8 +222,26 @@ const BulkProductImport = () => {
             const mapped = {};
             Object.keys(colMapping).forEach((colIndex) => {
               const field = colMapping[colIndex];
-              mapped[field] = row[headers[colIndex]] ?? null;
+              let value = row[headers[colIndex]] ?? null;
+
+              if (value === "" || value == null) {
+                mapped[field] = null;
+                return;
+              }
+
+              if (field === "company_code" || field === "product_code") {
+                mapped[field] = value.toString().trim();
+              } else if (field === "quantity" || field === "selling_price") {
+                mapped[field] = Number(value);
+              } else {
+                mapped[field] = value;
+              }
             });
+
+            if (!mapped.company_code && mapped.product_code) {
+              mapped.company_code = mapped.product_code;
+            }
+
             return mapped;
           });
 
@@ -318,7 +259,6 @@ const BulkProductImport = () => {
     });
   };
 
-  // ── Start Import ─────────────────────────────────────────────────
   const handleStartImport = async () => {
     if (!isMappingValid) {
       message.warning("Please map all required fields");
@@ -329,21 +269,18 @@ const BulkProductImport = () => {
 
     try {
       if (activeTab === "products") {
-        if (!selectedBrandId) {
-          message.error("Please select a brand");
-          return;
-        }
-
         const result = await startBulkImport({
           file,
           mapping,
-          selectedBrandId: String(selectedBrandId),
+          selectedBrandId: selectedBrandId || null,
         }).unwrap();
 
         message.success("Product import job started!");
         setJobId(result.jobId);
+        setCurrentStep(2);
+        setStartTime(Date.now());
+        setProcessedHistory([]);
       } else {
-        // Inventory Update
         const parsedData = await parseFileData(file, mapping);
 
         const result = await bulkInventoryUpdate({
@@ -351,25 +288,20 @@ const BulkProductImport = () => {
         }).unwrap();
 
         message.success(
-          `Inventory updated successfully! ${result.successCount} products affected.`,
+          `Success! ${result.successCount || 0} products updated.`,
         );
         setCurrentStep(2);
-        // For direct update, we don't use job polling
-        setJobId(null);
-        return;
       }
-
-      setCurrentStep(2);
-      setStartTime(Date.now());
-      setProcessedHistory([]);
     } catch (err) {
-      message.error(err?.data?.message || "Failed to start import");
+      console.error(err);
+      message.error(
+        err?.data?.message || err?.message || "Failed to process import",
+      );
     } finally {
       setImporting(false);
     }
   };
 
-  // ── Reset ────────────────────────────────────────────────────────
   const handleReset = () => {
     setCurrentStep(0);
     setFile(null);
@@ -380,23 +312,19 @@ const BulkProductImport = () => {
     setProcessedHistory([]);
   };
 
-  // ── Download Template ────────────────────────────────────────────
   const downloadTemplate = () => {
-    let templateHeaders = [];
-
-    if (activeTab === "products") {
-      templateHeaders = [
-        "name",
-        "product_code",
-        "description",
-        "quantity",
-        "category",
-        "vendor",
-        "keywords",
-      ];
-    } else {
-      templateHeaders = ["product_code", "quantity", "warehouse", "message"];
-    }
+    const templateHeaders =
+      activeTab === "products"
+        ? [
+            "name",
+            "product_code",
+            "description",
+            "quantity",
+            "category",
+            "vendor",
+            "keywords",
+          ]
+        : ["PRODUCT_CODE", "quantity", "warehouse", "selling_price", "message"];
 
     const ws = XLSX.utils.aoa_to_sheet([templateHeaders]);
     const wb = XLSX.utils.book_new();
@@ -437,15 +365,13 @@ const BulkProductImport = () => {
     <div className="page-wrapper">
       <div className="content container-fluid">
         <Card>
-          <Space align="center" style={{ marginBottom: 24 }} size="middle">
-            <Title level={3} style={{ margin: 0 }}>
-              Bulk Import Center
-            </Title>
+          <Space align="center" style={{ marginBottom: 24 }}>
+            <Title level={3}>Bulk Import Center</Title>
           </Space>
 
           <Alert
-            message="All operations are safe and logged"
-            description="Inventory updates create proper history records."
+            message="Brand is optional for Product Import"
+            description="Products will be validated using Product Code / Company Code from Excel (including meta fields)"
             type="info"
             showIcon
             style={{ marginBottom: 24 }}
@@ -464,7 +390,7 @@ const BulkProductImport = () => {
             <Step title="Result" />
           </Steps>
 
-          {/* Step 0: Upload */}
+          {/* Step 0 - Upload */}
           {currentStep === 0 && (
             <Card>
               {activeTab === "products" && (
@@ -476,18 +402,22 @@ const BulkProductImport = () => {
                       marginBottom: 12,
                     }}
                   >
-                    Select Brand *
+                    Select Brand{" "}
+                    <span style={{ color: "#999", fontWeight: "normal" }}>
+                      (Optional)
+                    </span>
                   </label>
                   <Space>
                     <Select
-                      placeholder="Choose brand"
+                      placeholder="Choose brand (optional)"
                       style={{ width: 400 }}
                       showSearch
+                      allowClear
                       value={selectedBrandId}
                       onChange={setSelectedBrandId}
                       loading={brandsLoading}
                     >
-                      {brands.map((b) => (
+                      {brandsData.map((b) => (
                         <Option key={b.id} value={b.id}>
                           {b.brandName}
                         </Option>
@@ -511,7 +441,6 @@ const BulkProductImport = () => {
                   file ? [{ ...file, status: "done", name: file.name }] : []
                 }
                 onRemove={() => setFile(null)}
-                disabled={activeTab === "products" && !selectedBrandId}
               >
                 <p className="ant-upload-drag-icon">
                   <UploadOutlined />
@@ -524,14 +453,13 @@ const BulkProductImport = () => {
 
               <div style={{ textAlign: "center", marginTop: 20 }}>
                 <Button icon={<DownloadOutlined />} onClick={downloadTemplate}>
-                  Download {activeTab === "products" ? "Product" : "Inventory"}{" "}
-                  Template
+                  Download Template
                 </Button>
               </div>
             </Card>
           )}
 
-          {/* Step 1: Mapping */}
+          {/* Step 1 - Mapping */}
           {currentStep === 1 && (
             <Card
               title={`Map Columns → ${activeTab === "products" ? "Product Fields" : "Inventory Fields"}`}
@@ -539,6 +467,7 @@ const BulkProductImport = () => {
               <Table
                 size="small"
                 pagination={false}
+                rowKey="key"
                 dataSource={headers.map((h, i) => ({ key: i, header: h }))}
                 columns={[
                   {
@@ -548,18 +477,17 @@ const BulkProductImport = () => {
                   },
                   {
                     title: "Map to Field",
-                    render: (_, { header }, index) => (
+                    render: (_, __, index) => (
                       <Select
-                        style={{ width: 320 }}
+                        style={{ width: 340 }}
                         placeholder="Select field"
                         allowClear
-                        value={mapping[index]}
+                        value={mapping[index] || undefined}
                         onChange={(val) =>
-                          setMapping((prev) =>
-                            val
-                              ? { ...prev, [index]: val }
-                              : { ...prev, [index]: undefined },
-                          )
+                          setMapping((prev) => ({
+                            ...prev,
+                            [index]: val || undefined,
+                          }))
                         }
                       >
                         {fieldOptions.map((opt) => (
@@ -590,7 +518,7 @@ const BulkProductImport = () => {
             </Card>
           )}
 
-          {/* Step 2: Result */}
+          {/* Step 2 - Result */}
           {currentStep === 2 && (
             <Card
               title={
@@ -599,36 +527,20 @@ const BulkProductImport = () => {
                   : "Inventory Update Result"
               }
             >
-              {activeTab === "products" && jobStatus ? (
-                // Existing job progress UI (unchanged)
-                <Space
-                  direction="vertical"
-                  style={{ width: "100%" }}
-                  size="middle"
-                >
-                  {/* ... your existing progress UI ... */}
-                  {jobStatus.status === "completed" && (
-                    <Result
-                      status="success"
-                      title="Import Completed"
-                      extra={[
-                        <Button onClick={handleReset}>New Import</Button>,
-                      ]}
-                    />
-                  )}
-                </Space>
-              ) : (
-                <Result
-                  status="success"
-                  title="Inventory Updated Successfully"
-                  subTitle="Stock levels and history records have been updated."
-                  extra={[
-                    <Button type="primary" onClick={handleReset}>
-                      Import Another File
-                    </Button>,
-                  ]}
-                />
-              )}
+              <Result
+                status="success"
+                title={
+                  activeTab === "products"
+                    ? "Import Job Started"
+                    : "Inventory Updated Successfully"
+                }
+                subTitle="Check progress or import another file."
+                extra={[
+                  <Button type="primary" onClick={handleReset}>
+                    New Import
+                  </Button>,
+                ]}
+              />
             </Card>
           )}
         </Card>
