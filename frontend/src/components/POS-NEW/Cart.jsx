@@ -1,5 +1,21 @@
 // src/components/POS-NEW/Cart.jsx
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+
 import {
   Card,
   Button,
@@ -14,15 +30,17 @@ import {
   ArrowLeftOutlined,
   ShoppingCartOutlined,
   DeleteOutlined,
+  CheckCircleOutlined,
+  DragOutlined,
 } from "@ant-design/icons";
 import styled from "styled-components";
 import OrderTotal from "../../components/POS-NEW/OrderTotal";
 import CartItemRow from "../../components/POS-NEW/CartItemRow";
-import { CheckCircleOutlined } from "@ant-design/icons";
 
 const { Title } = Typography;
 
 /* ────────────────────── Styled Components ────────────────────── */
+
 const CartItemsCard = styled(Card)`
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -68,22 +86,18 @@ const OptionGroupWrapper = styled.div`
 `;
 
 /* ────────────────────── Component ────────────────────── */
-const CartTab = ({
-  // Props from CartLayout
-  localCartItems = [],
-  cartItems, // backward compatibility
 
-  // Totals (passed from CartLayout - these exclude optional items)
+const CartTab = ({
+  localCartItems = [],
+  cartItems, // fallback
   subTotal = 0,
   discount = 0,
   roundOff = 0,
   shipping = 0,
-
   itemDiscounts = {},
   itemDiscountTypes = {},
   itemTaxes = {},
   updatingItems = {},
-
   handleUpdateQuantity,
   handleRemoveItem,
   handleDiscountChange,
@@ -95,11 +109,11 @@ const CartTab = ({
   handleMakeOption,
   getParentName,
   documentType = "quotation",
-
-  // New: Pass calculationCartItems if needed for OrderTotal
-  calculationCartItems = [],
+  onCartOrderChange, // ← From parent
 }) => {
-  // Use localCartItems as the source of truth
+  const [dragMode, setDragMode] = useState(false);
+  const [orderedIds, setOrderedIds] = useState([]);
+
   const safeCartItems = useMemo(() => {
     return Array.isArray(localCartItems) && localCartItems.length > 0
       ? localCartItems
@@ -108,36 +122,65 @@ const CartTab = ({
         : [];
   }, [localCartItems, cartItems]);
 
+  // Sync orderedIds
+  useEffect(() => {
+    const ids = safeCartItems.map((item) => item.productId || item.id);
+    setOrderedIds(ids);
+  }, [safeCartItems]);
+
   const isQuotationMode = documentType?.toLowerCase() === "quotation";
 
-  // Calculate line total for each item (used in CartItemRow)
   const lineTotal = (item) => {
     if (!item) return "0.00";
     const price = Number(item.price) || 0;
     const qty = Number(item.quantity) || 1;
     const subtotal = price * qty;
 
-    const productKey = item.productId || item.id;
-    const discVal = Number(itemDiscounts[productKey]) || 0;
-    const discType = itemDiscountTypes[productKey] || "percent";
+    const key = item.productId || item.id;
+    const discVal = Number(itemDiscounts[key]) || 0;
+    const discType = itemDiscountTypes[key] || "percent";
 
-    let discountAmount = 0;
-    if (discType === "percent") {
-      discountAmount = (subtotal * discVal) / 100;
-    } else {
-      discountAmount = discVal * qty;
-    }
+    let discountAmount =
+      discType === "percent" ? (subtotal * discVal) / 100 : discVal * qty;
 
-    const taxPct = Number(itemTaxes[productKey]) || 0;
+    const taxPct = Number(itemTaxes[key]) || 0;
     const taxAmount = (subtotal * taxPct) / 100;
 
     return (subtotal - discountAmount + taxAmount).toFixed(2);
   };
 
-  // Group main items with their options
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = orderedIds.indexOf(active.id);
+    const newIndex = orderedIds.indexOf(over.id);
+
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const newOrderedIds = arrayMove(orderedIds, oldIndex, newIndex);
+    setOrderedIds(newOrderedIds);
+
+    const newCartItems = arrayMove(safeCartItems, oldIndex, newIndex);
+
+    // IMPORTANT: Add priority to each item
+    const itemsWithPriority = newCartItems.map((item, index) => ({
+      ...item,
+      priority: index, // ← This is what backend expects
+    }));
+
+    onCartOrderChange?.(itemsWithPriority);
+  };
   const groupedItems = useMemo(() => {
-    const mains = safeCartItems.filter((item) => !item?.isOption);
-    const options = safeCartItems.filter((item) => item?.isOption === true);
+    const mains = safeCartItems.filter((i) => !i?.isOption);
+    const options = safeCartItems.filter((i) => i?.isOption);
 
     const grouped = mains.map((main) => ({
       main,
@@ -146,181 +189,171 @@ const CartTab = ({
       ),
     }));
 
-    const ungroupedOptions = options.filter((opt) => !opt?.parentProductId);
+    const ungroupedOptions = options.filter((o) => !o?.parentProductId);
 
     return { grouped, ungroupedOptions };
   }, [safeCartItems]);
 
-  const renderCartContent = () => {
-    if (safeCartItems.length === 0) {
-      return (
-        <EmptyCartWrapper>
-          <Empty
-            description="Your cart is empty"
-            image={<DeleteOutlined style={{ fontSize: 64, color: "#999" }} />}
-          />
-          <Button
-            type="primary"
-            icon={<ArrowLeftOutlined />}
-            href="/category-selector"
-            style={{ marginTop: 16 }}
-          >
-            Continue Shopping
-          </Button>
-        </EmptyCartWrapper>
-      );
-    }
-
-    return (
-      <>
-        {/* Main Items + Their Options */}
-        {groupedItems.grouped.map(({ main, options }) => (
-          <React.Fragment key={main?.productId || main?.id || Math.random()}>
-            {/* Main Product */}
-            <CartItemRow
-              item={main}
-              itemDiscounts={itemDiscounts}
-              itemDiscountTypes={itemDiscountTypes}
-              itemTaxes={itemTaxes}
-              updatingItems={updatingItems}
-              handleUpdateQuantity={handleUpdateQuantity}
-              handleRemoveItem={handleRemoveItem}
-              handleDiscountChange={handleDiscountChange}
-              handleDiscountTypeChange={handleDiscountTypeChange}
-              handleTaxChange={handleTaxChange}
-              handleMakeOption={handleMakeOption}
-              getParentName={getParentName}
-              documentType={documentType}
-              cartItems={safeCartItems}
-              lineTotal={lineTotal}
-            />
-
-            {/* Optional Items under this main product */}
-            {options.map((opt) => (
-              <OptionGroupWrapper
-                key={opt?.productId || opt?.id || Math.random()}
-              >
-                <CartItemRow
-                  item={opt}
-                  itemDiscounts={itemDiscounts}
-                  itemDiscountTypes={itemDiscountTypes}
-                  itemTaxes={itemTaxes}
-                  updatingItems={updatingItems}
-                  handleUpdateQuantity={handleUpdateQuantity}
-                  handleRemoveItem={handleRemoveItem}
-                  handleDiscountChange={handleDiscountChange}
-                  handleDiscountTypeChange={handleDiscountTypeChange}
-                  handleTaxChange={handleTaxChange}
-                  handleMakeOption={handleMakeOption}
-                  getParentName={getParentName}
-                  documentType={documentType}
-                  cartItems={safeCartItems}
-                  lineTotal={lineTotal}
-                />
-              </OptionGroupWrapper>
-            ))}
-          </React.Fragment>
-        ))}
-
-        {/* Ungrouped Optional Items */}
-        {groupedItems.ungroupedOptions.length > 0 && isQuotationMode && (
-          <>
-            <Divider orientation="left" plain>
-              Optional Items (Ungrouped)
-            </Divider>
-            {groupedItems.ungroupedOptions.map((opt) => (
-              <CartItemRow
-                key={opt?.productId || opt?.id || Math.random()}
-                item={opt}
-                itemDiscounts={itemDiscounts}
-                itemDiscountTypes={itemDiscountTypes}
-                itemTaxes={itemTaxes}
-                updatingItems={updatingItems}
-                handleUpdateQuantity={handleUpdateQuantity}
-                handleRemoveItem={handleRemoveItem}
-                handleDiscountChange={handleDiscountChange}
-                handleDiscountTypeChange={handleDiscountTypeChange}
-                handleTaxChange={handleTaxChange}
-                handleMakeOption={handleMakeOption}
-                getParentName={getParentName}
-                documentType={documentType}
-                cartItems={safeCartItems}
-                lineTotal={lineTotal}
-              />
-            ))}
-          </>
-        )}
-      </>
-    );
-  };
+  const renderEmpty = () => (
+    <EmptyCartWrapper>
+      <Empty description="Your cart is empty" />
+      <Button
+        type="primary"
+        icon={<ArrowLeftOutlined />}
+        href="/category-selector"
+        style={{ marginTop: 16 }}
+      >
+        Continue Shopping
+      </Button>
+    </EmptyCartWrapper>
+  );
 
   return (
-    <Row gutter={[16, 16]}>
-      {/* Cart Items Section */}
-      <Col xs={24} md={16} lg={16}>
-        <CartItemsCard>
-          <CartHeader>
-            <Space style={{ justifyContent: "space-between", width: "100%" }}>
-              <Title level={3} style={{ fontSize: "18px", margin: 0 }}>
-                Your Cart <ShoppingCartOutlined /> ({safeCartItems.length}{" "}
-                items)
-              </Title>
-              <Button
-                danger
-                onClick={() => setShowClearCartModal?.(true)}
-                disabled={safeCartItems.length === 0}
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
+      <SortableContext
+        items={orderedIds}
+        strategy={verticalListSortingStrategy}
+      >
+        <Row gutter={[16, 16]}>
+          <Col xs={24} md={16}>
+            <CartItemsCard>
+              <CartHeader>
+                <Space
+                  style={{ justifyContent: "space-between", width: "100%" }}
+                >
+                  <Title level={3} style={{ margin: 0 }}>
+                    <ShoppingCartOutlined /> Cart ({safeCartItems.length})
+                  </Title>
+
+                  <Space>
+                    <Button
+                      icon={<DragOutlined />}
+                      type={dragMode ? "primary" : "default"}
+                      onClick={() => setDragMode((p) => !p)}
+                    >
+                      {dragMode ? "Drag ON" : "Drag Mode"}
+                    </Button>
+
+                    <Button
+                      danger
+                      onClick={() => setShowClearCartModal?.(true)}
+                    >
+                      Clear Cart
+                    </Button>
+                  </Space>
+                </Space>
+                <Divider />
+              </CartHeader>
+
+              {!safeCartItems.length ? (
+                renderEmpty()
+              ) : (
+                <>
+                  {groupedItems.grouped.map(({ main, options }) => (
+                    <React.Fragment key={main?.productId || main?.id}>
+                      <CartItemRow
+                        item={main}
+                        itemDiscounts={itemDiscounts}
+                        itemDiscountTypes={itemDiscountTypes}
+                        updatingItems={updatingItems}
+                        handleUpdateQuantity={handleUpdateQuantity}
+                        handleRemoveItem={handleRemoveItem}
+                        handleDiscountChange={handleDiscountChange}
+                        handleDiscountTypeChange={handleDiscountTypeChange}
+                        handleMakeOption={handleMakeOption}
+                        lineTotal={lineTotal}
+                        documentType={documentType}
+                        dragEnabled={dragMode}
+                      />
+
+                      {options.map((opt) => (
+                        <OptionGroupWrapper key={opt?.productId || opt?.id}>
+                          <CartItemRow
+                            item={opt}
+                            itemDiscounts={itemDiscounts}
+                            itemDiscountTypes={itemDiscountTypes}
+                            updatingItems={updatingItems}
+                            handleUpdateQuantity={handleUpdateQuantity}
+                            handleRemoveItem={handleRemoveItem}
+                            handleDiscountChange={handleDiscountChange}
+                            handleDiscountTypeChange={handleDiscountTypeChange}
+                            handleMakeOption={handleMakeOption}
+                            lineTotal={lineTotal}
+                            documentType={documentType}
+                            dragEnabled={dragMode}
+                          />
+                        </OptionGroupWrapper>
+                      ))}
+                    </React.Fragment>
+                  ))}
+
+                  {groupedItems.ungroupedOptions.length > 0 &&
+                    isQuotationMode && (
+                      <>
+                        <Divider orientation="left">
+                          Optional Items (Ungrouped)
+                        </Divider>
+                        {groupedItems.ungroupedOptions.map((opt) => (
+                          <CartItemRow
+                            key={opt?.productId || opt?.id}
+                            item={opt}
+                            itemDiscounts={itemDiscounts}
+                            itemDiscountTypes={itemDiscountTypes}
+                            updatingItems={updatingItems}
+                            handleUpdateQuantity={handleUpdateQuantity}
+                            handleRemoveItem={handleRemoveItem}
+                            handleDiscountChange={handleDiscountChange}
+                            handleDiscountTypeChange={handleDiscountTypeChange}
+                            handleMakeOption={handleMakeOption}
+                            lineTotal={lineTotal}
+                            documentType={documentType}
+                            dragEnabled={dragMode}
+                          />
+                        ))}
+                      </>
+                    )}
+                </>
+              )}
+            </CartItemsCard>
+          </Col>
+
+          <Col xs={24} md={8}>
+            <CartSummaryCard>
+              <Title level={4}>Order Summary</Title>
+              <Divider />
+
+              <OrderTotal
+                shipping={shipping}
+                tax={0}
+                discount={discount}
+                roundOff={roundOff}
+                subTotal={subTotal}
+                onShippingChange={onShippingChange}
+              />
+
+              <Divider />
+
+              <CheckoutButton
+                icon={<CheckCircleOutlined />}
+                onClick={() => setActiveTab?.("checkout")}
+                disabled={!safeCartItems.length}
+                block
               >
-                Clear Cart
+                Proceed to Checkout
+              </CheckoutButton>
+
+              <Button block href="/category-selector" style={{ marginTop: 8 }}>
+                Continue Shopping
               </Button>
-            </Space>
-            <Divider />
-          </CartHeader>
-
-          {renderCartContent()}
-        </CartItemsCard>
-      </Col>
-
-      {/* Order Summary Sidebar */}
-      <Col xs={24} md={8} lg={8}>
-        <CartSummaryCard>
-          <Title level={4} style={{ fontSize: "16px", marginBottom: 16 }}>
-            Order Summary
-          </Title>
-          <Divider />
-
-          <OrderTotal
-            shipping={shipping}
-            tax={0} // You can pass actual tax if needed
-            discount={discount}
-            roundOff={roundOff}
-            subTotal={subTotal} // This comes from calculationCartItems (excludes options)
-            onShippingChange={onShippingChange}
-          />
-
-          <Divider />
-
-          <CheckoutButton
-            type="primary"
-            icon={<CheckCircleOutlined />}
-            onClick={() => setActiveTab?.("checkout")}
-            disabled={safeCartItems.length === 0}
-            block
-            size="large"
-          >
-            Proceed to Checkout
-          </CheckoutButton>
-
-          <Button
-            type="default"
-            href="/category-selector"
-            block
-            style={{ marginTop: 8 }}
-          >
-            Continue Shopping
-          </Button>
-        </CartSummaryCard>
-      </Col>
-    </Row>
+            </CartSummaryCard>
+          </Col>
+        </Row>
+      </SortableContext>
+    </DndContext>
   );
 };
 

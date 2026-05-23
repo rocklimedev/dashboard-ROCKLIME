@@ -321,6 +321,7 @@ const AddQuotation = () => {
           sellingPrice: price,
           discount: 0,
           discountType: "fixed",
+          priority: 0, // ✅ ADD THIS DEFAULT
           isOptionFor: null,
           groupId: `grp-${uuidv4().slice(0, 8)}`,
         },
@@ -357,6 +358,7 @@ const AddQuotation = () => {
           sellingPrice: price,
           discount: 0,
           discountType: "fixed",
+          priority: 0, // ✅ ADD THIS DEFAULT
           isOptionFor: selectedParentId,
           optionType,
           groupId: parent.groupId,
@@ -516,7 +518,7 @@ const AddQuotation = () => {
         isOptionFor: p.isOptionFor || null,
         optionType: p.optionType || null,
         groupId: p.groupId,
-
+        priority: safeNum(p.priority, 0),
         // === NEW: Send locations array (Critical for Area) ===
         locations: locations,
 
@@ -573,6 +575,17 @@ const AddQuotation = () => {
   };
   // ── Table Columns ─────────────────────────────────────────────────
   const columns = [
+    {
+      title: "Priority",
+      width: 120,
+      render: (_, r) => (
+        <InputNumber
+          min={0}
+          value={r.priority}
+          onChange={(v) => updateProductField(r.productId, "priority", v)}
+        />
+      ),
+    },
     {
       title: "Product",
       render: (_, record) => (
@@ -776,155 +789,278 @@ const AddQuotation = () => {
           </Card>
 
           {/* Quotation Details */}
-          <Card title="Quotation Details" style={{ marginBottom: 24 }}>
-            <Row gutter={16}>
+          <Card
+            title="Quotation Details"
+            style={{ marginBottom: 24 }}
+            styles={{ body: { paddingTop: 16 } }}
+          >
+            <Row gutter={[24, 16]}>
+              {/* Title */}
               <Col xs={24} md={12}>
-                <Form.Item label="Title *" required>
+                <Form.Item
+                  label="Quotation Title"
+                  required
+                  style={{ marginBottom: 8 }}
+                >
                   <Input
                     value={formData.document_title}
+                    placeholder="e.g. Bathroom Fittings Quotation"
                     onChange={(e) =>
                       setFormData({
                         ...formData,
                         document_title: e.target.value,
                       })
                     }
-                    placeholder="e.g. Bathroom Fittings Quotation"
                   />
                 </Form.Item>
               </Col>
+
+              {/* Number */}
               <Col xs={24} md={12}>
-                <Form.Item label="Quotation Number">
+                <Form.Item label="Quotation Number" style={{ marginBottom: 8 }}>
                   <Input value="Auto-generated" disabled />
                 </Form.Item>
               </Col>
-            </Row>
 
-            <Row gutter={16}>
-              <Col xs={24} md={12}>
-                <Form.Item label="Quotation Date *" required>
-                  <DatePicker
-                    selected={formData.quotation_date}
-                    onChange={(d) =>
-                      setFormData({ ...formData, quotation_date: d })
-                    }
-                    dateFormat="dd/MM/yyyy"
-                    className="ant-input"
-                    wrapperClassName="full-width"
-                    isClearable
-                  />
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={12}>
-                {/* Due Date - Optional */}
-                <Form.Item label="Due Date">
-                  <DatePicker
-                    selected={formData.due_date}
-                    onChange={(d) => setFormData({ ...formData, due_date: d })}
-                    dateFormat="dd/MM/yyyy"
-                    minDate={formData.quotation_date}
-                    className="ant-input"
-                    wrapperClassName="full-width"
-                    isClearable // Allows user to clear the date
-                    placeholderText="Select due date (optional)"
-                  />
-                </Form.Item>
-              </Col>
-            </Row>
-
-            <Form.Item label="Follow-up Dates">
-              <Space direction="vertical" style={{ width: "100%" }}>
-                {formData.followupDates.map((date, i) => (
-                  <Space key={i} align="center">
-                    <DatePicker
-                      selected={date}
-                      onChange={(d) => changeFollowup(i, d)}
-                      dateFormat="dd/MM/yyyy"
-                      minDate={new Date()}
-                      maxDate={formData.due_date}
-                    />
-                    <Button
-                      danger
-                      size="small"
-                      icon={<DeleteOutlined />}
-                      onClick={() => removeFollowup(i)}
-                    />
-                  </Space>
-                ))}
-                <Button
-                  type="dashed"
-                  block
-                  icon={<PlusOutlined />}
-                  onClick={addFollowup}
+              {/* Dates Section */}
+              <Col xs={24}>
+                <Card
+                  size="small"
+                  style={{
+                    background: "#fafafa",
+                    borderRadius: 10,
+                  }}
                 >
-                  Add Follow-up Date
-                </Button>
-              </Space>
-            </Form.Item>
-          </Card>
+                  <Row gutter={[16, 16]}>
+                    {/* Quotation Date */}
+                    <Col xs={24} md={12}>
+                      <Form.Item
+                        label="Quotation Date"
+                        required
+                        style={{ marginBottom: 0 }}
+                      >
+                        <DatePicker
+                          selected={formData.quotation_date}
+                          onChange={(d) =>
+                            setFormData({ ...formData, quotation_date: d })
+                          }
+                          dateFormat="dd/MM/yyyy"
+                          className="ant-input"
+                          isClearable
+                          placeholderText="Select quotation date"
+                          wrapperClassName="w-100"
+                        />
+                      </Form.Item>
+                    </Col>
 
+                    {/* Due Date */}
+                    <Col xs={24} md={12}>
+                      <Form.Item label="Due Date" style={{ marginBottom: 0 }}>
+                        <DatePicker
+                          selected={formData.due_date}
+                          onChange={(d) =>
+                            setFormData({ ...formData, due_date: d })
+                          }
+                          dateFormat="dd/MM/yyyy"
+                          className="ant-input"
+                          isClearable
+                          placeholderText="Optional due date"
+                          minDate={formData.quotation_date}
+                          wrapperClassName="w-100"
+                        />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                </Card>
+              </Col>
+
+              {/* Follow-up Dates */}
+              <Col xs={24}>
+                <Form.Item
+                  label="Follow-up Schedule"
+                  style={{ marginBottom: 8 }}
+                >
+                  <Space wrap>
+                    {formData.followupDates.map((date, i) => (
+                      <div
+                        key={i}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                          padding: "4px 8px",
+                          border: "1px solid #e5e5e5",
+                          borderRadius: 20,
+                          background: "#fff",
+                        }}
+                      >
+                        <DatePicker
+                          selected={date}
+                          onChange={(d) => changeFollowup(i, d)}
+                          dateFormat="dd/MM/yyyy"
+                          minDate={new Date()}
+                          maxDate={formData.due_date}
+                          className="ant-input"
+                        />
+
+                        <Button
+                          type="text"
+                          danger
+                          size="small"
+                          icon={<DeleteOutlined />}
+                          onClick={() => removeFollowup(i)}
+                        />
+                      </div>
+                    ))}
+
+                    <Button
+                      type="dashed"
+                      icon={<PlusOutlined />}
+                      onClick={addFollowup}
+                    >
+                      Add Follow-up
+                    </Button>
+                  </Space>
+                </Form.Item>
+              </Col>
+            </Row>
+          </Card>
           {/* Project Structure */}
           <Card
             title="Project Structure (Floors, Rooms & Areas)"
-            style={{ marginBottom: 24 }}
+            style={{
+              marginBottom: 24,
+              borderRadius: 12,
+            }}
+            bodyStyle={{ padding: 16 }}
             extra={
               <Button
                 type="primary"
                 icon={<PlusOutlined />}
                 onClick={() => setShowAddFloorModal(true)}
+                style={{ borderRadius: 8 }}
               >
                 Add Floor
               </Button>
             }
           >
             {formData.floors.length === 0 ? (
-              <Text type="secondary">No floors added yet.</Text>
+              <div style={{ padding: "20px 0", textAlign: "center" }}>
+                <Text type="secondary">No floors added yet</Text>
+              </div>
             ) : (
-              formData.floors.map((floor) => (
-                <Card
-                  key={floor.floorId}
-                  size="small"
-                  style={{ marginBottom: 12 }}
-                >
-                  <Space
-                    style={{ width: "100%", justifyContent: "space-between" }}
+              <div
+                style={{ display: "flex", flexDirection: "column", gap: 12 }}
+              >
+                {formData.floors.map((floor) => (
+                  <Card
+                    key={floor.floorId}
+                    size="small"
+                    style={{
+                      borderRadius: 10,
+                      border: "1px solid #f0f0f0",
+                      background: "#fff",
+                    }}
+                    bodyStyle={{ padding: 12 }}
                   >
-                    <strong>{floor.floorName}</strong>
-                    <Space>
-                      <Button
-                        size="small"
-                        onClick={() => {
-                          setEditingFloor(floor);
-                          setShowEditFloorModal(true);
+                    {/* FLOOR HEADER */}
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <div style={{ display: "flex", flexDirection: "column" }}>
+                        <Text strong style={{ fontSize: 15 }}>
+                          🏢 {floor.floorName}
+                        </Text>
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          {floor.rooms?.length || 0} Rooms
+                        </Text>
+                      </div>
+
+                      <Space>
+                        <Button
+                          size="small"
+                          onClick={() => {
+                            setEditingFloor(floor);
+                            setShowEditFloorModal(true);
+                          }}
+                          style={{ borderRadius: 6 }}
+                        >
+                          Edit
+                        </Button>
+
+                        <Button
+                          type="primary"
+                          size="small"
+                          onClick={() => {
+                            setSelectedFloorId(floor.floorId);
+                            setShowAddRoomModal(true);
+                          }}
+                          style={{ borderRadius: 6 }}
+                        >
+                          + Room
+                        </Button>
+                      </Space>
+                    </div>
+
+                    {/* ROOMS PREVIEW */}
+                    {floor.rooms?.length > 0 && (
+                      <div
+                        style={{
+                          marginTop: 10,
+                          paddingLeft: 10,
+                          borderLeft: "2px solid #e6f4ff",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 6,
                         }}
                       >
-                        Edit
-                      </Button>
-                      <Button
-                        type="primary"
-                        size="small"
-                        onClick={() => {
-                          setSelectedFloorId(floor.floorId);
-                          setShowAddRoomModal(true);
-                        }}
-                      >
-                        Add Room
-                      </Button>
-                    </Space>
-                  </Space>
-                </Card>
-              ))
+                        {floor.rooms.map((room) => (
+                          <div
+                            key={room.roomId}
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              padding: "6px 8px",
+                              borderRadius: 6,
+                              background: "#fafafa",
+                            }}
+                          >
+                            <Text style={{ fontSize: 13 }}>
+                              🛏️ {room.roomName}
+                            </Text>
+
+                            <Text type="secondary" style={{ fontSize: 12 }}>
+                              {room.areas?.length || 0} Areas
+                            </Text>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </Card>
+                ))}
+              </div>
             )}
           </Card>
 
           {/* Products & Options */}
+          {/* Products & Options */}
           <Card
             title="Products & Options"
+            style={{
+              borderRadius: 12,
+            }}
+            bodyStyle={{ padding: 12 }}
             extra={
               <Space>
+                {/* PRODUCT SEARCH */}
                 <Select
                   showSearch
-                  style={{ width: 720 }} // increased width
-                  size="large" // optional: increases height too
+                  style={{ width: 720 }}
+                  size="large"
                   placeholder="Search and add main product"
                   onSearch={debouncedSearch}
                   onChange={addProduct}
@@ -938,6 +1074,7 @@ const AddQuotation = () => {
                       p.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"],
                       0,
                     );
+
                     return (
                       <Option
                         key={p.id || p.productId}
@@ -949,11 +1086,13 @@ const AddQuotation = () => {
                   })}
                 </Select>
 
+                {/* ADD OPTION */}
                 {mainProducts.length > 0 && (
                   <Button
                     type="primary"
                     icon={<PlusOutlined />}
                     onClick={() => setShowAddOptionModal(true)}
+                    style={{ borderRadius: 8 }}
                   >
                     Add Option
                   </Button>
@@ -962,127 +1101,305 @@ const AddQuotation = () => {
             }
           >
             <Table
-              columns={columns}
+              columns={[
+                {
+                  title: "Product",
+                  width: 280,
+                  render: (_, record) => (
+                    <div style={{ display: "flex", flexDirection: "column" }}>
+                      <Text strong style={{ fontSize: 14 }}>
+                        {record.isOptionFor && (
+                          <span style={{ color: "#1677ff" }}>↳ </span>
+                        )}
+                        {record.name}
+                      </Text>
+                    </div>
+                  ),
+                },
+
+                {
+                  title: "Qty",
+                  width: 100,
+                  render: (_, r) => (
+                    <InputNumber
+                      min={1}
+                      value={r.qty}
+                      onChange={(v) =>
+                        updateProductField(r.productId, "qty", v)
+                      }
+                      style={{ width: "100%", borderRadius: 8 }}
+                    />
+                  ),
+                },
+
+                {
+                  title: "Price",
+                  width: 120,
+                  render: (_, r) => (
+                    <Text>₹{safeNum(r.sellingPrice, 0).toFixed(2)}</Text>
+                  ),
+                },
+
+                {
+                  title: "Discount",
+                  width: 180,
+                  render: (_, r) => (
+                    <Space.Compact style={{ width: "100%" }}>
+                      <InputNumber
+                        min={0}
+                        value={r.discount}
+                        onChange={(v) =>
+                          updateProductField(r.productId, "discount", v)
+                        }
+                        style={{ width: "60%" }}
+                      />
+                      <Select
+                        value={r.discountType}
+                        onChange={(v) =>
+                          updateProductField(r.productId, "discountType", v)
+                        }
+                        style={{ width: "40%" }}
+                      >
+                        <Option value="fixed">₹</Option>
+                        <Option value="percent">%</Option>
+                      </Select>
+                    </Space.Compact>
+                  ),
+                },
+
+                {
+                  title: "Priority",
+                  width: 110,
+                  render: (_, r) => (
+                    <InputNumber
+                      min={0}
+                      value={r.priority}
+                      onChange={(v) =>
+                        updateProductField(r.productId, "priority", v)
+                      }
+                      style={{ width: "100%", borderRadius: 8 }}
+                    />
+                  ),
+                },
+
+                {
+                  title: "Location",
+                  width: 260,
+                  render: (_, record) => {
+                    const location = [
+                      record.floorName,
+                      record.roomName,
+                      record.areaName,
+                    ]
+                      .filter(Boolean)
+                      .join(" → ");
+
+                    return (
+                      <Button
+                        type="link"
+                        onClick={() => openAssignModal(record)}
+                        style={{
+                          padding: 0,
+                          textAlign: "left",
+                          height: "auto",
+                          whiteSpace: "normal",
+                        }}
+                      >
+                        {location || (
+                          <Text type="secondary">Assign Location</Text>
+                        )}
+                      </Button>
+                    );
+                  },
+                },
+
+                {
+                  title: "",
+                  width: 60,
+                  render: (_, r) => (
+                    <Button
+                      danger
+                      size="small"
+                      icon={<DeleteOutlined />}
+                      onClick={() => removeProduct(r.productId)}
+                      style={{ borderRadius: 6 }}
+                    />
+                  ),
+                },
+              ]}
               dataSource={formData.products}
               rowKey="productId"
               pagination={false}
-              scroll={{ y: 400 }}
+              scroll={{ y: 420, x: "max-content" }}
+              size="middle"
+              bordered={false}
+              sticky
+              rowClassName={(record) =>
+                record.isOptionFor ? "option-row" : "main-row"
+              }
             />
           </Card>
 
-          {/* Financial Summary (GST removed) */}
-          <Card title="Financial Summary" style={{ marginBottom: 32 }}>
+          {/* Financial Summary */}
+          <Card
+            title="Financial Summary"
+            style={{
+              marginBottom: 32,
+              borderRadius: 12,
+            }}
+            bodyStyle={{ padding: 16 }}
+          >
             <Row gutter={[16, 16]}>
+              {/* TOP KPIs */}
               <Col xs={24} sm={8}>
-                <Statistic
-                  title="Main Subtotal"
-                  value={calculations.mainSubtotal}
-                  precision={2}
-                  prefix="₹"
-                />
-              </Col>
-              <Col xs={24} sm={8}>
-                <Statistic
-                  title="Line Discounts"
-                  value={-calculations.mainLineDiscount}
-                  precision={2}
-                  prefix="₹"
-                  valueStyle={{ color: "#f5222d" }}
-                />
-              </Col>
-              <Col xs={24} sm={8}>
-                <Statistic
-                  title="Extra Discount"
-                  value={-calculations.extraDiscAmt}
-                  precision={2}
-                  prefix="₹"
-                  valueStyle={{ color: "#fa8c16" }}
-                />
-              </Col>
-
-              <Divider />
-
-              <Col xs={24} sm={8}>
-                <Form.Item label="Shipping">
-                  <InputNumber
-                    min={0}
-                    value={formData.shippingAmount}
-                    onChange={(v) =>
-                      setFormData({ ...formData, shippingAmount: v })
-                    }
-                    style={{ width: "100%" }}
-                    addonBefore="₹"
-                  />
-                </Form.Item>
-              </Col>
-              <Col xs={24} sm={8}>
-                <Form.Item label="Round Off">
-                  <InputNumber
-                    disabled
-                    value={calculations.roundOff}
-                    style={{ width: "100%" }}
-                  />
-                </Form.Item>
-              </Col>
-
-              <Col xs={24}>
-                <Statistic
-                  title="FINAL AMOUNT"
-                  value={calculations.finalAmount}
-                  precision={0}
-                  prefix="₹"
-                  valueStyle={{
-                    color: "#1890ff",
-                    fontSize: 36,
-                    fontWeight: "bold",
+                <Card
+                  size="small"
+                  style={{
+                    borderRadius: 10,
+                    background: "#fafafa",
                   }}
-                />
-              </Col>
-
-              {calculations.optionalPotential > 0 && (
-                <Col xs={24}>
+                >
                   <Statistic
-                    title="Optional Items Potential"
-                    value={calculations.optionalPotential}
+                    title="Main Subtotal"
+                    value={calculations.mainSubtotal}
                     precision={2}
                     prefix="₹"
-                    valueStyle={{ color: "#722ed1" }}
                   />
-                  <Text type="secondary">(not included in final amount)</Text>
+                </Card>
+              </Col>
+
+              <Col xs={24} sm={8}>
+                <Card
+                  size="small"
+                  style={{
+                    borderRadius: 10,
+                    background: "#fff1f0",
+                  }}
+                >
+                  <Statistic
+                    title="Line Discounts"
+                    value={-calculations.mainLineDiscount}
+                    precision={2}
+                    prefix="₹"
+                    valueStyle={{ color: "#cf1322" }}
+                  />
+                </Card>
+              </Col>
+
+              <Col xs={24} sm={8}>
+                <Card
+                  size="small"
+                  style={{
+                    borderRadius: 10,
+                    background: "#fff7e6",
+                  }}
+                >
+                  <Statistic
+                    title="Extra Discount"
+                    value={-calculations.extraDiscAmt}
+                    precision={2}
+                    prefix="₹"
+                    valueStyle={{ color: "#d48806" }}
+                  />
+                </Card>
+              </Col>
+
+              {/* INPUT CONTROLS */}
+              <Col xs={24} sm={12}>
+                <Card size="small" style={{ borderRadius: 10 }}>
+                  <Form.Item label="Shipping Charges">
+                    <InputNumber
+                      min={0}
+                      value={formData.shippingAmount}
+                      onChange={(v) =>
+                        setFormData({ ...formData, shippingAmount: v })
+                      }
+                      style={{ width: "100%", borderRadius: 8 }}
+                      addonBefore="₹"
+                    />
+                  </Form.Item>
+                </Card>
+              </Col>
+
+              <Col xs={24} sm={12}>
+                <Card size="small" style={{ borderRadius: 10 }}>
+                  <Form.Item label="Round Off">
+                    <InputNumber
+                      disabled
+                      value={calculations.roundOff}
+                      style={{ width: "100%", borderRadius: 8 }}
+                    />
+                  </Form.Item>
+                </Card>
+              </Col>
+
+              {/* FINAL AMOUNT (HIGHLIGHTED) */}
+              <Col xs={24}>
+                <Card
+                  style={{
+                    borderRadius: 14,
+                    background:
+                      "linear-gradient(135deg, #e6f4ff 0%, #f0f5ff 100%)",
+                    border: "1px solid #d6e4ff",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <div>
+                      <Text type="secondary">Grand Total</Text>
+                      <div
+                        style={{
+                          fontSize: 32,
+                          fontWeight: 700,
+                          color: "#1677ff",
+                        }}
+                      >
+                        ₹{calculations.finalAmount}
+                      </div>
+                    </div>
+
+                    <div style={{ textAlign: "right" }}>
+                      <Text type="secondary">Rounded Amount</Text>
+                      <div style={{ fontSize: 16 }}>
+                        ₹{Math.round(calculations.finalAmount)}
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </Col>
+
+              {/* OPTIONAL ITEMS */}
+              {calculations.optionalPotential > 0 && (
+                <Col xs={24}>
+                  <Card
+                    size="small"
+                    style={{
+                      borderRadius: 10,
+                      border: "1px dashed #722ed1",
+                      background: "#faf5ff",
+                    }}
+                  >
+                    <div>
+                      <Text strong style={{ color: "#722ed1" }}>
+                        Optional Items Potential
+                      </Text>
+
+                      <div style={{ fontSize: 18, marginTop: 4 }}>
+                        ₹{calculations.optionalPotential}
+                      </div>
+
+                      <Text type="secondary">
+                        (not included in final quotation total)
+                      </Text>
+                    </div>
+                  </Card>
                 </Col>
               )}
-            </Row>
-          </Card>
-
-          {/* Signature */}
-          <Card title="Authorized Signature" style={{ marginBottom: 32 }}>
-            <Row gutter={16}>
-              <Col xs={24} md={12}>
-                <Form.Item label="Name">
-                  <Input
-                    value={formData.signature_name}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        signature_name: e.target.value,
-                      })
-                    }
-                  />
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={12}>
-                <Form.Item label="Signature Image URL">
-                  <Input
-                    value={formData.signature_image}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        signature_image: e.target.value,
-                      })
-                    }
-                  />
-                </Form.Item>
-              </Col>
             </Row>
           </Card>
 

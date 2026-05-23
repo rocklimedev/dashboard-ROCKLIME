@@ -6,7 +6,7 @@ import { ShoppingCartOutlined, CheckCircleOutlined } from "@ant-design/icons";
 import { useDispatch } from "react-redux";
 import { v4 as uuidv4 } from "uuid";
 
-import CartTab from "../../components/POS-NEW/Cart"; // Correct import
+import CartTab from "../../components/POS-NEW/Cart";
 import {
   useGetCartQuery,
   useUpdateCartMutation,
@@ -120,7 +120,6 @@ const CartLayout = ({ children }) => {
     }
   }, [location.pathname]);
 
-  // Initialize discount/tax for new items
   // Sync Server Cart to Local — PRESERVE OPTION FLAGS
   useEffect(() => {
     if (!allCartItems.length) {
@@ -140,7 +139,6 @@ const CartLayout = ({ children }) => {
         return {
           ...serverItem,
           id,
-          // Preserve location fields
           floorId: local?.floorId || serverItem.floorId,
           roomId: local?.roomId || serverItem.roomId,
           areaId: local?.areaId || serverItem.areaId,
@@ -149,7 +147,6 @@ const CartLayout = ({ children }) => {
           areaName: local?.areaName || serverItem.areaName,
           assignedQuantity: local?.assignedQuantity || serverItem.quantity || 1,
 
-          // CRITICAL: Preserve option-related fields
           isOption: local?.isOption ?? serverItem.isOption ?? false,
           isOptionFor: local?.isOptionFor ?? serverItem.isOptionFor ?? null,
           optionType: local?.optionType ?? serverItem.optionType ?? null,
@@ -159,16 +156,15 @@ const CartLayout = ({ children }) => {
       });
     });
   }, [allCartItems]);
+
   // ─────────────────────────────────────────────────────────────
   // CALCULATIONS
   // ─────────────────────────────────────────────────────────────
 
-  // For UI Totals → Exclude optional items
   const calculationCartItems = useMemo(() => {
     return localCartItems.filter((i) => !i?.isOption);
   }, [localCartItems]);
 
-  // For Quotation Payload → Include all items (main + optional)
   const payloadCartItems = useMemo(() => {
     return localCartItems;
   }, [localCartItems]);
@@ -226,6 +222,33 @@ const CartLayout = ({ children }) => {
     gst > 0 ? parseFloat(((roundedAmount * gst) / 100).toFixed(2)) : 0;
   const totalAmount = parseFloat((roundedAmount + gstAmount).toFixed(2));
 
+  // src/pages/quotations/CartLayout.jsx
+  // src/pages/quotations/CartLayout.jsx
+  const handleCartOrderChange = useCallback(
+    (newOrderedCart) => {
+      // Ensure every item has a priority
+      const withPriority = newOrderedCart.map((item, index) => ({
+        ...item,
+        priority: index, // Force priority
+      }));
+
+      setLocalCartItems(withPriority);
+
+      // Optional: Sync to server cache
+      dispatch(
+        cartApi.util.updateQueryData("getCart", userId, (draft) => {
+          if (!draft?.cart?.items) return;
+          withPriority.forEach((item) => {
+            const existing = draft.cart.items.find(
+              (i) => i.productId === item.productId,
+            );
+            if (existing) existing.priority = item.priority;
+          });
+        }),
+      );
+    },
+    [userId, dispatch],
+  );
   // ─────────────────────────────────────────────────────────────
   // HANDLERS
   // ─────────────────────────────────────────────────────────────
@@ -369,7 +392,6 @@ const CartLayout = ({ children }) => {
         }),
       );
 
-      // Also update localCartItems immediately so UI and payload stay in sync
       setLocalCartItems((prev) =>
         prev.map((item) => {
           if (item.productId !== productId) return item;
@@ -402,6 +424,7 @@ const CartLayout = ({ children }) => {
     },
     [userId, dispatch],
   );
+
   const getParentName = useCallback(
     (parentProductId) => {
       if (!parentProductId) return "Unknown";
@@ -474,7 +497,7 @@ const CartLayout = ({ children }) => {
     }
   }, [userId, clearCart, clearDraft]);
 
-  // Common Props
+  // Common Props (Now includes drag support)
   const commonProps = {
     localCartItems,
     calculationCartItems,
@@ -510,6 +533,7 @@ const CartLayout = ({ children }) => {
     getParentName,
     forceSave,
     clearDraft,
+    onCartOrderChange: handleCartOrderChange, // ← Important
   };
 
   return (

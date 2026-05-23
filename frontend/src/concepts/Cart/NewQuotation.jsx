@@ -10,7 +10,7 @@ import {
 } from "@ant-design/icons";
 import moment from "moment";
 import { v4 as uuidv4 } from "uuid";
-import { useOutletContext } from "react-router-dom";
+
 import CreateProductModal from "../../components/modals/CreateProductModal";
 import CartLayout from "./CartLayout";
 import QuotationForm from "../../components/POS-NEW/QuotationForm";
@@ -39,7 +39,7 @@ const buildFloorsFromProducts = (products) => {
       floorMap.set(item.floorId, {
         floorId: item.floorId,
         floorName: item.floorName || `Floor ${item.floorId}`,
-        sortOrder: floorMap.size,
+        sortOrder: Number(item.floorSortOrder ?? floorMap.size),
         rooms: [],
       });
     }
@@ -48,11 +48,12 @@ const buildFloorsFromProducts = (products) => {
 
     if (item.roomId) {
       let room = floor.rooms.find((r) => r.roomId === item.roomId);
+
       if (!room) {
         room = {
           roomId: item.roomId,
           roomName: item.roomName || "Unnamed Room",
-          sortOrder: floor.rooms.length,
+          sortOrder: Number(item.roomSortOrder ?? floor.rooms.length),
           type: item.roomType || "other",
           areas: [],
         };
@@ -60,30 +61,48 @@ const buildFloorsFromProducts = (products) => {
       }
 
       if (item.areaId) {
-        if (!room.areas.some((a) => a.id === item.areaId)) {
+        const exists = room.areas.some((a) => a.id === item.areaId);
+        if (!exists) {
           room.areas.push({
             id: item.areaId,
             name: item.areaName || "Area",
             value: item.areaValue || "",
+            sortOrder: Number(item.areaSortOrder ?? room.areas.length),
           });
         }
       }
     }
   });
 
-  return Array.from(floorMap.values());
+  return Array.from(floorMap.values())
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map((floor) => ({
+      ...floor,
+      rooms: floor.rooms
+        .sort((a, b) => a.sortOrder - b.sortOrder)
+        .map((room) => ({
+          ...room,
+          areas: room.areas.sort(
+            (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0),
+          ),
+        })),
+    }));
 };
 
 const NewQuotation = () => {
   const navigate = useNavigate();
   const { auth } = useAuth();
-  const commonProps = useOutletContext();
 
   const [createQuotation] = useCreateQuotationMutation();
   const [createAddress] = useCreateAddressMutation();
 
   // ==================== MODAL STATES ====================
   const [showCreateProductModal, setShowCreateProductModal] = useState(false);
+  const [previewVisible, setPreviewVisible] = useState(false);
+  const [showAddAddressModal, setShowAddAddressModal] = useState(false);
+  const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
+  const [showDraftModal, setShowDraftModal] = useState(false);
+  const [currentDraft, setCurrentDraft] = useState(null);
 
   // ==================== MAIN STATE ====================
   const [quotationData, setQuotationData] = useState({
@@ -102,14 +121,6 @@ const NewQuotation = () => {
   const [useBillingAddress, setUseBillingAddress] = useState(false);
   const [billingAddressId, setBillingAddressId] = useState(null);
 
-  const [previewVisible, setPreviewVisible] = useState(false);
-  const [showAddAddressModal, setShowAddAddressModal] = useState(false);
-  const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
-
-  // AutoSave Checker Modal State
-  const [showDraftModal, setShowDraftModal] = useState(false);
-  const [currentDraft, setCurrentDraft] = useState(null);
-
   // ==================== DATA FETCHING ====================
   const { data: customersData } = useGetCustomersQuery({ limit: 500 });
   const { data: addressesData, refetch: refetchAddresses } =
@@ -120,7 +131,7 @@ const NewQuotation = () => {
   const customers = customersData?.data || [];
   const addresses = addressesData || [];
 
-  // ==================== AUTOSAVE SETUP ====================
+  // ==================== AUTOSAVE ====================
   const draftKey = `draft_quotation_${auth?.userId || "guest"}`;
 
   const draftData = useMemo(
@@ -136,7 +147,7 @@ const NewQuotation = () => {
 
   const { loadDraft, clearDraft } = useAutoSave(draftKey, draftData, 2500);
 
-  // Load draft when component mounts
+  // Load draft
   useEffect(() => {
     const savedDraft = loadDraft();
     if (savedDraft) {
@@ -157,7 +168,7 @@ const NewQuotation = () => {
     }
   }, [loadDraft]);
 
-  // ==================== DRAFT CHECKER FUNCTIONS ====================
+  // ==================== DRAFT HANDLERS ====================
   const checkCurrentDraft = () => {
     const saved = loadDraft();
     if (saved) {
@@ -172,14 +183,13 @@ const NewQuotation = () => {
     clearDraft();
     setShowDraftModal(false);
     setCurrentDraft(null);
-    message.success("Draft has been deleted successfully");
+    message.success("Draft deleted successfully");
   };
 
   // ==================== CREATE QUOTATION ====================
   const handleCreateQuotation = async (layoutProps = {}) => {
     const {
-      payloadCartItems = [], // ← Use this for payload (includes options)
-      calculationCartItems = [],
+      payloadCartItems = [],
       shipping = 0,
       gst = 0,
       itemDiscounts = {},
@@ -188,70 +198,26 @@ const NewQuotation = () => {
       handleClearCart,
     } = layoutProps;
 
-    if (!selectedCustomer) {
-      return message.error("Please select a customer.");
-    }
+    if (!selectedCustomer) return message.error("Please select a customer.");
+    if (payloadCartItems.length === 0) return message.error("Cart is empty.");
 
-    if (payloadCartItems.length === 0) {
-      return message.error("Cart is empty.");
-    }
-
-    // ==================== HANDLE SHIPPING ADDRESS ====================
+    // Shipping Address Logic
     let finalShipTo = quotationData.shipTo;
-
-    if (useBillingAddress) {
-      if (billingAddressId) {
-        finalShipTo = billingAddressId;
-      } else {
-        const customer = customers.find(
-          (c) => c.customerId === selectedCustomer,
-        );
-        if (customer?.address) {
-          try {
-            const parsedAddr =
-              typeof customer.address === "string"
-                ? JSON.parse(customer.address)
-                : customer.address;
-
-            const payload = {
-              customerId: selectedCustomer,
-              street: parsedAddr.street || "",
-              city: parsedAddr.city || "",
-              state: parsedAddr.state || "",
-              postalCode: parsedAddr.postalCode || parsedAddr.zip || "",
-              country: "India",
-              status: "SHIPPING",
-            };
-
-            const response = await createAddress(payload).unwrap();
-            finalShipTo = response.addressId;
-          } catch (err) {
-            console.warn(
-              "Failed to create shipping address automatically:",
-              err,
-            );
-          }
-        }
-      }
+    if (useBillingAddress && billingAddressId) {
+      finalShipTo = billingAddressId;
     }
 
-    // ==================== FLOOR & ROOM LOGIC ====================
+    // Floors
     let finalFloors = quotationData.floors || [];
-
     if (finalFloors.length === 0) {
-      const hasAnyLocationAssignment = payloadCartItems.some(
-        (item) =>
-          Boolean(item.floorId) || Boolean(item.roomId) || Boolean(item.areaId),
+      const hasLocation = payloadCartItems.some(
+        (item) => item.floorId || item.roomId || item.areaId,
       );
-
-      if (hasAnyLocationAssignment) {
-        finalFloors = buildFloorsFromProducts(payloadCartItems);
-      }
+      if (hasLocation) finalFloors = buildFloorsFromProducts(payloadCartItems);
     }
 
-    // ==================== ENRICH ALL ITEMS (Main + Optional) ====================
-    // ==================== ENRICH ALL ITEMS (Main + Optional) ====================
-    const enrichedItems = payloadCartItems.map((item) => {
+    // Enrich Items for Payload
+    const enrichedItems = payloadCartItems.map((item, index) => {
       const productId = item.productId || item.id;
       const price = Number(item.price) || 0;
       const qty = Number(item.quantity) || 1;
@@ -264,18 +230,12 @@ const NewQuotation = () => {
 
       const itemTax = Number(itemTaxes[productId]) || 0;
 
-      const isOptional = Boolean(item.isOption) || Boolean(item.isOptionFor);
-
       return {
         ...item,
-        floorName: item.floorName || undefined,
-        roomName: item.roomName || undefined,
-        areaName: item.areaName || undefined,
-
+        priority: Number(item.priority ?? index), // ← FORCE HERE
         discount: discVal,
         discountType: discType,
         tax: itemTax,
-
         subtotal: Number(subtotal.toFixed(2)),
         discountAmount: Number(discountAmount.toFixed(2)),
         lineTotal: Number(
@@ -284,16 +244,12 @@ const NewQuotation = () => {
             ((subtotal - discountAmount) * itemTax) / 100,
         ).toFixed(2),
 
-        // Final safety net
-        isOption: isOptional,
-        isOptionFor: isOptional
-          ? item.parentProductId || item.isOptionFor || null
-          : null,
-        optionType: item.optionType || null,
+        isOption: Boolean(item.isOption) || Boolean(item.isOptionFor),
         parentProductId: item.parentProductId || null,
+        optionType: item.optionType || null,
       };
     });
-    // ==================== BUILD PAYLOAD ====================
+
     const quotationPayload = {
       quotationId: uuidv4(),
       document_title: `${
@@ -318,15 +274,20 @@ const NewQuotation = () => {
       signature_image: quotationData.signatureImage || "",
 
       floors: finalFloors,
-      products: enrichedItems, // ← Now includes optional products
-
+      products: enrichedItems,
       followupDates: quotationData.followupDates?.filter(Boolean) || [],
       createdBy: auth?.userId,
     };
-
+    console.log(
+      "Payload Items with Priority:",
+      payloadCartItems.map((i) => ({
+        name: i.name,
+        productId: i.productId,
+        priority: i.priority,
+      })),
+    );
     try {
       const result = await createQuotation(quotationPayload).unwrap();
-
       message.success(
         `Quotation created successfully!${
           result.quotation?.reference_number
@@ -337,7 +298,6 @@ const NewQuotation = () => {
 
       clearDraft();
       if (typeof handleClearCart === "function") handleClearCart();
-
       navigate("/quotations/list");
     } catch (err) {
       console.error("Create Quotation Error:", err);
@@ -345,9 +305,8 @@ const NewQuotation = () => {
     }
   };
 
-  // ==================== HANDLERS ====================
+  // ==================== OTHER HANDLERS ====================
   const handleAddCustomer = () => setShowAddCustomerModal(true);
-
   const handleCustomerSave = (newCustomer) => {
     setSelectedCustomer(newCustomer.customerId || "");
     setShowAddCustomerModal(false);
@@ -355,49 +314,41 @@ const NewQuotation = () => {
   };
 
   const handleAddAddress = () => setShowAddAddressModal(true);
-
   const handleAddressSave = (addressId) => {
     setQuotationData((prev) => ({ ...prev, shipTo: addressId }));
     setShowAddAddressModal(false);
     refetchAddresses();
     message.success("Address added successfully");
   };
-  // New: Handle product created (you can refresh cart or show message)
+
   const handleProductCreated = (newProduct) => {
     message.success(`Product "${newProduct.name}" created successfully!`);
-    // You can optionally auto-add it to cart here if needed
   };
+
   return (
     <>
       <CartLayout>
         {(layoutProps) => (
           <>
-            {/* Draft Management Button */}
-            <div
-              style={{
-                marginBottom: 16,
-                textAlign: "right",
-                display: "flex",
-                gap: 12,
-                justifyContent: "flex-end",
-                flexWrap: "wrap",
-              }}
-            >
-              <Button
-                icon={<PlusOutlined />}
-                onClick={() => setShowCreateProductModal(true)}
-                type="primary"
-              >
-                Add Optional Product
-              </Button>
+            {/* Header Buttons */}
+            <div style={{ marginBottom: 16, textAlign: "right" }}>
+              <Space>
+                <Button
+                  icon={<PlusOutlined />}
+                  onClick={() => setShowCreateProductModal(true)}
+                  type="primary"
+                >
+                  Add Optional Product
+                </Button>
 
-              <Button
-                icon={<InfoCircleOutlined />}
-                onClick={checkCurrentDraft}
-                type="default"
-              >
-                Manage Draft
-              </Button>
+                <Button
+                  icon={<InfoCircleOutlined />}
+                  onClick={checkCurrentDraft}
+                  type="default"
+                >
+                  Manage Draft
+                </Button>
+              </Space>
             </div>
 
             <QuotationForm
@@ -429,7 +380,7 @@ const NewQuotation = () => {
             <PreviewQuotation
               visible={previewVisible}
               onClose={() => setPreviewVisible(false)}
-              cartItems={layoutProps.calculationCartItems} // Use calculation items for preview totals
+              cartItems={layoutProps.calculationCartItems}
               productsData={layoutProps.cartProductsData}
               customer={customers.find(
                 (c) => c.customerId === selectedCustomer,
@@ -447,21 +398,16 @@ const NewQuotation = () => {
           </>
         )}
       </CartLayout>
-      {/* Create Optional Product Modal */}
+
+      {/* Modals */}
       <CreateProductModal
         open={showCreateProductModal}
         onClose={() => setShowCreateProductModal(false)}
         onSuccess={handleProductCreated}
       />
 
-      {/* Draft Info Modal */}
       <Modal
-        title={
-          <Space>
-            <SaveOutlined />
-            Draft Information
-          </Space>
-        }
+        title="Draft Information"
         open={showDraftModal}
         onCancel={() => setShowDraftModal(false)}
         footer={[
@@ -478,7 +424,7 @@ const NewQuotation = () => {
           </Button>,
         ]}
       >
-        {currentDraft ? (
+        {currentDraft && (
           <Descriptions column={1} bordered>
             <Descriptions.Item label="Customer">
               {customers.find(
@@ -488,24 +434,13 @@ const NewQuotation = () => {
             <Descriptions.Item label="Quotation Date">
               {currentDraft.quotationData?.quotationDate || "-"}
             </Descriptions.Item>
-            <Descriptions.Item label="Due Date">
-              {currentDraft.quotationData?.dueDate || "-"}
-            </Descriptions.Item>
             <Descriptions.Item label="Last Saved">
-              {currentDraft.lastSaved
-                ? moment(currentDraft.lastSaved).fromNow()
-                : "-"}
-            </Descriptions.Item>
-            <Descriptions.Item label="Status">
-              <Text type="success">Draft Saved Automatically</Text>
+              {moment(currentDraft.lastSaved).fromNow()}
             </Descriptions.Item>
           </Descriptions>
-        ) : (
-          <p>No draft data available.</p>
         )}
       </Modal>
 
-      {/* Other Modals */}
       {showAddAddressModal && (
         <AddAddress
           visible={true}
@@ -519,7 +454,6 @@ const NewQuotation = () => {
         <AddCustomerModal
           visible={showAddCustomerModal}
           onClose={() => setShowAddCustomerModal(false)}
-          customer={null}
           onSave={handleCustomerSave}
         />
       )}
