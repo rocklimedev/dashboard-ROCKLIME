@@ -111,7 +111,6 @@ const CartTab = ({
   documentType = "quotation",
   onCartOrderChange, // ← From parent
 }) => {
-  const [dragMode, setDragMode] = useState(false);
   const [orderedIds, setOrderedIds] = useState([]);
 
   const safeCartItems = useMemo(() => {
@@ -231,14 +230,6 @@ const CartTab = ({
 
                   <Space>
                     <Button
-                      icon={<DragOutlined />}
-                      type={dragMode ? "primary" : "default"}
-                      onClick={() => setDragMode((p) => !p)}
-                    >
-                      {dragMode ? "Drag ON" : "Drag Mode"}
-                    </Button>
-
-                    <Button
                       danger
                       onClick={() => setShowClearCartModal?.(true)}
                     >
@@ -267,7 +258,7 @@ const CartTab = ({
                         handleMakeOption={handleMakeOption}
                         lineTotal={lineTotal}
                         documentType={documentType}
-                        dragEnabled={dragMode}
+                        dragEnabled={true} // ← Always true
                       />
 
                       {options.map((opt) => (
@@ -284,7 +275,7 @@ const CartTab = ({
                             handleMakeOption={handleMakeOption}
                             lineTotal={lineTotal}
                             documentType={documentType}
-                            dragEnabled={dragMode}
+                            dragEnabled={true} // ← Always true
                           />
                         </OptionGroupWrapper>
                       ))}
@@ -311,7 +302,7 @@ const CartTab = ({
                             handleMakeOption={handleMakeOption}
                             lineTotal={lineTotal}
                             documentType={documentType}
-                            dragEnabled={dragMode}
+                            dragEnabled={true} // ← Always true
                           />
                         ))}
                       </>

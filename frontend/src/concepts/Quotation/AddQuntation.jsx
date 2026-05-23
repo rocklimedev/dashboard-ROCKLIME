@@ -25,6 +25,7 @@ import {
   PlusOutlined,
   DeleteOutlined,
   SaveOutlined,
+  DragOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
 import { debounce } from "lodash";
@@ -45,6 +46,23 @@ import { useGetCustomersQuery } from "../../api/customerApi";
 import { useGetAllAddressesQuery } from "../../api/addressApi";
 import { useGetProfileQuery } from "../../api/userApi";
 
+// DND KIT IMPORTS
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import AddAddress from "../../components/Address/AddAddressModal";
 
 // Import Modals
@@ -55,11 +73,50 @@ import EditFloorModal from "../../components/modals/EditFloorModal";
 
 const { Text } = Typography;
 const { Option } = Select;
+// Sortable Row Component
+const SortableRow = ({ children, ...props }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: props["data-row-key"],
+  });
 
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+    background: isDragging ? "#f0f0f0" : "transparent",
+  };
+
+  return (
+    <tr
+      ref={setNodeRef}
+      style={style}
+      {...props}
+      {...attributes}
+      {...listeners}
+    >
+      {children}
+    </tr>
+  );
+};
 const AddQuotation = () => {
   const { id } = useParams();
   const isEditMode = Boolean(id);
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // NEW: Drag & Drop State
+  const [dragMode, setDragMode] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
   // After other modal states
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   // ── API Hooks ─────────────────────────────────────────────────────
@@ -149,7 +206,31 @@ const AddQuotation = () => {
       return fallback;
     }
   };
+  // ── Drag Reorder Handler ─────────────────────────────────────────
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
 
+    setFormData((prev) => {
+      const oldIndex = prev.products.findIndex(
+        (item) => item.productId === active.id,
+      );
+      const newIndex = prev.products.findIndex(
+        (item) => item.productId === over.id,
+      );
+
+      if (oldIndex === -1 || newIndex === -1) return prev;
+
+      const newProducts = arrayMove(prev.products, oldIndex, newIndex).map(
+        (item, index) => ({
+          ...item,
+          priority: index,
+        }),
+      );
+
+      return { ...prev, products: newProducts };
+    });
+  };
   const generateId = () => `id_${uuidv4().slice(0, 8)}`;
 
   // ── Load Existing Quotation ───────────────────────────────────────
@@ -321,7 +402,7 @@ const AddQuotation = () => {
           sellingPrice: price,
           discount: 0,
           discountType: "fixed",
-          priority: 0, // ✅ ADD THIS DEFAULT
+          priority: prev.products.length, // ← Updated
           isOptionFor: null,
           groupId: `grp-${uuidv4().slice(0, 8)}`,
         },
@@ -358,7 +439,7 @@ const AddQuotation = () => {
           sellingPrice: price,
           discount: 0,
           discountType: "fixed",
-          priority: 0, // ✅ ADD THIS DEFAULT
+          priority: prev.products.length, // ← Updated
           isOptionFor: selectedParentId,
           optionType,
           groupId: parent.groupId,
@@ -576,15 +657,14 @@ const AddQuotation = () => {
   // ── Table Columns ─────────────────────────────────────────────────
   const columns = [
     {
-      title: "Priority",
-      width: 120,
-      render: (_, r) => (
-        <InputNumber
-          min={0}
-          value={r.priority}
-          onChange={(v) => updateProductField(r.productId, "priority", v)}
-        />
-      ),
+      title: "Drag",
+      width: 50,
+      render: (_, record) =>
+        dragMode ? (
+          <div style={{ cursor: "grab", color: "#999", textAlign: "center" }}>
+            <DragOutlined />
+          </div>
+        ) : null,
     },
     {
       title: "Product",
@@ -1045,8 +1125,6 @@ const AddQuotation = () => {
               </div>
             )}
           </Card>
-
-          {/* Products & Options */}
           {/* Products & Options */}
           <Card
             title="Products & Options"
@@ -1100,146 +1178,174 @@ const AddQuotation = () => {
               </Space>
             }
           >
-            <Table
-              columns={[
-                {
-                  title: "Product",
-                  width: 280,
-                  render: (_, record) => (
-                    <div style={{ display: "flex", flexDirection: "column" }}>
-                      <Text strong style={{ fontSize: 14 }}>
-                        {record.isOptionFor && (
-                          <span style={{ color: "#1677ff" }}>↳ </span>
-                        )}
-                        {record.name}
-                      </Text>
-                    </div>
-                  ),
-                },
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={formData.products.map((p) => p.productId)}
+                strategy={verticalListSortingStrategy}
+              >
+                <Table
+                  components={{ body: { row: SortableRow } }}
+                  columns={[
+                    {
+                      title: "Drag",
+                      width: 50,
+                      render: () => (
+                        <div
+                          style={{
+                            cursor: "grab",
+                            color: "#999",
+                            textAlign: "center",
+                          }}
+                        >
+                          <DragOutlined style={{ fontSize: 18 }} />
+                        </div>
+                      ),
+                    },
+                    {
+                      title: "Product",
+                      width: 280,
+                      render: (_, record) => (
+                        <div
+                          style={{ display: "flex", flexDirection: "column" }}
+                        >
+                          <Text strong style={{ fontSize: 14 }}>
+                            {record.isOptionFor && (
+                              <span style={{ color: "#1677ff" }}>↳ </span>
+                            )}
+                            {record.name}
+                          </Text>
+                        </div>
+                      ),
+                    },
 
-                {
-                  title: "Qty",
-                  width: 100,
-                  render: (_, r) => (
-                    <InputNumber
-                      min={1}
-                      value={r.qty}
-                      onChange={(v) =>
-                        updateProductField(r.productId, "qty", v)
-                      }
-                      style={{ width: "100%", borderRadius: 8 }}
-                    />
-                  ),
-                },
+                    {
+                      title: "Qty",
+                      width: 100,
+                      render: (_, r) => (
+                        <InputNumber
+                          min={1}
+                          value={r.qty}
+                          onChange={(v) =>
+                            updateProductField(r.productId, "qty", v)
+                          }
+                          style={{ width: "100%", borderRadius: 8 }}
+                        />
+                      ),
+                    },
 
-                {
-                  title: "Price",
-                  width: 120,
-                  render: (_, r) => (
-                    <Text>₹{safeNum(r.sellingPrice, 0).toFixed(2)}</Text>
-                  ),
-                },
+                    {
+                      title: "Price",
+                      width: 120,
+                      render: (_, r) => (
+                        <Text>₹{safeNum(r.sellingPrice, 0).toFixed(2)}</Text>
+                      ),
+                    },
 
-                {
-                  title: "Discount",
-                  width: 180,
-                  render: (_, r) => (
-                    <Space.Compact style={{ width: "100%" }}>
-                      <InputNumber
-                        min={0}
-                        value={r.discount}
-                        onChange={(v) =>
-                          updateProductField(r.productId, "discount", v)
-                        }
-                        style={{ width: "60%" }}
-                      />
-                      <Select
-                        value={r.discountType}
-                        onChange={(v) =>
-                          updateProductField(r.productId, "discountType", v)
-                        }
-                        style={{ width: "40%" }}
-                      >
-                        <Option value="fixed">₹</Option>
-                        <Option value="percent">%</Option>
-                      </Select>
-                    </Space.Compact>
-                  ),
-                },
+                    {
+                      title: "Discount",
+                      width: 180,
+                      render: (_, r) => (
+                        <Space.Compact style={{ width: "100%" }}>
+                          <InputNumber
+                            min={0}
+                            value={r.discount}
+                            onChange={(v) =>
+                              updateProductField(r.productId, "discount", v)
+                            }
+                            style={{ width: "60%" }}
+                          />
+                          <Select
+                            value={r.discountType}
+                            onChange={(v) =>
+                              updateProductField(r.productId, "discountType", v)
+                            }
+                            style={{ width: "40%" }}
+                          >
+                            <Option value="fixed">₹</Option>
+                            <Option value="percent">%</Option>
+                          </Select>
+                        </Space.Compact>
+                      ),
+                    },
 
-                {
-                  title: "Priority",
-                  width: 110,
-                  render: (_, r) => (
-                    <InputNumber
-                      min={0}
-                      value={r.priority}
-                      onChange={(v) =>
-                        updateProductField(r.productId, "priority", v)
-                      }
-                      style={{ width: "100%", borderRadius: 8 }}
-                    />
-                  ),
-                },
+                    {
+                      title: "Priority",
+                      width: 110,
+                      render: (_, r) => (
+                        <InputNumber
+                          min={0}
+                          value={r.priority}
+                          onChange={(v) =>
+                            updateProductField(r.productId, "priority", v)
+                          }
+                          style={{ width: "100%", borderRadius: 8 }}
+                        />
+                      ),
+                    },
 
-                {
-                  title: "Location",
-                  width: 260,
-                  render: (_, record) => {
-                    const location = [
-                      record.floorName,
-                      record.roomName,
-                      record.areaName,
-                    ]
-                      .filter(Boolean)
-                      .join(" → ");
+                    {
+                      title: "Location",
+                      width: 260,
+                      render: (_, record) => {
+                        const location = [
+                          record.floorName,
+                          record.roomName,
+                          record.areaName,
+                        ]
+                          .filter(Boolean)
+                          .join(" → ");
 
-                    return (
-                      <Button
-                        type="link"
-                        onClick={() => openAssignModal(record)}
-                        style={{
-                          padding: 0,
-                          textAlign: "left",
-                          height: "auto",
-                          whiteSpace: "normal",
-                        }}
-                      >
-                        {location || (
-                          <Text type="secondary">Assign Location</Text>
-                        )}
-                      </Button>
-                    );
-                  },
-                },
+                        return (
+                          <Button
+                            type="link"
+                            onClick={() => openAssignModal(record)}
+                            style={{
+                              padding: 0,
+                              textAlign: "left",
+                              height: "auto",
+                              whiteSpace: "normal",
+                            }}
+                          >
+                            {location || (
+                              <Text type="secondary">Assign Location</Text>
+                            )}
+                          </Button>
+                        );
+                      },
+                    },
 
-                {
-                  title: "",
-                  width: 60,
-                  render: (_, r) => (
-                    <Button
-                      danger
-                      size="small"
-                      icon={<DeleteOutlined />}
-                      onClick={() => removeProduct(r.productId)}
-                      style={{ borderRadius: 6 }}
-                    />
-                  ),
-                },
-              ]}
-              dataSource={formData.products}
-              rowKey="productId"
-              pagination={false}
-              scroll={{ y: 420, x: "max-content" }}
-              size="middle"
-              bordered={false}
-              sticky
-              rowClassName={(record) =>
-                record.isOptionFor ? "option-row" : "main-row"
-              }
-            />
+                    {
+                      title: "",
+                      width: 60,
+                      render: (_, r) => (
+                        <Button
+                          danger
+                          size="small"
+                          icon={<DeleteOutlined />}
+                          onClick={() => removeProduct(r.productId)}
+                          style={{ borderRadius: 6 }}
+                        />
+                      ),
+                    },
+                  ]}
+                  dataSource={formData.products}
+                  rowKey="productId"
+                  pagination={false}
+                  scroll={{ y: 420, x: "max-content" }}
+                  size="middle"
+                  bordered={false}
+                  sticky
+                  rowClassName={(record) =>
+                    record.isOptionFor ? "option-row" : "main-row"
+                  }
+                />
+              </SortableContext>
+            </DndContext>
           </Card>
-
           {/* Financial Summary */}
           <Card
             title="Financial Summary"
