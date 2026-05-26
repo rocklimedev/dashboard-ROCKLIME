@@ -6,7 +6,7 @@ export const quotationApi = baseApi.injectEndpoints({
       query: (filters = {}) => {
         const params = new URLSearchParams();
 
-        // Pagination (always include)
+        // Pagination
         params.append("page", filters.page ?? 1);
         params.append("limit", filters.limit ?? 20);
 
@@ -25,7 +25,7 @@ export const quotationApi = baseApi.injectEndpoints({
           params.append("status", filters.status);
         }
 
-        // Date range (send as two separate params)
+        // Date range
         if (
           filters.dateRange &&
           Array.isArray(filters.dateRange) &&
@@ -40,10 +40,12 @@ export const quotationApi = baseApi.injectEndpoints({
       },
       providesTags: ["Quotations"],
     }),
+
     getQuotationById: builder.query({
       query: (id) => `/quotation/${id}`,
       providesTags: (result, error, id) => [{ type: "Quotations", id }],
     }),
+
     createQuotation: builder.mutation({
       query: (newQuotation) => ({
         url: "/quotation/add",
@@ -52,6 +54,7 @@ export const quotationApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Quotations"],
     }),
+
     updateQuotation: builder.mutation({
       query: ({ id, updatedQuotation }) => ({
         url: `/quotation/${id}`,
@@ -60,9 +63,10 @@ export const quotationApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: (result, error, { id }) => [
         { type: "Quotations", id },
-        "Quotations", // ← Also invalidate list
+        "Quotations",
       ],
     }),
+
     deleteQuotation: builder.mutation({
       query: (id) => ({
         url: `/quotation/${id}`,
@@ -70,6 +74,16 @@ export const quotationApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Quotations"],
     }),
+
+    // ✅ NEW: Clone Quotation
+    cloneQuotation: builder.mutation({
+      query: (id) => ({
+        url: `/quotation/${id}/clone`,
+        method: "POST",
+      }),
+      invalidatesTags: ["Quotations"], // Refresh list after cloning
+    }),
+
     exportQuotation: builder.mutation({
       query: (id) => ({
         url: `/quotation/export/${id}`,
@@ -81,7 +95,8 @@ export const quotationApi = baseApi.injectEndpoints({
         responseHandler: async (response) => response.blob(),
       }),
     }),
-    // New endpoints for versioning
+
+    // Versioning Endpoints
     getQuotationVersions: builder.query({
       query: (id) => `/quotation/${id}/versions`,
       providesTags: (result, error, id) => [
@@ -89,6 +104,7 @@ export const quotationApi = baseApi.injectEndpoints({
         "Quotations",
       ],
     }),
+
     restoreQuotationVersion: builder.mutation({
       query: ({ id, version }) => ({
         url: `/quotation/${id}/restore/${version}`,
@@ -108,6 +124,7 @@ export const {
   useCreateQuotationMutation,
   useUpdateQuotationMutation,
   useDeleteQuotationMutation,
+  useCloneQuotationMutation, // ← New export
   useExportQuotationMutation,
   useGetQuotationVersionsQuery,
   useRestoreQuotationVersionMutation,

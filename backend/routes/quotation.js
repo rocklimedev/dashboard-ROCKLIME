@@ -62,7 +62,7 @@ router.post(
   quotationController.exportQuotation,
 );
 router.post(
-  "/clone/:id",
+  "/:id/clone",
   // checkPermission(
   //   "post",
   //   "clone_quotation",

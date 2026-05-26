@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import {
   useGetAllQuotationsQuery,
   useDeleteQuotationMutation,
+  useCloneQuotationMutation, // ← Added
 } from "../../api/quotationApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
 import {
@@ -16,6 +17,7 @@ import {
   HomeOutlined,
   BookOutlined,
   UnorderedListOutlined,
+  CopyOutlined, // ← Added for Clone
 } from "@ant-design/icons";
 import QuotationProductModal from "../../components/Quotation/QuotationProductModal";
 import DeleteModal from "../../components/Common/DeleteModal";
@@ -155,6 +157,8 @@ const QuotationList = () => {
 
   const [deleteQuotation, { isLoading: isDeleting }] =
     useDeleteQuotationMutation();
+  const [cloneQuotation, { isLoading: isCloning }] =
+    useCloneQuotationMutation(); // ← Added
 
   // ==================== HELPERS ====================
   const getProductCount = (items) => {
@@ -164,6 +168,17 @@ const QuotationList = () => {
       return JSON.parse(items).length;
     } catch {
       return 0;
+    }
+  };
+  // ==================== CLONE HANDLER ====================
+  const handleCloneQuotation = async (quotation) => {
+    try {
+      await cloneQuotation(quotation.quotationId).unwrap();
+      message.success(
+        `Quotation "${quotation.reference_number || quotation.document_title}" cloned successfully!`,
+      );
+    } catch (err) {
+      message.error(err?.data?.message || "Failed to clone quotation");
     }
   };
 
@@ -360,17 +375,16 @@ const QuotationList = () => {
       title: "Actions",
       key: "actions",
       fixed: "right",
-      width: 180, // increased width so icons have space
+      width: 220,
       render: (_, rec) => {
         const customer = customers.find((c) => c.customerId === rec.customerId);
         const custName = customer?.name || "Dear Client";
         const custPhone = customer?.mobileNumber || customer?.phone || "—";
-        const custAddress = "—"; // ← TODO: improve later
+        const custAddress = "—";
 
         const mainProducts = Array.isArray(rec.items) ? rec.items : [];
-        const optionalProducts = []; // not in list usually
+        const optionalProducts = [];
         const subtotal = Number(rec.finalAmount || 0);
-        const discount = 0;
         const extraDiscount = Number(rec.extraDiscount || 0);
         const finalAmount = Number(rec.finalAmount || 0);
         const roundOff = 0;
@@ -378,21 +392,36 @@ const QuotationList = () => {
 
         const isExporting = exportingId === rec.quotationId;
 
-        // ── THIS IS THE FIXED PART ──
         return (
           <div className="d-flex align-items-center gap-1">
+            {/* Edit */}
             <PermissionGate api="edit" module="quotations">
-              <Button
-                type="text"
-                icon={<EditOutlined />}
-                onClick={() =>
-                  navigate(`/quotation/${rec.quotationId}/edit`, {
-                    state: { quotation: rec },
-                  })
-                }
-              />
+              <Tooltip title="Edit">
+                <Button
+                  type="text"
+                  icon={<EditOutlined />}
+                  onClick={() =>
+                    navigate(`/quotation/${rec.quotationId}/edit`, {
+                      state: { quotation: rec },
+                    })
+                  }
+                />
+              </Tooltip>
             </PermissionGate>
 
+            {/* Clone */}
+            <PermissionGate api="write" module="quotations">
+              <Tooltip title="Clone Quotation">
+                <Button
+                  type="text"
+                  icon={<CopyOutlined />}
+                  loading={isCloning}
+                  onClick={() => handleCloneQuotation(rec)}
+                />
+              </Tooltip>
+            </PermissionGate>
+
+            {/* Export PDF */}
             <Tooltip title="Export PDF">
               <Button
                 type="text"
@@ -409,7 +438,7 @@ const QuotationList = () => {
                     mainProducts,
                     optionalProducts,
                     displaySubtotal: subtotal,
-                    displayProductDiscount: discount,
+                    displayProductDiscount: 0,
                     backendExtraDiscount: extraDiscount,
                     backendFinalAmount: finalAmount,
                     backendRoundOff: roundOff,
@@ -420,12 +449,13 @@ const QuotationList = () => {
               />
             </Tooltip>
 
+            {/* More Actions Dropdown */}
             <Dropdown
               overlay={
                 <Menu>
                   <Menu.Item key="view">
                     <Link to={`/quotation/${rec.quotationId}`}>
-                      <EyeOutlined className="me-2" /> View
+                      <EyeOutlined className="me-2" /> View Details
                     </Link>
                   </Menu.Item>
 
@@ -433,14 +463,14 @@ const QuotationList = () => {
                     key="dates"
                     onClick={() => handleOpenDatesModal(rec)}
                   >
-                    <CalendarOutlined className="me-2" /> Dates
+                    <CalendarOutlined className="me-2" /> Manage Dates
                   </Menu.Item>
 
                   <Menu.Item
                     key="sitemap"
                     onClick={() => handleGenerateSiteMap(rec)}
                   >
-                    <HomeOutlined className="me-2" /> Site Map
+                    <HomeOutlined className="me-2" /> Generate Site Map
                   </Menu.Item>
 
                   <PermissionGate api="write" module="quotations">

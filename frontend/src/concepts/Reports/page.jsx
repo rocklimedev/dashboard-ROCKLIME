@@ -7,19 +7,15 @@ import {
   Space,
   Typography,
   Tag,
-  Table,
   DatePicker,
   Select,
-  Input,
   message,
-  Empty,
-  Spin,
+  Statistic as AntStatistic,
 } from "antd";
 import {
   DownloadOutlined,
   FileTextOutlined,
   BarChartOutlined,
-  UserOutlined,
   ShoppingOutlined,
   ReloadOutlined,
 } from "@ant-design/icons";
@@ -34,12 +30,11 @@ const { RangePicker } = DatePicker;
 
 const ReportsPage = () => {
   const [loadingReport, setLoadingReport] = useState(null);
-  const [selectedReportType, setSelectedReportType] = useState("monthly");
-
-  // Date Filters
+  const [selectedReportType, setSelectedReportType] = useState("order");
   const [dateRange, setDateRange] = useState([null, null]);
+  const [quickFilter, setQuickFilter] = useState("all");
 
-  // Fetch necessary data
+  // Fetch Data
   const { data: quotationsData } = useGetAllQuotationsQuery({ limit: 500 });
   const { data: ordersData } = useGetAllOrdersQuery({ limit: 500 });
   const { data: productsData } = useGetAllProductsQuery({
@@ -51,193 +46,215 @@ const ReportsPage = () => {
   const orders = ordersData?.data || [];
   const products = productsData?.data || [];
 
-  // Quick Reports Data
-  const reportStats = useMemo(() => {
-    const totalQuotations = quotations.length;
-    const totalOrders = orders.length;
-    const totalRevenue = orders.reduce(
-      (sum, o) => sum + (Number(o.finalAmount) || 0),
-      0,
-    );
-    const lowStock = products.filter(
-      (p) => p.quantity > 0 && p.quantity <= 20,
-    ).length;
+  // ==================== DATE FILTER LOGIC ====================
 
-    return { totalQuotations, totalOrders, totalRevenue, lowStock };
-  }, [quotations, orders, products]);
+  const getFilteredData = (data, dateField = "createdAt") => {
+    if (!dateRange[0] && quickFilter === "all") return data;
+
+    const now = new Date();
+    let startDate = null;
+
+    switch (quickFilter) {
+      case "today":
+        startDate = new Date(now.setHours(0, 0, 0, 0));
+        break;
+      case "yesterday":
+        startDate = new Date(now.setDate(now.getDate() - 1));
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      case "last7":
+        startDate = new Date(now.setDate(now.getDate() - 7));
+        break;
+      case "last30":
+        startDate = new Date(now.setDate(now.getDate() - 30));
+        break;
+      case "last3m":
+        startDate = new Date(now.setMonth(now.getMonth() - 3));
+        break;
+      case "last6m":
+        startDate = new Date(now.setMonth(now.getMonth() - 6));
+        break;
+      default:
+        startDate = dateRange[0]?.toDate();
+    }
+
+    const endDate = dateRange[1]?.toDate() || new Date();
+
+    return data.filter((item) => {
+      const itemDate = new Date(item[dateField]);
+      if (startDate) return itemDate >= startDate && itemDate <= endDate;
+      return true;
+    });
+  };
 
   // ==================== REPORT GENERATORS ====================
 
-  const generateMonthlyStockReport = () => {
-    setLoadingReport("monthly");
+  const generateReport = (type) => {
+    setLoadingReport(type);
     try {
-      const now = new Date();
-      const monthName = now.toLocaleString("default", {
-        month: "long",
-        year: "numeric",
-      });
+      let reportData = [];
+      let fileName = "";
+      let title = "";
 
-      const reportData = products.map((p, i) => ({
-        "S.No": i + 1,
-        "Company Code":
-          p.metaDetails?.find?.((d) => d.value?.match?.(/^[A-Za-z0-9]{6,12}$/))
-            ?.value || "—",
-        "Product Name": p.name,
-        "Current Stock": p.quantity,
-        Status:
-          p.quantity === 0
-            ? "Out of Stock"
-            : p.quantity <= 20
-              ? "Low Stock"
-              : "In Stock",
-        "Last Updated": p.updatedAt
-          ? new Date(p.updatedAt).toLocaleDateString("en-IN")
-          : "—",
-      }));
+      switch (type) {
+        case "stock":
+          reportData = products.map((p, i) => ({
+            "S.No": i + 1,
+            "Company Code":
+              p.metaDetails?.find((d) => d.value?.match(/^[A-Za-z0-9]{6,12}$/))
+                ?.value || "—",
+            "Product Name": p.name,
+            "Current Stock": p.quantity,
+            Status:
+              p.quantity === 0
+                ? "Out of Stock"
+                : p.quantity <= 20
+                  ? "Low Stock"
+                  : "In Stock",
+            "Last Updated": p.updatedAt
+              ? new Date(p.updatedAt).toLocaleDateString("en-IN")
+              : "—",
+          }));
+          title = "Stock Report";
+          fileName = `Stock_Report_${new Date().toISOString().slice(0, 10)}`;
+          break;
 
-      generatePDF(reportData, `Monthly Stock Report - ${monthName}`);
-      message.success("Monthly Stock Report downloaded successfully!");
+        case "quotation":
+          const filteredQuotations = getFilteredData(
+            quotations,
+            "quotation_date",
+          );
+          reportData = filteredQuotations.map((q, i) => ({
+            "S.No": i + 1,
+            "Quotation No": q.reference_number || "—",
+            "Quotation Date": new Date(q.quotation_date).toLocaleDateString(
+              "en-IN",
+            ),
+            "Client Name": q.customer?.name || "—",
+            Amount: `₹${Number(q.finalAmount || 0).toLocaleString("en-IN")}`,
+          }));
+          title = "Quotation Report";
+          fileName = `Quotation_Report`;
+          break;
+
+        case "order":
+          const filteredOrders = getFilteredData(orders);
+          reportData = filteredOrders.map((o, i) => ({
+            "S.No": i + 1,
+            "Order No": o.orderNo || "—",
+            "Order Date": new Date(o.createdAt).toLocaleDateString("en-IN"),
+            "Client Name": o.customer?.name || "Walk-in",
+            Address: o.customer?.address || "—",
+            Amount: `₹${Number(o.finalAmount || 0).toLocaleString("en-IN")}`,
+            Status: o.status.replace("_", " ").toUpperCase(),
+          }));
+          title = "Order Report";
+          fileName = `Order_Report`;
+          break;
+
+        case "lowstock":
+          const lowStock = products.filter(
+            (p) => p.quantity > 0 && p.quantity <= 20,
+          );
+          reportData = lowStock.map((p, i) => ({
+            "S.No": i + 1,
+            "Product Name": p.name,
+            "Current Stock": p.quantity,
+            "Company Code":
+              p.metaDetails?.find((d) => d.value?.match(/^[A-Za-z0-9]{6,12}$/))
+                ?.value || "—",
+          }));
+          title = "Low Stock Alert Report";
+          fileName = `Low_Stock_Alert`;
+          break;
+
+        default:
+          message.warning("Report type not implemented yet");
+          return;
+      }
+
+      generatePDF(reportData, title);
+      generateExcel(reportData, fileName);
+      message.success(`${title} generated successfully!`);
     } catch (err) {
+      console.error(err);
       message.error("Failed to generate report");
     } finally {
       setLoadingReport(null);
     }
   };
 
-  const generateSalesReport = () => {
-    setLoadingReport("sales");
-    try {
-      const reportData = orders.map((order, i) => ({
-        "S.No": i + 1,
-        "Order No": order.orderNo || "—",
-        Customer: order.customer?.name || "Walk-in",
-        Date: new Date(order.createdAt).toLocaleDateString("en-IN"),
-        Amount: `₹${Number(order.finalAmount || 0).toLocaleString("en-IN")}`,
-        Status: order.status.replace("_", " "),
-      }));
-
-      generatePDF(reportData, "Sales Report");
-      generateExcel(reportData, "Sales_Report");
-      message.success("Sales Report generated!");
-    } catch (err) {
-      message.error("Failed to generate sales report");
-    } finally {
-      setLoadingReport(null);
-    }
-  };
-
-  const generateLowStockReport = () => {
-    setLoadingReport("lowstock");
-    try {
-      const lowStockProducts = products.filter(
-        (p) => p.quantity > 0 && p.quantity <= 20,
-      );
-
-      const reportData = lowStockProducts.map((p, i) => ({
-        "S.No": i + 1,
-        "Product Name": p.name,
-        "Current Stock": p.quantity,
-        "Company Code":
-          p.metaDetails?.find?.((d) => d.value?.match?.(/^[A-Za-z0-9]{6,12}$/))
-            ?.value || "—",
-      }));
-
-      generatePDF(reportData, "Low Stock Alert Report");
-      message.success(`${lowStockProducts.length} Low Stock items reported`);
-    } catch (err) {
-      message.error("Failed to generate low stock report");
-    } finally {
-      setLoadingReport(null);
-    }
-  };
-
-  const generateQuotationReport = () => {
-    setLoadingReport("quotation");
-    try {
-      const reportData = quotations.map((q, i) => ({
-        "S.No": i + 1,
-        "Quotation No": q.reference_number || "—",
-        Customer: q.customer?.name || "—",
-        Date: new Date(q.quotation_date).toLocaleDateString("en-IN"),
-        Amount: `₹${Number(q.finalAmount || 0).toLocaleString("en-IN")}`,
-      }));
-
-      generatePDF(reportData, "Quotations Report");
-      message.success("Quotations Report generated!");
-    } catch (err) {
-      message.error("Failed to generate quotation report");
-    } finally {
-      setLoadingReport(null);
-    }
-  };
-
-  // Report Cards
-  const quickReports = [
-    {
-      title: "Monthly Stock Report",
-      icon: <FileTextOutlined style={{ fontSize: 28, color: "#1890ff" }} />,
-      desc: "Current month stock summary",
-      onClick: generateMonthlyStockReport,
-      loadingKey: "monthly",
-    },
-    {
-      title: "Sales Report",
-      icon: <ShoppingOutlined style={{ fontSize: 28, color: "#52c41a" }} />,
-      desc: "Orders & Revenue Analysis",
-      onClick: generateSalesReport,
-      loadingKey: "sales",
-    },
-    {
-      title: "Low Stock Alert",
-      icon: <BarChartOutlined style={{ fontSize: 28, color: "#faad14" }} />,
-      desc: "Products running low",
-      onClick: generateLowStockReport,
-      loadingKey: "lowstock",
-    },
-    {
-      title: "Quotation Report",
-      icon: <FileTextOutlined style={{ fontSize: 28, color: "#722ed1" }} />,
-      desc: "All quotations summary",
-      onClick: generateQuotationReport,
-      loadingKey: "quotation",
-    },
-  ];
+  // Stats
+  const stats = useMemo(
+    () => ({
+      totalQuotations: quotations.length,
+      totalOrders: orders.length,
+      totalRevenue: orders.reduce(
+        (sum, o) => sum + Number(o.finalAmount || 0),
+        0,
+      ),
+      lowStock: products.filter((p) => p.quantity > 0 && p.quantity <= 20)
+        .length,
+    }),
+    [quotations, orders, products],
+  );
 
   return (
     <div className="page-wrapper">
+      <PageHeader
+        title="Reports"
+        subtitle="Business Intelligence & Analytics"
+      />
       <div className="content">
-        <PageHeader
-          title="Reports"
-          subtitle="Generate and export business reports"
-        />
-
-        <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
-          {quickReports.map((report, index) => (
-            <Col xs={24} sm={12} lg={6} key={index}>
-              <Card
-                hoverable
-                style={{ height: "100%", borderRadius: 12 }}
-                bodyStyle={{ padding: 24 }}
-              >
+        {/* Quick Reports */}
+        <Row gutter={[16, 16]} style={{ marginBottom: 32 }}>
+          {[
+            {
+              title: "Stock Report",
+              icon: (
+                <BarChartOutlined style={{ fontSize: 32, color: "#1890ff" }} />
+              ),
+              type: "stock",
+            },
+            {
+              title: "Order Report",
+              icon: (
+                <ShoppingOutlined style={{ fontSize: 32, color: "#52c41a" }} />
+              ),
+              type: "order",
+            },
+            {
+              title: "Quotation Report",
+              icon: (
+                <FileTextOutlined style={{ fontSize: 32, color: "#722ed1" }} />
+              ),
+              type: "quotation",
+            },
+            {
+              title: "Low Stock Alert",
+              icon: (
+                <BarChartOutlined style={{ fontSize: 32, color: "#faad14" }} />
+              ),
+              type: "lowstock",
+            },
+          ].map((report) => (
+            <Col xs={24} sm={12} lg={6} key={report.type}>
+              <Card hoverable style={{ height: "100%" }}>
                 <Space
                   direction="vertical"
-                  size="middle"
+                  size="large"
                   style={{ width: "100%" }}
                 >
                   <div>{report.icon}</div>
-                  <Title level={4} style={{ margin: 0 }}>
-                    {report.title}
-                  </Title>
-                  <Text type="secondary">{report.desc}</Text>
-
+                  <Title level={4}>{report.title}</Title>
                   <Button
                     type="primary"
                     block
                     icon={<DownloadOutlined />}
-                    loading={loadingReport === report.loadingKey}
-                    onClick={report.onClick}
+                    loading={loadingReport === report.type}
+                    onClick={() => generateReport(report.type)}
                   >
-                    Generate Report
+                    Generate PDF + Excel
                   </Button>
                 </Space>
               </Card>
@@ -245,72 +262,57 @@ const ReportsPage = () => {
           ))}
         </Row>
 
-        {/* Custom Report Section */}
-        <Card
-          style={{ marginTop: 32, borderRadius: 12 }}
-          title="Custom Report Builder"
-        >
-          <Row gutter={16}>
-            <Col xs={24} md={8}>
+        {/* Custom Report Builder */}
+        <Card title="Custom Report Builder" style={{ borderRadius: 12 }}>
+          <Row gutter={16} align="middle">
+            <Col xs={24} md={6}>
               <Select
                 style={{ width: "100%" }}
-                placeholder="Select Report Type"
                 value={selectedReportType}
                 onChange={setSelectedReportType}
                 options={[
-                  { value: "monthly", label: "Monthly Stock" },
-                  { value: "sales", label: "Sales Summary" },
-                  { value: "quotations", label: "Quotations" },
-                  { value: "lowstock", label: "Low Stock" },
+                  { value: "order", label: "Order Report" },
+                  { value: "quotation", label: "Quotation Report" },
+                  { value: "stock", label: "Stock Report" },
+                ]}
+              />
+            </Col>
+
+            <Col xs={24} md={6}>
+              <Select
+                style={{ width: "100%" }}
+                value={quickFilter}
+                onChange={setQuickFilter}
+                options={[
+                  { value: "all", label: "All Time" },
+                  { value: "today", label: "Today" },
+                  { value: "yesterday", label: "Yesterday" },
+                  { value: "last7", label: "Last 7 Days" },
+                  { value: "last30", label: "Last 30 Days" },
+                  { value: "last3m", label: "Last 3 Months" },
+                  { value: "last6m", label: "Last 6 Months" },
                 ]}
               />
             </Col>
 
             <Col xs={24} md={8}>
-              <RangePicker style={{ width: "100%" }} onChange={setDateRange} />
+              <RangePicker
+                style={{ width: "100%" }}
+                onChange={setDateRange}
+                placeholder={["Start Date", "End Date"]}
+              />
             </Col>
 
-            <Col xs={24} md={8}>
+            <Col xs={24} md={4}>
               <Button
                 type="primary"
                 icon={<DownloadOutlined />}
                 block
-                onClick={() =>
-                  message.info(
-                    "Advanced custom report coming soon with filters",
-                  )
-                }
+                loading={loadingReport === "custom"}
+                onClick={() => generateReport(selectedReportType)}
               >
-                Generate Custom Report
+                Generate
               </Button>
-            </Col>
-          </Row>
-        </Card>
-
-        {/* Recent Reports Info */}
-        <Card style={{ marginTop: 24 }} title="Quick Stats">
-          <Row gutter={16}>
-            <Col span={6}>
-              <Statistic
-                title="Total Quotations"
-                value={reportStats.totalQuotations}
-              />
-            </Col>
-            <Col span={6}>
-              <Statistic title="Total Orders" value={reportStats.totalOrders} />
-            </Col>
-            <Col span={6}>
-              <Statistic
-                title="Total Revenue"
-                value={`₹${reportStats.totalRevenue.toLocaleString("en-IN")}`}
-              />
-            </Col>
-            <Col span={6}>
-              <Statistic
-                title="Low Stock Items"
-                value={reportStats.lowStock}
-                suffix={<Tag color="orange">Alert</Tag>}
-              />
             </Col>
           </Row>
         </Card>
@@ -318,17 +320,5 @@ const ReportsPage = () => {
     </div>
   );
 };
-
-// Simple Statistic Component
-const Statistic = ({ title, value, suffix }) => (
-  <div style={{ textAlign: "center" }}>
-    <Text type="secondary" style={{ fontSize: 14 }}>
-      {title}
-    </Text>
-    <div style={{ fontSize: 28, fontWeight: 600, marginTop: 8 }}>
-      {value} {suffix}
-    </div>
-  </div>
-);
 
 export default ReportsPage;

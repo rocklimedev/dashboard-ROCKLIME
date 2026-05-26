@@ -1,7 +1,7 @@
 // src/pages/quotations/NewQuotationsDetails.jsx
 
 import React, { useRef, useState, useMemo, useCallback } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   message,
   Button,
@@ -12,6 +12,7 @@ import {
   Checkbox,
   Tag,
   Divider,
+  Select,
 } from "antd";
 import {
   ArrowLeftOutlined,
@@ -20,6 +21,7 @@ import {
   HistoryOutlined,
   SettingOutlined,
   TableOutlined,
+  AppstoreOutlined,
 } from "@ant-design/icons";
 import { Helmet } from "react-helmet";
 import dayjs from "dayjs";
@@ -55,7 +57,7 @@ const NewQuotationsDetails = () => {
   const [activeVersion, setActiveVersion] = useState("current");
   const [exportFormat, setExportFormat] = useState("pdf");
   const [isExporting, setIsExporting] = useState(false);
-
+  const navigate = useNavigate();
   // Toggle between Site Map (Visual) and Tabular Floor/Room View
   const [useTabularLayout, setUseTabularLayout] = useState(false);
 
@@ -166,18 +168,22 @@ const NewQuotationsDetails = () => {
       (address.postalCode ? ` - ${address.postalCode}` : "") || "--";
 
   // ── Products ────────────────────────────────────────────────────────────
+  // ── Products with Priority Sorting ─────────────────────────────────────
   const allProducts = useMemo(() => {
     const products = activeVersionData.products || [];
-    return products.map((p) => ({
-      ...p,
-      floorName: p.floorName || "",
-      roomName: p.roomName || "",
-      areaName: p.areaName || "",
-      imageUrl: p.imageUrl || "",
-      companyCode: p.companyCode || p.productCode || "—",
-    }));
-  }, [activeVersionData.products]);
 
+    return products
+      .map((p) => ({
+        ...p,
+        floorName: p.floorName || "",
+        roomName: p.roomName || "",
+        areaName: p.areaName || "",
+        imageUrl: p.imageUrl || "",
+        companyCode: p.companyCode || p.productCode || "—",
+        priority: Number(p.priority ?? 9999), // Important
+      }))
+      .sort((a, b) => a.priority - b.priority); // ← Sort by saved priority
+  }, [activeVersionData.products]);
   const mainProducts = useMemo(
     () => allProducts.filter((p) => p.isOptionFor == null),
     [allProducts],
@@ -199,7 +205,6 @@ const NewQuotationsDetails = () => {
       options: optionMap.get(mainItem.productId) || [],
     }));
   }, [mainProducts, optionalProducts]);
-
   // ── Brand Names ─────────────────────────────────────────────────────────
   const brandNames = useMemo(() => {
     const brands = new Set();
@@ -271,7 +276,6 @@ const NewQuotationsDetails = () => {
     quotation,
     enrichProductsWithAreas,
   ]);
-
   // ── Grouping Helpers ────────────────────────────────────────────────────
   const groupProductsByFloorAndRoom = (products = []) => {
     const map = new Map();
@@ -1101,11 +1105,15 @@ const NewQuotationsDetails = () => {
       <div className="page-wrapper">
         <div className="content">
           {/* Top Bar */}
+          {/* Top Bar */}
           <div
             style={{
-              padding: "16px 40px",
+              padding: "14px 24px",
               background: "#fff",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+              borderBottom: "1px solid #f0f0f0",
+              position: "sticky",
+              top: 0,
+              zIndex: 100,
             }}
           >
             <div
@@ -1115,178 +1123,171 @@ const NewQuotationsDetails = () => {
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
+                gap: 16,
                 flexWrap: "wrap",
-                gap: 20,
               }}
             >
-              <div>
-                <Title level={3} style={{ margin: 0, color: "#E31E24" }}>
-                  {quotation.document_title || "Quotation"}
+              {/* LEFT: Title Section */}
+              <div style={{ minWidth: 280 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <Title
+                    level={4}
+                    style={{
+                      margin: 0,
+                      color: "#1f1f1f",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {quotation.document_title || "Quotation"}
+                  </Title>
+
                   {activeVersion !== "current" && (
-                    <Tag color="blue" style={{ marginLeft: 12 }}>
-                      Version {activeVersion}
-                    </Tag>
+                    <Tag color="blue">v{activeVersion}</Tag>
                   )}
-                </Title>
-                <Text type="secondary">
-                  {quotation.reference_number || "—"} • {customerName} •{" "}
-                  {brandNames}
-                </Text>
+                </div>
+
+                <div
+                  style={{
+                    marginTop: 4,
+                    fontSize: 13,
+                    color: "#666",
+                  }}
+                >
+                  {quotation.reference_number || "—"}{" "}
+                  <span style={{ margin: "0 6px" }}>•</span>
+                  {customerName || "No Customer"}{" "}
+                  <span style={{ margin: "0 6px" }}>•</span>
+                  {brandNames || "—"}
+                </div>
               </div>
 
-              <Space size="middle" wrap>
+              {/* RIGHT: Actions */}
+              <Space size={12} wrap align="center">
+                {/* Export Column Config */}
                 <Dropdown
-                  placement="bottomRight"
                   trigger={["click"]}
+                  placement="bottomRight"
                   dropdownRender={() => (
                     <div
                       style={{
-                        padding: "16px 20px",
+                        padding: 16,
                         background: "#fff",
-                        borderRadius: 8,
-                        boxShadow: "0 6px 16px rgba(0,0,0,0.12)",
-                        minWidth: 240,
+                        borderRadius: 10,
+                        boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
+                        width: 260,
                       }}
                     >
-                      <div
-                        style={{
-                          fontWeight: 600,
-                          marginBottom: 12,
-                          color: "#333",
-                        }}
-                      >
-                        Columns to include in export
+                      <div style={{ fontWeight: 600, marginBottom: 10 }}>
+                        Export Columns
                       </div>
+
                       <Checkbox.Group
                         style={{ width: "100%" }}
                         value={Object.keys(visibleColumns).filter(
                           (k) => visibleColumns[k],
                         )}
-                        onChange={(checkedValues) => {
-                          setVisibleColumns({
-                            sno: checkedValues.includes("sno"),
-                            name: checkedValues.includes("name"),
-                            code: checkedValues.includes("code"),
-                            image: checkedValues.includes("image"),
-                            unit: checkedValues.includes("unit"),
-                            mrp: checkedValues.includes("mrp"),
-                            unitPrice: checkedValues.includes("unitPrice"),
-                            discount: checkedValues.includes("discount"),
-                            total: checkedValues.includes("total"),
+                        onChange={(checked) => {
+                          const map = {};
+                          Object.keys(visibleColumns).forEach((key) => {
+                            map[key] = checked.includes(key);
                           });
+                          setVisibleColumns(map);
                         }}
                       >
-                        <Space
-                          direction="vertical"
-                          size={10}
-                          style={{ width: "100%" }}
-                        >
+                        <Space direction="vertical" size={6}>
                           <Checkbox value="sno">S.No</Checkbox>
-                          <Checkbox value="name">Product Name</Checkbox>
+                          <Checkbox value="name">Product</Checkbox>
                           <Checkbox value="code">Code</Checkbox>
                           <Checkbox value="image">Image</Checkbox>
-                          <Checkbox value="unit">Unit / Qty</Checkbox>
+                          <Checkbox value="unit">Qty</Checkbox>
                           <Checkbox value="mrp">MRP</Checkbox>
-                          <Checkbox value="unitPrice">
-                            Unit Price (After Discount)
-                          </Checkbox>
-                          <Divider style={{ margin: "8px 0" }} />
+                          <Checkbox value="unitPrice">Unit Price</Checkbox>
                           <Checkbox value="discount">Discount</Checkbox>
                           <Checkbox value="total">Total</Checkbox>
                         </Space>
                       </Checkbox.Group>
 
-                      <Divider style={{ margin: "12px 0 8px" }} />
-                      <div style={{ textAlign: "right" }}>
-                        <Button
-                          size="small"
-                          type="link"
-                          onClick={() =>
-                            setVisibleColumns({
-                              sno: true,
-                              name: true,
-                              code: true,
-                              image: true,
-                              unit: true,
-                              mrp: true,
-                              unitPrice: true,
-                              discount: true,
-                              total: true,
-                            })
-                          }
-                        >
-                          Reset to default
-                        </Button>
-                      </div>
+                      <Divider style={{ margin: "10px 0" }} />
+
+                      <Button
+                        type="link"
+                        block
+                        onClick={() =>
+                          setVisibleColumns({
+                            sno: true,
+                            name: true,
+                            code: true,
+                            image: true,
+                            unit: true,
+                            mrp: true,
+                            unitPrice: true,
+                            discount: true,
+                            total: true,
+                          })
+                        }
+                      >
+                        Reset Default
+                      </Button>
                     </div>
                   )}
                 >
-                  <Button icon={<SettingOutlined />}>
-                    Export Columns{" "}
-                    {Object.values(visibleColumns).filter(Boolean).length}/9
+                  <Button size="middle" icon={<SettingOutlined />}>
+                    Columns
                   </Button>
                 </Dropdown>
 
+                {/* Layout Toggle */}
                 <Button
                   icon={
-                    useTabularLayout ? <TableOutlined /> : <HistoryOutlined />
+                    useTabularLayout ? <TableOutlined /> : <AppstoreOutlined />
                   }
                   onClick={() => setUseTabularLayout(!useTabularLayout)}
-                  type={useTabularLayout ? "default" : "primary"}
                 >
-                  {useTabularLayout ? "Show Site Map" : "Show Tabular"}
+                  {useTabularLayout ? "Tabular" : "Site Map"}
                 </Button>
 
-                <Space>
-                  <select
-                    value={exportFormat}
-                    onChange={(e) => setExportFormat(e.target.value)}
-                    style={{
-                      padding: "8px 14px",
-                      borderRadius: 6,
-                      borderColor: "#d9d9d9",
-                    }}
-                    disabled={isExporting}
-                  >
-                    <option value="pdf">Export as PDF</option>
-                    <option value="excel">Export as Excel</option>
-                  </select>
+                {/* Export Format */}
+                <Select
+                  value={exportFormat}
+                  onChange={setExportFormat}
+                  style={{ width: 150 }}
+                  disabled={isExporting}
+                  options={[
+                    { value: "pdf", label: "PDF Export" },
+                    { value: "excel", label: "Excel Export" },
+                  ]}
+                />
 
-                  <Button
-                    type="primary"
-                    size="large"
-                    loading={isExporting}
-                    onClick={handleExport}
-                    icon={
-                      exportFormat === "pdf" ? (
-                        <FilePdfFilled />
-                      ) : (
-                        <FileExcelFilled />
-                      )
-                    }
-                    style={{ background: "#E31E24", border: "none" }}
-                  >
-                    {isExporting ? "Exporting..." : "Export"}
-                  </Button>
-                </Space>
-
+                {/* Export Button */}
                 <Button
-                  icon={<ArrowLeftOutlined />}
-                  size="large"
+                  type="primary"
+                  loading={isExporting}
+                  onClick={handleExport}
+                  icon={
+                    exportFormat === "pdf" ? (
+                      <FilePdfFilled />
+                    ) : (
+                      <FileExcelFilled />
+                    )
+                  }
                   style={{
-                    background: "#E31E24",
-                    color: "#fff",
-                    border: "none",
+                    background: "#1677ff",
+                    borderRadius: 8,
                   }}
                 >
-                  <Link to="/quotations/list" style={{ color: "#fff" }}>
-                    Back
-                  </Link>
+                  Export
+                </Button>
+
+                {/* Back */}
+                <Button
+                  onClick={() => navigate("/quotations/list")}
+                  icon={<ArrowLeftOutlined />}
+                >
+                  Back
                 </Button>
               </Space>
             </div>
           </div>
-
           {/* Preview */}
           <div
             style={{
