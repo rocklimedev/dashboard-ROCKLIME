@@ -630,8 +630,14 @@ async function restoreStock({ products, orderNo }) {
 }
 
 // ──────── CREATE ORDER ────────
-// ──────── CREATE ORDER ────────
-// ──────── CREATE ORDER ──────── (FINAL ROBUST VERSION)
+// FINAL IMPROVED VERSION WITH:
+// ✅ Proper stock validation
+// ✅ Clear insufficient stock errors
+// ✅ Deadlock prevention
+// ✅ Early transaction rollback
+// ✅ Consistent product locking order
+// ✅ Better debugging logs
+
 exports.createOrder = async (req, res) => {
   const t = await sequelize.transaction();
 
@@ -661,14 +667,22 @@ exports.createOrder = async (req, res) => {
       products = [],
     } = req.body;
 
+    // ─────────────────────────────────────
+    // BASIC VALIDATION
+    // ─────────────────────────────────────
     if (!createdFor || !createdBy) {
+      await t.rollback();
+
       return sendErrorResponse(
         res,
         400,
         "createdFor and createdBy are required",
       );
     }
-    if (!products || products.length === 0) {
+
+    if (!Array.isArray(products) || products.length === 0) {
+      await t.rollback();
+
       return sendErrorResponse(
         res,
         400,
@@ -676,59 +690,101 @@ exports.createOrder = async (req, res) => {
       );
     }
 
-    // Validate users & customer
+    // ─────────────────────────────────────
+    // VALIDATE USER & CUSTOMER
+    // ─────────────────────────────────────
     const [creator, customer] = await Promise.all([
       User.findByPk(createdBy, {
         attributes: ["userId", "username", "name"],
         transaction: t,
       }),
-      Customer.findByPk(createdFor, { transaction: t }),
+
+      Customer.findByPk(createdFor, {
+        transaction: t,
+      }),
     ]);
 
-    if (!creator) return sendErrorResponse(res, 404, "Creator user not found");
-    if (!customer) return sendErrorResponse(res, 404, "Customer not found");
-
-    // Optional references validation (unchanged)
-    if (quotationId) {
-      const q = await Quotation.findByPk(quotationId, { transaction: t });
-      if (!q) return sendErrorResponse(res, 404, "Quotation not found");
+    if (!creator) {
+      await t.rollback();
+      return sendErrorResponse(res, 404, "Creator user not found");
     }
+
+    if (!customer) {
+      await t.rollback();
+      return sendErrorResponse(res, 404, "Customer not found");
+    }
+
+    // ─────────────────────────────────────
+    // OPTIONAL VALIDATIONS
+    // ─────────────────────────────────────
+    if (quotationId) {
+      const quotation = await Quotation.findByPk(quotationId, {
+        transaction: t,
+      });
+
+      if (!quotation) {
+        await t.rollback();
+        return sendErrorResponse(res, 404, "Quotation not found");
+      }
+    }
+
     if (masterPipelineNo) {
-      const m = await Order.findOne({
+      const masterOrder = await Order.findOne({
         where: { orderNo: masterPipelineNo },
         transaction: t,
       });
-      if (!m)
+
+      if (!masterOrder) {
+        await t.rollback();
+
         return sendErrorResponse(
           res,
           404,
           `Master order ${masterPipelineNo} not found`,
         );
+      }
     }
+
     if (previousOrderNo) {
-      const p = await Order.findOne({
+      const previousOrder = await Order.findOne({
         where: { orderNo: previousOrderNo },
         transaction: t,
       });
-      if (!p)
+
+      if (!previousOrder) {
+        await t.rollback();
+
         return sendErrorResponse(
           res,
           404,
           `Previous order ${previousOrderNo} not found`,
         );
+      }
     }
 
-    // ── FETCH PRODUCTS ──
+    // ─────────────────────────────────────
+    // PRODUCT IDS
+    // ─────────────────────────────────────
     const productIds = products.map((p) => p.id || p.productId).filter(Boolean);
 
+    // IMPORTANT:
+    // Sort product IDs before locking
+    // Prevents deadlocks when multiple orders happen simultaneously
+    const sortedProductIds = [...new Set(productIds)].sort();
+
+    // ─────────────────────────────────────
+    // FETCH PRODUCT METADATA
+    // ─────────────────────────────────────
     const dbProducts = await Product.findAll({
-      where: { productId: productIds },
+      where: {
+        productId: sortedProductIds,
+      },
       attributes: ["productId", "name", "images", "meta", "product_code"],
       transaction: t,
     });
 
     const productMap = {};
-    // Inside the productMap creation
+
     dbProducts.forEach((p) => {
       let imageUrl = "";
 
@@ -738,7 +794,7 @@ exports.createOrder = async (req, res) => {
             typeof p.images === "string" ? JSON.parse(p.images) : p.images;
 
           if (Array.isArray(imgs) && imgs.length > 0) {
-            imageUrl = imgs[0]?.url || imgs[0] || ""; // ← Handle possible {url: "..."} format
+            imageUrl = imgs[0]?.url || imgs[0] || "";
           }
         } catch (e) {
           console.warn(`Failed to parse images for product ${p.productId}`, e);
@@ -754,62 +810,108 @@ exports.createOrder = async (req, res) => {
       };
     });
 
-    // ── BUILD ENRICHED PRODUCTS WITH MAXIMUM FALLBACK ──
+    // ─────────────────────────────────────
+    // LOCK PRODUCTS IN CONSISTENT ORDER
+    // ─────────────────────────────────────
+    const lockedProducts = {};
+
+    for (const productId of sortedProductIds) {
+      const product = await Product.findByPk(productId, {
+        transaction: t,
+        lock: t.LOCK.UPDATE,
+      });
+
+      if (!product) {
+        await t.rollback();
+
+        return sendErrorResponse(res, 404, `Product not found: ${productId}`);
+      }
+
+      lockedProducts[productId] = product;
+    }
+
+    // ─────────────────────────────────────
+    // BUILD ORDER PRODUCTS
+    // ─────────────────────────────────────
     const enrichedProducts = [];
     const productUpdates = [];
 
     for (const p of products) {
       const productId = p.id || p.productId;
 
-      if (!productId || !p.quantity || p.quantity < 1 || p.price == null) {
-        return sendErrorResponse(
-          res,
-          400,
-          `Invalid product data for ${productId || "unknown"}`,
-        );
+      if (!productId) {
+        await t.rollback();
+
+        return sendErrorResponse(res, 400, "Product ID is required");
       }
 
-      const prod = await Product.findByPk(productId, {
-        lock: t.LOCK.UPDATE,
-        transaction: t,
-      });
-
-      if (!prod)
-        return sendErrorResponse(res, 404, `Product not found: ${productId}`);
-
-      if (prod.quantity < p.quantity) {
-        return sendErrorResponse(
-          res,
-          400,
-          `Insufficient stock for ${prod.name}`,
-        );
-      }
-
-      const price = Number(p.price);
       const quantity = Number(p.quantity);
+      const price = Number(p.price);
+
+      if (!quantity || quantity < 1) {
+        await t.rollback();
+
+        return sendErrorResponse(
+          res,
+          400,
+          `Invalid quantity for product ${productId}`,
+        );
+      }
+
+      if (price == null || isNaN(price)) {
+        await t.rollback();
+
+        return sendErrorResponse(
+          res,
+          400,
+          `Invalid price for product ${productId}`,
+        );
+      }
+
+      const prod = lockedProducts[productId];
+
+      // ─────────────────────────────────────
+      // CLEAR STOCK ERROR
+      // ─────────────────────────────────────
+      if (prod.quantity < quantity) {
+        await t.rollback();
+
+        console.error("INSUFFICIENT STOCK:", {
+          productId,
+          productName: prod.name,
+          requestedQty: quantity,
+          availableQty: prod.quantity,
+        });
+
+        return sendErrorResponse(
+          res,
+          400,
+          `Insufficient stock for "${prod.name}". Requested: ${quantity}, Available: ${prod.quantity}`,
+        );
+      }
+
       const discount = Number(p.discount) || 0;
       const discountType = p.discountType || "percent";
       const tax = Number(p.tax) || 0;
 
       const subtotal = price * quantity;
+
       const discountAmount =
         discountType === "percent"
           ? (subtotal * discount) / 100
           : discount * quantity;
+
       const lineTotal = Number((subtotal - discountAmount).toFixed(2));
 
       const prodInfo = productMap[productId] || {};
 
-      // MAXIMUM FALLBACK LOGIC
       const finalImageUrl = p.imageUrl || prodInfo.imageUrl || "";
+
       const finalProductCode = p.productCode || prodInfo.productCode || "";
+
       const finalCompanyCode = p.companyCode || prodInfo.companyCode || "";
-      console.log(`Product ${productId} image:`, {
-        fromFrontend: p.imageUrl,
-        fromDB: prodInfo.imageUrl,
-        final: finalImageUrl,
-      });
-      const enrichedItem = {
+
+      enrichedProducts.push({
         productId,
         name: p.name || prodInfo.name || prod.name || "Unknown Product",
         imageUrl: finalImageUrl,
@@ -821,9 +923,7 @@ exports.createOrder = async (req, res) => {
         discountType,
         tax,
         total: lineTotal,
-      };
-
-      enrichedProducts.push(enrichedItem);
+      });
 
       productUpdates.push({
         productId,
@@ -832,9 +932,13 @@ exports.createOrder = async (req, res) => {
       });
     }
 
-    // ── FINANCIAL CALCULATIONS ──
+    // ─────────────────────────────────────
+    // TOTALS
+    // ─────────────────────────────────────
     const parsedShipping = parseFloat(shipping) || 0;
+
     const parsedGst = gst !== null && gst !== "" ? parseFloat(gst) : null;
+
     const parsedExtraDiscount =
       extraDiscount !== null && extraDiscount !== ""
         ? parseFloat(extraDiscount)
@@ -842,6 +946,7 @@ exports.createOrder = async (req, res) => {
 
     const finalDiscountType =
       parsedExtraDiscount !== null ? extraDiscountType : null;
+
     const parsedAmountPaid = parseFloat(amountPaid) || 0;
 
     const { gstValue, extraDiscountValue, finalAmount } = computeTotals({
@@ -852,14 +957,21 @@ exports.createOrder = async (req, res) => {
       extraDiscountType: finalDiscountType,
     });
 
-    // Priority & Status validation
+    // ─────────────────────────────────────
+    // STATUS & PRIORITY
+    // ─────────────────────────────────────
     const priorityLower = priority ? priority.toLowerCase() : "medium";
+
     const statusUpper = status ? status.toUpperCase() : "PREPARING";
 
-    // Generate order number
+    // ─────────────────────────────────────
+    // GENERATE ORDER NUMBER
+    // ─────────────────────────────────────
     const orderNo = await generateDailyOrderNumber(t);
 
-    // Create Order
+    // ─────────────────────────────────────
+    // CREATE ORDER
+    // ─────────────────────────────────────
     const order = await Order.create(
       {
         createdFor,
@@ -890,10 +1002,14 @@ exports.createOrder = async (req, res) => {
         finalAmount,
         products: enrichedProducts,
       },
-      { transaction: t },
+      {
+        transaction: t,
+      },
     );
 
-    // Reduce stock
+    // ─────────────────────────────────────
+    // REDUCE STOCK
+    // ─────────────────────────────────────
     if (productUpdates.length > 0) {
       await reduceStockAndLog({
         productUpdates,
@@ -904,12 +1020,19 @@ exports.createOrder = async (req, res) => {
       });
     }
 
+    // ─────────────────────────────────────
+    // COMMIT
+    // ─────────────────────────────────────
     await t.commit();
 
-    // Save to MongoDB
+    // ─────────────────────────────────────
+    // SAVE TO MONGODB
+    // ─────────────────────────────────────
     try {
       await OrderItem.findOneAndUpdate(
-        { orderId: order.id },
+        {
+          orderId: order.id,
+        },
         {
           orderId: order.id,
           items: enrichedProducts.map((p) => ({
@@ -926,13 +1049,17 @@ exports.createOrder = async (req, res) => {
             total: p.total,
           })),
         },
-        { upsert: true },
+        {
+          upsert: true,
+        },
       );
     } catch (mongoErr) {
       console.error("MongoDB save error:", mongoErr);
     }
 
-    // Notifications (unchanged)
+    // ─────────────────────────────────────
+    // NOTIFICATIONS
+    // ─────────────────────────────────────
     const recipients = new Set(
       [createdBy, assignedUserId, secondaryUserId].filter(Boolean),
     );
@@ -951,14 +1078,48 @@ exports.createOrder = async (req, res) => {
       message: `Order #${order.orderNo} created by ${creator.name} for ${customer.name}.`,
     });
 
+    // ─────────────────────────────────────
+    // SUCCESS RESPONSE
+    // ─────────────────────────────────────
     return res.status(201).json({
+      success: true,
       message: "Order created successfully",
       id: order.id,
       orderNo: order.orderNo,
     });
   } catch (err) {
-    await t.rollback().catch(() => {});
-    console.error("Create Order Error:", err);
+    // ALWAYS rollback if transaction not finished
+    try {
+      await t.rollback();
+    } catch (rollbackErr) {
+      console.error("Rollback failed:", rollbackErr);
+    }
+
+    console.error("CREATE ORDER ERROR:", err);
+
+    // ─────────────────────────────────────
+    // DEADLOCK HANDLING
+    // ─────────────────────────────────────
+    if (
+      err.name === "SequelizeDatabaseError" &&
+      err.message?.toLowerCase().includes("deadlock")
+    ) {
+      return sendErrorResponse(
+        res,
+        409,
+        "Database deadlock detected. Please retry the order creation.",
+      );
+    }
+
+    // Lock timeout
+    if (err.message?.toLowerCase().includes("lock wait timeout")) {
+      return sendErrorResponse(
+        res,
+        409,
+        "Database is busy processing another order. Please try again.",
+      );
+    }
+
     return sendErrorResponse(res, 500, "Failed to create order", err.message);
   }
 };
