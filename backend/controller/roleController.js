@@ -2,6 +2,9 @@ const { v4: uuidv4 } = require("uuid");
 const { ROLES } = require("../config/constant");
 const { Op } = require("sequelize");
 const { User, Permission, Role, RolePermission } = require("../models");
+const { ActivityLog } = require("../models");
+const logActivity = require("../utils/activityLogger");
+
 const assignRole = async (userId, role) => {
   try {
     const user = await User.findOne({ where: { id: userId } });
@@ -46,6 +49,39 @@ const assignRole = async (userId, role) => {
       user.status = "active";
     }
     await user.save();
+    await logActivity({
+      userId: userId, // actor (IMPORTANT: pass caller id into function if not already available)
+      contextTag: "AUTH",
+      subContext: "USER",
+      action: "ASSIGN_ROLE",
+
+      entityId: user.userId || user.id,
+      entityName: user.username || user.email,
+
+      description: `Role ${role} assigned to user`,
+
+      oldValues: {
+        roles: user.roles,
+        roleId: user.roleId,
+        status: user.status,
+      },
+
+      newValues: {
+        roles: user.roles,
+        roleId: role === "Users" ? null : roleId,
+        status: role === "Users" ? "inactive" : "active",
+      },
+
+      metadata: {
+        assignedRole: role,
+        roleId: role === "Users" ? null : roleId,
+
+        isSuperAdminAttempt: role === "SuperAdmin",
+        statusChange: role === "Users" ? "inactive" : "active",
+
+        userId: user.userId || user.id,
+      },
+    });
     return { success: true, message: `Role ${role} assigned successfully` };
   } catch (error) {
     return { success: false, message: "Internal server error" };
@@ -111,7 +147,23 @@ const createRole = async (req, res) => {
       roleName,
       // This will be an array of permission IDs
     });
+    await logActivity({
+      userId: req.user?.userId,
+      contextTag: "SYSTEM",
+      subContext: "ROLE",
+      action: "CREATE_ROLE",
+      entityId: newRole.roleId,
+      entityName: newRole.roleName,
+      description: `Role "${newRole.roleName}" created`,
 
+      metadata: {
+        roleId: newRole.roleId,
+        roleName: newRole.roleName,
+        createdVia: "ADMIN_PANEL",
+      },
+
+      req,
+    });
     res.status(201).json(newRole);
   } catch (error) {
     res.status(500).json({ message: "Error creating role" });
@@ -160,6 +212,34 @@ const deleteRole = async (req, res) => {
 
     // Delete the role
     await role.destroy(); // or Role.destroy({ where: { roleId } })
+    await logActivity({
+      userId: req.user?.userId,
+      contextTag: "SYSTEM",
+      subContext: "ROLE",
+      action: "DELETE_ROLE",
+      entityId: role.roleId,
+      entityName: role.roleName,
+      description: `Role "${role.roleName}" deleted`,
+
+      oldValues: {
+        roleId: role.roleId,
+        roleName: role.roleName,
+      },
+
+      metadata: {
+        roleId: role.roleId,
+        roleName: role.roleName,
+
+        blockedDeletion: false,
+        associatedUsersCount: 0, // already validated
+        permissionsDeleted: true,
+
+        severity: "critical",
+        actionType: "HARD_DELETE",
+      },
+
+      req,
+    });
     res.status(200).json({ message: "Role deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: `Error deleting role: ${error.message}` });
@@ -195,7 +275,29 @@ const assignPermissionsToRole = async (req, res) => {
         .status(409)
         .json({ message: "Permission already assigned to role" });
     }
+    await logActivity({
+      userId: req.user?.userId,
+      contextTag: "SYSTEM",
+      subContext: "ROLE",
+      action: "ASSIGN_PERMISSION_TO_ROLE",
+      entityId: roleId,
+      entityName: roleExists.roleName,
 
+      description: `Permission assigned to role ${roleExists.roleName}`,
+
+      metadata: {
+        roleId,
+        roleName: roleExists.roleName,
+
+        permissionId,
+        permissionName: permissionExists.name || null,
+
+        actionType: "PERMISSION_GRANT",
+        securityImpact: "ROLE_PRIVILEGE_UPDATED",
+      },
+
+      req,
+    });
     res
       .status(201)
       .json({ message: "Permission assigned successfully", rolePermission });
@@ -250,7 +352,25 @@ const removePermissionFromRole = async (req, res) => {
     const deletedCount = await RolePermission.destroy({
       where: { roleId, permissionId: permissionsToRemove },
     });
+    await logActivity({
+      userId: req.user?.userId,
+      contextTag: "SYSTEM",
+      subContext: "ROLE",
+      action: "REMOVE_ROLE_PERMISSIONS",
+      entityId: roleId,
+      entityName: roleExists.roleName,
 
+      description: `Permissions removed from role ${roleExists.roleName}`,
+
+      metadata: {
+        roleId,
+        removedPermissions: permissionsToRemove,
+        removedCount: deletedCount,
+        securityImpact: "ROLE_PERMISSION_REVOKED",
+      },
+
+      req,
+    });
     if (deletedCount === 0) {
       return res
         .status(404)
@@ -328,7 +448,35 @@ const updateRolePermissions = async (req, res) => {
     }));
 
     await RolePermission.bulkCreate(newRolePermissions);
+    await logActivity({
+      userId: req.user?.userId,
+      contextTag: "SYSTEM",
+      subContext: "ROLE",
+      action: "UPDATE_ROLE_PERMISSIONS",
+      entityId: roleId,
+      entityName: roleExists.roleName,
+      description: `Permissions updated for role ${roleExists.roleName}`,
 
+      oldValues: {
+        permissions: "REPLACED_ALL",
+      },
+
+      newValues: {
+        permissions,
+      },
+
+      metadata: {
+        roleId,
+        roleName: roleExists.roleName,
+
+        permissionCount: permissions.length,
+        replacedAllPermissions: true,
+
+        securityImpact: "HIGH",
+      },
+
+      req,
+    });
     res.status(200).json({
       message: "Role permissions updated successfully",
       roleId,

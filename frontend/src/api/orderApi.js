@@ -184,6 +184,13 @@ export const orderApi = baseApi.injectEndpoints({
       },
       providesTags: ["Orders"],
     }),
+    downloadOrderSummary: builder.query({
+      query: (orderId) => ({
+        url: `/order/${orderId}/download-order`,
+        responseHandler: async (response) => response.blob(),
+        cache: "no-cache",
+      }),
+    }),
     getOrderCountByDate: builder.query({
       query: (date) => `/order/count?date=${date}`,
       providesTags: ["Orders"],
@@ -201,6 +208,7 @@ export const {
   useUpdateOrderStatusMutation,
   useDeleteOrderMutation,
   useRecentOrdersQuery,
+  useLazyDownloadOrderSummaryQuery,
   useGetAllOrdersQuery,
   useOrderByIdQuery,
   useGetCommentsQuery,

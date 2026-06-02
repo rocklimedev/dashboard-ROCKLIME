@@ -154,8 +154,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
 
   const cartItemCount = useMemo(() => cart?.cart?.items?.length || 0, [cart]);
   const avatarSrc =
-    user?.user?.photo_thumbnail || user?.user?.profileImage || null;
-
+    user?.user?.photo_thumbnail || user?.user?.profileImage || undefined;
   // User Dropdown Menu
   const userMenu = useMemo(
     () => (
@@ -380,18 +379,34 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
                 <Dropdown overlay={userMenu} trigger={["click"]}>
                   <a
                     href="#"
-                    className="nav-link userset d-flex align-items-center"
+                    className="nav-link userset d-flex align-items-center justify-content-center"
                     onClick={(e) => e.preventDefault()}
+                    style={{ width: 40, height: 40 }}
                   >
-                    <Avatar
-                      name={user?.user?.name || user?.user?.username || "User"}
-                      src={avatarSrc}
-                      size={36}
-                      round={true}
-                      className="circular-avatar"
-                      textSizeRatio={2.2}
-                      maxInitials={2}
-                    />
+                    {avatarSrc ? (
+                      <Avatar
+                        name={
+                          user?.user?.name || user?.user?.username || "User"
+                        }
+                        src={avatarSrc || undefined}
+                        size={36}
+                        round
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: 36,
+                          height: 36,
+                          borderRadius: "50%",
+                          background: "#f0f0f0",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <UserOutlined style={{ fontSize: 18 }} />
+                      </div>
+                    )}
                   </a>
                 </Dropdown>
               )}

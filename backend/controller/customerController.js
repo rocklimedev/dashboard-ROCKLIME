@@ -2,7 +2,8 @@ const { sendNotification } = require("./notificationController"); // Import send
 const { Customer } = require("../models");
 const ADMIN_USER_ID = "2ef0f07a-a275-4fe1-832d-fe9a5d145f60"; // Replace with actual admin user ID or channel
 const { Op } = require("sequelize");
-
+const { ActivityLog } = require("../models");
+const logActivity = require("../utils/activityLogger");
 // Create a new customer
 exports.createCustomer = async (req, res) => {
   try {
@@ -41,9 +42,39 @@ exports.createCustomer = async (req, res) => {
       ...req.body,
       phone2: req.body.phone2 || null,
       customerType: req.body.customerType || null,
-      gstNumber: req.body.gstNumber || null, // Add GST number here
+      gstNumber: req.body.gstNumber || null,
     });
 
+    // Activity Log
+    logActivity({
+      userId: req.user?.userId || null,
+
+      contextTag: ActivityLog.CONTEXT_TAGS.CRM,
+      subContext: ActivityLog.SUB_CONTEXTS.CUSTOMER,
+
+      action: "CUSTOMER_CREATED",
+
+      entityId: newCustomer.customerId,
+      entityName: newCustomer.name,
+
+      description: `Customer "${newCustomer.name}" was created`,
+
+      newValues: {
+        customerId: newCustomer.customerId,
+        name: newCustomer.name,
+        email: newCustomer.email,
+        phone: newCustomer.phone,
+        phone2: newCustomer.phone2,
+        customerType: newCustomer.customerType,
+        gstNumber: newCustomer.gstNumber,
+      },
+
+      metadata: {
+        createdBy: req.user?.userId || null,
+      },
+
+      req,
+    }).catch(console.error);
     // Send notification to admin/system
     await sendNotification({
       userId: ADMIN_USER_ID,
@@ -143,8 +174,6 @@ exports.getCustomerById = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
-// Update customer details
 exports.updateCustomer = async (req, res) => {
   try {
     const customer = await Customer.findByPk(req.params.id);
@@ -162,18 +191,21 @@ exports.updateCustomer = async (req, res) => {
       "Builder",
       "Contractor",
     ];
+
     if (
       req.body.customerType &&
       !allowedTypes.includes(req.body.customerType)
     ) {
       return res.status(400).json({
         success: false,
-        message: `Invalid customerType. Must be one of: ${allowedTypes.join(
-          ", ",
-        )}`,
+        message: `Invalid customerType. Must be one of: ${allowedTypes.join(", ")}`,
       });
     }
 
+    // ✅ Capture OLD values BEFORE update
+    const oldValues = customer.get({ plain: true });
+
+    // Update customer
     await customer.update({
       ...req.body,
       phone2: req.body.phone2 !== undefined ? req.body.phone2 : customer.phone2,
@@ -184,29 +216,47 @@ exports.updateCustomer = async (req, res) => {
       gstNumber:
         req.body.gstNumber !== undefined
           ? req.body.gstNumber
-          : customer.gstNumber, // Update GST number
+          : customer.gstNumber,
     });
 
-    // Send notification to admin/system
+    // ✅ NEW values after update
+    const newValues = customer.get({ plain: true });
+
+    // Activity Log
+    logActivity({
+      userId: req.user?.userId || null,
+      contextTag: ActivityLog.CONTEXT_TAGS.CRM,
+      subContext: ActivityLog.SUB_CONTEXTS.CUSTOMER,
+      action: "CUSTOMER_UPDATED",
+      entityId: customer.customerId,
+      entityName: customer.name,
+      description: `Customer "${customer.name}" was updated`,
+      oldValues, // ✅ now defined
+      newValues,
+      metadata: {
+        updatedBy: req.user?.userId || null,
+      },
+      req,
+    }).catch(console.error);
+
     await sendNotification({
       userId: ADMIN_USER_ID,
       title: "Customer Updated",
       message: `Customer "${customer.name}" has been updated.`,
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Customer updated successfully",
       data: customer,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message,
     });
   }
 };
-
 // Delete a customer
 exports.deleteCustomer = async (req, res) => {
   try {
@@ -226,7 +276,36 @@ exports.deleteCustomer = async (req, res) => {
     });
 
     await customer.destroy();
+    // Activity Log
+    logActivity({
+      userId: req.user?.userId || null,
 
+      contextTag: ActivityLog.CONTEXT_TAGS.CRM,
+      subContext: ActivityLog.SUB_CONTEXTS.CUSTOMER,
+
+      action: "CUSTOMER_DELETED",
+
+      entityId: customer.customerId,
+      entityName: customer.name,
+
+      description: `Customer "${customer.name}" was deleted`,
+
+      oldValues: {
+        customerId: customer.customerId,
+        name: customer.name,
+        email: customer.email,
+        phone: customer.phone,
+        phone2: customer.phone2,
+        customerType: customer.customerType,
+        gstNumber: customer.gstNumber,
+      },
+
+      metadata: {
+        deletedBy: req.user?.userId || null,
+      },
+
+      req,
+    }).catch(console.error);
     res
       .status(200)
       .json({ success: true, message: "Customer deleted successfully" });

@@ -5,6 +5,9 @@ const sequelize = require("../config/database");
 const { Product, Quotation } = require("../models");
 const QuotationItem = require("../models/quotationItem"); // MongoDB model
 const QuotationVersion = require("../models/quotationVersion");
+const { ActivityLog } = require("../models");
+const logActivity = require("../utils/activityLogger");
+
 // META_SLUGS (same as you have in your Cart controller)
 const META_SLUGS = {
   sellingPrice: "9ba862ef-f993-4873-95ef-1fef10036aa5",
@@ -473,7 +476,39 @@ exports.createQuotation = async (req, res) => {
 
     // ─── All good ───
     await t.commit();
+    await logActivity({
+      userId: req.user?.userId,
+      contextTag: "SALES",
+      subContext: "QUOTATION",
+      action: "CREATE_QUOTATION",
+      entityId: quotation.quotationId,
+      entityName: quotation.reference_number,
+      description: `Quotation ${quotation.reference_number} created for customer ${customerId}`,
 
+      metadata: {
+        referenceNumber: quotation.reference_number,
+        customerId,
+
+        productCount: enrichedProducts.length,
+        floorCount: floors.length,
+
+        financials: {
+          totalAmount: totals.finalAmount,
+          gst: Number(gst) || 0,
+          gstAmount: totals.gstAmount,
+          discount: Number(extraDiscount) || 0,
+          discountType: extraDiscountType,
+          shipping: Number(shippingAmount) || 0,
+        },
+
+        structure: {
+          hasLocations: enrichedProducts.some((p) => p.locations?.length),
+          hasOptions: enrichedProducts.some((p) => p.isOptionFor),
+        },
+
+        createdBy: req.user?.userId || null,
+      },
+    });
     return res.status(201).json({
       message: "Quotation created successfully",
       quotation: {
@@ -774,7 +809,53 @@ exports.updateQuotation = async (req, res) => {
     }
 
     await t.commit();
+    await logActivity({
+      userId: req.user?.userId,
+      contextTag: "SALES",
+      subContext: "QUOTATION",
+      action: "UPDATE_QUOTATION",
+      entityId: currentQuotation.quotationId,
+      entityName: currentQuotation.reference_number || id,
+      description: `Quotation ${id} updated (version ${newVersionNumber})`,
 
+      oldValues: {
+        finalAmount: currentQuotation.finalAmount,
+        extraDiscount: currentQuotation.extraDiscount,
+        gst: currentQuotation.gst,
+        shippingAmount: currentQuotation.shippingAmount,
+      },
+
+      newValues: {
+        finalAmount: totals.finalAmount,
+        extraDiscount,
+        gst,
+        shippingAmount,
+      },
+
+      metadata: {
+        quotationId: id,
+        version: newVersionNumber,
+
+        productCount: enrichedProducts.length,
+        floorCount: floors.length,
+
+        versionCreated: true,
+
+        financialImpact: {
+          gstAmount: totals.gstAmount,
+          discountAmount: totals.extraDiscountAmount,
+          roundOff: totals.roundOff,
+          finalAmount: totals.finalAmount,
+        },
+
+        mongoSynced: true,
+
+        productStructureChanged: true,
+        locationBasedQuotation: enrichedProducts.some((p) => p.locations),
+      },
+
+      req,
+    });
     return res.status(200).json({
       message: "Quotation updated successfully",
       version: newVersionNumber,
@@ -1291,7 +1372,36 @@ exports.cloneQuotation = async (req, res) => {
     });
 
     await t.commit();
+    await logActivity({
+      userId: req.user?.userId,
+      contextTag: "SALES",
+      subContext: "QUOTATION",
+      action: "CLONE_QUOTATION",
+      entityId: cloned.quotationId,
+      entityName: reference_number,
+      description: `Quotation cloned from ${original.reference_number}`,
 
+      metadata: {
+        originalQuotationId: id,
+        originalReferenceNumber: original.reference_number,
+        newQuotationId: cloned.quotationId,
+        newReferenceNumber: reference_number,
+
+        customerId: original.customerId,
+
+        finalAmount: totals.finalAmount,
+        gstAmount: totals.gstAmount,
+        discountAmount: totals.extraDiscountAmount,
+
+        productCount: enrichedProducts.length,
+        floorCount: floors.length,
+
+        cloneType: "FULL_DUPLICATE",
+        includesPricingRecalculation: true,
+      },
+
+      req,
+    });
     return res.status(201).json({
       message: "Quotation cloned successfully",
       clonedQuotation: {
@@ -1548,6 +1658,35 @@ exports.deleteQuotation = async (req, res) => {
       where: { quotationId: req.params.id },
     });
     await QuotationItem.deleteOne({ quotationId: req.params.id });
+    await logActivity({
+      userId: req.user?.userId,
+      contextTag: "SALES",
+      subContext: "QUOTATION",
+      action: "DELETE_QUOTATION",
+      entityId: quotation.quotationId,
+      entityName: quotation.reference_number || quotation.quotationId,
+      description: `Quotation ${quotation.reference_number || quotation.quotationId} deleted`,
+
+      oldValues: {
+        quotationId: quotation.quotationId,
+        referenceNumber: quotation.reference_number,
+        createdBy: quotation.createdBy,
+        customerId: quotation.customerId,
+      },
+
+      metadata: {
+        deletionType: "HARD_DELETE",
+
+        isAdminAction: req.user.roles.includes("ADMIN"),
+        isOwnerAction: req.user.userId === quotation.createdBy,
+
+        warning: "Quotation permanently deleted",
+
+        hasMongoCleanup: true,
+      },
+
+      req,
+    });
     res.status(200).json({ message: "Quotation deleted successfully" });
   } catch (error) {
     res.status(500).json({ error: error.message });

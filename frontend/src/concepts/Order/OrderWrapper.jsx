@@ -4,6 +4,7 @@ import {
   useGetAllOrdersQuery,
   useDeleteOrderMutation,
   useUpdateOrderStatusMutation,
+  useLazyDownloadOrderSummaryQuery,
 } from "../../api/orderApi";
 import { useGetAllTeamsQuery } from "../../api/teamApi";
 import { useGetAllUsersQuery } from "../../api/userApi";
@@ -33,7 +34,7 @@ import DeleteModal from "../../components/Common/DeleteModal";
 import PageHeader from "../../components/Common/PageHeader";
 import { useAuth } from "../../context/AuthContext";
 import moment from "moment";
-
+import { DownloadOutlined } from "@ant-design/icons";
 const { Option } = Select;
 const { Panel } = Collapse;
 
@@ -41,7 +42,28 @@ const OrderWrapper = () => {
   const navigate = useNavigate();
   const { auth } = useAuth();
   const permissions = auth?.permissions || [];
+  const [downloadOrderSummary] = useLazyDownloadOrderSummaryQuery();
 
+  const handleDownloadOrder = async (orderId) => {
+    try {
+      const blob = await downloadOrderSummary(orderId).unwrap();
+
+      const url = window.URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Order-${orderId}.pdf`;
+
+      document.body.appendChild(link);
+      link.click();
+
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      message.error("Failed to download order summary");
+    }
+  };
   const canEditOrder = permissions.some(
     (p) => p.action === "edit" && p.module === "orders",
   );
@@ -884,6 +906,14 @@ const OrderWrapper = () => {
                                               <FileTextOutlined /> View Invoice
                                             </Menu.Item>
                                           )}
+                                          <Menu.Item
+                                            key="download_order"
+                                            onClick={() =>
+                                              handleDownloadOrder(order.id)
+                                            }
+                                          >
+                                            <DownloadOutlined /> Download Order
+                                          </Menu.Item>
                                           {canDeleteOrder && (
                                             <Menu.Item
                                               key="delete"

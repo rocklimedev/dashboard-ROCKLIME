@@ -194,11 +194,6 @@ const Profile = ({ onSuccess, onCancel }) => {
       <div className="content">
         <div className="profile-form-page">
           <Card className="profile-form-card">
-            <div className="form-header">
-              <Title level={3}>Edit Your Profile</Title>
-              <Text type="secondary">Keep your information up to date</Text>
-            </div>
-
             <Row gutter={[32, 32]}>
               {/* Avatar Column */}
               <Col xs={24} md={8}>

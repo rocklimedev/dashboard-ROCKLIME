@@ -1,6 +1,7 @@
 const { sendNotification } = require("./notificationController");
 const { Brand, Product } = require("../models");
-
+const { ActivityLog } = require("../models");
+const logActivity = require("../utils/activityLogger");
 const ADMIN_USER_ID = "2ef0f07a-a275-4fe1-832d-fe9a5d145f60";
 
 // Get total products of a brand
@@ -28,6 +29,33 @@ const createBrand = async (req, res) => {
       brandSlug,
       logo: logo || null, // Allow null if no logo provided
     });
+    // Activity Log
+    logActivity({
+      userId: req.user?.userId || null,
+
+      contextTag: ActivityLog.CONTEXT_TAGS.CATALOG,
+      subContext: ActivityLog.SUB_CONTEXTS.BRAND,
+
+      action: "BRAND_CREATED",
+
+      entityId: brand.brandId,
+      entityName: brand.brandName,
+
+      description: `Brand "${brand.brandName}" was created`,
+
+      newValues: {
+        brandId: brand.brandId,
+        brandName: brand.brandName,
+        brandSlug: brand.brandSlug,
+        logo: brand.logo,
+      },
+
+      metadata: {
+        createdBy: req.user?.userId || null,
+      },
+
+      req,
+    }).catch(console.error);
 
     await sendNotification({
       userId: ADMIN_USER_ID,
@@ -67,7 +95,6 @@ const getBrandById = async (req, res) => {
   }
 };
 
-// Update a brand
 const updateBrand = async (req, res) => {
   try {
     const { id } = req.params;
@@ -76,52 +103,123 @@ const updateBrand = async (req, res) => {
     const brand = await Brand.findByPk(id);
 
     if (!brand) {
-      return res.status(404).json({ message: "Brand not found." });
+      return res.status(404).json({
+        message: "Brand not found.",
+      });
     }
 
+    const oldValues = {
+      brandName: brand.brandName,
+      brandSlug: brand.brandSlug,
+      logo: brand.logo,
+    };
+
     const updateData = {};
+
     if (brandName !== undefined) updateData.brandName = brandName;
     if (brandSlug !== undefined) updateData.brandSlug = brandSlug;
     if (logo !== undefined) updateData.logo = logo;
 
     await brand.update(updateData);
 
+    // Activity Log
+    logActivity({
+      userId: req.user?.userId || null,
+
+      contextTag: ActivityLog.CONTEXT_TAGS.CATALOG,
+      subContext: ActivityLog.SUB_CONTEXTS.BRAND,
+
+      action: "BRAND_UPDATED",
+
+      entityId: brand.brandId,
+      entityName: brand.brandName,
+
+      description: `Brand "${brand.brandName}" was updated`,
+
+      oldValues,
+
+      newValues: {
+        brandName: brand.brandName,
+        brandSlug: brand.brandSlug,
+        logo: brand.logo,
+      },
+
+      metadata: {
+        updatedBy: req.user?.userId || null,
+      },
+
+      req,
+    }).catch(console.error);
+
     await sendNotification({
       userId: ADMIN_USER_ID,
       title: "Brand Updated",
-      message: `The brand "${brand.brandName || brandName}" has been updated.`,
+      message: `The brand "${brand.brandName}" has been updated.`,
     });
 
     res.json({
       message: "Brand updated successfully.",
-      brand: brand,
+      brand,
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({
+      error: error.message,
+    });
   }
 };
-
-// Delete a brand
 const deleteBrand = async (req, res) => {
   try {
     const brand = await Brand.findByPk(req.params.id);
-    if (brand) {
-      await sendNotification({
-        userId: ADMIN_USER_ID,
-        title: "Brand Deleted",
-        message: `The brand "${brand.brandName}" with slug "${brand.brandSlug}" has been deleted.`,
-      });
 
-      await brand.destroy();
-      res.status(204).send();
-    } else {
-      res.status(404).json({ message: "Brand not found" });
+    if (!brand) {
+      return res.status(404).json({
+        message: "Brand not found",
+      });
     }
+
+    await sendNotification({
+      userId: ADMIN_USER_ID,
+      title: "Brand Deleted",
+      message: `The brand "${brand.brandName}" with slug "${brand.brandSlug}" has been deleted.`,
+    });
+
+    // Activity Log
+    logActivity({
+      userId: req.user?.userId || null,
+
+      contextTag: ActivityLog.CONTEXT_TAGS.CATALOG,
+      subContext: ActivityLog.SUB_CONTEXTS.BRAND,
+
+      action: "BRAND_DELETED",
+
+      entityId: brand.brandId,
+      entityName: brand.brandName,
+
+      description: `Brand "${brand.brandName}" was deleted`,
+
+      oldValues: {
+        brandId: brand.brandId,
+        brandName: brand.brandName,
+        brandSlug: brand.brandSlug,
+        logo: brand.logo,
+      },
+
+      metadata: {
+        deletedBy: req.user?.userId || null,
+      },
+
+      req,
+    }).catch(console.error);
+
+    await brand.destroy();
+
+    res.status(204).send();
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({
+      error: error.message,
+    });
   }
 };
-
 module.exports = {
   createBrand,
   getBrands,

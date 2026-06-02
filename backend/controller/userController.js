@@ -8,6 +8,8 @@ const ftp = require("basic-ftp");
 const sharp = require("sharp"); // npm i sharp
 const { v4: uuidv4 } = require("uuid");
 const { Readable } = require("stream");
+const logActivity = require("../utils/activityLogger");
+const { ActivityLog } = require("../models");
 // Helper function to exclude sensitive fields
 const excludeSensitiveFields = {
   attributes: {
@@ -101,7 +103,28 @@ exports.createUser = async (req, res) => {
       status: roleData.roleName === "Users" ? "inactive" : "active",
       isEmailVerified: Boolean(isEmailVerified), // ← ADD THIS
     });
-
+    // Activity Log
+    logActivity({
+      userId: req.user?.userId || null,
+      contextTag: ActivityLog.CONTEXT_TAGS.AUTH,
+      subContext: ActivityLog.SUB_CONTEXTS.USER,
+      action: "USER_CREATED",
+      entityId: newUser.userId,
+      entityName: newUser.name || newUser.username,
+      description: `User "${newUser.username}" was created`,
+      newValues: {
+        userId: newUser.userId,
+        username: newUser.username,
+        email: newUser.email,
+        role: roleData.roleName,
+        status: newUser.status,
+      },
+      metadata: {
+        roleId,
+        addressId,
+      },
+      req,
+    }).catch(console.error);
     res.status(201).json({
       message: "User created successfully",
       data: await User.findByPk(newUser.userId, excludeSensitiveFields),
@@ -286,18 +309,53 @@ exports.reportUser = async (req, res) => {
 exports.deleteUser = async (req, res) => {
   try {
     const { userId } = req.params;
+
     const user = await User.findByPk(userId);
+
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({
+        message: "User not found",
+      });
     }
 
+    // Activity Log
+    await logActivity({
+      userId: req.user?.userId || null, // user performing action
+
+      contextTag: ActivityLog.CONTEXT_TAGS.AUTH,
+      subContext: ActivityLog.SUB_CONTEXTS.USER,
+
+      action: "USER_DELETED",
+
+      entityId: user.userId,
+      entityName: user.name || user.username,
+
+      description: `User "${user.username}" was deleted`,
+
+      oldValues: {
+        userId: user.userId,
+        username: user.username,
+        name: user.name,
+        email: user.email,
+        role: user.roles,
+        status: user.status,
+      },
+
+      req,
+    });
+
     await user.destroy();
-    res.status(200).json({ message: "User deleted successfully" });
+
+    res.status(200).json({
+      message: "User deleted successfully",
+    });
   } catch (err) {
-    res.status(500).json({ message: "Server Error", error: err.message });
+    res.status(500).json({
+      message: "Server Error",
+      error: err.message,
+    });
   }
 };
-
 // Get All Users
 exports.getAllUsers = async (req, res) => {
   try {
@@ -506,10 +564,13 @@ exports.updateUser = async (req, res) => {
     // === 6. Update Email Verification (Admin/SuperAdmin only) ===
     if (isEmailVerified !== undefined) {
       const requester = await User.findByPk(req.user.userId);
-      if (!requester || !["ADMIN", "SUPER_ADMIN"].includes(requester.roles)) {
+      if (
+        !requester ||
+        !["ADMIN", "SUPER_ADMIN", "DEVELOPER"].includes(requester.roles)
+      ) {
         return res.status(403).json({
           message:
-            "Only Admin or SuperAdmin can change email verification status",
+            "Only Admin or SuperAdmin or Developer can change email verification status",
         });
       }
       user.isEmailVerified = Boolean(isEmailVerified);
@@ -545,20 +606,59 @@ exports.updateUser = async (req, res) => {
 exports.changeStatusToInactive = async (req, res) => {
   try {
     const { userId } = req.params;
-    const { status } = req.body; // Expect status: false for inactive
+    const { status } = req.body;
+
     const user = await User.findByPk(userId);
+
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({
+        message: "User not found",
+      });
     }
 
+    const oldStatus = user.status;
+
     user.status = status === false ? "inactive" : user.status;
+
     await user.save();
+
+    logActivity({
+      userId: req.user?.userId || null,
+
+      contextTag: ActivityLog.CONTEXT_TAGS.AUTH,
+      subContext: ActivityLog.SUB_CONTEXTS.USER,
+
+      action: "USER_STATUS_CHANGED",
+
+      entityId: user.userId,
+      entityName: user.name || user.username,
+
+      description: `User "${user.username}" status changed from ${oldStatus} to ${user.status}`,
+
+      oldValues: {
+        status: oldStatus,
+      },
+
+      newValues: {
+        status: user.status,
+      },
+
+      metadata: {
+        changedBy: req.user?.userId || null,
+      },
+
+      req,
+    }).catch(console.error);
+
     res.status(200).json({
       message: "User status updated to inactive",
       user: await User.findByPk(user.userId, excludeSensitiveFields),
     });
   } catch (err) {
-    res.status(500).json({ message: "Server Error", error: err.message });
+    res.status(500).json({
+      message: "Server Error",
+      error: err.message,
+    });
   }
 };
 
@@ -569,28 +669,74 @@ exports.assignRole = async (req, res) => {
     const { roleId } = req.body;
 
     const user = await User.findByPk(userId);
+
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({
+        message: "User not found",
+      });
     }
 
-    const roleData = await Role.findOne({ where: { roleId } });
+    const roleData = await Role.findOne({
+      where: { roleId },
+    });
+
     if (!roleData) {
-      return res.status(400).json({ message: "Invalid role specified" });
+      return res.status(400).json({
+        message: "Invalid role specified",
+      });
     }
 
-    // Removed restriction → Multiple Super Admins are now allowed
+    const oldRole = user.roles;
+    const oldRoleId = user.roleId;
+    const oldStatus = user.status;
+
     user.roles = roleData.roleName;
     user.roleId = roleData.roleId;
     user.status = roleData.roleName === "Users" ? "inactive" : "active";
 
     await user.save();
 
+    logActivity({
+      userId: req.user?.userId || null,
+
+      contextTag: ActivityLog.CONTEXT_TAGS.AUTH,
+      subContext: ActivityLog.SUB_CONTEXTS.USER,
+
+      action: "USER_ROLE_ASSIGNED",
+
+      entityId: user.userId,
+      entityName: user.name || user.username,
+
+      description: `Role changed for user "${user.username}" from "${oldRole}" to "${roleData.roleName}"`,
+
+      oldValues: {
+        roleId: oldRoleId,
+        role: oldRole,
+        status: oldStatus,
+      },
+
+      newValues: {
+        roleId: roleData.roleId,
+        role: roleData.roleName,
+        status: user.status,
+      },
+
+      metadata: {
+        assignedBy: req.user?.userId || null,
+      },
+
+      req,
+    }).catch(console.error);
+
     res.status(200).json({
       message: `Role ${roleData.roleName} assigned successfully`,
       user: await User.findByPk(user.userId, excludeSensitiveFields),
     });
   } catch (err) {
-    res.status(500).json({ message: "Server Error", error: err.message });
+    res.status(500).json({
+      message: "Server Error",
+      error: err.message,
+    });
   }
 };
 
@@ -603,6 +749,7 @@ exports.updateStatus = async (req, res) => {
     const { status } = req.body;
 
     const validStatuses = ["active", "inactive", "restricted"];
+
     if (!status || !validStatuses.includes(status)) {
       return res.status(400).json({
         message: "Invalid status. Must be one of: active, inactive, restricted",
@@ -610,8 +757,11 @@ exports.updateStatus = async (req, res) => {
     }
 
     const user = await User.findByPk(userId);
+
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({
+        message: "User not found",
+      });
     }
 
     if (req.user.userId === userId) {
@@ -622,8 +772,13 @@ exports.updateStatus = async (req, res) => {
 
     if (user.roles.includes(ROLES.SuperAdmin) && status !== "active") {
       const superAdminCount = await User.count({
-        where: { roles: { [Op.like]: `%${ROLES.SuperAdmin}%` } },
+        where: {
+          roles: {
+            [Op.like]: `%${ROLES.SuperAdmin}%`,
+          },
+        },
       });
+
       if (superAdminCount <= 1) {
         return res.status(400).json({
           message: "Cannot deactivate or restrict the only SuperAdmin",
@@ -631,10 +786,41 @@ exports.updateStatus = async (req, res) => {
       }
     }
 
+    const oldStatus = user.status;
+
     user.status = status;
+
     await user.save();
 
-    // Now safe to use excludeSensitiveFields
+    // Activity Log
+    logActivity({
+      userId: req.user?.userId || null,
+
+      contextTag: ActivityLog.CONTEXT_TAGS.AUTH,
+      subContext: ActivityLog.SUB_CONTEXTS.USER,
+
+      action: "USER_STATUS_UPDATED",
+
+      entityId: user.userId,
+      entityName: user.name || user.username,
+
+      description: `Status changed for user "${user.username}" from "${oldStatus}" to "${status}"`,
+
+      oldValues: {
+        status: oldStatus,
+      },
+
+      newValues: {
+        status,
+      },
+
+      metadata: {
+        changedBy: req.user?.userId || null,
+      },
+
+      req,
+    }).catch(console.error);
+
     const updatedUser = await User.findByPk(
       user.userId,
       excludeSensitiveFields,

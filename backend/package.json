@@ -44,6 +44,7 @@
     "nodemailer": "^6.10.1",
     "papaparse": "^5.5.3",
     "path": "^0.12.7",
+    "pdfkit": "^0.18.0",
     "react-helmet": "^6.1.0",
     "sanitize-html": "^2.17.0",
     "sharp": "^0.34.1",

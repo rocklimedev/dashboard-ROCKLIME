@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { useGetPurchaseOrderByIdQuery } from "../../api/poApi";
 import { message } from "antd";
 import logo from "../../assets/img/logo.png";
-import defaultProductImg from "../../assets/img/default.png"; // ← Import default image
+import defaultProductImg from "../../assets/img/default.png";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import ExcelJS from "exceljs";
@@ -23,16 +23,14 @@ const PODetails = () => {
   const poRef = useRef(null);
   const [exportFormat, setExportFormat] = useState("pdf");
 
-  if (isLoading) {
+  if (isLoading)
     return (
       <div className="page-wrapper">
         <div className="content text-center">
-          <p>Loading purchase order details...</p>
+          Loading purchase order details...
         </div>
       </div>
     );
-  }
-
   if (error || !purchaseOrder) {
     return (
       <div className="page-wrapper">
@@ -223,7 +221,6 @@ const PODetails = () => {
       setIsExporting(false);
     }
   };
-
   return (
     <div className="page-wrapper">
       <Helmet>
@@ -245,10 +242,14 @@ const PODetails = () => {
 
             <div className="card">
               <div className="po-container" ref={poRef}>
+                {/* Header */}
                 <table className="po-table full-width">
                   <tbody>
                     <tr>
-                      <td colSpan={3} style={{ textAlign: "center" }}>
+                      <td
+                        colSpan={3}
+                        style={{ textAlign: "center", padding: "20px 0" }}
+                      >
                         <img
                           src={logo}
                           alt="Company Logo"
@@ -257,20 +258,31 @@ const PODetails = () => {
                       </td>
                     </tr>
                     <tr>
-                      <td></td>
-                      <td className="title-cell">Purchase Order</td>
-                      <td className="brand-cell">{poNumber || "—"}</td>
+                      <td
+                        className="title-cell"
+                        style={{ textAlign: "center" }}
+                      >
+                        Purchase Order
+                      </td>
+                      <td className="brand-cell" style={{ textAlign: "right" }}>
+                        {poNumber || "—"}
+                      </td>
                     </tr>
                   </tbody>
                 </table>
 
+                {/* Vendor & Dates - Improved Layout */}
                 <table className="po-table full-width">
                   <tbody>
                     <tr>
-                      <td className="label-cell" style={{ width: "15%" }}>
+                      <td
+                        className="label-cell"
+                        style={{ width: "18%" }}
+                        rowSpan={2}
+                      >
                         Vendor
                       </td>
-                      <td style={{ width: "55%" }}>
+                      <td style={{ width: "52%" }} rowSpan={2}>
                         {vendor?.vendorName || "N/A"}
                       </td>
                       <td className="label-cell" style={{ width: "15%" }}>
@@ -284,28 +296,27 @@ const PODetails = () => {
                     </tr>
                     <tr>
                       <td className="label-cell">Expected Delivery</td>
-                      <td style={{ width: "55%" }}>
+                      <td>
                         {expectDeliveryDate
                           ? new Date(expectDeliveryDate).toLocaleDateString(
                               "en-IN",
                             )
                           : "N/A"}
                       </td>
-                      <td></td>
-                      <td></td>
                     </tr>
                   </tbody>
                 </table>
-
+                {/* Items Table - Improved with Total Column */}
                 <table className="po-table full-width">
                   <thead>
                     <tr>
-                      <th>S.No</th>
-                      <th>Product Image</th>
-                      <th>Product Name</th>
-                      <th>Product Code</th>
-                      <th>MRP</th>
-                      <th>Quantity</th>
+                      <th style={{ width: "5%" }}>S.No</th>
+                      <th style={{ width: "12%" }}>Image</th>
+                      <th style={{ width: "38%" }}>Product Name</th>
+                      <th style={{ width: "15%" }}>Product Code</th>
+                      <th style={{ width: "12%" }}>MRP</th>
+                      <th style={{ width: "8%" }}>Qty</th>
+                      <th style={{ width: "10%" }}>Total</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -316,10 +327,10 @@ const PODetails = () => {
                           <td>
                             <img
                               src={item.imageUrl || defaultProductImg}
-                              alt={item.productName || "Product"}
+                              alt={item.productName}
                               style={{
-                                maxWidth: "80px",
-                                maxHeight: "80px",
+                                maxWidth: "70px",
+                                maxHeight: "70px",
                                 objectFit: "contain",
                                 borderRadius: "4px",
                                 border: "1px solid #eee",
@@ -327,10 +338,7 @@ const PODetails = () => {
                               }}
                               onError={(e) => {
                                 e.currentTarget.src = defaultProductImg;
-                                e.currentTarget.style.border =
-                                  "1px solid #dc3545";
                               }}
-                              loading="lazy"
                               crossOrigin="anonymous"
                             />
                           </td>
@@ -340,20 +348,91 @@ const PODetails = () => {
                             ₹{(item.unitPrice ?? item.mrp ?? 0).toFixed(2)}
                           </td>
                           <td>{item.quantity || 0}</td>
+                          <td>
+                            ₹
+                            {Number(
+                              (item.total ?? item.unitPrice * item.quantity) ||
+                                0,
+                            ).toFixed(2)}
+                          </td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={6} className="text-center">
+                        <td colSpan={7} className="text-center">
                           No products in this purchase order
                         </td>
                       </tr>
                     )}
                   </tbody>
+                  <tfoot>
+                    <tr
+                      style={{ fontWeight: "bold", backgroundColor: "#f8f9fa" }}
+                    >
+                      <td colSpan={6} style={{ textAlign: "right" }}>
+                        Grand Total
+                      </td>
+                      <td>₹{Number(totalAmount ?? 0).toFixed(2)}</td>
+                    </tr>
+                  </tfoot>
                 </table>
+
+                {/* Approved By Section */}
+                <div
+                  style={{
+                    marginTop: "60px",
+                    padding: "20px 0",
+                    borderTop: "2px solid #ddd",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-end",
+                    }}
+                  >
+                    <div>
+                      <p
+                        style={{
+                          margin: "0 0 8px 0",
+                          fontWeight: "500",
+                          textAlign: "center",
+                        }}
+                      >
+                        Approved By
+                      </p>
+
+                      {/* Space for signature & stamp */}
+                      <div
+                        style={{
+                          height: "80px", // increase to 100-120px if needed
+                        }}
+                      />
+
+                      <div
+                        style={{
+                          width: "260px",
+                          borderBottom: "1px solid #333",
+                          marginBottom: "4px",
+                        }}
+                      />
+
+                      <small
+                        style={{
+                          display: "block",
+                          textAlign: "center",
+                        }}
+                      >
+                        Name &amp; Signature with Date
+                      </small>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
+            {/* Export Controls */}
             <div className="d-flex justify-content-center align-items-center mb-4">
               <div className="d-flex align-items-center me-2">
                 <select

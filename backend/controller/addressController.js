@@ -2,7 +2,8 @@ const { Address, User, Customer } = require("../models");
 const { sendNotification } = require("./notificationController");
 const { Op } = require("sequelize");
 const { v4: uuidv4 } = require("uuid");
-
+const logActivity = require("../utils/activityLogger");
+const { ActivityLog } = require("../models");
 // ─────────────────────────────────────────────────────────────────────────────
 // CREATE ADDRESS
 // ─────────────────────────────────────────────────────────────────────────────
@@ -62,7 +63,7 @@ exports.createAddress = async (req, res) => {
         // Demote any other address with same status
         await Address.update(
           { status: "ADDITIONAL" },
-          { where: { customerId, status } }
+          { where: { customerId, status } },
         );
         finalStatus = status;
       }
@@ -85,7 +86,41 @@ exports.createAddress = async (req, res) => {
       createdAt: new Date(),
       updatedAt: new Date(),
     });
+    // Activity Log
+    logActivity({
+      userId: req.user?.userId || null,
 
+      contextTag: ActivityLog.CONTEXT_TAGS.CRM,
+      subContext: ActivityLog.SUB_CONTEXTS.ADDRESS,
+
+      action: "ADDRESS_CREATED",
+
+      entityId: address.addressId,
+
+      entityName: `${street}, ${city}`,
+
+      description: `Address created for ${userId ? "User" : "Customer"}`,
+
+      newValues: {
+        addressId: address.addressId,
+        street,
+        city,
+        state,
+        postalCode,
+        country,
+        status: finalStatus,
+        userId: userId || null,
+        customerId: customerId || null,
+      },
+
+      metadata: {
+        ownerType: userId ? "USER" : "CUSTOMER",
+        ownerId: userId || customerId,
+        createdBy: req.user?.userId || null,
+      },
+
+      req,
+    }).catch(console.error);
     return res.status(201).json({
       message: "Address created successfully",
       addressId: address.addressId,
@@ -154,7 +189,7 @@ exports.updateAddress = async (req, res) => {
             status,
             addressId: { [Op.ne]: addressId },
           },
-        }
+        },
       );
       finalStatus = status;
     }
@@ -171,7 +206,43 @@ exports.updateAddress = async (req, res) => {
       customerId: customerId ?? address.customerId,
       updatedAt: new Date(),
     });
+    logActivity({
+      userId: req.user?.userId || null,
 
+      contextTag: ActivityLog.CONTEXT_TAGS.CRM,
+      subContext: ActivityLog.SUB_CONTEXTS.ADDRESS,
+
+      action: "ADDRESS_UPDATED",
+
+      entityId: address.addressId,
+
+      entityName: `${address.street}, ${address.city}`,
+
+      description: `Address updated for ${
+        address.userId ? "User" : "Customer"
+      }`,
+
+      oldValues,
+
+      newValues: {
+        street: address.street,
+        city: address.city,
+        state: address.state,
+        postalCode: address.postalCode,
+        country: address.country,
+        status: address.status,
+        userId: address.userId,
+        customerId: address.customerId,
+      },
+
+      metadata: {
+        ownerType: address.userId ? "USER" : "CUSTOMER",
+        ownerId: address.userId || address.customerId,
+        updatedBy: req.user?.userId || null,
+      },
+
+      req,
+    }).catch(console.error);
     // ── Notification ──────────────────────────────────────────────────────
     const recipientId =
       userId || customerId || address.userId || address.customerId;
@@ -232,7 +303,42 @@ exports.deleteAddress = async (req, res) => {
       title: "Address Deleted",
       message: `Your ${address.status} address was removed.`,
     });
+    logActivity({
+      userId: req.user?.userId || null,
 
+      contextTag: ActivityLog.CONTEXT_TAGS.CRM,
+      subContext: ActivityLog.SUB_CONTEXTS.ADDRESS,
+
+      action: "ADDRESS_DELETED",
+
+      entityId: address.addressId,
+
+      entityName: `${address.street}, ${address.city}`,
+
+      description: `Address deleted for ${
+        address.userId ? "User" : "Customer"
+      }`,
+
+      oldValues: {
+        addressId: address.addressId,
+        street: address.street,
+        city: address.city,
+        state: address.state,
+        postalCode: address.postalCode,
+        country: address.country,
+        status: address.status,
+        userId: address.userId,
+        customerId: address.customerId,
+      },
+
+      metadata: {
+        ownerType: address.userId ? "USER" : "CUSTOMER",
+        ownerId: address.userId || address.customerId,
+        deletedBy: req.user?.userId || null,
+      },
+
+      req,
+    }).catch(console.error);
     await address.destroy();
 
     return res.json({ message: "Address deleted successfully" });

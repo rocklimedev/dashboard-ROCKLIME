@@ -73,7 +73,7 @@ const UserList = () => {
       Active: users.filter((u) => isUserActive(u.status)),
       Inactive: users.filter((u) => !isUserActive(u.status)),
     }),
-    [users]
+    [users],
   );
 
   const filteredUsers = useMemo(() => {
@@ -84,7 +84,7 @@ const UserList = () => {
       result = result.filter((user) =>
         [user.name, user.email, user.username, user.mobileNumber]
           .filter(Boolean)
-          .some((field) => field?.toString().toLowerCase().includes(term))
+          .some((field) => field?.toString().toLowerCase().includes(term)),
       );
     }
 
@@ -153,7 +153,6 @@ const UserList = () => {
             <div className="row mb-4 align-items-center">
               <div className="col-lg-6">
                 <div className="d-flex align-items-center gap-3 flex-wrap">
-                  <h6 className="mb-0">Status:</h6>
                   <div className="btn-group">
                     {Object.keys(groupedUsers).map((tab) => (
                       <button
@@ -257,7 +256,7 @@ const UserList = () => {
                                     onClick={() =>
                                       handleStatusChange(
                                         user.userId,
-                                        "inactive"
+                                        "inactive",
                                       )
                                     }
                                   >
@@ -405,7 +404,7 @@ const UserList = () => {
                                     onClick={() =>
                                       handleStatusChange(
                                         user.userId,
-                                        "inactive"
+                                        "inactive",
                                       )
                                     }
                                   >

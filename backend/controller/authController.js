@@ -5,6 +5,8 @@ const { User, Role, RolePermission, Permission } = require("../models");
 const VerificationToken = require("../models/verificationToken");
 const emails = require("../middleware/sendMail");
 const ROLES = require("../config/constant");
+const { ActivityLog } = require("../models");
+const logActivity = require("../utils/activityLogger");
 require("dotenv").config();
 
 exports.login = async (req, res) => {
@@ -51,7 +53,27 @@ exports.login = async (req, res) => {
       sameSite: "Strict",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
+    logActivity({
+      userId: user.userId,
 
+      contextTag: ActivityLog.CONTEXT_TAGS.AUTH,
+      subContext: ActivityLog.SUB_CONTEXTS.USER,
+
+      action: "LOGIN_SUCCESS",
+
+      entityId: user.userId,
+      entityName: user.name || user.username,
+
+      description: `User "${user.username}" logged in successfully`,
+
+      metadata: {
+        email: user.email,
+        role: user.roles,
+        status: user.status,
+      },
+
+      req,
+    }).catch(console.error);
     res.status(200).json({
       message: "Login successful",
       accessToken,
@@ -121,7 +143,37 @@ exports.register = async (req, res, next) => {
       isVerified: false,
       expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
     });
+    logActivity({
+      userId: newUser.userId,
 
+      contextTag: ActivityLog.CONTEXT_TAGS.AUTH,
+      subContext: ActivityLog.SUB_CONTEXTS.USER,
+
+      action: "USER_REGISTERED",
+
+      entityId: newUser.userId,
+      entityName: newUser.name || newUser.username,
+
+      description: `New user "${newUser.username}" registered`,
+
+      newValues: {
+        userId: newUser.userId,
+        username: newUser.username,
+        name: newUser.name,
+        email: newUser.email,
+        mobileNumber: newUser.mobileNumber,
+        role: roleData.roleName,
+        status: newUser.status,
+        isEmailVerified: newUser.isEmailVerified,
+      },
+
+      metadata: {
+        registrationType: "SELF_REGISTRATION",
+        verificationEmailSent: true,
+      },
+
+      req,
+    }).catch(console.error);
     // Send verification email
     const emailContent = emails.accountVerificationEmail(
       req.headers.host,
@@ -195,7 +247,37 @@ exports.verifyAccount = async (req, res, next) => {
 
     verificationToken.isVerified = true;
     await verificationToken.save();
+    logActivity({
+      userId: user.userId,
 
+      contextTag: ActivityLog.CONTEXT_TAGS.AUTH,
+      subContext: ActivityLog.SUB_CONTEXTS.USER,
+
+      action: "ACCOUNT_VERIFIED",
+
+      entityId: user.userId,
+      entityName: user.name || user.username,
+
+      description: `Account verified for user "${user.username}"`,
+
+      oldValues: {
+        isEmailVerified: false,
+        status: "inactive",
+      },
+
+      newValues: {
+        isEmailVerified: true,
+        status: "active",
+      },
+
+      metadata: {
+        email: user.email,
+        verificationTokenId:
+          verificationToken.id || verificationToken._id || null,
+      },
+
+      req,
+    }).catch(console.error);
     const emailContent = emails.accountVerificationConfirmationEmail(user.name);
     await emails.sendMail(
       user.email,
@@ -569,7 +651,31 @@ exports.changePassword = async (req, res, next) => {
     user.password = hashedNewPassword;
     await user.save();
 
-    res.status(200).json({ message: "Password changed successfully" });
+    // Activity Log
+    logActivity({
+      userId: user.userId,
+
+      contextTag: ActivityLog.CONTEXT_TAGS.AUTH,
+      subContext: ActivityLog.SUB_CONTEXTS.USER,
+
+      action: "PASSWORD_CHANGED",
+
+      entityId: user.userId,
+      entityName: user.name || user.username,
+
+      description: `Password changed successfully for user "${user.username}"`,
+
+      metadata: {
+        email: user.email,
+        changedBy: user.userId,
+      },
+
+      req,
+    }).catch(console.error);
+
+    res.status(200).json({
+      message: "Password changed successfully",
+    });
   } catch (err) {
     next(err);
   }
@@ -711,9 +817,36 @@ exports.deactivateAccount = async (req, res, next) => {
     // Soft deactivate
     user.status = "inactive";
     await user.save();
+    // Activity Log
+    logActivity({
+      userId: user.userId,
 
-    // Optional: You could also invalidate all refresh tokens here
-    // e.g., delete from Redis / DB if you store them
+      contextTag: ActivityLog.CONTEXT_TAGS.AUTH,
+      subContext: ActivityLog.SUB_CONTEXTS.USER,
+
+      action: "ACCOUNT_DEACTIVATED",
+
+      entityId: user.userId,
+      entityName: user.name || user.username,
+
+      description: `Account deactivated by user "${user.username}"`,
+
+      oldValues: {
+        status: oldStatus,
+      },
+
+      newValues: {
+        status: "inactive",
+      },
+
+      metadata: {
+        email: user.email,
+        deactivatedBy: user.userId,
+        selfDeactivated: true,
+      },
+
+      req,
+    }).catch(console.error);
 
     res.status(200).json({
       message:

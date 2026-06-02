@@ -28,6 +28,10 @@ const { v7: uuidv7 } = require("uuid"); // Make sure this is imported at the top
 const { pipeline } = require("stream");
 const { promisify } = require("util");
 const pipe = promisify(pipeline);
+const PDFDocument = require("pdfkit");
+const { ActivityLog } = require("../models");
+const logActivity = require("../utils/activityLogger");
+
 // ──────── HELPERS ────────
 const VALID_STATUSES = [
   "PREPARING",
@@ -317,6 +321,24 @@ exports.addComment = async (req, res) => {
             name: newComment.userSnapshot?.name || "Unknown User",
           },
     };
+    // -------------------------------
+    // 🔥 ACTIVITY LOG (COMMENT)
+    // -------------------------------
+    await logActivity({
+      userId,
+      contextTag: "SYSTEM",
+      subContext: resourceType.toUpperCase(), // ORDER / FGS / etc
+      action: "CREATE_COMMENT",
+      entityId: resourceId,
+      entityName: resourceType,
+      description: `Comment added on ${resourceType} by ${user?.name || "Unknown"}`,
+      metadata: {
+        preview: sanitizedComment.slice(0, 120),
+        commentId: newComment._id,
+        userName: user?.name || null,
+      },
+      req,
+    });
 
     // 9. Notifications with fallback name
     if (resourceType === "Order") {
@@ -404,6 +426,31 @@ exports.deleteComment = async (req, res) => {
     if (comment.userId !== userId) {
       return sendErrorResponse(res, 403, "Unauthorized to delete this comment");
     }
+    // -------------------------------
+    // 🔥 ACTIVITY LOG (DELETE COMMENT)
+    // -------------------------------
+    await logActivity({
+      userId,
+      contextTag: "SYSTEM",
+      subContext: comment.resourceType?.toUpperCase(),
+      action: "DELETE_COMMENT",
+      entityId: comment.resourceId,
+      entityName: comment.resourceType,
+      description: `Comment deleted on ${comment.resourceType}`,
+      oldValues: {
+        commentId: comment._id,
+        comment: comment.comment,
+        resourceId: comment.resourceId,
+        resourceType: comment.resourceType,
+      },
+      newValues: null,
+      metadata: {
+        deletedByUser: true,
+        ownerUserId: comment.userId,
+        preview: comment.comment?.slice(0, 120),
+      },
+      req,
+    });
 
     // Send notification to admin
     await sendNotification({
@@ -630,8 +677,7 @@ async function restoreStock({ products, orderNo }) {
 }
 
 // ──────── CREATE ORDER ────────
-// ──────── CREATE ORDER ────────
-// ──────── CREATE ORDER ──────── (FINAL ROBUST VERSION)
+
 exports.createOrder = async (req, res) => {
   const t = await sequelize.transaction();
 
@@ -905,7 +951,30 @@ exports.createOrder = async (req, res) => {
     }
 
     await t.commit();
-
+    await logActivity({
+      userId: createdBy,
+      contextTag: "SALES",
+      subContext: "ORDER",
+      action: "CREATE_ORDER",
+      entityId: order.id,
+      entityName: order.orderNo,
+      description: `Order ${order.orderNo} created for ${customer.name}`,
+      metadata: {
+        orderNo: order.orderNo,
+        customerId: createdFor,
+        customerName: customer.name,
+        totalAmount: finalAmount,
+        productCount: enrichedProducts.length,
+        priority: priorityLower,
+        status: statusUpper,
+        shipping: parsedShipping,
+        gst: parsedGst,
+        extraDiscount: parsedExtraDiscount,
+        assignedUserId,
+        secondaryUserId,
+      },
+      req,
+    });
     // Save to MongoDB
     try {
       await OrderItem.findOneAndUpdate(
@@ -1282,7 +1351,46 @@ exports.updateOrderById = async (req, res) => {
     // ── SAVE TO MYSQL ──
     await order.update(updates);
     await order.reload();
+    await logActivity({
+      userId: req.user?.userId || order.createdBy,
+      contextTag: "SALES",
+      subContext: "ORDER",
+      action: "UPDATE_ORDER",
+      entityId: order.id,
+      entityName: order.orderNo,
+      description: `Order ${order.orderNo} updated`,
 
+      metadata: {
+        orderNo: order.orderNo,
+
+        // ── CORE CHANGES ──
+        changedFields: Object.keys(updates),
+
+        // ── BUSINESS IMPACT ──
+        status: updates.status || order.status,
+        priority: updates.priority || order.priority,
+        finalAmount: updates.finalAmount,
+
+        // ── FINANCIAL DIFF ──
+        financialChange: {
+          shipping: updates.shipping,
+          gst: updates.gst,
+          extraDiscount: updates.extraDiscount,
+          amountPaid: updates.amountPaid,
+        },
+
+        // ── PRODUCT IMPACT ──
+        productsChanged: !!updates.products,
+        productCount: updates.products?.length || order.products?.length || 0,
+
+        // ── INVENTORY IMPACT ──
+        stockRecalculated: newProductUpdates.length > 0,
+        stockRestored:
+          Array.isArray(order.products) && order.products.length > 0,
+      },
+
+      req,
+    });
     // ── UPDATE MONGODB ORDER ITEMS (only if products changed) ──
     if (updates.products && updates.products.length > 0) {
       const productIds = updates.products
@@ -1407,6 +1515,32 @@ exports.updateOrderStatus = async (req, res) => {
       await restoreStock({ products: order.products, orderNo: order.orderNo });
     }
 
+    // ── ACTIVITY LOG ──
+    await logActivity({
+      userId: req.user?.userId || order.createdBy,
+      contextTag: "SALES",
+      subContext: "ORDER",
+      action: "ORDER_STATUS_UPDATE",
+      entityId: order.id,
+      entityName: order.orderNo,
+      description: `Order ${order.orderNo} status changed: ${oldStatus} → ${norm}`,
+
+      metadata: {
+        orderNo: order.orderNo,
+        customerName: order.customer?.name || null,
+
+        statusChange: {
+          from: oldStatus,
+          to: norm,
+        },
+
+        gatePassRequired: norm === "DISPATCHED",
+
+        productCount: order.products?.length || 0,
+      },
+
+      req,
+    });
     // ── NOTIFICATIONS ──
     const recipients = new Set(
       [order.createdBy, order.assignedUserId, order.secondaryUserId].filter(
@@ -1559,6 +1693,32 @@ exports.deleteOrder = async (req, res) => {
     await OrderItem.deleteMany({ orderId: id });
 
     await order.destroy();
+    // ── ACTIVITY LOG ──
+    await logActivity({
+      userId: req.user?.userId || order.createdBy,
+      contextTag: "SALES",
+      subContext: "ORDER",
+      action: "DELETE_ORDER",
+      entityId: order.id,
+      entityName: order.orderNo,
+      description: `Order ${order.orderNo} deleted`,
+
+      oldValues: {
+        orderId: order.id,
+        orderNo: order.orderNo,
+        customerName: order.customer?.name,
+        finalAmount: order.finalAmount,
+        status: order.status,
+        productCount: order.products?.length || 0,
+      },
+
+      metadata: {
+        mongoCleaned: true,
+        dependencyBlocked: deps.length > 0,
+      },
+
+      req,
+    });
     return res.status(200).json({ message: "Order deleted" });
   } catch (err) {
     return sendErrorResponse(res, 500, "Delete failed", err.message);
@@ -2119,6 +2279,306 @@ exports.orderById = async (req, res) => {
   }
 };
 
+exports.downloadOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const order = await Order.findByPk(id, {
+      include: [
+        {
+          model: Customer,
+          as: "customer",
+          attributes: ["customerId", "name"],
+        },
+        {
+          model: User,
+          as: "creator",
+          attributes: ["userId", "username", "name"],
+        },
+        {
+          model: User,
+          as: "assignedUser",
+          attributes: ["userId", "username", "name"],
+        },
+        {
+          model: User,
+          as: "secondaryUser",
+          attributes: ["userId", "username", "name"],
+        },
+        {
+          model: Team,
+          as: "assignedTeam",
+          attributes: ["id", "teamName"],
+        },
+        {
+          model: Order,
+          as: "previousOrder",
+          attributes: ["id", "orderNo"],
+        },
+        {
+          model: Order,
+          as: "masterOrder",
+          attributes: ["id", "orderNo"],
+        },
+        {
+          model: Order,
+          as: "nextOrders",
+          attributes: ["id", "orderNo"],
+        },
+        {
+          model: Order,
+          as: "pipelineOrders",
+          attributes: ["id", "orderNo"],
+        },
+        {
+          model: Address,
+          as: "shippingAddress",
+          attributes: ["addressId"],
+        },
+        {
+          model: Quotation,
+          as: "quotation",
+          attributes: [
+            "quotationId",
+            "document_title",
+            "quotation_date",
+            "due_date",
+            "followupDates",
+            "reference_number",
+            "products",
+            "discountAmount",
+            "roundOff",
+            "finalAmount",
+            "signature_name",
+            "signature_image",
+            "createdBy",
+            "customerId",
+            "shipTo",
+          ],
+        },
+      ],
+    });
+
+    if (!order) {
+      return sendErrorResponse(res, 404, "Order not found");
+    }
+
+    const data = order.toJSON();
+
+    const quotationProducts = data.quotation?.products || [];
+
+    const products =
+      data.products?.length > 0 ? data.products : quotationProducts;
+
+    const doc = new PDFDocument({
+      margin: 40,
+      size: "A4",
+    });
+
+    res.setHeader("Content-Type", "application/pdf");
+
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=Order-${data.orderNo}.pdf`,
+    );
+
+    doc.pipe(res);
+
+    // ==========================
+    // HEADER
+    // ==========================
+
+    doc.fontSize(22).text("ORDER SUMMARY", {
+      align: "center",
+    });
+
+    doc.moveDown();
+
+    doc.fontSize(11);
+
+    doc.text(`Order No: ${data.orderNo}`);
+    doc.text(`Quotation Ref: ${data.quotation?.reference_number || "-"}`);
+    doc.text(`Status: ${data.status}`);
+    doc.text(`Priority: ${data.priority}`);
+    doc.text(`Created Date: ${new Date(data.createdAt).toLocaleDateString()}`);
+    doc.text(
+      `Due Date: ${
+        data.dueDate ? new Date(data.dueDate).toLocaleDateString() : "-"
+      }`,
+    );
+
+    doc.moveDown();
+
+    // ==========================
+    // CUSTOMER
+    // ==========================
+
+    doc.fontSize(16).text("Customer Details");
+
+    doc.moveDown(0.5);
+
+    doc.fontSize(11);
+
+    doc.text(`Customer: ${data.customer?.name || "-"}`);
+
+    doc.text(
+      `Created By: ${data.creator?.name || data.creator?.username || "-"}`,
+    );
+
+    doc.text(
+      `Assigned User: ${
+        data.assignedUser?.name || data.assignedUser?.username || "-"
+      }`,
+    );
+
+    doc.text(`Assigned Team: ${data.assignedTeam?.teamName || "-"}`);
+
+    doc.moveDown();
+
+    // ==========================
+    // DESCRIPTION
+    // ==========================
+
+    doc.fontSize(16).text("Description");
+
+    doc.moveDown(0.5);
+
+    doc.fontSize(11).text(data.description || "-");
+
+    doc.moveDown();
+
+    // ==========================
+    // PRODUCTS
+    // ==========================
+
+    doc.fontSize(16).text("Products");
+
+    doc.moveDown();
+
+    let y = doc.y;
+
+    doc.fontSize(10);
+
+    doc.text("#", 40, y);
+    doc.text("Product", 70, y);
+    doc.text("Qty", 320, y);
+    doc.text("Price", 380, y);
+    doc.text("Total", 470, y);
+
+    y += 20;
+
+    let grandTotal = 0;
+
+    products.forEach((item, index) => {
+      const total =
+        Number(item.total) || Number(item.price) * Number(item.quantity);
+
+      grandTotal += total;
+
+      doc.text(index + 1, 40, y);
+
+      doc.text(item.name || "-", 70, y, {
+        width: 220,
+      });
+
+      doc.text(String(item.quantity || 0), 320, y);
+
+      doc.text(`₹${Number(item.price || 0).toFixed(2)}`, 380, y);
+
+      doc.text(`₹${total.toFixed(2)}`, 470, y);
+
+      y += 25;
+
+      if (y > 700) {
+        doc.addPage();
+        y = 50;
+      }
+    });
+
+    doc.moveDown(3);
+
+    // ==========================
+    // FINANCIAL SUMMARY
+    // ==========================
+
+    doc.fontSize(16).text("Financial Summary");
+
+    doc.moveDown();
+
+    doc.fontSize(11);
+
+    doc.text(`Product Total : ₹${grandTotal.toFixed(2)}`);
+
+    doc.text(`Quotation Amount : ₹${data.quotation?.finalAmount || 0}`);
+
+    doc.text(`Shipping : ₹${data.shipping || 0}`);
+
+    doc.text(`GST : ₹${data.gstValue || 0}`);
+
+    doc.text(`Extra Discount : ₹${data.extraDiscountValue || 0}`);
+
+    doc.moveDown();
+
+    const finalAmount =
+      data.finalAmount && Number(data.finalAmount) > 0
+        ? data.finalAmount
+        : data.quotation?.finalAmount || 0;
+
+    doc.fontSize(14).text(`Final Amount : ₹${finalAmount}`, {
+      underline: true,
+    });
+
+    doc.text(`Amount Paid : ₹${data.amountPaid || 0}`);
+
+    doc.moveDown(2);
+
+    // ==========================
+    // ORDER LINKS
+    // ==========================
+
+    doc.fontSize(16).text("Order Relations");
+
+    doc.moveDown();
+
+    doc.fontSize(11);
+
+    doc.text(`Master Order : ${data.masterOrder?.orderNo || "-"}`);
+
+    doc.text(`Previous Order : ${data.previousOrder?.orderNo || "-"}`);
+
+    doc.text(
+      `Next Orders : ${
+        data.nextOrders?.length
+          ? data.nextOrders.map((o) => o.orderNo).join(", ")
+          : "-"
+      }`,
+    );
+
+    doc.moveDown(2);
+
+    // ==========================
+    // FOOTER
+    // ==========================
+
+    doc
+      .fontSize(10)
+      .fillColor("gray")
+      .text(`Generated on ${new Date().toLocaleString()}`, {
+        align: "right",
+      });
+
+    doc.end();
+  } catch (err) {
+    console.error(err);
+
+    return sendErrorResponse(
+      res,
+      500,
+      "Failed to download order summary",
+      err.message,
+    );
+  }
+};
 // Get filtered orders (no notification needed)
 exports.getFilteredOrders = async (req, res) => {
   try {
@@ -2497,7 +2957,27 @@ exports.uploadInvoiceAndLinkOrder = async (req, res) => {
     // Update order
     order.invoiceLink = fileUrl;
     await order.save();
+    await logActivity({
+      userId: req.user?.userId || order.createdBy,
+      contextTag: "SALES",
+      subContext: "ORDER",
+      action: "UPLOAD_INVOICE",
+      entityId: order.id,
+      entityName: order.orderNo,
+      description: `Invoice uploaded for Order ${order.orderNo}`,
 
+      metadata: {
+        orderNo: order.orderNo,
+        invoiceLink: fileUrl,
+        fileName: uniqueName,
+        fileSize: req.file.size,
+        previousInvoice: order.invoiceLink || null,
+        replaced: !!order.invoiceLink,
+        customerName: customer?.name || null,
+      },
+
+      req,
+    });
     const customer = await Customer.findByPk(order.createdFor);
 
     // Send notifications to relevant users
@@ -2586,7 +3066,34 @@ exports.issueGatePass = async (req, res) => {
 
     // --- Update order record ---
     await order.update({ gatePassLink: fileUrl });
+    await logActivity({
+      userId: req.user?.userId || order.createdBy,
+      contextTag: "SALES",
+      subContext: "ORDER",
+      action: "ISSUE_GATE_PASS",
+      entityId: order.id,
+      entityName: order.orderNo,
+      description: `Gate-pass issued for Order ${order.orderNo}`,
 
+      oldValues: {
+        gatePassLink: order.gatePassLink || null,
+      },
+
+      newValues: {
+        gatePassLink: fileUrl,
+      },
+
+      metadata: {
+        orderNo: order.orderNo,
+        customerName: customer?.name || null,
+        fileUrl,
+        fileName: uniqueName,
+        fileSize: req.file?.size || null,
+        replaced: !!order.gatePassLink,
+      },
+
+      req,
+    });
     // --- Send notifications ---
     const customer = await Customer.findByPk(order.createdFor);
     const recipients = new Set(

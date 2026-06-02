@@ -1,5 +1,6 @@
 const { Vendor } = require("../models");
-
+const logActivity = require("../utils/activityLogger");
+const { ActivityLog } = require("../models");
 const createVendor = async (req, res) => {
   try {
     const { vendorId, vendorName, brandSlug, brandId } = req.body;
@@ -13,7 +14,25 @@ const createVendor = async (req, res) => {
       brandSlug,
       brandId,
     });
+    await logActivity({
+      userId: req.user?.userId,
+      contextTag: "PROCUREMENT",
+      subContext: "VENDOR",
+      action: "CREATE_VENDOR",
+      entityId: vendor.vendorId,
+      entityName: vendor.vendorName,
+      description: `Vendor "${vendor.vendorName}" created`,
 
+      metadata: {
+        vendorId: vendor.vendorId,
+        vendorName: vendor.vendorName,
+        brandId: vendor.brandId || null,
+        brandSlug: vendor.brandSlug || null,
+        createdVia: "ADMIN_PANEL",
+      },
+
+      req,
+    });
     res.status(201).json(vendor);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -58,7 +77,37 @@ const updateVendor = async (req, res) => {
       brandSlug,
       brandId,
     });
+    await logActivity({
+      userId: req.user?.userId,
+      contextTag: "PROCUREMENT",
+      subContext: "VENDOR",
+      action: "UPDATE_VENDOR",
+      entityId: vendor.id,
+      entityName: vendor.vendorName,
 
+      description: `Vendor "${vendor.vendorName}" updated`,
+
+      oldValues: {
+        vendorId: vendor._previousDataValues.vendorId,
+        vendorName: vendor._previousDataValues.vendorName,
+        brandSlug: vendor._previousDataValues.brandSlug,
+        brandId: vendor._previousDataValues.brandId,
+      },
+
+      newValues: {
+        vendorId: vendor.vendorId,
+        vendorName: vendor.vendorName,
+        brandSlug: vendor.brandSlug,
+        brandId: vendor.brandId,
+      },
+
+      metadata: {
+        changedFields: Object.keys(req.body),
+        vendorId: vendor.id,
+      },
+
+      req,
+    });
     res.json({ message: "Vendor updated successfully.", vendor });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -70,6 +119,31 @@ const deleteVendor = async (req, res) => {
     const vendor = await Vendor.findByPk(req.params.id);
     if (vendor) {
       await vendor.destroy();
+      await logActivity({
+        userId: req.user?.userId,
+        contextTag: "PROCUREMENT",
+        subContext: "VENDOR",
+        action: "DELETE_VENDOR",
+        entityId: vendor.id,
+        entityName: vendor.vendorName,
+
+        description: `Vendor "${vendor.vendorName}" deleted`,
+
+        oldValues: {
+          vendorId: vendor.id,
+          vendorName: vendor.vendorName,
+          email: vendor.email || null,
+          phone: vendor.phone || null,
+          status: vendor.status || null,
+        },
+
+        metadata: {
+          deletionType: "HARD_DELETE",
+          warning: "Vendor removed permanently from system",
+        },
+
+        req,
+      });
       res.status(204).send();
     } else {
       res.status(404).json({ message: "Vendor not found" });

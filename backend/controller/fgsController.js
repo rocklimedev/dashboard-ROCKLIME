@@ -7,7 +7,8 @@ const { sendNotification } = require("./notificationController");
 const { Product, Vendor, FieldGuidedSheet, User } = require("../models");
 const FgsItem = require("../models/fgsItem"); // Mongoose model
 const { createPurchaseOrderFromData } = require("./purchaseOrderController"); // ← Assume this exists or create it
-
+const { ActivityLog } = require("../models");
+const logActivity = require("../utils/activityLogger");
 // Move to env or config in production
 const ADMIN_USER_ID =
   process.env.ADMIN_USER_ID || "2ef0f07a-a275-4fe1-832d-fe9a5d145f60";
@@ -195,6 +196,35 @@ exports.createFieldGuidedSheet = async (req, res) => {
 
     await t.commit();
 
+    await logActivity({
+      userId: req.user?.userId,
+
+      contextTag: "PROCUREMENT",
+      subContext: "FIELD_GUIDED_SHEET",
+
+      action: "FGS_CREATED",
+
+      entityId: fgs.id,
+      entityName: fgs.fgsNumber,
+
+      description: `Field Guided Sheet ${fgs.fgsNumber} created for ${vendor.vendorName}`,
+
+      newValues: {
+        fgsId: fgs.id,
+        fgsNumber: fgs.fgsNumber,
+        vendorId: vendor.id,
+        vendorName: vendor.vendorName,
+        totalAmount,
+        status: fgs.status,
+        itemCount: preparedItems.length,
+      },
+
+      metadata: {
+        mongoItemsId: mongoDoc?._id?.toString(),
+      },
+
+      req,
+    });
     await sendNotification({
       userId: ADMIN_USER_ID,
       title: `New FGS Created — ${fgsNumber}`,
@@ -293,7 +323,25 @@ exports.updateFieldGuidedSheet = async (req, res) => {
     });
 
     await t.commit();
-
+    // -------------------------------
+    // 🔥 ACTIVITY LOG (after commit)
+    // -------------------------------
+    await logActivity({
+      userId: req.user?.userId || null,
+      contextTag: "PROCUREMENT",
+      subContext: "FIELD_GUIDED_SHEET",
+      action: "UPDATE",
+      entityId: updated.id,
+      entityName: updated.fgsNumber,
+      description: `FGS updated: ${updated.fgsNumber}`,
+      oldValues: oldSnapshot,
+      newValues: updated.toJSON(),
+      metadata: {
+        updatedFields: Object.keys(updateData),
+        itemUpdated: !!returnedItems,
+      },
+      req,
+    });
     await sendNotification({
       userId: ADMIN_USER_ID,
       title: `FGS Updated — ${fgs.fgsNumber}`,
@@ -428,35 +476,77 @@ exports.getAllFieldGuidedSheets = async (req, res) => {
 exports.deleteFieldGuidedSheet = async (req, res) => {
   const t = await sequelize.transaction();
 
+  let fgs;
+  let snapshot;
+
   try {
-    const fgs = await FieldGuidedSheet.findByPk(req.params.id, {
+    fgs = await FieldGuidedSheet.findByPk(req.params.id, {
       include: [{ model: Vendor, as: "vendor" }],
       transaction: t,
     });
 
     if (!fgs) throw new Error("Not found");
 
+    // snapshot BEFORE delete
+    snapshot = {
+      id: fgs.id,
+      fgsNumber: fgs.fgsNumber,
+      vendorId: fgs.vendorId,
+      totalAmount: fgs.totalAmount,
+    };
+
     await fgs.destroy({ transaction: t });
-    await FgsItem.deleteOne({ fgsId: fgs.id });
 
     await t.commit();
+  } catch (err) {
+    try {
+      await t.rollback();
+    } catch (rbErr) {
+      console.error("Rollback failed:", rbErr.message);
+    }
+
+    const code = err.message.toLowerCase().includes("not found") ? 404 : 500;
+
+    return res.status(code).json({
+      message: "Delete failed",
+      error: err.message,
+    });
+  }
+
+  // ✅ OUTSIDE transaction (safe zone)
+  try {
+    await FgsItem.deleteOne({ fgsId: snapshot.id });
+
+    await logActivity({
+      userId: req.user?.userId || null,
+      contextTag: "PROCUREMENT",
+      subContext: "FIELD_GUIDED_SHEET",
+      action: "DELETE",
+      entityId: snapshot.id,
+      entityName: snapshot.fgsNumber,
+      description: `FGS deleted: ${snapshot.fgsNumber}`,
+      oldValues: snapshot,
+      newValues: null,
+      metadata: {
+        vendorId: snapshot.vendorId,
+        totalAmount: snapshot.totalAmount,
+      },
+      req,
+    });
 
     await sendNotification({
       userId: ADMIN_USER_ID,
-      title: `FGS Deleted — ${fgs.fgsNumber}`,
-      message: `${fgs.vendor?.vendorName || "Vendor"} • ${fgs.totalAmount}`,
+      title: `FGS Deleted — ${snapshot.fgsNumber}`,
+      message: `${fgs?.vendor?.vendorName || "Vendor"} • ${snapshot.totalAmount}`,
     });
-
-    return res.json({ message: "Field Guided Sheet deleted successfully" });
-  } catch (err) {
-    await t.rollback();
-    const code = err.message.includes("not found") ? 404 : 500;
-    return res
-      .status(code)
-      .json({ message: "Delete failed", error: err.message });
+  } catch (sideErr) {
+    console.error("Post-delete side effect failed:", sideErr.message);
   }
-};
 
+  return res.json({
+    message: "Field Guided Sheet deleted successfully",
+  });
+};
 // ─────────────────────────────────────────────────────────────
 // CONVERT TO PURCHASE ORDER
 // ─────────────────────────────────────────────────────────────
@@ -523,11 +613,12 @@ exports.convertFgsToPo = async (req, res) => {
   }
 };
 
-// ─────────────────────────────────────────────────────────────
-// UPDATE STATUS ONLY
-// ─────────────────────────────────────────────────────────────
 exports.updateFieldGuidedSheetStatus = async (req, res) => {
   const t = await sequelize.transaction();
+
+  let oldStatus;
+  let fgs;
+  let vendor;
 
   try {
     const { status } = req.body;
@@ -539,10 +630,12 @@ exports.updateFieldGuidedSheetStatus = async (req, res) => {
       );
     }
 
-    const fgs = await FieldGuidedSheet.findByPk(id, { transaction: t });
+    fgs = await FieldGuidedSheet.findByPk(id, { transaction: t });
     if (!fgs) throw new Error("Not found");
 
-    if (fgs.status === status) {
+    oldStatus = fgs.status;
+
+    if (oldStatus === status) {
       throw new Error("Status is already set to this value");
     }
 
@@ -552,26 +645,55 @@ exports.updateFieldGuidedSheetStatus = async (req, res) => {
 
     await fgs.update({ status }, { transaction: t });
 
-    const vendor = await Vendor.findByPk(fgs.vendorId, { transaction: t });
+    vendor = await Vendor.findByPk(fgs.vendorId, { transaction: t });
 
+    // ✅ commit ONLY DB work
     await t.commit();
+  } catch (err) {
+    try {
+      await t.rollback();
+    } catch (rollbackErr) {
+      console.error("Rollback failed:", rollbackErr.message);
+    }
+
+    return res.status(400).json({
+      message: "Status update failed",
+      error: err.message,
+    });
+  }
+
+  // ✅ OUTSIDE transaction: safe side-effects
+  try {
+    await logActivity({
+      userId: req.user?.userId || null,
+      contextTag: "PROCUREMENT",
+      subContext: "FIELD_GUIDED_SHEET",
+      action: "STATUS_UPDATE",
+      entityId: fgs.id,
+      entityName: fgs.fgsNumber,
+      description: `FGS status changed: ${oldStatus} → ${fgs.status}`,
+      oldValues: { status: oldStatus },
+      newValues: { status: fgs.status },
+      metadata: {
+        vendorId: fgs.vendorId,
+        vendorName: vendor?.vendorName || null,
+      },
+      req,
+    });
 
     await sendNotification({
       userId: ADMIN_USER_ID,
       title: `FGS Status Changed — ${fgs.fgsNumber}`,
-      message: `${fgs.status} → ${status} • ${vendor?.vendorName || "?"}`,
+      message: `${oldStatus} → ${fgs.status} • ${vendor?.vendorName || "?"}`,
     });
-
-    return res.json({
-      message: `Status updated to ${status}`,
-      fieldGuidedSheet: { ...fgs.toJSON(), status },
-    });
-  } catch (err) {
-    await t.rollback();
-    return res
-      .status(400)
-      .json({ message: "Status update failed", error: err.message });
+  } catch (sideErr) {
+    console.error("Post-commit side effect failed:", sideErr.message);
   }
+
+  return res.json({
+    message: `Status updated to ${fgs.status}`,
+    fieldGuidedSheet: fgs.toJSON(),
+  });
 };
 
 module.exports = exports;

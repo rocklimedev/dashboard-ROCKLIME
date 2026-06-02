@@ -12,7 +12,11 @@ import {
   FaBoxOpen,
 } from "react-icons/fa";
 
-import { MdOutlineInventory2, MdOutlineCategory } from "react-icons/md";
+import {
+  MdOutlineInventory2,
+  MdOutlineCategory,
+  MdLocalActivity,
+} from "react-icons/md";
 
 import { FaShoppingCart, FaStore } from "react-icons/fa";
 
@@ -27,6 +31,7 @@ import NewPageWrapper from "../../concepts/Home/NewPageWrapper";
 import CustomerList from "../../concepts/Customers/CustomerList";
 import BrandList from "../../concepts/Brands/BrandsList";
 import ReportsPage from "../../concepts/Reports/page";
+import ActivityLogsPage from "../../concepts/Activity/page";
 
 export const sidebarRoutes = [
   {
@@ -105,6 +110,13 @@ export const sidebarRoutes = [
         icon: <FaStore />, // ✅ Better icon for Brands
         isSidebarActive: true,
         element: <BrandList />,
+      },
+      {
+        path: "/activity-logs",
+        name: "Activity Logs",
+        icon: <MdLocalActivity />,
+        isSidebarActive: true,
+        element: <ActivityLogsPage />,
       },
       {
         path: "/roles-permission/list",

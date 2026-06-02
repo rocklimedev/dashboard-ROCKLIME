@@ -6,6 +6,8 @@ const sequelize = require("../config/database");
 const { sendNotification } = require("./notificationController");
 const { Product, Vendor, PurchaseOrder, User } = require("../models");
 const PoItem = require("../models/poItem"); // Mongoose model
+const { ActivityLog } = require("../models");
+const logActivity = require("../utils/activityLogger");
 
 // Preferably move to .env
 const ADMIN_USER_ID =
@@ -193,7 +195,32 @@ exports.createPurchaseOrder = async (req, res) => {
     );
 
     await t.commit();
+    await logActivity({
+      userId: userId,
+      contextTag: "PROCUREMENT",
+      subContext: "PURCHASE_ORDER",
+      action: "CREATE_PURCHASE_ORDER",
+      entityId: po.id,
+      entityName: po.poNumber,
+      description: `Purchase Order ${po.poNumber} created for ${vendor.vendorName}`,
 
+      metadata: {
+        poNumber: po.poNumber,
+        vendorId: vendorId,
+        vendorName: vendor.vendorName,
+        totalAmount: totalAmount,
+        itemCount: preparedItems.length,
+
+        source: fgsId ? "FGS" : "DIRECT",
+        fgsId: fgsId || null,
+
+        mongoLinked: !!mongoDoc?._id,
+        orderDate: po.orderDate,
+        expectedDelivery: expectDeliveryDate || null,
+      },
+
+      req,
+    });
     await sendNotification({
       userId: ADMIN_USER_ID,
       title: `New PO Created — ${poNumber}`,
@@ -283,7 +310,42 @@ exports.updatePurchaseOrder = async (req, res) => {
     });
 
     await t.commit();
+    await logActivity({
+      userId: req.user?.userId || po.userId,
+      contextTag: "PROCUREMENT",
+      subContext: "PURCHASE_ORDER",
+      action: "UPDATE_PURCHASE_ORDER",
+      entityId: updated.id,
+      entityName: po.poNumber,
+      description: `Purchase Order ${po.poNumber} updated`,
 
+      metadata: {
+        poNumber: po.poNumber,
+
+        // ── CHANGES ──
+        changedFields: Object.keys(updateData),
+
+        // ── STATUS IMPACT ──
+        status: updateData.status || updated.status,
+
+        // ── FINANCIAL IMPACT ──
+        totalAmount: updated.totalAmount,
+
+        // ── VENDOR CHANGE ──
+        vendorId: updateData.vendorId || po.vendorId,
+        vendorName: updated.vendor?.vendorName || null,
+
+        // ── ITEM UPDATE ──
+        itemsUpdated: !!items,
+        itemCount: items?.length || updated.items?.length || 0,
+
+        // ── DELIVERY ──
+        expectedDelivery:
+          updateData.expectDeliveryDate || po.expectDeliveryDate,
+      },
+
+      req,
+    });
     await sendNotification({
       userId: ADMIN_USER_ID,
       title: `PO Updated — ${po.poNumber}`,
@@ -422,7 +484,36 @@ exports.deletePurchaseOrder = async (req, res) => {
 
     await po.destroy({ transaction: t });
     await PoItem.deleteOne({ poId: po.id });
+    await logActivity({
+      userId: req.user?.userId || po.userId,
+      contextTag: "PROCUREMENT",
+      subContext: "PURCHASE_ORDER",
+      action: "DELETE_PURCHASE_ORDER",
+      entityId: po.id,
+      entityName: po.poNumber,
+      description: `Purchase Order ${po.poNumber} deleted`,
 
+      oldValues: {
+        poNumber: po.poNumber,
+        vendorId: po.vendorId,
+        vendorName: po.vendor?.vendorName || null,
+        totalAmount: po.totalAmount,
+        status: po.status,
+      },
+
+      metadata: {
+        vendorName: po.vendor?.vendorName || null,
+        totalAmount: po.totalAmount,
+        hasMongoItems: true,
+        mongoDeleted: false, // we delete after commit logic-wise
+        itemCount: null,
+        warning: "PO permanently deleted",
+
+        deletionType: "HARD_DELETE",
+      },
+
+      req,
+    });
     await t.commit();
 
     await sendNotification({
@@ -476,7 +567,44 @@ exports.confirmPurchaseOrder = async (req, res) => {
     const vendor = await Vendor.findByPk(po.vendorId, { transaction: t });
 
     await t.commit();
+    await logActivity({
+      userId: req.user?.userId || po.userId,
+      contextTag: "PROCUREMENT",
+      subContext: "PURCHASE_ORDER",
+      action: "CONFIRM_PURCHASE_ORDER",
+      entityId: po.id,
+      entityName: po.poNumber,
+      description: `Purchase Order ${po.poNumber} confirmed and marked as delivered`,
 
+      oldValues: {
+        status: po.status,
+      },
+
+      newValues: {
+        status: PO_STATUSES.DELIVERED,
+      },
+
+      metadata: {
+        poNumber: po.poNumber,
+        vendorId: po.vendorId,
+        vendorName: vendor?.vendorName || null,
+
+        totalAmount: po.totalAmount,
+
+        itemCount: items.length,
+
+        stockUpdated: true,
+
+        stockImpact: items.map((i) => ({
+          productId: i.productId,
+          quantityAdded: i.quantity,
+        })),
+
+        deliveryType: "PO_CONFIRMATION",
+      },
+
+      req,
+    });
     await sendNotification({
       userId: ADMIN_USER_ID,
       title: `PO Confirmed & Delivered — ${po.poNumber}`,
@@ -539,7 +667,43 @@ exports.updatePurchaseOrderStatus = async (req, res) => {
     const vendor = await Vendor.findByPk(po.vendorId, { transaction: t });
 
     await t.commit();
+    await logActivity({
+      userId: req.user?.userId || po.userId,
+      contextTag: "PROCUREMENT",
+      subContext: "PURCHASE_ORDER",
+      action: "UPDATE_PO_STATUS",
+      entityId: po.id,
+      entityName: po.poNumber,
+      description: `PO ${po.poNumber} status changed from ${oldStatus} to ${status}`,
 
+      oldValues: {
+        status: oldStatus,
+      },
+
+      newValues: {
+        status,
+      },
+
+      metadata: {
+        poNumber: po.poNumber,
+        vendorId: po.vendorId,
+        vendorName: vendor?.vendorName || null,
+
+        stockUpdated:
+          status === PO_STATUSES.DELIVERED &&
+          oldStatus !== PO_STATUSES.DELIVERED,
+
+        stockImpact:
+          status === PO_STATUSES.DELIVERED &&
+          oldStatus !== PO_STATUSES.DELIVERED
+            ? "INCREMENTED_FROM_PO_ITEMS"
+            : null,
+
+        transitionType: `${oldStatus}_TO_${status}`,
+      },
+
+      req,
+    });
     await sendNotification({
       userId: ADMIN_USER_ID,
       title: `PO Status Changed — ${po.poNumber}`,
@@ -645,8 +809,32 @@ exports.createPurchaseOrderFromData = async (data, transaction = null) => {
 
     if (shouldCommit) {
       await t.commit();
-    }
 
+      await logActivity({
+        userId: createdBy || null,
+        contextTag: "PROCUREMENT",
+        subContext: "PURCHASE_ORDER",
+        action: "CREATE_PO_FROM_SERVICE",
+        entityId: po.id,
+        entityName: po.poNumber,
+        description: `Purchase Order ${po.poNumber} created via service layer`,
+
+        metadata: {
+          poNumber: po.poNumber,
+          vendorId,
+          vendorName: vendor.vendorName || null,
+
+          totalAmount,
+          itemCount: preparedItems.length,
+
+          source: fgsId ? "FGS" : "DIRECT",
+          fgsId: fgsId || null,
+
+          mongoLinked: !!mongoDoc?._id,
+          serviceLayer: true,
+        },
+      });
+    }
     return {
       purchaseOrder: { ...po.toJSON(), items: preparedItems },
       poNumber: po.poNumber,

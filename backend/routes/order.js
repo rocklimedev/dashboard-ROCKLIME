@@ -44,6 +44,7 @@ router.get("/:orderId/download", orderController.getDownloadDocument);
 router.post("/create", orderController.createOrder);
 router.get("/all", orderController.getAllOrders);
 router.get("/:id", orderController.getOrderDetails);
+router.get("/:id/download-order", orderController.downloadOrder);
 router.put("/update-status", orderController.updateOrderStatus);
 router.delete("/delete/:id", orderController.deleteOrder);
 router.get("/recent", orderController.recentOrders);

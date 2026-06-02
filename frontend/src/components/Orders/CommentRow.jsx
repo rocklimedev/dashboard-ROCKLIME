@@ -6,6 +6,7 @@ const { Text } = Typography;
 
 const CommentRow = ({ comment, onDelete, currentUserId }) => {
   const isCurrentUser = comment.userId === currentUserId;
+
   const userInitial = comment.user?.name
     ? comment.user.name[0].toUpperCase()
     : "U";
@@ -16,6 +17,7 @@ const CommentRow = ({ comment, onDelete, currentUserId }) => {
       style={{
         display: "flex",
         justifyContent: isCurrentUser ? "flex-end" : "flex-start",
+        marginBottom: 10,
       }}
     >
       <div
@@ -23,54 +25,99 @@ const CommentRow = ({ comment, onDelete, currentUserId }) => {
           display: "flex",
           flexDirection: isCurrentUser ? "row-reverse" : "row",
           alignItems: "flex-start",
-          maxWidth: "80%",
-          gap: 8,
+          maxWidth: "75%",
+          gap: 10,
         }}
       >
         {/* Avatar */}
-        <div className="avatar">{userInitial}</div>
-
-        {/* Comment Bubble */}
         <div
-          className="comment-bubble"
           style={{
-            background: isCurrentUser ? "#1890ff" : "#f0f2f5",
-            color: isCurrentUser ? "#fff" : "#000",
+            width: 34,
+            height: 34,
+            borderRadius: "50%",
+            background: isCurrentUser ? "#1890ff" : "#d9d9d9",
+            color: isCurrentUser ? "#fff" : "#333",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontWeight: 600,
+            fontSize: 13,
+            flexShrink: 0,
           }}
         >
-          <div className="comment-header">
-            <Text strong>{comment.user?.name || "Unknown User"}</Text>
+          {userInitial}
+        </div>
+
+        {/* Bubble */}
+        <div
+          style={{
+            background: isCurrentUser ? "#1890ff" : "#f5f5f5",
+            color: isCurrentUser ? "#fff" : "#111",
+            padding: "10px 12px",
+            borderRadius: 14,
+            boxShadow: "0 1px 2px rgba(0,0,0,0.06)",
+            position: "relative",
+            minWidth: 120,
+          }}
+        >
+          {/* Header */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 4,
+              gap: 10,
+            }}
+          >
+            <Text
+              strong
+              style={{
+                fontSize: 12,
+                color: isCurrentUser ? "#fff" : "#333",
+                opacity: 0.9,
+              }}
+            >
+              {comment.user?.name || "Unknown User"}
+            </Text>
+
             {isCurrentUser && (
               <Button
-                type="link"
+                type="text"
                 danger
                 icon={<DeleteOutlined />}
                 onClick={() => onDelete(comment._id)}
                 style={{
+                  fontSize: 12,
                   padding: 0,
-                  fontSize: "0.8rem",
+                  height: "auto",
                   color: isCurrentUser ? "#fff" : "#ff4d4f",
+                  opacity: 0.85,
                 }}
-              >
-                Delete
-              </Button>
+              />
             )}
           </div>
 
-          <div className="comment-body">
-            <Text>{comment.comment}</Text>
+          {/* Message */}
+          <div style={{ fontSize: 14, lineHeight: "1.4" }}>
+            {comment.comment}
           </div>
 
-          <Text
-            type="secondary"
-            style={{ fontSize: "0.75rem", display: "block", marginTop: 6 }}
+          {/* Timestamp */}
+          <div
+            style={{
+              marginTop: 6,
+              fontSize: 11,
+              opacity: 0.7,
+              textAlign: isCurrentUser ? "right" : "left",
+            }}
           >
             {new Date(comment.createdAt).toLocaleTimeString([], {
               hour: "2-digit",
               minute: "2-digit",
             })}{" "}
             • {new Date(comment.createdAt).toLocaleDateString()}
-          </Text>
+          </div>
         </div>
       </div>
     </div>

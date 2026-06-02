@@ -40,6 +40,7 @@ const routes = {
   purchaseOrder: require("./routes/purchaseOrder"),
   notification: require("./routes/notification"),
   cachedPermission: require("./routes/cachedPermission"),
+  activity: require("./routes/activity"),
 };
 
 // ------------------- Express App -------------------
@@ -150,6 +151,7 @@ app.use("/api/notifications", routes.notification);
 app.use("/api/cached-permissions", routes.cachedPermission);
 app.use("/api/fgs", routes.fgs);
 app.use("/api/jobs", routes.jobs);
+app.use("/api/activity", routes.activity);
 // ------------------- Health Check -------------------
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", uptime: process.uptime() });

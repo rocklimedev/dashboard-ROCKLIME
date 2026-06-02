@@ -28,6 +28,7 @@ const BrandParentCategoryBrand = require("./brandParentCategoryBrand")(
   sequelize,
   DataTypes,
 );
+const ActivityLog = require("./activityLog")(sequelize, DataTypes);
 const Job = require("./job")(sequelize, DataTypes);
 const FieldGuidedSheet = require("./fgs")(sequelize, DataTypes);
 const InventoryHistory = require("./history")(sequelize, DataTypes);
@@ -57,6 +58,7 @@ const PurchaseOrder = require("./purchaseorder")(sequelize, DataTypes);
   Vendor,
   Keyword,
   BrandParentCategory,
+  ActivityLog, // ← add here
   BrandParentCategoryBrand,
   Customer,
   Quotation,
@@ -90,6 +92,7 @@ const PurchaseOrder = require("./purchaseorder")(sequelize, DataTypes);
       Order,
       PurchaseOrder,
       InventoryHistory,
+      ActivityLog, // ← add here
     });
   }
 });
@@ -122,5 +125,6 @@ module.exports = {
   Quotation,
   Order,
   PurchaseOrder,
+  ActivityLog, // ← add here
   InventoryHistory,
 };

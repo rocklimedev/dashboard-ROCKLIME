@@ -688,34 +688,59 @@ const OrderPage = () => {
         </Row>
 
         {/* ── COMMENTS ──────────────────────────────────────────────────── */}
+        {/* ── COMMENTS ──────────────────────────────────────────────────── */}
         <Card
-          title="Comments"
+          title={
+            <span style={{ fontSize: 16, fontWeight: 600 }}>Comments</span>
+          }
           className="comments-section"
-          style={{ marginTop: 32 }}
+          style={{
+            marginTop: 32,
+            borderRadius: 12,
+            boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
+          }}
+          bodyStyle={{ padding: 16 }}
         >
-          <Form layout="inline" style={{ marginBottom: 24 }}>
-            <Form.Item style={{ flex: 1 }}>
-              <Input.TextArea
-                rows={2}
-                placeholder="Write a comment..."
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-              />
-            </Form.Item>
-            <Form.Item>
-              <Button
-                type="primary"
-                icon={<SendOutlined />}
-                onClick={handleAddComment}
-                disabled={!newComment.trim()}
-              >
-                Send
-              </Button>
-            </Form.Item>
-          </Form>
+          {/* Input Section */}
+          <div
+            style={{
+              display: "flex",
+              gap: 12,
+              marginBottom: 20,
+              alignItems: "flex-start",
+            }}
+          >
+            <Input.TextArea
+              rows={2}
+              placeholder="Write a comment..."
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              style={{
+                resize: "none",
+                borderRadius: 10,
+              }}
+            />
 
+            <Button
+              type="primary"
+              icon={<SendOutlined />}
+              onClick={handleAddComment}
+              disabled={!newComment.trim()}
+              style={{
+                height: "100%",
+                borderRadius: 10,
+                paddingInline: 20,
+              }}
+            >
+              Send
+            </Button>
+          </div>
+
+          {/* Content Section */}
           {commentLoading ? (
-            <Spin />
+            <div style={{ textAlign: "center", padding: "20px 0" }}>
+              <Spin />
+            </div>
           ) : comments.length === 0 ? (
             <Text
               type="secondary"
@@ -723,24 +748,41 @@ const OrderPage = () => {
                 display: "block",
                 textAlign: "center",
                 padding: "32px 0",
+                fontSize: 14,
               }}
             >
               No comments yet.
             </Text>
           ) : (
-            <div className="comments-list">
+            <div
+              className="comments-list"
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 12,
+                marginTop: 8,
+              }}
+            >
               {commentData?.comments?.map((c) => (
-                <CommentRow
+                <div
                   key={c._id}
-                  comment={c}
-                  onDelete={handleDeleteComment}
-                  currentUserId={String(user.userId || "").trim()}
-                />
+                  style={{
+                    padding: 12,
+                    borderRadius: 10,
+                    background: "#fafafa",
+                    border: "1px solid #f0f0f0",
+                  }}
+                >
+                  <CommentRow
+                    comment={c}
+                    onDelete={handleDeleteComment}
+                    currentUserId={String(user.userId || "").trim()}
+                  />
+                </div>
               ))}
             </div>
           )}
         </Card>
-
         {/* MODALS */}
         {isBillingModalVisible && (
           <AddAddress
