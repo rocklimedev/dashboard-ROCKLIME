@@ -40,7 +40,7 @@ function transformProducts(data) {
 // === USAGE ===
 
 // Load input JSON
-const input = require("./normalized.json");
+const input = require("./newProducts.json");
 
 // Transform
 const output = transformProducts(input);
