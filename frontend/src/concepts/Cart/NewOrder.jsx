@@ -268,7 +268,6 @@ const NewOrder = () => {
 
       navigate("/orders/list");
     } catch (err) {
-      console.error("Create Order Error:", err);
       message.error(err?.data?.message || "Failed to create order.");
     }
   };

@@ -60,7 +60,6 @@ const OrderWrapper = () => {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      console.error(err);
       message.error("Failed to download order summary");
     }
   };

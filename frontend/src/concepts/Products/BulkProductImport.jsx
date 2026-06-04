@@ -293,7 +293,6 @@ const BulkProductImport = () => {
         setCurrentStep(2);
       }
     } catch (err) {
-      console.error(err);
       message.error(
         err?.data?.message || err?.message || "Failed to process import",
       );

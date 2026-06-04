@@ -83,7 +83,7 @@ const OrderPage = () => {
     refetch: refetchOrder,
   } = useGetOrderDetailsQuery(id);
   const order = orderData?.order || {};
-  console.log(order);
+
   const { data: commentData, isLoading: commentLoading } = useGetCommentsQuery(
     {
       resourceId: id,
@@ -335,7 +335,6 @@ const OrderPage = () => {
       a.remove();
       window.URL.revokeObjectURL(blobUrl);
     } catch (err) {
-      console.error("Download error:", err);
       message.error(err.message || "Download failed");
     }
   };

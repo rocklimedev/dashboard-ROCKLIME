@@ -916,13 +916,6 @@ exports.createOrder = async (req, res) => {
       if (prod.quantity < quantity) {
         await t.rollback();
 
-        console.error("INSUFFICIENT STOCK:", {
-          productId,
-          productName: prod.name,
-          requestedQty: quantity,
-          availableQty: prod.quantity,
-        });
-
         return sendErrorResponse(
           res,
           400,
@@ -1159,8 +1152,6 @@ exports.createOrder = async (req, res) => {
     } catch (rollbackErr) {
       console.error("Rollback failed:", rollbackErr);
     }
-
-    console.error("CREATE ORDER ERROR:", err);
 
     // ─────────────────────────────────────
     // DEADLOCK HANDLING
@@ -2726,8 +2717,6 @@ exports.downloadOrder = async (req, res) => {
 
     doc.end();
   } catch (err) {
-    console.error(err);
-
     return sendErrorResponse(
       res,
       500,
@@ -3167,7 +3156,6 @@ exports.uploadInvoiceAndLinkOrder = async (req, res) => {
       fileUrl,
     });
   } catch (err) {
-    console.error("Invoice upload error:", err);
     return res
       .status(500)
       .json({ message: "Server error", error: err.message });
@@ -3280,7 +3268,6 @@ exports.issueGatePass = async (req, res) => {
       .status(200)
       .json({ message: "Gate-pass uploaded", gatePassLink: fileUrl });
   } catch (err) {
-    console.error("Gate-pass error:", err);
     return sendErrorResponse(res, 500, "Gate-pass upload failed", err.message);
   }
 };
@@ -3324,11 +3311,9 @@ exports.getDownloadDocument = async (req, res) => {
 
     response.data.on("end", () => res.end());
     response.data.on("error", (err) => {
-      console.error("Download stream error:", err);
       res.status(500).end();
     });
   } catch (err) {
-    console.error("Download error:", err);
     res.status(500).json({ message: "Download failed", error: err.message });
   }
 };

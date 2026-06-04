@@ -596,7 +596,6 @@ exports.updateUser = async (req, res) => {
       data: updatedUser,
     });
   } catch (err) {
-    console.error("Update User Error:", err);
     return res.status(500).json({
       message: `Failed to update user: ${err.message || "Unknown server error"}`,
     });
@@ -896,7 +895,6 @@ exports.uploadUserPhoto = async (req, res) => {
       await client.send(`SITE CHMOD 644 ${thumbName}`);
       thumbUrl = `https://media.cmtradingco.com${uploadDir}/${thumbName}`;
     } catch (ftpErr) {
-      console.error("FTP upload failed:", ftpErr);
       return res
         .status(500)
         .json({ message: "FTP upload failed", error: ftpErr.message });
@@ -924,7 +922,6 @@ exports.uploadUserPhoto = async (req, res) => {
       user: safeUser,
     });
   } catch (err) {
-    console.error("Server error:", err);
     return res
       .status(500)
       .json({ message: "Server error", error: err.message });

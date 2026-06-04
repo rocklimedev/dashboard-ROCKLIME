@@ -1,154 +1,109 @@
-const fs = require("fs-extra");
-const stringSimilarity = require("string-similarity");
-const { v4: uuidv4 } = require("uuid");
+const fs = require("fs");
+const path = require("path");
 
-// FILE PATHS
-const UPDATED_FILE = "./scripts/json-outputs/all_sheets_data.json";
+const COMPANY_CODE_FIELD = "d11da9f9-3f2e-4536-8236-9671200cca4a";
+
+const NORMALIZED_FILE = "./scripts/json-outputs/all_sheets_data1.json";
 const BACKUP_FILE =
-  "./scripts/backup/products_backup_acbe7061-9b76-47d1-a509-e4b1f982a36f_2026-04-29T07-47-57-359Z.json";
+  "./scripts/backup/grohe_products_backup_2026-06-03T05-31-19-010Z.json";
 
-// OUTPUT
-const MERGED_FILE = "./scripts/merged-products.json";
-const NEW_FILE = "./scripts/new-products.json";
-const LOG_FILE = "./scripts/unmatched-log.txt";
-
-// CONFIG
-const MATCH_THRESHOLD = 0.75;
-const LOG_EVERY = 100; // progress log interval
-const DEBUG = false; // set true for deep logs
-
-// NORMALIZE NAME
-function normalize(str) {
-  return str
-    ?.toLowerCase()
-    .replace(/[^a-z0-9\s]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
+function readJson(file) {
+  return JSON.parse(fs.readFileSync(file, "utf8"));
 }
 
-console.time("⏱️ Total Execution Time");
+function writeJson(file, data) {
+  fs.writeFileSync(file, JSON.stringify(data, null, 2), "utf8");
+}
 
-// LOAD FILES
-console.log("📂 Loading files...");
-const updatedProducts = fs.readJsonSync(UPDATED_FILE);
-const backupProducts = fs.readJsonSync(BACKUP_FILE);
+const normalizedProducts = readJson(NORMALIZED_FILE);
+const backupProducts = readJson(BACKUP_FILE);
 
-console.log(`📊 Updated Products: ${updatedProducts.length}`);
-console.log(`📊 Backup Products: ${backupProducts.length}`);
+console.log(`Loaded ${normalizedProducts.length} normalized products`);
+console.log(`Loaded ${backupProducts.length} backup products`);
 
-// PREPARE BACKUP NAME LIST
-console.log("⚙️ Preparing index...");
-const backupNames = backupProducts.map((p) => normalize(p.name));
+const backupLookup = new Map();
 
-const mergedProducts = [];
+for (const product of backupProducts) {
+  const companyCode = product?.meta?.[COMPANY_CODE_FIELD];
+
+  if (companyCode !== undefined && companyCode !== null) {
+    backupLookup.set(String(companyCode), product);
+  }
+}
+
+const updatedProducts = [];
 const newProducts = [];
-const logs = [];
+const unmatchedCodes = [];
 
-let matchCount = 0;
-let newCount = 0;
+for (const incoming of normalizedProducts) {
+  const companyCode = incoming[COMPANY_CODE_FIELD];
 
-updatedProducts.forEach((updated, index) => {
-  const start = Date.now();
-
-  const updatedName = normalize(updated.name);
-
-  const { bestMatch, bestMatchIndex } = stringSimilarity.findBestMatch(
-    updatedName,
-    backupNames,
-  );
-
-  const timeTaken = Date.now() - start;
-
-  // ⏳ Slow operation warning
-  if (timeTaken > 50) {
-    console.log(`🐢 Slow match (${timeTaken}ms): "${updated.name}"`);
+  if (companyCode === undefined || companyCode === null) {
+    console.warn("Skipping product with missing company code:", incoming.name);
+    continue;
   }
 
-  if (bestMatch.rating >= MATCH_THRESHOLD) {
-    const existing = backupProducts[bestMatchIndex];
+  const existing = backupLookup.get(String(companyCode));
 
-    const merged = {
-      ...existing,
-      name: updated.name,
-      product_code: updated.company_code || existing.product_code,
-      description: updated.name,
-      meta: {
-        ...existing.meta,
-        item_code: updated.item_code,
-        hsn_code: updated.hsn_code,
-      },
-      updatedAt: new Date().toISOString(),
+  if (existing) {
+    // -------------------------
+    // UPDATE EXISTING PRODUCT
+    // -------------------------
+
+    if (incoming.name) {
+      existing.name = incoming.name;
+    }
+
+    if (incoming.description) {
+      existing.description = incoming.description;
+    }
+
+    if (incoming.tax !== undefined) {
+      const taxValue = Number(incoming.tax);
+
+      existing.tax = Number.isNaN(taxValue)
+        ? existing.tax
+        : (taxValue * 100).toFixed(2);
+    }
+
+    existing.meta = {
+      ...(existing.meta || {}),
     };
 
-    mergedProducts.push(merged);
-    matchCount++;
+    for (const [key, value] of Object.entries(incoming)) {
+      if (key === "name" || key === "description" || key === "tax") {
+        continue;
+      }
 
-    if (DEBUG) {
-      console.log(
-        `✅ MATCH (${bestMatch.rating.toFixed(2)}): "${updated.name}" → "${existing.name}"`,
-      );
+      existing.meta[key] = value;
     }
+
+    updatedProducts.push(existing);
   } else {
-    const newProduct = {
-      productId: uuidv4(),
-      name: updated.name,
-      product_code: updated.company_code || "",
-      quantity: 0,
-      masterProductId: null,
-      isMaster: false,
-      variantOptions: null,
-      variantKey: null,
-      skuSuffix: null,
-      discountType: null,
-      alert_quantity: 1,
-      tax: "0.00",
-      description: updated.name,
-      images: "[]",
-      isFeatured: false,
-      status: "active",
-      brandId: null,
-      categoryId: null,
-      vendorId: null,
-      brand_parentcategoriesId: null,
-      meta: {
-        item_code: updated.item_code,
-        hsn_code: updated.hsn_code,
-        units: updated.units,
-        category: updated.category,
-      },
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+    // -------------------------
+    // NEW PRODUCT
+    // KEEP FORMAT UNCHANGED
+    // -------------------------
 
-    newProducts.push(newProduct);
-    newCount++;
-
-    logs.push(`No match for: ${updated.name}`);
-
-    if (DEBUG) {
-      console.log(`❌ NO MATCH: "${updated.name}"`);
-    }
+    newProducts.push(incoming);
+    unmatchedCodes.push(companyCode);
   }
+}
 
-  // 📊 Progress log
-  if ((index + 1) % LOG_EVERY === 0) {
-    console.log(
-      `📈 Processed: ${index + 1}/${updatedProducts.length} | Matches: ${matchCount} | New: ${newCount}`,
-    );
-  }
-});
+writeJson("./updatedProducts.json", updatedProducts);
 
-// SAVE FILES
-console.log("💾 Writing output files...");
-fs.writeJsonSync(MERGED_FILE, mergedProducts, { spaces: 2 });
-fs.writeJsonSync(NEW_FILE, newProducts, { spaces: 2 });
-fs.writeFileSync(LOG_FILE, logs.join("\n"));
+writeJson("./newProducts.json", newProducts);
 
-// FINAL SUMMARY
-console.log("✅ Done!");
-console.log("📊 Summary:");
-console.log(`   ✔ Matches: ${matchCount}`);
-console.log(`   ➕ New: ${newCount}`);
-console.log(`   ⚠ Logs: ${logs.length}`);
+writeJson("./unmatchedCodes.json", unmatchedCodes);
 
-console.timeEnd("⏱️ Total Execution Time");
+console.log("\n========== SUMMARY ==========");
+console.log(`Updated Products : ${updatedProducts.length}`);
+
+console.log(`New Products     : ${newProducts.length}`);
+
+console.log(`Unmatched Codes  : ${unmatchedCodes.length}`);
+
+console.log("\nFiles generated:");
+console.log("✓ updatedProducts.json");
+console.log("✓ newProducts.json");
+console.log("✓ unmatchedCodes.json");

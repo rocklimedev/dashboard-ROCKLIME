@@ -636,10 +636,6 @@ const AddQuotation = () => {
         .filter(Boolean),
     };
 
-    // DEBUG: Remove after testing
-    console.log("Final Payload:", payload);
-    console.log("Products being sent:", cleanProducts);
-
     try {
       if (isEditMode) {
         await updateQuotation({ id, updatedQuotation: payload }).unwrap();
@@ -650,7 +646,6 @@ const AddQuotation = () => {
       }
       navigate("/quotations/list");
     } catch (err) {
-      console.error("Quotation save error:", err);
       message.error(err?.data?.message || "Failed to save quotation");
     }
   };

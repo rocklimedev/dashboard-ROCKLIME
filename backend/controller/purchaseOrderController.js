@@ -386,7 +386,6 @@ exports.getPurchaseOrderById = async (req, res) => {
 
     if (!po)
       return res.status(404).json({ message: "Purchase order not found" });
-    // Temporary test route or console
 
     const items = await fetchPoItems(po.id);
 

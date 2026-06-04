@@ -2,7 +2,11 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { message, Button, Modal, Descriptions, Space } from "antd";
-import { DeleteOutlined, SaveOutlined, InfoCircleOutlined } from "@ant-design/icons";
+import {
+  DeleteOutlined,
+  SaveOutlined,
+  InfoCircleOutlined,
+} from "@ant-design/icons";
 import moment from "moment";
 
 import CartLayout from "./CartLayout";
@@ -47,11 +51,14 @@ const NewPurchaseOrder = () => {
   // ==================== AUTOSAVE SETUP ====================
   const draftKey = `draft_purchaseorder_${auth?.userId || "guest"}`;
 
-  const draftData = useMemo(() => ({
-    purchaseOrderData,
-    selectedVendor,
-    lastSaved: new Date().toISOString(),
-  }), [purchaseOrderData, selectedVendor]);
+  const draftData = useMemo(
+    () => ({
+      purchaseOrderData,
+      selectedVendor,
+      lastSaved: new Date().toISOString(),
+    }),
+    [purchaseOrderData, selectedVendor],
+  );
 
   const { loadDraft, clearDraft } = useAutoSave(draftKey, draftData, 2500);
 
@@ -97,7 +104,10 @@ const NewPurchaseOrder = () => {
       return message.error("Please select a vendor.");
     }
 
-    if (!layoutProps?.calculationCartItems || layoutProps.calculationCartItems.length === 0) {
+    if (
+      !layoutProps?.calculationCartItems ||
+      layoutProps.calculationCartItems.length === 0
+    ) {
       return message.error("Cart is empty. Please add items.");
     }
 
@@ -124,7 +134,7 @@ const NewPurchaseOrder = () => {
       const result = await createPurchaseOrder(payload).unwrap();
 
       message.success(
-        `Purchase Order ${result.purchaseOrder?.poNumber || ""} created successfully!`
+        `Purchase Order ${result.purchaseOrder?.poNumber || ""} created successfully!`,
       );
 
       // Clear draft and cart after successful creation
@@ -154,7 +164,6 @@ const NewPurchaseOrder = () => {
         navigate("/purchase-manager");
       }, 1500);
     } catch (err) {
-      console.error("Create Purchase Order Error:", err);
       message.error(err?.data?.message || "Failed to create Purchase Order.");
     }
   };
@@ -185,7 +194,9 @@ const NewPurchaseOrder = () => {
               cartItems={layoutProps.localCartItems}
               calculationCartItems={layoutProps.calculationCartItems}
               setActiveTab={layoutProps.setActiveTab}
-              handleCreateDocument={() => handleCreatePurchaseOrder(layoutProps)}
+              handleCreateDocument={() =>
+                handleCreatePurchaseOrder(layoutProps)
+              }
               userId={layoutProps.userId}
               subTotal={layoutProps.subTotal}
               totalAmount={layoutProps.totalAmount}
@@ -221,8 +232,10 @@ const NewPurchaseOrder = () => {
         {currentDraft ? (
           <Descriptions column={1} bordered>
             <Descriptions.Item label="Vendor">
-              {vendors.find((v) => v.vendorId === currentDraft.selectedVendor)?.name || 
-               currentDraft.selectedVendor || "Not selected"}
+              {vendors.find((v) => v.vendorId === currentDraft.selectedVendor)
+                ?.name ||
+                currentDraft.selectedVendor ||
+                "Not selected"}
             </Descriptions.Item>
             <Descriptions.Item label="Order Date">
               {currentDraft.purchaseOrderData?.orderDate || "-"}
@@ -239,7 +252,9 @@ const NewPurchaseOrder = () => {
                 : "-"}
             </Descriptions.Item>
             <Descriptions.Item label="Status">
-              <span style={{ color: "#52c41a" }}>✓ Draft Saved Automatically</span>
+              <span style={{ color: "#52c41a" }}>
+                ✓ Draft Saved Automatically
+              </span>
             </Descriptions.Item>
           </Descriptions>
         ) : (

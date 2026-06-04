@@ -54,7 +54,8 @@ const ReportsPage = () => {
   const quotations = quotationsData?.data || [];
   const orders = ordersData?.data || [];
   const products = productsData?.data || [];
-  const purchaseOrders = poData?.data || [];
+  const purchaseOrders =
+    poData?.purchaseOrders?.data || poData?.data || poData || [];
 
   const isLoading =
     loadingQuotations || loadingOrders || loadingProducts || loadingPOs;
@@ -173,18 +174,24 @@ const ReportsPage = () => {
 
         case "po":
           const filteredPOs = getFilteredData(purchaseOrders, "orderDate");
-          reportData = filteredPOs.map((po, i) => ({
-            "S.No": i + 1,
-            "PO Number": po.orderNumber || "—",
-            "PO Date": new Date(po.orderDate).toLocaleDateString("en-IN"),
-            "Vendor Name": po.vendor?.name || po.vendorName || "—",
-            Amount: `₹${Number(po.totalAmount || 0).toLocaleString("en-IN")}`,
-            Status: po.status?.replace("_", " ").toUpperCase() || "PENDING",
-          }));
+
+          reportData = filteredPOs.map((po, i) => {
+            return {
+              "S.No": i + 1,
+              "PO Number": po.poNumber || po.id || "—",
+              "PO Date": po.orderDate
+                ? new Date(po.orderDate).toLocaleDateString("en-IN")
+                : "—",
+              "Vendor Name":
+                po.vendor?.vendorName || po.vendorName || "Unknown",
+              Amount: `₹${Number(po.totalAmount || 0).toLocaleString("en-IN")}`,
+              Status: (po.status || "pending").toUpperCase(),
+            };
+          });
+
           title = "Purchase Order Report";
           fileName = `Purchase_Order_Report_${new Date().toISOString().slice(0, 10)}`;
           break;
-
         case "lowstock":
           const lowStock = products.filter(
             (p) => p.quantity > 0 && p.quantity <= 20,
@@ -216,7 +223,6 @@ const ReportsPage = () => {
 
       message.success(`${title} generated successfully!`);
     } catch (err) {
-      console.error(err);
       message.error("Failed to generate report. Please try again.");
     } finally {
       setLoadingReport(null);
@@ -228,7 +234,7 @@ const ReportsPage = () => {
     () => ({
       totalOrders: orders.length,
       totalQuotations: quotations.length,
-      totalPOs: purchaseOrders.length,
+      totalPOs: purchaseOrders.length, // This should already work
       lowStock: products.filter((p) => p.quantity > 0 && p.quantity <= 20)
         .length,
     }),

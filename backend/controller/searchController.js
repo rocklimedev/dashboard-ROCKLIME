@@ -151,7 +151,6 @@ const searchAll = async (req, res) => {
             totalPages: Math.ceil(count / limitToUse),
           };
         } catch (err) {
-          console.error(`Search error in ${config.key}:`, err);
           results[config.key] = {
             items: [],
             total: 0,
@@ -181,7 +180,6 @@ const searchAll = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Global search error:", error);
     res.status(500).json({
       success: false,
       message: "An error occurred while searching",

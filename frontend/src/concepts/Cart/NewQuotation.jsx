@@ -278,14 +278,7 @@ const NewQuotation = () => {
       followupDates: quotationData.followupDates?.filter(Boolean) || [],
       createdBy: auth?.userId,
     };
-    console.log(
-      "Payload Items with Priority:",
-      payloadCartItems.map((i) => ({
-        name: i.name,
-        productId: i.productId,
-        priority: i.priority,
-      })),
-    );
+
     try {
       const result = await createQuotation(quotationPayload).unwrap();
       message.success(
@@ -300,7 +293,6 @@ const NewQuotation = () => {
       if (typeof handleClearCart === "function") handleClearCart();
       navigate("/quotations/list");
     } catch (err) {
-      console.error("Create Quotation Error:", err);
       message.error(err?.data?.message || "Failed to create quotation.");
     }
   };

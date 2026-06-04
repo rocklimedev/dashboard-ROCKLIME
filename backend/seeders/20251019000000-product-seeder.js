@@ -3,7 +3,7 @@
 const { v4: uuidv4 } = require("uuid");
 const { BrandParentCategory } = require("../models");
 const { Product } = require("../models");
-const jsonData = require("./updated-products.json"); // your JSON backup
+const jsonData = require("./updatedProducts.json"); // your JSON backup
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {

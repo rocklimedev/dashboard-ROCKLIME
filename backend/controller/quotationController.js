@@ -122,7 +122,7 @@ const extractFirstImageUrl = (imagesField) => {
     if (str.startsWith("http")) {
       return str.replace(/^["']|["']$/g, ""); // remove wrapping quotes
     }
-    console.warn(`Failed to parse images for product: ${imagesField}`);
+
     return null;
   }
 };
@@ -519,7 +519,6 @@ exports.createQuotation = async (req, res) => {
     });
   } catch (error) {
     await t.rollback().catch(() => {});
-    console.error("Create Quotation Error:", error);
 
     return res.status(500).json({
       error: "Failed to create quotation",
@@ -1158,7 +1157,6 @@ exports.exportQuotation = async (req, res) => {
     );
     res.send(buffer);
   } catch (error) {
-    console.error("Export error:", error);
     res
       .status(500)
       .json({ message: "Failed to export quotation", error: error.message });
@@ -1412,7 +1410,7 @@ exports.cloneQuotation = async (req, res) => {
     });
   } catch (error) {
     await t.rollback().catch(() => {});
-    console.error("Clone Quotation Error:", error);
+
     return res.status(500).json({
       error: "Failed to clone quotation",
       message: error.message,

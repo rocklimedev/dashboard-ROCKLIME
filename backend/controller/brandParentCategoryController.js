@@ -262,7 +262,6 @@ exports.getBpcTree = async (req, res) => {
       brandParentCategory: tree,
     });
   } catch (error) {
-    console.error("Error in getBpcTree:", error);
     return res.status(500).json({ message: error.message });
   }
 };

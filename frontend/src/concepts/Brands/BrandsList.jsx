@@ -6,22 +6,22 @@ import {
   MoreOutlined,
 } from "@ant-design/icons";
 import Avatar from "react-avatar";
-
 import {
   useGetAllBrandsQuery,
   useDeleteBrandMutation,
 } from "../../api/brandsApi";
-
 import {
   useGetBrandParentCategoriesQuery,
   useDeleteBrandParentCategoryMutation,
 } from "../../api/brandParentCategoryApi";
-
-// Product Meta API
 import {
   useGetAllProductMetaQuery,
   useDeleteProductMetaMutation,
 } from "../../api/productMetaApi";
+import {
+  useGetVendorsQuery,
+  useDeleteVendorMutation,
+} from "../../api/vendorApi";
 
 import {
   Dropdown,
@@ -33,6 +33,7 @@ import {
   Tabs,
   Input,
 } from "antd";
+
 import DeleteModal from "../../components/Common/DeleteModal";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import PageHeader from "../../components/Common/PageHeader";
@@ -41,6 +42,8 @@ import PageHeader from "../../components/Common/PageHeader";
 import BrandFormModal from "../../components/Brands/BrandFormModal";
 import BrandParentCategoryFormModal from "../../components/Brands/BrandParentCategoryFormModal";
 import ProductMetaFormModal from "../../components/modals/ProductMetaModal";
+import AddVendorModal from "../../components/POS-NEW/AddVendorModal";
+
 const { TabPane } = Tabs;
 const { Search } = Input;
 
@@ -50,10 +53,8 @@ const BrandList = () => {
 
   const currentTab = searchParams.get("tab") || "brands";
 
-  const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeBrandTab, setActiveBrandTab] = useState("All");
-
   const itemsPerPage = 20;
 
   // Modal States
@@ -66,6 +67,8 @@ const BrandList = () => {
   const [metaModalVisible, setMetaModalVisible] = useState(false);
   const [editingMeta, setEditingMeta] = useState(null);
 
+  const [vendorModalVisible, setVendorModalVisible] = useState(false);
+
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteType, setDeleteType] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
@@ -75,10 +78,12 @@ const BrandList = () => {
   const { data: categoriesData, refetch: refetchCategories } =
     useGetBrandParentCategoriesQuery();
   const { data: metaData, refetch: refetchMeta } = useGetAllProductMetaQuery();
+  const { data: vendorsData, refetch: refetchVendors } = useGetVendorsQuery();
 
   const allBrands = brandsData?.brands || brandsData || [];
   const brandParentCategories = categoriesData || [];
   const allMetaFields = metaData || [];
+  const allVendors = vendorsData || [];
 
   // Mutations
   const [deleteBrand, { isLoading: isDeletingBrand }] =
@@ -87,24 +92,22 @@ const BrandList = () => {
     useDeleteBrandParentCategoryMutation();
   const [deleteProductMeta, { isLoading: isDeletingMeta }] =
     useDeleteProductMetaMutation();
+  const [deleteVendor, { isLoading: isDeletingVendor }] =
+    useDeleteVendorMutation();
 
-  const safeJoin = (items) =>
-    Array.isArray(items)
-      ? items.map((i) => i?.name || i?.brandName || i).join(", ")
-      : "—";
-
-  // Grouped Brands
+  // ==================== GROUPED BRANDS (Using your API structure) ====================
   const groupedBrands = useMemo(() => {
     const groups = { All: [...allBrands] };
 
     brandParentCategories.forEach((category) => {
-      const brandsInCategory = allBrands.filter((brand) =>
-        brand.brandParentCategories?.some(
-          (bpc) =>
-            bpc.id === category.id || bpc.brandParentCategoryId === category.id,
-        ),
-      );
-      groups[category.name] = brandsInCategory;
+      if (category.brands && Array.isArray(category.brands)) {
+        // Extract brand object from the relation
+        groups[category.name] = category.brands
+          .map((item) => item.brand || item)
+          .filter(Boolean);
+      } else {
+        groups[category.name] = [];
+      }
     });
 
     return groups;
@@ -113,6 +116,7 @@ const BrandList = () => {
   // Filtered Data
   const filteredBrands = useMemo(() => {
     let result = groupedBrands[activeBrandTab] || [];
+
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
       result = result.filter((brand) =>
@@ -144,22 +148,31 @@ const BrandList = () => {
     );
   }, [allMetaFields, searchTerm]);
 
+  const filteredVendors = useMemo(() => {
+    if (!searchTerm.trim()) return allVendors;
+    const term = searchTerm.toLowerCase();
+    return allVendors.filter((vendor) =>
+      [vendor.vendorName, vendor.vendorId]
+        .filter(Boolean)
+        .some((field) => field.toString().toLowerCase().includes(term)),
+    );
+  }, [allVendors, searchTerm]);
+
   const activeMainTab =
     currentTab === "categories"
       ? "categories"
       : currentTab === "meta"
         ? "meta"
-        : "brands";
+        : currentTab === "vendors"
+          ? "vendors"
+          : "brands";
 
-  // Handle Tab Change
+  // Handlers
   const handleTabChange = (key) => {
     setSearchParams({ tab: key });
-    if (key !== activeMainTab) {
-      setSearchTerm("");
-    }
+    if (key !== activeMainTab) setSearchTerm("");
   };
 
-  // Modal Handlers
   const openBrandModal = (brand = null) => {
     setEditingBrand(brand);
     setBrandModalVisible(true);
@@ -175,6 +188,8 @@ const BrandList = () => {
     setMetaModalVisible(true);
   };
 
+  const openVendorModal = () => setVendorModalVisible(true);
+
   const openDeleteModal = (type, id) => {
     setDeleteType(type);
     setDeleteId(id);
@@ -182,6 +197,8 @@ const BrandList = () => {
   };
 
   const handleConfirmDelete = async () => {
+    if (!deleteId) return;
+
     try {
       if (deleteType === "brand") {
         await deleteBrand(deleteId).unwrap();
@@ -195,6 +212,10 @@ const BrandList = () => {
         await deleteProductMeta(deleteId).unwrap();
         message.success("Meta field deleted successfully");
         refetchMeta();
+      } else if (deleteType === "vendor") {
+        await deleteVendor(deleteId).unwrap();
+        message.success("Vendor deleted successfully");
+        refetchVendors();
       }
     } catch (err) {
       message.error(`Failed to delete ${deleteType}`);
@@ -208,13 +229,16 @@ const BrandList = () => {
   const handleModalSuccess = () => {
     if (activeMainTab === "brands") refetchBrands();
     else if (activeMainTab === "categories") refetchCategories();
-    else refetchMeta();
+    else if (activeMainTab === "meta") refetchMeta();
+    else if (activeMainTab === "vendors") refetchVendors();
   };
 
   const handleViewBrand = (brand) => navigate(`/store/${brand.id}`);
   const handleEditBrand = (brand) => openBrandModal(brand);
+
   const handleViewCategory = (category) =>
     navigate(`/category-selector/${category.id}`);
+
   const handleEditCategory = (category) => openCategoryModal(category);
 
   return (
@@ -223,13 +247,15 @@ const BrandList = () => {
         <div className="card">
           <PageHeader
             title="Brands & Meta Management"
-            subtitle="Manage Brands, Categories and Product Meta Fields"
+            subtitle="Manage Brands, Categories, Meta Fields and Vendors"
             onAdd={() =>
               activeMainTab === "brands"
                 ? openBrandModal()
                 : activeMainTab === "categories"
                   ? openCategoryModal()
-                  : openMetaModal()
+                  : activeMainTab === "meta"
+                    ? openMetaModal()
+                    : openVendorModal()
             }
           />
 
@@ -243,9 +269,10 @@ const BrandList = () => {
               <TabPane tab="Brands" key="brands" />
               <TabPane tab="Brand Categories" key="categories" />
               <TabPane tab="Meta Fields" key="meta" />
+              <TabPane tab="Vendors" key="vendors" />
             </Tabs>
 
-            {/* Search & Filter */}
+            {/* Search & Brand Sub-tabs */}
             <div className="row mb-4 align-items-center">
               <div className="col-lg-6">
                 {activeMainTab === "brands" && (
@@ -279,7 +306,9 @@ const BrandList = () => {
                         ? "Search by brand name or slug..."
                         : activeMainTab === "categories"
                           ? "Search categories..."
-                          : "Search meta fields by title, slug or type..."
+                          : activeMainTab === "meta"
+                            ? "Search meta fields by title, slug or type..."
+                            : "Search vendors by name or ID..."
                     }
                     allowClear
                     value={searchTerm}
@@ -289,7 +318,7 @@ const BrandList = () => {
               </div>
             </div>
 
-            {/* Brands Table */}
+            {/* ==================== BRANDS TABLE ==================== */}
             {activeMainTab === "brands" && (
               <div className="table-responsive">
                 <table className="table table-hover align-middle">
@@ -299,7 +328,7 @@ const BrandList = () => {
                       <th>Brand Name</th>
                       <th>Slug</th>
                       <th>Parent Categories</th>
-                      <th style={{ width: 120 }}>Actions</th>
+                      <th style={{ width: 140 }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -307,8 +336,8 @@ const BrandList = () => {
                       <tr key={brand.id}>
                         <td>
                           <Avatar
-                            src={brand.logo || undefined}
-                            name={brand.brandName || "No Logo"}
+                            src={brand.logo}
+                            name={brand.brandName || ""}
                             size="40"
                             round
                           />
@@ -328,7 +357,14 @@ const BrandList = () => {
                         <td className="text-muted">{brand.brandSlug}</td>
                         <td>
                           <span className="badge bg-light text-dark">
-                            {safeJoin(brand.brandParentCategories)}
+                            {brandParentCategories
+                              .filter((cat) =>
+                                cat.brands?.some(
+                                  (b) => (b.brand || b).id === brand.id,
+                                ),
+                              )
+                              .map((cat) => cat.name)
+                              .join(", ") || "—"}
                           </span>
                         </td>
                         <td>
@@ -346,11 +382,6 @@ const BrandList = () => {
                                   onClick={() => handleViewBrand(brand)}
                                 >
                                   <EyeOutlined /> View
-                                </Menu.Item>
-                                <Menu.Item
-                                  onClick={() => navigate(`/bulk-import/`)}
-                                >
-                                  <EyeOutlined /> Bulk Import
                                 </Menu.Item>
                                 <Menu.Item
                                   danger
@@ -377,7 +408,7 @@ const BrandList = () => {
               </div>
             )}
 
-            {/* Brand Categories Table */}
+            {/* ==================== CATEGORIES TABLE ==================== */}
             {activeMainTab === "categories" && (
               <div className="table-responsive">
                 <table className="table table-hover align-middle">
@@ -386,7 +417,7 @@ const BrandList = () => {
                       <th>Name</th>
                       <th>Slug</th>
                       <th>Attached Brands</th>
-                      <th style={{ width: 120 }}>Actions</th>
+                      <th style={{ width: 140 }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -442,7 +473,7 @@ const BrandList = () => {
               </div>
             )}
 
-            {/* Meta Fields Table */}
+            {/* ==================== META FIELDS TABLE ==================== */}
             {activeMainTab === "meta" && (
               <div className="table-responsive">
                 <table className="table table-hover align-middle">
@@ -476,7 +507,6 @@ const BrandList = () => {
                               onClick={() => openMetaModal(meta)}
                             />
                           </Tooltip>
-
                           <Dropdown
                             overlay={
                               <Menu>
@@ -502,23 +532,73 @@ const BrandList = () => {
                     ))}
                   </tbody>
                 </table>
-
-                {filteredMeta.length === 0 && (
-                  <p className="text-center text-muted py-5">
-                    No meta fields found.
-                  </p>
-                )}
               </div>
             )}
 
-            {/* Pagination - Only for Brands */}
+            {/* ==================== VENDORS TABLE ==================== */}
+            {activeMainTab === "vendors" && (
+              <div className="table-responsive">
+                <table className="table table-hover align-middle">
+                  <thead className="table-light">
+                    <tr>
+                      <th>Vendor ID</th>
+                      <th>Vendor Name</th>
+                      <th>Associated Brand</th>
+                      <th style={{ width: 140 }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredVendors.map((vendor) => (
+                      <tr key={vendor.id}>
+                        <td className="text-muted">{vendor.vendorId || "—"}</td>
+                        <td>
+                          <strong>{vendor.vendorName}</strong>
+                        </td>
+                        <td>
+                          {vendor.brandName || vendor.brandSlug ? (
+                            <span className="badge bg-light">
+                              {vendor.brandName} ({vendor.brandSlug})
+                            </span>
+                          ) : (
+                            "—"
+                          )}
+                        </td>
+                        <td>
+                          <Dropdown
+                            overlay={
+                              <Menu>
+                                <Menu.Item
+                                  danger
+                                  onClick={() =>
+                                    openDeleteModal("vendor", vendor.id)
+                                  }
+                                >
+                                  <DeleteOutlined /> Delete
+                                </Menu.Item>
+                              </Menu>
+                            }
+                            trigger={["click"]}
+                          >
+                            <Button
+                              type="text"
+                              icon={<MoreOutlined style={{ fontSize: 18 }} />}
+                            />
+                          </Dropdown>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Pagination for Brands */}
             {activeMainTab === "brands" && allBrands.length > itemsPerPage && (
               <div className="d-flex justify-content-end mt-4">
                 <Pagination
-                  current={currentPage}
+                  current={1}
                   pageSize={itemsPerPage}
                   total={allBrands.length}
-                  onChange={setCurrentPage}
                   showSizeChanger={false}
                 />
               </div>
@@ -557,6 +637,14 @@ const BrandList = () => {
           onSuccess={handleModalSuccess}
         />
 
+        <AddVendorModal
+          show={vendorModalVisible}
+          onClose={() => {
+            setVendorModalVisible(false);
+            refetchVendors();
+          }}
+        />
+
         <DeleteModal
           isVisible={showDeleteModal}
           onCancel={() => {
@@ -570,14 +658,18 @@ const BrandList = () => {
               ? "Brand"
               : deleteType === "category"
                 ? "Brand Category"
-                : "Meta Field"
+                : deleteType === "meta"
+                  ? "Meta Field"
+                  : "Vendor"
           }
           isLoading={
             deleteType === "brand"
               ? isDeletingBrand
               : deleteType === "category"
                 ? isDeletingCategory
-                : isDeletingMeta
+                : deleteType === "meta"
+                  ? isDeletingMeta
+                  : isDeletingVendor
           }
         />
       </div>

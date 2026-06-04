@@ -105,9 +105,9 @@ export const sidebarRoutes = [
         element: <UserList />,
       },
       {
-        path: "/brands/list",
-        name: "Brands",
-        icon: <FaStore />, // ✅ Better icon for Brands
+        path: "/meta/list",
+        name: "Meta",
+        icon: <FaStore />, // ✅ Better icon for Product Meta
         isSidebarActive: true,
         element: <BrandList />,
       },

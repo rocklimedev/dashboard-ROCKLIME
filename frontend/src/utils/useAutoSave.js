@@ -51,7 +51,6 @@ const useAutoSave = (key, data, delay = 3000, enabled = true) => {
       const saved = localStorage.getItem(key);
       return saved ? JSON.parse(saved) : null;
     } catch (err) {
-      console.warn("Failed to load draft:", err);
       return null;
     }
   }, [key]);
