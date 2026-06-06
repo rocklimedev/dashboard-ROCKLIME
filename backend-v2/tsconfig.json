@@ -3,23 +3,40 @@
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "resolvePackageJsonExports": true,
-    "esModuleInterop": true,
-    "isolatedModules": true,
+
+    "target": "ES2023",
+    "lib": ["ES2023"],
+
+    "outDir": "./dist",
+    "rootDir": "./",
+
+    // No baseUrl anymore
+    "paths": {
+      "@/*": ["./src/*"] // ← Note the added "./"
+    },
+
+    "sourceMap": true,
     "declaration": true,
     "removeComments": true,
+
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
+
+    "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "target": "ES2023",
-    "sourceMap": true,
-    "outDir": "./dist",
-    "baseUrl": "./",
+
+    "isolatedModules": true,
     "incremental": true,
     "skipLibCheck": true,
+
     "strictNullChecks": true,
-    "forceConsistentCasingInFileNames": true,
     "noImplicitAny": false,
     "strictBindCallApply": false,
-    "noFallthroughCasesInSwitch": false
-  }
+    "noFallthroughCasesInSwitch": false,
+    "types": ["jest", "node"], // ← Add this line
+    "forceConsistentCasingInFileNames": true
+  },
+
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }

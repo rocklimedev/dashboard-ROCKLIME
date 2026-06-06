@@ -5,14 +5,14 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { Address, AddressStatus } from '../entities/address.entity';
-import { User } from '@/modules/users/entities/user.entity';
-import { Customer } from '@/modules/customers/entities/customer.entity';
+import { Address, AddressStatus } from './models/address.model';
+import { User } from '../users/models/user.model';
+import { Customer } from '../customer/models/customer.model';
 import { Op } from 'sequelize';
 import { v4 as uuidv4 } from 'uuid';
 import { NotificationService } from '@/modules/notifications/services/notification.service';
 import { ActivityLoggerService } from '@/common/services/activity-logger.service';
-import { CreateAddressDto, UpdateAddressDto } from '../dto';
+import { CreateAddressDto, UpdateAddressDto } from './dto/create-address.dto';
 
 @Injectable()
 export class AddressService {

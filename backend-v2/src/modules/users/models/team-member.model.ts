@@ -1,68 +1,61 @@
-const { v4: uuidv4 } = require('uuid');
+import {
+  Table,
+  Column,
+  Model,
+  DataType,
+  ForeignKey,
+  BelongsTo,
+} from 'sequelize-typescript';
+import { Team } from './team.model';
+import { v4 as uuidv4 } from 'uuid';
 
-module.exports = (sequelize, DataTypes) => {
-  const TeamMember = sequelize.define(
-    'TeamMember',
-    {
-      id: {
-        type: DataTypes.UUID,
-        primaryKey: true,
-        defaultValue: () => uuidv4(),
-      },
+@Table({
+  tableName: 'teammembers',
+  timestamps: true,
+})
+export class TeamMember extends Model<TeamMember> {
+  @Column({
+    type: DataType.UUID,
+    primaryKey: true,
+    defaultValue: () => uuidv4(),
+  })
+  id: string;
 
-      teamId: {
-        type: DataTypes.UUID,
-        allowNull: false,
-        references: {
-          model: 'teams', // table name, not model import
-          key: 'id',
-        },
-        onDelete: 'CASCADE',
-        onUpdate: 'CASCADE',
-      },
+  // 🔗 Foreign Key -> Team
+  @ForeignKey(() => Team)
+  @Column({
+    type: DataType.UUID,
+    allowNull: false,
+  })
+  teamId: string;
 
-      userId: {
-        type: DataTypes.UUID,
-        allowNull: false,
-      },
+  @BelongsTo(() => Team, {
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+  })
+  team: Team;
 
-      userName: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
+  @Column({
+    type: DataType.UUID,
+    allowNull: false,
+  })
+  userId: string;
 
-      roleId: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+  })
+  userName: string;
 
-      roleName: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-    },
-    {
-      tableName: 'teammembers',
-      timestamps: true,
-    },
-  );
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+  })
+  roleId: string;
 
-  // Associations
-  TeamMember.associate = (models) => {
-    TeamMember.belongsTo(models.Team, {
-      foreignKey: 'teamId',
-      as: 'team',
-      onDelete: 'CASCADE',
-      onUpdate: 'CASCADE',
-    });
-
-    models.Team.hasMany(TeamMember, {
-      foreignKey: 'teamId',
-      as: 'teammembers',
-      onDelete: 'CASCADE',
-      onUpdate: 'CASCADE',
-    });
-  };
-
-  return TeamMember;
-};
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+  })
+  roleName: string;
+}

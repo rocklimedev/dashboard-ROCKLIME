@@ -11,10 +11,9 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { AddressService } from '../services/address.service';
-import { CreateAddressDto } from '../dto/create-address.dto';
+import { AddressService } from './address.service';
+import { CreateAddressDto } from './dto/create-address.dto';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
-
 @UseGuards(JwtAuthGuard)
 @Controller('addresses')
 export class AddressController {

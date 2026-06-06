@@ -67,7 +67,7 @@ const ReportsPage = () => {
   const products = productsData?.data || [];
 
   const lowStockCount = lowStockData?.totalLowStock || 0;
-  const lowStockProducts = lowStockData?.data || [];
+  const lowStockProducts = lowStockData?.products || [];
   const purchaseOrders =
     poData?.purchaseOrders?.data || poData?.data || poData || [];
 

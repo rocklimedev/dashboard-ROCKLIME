@@ -1,260 +1,81 @@
-const { Op } = require('sequelize');
-const { User, TeamMember, Team } = require('../models');
-// Create a new team with members
-exports.createTeam = async (req, res) => {
-  try {
-    const { teamName, adminId, members } = req.body;
+import {
+  Controller,
+  Post,
+  Get,
+  Put,
+  Delete,
+  Body,
+  Param,
+  UseGuards,
+  UsePipes,
+  ValidationPipe,
+} from '@nestjs/common';
+import { TeamService } from '../services/team.service';
+import {
+  CreateTeamDto,
+  UpdateTeamDto,
+  AddTeamMemberDto,
+  UpdateTeamMemberDto,
+} from '../dto/team.dto';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+@Controller('teams')
+@UseGuards(JwtAuthGuard)
+export class TeamController {
+  constructor(private readonly teamService: TeamService) {}
 
-    if (!teamName || !adminId) {
-      return res.status(400).json({
-        success: false,
-        message: 'Team name and admin ID are required.',
-      });
-    }
-
-    const admin = await User.findByPk(adminId);
-    if (!admin) {
-      return res
-        .status(404)
-        .json({ success: false, message: 'Admin not found.' });
-    }
-
-    const team = await Team.create({
-      teamName,
-      adminId,
-      adminName: admin.username,
-    });
-
-    // Save all members including admin
-    const teamMembers = members.map((member) => ({
-      teamId: team.id,
-      userId: member.userId,
-      userName: member.userName,
-      roleId: member.roleId,
-      roleName: member.roleName || 'Member',
-    }));
-
-    await TeamMember.bulkCreate(teamMembers);
-
-    return res
-      .status(201)
-      .json({ success: true, message: 'Team created', team });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: 'Internal Server Error',
-      error: error.message,
-    });
+  @Post()
+  @UsePipes(ValidationPipe)
+  async create(@Body() dto: CreateTeamDto) {
+    return this.teamService.createTeam(dto);
   }
-};
 
-// Get all teams with members
-exports.getAllTeams = async (req, res) => {
-  try {
-    const teams = await Team.findAll({
-      include: [{ model: TeamMember, as: 'teammembers' }],
-      order: [['createdAt', 'DESC']],
-    });
-    res.status(200).json({ success: true, teams });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+  @Get()
+  async findAll() {
+    return this.teamService.getAllTeams();
   }
-};
 
-exports.updateTeam = async (req, res) => {
-  try {
-    const { teamId } = req.params;
-    const { teamName, adminId, adminName, memberIds } = req.body;
-
-    const team = await Team.findByPk(teamId);
-    if (!team) {
-      return res
-        .status(404)
-        .json({ success: false, message: 'Team not found' });
-    }
-
-    let changesMade = false;
-
-    // Update teamName if provided and different
-    if (teamName && teamName.trim() && teamName !== team.teamName) {
-      await team.update({ teamName: teamName.trim() });
-      changesMade = true;
-    }
-
-    // Update adminId and adminName if provided (optional)
-    if (adminId && adminId !== team.adminId) {
-      const admin = await User.findByPk(adminId);
-      if (!admin) {
-        return res
-          .status(400)
-          .json({ success: false, message: 'Invalid admin ID' });
-      }
-      await team.update({
-        adminId,
-        adminName: adminName || admin.username,
-      });
-      changesMade = true;
-    }
-
-    // Update members if provided
-    if (Array.isArray(memberIds) && memberIds.length > 0) {
-      // Validate memberIds
-      const members = await User.findAll({
-        where: { userId: { [Op.in]: memberIds } },
-      });
-
-      if (members.length === 0) {
-        return res
-          .status(400)
-          .json({ success: false, message: 'No valid members found' });
-      }
-
-      // Delete existing members
-      const deletedCount = await TeamMember.destroy({ where: { teamId } });
-
-      // Create new members
-      const teamMembers = members.map((member) => ({
-        teamId: team.id,
-        userId: member.userId,
-        userName: member.username,
-        roleId: member.roleId,
-        roleName: member.roleName || 'Member',
-      }));
-
-      await TeamMember.bulkCreate(teamMembers, { validate: true });
-
-      changesMade = true;
-    }
-
-    if (!changesMade) {
-      return res.status(200).json({
-        success: true,
-        message: 'No changes made to the team',
-      });
-    }
-
-    // Fetch updated team for response
-    const updatedTeam = await Team.findByPk(teamId, {
-      include: [{ model: TeamMember, as: 'teammembers' }],
-    });
-
-    return res.status(200).json({
-      success: true,
-      message: 'Team updated successfully',
-      team: updatedTeam,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: 'Internal Server Error',
-      error: error.message,
-    });
+  @Get(':teamId')
+  async findOne(@Param('teamId') teamId: string) {
+    return this.teamService.getTeamById(teamId);
   }
-};
 
-// Delete a team
-exports.deleteTeam = async (req, res) => {
-  try {
-    const { teamId } = req.params;
-    const team = await Team.findByPk(teamId);
-    if (!team) {
-      return res
-        .status(404)
-        .json({ success: false, message: 'Team not found' });
-    }
-    await TeamMember.destroy({ where: { teamId } });
-    await team.destroy();
-    res
-      .status(200)
-      .json({ success: true, message: 'Team deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+  @Put(':teamId')
+  @UsePipes(ValidationPipe)
+  async update(@Param('teamId') teamId: string, @Body() dto: UpdateTeamDto) {
+    return this.teamService.updateTeam(teamId, dto);
   }
-};
 
-// Add a team member
-exports.addTeamMember = async (req, res) => {
-  try {
-    const { teamId, userId, userName, roleId, roleName } = req.body;
-    const member = await TeamMember.create({
-      teamId,
-      userId,
-      userName,
-      roleId,
-      roleName,
-    });
-    res.status(201).json({ success: true, member });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+  @Delete(':teamId')
+  async remove(@Param('teamId') teamId: string) {
+    return this.teamService.deleteTeam(teamId);
   }
-};
 
-// Remove a team member
-exports.removeTeamMember = async (req, res) => {
-  try {
-    const { memberId } = req.params;
-    const member = await TeamMember.findByPk(memberId);
-    if (!member) {
-      return res
-        .status(404)
-        .json({ success: false, message: 'Member not found' });
-    }
-    await member.destroy();
-    res
-      .status(200)
-      .json({ success: true, message: 'Member removed successfully' });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+  // Team Members
+  @Post(':teamId/members')
+  @UsePipes(ValidationPipe)
+  async addMember(
+    @Param('teamId') teamId: string,
+    @Body() dto: AddTeamMemberDto,
+  ) {
+    return this.teamService.addTeamMember(teamId, dto);
   }
-};
 
-// Get team members by team
-exports.getTeamMembers = async (req, res) => {
-  try {
-    const { teamId } = req.params;
-    const members = await TeamMember.findAll({ where: { teamId } });
-    res.status(200).json({ success: true, members });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+  @Delete('members/:memberId')
+  async removeMember(@Param('memberId') memberId: string) {
+    return this.teamService.removeTeamMember(memberId);
   }
-};
 
-// Get team by ID
-exports.getTeamById = async (req, res) => {
-  try {
-    const { teamId } = req.params;
-    const team = await Team.findByPk(teamId, {
-      include: [{ model: TeamMember, as: 'teammembers' }],
-    });
-    if (!team) {
-      return res
-        .status(404)
-        .json({ success: false, message: 'Team not found' });
-    }
-    res.status(200).json({ success: true, team });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+  @Get(':teamId/members')
+  async getMembers(@Param('teamId') teamId: string) {
+    return this.teamService.getTeamMembers(teamId);
   }
-};
 
-// Update a team member role
-exports.updateTeamMember = async (req, res) => {
-  try {
-    const { memberId } = req.params;
-    const { roleId, roleName } = req.body;
-
-    const member = await TeamMember.findByPk(memberId);
-    if (!member) {
-      return res
-        .status(404)
-        .json({ success: false, message: 'Member not found' });
-    }
-
-    await member.update({ roleId, roleName });
-    res
-      .status(200)
-      .json({ success: true, message: 'Member updated successfully', member });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+  @Put('members/:memberId')
+  @UsePipes(ValidationPipe)
+  async updateMember(
+    @Param('memberId') memberId: string,
+    @Body() dto: UpdateTeamMemberDto,
+  ) {
+    return this.teamService.updateTeamMember(memberId, dto);
   }
-};
+}

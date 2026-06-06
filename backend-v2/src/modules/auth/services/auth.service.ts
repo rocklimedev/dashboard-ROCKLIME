@@ -11,7 +11,6 @@ import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
 import { Op } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
-
 import { User } from '@/modules/users/entities/user.entity';
 import { Role } from '@/modules/roles/entities/role.entity';
 import { RolePermission } from '@/modules/roles/entities/role-permission.entity';

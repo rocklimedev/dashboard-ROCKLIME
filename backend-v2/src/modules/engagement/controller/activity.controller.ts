@@ -8,8 +8,8 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
-import { ActivityLogService } from './activity-log.service';
-import { PaginationQueryDto } from './dto/activity-log.dto';
+import { ActivityLogService } from '../services/activity-log.service';
+import { PaginationQueryDto } from '../dto/activity-log.dto';
 
 @Controller('activity-logs')
 export class ActivityLogController {

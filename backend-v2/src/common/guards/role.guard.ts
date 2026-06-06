@@ -1,42 +1,75 @@
-const Role = require('../models/roles');
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  InternalServerErrorException,
+} from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { InjectModel } from '@nestjs/sequelize';
+import { Role } from '../models/role.model'; // Adjust path as needed
 
-const role = {
-  check: (allowedRoleIds) => async (req, res, next) => {
+@Injectable()
+export class RolesGuard implements CanActivate {
+  constructor(
+    private reflector: Reflector,
+    @InjectModel(Role) private roleModel: typeof Role,
+  ) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const request = context.switchToHttp().getRequest();
+    const user = request.user;
+
+    // Get allowed role IDs from decorator
+    const allowedRoleIds = this.reflector.get<string[]>(
+      'allowedRoleIds',
+      context.getHandler(),
+    );
+
+    // If no roles are specified, allow access (or you can throw error)
+    if (!allowedRoleIds || allowedRoleIds.length === 0) {
+      return true;
+    }
+
+    if (!user || !user.roleId) {
+      throw new ForbiddenException('User role is not defined.');
+    }
+
     try {
-      // Validate user and roleId
-      if (!req.user || !req.user.roleId) {
-        return res.status(403).json({ error: 'User role is not defined.' });
-      }
-
-      // Check for Super Admin role
-      const superAdminRole = await Role.findOne({
+      // Check for Super Admin
+      const superAdminRole = await this.roleModel.findOne({
         where: { roleName: 'SUPER_ADMIN' },
       });
 
       if (!superAdminRole) {
-        return res
-          .status(500)
-          .json({ error: 'Super Admin role configuration error.' });
+        throw new InternalServerErrorException(
+          'Super Admin role configuration error.',
+        );
       }
 
-      if (req.user.roleId === superAdminRole.roleId) {
-        return next();
+      // Super Admin always has access
+      if (user.roleId === superAdminRole.roleId) {
+        return true;
       }
 
-      // Check if user's roleId exists in allowedRoleIds array
-      if (!allowedRoleIds.includes(req.user.roleId)) {
-        return res.status(403).json({
-          error: 'Access forbidden: Insufficient permissions.',
-        });
+      // Check if user's roleId is in allowed list
+      if (!allowedRoleIds.includes(user.roleId)) {
+        throw new ForbiddenException(
+          'Access forbidden: Insufficient permissions.',
+        );
       }
 
-      next();
+      return true;
     } catch (error) {
-      res
-        .status(500)
-        .json({ error: 'An internal error occurred in role verification.' });
+      if (
+        error instanceof ForbiddenException ||
+        error instanceof InternalServerErrorException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'An internal error occurred in role verification.',
+      );
     }
-  },
-};
-
-module.exports = role;
+  }
+}

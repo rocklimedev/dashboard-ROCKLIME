@@ -1,9 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { ActivityLog } from './entities/activity-log.entity';
-import { User } from '../user/entities/user.entity';
-import { PaginationQueryDto } from './dto/activity-log.dto';
-
+import { ActivityLog } from '../models/activity.model';
+import { User } from 'src/modules/users/models/user.model';
+import { PaginationQueryDto } from '../dto/activity-log.dto';
 @Injectable()
 export class ActivityLogService {
   constructor(

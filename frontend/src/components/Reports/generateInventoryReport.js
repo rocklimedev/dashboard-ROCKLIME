@@ -102,9 +102,10 @@ export const generateInventoryReportPDF = async (products) => {
 
     const pdfDoc = await PDFDocument.create();
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-
+    const generatedOn = new Date().toLocaleString("en-IN");
+    const totalProducts = products.length;
     const ROWS_PER_PAGE = 20;
-    const FONT_SIZE = 9;
+    const FONT_SIZE = 10;
     const ROW_HEIGHT = 33; // 🔥 FIXED ROW SPACING LIKE ORDER REPORT
 
     const pages = [];
@@ -116,7 +117,18 @@ export const generateInventoryReportPDF = async (products) => {
 
     for (let p = 0; p < pages.length; p++) {
       const page = await addTemplatePage(pdfDoc, templateBytes);
-
+      page.drawText(`${generatedOn}`, {
+        x: 120,
+        y: 759,
+        font,
+        size: 10,
+      });
+      page.drawText(`${totalProducts}`, {
+        x: 180,
+        y: 742.5,
+        font,
+        size: 10,
+      });
       const COLS = {
         sno: 37,
         name: 70,
@@ -143,8 +155,9 @@ export const generateInventoryReportPDF = async (products) => {
           item.metaDetails?.find((d) => d.value?.match(/^[A-Za-z0-9]{6,12}$/))
             ?.value,
         );
-
-        const price = sanitizePDFText(item.sellingPrice ?? 0);
+        const getMeta = (item, slug, fallback = "-") =>
+          item.metaDetails?.find((m) => m.slug === slug)?.value ?? fallback;
+        const price = sanitizePDFText(getMeta(item, "sellingPrice", 0));
         const stock = item.quantity ?? 0;
 
         const statusRaw = stock === 0 ? "OUT" : stock <= 20 ? "LOW" : "OK";

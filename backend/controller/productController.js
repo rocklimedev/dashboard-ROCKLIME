@@ -2544,49 +2544,132 @@ exports.getProductCount = async (req, res) => {
 // GET /api/products/low-stock
 exports.getLowStockProducts = async (req, res) => {
   try {
-    const threshold = parseInt(req.query.threshold) || 20;
-    const limit = parseInt(req.query.limit) || 20;
+    ensureAssociations();
 
-    const lowStockProducts = await Product.findAll({
-      where: {
-        quantity: {
-          [Op.lte]: threshold, // quantity <= threshold
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
+
+    const threshold = parseInt(req.query.threshold) || 20;
+
+    // ================= FETCH LOW STOCK =================
+    const { count: totalLowStock, rows: products } =
+      await Product.findAndCountAll({
+        where: {
+          quantity: {
+            [Op.lte]: threshold,
+          },
         },
-      },
-      attributes: [
-        "productId",
-        "name",
-        "quantity",
-        "alert_quantity",
-        "product_code",
-        "images",
-        "status",
-      ],
-      order: [["quantity", "ASC"]], // Most critical first
-      limit: limit,
-      raw: true, // Faster - no Sequelize overhead
+        attributes: [
+          "productId",
+          "name",
+          "quantity",
+          "alert_quantity",
+          "product_code",
+          "images",
+          "status",
+          "meta",
+          "updatedAt",
+        ],
+        order: [["quantity", "ASC"]],
+        limit,
+        offset,
+        distinct: true,
+        subQuery: false,
+      });
+
+    if (totalLowStock === 0) {
+      return res.json({
+        success: true,
+        totalLowStock: 0,
+        threshold,
+        products: [],
+        pagination: {
+          total: 0,
+          page,
+          limit,
+          totalPages: 0,
+        },
+      });
+    }
+
+    // ================= META ENRICHMENT =================
+    const metaIds = new Set();
+
+    products.forEach((p) => {
+      const meta = parseJsonSafely(p.meta, {});
+      Object.keys(meta || {}).forEach((key) => metaIds.add(key));
     });
 
-    // Optional: enrich images safely
-    const enriched = lowStockProducts.map((p) => ({
-      ...p,
-      images: p.images
-        ? typeof p.images === "string"
-          ? JSON.parse(p.images)
-          : p.images
-        : [],
-      quantity: Number(p.quantity),
-      alert_quantity: Number(p.alert_quantity || 20),
-    }));
+    const metaDefs =
+      metaIds.size > 0
+        ? await ProductMeta.findAll({
+            where: { id: { [Op.in]: Array.from(metaIds) } },
+            attributes: ["id", "title", "slug", "fieldType", "unit"],
+          })
+        : [];
 
-    res.json({
+    const metaMap = Object.fromEntries(metaDefs.map((m) => [m.id, m.toJSON()]));
+
+    // ================= ENRICH PRODUCTS =================
+    const enriched = products.map((p) => {
+      const raw = p.toJSON ? p.toJSON() : p;
+
+      const metaObj = parseJsonSafely(raw.meta, {});
+      const images = parseJsonSafely(raw.images, []);
+
+      const metaDetails = Object.entries(metaObj).map(([id, value]) => {
+        const def = metaMap[id] || {};
+
+        return {
+          id,
+          title: def.title || "Unknown Field",
+          slug: def.slug || null,
+          value: value != null ? String(value) : "",
+          fieldType: def.fieldType || "text",
+          unit: def.unit || null,
+        };
+      });
+
+      return {
+        productId: raw.productId,
+        name: raw.name,
+        quantity: Number(raw.quantity) || 0,
+        alert_quantity: Number(raw.alert_quantity || threshold),
+        product_code: raw.product_code,
+        status: raw.status,
+
+        images,
+        meta: metaObj,
+        metaDetails,
+
+        stockStatus:
+          raw.quantity === 0
+            ? "OUT_OF_STOCK"
+            : raw.quantity <= threshold
+              ? "LOW_STOCK"
+              : "OK",
+
+        updatedAt: raw.updatedAt,
+      };
+    });
+
+    return res.json({
       success: true,
-      totalLowStock: enriched.length,
+      totalLowStock,
       threshold,
       products: enriched,
+      pagination: {
+        total: totalLowStock,
+        page,
+        limit,
+        totalPages: Math.ceil(totalLowStock / limit),
+      },
     });
   } catch (error) {
-    res.status(500).json({
+    console.error("Low Stock Error:", error);
+
+    return res.status(500).json({
       success: false,
       message: "Failed to fetch low stock products",
     });

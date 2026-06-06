@@ -10,9 +10,9 @@ import {
   BelongsTo,
   HasMany,
 } from 'sequelize-typescript';
-import { User } from '@/modules/users/entities/user.entity';
-import { Customer } from '@/modules/customers/entities/customer.entity';
-import { Order } from '@/modules/orders/entities/order.entity';
+import { User } from '@/modules/users/models/user.model';
+import { Customer } from '@/modules/customer/models/customer.model';
+import { Order } from '@/modules/orders/models/order.model';
 
 export enum AddressStatus {
   BILLING = 'BILLING',

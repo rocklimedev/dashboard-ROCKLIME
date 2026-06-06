@@ -1,54 +1,58 @@
-const { v4: uuidv4 } = require('uuid');
+import {
+  Table,
+  Column,
+  Model,
+  DataType,
+  HasMany,
+  BelongsToMany,
+} from 'sequelize-typescript';
 
-module.exports = (sequelize, DataTypes) => {
-  const Team = sequelize.define(
-    'Team',
-    {
-      id: {
-        type: DataTypes.UUID,
-        primaryKey: true,
-        defaultValue: () => uuidv4(),
-      },
+import { v4 as uuidv4 } from 'uuid';
+import { Order } from './order.model';
+import { TeamMember } from './team-member.model';
+import { User } from './user.model';
 
-      teamName: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
+@Table({
+  tableName: 'teams',
+  timestamps: true,
+})
+export class Team extends Model<Team> {
+  @Column({
+    type: DataType.UUID,
+    primaryKey: true,
+    defaultValue: () => uuidv4(),
+  })
+  id: string;
 
-      adminId: {
-        type: DataTypes.UUID,
-        allowNull: false,
-      },
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+  })
+  teamName: string;
 
-      adminName: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-    },
-    {
-      tableName: 'teams',
-      timestamps: true,
-    },
-  );
+  @Column({
+    type: DataType.UUID,
+    allowNull: false,
+  })
+  adminId: string;
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+  })
+  adminName: string;
 
   // ---------------------------------------
-  // Associations
+  // 1:M -> Orders
   // ---------------------------------------
-  Team.associate = (models) => {
-    // Team ↔ Orders (1:M)
-    Team.hasMany(models.Order, {
-      foreignKey: 'assignedTeamId',
-      as: 'teamOrders',
-    });
+  @HasMany(() => Order, {
+    foreignKey: 'assignedTeamId',
+  })
+  teamOrders: Order[];
 
-    // Team ↔ Users (M:N through TeamMember)
-    Team.belongsToMany(models.User, {
-      through: models.TeamMember,
-      foreignKey: 'teamId',
-      otherKey: 'userId',
-      as: 'members',
-    });
-  };
-
-  return Team;
-};
+  // ---------------------------------------
+  // M:N -> Users through TeamMember
+  // ---------------------------------------
+  @BelongsToMany(() => User, () => TeamMember)
+  members: User[];
+}
