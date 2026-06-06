@@ -195,8 +195,8 @@ export const productApi = baseApi.injectEndpoints({
       }),
     }),
     getLowStockProducts: builder.query({
-      query: () => "/products/low-stock",
-      providesTags: ["Product"],
+      query: ({ page = 1, limit = 100000, threshold = 20 }) =>
+        `/products/low-stock?page=${page}&limit=${limit}&threshold=${threshold}`,
     }),
     // productApi.js
     getTopSellingProducts: builder.query({

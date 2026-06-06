@@ -395,12 +395,7 @@ const ProductsList = () => {
       }),
       render: (_, record) => getCompanyCode(record),
     },
-    {
-      title: "Brand",
-      dataIndex: "brandId",
-      key: "brand",
-      render: (brandId) => getBrandsName(brandId),
-    },
+
     {
       title: "Price",
       key: "price",
@@ -435,11 +430,7 @@ const ProductsList = () => {
           <div style={{ display: "flex", gap: 8 }}>
             <PermissionGate api="write" module="cart">
               <Tooltip
-                title={
-                  !priceValid
-                    ? "Price not available"
-                    : "Add to cart (even if out of stock)"
-                }
+                title={!priceValid ? "Price not available" : "Add to cart"}
               >
                 <Button
                   icon={

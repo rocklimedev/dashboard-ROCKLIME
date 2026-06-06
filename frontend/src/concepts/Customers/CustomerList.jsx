@@ -8,10 +8,8 @@ import { BiTrash } from "react-icons/bi";
 import {
   EyeOutlined,
   SearchOutlined,
-  AppstoreOutlined, // Better for card/grid view
-  BarsOutlined, // Better for list view
-  MoreOutlined,
   EditOutlined,
+  MoreOutlined,
 } from "@ant-design/icons";
 import {
   message,
@@ -33,7 +31,6 @@ const CustomerList = () => {
   const navigate = useNavigate();
 
   // State
-  const [viewMode, setViewMode] = useState("list"); // "list" or "card"
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -42,19 +39,19 @@ const CustomerList = () => {
   const [customerTypeFilter, setCustomerTypeFilter] = useState("All");
   const [sortBy, setSortBy] = useState("Recently Added");
 
-  // Debounced search to avoid too many requests
+  // Debounced search
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchTerm);
-      setCurrentPage(1); // Reset to page 1 on search
+      setCurrentPage(1);
     }, 500);
 
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // RTK Query with server-side pagination + search
+  // RTK Query
   const {
     data: response,
     error,
@@ -63,7 +60,7 @@ const CustomerList = () => {
   } = useGetCustomersQuery({
     page: currentPage,
     limit: pageSize,
-    search: debouncedSearch || undefined, // only send if not empty
+    search: debouncedSearch || undefined,
   });
 
   const customers = response?.data || [];
@@ -85,17 +82,7 @@ const CustomerList = () => {
     { value: "Contractor", label: "Contractor" },
   ];
 
-  const getInitials = (name) => {
-    if (!name) return "CU";
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
-  // Client-side filtering by customer type only (since search is server-side)
+  // Client-side filtering & sorting
   const filteredCustomers = React.useMemo(() => {
     let result = customers;
 
@@ -108,19 +95,18 @@ const CustomerList = () => {
       });
     }
 
-    // Client-side sorting (you can move this to backend later)
     switch (sortBy) {
       case "Ascending":
         return [...result].sort((a, b) =>
-          (a.name || "").localeCompare(b.name || "")
+          (a.name || "").localeCompare(b.name || ""),
         );
       case "Descending":
         return [...result].sort((a, b) =>
-          (b.name || "").localeCompare(a.name || "")
+          (b.name || "").localeCompare(a.name || ""),
         );
       case "Recently Added":
         return [...result].sort(
-          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
         );
       default:
         return result;
@@ -154,7 +140,6 @@ const CustomerList = () => {
       await deleteCustomer(customerToDelete).unwrap();
       message.success("Customer deleted successfully");
 
-      // If current page becomes empty, go to previous page
       if (filteredCustomers.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
       }
@@ -178,7 +163,6 @@ const CustomerList = () => {
     setCurrentPage(1);
   };
 
-  // Loading state
   if (isLoading) {
     return (
       <div className="content p-5 text-center">
@@ -233,7 +217,7 @@ const CustomerList = () => {
                             customers.filter((c) =>
                               type.value === "Retail"
                                 ? !c.customerType || c.customerType === "Retail"
-                                : c.customerType === type.value
+                                : c.customerType === type.value,
                             ).length
                           }
                           )
@@ -270,72 +254,66 @@ const CustomerList = () => {
                 <Button onClick={clearFilters} size="large">
                   Clear
                 </Button>
-
-                {/* View Mode Toggle */}
-                <div className="btn-group" role="group">
-                  <Button
-                    className={viewMode === "list" ? "active-red-btn" : ""}
-                    icon={<BarsOutlined />}
-                    onClick={() => setViewMode("list")}
-                    size="large"
-                  />
-                  <Button
-                    className={viewMode === "card" ? "active-red-btn" : ""}
-                    icon={<AppstoreOutlined />}
-                    onClick={() => setViewMode("card")}
-                    size="large"
-                  />
-                </div>
               </div>
             </div>
 
-            {/* Loading indicator for fetching */}
+            {/* Loading indicator */}
             {isFetching && !isLoading && (
               <div className="text-center my-3">
                 <span className="text-muted">Updating...</span>
               </div>
             )}
 
-            {/* CARD VIEW */}
-            {viewMode === "card" && (
-              <div className="row g-4">
-                {filteredCustomers.length === 0 ? (
-                  <div className="col-12 text-center py-5">
-                    <p className="text-muted">No customers found.</p>
-                  </div>
-                ) : (
-                  filteredCustomers.map((c) => (
-                    <div
-                      key={c.customerId}
-                      className="col-md-6 col-lg-4 col-xl-3"
-                    >
-                      <div className="card h-100 shadow-sm border-0 hover-shadow">
-                        <div className="card-body text-center p-4">
-                          <Avatar
-                            name={c.name || c.companyName || "Customer"}
-                            round
-                            size="80"
-                            className="mb-3"
-                            color="#e31e24"
-                            fgColor="#fff"
-                          />
-
-                          <h6 className="mb-1">
-                            {c.name || "Unnamed Customer"}
-                          </h6>
-                          {c.companyName && (
-                            <p className="text-muted small">{c.companyName}</p>
-                          )}
-                          <p className="text-muted small mb-2">
-                            {c.email || c.mobileNumber || "—"}
-                          </p>
-                          <div className="d-flex justify-content-center gap-2 mb-3">
-                            <span className="badge bg-light text-dark">
-                              {c.customerType || "Retail"}
-                            </span>
+            {/* LIST VIEW */}
+            <div className="table-responsive">
+              {filteredCustomers.length === 0 ? (
+                <div className="text-center py-5">
+                  <p className="text-muted">No customers found.</p>
+                </div>
+              ) : (
+                <table className="table table-hover align-middle">
+                  <thead className="table-light">
+                    <tr>
+                      <th>Customer</th>
+                      <th>Email</th>
+                      <th>Phone</th>
+                      <th>Company</th>
+                      <th>Type</th>
+                      <th className="text-end">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredCustomers.map((c) => (
+                      <tr key={c.customerId}>
+                        <td>
+                          <div className="d-flex align-items-center gap-3">
+                            <Avatar
+                              name={c.name || c.companyName}
+                              round
+                              size="40"
+                              color="#e31e24"
+                              fgColor="#fff"
+                            />
+                            <a
+                              href={`/customer/${c.customerId}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary fw-medium"
+                            >
+                              {c.name || "Unnamed"}
+                            </a>
                           </div>
-
-                          <div className="d-flex justify-content-center gap-2">
+                        </td>
+                        <td>{c.email || "—"}</td>
+                        <td>{c.mobileNumber || "—"}</td>
+                        <td>{c.companyName || "—"}</td>
+                        <td>
+                          <span className="badge bg-light text-dark">
+                            {c.customerType || "Retail"}
+                          </span>
+                        </td>
+                        <td className="text-end">
+                          <div className="d-flex justify-content-end gap-2">
                             <PermissionGate api="edit" module="customers">
                               <Button
                                 size="small"
@@ -383,135 +361,23 @@ const CustomerList = () => {
                                   </Menu>
                                 }
                               >
-                                <Button size="small" icon={<MoreOutlined />} />
+                                <Button
+                                  size="small"
+                                  type="text"
+                                  icon={<MoreOutlined />}
+                                />
                               </Dropdown>
                             </PermissionGate>
                           </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
-
-            {/* LIST VIEW */}
-            {viewMode === "list" && (
-              <div className="table-responsive">
-                {filteredCustomers.length === 0 ? (
-                  <div className="text-center py-5">
-                    <p className="text-muted">No customers found.</p>
-                  </div>
-                ) : (
-                  <table className="table table-hover align-middle">
-                    <thead className="table-light">
-                      <tr>
-                        <th>Customer</th>
-                        <th>Email</th>
-                        <th>Phone</th>
-                        <th>Company</th>
-                        <th>Type</th>
-                        <th className="text-end">Actions</th>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {filteredCustomers.map((c) => (
-                        <tr key={c.customerId}>
-                          <td>
-                            <div className="d-flex align-items-center gap-3">
-                              <Avatar
-                                name={c.name || c.companyName}
-                                round
-                                size="40"
-                                color="#e31e24"
-                                fgColor="#fff"
-                              />
-                              <a
-                                href={`/customer/${c.customerId}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-primary fw-medium"
-                              >
-                                {c.name || "Unnamed"}
-                              </a>
-                            </div>
-                          </td>
-                          <td>{c.email || "—"}</td>
-                          <td>{c.mobileNumber || "—"}</td>
-                          <td>{c.companyName || "—"}</td>
-                          <td>
-                            <span className="badge bg-light text-dark">
-                              {c.customerType || "Retail"}
-                            </span>
-                          </td>
-                          <td className="text-end">
-                            <div className="d-flex justify-content-end gap-2">
-                              <PermissionGate api="edit" module="customers">
-                                <Button
-                                  size="small"
-                                  icon={<EditOutlined />}
-                                  onClick={() => handleEditCustomer(c)}
-                                />
-                              </PermissionGate>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
 
-                              <PermissionGate
-                                api="view|delete"
-                                module="customers"
-                              >
-                                <Dropdown
-                                  trigger={["click"]}
-                                  overlay={
-                                    <Menu>
-                                      <PermissionGate
-                                        api="view"
-                                        module="customers"
-                                      >
-                                        <Menu.Item key="view">
-                                          <a
-                                            href={`/customer/${c.customerId}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                          >
-                                            <EyeOutlined className="me-2" />{" "}
-                                            View
-                                          </a>
-                                        </Menu.Item>
-                                      </PermissionGate>
-                                      <PermissionGate
-                                        api="delete"
-                                        module="customers"
-                                      >
-                                        <Menu.Item
-                                          key="delete"
-                                          danger
-                                          onClick={() =>
-                                            handleDelete(c.customerId)
-                                          }
-                                        >
-                                          <BiTrash className="me-2" /> Delete
-                                        </Menu.Item>
-                                      </PermissionGate>
-                                    </Menu>
-                                  }
-                                >
-                                  <Button
-                                    size="small"
-                                    type="text"
-                                    icon={<MoreOutlined />}
-                                  />
-                                </Dropdown>
-                              </PermissionGate>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-            )}
-
-            {/* Pagination - uses server total */}
+            {/* Pagination */}
             {pagination.total > 0 && (
               <div className="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
                 <div className="text-muted small">

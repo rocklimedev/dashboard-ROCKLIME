@@ -120,14 +120,44 @@ const InventoryWrapper = () => {
     limit: 50,
   };
   const getSellingPrice = (metaDetails) => {
-    if (!Array.isArray(metaDetails) || !metaDetails.length) return null;
-    for (const d of metaDetails) {
-      const val = String(d.value || "").trim();
-      if (!val || val.match(/^[0-9a-f-]{30,}/i)) continue;
-      const num = Number(val);
-      if (!isNaN(num) && num > 10) return num;
+    if (!Array.isArray(metaDetails) || metaDetails.length === 0) return null;
+
+    // Primary: Exact match on slug or title (most reliable)
+    const priceField = metaDetails.find(
+      (d) =>
+        d.slug === "sellingPrice" ||
+        d.title?.toLowerCase() === "selling price" ||
+        d.slug?.toLowerCase().includes("sellingprice") ||
+        d.title?.toLowerCase().includes("selling price"),
+    );
+
+    if (priceField) {
+      const num = Number(priceField.value);
+      return isNaN(num) ? null : num;
     }
-    return null;
+
+    // Secondary: Any field with "price" in slug/title
+    const anyPriceField = metaDetails.find(
+      (d) =>
+        d.slug?.toLowerCase().includes("price") ||
+        d.title?.toLowerCase().includes("price"),
+    );
+
+    if (anyPriceField) {
+      const num = Number(anyPriceField.value);
+      return isNaN(num) ? null : num;
+    }
+
+    // Fallback: Largest reasonable number (as safety net)
+    let maxPrice = null;
+    for (const d of metaDetails) {
+      const num = Number(d.value);
+      if (!isNaN(num) && num > 100 && (maxPrice === null || num > maxPrice)) {
+        maxPrice = num;
+      }
+    }
+
+    return maxPrice;
   };
   // ==================== CLIENT-SIDE FILTERS ====================
   const filteredProducts = useMemo(() => {

@@ -2,7 +2,7 @@ const { v4: uuidv4 } = require("uuid");
 const moment = require("moment");
 const { Op } = require("sequelize");
 const sequelize = require("../config/database");
-const { Product, Quotation } = require("../models");
+const { Product, Quotation, Customer, User } = require("../models");
 const QuotationItem = require("../models/quotationItem"); // MongoDB model
 const QuotationVersion = require("../models/quotationVersion");
 const { ActivityLog } = require("../models");
@@ -1520,41 +1520,36 @@ exports.getQuotationById = async (req, res) => {
 
 exports.getAllQuotations = async (req, res) => {
   try {
-    // ─────────────────────────────────────────────
-    // Pagination parameters
-    // ─────────────────────────────────────────────
+    // =====================================
+    // Pagination
+    // =====================================
     const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 20;
+    const limit = parseInt(req.query.limit, 10) || 500; // Good for reports
     const offset = (page - 1) * limit;
 
-    // ─────────────────────────────────────────────
-    // Build dynamic WHERE clause
-    // ─────────────────────────────────────────────
+    // =====================================
+    // WHERE Conditions
+    // =====================================
     const where = {};
 
-    // Search filter (case-insensitive via LIKE on common collation)
     const search = req.query.search?.trim();
     if (search) {
       const searchTerm = `%${search}%`;
       where[Op.or] = [
         { document_title: { [Op.like]: searchTerm } },
         { reference_number: { [Op.like]: searchTerm } },
-        // You can easily add more searchable fields here:
-        // { customer_notes: { [Op.like]: searchTerm } },
       ];
     }
 
-    // Customer filter
     if (req.query.customerId) {
       where.customerId = req.query.customerId;
     }
 
-    // Status filter
     if (req.query.status) {
       where.status = req.query.status;
     }
 
-    // Date range filter: ?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
+    // Date range filter
     if (req.query.startDate || req.query.endDate) {
       where.quotation_date = {};
       if (req.query.startDate) {
@@ -1565,19 +1560,33 @@ exports.getAllQuotations = async (req, res) => {
       }
     }
 
-    // ─────────────────────────────────────────────
-    // Fetch paginated quotations (PostgreSQL → MySQL compatible)
-    // ─────────────────────────────────────────────
+    // =====================================
+    // Main Query with Associations
+    // =====================================
     const { count: totalQuotations, rows: quotations } =
       await Quotation.findAndCountAll({
         where,
         offset,
         limit,
-        order: [["quotation_date", "DESC"]], // or [['createdAt', 'DESC']]
+        order: [["quotation_date", "DESC"]],
         subQuery: false,
+
+        include: [
+          {
+            model: Customer,
+            as: "customer",
+            attributes: ["customerId", "name", "companyName", "mobileNumber"],
+            required: false,
+          },
+          {
+            model: User,
+            as: "creator", // Must match Quotation model
+            attributes: ["userId", "name", "username"],
+            required: false,
+          },
+        ],
       });
 
-    // If no results → early return with empty array
     if (quotations.length === 0) {
       return res.status(200).json({
         data: [],
@@ -1585,50 +1594,60 @@ exports.getAllQuotations = async (req, res) => {
           total: totalQuotations,
           page,
           limit,
-          totalPages: Math.ceil(totalQuotations / limit),
+          totalPages: 0,
         },
       });
     }
 
-    // ─────────────────────────────────────────────
-    // Enrich with MongoDB items (your hybrid setup)
-    // ─────────────────────────────────────────────
+    // =====================================
+    // MongoDB Items Enrichment
+    // =====================================
     const quotationIds = quotations.map((q) => q.quotationId);
 
     const mongoItems = await QuotationItem.find({
       quotationId: { $in: quotationIds },
     }).lean();
 
-    // Build lookup: quotationId → items array
     const itemsMap = {};
     mongoItems.forEach((itemDoc) => {
       itemsMap[itemDoc.quotationId] = itemDoc.items || [];
     });
 
-    // Merge items into SQL quotations
+    // =====================================
+    // Final Response with Flattened Fields
+    // =====================================
     const enrichedQuotations = quotations.map((q) => {
       const plain = q.toJSON();
+
       return {
         ...plain,
         items: itemsMap[plain.quotationId] || [],
+
+        // Flattened fields (Best for Reports / PDF)
+        customerName:
+          plain.customer?.name ||
+          plain.customer?.companyName ||
+          "Walk-in Customer",
+
+        createdByName: plain.creator?.name || "Unknown",
+
+        // Keep original nested objects for flexibility
+        customer: plain.customer,
+        creator: plain.creator,
       };
     });
 
-    const totalPages = Math.ceil(totalQuotations / limit);
-
-    // ─────────────────────────────────────────────
-    // Final response
-    // ─────────────────────────────────────────────
     return res.status(200).json({
       data: enrichedQuotations,
       pagination: {
         total: totalQuotations,
         page,
         limit,
-        totalPages,
+        totalPages: Math.ceil(totalQuotations / limit),
       },
     });
   } catch (error) {
+    console.error("Get All Quotations Error:", error);
     return res.status(500).json({
       message: "Error fetching quotations",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,

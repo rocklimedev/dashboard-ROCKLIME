@@ -28,7 +28,7 @@ import ProductCard from "../../components/Product/ProductCard";
 import styles from "../../components/Product/productdetails.module.css";
 import noimage from "../../assets/img/default.png";
 import { Helmet } from "react-helmet";
-import PermissionGate from "../../context/PermissionGate";   // ← Added for permission control
+import PermissionGate from "../../context/PermissionGate"; // ← Added for permission control
 
 const ProductDetails = () => {
   const { id } = useParams();
@@ -170,7 +170,7 @@ const ProductDetails = () => {
       }).unwrap();
 
       message.success(
-        `Added ${quantity} unit${quantity > 1 ? "s" : ""} to cart successfully!`
+        `Added ${quantity} unit${quantity > 1 ? "s" : ""} to cart successfully!`,
       );
       setQuantity(1);
     } catch (err) {
@@ -275,7 +275,13 @@ const ProductDetails = () => {
 
             {/* Summary */}
             <div className={styles.summary}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                }}
+              >
                 <h1 className={styles.title}>{product.name}</h1>
 
                 {/* EDIT BUTTON */}
@@ -323,7 +329,9 @@ const ProductDetails = () => {
                   size="large"
                   onClick={handleAddToCart}
                   loading={isCartLoading}
-                  disabled={!sellingPrice || isNaN(sellingPrice) || sellingPrice <= 0}
+                  disabled={
+                    !sellingPrice || isNaN(sellingPrice) || sellingPrice <= 0
+                  }
                   className={styles.addToCartBtn}
                 >
                   Add to Cart
@@ -404,7 +412,9 @@ const ProductDetails = () => {
                     getCategoryName={getCategoryName}
                     formatPrice={(fallback, metaDetails) => {
                       if (!Array.isArray(metaDetails)) return "N/A";
-                      const sp = metaDetails.find((m) => m.slug === "sellingPrice");
+                      const sp = metaDetails.find(
+                        (m) => m.slug === "sellingPrice",
+                      );
                       const price = sp ? parseFloat(sp.value) : null;
                       return price != null && !isNaN(price)
                         ? `₹${price.toFixed(2)}`

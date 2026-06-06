@@ -5,8 +5,9 @@ import CreateProduct from "../../concepts/Products/CreateProduct";
 import ProductDetails from "../../concepts/Products/ProductDetails";
 import BulkProductImport from "../../concepts/Products/BulkProductImport";
 import BrandSelection from "../../concepts/Products/BrandSelection";
-import CategoryManagement from "../../concepts/Products/CategoryManagement";
+
 import BulkProductImportJob from "../../concepts/Products/ImportJob";
+import ProductInventoryPage from "../../concepts/Products/ProductInventoryPage";
 
 export const productRoutes = [
   {
@@ -44,18 +45,18 @@ export const productRoutes = [
     element: <BrandSelection />,
     isSidebarActive: false,
   },
-  {
-    path: "/inventory/categories-keywords",
-    name: "Categories",
-    icon: <FaThLarge />,
-    element: <CategoryManagement />,
-    isSidebarActive: true,
-  },
+
   {
     path: "/bulk-import",
     name: "Bulk Product Import",
     element: <BulkProductImport />,
     isSidebarActive: false,
+  },
+  {
+    path: "/product/:id/inventory",
+    name: "Product Inventory",
+    element: <ProductInventoryPage />,
+    isSidebarActiveL: false,
   },
   {
     path: "/inventory/import",

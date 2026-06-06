@@ -1,9 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import {
-  SearchOutlined,
-  UnorderedListOutlined,
-  OrderedListOutlined,
-} from "@ant-design/icons";
+import { SearchOutlined, UnorderedListOutlined } from "@ant-design/icons";
 import Avatar from "react-avatar";
 import {
   useGetAllUsersQuery,
@@ -28,7 +24,6 @@ import PageHeader from "../../components/Common/PageHeader";
 import { useResendVerificationEmailMutation } from "../../api/authApi";
 
 const UserList = () => {
-  const [viewMode, setViewMode] = useState("list");
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("All");
@@ -114,7 +109,6 @@ const UserList = () => {
       await deleteUser(userToDelete).unwrap();
       message.success("User deleted");
 
-      // Auto-fix pagination if last item on page was deleted
       if (filteredUsers.length === 1 && currentPage > 1) {
         setCurrentPage((p) => p - 1);
       }
@@ -137,7 +131,6 @@ const UserList = () => {
     }
   }, [resendUserId, selectedUser, resendVerificationEmail]);
 
-  // === Render (No loading/error states — handled globally) ===
   return (
     <div className="page-wrapper">
       <div className="content">
@@ -185,301 +178,146 @@ const UserList = () => {
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
                   </div>
-
-                  <div className="btn-group">
-                    <button
-                      className={`btn ${
-                        viewMode === "list"
-                          ? "btn-primary"
-                          : "btn-outline-secondary"
-                      }`}
-                      onClick={() => setViewMode("list")}
-                      title="List View"
-                    >
-                      <UnorderedListOutlined />
-                    </button>
-                    <button
-                      className={`btn ${
-                        viewMode === "card"
-                          ? "btn-primary"
-                          : "btn-outline-secondary"
-                      }`}
-                      onClick={() => setViewMode("card")}
-                      title="Card View"
-                    >
-                      <OrderedListOutlined />
-                    </button>
-                  </div>
                 </div>
               </div>
             </div>
 
-            {/* CARD VIEW */}
-            {viewMode === "card" && (
-              <div className="row g-4">
-                {filteredUsers.map((user) => {
-                  const active = isUserActive(user.status);
-                  return (
-                    <div
-                      key={user.userId}
-                      className="col-md-6 col-lg-4 col-xl-3"
-                    >
-                      <div className="card h-100 shadow-sm border-0">
-                        <div className="card-body text-center p-4">
+            {/* LIST VIEW (Only View Now) */}
+            <div className="table-responsive">
+              <table className="table table-hover align-middle">
+                <thead className="table-light">
+                  <tr>
+                    <th>Avatar</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredUsers.map((user) => {
+                    const active = isUserActive(user.status);
+                    return (
+                      <tr key={user.userId}>
+                        <td>
                           <Avatar
                             src={user.photo_thumbnail}
                             name={user.name || user.username}
+                            size="40"
                             round
-                            size="80"
-                            className="mb-3"
                           />
-                          <h6 className="mb-1">{user.name || "No Name"}</h6>
-                          <p className="text-muted small">@{user.username}</p>
-
-                          <div className="d-flex justify-content-center gap-2 mb-3 flex-wrap">
-                            <span className="badge bg-light text-dark">
-                              {safeRoles(user.roles)}
+                        </td>
+                        <td>
+                          <a
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleViewUser(user);
+                            }}
+                            className="text-primary fw-medium"
+                          >
+                            {user.name || "—"}
+                          </a>
+                        </td>
+                        <td>{user.email || "—"}</td>
+                        <td>{user.username || "—"}</td>
+                        <td>
+                          <span className="badge bg-light text-dark">
+                            {safeRoles(user.roles)}
+                          </span>
+                        </td>
+                        <td>
+                          <Dropdown
+                            overlay={
+                              <Menu>
+                                <Menu.Item
+                                  disabled={active}
+                                  onClick={() =>
+                                    handleStatusChange(user.userId, "active")
+                                  }
+                                >
+                                  Active
+                                </Menu.Item>
+                                <Menu.Item
+                                  disabled={!active}
+                                  onClick={() =>
+                                    handleStatusChange(user.userId, "inactive")
+                                  }
+                                >
+                                  Inactive
+                                </Menu.Item>
+                              </Menu>
+                            }
+                            trigger={["click"]}
+                          >
+                            <span
+                              className={`badge ${
+                                active ? "bg-success" : "bg-danger"
+                              } text-white cursor-pointer`}
+                            >
+                              {active ? "Active" : "Inactive"}{" "}
+                              <EditOutlined size={10} />
                             </span>
-                            <Dropdown
-                              overlay={
-                                <Menu>
-                                  <Menu.Item
-                                    disabled={active}
-                                    onClick={() =>
-                                      handleStatusChange(user.userId, "active")
-                                    }
-                                  >
-                                    Active
-                                  </Menu.Item>
-                                  <Menu.Item
-                                    disabled={!active}
-                                    onClick={() =>
-                                      handleStatusChange(
-                                        user.userId,
-                                        "inactive",
-                                      )
-                                    }
-                                  >
-                                    Inactive
-                                  </Menu.Item>
-                                </Menu>
-                              }
-                              trigger={["click"]}
-                            >
-                              <span
-                                className={`badge ${
-                                  active ? "bg-success" : "bg-danger"
-                                } text-white cursor-pointer`}
-                              >
-                                {active ? "Active" : "Inactive"}{" "}
-                                <EditOutlined size={10} />
-                              </span>
-                            </Dropdown>
-                          </div>
-
-                          <div className="d-flex justify-content-center gap-2">
-                            <Tooltip title="Edit">
-                              <Button
-                                size="small"
-                                onClick={() => handleEditUser(user)}
-                              >
-                                <EditOutlined />
-                              </Button>
-                            </Tooltip>
-                            <Dropdown
-                              overlay={
-                                <Menu>
-                                  <Menu.Item
-                                    onClick={() => handleViewUser(user)}
-                                  >
-                                    <EyeOutlined /> View
-                                  </Menu.Item>
-
-                                  <Menu.Item
-                                    onClick={() =>
-                                      reportUser(user.userId)
-                                        .unwrap()
-                                        .then(() => message.success("Reported"))
-                                    }
-                                  >
-                                    <ExclamationCircleOutlined /> Report
-                                  </Menu.Item>
-                                  {!user.isEmailVerified && (
-                                    <Menu.Item
-                                      onClick={() =>
-                                        setResendUserId(user.userId)
-                                      }
-                                    >
-                                      <MailOutlined /> Resend Email
-                                    </Menu.Item>
-                                  )}
-                                  <Menu.Item
-                                    danger
-                                    onClick={() =>
-                                      handleDeleteUser(user.userId)
-                                    }
-                                  >
-                                    <DeleteOutlined /> Delete
-                                  </Menu.Item>
-                                </Menu>
-                              }
-                              trigger={["click"]}
-                            >
-                              <Button size="small">
-                                <MoreOutlined />
-                              </Button>
-                            </Dropdown>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* LIST VIEW */}
-            {viewMode === "list" && (
-              <div className="table-responsive">
-                <table className="table table-hover align-middle">
-                  <thead className="table-light">
-                    <tr>
-                      <th>Avatar</th>
-                      <th>Name</th>
-                      <th>Email</th>
-                      <th>Username</th>
-                      <th>Phone</th>
-                      <th>Role</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredUsers.map((user) => {
-                      const active = isUserActive(user.status);
-                      return (
-                        <tr key={user.userId}>
-                          <td>
-                            <Avatar
-                              src={user.photo_thumbnail}
-                              name={user.name || user.username}
-                              size="40"
-                              round
-                            />
-                          </td>
-                          <td>
-                            <a
-                              href="#"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                handleViewUser(user);
-                              }}
-                              className="text-primary fw-medium"
-                            >
-                              {user.name || "—"}
-                            </a>
-                          </td>
-                          <td>{user.email || "—"}</td>
-                          <td>{user.username || "—"}</td>
-                          <td>{user.mobileNumber || "—"}</td>
-                          <td>
-                            <span className="badge bg-light text-dark">
-                              {safeRoles(user.roles)}
-                            </span>
-                          </td>
-                          <td>
-                            <Dropdown
-                              overlay={
-                                <Menu>
-                                  <Menu.Item
-                                    disabled={active}
-                                    onClick={() =>
-                                      handleStatusChange(user.userId, "active")
-                                    }
-                                  >
-                                    Active
-                                  </Menu.Item>
-                                  <Menu.Item
-                                    disabled={!active}
-                                    onClick={() =>
-                                      handleStatusChange(
-                                        user.userId,
-                                        "inactive",
-                                      )
-                                    }
-                                  >
-                                    Inactive
-                                  </Menu.Item>
-                                </Menu>
-                              }
-                              trigger={["click"]}
-                            >
-                              <span
-                                className={`badge ${
-                                  active ? "bg-success" : "bg-danger"
-                                } text-white cursor-pointer`}
-                              >
-                                {active ? "Active" : "Inactive"}{" "}
-                                <EditOutlined size={10} />
-                              </span>
-                            </Dropdown>
-                          </td>
-                          <td>
+                          </Dropdown>
+                        </td>
+                        <td>
+                          <Tooltip title="Edit">
                             <EditOutlined
                               className="me-3 text-primary"
                               style={{ cursor: "pointer", fontSize: 16 }}
                               onClick={() => handleEditUser(user)}
                             />
-                            <Dropdown
-                              overlay={
-                                <Menu>
+                          </Tooltip>
+
+                          <Dropdown
+                            overlay={
+                              <Menu>
+                                <Menu.Item onClick={() => handleViewUser(user)}>
+                                  <EyeOutlined /> View
+                                </Menu.Item>
+                                <Menu.Item
+                                  onClick={() =>
+                                    reportUser(user.userId)
+                                      .unwrap()
+                                      .then(() => message.success("Reported"))
+                                  }
+                                >
+                                  <ExclamationCircleOutlined /> Report
+                                </Menu.Item>
+                                {!user.isEmailVerified && (
                                   <Menu.Item
-                                    onClick={() => handleViewUser(user)}
+                                    onClick={() => setResendUserId(user.userId)}
                                   >
-                                    <EyeOutlined /> View
+                                    <MailOutlined /> Resend Email
                                   </Menu.Item>
-                                  <Menu.Item
-                                    onClick={() => reportUser(user.userId)}
-                                  >
-                                    <ExclamationCircleOutlined /> Report
-                                  </Menu.Item>
-                                  {!user.isEmailVerified && (
-                                    <Menu.Item
-                                      onClick={() =>
-                                        setResendUserId(user.userId)
-                                      }
-                                    >
-                                      <MailOutlined /> Resend
-                                    </Menu.Item>
-                                  )}
-                                  <Menu.Item
-                                    danger
-                                    onClick={() =>
-                                      handleDeleteUser(user.userId)
-                                    }
-                                  >
-                                    <DeleteOutlined /> Delete
-                                  </Menu.Item>
-                                </Menu>
-                              }
-                              trigger={["click"]}
-                            >
-                              <Button
-                                type="text"
-                                icon={<MoreOutlined style={{ fontSize: 18 }} />}
-                              />
-                            </Dropdown>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                                )}
+                                <Menu.Item
+                                  danger
+                                  onClick={() => handleDeleteUser(user.userId)}
+                                >
+                                  <DeleteOutlined /> Delete
+                                </Menu.Item>
+                              </Menu>
+                            }
+                            trigger={["click"]}
+                          >
+                            <Button
+                              type="text"
+                              icon={<MoreOutlined style={{ fontSize: 18 }} />}
+                            />
+                          </Dropdown>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
 
             {/* Pagination */}
-            {totalUsers > itemsPerPage && (
+            {totalUsers > 0 && (
               <div className="d-flex justify-content-end mt-4">
                 <Pagination
                   current={currentPage}

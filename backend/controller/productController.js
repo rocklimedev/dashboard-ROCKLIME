@@ -750,9 +750,6 @@ exports.getAllProducts = async (req, res) => {
       whereClause.quantity = { [Op.gt]: 0, [Op.lte]: lowStockThreshold };
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // INVENTORY SORTING: Stock first → Latest updated first
-    // ─────────────────────────────────────────────────────────────
     const order = [
       [
         sequelize.literal(
@@ -772,7 +769,6 @@ exports.getAllProducts = async (req, res) => {
         limit,
         distinct: true,
         subQuery: false,
-
         include: [
           {
             model: Keyword,
@@ -797,19 +793,19 @@ exports.getAllProducts = async (req, res) => {
       });
     }
 
-    // Meta Enrichment
+    // === META ENRICHMENT (UUID Support) ===
     const metaIds = new Set();
     products.forEach((p) => {
-      const meta = parseJsonSafely(p.meta, null);
+      const meta = parseJsonSafely(p.meta, {});
       if (meta && typeof meta === "object") {
-        Object.keys(meta).forEach((id) => metaIds.add(id));
+        Object.keys(meta).forEach((key) => metaIds.add(key)); // UUID strings
       }
     });
 
     const metaDefs =
       metaIds.size > 0
         ? await ProductMeta.findAll({
-            where: { id: { [Op.in]: Array.from(metaIds) } },
+            where: { id: { [Op.in]: Array.from(metaIds) } }, // Assuming `id` in ProductMeta is UUID
             attributes: ["id", "title", "slug", "fieldType", "unit"],
           })
         : [];
@@ -819,15 +815,14 @@ exports.getAllProducts = async (req, res) => {
     // Enrich Products
     const enrichedProducts = products.map((product) => {
       const raw = product.toJSON();
-
       const metaObj = parseJsonSafely(raw.meta, {});
       const images = parseJsonSafely(raw.images, []);
 
-      const metaDetails = Object.entries(metaObj).map(([idStr, value]) => {
-        const id = parseInt(idStr, 10);
-        const def = metaMap[id] || {};
+      const metaDetails = Object.entries(metaObj).map(([id, value]) => {
+        const def = metaMap[id] || {}; // id is UUID string
+
         return {
-          id,
+          id, // Keep original UUID
           title: def.title || "Unknown Field",
           slug: def.slug || null,
           value: value != null ? String(value) : "",
@@ -873,6 +868,7 @@ exports.getAllProducts = async (req, res) => {
       },
     });
   } catch (error) {
+    console.error(error);
     res.status(500).json({
       message: "Failed to fetch products",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
@@ -1602,56 +1598,129 @@ exports.getHistoryByProductId = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 exports.getLowStockProducts = async (req, res) => {
   try {
-    const threshold = req.query.threshold || 10;
-    const products = await Product.findAll({
-      where: {
-        quantity: { [Op.lte]: threshold },
+    ensureAssociations();
+
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 100;
+    const offset = (page - 1) * limit;
+
+    const threshold = parseInt(req.query.threshold) || 20;
+
+    const whereClause = {
+      quantity: {
+        [Op.lte]: threshold,
       },
-      attributes: ["productId", "name", "quantity"],
-      include: [
-        {
-          model: ProductMeta,
-          as: "product_metas",
-          attributes: ["id", "title", "slug", "fieldType", "unit"],
-        },
-      ],
+    };
+
+    const { count: totalLowStock, rows: products } =
+      await Product.findAndCountAll({
+        where: whereClause,
+        order: [
+          ["quantity", "ASC"],
+          ["updatedAt", "DESC"],
+        ],
+        offset,
+        limit,
+        distinct: true,
+        subQuery: false,
+        include: [
+          {
+            model: Keyword,
+            as: "keywords",
+            attributes: ["id", "keyword"],
+            through: { attributes: [] },
+            include: [
+              {
+                model: Category,
+                as: "categories",
+                attributes: ["categoryId", "name", "slug"],
+              },
+            ],
+          },
+        ],
+      });
+
+    // ===== META ENRICHMENT =====
+    const metaIds = new Set();
+
+    products.forEach((p) => {
+      const meta =
+        typeof p.meta === "string" ? JSON.parse(p.meta || "{}") : p.meta || {};
+
+      Object.keys(meta).forEach((id) => metaIds.add(id));
     });
 
+    const metaDefs =
+      metaIds.size > 0
+        ? await ProductMeta.findAll({
+            where: {
+              id: {
+                [Op.in]: [...metaIds],
+              },
+            },
+            attributes: ["id", "title", "slug", "fieldType", "unit"],
+          })
+        : [];
+
+    const metaMap = Object.fromEntries(metaDefs.map((m) => [m.id, m.toJSON()]));
+
     const enrichedProducts = products.map((product) => {
-      const productData = product.toJSON();
-      if (productData.meta) {
-        productData.metaDetails = Object.keys(productData.meta).map(
-          (metaId) => {
-            const metaField = productData.product_metas.find(
-              (mf) => mf.id === metaId,
-            );
-            return {
-              id: metaId,
-              title: metaField ? metaField.title : "Unknown",
-              slug: metaField ? metaField.slug : null,
-              value: productData.meta[metaId],
-              fieldType: metaField ? metaField.fieldType : null,
-              unit: metaField ? metaField.unit : null,
-            };
-          },
-        );
-      }
-      delete productData.product_metas;
-      return productData;
+      const raw = product.toJSON();
+
+      const meta =
+        typeof raw.meta === "string"
+          ? JSON.parse(raw.meta || "{}")
+          : raw.meta || {};
+
+      const images =
+        typeof raw.images === "string"
+          ? JSON.parse(raw.images || "[]")
+          : raw.images || [];
+
+      const metaDetails = Object.entries(meta).map(([id, value]) => {
+        const def = metaMap[id] || {};
+
+        return {
+          id,
+          title: def.title || "Unknown Field",
+          slug: def.slug || null,
+          value: value != null ? String(value) : "",
+          fieldType: def.fieldType || "text",
+          unit: def.unit || null,
+        };
+      });
+
+      return {
+        ...raw,
+        images,
+        meta,
+        metaDetails,
+        quantity: Number(raw.quantity) || 0,
+      };
     });
 
     return res.status(200).json({
-      message: `${products.length} product(s) with low stock`,
-      products: enrichedProducts,
+      success: true,
+      totalLowStock,
+      threshold,
+      data: enrichedProducts,
+      pagination: {
+        total: totalLowStock,
+        page,
+        limit,
+        totalPages: Math.ceil(totalLowStock / limit),
+      },
     });
   } catch (error) {
+    console.error("Low Stock Products Error:", error);
+
     return res.status(500).json({
+      success: false,
       message: "Error fetching low stock products",
       error: error.message,
     });
   }
 };
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Search products with meta data
 // ─────────────────────────────────────────────────────────────────────────────

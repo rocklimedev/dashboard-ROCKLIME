@@ -21,12 +21,18 @@ import {
 import { Statistic } from "antd";
 import { generatePDF, generateExcel } from "../../utils/helpers";
 import PageHeader from "../../components/Common/PageHeader";
-
+import { generateQuotationReportPDF } from "../../components/Reports/generateQuotationReport";
 import { useGetAllQuotationsQuery } from "../../api/quotationApi";
 import { useGetAllOrdersQuery } from "../../api/orderApi";
-import { useGetAllProductsQuery } from "../../api/productApi";
+import {
+  useGetAllProductsQuery,
+  useGetLowStockProductsQuery,
+} from "../../api/productApi";
 import { useGetPurchaseOrdersQuery } from "../../api/poApi"; // ← Added
-
+import { generateOrderReportPDF } from "../../components/Reports/generateOrderReport";
+import { generatePOReportPDF } from "../../components/Reports/generatePOReport";
+import { generateInventoryReportPDF } from "../../components/Reports/generateInventoryReport";
+import { generateLowStockReportPDF } from "../../components/Reports/lowStockReport";
 const { Title } = Typography;
 const { RangePicker } = DatePicker;
 
@@ -44,22 +50,33 @@ const ReportsPage = () => {
   });
   const { data: productsData, isLoading: loadingProducts } =
     useGetAllProductsQuery({
-      limit: 1000,
+      limit: 100000,
       tab: "all",
     });
   const { data: poData, isLoading: loadingPOs } = useGetPurchaseOrdersQuery({
     limit: 500,
   });
-
+  const { data: lowStockData, isLoading: loadingLowStock } =
+    useGetLowStockProductsQuery({
+      page: 1,
+      limit: 100000,
+      threshold: 20,
+    });
   const quotations = quotationsData?.data || [];
   const orders = ordersData?.data || [];
   const products = productsData?.data || [];
+
+  const lowStockCount = lowStockData?.totalLowStock || 0;
+  const lowStockProducts = lowStockData?.data || [];
   const purchaseOrders =
     poData?.purchaseOrders?.data || poData?.data || poData || [];
 
   const isLoading =
-    loadingQuotations || loadingOrders || loadingProducts || loadingPOs;
-
+    loadingQuotations ||
+    loadingOrders ||
+    loadingProducts ||
+    loadingPOs ||
+    loadingLowStock;
   // ==================== DATE FILTER LOGIC ====================
   const getFilteredData = (data, dateField = "createdAt") => {
     if (!data.length) return [];
@@ -111,119 +128,108 @@ const ReportsPage = () => {
   // ==================== REPORT GENERATORS ====================
   const generateReport = async (type) => {
     setLoadingReport(type);
-    try {
-      let reportData = [];
-      let title = "";
-      let fileName = "";
 
+    try {
       switch (type) {
-        case "stock":
-          reportData = products.map((p, i) => ({
+        // ================= STOCK =================
+        case "stock": {
+          const filteredProducts = getFilteredData(products);
+
+          const reportData = filteredProducts.map((p, i) => ({
             "S.No": i + 1,
+            "Product Name": p.name,
             "Company Code":
               p.metaDetails?.find((d) => d.value?.match(/^[A-Za-z0-9]{6,12}$/))
                 ?.value || "—",
-            "Product Name": p.name,
             "Current Stock": p.quantity,
             Status:
               p.quantity === 0
-                ? "Out of Stock"
+                ? "OUT OF STOCK"
                 : p.quantity <= 20
-                  ? "Low Stock"
-                  : "In Stock",
+                  ? "LOW STOCK"
+                  : "IN STOCK",
             "Last Updated": p.updatedAt
               ? new Date(p.updatedAt).toLocaleDateString("en-IN")
               : "—",
           }));
-          title = "Stock Report";
-          fileName = `Stock_Report_${new Date().toISOString().slice(0, 10)}`;
-          break;
 
-        case "quotation":
+          generateInventoryReportPDF(filteredProducts);
+          message.success("Inventory Report generated!");
+          break;
+        }
+
+        // ================= ORDER =================
+        case "order": {
+          const filteredOrders = getFilteredData(orders, "createdAt");
+
+          await generateOrderReportPDF(
+            filteredOrders,
+            dateRange?.[0]?.format?.("DD/MM/YYYY"),
+            dateRange?.[1]?.format?.("DD/MM/YYYY"),
+          );
+
+          message.success("Order Report generated!");
+          break;
+        }
+
+        // ================= QUOTATION =================
+        case "quotation": {
           const filteredQuotations = getFilteredData(
             quotations,
             "quotation_date",
           );
-          reportData = filteredQuotations.map((q, i) => ({
-            "S.No": i + 1,
-            "Quotation No": q.reference_number || "—",
-            "Quotation Date": new Date(q.quotation_date).toLocaleDateString(
-              "en-IN",
-            ),
-            "Client Name": q.customer?.name || "—",
-            Amount: `₹${Number(q.finalAmount || 0).toLocaleString("en-IN")}`,
-          }));
-          title = "Quotation Report";
-          fileName = `Quotation_Report_${new Date().toISOString().slice(0, 10)}`;
-          break;
 
-        case "order":
-          const filteredOrders = getFilteredData(orders);
-          reportData = filteredOrders.map((o, i) => ({
-            "S.No": i + 1,
-            "Order No": o.orderNo || "—",
-            "Order Date": new Date(o.createdAt).toLocaleDateString("en-IN"),
-            "Client Name": o.customer?.name || "Walk-in",
-            Address: o.customer?.address || "—",
-            Amount: `₹${Number(o.finalAmount || 0).toLocaleString("en-IN")}`,
-            Status: o.status.replace("_", " ").toUpperCase(),
-          }));
-          title = "Order Report";
-          fileName = `Order_Report_${new Date().toISOString().slice(0, 10)}`;
-          break;
+          const today = new Date();
+          const currentDate = [
+            String(today.getDate()).padStart(2, "0"),
+            String(today.getMonth() + 1).padStart(2, "0"),
+            today.getFullYear(),
+          ].join("/");
 
-        case "po":
+          const reportStartDate =
+            dateRange?.[0]?.format?.("DD/MM/YYYY") || currentDate;
+
+          const reportEndDate =
+            dateRange?.[1]?.format?.("DD/MM/YYYY") || currentDate;
+
+          await generateQuotationReportPDF(
+            filteredQuotations,
+            reportStartDate,
+            reportEndDate,
+          );
+
+          message.success("Quotation Report generated!");
+          break;
+        }
+
+        // ================= PURCHASE ORDER =================
+        case "po": {
           const filteredPOs = getFilteredData(purchaseOrders, "orderDate");
 
-          reportData = filteredPOs.map((po, i) => {
-            return {
-              "S.No": i + 1,
-              "PO Number": po.poNumber || po.id || "—",
-              "PO Date": po.orderDate
-                ? new Date(po.orderDate).toLocaleDateString("en-IN")
-                : "—",
-              "Vendor Name":
-                po.vendor?.vendorName || po.vendorName || "Unknown",
-              Amount: `₹${Number(po.totalAmount || 0).toLocaleString("en-IN")}`,
-              Status: (po.status || "pending").toUpperCase(),
-            };
-          });
-
-          title = "Purchase Order Report";
-          fileName = `Purchase_Order_Report_${new Date().toISOString().slice(0, 10)}`;
-          break;
-        case "lowstock":
-          const lowStock = products.filter(
-            (p) => p.quantity > 0 && p.quantity <= 20,
+          await generatePOReportPDF(
+            filteredPOs,
+            dateRange?.[0]?.format?.("DD/MM/YYYY"),
+            dateRange?.[1]?.format?.("DD/MM/YYYY"),
           );
-          reportData = lowStock.map((p, i) => ({
-            "S.No": i + 1,
-            "Product Name": p.name,
-            "Current Stock": p.quantity,
-            "Company Code":
-              p.metaDetails?.find((d) => d.value?.match(/^[A-Za-z0-9]{6,12}$/))
-                ?.value || "—",
-          }));
-          title = "Low Stock Alert Report";
-          fileName = `Low_Stock_Alert_${new Date().toISOString().slice(0, 10)}`;
+
+          message.success("Purchase Order Report generated!");
           break;
+        }
+
+        // ================= LOW STOCK =================
+        case "lowstock": {
+          await generateLowStockReportPDF(lowStockProducts);
+
+          message.success("Low Stock Report generated!");
+          break;
+        }
 
         default:
           message.warning("Report type not implemented");
-          return;
       }
-
-      if (reportData.length === 0) {
-        message.info("No data available for the selected filter.");
-        return;
-      }
-
-      generatePDF(reportData, title);
-      generateExcel(reportData, fileName);
-
-      message.success(`${title} generated successfully!`);
     } catch (err) {
-      message.error("Failed to generate report. Please try again.");
+      console.error(err);
+      message.error("Failed to generate report");
     } finally {
       setLoadingReport(null);
     }
@@ -234,11 +240,10 @@ const ReportsPage = () => {
     () => ({
       totalOrders: orders.length,
       totalQuotations: quotations.length,
-      totalPOs: purchaseOrders.length, // This should already work
-      lowStock: products.filter((p) => p.quantity > 0 && p.quantity <= 20)
-        .length,
+      totalPOs: purchaseOrders.length,
+      lowStock: lowStockCount,
     }),
-    [orders, quotations, purchaseOrders, products],
+    [orders, quotations, purchaseOrders, lowStockCount],
   );
 
   return (

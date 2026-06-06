@@ -1,38 +1,29 @@
 // src/pages/categories/CategoryManagement.jsx
-import React, { useState, useMemo, useCallback } from "react";
-import { debounce } from "lodash";
-import {
-  Tabs,
-  Card,
-  Input,
-  Button,
-  Space,
-  Tooltip,
-  message,
-  Popconfirm,
-  Table,
-} from "antd";
-import {
-  EditOutlined,
-  DeleteOutlined,
-  PlusOutlined,
-  FolderOutlined,
-  TagOutlined,
-  MoreOutlined,
-} from "@ant-design/icons";
+import React, { useState, useMemo } from "react";
+import { EditOutlined, DeleteOutlined, MoreOutlined } from "@ant-design/icons";
+import { Dropdown, Menu, Button, Tooltip, message, Tabs, Input } from "antd";
+
 import { useSearchParams } from "react-router-dom";
 
 import {
   useGetAllParentCategoriesQuery,
   useDeleteParentCategoryMutation,
+  useCreateParentCategoryMutation,
+  useUpdateParentCategoryMutation,
 } from "../../api/parentCategoryApi";
+
 import {
   useGetAllCategoriesQuery,
   useDeleteCategoryMutation,
+  useCreateCategoryMutation,
+  useUpdateCategoryMutation,
 } from "../../api/categoryApi";
+
 import {
   useGetAllKeywordsQuery,
   useDeleteKeywordMutation,
+  useCreateKeywordMutation,
+  useUpdateKeywordMutation,
 } from "../../api/keywordApi";
 
 import PageHeader from "../../components/Common/PageHeader";
@@ -44,14 +35,16 @@ import AddKeywordModal from "../../components/Categories/AddKeywordModal";
 
 import "../../components/Categories/category.css";
 
-const { Search } = Input;
 const { TabPane } = Tabs;
+const { Search } = Input;
 
 const CategoryManagement = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const currentTab = searchParams.get("tab") || "parent";
 
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Modal States
   const [showParentModal, setShowParentModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showKeywordModal, setShowKeywordModal] = useState(false);
@@ -61,20 +54,31 @@ const CategoryManagement = () => {
   const [deleteType, setDeleteType] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
 
-  // === API ===
+  // === Queries ===
   const { data: parentData, refetch: refetchParents } =
     useGetAllParentCategoriesQuery();
+
   const { data: catData, refetch: refetchCategories } =
     useGetAllCategoriesQuery();
+
   const { data: kwData, refetch: refetchKeywords } = useGetAllKeywordsQuery();
 
+  // === Mutations ===
   const [deleteParent] = useDeleteParentCategoryMutation();
   const [deleteCategory] = useDeleteCategoryMutation();
   const [deleteKeyword] = useDeleteKeywordMutation();
 
+  const [createParent] = useCreateParentCategoryMutation();
+  const [updateParent] = useUpdateParentCategoryMutation();
+  const [createCategory] = useCreateCategoryMutation();
+  const [updateCategory] = useUpdateCategoryMutation();
+  const [createKeyword] = useCreateKeywordMutation();
+  const [updateKeyword] = useUpdateKeywordMutation();
+
+  // === Data Extraction ===
   const parentCategories = parentData?.data || [];
   const categories = catData?.categories || [];
-  const keywords = kwData?.keywords || [];
+  const keywords = kwData || []; // Important: transformResponse already returns array
 
   // === Mappings ===
   const parentMap = useMemo(() => {
@@ -85,50 +89,52 @@ const CategoryManagement = () => {
 
   // === Filtered Data ===
   const filteredParents = useMemo(() => {
-    return parentCategories.filter((p) =>
-      p.name.toLowerCase().includes(searchTerm.toLowerCase()),
-    );
+    if (!searchTerm.trim()) return parentCategories;
+    const term = searchTerm.toLowerCase();
+    return parentCategories.filter((p) => p.name?.toLowerCase().includes(term));
   }, [parentCategories, searchTerm]);
 
   const filteredCategories = useMemo(() => {
-    return categories.filter((c) =>
-      c.name.toLowerCase().includes(searchTerm.toLowerCase()),
-    );
+    if (!searchTerm.trim()) return categories;
+    const term = searchTerm.toLowerCase();
+    return categories.filter((c) => c.name?.toLowerCase().includes(term));
   }, [categories, searchTerm]);
 
   const filteredKeywords = useMemo(() => {
-    return keywords.filter((k) =>
-      k.keyword.toLowerCase().includes(searchTerm.toLowerCase()),
-    );
+    if (!searchTerm.trim()) return keywords;
+    const term = searchTerm.toLowerCase();
+    return keywords.filter((k) => k.keyword?.toLowerCase().includes(term));
   }, [keywords, searchTerm]);
 
-  const debouncedSearch = useCallback(
-    debounce((value) => setSearchTerm(value), 300),
-    [],
-  );
-
-  // === Tab Change with URL Sync ===
+  // === Handlers ===
   const handleTabChange = (key) => {
     setSearchParams({ tab: key });
-    setSearchTerm(""); // Clear search when switching tabs
+    setSearchTerm("");
   };
 
-  // === Edit Handlers ===
-  const handleEdit = (item, type) => {
-    setEditingItem({ ...item, type });
+  const openModal = (type, item = null) => {
+    setEditingItem(item ? { ...item, type } : null);
+
     if (type === "parent") setShowParentModal(true);
     else if (type === "category") setShowCategoryModal(true);
     else if (type === "keyword") setShowKeywordModal(true);
   };
 
-  // === Delete Handlers ===
   const openDeleteModal = (type, id) => {
     setDeleteType(type);
     setDeleteId(id);
     setShowDeleteModal(true);
   };
 
+  const handleModalSuccess = () => {
+    if (currentTab === "parent") refetchParents();
+    else if (currentTab === "category") refetchCategories();
+    else refetchKeywords();
+  };
+
   const handleConfirmDelete = async () => {
+    if (!deleteId) return;
+
     try {
       if (deleteType === "parent") {
         await deleteParent(deleteId).unwrap();
@@ -144,7 +150,7 @@ const CategoryManagement = () => {
         refetchKeywords();
       }
     } catch (err) {
-      message.error(err?.data?.message || "Delete failed");
+      message.error(err?.data?.message || `Failed to delete ${deleteType}`);
     } finally {
       setShowDeleteModal(false);
       setDeleteId(null);
@@ -152,125 +158,29 @@ const CategoryManagement = () => {
     }
   };
 
-  // === Modal Close Handlers ===
-  const closeParentModal = () => {
+  const closeModals = () => {
     setShowParentModal(false);
-    setEditingItem(null);
-  };
-
-  const closeCategoryModal = () => {
     setShowCategoryModal(false);
-    setEditingItem(null);
-  };
-
-  const closeKeywordModal = () => {
     setShowKeywordModal(false);
     setEditingItem(null);
   };
 
-  // === Table Columns ===
-  const parentColumns = [
-    { title: "Parent Category Name", dataIndex: "name", key: "name" },
-    {
-      title: "Actions",
-      key: "actions",
-      width: 140,
-      render: (_, record) => (
-        <Space>
-          <Tooltip title="Edit">
-            <EditOutlined
-              style={{ color: "#1890ff", cursor: "pointer", fontSize: 18 }}
-              onClick={() => handleEdit(record, "parent")}
-            />
-          </Tooltip>
-          <Tooltip title="Delete">
-            <DeleteOutlined
-              style={{ color: "#ff4d4f", cursor: "pointer", fontSize: 18 }}
-              onClick={() => openDeleteModal("parent", record.id)}
-            />
-          </Tooltip>
-        </Space>
-      ),
-    },
-  ];
-
-  const categoryColumns = [
-    { title: "Category Name", dataIndex: "name", key: "name" },
-    {
-      title: "Parent Category",
-      key: "parent",
-      render: (_, record) => parentMap[record.parentCategoryId] || "—",
-    },
-    {
-      title: "Actions",
-      key: "actions",
-      width: 140,
-      render: (_, record) => (
-        <Space>
-          <Tooltip title="Edit">
-            <EditOutlined
-              style={{ color: "#1890ff", cursor: "pointer", fontSize: 18 }}
-              onClick={() => handleEdit(record, "category")}
-            />
-          </Tooltip>
-          <Tooltip title="Delete">
-            <DeleteOutlined
-              style={{ color: "#ff4d4f", cursor: "pointer", fontSize: 18 }}
-              onClick={() => openDeleteModal("category", record.categoryId)}
-            />
-          </Tooltip>
-        </Space>
-      ),
-    },
-  ];
-
-  const keywordColumns = [
-    { title: "Keyword", dataIndex: "keyword", key: "keyword" },
-    {
-      title: "Category",
-      key: "category",
-      render: (_, record) =>
-        categories.find((c) => c.categoryId === record.categoryId)?.name || "—",
-    },
-    {
-      title: "Actions",
-      key: "actions",
-      width: 140,
-      render: (_, record) => (
-        <Space>
-          <Tooltip title="Edit">
-            <EditOutlined
-              style={{ color: "#1890ff", cursor: "pointer", fontSize: 18 }}
-              onClick={() => handleEdit(record, "keyword")}
-            />
-          </Tooltip>
-          <Tooltip title="Delete">
-            <DeleteOutlined
-              style={{ color: "#ff4d4f", cursor: "pointer", fontSize: 18 }}
-              onClick={() => openDeleteModal("keyword", record.id)}
-            />
-          </Tooltip>
-        </Space>
-      ),
-    },
-  ];
-
   return (
     <div className="page-wrapper">
       <div className="content">
-        <Card>
+        <div className="card">
           <PageHeader
             title="Category Management"
             subtitle="Manage Parent Categories, Categories & Keywords"
             onAdd={() => {
-              if (currentTab === "parent") setShowParentModal(true);
-              else if (currentTab === "category") setShowCategoryModal(true);
-              else setShowKeywordModal(true);
+              if (currentTab === "parent") openModal("parent");
+              else if (currentTab === "category") openModal("category");
+              else openModal("keyword");
             }}
           />
 
           <div className="card-body">
-            {/* Main Tabs with URL Sync */}
+            {/* Main Tabs */}
             <Tabs
               activeKey={currentTab}
               onChange={handleTabChange}
@@ -279,7 +189,7 @@ const CategoryManagement = () => {
               <TabPane
                 tab={
                   <span>
-                    <FolderOutlined /> Parent Categories
+                    <i className="fas fa-folder me-2" /> Parent Categories
                   </span>
                 }
                 key="parent"
@@ -287,7 +197,7 @@ const CategoryManagement = () => {
               <TabPane
                 tab={
                   <span>
-                    <FolderOutlined /> Categories
+                    <i className="fas fa-folder me-2" /> Categories
                   </span>
                 }
                 key="category"
@@ -295,7 +205,7 @@ const CategoryManagement = () => {
               <TabPane
                 tab={
                   <span>
-                    <TagOutlined /> Keywords
+                    <i className="fas fa-tags me-2" /> Keywords
                   </span>
                 }
                 key="keyword"
@@ -303,71 +213,216 @@ const CategoryManagement = () => {
             </Tabs>
 
             {/* Search */}
-            <div className="mb-4" style={{ maxWidth: "320px" }}>
-              <Search
-                placeholder="Search..."
-                allowClear
-                value={searchTerm}
-                onChange={(e) => debouncedSearch(e.target.value)}
-              />
+            <div className="row mb-4">
+              <div className="col-lg-6" />
+              <div className="col-lg-6 text-lg-end">
+                <div style={{ maxWidth: "340px", marginLeft: "auto" }}>
+                  <Search
+                    placeholder={
+                      currentTab === "parent"
+                        ? "Search parent categories..."
+                        : currentTab === "category"
+                          ? "Search categories..."
+                          : "Search keywords..."
+                    }
+                    allowClear
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+              </div>
             </div>
 
-            {/* Parent Categories Table */}
+            {/* Tables */}
             {currentTab === "parent" && (
-              <Table
-                columns={parentColumns}
-                dataSource={filteredParents}
-                rowKey="id"
-                pagination={{ pageSize: 10 }}
-                locale={{ emptyText: "No parent categories found" }}
-              />
+              <div className="table-responsive">
+                <table className="table table-hover align-middle">
+                  <thead className="table-light">
+                    <tr>
+                      <th>Parent Category Name</th>
+                      <th style={{ width: 140 }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredParents.map((item) => (
+                      <tr key={item.id}>
+                        <td>
+                          <strong>{item.name}</strong>
+                        </td>
+                        <td>
+                          <Tooltip title="Edit">
+                            <EditOutlined
+                              className="me-3 text-primary"
+                              style={{ cursor: "pointer", fontSize: 18 }}
+                              onClick={() => openModal("parent", item)}
+                            />
+                          </Tooltip>
+                          <Dropdown
+                            overlay={
+                              <Menu>
+                                <Menu.Item
+                                  danger
+                                  onClick={() =>
+                                    openDeleteModal("parent", item.id)
+                                  }
+                                >
+                                  <DeleteOutlined /> Delete
+                                </Menu.Item>
+                              </Menu>
+                            }
+                            trigger={["click"]}
+                          >
+                            <Button
+                              type="text"
+                              icon={<MoreOutlined style={{ fontSize: 18 }} />}
+                            />
+                          </Dropdown>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
 
-            {/* Categories Table */}
             {currentTab === "category" && (
-              <Table
-                columns={categoryColumns}
-                dataSource={filteredCategories}
-                rowKey="categoryId"
-                pagination={{ pageSize: 10 }}
-                locale={{ emptyText: "No categories found" }}
-              />
+              <div className="table-responsive">
+                <table className="table table-hover align-middle">
+                  <thead className="table-light">
+                    <tr>
+                      <th>Category Name</th>
+                      <th>Parent Category</th>
+                      <th style={{ width: 140 }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredCategories.map((item) => (
+                      <tr key={item.categoryId}>
+                        <td>
+                          <strong>{item.name}</strong>
+                        </td>
+                        <td className="text-muted">
+                          {parentMap[item.parentCategoryId] || "—"}
+                        </td>
+                        <td>
+                          <Tooltip title="Edit">
+                            <EditOutlined
+                              className="me-3 text-primary"
+                              style={{ cursor: "pointer", fontSize: 18 }}
+                              onClick={() => openModal("category", item)}
+                            />
+                          </Tooltip>
+                          <Dropdown
+                            overlay={
+                              <Menu>
+                                <Menu.Item
+                                  danger
+                                  onClick={() =>
+                                    openDeleteModal("category", item.categoryId)
+                                  }
+                                >
+                                  <DeleteOutlined /> Delete
+                                </Menu.Item>
+                              </Menu>
+                            }
+                            trigger={["click"]}
+                          >
+                            <Button
+                              type="text"
+                              icon={<MoreOutlined style={{ fontSize: 18 }} />}
+                            />
+                          </Dropdown>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
 
-            {/* Keywords Table */}
             {currentTab === "keyword" && (
-              <Table
-                columns={keywordColumns}
-                dataSource={filteredKeywords}
-                rowKey="id"
-                pagination={{ pageSize: 10 }}
-                locale={{ emptyText: "No keywords found" }}
-              />
+              <div className="table-responsive">
+                <table className="table table-hover align-middle">
+                  <thead className="table-light">
+                    <tr>
+                      <th>Keyword</th>
+                      <th>Category</th>
+                      <th style={{ width: 140 }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredKeywords.map((item) => (
+                      <tr key={item.id}>
+                        <td>
+                          <strong>{item.keyword}</strong>
+                        </td>
+                        <td className="text-muted">
+                          {categories.find(
+                            (c) => c.categoryId === item.categoryId,
+                          )?.name || "—"}
+                        </td>
+                        <td>
+                          <Tooltip title="Edit">
+                            <EditOutlined
+                              className="me-3 text-primary"
+                              style={{ cursor: "pointer", fontSize: 18 }}
+                              onClick={() => openModal("keyword", item)}
+                            />
+                          </Tooltip>
+                          <Dropdown
+                            overlay={
+                              <Menu>
+                                <Menu.Item
+                                  danger
+                                  onClick={() =>
+                                    openDeleteModal("keyword", item.id)
+                                  }
+                                >
+                                  <DeleteOutlined /> Delete
+                                </Menu.Item>
+                              </Menu>
+                            }
+                            trigger={["click"]}
+                          >
+                            <Button
+                              type="text"
+                              icon={<MoreOutlined style={{ fontSize: 18 }} />}
+                            />
+                          </Dropdown>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
-        </Card>
+        </div>
 
         {/* Modals */}
         <AddParentCategoryModal
           open={showParentModal}
-          onClose={closeParentModal}
+          onClose={closeModals}
           editMode={!!editingItem && editingItem.type === "parent"}
           parentCategoryData={
             editingItem?.type === "parent" ? editingItem : null
           }
+          onSuccess={handleModalSuccess}
         />
 
         <AddCategoryModal
           open={showCategoryModal}
-          onClose={closeCategoryModal}
+          onClose={closeModals}
           editMode={!!editingItem && editingItem.type === "category"}
           categoryData={editingItem?.type === "category" ? editingItem : null}
+          onSuccess={handleModalSuccess}
         />
 
         <AddKeywordModal
           open={showKeywordModal}
-          onClose={closeKeywordModal}
+          onClose={closeModals}
           editData={editingItem?.type === "keyword" ? editingItem : null}
+          onSuccess={handleModalSuccess}
         />
 
         <DeleteModal
@@ -385,7 +440,6 @@ const CategoryManagement = () => {
                 ? "Category"
                 : "Keyword"
           }
-          isLoading={false}
         />
       </div>
     </div>

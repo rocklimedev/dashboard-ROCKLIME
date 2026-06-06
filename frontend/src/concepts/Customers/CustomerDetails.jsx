@@ -1,5 +1,3 @@
-// src/pages/CustomerDetails.jsx  (or wherever it lives in your project)
-
 import React, { useState, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
@@ -50,8 +48,8 @@ import {
 } from "antd";
 import { Helmet } from "react-helmet";
 import moment from "moment";
+
 import AddressModal from "../../components/modals/AddAddressModal";
-import "../../components/Customers/customerdetails.css";
 
 const { Title, Text } = Typography;
 
@@ -62,26 +60,27 @@ const CustomerDetails = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState(null);
 
-  // ── Data Fetching ────────────────────────────────────────────────
+  // Data Fetching
   const { data: customerData } = useGetCustomerByIdQuery(id);
   const customer = customerData?.data || {};
 
   const { data: invoicesData } = useGetInvoicesByCustomerIdQuery(
     customer?.customerId,
-    { skip: !customer?.customerId }
+    {
+      skip: !customer?.customerId,
+    },
   );
 
   const { data: usersData } = useGetAllUsersQuery();
-  const users = usersData?.users || [];
-
-  const { data: addressesData, refetch: refetchAddresses } = useGetAllAddressesQuery(
-    { customerId: customer?.customerId },
-    { skip: !customer?.customerId }
-  );
+  const { data: addressesData, refetch: refetchAddresses } =
+    useGetAllAddressesQuery(
+      { customerId: customer?.customerId },
+      { skip: !customer?.customerId },
+    );
 
   const { data: quotationsData } = useGetAllQuotationsQuery(
     { customerId: customer?.customerId },
-    { skip: !customer?.customerId }
+    { skip: !customer?.customerId },
   );
 
   const { data: ordersData } = useGetAllOrdersQuery();
@@ -90,34 +89,41 @@ const CustomerDetails = () => {
   const [updateAddress] = useUpdateAddressMutation();
   const [deleteAddress] = useDeleteAddressMutation();
 
-  // ── Derived Data ─────────────────────────────────────────────────
+  // Derived Data
   const addresses = useMemo(
-    () => (addressesData || []).filter((a) => a.customerId === customer.customerId),
-    [addressesData, customer.customerId]
+    () =>
+      (addressesData || []).filter((a) => a.customerId === customer.customerId),
+    [addressesData, customer.customerId],
   );
 
   const quotations = quotationsData?.data || [];
   const orders = (ordersData?.orders || []).filter(
-    (o) => o.createdFor === customer.customerId
+    (o) => o.createdFor === customer.customerId,
   );
   const invoices = invoicesData?.data || [];
 
-  const totalQuoted = quotations.reduce((sum, q) => sum + Number(q.finalAmount || 0), 0);
-  const totalInvoiced = invoices.reduce((sum, i) => sum + Number(i.finalAmount || 0), 0);
-  const totalPaid = invoices.reduce((sum, i) => sum + Number(i.paidAmount || 0), 0);
+  const totalQuoted = quotations.reduce(
+    (sum, q) => sum + Number(q.finalAmount || 0),
+    0,
+  );
+  const totalInvoiced = invoices.reduce(
+    (sum, i) => sum + Number(i.finalAmount || 0),
+    0,
+  );
+  const totalPaid = invoices.reduce(
+    (sum, i) => sum + Number(i.paidAmount || 0),
+    0,
+  );
   const balanceDue = totalInvoiced - totalPaid;
 
-  const primaryAddress = addresses.find((a) => a.status === "PRIMARY") || addresses[0];
+  const primaryAddress =
+    addresses.find((a) => a.status === "PRIMARY") || addresses[0];
 
-  // ── Formatters ───────────────────────────────────────────────────
-  const formatDate = (date) => (date ? moment(date).format("DD MMM YYYY") : "—");
+  // Helpers
+  const formatDate = (date) =>
+    date ? moment(date).format("DD MMM YYYY") : "—";
   const formatCurrency = (amt) =>
     `₹${Number(amt || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}`;
-
-  const getUsername = (userId) => {
-    const user = users.find((u) => u.userId === userId);
-    return user ? user.name || user.email.split("@")[0] : "System";
-  };
 
   const getInitials = (name) =>
     name
@@ -129,7 +135,7 @@ const CustomerDetails = () => {
           .slice(0, 2)
       : "CU";
 
-  // ── Handlers ─────────────────────────────────────────────────────
+  // Handlers
   const handleEditCustomer = () => {
     navigate(`/customer/edit/${customer.customerId}`, { state: { customer } });
   };
@@ -181,45 +187,46 @@ const CustomerDetails = () => {
     });
   };
 
-  // ── Tab Contents ─────────────────────────────────────────────────
+  // Tab Items
   const tabItems = [
     {
       key: "overview",
       label: "Overview",
       children: (
-        <Card className="section-card">
-          <Title level={5} style={{ marginBottom: 20 }}>
-            Recent Activity
-          </Title>
+        <Card>
+          <Title level={5}>Recent Activity</Title>
           <Timeline mode="left">
             {quotations.slice(0, 5).map((q) => (
-              <Timeline.Item key={q.quotationId} dot={<FileTextOutlined />} color="blue">
-                <div className="timeline-item">
-                  <strong>Quotation Created</strong>
-                  <div className="text-secondary">
-                    {q.document_title || "Quotation"} • {formatCurrency(q.finalAmount)}
-                  </div>
-                  <div className="text-tiny text-muted">{formatDate(q.quotation_date)}</div>
+              <Timeline.Item
+                key={q.quotationId}
+                dot={<FileTextOutlined />}
+                color="blue"
+              >
+                <strong>Quotation Created</strong>
+                <div>
+                  {q.document_title || "Quotation"} •{" "}
+                  {formatCurrency(q.finalAmount)}
                 </div>
+                <small>{formatDate(q.quotation_date)}</small>
               </Timeline.Item>
             ))}
 
             {orders.slice(0, 4).map((o) => (
-              <Timeline.Item key={o.id} dot={<ShoppingCartOutlined />} color="green">
-                <div className="timeline-item">
-                  <strong>Order Placed</strong>
-                  <div className="text-secondary">
-                    {o.orderNo} • <Tag>{o.status}</Tag>
-                  </div>
-                  <div className="text-tiny text-muted">{formatDate(o.createdAt)}</div>
+              <Timeline.Item
+                key={o.id}
+                dot={<ShoppingCartOutlined />}
+                color="green"
+              >
+                <strong>Order Placed</strong>
+                <div>
+                  {o.orderNo} • <Tag>{o.status}</Tag>
                 </div>
+                <small>{formatDate(o.createdAt)}</small>
               </Timeline.Item>
             ))}
 
             {quotations.length === 0 && orders.length === 0 && (
-              <div style={{ textAlign: "center", padding: "40px 0", color: "#aaa" }}>
-                No activity recorded yet
-              </div>
+              <Empty description="No activity yet" />
             )}
           </Timeline>
         </Card>
@@ -230,20 +237,18 @@ const CustomerDetails = () => {
       label: `Quotations (${quotations.length})`,
       children:
         quotations.length === 0 ? (
-          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No quotations yet" />
+          <Empty description="No quotations yet" />
         ) : (
           <Table
             dataSource={quotations}
             rowKey="quotationId"
-            pagination={{ pageSize: 10, size: "small" }}
+            pagination={{ pageSize: 10 }}
             columns={[
               {
                 title: "Ref No",
                 dataIndex: "reference_number",
-                render: (text, record) => (
-                  <Link to={`/quotation/${record.quotationId}`} className="table-link">
-                    {text || "—"}
-                  </Link>
+                render: (text, r) => (
+                  <Link to={`/quotation/${r.quotationId}`}>{text || "—"}</Link>
                 ),
               },
               { title: "Title", dataIndex: "document_title", ellipsis: true },
@@ -257,13 +262,17 @@ const CustomerDetails = () => {
                 title: "Date",
                 dataIndex: "quotation_date",
                 render: formatDate,
-                width: 120,
+                width: 110,
               },
               {
                 title: "",
-                width: 60,
+                width: 50,
                 render: (_, r) => (
-                  <Button type="text" icon={<EyeOutlined />} href={`/quotation/${r.quotationId}`} />
+                  <Button
+                    type="text"
+                    icon={<EyeOutlined />}
+                    href={`/quotation/${r.quotationId}`}
+                  />
                 ),
               },
             ]}
@@ -275,12 +284,12 @@ const CustomerDetails = () => {
       label: `Orders (${orders.length})`,
       children:
         orders.length === 0 ? (
-          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No orders yet" />
+          <Empty description="No orders yet" />
         ) : (
           <Table
             dataSource={orders}
             rowKey="id"
-            pagination={{ pageSize: 10, size: "small" }}
+            pagination={{ pageSize: 10 }}
             columns={[
               {
                 title: "Order No",
@@ -290,40 +299,36 @@ const CustomerDetails = () => {
               {
                 title: "Status",
                 dataIndex: "status",
+                width: 130,
                 render: (s) => (
                   <Tag
                     color={
                       s === "DELIVERED"
                         ? "success"
                         : s === "CANCELED"
-                        ? "error"
-                        : s === "ONHOLD"
-                        ? "warning"
-                        : "processing"
+                          ? "error"
+                          : "processing"
                     }
                   >
                     {s}
                   </Tag>
                 ),
-                width: 140,
               },
               {
                 title: "Date",
                 dataIndex: "createdAt",
                 render: formatDate,
-                width: 120,
-              },
-              {
-                title: "Due",
-                dataIndex: "dueDate",
-                render: formatDate,
-                width: 120,
+                width: 110,
               },
               {
                 title: "",
-                width: 60,
+                width: 50,
                 render: (_, r) => (
-                  <Button type="text" icon={<EyeOutlined />} href={`/order/${r.id}`} />
+                  <Button
+                    type="text"
+                    icon={<EyeOutlined />}
+                    href={`/order/${r.id}`}
+                  />
                 ),
               },
             ]}
@@ -335,7 +340,7 @@ const CustomerDetails = () => {
       label: `Addresses (${addresses.length})`,
       children: (
         <>
-          <div style={{ marginBottom: 20, textAlign: "right" }}>
+          <div style={{ textAlign: "right", marginBottom: 16 }}>
             <Button
               type="primary"
               icon={<PlusOutlined />}
@@ -353,30 +358,32 @@ const CustomerDetails = () => {
                 <Col xs={24} sm={12} lg={8} key={addr.addressId}>
                   <Card
                     hoverable
-                    className="address-card"
                     actions={[
-                      <EditOutlined key="edit" onClick={() => openAddressModal(addr)} />,
+                      <EditOutlined
+                        onClick={() => openAddressModal(addr)}
+                        key="edit"
+                      />,
                       <DeleteOutlined
-                        key="delete"
                         onClick={() => handleDeleteAddress(addr.addressId)}
+                        key="delete"
                       />,
                     ]}
                   >
                     <Card.Meta
                       avatar={
-                        <EnvironmentOutlined style={{ fontSize: 24, color: "#1890ff" }} />
+                        <EnvironmentOutlined
+                          style={{ fontSize: 28, color: "#1890ff" }}
+                        />
                       }
                       title={
-                        <Space>
-                          {addr.status === "PRIMARY" ? (
-                            <Tag color="gold">Primary</Tag>
-                          ) : (
-                            <Tag color="default">Additional</Tag>
-                          )}
-                        </Space>
+                        addr.status === "PRIMARY" ? (
+                          <Tag color="gold">Primary</Tag>
+                        ) : (
+                          <Tag>Additional</Tag>
+                        )
                       }
                       description={
-                        <div className="address-text">
+                        <div>
                           {addr.street}
                           <br />
                           {addr.city}, {addr.state}{" "}
@@ -396,146 +403,172 @@ const CustomerDetails = () => {
     },
   ];
 
-  // ── Render ───────────────────────────────────────────────────────
+  if (!customer.customerId) return <div>Loading customer...</div>;
+
   return (
     <div className="page-wrapper">
       <div className="content">
-        <div className="customer-details-modern">
-          <Helmet>
-            <title>{customer.name || "Customer Details"} | CRM</title>
-          </Helmet>
+        <Helmet>
+          <title>{customer.name || "Customer"} | Details</title>
+        </Helmet>
 
-          {/* Header */}
-          <div className="page-header">
-            <div className="header-content">
-              <Avatar size={64} style={{ backgroundColor: "#1890ff" }}>
-                {getInitials(customer.name)}
-              </Avatar>
-              <div className="header-info">
-                <Title level={3} style={{ margin: 0 }}>
-                  {customer.name || "—"}
-                </Title>
-                <Space>
-                  <Tag icon={customer.isVendor ? <ShopOutlined /> : <UserOutlined />}>
-                    {customer.isVendor ? "Vendor" : "Customer"}
-                  </Tag>
-                  {!customer.isActive && <Tag color="red">Inactive</Tag>}
-                </Space>
-              </div>
+        {/* Header */}
+        <div
+          className="page-header"
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 24,
+          }}
+        >
+          <Space>
+            <Avatar size={72} style={{ backgroundColor: "#1890ff" }}>
+              {getInitials(customer.name)}
+            </Avatar>
+            <div>
+              <Title level={3} style={{ margin: 0 }}>
+                {customer.name}
+              </Title>
+              <Space>
+                <Tag
+                  icon={customer.isVendor ? <ShopOutlined /> : <UserOutlined />}
+                >
+                  {customer.isVendor ? "Vendor" : "Customer"}
+                </Tag>
+                {!customer.isActive && <Tag color="red">Inactive</Tag>}
+              </Space>
             </div>
-            <Button type="primary" icon={<EditOutlined />} onClick={handleEditCustomer}>
-              Edit Customer
-            </Button>
-          </div>
+          </Space>
 
-          {/* Stats */}
-          <Row gutter={[16, 16]} className="stats-row">
-            <Col xs={12} sm={6}>
-              <Card className="stat-card">
-                <Statistic title="Total Quoted" value={totalQuoted} prefix="₹" precision={2} />
-              </Card>
-            </Col>
-            <Col xs={12} sm={6}>
-              <Card className="stat-card">
-                <Statistic title="Invoiced" value={totalInvoiced} prefix="₹" precision={2} />
-              </Card>
-            </Col>
-            <Col xs={12} sm={6}>
-              <Card className="stat-card">
-                <Statistic title="Paid" value={totalPaid} prefix="₹" precision={2} />
-              </Card>
-            </Col>
-            <Col xs={12} sm={6}>
-              <Card className="stat-card">
-                <Statistic
-                  title="Balance Due"
-                  value={balanceDue}
-                  prefix="₹"
-                  precision={2}
-                  valueStyle={{ color: balanceDue > 0 ? "#cf1322" : "#52c41a" }}
-                />
-              </Card>
-            </Col>
-          </Row>
+          <Button
+            type="primary"
+            icon={<EditOutlined />}
+            onClick={handleEditCustomer}
+          >
+            Edit Customer
+          </Button>
+        </div>
 
-          <Row gutter={24}>
-            {/* Left – Customer Info */}
-            <Col xs={24} lg={7} xl={6}>
-              <Space direction="vertical" size={24} style={{ width: "100%" }}>
-                <Card className="info-card">
-                  <div className="customer-meta">
+        {/* Statistics */}
+        <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+          <Col xs={12} sm={6}>
+            <Card>
+              <Statistic
+                title="Total Quoted"
+                value={totalQuoted}
+                prefix="₹"
+                precision={2}
+              />
+            </Card>
+          </Col>
+          <Col xs={12} sm={6}>
+            <Card>
+              <Statistic
+                title="Invoiced"
+                value={totalInvoiced}
+                prefix="₹"
+                precision={2}
+              />
+            </Card>
+          </Col>
+          <Col xs={12} sm={6}>
+            <Card>
+              <Statistic
+                title="Paid"
+                value={totalPaid}
+                prefix="₹"
+                precision={2}
+              />
+            </Card>
+          </Col>
+          <Col xs={12} sm={6}>
+            <Card>
+              <Statistic
+                title="Balance Due"
+                value={balanceDue}
+                prefix="₹"
+                precision={2}
+                valueStyle={{ color: balanceDue > 0 ? "#cf1322" : "#52c41a" }}
+              />
+            </Card>
+          </Col>
+        </Row>
+
+        <Row gutter={24}>
+          {/* Left Sidebar Info */}
+          <Col xs={24} lg={7} xl={6}>
+            <Space direction="vertical" size={24} style={{ width: "100%" }}>
+              <Card title="Contact Information">
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 16 }}
+                >
+                  <div>
+                    <Text type="secondary">
+                      <PhoneOutlined /> Phone
+                    </Text>
+                    <div>{customer.mobileNumber || "—"}</div>
+                  </div>
+                  <div>
+                    <Text type="secondary">
+                      <MailOutlined /> Email
+                    </Text>
                     <div>
-                      <Text type="secondary">
-                        <PhoneOutlined /> Phone
-                      </Text>
-                      <div className="value">{customer.mobileNumber || "—"}</div>
-                    </div>
-                    <div>
-                      <Text type="secondary">
-                        <MailOutlined /> Email
-                      </Text>
-                      <div className="value">
-                        <a href={`mailto:${customer.email}`}>{customer.email || "—"}</a>
-                      </div>
-                    </div>
-                    <div>
-                      <Text type="secondary">
-                        <ShopOutlined /> Company
-                      </Text>
-                      <div className="value">{customer.companyName || "—"}</div>
-                    </div>
-                    <div>
-                      <Text type="secondary">
-                        <CalendarOutlined /> Since
-                      </Text>
-                      <div className="value">{formatDate(customer.createdAt)}</div>
+                      <a href={`mailto:${customer.email}`}>
+                        {customer.email || "—"}
+                      </a>
                     </div>
                   </div>
-                </Card>
-
-                {primaryAddress && (
-                  <Card title="Primary Address" className="info-card">
-                    <div className="address-block">
-                      <EnvironmentOutlined style={{ marginRight: 8, color: "#1890ff" }} />
-                      <div>
-                        {primaryAddress.street}
-                        <br />
-                        {primaryAddress.city}, {primaryAddress.state}{" "}
-                        {primaryAddress.postalCode && primaryAddress.postalCode}
-                        <br />
-                        {primaryAddress.country || "India"}
-                      </div>
-                    </div>
-                  </Card>
-                )}
-              </Space>
-            </Col>
-
-            {/* Right – Tabs */}
-            <Col xs={24} lg={17} xl={18}>
-              <Card className="tabs-card">
-                <Tabs
-                  defaultActiveKey="overview"
-                  items={tabItems}
-                  size="large"
-                  tabBarStyle={{ padding: "0 16px" }}
-                />
+                  <div>
+                    <Text type="secondary">
+                      <ShopOutlined /> Company
+                    </Text>
+                    <div>{customer.companyName || "—"}</div>
+                  </div>
+                  <div>
+                    <Text type="secondary">
+                      <CalendarOutlined /> Since
+                    </Text>
+                    <div>{formatDate(customer.createdAt)}</div>
+                  </div>
+                </div>
               </Card>
-            </Col>
-          </Row>
 
-          {/* Address Modal */}
-          <AddressModal
-            open={isModalOpen}
-            onCancel={() => {
-              setIsModalOpen(false);
-              setEditingAddress(null);
-            }}
-            onFinish={handleAddressSave}
-            initialValues={editingAddress || {}}
-            title={editingAddress ? "Edit Address" : "Add New Address"}
-          />
-        </div>
+              {primaryAddress && (
+                <Card title="Primary Address">
+                  <EnvironmentOutlined
+                    style={{ marginRight: 8, color: "#1890ff" }}
+                  />
+                  {primaryAddress.street}
+                  <br />
+                  {primaryAddress.city}, {primaryAddress.state}{" "}
+                  {primaryAddress.postalCode}
+                  <br />
+                  {primaryAddress.country || "India"}
+                </Card>
+              )}
+            </Space>
+          </Col>
+
+          {/* Main Content - Tabs */}
+          <Col xs={24} lg={17} xl={18}>
+            <Card>
+              <Tabs defaultActiveKey="overview" items={tabItems} size="large" />
+            </Card>
+          </Col>
+        </Row>
+
+        {/* Address Modal */}
+        <AddressModal
+          open={isModalOpen}
+          onCancel={() => {
+            setIsModalOpen(false);
+            setEditingAddress(null);
+          }}
+          onFinish={handleAddressSave}
+          initialValues={editingAddress || {}}
+          title={editingAddress ? "Edit Address" : "Add New Address"}
+        />
       </div>
     </div>
   );

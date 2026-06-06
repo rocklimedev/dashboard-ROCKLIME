@@ -46,6 +46,7 @@
     "path": "^0.12.7",
     "pdfkit": "^0.18.0",
     "react-helmet": "^6.1.0",
+    "resend": "^6.12.4",
     "sanitize-html": "^2.17.0",
     "sharp": "^0.34.1",
     "slugify": "^1.6.6",

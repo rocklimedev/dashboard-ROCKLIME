@@ -19,7 +19,7 @@ import {
 } from "react-icons/md";
 
 import { FaShoppingCart, FaStore } from "react-icons/fa";
-
+import CategoryManagement from "../../concepts/Products/CategoryManagement";
 import PurchaseManagement from "../../concepts/PO/PurchaseManagement";
 import Product from "../../concepts/Products/Product";
 import OrderWrapper from "../../concepts/Order/OrderWrapper";
@@ -110,6 +110,13 @@ export const sidebarRoutes = [
         icon: <FaStore />, // ✅ Better icon for Product Meta
         isSidebarActive: true,
         element: <BrandList />,
+      },
+      {
+        path: "/categories-keywords/list",
+        name: "Categories",
+        icon: <FaThLarge />,
+        element: <CategoryManagement />,
+        isSidebarActive: true,
       },
       {
         path: "/activity-logs",

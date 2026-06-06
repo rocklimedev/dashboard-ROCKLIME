@@ -118,7 +118,7 @@ If you did not request this, you can safely ignore this email.`;
      <p style="text-align: center; margin: 20px 0;">
        <a href="${url}" style="background-color: #e31e24; color: #fff; padding: 12px 20px; border-radius: 5px; text-decoration: none; font-weight: bold; font-family: 'Lato', Arial, sans-serif;">Reset Password</a>
      </p>
-     <p style="margin-bottom: 0; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">If you did not request this, please ignore this email.</p>`
+     <p style="margin-bottom: 0; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">If you did not request this, please ignore this email.</p>`,
   );
 
   return { subject, text, html };
@@ -136,7 +136,7 @@ If you did not make this change, please contact our support team immediately.`;
   const html = baseTemplate(
     "Password Changed",
     `<p style="margin-bottom: 20px; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">Your password was successfully changed.</p>
-     <p style="margin-bottom: 0; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">If you did not make this change, please contact our support team immediately.</p>`
+     <p style="margin-bottom: 0; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">If you did not make this change, please contact our support team immediately.</p>`,
   );
 
   return { subject, text, html };
@@ -174,7 +174,7 @@ If you did not register, please ignore this email.`;
      <p style="text-align: center; margin: 20px 0;">
        <a href="${url}" style="background-color: #3eb780; color: #fff; padding: 12px 20px; border-radius: 5px; text-decoration: none; font-weight: bold; font-family: 'Lato', Arial, sans-serif;">Verify Account</a>
      </p>
-     <p style="margin-bottom: 0; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">If you did not register, please ignore this email.</p>`
+     <p style="margin-bottom: 0; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">If you did not register, please ignore this email.</p>`,
   );
 
   return { subject, text, html };
@@ -189,7 +189,7 @@ function signupEmail(name) {
   const html = baseTemplate(
     "Welcome to CM Trading Co",
     `<p style="margin-bottom: 20px; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">Hi ${name}!</p>
-     <p style="margin-bottom: 0; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">Thank you for creating an account with us. We’re excited to have you onboard.</p>`
+     <p style="margin-bottom: 0; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">Thank you for creating an account with us. We’re excited to have you onboard.</p>`,
   );
 
   return { subject, text, html };
@@ -209,7 +209,7 @@ Hi ${name}!\n\nYour account has been successfully verified. You can now log in t
      <p style="text-align: center; margin: 20px 0;">
        <a href="https://dashboard-rocklime.vercel.app/login" style="background-color: #3eb780; color: #fff; padding: 12px 20px; border-radius: 5px; text-decoration: none; font-weight: bold; font-family: 'Lato', Arial, sans-serif;">Log In Now</a>
      </p>
-     <p style="margin-bottom: 0; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">If you did not initiate this verification, please contact our support team immediately.</p>`
+     <p style="margin-bottom: 0; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">If you did not initiate this verification, please contact our support team immediately.</p>`,
   );
 
   return { subject, text, html };
@@ -228,7 +228,7 @@ Hi ${name}!\n\nThank you for reaching out to us. We have received your message:\
      <p style="margin-bottom: 20px; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">Thank you for reaching out to us. We have received your message:</p>
      <blockquote style="border-left: 3px solid #e31e24; padding-left: 12px; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5; margin-bottom: 20px;">${message}</blockquote>
      <p style="margin-bottom: 20px; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">Our team will get back to you soon.</p>
-     <p style="margin-bottom: 0; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">Best regards,<br>CM Trading Co</p>`
+     <p style="margin-bottom: 0; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">Best regards,<br>CM Trading Co</p>`,
   );
 
   return { subject, text, html };
@@ -261,7 +261,7 @@ Please follow up with the user.`;
        }</li>
        <li style="list-style: disc; padding-left: 15px;"><strong style="font-weight: 700;">Message:</strong> ${message}</li>
      </ul>
-     <p style="margin-bottom: 0; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">Please follow up with the user.</p>`
+     <p style="margin-bottom: 0; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">Please follow up with the user.</p>`,
   );
 
   return { subject, text, html };
