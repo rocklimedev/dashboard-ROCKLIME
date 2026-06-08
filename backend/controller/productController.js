@@ -706,7 +706,7 @@ exports.getAllProducts = async (req, res) => {
 
     let whereClause = {};
 
-    // Search
+    // === Search ===
     if (searchTerm) {
       const pattern = `%${searchTerm.toLowerCase()}%`;
       whereClause[Op.or] = [
@@ -741,7 +741,7 @@ exports.getAllProducts = async (req, res) => {
       ];
     }
 
-    // Tab filtering
+    // === Tab filtering ===
     if (tab === "in-stock") {
       whereClause.quantity = { [Op.gt]: 0 };
     } else if (tab === "out-of-stock") {
@@ -750,14 +750,30 @@ exports.getAllProducts = async (req, res) => {
       whereClause.quantity = { [Op.gt]: 0, [Op.lte]: lowStockThreshold };
     }
 
+    // === ORDERING: Priority to latest InventoryHistory ===
     const order = [
+      // 1. Most recently updated inventory first (NULLS LAST)
+      [
+        sequelize.literal(`
+          COALESCE(
+            (SELECT MAX(createdAt) 
+             FROM inventory_history 
+             WHERE inventory_history.productId = \`Product\`.\`productId\`),
+            '1970-01-01'
+          )
+        `),
+        "DESC",
+      ],
+      // 2. In-stock before out-of-stock
       [
         sequelize.literal(
           `CASE WHEN \`Product\`.\`quantity\` > 0 THEN 0 ELSE 1 END`,
         ),
         "ASC",
       ],
+      // 3. Product updatedAt
       ["updatedAt", "DESC"],
+      // 4. Name
       ["name", "ASC"],
     ];
 
@@ -793,36 +809,35 @@ exports.getAllProducts = async (req, res) => {
       });
     }
 
-    // === META ENRICHMENT (UUID Support) ===
+    // === META ENRICHMENT (unchanged) ===
     const metaIds = new Set();
     products.forEach((p) => {
       const meta = parseJsonSafely(p.meta, {});
       if (meta && typeof meta === "object") {
-        Object.keys(meta).forEach((key) => metaIds.add(key)); // UUID strings
+        Object.keys(meta).forEach((key) => metaIds.add(key));
       }
     });
 
     const metaDefs =
       metaIds.size > 0
         ? await ProductMeta.findAll({
-            where: { id: { [Op.in]: Array.from(metaIds) } }, // Assuming `id` in ProductMeta is UUID
+            where: { id: { [Op.in]: Array.from(metaIds) } },
             attributes: ["id", "title", "slug", "fieldType", "unit"],
           })
         : [];
 
     const metaMap = Object.fromEntries(metaDefs.map((m) => [m.id, m.toJSON()]));
 
-    // Enrich Products
+    // === Enrich Products ===
     const enrichedProducts = products.map((product) => {
       const raw = product.toJSON();
       const metaObj = parseJsonSafely(raw.meta, {});
       const images = parseJsonSafely(raw.images, []);
 
       const metaDetails = Object.entries(metaObj).map(([id, value]) => {
-        const def = metaMap[id] || {}; // id is UUID string
-
+        const def = metaMap[id] || {};
         return {
-          id, // Keep original UUID
+          id,
           title: def.title || "Unknown Field",
           slug: def.slug || null,
           value: value != null ? String(value) : "",

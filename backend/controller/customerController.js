@@ -1,5 +1,5 @@
 const { sendNotification } = require("./notificationController"); // Import sendNotification
-const { Customer } = require("../models");
+const { Customer, Address } = require("../models");
 const ADMIN_USER_ID = "2ef0f07a-a275-4fe1-832d-fe9a5d145f60"; // Replace with actual admin user ID or channel
 const { Op } = require("sequelize");
 const { ActivityLog } = require("../models");
@@ -106,33 +106,42 @@ exports.getCustomers = async (req, res) => {
     // Build dynamic WHERE clause
     const where = {};
 
-    // Search by name, email, or phone (use LIKE – case-insensitive in MySQL ci collation)
+    // Search by name, email, or phone
     const search = req.query.search?.trim();
     if (search) {
       const searchTerm = `%${search}%`;
       where[Op.or] = [
         { name: { [Op.like]: searchTerm } },
         { email: { [Op.like]: searchTerm } },
-        { mobileNumber: { [Op.like]: searchTerm } },
-        // Add more fields if needed, e.g.:
-        // { companyName: { [Op.like]: searchTerm } },
+        { mobileNumber: { [Op.like]: searchTerm } }, // or phone
       ];
     }
 
-    // Optional: Add customerType filter later if you want server-side
-    // if (req.query.customerType && req.query.customerType !== "All") {
-    //   where.customerType = req.query.customerType;
-    // }
-
-    // Fetch paginated customers
+    // Fetch customers with their addresses
     const { count: totalCustomers, rows: customers } =
       await Customer.findAndCountAll({
         where,
         offset,
         limit,
-        order: [["name", "ASC"]], // or [["createdAt", "DESC"]]
+        order: [["name", "ASC"]],
         attributes: { exclude: ["createdAt", "updatedAt"] },
         subQuery: false,
+        include: [
+          {
+            model: Address,
+            as: "addresses", // Make sure this alias matches your model association
+            attributes: [
+              "addressId",
+              "street",
+              "city",
+              "state",
+              "postalCode",
+              "country",
+              "status",
+            ],
+            required: false, // LEFT JOIN - show customers even without addresses
+          },
+        ],
       });
 
     const totalPages = Math.ceil(totalCustomers / limit);
@@ -148,6 +157,7 @@ exports.getCustomers = async (req, res) => {
       },
     });
   } catch (error) {
+    console.error("Get Customers Error:", error);
     return res.status(500).json({
       success: false,
       message:
