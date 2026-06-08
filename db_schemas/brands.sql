@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS `brands` (
   UNIQUE KEY `brandName` (`brandName`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Dumping data for table spsyn8lm_rocklime_dashboard.brands: ~19 rows (approximately)
+-- Dumping data for table spsyn8lm_rocklime_dashboard.brands: ~20 rows (approximately)
 INSERT INTO `brands` (`id`, `brandSlug`, `brandName`, `logo`, `createdAt`, `updatedAt`) VALUES
 	('13847c2c-3c91-4bb2-a130-f94928658237', 'GP_002', 'Grohe Premium', 'https://media.cmtradingco.com/brands/grohe_premium.png', '2025-03-01 10:10:42', '2025-03-01 10:10:42'),
 	('1e19b647-1138-11f1-b773-52540021303b', 'perk', 'PERK', 'https://media.cmtradingco.com/brands/perk.png', '2026-02-24 09:50:14', '2026-02-24 09:50:14'),
@@ -47,6 +47,7 @@ INSERT INTO `brands` (`id`, `brandSlug`, `brandName`, `logo`, `createdAt`, `upda
 	('8b00e9ad-3e28-11f1-97e0-52540021303b', 'vista', 'VISTA', 'https://media.cmtradingco.com/brands/vistas.jpg', '2026-04-22 14:22:07', '2026-04-22 14:22:07'),
 	('987bb747-773d-11f0-9e84-52540021303b', 'subway', 'SUBWAY', 'https://media.cmtradingco.com/brands/subway.webp', '2025-08-12 11:01:28', '2025-08-12 11:01:28'),
 	('acbe7061-9b76-47d1-a509-e4b1f982a36f', 'colston', 'Colston', 'https://media.cmtradingco.com/brands/colston-logo_black.png', '2025-07-30 07:59:10', '2025-07-30 07:59:10'),
+	('b3da7c9f-47ad-11f1-ba3d-52540021303b', 'nexion', 'NEXION', NULL, '2026-05-04 17:07:59', '2026-05-04 17:07:59'),
 	('c69121e3-7686-11f0-9e84-52540021303b', 'sunheart', 'SUNHEART', 'https://media.cmtradingco.com/brands/sunheart.jpg', '2025-08-11 13:12:47', '2025-08-11 13:12:47'),
 	('d642a7f4-9bb9-4d91-bcf3-fd63b438b85e', 'GB_004', 'Grohe Bau', 'https://media.cmtradingco.com/brands/grohe.png', '2025-03-01 10:10:42', '2025-03-01 10:10:42'),
 	('f84227c5-9852-11f0-ac50-52540021303b', 'plumbing', 'Plumbing', 'https://media.cmtradingco.com/brands/plumbing.jpg', '2025-09-23 13:27:36', '2025-09-23 13:27:36');

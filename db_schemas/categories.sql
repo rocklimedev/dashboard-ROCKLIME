@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS `categories` (
   CONSTRAINT `categories_ibfk_1380` FOREIGN KEY (`brandId`) REFERENCES `brands` (`id`) ON DELETE NO ACTION ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Dumping data for table spsyn8lm_rocklime_dashboard.categories: ~346 rows (approximately)
+-- Dumping data for table spsyn8lm_rocklime_dashboard.categories: ~353 rows (approximately)
 INSERT INTO `categories` (`categoryId`, `name`, `parentCategoryId`, `createdAt`, `updatedAt`, `slug`, `brandId`) VALUES
 	('02cb1e04-2620-4998-9653-c81e576b9ade', 'TAP CONNECTOR HOSE PIPE', 'd18dd89c-90d2-44dd-8ba4-16783d58bd5e', '2025-08-08 08:00:16', '2025-08-08 08:00:16', 'tap-connector-hose-pipe', 'acbe7061-9b76-47d1-a509-e4b1f982a36f'),
 	('034c7cfb-a607-49d0-a061-9f38dac1cca8', 'THM –ROUND', '80afdfa6-2124-4c58-8d1e-116f9f7d8c56', '2025-04-07 12:33:05', '2025-04-07 12:33:05', 'cat-034c7cfba60749d0a0619f38dac1cca8', '13847c2c-3c91-4bb2-a130-f94928658237'),
@@ -137,10 +137,6 @@ INSERT INTO `categories` (`categoryId`, `name`, `parentCategoryId`, `createdAt`,
 	('52fa8cdf-2eb5-4bde-97c4-c652721d8c31', 'THM – SQUARE  ACRYLIC GLASS (LS0)', '80afdfa6-2124-4c58-8d1e-116f9f7d8c56', '2025-04-07 12:33:05', '2025-04-07 12:33:05', 'cat-52fa8cdf2eb54bde97c4c652721d8c31', '13847c2c-3c91-4bb2-a130-f94928658237'),
 	('533b5e77-2edd-412d-844b-4a538f92aead', 'HUBB CHROME', 'fcec49c3-3931-4120-841c-50d517b2ab1b', '2025-08-08 07:56:07', '2025-08-08 07:56:07', 'hubb-chrome', 'acbe7061-9b76-47d1-a509-e4b1f982a36f'),
 	('5480e213-78fb-4490-ae5d-aea180baba21', 'HUBB GOLD', 'fcec49c3-3931-4120-841c-50d517b2ab1b', '2025-08-08 07:56:07', '2025-08-08 07:56:07', 'hubb-gold', 'acbe7061-9b76-47d1-a509-e4b1f982a36f'),
-	('550316f6-d0c8-11f0-ae77-52540021303b', 'SHOWER HOSE', NULL, '2025-12-04 09:48:48', '2025-12-04 09:48:48', 'shower-hose', NULL),
-	('550914bd-d0c8-11f0-ae77-52540021303b', 'Thermostats Phantom Black', NULL, '2025-12-04 09:48:48', '2025-12-04 09:48:48', 'thermostats-phantom-black', NULL),
-	('550c01d9-d0c8-11f0-ae77-52540021303b', 'Head Showers Phantom Black', NULL, '2025-12-04 09:48:48', '2025-12-04 09:48:48', 'head-showers-phantom-black', NULL),
-	('550c3009-d0c8-11f0-ae77-52540021303b', 'Shower Systems Phantom Black', NULL, '2025-12-04 09:48:48', '2025-12-04 09:48:48', 'shower-systems-phantom-black', NULL),
 	('57a97c2c-5396-483f-9f4a-0decae9d84b2', 'VALENTINO - WALL HUNG WC', 'd18dd89c-90d2-44dd-8ba4-16783d58bd5e', '2025-08-08 08:00:18', '2025-08-08 08:00:18', 'valentino-wall-hung-wc', 'acbe7061-9b76-47d1-a509-e4b1f982a36f'),
 	('57b177dd-b0be-4f51-b5d8-5e2ec3f99588', 'GRAB BAR', 'fcec49c3-3931-4120-841c-50d517b2ab1b', '2025-08-08 08:00:00', '2025-08-08 08:00:00', 'grab-bar', 'acbe7061-9b76-47d1-a509-e4b1f982a36f'),
 	('5827fd11-7d24-46fa-8460-b873d5b4b2ab', 'BIDET WC', '7b7a5690-1dae-46dd-9de0-601646b66331', '2025-08-08 08:00:20', '2025-08-08 08:00:20', 'bidet-wc', 'acbe7061-9b76-47d1-a509-e4b1f982a36f'),
@@ -238,6 +234,17 @@ INSERT INTO `categories` (`categoryId`, `name`, `parentCategoryId`, `createdAt`,
 	('997b6219-61df-4061-9799-10d0005c226b', 'GROHE FLUSH PLATES', '34e5ad50-2d39-4dfe-8726-cb4db364d84d', '2025-04-07 12:22:34', '2025-04-07 12:22:34', 'cat-997b621961df4061979910d0005c226b', '13847c2c-3c91-4bb2-a130-f94928658237'),
 	('99b17a0b-0321-4fc5-aa92-87b567dab46f', 'DRAIN', 'fcec49c3-3931-4120-841c-50d517b2ab1b', '2025-08-08 08:00:00', '2025-08-08 08:00:00', 'drain', 'acbe7061-9b76-47d1-a509-e4b1f982a36f'),
 	('9a6d9c0d-2528-4c56-b949-e3cbefb8b013', 'SENSOR URINAL', 'd18dd89c-90d2-44dd-8ba4-16783d58bd5e', '2025-08-08 08:00:19', '2025-08-08 08:00:19', 'sensor-urinal', 'acbe7061-9b76-47d1-a509-e4b1f982a36f'),
+	('9c640788-483a-11f1-ba3d-52540021303b', 'Without Mesh (Thickness 6 mm)', NULL, '2026-05-05 09:56:39', '2026-05-05 09:56:39', 'without-mesh-thickness-6mm', 'b3da7c9f-47ad-11f1-ba3d-52540021303b'),
+	('9c654648-483a-11f1-ba3d-52540021303b', 'Facade Panel with Safety Mesh (Thickness 6mm+)', NULL, '2026-05-05 09:56:39', '2026-05-05 09:56:39', 'facade-panel-safety-mesh-6mm', 'b3da7c9f-47ad-11f1-ba3d-52540021303b'),
+	('9c6579f5-483a-11f1-ba3d-52540021303b', 'ENDLESS/AMBIENT/RUNA/LITHIC/TERRAELINO/PLANUM (Thickness 9 mm)', NULL, '2026-05-05 09:56:39', '2026-05-05 09:56:39', 'endless-ambient-runa-lithic-terraelino-planum-9mm', 'b3da7c9f-47ad-11f1-ba3d-52540021303b'),
+	('9c65a52c-483a-11f1-ba3d-52540021303b', 'TERRAELINO (Thickness 9 mm)', NULL, '2026-05-05 09:56:39', '2026-05-05 09:56:39', 'terraelino-9mm', 'b3da7c9f-47ad-11f1-ba3d-52540021303b'),
+	('9c65aa08-483a-11f1-ba3d-52540021303b', 'TERRAELINO/TERRACOTTA/PICHHE (Thickness 9 mm)', NULL, '2026-05-05 09:56:39', '2026-05-05 09:56:39', 'terraelino-terracotta-pichhe-9mm', 'b3da7c9f-47ad-11f1-ba3d-52540021303b'),
+	('9c65add3-483a-11f1-ba3d-52540021303b', 'RIGA/OMBRE (Thickness 9mm)', NULL, '2026-05-05 09:56:39', '2026-05-05 09:56:39', 'riga-ombre-9mm', 'b3da7c9f-47ad-11f1-ba3d-52540021303b'),
+	('9c65e663-483a-11f1-ba3d-52540021303b', 'CONIWOOD/ESSENZE (Thickness 9 mm)', NULL, '2026-05-05 09:56:39', '2026-05-05 09:56:39', 'coniwood-essenze-9mm', 'b3da7c9f-47ad-11f1-ba3d-52540021303b'),
+	('9c65eb7a-483a-11f1-ba3d-52540021303b', 'TEXTURE / SPAZZOLATO (Thickness 9 mm)', NULL, '2026-05-05 09:56:39', '2026-05-05 09:56:39', 'texture-spazzolato-9mm', 'b3da7c9f-47ad-11f1-ba3d-52540021303b'),
+	('9c65f08a-483a-11f1-ba3d-52540021303b', 'Thickness 9 mm / Full Lappato / Lappato Matt', NULL, '2026-05-05 09:56:39', '2026-05-05 09:56:39', 'thickness-9mm-full-lappato', 'b3da7c9f-47ad-11f1-ba3d-52540021303b'),
+	('9c65f5b4-483a-11f1-ba3d-52540021303b', 'Naturale / Soft Naturale I (Thickness 9 mm)', NULL, '2026-05-05 09:56:39', '2026-05-05 09:56:39', 'naturale-soft-1-9mm', 'b3da7c9f-47ad-11f1-ba3d-52540021303b'),
+	('9c65fbbc-483a-11f1-ba3d-52540021303b', 'Naturale / Soft Naturale II (Thickness 9 mm)', NULL, '2026-05-05 09:56:39', '2026-05-05 09:56:39', 'naturale-soft-2-9mm', 'b3da7c9f-47ad-11f1-ba3d-52540021303b'),
 	('9cd81db9-7362-4a31-84c1-fbcc4c28db0d', 'GROHE SENSIA ARENA  FLOOR STANDING', '80afdfa6-2124-4c58-8d1e-116f9f7d8c56', '2025-04-07 12:33:20', '2025-04-07 12:33:20', 'cat-9cd81db973624a3184c1fbcc4c28db0d', '13847c2c-3c91-4bb2-a130-f94928658237'),
 	('9d7ae48d-fe28-48a8-93ef-f466ddec7835', 'SENSOR FOR WC', '80afdfa6-2124-4c58-8d1e-116f9f7d8c56', '2025-04-07 12:33:28', '2025-04-07 12:33:28', 'cat-9d7ae48dfe2848a893eff466ddec7835', '13847c2c-3c91-4bb2-a130-f94928658237'),
 	('9dd53e2f-8f94-4f99-adbc-cea14335dfe9', 'ANGLE VALVE', '80afdfa6-2124-4c58-8d1e-116f9f7d8c56', '2025-04-07 12:33:16', '2025-04-07 12:33:16', 'cat-9dd53e2f8f944f99adbccea14335dfe9', '13847c2c-3c91-4bb2-a130-f94928658237'),

@@ -40,13 +40,18 @@ CREATE TABLE IF NOT EXISTS `purchase_orders` (
   CONSTRAINT `purchase_orders_ibfk_1` FOREIGN KEY (`vendorId`) REFERENCES `vendors` (`id`) ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
--- Dumping data for table spsyn8lm_rocklime_dashboard.purchase_orders: ~5 rows (approximately)
+-- Dumping data for table spsyn8lm_rocklime_dashboard.purchase_orders: ~10 rows (approximately)
 INSERT INTO `purchase_orders` (`id`, `vendorId`, `userId`, `fgsId`, `status`, `orderDate`, `totalAmount`, `mongoItemsId`, `createdAt`, `updatedAt`, `poNumber`, `expectDeliveryDate`) VALUES
 	('1ab991b1-2c8c-4be0-8050-44202e7a1eec', '3a4df5ea-e679-4882-8e3e-16004e9c11ce', 'ce2549ac-ec37-4201-946c-625725114c6a', NULL, 'pending', '2026-04-24 11:01:16', 36350.00, '69eb4d7ccaf6050e33e9f0a5', '2026-04-24 11:01:16', '2026-04-25 05:35:26', 'PO240426101', '2026-04-25 00:00:00'),
 	('4002ef1d-2beb-46b7-b6e7-199e5e7f4088', '26264130-b469-4194-a7ca-ce13a0c38225', '12c1816f-87f3-4dc6-9432-942a007b6a4b', NULL, 'confirmed', '2026-03-31 05:10:42', 849000.00, '69cb57520f0316e909b94d84', '2026-03-31 05:10:42', '2026-03-31 05:11:31', 'PO310326101', '2026-04-18 00:00:00'),
 	('5a9cc676-b6b3-4774-8ea1-a1709939fa12', '3a4df5ea-e679-4882-8e3e-16004e9c11ce', '12c1816f-87f3-4dc6-9432-942a007b6a4b', NULL, 'pending', '2026-04-11 07:16:42', 202800.00, '69d9f55aafbbeb0666d2d8d4', '2026-04-11 07:16:42', '2026-04-11 07:27:40', 'PO110426102', '2026-04-11 00:00:00'),
+	('6152c7c0-1217-4360-8245-c789ab8f8b91', '919d22fa-911c-4ae9-a7c5-34fc6d400ebe', '12c1816f-87f3-4dc6-9432-942a007b6a4b', NULL, 'pending', '2026-06-05 08:34:42', 113986.00, '6a228a225fd950b1c54b7f8e', '2026-06-05 08:34:42', '2026-06-05 08:34:42', 'PO050626101', '2026-06-05 00:00:00'),
 	('6d9c8cc6-1832-4934-9306-cd56426d0f85', '26264130-b469-4194-a7ca-ce13a0c38225', '12c1816f-87f3-4dc6-9432-942a007b6a4b', NULL, 'pending', '2026-04-09 11:43:40', 115300.00, '69d790ec8782c8216bd25594', '2026-04-09 11:43:40', '2026-04-09 11:43:40', 'PO090426101', '2026-04-09 00:00:00'),
-	('c7c5820f-ab5b-421b-9ed7-e7bde03e25a2', '0e43317e-2b3b-4a96-8da7-41afbcb7d112', '12c1816f-87f3-4dc6-9432-942a007b6a4b', NULL, 'pending', '2026-04-11 06:42:08', 469790.00, '69d9ed40afbbeb0666d2d831', '2026-04-11 06:42:08', '2026-04-11 06:49:28', 'PO110426101', NULL);
+	('a52bb025-f61d-4eb7-9778-c41ff48f7a0f', '3a4df5ea-e679-4882-8e3e-16004e9c11ce', '12c1816f-87f3-4dc6-9432-942a007b6a4b', NULL, 'pending', '2026-04-30 12:41:08', 9800.00, '69f34de439ea8b7d70cfe844', '2026-04-30 12:41:08', '2026-04-30 12:41:08', 'PO300426101', '2026-04-30 00:00:00'),
+	('aec9ace2-903f-4e0d-8cd9-d2ac5022d96d', '04a1e87e-baef-49ef-b881-c4ecc0c851a6', '12c1816f-87f3-4dc6-9432-942a007b6a4b', NULL, 'pending', '2026-05-16 12:03:02', 190000.00, '6a085cf6ebde5b834d2bcfc0', '2026-05-16 12:03:02', '2026-05-16 12:03:02', 'PO160526101', '2026-05-16 00:00:00'),
+	('c7c5820f-ab5b-421b-9ed7-e7bde03e25a2', '0e43317e-2b3b-4a96-8da7-41afbcb7d112', '12c1816f-87f3-4dc6-9432-942a007b6a4b', NULL, 'pending', '2026-04-11 06:42:08', 469790.00, '69d9ed40afbbeb0666d2d831', '2026-04-11 06:42:08', '2026-04-11 06:49:28', 'PO110426101', NULL),
+	('e2e144d7-4b80-4988-93e9-4a294a9da4ad', 'b160a51b-b8b3-4a0c-bee1-c044150f180f', '12c1816f-87f3-4dc6-9432-942a007b6a4b', NULL, 'pending', '2026-06-05 08:34:43', 113986.00, '6a228a235fd950b1c54b7f9a', '2026-06-05 08:34:43', '2026-06-05 08:36:38', 'PO050626102', '2026-06-05 00:00:00'),
+	('e9d4dc68-1407-4a1f-b01a-7b4ab5e04bb5', '919d22fa-911c-4ae9-a7c5-34fc6d400ebe', 'ce2549ac-ec37-4201-946c-625725114c6a', NULL, 'pending', '2026-06-02 14:06:12', 175270.00, '6a1ee354e0ad4e081efd33bd', '2026-06-02 14:06:12', '2026-06-02 14:06:12', 'PO020626102', NULL);
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

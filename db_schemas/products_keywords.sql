@@ -28,9 +28,11 @@ CREATE TABLE IF NOT EXISTS `products_keywords` (
   CONSTRAINT `fk_products_keywords_product` FOREIGN KEY (`productId`) REFERENCES `products` (`productId`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Dumping data for table spsyn8lm_rocklime_dashboard.products_keywords: ~0 rows (approximately)
+-- Dumping data for table spsyn8lm_rocklime_dashboard.products_keywords: ~3 rows (approximately)
 INSERT INTO `products_keywords` (`productId`, `keywordId`, `createdAt`, `updatedAt`) VALUES
-	('04201923-9f3b-486c-b5df-cbfd8c8bd910', 'e2cf5aa6-b133-4031-ba61-e15b8038b816', '2026-04-09 11:42:51', '2026-04-09 11:42:51');
+	('04201923-9f3b-486c-b5df-cbfd8c8bd910', 'e2cf5aa6-b133-4031-ba61-e15b8038b816', '2026-04-09 11:42:51', '2026-04-09 11:42:51'),
+	('4b4070c2-e391-49a8-a56c-6ca01a576201', '147f299b-a77b-4a32-9469-7a4309e29483', '2026-05-04 07:11:46', '2026-05-04 07:11:46'),
+	('4b4070c2-e391-49a8-a56c-6ca01a576201', '8d4e6286-02ba-43ee-b57e-5791f6cfd0a6', '2026-05-04 07:04:38', '2026-05-04 07:04:38');
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

@@ -11,38 +11,78 @@ const addTemplatePage = async (pdfDoc, templateBytes) => {
 // 🔥 SAFE TEXT CLEANER
 const sanitizePDFText = (text) => {
   if (text === null || text === undefined) return "-";
-
   return String(text)
     .replace(/[\u0000-\u001F\u007F]/g, "")
     .replace(/\s+/g, " ")
     .trim();
 };
 
-// 🔥 SMART 2-LINE NAME SPLITTER (YOUR REQUIREMENT)
-const splitNameSmart = (text, maxCharsPerLine = 20) => {
-  if (!text) return ["-"];
+// 🔥 BASIC WRAP TEXT
+const wrapText = (text, maxWidth, font, fontSize) => {
+  if (!text || text === "-") return ["-"];
 
-  const str = String(text);
+  const words = String(text).split(" ");
+  const lines = [];
+  let currentLine = "";
 
-  if (str.length <= maxCharsPerLine) {
-    return [str];
+  for (const word of words) {
+    const testLine = currentLine ? `${currentLine} ${word}` : word;
+    const width = font.widthOfTextAtSize(testLine, fontSize);
+
+    if (width <= maxWidth) {
+      currentLine = testLine;
+    } else {
+      if (currentLine) lines.push(currentLine);
+      currentLine = word;
+    }
   }
 
-  const firstLine = str.slice(0, maxCharsPerLine);
-  let secondPart = str.slice(maxCharsPerLine);
+  if (currentLine) lines.push(currentLine);
+  return lines;
+};
 
-  // If second line too long → truncate with ...
-  if (secondPart.length > 20) {
-    secondPart = secondPart.slice(0, 20) + "...";
+// 🔥 WRAP TEXT WITH LINE LIMIT + ELLIPSIS (Best Version)
+const wrapTextWithLimit = (text, maxWidth, font, fontSize, maxLines = 2) => {
+  if (!text || text === "-") return ["-"];
+
+  const words = String(text).split(" ");
+  const lines = [];
+  let currentLine = "";
+
+  for (const word of words) {
+    const testLine = currentLine ? `${currentLine} ${word}` : word;
+    const width = font.widthOfTextAtSize(testLine, fontSize);
+
+    if (width <= maxWidth) {
+      currentLine = testLine;
+    } else {
+      if (currentLine) lines.push(currentLine);
+      currentLine = word;
+
+      if (lines.length === maxLines - 1) break;
+    }
   }
 
-  return [firstLine, secondPart];
-};
+  if (lines.length < maxLines && currentLine) {
+    lines.push(currentLine);
+  }
 
-const getMetaValue = (metaDetails, slug) => {
-  return metaDetails?.find((m) => m.slug === slug)?.value ?? "-";
-};
+  // Add ellipsis to last line if needed
+  if (lines.length === maxLines) {
+    let last = lines[maxLines - 1];
+    const ellipsis = "...";
 
+    while (
+      font.widthOfTextAtSize(last + ellipsis, fontSize) > maxWidth &&
+      last.length > 3
+    ) {
+      last = last.slice(0, -1);
+    }
+    lines[maxLines - 1] = last.trimEnd() + ellipsis;
+  }
+
+  return lines.slice(0, maxLines);
+};
 export const generateLowStockReportPDF = async (products) => {
   try {
     const templateBytes = await fetch(lowStockTemplate).then((res) =>
@@ -56,10 +96,10 @@ export const generateLowStockReportPDF = async (products) => {
 
     const LOW_STOCK_THRESHOLD = 20;
     const ROWS_PER_PAGE = 20;
-    const FONT_SIZE = 9;
-    const LINE_HEIGHT = 11;
+    const FONT_SIZE = 10;
+    const ROW_HEIGHT = 33;
+    const LINE_SPACING = 11;
 
-    // 🔥 FILTER LOW STOCK
     const lowStock = (products || []).filter(
       (p) => (p.quantity ?? 0) <= LOW_STOCK_THRESHOLD,
     );
@@ -88,40 +128,63 @@ export const generateLowStockReportPDF = async (products) => {
         stock: 520,
       };
 
+      const WRAP_WIDTH = {
+        name: COLS.companyCode - COLS.name - 15,
+        companyCode: COLS.price - COLS.companyCode - 15, // ≈ 165px
+      };
+
       let y = 670;
 
       pages[p].forEach((item, i) => {
         const sno = p * ROWS_PER_PAGE + i + 1;
 
         const name = sanitizePDFText(item.name);
-
         const companyCode = sanitizePDFText(
-          getMetaValue(item.metaDetails, "companyCode"),
+          item.metaDetails?.find((m) => m.slug === "companyCode")?.value,
         );
-
         const sellingPrice = sanitizePDFText(
-          getMetaValue(item.metaDetails, "sellingPrice"),
+          item.metaDetails?.find((m) => m.slug === "sellingPrice")?.value,
         );
-
         const stock = item.quantity ?? 0;
 
-        // =====================
-        // 🔥 NAME (2 LINE SMART SPLIT)
-        // =====================
-        const nameLines = splitNameSmart(name, 20);
+        // Wrap both name and companyCode
+        const nameLines = wrapTextWithLimit(
+          name,
+          WRAP_WIDTH.name,
+          font,
+          FONT_SIZE,
+          2,
+        );
 
+        const companyCodeLines = wrapTextWithLimit(
+          companyCode,
+          WRAP_WIDTH.companyCode,
+          font,
+          FONT_SIZE,
+          2,
+        );
+
+        // Draw Name (multi-line)
         nameLines.forEach((line, idx) => {
           page.drawText(line, {
             x: COLS.name,
-            y: y - idx * LINE_HEIGHT,
+            y: y - idx * LINE_SPACING,
             font,
             size: FONT_SIZE,
           });
         });
 
-        // =====================
-        // SNO
-        // =====================
+        // Draw Company Code (multi-line)
+        companyCodeLines.forEach((line, idx) => {
+          page.drawText(line, {
+            x: COLS.companyCode,
+            y: y - idx * LINE_SPACING,
+            font,
+            size: FONT_SIZE,
+          });
+        });
+
+        // Draw other single-line columns
         page.drawText(String(sno), {
           x: COLS.sno,
           y,
@@ -129,19 +192,6 @@ export const generateLowStockReportPDF = async (products) => {
           size: FONT_SIZE,
         });
 
-        // =====================
-        // COMPANY CODE
-        // =====================
-        page.drawText(companyCode, {
-          x: COLS.companyCode,
-          y,
-          font,
-          size: FONT_SIZE,
-        });
-
-        // =====================
-        // PRICE
-        // =====================
         page.drawText(String(sellingPrice), {
           x: COLS.price,
           y,
@@ -149,9 +199,6 @@ export const generateLowStockReportPDF = async (products) => {
           size: FONT_SIZE,
         });
 
-        // =====================
-        // STOCK
-        // =====================
         page.drawText(String(stock), {
           x: COLS.stock,
           y,
@@ -159,11 +206,10 @@ export const generateLowStockReportPDF = async (products) => {
           size: FONT_SIZE,
         });
 
-        // 🔥 FIXED ROW GAP (because max 2 lines only)
-        y -= 30;
+        y -= ROW_HEIGHT;
       });
 
-      // footer page number
+      // Footer - Page Number
       page.drawText(`${p + 1} / ${pages.length}`, {
         x: 500,
         y: 25,
@@ -173,7 +219,6 @@ export const generateLowStockReportPDF = async (products) => {
     }
 
     const pdfBytes = await pdfDoc.save();
-
     const blob = new Blob([pdfBytes], { type: "application/pdf" });
     const url = URL.createObjectURL(blob);
 

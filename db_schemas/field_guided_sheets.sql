@@ -39,9 +39,7 @@ CREATE TABLE IF NOT EXISTS `field_guided_sheets` (
   CONSTRAINT `fk_field_guided_sheets_vendor` FOREIGN KEY (`vendorId`) REFERENCES `vendors` (`id`) ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Dumping data for table spsyn8lm_rocklime_dashboard.field_guided_sheets: ~1 rows (approximately)
-INSERT INTO `field_guided_sheets` (`id`, `fgsNumber`, `vendorId`, `userId`, `status`, `orderDate`, `expectDeliveryDate`, `totalAmount`, `mongoItemsId`, `createdAt`, `updatedAt`) VALUES
-	('13a3c3c1-c059-4315-b502-c634df71f99d', 'FGS060226101', '0e43317e-2b3b-4a96-8da7-41afbcb7d112', '5ee872f3-a316-4de6-a55e-959a762f2327', 'converted', '2026-02-06 11:13:59', '2026-02-21 00:00:00', 43870.00, '6985ccf7507d8955fb7202a6', '2026-02-06 11:13:59', '2026-02-06 11:29:57');
+-- Dumping data for table spsyn8lm_rocklime_dashboard.field_guided_sheets: ~0 rows (approximately)
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

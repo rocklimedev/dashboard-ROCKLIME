@@ -31,16 +31,18 @@ CREATE TABLE IF NOT EXISTS `vendors` (
   CONSTRAINT `vendors_ibfk_1094` FOREIGN KEY (`brandSlug`) REFERENCES `brands` (`brandSlug`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Dumping data for table spsyn8lm_rocklime_dashboard.vendors: ~7 rows (approximately)
+-- Dumping data for table spsyn8lm_rocklime_dashboard.vendors: ~12 rows (approximately)
 INSERT INTO `vendors` (`id`, `vendorId`, `vendorName`, `brandId`, `brandSlug`, `createdAt`, `updatedAt`) VALUES
 	('04a1e87e-baef-49ef-b881-c4ecc0c851a6', 'V_2', 'S4 Bath', 'd642a7f4-9bb9-4d91-bcf3-fd63b438b85e', 'GB_004', '2025-03-01 10:12:42', '2025-03-01 10:12:42'),
 	('0e43317e-2b3b-4a96-8da7-41afbcb7d112', '123', 'GROHE INDIA', '13847c2c-3c91-4bb2-a130-f94928658237', 'GP_002', '2026-01-30 11:16:44', '2026-01-30 11:16:44'),
+	('1206ed40-d346-4809-9ae5-be5535a4d6c1', 'VENDOR-123', 'VENDOR-123', '39fd411d-7c06-11f0-9e84-52540021303b', 'extras', '2026-06-02 11:36:21', '2026-06-02 11:36:21'),
 	('18f6e324-5156-42da-8a70-89ec03f93e96', 'V_4', 'Jayna', '25df6ffd-16a5-4cd2-8c4b-c7a18a3f18ab', 'JA_003', '2025-03-01 10:12:42', '2025-03-01 10:12:42'),
 	('26264130-b469-4194-a7ca-ce13a0c38225', NULL, 'MD Sons ', '4e3acf32-1e47-4d38-a6bb-417addd52ac0', 'AS_001', '2026-03-08 10:43:56', '2026-03-08 10:43:56'),
 	('3a4df5ea-e679-4882-8e3e-16004e9c11ce', 'V_1', 'Arth Tiles', '4e3acf32-1e47-4d38-a6bb-417addd52ac0', 'AS_001', '2025-03-01 10:12:41', '2025-03-01 10:12:41'),
 	('919d22fa-911c-4ae9-a7c5-34fc6d400ebe', 'V_747109', 'Unknown', NULL, NULL, '2026-01-30 06:15:47', '2026-01-30 06:15:47'),
 	('982b40c6-06b0-4c8e-9d50-ae9b9377f902', 'V_45456', 'YUBB', '39fd411d-7c06-11f0-9e84-52540021303b', 'extras', '2025-10-14 05:07:48', '2025-10-14 05:07:48'),
 	('a9ee30d5-efdb-439d-bcfb-386e675a91b8', 'GROHE', 'G3', NULL, NULL, '2026-03-30 13:44:18', '2026-03-30 13:44:18'),
+	('b160a51b-b8b3-4a0c-bee1-c044150f180f', 'COLSTON', 'COLSTON', 'acbe7061-9b76-47d1-a509-e4b1f982a36f', 'colston', '2026-06-05 08:35:08', '2026-06-05 08:35:08'),
 	('d44ad799-e58a-43f2-8c4b-48b64f0c085e', 'GROHE_v1', 'grohe', 'd642a7f4-9bb9-4d91-bcf3-fd63b438b85e', 'GB_004', '2026-03-31 05:13:40', '2026-03-31 05:13:40'),
 	('d56421ab-772d-4894-8bb5-a675d41cdc76', 'V_3', 'Groha', '13847c2c-3c91-4bb2-a130-f94928658237', 'GP_002', '2025-03-01 10:12:42', '2025-03-01 10:12:42');
 

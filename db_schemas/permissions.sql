@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS `permissions` (
   KEY `permissions_module` (`module`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Dumping data for table spsyn8lm_rocklime_dashboard.permissions: ~220 rows (approximately)
+-- Dumping data for table spsyn8lm_rocklime_dashboard.permissions: ~227 rows (approximately)
 INSERT INTO `permissions` (`permissionId`, `createdAt`, `updatedAt`, `name`, `module`, `api`, `route`) VALUES
 	('00bf152a-9c34-47f5-8f84-ff6b49d1532d', '2025-04-16 00:22:51', '2025-10-24 06:54:00', 'get_category_by_id', 'categories', 'view', '/api/category/:id'),
 	('00d4c58e-d09c-4255-bd94-23cc94bd0ad7', '2025-10-24 06:33:38', '2025-10-24 06:54:01', 'create_signature', 'signatures', 'write', '/api/signatures'),

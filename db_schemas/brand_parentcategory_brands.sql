@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS `brand_parentcategory_brands` (
   UNIQUE KEY `brand_parentcategory_brands_brand_parent_category_id_brand_id` (`brandParentCategoryId`,`brandId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
--- Dumping data for table spsyn8lm_rocklime_dashboard.brand_parentcategory_brands: ~34 rows (approximately)
+-- Dumping data for table spsyn8lm_rocklime_dashboard.brand_parentcategory_brands: ~35 rows (approximately)
 INSERT INTO `brand_parentcategory_brands` (`brandParentCategoryId`, `brandId`) VALUES
 	('158dd2fa-7421-11f0-9e84-52540021303b', 'f84227c5-9852-11f0-ac50-52540021303b'),
 	('1a76fdf5-a380-4a62-867c-ca32f6bd7f29', '13847c2c-3c91-4bb2-a130-f94928658237'),
@@ -42,6 +42,7 @@ INSERT INTO `brand_parentcategory_brands` (`brandParentCategoryId`, `brandId`) V
 	('dfe98ae0-3437-4d6b-933d-e51623b7dc34', '50106480-7686-11f0-9e84-52540021303b'),
 	('dfe98ae0-3437-4d6b-933d-e51623b7dc34', '50107b22-7686-11f0-9e84-52540021303b'),
 	('dfe98ae0-3437-4d6b-933d-e51623b7dc34', '987bb747-773d-11f0-9e84-52540021303b'),
+	('dfe98ae0-3437-4d6b-933d-e51623b7dc34', 'b3da7c9f-47ad-11f1-ba3d-52540021303b'),
 	('dfe98ae0-3437-4d6b-933d-e51623b7dc34', 'f7c065c3-e2bf-48c9-9c32-8d979402388c'),
 	('f7940b5e-8d97-43be-b37b-0fd6b56e431a', '13847c2c-3c91-4bb2-a130-f94928658237'),
 	('f7940b5e-8d97-43be-b37b-0fd6b56e431a', '4e3acf32-1e47-4d38-a6bb-417addd52ac0'),
