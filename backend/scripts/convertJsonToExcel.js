@@ -3,7 +3,7 @@ const fs = require("fs");
 const path = require("path");
 
 // === CONFIG ===
-const inputFile = path.join(__dirname, "./normalized.json"); // your JSON file
+const inputFile = path.join(__dirname, "./productnotfound.json"); // your JSON file
 const outputFile = path.join(__dirname, "output.xlsx");
 
 // === READ JSON ===

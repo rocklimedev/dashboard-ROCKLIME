@@ -352,11 +352,19 @@ const BulkProductImport = () => {
   };
 
   const handleStartImport = async () => {
+    console.log("🚀 [IMPORT START] activeTab:", activeTab);
+    console.log("📄 File:", file?.name);
+    console.log("🧩 Mapping:", mapping);
+    console.log("🏷️ Selected Brand:", selectedBrandId);
+
     if (!isMappingValid) {
+      console.warn("⚠️ Mapping invalid:", mapping);
       message.warning("Please map all required fields");
       return;
     }
+
     if (activeTab === "products" && !selectedBrandId) {
+      console.error("❌ Brand missing for product import");
       message.error("Please select a brand before starting import");
       return;
     }
@@ -365,17 +373,22 @@ const BulkProductImport = () => {
 
     try {
       if (activeTab === "inventory") {
-        // === Inventory Update (Immediate) ===
+        console.log("📦 INVENTORY MODE: parsing file...");
+
         const parsedData = await parseFileToJson(file, mapping);
 
+        console.log("📊 RAW parsedData:", parsedData);
+        console.log("📊 parsedData length:", parsedData?.length);
+
         const updates = parsedData
-          .map((row) => {
+          .map((row, index) => {
             const companyCode =
               row["meta_d11da9f9-3f2e-4536-8236-9671200cca4a"] ||
               row.company_code;
+
             const productCode = row.product_code;
 
-            return {
+            const mapped = {
               company_code: companyCode?.toString().trim(),
               product_code: productCode?.toString().trim(),
               quantity: Number(row.quantity),
@@ -385,13 +398,30 @@ const BulkProductImport = () => {
                 : undefined,
               brand: row.brand,
             };
+
+            console.log(`🧾 Row ${index} mapped:`, mapped);
+
+            return mapped;
           })
-          .filter((item) => {
+          .filter((item, index) => {
             const hasIdentifier = item.company_code || item.product_code;
             const hasValidQty = !isNaN(item.quantity) && item.quantity > 0;
-            return hasIdentifier && hasValidQty;
+
+            const valid = hasIdentifier && hasValidQty;
+
+            if (!valid) {
+              console.warn(`❌ Filtered out row ${index}:`, item);
+            }
+
+            return valid;
           });
+
+        console.log("✅ FINAL updates payload:", updates);
+        console.log("📦 updates count:", updates.length);
+
         const result = await bulkInventoryUpdate({ updates }).unwrap();
+
+        console.log("📡 API RESPONSE:", result);
 
         message.success(
           `Inventory Update Completed! ${result.successCount} successful, ${result.failedCount} failed`,
@@ -400,10 +430,10 @@ const BulkProductImport = () => {
         setJobId(`inventory-${Date.now()}`);
         setCurrentStep(2);
 
-        // Store result for display
         setJobStatusManually(result);
       } else {
-        // === Product Import (Background Job) ===
+        console.log("📦 PRODUCT IMPORT MODE: preparing payload...");
+
         const payload = {
           file,
           mapping,
@@ -411,7 +441,12 @@ const BulkProductImport = () => {
           selectedBrandId: String(selectedBrandId),
         };
 
+        console.log("📤 Product payload:", payload);
+
         const result = await startBulkImport(payload).unwrap();
+
+        console.log("📡 Product API response:", result);
+
         message.success("Product import job started successfully!");
         setJobId(result.jobId);
         setCurrentStep(2);
@@ -419,14 +454,16 @@ const BulkProductImport = () => {
         setProcessedHistory([]);
       }
     } catch (err) {
+      console.error("🔥 IMPORT ERROR:", err);
+
       message.error(
         err?.data?.message || err?.message || "Failed to start import",
       );
     } finally {
       setImporting(false);
+      console.log("🏁 Import finished");
     }
   };
-
   const [manualJobStatus, setManualJobStatus] = useState(null);
 
   const setJobStatusManually = (result) => {

@@ -1,14 +1,13 @@
 const fs = require("fs");
 
 // Load files
-const stockData = require("./output.json");
-const products = require("./cleaned.json");
+const stockData = require("./json-outputs/all_sheets_data2.json");
+const products = require("./json-outputs/product_backup.json");
 
 const META_KEY = "d11da9f9-3f2e-4536-8236-9671200cca4a";
 
 // Normalize helper
-const normalize = (str) =>
-  str?.toLowerCase().replace(/\s+/g, " ").trim();
+const normalize = (str) => str?.toLowerCase().replace(/\s+/g, " ").trim();
 
 // Track matched stock
 const matchedStockCodes = new Set();
@@ -24,9 +23,7 @@ products.forEach((product) => {
 
   // ✅ 1. Match by company_code (STRICT)
   if (productCode) {
-    matchedStock = stockData.find(
-      (s) => s.company_code === productCode
-    );
+    matchedStock = stockData.find((s) => s.company_code === productCode);
 
     if (matchedStock) {
       matchedStockCodes.add(matchedStock.company_code);
@@ -36,7 +33,7 @@ products.forEach((product) => {
   // ✅ 2. Fallback ONLY if company_code missing
   if (!productCode) {
     matchedStock = stockData.find(
-      (s) => normalize(s.name) === normalize(product.name)
+      (s) => normalize(s.name) === normalize(product.name),
     );
 
     if (matchedStock) {
@@ -78,9 +75,7 @@ products.forEach((product) => {
 // 🔁 Unmatched stock ONLY
 const productnotfound = stockData.filter((stock) => {
   const isMatchedByCode = matchedStockCodes.has(stock.company_code);
-  const isMatchedByName = matchedStockNames.has(
-    normalize(stock.name)
-  );
+  const isMatchedByName = matchedStockNames.has(normalize(stock.name));
 
   return !isMatchedByCode && !isMatchedByName;
 });
@@ -88,17 +83,17 @@ const productnotfound = stockData.filter((stock) => {
 // 💾 Save files
 fs.writeFileSync(
   "./updated-stock.json",
-  JSON.stringify(updatedProducts, null, 2)
+  JSON.stringify(updatedProducts, null, 2),
 );
 
 fs.writeFileSync(
   "./productnotfound.json",
-  JSON.stringify(productnotfound, null, 2)
+  JSON.stringify(productnotfound, null, 2),
 );
 
 fs.writeFileSync(
   "./inventory-history.json",
-  JSON.stringify(inventoryHistory, null, 2)
+  JSON.stringify(inventoryHistory, null, 2),
 );
 
 console.log("✅ Only changed products saved");

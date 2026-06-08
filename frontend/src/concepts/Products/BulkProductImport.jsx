@@ -268,35 +268,67 @@ const BulkProductImport = () => {
     setImporting(true);
 
     try {
+      console.log("🚀 Import started");
+      console.log("Active tab:", activeTab);
+      console.log("Selected file:", file);
+      console.log("Mapping:", mapping);
+      console.log("Selected brand:", selectedBrandId);
+
       if (activeTab === "products") {
-        const result = await startBulkImport({
+        console.log("➡ Starting PRODUCT bulk import job...");
+
+        const payload = {
           file,
           mapping,
           selectedBrandId: selectedBrandId || null,
-        }).unwrap();
+        };
+
+        console.log("📦 Product import payload:", payload);
+
+        const result = await startBulkImport(payload).unwrap();
+
+        console.log("✅ Product import response:", result);
 
         message.success("Product import job started!");
+
         setJobId(result.jobId);
         setCurrentStep(2);
         setStartTime(Date.now());
         setProcessedHistory([]);
       } else {
+        console.log("➡ Starting INVENTORY bulk update...");
+
         const parsedData = await parseFileData(file, mapping);
 
-        const result = await bulkInventoryUpdate({
+        console.log("🧾 Parsed data length:", parsedData?.length);
+        console.log("🧾 Parsed data sample:", parsedData?.slice(0, 5));
+
+        const payload = {
           updates: parsedData,
-        }).unwrap();
+        };
+
+        console.log("📦 Inventory update payload:", payload);
+
+        const result = await bulkInventoryUpdate(payload).unwrap();
+
+        console.log("✅ Inventory update response:", result);
 
         message.success(
           `Success! ${result.successCount || 0} products updated.`,
         );
+
         setCurrentStep(2);
       }
     } catch (err) {
+      console.error("❌ Bulk import error:", err);
+      console.error("❌ Error response:", err?.data);
+      console.error("❌ Error message:", err?.message);
+
       message.error(
         err?.data?.message || err?.message || "Failed to process import",
       );
     } finally {
+      console.log("🏁 Import process finished");
       setImporting(false);
     }
   };

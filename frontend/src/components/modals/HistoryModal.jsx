@@ -56,10 +56,9 @@ const HistoryModalAntD = ({ open, onCancel, product }) => {
 
   const previewData = useMemo(() => {
     return [...dataSource]
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)) // ← Changed
       .slice(0, 10);
   }, [dataSource]);
-
   const exportToExcel = () => {
     if (!dataSource.length) {
       return message.warning("No data to export");
@@ -149,10 +148,10 @@ const HistoryModalAntD = ({ open, onCancel, product }) => {
     () => [
       {
         title: "Date & Time",
-        dataIndex: "createdAt",
+        dataIndex: "timestamp", // ← Changed
         key: "date",
         width: 180,
-        render: (date) => dayjs(date).format("DD MMM YYYY, HH:mm"),
+        render: (timestamp) => dayjs(timestamp).format("DD MMM YYYY, HH:mm"),
       },
       {
         title: "Action",
