@@ -1,7 +1,10 @@
 const { sendNotification } = require("./notificationController"); // Import sendNotification
 const { Customer, Address } = require("../models");
+const { Quotation, Order, sequelize } = require("../models");
+
 const ADMIN_USER_ID = "2ef0f07a-a275-4fe1-832d-fe9a5d145f60"; // Replace with actual admin user ID or channel
-const { Op } = require("sequelize");
+const { Op, Sequelize } = require("sequelize");
+
 const { ActivityLog } = require("../models");
 const logActivity = require("../utils/activityLogger");
 // Create a new customer
@@ -94,42 +97,44 @@ exports.createCustomer = async (req, res) => {
   }
 };
 
-// Get all customers (no notification needed)
-
 exports.getCustomers = async (req, res) => {
   try {
-    // Pagination parameters
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 20;
     const offset = (page - 1) * limit;
 
-    // Build dynamic WHERE clause
     const where = {};
 
-    // Search by name, email, or phone
     const search = req.query.search?.trim();
+
     if (search) {
       const searchTerm = `%${search}%`;
+
       where[Op.or] = [
         { name: { [Op.like]: searchTerm } },
         { email: { [Op.like]: searchTerm } },
-        { mobileNumber: { [Op.like]: searchTerm } }, // or phone
+        { mobileNumber: { [Op.like]: searchTerm } },
+        { companyName: { [Op.like]: searchTerm } },
       ];
     }
 
-    // Fetch customers with their addresses
     const { count: totalCustomers, rows: customers } =
       await Customer.findAndCountAll({
         where,
         offset,
         limit,
-        order: [["name", "ASC"]],
-        attributes: { exclude: ["createdAt", "updatedAt"] },
-        subQuery: false,
+        order: [["createdAt", "DESC"]],
+        distinct: true,
+
+        attributes: {
+          exclude: ["updatedAt"],
+        },
+
         include: [
           {
             model: Address,
-            as: "addresses", // Make sure this alias matches your model association
+            as: "addresses",
+            required: false,
             attributes: [
               "addressId",
               "street",
@@ -139,25 +144,125 @@ exports.getCustomers = async (req, res) => {
               "country",
               "status",
             ],
-            required: false, // LEFT JOIN - show customers even without addresses
           },
         ],
       });
 
-    const totalPages = Math.ceil(totalCustomers / limit);
+    const customerIds = customers.map((customer) => customer.customerId);
+
+    const quotationStats = await Quotation.findAll({
+      where: {
+        customerId: {
+          [Op.in]: customerIds,
+        },
+      },
+
+      attributes: [
+        "customerId",
+
+        [sequelize.fn("COUNT", sequelize.col("quotationId")), "quotations"],
+
+        [
+          sequelize.fn(
+            "COALESCE",
+            sequelize.fn("SUM", sequelize.col("finalAmount")),
+            0,
+          ),
+          "quotationValue",
+        ],
+      ],
+
+      group: ["customerId"],
+      raw: true,
+    });
+
+    const orderStats = await Order.findAll({
+      where: {
+        createdFor: {
+          [Op.in]: customerIds,
+        },
+      },
+
+      attributes: [
+        "createdFor",
+
+        [sequelize.fn("COUNT", sequelize.col("id")), "orders"],
+
+        [
+          sequelize.fn(
+            "COALESCE",
+            sequelize.fn("SUM", sequelize.col("finalAmount")),
+            0,
+          ),
+          "orderValue",
+        ],
+      ],
+
+      group: ["createdFor"],
+      raw: true,
+    });
+
+    const quotationMap = new Map();
+
+    quotationStats.forEach((item) => {
+      quotationMap.set(item.customerId, {
+        quotations: Number(item.quotations || 0),
+        quotationValue: Number(item.quotationValue || 0),
+      });
+    });
+
+    const orderMap = new Map();
+
+    orderStats.forEach((item) => {
+      orderMap.set(item.createdFor, {
+        orders: Number(item.orders || 0),
+        orderValue: Number(item.orderValue || 0),
+      });
+    });
+
+    const data = customers.map((customer) => {
+      const customerJson = customer.toJSON();
+
+      const quotationData = quotationMap.get(customer.customerId) || {};
+
+      const orderData = orderMap.get(customer.customerId) || {};
+
+      const quotations = quotationData.quotations || 0;
+
+      const quotationValue = quotationData.quotationValue || 0;
+
+      const orders = orderData.orders || 0;
+
+      const orderValue = orderData.orderValue || 0;
+
+      return {
+        ...customerJson,
+
+        quotations,
+        quotationValue,
+
+        orders,
+        orderValue,
+
+        customerStatus:
+          quotations === 0 && orders === 0 ? "INACTIVE" : "ACTIVE",
+      };
+    });
 
     return res.status(200).json({
       success: true,
-      data: customers.map((customer) => customer.toJSON()),
+      data,
+
       pagination: {
         total: totalCustomers,
         page,
         limit,
-        totalPages,
+        totalPages: Math.ceil(totalCustomers / limit),
       },
     });
   } catch (error) {
     console.error("Get Customers Error:", error);
+
     return res.status(500).json({
       success: false,
       message:
@@ -167,7 +272,6 @@ exports.getCustomers = async (req, res) => {
     });
   }
 };
-
 // Get a single customer by ID (no notification needed)
 exports.getCustomerById = async (req, res) => {
   try {

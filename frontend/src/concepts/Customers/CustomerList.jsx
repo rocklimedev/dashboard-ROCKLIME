@@ -38,7 +38,7 @@ const CustomerList = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [customerTypeFilter, setCustomerTypeFilter] = useState("All");
   const [sortBy, setSortBy] = useState("Recently Added");
-
+  const [statusFilter, setStatusFilter] = useState("ALL");
   // Debounced search
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
@@ -94,7 +94,11 @@ const CustomerList = () => {
         return c.customerType === customerTypeFilter;
       });
     }
-
+    if (statusFilter !== "ALL") {
+      result = result.filter(
+        (customer) => customer.customerStatus === statusFilter,
+      );
+    }
     switch (sortBy) {
       case "Ascending":
         return [...result].sort((a, b) =>
@@ -275,10 +279,10 @@ const CustomerList = () => {
                   <thead className="table-light">
                     <tr>
                       <th>Customer</th>
-                      <th>Email</th>
-                      <th>Phone</th>
-                      <th>Company</th>
-                      <th>Type</th>
+                      <th>Contact</th>
+                      <th>Quotations</th>
+                      <th>Orders</th>
+                      <th>Business Value</th>
                       <th className="text-end">Actions</th>
                     </tr>
                   </thead>
@@ -294,24 +298,83 @@ const CustomerList = () => {
                               color="#e31e24"
                               fgColor="#fff"
                             />
-                            <a
-                              href={`/customer/${c.customerId}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-primary fw-medium"
-                            >
-                              {c.name || "Unnamed"}
-                            </a>
+
+                            <div>
+                              <a
+                                href={`/customer/${c.customerId}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="fw-semibold text-primary d-block"
+                              >
+                                {c.name || "Unnamed Customer"}
+                              </a>
+
+                              {c.companyName && (
+                                <small className="text-muted">
+                                  {c.companyName}
+                                </small>
+                              )}
+                              <span className="badge bg-light text-dark">
+                                {c.customerType || "Retail"}
+                              </span>
+                            </div>
                           </div>
                         </td>
-                        <td>{c.email || "—"}</td>
-                        <td>{c.mobileNumber || "—"}</td>
-                        <td>{c.companyName || "—"}</td>
+
                         <td>
-                          <span className="badge bg-light text-dark">
-                            {c.customerType || "Retail"}
-                          </span>
+                          <div>
+                            <div>{c.mobileNumber || ""}</div>
+                            <small className="text-muted">
+                              {c.email || ""}
+                            </small>
+                          </div>
                         </td>
+
+                        <td>
+                          {Number(c.quotationValue || 0) > 0 ||
+                          Number(c.quotations || 0) > 0 ? (
+                            <small className="text-muted">
+                              ₹
+                              {Number(c.quotationValue || 0).toLocaleString(
+                                "en-IN",
+                              )}{" "}
+                              ({c.quotations || 0})
+                            </small>
+                          ) : (
+                            ""
+                          )}
+                        </td>
+
+                        <td>
+                          {Number(c.orderValue || 0) > 0 ||
+                          Number(c.orders || 0) > 0 ? (
+                            <small className="text-success">
+                              ₹
+                              {Number(c.orderValue || 0).toLocaleString(
+                                "en-IN",
+                              )}{" "}
+                              ({c.orders || 0})
+                            </small>
+                          ) : (
+                            ""
+                          )}
+                        </td>
+                        <td>
+                          {Number(c.quotationValue || 0) +
+                            Number(c.orderValue || 0) >
+                          0 ? (
+                            <div className="small">
+                              ₹
+                              {(
+                                Number(c.quotationValue || 0) +
+                                Number(c.orderValue || 0)
+                              ).toLocaleString("en-IN")}
+                            </div>
+                          ) : (
+                            ""
+                          )}
+                        </td>
+
                         <td className="text-end">
                           <div className="d-flex justify-content-end gap-2">
                             <PermissionGate api="edit" module="customers">
@@ -340,10 +403,12 @@ const CustomerList = () => {
                                           target="_blank"
                                           rel="noopener noreferrer"
                                         >
-                                          <EyeOutlined className="me-2" /> View
+                                          <EyeOutlined className="me-2" />
+                                          View
                                         </a>
                                       </Menu.Item>
                                     </PermissionGate>
+
                                     <PermissionGate
                                       api="delete"
                                       module="customers"
@@ -355,7 +420,8 @@ const CustomerList = () => {
                                           handleDelete(c.customerId)
                                         }
                                       >
-                                        <BiTrash className="me-2" /> Delete
+                                        <BiTrash className="me-2" />
+                                        Delete
                                       </Menu.Item>
                                     </PermissionGate>
                                   </Menu>
