@@ -133,23 +133,34 @@ function calculateTotals(
   shippingAmount = 0,
   gst = 0,
 ) {
-  const mainItems = items.filter((item) => !item.isOptionFor);
+  // STRONGER FILTERING FOR OPTIONAL ITEMS
+  const mainItems = items.filter((item) => {
+    const isOptional =
+      Boolean(item.isOption) ||
+      Boolean(item.isOptionFor) ||
+      (item.optionType && item.optionType !== "main");
+
+    return !isOptional;
+  });
+
+  const optionalItems = items.filter((item) => {
+    return (
+      Boolean(item.isOption) ||
+      Boolean(item.isOptionFor) ||
+      (item.optionType && item.optionType !== "main")
+    );
+  });
 
   let subTotal = 0;
   let totalItemDiscount = 0;
   let taxableAmount = 0;
 
   mainItems.forEach((p) => {
-    const price = Number(p.price) || 0;
-    const qty = Number(p.quantity) || 1;
-    const discount = Number(p.discount) || 0;
-    const discountType = p.discountType || "percent";
-
-    const lineGross = price * qty;
+    const lineGross = (Number(p.price) || 0) * (Number(p.quantity) || 1);
     const discountAmount =
-      discountType === "percent"
-        ? lineGross * (discount / 100)
-        : discount * qty;
+      p.discountType === "percent"
+        ? (lineGross * (Number(p.discount) || 0)) / 100
+        : (Number(p.discount) || 0) * (Number(p.quantity) || 1);
 
     const lineAfterDiscount = lineGross - discountAmount;
 
@@ -159,27 +170,21 @@ function calculateTotals(
   });
 
   const baseForExtraDiscount = taxableAmount + Number(shippingAmount || 0);
-
   const extraDiscountAmount =
     extraDiscountType === "percent"
-      ? (baseForExtraDiscount * Number(extraDiscount)) / 100
-      : Number(extraDiscount);
+      ? (baseForExtraDiscount * Number(extraDiscount || 0)) / 100
+      : Number(extraDiscount || 0);
 
   const amountBeforeGst = baseForExtraDiscount - extraDiscountAmount;
-
-  // Simple round-off to nearest whole number
   const roundedAmount = Math.round(amountBeforeGst);
   const roundOff = roundedAmount - amountBeforeGst;
 
   const gstAmount = roundedAmount * (Number(gst || 0) / 100);
   const finalAmount = roundedAmount + gstAmount;
 
-  // Optional items potential
-  const optionalItems = items.filter((item) => !!item.isOptionFor);
-  let optionalPotential = 0;
-  optionalItems.forEach((p) => {
-    optionalPotential += (Number(p.price) || 0) * (Number(p.quantity) || 1);
-  });
+  const optionalTotal = optionalItems.reduce((sum, item) => {
+    return sum + (Number(item.price) || 0) * (Number(item.quantity) || 1);
+  }, 0);
 
   return {
     subTotal: Number(subTotal.toFixed(2)),
@@ -191,11 +196,12 @@ function calculateTotals(
     roundOff: Number(roundOff.toFixed(2)),
     gstAmount: Number(gstAmount.toFixed(2)),
     finalAmount: Number(finalAmount.toFixed(2)),
+
+    optionalItems,
+    optionalTotal: Number(optionalTotal.toFixed(2)),
     optionalItemsCount: optionalItems.length,
-    optionalPotentialTotal: Number(optionalPotential.toFixed(2)),
   };
 }
-
 async function generateQuotationNumber(t) {
   const today = moment();
   const prefixDate = today.format("DDMMYY");
@@ -327,97 +333,83 @@ exports.createQuotation = async (req, res) => {
       });
     }
 
-    // ─── Enrich incoming products ───
     // ─── Enrich incoming products with location validation ───
-    // ─── Enrich incoming products with location validation ───
-    const enrichedProducts = incomingProducts.map((p) => {
+
+    const enrichedProducts = incomingProducts.map((p, index) => {
       const id = p.productId || p.id;
       const db = productMap[id] || {};
 
       const price = Number(p.price || 0);
-      const totalQuantity = Number(p.quantity) || 1;
+      const quantity = Number(p.quantity) || 1;
       const discount = Number(p.discount || 0);
       const discountType = p.discountType || db.discountType || "percent";
 
-      // === Location Quantity Validation ===
+      // === Option / Addon Handling ===
+      const isOption =
+        Boolean(p.isOption) ||
+        Boolean(p.isOptionFor) ||
+        Boolean(p.optionType && p.optionType !== "main");
+
+      const optionType = p.optionType || null;
+      const parentProductId = p.parentProductId || p.isOptionFor || null;
+
+      // === Location Handling ===
       let locations = [];
-      let validatedTotalAssignedQty = 0;
-
       if (Array.isArray(p.locations) && p.locations.length > 0) {
-        p.locations.forEach((loc) => {
-          const assignedQty = Number(loc.assignedQuantity) || 0;
-          if (assignedQty > 0) {
-            validatedTotalAssignedQty += assignedQty;
-            locations.push({
-              floorId: loc.floorId,
-              floorName: loc.floorName || `Floor ${loc.floorId}`,
-              roomId: loc.roomId || null,
-              roomName: loc.roomName || null,
-              areaId: loc.areaId || null,
-              areaName: loc.areaName || null,
-              assignedQuantity: assignedQty,
-            });
-          }
-        });
-      }
-      // Backward compatibility
-      else if (p.floorId) {
-        locations.push({
-          floorId: p.floorId,
-          floorName: p.floorName || null,
-          roomId: p.roomId || null,
-          roomName: p.roomName || null,
-          assignedQuantity: totalQuantity,
-        });
-        validatedTotalAssignedQty = totalQuantity;
+        locations = p.locations
+          .filter((loc) => loc.floorId && Number(loc.assignedQuantity) > 0)
+          .map((loc) => ({
+            floorId: loc.floorId,
+            floorName: loc.floorName || `Floor ${loc.floorId}`,
+            roomId: loc.roomId || null,
+            roomName: loc.roomName || null,
+            areaId: loc.areaId || null,
+            areaName: loc.areaName || null,
+            assignedQuantity: Number(loc.assignedQuantity),
+          }));
+      } else if (p.floorId) {
+        // Backward compatibility
+        locations = [
+          {
+            floorId: p.floorId,
+            floorName: p.floorName || null,
+            roomId: p.roomId || null,
+            roomName: p.roomName || null,
+            assignedQuantity: quantity,
+          },
+        ];
       }
 
-      if (validatedTotalAssignedQty > totalQuantity) {
-        throw new Error(
-          `Quantity overflow for product ${p.name || id}. Total assigned (${validatedTotalAssignedQty}) > available (${totalQuantity})`,
-        );
-      }
-
-      if (locations.length === 0) {
-        locations = null;
-      }
-
-      const isOption = Boolean(p.isOption) || Boolean(p.isOptionFor);
       return {
         productId: id,
         name: p.name || db.name || "Unknown Product",
-
-        // ← FIXED: Now properly saving imageUrl and companyCode
-        // ← Improved image handling
-        imageUrl:
-          p.imageUrl && p.imageUrl.trim() !== ""
-            ? p.imageUrl
-            : db.imageUrl || null,
+        imageUrl: p.imageUrl || db.imageUrl || null,
         companyCode: p.companyCode || db.companyCode || null,
         productCode: p.productCode || db.productCode || null,
 
-        quantity: totalQuantity,
+        quantity,
         price: Number(price.toFixed(2)),
         discount: Number(discount.toFixed(2)),
         discountType,
-        tax: 0,
-        priority: Number(p.priority ?? 0),
-        total: Number(
-          discountType === "percent"
-            ? price * totalQuantity * (1 - discount / 100)
-            : (price - discount) * totalQuantity,
-        ).toFixed(2),
+        tax: Number(p.tax || 0),
 
-        isOptionFor: isOption ? p.parentProductId || p.isOptionFor : null,
-        optionType: p.optionType || null,
+        priority: Number(p.priority ?? index),
+
+        // === OPTION FIELDS - CRITICAL ===
+        isOption: isOption,
+        optionType: optionType,
+        isOptionFor: isOption ? parentProductId : null,
+        parentProductId: parentProductId,
         groupId: p.groupId || (isOption ? null : generateGroupId()),
 
-        locations, // New split support
-        // Backward compatibility
-        floorId: locations?.[0]?.floorId || null,
-        floorName: locations?.[0]?.floorName || null,
-        roomId: locations?.[0]?.roomId || null,
-        roomName: locations?.[0]?.roomName || null,
+        // Locations
+        locations: locations.length > 0 ? locations : null,
+
+        // Backward compatibility fields
+        floorId: locations[0]?.floorId || null,
+        floorName: locations[0]?.floorName || null,
+        roomId: locations[0]?.roomId || null,
+        roomName: locations[0]?.roomName || null,
       };
     });
 
@@ -435,7 +427,6 @@ exports.createQuotation = async (req, res) => {
       Number(shippingAmount),
       Number(gst),
     );
-
     // ─── Generate unique reference number ───
     const reference_number = await generateQuotationNumber(t);
 
@@ -450,6 +441,9 @@ exports.createQuotation = async (req, res) => {
         due_date,
         products: enrichedProducts,
         floors,
+        // Add these new fields
+        optionalTotal: totals.optionalTotal,
+        optionalItemsCount: totals.optionalItemsCount,
         totalFloors: floors.length,
         extraDiscount: Number(extraDiscount) || 0,
         extraDiscountType: extraDiscountType || "percent",

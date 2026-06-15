@@ -25,15 +25,15 @@ import {
   Row,
   Col,
   Empty,
+  message,
 } from "antd";
 import {
   ArrowLeftOutlined,
   ShoppingCartOutlined,
-  DeleteOutlined,
   CheckCircleOutlined,
-  DragOutlined,
 } from "@ant-design/icons";
 import styled from "styled-components";
+
 import OrderTotal from "../../components/POS-NEW/OrderTotal";
 import CartItemRow from "../../components/POS-NEW/CartItemRow";
 
@@ -90,6 +90,8 @@ const OptionGroupWrapper = styled.div`
 const CartTab = ({
   localCartItems = [],
   cartItems, // fallback
+  mainCartItems = [], // ← New
+  optionalCartItems = [], // ← New (optional)
   subTotal = 0,
   discount = 0,
   roundOff = 0,
@@ -107,9 +109,9 @@ const CartTab = ({
   setActiveTab,
   onShippingChange,
   handleMakeOption,
-  getParentName,
   documentType = "quotation",
-  onCartOrderChange, // ← From parent
+  onCartOrderChange,
+  handleAssignOptionToParent, // ← New
 }) => {
   const [orderedIds, setOrderedIds] = useState([]);
 
@@ -121,7 +123,7 @@ const CartTab = ({
         : [];
   }, [localCartItems, cartItems]);
 
-  // Sync orderedIds
+  // Sync orderedIds for drag & drop
   useEffect(() => {
     const ids = safeCartItems.map((item) => item.productId || item.id);
     setOrderedIds(ids);
@@ -169,26 +171,31 @@ const CartTab = ({
 
     const newCartItems = arrayMove(safeCartItems, oldIndex, newIndex);
 
-    // IMPORTANT: Add priority to each item
     const itemsWithPriority = newCartItems.map((item, index) => ({
       ...item,
-      priority: index, // ← This is what backend expects
+      priority: index,
     }));
 
     onCartOrderChange?.(itemsWithPriority);
   };
+
+  // Updated Grouping Logic
   const groupedItems = useMemo(() => {
-    const mains = safeCartItems.filter((i) => !i?.isOption);
-    const options = safeCartItems.filter((i) => i?.isOption);
+    const mains = safeCartItems.filter((i) => !i?.isOption && !i?.isOptionFor);
+    const options = safeCartItems.filter((i) => i?.isOption || i?.isOptionFor);
 
     const grouped = mains.map((main) => ({
       main,
       options: options.filter(
-        (opt) => opt?.parentProductId === (main?.productId || main?.id),
+        (opt) =>
+          opt?.parentProductId === main?.productId ||
+          opt?.isOptionFor === main?.productId,
       ),
     }));
 
-    const ungroupedOptions = options.filter((o) => !o?.parentProductId);
+    const ungroupedOptions = options.filter(
+      (o) => !o?.parentProductId && !o?.isOptionFor,
+    );
 
     return { grouped, ungroupedOptions };
   }, [safeCartItems]);
@@ -258,7 +265,9 @@ const CartTab = ({
                         handleMakeOption={handleMakeOption}
                         lineTotal={lineTotal}
                         documentType={documentType}
-                        dragEnabled={true} // ← Always true
+                        dragEnabled={true}
+                        mainCartItems={mainCartItems}
+                        handleAssignOptionToParent={handleAssignOptionToParent}
                       />
 
                       {options.map((opt) => (
@@ -275,7 +284,11 @@ const CartTab = ({
                             handleMakeOption={handleMakeOption}
                             lineTotal={lineTotal}
                             documentType={documentType}
-                            dragEnabled={true} // ← Always true
+                            dragEnabled={true}
+                            mainCartItems={mainCartItems}
+                            handleAssignOptionToParent={
+                              handleAssignOptionToParent
+                            }
                           />
                         </OptionGroupWrapper>
                       ))}
@@ -302,7 +315,11 @@ const CartTab = ({
                             handleMakeOption={handleMakeOption}
                             lineTotal={lineTotal}
                             documentType={documentType}
-                            dragEnabled={true} // ← Always true
+                            dragEnabled={true}
+                            mainCartItems={mainCartItems}
+                            handleAssignOptionToParent={
+                              handleAssignOptionToParent
+                            }
                           />
                         ))}
                       </>

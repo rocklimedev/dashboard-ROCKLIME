@@ -1,4 +1,4 @@
-// src/pages/quotations/CartItemRow.jsx
+// src/components/POS-NEW/CartItemRow.jsx
 import React from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -11,6 +11,7 @@ import {
   Select,
   Divider,
   Space,
+  Tag,
 } from "antd";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import { DeleteFilled, HolderOutlined } from "@ant-design/icons";
@@ -83,12 +84,12 @@ const CartItemRow = ({
   handleDiscountTypeChange,
   handleMakeOption,
   lineTotal,
-  getParentName,
   documentType,
-  cartItems = [],
-
-  /* DRAG */
   dragEnabled = false,
+
+  /* New Props for Option Handling */
+  mainCartItems = [],
+  handleAssignOptionToParent,
 }) => {
   const {
     attributes,
@@ -107,18 +108,32 @@ const CartItemRow = ({
     transition,
   };
 
+  // Fetch product details as fallback
   const { data: product, isLoading } = useGetProductByIdQuery(item?.productId, {
     skip: !item?.productId,
   });
 
-  const imageUrl = product?.images?.[0] || "https://via.placeholder.com/80";
-  const discType = itemDiscountTypes[item?.productId] || "percent";
+  // Priority: item.imageUrl (from cart/backend) > product.images > placeholder
+  const imageUrl =
+    item?.imageUrl ||
+    (Array.isArray(product?.images) ? product?.images[0] : null) ||
+    "https://via.placeholder.com/80";
+
+  const isOption =
+    Boolean(item?.isOption) ||
+    Boolean(item?.isOptionFor) ||
+    Boolean(item?.optionType && item?.optionType !== "main");
+
   const isQuotationMode = (documentType || "").toLowerCase() === "quotation";
   const showDiscountAndTax = ["quotation", "order"].includes(
     (documentType || "").toLowerCase(),
   );
 
-  if (isLoading) return <div>Loading...</div>;
+  const currentParentName = item?.parentProductId
+    ? mainCartItems.find((m) => m.productId === item.parentProductId)?.name
+    : null;
+
+  if (isLoading) return <div style={{ padding: "20px" }}>Loading...</div>;
 
   return (
     <ItemContainer ref={setNodeRef} style={style} isDragging={isDragging}>
@@ -134,18 +149,25 @@ const CartItemRow = ({
 
         {/* IMAGE */}
         <Col flex="0 0 80px">
-          <CartItemImage src={imageUrl} alt={product?.name} />
+          <CartItemImage src={imageUrl} alt={item?.name} />
         </Col>
 
         {/* CONTENT */}
         <Col flex="1 1 auto">
           <Text strong>{product?.name || item?.name}</Text>
 
-          <div>
-            <Text type="success">₹{item?.price}</Text>
+          <div style={{ marginTop: 4 }}>
+            <Text type="success">
+              ₹{Number(item?.price || 0).toLocaleString()}
+            </Text>
+            {isOption && (
+              <Tag color="orange" style={{ marginLeft: 8 }}>
+                Optional
+              </Tag>
+            )}
           </div>
 
-          {/* OPTIONS */}
+          {/* Option Type Selector */}
           {isQuotationMode && handleMakeOption && (
             <Space style={{ marginTop: 8 }}>
               <Select
@@ -158,21 +180,52 @@ const CartItemRow = ({
                     item.parentProductId,
                   )
                 }
-                style={{ width: 110 }}
+                style={{ width: 120 }}
               >
-                <Option value="main">Main</Option>
+                <Option value="main">Main Product</Option>
                 <Option value="addon">Add-on</Option>
                 <Option value="upgrade">Upgrade</Option>
               </Select>
             </Space>
           )}
 
-          {/* DISCOUNT */}
+          {/* Parent Product Selector - Only for Optional Items */}
+          {isOption && isQuotationMode && mainCartItems.length > 0 && (
+            <div style={{ marginTop: 8 }}>
+              <Text type="secondary" style={{ fontSize: "12px" }}>
+                Attach to Main Product:
+              </Text>
+              <Select
+                size="small"
+                placeholder="Select main product..."
+                value={item.parentProductId || item.isOptionFor || undefined}
+                onChange={(parentId) =>
+                  handleAssignOptionToParent?.(item.productId, parentId)
+                }
+                style={{ width: "100%", marginTop: 4 }}
+                allowClear
+              >
+                {mainCartItems.map((main) => (
+                  <Option key={main.productId} value={main.productId}>
+                    {main.name}
+                  </Option>
+                ))}
+              </Select>
+
+              {currentParentName && (
+                <Tag color="blue" style={{ marginTop: 6 }}>
+                  Attached to: {currentParentName}
+                </Tag>
+              )}
+            </div>
+          )}
+
+          {/* Discount Controls */}
           {showDiscountAndTax && (
             <Space style={{ marginTop: 8 }}>
               <Select
                 size="small"
-                value={discType}
+                value={itemDiscountTypes[item?.productId] || "percent"}
                 onChange={(v) => handleDiscountTypeChange?.(item.productId, v)}
                 style={{ width: 70 }}
               >
@@ -182,7 +235,7 @@ const CartItemRow = ({
 
               <InputNumber
                 size="small"
-                value={itemDiscounts[item.productId] ?? 0}
+                value={itemDiscounts[item?.productId] ?? 0}
                 onChange={(v) => handleDiscountChange?.(item.productId, v ?? 0)}
                 style={{ width: 90 }}
               />
@@ -190,8 +243,8 @@ const CartItemRow = ({
           )}
         </Col>
 
-        {/* QTY */}
-        <Col flex="0 0 140px" style={{ textAlign: "center" }}>
+        {/* QUANTITY & TOTAL */}
+        <Col flex="0 0 160px" style={{ textAlign: "right" }}>
           <Space>
             <Button
               onClick={() =>
@@ -219,26 +272,27 @@ const CartItemRow = ({
               +
             </Button>
           </Space>
-        </Col>
 
-        {/* TOTAL */}
-        <Col flex="0 0 120px" style={{ textAlign: "right" }}>
-          <Text strong style={{ color: "#52c41a" }}>
-            ₹{lineTotal?.(item)}
-          </Text>
+          <div style={{ marginTop: 12 }}>
+            <Text strong style={{ color: "#52c41a", fontSize: 16 }}>
+              ₹{lineTotal?.(item) || "0.00"}
+            </Text>
+          </div>
 
-          <div style={{ marginTop: 6 }}>
+          <div style={{ marginTop: 8 }}>
             <Button
               danger
               size="small"
               icon={<DeleteFilled />}
               onClick={(e) => handleRemoveItem?.(e, item.productId)}
-            />
+            >
+              Remove
+            </Button>
           </div>
         </Col>
       </Row>
 
-      <Divider style={{ margin: "0 0 0 80px" }} />
+      <Divider style={{ margin: "12px 0 0 80px" }} />
     </ItemContainer>
   );
 };

@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const quotationItemSchema = new mongoose.Schema({
   productId: String,
   name: String,
+  parentProductId: { type: String, default: null, index: true }, // ← Add this
   imageUrl: String,
   productCode: { type: String, trim: true },
   companyCode: { type: String, trim: true },

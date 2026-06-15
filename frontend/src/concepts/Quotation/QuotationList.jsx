@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import {
   useGetAllQuotationsQuery,
   useDeleteQuotationMutation,
-  useCloneQuotationMutation, // ← Added
+  useCloneQuotationMutation,
 } from "../../api/quotationApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
 import {
@@ -15,9 +15,7 @@ import {
   CalendarOutlined,
   EditOutlined,
   HomeOutlined,
-  BookOutlined,
-  UnorderedListOutlined,
-  CopyOutlined, // ← Added for Clone
+  CopyOutlined,
 } from "@ant-design/icons";
 import QuotationProductModal from "../../components/Quotation/QuotationProductModal";
 import DeleteModal from "../../components/Common/DeleteModal";
@@ -32,7 +30,6 @@ import {
   Menu,
   DatePicker,
   Table,
-  Collapse,
   Card,
   Statistic,
 } from "antd";
@@ -47,14 +44,11 @@ import PermissionGate from "../../context/PermissionGate";
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
-const { Panel } = Collapse;
 
 const QuotationList = () => {
   const navigate = useNavigate();
 
   // ==================== STATE ====================
-  const [viewMode, setViewMode] = useState("list"); // "list" | "book"
-
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [searchTerm, setSearchTerm] = useState("");
@@ -101,8 +95,8 @@ const QuotationList = () => {
     isError,
     error,
   } = useGetAllQuotationsQuery({
-    page: viewMode === "book" ? 1 : currentPage, // Fetch all in one go for Book mode
-    limit: viewMode === "book" ? 1000 : pageSize, // Large limit for grouping
+    page: currentPage,
+    limit: pageSize,
     search: debouncedSearch.trim() === "" ? undefined : debouncedSearch.trim(),
     customerId: customerFilter === "" ? undefined : customerFilter,
     status: statusFilter === "" ? undefined : statusFilter,
@@ -112,38 +106,6 @@ const QuotationList = () => {
   });
 
   const quotations = Array.isArray(response?.data) ? response?.data : [];
-
-  // ==================== GROUP BY MONTH (Book Mode) ====================
-  const monthlyGroups = useMemo(() => {
-    if (viewMode !== "book") return [];
-
-    const groups = {};
-
-    quotations.forEach((q) => {
-      const date = q.quotation_date || q.createdAt;
-      if (!date) return;
-
-      const monthKey = moment(date).format("YYYY-MM"); // e.g., "2026-05"
-      const monthLabel = moment(date).format("MMMM YYYY");
-
-      if (!groups[monthKey]) {
-        groups[monthKey] = {
-          key: monthKey,
-          label: monthLabel,
-          quotations: [],
-          totalAmount: 0,
-          count: 0,
-        };
-      }
-
-      groups[monthKey].quotations.push(q);
-      groups[monthKey].totalAmount += Number(q.finalAmount || 0);
-      groups[monthKey].count += 1;
-    });
-
-    // Sort months descending
-    return Object.values(groups).sort((a, b) => b.key.localeCompare(a.key));
-  }, [quotations, viewMode]);
 
   const pagination = response?.pagination || {
     total: 0,
@@ -158,7 +120,7 @@ const QuotationList = () => {
   const [deleteQuotation, { isLoading: isDeleting }] =
     useDeleteQuotationMutation();
   const [cloneQuotation, { isLoading: isCloning }] =
-    useCloneQuotationMutation(); // ← Added
+    useCloneQuotationMutation();
 
   // ==================== HELPERS ====================
   const getProductCount = (items) => {
@@ -170,6 +132,7 @@ const QuotationList = () => {
       return 0;
     }
   };
+
   // ==================== CLONE HANDLER ====================
   const handleCloneQuotation = async (quotation) => {
     try {
@@ -182,7 +145,7 @@ const QuotationList = () => {
     }
   };
 
-  // ==================== HANDLERS (same as before) ====================
+  // ==================== HANDLERS ====================
   const handleOpenProductModal = (id) => {
     setSelectedQuotationId(id);
     setShowProductModal(true);
@@ -218,6 +181,7 @@ const QuotationList = () => {
     setDateRange([null, null]);
     setCurrentPage(1);
   };
+
   const handleGenerateSiteMap = (q) => {
     const rawItems = q.items || [];
     if (rawItems.length === 0) {
@@ -246,6 +210,7 @@ const QuotationList = () => {
       },
     });
   };
+
   const handleConvertToOrder = (q) => {
     const rawItems = q.items || [];
     if (rawItems.length === 0) {
@@ -304,7 +269,7 @@ const QuotationList = () => {
     }
   };
 
-  // ==================== COLUMNS (same as before) ====================
+  // ==================== COLUMNS ====================
   const columns = [
     {
       title: "S.No.",
@@ -370,7 +335,6 @@ const QuotationList = () => {
       key: "amount",
       render: (amt) => `₹${Number(amt || 0).toFixed(2)}`,
     },
-
     {
       title: "Actions",
       key: "actions",
@@ -394,7 +358,6 @@ const QuotationList = () => {
 
         return (
           <div className="d-flex align-items-center gap-1">
-            {/* Edit */}
             <PermissionGate api="edit" module="quotations">
               <Tooltip title="Edit">
                 <Button
@@ -409,7 +372,6 @@ const QuotationList = () => {
               </Tooltip>
             </PermissionGate>
 
-            {/* Clone */}
             <PermissionGate api="write" module="quotations">
               <Tooltip title="Clone Quotation">
                 <Button
@@ -421,7 +383,6 @@ const QuotationList = () => {
               </Tooltip>
             </PermissionGate>
 
-            {/* Export PDF */}
             <Tooltip title="Export PDF">
               <Button
                 type="text"
@@ -449,7 +410,6 @@ const QuotationList = () => {
               />
             </Tooltip>
 
-            {/* More Actions Dropdown */}
             <Dropdown
               overlay={
                 <Menu>
@@ -502,52 +462,15 @@ const QuotationList = () => {
       },
     },
   ];
-  const tableDataForExport = useMemo(() => {
-    if (!Array.isArray(quotations)) return [];
 
-    return quotations.map((q, i) => ({
-      "S.No.": (currentPage - 1) * pageSize + i + 1,
-      Title: q.document_title || "Untitled",
-      "Ref #": q.reference_number || "—",
-      Date: q.quotation_date
-        ? moment(q.quotation_date).format("DD/MM/YYYY")
-        : "—",
-      Customer:
-        customers.find((c) => c.customerId === q.customerId)?.name || "—",
-      Products: getProductCount(q.items),
-      Amount: `₹${Number(q.finalAmount || 0).toFixed(2)}`,
-      Status: q.status || "Pending",
-    }));
-  }, [quotations, currentPage, pageSize, customers]);
   return (
     <div className="page-wrapper">
       <div className="content">
         <div className="card">
           <PageHeader
             title="Quotations"
-            subtitle={
-              viewMode === "book"
-                ? "Book View - Monthly"
-                : "Manage your quotations"
-            }
+            subtitle="Manage your quotations"
             onAdd={() => navigate("/quotation/add")}
-            extra={
-              <Button
-                icon={
-                  viewMode === "list" ? (
-                    <BookOutlined />
-                  ) : (
-                    <UnorderedListOutlined />
-                  )
-                }
-                onClick={() =>
-                  setViewMode(viewMode === "list" ? "book" : "list")
-                }
-                type={viewMode === "book" ? "primary" : "default"}
-              >
-                {viewMode === "book" ? "List Mode" : "Book Mode"}
-              </Button>
-            }
           />
 
           <div className="card-body">
@@ -595,108 +518,47 @@ const QuotationList = () => {
               </div>
             </div>
 
-            {/* BOOK MODE */}
-            {viewMode === "book" ? (
-              isLoading ? (
-                <div className="text-center py-5">Loading book view...</div>
-              ) : monthlyGroups.length === 0 ? (
-                <div className="text-center py-5 text-muted">
-                  No quotations found
-                </div>
-              ) : (
-                <Collapse accordion defaultActiveKey={monthlyGroups[0]?.key}>
-                  {monthlyGroups.map((month) => (
-                    <Panel
-                      header={
-                        <div className="d-flex justify-content-between align-items-center w-100">
-                          <span>
-                            <strong>{month.label}</strong>
-                          </span>
-                          <div className="d-flex gap-4">
-                            <Statistic
-                              title="Quotations"
-                              value={month.count}
-                              valueStyle={{ fontSize: "16px" }}
-                            />
-                            <Statistic
-                              title="Total Amount"
-                              value={month.totalAmount}
-                              precision={2}
-                              prefix="₹"
-                              valueStyle={{
-                                fontSize: "16px",
-                                color: "#3f8600",
-                              }}
-                            />
-                          </div>
-                        </div>
-                      }
-                      key={month.key}
-                    >
-                      <Table
-                        columns={columns}
-                        dataSource={month.quotations}
-                        rowKey="quotationId"
-                        pagination={false}
-                        scroll={{ x: "max-content" }}
-                        size="small"
-                      />
-                    </Panel>
-                  ))}
-                </Collapse>
-              )
+            {/* List View */}
+            {isLoading ? (
+              <div className="text-center py-5">
+                <div className="spinner-border text-primary" role="status" />
+              </div>
+            ) : isError ? (
+              <div className="alert alert-danger">
+                Error: {error?.data?.message || "Failed to load quotations"}
+              </div>
+            ) : quotations.length === 0 ? (
+              <div className="text-center py-5 text-muted">
+                No quotations found
+              </div>
             ) : (
-              /* ==================== LIST MODE (Original) ==================== */
               <>
-                {/* Your existing Table + Pagination code */}
-                {isLoading ? (
-                  <div className="text-center py-5">
-                    <div
-                      className="spinner-border text-primary"
-                      role="status"
+                <div className="table-responsive">
+                  <Table
+                    columns={columns}
+                    dataSource={quotations}
+                    rowKey="quotationId"
+                    pagination={false}
+                    scroll={{ x: "max-content" }}
+                  />
+                </div>
+
+                {pagination.total > 0 && (
+                  <div className="mt-4 d-flex justify-content-between align-items-center">
+                    <div className="text-muted small">
+                      Showing {(currentPage - 1) * pageSize + 1}–{" "}
+                      {Math.min(currentPage * pageSize, pagination.total)} of{" "}
+                      {pagination.total} quotations
+                    </div>
+                    <Pagination
+                      current={currentPage}
+                      pageSize={pageSize}
+                      total={pagination.total}
+                      onChange={handlePageChange}
+                      showSizeChanger
+                      pageSizeOptions={["10", "20", "50", "100"]}
                     />
                   </div>
-                ) : isError ? (
-                  <div className="alert alert-danger">
-                    Error: {error?.data?.message || "Failed to load quotations"}
-                  </div>
-                ) : quotations.length === 0 ? (
-                  <div className="text-center py-5 text-muted">
-                    No quotations found
-                  </div>
-                ) : (
-                  <>
-                    <div className="table-responsive">
-                      <Table
-                        columns={columns}
-                        dataSource={quotations}
-                        rowKey="quotationId"
-                        pagination={false}
-                        scroll={{ x: "max-content" }}
-                      />
-                    </div>
-
-                    {pagination.total > 0 && (
-                      <div className="mt-4 d-flex justify-content-between align-items-center">
-                        <div className="text-muted small">
-                          Showing {(currentPage - 1) * pageSize + 1}–
-                          {Math.min(currentPage * pageSize, pagination.total)}{" "}
-                          of {pagination.total} quotations
-                        </div>
-                        <Pagination
-                          current={currentPage}
-                          pageSize={pageSize}
-                          total={pagination.total}
-                          onChange={(page, size) => {
-                            setCurrentPage(page);
-                            if (size !== pageSize) setPageSize(size);
-                          }}
-                          showSizeChanger
-                          pageSizeOptions={["10", "20", "50", "100"]}
-                        />
-                      </div>
-                    )}
-                  </>
                 )}
               </>
             )}
@@ -724,6 +586,7 @@ const QuotationList = () => {
           }}
           quotationId={selectedQuotationId}
         />
+
         <DatesModal
           open={showDatesModal}
           onClose={() => {
@@ -733,6 +596,7 @@ const QuotationList = () => {
           dueDate={selectedForDates?.due_date}
           followupDates={selectedForDates?.followupDates || []}
         />
+
         <DeleteModal
           isVisible={showDeleteModal}
           onConfirm={handleConfirmDelete}

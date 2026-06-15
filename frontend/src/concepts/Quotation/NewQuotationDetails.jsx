@@ -52,6 +52,37 @@ dayjs.extend(relativeTime);
 
 const { Title, Text } = Typography;
 
+// ── Shared Pricing Helper ────────────────────────────────────────────────
+// Computes the discounted unit price and line total for any product/option
+// item. Falls back gracefully if `total` is not present in the data.
+const computePricing = (item) => {
+  const mrp = Number(item.price ?? 0);
+  const qty = Number(item.quantity ?? 1);
+  const discValue = Number(item.discount ?? 0);
+  const discType = (item.discountType ?? "percent").toLowerCase();
+
+  let unitPrice = mrp;
+  if (discValue > 0) {
+    unitPrice =
+      discType === "percent" ? mrp * (1 - discValue / 100) : mrp - discValue;
+  }
+  unitPrice = Math.round(unitPrice * 100) / 100;
+
+  const lineTotal =
+    item.total !== undefined && item.total !== null && Number(item.total) > 0
+      ? Number(item.total)
+      : Math.round(unitPrice * qty * 100) / 100;
+
+  const displayDiscount =
+    discValue > 0
+      ? discType === "percent"
+        ? `${discValue}%`
+        : `₹${discValue.toFixed(0)}`
+      : "—";
+
+  return { mrp, qty, unitPrice, lineTotal, displayDiscount };
+};
+
 const NewQuotationsDetails = () => {
   const { id } = useParams();
   const [activeVersion, setActiveVersion] = useState("current");
@@ -205,6 +236,17 @@ const NewQuotationsDetails = () => {
       options: optionMap.get(mainItem.productId) || [],
     }));
   }, [mainProducts, optionalProducts]);
+
+  // Main products without inline options (used for the primary product pages)
+  const mainProductsOnly = useMemo(
+    () =>
+      groupedProductsWithOptions.map((item) => ({
+        ...item,
+        options: [],
+      })),
+    [groupedProductsWithOptions],
+  );
+
   // ── Brand Names ─────────────────────────────────────────────────────────
   const brandNames = useMemo(() => {
     const brands = new Set();
@@ -229,8 +271,10 @@ const NewQuotationsDetails = () => {
 
   const totalProductDiscount = useMemo(() => {
     return mainProducts.reduce((sum, p) => {
-      const gross = Number(p.price ?? 0) * Number(p.quantity ?? 1);
-      return sum + (gross - Number(p.total ?? 0));
+      const qty = Number(p.quantity ?? 1);
+      const gross = Number(p.price ?? 0) * qty;
+      const { lineTotal } = computePricing(p);
+      return sum + (gross - lineTotal);
     }, 0);
   }, [mainProducts]);
 
@@ -714,29 +758,8 @@ const NewQuotationsDetails = () => {
             {itemsWithOptions.map((mainItem) => {
               const code = mainItem.companyCode || mainItem.productCode || "—";
               const img = mainItem.imageUrl || "";
-              const mrp = Number(mainItem.price ?? 0);
-              const qty = Number(mainItem.quantity ?? 1);
-              const lineTotal = Number(mainItem.total ?? 0);
-              const discValue = Number(mainItem.discount ?? 0);
-              const discType = (
-                mainItem.discountType ?? "percent"
-              ).toLowerCase();
-
-              let unitPrice = mrp;
-              if (discValue > 0) {
-                unitPrice =
-                  discType === "percent"
-                    ? mrp * (1 - discValue / 100)
-                    : mrp - discValue;
-              }
-              unitPrice = Math.round(unitPrice * 100) / 100;
-
-              const displayDiscount =
-                discValue > 0
-                  ? discType === "percent"
-                    ? `${discValue}%`
-                    : `₹${discValue.toFixed(0)}`
-                  : "—";
+              const { mrp, qty, unitPrice, lineTotal, displayDiscount } =
+                computePricing(mainItem);
 
               localSno++;
 
@@ -779,31 +802,14 @@ const NewQuotationsDetails = () => {
                   </tr>
 
                   {mainItem.options?.map((opt, idx) => {
-                    // Optional items logic (same as your original)
                     const optCode = opt.companyCode || opt.productCode || "—";
-                    const optMrp = Number(opt.price ?? 0);
-                    const optQty = Number(opt.quantity ?? 1);
-                    const optTotal = Number(opt.total ?? 0);
-                    const optDisc = Number(opt.discount ?? 0);
-                    const optDiscType = (
-                      opt.discountType ?? "percent"
-                    ).toLowerCase();
-
-                    let optUnitPrice = optMrp;
-                    if (optDisc > 0) {
-                      optUnitPrice =
-                        optDiscType === "percent"
-                          ? optMrp * (1 - optDisc / 100)
-                          : optMrp - optDisc;
-                    }
-                    optUnitPrice = Math.round(optUnitPrice * 100) / 100;
-
-                    const optDisplayDisc =
-                      optDisc > 0
-                        ? optDiscType === "percent"
-                          ? `${optDisc}%`
-                          : `₹${optDisc.toFixed(0)}`
-                        : "—";
+                    const {
+                      mrp: optMrp,
+                      qty: optQty,
+                      unitPrice: optUnitPrice,
+                      lineTotal: optTotal,
+                      displayDiscount: optDisplayDisc,
+                    } = computePricing(opt);
 
                     return (
                       <tr
@@ -865,6 +871,67 @@ const NewQuotationsDetails = () => {
     );
   };
 
+  // ── NEW: Render Optional Items on their own dedicated page(s) ──────────
+  const renderOptionalItemsPages = (shouldShowColumn) => {
+    if (optionalProducts.length === 0) return [];
+
+    const MAX_OPTIONAL_PER_PAGE = 10;
+    const pages = [];
+
+    // Strip nested options (none expected, but keep table flat/consistent)
+    const flatOptionalItems = optionalProducts.map((opt) => ({
+      ...opt,
+      options: [],
+    }));
+
+    let remaining = [...flatOptionalItems];
+    let localSno = 0;
+
+    while (remaining.length > 0) {
+      const itemsThisPage = remaining.slice(0, MAX_OPTIONAL_PER_PAGE);
+
+      pages.push(
+        <div
+          key={`optional-page-${localSno}`}
+          className={`${styles.productPage} page`}
+        >
+          <div className={styles.pageTopHeader}>
+            <div>
+              <div className={styles.clientName}>{customerName}</div>
+              <div className={styles.clientAddress}>{customerAddress}</div>
+            </div>
+            <div className={styles.pageDate}>
+              {new Date(
+                quotation.quotation_date || Date.now(),
+              ).toLocaleDateString("en-IN", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })}
+            </div>
+          </div>
+
+          <h2
+            style={{
+              color: "#d32f2f",
+              textAlign: "center",
+              margin: "20px 0 25px",
+            }}
+          >
+            OPTIONAL ITEMS
+          </h2>
+
+          {renderProductTable(itemsThisPage, "", localSno, shouldShowColumn)}
+        </div>,
+      );
+
+      localSno += itemsThisPage.length;
+      remaining = remaining.slice(itemsThisPage.length);
+    }
+
+    return pages;
+  };
+
   // ── Render All Pages ────────────────────────────────────────────────────
   const renderPages = (getShouldShowColumn) => {
     const shouldShowColumn = getShouldShowColumn || (() => true);
@@ -918,8 +985,8 @@ const NewQuotationsDetails = () => {
       </div>,
     );
 
-    // Main Product Pages
-    let remainingItems = [...groupedProductsWithOptions];
+    // Main Product Pages (options NOT shown inline here)
+    let remainingItems = [...mainProductsOnly];
     let globalSno = 0;
 
     while (remainingItems.length > 0) {
@@ -950,6 +1017,9 @@ const NewQuotationsDetails = () => {
       globalSno += itemsThisPage.length;
       remainingItems = remainingItems.slice(itemsThisPage.length);
     }
+
+    // Optional Items — own dedicated page(s)
+    pages.push(...renderOptionalItemsPages(shouldShowColumn));
 
     // Floor & Room Section with Toggle
     if (hasSiteLayout) {
@@ -1104,7 +1174,6 @@ const NewQuotationsDetails = () => {
 
       <div className="page-wrapper">
         <div className="content">
-          {/* Top Bar */}
           {/* Top Bar */}
           <div
             style={{

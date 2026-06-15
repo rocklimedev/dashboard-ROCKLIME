@@ -17,8 +17,6 @@ import {
   Pagination,
   Dropdown,
   Menu,
-  Collapse,
-  Statistic,
 } from "antd";
 import {
   SearchOutlined,
@@ -26,17 +24,15 @@ import {
   FileTextOutlined,
   DeleteOutlined,
   MoreOutlined,
-  BookOutlined,
-  UnorderedListOutlined,
+  DownloadOutlined,
 } from "@ant-design/icons";
 import DatesModal from "../../components/Orders/DateModal";
 import DeleteModal from "../../components/Common/DeleteModal";
 import PageHeader from "../../components/Common/PageHeader";
 import { useAuth } from "../../context/AuthContext";
 import moment from "moment";
-import { DownloadOutlined } from "@ant-design/icons";
+
 const { Option } = Select;
-const { Panel } = Collapse;
 
 const OrderWrapper = () => {
   const navigate = useNavigate();
@@ -44,25 +40,6 @@ const OrderWrapper = () => {
   const permissions = auth?.permissions || [];
   const [downloadOrderSummary] = useLazyDownloadOrderSummaryQuery();
 
-  const handleDownloadOrder = async (orderId) => {
-    try {
-      const blob = await downloadOrderSummary(orderId).unwrap();
-
-      const url = window.URL.createObjectURL(blob);
-
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `Order-${orderId}.pdf`;
-
-      document.body.appendChild(link);
-      link.click();
-
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      message.error("Failed to download order summary");
-    }
-  };
   const canEditOrder = permissions.some(
     (p) => p.action === "edit" && p.module === "orders",
   );
@@ -73,9 +50,7 @@ const OrderWrapper = () => {
     (p) => p.action === "write" && p.module === "orders",
   );
 
-  // ==================== NEW: View Mode ====================
-  const [viewMode, setViewMode] = useState("list"); // "list" | "book"
-
+  // ==================== STATE ====================
   const [searchTerm, setSearchTerm] = useState("");
   const [committedFilters, setCommittedFilters] = useState({
     search: "",
@@ -114,11 +89,7 @@ const OrderWrapper = () => {
     error,
     isLoading,
     isFetching,
-  } = useGetAllOrdersQuery({
-    ...committedFilters,
-    limit: viewMode === "book" ? 1000 : committedFilters.limit, // Fetch more for grouping
-    page: viewMode === "book" ? 1 : committedFilters.page,
-  });
+  } = useGetAllOrdersQuery(committedFilters);
 
   const orders = response?.data || [];
   const pagination = response?.pagination || {
@@ -159,35 +130,6 @@ const OrderWrapper = () => {
     }, {});
   }, [quotationsData]);
 
-  // ==================== MONTHLY GROUPING (Book Mode) ====================
-  const monthlyGroups = useMemo(() => {
-    if (viewMode !== "book") return [];
-
-    const groups = {};
-
-    orders.forEach((order) => {
-      const date = order.dueDate || order.createdAt;
-      if (!date) return;
-
-      const monthKey = moment(date).format("YYYY-MM");
-      const monthLabel = moment(date).format("MMMM YYYY");
-
-      if (!groups[monthKey]) {
-        groups[monthKey] = {
-          key: monthKey,
-          label: monthLabel,
-          orders: [],
-          totalOrders: 0,
-        };
-      }
-
-      groups[monthKey].orders.push(order);
-      groups[monthKey].totalOrders += 1;
-    });
-
-    return Object.values(groups).sort((a, b) => b.key.localeCompare(a.key));
-  }, [orders, viewMode]);
-
   const getAssignedToDisplay = (order) => {
     const parts = [];
     if (order.assignedTeam?.id && teamMap[order.assignedTeam.id]) {
@@ -208,7 +150,7 @@ const OrderWrapper = () => {
     return diffDays <= 3 && diffDays >= 0;
   };
 
-  // Handlers (same as before)
+  // ==================== HANDLERS ====================
   const handleStatusChange = (value) => {
     setCommittedFilters((prev) => ({ ...prev, status: value || "", page: 1 }));
   };
@@ -285,20 +227,21 @@ const OrderWrapper = () => {
     setShowDatesModal(true);
   };
 
-  // Export Data
-  const tableDataForExport = useMemo(() => {
-    return orders.map((order, index) => ({
-      "S.No.": (committedFilters.page - 1) * committedFilters.limit + index + 1,
-      "Order No.": order.orderNo,
-      Status: order.status || "PREPARING",
-      Customer: order.customer?.name || "N/A",
-      Priority: order.priority || "Medium",
-      "Assigned To": getAssignedToDisplay(order),
-      "Due Date": order.dueDate
-        ? moment(order.dueDate).format("DD/MM/YYYY")
-        : "—",
-    }));
-  }, [orders, committedFilters]);
+  const handleDownloadOrder = async (orderId) => {
+    try {
+      const blob = await downloadOrderSummary(orderId).unwrap();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Order-${orderId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      message.error("Failed to download order summary");
+    }
+  };
 
   return (
     <div className="page-wrapper">
@@ -306,29 +249,8 @@ const OrderWrapper = () => {
         <div className="card">
           <PageHeader
             title="Orders"
-            subtitle={
-              viewMode === "book" ? "Book View - Monthly" : "Manage your Orders"
-            }
+            subtitle="Manage your Orders"
             onAdd={() => navigate("/order/add")}
-            tableData={tableDataForExport}
-            exportOptions={{ pdf: true, excel: true }}
-            extra={
-              <Button
-                icon={
-                  viewMode === "list" ? (
-                    <BookOutlined />
-                  ) : (
-                    <UnorderedListOutlined />
-                  )
-                }
-                onClick={() =>
-                  setViewMode(viewMode === "list" ? "book" : "list")
-                }
-                type={viewMode === "book" ? "primary" : "default"}
-              >
-                {viewMode === "book" ? "List Mode" : "Book Mode"}
-              </Button>
-            }
           />
 
           <div className="card-body">
@@ -408,566 +330,279 @@ const OrderWrapper = () => {
               </div>
             </div>
 
-            {/* ==================== BOOK MODE ==================== */}
-            {viewMode === "book" ? (
-              isLoading ? (
-                <div className="text-center py-5">Loading book view...</div>
-              ) : monthlyGroups.length === 0 ? (
-                <div className="text-center py-5 text-muted">
-                  No orders found
-                </div>
-              ) : (
-                <Collapse accordion defaultActiveKey={monthlyGroups[0]?.key}>
-                  {monthlyGroups.map((month) => (
-                    <Panel
-                      header={
-                        <div className="d-flex justify-content-between align-items-center w-100">
-                          <strong>{month.label}</strong>
-                          <Statistic
-                            title="Total Orders"
-                            value={month.totalOrders}
-                            valueStyle={{ fontSize: "18px", color: "#3f8600" }}
-                          />
-                        </div>
-                      }
-                      key={month.key}
-                    >
-                      <div className="table-responsive">
-                        <table className="table table-hover align-middle">
-                          <thead className="table-light">
-                            <tr>
-                              <th>S.No.</th>
-                              <th>Order No.</th>
-                              <th>STATUS</th>
-                              <th>CUSTOMER</th>
-                              <th>PRIORITY</th>
-                              <th>ASSIGNED TO</th>
-                              <th>DUE DATE</th>
-                              <th className="text-end">ACTIONS</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {month.orders.map((order, idx) => {
-                              const serialNo =
-                                (committedFilters.page - 1) *
-                                  committedFilters.limit +
-                                orders.indexOf(order) +
-                                1;
-
-                              const hasInvoice =
-                                [
-                                  "INVOICE",
-                                  "DISPATCHED",
-                                  "DELIVERED",
-                                  "PARTIALLY_DELIVERED",
-                                  "CLOSED",
-                                ].includes(order.status) && order.invoiceLink;
-                              return (
-                                <tr key={order.id}>
-                                  <td>{serialNo}</td>
-                                  <td>
-                                    <Link
-                                      to={`/order/${order.id}`}
-                                      className="fw-medium"
-                                    >
-                                      {order.orderNo}
-                                    </Link>
-                                    <span
-                                      className="badge ms-2"
-                                      style={{
-                                        backgroundColor: order.quotationId
-                                          ? "#d4edda"
-                                          : "#f8d7da",
-                                        color: order.quotationId
-                                          ? "#155724"
-                                          : "#721c24",
-                                      }}
-                                    >
-                                      {order.quotationId ? "Linked" : "Idle"}
-                                    </span>
-                                  </td>
-
-                                  <td>
-                                    <span
-                                      className="badge"
-                                      style={{
-                                        backgroundColor: "#e6eaed",
-                                        color: "black",
-                                      }}
-                                    >
-                                      {order.status || "PREPARING"}
-                                    </span>
-
-                                    {canUpdateOrderStatus && (
-                                      <Dropdown
-                                        overlay={
-                                          <Menu>
-                                            {[
-                                              "PREPARING",
-                                              "CHECKING",
-                                              "INVOICE",
-                                              "DISPATCHED",
-                                              "DELIVERED",
-                                              "PARTIALLY_DELIVERED",
-                                              "CANCELED",
-                                              "DRAFT",
-                                              "ONHOLD",
-                                              "CLOSED",
-                                            ].map((s) => (
-                                              <Menu.Item
-                                                key={s}
-                                                onClick={() =>
-                                                  updateOrderStatus({
-                                                    orderId: order.id,
-                                                    status: s,
-                                                  })
-                                                }
-                                                disabled={order.status === s}
-                                              >
-                                                {s.replace("_", " ")}
-                                              </Menu.Item>
-                                            ))}
-                                          </Menu>
-                                        }
-                                        trigger={["click"]}
-                                      >
-                                        <EditOutlined
-                                          className="ms-2 text-primary"
-                                          style={{ cursor: "pointer" }}
-                                        />
-                                      </Dropdown>
-                                    )}
-                                  </td>
-
-                                  <td>
-                                    {order.quotationId ? (
-                                      <Link
-                                        to={`/quotation/${order.quotationId}`}
-                                      >
-                                        {quotationMap[order.quotationId] || "—"}
-                                      </Link>
-                                    ) : (
-                                      "—"
-                                    )}
-                                  </td>
-
-                                  <td>
-                                    {order.customer ? (
-                                      <Link
-                                        to={`/customer/${order.customer.customerId}`}
-                                      >
-                                        {order.customer.name}
-                                      </Link>
-                                    ) : (
-                                      "N/A"
-                                    )}
-                                  </td>
-
-                                  <td>
-                                    <span
-                                      className={`badge bg-${
-                                        order.priority === "high"
-                                          ? "danger"
-                                          : order.priority === "low"
-                                            ? "info"
-                                            : "warning"
-                                      }`}
-                                    >
-                                      {order.priority || "Medium"}
-                                    </span>
-                                  </td>
-
-                                  <td>{getAssignedToDisplay(order)}</td>
-
-                                  <td>
-                                    {order.creator?.name ||
-                                      order.creator?.username ||
-                                      "N/A"}
-                                  </td>
-
-                                  <td
-                                    className={
-                                      isDueDateClose(order.dueDate)
-                                        ? "text-danger fw-bold"
-                                        : ""
-                                    }
-                                  >
-                                    {order.dueDate ? (
-                                      <span
-                                        className="cursor-pointer text-decoration-underline"
-                                        onClick={() =>
-                                          handleOpenDatesModal(
-                                            order.dueDate,
-                                            order.followupDates,
-                                          )
-                                        }
-                                      >
-                                        {new Date(
-                                          order.dueDate,
-                                        ).toLocaleDateString()}
-                                      </span>
-                                    ) : (
-                                      "—"
-                                    )}
-                                  </td>
-
-                                  <td className="text-end">
-                                    {canEditOrder && (
-                                      <Button
-                                        type="text"
-                                        icon={<EditOutlined />}
-                                        onClick={() =>
-                                          navigate(`/order/${order.id}/edit`, {
-                                            state: { order },
-                                          })
-                                        }
-                                      />
-                                    )}
-
-                                    {(canDeleteOrder || hasInvoice) && (
-                                      <Dropdown
-                                        overlay={
-                                          <Menu>
-                                            {hasInvoice && (
-                                              <Menu.Item
-                                                key="invoice"
-                                                onClick={() =>
-                                                  handleViewInvoice(
-                                                    order.invoiceLink,
-                                                  )
-                                                }
-                                              >
-                                                <FileTextOutlined /> View
-                                                Invoice
-                                              </Menu.Item>
-                                            )}
-                                            {canDeleteOrder && (
-                                              <Menu.Item
-                                                key="delete"
-                                                danger
-                                                onClick={() =>
-                                                  handleDeleteClick(order.id)
-                                                }
-                                              >
-                                                <DeleteOutlined /> Delete
-                                              </Menu.Item>
-                                            )}
-                                          </Menu>
-                                        }
-                                        trigger={["click"]}
-                                      >
-                                        <Button
-                                          type="text"
-                                          icon={<MoreOutlined />}
-                                        />
-                                      </Dropdown>
-                                    )}
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                    </Panel>
-                  ))}
-                </Collapse>
-              )
+            {/* LIST MODE */}
+            {isLoading ? (
+              <div className="text-center py-5">
+                <div className="spinner-border text-primary" role="status" />
+              </div>
+            ) : error ? (
+              <div className="alert alert-danger">
+                {error?.data?.message || "Failed to load orders"}
+              </div>
+            ) : orders.length === 0 ? (
+              <div className="text-center py-5 text-muted">No orders found</div>
             ) : (
-              /* ==================== LIST MODE (Original) ==================== */
               <>
-                {/* Your existing table code here */}
-                {isLoading ? (
-                  <div className="text-center py-5">
-                    <div
-                      className="spinner-border text-primary"
-                      role="status"
-                    />
-                  </div>
-                ) : error ? (
-                  <div className="alert alert-danger">
-                    {error?.data?.message || "Failed to load orders"}
-                  </div>
-                ) : orders.length === 0 ? (
-                  <div className="text-center py-5 text-muted">
-                    No orders found
-                  </div>
-                ) : (
-                  <>
-                    <div className="table-responsive">
-                      <table className="table table-hover align-middle">
-                        <thead className="table-light">
-                          <tr>
-                            <th>S.No.</th>
-                            <th>Order No.</th>
-                            <th>STATUS</th>
-                            <th>QUOTATION</th>
-                            <th>CUSTOMER</th>
-                            <th>PRIORITY</th>
-                            <th>ASSIGNED TO</th>
-                            <th>CREATED BY</th>
-                            <th>DUE DATE</th>
-                            <th className="text-end">ACTIONS</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {orders.map((order) => {
-                            const serialNo =
-                              (committedFilters.page - 1) *
-                                committedFilters.limit +
-                              orders.indexOf(order) +
-                              1;
+                <div className="table-responsive">
+                  <table className="table table-hover align-middle">
+                    <thead className="table-light">
+                      <tr>
+                        <th>S.No.</th>
+                        <th>Order No.</th>
+                        <th>STATUS</th>
+                        <th>QUOTATION</th>
+                        <th>CUSTOMER</th>
+                        <th>PRIORITY</th>
+                        <th>ASSIGNED TO</th>
+                        <th>CREATED BY</th>
+                        <th>DUE DATE</th>
+                        <th className="text-end">ACTIONS</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {orders.map((order) => {
+                        const serialNo =
+                          (committedFilters.page - 1) * committedFilters.limit +
+                          orders.indexOf(order) +
+                          1;
 
-                            const hasInvoice =
-                              [
-                                "INVOICE",
-                                "DISPATCHED",
-                                "DELIVERED",
-                                "PARTIALLY_DELIVERED",
-                                "CLOSED",
-                              ].includes(order.status) && order.invoiceLink;
+                        const hasInvoice =
+                          [
+                            "INVOICE",
+                            "DISPATCHED",
+                            "DELIVERED",
+                            "PARTIALLY_DELIVERED",
+                            "CLOSED",
+                          ].includes(order.status) && order.invoiceLink;
 
-                            return (
-                              <tr key={order.id}>
-                                <td>{serialNo}</td>
-                                <td>
-                                  <Link
-                                    to={`/order/${order.id}`}
-                                    className="fw-medium"
-                                  >
-                                    {order.orderNo}
-                                  </Link>
-                                  <span
-                                    className="badge ms-2"
-                                    style={{
-                                      backgroundColor: order.quotationId
-                                        ? "#d4edda"
-                                        : "#f8d7da",
-                                      color: order.quotationId
-                                        ? "#155724"
-                                        : "#721c24",
-                                    }}
-                                  >
-                                    {order.quotationId ? "Linked" : "Idle"}
-                                  </span>
-                                </td>
+                        return (
+                          <tr key={order.id}>
+                            <td>{serialNo}</td>
+                            <td>
+                              <Link
+                                to={`/order/${order.id}`}
+                                className="fw-medium"
+                              >
+                                {order.orderNo}
+                              </Link>
+                              <span
+                                className="badge ms-2"
+                                style={{
+                                  backgroundColor: order.quotationId
+                                    ? "#d4edda"
+                                    : "#f8d7da",
+                                  color: order.quotationId
+                                    ? "#155724"
+                                    : "#721c24",
+                                }}
+                              >
+                                {order.quotationId ? "Linked" : "Idle"}
+                              </span>
+                            </td>
 
-                                <td>
-                                  <span
-                                    className="badge"
-                                    style={{
-                                      backgroundColor: "#e6eaed",
-                                      color: "black",
-                                    }}
-                                  >
-                                    {order.status || "PREPARING"}
-                                  </span>
+                            <td>
+                              <span
+                                className="badge"
+                                style={{
+                                  backgroundColor: "#e6eaed",
+                                  color: "black",
+                                }}
+                              >
+                                {order.status || "PREPARING"}
+                              </span>
 
-                                  {canUpdateOrderStatus && (
-                                    <Dropdown
-                                      overlay={
-                                        <Menu>
-                                          {[
-                                            "PREPARING",
-                                            "CHECKING",
-                                            "INVOICE",
-                                            "DISPATCHED",
-                                            "DELIVERED",
-                                            "PARTIALLY_DELIVERED",
-                                            "CANCELED",
-                                            "DRAFT",
-                                            "ONHOLD",
-                                            "CLOSED",
-                                          ].map((s) => (
-                                            <Menu.Item
-                                              key={s}
-                                              onClick={() =>
-                                                updateOrderStatus({
-                                                  orderId: order.id,
-                                                  status: s,
-                                                })
-                                              }
-                                              disabled={order.status === s}
-                                            >
-                                              {s.replace("_", " ")}
-                                            </Menu.Item>
-                                          ))}
-                                        </Menu>
-                                      }
-                                      trigger={["click"]}
-                                    >
-                                      <EditOutlined
-                                        className="ms-2 text-primary"
-                                        style={{ cursor: "pointer" }}
-                                      />
-                                    </Dropdown>
-                                  )}
-                                </td>
+                              {canUpdateOrderStatus && (
+                                <Dropdown
+                                  overlay={
+                                    <Menu>
+                                      {[
+                                        "PREPARING",
+                                        "CHECKING",
+                                        "INVOICE",
+                                        "DISPATCHED",
+                                        "DELIVERED",
+                                        "PARTIALLY_DELIVERED",
+                                        "CANCELED",
+                                        "DRAFT",
+                                        "ONHOLD",
+                                        "CLOSED",
+                                      ].map((s) => (
+                                        <Menu.Item
+                                          key={s}
+                                          onClick={() =>
+                                            updateOrderStatus({
+                                              orderId: order.id,
+                                              status: s,
+                                            })
+                                          }
+                                          disabled={order.status === s}
+                                        >
+                                          {s.replace("_", " ")}
+                                        </Menu.Item>
+                                      ))}
+                                    </Menu>
+                                  }
+                                  trigger={["click"]}
+                                >
+                                  <EditOutlined
+                                    className="ms-2 text-primary"
+                                    style={{ cursor: "pointer" }}
+                                  />
+                                </Dropdown>
+                              )}
+                            </td>
 
-                                <td>
-                                  {order.quotationId ? (
-                                    <Link
-                                      to={`/quotation/${order.quotationId}`}
-                                    >
-                                      {quotationMap[order.quotationId] || "—"}
-                                    </Link>
-                                  ) : (
-                                    "—"
-                                  )}
-                                </td>
+                            <td>
+                              {order.quotationId ? (
+                                <Link to={`/quotation/${order.quotationId}`}>
+                                  {quotationMap[order.quotationId] || "—"}
+                                </Link>
+                              ) : (
+                                "—"
+                              )}
+                            </td>
 
-                                <td>
-                                  {order.customer ? (
-                                    <Link
-                                      to={`/customer/${order.customer.customerId}`}
-                                    >
-                                      {order.customer.name}
-                                    </Link>
-                                  ) : (
-                                    "N/A"
-                                  )}
-                                </td>
+                            <td>
+                              {order.customer ? (
+                                <Link
+                                  to={`/customer/${order.customer.customerId}`}
+                                >
+                                  {order.customer.name}
+                                </Link>
+                              ) : (
+                                "N/A"
+                              )}
+                            </td>
 
-                                <td>
-                                  <span
-                                    className={`badge bg-${
-                                      order.priority === "high"
-                                        ? "danger"
-                                        : order.priority === "low"
-                                          ? "info"
-                                          : "warning"
-                                    }`}
-                                  >
-                                    {order.priority || "Medium"}
-                                  </span>
-                                </td>
+                            <td>
+                              <span
+                                className={`badge bg-${
+                                  order.priority === "high"
+                                    ? "danger"
+                                    : order.priority === "low"
+                                      ? "info"
+                                      : "warning"
+                                }`}
+                              >
+                                {order.priority || "Medium"}
+                              </span>
+                            </td>
 
-                                <td>{getAssignedToDisplay(order)}</td>
+                            <td>{getAssignedToDisplay(order)}</td>
 
-                                <td>
-                                  {order.creator?.name ||
-                                    order.creator?.username ||
-                                    "N/A"}
-                                </td>
+                            <td>
+                              {order.creator?.name ||
+                                order.creator?.username ||
+                                "N/A"}
+                            </td>
 
-                                <td
-                                  className={
-                                    isDueDateClose(order.dueDate)
-                                      ? "text-danger fw-bold"
-                                      : ""
+                            <td
+                              className={
+                                isDueDateClose(order.dueDate)
+                                  ? "text-danger fw-bold"
+                                  : ""
+                              }
+                            >
+                              {order.dueDate ? (
+                                <span
+                                  className="cursor-pointer text-decoration-underline"
+                                  onClick={() =>
+                                    handleOpenDatesModal(
+                                      order.dueDate,
+                                      order.followupDates,
+                                    )
                                   }
                                 >
-                                  {order.dueDate ? (
-                                    <span
-                                      className="cursor-pointer text-decoration-underline"
-                                      onClick={() =>
-                                        handleOpenDatesModal(
-                                          order.dueDate,
-                                          order.followupDates,
-                                        )
-                                      }
-                                    >
-                                      {new Date(
-                                        order.dueDate,
-                                      ).toLocaleDateString()}
-                                    </span>
-                                  ) : (
-                                    "—"
-                                  )}
-                                </td>
+                                  {new Date(order.dueDate).toLocaleDateString()}
+                                </span>
+                              ) : (
+                                "—"
+                              )}
+                            </td>
 
-                                <td className="text-end">
-                                  {canEditOrder && (
-                                    <Button
-                                      type="text"
-                                      icon={<EditOutlined />}
-                                      onClick={() =>
-                                        navigate(`/order/${order.id}/edit`, {
-                                          state: { order },
-                                        })
-                                      }
-                                    />
-                                  )}
+                            <td className="text-end">
+                              {canEditOrder && (
+                                <Button
+                                  type="text"
+                                  icon={<EditOutlined />}
+                                  onClick={() =>
+                                    navigate(`/order/${order.id}/edit`, {
+                                      state: { order },
+                                    })
+                                  }
+                                />
+                              )}
 
-                                  {(canDeleteOrder || hasInvoice) && (
-                                    <Dropdown
-                                      overlay={
-                                        <Menu>
-                                          {hasInvoice && (
-                                            <Menu.Item
-                                              key="invoice"
-                                              onClick={() =>
-                                                handleViewInvoice(
-                                                  order.invoiceLink,
-                                                )
-                                              }
-                                            >
-                                              <FileTextOutlined /> View Invoice
-                                            </Menu.Item>
-                                          )}
-                                          <Menu.Item
-                                            key="download_order"
-                                            onClick={() =>
-                                              handleDownloadOrder(order.id)
-                                            }
-                                          >
-                                            <DownloadOutlined /> Download Order
-                                          </Menu.Item>
-                                          {canDeleteOrder && (
-                                            <Menu.Item
-                                              key="delete"
-                                              danger
-                                              onClick={() =>
-                                                handleDeleteClick(order.id)
-                                              }
-                                            >
-                                              <DeleteOutlined /> Delete
-                                            </Menu.Item>
-                                          )}
-                                        </Menu>
-                                      }
-                                      trigger={["click"]}
-                                    >
-                                      <Button
-                                        type="text"
-                                        icon={<MoreOutlined />}
-                                      />
-                                    </Dropdown>
-                                  )}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
+                              {(canDeleteOrder || hasInvoice) && (
+                                <Dropdown
+                                  overlay={
+                                    <Menu>
+                                      {hasInvoice && (
+                                        <Menu.Item
+                                          key="invoice"
+                                          onClick={() =>
+                                            handleViewInvoice(order.invoiceLink)
+                                          }
+                                        >
+                                          <FileTextOutlined /> View Invoice
+                                        </Menu.Item>
+                                      )}
+                                      <Menu.Item
+                                        key="download_order"
+                                        onClick={() =>
+                                          handleDownloadOrder(order.id)
+                                        }
+                                      >
+                                        <DownloadOutlined /> Download Order
+                                      </Menu.Item>
+                                      {canDeleteOrder && (
+                                        <Menu.Item
+                                          key="delete"
+                                          danger
+                                          onClick={() =>
+                                            handleDeleteClick(order.id)
+                                          }
+                                        >
+                                          <DeleteOutlined /> Delete
+                                        </Menu.Item>
+                                      )}
+                                    </Menu>
+                                  }
+                                  trigger={["click"]}
+                                >
+                                  <Button type="text" icon={<MoreOutlined />} />
+                                </Dropdown>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {pagination.total > 0 && (
+                  <div className="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <div className="text-muted small">
+                      Showing{" "}
+                      {(committedFilters.page - 1) * committedFilters.limit + 1}
+                      –
+                      {Math.min(
+                        committedFilters.page * committedFilters.limit,
+                        pagination.total,
+                      )}{" "}
+                      of {pagination.total} orders
                     </div>
-
-                    {pagination.total > 0 && (
-                      <div className="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
-                        <div className="text-muted small">
-                          Showing{" "}
-                          {(committedFilters.page - 1) *
-                            committedFilters.limit +
-                            1}
-                          –
-                          {Math.min(
-                            committedFilters.page * committedFilters.limit,
-                            pagination.total,
-                          )}{" "}
-                          of {pagination.total} orders
-                        </div>
-                        <Pagination
-                          current={committedFilters.page}
-                          pageSize={committedFilters.limit}
-                          total={pagination.total}
-                          onChange={handlePageChange}
-                          showSizeChanger
-                          pageSizeOptions={["10", "20", "50", "100"]}
-                          disabled={isFetching}
-                        />
-                      </div>
-                    )}
-                  </>
+                    <Pagination
+                      current={committedFilters.page}
+                      pageSize={committedFilters.limit}
+                      total={pagination.total}
+                      onChange={handlePageChange}
+                      showSizeChanger
+                      pageSizeOptions={["10", "20", "50", "100"]}
+                      disabled={isFetching}
+                    />
+                  </div>
                 )}
               </>
             )}
