@@ -219,34 +219,32 @@ const NewQuotation = () => {
     // Enrich Items for Payload
     const enrichedItems = payloadCartItems.map((item, index) => {
       const productId = item.productId || item.id;
-      const price = Number(item.price) || 0;
-      const qty = Number(item.quantity) || 1;
-      const subtotal = price * qty;
-
-      const discVal = Number(itemDiscounts[productId]) || 0;
-      const discType = itemDiscountTypes[productId] || "percent";
-      const discountAmount =
-        discType === "percent" ? (subtotal * discVal) / 100 : discVal * qty;
-
-      const itemTax = Number(itemTaxes[productId]) || 0;
+      const isOption =
+        Boolean(item.isOption) ||
+        Boolean(item.isOptionFor) ||
+        Boolean(item.optionType && item.optionType !== "main");
 
       return {
         ...item,
-        priority: Number(item.priority ?? index), // ← FORCE HERE
-        discount: discVal,
-        discountType: discType,
-        tax: itemTax,
-        subtotal: Number(subtotal.toFixed(2)),
-        discountAmount: Number(discountAmount.toFixed(2)),
-        lineTotal: Number(
-          subtotal -
-            discountAmount +
-            ((subtotal - discountAmount) * itemTax) / 100,
-        ).toFixed(2),
+        productId,
+        priority: Number(item.priority ?? index),
 
-        isOption: Boolean(item.isOption) || Boolean(item.isOptionFor),
-        parentProductId: item.parentProductId || null,
+        isOption: isOption,
         optionType: item.optionType || null,
+        isOptionFor: isOption ? item.parentProductId || item.isOptionFor : null,
+        parentProductId: item.parentProductId || item.isOptionFor || null,
+
+        discount: Number(itemDiscounts[productId] || 0),
+        discountType: itemDiscountTypes[productId] || "percent",
+        tax: Number(itemTaxes[productId] || 0),
+
+        discountAmount: Number(
+          (itemDiscountTypes[productId] === "percent"
+            ? (item.price * item.quantity * (itemDiscounts[productId] || 0)) /
+              100
+            : (itemDiscounts[productId] || 0) * item.quantity
+          ).toFixed(2),
+        ),
       };
     });
 
@@ -278,7 +276,15 @@ const NewQuotation = () => {
       followupDates: quotationData.followupDates?.filter(Boolean) || [],
       createdBy: auth?.userId,
     };
-
+    console.log("=== FINAL PAYLOAD ===");
+    console.log(
+      "Products:",
+      JSON.stringify(quotationPayload.products, null, 2),
+    );
+    console.log(
+      "Has Options?",
+      quotationPayload.products.some((p) => p.isOption || p.optionType),
+    );
     try {
       const result = await createQuotation(quotationPayload).unwrap();
       message.success(

@@ -398,6 +398,11 @@ const InventoryWrapper = () => {
 
   const moreMenu = (record) => (
     <Menu>
+      <Menu.Item key="inventory">
+        <Link to={`/product/${record.productId}/inventory`}>
+          Check Inventory
+        </Link>
+      </Menu.Item>
       <Menu.Item key="edit">
         <Link to={`/product/${record.productId}/edit`}>Edit Product</Link>
       </Menu.Item>

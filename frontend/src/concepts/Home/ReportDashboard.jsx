@@ -25,7 +25,9 @@ import { useGetAllQuotationsQuery } from "../../api/quotationApi";
 import { useGetAllOrdersQuery } from "../../api/orderApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
 import { useAuth } from "../../context/AuthContext";
-
+import { FaShoppingBag } from "react-icons/fa";
+import { HiDocumentText } from "react-icons/hi";
+import { MdWarningAmber } from "react-icons/md";
 import "./reportdashboard.css";
 
 const BRAND_RED = "#e31e24";
@@ -312,24 +314,6 @@ const ReportDashboard = () => {
     <div className="page-wrapper">
       <div className="content">
         <div className="report-page-wrapper">
-          <div className="report-header">
-            <div>
-              <p className="report-eyebrow">Admin analytics</p>
-              <h1>Report Dashboard</h1>
-              <p className="report-subtitle">
-                A visual overview of orders, quotations, products, stock health
-                and customer movement.
-              </p>
-            </div>
-
-            <Select
-              value={range}
-              options={DATE_RANGE_OPTIONS}
-              onChange={setRange}
-              className="report-range-select"
-            />
-          </div>
-
           {loading ? (
             <div className="report-loading">
               <Spin size="large" />
@@ -341,45 +325,95 @@ const ReportDashboard = () => {
                   title="Total Orders"
                   value={reportSummary.totalOrders}
                   helper={`${filteredData.filteredOrders.length} in selected range`}
-                  icon="bi bi-bag-check"
+                  icon={<FaShoppingBag />}
                 />
+
                 <ReportMetricCard
                   title="Total Quotations"
                   value={reportSummary.totalQuotations}
                   helper={`${filteredData.filteredQuotations.length} in selected range`}
-                  icon="bi bi-receipt"
+                  icon={<HiDocumentText />}
                 />
-                <ReportMetricCard
-                  title="Quotation Value"
-                  value={formatCurrency(reportSummary.quotationValue)}
-                  helper={`Value generated in last ${range} days`}
-                  icon="bi bi-graph-up-arrow"
-                />
-                <ReportMetricCard
-                  title="Products"
-                  value={reportSummary.productCount}
-                  helper={`${reportSummary.lowStockCount} low stock items`}
-                  icon="bi bi-box-seam"
-                />
+
                 <ReportMetricCard
                   title="Critical Stock"
                   value={reportSummary.criticalStock}
                   helper="Products with quantity 5 or below"
-                  icon="bi bi-exclamation-triangle"
-                />
-                <ReportMetricCard
-                  title="Order / Quote Ratio"
-                  value={`${reportSummary.conversionRate}%`}
-                  helper="Based on total orders vs quotations"
-                  icon="bi bi-percent"
+                  icon={<MdWarningAmber />}
                 />
               </div>
+              <div className="report-grid report-grid-lists">
+                <ReportListCard title="Latest Orders">
+                  {latestOrders.length ? (
+                    latestOrders.map((order) => (
+                      <div className="report-list-item" key={order.id}>
+                        <div>
+                          <a
+                            href={`/order/${order.id}`}
+                            className="report-link"
+                          >
+                            #{order.orderNo || order.id}
+                          </a>
+                          <p>
+                            {order.customer?.name ||
+                              getCustomerName(order.customerId)}
+                          </p>
+                        </div>
+                        <div className="report-list-right">
+                          <Tag color="red">{normaliseStatus(order.status)}</Tag>
+                          <span>{formatFullDate(order.createdAt)}</span>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <Empty description="No orders found" />
+                  )}
+                </ReportListCard>
 
+                <ReportListCard title="Latest Quotations">
+                  {latestQuotations.length ? (
+                    latestQuotations.map((quotation) => (
+                      <div
+                        className="report-list-item"
+                        key={quotation.quotationId}
+                      >
+                        <div>
+                          <a
+                            href={`/quotation/${quotation.quotationId}`}
+                            className="report-link"
+                          >
+                            {quotation.reference_number || "Quotation"}
+                          </a>
+                          <p>
+                            {quotation.customer?.name ||
+                              getCustomerName(quotation.customerId)}
+                          </p>
+                        </div>
+                        <div className="report-list-right">
+                          <strong>
+                            {formatCurrency(getAmount(quotation))}
+                          </strong>
+                          <span>{formatFullDate(quotation.createdAt)}</span>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <Empty description="No quotations found" />
+                  )}
+                </ReportListCard>
+              </div>
               <div className="report-grid report-grid-main">
                 <ReportChartCard
-                  title="Orders vs Quotations"
+                  title="Orders & Quotations"
                   description={`Daily comparison for the last ${range} days`}
-                  className="report-card-wide"
+                  extra={
+                    <Select
+                      value={range}
+                      options={DATE_RANGE_OPTIONS}
+                      onChange={setRange}
+                      className="report-chart-select"
+                    />
+                  }
                 >
                   <ResponsiveContainer width="100%" height={330}>
                     <LineChart data={timelineData}>
@@ -407,40 +441,8 @@ const ReportDashboard = () => {
                     </LineChart>
                   </ResponsiveContainer>
                 </ReportChartCard>
-
-                <ReportChartCard
-                  title="Order Status"
-                  description="Current operational movement"
-                >
-                  {statusData.length ? (
-                    <ResponsiveContainer width="100%" height={330}>
-                      <PieChart>
-                        <Pie
-                          data={statusData}
-                          dataKey="count"
-                          nameKey="status"
-                          innerRadius={75}
-                          outerRadius={112}
-                          paddingAngle={4}
-                        >
-                          {statusData.map((entry, index) => (
-                            <Cell
-                              key={entry.status}
-                              fill={CHART_COLORS[index % CHART_COLORS.length]}
-                            />
-                          ))}
-                        </Pie>
-                        <Tooltip />
-                        <Legend />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <Empty description="No order status data" />
-                  )}
-                </ReportChartCard>
               </div>
-
-              <div className="report-grid report-grid-secondary">
+              {/* <div className="report-grid report-grid-secondary">
                 <ReportChartCard
                   title="Quotation Value Trend"
                   description="Daily value created through quotations"
@@ -546,68 +548,7 @@ const ReportDashboard = () => {
                     <Empty description="No customer analytics yet" />
                   )}
                 </ReportChartCard>
-              </div>
-
-              <div className="report-grid report-grid-lists">
-                <ReportListCard title="Latest Orders">
-                  {latestOrders.length ? (
-                    latestOrders.map((order) => (
-                      <div className="report-list-item" key={order.id}>
-                        <div>
-                          <a
-                            href={`/order/${order.id}`}
-                            className="report-link"
-                          >
-                            #{order.orderNo || order.id}
-                          </a>
-                          <p>
-                            {order.customer?.name ||
-                              getCustomerName(order.customerId)}
-                          </p>
-                        </div>
-                        <div className="report-list-right">
-                          <Tag color="red">{normaliseStatus(order.status)}</Tag>
-                          <span>{formatFullDate(order.createdAt)}</span>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <Empty description="No orders found" />
-                  )}
-                </ReportListCard>
-
-                <ReportListCard title="Latest Quotations">
-                  {latestQuotations.length ? (
-                    latestQuotations.map((quotation) => (
-                      <div
-                        className="report-list-item"
-                        key={quotation.quotationId}
-                      >
-                        <div>
-                          <a
-                            href={`/quotation/${quotation.quotationId}`}
-                            className="report-link"
-                          >
-                            {quotation.reference_number || "Quotation"}
-                          </a>
-                          <p>
-                            {quotation.customer?.name ||
-                              getCustomerName(quotation.customerId)}
-                          </p>
-                        </div>
-                        <div className="report-list-right">
-                          <strong>
-                            {formatCurrency(getAmount(quotation))}
-                          </strong>
-                          <span>{formatFullDate(quotation.createdAt)}</span>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <Empty description="No quotations found" />
-                  )}
-                </ReportListCard>
-              </div>
+              </div> */}
             </>
           )}
         </div>
@@ -616,34 +557,36 @@ const ReportDashboard = () => {
   );
 };
 
-const ReportMetricCard = ({ title, value, helper, icon }) => {
+function ReportMetricCard({ title, value, helper, icon }) {
   return (
-    <Card className="report-metric-card" bordered={false}>
+    <Card className="report-metric-card">
       <div className="report-metric-top">
-        <span className="report-metric-icon">
-          <i className={icon}></i>
-        </span>
+        <div className="report-metric-icon">{icon}</div>
       </div>
+
       <h3>{value}</h3>
       <p>{title}</p>
       <small>{helper}</small>
     </Card>
   );
-};
+}
 
-const ReportChartCard = ({ title, description, children, className = "" }) => {
+function ReportChartCard({ title, description, extra, children, className }) {
   return (
-    <Card className={`report-chart-card ${className}`} bordered={false}>
+    <Card className={`report-chart-card ${className || ""}`}>
       <div className="report-card-heading">
         <div>
           <h2>{title}</h2>
           <p>{description}</p>
         </div>
+
+        {extra}
       </div>
+
       {children}
     </Card>
   );
-};
+}
 
 const ReportListCard = ({ title, children }) => {
   return (

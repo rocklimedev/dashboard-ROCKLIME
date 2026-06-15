@@ -34,7 +34,7 @@ const UserPage = () => {
   const { userId } = useParams();
   const { data, isLoading, isError, error, refetch } = useGetUserByIdQuery(
     userId,
-    { skip: !userId }
+    { skip: !userId },
   );
   const user = data?.user;
 

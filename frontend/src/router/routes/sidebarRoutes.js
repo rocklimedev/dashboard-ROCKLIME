@@ -32,6 +32,7 @@ import CustomerList from "../../concepts/Customers/CustomerList";
 import BrandList from "../../concepts/Brands/BrandsList";
 import ReportsPage from "../../concepts/Reports/page";
 import ActivityLogsPage from "../../concepts/Activity/page";
+import ReportDashboard from "../../concepts/Home/ReportDashboard";
 
 export const sidebarRoutes = [
   {
@@ -39,7 +40,7 @@ export const sidebarRoutes = [
     name: "Dashboard",
     icon: <FaHome />,
     isSidebarActive: true,
-    element: <NewPageWrapper />,
+    element: <ReportDashboard />,
   },
   {
     path: "/category-selector",

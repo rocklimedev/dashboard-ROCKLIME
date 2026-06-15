@@ -120,7 +120,7 @@ const CartLayout = ({ children }) => {
     }
   }, [location.pathname]);
 
-  // Sync Server Cart to Local — PRESERVE OPTION FLAGS
+  // Sync Server Cart to Local
   useEffect(() => {
     if (!allCartItems.length) {
       setLocalCartItems([]);
@@ -158,29 +158,49 @@ const CartLayout = ({ children }) => {
   }, [allCartItems]);
 
   // ─────────────────────────────────────────────────────────────
-  // CALCULATIONS
+  // SEPARATE MAIN & OPTIONAL ITEMS
   // ─────────────────────────────────────────────────────────────
 
-  const calculationCartItems = useMemo(() => {
-    return localCartItems.filter((i) => !i?.isOption);
+  const mainCartItems = useMemo(() => {
+    return localCartItems.filter((i) => {
+      const isOptional =
+        Boolean(i.isOption) ||
+        Boolean(i.isOptionFor) ||
+        (i.optionType && i.optionType !== "main");
+      return !isOptional;
+    });
   }, [localCartItems]);
+
+  const optionalCartItems = useMemo(() => {
+    return localCartItems.filter((i) => {
+      return (
+        Boolean(i.isOption) ||
+        Boolean(i.isOptionFor) ||
+        (i.optionType && i.optionType !== "main")
+      );
+    });
+  }, [localCartItems]);
+  const calculationCartItems = mainCartItems; // For backward compatibility
 
   const payloadCartItems = useMemo(() => {
-    return localCartItems;
+    return localCartItems; // Send ALL items (main + optional)
   }, [localCartItems]);
 
-  const { productsData: cartProductsData } =
-    useProductsData(calculationCartItems);
+  const { productsData: cartProductsData } = useProductsData(mainCartItems);
+
+  // ─────────────────────────────────────────────────────────────
+  // CALCULATIONS (ONLY MAIN ITEMS)
+  // ─────────────────────────────────────────────────────────────
 
   const subTotal = useMemo(() => {
-    return calculationCartItems.reduce(
+    return mainCartItems.reduce(
       (sum, i) => sum + (Number(i.price) || 0) * (Number(i.quantity) || 0),
       0,
     );
-  }, [calculationCartItems]);
+  }, [mainCartItems]);
 
   const totalDiscount = useMemo(() => {
-    return calculationCartItems.reduce((sum, item) => {
+    return mainCartItems.reduce((sum, item) => {
       const subtotal = (Number(item.price) || 0) * (Number(item.quantity) || 1);
       const discVal = Number(itemDiscounts[item.productId]) || 0;
       const type = itemDiscountTypes[item.productId] || "percent";
@@ -190,10 +210,10 @@ const CartLayout = ({ children }) => {
           : discVal * (Number(item.quantity) || 1);
       return sum + disc;
     }, 0);
-  }, [calculationCartItems, itemDiscounts, itemDiscountTypes]);
+  }, [mainCartItems, itemDiscounts, itemDiscountTypes]);
 
   const tax = useMemo(() => {
-    return calculationCartItems.reduce((acc, item) => {
+    return mainCartItems.reduce((acc, item) => {
       const subtotal = (Number(item.price) || 0) * (Number(item.quantity) || 1);
       const discVal = Number(itemDiscounts[item.productId]) || 0;
       const type = itemDiscountTypes[item.productId] || "percent";
@@ -202,7 +222,14 @@ const CartLayout = ({ children }) => {
       const itemTax = Number(itemTaxes[item.productId]) || 0;
       return acc + (taxable * itemTax) / 100;
     }, 0);
-  }, [calculationCartItems, itemDiscounts, itemDiscountTypes, itemTaxes]);
+  }, [mainCartItems, itemDiscounts, itemDiscountTypes, itemTaxes]);
+
+  const optionalTotal = useMemo(() => {
+    return optionalCartItems.reduce(
+      (sum, i) => sum + (Number(i.price) || 0) * (Number(i.quantity) || 1),
+      0,
+    );
+  }, [optionalCartItems]);
 
   const amountBeforeGst = useMemo(
     () => parseFloat((subTotal - totalDiscount + tax + shipping).toFixed(2)),
@@ -222,8 +249,9 @@ const CartLayout = ({ children }) => {
     gst > 0 ? parseFloat(((roundedAmount * gst) / 100).toFixed(2)) : 0;
   const totalAmount = parseFloat((roundedAmount + gstAmount).toFixed(2));
 
-  // src/pages/quotations/CartLayout.jsx
-  // src/pages/quotations/CartLayout.jsx
+  // ─────────────────────────────────────────────────────────────
+  // HANDLERS
+  // ─────────────────────────────────────────────────────────────
   const handleCartOrderChange = useCallback(
     (newOrderedCart) => {
       // Ensure every item has a priority
@@ -249,10 +277,6 @@ const CartLayout = ({ children }) => {
     },
     [userId, dispatch],
   );
-  // ─────────────────────────────────────────────────────────────
-  // HANDLERS
-  // ─────────────────────────────────────────────────────────────
-
   const handleDocumentTypeChange = useCallback(
     (newType) => {
       setDocumentType(newType);
@@ -265,7 +289,6 @@ const CartLayout = ({ children }) => {
     },
     [navigate],
   );
-
   const handleUpdateQuantity = useCallback(
     async (productId, newQty) => {
       if (!userId || newQty < 1) return;
@@ -437,7 +460,45 @@ const CartLayout = ({ children }) => {
     },
     [localCartItems],
   );
+  // NEW: Link Optional Item to a Main Product
+  const handleAssignOptionToParent = useCallback(
+    (optionProductId, parentProductId) => {
+      if (!optionProductId) return;
 
+      setLocalCartItems((prev) =>
+        prev.map((item) => {
+          if (item.productId === optionProductId) {
+            return {
+              ...item,
+              isOption: true,
+              isOptionFor: parentProductId,
+              parentProductId: parentProductId,
+              optionType: item.optionType || "addon",
+            };
+          }
+          return item;
+        }),
+      );
+
+      // Also update Redux cache
+      dispatch(
+        cartApi.util.updateQueryData("getCart", userId, (draft) => {
+          const item = draft.cart?.items?.find(
+            (i) => i.productId === optionProductId,
+          );
+          if (item) {
+            item.isOption = true;
+            item.isOptionFor = parentProductId;
+            item.parentProductId = parentProductId;
+            item.optionType = item.optionType || "addon";
+          }
+        }),
+      );
+
+      message.success("Optional item attached to main product");
+    },
+    [userId, dispatch],
+  );
   const handleDiscountChange = useCallback(
     (productId, value) =>
       setItemDiscounts((prev) => ({ ...prev, [productId]: value ?? 0 })),
@@ -497,15 +558,20 @@ const CartLayout = ({ children }) => {
     }
   }, [userId, clearCart, clearDraft]);
 
-  // Common Props (Now includes drag support)
+  // ... [Keep all other handlers unchanged: handleUpdateQuantity, handleRemoveItem, handleMakeOption, etc.]
+
+  // Common Props
   const commonProps = {
     localCartItems,
+    mainCartItems, // ← New
+    optionalCartItems, // ← New
     calculationCartItems,
     payloadCartItems,
     cartProductsData,
     subTotal,
     totalDiscount,
     tax,
+    optionalTotal, // ← New
     shipping,
     gst,
     totalAmount,
@@ -533,7 +599,8 @@ const CartLayout = ({ children }) => {
     getParentName,
     forceSave,
     clearDraft,
-    onCartOrderChange: handleCartOrderChange, // ← Important
+    handleAssignOptionToParent, // ← Add this
+    onCartOrderChange: handleCartOrderChange,
   };
 
   return (
