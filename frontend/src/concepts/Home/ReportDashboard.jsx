@@ -112,8 +112,6 @@ const ReportDashboard = () => {
     .toString()
     .toUpperCase();
 
-  const isRestrictedRole =
-    role && !["ADMIN", "SUPER_ADMIN", "DEVELOPER"].includes(role);
 
   const { data: countData, isLoading: productCountLoading } =
     useGetProductCountQuery();
@@ -302,13 +300,7 @@ const ReportDashboard = () => {
       .slice(0, 7);
   }, [quotations]);
 
-  if (isRestrictedRole) {
-    return (
-      <div className="report-page-wrapper">
-        <Empty description="This report dashboard is available only for Admin and Super Admin users." />
-      </div>
-    );
-  }
+
 
   return (
     <div className="page-wrapper">
