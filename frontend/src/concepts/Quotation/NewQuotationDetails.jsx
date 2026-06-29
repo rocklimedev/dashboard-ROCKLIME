@@ -53,7 +53,7 @@ dayjs.extend(relativeTime);
 const { Title, Text } = Typography;
 
 // ── Shared Pricing Helper ────────────────────────────────────────────────
-// Computes the discounted unit price and line total for any product/option
+// Computes the discounted Net Price and line total for any product/option
 // item. Falls back gracefully if `total` is not present in the data.
 const computePricing = (item) => {
   const mrp = Number(item.price ?? 0);
@@ -279,6 +279,8 @@ const NewQuotationsDetails = () => {
   }, [mainProducts]);
 
   const extraDiscount = Number(quotation?.extraDiscount ?? 0);
+  const shippingAmountNum = Number(quotation?.shippingAmount || 0);
+
   const finalAmount = Number(quotation?.finalAmount ?? 0);
   const finalAmountInWords = amountInWords(Math.round(finalAmount));
 
@@ -749,7 +751,7 @@ const NewQuotationsDetails = () => {
               {showCol("image") && <th>Image</th>}
               {showCol("unit") && <th>Unit</th>}
               {showCol("mrp") && <th>MRP</th>}
-              {showCol("unitPrice") && <th>Unit Price</th>}
+              {showCol("unitPrice") && <th>Net Price</th>}
               {showCol("discount") && <th>Discount</th>}
               {showCol("total") && <th>Total</th>}
             </tr>
@@ -1073,6 +1075,7 @@ const NewQuotationsDetails = () => {
                 </span>
                 <span>₹{grossTotalBeforeDiscount.toLocaleString("en-IN")}</span>
               </div>
+
               {totalProductDiscount > 0 && (
                 <div className={styles.summaryRow}>
                   <span style={{ color: "#f5222d" }}>Discount</span>
@@ -1081,11 +1084,22 @@ const NewQuotationsDetails = () => {
                   </span>
                 </div>
               )}
+
               {extraDiscount > 0 && (
                 <div className={styles.summaryRow}>
                   <span style={{ color: "#fa8c16" }}>Extra Discount</span>
                   <span style={{ color: "#fa8c16" }}>
                     -₹{Math.round(extraDiscount).toLocaleString("en-IN")}
+                  </span>
+                </div>
+              )}
+
+              {/* ✅ SHIPPING ADDED */}
+              {shippingAmountNum > 0 && (
+                <div className={styles.summaryRow}>
+                  <span style={{ color: "#1677ff" }}>Shipping</span>
+                  <span style={{ color: "#1677ff" }}>
+                    +₹{shippingAmountNum.toLocaleString("en-IN")}
                   </span>
                 </div>
               )}
@@ -1270,7 +1284,7 @@ const NewQuotationsDetails = () => {
                           <Checkbox value="image">Image</Checkbox>
                           <Checkbox value="unit">Qty</Checkbox>
                           <Checkbox value="mrp">MRP</Checkbox>
-                          <Checkbox value="unitPrice">Unit Price</Checkbox>
+                          <Checkbox value="unitPrice">Net Price</Checkbox>
                           <Checkbox value="discount">Discount</Checkbox>
                           <Checkbox value="total">Total</Checkbox>
                         </Space>
