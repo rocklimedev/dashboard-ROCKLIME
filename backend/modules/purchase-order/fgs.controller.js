@@ -6,7 +6,7 @@ const sequelize = require("../config/database");
 const { sendNotification } = require("./notificationController");
 const { Product, Vendor, FieldGuidedSheet, User } = require("../models");
 const FgsItem = require("../models/fgsItem"); // Mongoose model
-const { createPurchaseOrderFromData } = require("./purchaseOrderController"); // ← Assume this exists or create it
+const { createPurchaseOrderFromData } = require("./purchase_order.controller"); // ← Assume this exists or create it
 const { ActivityLog } = require("../models");
 const logActivity = require("../utils/activityLogger");
 // Move to env or config in production

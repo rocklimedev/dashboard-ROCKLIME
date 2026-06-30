@@ -1,8 +1,8 @@
 const express = require("express");
-const addressController = require("../controller/addressController");
-const checkPermission = require("../middleware/permission");
+const addressController = require("./address.controller");
+const checkPermission = require("../../middleware/permission");
 const router = express.Router();
-const { auth } = require("../middleware/auth");
+const { auth } = require("../../middleware/auth");
 router.use(auth);
 router.get("/all/users", addressController.getAllUserAddresses);
 router.get("/all/customers", addressController.getAllCustomerAddresses);

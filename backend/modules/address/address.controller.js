@@ -1,9 +1,9 @@
-const { Address, User, Customer } = require("../models");
-const { sendNotification } = require("./notificationController");
+const { Address, User, Customer, ActivityLog } = require("../../models");
+const { sendNotification } = require("../engagement/notification.controller");
 const { Op } = require("sequelize");
 const { v4: uuidv4 } = require("uuid");
-const logActivity = require("../utils/activityLogger");
-const { ActivityLog } = require("../models");
+const logActivity = require("../../utils/activityLogger");
+
 // ─────────────────────────────────────────────────────────────────────────────
 // CREATE ADDRESS
 // ─────────────────────────────────────────────────────────────────────────────
