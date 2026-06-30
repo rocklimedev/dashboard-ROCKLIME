@@ -53,7 +53,7 @@ dayjs.extend(relativeTime);
 const { Title, Text } = Typography;
 
 // ── Shared Pricing Helper ────────────────────────────────────────────────
-// Computes the discounted Net Price and line total for any product/option
+// Computes the discounted unit price and line total for any product/option
 // item. Falls back gracefully if `total` is not present in the data.
 const computePricing = (item) => {
   const mrp = Number(item.price ?? 0);
@@ -279,8 +279,6 @@ const NewQuotationsDetails = () => {
   }, [mainProducts]);
 
   const extraDiscount = Number(quotation?.extraDiscount ?? 0);
-  const shippingAmountNum = Number(quotation?.shippingAmount || 0);
-
   const finalAmount = Number(quotation?.finalAmount ?? 0);
   const finalAmountInWords = amountInWords(Math.round(finalAmount));
 
@@ -751,7 +749,7 @@ const NewQuotationsDetails = () => {
               {showCol("image") && <th>Image</th>}
               {showCol("unit") && <th>Unit</th>}
               {showCol("mrp") && <th>MRP</th>}
-              {showCol("unitPrice") && <th>Net Price</th>}
+              {showCol("unitPrice") && <th>Unit Price</th>}
               {showCol("discount") && <th>Discount</th>}
               {showCol("total") && <th>Total</th>}
             </tr>
@@ -934,6 +932,177 @@ const NewQuotationsDetails = () => {
     return pages;
   };
 
+  // ── Render Room-wise Summary Page(s) ────────────────────────────────────
+  const renderRoomWiseSummaryPages = () => {
+    if (!hasSiteLayout) return [];
+
+    const roomGroups = groupProductsByFloorAndRoom(enrichedProducts);
+    if (roomGroups.length === 0) return [];
+
+    // One row per floor+room with item count & subtotal (mains + their options)
+    const summaryRows = roomGroups.map((group) => {
+      const roomMainItems = groupedProductsWithOptions.filter((main) =>
+        group.products.some((p) => p.productId === main.productId),
+      );
+
+      const itemCount = roomMainItems.reduce(
+        (sum, item) => sum + 1 + (item.options?.length || 0),
+        0,
+      );
+
+      const roomSubtotal = roomMainItems.reduce((sum, item) => {
+        const { lineTotal } = computePricing(item);
+        const optionsTotal = (item.options || []).reduce((optSum, opt) => {
+          const { lineTotal: optTotal } = computePricing(opt);
+          return optSum + optTotal;
+        }, 0);
+        return sum + lineTotal + optionsTotal;
+      }, 0);
+
+      return {
+        floorName: group.floorName,
+        roomName: group.roomName,
+        itemCount,
+        roomSubtotal,
+      };
+    });
+
+    // Group rows by floor
+    const floorWise = new Map();
+    summaryRows.forEach((row) => {
+      if (!floorWise.has(row.floorName)) floorWise.set(row.floorName, []);
+      floorWise.get(row.floorName).push(row);
+    });
+
+    const grandTotal = summaryRows.reduce(
+      (sum, row) => sum + row.roomSubtotal,
+      0,
+    );
+
+    const ROWS_PER_PAGE = 22;
+    const allRowsFlat = [];
+    floorWise.forEach((rows, floorName) => {
+      allRowsFlat.push({ isFloorHeader: true, floorName });
+      rows.forEach((r) => allRowsFlat.push(r));
+    });
+
+    const pages = [];
+    let pageIndex = 0;
+
+    for (let i = 0; i < allRowsFlat.length; i += ROWS_PER_PAGE) {
+      const chunk = allRowsFlat.slice(i, i + ROWS_PER_PAGE);
+      const isLastPage = i + ROWS_PER_PAGE >= allRowsFlat.length;
+
+      pages.push(
+        <div
+          key={`room-summary-page-${pageIndex}`}
+          className={`${styles.productPage} page`}
+        >
+          <div className={styles.pageTopHeader}>
+            <div>
+              <div className={styles.clientName}>{customerName}</div>
+              <div className={styles.clientAddress}>{customerAddress}</div>
+            </div>
+            <div className={styles.pageDate}>
+              {new Date(
+                quotation.quotation_date || Date.now(),
+              ).toLocaleDateString("en-IN", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })}
+            </div>
+          </div>
+
+          <h2
+            style={{
+              color: "#d32f2f",
+              textAlign: "center",
+              margin: "20px 0 25px",
+            }}
+          >
+            ROOM-WISE SUMMARY {pageIndex > 0 ? "(Continued)" : ""}
+          </h2>
+
+          <table className={styles.productTable}>
+            <thead>
+              <tr>
+                <th>Floor / Room</th>
+                <th>Items</th>
+                <th>Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              {chunk.map((row, idx) =>
+                row.isFloorHeader ? (
+                  <tr key={`floor-${row.floorName}-${idx}`}>
+                    <td
+                      colSpan={3}
+                      style={{
+                        background: "#fafafa",
+                        fontWeight: 700,
+                        color: "#222",
+                        borderTop: "2px solid #d32f2f",
+                        paddingTop: 10,
+                      }}
+                    >
+                      {row.floorName.toUpperCase()}
+                    </td>
+                  </tr>
+                ) : (
+                  <tr key={`${row.floorName}-${row.roomName}-${idx}`}>
+                    <td style={{ paddingLeft: 24 }}>{row.roomName}</td>
+                    <td>{row.itemCount}</td>
+                    <td className={styles.totalCell}>
+                      ₹{Math.round(row.roomSubtotal).toLocaleString("en-IN")}
+                    </td>
+                  </tr>
+                ),
+              )}
+            </tbody>
+          </table>
+
+          {isLastPage && (
+            <div
+              style={{
+                marginTop: 30,
+                display: "flex",
+                justifyContent: "flex-end",
+              }}
+            >
+              <div
+                style={{
+                  minWidth: 280,
+                  border: "2px solid #d32f2f",
+                  borderRadius: 8,
+                  padding: "14px 20px",
+                  textAlign: "right",
+                }}
+              >
+                <div style={{ fontSize: "0.9em", color: "#666" }}>
+                  Total (All Rooms)
+                </div>
+                <div
+                  style={{
+                    fontSize: "1.6em",
+                    fontWeight: 700,
+                    color: "#d32f2f",
+                  }}
+                >
+                  ₹{Math.round(grandTotal).toLocaleString("en-IN")}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>,
+      );
+
+      pageIndex++;
+    }
+
+    return pages;
+  };
+
   // ── Render All Pages ────────────────────────────────────────────────────
   const renderPages = (getShouldShowColumn) => {
     const shouldShowColumn = getShouldShowColumn || (() => true);
@@ -1037,6 +1206,9 @@ const NewQuotationsDetails = () => {
       }
     }
 
+    // Room-wise Summary (new dedicated page)
+    pages.push(...renderRoomWiseSummaryPages());
+
     // Final Summary
     pages.push(
       <div key="summary-page" className={`${styles.productPage} page`}>
@@ -1075,7 +1247,6 @@ const NewQuotationsDetails = () => {
                 </span>
                 <span>₹{grossTotalBeforeDiscount.toLocaleString("en-IN")}</span>
               </div>
-
               {totalProductDiscount > 0 && (
                 <div className={styles.summaryRow}>
                   <span style={{ color: "#f5222d" }}>Discount</span>
@@ -1084,22 +1255,11 @@ const NewQuotationsDetails = () => {
                   </span>
                 </div>
               )}
-
               {extraDiscount > 0 && (
                 <div className={styles.summaryRow}>
                   <span style={{ color: "#fa8c16" }}>Extra Discount</span>
                   <span style={{ color: "#fa8c16" }}>
                     -₹{Math.round(extraDiscount).toLocaleString("en-IN")}
-                  </span>
-                </div>
-              )}
-
-              {/* ✅ SHIPPING ADDED */}
-              {shippingAmountNum > 0 && (
-                <div className={styles.summaryRow}>
-                  <span style={{ color: "#1677ff" }}>Shipping</span>
-                  <span style={{ color: "#1677ff" }}>
-                    +₹{shippingAmountNum.toLocaleString("en-IN")}
                   </span>
                 </div>
               )}
@@ -1284,7 +1444,7 @@ const NewQuotationsDetails = () => {
                           <Checkbox value="image">Image</Checkbox>
                           <Checkbox value="unit">Qty</Checkbox>
                           <Checkbox value="mrp">MRP</Checkbox>
-                          <Checkbox value="unitPrice">Net Price</Checkbox>
+                          <Checkbox value="unitPrice">Unit Price</Checkbox>
                           <Checkbox value="discount">Discount</Checkbox>
                           <Checkbox value="total">Total</Checkbox>
                         </Space>
