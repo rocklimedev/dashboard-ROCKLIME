@@ -1180,8 +1180,7 @@ exports.createOrder = async (req, res) => {
   }
 };
 // ──────── UPDATE ORDER (by id) ────────
-// ──────── UPDATE ORDER (by id) ────────
-// ────────────────────────────────
+
 exports.updateOrderById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -1629,7 +1628,7 @@ exports.updateOrderById = async (req, res) => {
 };
 
 // ──────── UPDATE STATUS ONLY ────────
-// ──────── UPDATE STATUS ONLY ────────
+
 exports.updateOrderStatus = async (req, res) => {
   try {
     const { id, status } = req.body;
@@ -1718,7 +1717,7 @@ exports.updateOrderStatus = async (req, res) => {
   }
 };
 // GET /api/orders/:id/download-invoice
-// GET /api/orders/:id/download-invoice
+
 exports.downloadInvoice = async (req, res) => {
   try {
     const { id } = req.params;
