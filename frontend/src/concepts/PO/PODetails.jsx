@@ -24,6 +24,7 @@ const EXPORT_FIELDS = [
   { key: "mrp", label: "MRP" },
   { key: "quantity", label: "Quantity" },
   { key: "total", label: "Total" },
+  { key: "grandTotal", label: "Grand Total" }, // NEW: Allow toggling Grand Total row
 ];
 
 const DEFAULT_VISIBLE_FIELDS = EXPORT_FIELDS.reduce((acc, f) => {
@@ -80,14 +81,19 @@ const PODetails = () => {
     items = [],
   } = purchaseOrder;
 
-  const selectedFields = EXPORT_FIELDS.filter((f) => visibleFields[f.key]);
+  const selectedFields = EXPORT_FIELDS.filter(
+    (f) => f.key !== "grandTotal" && visibleFields[f.key],
+  );
+  const showGrandTotal = visibleFields.grandTotal;
   const columnCount = 1 + selectedFields.length; // +1 for S.No
 
   const toggleField = (key) => {
     setVisibleFields((prev) => {
       const next = { ...prev, [key]: !prev[key] };
       // Prevent removing every field — keep at least one alongside S.No
-      const anyLeft = EXPORT_FIELDS.some((f) => next[f.key]);
+      const anyLeft = EXPORT_FIELDS.some(
+        (f) => f.key !== "grandTotal" && next[f.key],
+      );
       return anyLeft ? next : prev;
     });
   };
@@ -317,11 +323,14 @@ const PODetails = () => {
           worksheet.addRow(row);
         });
 
-        // Grand Total
-        const totalRow = new Array(columnCount).fill("");
-        totalRow[columnCount - 2 >= 0 ? columnCount - 2 : 0] = "Total";
-        totalRow[columnCount - 1] = `₹${Number(totalAmount ?? 0).toFixed(2)}`;
-        worksheet.addRow(totalRow);
+        // Grand Total (only if enabled)
+        if (showGrandTotal) {
+          const totalRow = new Array(columnCount).fill("");
+          totalRow[columnCount - 2 >= 0 ? columnCount - 2 : 0] = "Total";
+          totalRow[columnCount - 1] = `₹${Number(totalAmount ?? 0).toFixed(2)}`;
+          const totalExcelRow = worksheet.addRow(totalRow);
+          totalExcelRow.font = { bold: true };
+        }
 
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], {
@@ -544,33 +553,36 @@ const PODetails = () => {
                         </tr>
                       )}
                     </tbody>
-                    <tfoot>
-                      <tr
-                        style={{
-                          fontWeight: "bold",
-                          backgroundColor: "#f8f9fa",
-                        }}
-                      >
-                        {visibleFields.total ? (
-                          <>
+                    {showGrandTotal && (
+                      <tfoot>
+                        <tr
+                          style={{
+                            fontWeight: "bold",
+                            backgroundColor: "#f8f9fa",
+                          }}
+                        >
+                          {visibleFields.total ? (
+                            <>
+                              <td
+                                colSpan={columnCount - 1}
+                                style={{ textAlign: "right" }}
+                              >
+                                Grand Total
+                              </td>
+                              <td>₹{Number(totalAmount ?? 0).toFixed(2)}</td>
+                            </>
+                          ) : (
                             <td
-                              colSpan={columnCount - 1}
+                              colSpan={columnCount}
                               style={{ textAlign: "right" }}
                             >
-                              Grand Total
+                              Grand Total: ₹
+                              {Number(totalAmount ?? 0).toFixed(2)}
                             </td>
-                            <td>₹{Number(totalAmount ?? 0).toFixed(2)}</td>
-                          </>
-                        ) : (
-                          <td
-                            colSpan={columnCount}
-                            style={{ textAlign: "right" }}
-                          >
-                            Grand Total: ₹{Number(totalAmount ?? 0).toFixed(2)}
-                          </td>
-                        )}
-                      </tr>
-                    </tfoot>
+                          )}
+                        </tr>
+                      </tfoot>
+                    )}
                   </table>
 
                   {/* Approved By Section */}
