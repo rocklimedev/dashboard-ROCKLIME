@@ -1,15 +1,40 @@
 import React, { useRef, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useGetPurchaseOrderByIdQuery } from "../../api/poApi";
-import { message } from "antd";
+import { message, Popover, Checkbox } from "antd";
 import logo from "../../assets/img/logo.png";
 import defaultProductImg from "../../assets/img/default.png";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import ExcelJS from "exceljs";
-import { LeftOutlined, PrinterOutlined } from "@ant-design/icons";
+import {
+  LeftOutlined,
+  PrinterOutlined,
+  SettingOutlined,
+} from "@ant-design/icons";
 import { Helmet } from "react-helmet";
 import "../../components/Orders/po.css";
+
+// Fields the user is allowed to remove from the export.
+// "S.No" is intentionally excluded — it always stays as the row anchor.
+const EXPORT_FIELDS = [
+  { key: "image", label: "Product Image" },
+  { key: "productName", label: "Product Name" },
+  { key: "productCode", label: "Product Code" },
+  { key: "mrp", label: "MRP" },
+  { key: "quantity", label: "Quantity" },
+  { key: "total", label: "Total" },
+];
+
+const DEFAULT_VISIBLE_FIELDS = EXPORT_FIELDS.reduce((acc, f) => {
+  acc[f.key] = true;
+  return acc;
+}, {});
+
+// A4 page dimensions at 96dpi (210mm x 297mm), used so the on-screen
+// preview matches the exported PDF page size/proportions.
+const A4_WIDTH_PX = 794;
+const A4_MIN_HEIGHT_PX = 1123;
 
 const PODetails = () => {
   const { id } = useParams();
@@ -22,6 +47,8 @@ const PODetails = () => {
   const [isExporting, setIsExporting] = useState(false);
   const poRef = useRef(null);
   const [exportFormat, setExportFormat] = useState("pdf");
+  const [visibleFields, setVisibleFields] = useState(DEFAULT_VISIBLE_FIELDS);
+  const [fieldsPopoverOpen, setFieldsPopoverOpen] = useState(false);
 
   if (isLoading)
     return (
@@ -49,8 +76,77 @@ const PODetails = () => {
     orderDate,
     expectDeliveryDate,
     totalAmount,
+    createdBy,
     items = [],
   } = purchaseOrder;
+
+  const selectedFields = EXPORT_FIELDS.filter((f) => visibleFields[f.key]);
+  const columnCount = 1 + selectedFields.length; // +1 for S.No
+
+  const toggleField = (key) => {
+    setVisibleFields((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      // Prevent removing every field — keep at least one alongside S.No
+      const anyLeft = EXPORT_FIELDS.some((f) => next[f.key]);
+      return anyLeft ? next : prev;
+    });
+  };
+
+  const renderCell = (item, key) => {
+    switch (key) {
+      case "image":
+        return (
+          <td key={key}>
+            <img
+              src={item.imageUrl || defaultProductImg}
+              alt={item.productName}
+              style={{
+                maxWidth: "70px",
+                maxHeight: "70px",
+                objectFit: "contain",
+                borderRadius: "4px",
+                border: "1px solid #eee",
+                backgroundColor: "#f8f9fa",
+              }}
+              onError={(e) => {
+                e.currentTarget.src = defaultProductImg;
+              }}
+              crossOrigin="anonymous"
+            />
+          </td>
+        );
+      case "productName":
+        return <td key={key}>{item.productName || "N/A"}</td>;
+      case "productCode":
+        return <td key={key}>{item.companyCode || "N/A"}</td>;
+      case "mrp":
+        return (
+          <td key={key}>₹{(item.unitPrice ?? item.mrp ?? 0).toFixed(2)}</td>
+        );
+      case "quantity":
+        return <td key={key}>{item.quantity || 0}</td>;
+      case "total":
+        return (
+          <td key={key}>
+            ₹
+            {Number(
+              (item.total ?? item.unitPrice * item.quantity) || 0,
+            ).toFixed(2)}
+          </td>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const fieldHeaderWidths = {
+    image: "12%",
+    productName: "38%",
+    productCode: "15%",
+    mrp: "12%",
+    quantity: "8%",
+    total: "10%",
+  };
 
   const handleExport = async () => {
     setIsExporting(true);
@@ -130,79 +226,102 @@ const PODetails = () => {
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet("Purchase Order");
 
+        // S.No column + one column per selected field
+        const colWidths = {
+          image: 15,
+          productName: 35,
+          productCode: 18,
+          mrp: 12,
+          quantity: 10,
+          total: 14,
+        };
         worksheet.columns = [
           { width: 8 }, // S.No
-          { width: 15 }, // Image placeholder
-          { width: 35 }, // Product Name
-          { width: 18 }, // Product Code
-          { width: 12 }, // MRP
-          { width: 10 }, // Quantity
-          { width: 14 }, // Total
+          ...selectedFields.map((f) => ({ width: colWidths[f.key] })),
         ];
 
+        const lastColLetter = worksheet.getColumn(columnCount).letter;
+
         // Header section
-        worksheet.mergeCells("A1:G1");
+        worksheet.mergeCells(`A1:${lastColLetter}1`);
         worksheet.getCell("A1").value = " ";
 
-        worksheet.mergeCells("B2:D2");
+        const midCol = Math.max(2, Math.ceil(columnCount / 2));
+        worksheet.mergeCells(`B2:${worksheet.getColumn(midCol).letter}2`);
         worksheet.getCell("B2").value = "Purchase Order";
         worksheet.getCell("B2").font = { bold: true, size: 16 };
         worksheet.getCell("B2").alignment = { horizontal: "center" };
 
-        worksheet.mergeCells("E2:G2");
-        worksheet.getCell("E2").value = " ";
-
         // Vendor & Dates
         worksheet.getCell("A4").value = "Vendor";
         worksheet.getCell("B4").value = vendor?.vendorName || "N/A";
-        worksheet.mergeCells("B4:D4");
 
-        worksheet.getCell("E4").value = "Order Date";
-        worksheet.getCell("F4").value = orderDate
+        worksheet.getCell("A5").value = "Order Date";
+        worksheet.getCell("B5").value = orderDate
           ? new Date(orderDate).toLocaleDateString("en-IN")
           : "N/A";
 
-        worksheet.getCell("A5").value = "Expected Delivery";
-        worksheet.getCell("B5").value = expectDeliveryDate
+        worksheet.getCell("A6").value = "Expected Delivery";
+        worksheet.getCell("B6").value = expectDeliveryDate
           ? new Date(expectDeliveryDate).toLocaleDateString("en-IN")
           : "N/A";
-        worksheet.mergeCells("B5:D5");
 
         // Table headers
+        const headerLabels = {
+          image: "Product Image",
+          productName: "Product Name",
+          productCode: "Product Code",
+          mrp: "MRP",
+          quantity: "Quantity",
+          total: "Total",
+        };
         const headerRow = worksheet.addRow([
           "S.No",
-          "Product Image",
-          "Product Name",
-          "Product Code",
-          "MRP",
-          "Quantity",
-          "Total",
+          ...selectedFields.map((f) => headerLabels[f.key]),
         ]);
         headerRow.font = { bold: true };
 
         // Items
         items.forEach((item, index) => {
-          worksheet.addRow([
-            index + 1,
-            "", // Image placeholder (can be extended later with base64)
-            item.productName || "N/A",
-            item.companyCode || "N/A",
-            `₹${Number(item.unitPrice ?? 0).toFixed(2)}`,
-            item.quantity || 0,
-            `₹${Number(item.total ?? 0).toFixed(2)}`,
-          ]);
+          const row = [index + 1];
+          selectedFields.forEach((f) => {
+            switch (f.key) {
+              case "image":
+                row.push(""); // Image placeholder (can be extended later with base64)
+                break;
+              case "productName":
+                row.push(item.productName || "N/A");
+                break;
+              case "productCode":
+                row.push(item.companyCode || "N/A");
+                break;
+              case "mrp":
+                row.push(
+                  `₹${Number(item.unitPrice ?? item.mrp ?? 0).toFixed(2)}`,
+                );
+                break;
+              case "quantity":
+                row.push(item.quantity || 0);
+                break;
+              case "total":
+                row.push(
+                  `₹${Number(
+                    (item.total ?? item.unitPrice * item.quantity) || 0,
+                  ).toFixed(2)}`,
+                );
+                break;
+              default:
+                row.push("");
+            }
+          });
+          worksheet.addRow(row);
         });
 
         // Grand Total
-        worksheet.addRow([
-          "",
-          "",
-          "",
-          "",
-          "",
-          "Total",
-          `₹${Number(totalAmount ?? 0).toFixed(2)}`,
-        ]);
+        const totalRow = new Array(columnCount).fill("");
+        totalRow[columnCount - 2 >= 0 ? columnCount - 2 : 0] = "Total";
+        totalRow[columnCount - 1] = `₹${Number(totalAmount ?? 0).toFixed(2)}`;
+        worksheet.addRow(totalRow);
 
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], {
@@ -221,6 +340,22 @@ const PODetails = () => {
       setIsExporting(false);
     }
   };
+
+  const fieldsPopoverContent = (
+    <div style={{ minWidth: "200px" }}>
+      {EXPORT_FIELDS.map((f) => (
+        <div key={f.key} style={{ marginBottom: "6px" }}>
+          <Checkbox
+            checked={visibleFields[f.key]}
+            onChange={() => toggleField(f.key)}
+          >
+            {f.label}
+          </Checkbox>
+        </div>
+      ))}
+    </div>
+  );
+
   return (
     <div className="page-wrapper">
       <Helmet>
@@ -230,213 +365,42 @@ const PODetails = () => {
       <div className="content">
         <div className="row">
           <div className="col-sm-10 mx-auto">
-            <Link
-              to="/purchase-manager"
-              className="back-icon d-flex align-items-center fs-12 fw-medium mb-3 d-inline-flex"
-            >
-              <span className="d-flex justify-content-center align-items-center rounded-circle me-2">
-                <LeftOutlined />
-              </span>
-              Back to Purchase Orders
-            </Link>
-
-            <div className="card">
-              <div className="po-container" ref={poRef}>
-                {/* Header */}
-                <table className="po-table full-width">
-                  <tbody>
-                    <tr>
-                      <td
-                        colSpan={3}
-                        style={{ textAlign: "center", padding: "20px 0" }}
-                      >
-                        <img
-                          src={logo}
-                          alt="Company Logo"
-                          className="logo-img"
-                        />
-                      </td>
-                    </tr>
-                    <tr>
-                      <td
-                        className="title-cell"
-                        style={{ textAlign: "center" }}
-                      >
-                        Purchase Order
-                      </td>
-                      <td className="brand-cell" style={{ textAlign: "right" }}>
-                        {poNumber || "—"}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-
-                {/* Vendor & Dates - Improved Layout */}
-                <table className="po-table full-width">
-                  <tbody>
-                    <tr>
-                      <td
-                        className="label-cell"
-                        style={{ width: "18%" }}
-                        rowSpan={2}
-                      >
-                        Vendor
-                      </td>
-                      <td style={{ width: "52%" }} rowSpan={2}>
-                        {vendor?.vendorName || "N/A"}
-                      </td>
-                      <td className="label-cell" style={{ width: "15%" }}>
-                        Order Date
-                      </td>
-                      <td style={{ width: "15%" }}>
-                        {orderDate
-                          ? new Date(orderDate).toLocaleDateString("en-IN")
-                          : "N/A"}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="label-cell">Expected Delivery</td>
-                      <td>
-                        {expectDeliveryDate
-                          ? new Date(expectDeliveryDate).toLocaleDateString(
-                              "en-IN",
-                            )
-                          : "N/A"}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-                {/* Items Table - Improved with Total Column */}
-                <table className="po-table full-width">
-                  <thead>
-                    <tr>
-                      <th style={{ width: "5%" }}>S.No</th>
-                      <th style={{ width: "12%" }}>Image</th>
-                      <th style={{ width: "38%" }}>Product Name</th>
-                      <th style={{ width: "15%" }}>Product Code</th>
-                      <th style={{ width: "12%" }}>MRP</th>
-                      <th style={{ width: "8%" }}>Qty</th>
-                      <th style={{ width: "10%" }}>Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {items.length > 0 ? (
-                      items.map((item, index) => (
-                        <tr key={item._id || index}>
-                          <td>{index + 1}</td>
-                          <td>
-                            <img
-                              src={item.imageUrl || defaultProductImg}
-                              alt={item.productName}
-                              style={{
-                                maxWidth: "70px",
-                                maxHeight: "70px",
-                                objectFit: "contain",
-                                borderRadius: "4px",
-                                border: "1px solid #eee",
-                                backgroundColor: "#f8f9fa",
-                              }}
-                              onError={(e) => {
-                                e.currentTarget.src = defaultProductImg;
-                              }}
-                              crossOrigin="anonymous"
-                            />
-                          </td>
-                          <td>{item.productName || "N/A"}</td>
-                          <td>{item.companyCode || "N/A"}</td>
-                          <td>
-                            ₹{(item.unitPrice ?? item.mrp ?? 0).toFixed(2)}
-                          </td>
-                          <td>{item.quantity || 0}</td>
-                          <td>
-                            ₹
-                            {Number(
-                              (item.total ?? item.unitPrice * item.quantity) ||
-                                0,
-                            ).toFixed(2)}
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={7} className="text-center">
-                          No products in this purchase order
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                  <tfoot>
-                    <tr
-                      style={{ fontWeight: "bold", backgroundColor: "#f8f9fa" }}
-                    >
-                      <td colSpan={6} style={{ textAlign: "right" }}>
-                        Grand Total
-                      </td>
-                      <td>₹{Number(totalAmount ?? 0).toFixed(2)}</td>
-                    </tr>
-                  </tfoot>
-                </table>
-
-                {/* Approved By Section */}
-                <div
-                  style={{
-                    marginTop: "60px",
-                    padding: "20px 0",
-                    borderTop: "2px solid #ddd",
-                  }}
+            {/* Page Header: back link, title, and export controls live here.
+                The PO content/structure below (po-container) is untouched. */}
+            <div className="po-page-header d-flex justify-content-between align-items-center flex-wrap mb-3">
+              <div className="d-flex flex-column">
+                <Link
+                  to="/purchase-manager"
+                  className="back-icon d-flex align-items-center fs-12 fw-medium mb-2 d-inline-flex"
                 >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "flex-end",
-                    }}
-                  >
-                    <div>
-                      <p
-                        style={{
-                          margin: "0 0 8px 0",
-                          fontWeight: "500",
-                          textAlign: "center",
-                        }}
-                      >
-                        Approved By
-                      </p>
-
-                      {/* Space for signature & stamp */}
-                      <div
-                        style={{
-                          height: "80px", // increase to 100-120px if needed
-                        }}
-                      />
-
-                      <div
-                        style={{
-                          width: "260px",
-                          borderBottom: "1px solid #333",
-                          marginBottom: "4px",
-                        }}
-                      />
-
-                      <small
-                        style={{
-                          display: "block",
-                          textAlign: "center",
-                        }}
-                      >
-                        Name &amp; Signature with Date
-                      </small>
-                    </div>
-                  </div>
-                </div>
+                  <span className="d-flex justify-content-center align-items-center rounded-circle me-2">
+                    <LeftOutlined />
+                  </span>
+                  Back to Purchase Orders
+                </Link>
+                <h4 className="mb-0">{poNumber || "Purchase Order Details"}</h4>
               </div>
-            </div>
 
-            {/* Export Controls */}
-            <div className="d-flex justify-content-center align-items-center mb-4">
-              <div className="d-flex align-items-center me-2">
+              <div className="d-flex align-items-center flex-wrap">
+                <Popover
+                  content={fieldsPopoverContent}
+                  title="Fields to include"
+                  trigger="click"
+                  open={fieldsPopoverOpen}
+                  onOpenChange={setFieldsPopoverOpen}
+                >
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary me-2 d-flex align-items-center"
+                  >
+                    <SettingOutlined className="me-2" />
+                    Customize Fields
+                  </button>
+                </Popover>
+
                 <select
                   className="form-select me-2"
+                  style={{ width: "auto" }}
                   value={exportFormat}
                   onChange={(e) => setExportFormat(e.target.value)}
                 >
@@ -452,6 +416,216 @@ const PODetails = () => {
                   <PrinterOutlined className="me-2" />
                   {isExporting ? "Exporting..." : "Export Purchase Order"}
                 </button>
+              </div>
+            </div>
+
+            {/* A4 page preview wrapper: centers the document and gives it a
+                page-like backdrop. The po-container below is sized to A4
+                (210mm x 297mm) so the on-screen preview matches the export. */}
+            <div
+              className="po-page-preview"
+              style={{
+                background: "#e9ecef",
+                padding: "24px",
+                overflowX: "auto",
+                display: "flex",
+                justifyContent: "center",
+              }}
+            >
+              <div className="card" style={{ margin: 0 }}>
+                <div
+                  className="po-container"
+                  ref={poRef}
+                  style={{
+                    width: `${A4_WIDTH_PX}px`,
+                    minHeight: `${A4_MIN_HEIGHT_PX}px`,
+                    padding: "40px",
+                    margin: "0 auto",
+                    background: "#ffffff",
+                    boxSizing: "border-box",
+                    boxShadow: "0 0 8px rgba(0,0,0,0.15)",
+                  }}
+                >
+                  {/* Header */}
+                  <table className="po-table full-width">
+                    <tbody>
+                      <tr>
+                        <td
+                          colSpan={3}
+                          style={{ textAlign: "center", padding: "20px 0" }}
+                        >
+                          <img
+                            src={logo}
+                            alt="Company Logo"
+                            className="logo-img"
+                          />
+                        </td>
+                      </tr>
+                      <tr>
+                        <td
+                          className="title-cell"
+                          style={{ textAlign: "center" }}
+                        >
+                          Purchase Order
+                        </td>
+                        <td
+                          className="brand-cell"
+                          style={{ textAlign: "right" }}
+                        >
+                          {poNumber || "—"}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+
+                  {/* Vendor & Dates - Improved Layout */}
+                  <table className="po-table full-width">
+                    <tbody>
+                      <tr>
+                        <td
+                          className="label-cell"
+                          style={{ width: "18%" }}
+                          rowSpan={2}
+                        >
+                          Vendor
+                        </td>
+                        <td style={{ width: "52%" }} rowSpan={2}>
+                          {vendor?.vendorName || "N/A"}
+                        </td>
+                        <td className="label-cell" style={{ width: "15%" }}>
+                          Order Date
+                        </td>
+                        <td style={{ width: "15%" }}>
+                          {orderDate
+                            ? new Date(orderDate).toLocaleDateString("en-IN")
+                            : "N/A"}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="label-cell">Expected Delivery</td>
+                        <td>
+                          {expectDeliveryDate
+                            ? new Date(expectDeliveryDate).toLocaleDateString(
+                                "en-IN",
+                              )
+                            : "N/A"}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  {/* Items Table - fields shown depend on visibleFields selection */}
+                  <table className="po-table full-width">
+                    <thead>
+                      <tr>
+                        <th style={{ width: "5%" }}>S.No</th>
+                        {selectedFields.map((f) => (
+                          <th
+                            key={f.key}
+                            style={{ width: fieldHeaderWidths[f.key] }}
+                          >
+                            {f.key === "quantity" ? "Qty" : f.label}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {items.length > 0 ? (
+                        items.map((item, index) => (
+                          <tr key={item._id || index}>
+                            <td>{index + 1}</td>
+                            {selectedFields.map((f) => renderCell(item, f.key))}
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={columnCount} className="text-center">
+                            No products in this purchase order
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                    <tfoot>
+                      <tr
+                        style={{
+                          fontWeight: "bold",
+                          backgroundColor: "#f8f9fa",
+                        }}
+                      >
+                        {visibleFields.total ? (
+                          <>
+                            <td
+                              colSpan={columnCount - 1}
+                              style={{ textAlign: "right" }}
+                            >
+                              Grand Total
+                            </td>
+                            <td>₹{Number(totalAmount ?? 0).toFixed(2)}</td>
+                          </>
+                        ) : (
+                          <td
+                            colSpan={columnCount}
+                            style={{ textAlign: "right" }}
+                          >
+                            Grand Total: ₹{Number(totalAmount ?? 0).toFixed(2)}
+                          </td>
+                        )}
+                      </tr>
+                    </tfoot>
+                  </table>
+
+                  {/* Approved By Section */}
+                  <div
+                    style={{
+                      marginTop: "60px",
+                      padding: "20px 0",
+                      borderTop: "2px solid #ddd",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "flex-end",
+                      }}
+                    >
+                      <div>
+                        <p
+                          style={{
+                            margin: "0 0 8px 0",
+                            fontWeight: "500",
+                            textAlign: "center",
+                          }}
+                        >
+                          Approved By
+                        </p>
+
+                        {/* Space for signature & stamp */}
+                        <div
+                          style={{
+                            height: "80px", // increase to 100-120px if needed
+                          }}
+                        />
+
+                        <div
+                          style={{
+                            width: "260px",
+                            borderBottom: "1px solid #333",
+                            marginBottom: "4px",
+                          }}
+                        />
+
+                        <small
+                          style={{
+                            display: "block",
+                            textAlign: "center",
+                          }}
+                        >
+                          Name &amp; Signature with Date
+                        </small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

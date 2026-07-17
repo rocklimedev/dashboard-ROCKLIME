@@ -1,5 +1,28 @@
+:root {
+  /* A4 page size at 96dpi (210mm x 297mm) */
+  --po-page-width: 794px;
+  --po-page-min-height: 1123px;
+}
+
+/* Backdrop wrapper that centers the document and gives it a page-like
+   canvas to sit on, similar to a print preview. */
+.po-page-preview {
+  background-color: #e9ecef;
+  padding: 24px;
+  display: flex;
+  justify-content: center;
+  overflow-x: auto;
+}
+
 .po-container {
-  padding: 20px;
+  width: 100%;
+  max-width: var(--po-page-width);
+  min-height: var(--po-page-min-height);
+  margin: 0 auto;
+  padding: 40px;
+  background-color: #ffffff;
+  box-sizing: border-box;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.15);
   font-family: Arial, sans-serif;
 }
 
@@ -72,4 +95,18 @@
 
 .back-icon:hover {
   text-decoration: underline;
+}
+
+/* Keep the page a clean, unshadowed A4 sheet when printed directly
+   (e.g. via Ctrl+P) instead of the exported PDF flow. */
+@media print {
+  .po-page-preview {
+    background-color: #ffffff;
+    padding: 0;
+  }
+
+  .po-container {
+    box-shadow: none;
+    margin: 0;
+  }
 }
