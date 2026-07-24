@@ -17,7 +17,10 @@ const MODEL_META_KEY = "1e19b647-1138-11f1-b773-52540021303b"; // ← your model
 async function main() {
   try {
     // Load the actual file – update path/filename if needed
-    const inputFile = path.join(__dirname, "./newProducts.json"); // or "duplicate_products.json"
+    const inputFile = path.join(
+      __dirname,
+      "./json-outputs/all_sheets_data2.json",
+    ); // or "duplicate_products.json"
     const jsonData = require(inputFile);
 
     console.log(`Loaded ${jsonData.length} products`);

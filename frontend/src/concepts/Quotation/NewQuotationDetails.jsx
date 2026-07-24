@@ -83,6 +83,21 @@ const computePricing = (item) => {
   return { mrp, qty, unitPrice, lineTotal, displayDiscount };
 };
 
+// ── Floor-wise Totals Helper ──────────────────────────────────────────────
+// Given a flat list of products belonging to a single floor, computes the
+// gross (pre-discount) total, the discount amount, and the net total.
+const computeFloorTotals = (floorProducts = []) => {
+  const gross = floorProducts.reduce(
+    (sum, p) => sum + Number(p.price ?? 0) * Number(p.quantity ?? 1),
+    0,
+  );
+  const net = floorProducts.reduce((sum, p) => {
+    const { lineTotal } = computePricing(p);
+    return sum + lineTotal;
+  }, 0);
+  return { gross, discount: gross - net, net };
+};
+
 const NewQuotationsDetails = () => {
   const { id } = useParams();
   const [activeVersion, setActiveVersion] = useState("current");
@@ -91,6 +106,10 @@ const NewQuotationsDetails = () => {
   const navigate = useNavigate();
   // Toggle between Site Map (Visual) and Tabular Floor/Room View
   const [useTabularLayout, setUseTabularLayout] = useState(false);
+
+  // Toggle visibility of the two "extra" sections during export/preview
+  const [includeProductListPage, setIncludeProductListPage] = useState(true);
+  const [includeSummaryPage, setIncludeSummaryPage] = useState(true);
 
   const [visibleColumns, setVisibleColumns] = useState({
     sno: true,
@@ -360,6 +379,51 @@ const NewQuotationsDetails = () => {
     return groups;
   };
 
+  // ── Render Per-Floor Discount / Total Box ───────────────────────────────
+  // Shown at the bottom of each floor's final page (both tabular and
+  // site-map layouts) so viewers can see that floor/option's own subtotal,
+  // discount, and net total without waiting for the global summary page.
+  const renderFloorDiscountBox = (floorName, floorProducts) => {
+    if (!floorProducts || floorProducts.length === 0) return null;
+    const { gross, discount, net } = computeFloorTotals(floorProducts);
+
+    return (
+      <div
+        key={`floor-discount-${floorName}`}
+        style={{
+          marginTop: 20,
+          marginBottom: 10,
+          padding: "14px 20px",
+          border: "2px solid #d32f2f",
+          borderRadius: 8,
+          display: "flex",
+          justifyContent: "flex-end",
+          breakInside: "avoid",
+          pageBreakInside: "avoid",
+        }}
+      >
+        <div style={{ minWidth: 260, textAlign: "right" }}>
+          <div style={{ fontSize: "0.85em", color: "#666" }}>
+            {floorName.toUpperCase()} — Total
+          </div>
+          <div style={{ fontSize: "0.95em", color: "#333" }}>
+            ₹{gross.toLocaleString("en-IN")}
+          </div>
+          {discount > 0 && (
+            <div style={{ fontSize: "0.9em", color: "#f5222d" }}>
+              Discount: −₹{Math.round(discount).toLocaleString("en-IN")}
+            </div>
+          )}
+          <div
+            style={{ fontSize: "1.25em", fontWeight: 700, color: "#d32f2f" }}
+          >
+            ₹{Math.round(net).toLocaleString("en-IN")}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // ── Render Area-wise Site Map (Existing) ───────────────────────────────
   const renderAreaWisePageForRoom = (roomGroup) => {
     const { floorName, roomName, products } = roomGroup;
@@ -550,6 +614,14 @@ const NewQuotationsDetails = () => {
     };
 
     floorMap.forEach((roomsInFloor, floorName) => {
+      // Snapshot this floor's full product list BEFORE the pagination/split
+      // logic below mutates `roomsInFloor` in place. This snapshot is what
+      // feeds the per-floor discount box, so it must reflect every product
+      // that belongs to the floor, independent of how pages get split.
+      const floorAllProducts = enrichedProducts.filter(
+        (p) => (p.floorName || "Unspecified Floor") === floorName,
+      );
+
       let roomIndex = 0;
 
       while (roomIndex < roomsInFloor.length) {
@@ -636,6 +708,10 @@ const NewQuotationsDetails = () => {
           break;
         }
 
+        // Is this the last page generated for this floor? If so, the
+        // per-floor discount box gets appended after the room tables.
+        const isLastPageOfFloor = roomIndex >= roomsInFloor.length;
+
         // =========================================================
         // PAGE
         // =========================================================
@@ -701,6 +777,10 @@ const NewQuotationsDetails = () => {
                 </div>
               );
             })}
+
+            {/* Per-floor discount / total box — only on the floor's last page */}
+            {isLastPageOfFloor &&
+              renderFloorDiscountBox(floorName, floorAllProducts)}
           </div>,
         );
 
@@ -1104,7 +1184,15 @@ const NewQuotationsDetails = () => {
   };
 
   // ── Render All Pages ────────────────────────────────────────────────────
-  const renderPages = (getShouldShowColumn) => {
+  // Accepts an options object so the caller can independently control:
+  //  - which export columns are visible (shouldShowColumn)
+  //  - whether the flat Product List page(s) are included
+  //  - whether the final global Summary page is included
+  const renderPages = ({
+    shouldShowColumn: getShouldShowColumn,
+    includeProductList = true,
+    includeSummary = true,
+  } = {}) => {
     const shouldShowColumn = getShouldShowColumn || (() => true);
     const pages = [];
     const MAX_PRODUCTS_NORMAL = 10;
@@ -1156,17 +1244,118 @@ const NewQuotationsDetails = () => {
       </div>,
     );
 
-    // Main Product Pages (options NOT shown inline here)
-    let remainingItems = [...mainProductsOnly];
-    let globalSno = 0;
+    // Main Product Pages (options NOT shown inline here) — optional section
+    if (includeProductList) {
+      let remainingItems = [...mainProductsOnly];
+      let globalSno = 0;
 
-    while (remainingItems.length > 0) {
-      const itemsThisPage = remainingItems.slice(0, MAX_PRODUCTS_NORMAL);
+      while (remainingItems.length > 0) {
+        const itemsThisPage = remainingItems.slice(0, MAX_PRODUCTS_NORMAL);
+        pages.push(
+          <div
+            key={`main-page-${globalSno}`}
+            className={`${styles.productPage} page`}
+          >
+            <div className={styles.pageTopHeader}>
+              <div>
+                <div className={styles.clientName}>{customerName}</div>
+                <div className={styles.clientAddress}>{customerAddress}</div>
+              </div>
+              <div className={styles.pageDate}>
+                {new Date(
+                  quotation.quotation_date || Date.now(),
+                ).toLocaleDateString("en-IN", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                })}
+              </div>
+            </div>
+            {renderProductTable(itemsThisPage, "", globalSno, shouldShowColumn)}
+          </div>,
+        );
+        globalSno += itemsThisPage.length;
+        remainingItems = remainingItems.slice(itemsThisPage.length);
+      }
+    }
+
+    // Optional Items — own dedicated page(s)
+    pages.push(...renderOptionalItemsPages(shouldShowColumn));
+
+    // Floor & Room Section with Toggle
+    if (hasSiteLayout) {
+      if (useTabularLayout) {
+        pages.push(...renderDetailedTabularFloorRoom());
+      } else {
+        const roomGroups = groupProductsByFloorAndRoom(enrichedProducts);
+        roomGroups.forEach((roomGroup, idx) => {
+          if (roomGroup.products?.length > 0) {
+            pages.push(...renderAreaWisePageForRoom(roomGroup));
+          }
+
+          // After the last room belonging to a floor, append that floor's
+          // discount/total box on its own small page.
+          const isLastRoomOfFloor =
+            idx === roomGroups.length - 1 ||
+            roomGroups[idx + 1].floorName !== roomGroup.floorName;
+
+          if (isLastRoomOfFloor) {
+            const floorAllProducts = enrichedProducts.filter(
+              (p) =>
+                (p.floorName || "Unspecified Floor") === roomGroup.floorName,
+            );
+
+            pages.push(
+              <div
+                key={`floor-total-${roomGroup.floorName}`}
+                className={`${styles.productPage} page`}
+              >
+                <div className={styles.pageTopHeader}>
+                  <div>
+                    <div className={styles.clientName}>{customerName}</div>
+                    <div className={styles.clientAddress}>
+                      {customerAddress}
+                    </div>
+                  </div>
+                  <div className={styles.pageDate}>
+                    {new Date(
+                      quotation.quotation_date || Date.now(),
+                    ).toLocaleDateString("en-IN", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </div>
+                </div>
+
+                <h2
+                  style={{
+                    color: "#d32f2f",
+                    textAlign: "center",
+                    margin: "20px 0 10px",
+                  }}
+                >
+                  {roomGroup.floorName.toUpperCase()} — TOTAL
+                </h2>
+
+                {renderFloorDiscountBox(
+                  roomGroup.floorName,
+                  floorAllProducts,
+                )}
+              </div>,
+            );
+          }
+        });
+      }
+    }
+
+    // Room-wise Summary (new dedicated page)
+    pages.push(...renderRoomWiseSummaryPages());
+
+    // Final Summary — optional section
+    if (includeSummary) {
       pages.push(
-        <div
-          key={`main-page-${globalSno}`}
-          className={`${styles.productPage} page`}
-        >
+        <div key="summary-page" className={`${styles.productPage} page`}>
           <div className={styles.pageTopHeader}>
             <div>
               <div className={styles.clientName}>{customerName}</div>
@@ -1182,101 +1371,64 @@ const NewQuotationsDetails = () => {
               })}
             </div>
           </div>
-          {renderProductTable(itemsThisPage, "", globalSno, shouldShowColumn)}
+
+          <h2
+            style={{
+              color: "#d32f2f",
+              textAlign: "center",
+              margin: "40px 0 30px",
+            }}
+          >
+            SUMMARY
+          </h2>
+
+          <div className={styles.finalSummaryWrapper}>
+            <div className={styles.finalSummarySection}>
+              <div className={styles.summaryLeft}>
+                <div className={styles.summaryRow}>
+                  <span>
+                    <strong>Total</strong>
+                  </span>
+                  <span>
+                    ₹{grossTotalBeforeDiscount.toLocaleString("en-IN")}
+                  </span>
+                </div>
+                {totalProductDiscount > 0 && (
+                  <div className={styles.summaryRow}>
+                    <span style={{ color: "#f5222d" }}>Discount</span>
+                    <span style={{ color: "#f5222d" }}>
+                      -₹
+                      {Math.round(totalProductDiscount).toLocaleString(
+                        "en-IN",
+                      )}
+                    </span>
+                  </div>
+                )}
+                {extraDiscount > 0 && (
+                  <div className={styles.summaryRow}>
+                    <span style={{ color: "#fa8c16" }}>Extra Discount</span>
+                    <span style={{ color: "#fa8c16" }}>
+                      -₹{Math.round(extraDiscount).toLocaleString("en-IN")}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <div className={styles.summaryRight}>
+                <div className={styles.totalAmount}>
+                  <strong>GRAND TOTAL</strong>
+                </div>
+                <div style={{ fontSize: "2.35em", fontWeight: 700 }}>
+                  ₹{finalAmount.toLocaleString("en-IN")}
+                </div>
+                <div className={styles.amountInWords}>
+                  {finalAmountInWords}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>,
       );
-      globalSno += itemsThisPage.length;
-      remainingItems = remainingItems.slice(itemsThisPage.length);
     }
-
-    // Optional Items — own dedicated page(s)
-    pages.push(...renderOptionalItemsPages(shouldShowColumn));
-
-    // Floor & Room Section with Toggle
-    if (hasSiteLayout) {
-      if (useTabularLayout) {
-        pages.push(...renderDetailedTabularFloorRoom());
-      } else {
-        const roomGroups = groupProductsByFloorAndRoom(enrichedProducts);
-        roomGroups.forEach((roomGroup) => {
-          if (roomGroup.products?.length > 0) {
-            pages.push(...renderAreaWisePageForRoom(roomGroup));
-          }
-        });
-      }
-    }
-
-    // Room-wise Summary (new dedicated page)
-    pages.push(...renderRoomWiseSummaryPages());
-
-    // Final Summary
-    pages.push(
-      <div key="summary-page" className={`${styles.productPage} page`}>
-        <div className={styles.pageTopHeader}>
-          <div>
-            <div className={styles.clientName}>{customerName}</div>
-            <div className={styles.clientAddress}>{customerAddress}</div>
-          </div>
-          <div className={styles.pageDate}>
-            {new Date(
-              quotation.quotation_date || Date.now(),
-            ).toLocaleDateString("en-IN", {
-              day: "2-digit",
-              month: "short",
-              year: "numeric",
-            })}
-          </div>
-        </div>
-
-        <h2
-          style={{
-            color: "#d32f2f",
-            textAlign: "center",
-            margin: "40px 0 30px",
-          }}
-        >
-          SUMMARY
-        </h2>
-
-        <div className={styles.finalSummaryWrapper}>
-          <div className={styles.finalSummarySection}>
-            <div className={styles.summaryLeft}>
-              <div className={styles.summaryRow}>
-                <span>
-                  <strong>Total</strong>
-                </span>
-                <span>₹{grossTotalBeforeDiscount.toLocaleString("en-IN")}</span>
-              </div>
-              {totalProductDiscount > 0 && (
-                <div className={styles.summaryRow}>
-                  <span style={{ color: "#f5222d" }}>Discount</span>
-                  <span style={{ color: "#f5222d" }}>
-                    -₹{Math.round(totalProductDiscount).toLocaleString("en-IN")}
-                  </span>
-                </div>
-              )}
-              {extraDiscount > 0 && (
-                <div className={styles.summaryRow}>
-                  <span style={{ color: "#fa8c16" }}>Extra Discount</span>
-                  <span style={{ color: "#fa8c16" }}>
-                    -₹{Math.round(extraDiscount).toLocaleString("en-IN")}
-                  </span>
-                </div>
-              )}
-            </div>
-            <div className={styles.summaryRight}>
-              <div className={styles.totalAmount}>
-                <strong>GRAND TOTAL</strong>
-              </div>
-              <div style={{ fontSize: "2.35em", fontWeight: 700 }}>
-                ₹{finalAmount.toLocaleString("en-IN")}
-              </div>
-              <div className={styles.amountInWords}>{finalAmountInWords}</div>
-            </div>
-          </div>
-        </div>
-      </div>,
-    );
 
     return pages;
   };
@@ -1303,7 +1455,7 @@ const NewQuotationsDetails = () => {
           activeVersion,
           activeVersionData.quotation,
           `${fileName}.pdf`,
-          { visibleColumns },
+          { visibleColumns, includeProductListPage, includeSummaryPage },
         );
       } else {
         await exportToExcel(/* your existing excel params */);
@@ -1452,10 +1604,35 @@ const NewQuotationsDetails = () => {
 
                       <Divider style={{ margin: "10px 0" }} />
 
+                      <div style={{ fontWeight: 600, marginBottom: 10 }}>
+                        Include Sections
+                      </div>
+
+                      <Space direction="vertical" size={6}>
+                        <Checkbox
+                          checked={includeProductListPage}
+                          onChange={(e) =>
+                            setIncludeProductListPage(e.target.checked)
+                          }
+                        >
+                          Product List Page
+                        </Checkbox>
+                        <Checkbox
+                          checked={includeSummaryPage}
+                          onChange={(e) =>
+                            setIncludeSummaryPage(e.target.checked)
+                          }
+                        >
+                          Summary Page
+                        </Checkbox>
+                      </Space>
+
+                      <Divider style={{ margin: "10px 0" }} />
+
                       <Button
                         type="link"
                         block
-                        onClick={() =>
+                        onClick={() => {
                           setVisibleColumns({
                             sno: true,
                             name: true,
@@ -1466,8 +1643,10 @@ const NewQuotationsDetails = () => {
                             unitPrice: true,
                             discount: true,
                             total: true,
-                          })
-                        }
+                          });
+                          setIncludeProductListPage(true);
+                          setIncludeSummaryPage(true);
+                        }}
                       >
                         Reset Default
                       </Button>
@@ -1539,7 +1718,13 @@ const NewQuotationsDetails = () => {
               minHeight: "calc(100vh - 220px)",
             }}
           >
-            <div className={styles.printArea}>{renderPages(() => true)}</div>
+            <div className={styles.printArea}>
+              {renderPages({
+                shouldShowColumn: () => true,
+                includeProductList: includeProductListPage,
+                includeSummary: includeSummaryPage,
+              })}
+            </div>
           </div>
 
           {/* Hidden Export Container */}
@@ -1549,7 +1734,11 @@ const NewQuotationsDetails = () => {
           >
             {isExporting && (
               <div className={styles.printArea}>
-                {renderPages((col) => visibleColumns[col] ?? true)}
+                {renderPages({
+                  shouldShowColumn: (col) => visibleColumns[col] ?? true,
+                  includeProductList: includeProductListPage,
+                  includeSummary: includeSummaryPage,
+                })}
               </div>
             )}
           </div>

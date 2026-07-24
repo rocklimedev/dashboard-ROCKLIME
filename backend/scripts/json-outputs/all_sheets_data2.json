@@ -1,840 +1,5219 @@
 [
   {
-    "productCode": "1013962080",
-    "name": "1013962080 LOVEN WH TOLET W/O SC VN",
-    "quantity": 0
+    "product_code": "FFAS1301-101440BF0",
+    "name": "Acacia E Sh Sl Basin Mixer-C1",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Basin Mixer",
+    "selling_price": 17270
+  },
+  {
+    "product_code": "FFAS1301-101AL0BF0",
+    "name": "Acacia E Sh Sl Basin Mixer-C1",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Basin Mixer",
+    "selling_price": 18320
+  },
+  {
+    "product_code": "FFAS1301-101GL0BF0",
+    "name": "Acacia E Sh Sl Basin Mixer-C1",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Basin Mixer",
+    "selling_price": 18380
+  },
+  {
+    "product_code": "FFAS1301-101DA0BF0",
+    "name": "Acacia E Sh Sl Basin Mixer-C1",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Basin Mixer",
+    "selling_price": 18320
+  },
+  {
+    "product_code": "FFAS1301-102500BF0",
+    "name": "Acacia E Sh Sl Basin Mixer-C1",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Basin Mixer",
+    "selling_price": 16220
+  },
+  {
+    "product_code": "FFAS1302-101440BF0",
+    "name": "Acacia E Sh Sl Vessel Mixer-F",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Basin Mixer",
+    "selling_price": 23210
+  },
+  {
+    "product_code": "FFAS1302-101AL0BF0",
+    "name": "Acacia E Sh Sl Vessel Mixer-F",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Basin Mixer",
+    "selling_price": 24680
+  },
+  {
+    "product_code": "FFAS1302-101GL0BF0",
+    "name": "Acacia E Sh Sl Vessel Mixer-F",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Basin Mixer",
+    "selling_price": 24680
+  },
+  {
+    "product_code": "FFAS1302-101DA0BF0",
+    "name": "Acacia E Sh Sl Vessel Mixer-F",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Basin Mixer",
+    "selling_price": 24680
+  },
+  {
+    "product_code": "FFAS1302-102500BF0",
+    "name": "Acacia E Single Hole Vessel",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Basin Mixer",
+    "selling_price": 21840
+  },
+  {
+    "product_code": "FFAS1303-101440BF0",
+    "name": "Acacia E 8\" Spread Basinfaucet",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Basin Mixer",
+    "selling_price": 28190
+  },
+  {
+    "product_code": "FFAS1303-101AL0BF0",
+    "name": "Acacia E 8\" Spread Basinfaucet",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Basin Mixer",
+    "selling_price": 30030
+  },
+  {
+    "product_code": "FFAS1303-101GL0BF0",
+    "name": "Acacia E 8\" Spread Basinfaucet",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Basin Mixer",
+    "selling_price": 30030
   },
   {
-    "productCode": "1023422430",
-    "name": "1023422430  ANGLE VALVE",
-    "quantity": 5
+    "product_code": "FFAS1303-101DA0BF0",
+    "name": "Acacia E 8\" Spread Basinfaucet",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Basin Mixer",
+    "selling_price": 30030
   },
   {
-    "productCode": "1024642430",
-    "name": "1024642430   WASTE SET BASIN",
-    "quantity": 2
+    "product_code": "FFAS1303-102500BF0",
+    "name": "Acacia E 8\" Spread Basinfaucet",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Basin Mixer",
+    "selling_price": 26150
   },
   {
-    "productCode": "1025302431",
-    "name": "1025302431- New Tempesta-F Trigger Spray Set",
-    "quantity": 1
+    "product_code": "FFAS1304-101440BF0",
+    "name": "Acacia E In-Wall Vessel Mixer",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Basin Mixer",
+    "selling_price": 24200
   },
   {
-    "productCode": "1029950200",
-    "name": "1029950200 LOW-COST FLUSHING CABLE SET",
-    "quantity": 2
+    "product_code": "FFAS1304-101AL0BF0",
+    "name": "Acacia E In-Wall Vessel Mixer",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Basin Mixer",
+    "selling_price": 25830
   },
   {
-    "productCode": "1068690000",
-    "name": "1068690000  AQUA  TILES",
-    "quantity": 3
+    "product_code": "FFAS1304-101GL0BF0",
+    "name": "Acacia E In-Wall Vessel Mixer",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Basin Mixer",
+    "selling_price": 25830
   },
   {
-    "productCode": "1068810000",
-    "name": "1068810000   Aqua  Tiles  4SC",
-    "quantity": 1
+    "product_code": "FFAS1304-101DA0BF0",
+    "name": "Acacia E In-Wall Vessel Mixer",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Basin Mixer",
+    "selling_price": 25830
   },
   {
-    "productCode": "1068820000",
-    "name": "1068820000 GRT AQUA TILES THM",
-    "quantity": 1
+    "product_code": "FFAS1304-102500BF0",
+    "name": "Acacia E In-Wall Vessel Mixer",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Basin Mixer",
+    "selling_price": 22210
   },
   {
-    "productCode": "1070580000",
-    "name": "1070580000   HEAD SHOWER",
-    "quantity": 1
+    "product_code": "FFAS1305-101AL0BF0",
+    "name": "Acacia E Single Hole Side Lava Faucet",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Basin Mixer",
+    "selling_price": 17750
   },
   {
-    "productCode": "13262000",
-    "name": "13262000 Eurosmart Cosmo Button Spout",
-    "quantity": 1
+    "product_code": "FFAS1305-101GL0BF0",
+    "name": "Acacia E Single Hole Side Lava Faucet",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Basin Mixer",
+    "selling_price": 17750
   },
   {
-    "productCode": "13304000",
-    "name": "13304000 euro cube diverter spout",
-    "quantity": 1
+    "product_code": "FFAS1305-102500BF0",
+    "name": "Acacia E Single Hole Side Lava Faucet",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Basin Mixer",
+    "selling_price": 15440
   },
   {
-    "productCode": "134482433",
-    "name": "134482433   Eurosmart  Tub Spout"
+    "product_code": "FFAS1306-101500BF0",
+    "name": "Acacia-E Basin Mono",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Basin Mono",
+    "selling_price": 10500
   },
   {
-    "productCode": "19285001",
-    "name": "19285001     Trimset  Bath",
-    "quantity": 2
+    "product_code": "FFAS1306-1T1440BF0",
+    "name": "Acacia E Basin Mono",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Basin Mono",
+    "selling_price": 11340
   },
   {
-    "productCode": "19382000",
-    "name": "19382000 euro smart cosmo diverter",
-    "quantity": 5
+    "product_code": "FFAS1300-601440BF0",
+    "name": "Acacia E Deck Mounted B&S Faucet-C",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Bath&Shower Mixer",
+    "selling_price": 50300
   },
   {
-    "productCode": "19409001",
-    "name": "19409001 linear wall mounted basin mixer 149mm",
-    "quantity": 2
+    "product_code": "FFAS1300-601500BF0",
+    "name": "Acacia E Deck Mounted B&S Faucet-C",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Bath&Shower Mixer",
+    "selling_price": 46570
   },
   {
-    "productCode": "19450003",
-    "name": "19450003 euro smart new 2021 diverter",
-    "quantity": 5
+    "product_code": "FFAS1300-601AL0BF0",
+    "name": "Acacia E Deck Mounted B&S Faucet-C",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Bath&Shower Mixer",
+    "selling_price": 53550
   },
   {
-    "productCode": "194502433",
-    "name": "194502433 Eurosmart SLM Trim Bath",
-    "quantity": 2
+    "product_code": "FFAS1300-601GL0BF0",
+    "name": "Acacia E Deck Mounted B&S Faucet-C",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Bath&Shower Mixer",
+    "selling_price": 53550
   },
   {
-    "productCode": "19808001",
-    "name": "19808001 costa concealed upper part",
-    "quantity": 2
+    "product_code": "FFAS1300-601DA0BF0",
+    "name": "Acacia E Deck Mounted B&S Faucet-C",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Bath&Shower Mixer",
+    "selling_price": 53550
   },
   {
-    "productCode": "19917ALO",
-    "name": "19917ALO  VOLUME CONTROL TRIM",
-    "quantity": 4
+    "product_code": "FFAS1311-602500BF0",
+    "name": "Acacia E Exposed B&S Mixer",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Bath&Shower Mixer",
+    "selling_price": 39690
   },
   {
-    "productCode": "19967001",
-    "name": "19967001    Basin 2-H Wall",
-    "quantity": 2
+    "product_code": "FFAS1321-608440BF0",
+    "name": "Acacia E Concealed Bns Main Mixing Val",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Bath&Shower Mixer",
+    "selling_price": 21740
   },
   {
-    "productCode": "22041001",
-    "name": "22041001 ANGLE VALVE 1/2'' X 1/2''",
-    "quantity": 2
+    "product_code": "FFAS1321-608500BF0",
+    "name": "Acacia E Concealed Bns Main Mixing Val",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Bath&Shower Mixer",
+    "selling_price": 20530
   },
   {
-    "productCode": "22940000",
-    "name": "22940000 ANGLE VALUE , MINI TDL",
-    "quantity": 1
+    "product_code": "FFAS1321-608AL0BF0",
+    "name": "Acacia E Concealed Bns Main Mixing Val",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Bath&Shower Mixer",
+    "selling_price": 23150
   },
   {
-    "productCode": "23303DA0",
-    "name": "23303DA0 Grander OHM Basin",
-    "quantity": 2
+    "product_code": "FFAS1321-608GL0BF0",
+    "name": "Acacia E Concealed Bns Main Mixing Val",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Bath&Shower Mixer",
+    "selling_price": 23100
   },
   {
-    "productCode": "23405001",
-    "name": "23405001  Lineare Ohm",
-    "quantity": 1
+    "product_code": "FFAS1321-608DA0BF0",
+    "name": "Acacia E Concealed Bns Main Mixing Val",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Bath&Shower Mixer",
+    "selling_price": 23150
   },
   {
-    "productCode": "23447000",
-    "name": "23447000    Eurocube",
-    "quantity": 1
+    "product_code": "FFAS1381-908440BF0",
+    "name": "Acacia E Robe Hook",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 3200
   },
   {
-    "productCode": "24068DA0",
-    "name": "24068DA0 Grander OHM Trimset Bath",
-    "quantity": 2
+    "product_code": "FFAS1381-908500BC0",
+    "name": "Acacia E Robe Hook",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 2990
   },
   {
-    "productCode": "24092001",
-    "name": "24092001 ESSENCE 3-WAY diverter",
-    "quantity": 2
+    "product_code": "FFAS1382-908500BC0",
+    "name": "Acacia E Soap Dish",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 3310
   },
   {
-    "productCode": "24095001",
-    "name": "24095001 linear 3 way diverter",
-    "quantity": 2
+    "product_code": "FFAS1384-908500BC0",
+    "name": "Acacia E Cup Holder",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 3310
   },
   {
-    "productCode": "24155000",
-    "name": "24155000 Grt Cube Thm Trimset Bath",
-    "quantity": 2
+    "product_code": "FFAS1386-908500BC0",
+    "name": "Acacia E Toilet Brush",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 6770
   },
   {
-    "productCode": "24247001",
-    "name": "24247001 ALIRA OHM BASIN SMTH B M IN",
-    "quantity": 4
+    "product_code": "FFAS1387-908440BF0",
+    "name": "Acacia E Tissue Holder",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 3940
   },
   {
-    "productCode": "24249001",
-    "name": "24249001 ALIRA OHM VESSEL BASIN SMTH",
-    "quantity": 4
+    "product_code": "FFAS1387-908500BC0",
+    "name": "Acacia E Tissue Holder",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 3620
   },
   {
-    "productCode": "24254001",
-    "name": "24254001 ALIRA OHM SET BASIN 2-H M IN",
-    "quantity": 0
+    "product_code": "FFAS1390-908500BC0",
+    "name": "Acacia E Towel Ring",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 5410
   },
   {
-    "productCode": "24356000",
-    "name": "24356000 ARTIO NEW OHM TRIM SHW.",
-    "quantity": 2
+    "product_code": "FFAS1393-908440BF0",
+    "name": "Acacia E Towel Rack",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 7140
   },
   {
-    "productCode": "26259000",
-    "name": "26259000 RSH F-SERIES 10 '' HEADSHOWER SET (L)",
-    "quantity": 1
+    "product_code": "FFAS1393-908500BC0",
+    "name": "Acacia E Towel Rack",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 6620
   },
   {
-    "productCode": "26352000",
-    "name": "26352000 Grohe health faucet",
-    "quantity": 0
-  },
-  {
-    "productCode": "26370000",
-    "name": "26370000 shower outlet and holder 1/2",
-    "quantity": 2
-  },
-  {
-    "productCode": "26481000",
-    "name": "26481000 RSH SMARTACTIVE 310",
-    "quantity": 2
-  },
-  {
-    "productCode": "26508000",
-    "name": "26508000    SHOWER  SYSTEM",
-    "quantity": 1
-  },
-  {
-    "productCode": "26558000",
-    "name": "26558000   RSH 310 MONO HEADSHOWER",
-    "quantity": 1
-  },
-  {
-    "productCode": "26563000",
-    "name": "26563000 RSH 310 MONO CUBE HEADSHOWER 422MM",
-    "quantity": 1
-  },
-  {
-    "productCode": "26574000",
-    "name": "26574000 3 spray hand shower 130mm",
-    "quantity": 3
-  },
-  {
-    "productCode": "26582000",
-    "name": "26582000 3 spray hand shower cube 130mm",
-    "quantity": 2
-  },
-  {
-    "productCode": "26663000",
-    "name": "26663000 head shower with shower arm",
-    "quantity": 2
-  },
-  {
-    "productCode": "266682430",
-    "name": "266682430    Tempesta Headshower",
-    "quantity": 2
-  },
-  {
-    "productCode": "26682000",
-    "name": "26682000 TEMPESTA CUBE 250 H/S ST",
-    "quantity": 3
-  },
-  {
-    "productCode": "26683000",
-    "name": "26683000 head shower with sealing shower arm",
-    "quantity": 2
-  },
-  {
-    "productCode": "26731000",
-    "name": "26731000 RSH AQUA MONO CEILING SHW",
-    "quantity": 0
-  },
-  {
-    "productCode": "26734000",
-    "name": "26734000 RSH AQUA CASCADE CEILING SHW",
-    "quantity": 2
-  },
-  {
-    "productCode": "26735000",
-    "name": "26735000 RSH AQUA MIST CEILING SHW",
-    "quantity": 2
-  },
-  {
-    "productCode": "26739000",
-    "name": "26739000 concealed body for rain shower",
-    "quantity": 0
-  },
-  {
-    "productCode": "26746003",
-    "name": "26746003 TEMPESTA CUBE 110 II HANDSHOWER WS8",
-    "quantity": 1
-  },
-  {
-    "productCode": "26802000",
-    "name": "26802000 body jet 2 spray square",
-    "quantity": 2
-  },
-  {
-    "productCode": "27367000",
-    "name": "27367000 EUPH COSMOPOLITAN STICK HANDSHOWER",
-    "quantity": 2
-  },
-  {
-    "productCode": "27369000",
-    "name": "27369000 1SPRAY",
-    "quantity": 1
-  },
-  {
-    "productCode": "27541001",
-    "name": "27541001  N Tempesta Cosmopolitan",
-    "quantity": 0
-  },
-  {
-    "productCode": "27572003",
-    "name": "27572003   HANDSHOWER",
-    "quantity": 0
-  },
-  {
-    "productCode": "27574003",
-    "name": "27574003 TEMPESTA CUBE 11 HEADSHOWER WS8",
-    "quantity": 2
-  },
-  {
-    "productCode": "27693000",
-    "name": "27693000 hand shower holder",
-    "quantity": 8
-  },
-  {
-    "productCode": "27698000",
-    "name": "27698000 EUPHORIA CUBE STICK HANDSHOWER",
-    "quantity": 2
-  },
-  {
-    "productCode": "27704000",
-    "name": "27704000 SHOWER OUTLET ELBOW,1/2''",
-    "quantity": 1
-  },
-  {
-    "productCode": "27799001",
-    "name": "27799001 2 hand shower 2 spray with holder",
-    "quantity": 1
-  },
-  {
-    "productCode": "27799003",
-    "name": "27799003   Tempesta 110 wall holder set",
-    "quantity": 2
-  },
-  {
-    "productCode": "27869001",
-    "name": "27869001 head shower 100mm 4",
-    "quantity": 3
-  },
-  {
-    "productCode": "27969DA0",
-    "name": "27969DA0 Grandera Shower Holder",
-    "quantity": 2
-  },
-  {
-    "productCode": "2797DA0",
-    "name": "2797DA0 Grandera Wall Union",
-    "quantity": 2
-  },
-  {
-    "productCode": "28419003",
-    "name": "28419003 Tempesta 110 Hand Shower 3-Spray, 9.5I",
-    "quantity": 3
-  },
-  {
-    "productCode": "28671000",
-    "name": "28671000 RELEXA WALL UNION",
-    "quantity": 0
-  },
-  {
-    "productCode": "29049000",
-    "name": "29049000   CONNECTION  TUBE",
-    "quantity": 17
-  },
-  {
-    "productCode": "29058000",
-    "name": "29058000 Waste Trap Basin 1 1/4''",
-    "quantity": 0
-  },
-  {
-    "productCode": "29119000",
-    "name": "29119000   GRT  SMARTCONTROL",
-    "quantity": 1
-  },
-  {
-    "productCode": "29121000",
-    "name": "29121000 smart control with thermostate round 3 way",
-    "quantity": 1
-  },
-  {
-    "productCode": "29126000",
-    "name": "29126000 smart control with thermostate square 3 way",
-    "quantity": 1
-  },
-  {
-    "productCode": "29149000",
-    "name": "29149000 SMARTCONTROL MIXER TRIMSET SQUARE 3SC",
-    "quantity": 1
-  },
-  {
-    "productCode": "29338003",
-    "name": "29338003   EUROSMART",
-    "quantity": 1
-  },
-  {
-    "productCode": "293382433",
-    "name": "293382433   Eurosmart   SLM Trim",
-    "quantity": 2
-  },
-  {
-    "productCode": "29375001",
-    "name": "29375001 alira diverter",
-    "quantity": 3
-  },
-  {
-    "productCode": "29800000",
-    "name": "29800000 concealed inner part",
-    "quantity": 20
-  },
-  {
-    "productCode": "31191001",
-    "name": "31191001 wall mounted kitchen mixer"
-  },
-  {
-    "productCode": "33963000",
-    "name": "33963000 concealed for single lever diverter",
-    "quantity": 22
-  },
-  {
-    "productCode": "35600000",
-    "name": "35600000 smart box  grohe",
-    "quantity": 5
-  },
-  {
-    "productCode": "38505000",
-    "name": "38505000  Flush Plate Skate Air",
-    "quantity": 22
-  },
-  {
-    "productCode": "38505SHO",
-    "name": "38505SHO white flush plate",
-    "quantity": 3
-  },
-  {
-    "productCode": "3855800M",
-    "name": "3855800M RAPID SL WALL BRACKETS",
-    "quantity": 0
-  },
-  {
-    "productCode": "38732000",
-    "name": "38732000 arena cosmopolitan flush plate",
-    "quantity": 50
-  },
-  {
-    "productCode": "38732ALO",
-    "name": "38732ALO Brushed Hard Graphite flush plate ",
-    "quantity": 14
-  },
-  {
-    "productCode": "38732SHO",
-    "name": "38732SHO - GROHE (SQUARE ALPINE WHITE)",
-    "quantity": 2
-  },
-  {
-    "productCode": "38765000",
-    "name": "38765000 Nova Cosmopolitan Flush Plate",
-    "quantity": 2
-  },
-  {
-    "productCode": "38844000",
-    "name": "38844000 arena cosmopolitan flush plate",
-    "quantity": 2
-  },
-  {
-    "productCode": "38986000",
-    "name": "38986000  GROHE CISTERN  77MM",
-    "quantity": 0
-  },
-  {
-    "productCode": "39122001",
-    "name": "39122001 eurocosmo counter top basin",
-    "quantity": 0
-  },
-  {
-    "productCode": "39125001",
-    "name": "39125001 Eurosmart Basin, UnderxCounter, 60cm",
-    "quantity": 0
-  },
-  {
-    "productCode": "39234000",
-    "name": "39234000 Eurocube Counter Top Basin",
-    "quantity": 0
-  },
-  {
-    "productCode": "39311000",
-    "name": "39311000   EUROCUBE",
-    "quantity": 0
-  },
-  {
-    "productCode": "39321000",
-    "name": "39321000   PROJECTLINE  WH WITH SC",
-    "quantity": 0
-  },
-  {
-    "productCode": "39330002",
-    "name": "39330002 EURO CERRMIC TOILET SEAT SOFT",
-    "quantity": 0
-  },
-  {
-    "productCode": "39577000",
-    "name": "39577000 essence seat cover",
-    "quantity": 0
-  },
-  {
-    "productCode": "39596000",
-    "name": "39596000 Rapid Slx Wc 3-6 I 1, 13m",
-    "quantity": 0
-  },
-  {
-    "productCode": "39682000",
-    "name": "39682000 concealed tank slim body",
-    "quantity": 0
-  },
-  {
-    "productCode": "40367001",
-    "name": "40367001 ESSENTIALS TOILET PAPER HOLDER W/COVER",
-    "quantity": 2
-  },
-  {
-    "productCode": "40374001",
-    "name": "40374001   TOILET  BRUSH SET",
-    "quantity": 1
-  },
-  {
-    "productCode": "40689001",
-    "name": "40689001   TOILET  PAPER  HOLDER",
-    "quantity": 1
-  },
-  {
-    "productCode": "45565000",
-    "name": "45565000 EXTENSION FOR VOLUME CONTROL",
-    "quantity": 0
-  },
-  {
-    "productCode": "46905000",
-    "name": "46905000 ESCUTCHEON",
-    "quantity": 2
-  },
-  {
-    "productCode": "9003",
-    "name": "9003 SS GRATING ROUND PLAIN 125MM",
-    "quantity": 0
-  },
-  {
-    "productCode": "A8 WALL HUNG BKT. ADUSTABLE",
-    "name": "A8 WALL HUNG BKT. ADUSTABLE",
-    "quantity": 6
-  },
-  {
-    "productCode": "ANITILLA WASH BASIN SKU-WB-ANTL",
-    "name": "ANITILLA WASH BASIN SKU-WB-ANTL",
-    "quantity": 0
-  },
-  {
-    "productCode": "AXN-71010",
-    "name": "AXN-71010 SINGLE ROBE HOOK ( G )",
-    "quantity": 0
-  },
-  {
-    "productCode": "CCAS0420-101041F0",
-    "name": "CCAS0420-101041 F0SIGNATURE 550MM COUNTER TOP",
-    "quantity": 0
-  },
-  {
-    "productCode": "CCAS0426 -1000410F0",
-    "name": "CCAS0426 -1000410F0 -active under counter basin",
-    "quantity": 0
-  },
-  {
-    "productCode": "CCAS0628 0000410F0",
-    "name": "CCAS0628 0000410F0-signature basin",
-    "quantity": 0
-  },
-  {
-    "productCode": "CCAS31205W20410F0",
-    "name": "CCAS31205W20410F0 ACACIA SUPERSLEEK",
-    "quantity": 0
-  },
-  {
-    "productCode": "CCAS3140 3W20400",
-    "name": "CCAS3140 3W20400 signature wc",
-    "quantity": 0
-  },
-  {
-    "productCode": "CCAS3207-3W2041F0",
-    "name": "CCAS3207-3W2041F0 COMPACT WC",
-    "quantity": 0
-  },
-  {
-    "productCode": "CCASF412-100410F0",
-    "name": "CCASF412-100410F0 acacia supasleeek counter top basin",
-    "quantity": 0
-  },
-  {
-    "productCode": "CCASF521-000410F0",
-    "name": "CCASF521-000410F0  FECILITY DOUBLE  COUTERTOP",
-    "quantity": 0
-  },
-  {
-    "productCode": "CCASF650-1000410",
-    "name": "CCASF650-1000410 MILANO VESSEL 550MM",
-    "quantity": 0
-  },
-  {
-    "productCode": "CCT-1001",
-    "name": "CCT-1001-Maze-H",
-    "quantity": 0
-  },
-  {
-    "productCode": "32635000",
-    "name": "CONCEALED BASIN MIXER 32635000",
-    "quantity": 12
-  },
-  {
-    "productCode": "Concealed  CBK 005",
-    "name": "Concealed  CBK 005",
-    "quantity": 0
-  },
-  {
-    "productCode": "EAGLE - ROUND FLOOR DRAIN (WIFI)",
-    "name": "EAGLE - ROUND FLOOR DRAIN (WIFI)",
-    "quantity": 0
-  },
-  {
-    "productCode": "EAGLE - ROUND FLOOR DRAIN (WIFI) HOLE",
-    "name": "EAGLE - ROUND FLOOR DRAIN (WIFI) HOLE",
-    "quantity": 0
-  },
-  {
-    "productCode": "E  SMART  EWC  (WHITE )",
-    "name": "E  SMART  EWC  (WHITE )",
-    "quantity": 0
-  },
-  {
-    "productCode": "F14",
-    "name": "F14 16MM BOLT WITH ABS CAP",
-    "quantity": 6
-  },
-  {
-    "productCode": "F15",
-    "name": "F15 12X180MM FASTNERS WITH ABS CAP",
-    "quantity": 10
-  },
-  {
-    "productCode": "F78006-CHADY",
-    "name": "F78006-CHADY",
-    "quantity": 2
-  },
-  {
-    "productCode": "FFAS0481-908ALOBF0",
-    "name": "FFAS0481-908ALOBF0 CONCEPT SQ ROBE HOOK ALO",
-    "quantity": 1
-  },
-  {
-    "productCode": "FFAS0495-908ALOBF0",
-    "name": "FFAS0495-908ALOBF0 SQ TOWEL SHELF ALO",
-    "quantity": 1
-  },
-  {
-    "productCode": "FFAS0498-908ALOBF0",
-    "name": "FFAS0498-908ALOBF0 SINGLE TISSUE",
-    "quantity": 1
-  },
-  {
-    "productCode": "FFAS0703 - 151500BA0",
-    "name": "FFAS0703 - 151500BA0 neo morden tall body",
-    "quantity": 1
-  },
-  {
-    "productCode": "FFAS0921-609500BF",
-    "name": "FFAS0921-609500BF   MILANO CONCEALED B & S",
-    "quantity": 8
-  },
-  {
-    "productCode": "FFAS1301-101ALOBFO",
-    "name": "FFAS1301-101ALOBFO acacia basin mixer short body brushed hard graphite",
-    "quantity": 1
-  },
-  {
-    "productCode": "FFAS1302-101ALOBFO",
-    "name": "FFAS1302-101ALOBFO acacia basin mixer brushed hard graphite",
-    "quantity": 1
-  },
-  {
-    "productCode": "FFAS9909-000ALOBFO",
-    "name": "FFAS9909-000ALOBFO",
-    "quantity": 2
-  },
-  {
-    "productCode": "FFAST606-501500BFO",
-    "name": "FFAST606-501500BFO WINSTON DECK MOUNTED KITCHEN",
-    "quantity": 2
-  },
-  {
-    "productCode": "FFAST705-709500NF0",
-    "name": "FFAST705-709500NF0 WINSTON CONCEALED SHOWER",
-    "quantity": 0
-  },
-  {
-    "productCode": "FFAST707-501500BFO",
-    "name": "FFAST707-501500BFO   WINSTON WALL",
-    "quantity": 1
-  },
-  {
-    "productCode": "FFASTS28-000440bf0",
-    "name": "FFASTS28-000440bf0 Duostix Hygiene Spray",
-    "quantity": 0
-  },
-  {
-    "productCode": "48166000",
-    "name": "GROHE CLEAN 48166000",
-    "quantity": 1
-  },
-  {
-    "productCode": "H712",
-    "name": "H7 12 X 180MM CONCEALED W.H.WCS",
-    "quantity": 8
-  },
-  {
-    "productCode": "HUBB ANGLE VALUE ROSE GOLD",
-    "name": "HUBB ANGLE VALUE ROSE GOLD",
-    "quantity": 0
-  },
-  {
-    "productCode": "HUBLET ANGE VALUE GUN METAL",
-    "name": "HUBLET ANGE VALUE GUN METAL",
-    "quantity": 0
-  },
-  {
-    "productCode": "HUBLET ANGLE VALUE GOLD",
-    "name": "HUBLET ANGLE VALUE GOLD",
-    "quantity": 0
-  },
-  {
-    "productCode": "HUBLET ANGLE VALUE NICKLE",
-    "name": "HUBLET ANGLE VALUE NICKLE",
-    "quantity": 1
-  },
-  {
-    "productCode": "KX 003 BK BIB COCK LONG BODY BLACK",
-    "name": "KX 003 BK BIB COCK LONG BODY BLACK",
-    "quantity": 1
-  },
-  {
-    "productCode": "KX 003  GD  BIB  COCK LONG BODY  GOLD",
-    "name": "KX 003  GD  BIB  COCK LONG BODY  GOLD",
-    "quantity": 1
-  },
-  {
-    "productCode": "KX -005  GD  KUTEX CONCEALED STOP COCK GOLD",
-    "name": "KX -005  GD  KUTEX CONCEALED STOP COCK GOLD",
-    "quantity": 1
-  },
-  {
-    "productCode": "KX-005   KUTEX CONCEALED STOP COCK  15/20MM",
-    "name": "KX-005   KUTEX CONCEALED STOP COCK  15/20MM",
-    "quantity": 1
-  },
-  {
-    "productCode": "NEET FLOSY WHITE URINAL SKU UR-NST",
-    "name": "NEET FLOSY WHITE URINAL SKU UR-NST",
-    "quantity": 0
-  },
-  {
-    "productCode": "Net Glossy White Urinal",
-    "name": "Net Glossy White Urinal",
-    "quantity": 0
-  },
-  {
-    "productCode": "PTFE THREAD SEAL TAPE 10MTR",
-    "name": "PTFE THREAD SEAL TAPE 10MTR",
-    "quantity": 672
-  },
-  {
-    "productCode": "27139000",
-    "name": "RSH RUSTIC 130 SHOWER RAIL SET 600- (L) 27139000",
-    "quantity": 2
-  },
-  {
-    "productCode": "S.L.B.M. EXT.  BODY OPELL-PRIMA MATT BLACK 1719-MB",
-    "name": "S.L.B.M. EXT.  BODY OPELL-PRIMA MATT BLACK 1719-MB",
-    "quantity": 1
-  },
-  {
-    "productCode": "S.L.B.M. EXT.BODY OPELL-PRIMA MATT WHITE 1719-MW",
-    "name": "S.L.B.M. EXT.BODY OPELL-PRIMA MATT WHITE 1719-MW",
-    "quantity": 1
-  },
-  {
-    "productCode": "S.L.B.M. OPELL-PRIMA MATT BLACK     1718-MB",
-    "name": "S.L.B.M. OPELL-PRIMA MATT BLACK     1718-MB",
-    "quantity": 1
-  },
-  {
-    "productCode": "S.L.B.M. OPELL-PRIMA MATT WHITE 1718-MW",
-    "name": "S.L.B.M. OPELL-PRIMA MATT WHITE 1718-MW",
-    "quantity": 1
-  },
-  {
-    "productCode": "SMART STEAM  GENERATOR   6.0 KW",
-    "name": "SMART STEAM  GENERATOR   6.0 KW",
-    "quantity": 4
-  },
-  {
-    "productCode": "SVEL-055",
-    "name": "SVEL-055",
-    "quantity": 0
-  },
-  {
-    "productCode": "Tasmaina Shower Frame",
-    "name": "Tasmaina Shower Frame",
-    "quantity": 1
-  },
-  {
-    "productCode": "TGT 2074 SPL. GT COVER HEAVY DUTY COMMERCIAL",
-    "name": "TGT 2074 SPL. GT COVER HEAVY DUTY COMMERCIAL",
-    "quantity": 0
-  },
-  {
-    "productCode": "Theo Ceiling Faucet Brush Gold Diverter",
-    "name": "Theo Ceiling Faucet Brush Gold Diverter",
-    "quantity": 0
-  },
-  {
-    "productCode": "TM SLSM S/H ANG SPOUT OPELL-PRIMA MATT BLACK 1730-M",
-    "name": "TM SLSM S/H ANG SPOUT OPELL-PRIMA MATT BLACK 1730-M",
-    "quantity": 0
-  },
-  {
-    "productCode": "TM SLSM S/H RND SPOUT OPELL-PRIMAMATT BLACK 1727-MB",
-    "name": "TM SLSM S/H RND SPOUT OPELL-PRIMAMATT BLACK 1727-MB",
-    "quantity": 0
-  },
-  {
-    "productCode": "TURRO 8MM FROSTED FIX PARTITION",
-    "name": "TURRO 8MM FROSTED FIX PARTITION",
-    "quantity": 0
-  },
-  {
-    "productCode": "VE  SMART    WC",
-    "name": "VE  SMART    WC",
-    "quantity": 0
-  },
-  {
-    "productCode": "VFG-055",
-    "name": "VFG-055",
-    "quantity": 0
-  },
-  {
-    "productCode": "VTD-424",
-    "name": "VTD-424",
-    "quantity": 0
-  },
-  {
-    "productCode": "VTD-436",
-    "name": "VTD-436",
-    "quantity": 0
-  },
+    "product_code": "FFAS1394-908500BC0",
+    "name": "Acacia E Dual Towel Rack",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 10030
+  },
   {
-    "productCode": "Wall Mist (Matte Gold)",
-    "name": "Wall Mist (Matte Gold)",
-    "quantity": 1
+    "product_code": "FFAS1395-908500BC0",
+    "name": "Acacia E Towel Shelf",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 23100
+  },
+  {
+    "product_code": "FFAS1312-701500BF0",
+    "name": "Exposed Shower Mixer With Shower Kits",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Shower Mixer",
+    "selling_price": 32340
+  },
+  {
+    "product_code": "FFAS1322-708500BF0",
+    "name": "Acacia E Concealed Shower Main Mixing",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Shower Mixer",
+    "selling_price": 17270
+  },
+  {
+    "product_code": "FFAS1322-708AL0BF0",
+    "name": "Acacia E Concealed Shower Main Mixing",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Shower Mixer",
+    "selling_price": 19900
+  },
+  {
+    "product_code": "FFAS1322-708GL0BF0",
+    "name": "Acacia E Concealed Shower Main Mixing",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Shower Mixer",
+    "selling_price": 19900
+  },
+  {
+    "product_code": "FFAS1322-708DA0BF0",
+    "name": "Acacia E Concealed Shower Main Mixing",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Shower Mixer",
+    "selling_price": 19900
+  },
+  {
+    "product_code": "FFAS1326-7T1440BF0",
+    "name": "Acacia E Shower Mono",
+    "product_segment": "Bathroom Fittings",
+    "design": "Acacia E",
+    "product_group": "Shower Mono",
+    "selling_price": 17010
+  },
+
+  {
+    "product_code": "FF1-CN521X00000460",
+    "name": "Onyx Spout W/ Diverter",
+    "product_segment": "Bathroom Fittings",
+    "design": "Onyx",
+    "product_group": "Bath Filler",
+    "selling_price": 6980
+  },
+  {
+    "product_code": "137441A000",
+    "name": "ONYX BUTTON SPOUT_A00",
+    "product_segment": "Bathroom Fittings",
+    "design": "Onyx",
+    "product_group": "Bath Filler",
+    "selling_price": 8400
+  },
+  {
+    "product_code": "137441DA00",
+    "name": "ONYX BUTTON SPOUT_DA0",
+    "product_segment": "Bathroom Fittings",
+    "design": "Onyx",
+    "product_group": "Bath Filler",
+    "selling_price": 8400
+  },
+  {
+    "product_code": "137441GL00",
+    "name": "ONYX BUTTON SPOUT_GL0",
+    "product_segment": "Bathroom Fittings",
+    "design": "Onyx",
+    "product_group": "Bath Filler",
+    "selling_price": 8400
+  },
+
+  {
+    "product_code": "FFAS1261-105500BC0",
+    "name": "Ceraplan Single Hole Lava Faucet - Long",
+    "product_segment": "Bathroom Fittings",
+    "design": "Ceraplan",
+    "product_group": "Basin Mixer",
+    "selling_price": 21740
+  },
+
+  {
+    "product_code": "FTP0051",
+    "name": "Chi Extended Mono Faucet",
+    "product_segment": "Bathroom Fittings",
+    "design": "Chi",
+    "product_group": "Basin Mono",
+    "selling_price": 6410
+  },
+
+  {
+    "product_code": "FFAS4801-101500BC0",
+    "name": "City Deck Mounted Pull-Out Basin Mi",
+    "product_segment": "Bathroom Fittings",
+    "design": "City",
+    "product_group": "Basin Mixer",
+    "selling_price": 21470
+  },
+
+  {
+    "product_code": "FFASB206-101500BF0",
+    "name": "Codie Basin Mono W/O Pop-Up",
+    "product_segment": "Bathroom Fittings",
+    "design": "Codie",
+    "product_group": "Basin Mono",
+    "selling_price": 8930
+  },
+  {
+    "product_code": "FFASB201-101501BF0",
+    "name": "Simplica Basin Mixer W/O Pop Up Drain",
+    "product_segment": "Bathroom Fittings",
+    "design": "Codie",
+    "product_group": "Basin Mixer",
+    "selling_price": 9140
+  },
+  {
+    "product_code": "FFASB221-609500BF0",
+    "name": "Codie Concealed B&S?Mixing Valve",
+    "product_segment": "Bathroom Fittings",
+    "design": "Codie",
+    "product_group": "Bath&Shower Mixer",
+    "selling_price": 14960
+  },
+
+  {
+    "product_code": "FFAS1401-101500BF0",
+    "name": "Concept Sh Basin Mxr W/ Puw",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Round",
+    "product_group": "Basin Mixer",
+    "selling_price": 10400
+  },
+  {
+    "product_code": "FFAS1411-601500BF0",
+    "name": "Concept Exposed B&S",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Round",
+    "product_group": "Bath&Shower Mixer",
+    "selling_price": 16220
+  },
+  {
+    "product_code": "FFAS1420-609500BF0",
+    "name": "Concept Concealed B&S Mixing Valve",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Round",
+    "product_group": "Bath&Shower Mixer",
+    "selling_price": 14440
+  },
+  {
+    "product_code": "FFAS1495-908500BF0",
+    "name": "Concept Round Towel Rack",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Round",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 13490
+  },
+  {
+    "product_code": "FFAS1493-908500BF0",
+    "name": "Concept Round Towel Holder 60 Cm.",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Round",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 9560
+  },
+  {
+    "product_code": "FFAS1499-908500BC0",
+    "name": "Concept Round Double Tissue Holder With Shelf",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Round",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 8720
+  },
+  {
+    "product_code": "FFAS1498-908500BC0",
+    "name": "Concept Round Single Tissue Holder With Shelf",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Round",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 6510
+  },
+  {
+    "product_code": "FFAS1492-908500BF0",
+    "name": "Concept Round Glass Shelf With Bar",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Round",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 6510
+  },
+  {
+    "product_code": "FFAS1494-908500BF0",
+    "name": "Concept Round Double Towel Holder 60 Cm.",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Round",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 6510
+  },
+  {
+    "product_code": "FFAS1483-908500BF0",
+    "name": "Concept Round Soap Bracket",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Round",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 6250
+  },
+  {
+    "product_code": "FFAS1486-908500BF0",
+    "name": "Concept Round Brush Holder",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Round",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 6090
+  },
+  {
+    "product_code": "FFAS1485-908500BF0",
+    "name": "Concept Round Double Glass",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Round",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 5410
+  },
+  {
+    "product_code": "FFAS1491-908500BF0",
+    "name": "Concept Round Glass Shelf",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Round",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 5410
+  },
+  {
+    "product_code": "FFAS1488-908500BF0",
+    "name": "Concept Round Paper Holder (Vertical)",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Round",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 4880
+  },
+  {
+    "product_code": "FFAS1489-908500BF0",
+    "name": "Concept Round Paper Holder",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Round",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 4460
+  },
+  {
+    "product_code": "FFAS1487-908500BF0",
+    "name": "Concept Round Paper Holder (Horizontal)",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Round",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 4460
+  },
+  {
+    "product_code": "FFAS1490-908500BF0",
+    "name": "Concept Round Towel Ring",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Round",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 3780
+  },
+  {
+    "product_code": "FFAS1484-908500BF0",
+    "name": "Concept Round Glass Holder",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Round",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 3730
+  },
+  {
+    "product_code": "FFAS1482-908500BF0",
+    "name": "Concept Round Soap Holder",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Round",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 3410
+  },
+  {
+    "product_code": "FFAS1481-908500BF0",
+    "name": "Concept Round Double Hook",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Round",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 2210
+  },
+  {
+    "product_code": "FFAS1422-709500BF0",
+    "name": "Concept? In-Wall Shower Only Mixing Valv",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Round",
+    "product_group": "Shower Mixer",
+    "selling_price": 11180
+  },
+
+  {
+    "product_code": "FFAS0401-151500BA0",
+    "name": "Wf-0401.151.50\\Concept Square Single Hol",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Square",
+    "product_group": "Basin Mixer",
+    "selling_price": 12920
+  },
+  {
+    "product_code": "FFAS0406-151500BA0",
+    "name": "Wf-0406.151.50\\Concept Square Single Hol",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Square",
+    "product_group": "Basin Mono",
+    "selling_price": 11600
+  },
+  {
+    "product_code": "FFAS0421-659500BA0",
+    "name": "Wf-0421.659.50\\Concept Square Concealed",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Square",
+    "product_group": "Bath&Shower Mixer",
+    "selling_price": 17010
+  },
+  {
+    "product_code": "FFAS0481-908500BF0",
+    "name": "Concept Square Double Hook",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Square",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 3310
+  },
+  {
+    "product_code": "FFAS0481-908AL0BF0",
+    "name": "Concept Square Robe Hook",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Square",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 3620
+  },
+  {
+    "product_code": "FFAS0481-908GL0BF0",
+    "name": "Concept Square Robe Hook",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Square",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 3620
+  },
+  {
+    "product_code": "FFAS0481-908A00BF0",
+    "name": "Concept Square Robe Hook",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Square",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 3620
+  },
+  {
+    "product_code": "FFAS0481-908DA0BF0",
+    "name": "Concept Square Robe Hook",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Square",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 3620
+  },
+  {
+    "product_code": "FFAS0482-908500BF0",
+    "name": "Concept Square Soap Holder",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Square",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 5040
+  },
+  {
+    "product_code": "FFAS0483-908500BF0",
+    "name": "Concept Square Soap Bracket",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Square",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 6250
+  },
+  {
+    "product_code": "FFAS0484-908500BF0",
+    "name": "Concept Square Glass Holder",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Square",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 5570
+  },
+  {
+    "product_code": "FFAS0485-908500BF0",
+    "name": "Concept Square Double Glass Holder",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Square",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 7400
+  },
+  {
+    "product_code": "FFAS0486-908500BF0",
+    "name": "Concept Square Brush Holder",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Square",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 7720
+  },
+  {
+    "product_code": "FFAS0487-908500BF0",
+    "name": "Concept Square Paper Holder (Horizontal)",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Square",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 4880
+  },
+  {
+    "product_code": "FFAS0488-908500BF0",
+    "name": "Concept Square Paper Holder (Vertical)",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Square",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 5360
+  },
+  {
+    "product_code": "FFAS0489-908500BF0",
+    "name": "Concept Square Paper Holder",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Square",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 5460
+  },
+  {
+    "product_code": "FFAS0490-908500BF0",
+    "name": "Concept Square Towel Ring",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Square",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 4880
+  },
+  {
+    "product_code": "FFAS0491-908500BF0",
+    "name": "Concept Square Glass Shelf",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Square",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 5620
+  },
+  {
+    "product_code": "FFAS0492-908500BF0",
+    "name": "Concept Square Glass Shelf With Bar",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Square",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 6770
+  },
+  {
+    "product_code": "FFAS0493-908500BF0",
+    "name": "Concept Square Single Towel Holder 60 Cm.",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Square",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 6670
+  },
+  {
+    "product_code": "FFAS0493-908AL0BF0",
+    "name": "Concept Square Towel Rack",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Square",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 7300
+  },
+  {
+    "product_code": "FFAS0493-908GL0BF0",
+    "name": "Concept Square Towel Rack",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Square",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 7300
+  },
+  {
+    "product_code": "FFAS0493-908A00BF0",
+    "name": "Concept Square Towel Rack",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Square",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 7300
+  },
+  {
+    "product_code": "FFAS0493-908DA0BF0",
+    "name": "Concept Square Towel Rack",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Square",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 7300
+  },
+  {
+    "product_code": "FFAS0494-908500BF0",
+    "name": "Concept Square Double Towel Holder 60 Cm.",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Square",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 9980
+  },
+  {
+    "product_code": "FFAS0495-908500BF0",
+    "name": "Concept Square Towel Rack",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Square",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 21050
+  },
+  {
+    "product_code": "FFAS0495-908AL0BF0",
+    "name": "Concept Square Towel Shelf",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Square",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 23050
+  },
+  {
+    "product_code": "FFAS0495-908GL0BF0",
+    "name": "Concept Square Towel Shelf",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Square",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 23050
+  },
+  {
+    "product_code": "FFAS0495-908A00BF0",
+    "name": "Concept Square Towel Shelf",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Square",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 23050
+  },
+  {
+    "product_code": "FFAS0495-908DA0BF0",
+    "name": "Concept Square Towel Shelf",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Square",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 23050
+  },
+  {
+    "product_code": "FFAS0498-908440BF0",
+    "name": "Concept Square Singletissueholder W/S",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Square",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 7040
+  },
+  {
+    "product_code": "FFAS0498-908500BC0",
+    "name": "Concept Square Single Tissue Holder With Shelf",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Square",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 6770
+  },
+  {
+    "product_code": "FFAS0498-908AL0BF0",
+    "name": "Concept Square Single Tissue Holder",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Square",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 7460
+  },
+  {
+    "product_code": "FFAS0498-908GL0BF0",
+    "name": "Concept Square Single Tissue Holder",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Square",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 7460
+  },
+  {
+    "product_code": "FFAS0498-908A00BF0",
+    "name": "Concept Square Single Tissue Holder",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Square",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 7460
+  },
+  {
+    "product_code": "FFAS0498-908DA0BF0",
+    "name": "Concept Square Single Tissue Holder",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Square",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 7460
+  },
+  {
+    "product_code": "FFAS0499-908500BC0",
+    "name": "Concept Square Double Tissue Holder With Shelf",
+    "product_segment": "Bathroom Fittings",
+    "design": "Concept Square",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 8980
+  },
+
+  {
+    "product_code": "FF1-CN521X00000478",
+    "name": "Cygnet Bath Spout - Chrome",
+    "product_segment": "Bathroom Fittings",
+    "design": "Cygnet",
+    "product_group": "Bath Filler",
+    "selling_price": 4880
+  },
+  {
+    "product_code": "FFAS0303-151500BA0",
+    "name": "Wf-0303.151.50\\Cygnet Single Hole Extend",
+    "product_segment": "Bathroom Fittings",
+    "design": "Cygnet",
+    "product_group": "Basin Mixer",
+    "selling_price": 19370
+  },
+  {
+    "product_code": "FFAS0301-151500BA0",
+    "name": "Wf-0301.151.50\\Cygnet Single Hole Lave F",
+    "product_segment": "Bathroom Fittings",
+    "design": "Cygnet",
+    "product_group": "Basin Mixer",
+    "selling_price": 12290
+  },
+  {
+    "product_code": "FFAS0306-101500BF0",
+    "name": "Cygnet Single Mono Faucet-F",
+    "product_segment": "Bathroom Fittings",
+    "design": "Cygnet",
+    "product_group": "Basin Mono",
+    "selling_price": 9080
+  },
+  {
+    "product_code": "FFAS0321-659500BA0",
+    "name": "Wf-0321.659.50\\Cygnet Concealed Bns Mixi",
+    "product_segment": "Bathroom Fittings",
+    "design": "Cygnet",
+    "product_group": "Bath&Shower Mixer",
+    "selling_price": 16490
+  },
+
+  {
+    "product_code": "FFAS9140-000500BC0",
+    "name": "Wall Outlet - Round (G1/2\")",
+    "product_segment": "Bathroom Fittings",
+    "design": "EasySET",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 4150
+  },
+  {
+    "product_code": "FFAS9141-000500BC0",
+    "name": "Wall Outlet With Holder- Round (G1/2\")",
+    "product_segment": "Bathroom Fittings",
+    "design": "EasySET",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 5780
+  },
+  {
+    "product_code": "FFAS9142-000500BC0",
+    "name": "Wall Outlet - Square  (G1/2\")",
+    "product_segment": "Bathroom Fittings",
+    "design": "EasySET",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 4310
+  },
+  {
+    "product_code": "FFAS9143-000500BC0",
+    "name": "Wall Outlet With Holder - Square (G1/2\")",
+    "product_segment": "Bathroom Fittings",
+    "design": "EasySET",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 7880
+  },
+  {
+    "product_code": "FFAS0925-709440BF0",
+    "name": "Easyset For Hand Shower",
+    "product_segment": "Bathroom Fittings",
+    "design": "EasySET",
+    "product_group": "Hand Shower",
+    "selling_price": 18690
+  },
+  {
+    "product_code": "FFAS0925-709AL0BF0",
+    "name": "Easyset For Hand Shower",
+    "product_segment": "Bathroom Fittings",
+    "design": "EasySET",
+    "product_group": "Hand Shower",
+    "selling_price": 19110
+  },
+  {
+    "product_code": "FFAS0925-709GL0BF0",
+    "name": "Easyset For Hand Shower",
+    "product_segment": "Bathroom Fittings",
+    "design": "EasySET",
+    "product_group": "Hand Shower",
+    "selling_price": 19110
+  },
+  {
+    "product_code": "FFAS0925-709A00BF0",
+    "name": "Easyset For Hand Shower",
+    "product_segment": "Bathroom Fittings",
+    "design": "EasySET",
+    "product_group": "Hand Shower",
+    "selling_price": 19110
+  },
+  {
+    "product_code": "FFAS0925-709DA0BF0",
+    "name": "Easyset For Hand Shower",
+    "product_segment": "Bathroom Fittings",
+    "design": "EasySET",
+    "product_group": "Hand Shower",
+    "selling_price": 19110
+  },
+  {
+    "product_code": "FFAS0926-709440BF0",
+    "name": "Easyset For Head Shower",
+    "product_segment": "Bathroom Fittings",
+    "design": "EasySET",
+    "product_group": "Head Shower",
+    "selling_price": 18690
+  },
+  {
+    "product_code": "FFAS0926-709AL0BF0",
+    "name": "Easyset For Head Shower",
+    "product_segment": "Bathroom Fittings",
+    "design": "EasySET",
+    "product_group": "Head Shower",
+    "selling_price": 19110
+  },
+  {
+    "product_code": "FFAS0926-709GL0BF0",
+    "name": "Easyset For Head Shower",
+    "product_segment": "Bathroom Fittings",
+    "design": "EasySET",
+    "product_group": "Head Shower",
+    "selling_price": 19110
+  },
+  {
+    "product_code": "FFAS0926-709A00BF0",
+    "name": "Easyset For Head Shower",
+    "product_segment": "Bathroom Fittings",
+    "design": "EasySET",
+    "product_group": "Head Shower",
+    "selling_price": 19110
+  },
+  {
+    "product_code": "FFAS0926-709DA0BF0",
+    "name": "Easyset For Head Shower",
+    "product_segment": "Bathroom Fittings",
+    "design": "EasySET",
+    "product_group": "Head Shower",
+    "selling_price": 19110
+  },
+  {
+    "product_code": "FFAS0925-709500BC0",
+    "name": "Easy Dial For Hand Shower",
+    "product_segment": "Bathroom Fittings",
+    "design": "EasySET",
+    "product_group": "Thermostats",
+    "selling_price": 17380
+  },
+  {
+    "product_code": "FFAS0926-709500BC0",
+    "name": "Easy Dial For Head Shower",
+    "product_segment": "Bathroom Fittings",
+    "design": "EasySET",
+    "product_group": "Thermostats",
+    "selling_price": 17380
+  },
+  {
+    "product_code": "FFAS0927-709500BC0",
+    "name": "Easy Dial For Body Shower",
+    "product_segment": "Bathroom Fittings",
+    "design": "EasySET",
+    "product_group": "Thermostats",
+    "selling_price": 17380
+  },
+  {
+    "product_code": "FFAS0930-000500BC0",
+    "name": "Conceal Thermostatic Mixer With Trim",
+    "product_segment": "Bathroom Fittings",
+    "design": "EasySET",
+    "product_group": "Thermostats",
+    "selling_price": 26360
+  },
+  {
+    "product_code": "FFAS0930-709440BF0",
+    "name": "Conceal Thermostatic Mixer With Trim",
+    "product_segment": "Bathroom Fittings",
+    "design": "EasySET",
+    "product_group": "Thermostats",
+    "selling_price": 28460
+  },
+  {
+    "product_code": "FFAS0930-709AL0BF0",
+    "name": "Conceal Thermostatic Mixer With Trim",
+    "product_segment": "Bathroom Fittings",
+    "design": "EasySET",
+    "product_group": "Thermostats",
+    "selling_price": 28980
+  },
+  {
+    "product_code": "FFAS0930-709GL0BF0",
+    "name": "Conceal Thermostatic Mixer With Trim",
+    "product_segment": "Bathroom Fittings",
+    "design": "EasySET",
+    "product_group": "Thermostats",
+    "selling_price": 28980
+  },
+  {
+    "product_code": "FFAS0930-000A00BF0",
+    "name": "Conceal Thermostatic Mixer With Trim",
+    "product_segment": "Bathroom Fittings",
+    "design": "EasySET",
+    "product_group": "Thermostats",
+    "selling_price": 28980
+  },
+  {
+    "product_code": "FFAS0930-000DA0BF0",
+    "name": "Conceal Thermostatic Mixer With Trim",
+    "product_segment": "Bathroom Fittings",
+    "design": "EasySET",
+    "product_group": "Thermostats",
+    "selling_price": 28980
+  },
+  {
+    "product_code": "FFAS4954-601500BC0",
+    "name": "Easy Set Exposed Bath & Shower Auto Temperature Mixer With Shower Kit",
+    "product_segment": "Bathroom Fittings",
+    "design": "EasySET",
+    "product_group": "Thermostats",
+    "selling_price": 69140
+  },
+  {
+    "product_code": "FFAS4954-609500BC0",
+    "name": "Easy Set Exposed Bath & Shower Auto Temperature Mixer",
+    "product_segment": "Bathroom Fittings",
+    "design": "EasySET",
+    "product_group": "Thermostats",
+    "selling_price": 62060
+  },
+  {
+    "product_code": "FFAS4955-701440BF0",
+    "name": "Easyset  Exposed Shower Auto Temperature",
+    "product_segment": "Bathroom Fittings",
+    "design": "EasySET",
+    "product_group": "Thermostats",
+    "selling_price": 89620
+  },
+  {
+    "product_code": "FFAS4955-701500BC0",
+    "name": "Easy Set Exposed Bath & Shower Auto Temperature Mixer With Inte",
+    "product_segment": "Bathroom Fittings",
+    "design": "EasySET",
+    "product_group": "Thermostats",
+    "selling_price": 82950
+  },
+  {
+    "product_code": "FFAS4956-601440BF0",
+    "name": "Easyset Exposed Auto Temperature Shower",
+    "product_segment": "Bathroom Fittings",
+    "design": "EasySET",
+    "product_group": "Thermostats",
+    "selling_price": 104530
+  },
+  {
+    "product_code": "FFAS4956-601500BC0",
+    "name": "Easy Set Exposed Bath & Shower 3-Way Rainshower System",
+    "product_segment": "Bathroom Fittings",
+    "design": "EasySET",
+    "product_group": "Thermostats",
+    "selling_price": 96810
+  },
+  {
+    "product_code": "FFAS4956-601AL0BF0",
+    "name": "Easyset Exposed Auto Temperature Shower",
+    "product_segment": "Bathroom Fittings",
+    "design": "EasySET",
+    "product_group": "Thermostats",
+    "selling_price": 106470
+  },
+  {
+    "product_code": "FFAS4956-601GL0BF0",
+    "name": "Easyset Exposed Auto Temperature Shower",
+    "product_segment": "Bathroom Fittings",
+    "design": "EasySET",
+    "product_group": "Thermostats",
+    "selling_price": 106470
+  },
+  {
+    "product_code": "FFAS4956-601A00BF0",
+    "name": "Easyset Exposed Auto Temperature Shower",
+    "product_segment": "Bathroom Fittings",
+    "design": "EasySET",
+    "product_group": "Thermostats",
+    "selling_price": 106470
+  },
+  {
+    "product_code": "FFAS4956-601DA0BF0",
+    "name": "Easyset Exposed Auto Temperature Shower",
+    "product_segment": "Bathroom Fittings",
+    "design": "EasySET",
+    "product_group": "Thermostats",
+    "selling_price": 106470
+  },
+
+  {
+    "product_code": "FFAS0286-908500BC0",
+    "name": "Heritagetoilet Brush",
+    "product_segment": "Bathroom Fittings",
+    "design": "Heritage",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 6770
+  },
+  {
+    "product_code": "FFAS0287-908500BC0",
+    "name": "Heritage Tissue Holder",
+    "product_segment": "Bathroom Fittings",
+    "design": "Heritage",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 7250
+  },
+  {
+    "product_code": "FFAS0290-908500BC0",
+    "name": "Heritage Towel Ring",
+    "product_segment": "Bathroom Fittings",
+    "design": "Heritage",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 3830
+  },
+  {
+    "product_code": "FFAS0294-908500BC0",
+    "name": "Heritagedul Towel Rack",
+    "product_segment": "Bathroom Fittings",
+    "design": "Heritage",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 11920
+  },
+  {
+    "product_code": "FFAS0282-908500BC0",
+    "name": "Heritage Soap Dish",
+    "product_segment": "Bathroom Fittings",
+    "design": "Heritage",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 4780
+  },
+  {
+    "product_code": "FFAS0284-908500BC0",
+    "name": "Heritagecup Holder",
+    "product_segment": "Bathroom Fittings",
+    "design": "Heritage",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 4780
+  },
+  {
+    "product_code": "FFAS0281-908500BC0",
+    "name": "Heritage Robe Hook",
+    "product_segment": "Bathroom Fittings",
+    "design": "Heritage",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 2520
+  },
+  {
+    "product_code": "FFAS0295-908500BC0",
+    "name": "Heritagetowel Shelf",
+    "product_segment": "Bathroom Fittings",
+    "design": "Heritage",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 17430
+  },
+  {
+    "product_code": "FFAS0293-908500BC0",
+    "name": "Heritagetowel Rack",
+    "product_segment": "Bathroom Fittings",
+    "design": "Heritage",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 7250
+  },
+
+  {
+    "product_code": "FFAS1603-101500BF0",
+    "name": "Kastello 3H Basin Faucet",
+    "product_segment": "Bathroom Fittings",
+    "design": "Kastello",
+    "product_group": "Basin Mixer",
+    "selling_price": 39850
+  },
+  {
+    "product_code": "FFAS1604-101501BF0",
+    "name": "In-Wall Dc Vessel Basin Mixer W/O Pop-Up",
+    "product_segment": "Bathroom Fittings",
+    "design": "Kastello",
+    "product_group": "Basin Mixer",
+    "selling_price": 33920
+  },
+  {
+    "product_code": "FFAS1601-101500BF0",
+    "name": "Basin Mixer W/ Pop-Up Drain",
+    "product_segment": "Bathroom Fittings",
+    "design": "Kastello",
+    "product_group": "Basin Mixer",
+    "selling_price": 27620
+  },
+  {
+    "product_code": "FFAS1600-601500BF0",
+    "name": "Dm Bath Filler W/ Handspray",
+    "product_segment": "Bathroom Fittings",
+    "design": "Kastello",
+    "product_group": "Bath Filler",
+    "selling_price": 53710
+  },
+  {
+    "product_code": "FFAS1621-608500ZF0",
+    "name": "Concealed B&S Mixing Valve W/O U-Box",
+    "product_segment": "Bathroom Fittings",
+    "design": "Kastello",
+    "product_group": "Bath&Shower Mixer",
+    "selling_price": 30400
+  },
+
+  {
+    "product_code": "FFAS0802-101500BF0",
+    "name": "Basin Mixer With Pop Up  - Vessel",
+    "product_segment": "Bathroom Fittings",
+    "design": "La Moda",
+    "product_group": "Basin Mixer",
+    "selling_price": 26460
+  },
+  {
+    "product_code": "FFAS0801-101500BF0",
+    "name": "Basin Mixer With Pop Up",
+    "product_segment": "Bathroom Fittings",
+    "design": "La Moda",
+    "product_group": "Basin Mixer",
+    "selling_price": 21160
+  },
+  {
+    "product_code": "FFAS0816-602500BF0",
+    "name": "Freestanding B&S Mixer W/Shw Kits(Thermo",
+    "product_segment": "Bathroom Fittings",
+    "design": "La Moda",
+    "product_group": "Bath&Shower Mixer",
+    "selling_price": 123320
+  },
+  {
+    "product_code": "FFAS0821-608500BF0",
+    "name": "Concealed B&S Mixer (Thermostatic) W/O U",
+    "product_segment": "Bathroom Fittings",
+    "design": "La Moda",
+    "product_group": "Bath&Shower Mixer",
+    "selling_price": 21950
+  },
+
+  {
+    "product_code": "FFAS6816-601500BF0",
+    "name": "Floor Standing Bath Filler",
+    "product_segment": "Bathroom Fittings",
+    "design": "Melange",
+    "product_group": "Bath&Shower Mixer",
+    "selling_price": 104480
+  },
+
+  {
+    "product_code": "FFAS0904-102501BF0",
+    "name": "Milano In-Wall Basin Mixer W/O Puw",
+    "product_segment": "Bathroom Fittings",
+    "design": "Milano",
+    "product_group": "Basin Mixer",
+    "selling_price": 15700
+  },
+  {
+    "product_code": "FFAS0902-102501BF0",
+    "name": "Milano Extended Basin Mixer W/O Puw",
+    "product_segment": "Bathroom Fittings",
+    "design": "Milano",
+    "product_group": "Basin Mixer",
+    "selling_price": 15590
+  },
+  {
+    "product_code": "FFAS9714-000500BF0",
+    "name": "Concealed Tub Spout",
+    "product_segment": "Bathroom Fittings",
+    "design": "Milano",
+    "product_group": "Bath Filler",
+    "selling_price": 7300
+  },
+  {
+    "product_code": "FFAS0901-102500BF0",
+    "name": "Milano Basin Mixer W/ Puw",
+    "product_segment": "Bathroom Fittings",
+    "design": "Milano",
+    "product_group": "Basin Mixer",
+    "selling_price": 12080
+  },
+  {
+    "product_code": "FFAS0906-102500BF0",
+    "name": "Milano Basin Mono W/O Puw",
+    "product_segment": "Bathroom Fittings",
+    "design": "Milano",
+    "product_group": "Basin Mono",
+    "selling_price": 9400
+  },
+  {
+    "product_code": "FFAS0911-602501BF0",
+    "name": "Milano Exposed B&S Mixer W/O Shower Kis",
+    "product_segment": "Bathroom Fittings",
+    "design": "Milano",
+    "product_group": "Bath&Shower Mixer",
+    "selling_price": 22580
+  },
+  {
+    "product_code": "FFAS0921-609500BF0",
+    "name": "Milano Concealed B&S?Control Valve",
+    "product_segment": "Bathroom Fittings",
+    "design": "Milano",
+    "product_group": "Bath&Shower Mixer",
+    "selling_price": 17430
+  },
+  {
+    "product_code": "FFAS0922-709500BF0",
+    "name": "Milano Concealed Shower?Control Valve",
+    "product_segment": "Bathroom Fittings",
+    "design": "Milano",
+    "product_group": "Shower Mixer",
+    "selling_price": 15230
+  },
+
+  {
+    "product_code": "FFAS0701-151500BA0",
+    "name": "Wf-0701.151.50\\Neo Modern Single Hole La",
+    "product_segment": "Bathroom Fittings",
+    "design": "Neo Modern",
+    "product_group": "Basin Mixer",
+    "selling_price": 6460
+  },
+  {
+    "product_code": "FFAS0703-151500BA0",
+    "name": "Wf-0703.151.50\\Neo Modern Single Hole Ex",
+    "product_segment": "Bathroom Fittings",
+    "design": "Neo Modern",
+    "product_group": "Basin Mixer",
+    "selling_price": 10080
+  },
+  {
+    "product_code": "FFAS0707-101500BF0",
+    "name": "Neo Modern Single Hole Basin",
+    "product_segment": "Bathroom Fittings",
+    "design": "Neo Modern",
+    "product_group": "Basin Mono",
+    "selling_price": 9500
+  },
+  {
+    "product_code": "FFAS0706-151500BA0",
+    "name": "Wf-0706.151.50\\Neo Modern Single Hole Mo",
+    "product_segment": "Bathroom Fittings",
+    "design": "Neo Modern",
+    "product_group": "Basin Mono",
+    "selling_price": 5880
+  },
+  {
+    "product_code": "FF1-CN521X00000477",
+    "name": "Neo Modern Bath Spout - Chromee",
+    "product_segment": "Bathroom Fittings",
+    "design": "Neo Modern",
+    "product_group": "Bath Filler",
+    "selling_price": 3310
+  },
+  {
+    "product_code": "FFAS0721-659500BA0",
+    "name": "Wf-0721.659.50\\Neo Modern Concealed Bns",
+    "product_segment": "Bathroom Fittings",
+    "design": "Neo Modern",
+    "product_group": "Bath&Shower Mixer",
+    "selling_price": 9770
+  },
+  {
+    "product_code": "FFAS0714-604090BA0",
+    "name": "Neo Modern L - Bend Mixer - White",
+    "product_segment": "Bathroom Fittings",
+    "design": "Neo Modern",
+    "product_group": "Bath&Shower Mixer",
+    "selling_price": 9770
+  },
+  {
+    "product_code": "FFAS0714-604500BA0",
+    "name": "Neo Modern L - Bend Mixer - Chrome",
+    "product_segment": "Bathroom Fittings",
+    "design": "Neo Modern",
+    "product_group": "Bath&Shower Mixer",
+    "selling_price": 9770
+  },
+  {
+    "product_code": "FFAS0711-651500BA0",
+    "name": "Wf-0711.651.50\\Neo Modern Exposed Bns Fa",
+    "product_segment": "Bathroom Fittings",
+    "design": "Neo Modern",
+    "product_group": "Bath&Shower Mixer",
+    "selling_price": 12080
+  },
+  {
+    "product_code": "FFAS0722-709500BF0",
+    "name": "Concealed Shower Mixing Valve",
+    "product_segment": "Bathroom Fittings",
+    "design": "Neo Modern",
+    "product_group": "Shower Mixer",
+    "selling_price": 6410
+  },
+  {
+    "product_code": "FFAS0726-701500BF0",
+    "name": "Exposed Shower Mono Without Shower Kits",
+    "product_segment": "Bathroom Fittings",
+    "design": "Neo Modern",
+    "product_group": "Shower Mono",
+    "selling_price": 6090
+  },
+
+  {
+    "product_code": "FFAS6501-102500BF0",
+    "name": "Seva Basin Mixer Without Pop-Up Drain",
+    "product_segment": "Bathroom Fittings",
+    "design": "Seva",
+    "product_group": "Basin Mixer",
+    "selling_price": 8140
+  },
+  {
+    "product_code": "FFAS6506-101500BF0",
+    "name": "Seva Basin Mono Without Pop-Up Drain",
+    "product_segment": "Bathroom Fittings",
+    "design": "Seva",
+    "product_group": "Basin Mono",
+    "selling_price": 7880
+  },
+  {
+    "product_code": "FFAS6511-601500BF0",
+    "name": "Exposed Bath & Shower Mixer With Shower Kits",
+    "product_segment": "Bathroom Fittings",
+    "design": "Seva",
+    "product_group": "Bath&Shower Mixer",
+    "selling_price": 14230
+  },
+  {
+    "product_code": "FFAS6583-908500BF0",
+    "name": "Seva  Glass  Holder",
+    "product_segment": "Bathroom Fittings",
+    "design": "Seva",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 2520
+  },
+  {
+    "product_code": "FFAS6582-908500BF0",
+    "name": "Simple Soap Dish",
+    "product_segment": "Bathroom Fittings",
+    "design": "Seva",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 2420
+  },
+  {
+    "product_code": "FFAS6590-908500BF0",
+    "name": "Seva  Towel  Ring",
+    "product_segment": "Bathroom Fittings",
+    "design": "Seva",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 3150
+  },
+  {
+    "product_code": "FFAS6586-908500BF0",
+    "name": "Simple Tissue Holder",
+    "product_segment": "Bathroom Fittings",
+    "design": "Seva",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 3100
+  },
+  {
+    "product_code": "FFAS6581-908500BF0",
+    "name": "Seva Robe Hook",
+    "product_segment": "Bathroom Fittings",
+    "design": "Seva",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 1840
+  },
+  {
+    "product_code": "FFAS6589-908500BF0",
+    "name": "Seva Towel Shelf(Round)",
+    "product_segment": "Bathroom Fittings",
+    "design": "Seva",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 8610
+  },
+  {
+    "product_code": "FFAS6588-908500BF0",
+    "name": "Seva Towel Holder",
+    "product_segment": "Bathroom Fittings",
+    "design": "Seva",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 3150
+  },
+  {
+    "product_code": "FFAS6512-701500BF0",
+    "name": "Seva Exposed Shower Mixer With Shower Ki",
+    "product_segment": "Bathroom Fittings",
+    "design": "Seva",
+    "product_group": "Shower Mixer",
+    "selling_price": 11810
+  },
+  {
+    "product_code": "FFAS6521-609500BF0",
+    "name": "Concealed Bath & Shower Mixing Valve",
+    "product_segment": "Bathroom Fittings",
+    "design": "Seva",
+    "product_group": "Shower Mixer",
+    "selling_price": 8240
+  },
+
+  {
+    "product_code": "FFAS1704-1015L0BC0",
+    "name": "Signature Wall Mounted Basin Mixer With Pop-Up Drain",
+    "product_segment": "Bathroom Fittings",
+    "design": "Signature",
+    "product_group": "Basin Mixer",
+    "selling_price": 27460
+  },
+  {
+    "product_code": "FFAS1704-101A00BF0",
+    "name": "Signature Wall Mounted Basin Mixer With Pop-Up Drain",
+    "product_segment": "Bathroom Fittings",
+    "design": "Signature",
+    "product_group": "Basin Mixer",
+    "selling_price": 29510
+  },
+  {
+    "product_code": "FFAS1704-101DA0BF0",
+    "name": "Signature Wall Mounted Basin Mixer With Pop-Up Drain",
+    "product_segment": "Bathroom Fittings",
+    "design": "Signature",
+    "product_group": "Basin Mixer",
+    "selling_price": 29510
+  },
+  {
+    "product_code": "FFAS1704-101GL0BF0",
+    "name": "Signature Wall Mounted Basin Mixer With Pop-Up Drain",
+    "product_segment": "Bathroom Fittings",
+    "design": "Signature",
+    "product_group": "Basin Mixer",
+    "selling_price": 29510
+  },
+  {
+    "product_code": "FFAS1703-1015L0BC0",
+    "name": "Signature 3-Hole Basin Mixer With Pop-Up Drain",
+    "product_segment": "Bathroom Fittings",
+    "design": "Signature",
+    "product_group": "Basin Mixer",
+    "selling_price": 24730
+  },
+  {
+    "product_code": "FFAS1703-101A00BF0",
+    "name": "Signature 3-Hole Basin Mixer With Pop-Up Drain",
+    "product_segment": "Bathroom Fittings",
+    "design": "Signature",
+    "product_group": "Basin Mixer",
+    "selling_price": 28400
+  },
+  {
+    "product_code": "FFAS1703-101DA0BF0",
+    "name": "Signature 3-Hole Basin Mixer With Pop-Up Drain",
+    "product_segment": "Bathroom Fittings",
+    "design": "Signature",
+    "product_group": "Basin Mixer",
+    "selling_price": 28400
+  },
+  {
+    "product_code": "FFAS1703-101GL0BF0",
+    "name": "Signature 3-Hole Basin Mixer With Pop-Up Drain",
+    "product_segment": "Bathroom Fittings",
+    "design": "Signature",
+    "product_group": "Basin Mixer",
+    "selling_price": 28400
+  },
+  {
+    "product_code": "FFAS1702-1015L0BC0",
+    "name": "Signature Single Hole Extended Basin Mixer With Pop-Up Drain",
+    "product_segment": "Bathroom Fittings",
+    "design": "Signature",
+    "product_group": "Basin Mixer",
+    "selling_price": 21320
+  },
+  {
+    "product_code": "FFAS1702-101A00BF0",
+    "name": "Signature Single Hole Extended Basin Mixer With Pop-Up Drain",
+    "product_segment": "Bathroom Fittings",
+    "design": "Signature",
+    "product_group": "Basin Mixer",
+    "selling_price": 23780
+  },
+  {
+    "product_code": "FFAS1702-101DA0BF0",
+    "name": "Signature Single Hole Extended Basin Mixer With Pop-Up Drain",
+    "product_segment": "Bathroom Fittings",
+    "design": "Signature",
+    "product_group": "Basin Mixer",
+    "selling_price": 23780
+  },
+  {
+    "product_code": "FFAS1702-101GL0BF0",
+    "name": "Signature Single Hole Extended Basin Mixer With Pop-Up Drain",
+    "product_segment": "Bathroom Fittings",
+    "design": "Signature",
+    "product_group": "Basin Mixer",
+    "selling_price": 23780
+  },
+  {
+    "product_code": "FFAS1701-1015L0BC0",
+    "name": "Signature Single Hole Basin Mixer With Pop-Up Drain",
+    "product_segment": "Bathroom Fittings",
+    "design": "Signature",
+    "product_group": "Basin Mixer",
+    "selling_price": 15120
+  },
+  {
+    "product_code": "FFAS1701-101A00BF0",
+    "name": "Signature Single Hole Basin Mixer With Pop-Up Drain",
+    "product_segment": "Bathroom Fittings",
+    "design": "Signature",
+    "product_group": "Basin Mixer",
+    "selling_price": 17380
+  },
+  {
+    "product_code": "FFAS1701-101DA0BF0",
+    "name": "Signature Single Hole Basin Mixer With Pop-Up Drain",
+    "product_segment": "Bathroom Fittings",
+    "design": "Signature",
+    "product_group": "Basin Mixer",
+    "selling_price": 17380
+  },
+  {
+    "product_code": "FFAS1701-101GL0BF0",
+    "name": "Signature Single Hole Basin Mixer With Pop-Up Drain",
+    "product_segment": "Bathroom Fittings",
+    "design": "Signature",
+    "product_group": "Basin Mixer",
+    "selling_price": 17380
+  },
+  {
+    "product_code": "FFAS1707-1015L0BA0",
+    "name": "Signature Extended Basin Mono Without Pop-Up Drain",
+    "product_segment": "Bathroom Fittings",
+    "design": "Signature",
+    "product_group": "Basin Mono",
+    "selling_price": 20370
+  },
+  {
+    "product_code": "FFAS1706-1015L0BA0",
+    "name": "Signature Basin Mono Without Pop-Up Drain",
+    "product_segment": "Bathroom Fittings",
+    "design": "Signature",
+    "product_group": "Basin Mono",
+    "selling_price": 9920
+  },
+  {
+    "product_code": "FFAS1772-701500BC0",
+    "name": "Signature Exposed Bath & Shower Mixer With Integrated Rain Shower Kit",
+    "product_segment": "Bathroom Fittings",
+    "design": "Signature",
+    "product_group": "Bath&Shower Mixer",
+    "selling_price": 66360
+  },
+  {
+    "product_code": "FFAS1772-701A00BF0",
+    "name": "Signature Exposed Bath & Shower Mixer With Integrated Rain Shower Kit",
+    "product_segment": "Bathroom Fittings",
+    "design": "Signature",
+    "product_group": "Bath&Shower Mixer",
+    "selling_price": 76280
+  },
+  {
+    "product_code": "FFAS1772-701DA0BF0",
+    "name": "Signature Exposed Bath & Shower Mixer With Integrated Rain Shower Kit",
+    "product_segment": "Bathroom Fittings",
+    "design": "Signature",
+    "product_group": "Bath&Shower Mixer",
+    "selling_price": 76280
+  },
+  {
+    "product_code": "FFAS1772-701GL0BF0",
+    "name": "Signature Exposed Bath & Shower Mixer With Integrated Rain Shower Kit",
+    "product_segment": "Bathroom Fittings",
+    "design": "Signature",
+    "product_group": "Bath&Shower Mixer",
+    "selling_price": 76280
+  },
+  {
+    "product_code": "FFAS1711-609500BC0",
+    "name": "Signature Exposed Bath & Shower Mixer",
+    "product_segment": "Bathroom Fittings",
+    "design": "Signature",
+    "product_group": "Bath&Shower Mixer",
+    "selling_price": 34760
+  },
+  {
+    "product_code": "FFAS1711-609A00BF0",
+    "name": "Signature Exposed Bath & Shower Mixer",
+    "product_segment": "Bathroom Fittings",
+    "design": "Signature",
+    "product_group": "Bath&Shower Mixer",
+    "selling_price": 40010
+  },
+  {
+    "product_code": "FFAS1711-609DA0BF0",
+    "name": "Signature Exposed Bath & Shower Mixer",
+    "product_segment": "Bathroom Fittings",
+    "design": "Signature",
+    "product_group": "Bath&Shower Mixer",
+    "selling_price": 40010
+  },
+  {
+    "product_code": "FFAS1711-609GL0BF0",
+    "name": "Signature Exposed Bath & Shower Mixer",
+    "product_segment": "Bathroom Fittings",
+    "design": "Signature",
+    "product_group": "Bath&Shower Mixer",
+    "selling_price": 40010
+  },
+  {
+    "product_code": "FFAS1721-609500BC0",
+    "name": "Signature Concealed Bath & Shower Mixer",
+    "product_segment": "Bathroom Fittings",
+    "design": "Signature",
+    "product_group": "Bath&Shower Mixer",
+    "selling_price": 21630
+  },
+  {
+    "product_code": "FFAS1721-609A00BF0",
+    "name": "Signature Concealed Bath & Shower Mixer",
+    "product_segment": "Bathroom Fittings",
+    "design": "Signature",
+    "product_group": "Bath&Shower Mixer",
+    "selling_price": 24890
+  },
+  {
+    "product_code": "FFAS1721-609DA0BF0",
+    "name": "Signature Concealed Bath & Shower Mixer",
+    "product_segment": "Bathroom Fittings",
+    "design": "Signature",
+    "product_group": "Bath&Shower Mixer",
+    "selling_price": 24890
+  },
+  {
+    "product_code": "FFAS1721-609GL0BF0",
+    "name": "Signature Concealed Bath & Shower Mixer",
+    "product_segment": "Bathroom Fittings",
+    "design": "Signature",
+    "product_group": "Bath&Shower Mixer",
+    "selling_price": 24890
+  },
+  {
+    "product_code": "FFAS1712-709500BC0",
+    "name": "Signature Exposed Shower Mixer",
+    "product_segment": "Bathroom Fittings",
+    "design": "Signature",
+    "product_group": "Shower Mixer",
+    "selling_price": 20740
+  },
+  {
+    "product_code": "FFAS1712-709A00BF0",
+    "name": "Signature Exposed Shower Mixer",
+    "product_segment": "Bathroom Fittings",
+    "design": "Signature",
+    "product_group": "Shower Mixer",
+    "selling_price": 23840
+  },
+  {
+    "product_code": "FFAS1712-709DA0BF0",
+    "name": "Signature Exposed Shower Mixer",
+    "product_segment": "Bathroom Fittings",
+    "design": "Signature",
+    "product_group": "Shower Mixer",
+    "selling_price": 23840
+  },
+  {
+    "product_code": "FFAS1712-709GL0BF0",
+    "name": "Signature Exposed Shower Mixer",
+    "product_segment": "Bathroom Fittings",
+    "design": "Signature",
+    "product_group": "Shower Mixer",
+    "selling_price": 23840
+  },
+  {
+    "product_code": "FFAS1722-709500BC0",
+    "name": "Signature Concealed Shower Mixer",
+    "product_segment": "Bathroom Fittings",
+    "design": "Signature",
+    "product_group": "Shower Mixer",
+    "selling_price": 15230
+  },
+  {
+    "product_code": "FFAS1722-709A00BF0",
+    "name": "Signature Concealed Shower Mixer",
+    "product_segment": "Bathroom Fittings",
+    "design": "Signature",
+    "product_group": "Shower Mixer",
+    "selling_price": 17480
+  },
+  {
+    "product_code": "FFAS1722-709DA0BF0",
+    "name": "Signature Concealed Shower Mixer",
+    "product_segment": "Bathroom Fittings",
+    "design": "Signature",
+    "product_group": "Shower Mixer",
+    "selling_price": 17480
+  },
+  {
+    "product_code": "FFAS1722-709GL0BF0",
+    "name": "Signature Concealed Shower Mixer",
+    "product_segment": "Bathroom Fittings",
+    "design": "Signature",
+    "product_group": "Shower Mixer",
+    "selling_price": 17480
+  },
+  {
+    "product_code": "FFAS1726-701500BA0",
+    "name": "Signature Exposed Shower Mono",
+    "product_segment": "Bathroom Fittings",
+    "design": "Signature",
+    "product_group": "Shower Mono",
+    "selling_price": 8300
+  },
+  {
+    "product_code": "FFAS6587-908500BF0",
+    "name": "Simple Towel Shelf",
+    "product_segment": "Bathroom Fittings",
+    "design": "Simple",
+    "product_group": "Bathroom Accessories",
+    "selling_price": 7140
+  },
+
+  {
+    "product_code": "FFAST501-151500BF0",
+    "name": "Simplicity Square Basin Mixer W/O Pop Up",
+    "product_segment": "Bathroom Fittings",
+    "design": "Simplicity Square",
+    "product_group": "Basin Mixer",
+    "selling_price": 7510
+  },
+  {
+    "product_code": "FFAST506-151500BA0",
+    "name": "Simplicity Square Basin Mono",
+    "product_segment": "Bathroom Fittings",
+    "design": "Simplicity Square",
+    "product_group": "Basin Mono",
+    "selling_price": 8300
+  },
+  {
+    "product_code": "103835AL01",
+    "name": "Simplicity Square Bath Spout",
+    "product_segment": "Bathroom Fittings",
+    "design": "Simplicity",
+    "product_group": "Bath Filler",
+    "selling_price": 5410
+  },
+  {
+    "product_code": "103835GL01",
+    "name": "Simplicity Square Bath Spout",
+    "product_segment": "Bathroom Fittings",
+    "design": "Simplicity",
+    "product_group": "Bath Filler",
+    "selling_price": 5410
+  },
+  {
+    "product_code": "103835A001",
+    "name": "Simplicity Square Bath Spout",
+    "product_segment": "Bathroom Fittings",
+    "design": "Simplicity",
+    "product_group": "Bath Filler",
+    "selling_price": 5410
+  },
+  {
+    "product_code": "103835DA01",
+    "name": "Simplicity Square Bath Spout",
+    "product_segment": "Bathroom Fittings",
+    "design": "Simplicity",
+    "product_group": "Bath Filler",
+    "selling_price": 5410
+  },
+  {
+    "product_code": "FF1-CN521X00000480",
+    "name": "Simplicity Square Bath Spout- Chrome- Ch",
+    "product_segment": "Bathroom Fittings",
+    "design": "Simplicity Square",
+    "product_group": "Bath Filler",
+    "selling_price": 4410
+  },
+  {
+    "product_code": "FF1-CN521X44000480",
+    "name": "Simplicity Square Bath Spout- Chrome",
+    "product_segment": "Bathroom Fittings",
+    "design": "Simplicity",
+    "product_group": "Bath Filler",
+    "selling_price": 4990
+  },
+  {
+    "product_code": "FFAST521-659500BF0",
+    "name": "Simplicity Square Concealed Bath & Shw",
+    "product_segment": "Bathroom Fittings",
+    "design": "Simplicity Square",
+    "product_group": "Bath&Shower Mixer",
+    "selling_price": 11290
+  },
+  {
+    "product_code": "FFAST526-701500BF0",
+    "name": "Simplicity Square Exposed Shower Mono",
+    "product_segment": "Bathroom Fittings",
+    "design": "Simplicity Square",
+    "product_group": "Shower Mono",
+    "selling_price": 8140
+  },
+
+  {
+    "product_code": "F22400-CHACTN",
+    "name": "Cool Self Closing Mono Basin Faucet",
+    "product_segment": "Bathroom Fittings",
+    "design": "Universal",
+    "product_group": "Basin Mono",
+    "selling_price": 21740
+  },
+  {
+    "product_code": "FFAS4609-101500BF0",
+    "name": "Frost Self Closing Mono Basin Faucet",
+    "product_segment": "Bathroom Fittings",
+    "design": "Universal",
+    "product_group": "Basin Mono",
+    "selling_price": 11600
+  },
+  {
+    "product_code": "FF1-CN521X00000461",
+    "name": "Rectangle Spout W/ Diverter",
+    "product_segment": "Bathroom Fittings",
+    "design": "Universal",
+    "product_group": "Bath Filler",
+    "selling_price": 7250
+  },
+  {
+    "product_code": "FF1-CN521X00000458",
+    "name": "Minialistic Spout W/ Diverter",
+    "product_segment": "Bathroom Fittings",
+    "design": "Universal",
+    "product_group": "Bath Filler",
+    "selling_price": 5930
+  },
+  {
+    "product_code": "FFAS0625-000990BF0",
+    "name": "Wf-0625.000.50\\Universal Installation Bo",
+    "product_segment": "Bathroom Fittings",
+    "design": "Universal",
+    "product_group": "Rough-ins/Concealed bodies",
+    "selling_price": 9350
+  },
+
+  {
+    "product_code": "FFAST601-101500BF0",
+    "name": "Winston Pillar Tap-Lever Handle-Export",
+    "product_segment": "Bathroom Fittings",
+    "design": "Winston",
+    "product_group": "Basin Mono",
+    "selling_price": 3890
+  },
+  {
+    "product_code": "FFAST701-101500BF0",
+    "name": "Winston Pillar Tap-Cross Handle-Export",
+    "product_segment": "Bathroom Fittings",
+    "design": "Winston",
+    "product_group": "Basin Mono",
+    "selling_price": 4150
+  },
+  {
+    "product_code": "FFAST704-701500BF0",
+    "name": "Winston Exposed Shower Mono (Cross)",
+    "product_segment": "Bathroom Fittings",
+    "design": "Winston",
+    "product_group": "Shower Mono",
+    "selling_price": 2420
+  },
+  {
+    "product_code": "FFAST605-709500BF0",
+    "name": "Winston Concealed Shower Mono (Lever)",
+    "product_segment": "Bathroom Fittings",
+    "design": "Winston",
+    "product_group": "Shower Mono",
+    "selling_price": 3410
+  },
+  {
+    "product_code": "FFAST705-709500BF0",
+    "name": "Winston Concealed Shower Mono (Cross)",
+    "product_segment": "Bathroom Fittings",
+    "design": "Winston",
+    "product_group": "Shower Mono",
+    "selling_price": 3410
+  },
+  {
+    "product_code": "FFAST603-601500BF0",
+    "name": "Winston Exposed B&S Mono (2 Ways)(Lever)",
+    "product_segment": "Bathroom Fittings",
+    "design": "Winston",
+    "product_group": "Walltap Mono",
+    "selling_price": 4780
+  },
+  {
+    "product_code": "FFAST702-000500BF0",
+    "name": "Winston Wall Tap (Cross Handle)",
+    "product_segment": "Bathroom Fittings",
+    "design": "Winston",
+    "product_group": "Walltap Mono",
+    "selling_price": 2680
+  },
+  {
+    "product_code": "FFAST602-000500BF0",
+    "name": "Winston Wall Tap (Lever Handle)",
+    "product_segment": "Bathroom Fittings",
+    "design": "Winston",
+    "product_group": "Walltap Mono",
+    "selling_price": 2570
+  },
+  {
+    "product_code": "FFAST604-701500BF0",
+    "name": "Winston Exposed Shower Mono (Lever)",
+    "product_segment": "Bathroom Fittings",
+    "design": "Winston",
+    "product_group": "Walltap Mono",
+    "selling_price": 2260
+  },
+  {
+    "product_code": "FFAST703-601500BF0",
+    "name": "Winston Exposed B&S Mono (2 Ways)(Cross)",
+    "product_segment": "Bathroom Fittings",
+    "design": "Winston",
+    "product_group": "Walltap Mono",
+    "selling_price": 5150
+  },
+
+  {
+    "product_code": "FFAST823-109500BF0",
+    "name": "Easyflo Basin Mono",
+    "product_segment": "Bathroom Fittings",
+    "design": "Easyflo",
+    "product_group": "Basin Mono",
+    "selling_price": 8560
+  },
+  {
+    "product_code": "FFAST825-709500BF0",
+    "name": "Easyflo Exposed Shower Mono",
+    "product_segment": "Bathroom Fittings",
+    "design": "EasyFlo",
+    "product_group": "Shower Mono",
+    "selling_price": 5040
+  },
+  {
+    "product_code": "FFAST826-709500BF0",
+    "name": "Easyflo Concealed Shower Mono",
+    "product_segment": "Bathroom Fittings",
+    "design": "EasyFlo",
+    "product_group": "Shower Mono",
+    "selling_price": 5670
+  },
+
+  {
+    "product_code": "CL900PI1-1MA00",
+    "name": "Universal Full Pedestal",
+    "product_segment": "Fixtures (WB)",
+    "design": "Winston",
+    "product_group": "Pedestal",
+    "selling_price": 3100
+  },
+
+  {
+    "product_code": "CL0741PI1-1MA00",
+    "name": "Universal Semi Pedestal",
+    "product_segment": "Fixtures (WB)",
+    "design": "Winston",
+    "product_group": "Semi-Pedestal",
+    "selling_price": 3100
+  },
+  {
+    "product_code": "CL0740S-6DACT",
+    "name": "Concept Semi Pedestal For 0552/0553 Wt",
+    "product_segment": "Fixtures (WB)",
+    "design": "Concept",
+    "product_group": "Semi-Pedestal",
+    "selling_price": 5400
+  },
+  {
+    "product_code": "CL0755F-6DACT",
+    "name": "Active Semi Pedestal For 0955 Wt",
+    "product_segment": "Fixtures (WB)",
+    "design": "Active",
+    "product_group": "Semi-Pedestal",
+    "selling_price": 5900
+  },
+  {
+    "product_code": "CL0707S-6DACT",
+    "name": "Acacia E Semi Pedestal Wt",
+    "product_segment": "Fixtures (WB)",
+    "design": "Acacia E",
+    "product_group": "Semi-Pedestal",
+    "selling_price": 6000
+  },
+  {
+    "product_code": "CCASF712-1000410F0",
+    "name": "Cygnet Semi-Pedestal",
+    "product_segment": "Fixtures (WB)",
+    "design": "Cygnet",
+    "product_group": "Semi-Pedestal",
+    "selling_price": 6300
+  },
+  {
+    "product_code": "CCAS7532-1000411F0",
+    "name": "Wp-7532.000.04.1\\Semi Ped For New Codies",
+    "product_segment": "Fixtures (WB)",
+    "design": "New Codie",
+    "product_group": "Semi-Pedestal",
+    "selling_price": 4600
+  },
+
+  {
+    "product_code": "CL0294F1-6DA10",
+    "name": "Concept Vessel 500Mm",
+    "product_segment": "Fixtures (WB)",
+    "design": "Concept",
+    "product_group": "WB Above Counter",
+    "selling_price": 5600
+  },
+  {
+    "product_code": "1016312080",
+    "name": "Loven Vessel 500Mm Ex",
+    "product_segment": "Fixtures (WB)",
+    "design": "Loven",
+    "product_group": "WB Above Counter",
+    "selling_price": 6600
+  },
+  {
+    "product_code": "CL0613I1-1MA00",
+    "name": "Flexio Vessel 500Mm",
+    "product_segment": "Fixtures (WB)",
+    "design": "Flexio",
+    "product_group": "WB Above Counter",
+    "selling_price": 7450
+  },
+  {
+    "product_code": "CCASF605-0000410F0",
+    "name": "White Round Bowl Lava",
+    "product_segment": "Fixtures (WB)",
+    "design": "White",
+    "product_group": "WB Above Counter",
+    "selling_price": 10350
+  },
+  {
+    "product_code": "CCASF606-0000410F0",
+    "name": "White Square Bowl Lava",
+    "product_segment": "Fixtures (WB)",
+    "design": "White",
+    "product_group": "WB Above Counter",
+    "selling_price": 10800
+  },
+  {
+    "product_code": "CL0950I-6DACTLA",
+    "name": "Active Vessel 50Cm Wt",
+    "product_segment": "Fixtures (WB)",
+    "design": "Active",
+    "product_group": "WB Above Counter",
+    "selling_price": 11350
+  },
+  {
+    "product_code": "CL0500I-6DACTLA",
+    "name": "Vallo Above Countertop Basin Wt",
+    "product_segment": "Fixtures (WB)",
+    "design": "Vallo",
+    "product_group": "WB Above Counter",
+    "selling_price": 11900
+  },
+  {
+    "product_code": "CCASF445-1010410F0",
+    "name": "Mizu Basin Size 45Cmo,Heaii",
+    "product_segment": "Fixtures (WB)",
+    "design": "Mizu",
+    "product_group": "WB Above Counter",
+    "selling_price": 12750
+  },
+  {
+    "product_code": "CL0509I-6DACTLA",
+    "name": "Acacia E Round Vessel Basin Wt",
+    "product_segment": "Fixtures (WB)",
+    "design": "Acacia E",
+    "product_group": "WB Above Counter",
+    "selling_price": 13450
+  },
+  {
+    "product_code": "CCASF650-1000410F0",
+    "name": "Milano Vessel 550Mm",
+    "product_segment": "Fixtures (WB)",
+    "design": "Milano",
+    "product_group": "WB Above Counter",
+    "selling_price": 13900
+  },
+  {
+    "product_code": "CCASF446-1010410F0",
+    "name": "Mizu Above-Counter 60Cm Ms Basin Wto,Hea",
+    "product_segment": "Fixtures (WB)",
+    "design": "Mizu",
+    "product_group": "WB Above Counter",
+    "selling_price": 14700
+  },
+  {
+    "product_code": "CCASF633-0000410F0",
+    "name": "Neo Modern Basin Vessel Wt",
+    "product_segment": "Fixtures (WB)",
+    "design": "Neo Modern",
+    "product_group": "WB Above Counter",
+    "selling_price": 14400
+  },
+  {
+    "product_code": "CCASF608-0000410F0",
+    "name": "Ova Oval Above Counter",
+    "product_segment": "Fixtures (WB)",
+    "design": "Ova",
+    "product_group": "WB Above Counter",
+    "selling_price": 14400
+  },
+  {
+    "product_code": "CCASF611-0000410F0",
+    "name": "Square Thin 500Mm Vessel",
+    "product_segment": "Fixtures (WB)",
+    "design": "Flexio",
+    "product_group": "WB Above Counter",
+    "selling_price": 15100
+  },
+  {
+    "product_code": "CCASF646-0000410F0",
+    "name": "Cygnet Vessel Basin 550Mm Wt",
+    "product_segment": "Fixtures (WB)",
+    "design": "Cygnet",
+    "product_group": "WB Above Counter",
+    "selling_price": 15450
+  },
+  {
+    "product_code": "CCASF411-1000410F0",
+    "name": "Acacia Supasleek  Vessel 420Mm",
+    "product_segment": "Fixtures (WB)",
+    "design": "Acacia",
+    "product_group": "WB Above Counter",
+    "selling_price": 15350
+  },
+  {
+    "product_code": "CCAS0628-0000410F0",
+    "name": "Signature 550Mm Vessel",
+    "product_segment": "Fixtures (WB)",
+    "design": "Signature",
+    "product_group": "WB Above Counter",
+    "selling_price": 15350
+  },
+  {
+    "product_code": "CCAS0618-1010410F0",
+    "name": "Signature 550Mm Vessel W Deck Single Hole",
+    "product_segment": "Fixtures (WB)",
+    "design": "Signature",
+    "product_group": "WB Above Counter",
+    "selling_price": 18000
+  },
+  {
+    "product_code": "CCAS0618-1080410F0",
+    "name": "Signature 550Mm Vessel W Deck (8” Hole)",
+    "product_segment": "Fixtures (WB)",
+    "design": "Signature",
+    "product_group": "WB Above Counter",
+    "selling_price": 18900
+  },
+  {
+    "product_code": "CCASF412-1000410F0",
+    "name": "Acacia Supasleek Vessel 550Mm",
+    "product_segment": "Fixtures (WB)",
+    "design": "Acacia",
+    "product_group": "WB Above Counter",
+    "selling_price": 18700
+  },
+  {
+    "product_code": "CCAS0620-1010411A0",
+    "name": "Acacia Neo Vessel 600Mm",
+    "product_segment": "Fixtures (WB)",
+    "design": "Acacia E",
+    "product_group": "WB Above Counter",
+    "selling_price": 20150
+  },
+  {
+    "product_code": "CCASF525-1010410F0",
+    "name": "Kastello 600Mm Vessel Basin",
+    "product_segment": "Fixtures (WB)",
+    "design": "Kastello",
+    "product_group": "WB Above Counter",
+    "selling_price": 21000
+  },
+  {
+    "product_code": "CCASF525-1080410F0",
+    "name": "Kastello 600Mm Vessel Basin (8” Hole)",
+    "product_segment": "Fixtures (WB)",
+    "design": "Kastello",
+    "product_group": "WB Above Counter",
+    "selling_price": 21000
+  },
+  {
+    "product_code": "CCASF420-1010411F0",
+    "name": "Acacia Supasleek Vessel 600Mm With Deck",
+    "product_segment": "Fixtures (WB)",
+    "design": "Acacia",
+    "product_group": "WB Above Counter",
+    "selling_price": 22400
+  },
+  {
+    "product_code": "CCASF602-1000410F0",
+    "name": "La Moda Vessel",
+    "product_segment": "Fixtures (WB)",
+    "design": "La Moda",
+    "product_group": "WB Above Counter",
+    "selling_price": 23650
+  },
+
+  {
+    "product_code": "CCAS0220-1010410F0",
+    "name": "New Codie Corner 350Mm Basin,Single Hole",
+    "product_segment": "Fixtures (WB)",
+    "design": "New Codie",
+    "product_group": "WB Corner",
+    "selling_price": 7900
+  },
+
+  {
+    "product_code": "CL0476I-6DACTLT",
+    "name": "Aqualyn 1-Tap Holes Countertop Lava Wt",
+    "product_segment": "Fixtures (WB)",
+    "design": "Aqualyn",
+    "product_group": "WB Counter Top",
+    "selling_price": 6450
+  },
+  {
+    "product_code": "CL0477I-6DAWDLU",
+    "name": "Ceros Countertop Lavatory Wt",
+    "product_segment": "Fixtures (WB)",
+    "design": "Ceros",
+    "product_group": "WB Counter Top",
+    "selling_price": 7000
+  },
+  {
+    "product_code": "CL0452I-6DAWDLT",
+    "name": "Concept Sphere Countertop 55Cm Basin Wt",
+    "product_segment": "Fixtures (WB)",
+    "design": "Concept Sphere",
+    "product_group": "WB Counter Top",
+    "selling_price": 9000
+  },
+  {
+    "product_code": "CCAS0420-1010410F0",
+    "name": "Signature 550Mm Counter Top Basin",
+    "product_segment": "Fixtures (WB)",
+    "design": "Signature",
+    "product_group": "WB Counter Top",
+    "selling_price": 11900
+  },
+  {
+    "product_code": "CCASF507-1010410F0",
+    "name": "Neo Nobile Countertop Lava, Single Hole",
+    "product_segment": "Fixtures (WB)",
+    "design": "Neo Nobile",
+    "product_group": "WB Counter Top",
+    "selling_price": 18800
+  },
+  {
+    "product_code": "CCASF521-1000410F0",
+    "name": "Fecility Double Countertop Lava 890Mm",
+    "product_segment": "Fixtures (WB)",
+    "design": "Fecility",
+    "product_group": "WB Counter Top",
+    "selling_price": 39900
+  },
+  {
+    "product_code": "CCASF521-1010410F0",
+    "name": "Fecility Double Countertop Lava 890Mm (Single Hole)",
+    "product_segment": "Fixtures (WB)",
+    "design": "Fecility",
+    "product_group": "WB Counter Top",
+    "selling_price": 39900
+  },
+
+  {
+    "product_code": "CCASF307-1010410F0",
+    "name": "White Semi-Countertop Lavaa",
+    "product_segment": "Fixtures (WB)",
+    "design": "White",
+    "product_group": "WB Semi Counter",
+    "selling_price": 9400
+  },
+  {
+    "product_code": "CCASF301-1010410F0",
+    "name": "Milano Semi-Countertop Lava 500Mm(Single",
+    "product_segment": "Fixtures (WB)",
+    "design": "Milano",
+    "product_group": "WB Semi Counter",
+    "selling_price": 10550
+  },
+  {
+    "product_code": "CL0518I-6DACTLS",
+    "name": "Semi-Counter Wash Basin Paramount",
+    "product_segment": "Fixtures (WB)",
+    "design": "Paramount",
+    "product_group": "WB Semi Counter",
+    "selling_price": 12350
+  },
+  {
+    "product_code": "CCAS0320-1010410F0",
+    "name": "Signature 550Mm Semi-Counter Basin",
+    "product_segment": "Fixtures (WB)",
+    "design": "Signature",
+    "product_group": "WB Semi Counter",
+    "selling_price": 12600
+  },
+  {
+    "product_code": "CCASF372-1010410F0",
+    "name": "Acacia Semi-Counter Lava 50 Cm 1Th",
+    "product_segment": "Fixtures (WB)",
+    "design": "Acacia",
+    "product_group": "WB Semi Counter",
+    "selling_price": 12600
+  },
+  {
+    "product_code": "CL0519I-6DACTLS",
+    "name": "Acacia E Semi Counter 50Cm. Lava Wt",
+    "product_segment": "Fixtures (WB)",
+    "design": "Acacia E",
+    "product_group": "WB Semi Counter",
+    "selling_price": 13350
+  },
+  {
+    "product_code": "CCASF419-1080411F0",
+    "name": "Acacia Supasleek Semi Counter Basin 550Mm (3Hole)",
+    "product_segment": "Fixtures (WB)",
+    "design": "Acacia",
+    "product_group": "WB Semi Counter",
+    "selling_price": 21750
+  },
+  {
+    "product_code": "CCASF419-1010411F0",
+    "name": "Acacia Supasleek Semi Counter Basin 550Mm",
+    "product_segment": "Fixtures (WB)",
+    "design": "Acacia",
+    "product_group": "WB Semi Counter",
+    "selling_price": 21750
+  },
+
+  {
+    "product_code": "CL2216I1-1MA00",
+    "name": "Cadet Under Counter Basin 550Mm",
+    "product_segment": "Fixtures (WB)",
+    "design": "Cadet",
+    "product_group": "WB Under Counter",
+    "selling_price": 4900
+  },
+  {
+    "product_code": "C0496000-1MA21",
+    "name": "AS Ovalyn 19inch Undercounter Wash Basin",
+    "product_segment": "Fixtures (WB)",
+    "design": "Cadet",
+    "product_group": "WB Under Counter",
+    "selling_price": 4900
+  },
+  {
+    "product_code": "CCAS0426-1000410F0",
+    "name": "Active Undercounter Basin",
+    "product_segment": "Fixtures (WB)",
+    "design": "Active",
+    "product_group": "WB Under Counter",
+    "selling_price": 7700
+  },
+  {
+    "product_code": "CCAS0440-1000410F0",
+    "name": "Activa Under Counter 60 - Wt",
+    "product_segment": "Fixtures (WB)",
+    "design": "Activa",
+    "product_group": "WB Under Counter",
+    "selling_price": 8400
+  },
+  {
+    "product_code": "CL0474I-6DACTLU",
+    "name": "Studio Undercount Lavatory Wt",
+    "product_segment": "Fixtures (WB)",
+    "design": "Studio",
+    "product_group": "WB Under Counter",
+    "selling_price": 9250
+  },
+  {
+    "product_code": "CCASF514-1000410F0",
+    "name": "Square Thin 500Mm Uc",
+    "product_segment": "Fixtures (WB)",
+    "design": "Flexio",
+    "product_group": "WB Under Counter",
+    "selling_price": 13350
+  },
+  {
+    "product_code": "CCASF513-1000410F0",
+    "name": "Square Thin 600Mm Uc",
+    "product_segment": "Fixtures (WB)",
+    "design": "Flexio",
+    "product_group": "WB Under Counter",
+    "selling_price": 14450
+  },
+  {
+    "product_code": "CL0451I-6DAWDLU",
+    "name": "Concept Cube Undercounter 56Cm Basin Wt",
+    "product_segment": "Fixtures (WB)",
+    "design": "Concept Cube",
+    "product_group": "WB Under Counter",
+    "selling_price": 16000
+  },
+
+  {
+    "product_code": "CCAS1140-1010920C0",
+    "name": "Wheelchair Users Bathroom Lava Aw Us As",
+    "product_segment": "Fixtures (WB)",
+    "design": "Wheel Chair",
+    "product_group": "WB Vessel",
+    "selling_price": 23050
+  },
+  {
+    "product_code": "CC1-CN511MI0000940",
+    "name": "Bracket For Wheelchair User Bathroom",
+    "product_segment": "Fixtures (WB)",
+    "design": "Wheel Chair",
+    "product_group": "WB Vessel",
+    "selling_price": 19450
+  },
+
+  {
+    "product_code": "CCAS0279-1110410A0",
+    "name": "Winston Wall Hung Basin New (Rag Bolt Holes)",
+    "product_segment": "Fixtures (WB)",
+    "design": "Winston",
+    "product_group": "WB Wall Hung",
+    "selling_price": 4900
+  },
+  {
+    "product_code": "CL0945I-6DAWDLW",
+    "name": "New Codie-R 1Th Round Small W/H Lava Wt",
+    "product_segment": "Fixtures (WB)",
+    "design": "New Codie",
+    "product_group": "WB Wall Hung",
+    "selling_price": 5600
+  },
+  {
+    "product_code": "CCAS1530-1010410F0",
+    "name": "New Codie Round 430Mm Basin, Single Hole",
+    "product_segment": "Fixtures (WB)",
+    "design": "New Codie",
+    "product_group": "WB Wall Hung",
+    "selling_price": 8100
+  },
+  {
+    "product_code": "CCAS0254-1010410R0",
+    "name": "Concept 400 Wall Basin Nth As Logo Heaii",
+    "product_segment": "Fixtures (WB)",
+    "design": "Concept",
+    "product_group": "WB Wall Hung",
+    "selling_price": 8750
+  },
+  {
+    "product_code": "CCAS1560-1010410F0",
+    "name": "New Codie Square 430Mm Lava, Single Hole",
+    "product_segment": "Fixtures (WB)",
+    "design": "New Codie",
+    "product_group": "WB Wall Hung",
+    "selling_price": 8550
+  },
+  {
+    "product_code": "CL0953I-6DACTLW",
+    "name": "Neo Modern W/H Basin 55Cm Wt",
+    "product_segment": "Fixtures (WB)",
+    "design": "Neo Modern",
+    "product_group": "WB Wall Hung",
+    "selling_price": 9250
+  },
+  {
+    "product_code": "CL0552I-6DACTLW",
+    "name": "Concept Sphere Wall Hung Basin Wt",
+    "product_segment": "Fixtures (WB)",
+    "design": "Concept Sphere",
+    "product_group": "WB Wall Hung",
+    "selling_price": 9550
+  },
+  {
+    "product_code": "CL0955I-6DACTLW",
+    "name": "Active W/H Lavatory Wt",
+    "product_segment": "Fixtures (WB)",
+    "design": "Active",
+    "product_group": "WB Wall Hung",
+    "selling_price": 10350
+  },
+  {
+    "product_code": "CCASF550-1010410F0",
+    "name": "Concept Cube Lava 550Mm, C",
+    "product_segment": "Fixtures (WB)",
+    "design": "Concept Cube",
+    "product_group": "WB Wall Hung",
+    "selling_price": 10800
+  },
+  {
+    "product_code": "CL0553I-6DACTLW",
+    "name": "Concept D-Shape Wall Hung 55Cm Basin Wt",
+    "product_segment": "Fixtures (WB)",
+    "design": "Concept D",
+    "product_group": "WB Wall Hung",
+    "selling_price": 11200
+  },
+  {
+    "product_code": "CCAS1511-1010410F0",
+    "name": "Cygnet Wall-Hung Lava 550 Mm Single Hol",
+    "product_segment": "Fixtures (WB)",
+    "design": "Cygnet",
+    "product_group": "WB Wall Hung",
+    "selling_price": 14450
+  },
+  {
+    "product_code": "CL0507I-6DACTLWW",
+    "name": "Acacia E Wall Hung Basin Wt",
+    "product_segment": "Fixtures (WB)",
+    "design": "Acacia E",
+    "product_group": "WB Wall Hung",
+    "selling_price": 15000
+  },
+  {
+    "product_code": "CCASF479-0040410C0",
+    "name": "Town Square Wall Hung Basin 24\" - 3 Hole",
+    "product_segment": "Fixtures (WB)",
+    "design": "Town Square",
+    "product_group": "WB Wall Hung",
+    "selling_price": 23850
+  },
+  {
+    "product_code": "CCASF523-1000410C0",
+    "name": "Luxus Floor Standing Vessel 600Mm",
+    "product_segment": "Fixtures (WB)",
+    "design": "Luxus",
+    "product_group": "WB WH w/ Full Pedestal",
+    "selling_price": 68600
+  },
+
+  {
+    "product_code": "FFAST707-501500BF0",
+    "name": "Winston Wall Mounted Kitchen Tap(Cross)",
+    "product_segment": "Kitchen Devices",
+    "design": "Winston",
+    "product_group": "Mono Kitchen",
+    "selling_price": 4200
+  },
+  {
+    "product_code": "FFAST607-501500BF0",
+    "name": "Winston Wall Mounted Kitchen Mono(Lever)",
+    "product_segment": "Kitchen Devices",
+    "design": "Winston",
+    "product_group": "Mono Kitchen",
+    "selling_price": 4200
+  },
+  {
+    "product_code": "FFAST606-501500BF0",
+    "name": "Winston Deck Mounted Kitchen Mono(Lever)",
+    "product_segment": "Kitchen Devices",
+    "design": "Winston",
+    "product_group": "Mono Kitchen",
+    "selling_price": 4780
+  },
+  {
+    "product_code": "FFAST706-501500BF0",
+    "name": "Winston Deck Mounted Kitchen Tap(Cross)",
+    "product_segment": "Kitchen Devices",
+    "design": "Winston",
+    "product_group": "Mono Kitchen",
+    "selling_price": 4940
+  },
+
+  {
+    "product_code": "FFAS5634-5015L0BF0",
+    "name": "Gl890 Multifunction Kitchen Faucet (Edgewater)",
+    "product_segment": "Kitchen Devices",
+    "design": "EdgeWater",
+    "product_group": "Kitchen Mixer",
+    "selling_price": 41950
+  },
+  {
+    "product_code": "FFAS5644-5015L0BF0",
+    "name": "Touch Sensor Kitchen Faucet",
+    "product_segment": "Kitchen Devices",
+    "design": "EdgeWater",
+    "product_group": "Kitchen Mixer",
+    "selling_price": 78380
+  },
+  {
+    "product_code": "FFAS5637-501500BF0",
+    "name": "Ceraplan Single Hole Deck Kitchen Faucet",
+    "product_segment": "Kitchen Devices",
+    "design": "Ceraplan",
+    "product_group": "Kitchen Mixer",
+    "selling_price": 14540
+  },
+
+  {
+    "product_code": "F54400-CHACT",
+    "name": "Angle Stop",
+    "product_segment": "Pro & Commercial",
+    "design": "Angle Valve",
+    "product_group": "Angle Valve",
+    "selling_price": 1000
+  },
+  {
+    "product_code": "103650AL01",
+    "name": "Stop Valve Ceramic Valve",
+    "product_segment": "Pro & Commercial",
+    "design": "Stop Valve",
+    "product_group": "Stop Valve",
+    "selling_price": 1890
+  },
+  {
+    "product_code": "103650GL01",
+    "name": "Stop Valve Ceramic Valve",
+    "product_segment": "Pro & Commercial",
+    "design": "Stop Valve",
+    "product_group": "Stop Valve",
+    "selling_price": 1890
+  },
+  {
+    "product_code": "103650A001",
+    "name": "Stop Valve Ceramic Valve",
+    "product_segment": "Pro & Commercial",
+    "design": "Stop Valve",
+    "product_group": "Stop Valve",
+    "selling_price": 1890
+  },
+  {
+    "product_code": "103650DA01",
+    "name": "Stop Valve Ceramic Valve",
+    "product_segment": "Pro & Commercial",
+    "design": "Stop Valve",
+    "product_group": "Stop Valve",
+    "selling_price": 1890
+  },
+  {
+    "product_code": "1024362430",
+    "name": "Stop Valve Ceramic Valve",
+    "product_segment": "Pro & Commercial",
+    "design": "Stop Valve",
+    "product_group": "Stop Valve",
+    "selling_price": 1680
+  },
+
+  {
+    "product_code": "F78107-CHADYBR",
+    "name": "Bottle Trap 25Cm Brass",
+    "product_segment": "Pro & Commercial",
+    "design": "Universal",
+    "product_group": "Drain Technology (Traps)",
+    "selling_price": 2730
+  },
+  {
+    "product_code": "F78108-CHADYBR",
+    "name": "Brass Chromed/Abs 40 Cm Long",
+    "product_segment": "Pro & Commercial",
+    "design": "Universal",
+    "product_group": "Drain Technology (Traps)",
+    "selling_price": 6980
+  },
+  {
+    "product_code": "F78100-CHADY",
+    "name": "Tubing Trap For Lavatory Slide Pack",
+    "product_segment": "Pro & Commercial",
+    "design": "Universal",
+    "product_group": "Drain Technology (Traps)",
+    "selling_price": 5650
+  },
+  {
+    "product_code": "F78100-CHACTLS",
+    "name": "P-Trap For Lavatory,Long Tail Piece,C",
+    "product_segment": "Pro & Commercial",
+    "design": "Universal",
+    "product_group": "Drain Technology (Traps)",
+    "selling_price": 5400
+  },
+  {
+    "product_code": "F78100-CHACTLST",
+    "name": "P-Trap For Lava Long Tail Top 25 Cms,",
+    "product_segment": "Pro & Commercial",
+    "design": "Universal",
+    "product_group": "Drain Technology (Traps)",
+    "selling_price": 5500
+  },
+  {
+    "product_code": "F78102-CHADYN",
+    "name": "Bottle Trap For Lavatory - Chrome",
+    "product_segment": "Pro & Commercial",
+    "design": "Universal",
+    "product_group": "Drain Technology (Traps)",
+    "selling_price": 5720
+  },
+  {
+    "product_code": "F78100-CHACTLSTT",
+    "name": "P-Trap For Lava Long Tail Top 30 Cms,",
+    "product_segment": "Pro & Commercial",
+    "design": "Universal",
+    "product_group": "Drain Technology (Traps)",
+    "selling_price": 5450
+  },
+  {
+    "product_code": "F78100-CHACTN",
+    "name": "Tubing Trap For Lavatory - Chrome",
+    "product_segment": "Pro & Commercial",
+    "design": "Universal",
+    "product_group": "Drain Technology (Traps)",
+    "selling_price": 5720
+  },
+  {
+    "product_code": "F78104-CHADYN",
+    "name": "Abs Bottle Trap, Chrome Plated (A-810\"",
+    "product_segment": "Pro & Commercial",
+    "design": "Universal",
+    "product_group": "Drain Technology (Traps)",
+    "selling_price": 3100
+  },
+  {
+    "product_code": "F78106-CHADYST",
+    "name": "Stainless Steel/Abs Long 25 Cm Long",
+    "product_segment": "Pro & Commercial",
+    "design": "Universal",
+    "product_group": "Drain Technology (Traps)",
+    "selling_price": 2940
+  },
+
+  {
+    "product_code": "FFAS9403-000040BC0",
+    "name": "Cf-9403.000.04\\Floor Stand Nylon Grab Ba",
+    "product_segment": "Pro & Commercial",
+    "design": "Universal",
+    "product_group": "Grab Bar",
+    "selling_price": 162440
+  },
+  {
+    "product_code": "FFAS9407-000040BC0",
+    "name": "Shower Nylon Chair",
+    "product_segment": "Pro & Commercial",
+    "design": "Universal",
+    "product_group": "Grab Bar",
+    "selling_price": 153410
+  },
+  {
+    "product_code": "FFAS9401-000040BC0",
+    "name": "Turnup Nylon Grab Bar",
+    "product_segment": "Pro & Commercial",
+    "design": "Universal",
+    "product_group": "Grab Bar",
+    "selling_price": 138020
+  },
+  {
+    "product_code": "FFAS9404-000040BC0",
+    "name": "Cf-9404.000.04\\L Nylon Grab Bar(Left)",
+    "product_segment": "Pro & Commercial",
+    "design": "Universal",
+    "product_group": "Grab Bar",
+    "selling_price": 57330
+  },
+  {
+    "product_code": "FFAS9405-000040BC0",
+    "name": "L  Nylon Grab Bar(Right)",
+    "product_segment": "Pro & Commercial",
+    "design": "Universal",
+    "product_group": "Grab Bar",
+    "selling_price": 57330
+  },
+  {
+    "product_code": "FFAS9402-000040BC0",
+    "name": "Cf-9402.000.04\\Nylon Grab Bar",
+    "product_segment": "Pro & Commercial",
+    "design": "Universal",
+    "product_group": "Grab Bar",
+    "selling_price": 52240
+  },
+  {
+    "product_code": "FFAS9406-000040BC0",
+    "name": "Shower  Nylon Grab Bar",
+    "product_segment": "Pro & Commercial",
+    "design": "Universal",
+    "product_group": "Grab Bar",
+    "selling_price": 30610
+  },
+
+  {
+    "product_code": "CLTP405-CHZZ",
+    "name": "Jet Washer W/120Cm Pvc Hose And Holder",
+    "product_segment": "Pro & Commercial",
+    "design": "Hygiene Spray",
+    "product_group": "Hygiene Spray",
+    "selling_price": 2570
+  },
+  {
+    "product_code": "FFASTS28-000090BF0",
+    "name": "Duostix Hygiene Spray (Chrome & Glossy White)",
+    "product_segment": "Pro & Commercial",
+    "design": "Hygiene Spray",
+    "product_group": "Hygiene Spray",
+    "selling_price": 3360
+  },
+  {
+    "product_code": "FFASTS28-000091BF0",
+    "name": "Duostix Hygiene Spray (Glossy White)",
+    "product_segment": "Pro & Commercial",
+    "design": "Hygiene Spray",
+    "product_group": "Hygiene Spray",
+    "selling_price": 3100
+  },
+  {
+    "product_code": "FFASTS28-000440BF0",
+    "name": "Duostix Hygiene Spray (Chrome & Matte Bl",
+    "product_segment": "Pro & Commercial",
+    "design": "Hygiene Spray",
+    "product_group": "Hygiene Spray",
+    "selling_price": 3360
+  },
+  {
+    "product_code": "FFASTS28-000441BF0",
+    "name": "Duostix™ Hygiene Spray",
+    "product_segment": "Pro & Commercial",
+    "design": "Hygiene Spray",
+    "product_group": "Hygiene Spray",
+    "selling_price": 3730
+  },
+  {
+    "product_code": "FFASTS28-000AL0BF0",
+    "name": "Duostix™ Hygiene Spray",
+    "product_segment": "Pro & Commercial",
+    "design": "Hygiene Spray",
+    "product_group": "Hygiene Spray",
+    "selling_price": 3890
+  },
+  {
+    "product_code": "FFASTS28-000GL0BF0",
+    "name": "Duostix™ Hygiene Spray",
+    "product_segment": "Pro & Commercial",
+    "design": "Hygiene Spray",
+    "product_group": "Hygiene Spray",
+    "selling_price": 3890
+  },
+  {
+    "product_code": "FFASTS28-000A00BF0",
+    "name": "Duostix™ Hygiene Spray",
+    "product_segment": "Pro & Commercial",
+    "design": "Hygiene Spray",
+    "product_group": "Hygiene Spray",
+    "selling_price": 3890
+  },
+  {
+    "product_code": "FFASTS28-000DA0BF0",
+    "name": "Duostix™ Hygiene Spray",
+    "product_segment": "Pro & Commercial",
+    "design": "Hygiene Spray",
+    "product_group": "Hygiene Spray",
+    "selling_price": 3890
+  },
+
+  {
+    "product_code": "FFAS9810-000500BA0",
+    "name": "Concept Arc Dual Flush Valve Trim",
+    "product_segment": "Pro & Commercial",
+    "design": "Concept",
+    "product_group": "Manual Flush Valve for Toilet",
+    "selling_price": 1500
+  },
+  {
+    "product_code": "FFAS9809-009500BA0",
+    "name": "Concept Arc Flush Valve Concealed Body- Dn32",
+    "product_segment": "Pro & Commercial",
+    "design": "Concept",
+    "product_group": "Manual Flush Valve for Toilet",
+    "selling_price": 4850
+  },
+  {
+    "product_code": "FFAS9808-009500BA0",
+    "name": "Concept Arc Flush Valve Concealed Body- Dn40",
+    "product_segment": "Pro & Commercial",
+    "design": "Concept",
+    "product_group": "Manual Flush Valve for Toilet",
+    "selling_price": 4850
+  },
+
+  {
+    "product_code": "FFAS9859-000500BF0",
+    "name": "Manual Urinal Fv",
+    "product_segment": "Pro & Commercial",
+    "design": "Universal",
+    "product_group": "Manual Flush Valve for Urinal",
+    "selling_price": 5050
+  },
+  {
+    "product_code": "FFAS9802-007500BC0",
+    "name": "Cf-9802.007.50/Urinal Flush Valve",
+    "product_segment": "Pro & Commercial",
+    "design": "Universal",
+    "product_group": "Manual Flush Valve for Urinal",
+    "selling_price": 8550
+  },
+  {
+    "product_code": "FFAS9802-009500BF0",
+    "name": "Manual Urinal Flush Valve With Volume Adjustment",
+    "product_segment": "Pro & Commercial",
+    "design": "Universal",
+    "product_group": "Manual Flush Valve for Urinal",
+    "selling_price": 6150
+  },
+
+  {
+    "product_code": "FFAS8601-000500BF0",
+    "name": "Senseflow Sensor Faucet (Dc)",
+    "product_segment": "Pro & Commercial",
+    "design": "SenseFlow",
+    "product_group": "Sensor Faucet",
+    "selling_price": 34700
+  },
+  {
+    "product_code": "FFAS8611-000500BF0",
+    "name": "Senseflow Sensor Faucet (Ac)",
+    "product_segment": "Pro & Commercial",
+    "design": "SenseFlow",
+    "product_group": "Sensor Faucet",
+    "selling_price": 37590
+  },
+  {
+    "product_code": "FFAS8506-A00500BF0",
+    "name": "Line- Sensor Technology Sensor Faucet - Ac",
+    "product_segment": "Pro & Commercial",
+    "design": "Line Sensor",
+    "product_group": "Sensor Faucet",
+    "selling_price": 39060
+  },
+  {
+    "product_code": "FFAS8508-A00500BC0",
+    "name": "Line- Sensor Technology Sensor In-Wall Sensor Faucet - Ac",
+    "product_segment": "Pro & Commercial",
+    "design": "Line Sensor",
+    "product_group": "Sensor Faucet",
+    "selling_price": 43260
+  },
+  {
+    "product_code": "FFAS8510-A00500BC0",
+    "name": "Line- Sensor Technology Square Extended Sensor Faucet - Ac",
+    "product_segment": "Pro & Commercial",
+    "design": "Line Sensor",
+    "product_group": "Sensor Faucet",
+    "selling_price": 46880
+  },
+  {
+    "product_code": "FFAS8511-A00500BC0",
+    "name": "Line- Sensor Technology  In-Wall Square Sensor Faucet - Ac",
+    "product_segment": "Pro & Commercial",
+    "design": "Line Sensor",
+    "product_group": "Sensor Faucet",
+    "selling_price": 42680
+  },
+  {
+    "product_code": "FFAS8507-A00500BC0",
+    "name": "Line- Sensor Technology Sensor Extended Sensor Faucet - Ac",
+    "product_segment": "Pro & Commercial",
+    "design": "Line Sensor",
+    "product_group": "Sensor Faucet",
+    "selling_price": 46460
+  },
+  {
+    "product_code": "FFAS8509-A00500BC0",
+    "name": "Line- Sensor Technology Square Sensor Faucet - Ac",
+    "product_segment": "Pro & Commercial",
+    "design": "Line Sensor",
+    "product_group": "Sensor Faucet",
+    "selling_price": 39800
+  },
+  {
+    "product_code": "FFAS8506-D00500BF0",
+    "name": "Line-Sensor Technology Sensor Faucet",
+    "product_segment": "Pro & Commercial",
+    "design": "Line Sensor",
+    "product_group": "Sensor Faucet",
+    "selling_price": 41950
+  },
+  {
+    "product_code": "FFAS8507-D00500BC0",
+    "name": "Line-Sensor Technology  Extend Sensor Fa",
+    "product_segment": "Pro & Commercial",
+    "design": "Line Sensor",
+    "product_group": "Sensor Faucet",
+    "selling_price": 46670
+  },
+  {
+    "product_code": "FFAS8508-D00500BF0",
+    "name": "Line-Sensor Technology  In Wall Sensor F",
+    "product_segment": "Pro & Commercial",
+    "design": "Line Sensor",
+    "product_group": "Sensor Faucet",
+    "selling_price": 46200
+  },
+  {
+    "product_code": "FFAS8509-D00500BF0",
+    "name": "Line-Sensor Technology  Square Sensor Fa",
+    "product_segment": "Pro & Commercial",
+    "design": "Line Sensor",
+    "product_group": "Sensor Faucet",
+    "selling_price": 42680
+  },
+  {
+    "product_code": "FFAS8510-D00500BF0",
+    "name": "Line-Sensor Technology  Square Extend Se",
+    "product_segment": "Pro & Commercial",
+    "design": "Line Sensor",
+    "product_group": "Sensor Faucet",
+    "selling_price": 51240
+  },
+  {
+    "product_code": "FFAS8510-D00500BC0",
+    "name": "Line-Sensor Technology Square Extend Sen",
+    "product_segment": "Pro & Commercial",
+    "design": "Line Sensor",
+    "product_group": "Sensor Faucet",
+    "selling_price": 51240
+  },
+  {
+    "product_code": "FFAS8511-D00500BF0",
+    "name": "Line-Sensor Technology In Wall Square Se",
+    "product_segment": "Pro & Commercial",
+    "design": "Line Sensor",
+    "product_group": "Sensor Faucet",
+    "selling_price": 47040
+  },
+  {
+    "product_code": "FFAS8101-AD0500BF0",
+    "name": "Integral Foam & Water Faucet-Ac/Dc",
+    "product_segment": "Pro & Commercial",
+    "design": "Intergal",
+    "product_group": "Sensor Faucet",
+    "selling_price": 61800
+  },
+
+  {
+    "product_code": "FFAS8604-000500BF0",
+    "name": "Sense Flow Concealed Sensor Urinal Fv-Dc",
+    "product_segment": "Pro & Commercial",
+    "design": "SenseFlow",
+    "product_group": "Sensor Flush Valve Urinal",
+    "selling_price": 28900
+  },
+  {
+    "product_code": "FFAS8614-000500BF0",
+    "name": "Wf-8614.000.50\\Senseflow Concealed Senso",
+    "product_segment": "Pro & Commercial",
+    "design": "SenseFlow",
+    "product_group": "Sensor Flush Valve Urinal",
+    "selling_price": 32900
+  },
+  {
+    "product_code": "FFAS8609-000500BF0",
+    "name": "Senseflow Exposed Sensor Urinal Fv",
+    "product_segment": "Pro & Commercial",
+    "design": "SenseFlow",
+    "product_group": "Sensor Flush Valve Urinal",
+    "selling_price": 28900
+  },
+  {
+    "product_code": "FFAS8604-0C1500BC0",
+    "name": "Sense Flow Concealed Sensor Urinal Fv-Dc",
+    "product_segment": "Pro & Commercial",
+    "design": "SenseFlow",
+    "product_group": "Sensor Flush Valve Urinal",
+    "selling_price": 30700
+  },
+
+  {
+    "product_code": "FFAS8102-AD0500BF0",
+    "name": "Sensor Foam Dispenser-Ac/Dc",
+    "product_segment": "Bathroom Fittings",
+    "design": "Integral",
+    "product_group": "Soap Dispenser",
+    "selling_price": 40430
+  },
+
+  {
+    "product_code": "FFAS8603-000500BF0",
+    "name": "Concealed Sensor Toilet Flush Valve - Dc",
+    "product_segment": "Pro & Commercial",
+    "design": "SenseFlow",
+    "product_group": "Sensor Flush Valve Toilet",
+    "selling_price": 47850
+  },
+  {
+    "product_code": "FFAS8613-000500BF0",
+    "name": "Senseflow Concealed Sensortoilet Fv,(Ac)",
+    "product_segment": "Pro & Commercial",
+    "design": "SenseFlow",
+    "product_group": "Sensor Flush Valve Toilet",
+    "selling_price": 50450
+  },
+  {
+    "product_code": "FFAS8703-000500BC0",
+    "name": "Senseflow Ii Concealed Sensor Toilet Fv",
+    "product_segment": "Pro & Commercial",
+    "design": "SenseFlow",
+    "product_group": "Sensor Flush Valve Toilet",
+    "selling_price": 52550
+  },
+  {
+    "product_code": "FFAS8713-000500BC0",
+    "name": "Senseflow Ii Concealed Sensor Toilet Fv (Ac)",
+    "product_segment": "Pro & Commercial",
+    "design": "SenseFlow",
+    "product_group": "Sensor Flush Valve Toilet",
+    "selling_price": 55300
+  },
+
+  {
+    "product_code": "103836AL01",
+    "name": "Push-Open Waste With Overflow",
+    "product_segment": "Pro & Commercial",
+    "design": "Wastes set",
+    "product_group": "Waste & Overflow",
+    "selling_price": 2210
+  },
+  {
+    "product_code": "103836GL01",
+    "name": "Push-Open Waste With Overflow",
+    "product_segment": "Pro & Commercial",
+    "design": "Wastes set",
+    "product_group": "Waste & Overflow",
+    "selling_price": 2210
+  },
+  {
+    "product_code": "103836A001",
+    "name": "Push-Open Waste With Overflow",
+    "product_segment": "Pro & Commercial",
+    "design": "Wastes set",
+    "product_group": "Waste & Overflow",
+    "selling_price": 2210
+  },
+  {
+    "product_code": "103836DA01",
+    "name": "Push-Open Waste With Overflow",
+    "product_segment": "Pro & Commercial",
+    "design": "Wastes set",
+    "product_group": "Waste & Overflow",
+    "selling_price": 2210
+  },
+  {
+    "product_code": "F78006-CHADYN",
+    "name": "Waste Overflow For Lava",
+    "product_segment": "Pro & Commercial",
+    "design": "Universal",
+    "product_group": "Waste & Overflow",
+    "selling_price": 2210
+  },
+  {
+    "product_code": "F78007-CHADY",
+    "name": "Waste & Overflow For Lavatory - Chrome",
+    "product_segment": "Pro & Commercial",
+    "design": "Universal",
+    "product_group": "Waste & Overflow",
+    "selling_price": 2420
+  },
+  {
+    "product_code": "F78200-CHADYN",
+    "name": "Floordrain With Cover Plate-Stainless",
+    "product_segment": "Pro & Commercial",
+    "design": "Universal",
+    "product_group": "Waste & Overflow",
+    "selling_price": 1260
+  },
+  {
+    "product_code": "F78201-CHADYN",
+    "name": "Floordrain - Stainless",
+    "product_segment": "Pro & Commercial",
+    "design": "Universal",
+    "product_group": "Waste & Overflow",
+    "selling_price": 1160
+  },
+  {
+    "product_code": "F78205-CHADY",
+    "name": "Brass Floor Drain 10X10 Cm Deodorization W/Flap Design -Nickel",
+    "product_segment": "Pro & Commercial",
+    "design": "Universal",
+    "product_group": "Waste & Overflow",
+    "selling_price": 3200
+  },
+  {
+    "product_code": "FKF60001-F00",
+    "name": "Floor Drainage Cover D600X130",
+    "product_segment": "Pro & Commercial",
+    "design": "Universal",
+    "product_group": "Waste & Overflow",
+    "selling_price": 31240
+  },
+  {
+    "product_code": "G-124512",
+    "name": "Waste Coupling",
+    "product_segment": "Pro & Commercial",
+    "design": "Universal",
+    "product_group": "Waste & Overflow",
+    "selling_price": 680
+  },
+  {
+    "product_code": "CC1-CN511M9A009310",
+    "name": "As Waster Overflow Exclude0476/0470",
+    "product_segment": "Pro & Commercial",
+    "design": "Concept Sphere",
+    "product_group": "Waste & Overflow",
+    "selling_price": 100
+  },
+
+  {
+    "product_code": "FK303D01-AASI1",
+    "name": "Adroit Flushing System (K303)",
+    "product_segment": "Pro & Commercial",
+    "design": "Universal",
+    "product_group": "Conceal cistern",
+    "selling_price": 6400
+  },
+  {
+    "product_code": "103033BL00",
+    "name": "Aero-Lite Concealed Cistern",
+    "product_segment": "Pro & Commercial",
+    "design": "Aero-lite",
+    "product_group": "Conceal cistern",
+    "selling_price": 36750
+  },
+  {
+    "product_code": "103034SH00",
+    "name": "Aero-Lite White Flush Plate",
+    "product_segment": "Pro & Commercial",
+    "design": "Aero-lite",
+    "product_group": "Cistern Plates",
+    "selling_price": 5250
+  },
+  {
+    "product_code": "F0A1350A-ACH",
+    "name": "Wide Square Flush Plate - Chrome Finish",
+    "product_segment": "Pro & Commercial",
+    "design": "Universal",
+    "product_group": "Cistern Plates",
+    "selling_price": 2750
+  },
+  {
+    "product_code": "FA4305A0-CH",
+    "name": "Step Square Flush Plate - Chrome Finish",
+    "product_segment": "Pro & Commercial",
+    "design": "Universal",
+    "product_group": "Cistern Plates",
+    "selling_price": 2750
+  },
+  {
+    "product_code": "FA2315A0-CH",
+    "name": "Little Square Flush Plate -Chrome Finish",
+    "product_segment": "Pro & Commercial",
+    "design": "Universal",
+    "product_group": "Cistern Plates",
+    "selling_price": 3700
+  },
+  {
+    "product_code": "FA0325A0-CH",
+    "name": "Dynamic Dots Flush Plate - Chrome Finish",
+    "product_segment": "Pro & Commercial",
+    "design": "Universal",
+    "product_group": "Cistern Plates",
+    "selling_price": 3700
+  },
+  {
+    "product_code": "FA1325A0-CH",
+    "name": "Stretch Square Flush Plate - Chrome Fini",
+    "product_segment": "Pro & Commercial",
+    "design": "Universal",
+    "product_group": "Cistern Plates",
+    "selling_price": 3700
+  },
+  {
+    "product_code": "CLCN59ZZ",
+    "name": "Concept Oblong Flush Plate - Chrome Finish",
+    "product_segment": "Pro & Commercial",
+    "design": "Concept",
+    "product_group": "Cistern Plates",
+    "selling_price": 3700
+  },
+  {
+    "product_code": "CLCN60ZZ",
+    "name": "Concept Pillow Flush Plate - Chrome Finish",
+    "product_segment": "Pro & Commercial",
+    "design": "Concept",
+    "product_group": "Cistern Plates",
+    "selling_price": 3700
+  },
+
+  {
+    "product_code": "CL6728U-6DACTUS",
+    "name": "Active W/H Urinal Top Inlet Wt",
+    "product_segment": "Pro & Commercial",
+    "design": "Active",
+    "product_group": "Urinal Wall Hung",
+    "selling_price": 21650
+  },
+  {
+    "product_code": "CL6728V-6DACTUS",
+    "name": "Active W/H Urinal Back Inlet Wt",
+    "product_segment": "Pro & Commercial",
+    "design": "Active",
+    "product_group": "Urinal Wall Hung",
+    "selling_price": 23850
+  },
+  {
+    "product_code": "CCAS6507-3130410C0",
+    "name": "Concept 1.5 L Urinal He2 (Dc)",
+    "product_segment": "Pro & Commercial",
+    "design": "Concept",
+    "product_group": "Urinal Wall Hung",
+    "selling_price": 93900
+  },
+  {
+    "product_code": "CCAS6507-3100410C0",
+    "name": "Cp-6507.322.04\\Concept 1.9 L Urinal He2",
+    "product_segment": "Pro & Commercial",
+    "design": "Concept",
+    "product_group": "Urinal Wall Hung",
+    "selling_price": 96250
+  },
+  {
+    "product_code": "CCAS6737-3100410F0",
+    "name": "New Contour Urinal Back Inlet 1.9Lpf",
+    "product_segment": "Pro & Commercial",
+    "design": "Contour",
+    "product_group": "Urinal Wall Hung",
+    "selling_price": 28700
+  },
+  {
+    "product_code": "CCAS6737-3200410F0",
+    "name": "New Contour Urinal Top Inlet 1.9Lpf",
+    "product_segment": "Pro & Commercial",
+    "design": "Contour",
+    "product_group": "Urinal Wall Hung",
+    "selling_price": 28700
+  },
+  {
+    "product_code": "CCAS6510-3100410C0",
+    "name": "Flexbrook Urinal (Back-Inlet) 0.5L, Heai",
+    "product_segment": "Pro & Commercial",
+    "design": "Flexbrook",
+    "product_group": "Urinal Wall Hung",
+    "selling_price": 26150
+  },
+  {
+    "product_code": "CCAS6510-3200410C0",
+    "name": "Flexbrook Urinal (Top-Inlet) 0.5L, Heaii",
+    "product_segment": "Pro & Commercial",
+    "design": "Flexbrook",
+    "product_group": "Urinal Wall Hung",
+    "selling_price": 27500
+  },
+  {
+    "product_code": "CCAS6509-3100410C0",
+    "name": "Lynbrook Wh 0.5L Back Inlet",
+    "product_segment": "Pro & Commercial",
+    "design": "Lynbrook",
+    "product_group": "Urinal Wall Hung",
+    "selling_price": 35750
+  },
+  {
+    "product_code": "CCAS6605-3100420F0",
+    "name": "Lynbrook 0.9L Water-Saving Floor Standing Urinal(Back Inlet)",
+    "product_segment": "Pro & Commercial",
+    "design": "Lynbrook",
+    "product_group": "Urinal Floor Standing",
+    "selling_price": 46200
+  },
+  {
+    "product_code": "CCAS6605-3200420F0",
+    "name": "Lynbrook 0.9L Water-Saving Floor Standing Urinal(Top Inlet)",
+    "product_segment": "Pro & Commercial",
+    "design": "Lynbrook",
+    "product_group": "Urinal Floor Standing",
+    "selling_price": 48150
+  },
+  {
+    "product_code": "CCAS6519-3110410F0",
+    "name": "Lynbrook Int Wh Urinal_0.5L_Dc",
+    "product_segment": "Pro & Commercial",
+    "design": "Lynbrook",
+    "product_group": "Urinal Wall Hung",
+    "selling_price": 59150
+  },
+  {
+    "product_code": "CCAS6519-3120410F0",
+    "name": "Lynbrook Int Wh Urinal_0.5L_Ac",
+    "product_segment": "Pro & Commercial",
+    "design": "Lynbrook",
+    "product_group": "Urinal Wall Hung",
+    "selling_price": 60550
+  },
+  {
+    "product_code": "CCAS6606-311A410F0",
+    "name": "Lynbrook Fsd Intergrated Urinal - Dc",
+    "product_segment": "Pro & Commercial",
+    "design": "Lynbrook",
+    "product_group": "Urinal Floor Standing",
+    "selling_price": 98550
+  },
+  {
+    "product_code": "CCAS6606-312A410F0",
+    "name": "Lynbrook Fsd Intergrated Urinal - Ac",
+    "product_segment": "Pro & Commercial",
+    "design": "Lynbrook",
+    "product_group": "Urinal Floor Standing",
+    "selling_price": 99800
+  },
+  {
+    "product_code": "CCAS6401-3100410F0",
+    "name": "Mini Wash Brook Urinal Back Inlet",
+    "product_segment": "Pro & Commercial",
+    "design": "Mini Washbrook",
+    "product_group": "Urinal Wall Hung",
+    "selling_price": 24350
+  },
+  {
+    "product_code": "CCAS6401-3200410F0",
+    "name": "As Mini Washbrook Top Inlet Urinal White",
+    "product_segment": "Pro & Commercial",
+    "design": "Mini Washbrook",
+    "product_group": "Urinal Wall Hung",
+    "selling_price": 24350
+  },
+  {
+    "product_code": "CCAS6747-3100410C1",
+    "name": "Neo Modern 0.9L Water-Saving Urinal",
+    "product_segment": "Pro & Commercial",
+    "design": "Neo Modern",
+    "product_group": "Urinal Wall Hung",
+    "selling_price": 27500
+  },
+  {
+    "product_code": "CL6734U-6DACTUS",
+    "name": "Penta Urinal Wt",
+    "product_segment": "Pro & Commercial",
+    "design": "Penta",
+    "product_group": "Urinal Wall Hung",
+    "selling_price": 20650
+  },
+  {
+    "product_code": "CL0412U-6DACTUS",
+    "name": "Wall Urinal Wt",
+    "product_segment": "Pro & Commercial",
+    "design": "Universal",
+    "product_group": "Urinal Wall Hung",
+    "selling_price": 8550
+  },
+  {
+    "product_code": "CCAS6591-3200410C0",
+    "name": "Cp-6591.321.04\\Washbrook Pro Water-Savin",
+    "product_segment": "Pro & Commercial",
+    "design": "Washbrook",
+    "product_group": "Urinal Wall Hung",
+    "selling_price": 27950
+  },
+  {
+    "product_code": "CCAS6591-3100410C0",
+    "name": "Cp-6591.322.04\\Washbrook Pro Water-Savin",
+    "product_segment": "Pro & Commercial",
+    "design": "Washbrook",
+    "product_group": "Urinal Wall Hung",
+    "selling_price": 31100
+  },
+
+  {
+    "product_code": "CL3229B-6DACTCB",
+    "name": "Acacia E Vortex Btw 3/4.5L Cbr Wt",
+    "product_segment": "Fixtures (WC)",
+    "design": "Acacia E",
+    "product_group": "WC Back To Wall",
+    "selling_price": 36850
+  },
+  {
+    "product_code": "CL6151M-6D",
+    "name": "Crystasleek S&C Wt",
+    "product_segment": "Fixtures (WC)",
+    "design": "Acacia E",
+    "product_group": "Seat & Cover",
+    "selling_price": 12350
+  },
+
+  {
+    "product_code": "CL3229B-6DACTCB",
+    "name": "Acacia E Vortex Btw 3/4.5L Cbr Wt",
+    "product_segment": "Fixtures (WC)",
+    "design": "Acacia E",
+    "product_group": "WC Back To Wall",
+    "selling_price": 36850
+  },
+  {
+    "product_code": "CL6117M-6D",
+    "name": "Acacia E Slow Closing S&C -Wt",
+    "product_segment": "Fixtures (WC)",
+    "design": "Acacia E",
+    "product_group": "Seat & Cover",
+    "selling_price": 9800
+  },
+
+  {
+    "product_code": "CL3119B-6DACTPTY",
+    "name": "City 3/4.5L Double Vortex Wh Wt",
+    "product_segment": "Fixtures (WC)",
+    "design": "City",
+    "product_group": "WC Wall Hung",
+    "selling_price": 28350
+  },
+  {
+    "product_code": "CL6151M-6D",
+    "name": "Crystasleek S&C Wt",
+    "product_segment": "Fixtures (WC)",
+    "design": "Acacia E",
+    "product_group": "Seat & Cover",
+    "selling_price": 12350
+  },
+  {
+    "product_code": "CCAS4119-0205010C0",
+    "name": "City 3/4.5L Dv Concealed Cistern For Wh",
+    "product_segment": "Fixtures (WC)",
+    "design": "City",
+    "product_group": "Cistern",
+    "selling_price": 87800
+  },
+
+  {
+    "product_code": "CCAS3120-5W20410F0",
+    "name": "Acacia Supasleek Square Wh 3/4.5Lpf Wh Toilet Bowl",
+    "product_segment": "Fixtures (WC)",
+    "design": "Acacia E",
+    "product_group": "WC Wall Hung",
+    "selling_price": 36200
+  },
+  {
+    "product_code": "CCASC120-U200410F0",
+    "name": "Acacia Supasleek Square Seat Cover",
+    "product_segment": "Fixtures (WC)",
+    "design": "Acacia E",
+    "product_group": "Seat & Cover",
+    "selling_price": 8250
+  },
+
+  {
+    "product_code": "CL3119B-6DACTPT",
+    "name": "Acacia E Vortex Wh 3/4.5L Wt",
+    "product_segment": "Fixtures (WC)",
+    "design": "Acacia E",
+    "product_group": "WC Wall Hung",
+    "selling_price": 27700
+  },
+  {
+    "product_code": "CL6151M-6D",
+    "name": "Crystasleek S&C Wt",
+    "product_segment": "Fixtures (WC)",
+    "design": "Acacia E",
+    "product_group": "Seat & Cover",
+    "selling_price": 12350
+  },
+  {
+    "product_code": "CL6117M-6D",
+    "name": "Acacia E Slow Closing S&C -Wt",
+    "product_segment": "Fixtures (WC)",
+    "design": "Acacia E",
+    "product_group": "Seat & Cover",
+    "selling_price": 9800
+  },
+
+  {
+    "product_code": "CCAS3140-3W20400F0",
+    "name": "Signature Wh Toilet_Bowl",
+    "product_segment": "Fixtures (WC)",
+    "design": "Signature",
+    "product_group": "WC Wall Hung",
+    "selling_price": 23250
+  },
+  {
+    "product_code": "CCASC119-U20U420C0",
+    "name": "Signature Wh Seat Cover",
+    "product_segment": "Fixtures (WC)",
+    "design": "Signature",
+    "product_group": "Seat & Cover",
+    "selling_price": 9800
+  },
+
+  {
+    "product_code": "CCAS3131-3W20400F0",
+    "name": "Kastello Square Toilet_Bowl",
+    "product_segment": "Fixtures (WC)",
+    "design": "Kastello",
+    "product_group": "WC Wall Hung",
+    "selling_price": 19250
+  },
+  {
+    "product_code": "CCASC131-U200410F0",
+    "name": "Kastello Square Wh Toilet Seat Cover",
+    "product_segment": "Fixtures (WC)",
+    "design": "Kastello",
+    "product_group": "Seat & Cover",
+    "selling_price": 7900
+  },
+
+  {
+    "product_code": "1013962080",
+    "name": "Loven Wh Wc",
+    "product_segment": "Fixtures (WC)",
+    "design": "Loven",
+    "product_group": "WC Wall Hung",
+    "selling_price": 22250
+  },
+  {
+    "product_code": "CCASC162-0200410F0",
+    "name": "Loven Op Toilet Seat Cover",
+    "product_segment": "Fixtures (WC)",
+    "design": "Loven",
+    "product_group": "Seat & Cover",
+    "selling_price": 1800
+  },
+
+  {
+    "product_code": "CCAS3105-4W20410A0",
+    "name": "Concept 3/4.5Lpf Wall Hung Toilet_Bowl",
+    "product_segment": "Fixtures (WC)",
+    "design": "Concept",
+    "product_group": "WC Wall Hung",
+    "selling_price": 15500
+  },
+  {
+    "product_code": "CCASC105-0200410A0",
+    "name": "Concept Wh Toilet – Slim Amor Lid S&C",
+    "product_segment": "Fixtures (WC)",
+    "design": "Concept",
+    "product_group": "Seat & Cover",
+    "selling_price": 6100
+  },
+
+  {
+    "product_code": "CCAS3207-3W20410F0",
+    "name": "Compact Codie Toilet_Bowl",
+    "product_segment": "Fixtures (WC)",
+    "design": "Compact Codie",
+    "product_group": "WC Wall Hung",
+    "selling_price": 12400
+  },
+  {
+    "product_code": "CCASC128-0200410A0",
+    "name": "Cadet Wh Toilet - Seat & Cover",
+    "product_segment": "Fixtures (WC)",
+    "design": "Cadet",
+    "product_group": "Seat & Cover",
+    "selling_price": 3000
+  },
+
+  {
+    "product_code": "CCAS3130-3W20410A0",
+    "name": "Winston 3/6Lpf Wall Hung Toilet Bowl",
+    "product_segment": "Fixtures (WC)",
+    "design": "Winston",
+    "product_group": "WC Wall Hung",
+    "selling_price": 10850
+  },
+  {
+    "product_code": "CF070001-6DF00-N",
+    "name": "Seat & Cover",
+    "product_segment": "Fixtures (WC)",
+    "design": "Winston",
+    "product_group": "Seat & Cover",
+    "selling_price": 3550
+  },
+
+  {
+    "product_code": "CCAS3906-3P00410C0",
+    "name": "New Codie Wall Hung 4/6Lwashdown Bowl",
+    "product_segment": "Fixtures (WC)",
+    "design": "New Codie",
+    "product_group": "WC Wall Hung",
+    "selling_price": 7900
+  },
+  {
+    "product_code": "CCASC906-0000410C0",
+    "name": "New Codie Soft Closing Seats&Cover,White",
+    "product_segment": "Fixtures (WC)",
+    "design": "New Codie",
+    "product_group": "Seat & Cover",
+    "selling_price": 2600
+  },
+
+  {
+    "product_code": "CCAS3128-3W20410A0",
+    "name": "Cadet 3/6Lpf Wall Hung Toilet-Bowl - W/O S&C",
+    "product_segment": "Fixtures (WC)",
+    "design": "Cadet",
+    "product_group": "WC Wall Hung",
+    "selling_price": 8200
+  },
+  {
+    "product_code": "CCASC128-0200410A0",
+    "name": "Cadet Wh Toilet - Seat & Cover",
+    "product_segment": "Fixtures (WC)",
+    "design": "Cadet",
+    "product_group": "Seat & Cover",
+    "selling_price": 3000
+  },
+
+  {
+    "product_code": "CCAS2025-111A410C0",
+    "name": "Kastello One Piece Toilet",
+    "product_segment": "Fixtures (WC)",
+    "design": "Kastello",
+    "product_group": "WC One Piece",
+    "selling_price": 85300
+  },
+  {
+    "product_code": "CCASC025-P20P410C0",
+    "name": "Kastello Armorlid Slow Close",
+    "product_segment": "Fixtures (WC)",
+    "design": "Kastello",
+    "product_group": "Seat & Cover",
+    "selling_price": 9550
+  },
+
+  {
+    "product_code": "CCASC060-U20U410C0",
+    "name": "Cp-C060.002.U4\\As Soft-Closing S&C For N",
+    "product_segment": "Fixtures (WC)",
+    "design": "Neo Nobile",
+    "product_group": "Seat & Cover",
+    "selling_price": 10450
+  },
+
+  {
+    "product_code": "1057282080",
+    "name": "Signature One-Piece Toilet",
+    "product_segment": "Fixtures (WC)",
+    "design": "Signature",
+    "product_group": "WC One Piece",
+    "selling_price": 63700
+  },
+  {
+    "product_code": "CCASC119-U20U420C0",
+    "name": "Signature Wh Seat Cover",
+    "product_segment": "Fixtures (WC)",
+    "design": "Signature",
+    "product_group": "Seat & Cover",
+    "selling_price": 9800
+  },
+
+  {
+    "product_code": "CL20075-6DACTCBT",
+    "name": "Acacia Supasleek Op 2.6/4L Cbr Cp Set Wt",
+    "product_segment": "Fixtures (WC)",
+    "design": "Acacia E",
+    "product_group": "WC One Piece",
+    "selling_price": 66850
+  },
+
+  {
+    "product_code": "CCAS1860-112A410F0",
+    "name": "Milano 3.5/5L Max Low Tank Op Bowl 305Mm",
+    "product_segment": "Fixtures (WC)",
+    "design": "Milano",
+    "product_group": "WC One Piece",
+    "selling_price": 44850
+  },
+  {
+    "product_code": "CCASC830-0200410C0",
+    "name": "Milano Pp Soft-Closing S&C",
+    "product_segment": "Fixtures (WC)",
+    "design": "Milano",
+    "product_group": "Seat & Cover",
+    "selling_price": 5700
+  },
+
+  {
+    "product_code": "CCAS2073-1110410F0",
+    "name": "Neo Modern One Piece Toilet",
+    "product_segment": "Fixtures (WC)",
+    "design": "Neo Modern",
+    "product_group": "WC One Piece",
+    "selling_price": 39000
+  },
+  {
+    "product_code": "CCASC630-0200410C0",
+    "name": "Cp-C630.026.04 S&C Heaii",
+    "product_segment": "Fixtures (WC)",
+    "design": "Neo Modern",
+    "product_group": "Seat & Cover",
+    "selling_price": 6200
+  },
+
+  {
+    "product_code": "CCAS1841-1120410C0",
+    "name": "Cadet 4/6L One-Piece Toilet Bowl 305Mm H",
+    "product_segment": "Fixtures (WC)",
+    "design": "Cadet",
+    "product_group": "WC One Piece",
+    "selling_price": 30250
+  },
+  {
+    "product_code": "CCASC791-0200410C0",
+    "name": "Slow Closing S&C For Cadet Op",
+    "product_segment": "Fixtures (WC)",
+    "design": "Cadet",
+    "product_group": "Seat & Cover",
+    "selling_price": 2800
+  },
+
+  {
+    "product_code": "CCAS2090-1120410F0",
+    "name": "Cp-2090.712.04\\Yoka 4/6L El One-Piece To",
+    "product_segment": "Fixtures (WC)",
+    "design": "Yoka",
+    "product_group": "WC One Piece",
+    "selling_price": 27750
+  },
+  {
+    "product_code": "CCASC791-0200410C0",
+    "name": "Slow Closing S&C For Cadet Op",
+    "product_segment": "Fixtures (WC)",
+    "design": "Cadet",
+    "product_group": "Seat & Cover",
+    "selling_price": 2800
+  },
+
+  {
+    "product_code": "C2530300-1MA21",
+    "name": "Flexio Op Complete Set P Trap",
+    "product_segment": "Fixtures (WC)",
+    "design": "Flexio",
+    "product_group": "WC One Piece",
+    "selling_price": 21450
+  },
+  {
+    "product_code": "CL6104M-6D",
+    "name": "Seat & Cover",
+    "product_segment": "Fixtures (WC)",
+    "design": "Flexio",
+    "product_group": "Seat & Cover",
+    "selling_price": 2650
+  },
+
+  {
+    "product_code": "C2530300-1MA21",
+    "name": "Flexio Op Complete Set P Trap",
+    "product_segment": "Fixtures (WC)",
+    "design": "Flexio",
+    "product_group": "WC One Piece",
+    "selling_price": 21450
+  },
+  {
+    "product_code": "CL6104M-6D",
+    "name": "Seat & Cover",
+    "product_segment": "Fixtures (WC)",
+    "design": "Flexio",
+    "product_group": "Seat & Cover",
+    "selling_price": 2650
+  },
+
+  {
+    "product_code": "CCAS1862-1320411A0",
+    "name": "Loven One Piece Toilet 220Mm",
+    "product_segment": "Fixtures (WC)",
+    "design": "Loven",
+    "product_group": "WC One Piece",
+    "selling_price": 15100
+  },
+  {
+    "product_code": "CCAS1862-1120411F0",
+    "name": "Loven Op Toilet Con. 305Mm W/O Sc Ic,Ph",
+    "product_segment": "Fixtures (WC)",
+    "design": "Loven",
+    "product_group": "WC One Piece",
+    "selling_price": 15100
+  },
+  {
+    "product_code": "CCASC162-0200410F0",
+    "name": "Loven Op Toilet Seat Cover",
+    "product_segment": "Fixtures (WC)",
+    "design": "Loven",
+    "product_group": "Seat & Cover",
+    "selling_price": 1800
+  },
+
+  {
+    "product_code": "CL23075-6DACTCB",
+    "name": "Acacia E Cc Vortex 2.6/4 Cbr Comp.Set Wt",
+    "product_segment": "Fixtures (WC)",
+    "design": "Acacia E",
+    "product_group": "WC Close Coupled",
+    "selling_price": 58700
+  },
+
+  {
+    "product_code": "CL24075-6DACTCB",
+    "name": "Compact Codie Cc 3/4.2L Cbr Wt(Complete Set W Components)",
+    "product_segment": "Fixtures (WC)",
+    "design": "Compact Codie",
+    "product_group": "WC Close Coupled",
+    "selling_price": 40550
+  },
+
+  {
+    "product_code": "CL27045-6DACTST",
+    "name": "Concept Cc 305Ri Cube Tank Comple.Set Wt",
+    "product_segment": "Fixtures (WC)",
+    "design": "Concept Cube",
+    "product_group": "WC Close Coupled",
+    "selling_price": 39100
+  },
+
+  {
+    "product_code": "CL21030-6DACTST",
+    "name": "Tonic New Wave Cc 3/4.5L Slow Sc Rd Tank",
+    "product_segment": "Fixtures (WC)",
+    "design": "Tonic",
+    "product_group": "WC Close Coupled",
+    "selling_price": 36450
+  },
+
+  {
+    "product_code": "CL27055-6DACTST",
+    "name": "Concept Cc 305Ri D-Tank Complete Set Wt",
+    "product_segment": "Fixtures (WC)",
+    "design": "Concept D",
+    "product_group": "WC Close Coupled",
+    "selling_price": 36450
+  },
+
+  {
+    "product_code": "CL27935-6DAWDPT",
+    "name": "New Sibia 3/4.5L Ho Toilet Slow W Set Wt",
+    "product_segment": "Fixtures (WC)",
+    "design": "New Sibia",
+    "product_group": "WC Close Coupled",
+    "selling_price": 33900
+  },
+
+  {
+    "product_code": "CL26305-6DACTST",
+    "name": "Neo Modern Cc 4.2/3L Smart Lid Wt",
+    "product_segment": "Fixtures (WC)",
+    "design": "Neo Modern",
+    "product_group": "WC Close Coupled",
+    "selling_price": 30750
+  },
+
+  {
+    "product_code": "CL28930-6DAWDST",
+    "name": "Halo Cc Concave Tank Top 3/4.5L Wt",
+    "product_segment": "Fixtures (WC)",
+    "design": "Halo",
+    "product_group": "WC Close Coupled",
+    "selling_price": 26550
+  },
+
+  {
+    "product_code": "CCAS4797-0120410A0",
+    "name": "Winston 3/4.5L Cc Toilet - Tank",
+    "product_segment": "Fixtures (WC)",
+    "design": "Winston",
+    "product_group": "WC Close Coupled",
+    "selling_price": 8150
+  },
+  {
+    "product_code": "CCAS3396-1120410A0",
+    "name": "Winston 3/4.5L Cc Toilet - Bowl",
+    "product_segment": "Fixtures (WC)",
+    "design": "Winston",
+    "product_group": "WC Close Coupled",
+    "selling_price": 10900
+  },
+  {
+    "product_code": "CRTS480S-1M",
+    "name": "Winston Slow Closing Seat & Cover",
+    "product_segment": "Fixtures (WC)",
+    "design": "Winston",
+    "product_group": "Seat & Cover",
+    "selling_price": 2500
+  },
+
+  {
+    "product_code": "103035BL00",
+    "name": "Aero-Lite Wh Showertoilet",
+    "product_segment": "Shower Toilet",
+    "design": "Aero-lite",
+    "product_group": "Shower Toilet",
+    "selling_price": 231000
+  },
+  {
+    "product_code": "CEAS5312-1000402C0",
+    "name": "Aerozen Shower Toilet",
+    "product_segment": "Shower Toilet",
+    "design": "AeroZen",
+    "product_group": "Shower Toilet",
+    "selling_price": 280150
+  },
+  {
+    "product_code": "CEAS5006-0000424C0",
+    "name": "Acacia E Shower Toilet",
+    "product_segment": "Shower Toilet",
+    "design": "Acacia E",
+    "product_group": "Shower Toilet",
+    "selling_price": 496600
+  },
+
+  {
+    "product_code": "CEAS7SL1-0100510A0",
+    "name": "Pristine E-Bidet(Full Function W/Deodori",
+    "product_segment": "Shower Toilet",
+    "design": "Pristine",
+    "product_group": "E-bidet",
+    "selling_price": 57350
+  },
+
+  {
+    "product_code": "CFB10400-FAST3",
+    "name": "Axisse Slim Smart Washer - Euro U Style",
+    "product_segment": "Shower Toilet",
+    "design": "Axisse",
+    "product_group": "Manual Bidet",
+    "selling_price": 9450
+  },
+  {
+    "product_code": "CEBFB108",
+    "name": "Axisse Slim Smart Washer - Amer R Style",
+    "product_segment": "Shower Toilet",
+    "design": "Axisse",
+    "product_group": "Manual Bidet",
+    "selling_price": 9450
+  },
+  {
+    "product_code": "1007372080",
+    "name": "Smart Washer Manual Bidet",
+    "product_segment": "Shower Toilet",
+    "design": "Loven",
+    "product_group": "Manual Bidet",
+    "selling_price": 12000
+  },
+
+  {
+    "product_code": "CL6146M-6D",
+    "name": "Acacia-E Uf S&C Without Metal Strip",
+    "product_segment": "Fixtures (WC)",
+    "design": "Acacia E",
+    "product_group": "Seat & Cover",
+    "selling_price": 7350
+  },
+  {
+    "product_code": "CCASC906-0000410C0",
+    "name": "New Codie Soft Closing Seats&Cover,White",
+    "product_segment": "Fixtures (WC)",
+    "design": "New Codie",
+    "product_group": "Seat & Cover",
+    "selling_price": 2600
+  },
+  {
+    "product_code": "CL6047M-6D",
+    "name": "Seat & Cover No.39 Wt",
+    "product_segment": "Fixtures (WC)",
+    "design": "-",
+    "product_group": "Seat & Cover",
+    "selling_price": 3100
+  },
+  {
+    "product_code": "CL6076M-6D",
+    "name": "Kenso Slow Closing Seat&Cover Wt",
+    "product_segment": "Fixtures (WC)",
+    "design": "Kenso",
+    "product_group": "Seat & Cover",
+    "selling_price": 4350
+  },
+  {
+    "product_code": "CL6095M-6D",
+    "name": "New Tonic Wave Slow Seat & Cover Wt",
+    "product_segment": "Fixtures (WC)",
+    "design": "Tonic",
+    "product_group": "Seat & Cover",
+    "selling_price": 15000
+  },
+  {
+    "product_code": "CL6103M-6D",
+    "name": "New Slow Closing Seat & Cover No.48 Wt",
+    "product_segment": "Fixtures (WC)",
+    "design": "-",
+    "product_group": "Seat & Cover",
+    "selling_price": 12150
+  },
+  {
+    "product_code": "CL6100M-6D",
+    "name": "Seat & Cover No.50 Wt",
+    "product_segment": "Fixtures (WC)",
+    "design": "Plaza",
+    "product_group": "Seat & Cover",
+    "selling_price": 4050
+  },
+  {
+    "product_code": "CL6145M-6D",
+    "name": "Cadet Iii Slow Closing Seat Cover",
+    "product_segment": "Fixtures (WC)",
+    "design": "Cadet",
+    "product_group": "Seat & Cover",
+    "selling_price": 3700
+  },
+
+  {
+    "product_code": "F40017-CHADY",
+    "name": "3-Function Hand Shower Set With Push Button",
+    "product_segment": "Showers & Shower System",
+    "design": "Click",
+    "product_group": "Hand Shower",
+    "selling_price": 7820
+  },
+  {
+    "product_code": "F46014-CHADYHS",
+    "name": "Hand Spray 3F W/Hook&Hose Smart",
+    "product_segment": "Showers & Shower System",
+    "design": "Click",
+    "product_group": "Hand Shower",
+    "selling_price": 5620
+  },
+  {
+    "product_code": "FFAS9h09-000500BC0",
+    "name": "Kastello 5F Hand Shower",
+    "product_segment": "Showers & Shower System",
+    "design": "Kastello",
+    "product_group": "Hand Shower",
+    "selling_price": 8240
+  },
+  {
+    "product_code": "FFAS9H11-000440BF0",
+    "name": "Rainclick 130 Round 3F Hand Shower",
+    "product_segment": "Showers & Shower System",
+    "design": "RainClick",
+    "product_group": "Hand Shower",
+    "selling_price": 8030
+  },
+  {
+    "product_code": "FFAS9H11-000AL0BF0",
+    "name": "Rainclick 130 Round 3F Hand Shower",
+    "product_segment": "Showers & Shower System",
+    "design": "RainClick",
+    "product_group": "Hand Shower",
+    "selling_price": 8610
+  },
+  {
+    "product_code": "FFAS9H11-000GL0BF0",
+    "name": "Rainclick 130 Round 3F Hand Shower",
+    "product_segment": "Showers & Shower System",
+    "design": "RainClick",
+    "product_group": "Hand Shower",
+    "selling_price": 8610
+  },
+  {
+    "product_code": "FFAS9H11-000A00BF0",
+    "name": "Rainclick 130 Round 3F Hand Shower",
+    "product_segment": "Showers & Shower System",
+    "design": "RainClick",
+    "product_group": "Hand Shower",
+    "selling_price": 8560
+  },
+  {
+    "product_code": "FFAS9H11-000DA0BF0",
+    "name": "Rainclick 130 Round 3F Hand Shower",
+    "product_segment": "Showers & Shower System",
+    "design": "RainClick",
+    "product_group": "Hand Shower",
+    "selling_price": 8560
+  },
+  {
+    "product_code": "FFASS505-000440BA0",
+    "name": "Genie Hand Shower(Steel Grey)",
+    "product_segment": "Showers & Shower System",
+    "design": "Genie",
+    "product_group": "Hand Shower",
+    "selling_price": 3570
+  },
+  {
+    "product_code": "FFASS505-000560BA0",
+    "name": "Genie Hand Shower(Petal Pink)",
+    "product_segment": "Showers & Shower System",
+    "design": "Genie",
+    "product_group": "Hand Shower",
+    "selling_price": 3570
+  },
+  {
+    "product_code": "FFASS505-000600BA0",
+    "name": "Genie Hand Shower(Aquamarine)",
+    "product_segment": "Showers & Shower System",
+    "design": "Genie",
+    "product_group": "Hand Shower",
+    "selling_price": 3570
+  },
+  {
+    "product_code": "FF1-CN521X0025550B",
+    "name": "Genie Shower Holder And Hose Set",
+    "product_segment": "Showers & Shower System",
+    "design": "Genie",
+    "product_group": "Showering Components",
+    "selling_price": 1160
+  },
+
+  {
+    "product_code": "FFASS515-000AL0BF0",
+    "name": "Easyset Headshower",
+    "product_segment": "Showers & Shower System",
+    "design": "EasySET",
+    "product_group": "Head Shower",
+    "selling_price": 8720
+  },
+  {
+    "product_code": "FFASS515-000GL0BF0",
+    "name": "Easyset Headshower",
+    "product_segment": "Showers & Shower System",
+    "design": "EasySET",
+    "product_group": "Head Shower",
+    "selling_price": 8720
+  },
+  {
+    "product_code": "FFASS515-000A00BF0",
+    "name": "Easyset Headshower",
+    "product_segment": "Showers & Shower System",
+    "design": "EasySET",
+    "product_group": "Head Shower",
+    "selling_price": 8720
+  },
+  {
+    "product_code": "FFASS515-000DA0BF0",
+    "name": "Easyset Headshower",
+    "product_segment": "Showers & Shower System",
+    "design": "EasySET",
+    "product_group": "Head Shower",
+    "selling_price": 8720
+  },
+  {
+    "product_code": "FFASS515-000440BF0",
+    "name": "Easyset Headshower",
+    "product_segment": "Showers & Shower System",
+    "design": "EasySET",
+    "product_group": "Head Shower",
+    "selling_price": 8720
+  },
+
+  {
+    "product_code": "F46022-CHACT",
+    "name": "Shower Arm With Escutcheon -Chrome",
+    "product_segment": "Showers & Shower System",
+    "design": "Universal",
+    "product_group": "Shower Kits",
+    "selling_price": 1790
+  },
+  {
+    "product_code": "FFAS9908-000500BC0",
+    "name": "Top Installation Shower Arm",
+    "product_segment": "Showers & Shower System",
+    "design": "Universal",
+    "product_group": "Shower Kits",
+    "selling_price": 2990
+  },
+  {
+    "product_code": "FF163505050",
+    "name": "Shower Arm",
+    "product_segment": "Showers & Shower System",
+    "design": "Universal",
+    "product_group": "Shower Kits",
+    "selling_price": 2990
+  },
+  {
+    "product_code": "FFAS9909-000500BC0",
+    "name": "Wall Mounted Shower Arm",
+    "product_segment": "Showers & Shower System",
+    "design": "Universal",
+    "product_group": "Shower Kits",
+    "selling_price": 5250
+  },
+  {
+    "product_code": "F40014-CHADY",
+    "name": "Curved Slide Bar W/O Soap Dish, Brass",
+    "product_segment": "Showers & Shower System",
+    "design": "Universal",
+    "product_group": "Shower Kits",
+    "selling_price": 8560
+  },
+  {
+    "product_code": "F40013-CHADY",
+    "name": "Square Slide Bar W/ Soap Dish, Brass",
+    "product_segment": "Showers & Shower System",
+    "design": "Universal",
+    "product_group": "Shower Kits",
+    "selling_price": 10190
+  },
+  {
+    "product_code": "FFASS054-000500BC0",
+    "name": "Body Showers With Conceal Body",
+    "product_segment": "Showers & Shower System",
+    "design": "EasySET",
+    "product_group": "Shower Kits",
+    "selling_price": 9660
+  },
+  {
+    "product_code": "F40015-CHADY",
+    "name": "Slide Bar W/Soap Dish  Icolor Chrome Ha",
+    "product_segment": "Showers & Shower System",
+    "design": "Universal",
+    "product_group": "Shower Kits",
+    "selling_price": 13760
+  },
+  {
+    "product_code": "FFAS0927-709440BF0",
+    "name": "Easyset For Bodyspray",
+    "product_segment": "Showers & Shower System",
+    "design": "EasySET",
+    "product_group": "Shower kits",
+    "selling_price": 18740
+  },
+  {
+    "product_code": "FFAS0927-709AL0BF0",
+    "name": "Easyset For Body Shower",
+    "product_segment": "Showers & Shower System",
+    "design": "EasySET",
+    "product_group": "Shower kits",
+    "selling_price": 19110
+  },
+  {
+    "product_code": "FFAS0927-709GL0BF0",
+    "name": "Easyset For Body Shower",
+    "product_segment": "Showers & Shower System",
+    "design": "EasySET",
+    "product_group": "Shower kits",
+    "selling_price": 19110
+  },
+  {
+    "product_code": "FFAS0927-709A00BF0",
+    "name": "Easyset For Body Shower",
+    "product_segment": "Showers & Shower System",
+    "design": "EasySET",
+    "product_group": "Shower kits",
+    "selling_price": 19110
+  },
+  {
+    "product_code": "FFAS0927-709DA0BF0",
+    "name": "Easyset For Body Shower",
+    "product_segment": "Showers & Shower System",
+    "design": "EasySET",
+    "product_group": "Shower kits",
+    "selling_price": 19110
+  },
+
+  {
+    "product_code": "FFAS9031-000500BC0",
+    "name": "Olyos In-Wall Shower Head With Arm",
+    "product_segment": "Showers & Shower System",
+    "design": "Olyos",
+    "product_group": "Showerhead",
+    "selling_price": 2890
+  },
+  {
+    "product_code": "FFAS9036-000500BC0",
+    "name": "Celia In-Wall Shower Head With Arm",
+    "product_segment": "Showers & Shower System",
+    "design": "Celia",
+    "product_group": "Showerhead",
+    "selling_price": 3780
+  },
+  {
+    "product_code": "FFAS9033-000500BC0",
+    "name": "Idyll In-Wall Shower Head With Arm",
+    "product_segment": "Showers & Shower System",
+    "design": "Idyll",
+    "product_group": "Showerhead",
+    "selling_price": 3990
+  },
+  {
+    "product_code": "FF163205050",
+    "name": "Single Shower Head 102Mm With Arm",
+    "product_segment": "Showers & Shower System",
+    "design": "Universal",
+    "product_group": "Showerhead",
+    "selling_price": 4570
+  },
+  {
+    "product_code": "F40011-CHADY",
+    "name": "Shower Head 100Mm 5-Function(W/ Shower",
+    "product_segment": "Showers & Shower System",
+    "design": "Universal",
+    "product_group": "Showerhead",
+    "selling_price": 6770
+  },
+  {
+    "product_code": "FFASS025-006500BC0",
+    "name": "200Mm Rain Shower - Round - Air Ind Chk",
+    "product_segment": "Showers & Shower System",
+    "design": "Universal",
+    "product_group": "Showerhead",
+    "selling_price": 6830
+  },
+  {
+    "product_code": "FFASS026-006500BC0",
+    "name": "202Mm Rain Shower - Square - Air Ind Ch",
+    "product_segment": "Showers & Shower System",
+    "design": "Universal",
+    "product_group": "Showerhead",
+    "selling_price": 7460
+  },
+  {
+    "product_code": "FFASS029-000500BF0",
+    "name": "8\" Round Stainless Steel Rain Shower Hea",
+    "product_segment": "Showers & Shower System",
+    "design": "Rainshower",
+    "product_group": "Showerhead",
+    "selling_price": 9980
+  },
+  {
+    "product_code": "FFASS032-006500BC0",
+    "name": "Super Thin 200Mm Square Air-In Rain Shower Head",
+    "product_segment": "Showers & Shower System",
+    "design": "Rainshower",
+    "product_group": "Showerhead",
+    "selling_price": 11030
+  },
+  {
+    "product_code": "FFASS035-000500BF0",
+    "name": "8\" Round Brass Rain Shower Head  (W/O Sh",
+    "product_segment": "Showers & Shower System",
+    "design": "Rainshower",
+    "product_group": "Showerhead",
+    "selling_price": 14810
+  },
+  {
+    "product_code": "FFASS055-000500BC0",
+    "name": "Spectra Duo",
+    "product_segment": "Showers & Shower System",
+    "design": "Spectra",
+    "product_group": "Showerhead",
+    "selling_price": 15960
+  },
+  {
+    "product_code": "FFASS056-000500BC0",
+    "name": "Spectra Touch",
+    "product_segment": "Showers & Shower System",
+    "design": "Spectra",
+    "product_group": "Showerhead",
+    "selling_price": 17430
+  },
+  {
+    "product_code": "FFASTS01-006500BF0",
+    "name": "10\" Round Stainless Steel Rain Shower He",
+    "product_segment": "Showers & Shower System",
+    "design": "Rainshower",
+    "product_group": "Showerhead",
+    "selling_price": 18320
+  },
+  {
+    "product_code": "FFASS033-000500BC0",
+    "name": "Super Thin 250Mm Square Rain Shower Head",
+    "product_segment": "Showers & Shower System",
+    "design": "Rainshower",
+    "product_group": "Showerhead",
+    "selling_price": 19740
+  },
+  {
+    "product_code": "FFASS037-000500BF0",
+    "name": "Square 200X200Mm Brass Rain Shower Head",
+    "product_segment": "Showers & Shower System",
+    "design": "Rainshower",
+    "product_group": "Showerhead",
+    "selling_price": 19900
+  },
+  {
+    "product_code": "FFASS057-000500BC0",
+    "name": "Spectra E-Touch",
+    "product_segment": "Showers & Shower System",
+    "design": "Spectra",
+    "product_group": "Showerhead",
+    "selling_price": 21740
+  },
+  {
+    "product_code": "FFASTS02-006500BF0",
+    "name": "12\" Round Stainless Steel Rain Shower He",
+    "product_segment": "Showers & Shower System",
+    "design": "Rainshower",
+    "product_group": "Showerhead",
+    "selling_price": 23210
+  },
+  {
+    "product_code": "FFASS034-000500BC0",
+    "name": "Super Thin 300Mm Square Rain Shower Head",
+    "product_segment": "Showers & Shower System",
+    "design": "Rainshower",
+    "product_group": "Showerhead",
+    "selling_price": 24360
+  },
+  {
+    "product_code": "FFASTS03-006500BF0",
+    "name": "10\" Round Brass Rain Shower Head With Ai",
+    "product_segment": "Showers & Shower System",
+    "design": "Rainshower",
+    "product_group": "Showerhead",
+    "selling_price": 24940
+  },
+  {
+    "product_code": "FFASTS05-006500BF0",
+    "name": "Square 250X250 Mm Brass Rain Shower Head",
+    "product_segment": "Showers & Shower System",
+    "design": "Rainshower",
+    "product_group": "Showerhead",
+    "selling_price": 29870
+  },
+  {
+    "product_code": "FFASS038-000500BC0",
+    "name": "254Mm Square Brass Rain Shower Head",
+    "product_segment": "Showers & Shower System",
+    "design": "Rainshower",
+    "product_group": "Showerhead",
+    "selling_price": 31610
+  },
+  {
+    "product_code": "FFASTS04-006500BF0",
+    "name": "12\" Round Brass Rain Shower Head With Ai",
+    "product_segment": "Showers & Shower System",
+    "design": "Rainshower",
+    "product_group": "Showerhead",
+    "selling_price": 39950
+  },
+  {
+    "product_code": "FFASTS06-006500BF0",
+    "name": "Square 300X300Mm Brass Rain Shower Head",
+    "product_segment": "Showers & Shower System",
+    "design": "Rainshower",
+    "product_group": "Showerhead",
+    "selling_price": 46620
+  },
+
+  {
+    "product_code": "FFASS054-000440BF0",
+    "name": "Body Showers With Conceal Body(G1/2\")",
+    "product_segment": "Showers & Shower System",
+    "design": "Body Showers",
+    "product_group": "Body Showers",
+    "selling_price": 10450
+  },
+  {
+    "product_code": "FFASS054-000AL0BC0",
+    "name": "Body Showers With Conceal Body(G1/2\")",
+    "product_segment": "Showers & Shower System",
+    "design": "Body Showers",
+    "product_group": "Body Showers",
+    "selling_price": 11130
+  },
+  {
+    "product_code": "FFASS054-000GL0BC0",
+    "name": "Body Showers With Conceal Body(G1/2\")",
+    "product_segment": "Showers & Shower System",
+    "design": "Body Showers",
+    "product_group": "Body Showers",
+    "selling_price": 11130
+  },
+  {
+    "product_code": "FFASS054-000A00BC0",
+    "name": "Body Showers With Conceal Body(G1/2\")",
+    "product_segment": "Showers & Shower System",
+    "design": "Body Showers",
+    "product_group": "Body Showers",
+    "selling_price": 11130
+  },
+  {
+    "product_code": "FFASS054-000DA0BC0",
+    "name": "Body Showers With Conceal Body(G1/2\")",
+    "product_segment": "Showers & Shower System",
+    "design": "Body Showers",
+    "product_group": "Body Showers",
+    "selling_price": 11130
+  },
+
+  {
+    "product_code": "FFAS9127-000AL0BF0",
+    "name": "1.5M Pvc Twist-Free Flexible Hose For",
+    "product_segment": "Showers & Shower System",
+    "design": "Showering Components",
+    "product_group": "Showering Components",
+    "selling_price": 2730
+  },
+  {
+    "product_code": "FFAS9127-000GL0BF0",
+    "name": "1.5M Pvc Twist-Free Flexible Hose For",
+    "product_segment": "Showers & Shower System",
+    "design": "Showering Components",
+    "product_group": "Showering Components",
+    "selling_price": 2730
+  },
+  {
+    "product_code": "FFAS9127-000A00BF0",
+    "name": "1.5M Pvc Twist-Free Flexible Hose For",
+    "product_segment": "Showers & Shower System",
+    "design": "Showering Components",
+    "product_group": "Showering Components",
+    "selling_price": 2730
+  },
+  {
+    "product_code": "FFAS9127-000DA0BF0",
+    "name": "1.5M Pvc Twist-Free Flexible Hose For",
+    "product_segment": "Showers & Shower System",
+    "design": "Showering Components",
+    "product_group": "Showering Components",
+    "selling_price": 2730
+  },
+  {
+    "product_code": "FFAS9143-000AL0BF0",
+    "name": "Square Wall Outlet With Holder (G1/2\")",
+    "product_segment": "Showers & Shower System",
+    "design": "Showering Components",
+    "product_group": "Showering Components",
+    "selling_price": 8140
+  },
+  {
+    "product_code": "FFAS9143-000GL0BF0",
+    "name": "Square Wall Outlet With Holder (G1/2\")",
+    "product_segment": "Showers & Shower System",
+    "design": "Showering Components",
+    "product_group": "Showering Components",
+    "selling_price": 8140
+  },
+  {
+    "product_code": "FFAS9143-000A00BF0",
+    "name": "Square Wall Outlet With Holder (G1/2\")",
+    "product_segment": "Showers & Shower System",
+    "design": "Showering Components",
+    "product_group": "Showering Components",
+    "selling_price": 8140
+  },
+  {
+    "product_code": "FFAS9143-000DA0BF0",
+    "name": "Square Wall Outlet With Holder (G1/2\")",
+    "product_segment": "Showers & Shower System",
+    "design": "Showering Components",
+    "product_group": "Showering Components",
+    "selling_price": 8140
+  },
+  {
+    "product_code": "FFAS9909-000AL0BF0",
+    "name": "Wall Mounted Shower Arm-C1",
+    "product_segment": "Showers & Shower System",
+    "design": "Showering Components",
+    "product_group": "Showering Components",
+    "selling_price": 5360
+  },
+  {
+    "product_code": "FFAS9909-000GL0BF0",
+    "name": "Wall Mounted Shower Arm-C1",
+    "product_segment": "Showers & Shower System",
+    "design": "Showering Components",
+    "product_group": "Showering Components",
+    "selling_price": 5360
+  },
+  {
+    "product_code": "FFAS9909-000A00BF0",
+    "name": "Wall Mounted Shower Arm-C1",
+    "product_segment": "Showers & Shower System",
+    "design": "Showering Components",
+    "product_group": "Showering Components",
+    "selling_price": 5300
+  },
+  {
+    "product_code": "FFAS9909-000DA0BF0",
+    "name": "Wall Mounted Shower Arm-C1",
+    "product_segment": "Showers & Shower System",
+    "design": "Showering Components",
+    "product_group": "Showering Components",
+    "selling_price": 5300
+  },
+  {
+    "product_code": "FFAS9127-000440BF0",
+    "name": "1.5M Pvc Twist-Free Flexible Hose For",
+    "product_segment": "Showers & Shower System",
+    "design": "Showering Components",
+    "product_group": "Showering Components",
+    "selling_price": 1940
+  },
+  {
+    "product_code": "FFAS9143-000440BF0",
+    "name": "Square Wall Outlet With Holder (G1/2\")",
+    "product_segment": "Showers & Shower System",
+    "design": "Showering Components",
+    "product_group": "Showering Components",
+    "selling_price": 8030
+  },
+  {
+    "product_code": "FFAS9909-000440BF0",
+    "name": "Wall Mounted Shower Arm-C1",
+    "product_segment": "Showers & Shower System",
+    "design": "Showering Components",
+    "product_group": "Showering Components",
+    "selling_price": 4990
+  },
+  {
+    "product_code": "FFAS9908-000440BF0",
+    "name": "Top Installation Shower Arm",
+    "product_segment": "Showers & Shower System",
+    "design": "Showering Components",
+    "product_group": "Showering Components",
+    "selling_price": 4310
+  },
+  {
+    "product_code": "FFAS9908-000AL0BF0",
+    "name": "Top Installation Shower Arm",
+    "product_segment": "Showers & Shower System",
+    "design": "Showering Components",
+    "product_group": "Showering Components",
+    "selling_price": 4570
+  },
+  {
+    "product_code": "FFAS9908-000GL0BF0",
+    "name": "Top Installation Shower Arm",
+    "product_segment": "Showers & Shower System",
+    "design": "Showering Components",
+    "product_group": "Showering Components",
+    "selling_price": 4570
+  },
+  {
+    "product_code": "FFAS9908-000A00BF0",
+    "name": "Top Installation Shower Arm",
+    "product_segment": "Showers & Shower System",
+    "design": "Showering Components",
+    "product_group": "Showering Components",
+    "selling_price": 4570
+  },
+  {
+    "product_code": "FFAS9908-000DA0BF0",
+    "name": "Top Installation Shower Arm",
+    "product_segment": "Showers & Shower System",
+    "design": "Showering Components",
+    "product_group": "Showering Components",
+    "selling_price": 4570
+  },
+  {
+    "product_code": "FFAS9142-000AL0BF0",
+    "name": "Wall Outlet - (G1/2\")",
+    "product_segment": "Showers & Shower System",
+    "design": "Showering Components",
+    "product_group": "Showering Components",
+    "selling_price": 6410
+  },
+  {
+    "product_code": "FFAS9142-000GL0BF0",
+    "name": "Wall Outlet - (G1/2\")",
+    "product_segment": "Showers & Shower System",
+    "design": "Showering Components",
+    "product_group": "Showering Components",
+    "selling_price": 6410
+  },
+  {
+    "product_code": "FFAS9142-000A00BF0",
+    "name": "Wall Outlet - (G1/2\")",
+    "product_segment": "Showers & Shower System",
+    "design": "Showering Components",
+    "product_group": "Showering Components",
+    "selling_price": 6410
+  },
+  {
+    "product_code": "FFAS9142-000DA0BF0",
+    "name": "Wall Outlet - (G1/2\")",
+    "product_segment": "Showers & Shower System",
+    "design": "Showering Components",
+    "product_group": "Showering Components",
+    "selling_price": 6410
+  },
+
+  {
+    "product_code": "BTAS6601-0320403C0",
+    "name": "Acacia 1.6M Acrylic Floor-Standing Tub",
+    "product_segment": "Bathtub",
+    "design": "Acacia",
+    "product_group": "Acrylic Tub",
+    "selling_price": 184900
+  },
+  {
+    "product_code": "BTAS6704-0020403C5",
+    "name": "Acacia Floor-Standing Tub,Heaii",
+    "product_segment": "Bathtub",
+    "design": "Acacia",
+    "product_group": "Acrylic Tub",
+    "selling_price": 231150
+  },
+  {
+    "product_code": "BTAS2601-0320400C0",
+    "name": "Acacia 1.6M Cast Iron Floor-Standing Tub",
+    "product_segment": "Bathtub",
+    "design": "Acacia",
+    "product_group": "Cast Iron Tub",
+    "selling_price": 385150
+  },
+  {
+    "product_code": "BTAS2732-2520400C5",
+    "name": "Acacia Ii 1.7 M Castiron Floor-Standing Tub",
+    "product_segment": "Bathtub",
+    "design": "Acacia",
+    "product_group": "Cast Iron Tub",
+    "selling_price": 434100
+  },
+  {
+    "product_code": "BTAS6719-032ASXJF0",
+    "name": "Acacia E Freestanding Bathtub W/O Holes",
+    "product_segment": "Bathtub",
+    "design": "Acacia E",
+    "product_group": "Acrylic Tub",
+    "selling_price": 321850
+  },
+  {
+    "product_code": "BTAS6719-602ASXJF0",
+    "name": "Acacia-E Fsd Tub(With Faucet Hole)",
+    "product_segment": "Bathtub",
+    "design": "Acacia E",
+    "product_group": "Acrylic Tub",
+    "selling_price": 336150
+  },
+  {
+    "product_code": "BTAS6719-632AS00C5",
+    "name": "Ct-6719.H56.04\\Acacia-E 1.7M Seamless Fr",
+    "product_segment": "Bathtub",
+    "design": "Acacia E",
+    "product_group": "Acrylic Tub",
+    "selling_price": 336150
+  },
+  {
+    "product_code": "BTAS6722-2020403C5",
+    "name": "Active 1.7M Acrylic Drop-In Tub W/ Handle",
+    "product_segment": "Bathtub",
+    "design": "Active",
+    "product_group": "Acrylic Tub",
+    "selling_price": 133100
+  },
+  {
+    "product_code": "BTAS2702-2520403C5",
+    "name": "Active 1.7M Cast Iron Drop-In Tub, Hea I W/ Handle",
+    "product_segment": "Bathtub",
+    "design": "Active",
+    "product_group": "Cast Iron Tub",
+    "selling_price": 184900
+  },
+  {
+    "product_code": "BTAS6716-2350403C5",
+    "name": "Concept 1.7M Drop-In Acrylic W/ Grab Bar- Whirlpool W/ Foot/Lumber Message",
+    "product_segment": "Bathtub",
+    "design": "Concept",
+    "product_group": "Acrylic Tub",
+    "selling_price": 252150
+  },
+  {
+    "product_code": "BTAS6716-2650403C5",
+    "name": "Concept 1.7M Drop-In Acrylic W/ Grab Bar- Full System With Heater",
+    "product_segment": "Bathtub",
+    "design": "Concept",
+    "product_group": "Acrylic Tub",
+    "selling_price": 321850
+  },
+  {
+    "product_code": "BTAS2800-DZ204AGA8",
+    "name": "T001A Cast Iron Tub Free Standing",
+    "product_segment": "Bathtub",
+    "design": "Free Standing",
+    "product_group": "Cast Iron Tub",
+    "selling_price": 462200
+  },
+  {
+    "product_code": "B70210-6DAWD",
+    "name": "Ids Fs Round Tub 1.7",
+    "product_segment": "Bathtub",
+    "design": "IDS",
+    "product_group": "Acrylic Tub",
+    "selling_price": 588300
+  },
+  {
+    "product_code": "B70211-6DAWD",
+    "name": "Ids Round (Fsd) 1.7 Whirlpool",
+    "product_segment": "Bathtub",
+    "design": "IDS",
+    "product_group": "Whirlpool Tub",
+    "selling_price": 840400
+  },
+  {
+    "product_code": "B70212-6DAWD",
+    "name": "Ids Round (Fsd ) 1.7 Whirlpool+Airpool",
+    "product_segment": "Bathtub",
+    "design": "IDS",
+    "product_group": "Whirlpool Tub",
+    "selling_price": 1036500
+  },
+  {
+    "product_code": "B70280-6DACT",
+    "name": "New Codie 1.5M Drop-In Tub Wt",
+    "product_segment": "Bathtub",
+    "design": "New Codie",
+    "product_group": "Acrylic Tub",
+    "selling_price": 70100
+  },
+  {
+    "product_code": "B70280-6DACTPW",
+    "name": "New Codie 1.5M Drop-In Tub W/Pop-Up Wt",
+    "product_segment": "Bathtub",
+    "design": "New Codie",
+    "product_group": "Acrylic Tub",
+    "selling_price": 70100
+  },
+  {
+    "product_code": "BTAS6512-0520403C5",
+    "name": "New Codie 1.5M Acrylic Drop-In Tub,Heaii(Normal Package)",
+    "product_segment": "Bathtub",
+    "design": "New Codie",
+    "product_group": "Acrylic Tub",
+    "selling_price": 119050
+  },
+  {
+    "product_code": "BTAS9761-0020400C5",
+    "name": "Zenistone Floor Standingtub (Oval)",
+    "product_segment": "Bathtub",
+    "design": "Zenistone",
+    "product_group": "Stone Tub",
+    "selling_price": 665300
+  },
+  {
+    "product_code": "BTAS9831-0020400C5",
+    "name": "Zenistone Floor Standingtub (Rectangle)",
+    "product_segment": "Bathtub",
+    "design": "Zenistone",
+    "product_group": "Stone Tub",
+    "selling_price": 693300
   }
 ]

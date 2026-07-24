@@ -1,109 +1,196 @@
 const fs = require("fs");
 const path = require("path");
+const { v4: uuidv4 } = require("uuid");
 
-const COMPANY_CODE_FIELD = "d11da9f9-3f2e-4536-8236-9671200cca4a";
+// ==============================
+// CONFIG
+// ==============================
+const COMPANY_CODE_KEY = "d11da9f9-3f2e-4536-8236-9671200cca4a";
+const SELLING_PRICE_KEY = "9ba862ef-f993-4873-95ef-1fef10036aa5";
+const MODEL_META_KEY = "1e19b647-1138-11f1-b773-52540021303b";
 
-const NORMALIZED_FILE = "./scripts/json-outputs/all_sheets_data1.json";
-const BACKUP_FILE =
-  "./scripts/backup/grohe_products_backup_2026-06-03T05-31-19-010Z.json";
+// Update according to brand
+const BRAND = {
+  shortCode: "GR", // Example: GR
+  namePrefix: "GR",
+};
 
-function readJson(file) {
-  return JSON.parse(fs.readFileSync(file, "utf8"));
-}
+// Files
+const updatedProducts = require("./json-outputs/all_sheets_data2.json");
+const productBackup = require("./json-outputs/products_backup.json");
 
-function writeJson(file, data) {
-  fs.writeFileSync(file, JSON.stringify(data, null, 2), "utf8");
-}
+// ==============================
+// OUTPUT ARRAYS
+// ==============================
+const updatedOutput = [];
+const missingProducts = [];
 
-const normalizedProducts = readJson(NORMALIZED_FILE);
-const backupProducts = readJson(BACKUP_FILE);
+// ==============================
+// LOOKUP MAPS
+// ==============================
+const productMap = new Map();
+const existingProductCodes = new Set();
 
-console.log(`Loaded ${normalizedProducts.length} normalized products`);
-console.log(`Loaded ${backupProducts.length} backup products`);
+// Build lookup from backup
+for (const product of productBackup) {
+  const companyCode = product?.meta?.[COMPANY_CODE_KEY];
 
-const backupLookup = new Map();
+  if (companyCode) {
+    productMap.set(String(companyCode).trim().toUpperCase(), product);
+  }
 
-for (const product of backupProducts) {
-  const companyCode = product?.meta?.[COMPANY_CODE_FIELD];
-
-  if (companyCode !== undefined && companyCode !== null) {
-    backupLookup.set(String(companyCode), product);
+  if (product.product_code) {
+    existingProductCodes.add(String(product.product_code).trim().toUpperCase());
   }
 }
 
-const updatedProducts = [];
-const newProducts = [];
-const unmatchedCodes = [];
+console.log(`Loaded ${productMap.size} products from backup.`);
 
-for (const incoming of normalizedProducts) {
-  const companyCode = incoming[COMPANY_CODE_FIELD];
+// ==============================
+// PRODUCT CODE GENERATOR
+// ==============================
+function generateProductCode(product) {
+  let baseCode = "0000";
 
-  if (companyCode === undefined || companyCode === null) {
-    console.warn("Skipping product with missing company code:", incoming.name);
+  if (product.meta && product.meta[MODEL_META_KEY]) {
+    const raw = String(product.meta[MODEL_META_KEY]).trim();
+
+    const digits = raw.replace(/\D/g, "");
+
+    if (digits.length >= 4) {
+      baseCode = digits.slice(-4);
+    } else if (digits.length > 0) {
+      baseCode = digits.padStart(4, "0");
+    }
+  }
+
+  const prefix = `E${BRAND.shortCode}${BRAND.namePrefix
+    .slice(0, 2)
+    .toUpperCase()}${baseCode}`;
+
+  let code;
+
+  do {
+    const suffix = Math.floor(Math.random() * 9000 + 1000);
+    code = `${prefix}${suffix}`;
+  } while (existingProductCodes.has(code));
+
+  existingProductCodes.add(code);
+
+  return code;
+}
+
+// ==============================
+// PROCESS
+// ==============================
+for (const item of updatedProducts) {
+  const companyCode = String(item.product_code).trim().toUpperCase();
+
+  const product = productMap.get(companyCode);
+
+  // =====================================
+  // FOUND → UPDATE SELLING PRICE
+  // =====================================
+  if (product) {
+    if (!product.meta) {
+      product.meta = {};
+    }
+
+    product.meta[SELLING_PRICE_KEY] = item.selling_price;
+
+    updatedOutput.push(product);
     continue;
   }
 
-  const existing = backupLookup.get(String(companyCode));
+  // =====================================
+  // NOT FOUND → CREATE NEW PRODUCT JSON
+  // =====================================
 
-  if (existing) {
-    // -------------------------
-    // UPDATE EXISTING PRODUCT
-    // -------------------------
+  const tempProduct = {
+    meta: {},
+  };
 
-    if (incoming.name) {
-      existing.name = incoming.name;
-    }
-
-    if (incoming.description) {
-      existing.description = incoming.description;
-    }
-
-    if (incoming.tax !== undefined) {
-      const taxValue = Number(incoming.tax);
-
-      existing.tax = Number.isNaN(taxValue)
-        ? existing.tax
-        : (taxValue * 100).toFixed(2);
-    }
-
-    existing.meta = {
-      ...(existing.meta || {}),
-    };
-
-    for (const [key, value] of Object.entries(incoming)) {
-      if (key === "name" || key === "description" || key === "tax") {
-        continue;
-      }
-
-      existing.meta[key] = value;
-    }
-
-    updatedProducts.push(existing);
-  } else {
-    // -------------------------
-    // NEW PRODUCT
-    // KEEP FORMAT UNCHANGED
-    // -------------------------
-
-    newProducts.push(incoming);
-    unmatchedCodes.push(companyCode);
+  // If model number exists in source json
+  if (item.model_number) {
+    tempProduct.meta[MODEL_META_KEY] = item.model_number;
   }
+
+  const generatedProductCode = generateProductCode(tempProduct);
+
+  missingProducts.push({
+    name: item.name,
+
+    product_code: generatedProductCode,
+
+    quantity: 0,
+
+    masterProductId: null,
+
+    isMaster: false,
+
+    variantOptions: null,
+
+    variantKey: null,
+
+    skuSuffix: null,
+
+    discountType: null,
+
+    alert_quantity: 1,
+
+    tax: 0,
+
+    description: item.name,
+
+    images: [],
+
+    isFeatured: false,
+
+    status: "active",
+
+    brandId: null,
+
+    categoryId: null,
+
+    vendorId: null,
+
+    brand_parentcategoriesId: null,
+
+    meta: {
+      [SELLING_PRICE_KEY]: item.selling_price,
+
+      [COMPANY_CODE_KEY]: item.product_code,
+
+      ...(item.model_number && {
+        [MODEL_META_KEY]: item.model_number,
+      }),
+    },
+  });
 }
 
-writeJson("./updatedProducts.json", updatedProducts);
+// ==============================
+// WRITE FILES
+// ==============================
 
-writeJson("./newProducts.json", newProducts);
+fs.writeFileSync(
+  path.join(__dirname, "updated_products_output.json"),
+  JSON.stringify(updatedOutput, null, 2),
+);
 
-writeJson("./unmatchedCodes.json", unmatchedCodes);
+fs.writeFileSync(
+  path.join(__dirname, "missing_products.json"),
+  JSON.stringify(missingProducts, null, 2),
+);
 
-console.log("\n========== SUMMARY ==========");
-console.log(`Updated Products : ${updatedProducts.length}`);
+// ==============================
+// SUMMARY
+// ==============================
 
-console.log(`New Products     : ${newProducts.length}`);
-
-console.log(`Unmatched Codes  : ${unmatchedCodes.length}`);
-
-console.log("\nFiles generated:");
-console.log("✓ updatedProducts.json");
-console.log("✓ newProducts.json");
-console.log("✓ unmatchedCodes.json");
+console.log("\n=====================================");
+console.log(`Updated Products : ${updatedOutput.length}`);
+console.log(`Missing Products : ${missingProducts.length}`);
+console.log("=====================================");
+console.log(
+  `Updated JSON : ${path.join(__dirname, "updated_products_output.json")}`,
+);
+console.log(`Missing JSON : ${path.join(__dirname, "missing_products.json")}`);
