@@ -33,45 +33,57 @@ const buildFloorsFromProducts = (products) => {
   const floorMap = new Map();
 
   products.forEach((item) => {
-    if (!item?.floorId) return;
+    const locationList =
+      Array.isArray(item.locations) && item.locations.length > 0
+        ? item.locations
+        : item.floorId
+          ? [
+              {
+                floorId: item.floorId,
+                floorName: item.floorName,
+                roomId: item.roomId,
+                roomName: item.roomName,
+                areaId: item.areaId,
+                areaName: item.areaName,
+                areaValue: item.areaValue,
+              },
+            ]
+          : [];
 
-    if (!floorMap.has(item.floorId)) {
-      floorMap.set(item.floorId, {
-        floorId: item.floorId,
-        floorName: item.floorName || `Floor ${item.floorId}`,
-        sortOrder: Number(item.floorSortOrder ?? floorMap.size),
-        rooms: [],
-      });
-    }
+    locationList.forEach((loc) => {
+      if (!loc.floorId) return;
 
-    const floor = floorMap.get(item.floorId);
-
-    if (item.roomId) {
-      let room = floor.rooms.find((r) => r.roomId === item.roomId);
-
-      if (!room) {
-        room = {
-          roomId: item.roomId,
-          roomName: item.roomName || "Unnamed Room",
-          sortOrder: Number(item.roomSortOrder ?? floor.rooms.length),
-          type: item.roomType || "other",
-          areas: [],
-        };
-        floor.rooms.push(room);
+      if (!floorMap.has(loc.floorId)) {
+        floorMap.set(loc.floorId, {
+          floorId: loc.floorId,
+          floorName: loc.floorName || `Floor ${loc.floorId}`,
+          sortOrder: Number(loc.floorSortOrder ?? floorMap.size),
+          rooms: [],
+        });
       }
+      const floor = floorMap.get(loc.floorId);
 
-      if (item.areaId) {
-        const exists = room.areas.some((a) => a.id === item.areaId);
-        if (!exists) {
+      if (loc.roomId) {
+        let room = floor.rooms.find((r) => r.roomId === loc.roomId);
+        if (!room) {
+          room = {
+            roomId: loc.roomId,
+            roomName: loc.roomName || "Unnamed Room",
+            sortOrder: Number(loc.roomSortOrder ?? floor.rooms.length),
+            type: loc.roomType || "other",
+            areas: [],
+          };
+          floor.rooms.push(room);
+        }
+        if (loc.areaId && !room.areas.some((a) => a.id === loc.areaId)) {
           room.areas.push({
-            id: item.areaId,
-            name: item.areaName || "Area",
-            value: item.areaValue || "",
-            sortOrder: Number(item.areaSortOrder ?? room.areas.length),
+            id: loc.areaId,
+            name: loc.areaName || "Area",
+            value: loc.areaValue || "",
           });
         }
       }
-    }
+    });
   });
 
   return Array.from(floorMap.values())

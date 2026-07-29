@@ -112,7 +112,6 @@ const ReportDashboard = () => {
     .toString()
     .toUpperCase();
 
-
   const { data: countData, isLoading: productCountLoading } =
     useGetProductCountQuery();
 
@@ -300,8 +299,6 @@ const ReportDashboard = () => {
       .slice(0, 7);
   }, [quotations]);
 
-
-
   return (
     <div className="page-wrapper">
       <div className="content">
@@ -434,113 +431,6 @@ const ReportDashboard = () => {
                   </ResponsiveContainer>
                 </ReportChartCard>
               </div>
-              {/* <div className="report-grid report-grid-secondary">
-                <ReportChartCard
-                  title="Quotation Value Trend"
-                  description="Daily value created through quotations"
-                >
-                  <ResponsiveContainer width="100%" height={300}>
-                    <AreaChart data={timelineData}>
-                      <defs>
-                        <linearGradient
-                          id="quoteValueFill"
-                          x1="0"
-                          y1="0"
-                          x2="0"
-                          y2="1"
-                        >
-                          <stop
-                            offset="5%"
-                            stopColor={BRAND_RED}
-                            stopOpacity={0.22}
-                          />
-                          <stop
-                            offset="95%"
-                            stopColor={BRAND_RED}
-                            stopOpacity={0}
-                          />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="date" minTickGap={24} />
-                      <YAxis
-                        tickFormatter={(value) => `₹${Number(value) / 1000}k`}
-                      />
-                      <Tooltip formatter={(value) => formatCurrency(value)} />
-                      <Area
-                        type="monotone"
-                        dataKey="quoteValue"
-                        name="Quotation Value"
-                        stroke={BRAND_RED}
-                        strokeWidth={3}
-                        fill="url(#quoteValueFill)"
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </ReportChartCard>
-
-                <ReportChartCard
-                  title="Low Stock Products"
-                  description="Lowest quantity products requiring attention"
-                >
-                  {lowStockChartData.length ? (
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={lowStockChartData} layout="vertical">
-                        <CartesianGrid
-                          strokeDasharray="3 3"
-                          horizontal={false}
-                        />
-                        <XAxis type="number" allowDecimals={false} />
-                        <YAxis
-                          dataKey="name"
-                          type="category"
-                          width={130}
-                          tick={{ fontSize: 11 }}
-                        />
-                        <Tooltip />
-                        <Bar
-                          dataKey="quantity"
-                          name="Quantity"
-                          fill={BRAND_RED}
-                          radius={[0, 8, 8, 0]}
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <Empty description="No low stock products" />
-                  )}
-                </ReportChartCard>
-
-                <ReportChartCard
-                  title="Top Customers"
-                  description="Customers ranked by quotation value"
-                >
-                  {customerAnalytics.length ? (
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={customerAnalytics}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                        <XAxis
-                          dataKey="name"
-                          tick={{ fontSize: 11 }}
-                          interval={0}
-                        />
-                        <YAxis
-                          tickFormatter={(value) => `₹${Number(value) / 1000}k`}
-                        />
-                        <Tooltip formatter={(value) => formatCurrency(value)} />
-                        <Bar
-                          dataKey="quoteValue"
-                          name="Quotation Value"
-                          fill={TEXT_DARK}
-                          radius={[8, 8, 0, 0]}
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <Empty description="No customer analytics yet" />
-                  )}
-                </ReportChartCard>
-              </div> */}
             </>
           )}
         </div>

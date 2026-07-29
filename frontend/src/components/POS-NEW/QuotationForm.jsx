@@ -206,11 +206,6 @@ const QuotationForm = ({
     }
   }, [effectiveCartItems, quotationData.floors?.length, handleQuotationChange]);
 
-  const unassignedCount = useMemo(
-    () => effectiveCartItems.filter((i) => !i?.floorId).length,
-    [effectiveCartItems],
-  );
-
   const floorSummary = useMemo(() => {
     const summary = {};
     (quotationData.floors || []).forEach((f) => {
@@ -223,23 +218,55 @@ const QuotationForm = ({
     });
 
     effectiveCartItems.forEach((item) => {
-      if (!item?.floorId || !summary[item.floorId]) return;
-      const floor = summary[item.floorId];
-      floor.itemCount += item.quantity || 1;
-      floor.total += (item.quantity || 1) * (item.price || 0);
+      const price = item.price || 0;
+      const locations =
+        Array.isArray(item.locations) && item.locations.length > 0
+          ? item.locations
+          : item.floorId
+            ? [
+                {
+                  floorId: item.floorId,
+                  roomId: item.roomId,
+                  assignedQuantity: item.quantity || 1,
+                },
+              ]
+            : [];
 
-      if (item.roomId) {
-        const room = floor.rooms.find((r) => r.roomId === item.roomId);
-        if (room) {
-          room.itemCount += item.quantity || 1;
-          room.total += (item.quantity || 1) * (item.price || 0);
+      locations.forEach((loc) => {
+        const floor = summary[loc.floorId];
+        if (!floor) return;
+        const qty = Number(loc.assignedQuantity) || 0;
+        floor.itemCount += qty;
+        floor.total += qty * price;
+
+        if (loc.roomId) {
+          const room = floor.rooms.find((r) => r.roomId === loc.roomId);
+          if (room) {
+            room.itemCount += qty;
+            room.total += qty * price;
+          }
         }
-      }
+      });
     });
 
     return Object.values(summary);
   }, [effectiveCartItems, quotationData.floors]);
 
+  const unassignedCount = useMemo(() => {
+    return effectiveCartItems.filter((item) => {
+      const totalQty = Number(item.quantity) || 0;
+      const assignedQty =
+        Array.isArray(item.locations) && item.locations.length > 0
+          ? item.locations.reduce(
+              (s, l) => s + (Number(l.assignedQuantity) || 0),
+              0,
+            )
+          : item.floorId
+            ? totalQty
+            : 0;
+      return assignedQty < totalQty;
+    }).length;
+  }, [effectiveCartItems]);
   // Customer & Address Logic
   const customerOptions = useMemo(() => {
     return customers.map((cust) => ({
@@ -836,8 +863,13 @@ const QuotationForm = ({
                     icon={<PushpinOutlined />}
                     onClick={() => openAssignModal(item.id)}
                   >
-                    {item.floorId
-                      ? `✓ ${item.floorName || "Assigned"}`
+                    {item.locations?.length
+                      ? item.locations
+                          .map(
+                            (l) =>
+                              `${l.floorName || "Floor"} ×${l.assignedQuantity}`,
+                          )
+                          .join(", ")
                       : "Assign Location"}
                   </Button>
                 }
