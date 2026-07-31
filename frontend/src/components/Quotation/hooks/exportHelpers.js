@@ -194,102 +194,98 @@ const downloadBlob = (data, name) => {
 };
 
 /* ------------------------------------------------------------------ */
+/*                    ROW PRICING HELPER (matches component)          */
+/* ------------------------------------------------------------------ */
+const computeRowPricing = (item) => {
+  const mrp = Number(item.price ?? 0);
+  const qty = Number(item.quantity ?? 1);
+  const discValue = Number(item.discount ?? 0);
+  const discType = (item.discountType ?? "percent").toLowerCase();
+
+  let unitPrice = mrp;
+  if (discValue > 0) {
+    unitPrice =
+      discType === "percent" ? mrp * (1 - discValue / 100) : mrp - discValue;
+  }
+  unitPrice = Math.round(unitPrice * 100) / 100;
+
+  const lineTotal =
+    item.total !== undefined && item.total !== null && Number(item.total) > 0
+      ? Number(item.total)
+      : Math.round(unitPrice * qty * 100) / 100;
+
+  const displayDiscount =
+    discValue > 0
+      ? discType === "percent"
+        ? `${discValue}%`
+        : `₹${discValue.toFixed(0)}`
+      : "0";
+
+  return {
+    mrp,
+    qty,
+    unitPrice,
+    lineTotal,
+    discValue,
+    discType,
+    displayDiscount,
+  };
+};
+
+/* ------------------------------------------------------------------ */
 /*                              EXCEL EXPORT                          */
 /* ------------------------------------------------------------------ */
-export const exportToExcel = async (
-  products,
-  productsData,
-  brandNames,
-  customerName,
-  quotation = {}, // Now used for title
-  address,
+export const exportToExcel = async ({
+  products = [], // flat array of product objects (mainProducts / allProducts)
+  brandNames = "",
+  customerName = "Dear Client",
+  quotation = {},
+  address = "",
   logo,
   accountDetails,
   id,
-  activeVersion,
-  allBrands = [],
-) => {
-  /* ---------- 1. Normalise product list ---------- */
-  let productList = [];
-  try {
-    productList = Array.isArray(products)
-      ? products
-      : typeof products === "string"
-        ? JSON.parse(products)
-        : [];
-  } catch (e) {
-    productList = [];
+  activeVersion = "current",
+} = {}) => {
+  if (!products || products.length === 0) {
+    message.warning("No products found to export.");
   }
 
-  /* ---------- 2. Build rows ---------- */
-  const rows = productList.map((p, i) => {
-    const pd = productsData.find((x) => x.productId === p.productId) || {};
-    let img = null;
-    try {
-      if (pd.images) {
-        // Case 1: Already parsed array
-        if (Array.isArray(pd.images)) {
-          img = pd.images[0];
-        }
-        // Case 2: JSON string like '["url"]'
-        else if (
-          typeof pd.images === "string" &&
-          pd.images.trim().startsWith("[")
-        ) {
-          const parsed = JSON.parse(pd.images);
-          img = Array.isArray(parsed) ? parsed[0] : null;
-        }
-        // Case 3: Direct URL string (most common now)
-        else if (
-          typeof pd.images === "string" &&
-          pd.images.trim().startsWith("http")
-        ) {
-          img = pd.images.trim();
-        }
-      }
-    } catch (e) {
-      img = null;
-    }
-    const code =
-      pd?.meta?.d11da9f9_3f2e_4536_8236_9671200cca4a || p.productCode || "N/A";
-    const mrp =
-      pd.metaDetails?.find((m) => m.title === "sellingPrice")?.value ||
-      p.total ||
-      0;
+  /* ---------- 1. Build rows directly from product objects ---------- */
+  const rows = products.map((p, i) => {
+    const { mrp, qty, unitPrice, lineTotal, displayDiscount } =
+      computeRowPricing(p);
 
     return {
       idx: i + 1,
-      img,
-      name: p.name || pd.name || "‑",
-      code,
-      mrp: `₹${Number(mrp).toFixed(2)}`,
-      discount:
-        p.discount && p.discountType === "percent"
-          ? `${p.discount}%`
-          : p.discount
-            ? `₹${p.discount}`
-            : "0",
-      rate: `₹${(p.rate || mrp).toFixed(2)}`,
-      qty: p.quantity || "1",
-      total: `₹${Number(p.total).toFixed(2)}`,
+      img: p.imageUrl || null,
+      name: p.name || "‑",
+      code: p.companyCode || p.productCode || "N/A",
+      mrp,
+      mrpDisplay: `₹${mrp.toFixed(2)}`,
+      discount: displayDiscount,
+      rate: unitPrice,
+      rateDisplay: `₹${unitPrice.toFixed(2)}`,
+      qty,
+      total: lineTotal,
+      totalDisplay: `₹${lineTotal.toFixed(2)}`,
     };
   });
 
-  /* ---------- 3. Load images ---------- */
+  /* ---------- 2. Load images ---------- */
   const logoImg = logo ? await fetchImg(logo) : placeholder;
   const prodImgPromises = rows.map((r) =>
     r.img ? fetchImg(r.img) : Promise.resolve(placeholder),
   );
   const prodImgs = await Promise.all(prodImgPromises);
 
-  /* ---------- 4. Workbook ---------- */
+  /* ---------- 3. Workbook ---------- */
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet("Quotation", {
     pageSetup: { paperSize: 9, orientation: "portrait", fitToPage: true },
     properties: { defaultRowHeight: 20 },
   });
 
-  /* ---------- 5. Column widths ---------- */
+  /* ---------- 4. Column widths ---------- */
   ws.columns = [
     { width: 6 }, // S.No
     { width: 12 }, // Image
@@ -302,7 +298,7 @@ export const exportToExcel = async (
     { width: 14 }, // Total
   ];
 
-  /* ---------- 6. LOGO ---------- */
+  /* ---------- 5. LOGO ---------- */
   if (logoImg?.buffer) {
     const logoId = wb.addImage({
       buffer: logoImg.buffer,
@@ -315,7 +311,7 @@ export const exportToExcel = async (
     ws.getRow(1).height = 80;
   }
 
-  /* ---------- 7. Title + Brand ---------- */
+  /* ---------- 6. Title + Brand ---------- */
   ws.mergeCells("B2:E2");
   ws.getCell("B2").value = "Estimate / Quotation";
   ws.getCell("B2").font = { bold: true, size: 16 };
@@ -326,7 +322,7 @@ export const exportToExcel = async (
   ws.getCell("F2").font = { bold: true };
   ws.getCell("F2").alignment = { horizontal: "right" };
 
-  /* ---------- 8. Customer block ---------- */
+  /* ---------- 7. Customer block ---------- */
   ws.mergeCells("B4:E5");
   ws.getCell("B4").value = customerName || "Dear Client";
 
@@ -339,7 +335,7 @@ export const exportToExcel = async (
   ws.mergeCells("B6:I7");
   ws.getCell("B6").value = address || "N/A";
 
-  /* ---------- 9. Product table header ---------- */
+  /* ---------- 8. Product table header ---------- */
   const header = ws.addRow([
     "S.No",
     "Image",
@@ -368,21 +364,20 @@ export const exportToExcel = async (
   });
   ws.getRow(ws.rowCount).height = 30;
 
-  /* ---------- 10. Product rows ---------- */
+  /* ---------- 9. Product rows ---------- */
   rows.forEach((r, i) => {
     const row = ws.addRow([
       r.idx,
       "",
       r.name,
       r.code,
-      r.mrp,
+      r.mrpDisplay,
       r.discount,
-      r.rate,
+      r.rateDisplay,
       r.qty,
-      r.total,
+      r.totalDisplay,
     ]);
     row.height = 60;
-    const imgData = prodImgs[i];
 
     const img = prodImgs[i];
     if (img?.buffer) {
@@ -408,13 +403,13 @@ export const exportToExcel = async (
     });
   });
 
-  /* ---------- 11–13. Totals, Tax Summary, Bank Details (unchanged) ---------- */
+  /* ---------- 10. Totals ---------- */
   const {
     subtotal,
     gst: gstAmount,
     total: finalTotal,
   } = calcTotals(
-    productList,
+    rows.map((r) => ({ total: r.total })),
     quotation?.gst_value ?? 0,
     quotation?.include_gst ?? false,
   );
@@ -425,7 +420,7 @@ export const exportToExcel = async (
     `Amount Chargeable (in words): ${amountInWords(finalTotal)}`;
   ws.getCell(`A${ws.rowCount}`).font = { bold: true };
 
-  // Tax summary logic (same as before)
+  /* ---------- 11. Tax summary ---------- */
   const taxHeader = ws.addRow([
     "HSN/SAC",
     "Taxable Value",
@@ -450,16 +445,18 @@ export const exportToExcel = async (
     };
   });
 
+  // No separate productsData catalog anymore — HSN/SAC pulled straight
+  // off each product if present, otherwise grouped under "N/A".
   const taxMap = new Map();
-  productList.forEach((p) => {
-    const pd = productsData.find((x) => x.productId === p.productId) || {};
-    const hsn = pd.hsnSac || "N/A";
-    const taxable = Number(p.total || 0);
+  products.forEach((p) => {
+    const hsn = p.hsnSac || p.hsn || "N/A";
+    const { lineTotal } = computeRowPricing(p);
     const rate = quotation?.gst_value || 0;
-    const cgst = (taxable * rate) / 200;
+    const cgst = (lineTotal * rate) / 200;
+
     if (!taxMap.has(hsn)) taxMap.set(hsn, { taxable: 0, cgst: 0 });
     const e = taxMap.get(hsn);
-    e.taxable += taxable;
+    e.taxable += lineTotal;
     e.cgst += cgst;
   });
 
@@ -488,11 +485,11 @@ export const exportToExcel = async (
 
   ws.addRow([]);
   ws.mergeCells(`A${ws.rowCount}:G${ws.rowCount}`);
-  ws.getCell(`A${ws.rowCount}`).value = `Tax Amount (in words): ${amountInWords(
-    gstAmount,
-  )}`;
+  ws.getCell(`A${ws.rowCount}`).value =
+    `Tax Amount (in words): ${amountInWords(gstAmount)}`;
   ws.getCell(`A${ws.rowCount}`).font = { bold: true };
 
+  /* ---------- 12. Bank details ---------- */
   const bank = accountDetails || {};
   ws.addRow([]);
   ws.mergeCells(`A${ws.rowCount}:D${ws.rowCount}`);
@@ -523,12 +520,12 @@ export const exportToExcel = async (
     "Terms & Conditions: Refer attached document.";
   ws.getCell(`A${ws.rowCount}`).font = { bold: true };
 
-  /* ---------- 14. SAVE WITH CUSTOM FILENAME ---------- */
-  // Inside exportToExcel, near the end:
+  /* ---------- 13. Save with custom filename ---------- */
   const safeVersion = activeVersion === "current" ? "Latest" : activeVersion;
   const safeTitle = getSafeTitle(quotation);
   const titlePart = safeTitle ? `${safeTitle}_` : "";
-  const excelFilename = `${titlePart}  _V${safeVersion}.xlsx`;
+  const excelFilename = `${titlePart}V${safeVersion}.xlsx`;
+
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -541,4 +538,6 @@ export const exportToExcel = async (
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+
+  message.success("Excel exported successfully!");
 };

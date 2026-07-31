@@ -48,6 +48,7 @@ import {
   SendOutlined,
 } from "@ant-design/icons";
 import { Document, Page, pdfjs } from "react-pdf";
+import noimg from "../../assets/img/noimg.jpg";
 import useProductsData from "../../utils/useProductdata";
 import AddAddress from "../../components/Address/AddAddressModal";
 import CommentRow from "../../components/Orders/CommentRow";
@@ -160,8 +161,7 @@ const OrderPage = () => {
         productsData.find(
           (p) => p.productId === (original.productId || original.id),
         ) || {};
-      let imageUrl =
-        original.imageUrl || pd.images?.[0] || "https://via.placeholder.com/64";
+      let imageUrl = original.imageUrl || pd.images?.[0] || noimg;
       let code = String(
         original.companyCode || pd.product_code || original.sku || "N/A",
       ).trim();
@@ -187,6 +187,7 @@ const OrderPage = () => {
         ),
         quantity: original.quantity || 1,
         discount: parseFloat(original.discount || 0),
+        discountType: original.discountType || "fixed", // ← added
         total: parseFloat(original.total || 0),
       };
     });
@@ -417,9 +418,7 @@ const OrderPage = () => {
                           src={record.image}
                           alt={record.name}
                           className="product-thumb"
-                          onError={(e) =>
-                            (e.target.src = "https://via.placeholder.com/64")
-                          }
+                          onError={(e) => (e.target.src = { noimg })}
                         />
                         <div>
                           <div className="product-name">{record.name}</div>
@@ -441,6 +440,25 @@ const OrderPage = () => {
                     render: (v) => `₹${parseFloat(v).toFixed(2)}`,
                   },
                   {
+                    title: "Discount",
+                    key: "discount",
+                    width: 110,
+                    align: "center",
+                    render: (_, record) => {
+                      const discountVal = parseFloat(record.discount || 0);
+                      if (!discountVal)
+                        return <span className="no-discount">—</span>;
+                      const isPercent = record.discountType === "percent";
+                      return (
+                        <span className="discount-tag">
+                          {isPercent
+                            ? `${discountVal}%`
+                            : `₹${discountVal.toFixed(2)}`}
+                        </span>
+                      );
+                    },
+                  },
+                  {
                     title: "Total",
                     key: "total",
                     width: 120,
@@ -450,34 +468,76 @@ const OrderPage = () => {
                     ),
                   },
                 ]}
-                footer={() => (
-                  <div className="table-summary">
-                    <div className="summary-row">
-                      <span>Subtotal</span>
-                      <strong>₹{lineItemsTotal.toFixed(2)}</strong>
-                    </div>
-                    {order.shipping > 0 && (
+                footer={() => {
+                  const itemDiscountTotal = mergedProducts.reduce((sum, p) => {
+                    if (!p.discount) return sum;
+                    return (
+                      sum +
+                      (p.discountType === "percent"
+                        ? (p.price * p.quantity * p.discount) / 100
+                        : p.discount)
+                    );
+                  }, 0);
+
+                  const globalDiscountValue = parseFloat(
+                    order.extraDiscountValue || 0,
+                  );
+                  const globalDiscountFromQuotation = parseFloat(
+                    order.quotation?.discountAmount ||
+                      order.quotationDetails?.discountAmount ||
+                      0,
+                  );
+                  const effectiveGlobalDiscount =
+                    globalDiscountValue > 0
+                      ? globalDiscountValue
+                      : globalDiscountFromQuotation;
+                  const globalDiscountLabel =
+                    order.extraDiscountType === "percent" &&
+                    globalDiscountValue > 0
+                      ? `${order.extraDiscount || order.extraDiscountValue}%`
+                      : `₹${effectiveGlobalDiscount.toFixed(2)}`;
+
+                  return (
+                    <div className="table-summary">
                       <div className="summary-row">
-                        <span>Shipping</span>
-                        <span>+₹{parseFloat(order.shipping).toFixed(2)}</span>
+                        <span>Subtotal</span>
+                        <strong>₹{lineItemsTotal.toFixed(2)}</strong>
                       </div>
-                    )}
-                    {order.extraDiscountValue > 0 && (
-                      <div className="summary-row discount">
-                        <span>Extra Discount</span>
-                        <span className="negative">
-                          -₹{parseFloat(order.extraDiscountValue).toFixed(2)}
-                        </span>
+
+                      {itemDiscountTotal > 0 && (
+                        <div className="summary-row discount">
+                          <span>Item Discounts</span>
+                          <span className="negative">
+                            -₹{itemDiscountTotal.toFixed(2)}
+                          </span>
+                        </div>
+                      )}
+
+                      {parseFloat(order.shipping || 0) > 0 && (
+                        <div className="summary-row">
+                          <span>Shipping</span>
+                          <span>+₹{parseFloat(order.shipping).toFixed(2)}</span>
+                        </div>
+                      )}
+
+                      {effectiveGlobalDiscount > 0 && (
+                        <div className="summary-row discount">
+                          <span>Global Discount</span>
+                          <span className="negative">
+                            -{globalDiscountLabel}
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="summary-row final">
+                        <span>Final Amount</span>
+                        <strong className="final-amount">
+                          ₹{finalAmount.toFixed(2)}
+                        </strong>
                       </div>
-                    )}
-                    <div className="summary-row final">
-                      <span>Final Amount</span>
-                      <strong className="final-amount">
-                        ₹{finalAmount.toFixed(2)}
-                      </strong>
                     </div>
-                  </div>
-                )}
+                  );
+                }}
               />
             </Card>
 

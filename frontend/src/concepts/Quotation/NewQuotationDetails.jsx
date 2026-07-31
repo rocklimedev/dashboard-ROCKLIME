@@ -97,7 +97,13 @@ const computeFloorTotals = (floorProducts = []) => {
   }, 0);
   return { gross, discount: gross - net, net };
 };
-
+// ── Title by Gender Helper ─────────────────────────────────────────────
+const getTitleByGender = (gender) => {
+  const g = (gender || "").toLowerCase();
+  if (g === "male") return "Mr.";
+  if (g === "female") return "Ms.";
+  return "Mx."; // other / unspecified / non-binary
+};
 const NewQuotationsDetails = () => {
   const { id } = useParams();
   const [activeVersion, setActiveVersion] = useState("current");
@@ -211,7 +217,15 @@ const NewQuotationsDetails = () => {
   const customer = customerResponse?.data || {};
   const address = addressResponse || {};
 
-  const customerName = customer?.name || "Dear Client";
+  const customerName = useMemo(() => {
+    if (!customer?.name) return "Dear Client";
+
+    // Prefer API-provided displayName/title if present, else derive from gender
+    if (customer.displayName) return customer.displayName;
+
+    const title = customer.title || getTitleByGender(customer.gender);
+    return `${title} ${customer.name}`;
+  }, [customer]);
   const customerPhone = customer?.mobileNumber || customer?.phone || "";
   const customerAddress =
     [address.street, address.city, address.state].filter(Boolean).join(", ") +
@@ -1338,10 +1352,7 @@ const NewQuotationsDetails = () => {
                   {roomGroup.floorName.toUpperCase()} — TOTAL
                 </h2>
 
-                {renderFloorDiscountBox(
-                  roomGroup.floorName,
-                  floorAllProducts,
-                )}
+                {renderFloorDiscountBox(roomGroup.floorName, floorAllProducts)}
               </div>,
             );
           }
@@ -1398,9 +1409,7 @@ const NewQuotationsDetails = () => {
                     <span style={{ color: "#f5222d" }}>Discount</span>
                     <span style={{ color: "#f5222d" }}>
                       -₹
-                      {Math.round(totalProductDiscount).toLocaleString(
-                        "en-IN",
-                      )}
+                      {Math.round(totalProductDiscount).toLocaleString("en-IN")}
                     </span>
                   </div>
                 )}
@@ -1420,9 +1429,7 @@ const NewQuotationsDetails = () => {
                 <div style={{ fontSize: "2.35em", fontWeight: 700 }}>
                   ₹{finalAmount.toLocaleString("en-IN")}
                 </div>
-                <div className={styles.amountInWords}>
-                  {finalAmountInWords}
-                </div>
+                <div className={styles.amountInWords}>{finalAmountInWords}</div>
               </div>
             </div>
           </div>
@@ -1458,7 +1465,16 @@ const NewQuotationsDetails = () => {
           { visibleColumns, includeProductListPage, includeSummaryPage },
         );
       } else {
-        await exportToExcel(/* your existing excel params */);
+        await exportToExcel({
+          products: mainProducts, // or allProducts if you want options included
+          brandNames,
+          customerName,
+          quotation: activeVersionData.quotation || quotation,
+          address: customerAddress,
+          logo,
+          id,
+          activeVersion,
+        });
       }
       message.success(`${exportFormat.toUpperCase()} exported successfully!`);
     } catch (err) {

@@ -84,6 +84,7 @@ const AddCustomer = () => {
         name: existingCustomer.name || "",
         companyName: existingCustomer.companyName || "",
         customerType: existingCustomer.customerType || "Retail",
+        gender: existingCustomer.gender || undefined,
         email: existingCustomer.email || "",
         mobileNumber: existingCustomer.mobileNumber || "",
         phone2: existingCustomer.phone2 || "",
@@ -147,6 +148,7 @@ const AddCustomer = () => {
         name: values.name?.trim(),
         companyName: values.companyName?.trim() || null,
         customerType: values.customerType || null,
+        gender: values.gender || null,
         email: values.email?.trim() || null,
         mobileNumber: values.mobileNumber?.trim() || null,
         phone2: values.phone2?.trim() || null,
@@ -250,6 +252,16 @@ const AddCustomer = () => {
                           <Option value="Interior">Interior</Option>
                           <Option value="Builder">Builder</Option>
                           <Option value="Contractor">Contractor</Option>
+                        </Select>
+                      </Form.Item>
+                    </Col>
+
+                    <Col lg={12} xs={24}>
+                      <Form.Item label="Gender" name="gender">
+                        <Select allowClear placeholder="Select gender">
+                          <Option value="Male">Male</Option>
+                          <Option value="Female">Female</Option>
+                          <Option value="Other">Other</Option>
                         </Select>
                       </Form.Item>
                     </Col>

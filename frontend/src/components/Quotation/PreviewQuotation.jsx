@@ -272,10 +272,13 @@ const PreviewQuotation = ({
                       )}
                     </td>
                     <td>{code}</td>
-                    <td>
+                    <td className={styles.image}>
                       {img ? (
                         <img
-                          src={img}
+                          src={
+                            img ||
+                            "https://via.placeholder.com/135x60?text=No+Image"
+                          }
                           alt={p.name}
                           className={styles.prodImg}
                         />

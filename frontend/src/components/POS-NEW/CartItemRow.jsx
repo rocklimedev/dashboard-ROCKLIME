@@ -24,7 +24,7 @@ const { Option } = Select;
 /* ===================== STYLES ===================== */
 
 const ItemContainer = styled.div`
-  padding: 14px 10px;
+  padding: 12px 8px;
   transition: all 0.2s;
   background: #fff;
   border-radius: 8px;
@@ -41,6 +41,20 @@ const ItemContainer = styled.div`
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
     z-index: 100;
   `}
+
+  @media (min-width: 768px) {
+    padding: 14px 10px;
+  }
+`;
+
+/* Main row: stacks vertically on small screens, becomes a horizontal
+   row (image | content | qty/total) from the sm breakpoint up. */
+const MainRow = styled(Row)`
+  flex-wrap: wrap;
+
+  @media (min-width: 576px) {
+    flex-wrap: nowrap;
+  }
 `;
 
 const DragHandle = styled.div`
@@ -63,13 +77,57 @@ const DragHandle = styled.div`
 const CartItemImage = styled(LazyLoadImage)`
   border-radius: 8px;
   object-fit: cover;
-  width: 64px;
-  height: 64px;
+  width: 56px;
+  height: 56px;
   background: #f5f5f5;
+
+  @media (min-width: 576px) {
+    width: 64px;
+    height: 64px;
+  }
 
   @media (min-width: 768px) {
     width: 80px;
     height: 80px;
+  }
+`;
+
+/* Quantity / total block: full-width row under content on mobile,
+   right-aligned fixed-width column from sm up. */
+const QtyTotalCol = styled(Col)`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  margin-top: 10px;
+
+  @media (min-width: 576px) {
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: flex-start;
+    gap: 8px;
+    width: auto;
+    margin-top: 0;
+  }
+`;
+
+/* On mobile "Remove" collapses to just the icon to save space */
+const RemoveLabel = styled.span`
+  display: none;
+
+  @media (min-width: 576px) {
+    display: inline;
+    margin-left: 4px;
+  }
+`;
+
+const ResponsiveDivider = styled(Divider)`
+  margin: 12px 0 0 0 !important;
+
+  @media (min-width: 576px) {
+    margin: 12px 0 0 80px !important;
   }
 `;
 
@@ -137,10 +195,10 @@ const CartItemRow = ({
 
   return (
     <ItemContainer ref={setNodeRef} style={style} isDragging={isDragging}>
-      <Row gutter={[12, 12]} align="middle" wrap={false}>
+      <MainRow gutter={[12, 12]} align="middle">
         {/* DRAG HANDLE */}
         {dragEnabled && (
-          <Col flex="0 0 36px">
+          <Col flex="0 0 32px">
             <DragHandle {...attributes} {...listeners}>
               <HolderOutlined style={{ fontSize: 18 }} />
             </DragHandle>
@@ -148,13 +206,15 @@ const CartItemRow = ({
         )}
 
         {/* IMAGE */}
-        <Col flex="0 0 80px">
+        <Col flex="0 0 auto">
           <CartItemImage src={imageUrl} alt={item?.name} />
         </Col>
 
         {/* CONTENT */}
-        <Col flex="1 1 auto">
-          <Text strong>{product?.name || item?.name}</Text>
+        <Col flex="1 1 160px" style={{ minWidth: 0 }}>
+          <Text strong ellipsis style={{ display: "block" }}>
+            {product?.name || item?.name}
+          </Text>
 
           <div style={{ marginTop: 4 }}>
             <Text type="success">
@@ -169,7 +229,7 @@ const CartItemRow = ({
 
           {/* Option Type Selector */}
           {isQuotationMode && handleMakeOption && (
-            <Space style={{ marginTop: 8 }}>
+            <Space style={{ marginTop: 8 }} wrap>
               <Select
                 size="small"
                 value={item.optionType || "main"}
@@ -222,7 +282,7 @@ const CartItemRow = ({
 
           {/* Discount Controls */}
           {showDiscountAndTax && (
-            <Space style={{ marginTop: 8 }}>
+            <Space style={{ marginTop: 8 }} wrap>
               <Select
                 size="small"
                 value={itemDiscountTypes[item?.productId] || "percent"}
@@ -244,9 +304,10 @@ const CartItemRow = ({
         </Col>
 
         {/* QUANTITY & TOTAL */}
-        <Col flex="0 0 160px" style={{ textAlign: "right" }}>
-          <Space>
+        <QtyTotalCol flex="0 0 auto">
+          <Space size="small" wrap>
             <Button
+              size="small"
               onClick={() =>
                 handleUpdateQuantity(
                   item.productId,
@@ -259,12 +320,14 @@ const CartItemRow = ({
 
             <InputNumber
               min={1}
+              size="small"
               value={item.quantity}
               onChange={(v) => handleUpdateQuantity(item.productId, Number(v))}
-              style={{ width: 60 }}
+              style={{ width: 56 }}
             />
 
             <Button
+              size="small"
               onClick={() =>
                 handleUpdateQuantity(item.productId, (item.quantity || 1) + 1)
               }
@@ -273,26 +336,24 @@ const CartItemRow = ({
             </Button>
           </Space>
 
-          <div style={{ marginTop: 12 }}>
-            <Text strong style={{ color: "#52c41a", fontSize: 16 }}>
+          <div style={{ textAlign: "right" }}>
+            <Text strong style={{ color: "#52c41a", fontSize: 15 }}>
               ₹{lineTotal?.(item) || "0.00"}
             </Text>
           </div>
 
-          <div style={{ marginTop: 8 }}>
-            <Button
-              danger
-              size="small"
-              icon={<DeleteFilled />}
-              onClick={(e) => handleRemoveItem?.(e, item.productId)}
-            >
-              Remove
-            </Button>
-          </div>
-        </Col>
-      </Row>
+          <Button
+            danger
+            size="small"
+            icon={<DeleteFilled />}
+            onClick={(e) => handleRemoveItem?.(e, item.productId)}
+          >
+            <RemoveLabel>Remove</RemoveLabel>
+          </Button>
+        </QtyTotalCol>
+      </MainRow>
 
-      <Divider style={{ margin: "12px 0 0 80px" }} />
+      <ResponsiveDivider />
     </ItemContainer>
   );
 };

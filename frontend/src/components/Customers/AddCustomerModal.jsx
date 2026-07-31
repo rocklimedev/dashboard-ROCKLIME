@@ -23,7 +23,7 @@ import {
 import { INDIAN_STATES } from "../../constants/statesConstants";
 const { TabPane } = Tabs;
 const { Option } = Select;
-const indiaStates = INDIAN_STATES
+const indiaStates = INDIAN_STATES;
 
 const AddCustomerModal = ({ visible, onClose, customer }) => {
   const dispatch = useDispatch();
@@ -34,6 +34,7 @@ const AddCustomerModal = ({ visible, onClose, customer }) => {
     name: "",
     companyName: "",
     customerType: "Retail",
+    gender: "",
     email: "",
     mobileNumber: "",
     phone2: "",
@@ -88,6 +89,7 @@ const AddCustomerModal = ({ visible, onClose, customer }) => {
         name: existingCustomer.name || "",
         companyName: existingCustomer.companyName || "",
         customerType: existingCustomer.customerType || "Retail",
+        gender: existingCustomer.gender || undefined,
         email: existingCustomer.email || "",
         mobileNumber: existingCustomer.mobileNumber || "",
         phone2: existingCustomer.phone2 || "",
@@ -110,6 +112,7 @@ const AddCustomerModal = ({ visible, onClose, customer }) => {
         name: "",
         companyName: "",
         customerType: "Retail",
+        gender: "",
         email: "",
         mobileNumber: "",
         phone2: "",
@@ -169,6 +172,7 @@ const AddCustomerModal = ({ visible, onClose, customer }) => {
         name: values.name?.trim(),
         companyName: values.companyName?.trim() || null,
         customerType: values.customerType || null,
+        gender: values.gender || null,
         email: values.email?.trim() || null,
         mobileNumber: values.mobileNumber?.trim() || null,
         phone2: values.phone2?.trim() || null,
@@ -248,6 +252,16 @@ const AddCustomerModal = ({ visible, onClose, customer }) => {
                       <Option value="Interior">Interior</Option>
                       <Option value="Builder">Builder</Option>
                       <Option value="Contractor">Contractor</Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+
+                <Col lg={12} xs={24}>
+                  <Form.Item label="Gender" name="gender">
+                    <Select allowClear placeholder="Select gender">
+                      <Option value="Male">Male</Option>
+                      <Option value="Female">Female</Option>
+                      <Option value="Other">Other</Option>
                     </Select>
                   </Form.Item>
                 </Col>

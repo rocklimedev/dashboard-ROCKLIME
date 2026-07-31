@@ -444,16 +444,6 @@ td.image {
   hyphens: auto;
 }
 
-/* Image stays neat */
-.prodImg {
-  height: 60px;
-  width: 135px;
-  /* object-fit: contain; */
-  /* border-radius: 8px; */
-  /* box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); */
-  border: 0px solid #eee;
-}
-
 .snoCell,
 .totalCell,
 .discountCell,

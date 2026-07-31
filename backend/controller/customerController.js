@@ -7,6 +7,31 @@ const { Op, Sequelize } = require("sequelize");
 
 const { ActivityLog } = require("../models");
 const logActivity = require("../utils/activityLogger");
+
+// ---- NEW: helper to derive title from gender ----
+function getTitle(gender) {
+  switch (gender) {
+    case "Male":
+      return "Mr.";
+    case "Female":
+      return "Ms."; // change to "Mrs." / "Miss" if you track marital status separately
+    case "Other":
+      return "Mx.";
+    default:
+      return "";
+  }
+}
+
+function withTitle(customerJson) {
+  const title = getTitle(customerJson.gender);
+  return {
+    ...customerJson,
+    title,
+    displayName: title ? `${title} ${customerJson.name}` : customerJson.name,
+  };
+}
+// ---- end helper ----
+
 // Create a new customer
 exports.createCustomer = async (req, res) => {
   try {
@@ -41,11 +66,21 @@ exports.createCustomer = async (req, res) => {
       });
     }
 
+    // Validate gender if provided
+    const allowedGenders = ["Male", "Female", "Other"];
+    if (req.body.gender && !allowedGenders.includes(req.body.gender)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid gender. Must be one of: ${allowedGenders.join(", ")}`,
+      });
+    }
+
     const newCustomer = await Customer.create({
       ...req.body,
       phone2: req.body.phone2 || null,
       customerType: req.body.customerType || null,
       gstNumber: req.body.gstNumber || null,
+      gender: req.body.gender || null,
     });
 
     // Activity Log
@@ -70,6 +105,7 @@ exports.createCustomer = async (req, res) => {
         phone2: newCustomer.phone2,
         customerType: newCustomer.customerType,
         gstNumber: newCustomer.gstNumber,
+        gender: newCustomer.gender,
       },
 
       metadata: {
@@ -87,7 +123,7 @@ exports.createCustomer = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      data: newCustomer,
+      data: withTitle(newCustomer.toJSON()),
     });
   } catch (error) {
     res.status(500).json({
@@ -235,7 +271,7 @@ exports.getCustomers = async (req, res) => {
 
       const orderValue = orderData.orderValue || 0;
 
-      return {
+      return withTitle({
         ...customerJson,
 
         quotations,
@@ -246,7 +282,7 @@ exports.getCustomers = async (req, res) => {
 
         customerStatus:
           quotations === 0 && orders === 0 ? "INACTIVE" : "ACTIVE",
-      };
+      });
     });
 
     return res.status(200).json({
@@ -283,7 +319,7 @@ exports.getCustomerById = async (req, res) => {
         .json({ success: false, message: "Customer not found" });
     }
 
-    res.status(200).json({ success: true, data: customer });
+    res.status(200).json({ success: true, data: withTitle(customer.toJSON()) });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -316,6 +352,14 @@ exports.updateCustomer = async (req, res) => {
       });
     }
 
+    const allowedGenders = ["Male", "Female", "Other"];
+    if (req.body.gender && !allowedGenders.includes(req.body.gender)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid gender. Must be one of: ${allowedGenders.join(", ")}`,
+      });
+    }
+
     // ✅ Capture OLD values BEFORE update
     const oldValues = customer.get({ plain: true });
 
@@ -331,6 +375,7 @@ exports.updateCustomer = async (req, res) => {
         req.body.gstNumber !== undefined
           ? req.body.gstNumber
           : customer.gstNumber,
+      gender: req.body.gender !== undefined ? req.body.gender : customer.gender,
     });
 
     // ✅ NEW values after update
@@ -362,7 +407,7 @@ exports.updateCustomer = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Customer updated successfully",
-      data: customer,
+      data: withTitle(customer.toJSON()),
     });
   } catch (error) {
     return res.status(500).json({
@@ -412,6 +457,7 @@ exports.deleteCustomer = async (req, res) => {
         phone2: customer.phone2,
         customerType: customer.customerType,
         gstNumber: customer.gstNumber,
+        gender: customer.gender,
       },
 
       metadata: {

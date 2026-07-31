@@ -51,6 +51,10 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
         defaultValue: "Retail",
       },
+      gender: {
+        type: DataTypes.ENUM("Male", "Female", "Other"),
+        allowNull: true,
+      },
       address: {
         type: DataTypes.JSON,
         allowNull: true,
