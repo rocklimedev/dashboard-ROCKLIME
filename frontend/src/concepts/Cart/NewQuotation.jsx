@@ -43,9 +43,6 @@ const buildFloorsFromProducts = (products) => {
                 floorName: item.floorName,
                 roomId: item.roomId,
                 roomName: item.roomName,
-                areaId: item.areaId,
-                areaName: item.areaName,
-                areaValue: item.areaValue,
               },
             ]
           : [];
@@ -71,16 +68,8 @@ const buildFloorsFromProducts = (products) => {
             roomName: loc.roomName || "Unnamed Room",
             sortOrder: Number(loc.roomSortOrder ?? floor.rooms.length),
             type: loc.roomType || "other",
-            areas: [],
           };
           floor.rooms.push(room);
-        }
-        if (loc.areaId && !room.areas.some((a) => a.id === loc.areaId)) {
-          room.areas.push({
-            id: loc.areaId,
-            name: loc.areaName || "Area",
-            value: loc.areaValue || "",
-          });
         }
       }
     });
@@ -90,14 +79,7 @@ const buildFloorsFromProducts = (products) => {
     .sort((a, b) => a.sortOrder - b.sortOrder)
     .map((floor) => ({
       ...floor,
-      rooms: floor.rooms
-        .sort((a, b) => a.sortOrder - b.sortOrder)
-        .map((room) => ({
-          ...room,
-          areas: room.areas.sort(
-            (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0),
-          ),
-        })),
+      rooms: floor.rooms.sort((a, b) => a.sortOrder - b.sortOrder),
     }));
 };
 
@@ -198,6 +180,12 @@ const NewQuotation = () => {
     message.success("Draft deleted successfully");
   };
 
+  // ==================== QUOTATION DATA CHANGE ====================
+  // Shared by both the Checkout form (QuotationForm) and the Cart tab's
+  // Site Layout section (CartTab), since floors now live/render there.
+  const handleQuotationChange = (key, value) =>
+    setQuotationData((prev) => ({ ...prev, [key]: value }));
+
   // ==================== CREATE QUOTATION ====================
   const handleCreateQuotation = async (layoutProps = {}) => {
     const {
@@ -223,7 +211,7 @@ const NewQuotation = () => {
     let finalFloors = quotationData.floors || [];
     if (finalFloors.length === 0) {
       const hasLocation = payloadCartItems.some(
-        (item) => item.floorId || item.roomId || item.areaId,
+        (item) => item.floorId || item.roomId,
       );
       if (hasLocation) finalFloors = buildFloorsFromProducts(payloadCartItems);
     }
@@ -337,7 +325,10 @@ const NewQuotation = () => {
 
   return (
     <>
-      <CartLayout>
+      <CartLayout
+        quotationData={quotationData}
+        handleQuotationChange={handleQuotationChange}
+      >
         {(layoutProps) => (
           <>
             {/* Header Buttons */}
@@ -365,9 +356,7 @@ const NewQuotation = () => {
               {...layoutProps}
               quotationData={quotationData}
               setQuotationData={setQuotationData}
-              handleQuotationChange={(key, value) =>
-                setQuotationData((prev) => ({ ...prev, [key]: value }))
-              }
+              handleQuotationChange={handleQuotationChange}
               selectedCustomer={selectedCustomer}
               setSelectedCustomer={setSelectedCustomer}
               customers={customers}
@@ -380,7 +369,6 @@ const NewQuotation = () => {
               handleAddCustomer={handleAddCustomer}
               handleAddAddress={handleAddAddress}
               handleCreateDocument={handleCreateQuotation}
-              handleAssignItem={layoutProps.handleAssignItemToLocation}
               itemDiscounts={layoutProps.itemDiscounts}
               itemDiscountTypes={layoutProps.itemDiscountTypes}
               itemTaxes={layoutProps.itemTaxes}

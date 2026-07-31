@@ -36,7 +36,11 @@ const getDocumentTypeFromPath = (pathname) => {
   return "quotation";
 };
 
-const CartLayout = ({ children }) => {
+const CartLayout = ({
+  children,
+  quotationData = { floors: [] },
+  handleQuotationChange = () => {},
+}) => {
   const { auth } = useAuth();
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -366,20 +370,16 @@ const CartLayout = ({ children }) => {
             ...item,
             floorId,
             roomId,
-            areaId,
             assignedQuantity: assignedQuantity || item.quantity,
             floorName: floorName || item.floorName,
             roomName: roomName || item.roomName,
-            areaName: areaName || item.areaName,
             locations: [
               ...(item.locations || []),
               {
                 floorId,
                 roomId,
-                areaId,
                 floorName,
                 roomName,
-                areaName,
                 assignedQuantity: assignedQuantity || item.quantity,
               },
             ],
@@ -601,6 +601,9 @@ const CartLayout = ({ children }) => {
     clearDraft,
     handleAssignOptionToParent, // ← Add this
     onCartOrderChange: handleCartOrderChange,
+    // Site Layout (quotation only) — needed so CartTab can render it
+    quotationData,
+    handleQuotationChange,
   };
 
   return (

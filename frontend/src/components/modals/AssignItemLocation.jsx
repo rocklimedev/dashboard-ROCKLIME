@@ -27,11 +27,9 @@ export default function AssignItemModal({
     {
       floorId: null,
       roomId: null,
-      areaId: null,
       assignedQuantity: 1,
       floorName: null,
       roomName: null,
-      areaName: null,
     },
   ]);
 
@@ -49,11 +47,9 @@ export default function AssignItemModal({
         {
           floorId: null,
           roomId: null,
-          areaId: null,
           assignedQuantity: Number(item.quantity) || 1,
           floorName: null,
           roomName: null,
-          areaName: null,
         },
       ]);
     }
@@ -66,11 +62,9 @@ export default function AssignItemModal({
       {
         floorId: null,
         roomId: null,
-        areaId: null,
         assignedQuantity: Math.min(remaining, 1),
         floorName: null,
         roomName: null,
-        areaName: null,
       },
     ]);
   };
@@ -84,11 +78,9 @@ export default function AssignItemModal({
     if (field === "floorId") {
       const selectedFloor = floors?.find((f) => f.floorId === value);
       newAssignments[index].floorName = selectedFloor?.floorName || null;
-      // Clear child fields
+      // Clear child field
       newAssignments[index].roomId = null;
       newAssignments[index].roomName = null;
-      newAssignments[index].areaId = null;
-      newAssignments[index].areaName = null;
     }
 
     if (field === "roomId") {
@@ -97,20 +89,6 @@ export default function AssignItemModal({
       );
       const selectedRoom = floor?.rooms?.find((r) => r.roomId === value);
       newAssignments[index].roomName = selectedRoom?.roomName || null;
-      // Clear area
-      newAssignments[index].areaId = null;
-      newAssignments[index].areaName = null;
-    }
-
-    if (field === "areaId") {
-      const floor = floors?.find(
-        (f) => f.floorId === newAssignments[index].floorId,
-      );
-      const room = floor?.rooms?.find(
-        (r) => r.roomId === newAssignments[index].roomId,
-      );
-      const selectedArea = room?.areas?.find((a) => a.id === value);
-      newAssignments[index].areaName = selectedArea?.name || null;
     }
 
     setAssignments(newAssignments);
@@ -161,9 +139,6 @@ export default function AssignItemModal({
 
         {assignments.map((assignment, index) => {
           const floor = selectedFloor(assignment.floorId);
-          const room = floor?.rooms?.find(
-            (r) => r.roomId === assignment.roomId,
-          );
 
           return (
             <div
@@ -230,22 +205,6 @@ export default function AssignItemModal({
                     {floor?.rooms?.map((r) => (
                       <Option key={r.roomId} value={r.roomId}>
                         {r.roomName} {r.type && `(${r.type})`}
-                      </Option>
-                    ))}
-                  </Select>
-                )}
-
-                {assignment.roomId && (
-                  <Select
-                    style={{ width: "100%" }}
-                    placeholder="Area / Section (optional)"
-                    value={assignment.areaId}
-                    onChange={(v) => updateAssignment(index, "areaId", v)}
-                    allowClear
-                  >
-                    {room?.areas?.map((a) => (
-                      <Option key={a.id} value={a.id}>
-                        {a.name}
                       </Option>
                     ))}
                   </Select>

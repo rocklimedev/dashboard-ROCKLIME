@@ -20,8 +20,6 @@ import {
   FileExcelFilled,
   HistoryOutlined,
   SettingOutlined,
-  TableOutlined,
-  AppstoreOutlined,
 } from "@ant-design/icons";
 import { Helmet } from "react-helmet";
 import dayjs from "dayjs";
@@ -33,7 +31,6 @@ import logo from "../../assets/img/logo-quotation.png";
 import styles from "../../components/Quotation/quotationnew.module.css";
 import coverImage from "../../assets/img/quotation_first_page.jpeg";
 import quotationBgImage from "../../assets/img/quotation_letterhead.jpeg";
-import siteMapQuotation from "../../assets/img/quotation_sitemap.jpg";
 
 /** API Hooks */
 import {
@@ -110,8 +107,6 @@ const NewQuotationsDetails = () => {
   const [exportFormat, setExportFormat] = useState("pdf");
   const [isExporting, setIsExporting] = useState(false);
   const navigate = useNavigate();
-  // Toggle between Site Map (Visual) and Tabular Floor/Room View
-  const [useTabularLayout, setUseTabularLayout] = useState(false);
 
   // Toggle visibility of the two "extra" sections during export/preview
   const [includeProductListPage, setIncludeProductListPage] = useState(true);
@@ -241,7 +236,6 @@ const NewQuotationsDetails = () => {
         ...p,
         floorName: p.floorName || "",
         roomName: p.roomName || "",
-        areaName: p.areaName || "",
         imageUrl: p.imageUrl || "",
         companyCode: p.companyCode || p.productCode || "—",
         priority: Number(p.priority ?? 9999), // Important
@@ -315,44 +309,16 @@ const NewQuotationsDetails = () => {
   const finalAmount = Number(quotation?.finalAmount ?? 0);
   const finalAmountInWords = amountInWords(Math.round(finalAmount));
 
-  const hasSiteLayout = useMemo(() => {
+  const hasFloorLayout = useMemo(() => {
     const floors =
       activeVersionData.quotation?.floors || quotation?.floors || [];
     return Array.isArray(floors) && floors.length > 0;
   }, [activeVersionData.quotation, quotation]);
 
-  // ── Area Enrichment ─────────────────────────────────────────────────────
-  const enrichProductsWithAreas = useCallback((products, floors) => {
-    const areaMap = new Map();
-    floors.forEach((floor) => {
-      floor.rooms?.forEach((room) => {
-        room.areas?.forEach((areaObj) => {
-          const key = `${room.roomId}_${areaObj.value || areaObj.name?.toLowerCase()}`;
-          if (key)
-            areaMap.set(key, areaObj.name || areaObj.value || "Unassigned");
-        });
-      });
-    });
+  // Products already carry floorName/roomName directly — no enrichment
+  // needed now that Area has been removed.
+  const enrichedProducts = allProducts;
 
-    return products.map((p) => ({
-      ...p,
-      areaName:
-        p.areaValue || p.areaId
-          ? areaMap.get(`${p.roomId}_${p.areaValue || p.areaId}`) || p.areaName
-          : p.areaName || "Unassigned",
-    }));
-  }, []);
-
-  const enrichedProducts = useMemo(() => {
-    const floors =
-      activeVersionData.quotation?.floors || quotation?.floors || [];
-    return enrichProductsWithAreas(allProducts, floors);
-  }, [
-    allProducts,
-    activeVersionData.quotation,
-    quotation,
-    enrichProductsWithAreas,
-  ]);
   // ── Grouping Helpers ────────────────────────────────────────────────────
   const groupProductsByFloorAndRoom = (products = []) => {
     const map = new Map();
@@ -383,20 +349,10 @@ const NewQuotationsDetails = () => {
     });
   };
 
-  const groupProductsByAreaName = (products = []) => {
-    const groups = {};
-    products.forEach((p) => {
-      const area = (p.areaName || "Unassigned").trim();
-      if (!groups[area]) groups[area] = [];
-      groups[area].push(p);
-    });
-    return groups;
-  };
-
   // ── Render Per-Floor Discount / Total Box ───────────────────────────────
-  // Shown at the bottom of each floor's final page (both tabular and
-  // site-map layouts) so viewers can see that floor/option's own subtotal,
-  // discount, and net total without waiting for the global summary page.
+  // Shown at the bottom of each floor's final page so viewers can see that
+  // floor/option's own subtotal, discount, and net total without waiting
+  // for the global summary page.
   const renderFloorDiscountBox = (floorName, floorProducts) => {
     if (!floorProducts || floorProducts.length === 0) return null;
     const { gross, discount, net } = computeFloorTotals(floorProducts);
@@ -438,165 +394,7 @@ const NewQuotationsDetails = () => {
     );
   };
 
-  // ── Render Area-wise Site Map (Existing) ───────────────────────────────
-  const renderAreaWisePageForRoom = (roomGroup) => {
-    const { floorName, roomName, products } = roomGroup;
-    const areaGroups = groupProductsByAreaName(products);
-    const mainAreas = Object.entries(areaGroups).slice(0, 3);
-
-    const ZONE_LAYOUT = [
-      { top: "26%", left: "2%", width: "29%" },
-      { top: "26%", right: "2%", width: "29%" },
-      { top: "28%", left: "37%", width: "29%" },
-    ];
-
-    const pages = [];
-    const maxChunks = Math.max(
-      ...mainAreas.map(([_, items]) => Math.ceil(items.length / 8)),
-      1,
-    );
-
-    for (let chunkIndex = 0; chunkIndex < maxChunks; chunkIndex++) {
-      const isContinuation = chunkIndex > 0;
-      pages.push(
-        <div
-          key={`room-area-page-${floorName}-${roomName}-${chunkIndex}`}
-          className="page"
-          style={{
-            position: "relative",
-            width: "210mm",
-            height: "297mm",
-            overflow: "hidden",
-            pageBreakBefore: "always",
-            pageBreakAfter: "always",
-            background: "#fff",
-          }}
-        >
-          <img
-            src={siteMapQuotation}
-            alt="Site Map"
-            style={{
-              position: "absolute",
-              inset: 0,
-              width: "100%",
-              height: "100%",
-              objectFit: "fill",
-              zIndex: 0,
-            }}
-          />
-
-          <div
-            style={{
-              position: "relative",
-              zIndex: 2,
-              padding: "35px 30px",
-              height: "100%",
-            }}
-          >
-            <div style={{ textAlign: "center", marginBottom: 25 }}>
-              <h2
-                style={{
-                  color: "#d32f2f",
-                  fontSize: "2.5em",
-                  margin: "0 0 8px 0",
-                }}
-              >
-                {floorName.toUpperCase()}
-              </h2>
-              <h3
-                style={{
-                  fontSize: "1.95em",
-                  color: "#222",
-                  margin: 0,
-                  fontWeight: 500,
-                }}
-              >
-                {roomName}
-                {isContinuation && " (Continued)"}
-              </h3>
-            </div>
-
-            <div style={{ position: "absolute", inset: 0 }}>
-              {mainAreas.map(([areaName, allItems], areaIndex) => {
-                const zone = ZONE_LAYOUT[areaIndex];
-                if (!zone) return null;
-
-                const start = chunkIndex * 8;
-                const items = allItems.slice(start, start + 8);
-
-                return (
-                  <div
-                    key={areaName}
-                    style={{
-                      position: "absolute",
-                      ...zone,
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "12px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr 1fr",
-                        gap: "10px",
-                      }}
-                    >
-                      {items.map((p, i) => (
-                        <div
-                          key={i}
-                          style={{ padding: "10px 8px", textAlign: "center" }}
-                        >
-                          {p.imageUrl ? (
-                            <img
-                              src={p.imageUrl}
-                              alt={p.name}
-                              style={{
-                                width: "68px",
-                                height: "68px",
-                                objectFit: "contain",
-                                borderRadius: "6px",
-                              }}
-                            />
-                          ) : (
-                            <div
-                              style={{
-                                width: "68px",
-                                height: "68px",
-                                background: "#f0f0f0",
-                                borderRadius: "6px",
-                              }}
-                            />
-                          )}
-                          <div
-                            style={{
-                              fontSize: "0.77em",
-                              lineHeight: 1.3,
-                              marginTop: "6px",
-                            }}
-                          >
-                            <div style={{ fontWeight: 600 }}>{p.name}</div>
-                            {p.quantity > 1 && (
-                              <div style={{ color: "#666" }}>
-                                × {p.quantity}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>,
-      );
-    }
-    return pages;
-  };
-
-  // ── NEW: Detailed Tabular Floor & Room Wise (Full Products) ─────────────
+  // ── Detailed Tabular Floor & Room Wise (Full Products) ──────────────────
 
   const renderDetailedTabularFloorRoom = () => {
     const floorRoomGroups = groupProductsByFloorAndRoom(enrichedProducts);
@@ -965,7 +763,7 @@ const NewQuotationsDetails = () => {
     );
   };
 
-  // ── NEW: Render Optional Items on their own dedicated page(s) ──────────
+  // ── Render Optional Items on their own dedicated page(s) ────────────────
   const renderOptionalItemsPages = (shouldShowColumn) => {
     if (optionalProducts.length === 0) return [];
 
@@ -1028,7 +826,7 @@ const NewQuotationsDetails = () => {
 
   // ── Render Room-wise Summary Page(s) ────────────────────────────────────
   const renderRoomWiseSummaryPages = () => {
-    if (!hasSiteLayout) return [];
+    if (!hasFloorLayout) return [];
 
     const roomGroups = groupProductsByFloorAndRoom(enrichedProducts);
     if (roomGroups.length === 0) return [];
@@ -1296,68 +1094,9 @@ const NewQuotationsDetails = () => {
     // Optional Items — own dedicated page(s)
     pages.push(...renderOptionalItemsPages(shouldShowColumn));
 
-    // Floor & Room Section with Toggle
-    if (hasSiteLayout) {
-      if (useTabularLayout) {
-        pages.push(...renderDetailedTabularFloorRoom());
-      } else {
-        const roomGroups = groupProductsByFloorAndRoom(enrichedProducts);
-        roomGroups.forEach((roomGroup, idx) => {
-          if (roomGroup.products?.length > 0) {
-            pages.push(...renderAreaWisePageForRoom(roomGroup));
-          }
-
-          // After the last room belonging to a floor, append that floor's
-          // discount/total box on its own small page.
-          const isLastRoomOfFloor =
-            idx === roomGroups.length - 1 ||
-            roomGroups[idx + 1].floorName !== roomGroup.floorName;
-
-          if (isLastRoomOfFloor) {
-            const floorAllProducts = enrichedProducts.filter(
-              (p) =>
-                (p.floorName || "Unspecified Floor") === roomGroup.floorName,
-            );
-
-            pages.push(
-              <div
-                key={`floor-total-${roomGroup.floorName}`}
-                className={`${styles.productPage} page`}
-              >
-                <div className={styles.pageTopHeader}>
-                  <div>
-                    <div className={styles.clientName}>{customerName}</div>
-                    <div className={styles.clientAddress}>
-                      {customerAddress}
-                    </div>
-                  </div>
-                  <div className={styles.pageDate}>
-                    {new Date(
-                      quotation.quotation_date || Date.now(),
-                    ).toLocaleDateString("en-IN", {
-                      day: "2-digit",
-                      month: "short",
-                      year: "numeric",
-                    })}
-                  </div>
-                </div>
-
-                <h2
-                  style={{
-                    color: "#d32f2f",
-                    textAlign: "center",
-                    margin: "20px 0 10px",
-                  }}
-                >
-                  {roomGroup.floorName.toUpperCase()} — TOTAL
-                </h2>
-
-                {renderFloorDiscountBox(roomGroup.floorName, floorAllProducts)}
-              </div>,
-            );
-          }
-        });
-      }
+    // Floor & Room Section — Tabular only (Site Map view removed)
+    if (hasFloorLayout) {
+      pages.push(...renderDetailedTabularFloorRoom());
     }
 
     // Room-wise Summary (new dedicated page)
@@ -1673,16 +1412,6 @@ const NewQuotationsDetails = () => {
                     Columns
                   </Button>
                 </Dropdown>
-
-                {/* Layout Toggle */}
-                <Button
-                  icon={
-                    useTabularLayout ? <TableOutlined /> : <AppstoreOutlined />
-                  }
-                  onClick={() => setUseTabularLayout(!useTabularLayout)}
-                >
-                  {useTabularLayout ? "Tabular" : "Site Map"}
-                </Button>
 
                 {/* Export Format */}
                 <Select
