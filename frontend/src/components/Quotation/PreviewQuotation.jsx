@@ -238,13 +238,15 @@ const PreviewQuotation = ({
               {items.map((p, idx) => {
                 const pd =
                   productsData.find((x) => x.productId === p.productId) || {};
+
                 const img = p.imageUrl || pd.images?.[0] || "";
+
                 const code =
                   p.companyCode ||
-                  pd.companyCode ||
                   pd.metaDetails?.find((m) => m.slug === "companyCode")
                     ?.value ||
                   "—";
+
                 const mrp = Number(p.price || p.sellingPrice || 0);
                 const qty = Number(p.quantity || 1);
                 const discount = Number(itemDiscounts[p.productId] || 0);
@@ -275,14 +277,22 @@ const PreviewQuotation = ({
                     <td className={styles.image}>
                       {img ? (
                         <img
-                          src={
-                            img ||
-                            "https://via.placeholder.com/135x60?text=No+Image"
-                          }
+                          src={img}
                           alt={p.name}
                           className={styles.prodImg}
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src =
+                              "https://via.placeholder.com/135x60?text=No+Image";
+                          }}
                         />
-                      ) : null}
+                      ) : (
+                        <img
+                          src="https://via.placeholder.com/135x60?text=No+Image"
+                          alt="No product"
+                          className={styles.prodImg}
+                        />
+                      )}
                     </td>
                     <td>{qty}</td>
                     <td>{formatINR(mrp)}</td>

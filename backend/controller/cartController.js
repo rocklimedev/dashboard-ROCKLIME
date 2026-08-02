@@ -97,7 +97,7 @@ exports.addProductToCart = async (req, res) => {
     if (!cart) cart = new Cart({ userId, items: [] });
 
     const existingItem = cart.items.find(
-      (i) => i.productId.toString() === productId.toString()
+      (i) => i.productId.toString() === productId.toString(),
     );
 
     if (existingItem) {
@@ -117,9 +117,10 @@ exports.addProductToCart = async (req, res) => {
 
     await cart.save();
 
-    const message = product.quantity < quantity 
-      ? "Product added to cart (even though stock is insufficient)" 
-      : "Product added to cart";
+    const message =
+      product.quantity < quantity
+        ? "Product added to cart (even though stock is insufficient)"
+        : "Product added to cart";
 
     res.status(200).json({ message, cart });
   } catch (err) {
@@ -171,7 +172,7 @@ exports.addToCart = async (req, res) => {
       // STOCK CHECK REMOVED - Allow adding even if out of stock
 
       const existing = cart.items.find(
-        (i) => i.productId.toString() === productId.toString()
+        (i) => i.productId.toString() === productId.toString(),
       );
 
       if (existing) {
@@ -191,9 +192,9 @@ exports.addToCart = async (req, res) => {
     }
 
     await cart.save();
-    res.status(200).json({ 
-      message: "Items added to cart successfully (stock check disabled)", 
-      cart 
+    res.status(200).json({
+      message: "Items added to cart successfully (stock check disabled)",
+      cart,
     });
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
@@ -239,7 +240,7 @@ exports.removeFromCart = async (req, res) => {
 
     const initialLength = cart.items.length;
     cart.items = cart.items.filter(
-      (item) => item.productId.toString() !== productId.toString()
+      (item) => item.productId.toString() !== productId.toString(),
     );
 
     if (cart.items.length === initialLength) {
@@ -270,7 +271,7 @@ exports.updateCart = async (req, res) => {
     }
 
     const existingItem = cart.items.find(
-      (item) => item.productId.toString() === productId.toString()
+      (item) => item.productId.toString() === productId.toString(),
     );
     if (!existingItem) {
       return res.status(404).json({ message: "Product not found in cart" });
@@ -281,7 +282,8 @@ exports.updateCart = async (req, res) => {
     existingItem.quantity = quantity;
     existingItem.discount = Number(discount);
     existingItem.tax = Number(tax);
-    existingItem.total = existingItem.price * quantity - Number(discount) + Number(tax);
+    existingItem.total =
+      existingItem.price * quantity - Number(discount) + Number(tax);
 
     cart.updatedAt = new Date();
     await cart.save();
@@ -361,7 +363,7 @@ exports.convertQuotationToCart = async (req, res) => {
       }
 
       const existingItem = cart.items.find(
-        (cartItem) => cartItem.productId.toString() === item.id.toString()
+        (cartItem) => cartItem.productId.toString() === item.id.toString(),
       );
 
       if (existingItem) {
@@ -418,7 +420,7 @@ exports.getCartById = async (req, res) => {
         const sellingPrice = getSellingPrice(product.meta);
         if (sellingPrice === null) {
           console.warn(
-            `Removing item ${item.productId} from cart due to invalid sellingPrice`
+            `Removing item ${item.productId} from cart due to invalid sellingPrice`,
           );
           return null;
         }
@@ -432,7 +434,7 @@ exports.getCartById = async (req, res) => {
           tax: item.tax || 0,
           total: sellingPrice * item.quantity,
         };
-      })
+      }),
     );
 
     cart.items = updatedItems.filter((item) => item !== null);
@@ -471,7 +473,7 @@ exports.reduceQuantity = async (req, res) => {
     }
 
     const existingItem = cart.items.find(
-      (item) => item.productId.toString() === productId.toString()
+      (item) => item.productId.toString() === productId.toString(),
     );
     if (!existingItem) {
       return res.status(404).json({ message: "Item not found in cart" });
@@ -482,7 +484,7 @@ exports.reduceQuantity = async (req, res) => {
       existingItem.total = existingItem.price * existingItem.quantity;
     } else {
       cart.items = cart.items.filter(
-        (item) => item.productId.toString() !== productId.toString()
+        (item) => item.productId.toString() !== productId.toString(),
       );
     }
 
