@@ -8,7 +8,8 @@ import { InjectModel } from '@nestjs/sequelize';
 import { ParentCategory } from '@/modules/brands/models/parentcategory.model';
 import { Brand } from '@/modules/brands/models/brand.model';
 import { Category } from '@/modules/brands/models/category.model';
-import { CreateParentCategoryDto, UpdateParentCategoryDto } from '../dto';
+import { CreateParentCategoryDto } from '../dto/create-parent-category.dto';
+import { UpdateParentCategoryDto } from '../dto/update-parent-category.dto';
 import { Op } from 'sequelize';
 
 @Injectable()

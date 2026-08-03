@@ -8,7 +8,8 @@ import {
 import { InjectModel } from '@nestjs/sequelize';
 import { Keyword } from '@/modules/brands/models/keyword.model';
 import { Category } from '@/modules/brands/models/category.model';
-import { CreateKeywordDto, UpdateKeywordDto } from '../dto';
+import { CreateKeywordDto } from '../dto/create-keyword.dto';
+import { UpdateKeywordDto } from '../dto/update-keyword.dto';
 import { Op, Sequelize } from 'sequelize';
 
 @Injectable()

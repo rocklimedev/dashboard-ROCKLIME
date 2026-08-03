@@ -11,7 +11,8 @@ import {
   HttpCode,
 } from '@nestjs/common';
 import { CategoryService } from '../services/category.service';
-import { CreateCategoryDto, UpdateCategoryDto } from '../dto';
+import { CreateCategoryDto } from '../dto/create-category.dto';
+import { UpdateCategoryDto } from '../dto/update-category.dto';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 
 @UseGuards(JwtAuthGuard)

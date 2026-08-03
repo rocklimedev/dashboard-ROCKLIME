@@ -31,9 +31,12 @@ export class AuthService {
   constructor(
     @InjectModel(User) private readonly userModel: typeof User,
     @InjectModel(Role) private readonly roleModel: typeof Role,
-    @InjectModel(VerificationToken) private readonly verificationModel: typeof VerificationToken,
-    @InjectModel(RolePermission) private readonly rolePermissionModel: typeof RolePermission,
-    @InjectModel(Permission) private readonly permissionModel: typeof Permission,
+    @InjectModel(VerificationToken)
+    private readonly verificationModel: typeof VerificationToken,
+    @InjectModel(RolePermission)
+    private readonly rolePermissionModel: typeof RolePermission,
+    @InjectModel(Permission)
+    private readonly permissionModel: typeof Permission,
 
     private readonly activityLogger: ActivityLogService,
     private readonly emailService: MailService,
@@ -159,11 +162,9 @@ export class AuthService {
       isEmailVerified: false,
     });
 
-    const verificationToken = jwt.sign(
-      { userId: user.userId },
-      JWT_SECRET,
-      { expiresIn: '1d' },
-    );
+    const verificationToken = jwt.sign({ userId: user.userId }, JWT_SECRET, {
+      expiresIn: '1d',
+    });
 
     await this.verificationModel.create({
       userId: user.userId,
@@ -172,11 +173,6 @@ export class AuthService {
       isVerified: false,
       expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
     });
-
-    // Send verification email
-    // await this.emailService.sendAccountVerification(user.email, verificationToken, req.headers.host);
-
-    this.activityLogger.log({ ... /* similar to original */ }).catch(console.error);
 
     return {
       message: 'User registered successfully. Verification email sent.',
@@ -198,10 +194,14 @@ export class AuthService {
   // VERIFY ACCOUNT
   // ─────────────────────────────────────────────────────────────
   async verifyAccount(token: string) {
-    const verification = await this.verificationModel.findOne({ where: { token } });
+    const verification = await this.verificationModel.findOne({
+      where: { token },
+    });
 
-    if (!verification) throw new BadRequestException('Invalid or expired token');
-    if (verification.isVerified) throw new BadRequestException('Account already verified');
+    if (!verification)
+      throw new BadRequestException('Invalid or expired token');
+    if (verification.isVerified)
+      throw new BadRequestException('Account already verified');
     if (verification.expiresAt < new Date()) {
       await verification.destroy();
       throw new BadRequestException('Token has expired');
@@ -219,18 +219,20 @@ export class AuthService {
     verification.isVerified = true;
     await verification.save();
 
-    this.activityLogger.log({
-      userId: user.userId,
-      contextTag: 'AUTH',
-      subContext: 'USER',
-      action: 'ACCOUNT_VERIFIED',
-      entityId: user.userId,
-      entityName: user.name || user.username,
-      description: `Account verified for user "${user.username}"`,
-      oldValues: { isEmailVerified: false, status: 'inactive' },
-      newValues: { isEmailVerified: true, status: 'active' },
-      metadata: { email: user.email },
-    }).catch(console.error);
+    this.activityLogger
+      .log({
+        userId: user.userId,
+        contextTag: 'AUTH',
+        subContext: 'USER',
+        action: 'ACCOUNT_VERIFIED',
+        entityId: user.userId,
+        entityName: user.name || user.username,
+        description: `Account verified for user "${user.username}"`,
+        oldValues: { isEmailVerified: false, status: 'inactive' },
+        newValues: { isEmailVerified: true, status: 'active' },
+        metadata: { email: user.email },
+      })
+      .catch(console.error);
 
     // Send confirmation email
     // await this.emailService.sendVerificationConfirmation(user.email, user.name);
@@ -243,11 +245,15 @@ export class AuthService {
   // ─────────────────────────────────────────────────────────────
   async forgotPassword(email: string, req: any) {
     const normalizedEmail = email.trim().toLowerCase();
-    const user = await this.userModel.findOne({ where: { email: normalizedEmail } });
+    const user = await this.userModel.findOne({
+      where: { email: normalizedEmail },
+    });
 
     if (!user) throw new NotFoundException('User not found');
 
-    const resetToken = jwt.sign({ userId: user.userId }, JWT_SECRET, { expiresIn: '15m' });
+    const resetToken = jwt.sign({ userId: user.userId }, JWT_SECRET, {
+      expiresIn: '15m',
+    });
 
     await this.verificationModel.create({
       userId: user.userId,
@@ -286,7 +292,9 @@ export class AuthService {
     }
 
     if (newPassword.length < 8) {
-      throw new BadRequestException('Password must be at least 8 characters long');
+      throw new BadRequestException(
+        'Password must be at least 8 characters long',
+      );
     }
 
     user.password = await bcrypt.hash(newPassword, 10);
@@ -305,15 +313,20 @@ export class AuthService {
   // ─────────────────────────────────────────────────────────────
   async resendVerificationEmail(email: string, req: any) {
     const normalizedEmail = email.trim().toLowerCase();
-    const user = await this.userModel.findOne({ where: { email: normalizedEmail } });
+    const user = await this.userModel.findOne({
+      where: { email: normalizedEmail },
+    });
 
     if (!user) throw new NotFoundException('User not found');
-    if (user.isEmailVerified) throw new BadRequestException('Account is already verified');
+    if (user.isEmailVerified)
+      throw new BadRequestException('Account is already verified');
 
     // Delete old tokens
     await this.verificationModel.destroy({ where: { userId: user.userId } });
 
-    const verificationToken = jwt.sign({ userId: user.userId }, JWT_SECRET, { expiresIn: '1d' });
+    const verificationToken = jwt.sign({ userId: user.userId }, JWT_SECRET, {
+      expiresIn: '1d',
+    });
 
     await this.verificationModel.create({
       userId: user.userId,
@@ -339,26 +352,31 @@ export class AuthService {
     if (!user) throw new NotFoundException('User not found');
 
     const isValid = await bcrypt.compare(currentPassword, user.password);
-    if (!isValid) throw new BadRequestException('Current password is incorrect');
+    if (!isValid)
+      throw new BadRequestException('Current password is incorrect');
 
     if (currentPassword === newPassword) {
-      throw new BadRequestException('New password must be different from current password');
+      throw new BadRequestException(
+        'New password must be different from current password',
+      );
     }
 
     user.password = await bcrypt.hash(newPassword, 10);
     await user.save();
 
-    this.activityLogger.log({
-      userId: user.userId,
-      contextTag: 'AUTH',
-      subContext: 'USER',
-      action: 'PASSWORD_CHANGED',
-      entityId: user.userId,
-      entityName: user.name || user.username,
-      description: `Password changed successfully for user "${user.username}"`,
-      metadata: { email: user.email },
-      req,
-    }).catch(console.error);
+    this.activityLogger
+      .log({
+        userId: user.userId,
+        contextTag: 'AUTH',
+        subContext: 'USER',
+        action: 'PASSWORD_CHANGED',
+        entityId: user.userId,
+        entityName: user.name || user.username,
+        description: `Password changed successfully for user "${user.username}"`,
+        metadata: { email: user.email },
+        req,
+      })
+      .catch(console.error);
 
     return { message: 'Password changed successfully' };
   }
@@ -411,7 +429,8 @@ export class AuthService {
       const user = await this.userModel.findByPk(decoded.userId);
 
       if (!user) throw new UnauthorizedException('User not found');
-      if (user.status !== 'active') throw new UnauthorizedException('Account is inactive');
+      if (user.status !== 'active')
+        throw new UnauthorizedException('Account is inactive');
 
       return { valid: true, userId: decoded.userId };
     } catch (err: any) {
@@ -430,28 +449,33 @@ export class AuthService {
     const user = await this.userModel.findByPk(userId);
 
     if (!user) throw new NotFoundException('User not found');
-    if (user.status === 'inactive') throw new BadRequestException('Account is already deactivated');
+    if (user.status === 'inactive')
+      throw new BadRequestException('Account is already deactivated');
     if (user.roles.includes(ROLES.SuperAdmin)) {
-      throw new UnauthorizedException('SuperAdmin account cannot be deactivated');
+      throw new UnauthorizedException(
+        'SuperAdmin account cannot be deactivated',
+      );
     }
 
     const oldStatus = user.status;
     user.status = 'inactive';
     await user.save();
 
-    this.activityLogger.log({
-      userId: user.userId,
-      contextTag: 'AUTH',
-      subContext: 'USER',
-      action: 'ACCOUNT_DEACTIVATED',
-      entityId: user.userId,
-      entityName: user.name || user.username,
-      description: `Account deactivated by user "${user.username}"`,
-      oldValues: { status: oldStatus },
-      newValues: { status: 'inactive' },
-      metadata: { email: user.email, selfDeactivated: true },
-      req,
-    }).catch(console.error);
+    this.activityLogger
+      .log({
+        userId: user.userId,
+        contextTag: 'AUTH',
+        subContext: 'USER',
+        action: 'ACCOUNT_DEACTIVATED',
+        entityId: user.userId,
+        entityName: user.name || user.username,
+        description: `Account deactivated by user "${user.username}"`,
+        oldValues: { status: oldStatus },
+        newValues: { status: 'inactive' },
+        metadata: { email: user.email, selfDeactivated: true },
+        req,
+      })
+      .catch(console.error);
 
     return { message: 'Account deactivated successfully' };
   }

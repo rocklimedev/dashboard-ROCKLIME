@@ -10,11 +10,11 @@ import {
   HasMany,
 } from 'sequelize-typescript';
 
-import { User } from '@/modules/users/entities/user.entity';
-import { Team } from '@/modules/teams/entities/team.entity';
-import { Customer } from '@/modules/customers/entities/customer.entity';
-import { Address } from '@/modules/addresses/entities/address.entity';
-import { Quotation } from '@/modules/quotations/entities/quotation.entity';
+import { User } from '@/modules/users/models/user.model';
+import { Team } from '@/modules/users/models/team.model';
+import { Customer } from '@/modules/customer/models/customer.model';
+import { Address } from '@/modules/address/models/address.model';
+import { Quotation } from '@/modules/quotation/models/quotation.model';
 
 export enum OrderStatus {
   DRAFT = 'DRAFT',

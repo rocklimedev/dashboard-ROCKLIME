@@ -6,13 +6,10 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Op } from 'sequelize';
-import { ProductMeta } from './entities/product-meta.entity';
-import { Product } from '../product/entities/product.entity'; // Adjust path
-import {
-  CreateProductMetaDto,
-  UpdateProductMetaDto,
-} from './dto/product-meta.dto';
-
+import { Product } from '../models/product.model';
+import { ProductMeta } from '../models/product-meta.model';
+import { CreateProductMetaDto } from '../dto/product-meta.dto';
+import { UpdateProductMetaDto } from '../dto/product-meta.dto';
 @Injectable()
 export class ProductMetaService {
   constructor(

@@ -11,11 +11,9 @@ import { Brand } from '@/modules/brands/models/brand.model';
 import { ParentCategory } from '@/modules/brands/models/parentcategory.model';
 import { NotificationService } from '@/modules/notifications/services/notification.service';
 import * as slugify from 'slugify';
-import {
-  CreateBrandParentCategoryDto,
-  UpdateBrandParentCategoryDto,
-  AttachBrandsDto,
-} from '../dto';
+import { AttachBrandsDto } from '../dto/attach-brands.dto';
+import { UpdateBrandParentCategoryDto } from '../dto/update-brand-parent-category';
+import { CreateBrandParentCategoryDto } from '../dto/create-brand-parent-category.dto';
 import { Sequelize } from 'sequelize-typescript';
 
 const ADMIN_USER_ID = '2ef0f07a-a275-4fe1-832d-fe9a5d145f60';
