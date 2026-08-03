@@ -11,26 +11,32 @@ import { Sequelize, Op } from 'sequelize';
 import { Model } from 'mongoose';
 import { Request } from 'express';
 import * as moment from 'moment';
-import { Order } from '../../models/order.model';
+import { Order } from './models/order.model';
+import { Customer } from '@/modules/customer/models/customer.model';
+import { Team } from '@/modules/users/models/team.model';
+import { User } from '../users/models/user.model';
+import { Address } from '@/modules/address/models/address.model';
+import { Quotation } from '@/modules/quotation/models/quotation.model';
+import { Product } from '@/modules/product/models/product.model';
 import {
-  User,
-  Customer,
-  Team,
-  Address,
-  Quotation,
-  Product,
-} from '../../models';
-import { OrderItem, OrderItemDocument } from '../../models/order-item.schema';
-import { Comment } from '../../models/comment.schema';
+  OrderItem,
+  OrderItemSchema,
+  OrderItemDocument,
+} from './models/order-item.model';
+import {
+  Comment,
+  CommentSchema,
+} from '@/modules/comments/models/comment.model';
+
 import { OrderCalculationService } from './order-calculation.service';
 import { OrderNumberService } from './order-number.service';
 import { InventoryService, ProductUpdate } from './inventory.service';
 import { OrderNotificationService } from './order-notification.service';
-import { ActivityLogService } from '../../common/activity-log/activity-log.service';
-import { CommentsService } from '../../comments/comments.service';
-import { CreateOrderDto } from '../dto/create-order.dto';
-import { UpdateOrderDto } from '../dto/update-order.dto';
-import { GetAllOrdersDto, FilterOrdersDto } from '../dto/filter-orders.dto';
+import { ActivityLogService } from '@/modules/engagement/services/activity-log.service';
+import { CommentsService } from '@/modules/comments/comments.service';
+import { CreateOrderDto } from './dto/create-product.dto';
+import { UpdateOrderDto } from './dto/update-order.dto';
+import { GetAllOrdersDto, FilterOrdersDto } from './dto/filter-orders.dto';
 
 const VALID_STATUSES = [
   'PREPARING',

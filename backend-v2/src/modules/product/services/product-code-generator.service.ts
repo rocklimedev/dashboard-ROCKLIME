@@ -8,7 +8,7 @@ import {
   COMPANY_CODE_META_ID,
   MAX_PRODUCT_CODE_COLLISION_ATTEMPTS,
   MAX_PRODUCT_CODE_GENERATION_ATTEMPTS,
-} from '../constants/product.constants';
+} from '../utils/product-constants';
 
 interface GenerateCodeParams {
   brandId?: string;

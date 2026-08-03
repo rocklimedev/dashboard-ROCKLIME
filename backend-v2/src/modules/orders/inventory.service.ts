@@ -2,9 +2,9 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { Transaction } from 'sequelize';
 import { v7 as uuidv7 } from 'uuid';
-import { User } from '../../models';
-import { Product, InventoryHistory } from '../../models';
-
+import { User } from '@/modules/users/models/user.model';
+import { Product } from '@/modules/product/models/product.model';
+import { InventoryHistory } from '@/modules/product/models/inventory-history.model';
 export interface ProductUpdate {
   productId: string;
   quantityToReduce: number;

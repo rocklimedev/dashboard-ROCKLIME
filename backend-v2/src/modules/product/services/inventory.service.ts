@@ -12,7 +12,7 @@ import { InventoryHistory } from '../models/inventory-history.model'; // TODO: a
 
 import { AdjustStockDto } from '../dto/adjust-stock.dto';
 import { BulkInventoryUpdateDto } from '../dto/bulk-inventory-update.dto';
-import { COMPANY_CODE_META_ID } from '../constants/product.constants';
+import { COMPANY_CODE_META_ID } from '../utils/product-constants';
 
 @Injectable()
 export class InventoryService {

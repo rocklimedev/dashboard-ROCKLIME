@@ -11,8 +11,8 @@ import {
 } from 'sequelize-typescript';
 import { v7 as uuidv7 } from 'uuid';
 
-import { Product } from '@/modules/products/entities/product.entity';
-import { User } from '@/modules/users/entities/user.entity';
+import { Product } from '@/modules/product/models/product.model';
+import { User } from '@/modules/users/models/user.model';
 
 export enum InventoryAction {
   ADD_STOCK = 'add-stock',

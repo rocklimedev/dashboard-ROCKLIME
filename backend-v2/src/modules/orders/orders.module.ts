@@ -9,19 +9,20 @@ import { InventoryService } from './inventory.service';
 import { OrderNotificationService } from './order-notification.service';
 import { OrderDocumentService } from './order-document.service';
 import { Order } from './models/order.model';
+import { InventoryHistory } from '@/modules/product/models/inventory-history.model';
+import { Customer } from '@/modules/customer/models/customer.model';
+import { Team } from '@/modules/users/models/team.model';
+import { User } from '../users/models/user.model';
+import { Address } from '@/modules/address/models/address.model';
+import { Quotation } from '@/modules/quotation/models/quotation.model';
+import { Product } from '@/modules/product/models/product.model';
+import { OrderItem, OrderItemSchema } from './models/order-item.model';
 import {
-  User,
-  Customer,
-  Team,
-  Address,
-  Quotation,
-  Product,
-  InventoryHistory,
-} from '../models';
-import { OrderItem, OrderItemSchema } from '../models/order-item.schema';
-import { Comment, CommentSchema } from '../models/comment.schema';
+  Comment,
+  CommentSchema,
+} from '@/modules/comments/models/comment.model';
 import { NotificationModule } from '../common/notification/notification.module';
-import { ActivityLogModule } from '../common/activity-log/activity-log.module';
+import { ActivityLogModule } from '@/modules/engagement/activity-log.module';
 import { FtpModule } from '../common/ftp/ftp.module';
 import { CommentsModule } from '../comments/comments.module';
 

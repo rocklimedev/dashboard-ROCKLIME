@@ -11,12 +11,12 @@ import {
   BelongsToMany,
 } from 'sequelize-typescript';
 
-import { Brand } from '@/modules/brands/entities/brand.entity';
-import { Category } from '@/modules/categories/entities/category.entity';
-import { Vendor } from '@/modules/vendors/entities/vendor.entity';
-import { BrandParentCategory } from '@/modules/brand-parent-categories/entities/brand-parent-category.entity';
-import { Keyword } from '@/modules/keywords/entities/keyword.entity';
-import { ProductKeyword } from '@/modules/product-keywords/entities/product-keyword.entity';
+import { Brand } from '@/modules/brands/models/brand.model';
+import { Category } from '@/modules/brands/models/category.model';
+import { Vendor } from '@/modules/vendor/models/vendor.model';
+import { BrandParentCategory } from '@/modules/brands/models/brand-parent-category.model';
+import { Keyword } from '@/modules/brands/models/keyword.model';
+import { ProductKeyword } from '@/modules/product/models/product-keywords.model';
 
 export enum ProductStatus {
   ACTIVE = 'active',

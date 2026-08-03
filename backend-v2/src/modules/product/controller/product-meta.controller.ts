@@ -9,11 +9,11 @@ import {
   Query,
   ParseIntPipe,
 } from '@nestjs/common';
-import { ProductMetaService } from './product-meta.service';
+import { ProductMetaService } from '../services/product-meta.service';
 import {
   CreateProductMetaDto,
   UpdateProductMetaDto,
-} from './dto/product-meta.dto';
+} from '../dto/product-meta.dto';
 
 @Controller('product-meta')
 export class ProductMetaController {
