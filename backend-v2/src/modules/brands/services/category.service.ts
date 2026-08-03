@@ -5,11 +5,11 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { Category } from '../entities/category.entity';
-import { Brand } from '@/modules/brands/entities/brand.entity';
-import { ParentCategory } from './parent-category.entity';
-import { Keyword } from './keyword.entity';
-import { BrandParentCategory } from '@/modules/brands/entities/brand-parent-category.entity';
+import { Category } from '@/modules/brands/models/category.model';
+import { Brand } from '@/modules/brands/models/brand.model';
+import { ParentCategory } from '@/modules/brands/models/parentcategory.model';
+import { Keyword } from '@/modules/brands/models/keyword.model';
+import { BrandParentCategory } from '@/modules/brands/models/brand-parent-category.model';
 import { CreateCategoryDto, UpdateCategoryDto } from '../dto';
 import * as slugify from 'slugify';
 import { Sequelize } from 'sequelize-typescript';

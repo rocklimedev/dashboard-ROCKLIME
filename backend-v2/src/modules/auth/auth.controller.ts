@@ -11,10 +11,10 @@ import {
   UseGuards,
   HttpCode,
 } from '@nestjs/common';
-import { AuthService } from '../services/auth.service';
-import { LoginDto } from '../dto/login.dto';
-import { RegisterDto } from '../dto/register.dto';
-import { ResetPasswordDto } from '../dto/reset-password.dto';
+import { AuthService } from './auth.service';
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { Response } from 'express';
 

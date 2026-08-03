@@ -6,8 +6,8 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { Keyword } from '../entities/keyword.entity';
-import { Category } from '../entities/category.entity';
+import { Keyword } from '@/modules/brands/models/keyword.model';
+import { Category } from '@/modules/brands/models/category.model';
 import { CreateKeywordDto, UpdateKeywordDto } from '../dto';
 import { Op, Sequelize } from 'sequelize';
 

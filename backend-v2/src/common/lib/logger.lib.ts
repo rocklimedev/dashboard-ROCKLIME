@@ -1,80 +1,128 @@
-// middleware/logger.js
-const ApiLog = require('../models/apiLog');
-const { User } = require('../models/users'); // Sequelize MySQL
+import {
+  Injectable,
+  NestInterceptor,
+  ExecutionContext,
+  CallHandler,
+} from '@nestjs/common';
+import { Observable } from 'rxjs';
+import { tap, catchError } from 'rxjs/operators';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 
-const apiLogger = (req, res, next) => {
-  const startTime = Date.now();
+import {
+  ApiLog,
+  ApiLogDocument,
+} from '../schemas/api-log.schema';
 
-  // Extract user early (from JWT, not DB lookup!)
-  let userSnapshot = null;
-  if (req.user) {
-    userSnapshot = {
-      id: req.user.userId,
-      name: req.user.name || req.user.username || 'Unknown',
-      email: req.user.email || 'unknown@example.com',
-    };
-  }
+@Injectable()
+export class ApiLoggerInterceptor implements NestInterceptor {
+  constructor(
+    @InjectModel(ApiLog.name)
+    private readonly apiLogModel: Model<ApiLogDocument>,
+  ) {}
 
-  // Create log entry immediately (fire-and-forget)
-  const logEntry = {
-    method: req.method,
-    route: req.originalUrl || req.url,
-    status: null,
-    userId: userSnapshot?.id || null,
-    userSnapshot: userSnapshot
+  intercept(
+    context: ExecutionContext,
+    next: CallHandler,
+  ): Observable<any> {
+    const request = context.switchToHttp().getRequest();
+    const response = context.switchToHttp().getResponse();
+
+    const startTime = Date.now();
+
+    const user = request.user;
+
+    const userSnapshot = user
       ? {
-          name: userSnapshot.name,
-          email: userSnapshot.email,
+          id: user.userId,
+          name: user.name || user.username || 'Unknown',
+          email: user.email || 'unknown@example.com',
         }
-      : null,
-    startTime: new Date(startTime),
-    endTime: null,
-    duration: null,
-    body: req.method !== 'GET' && req.method !== 'HEAD' ? req.body : undefined,
-    query: req.query && Object.keys(req.query).length ? req.query : undefined,
-    ipAddress:
-      req.ip || req.connection?.remoteAddress || req.socket?.remoteAddress,
-    userAgent: req.get('User-Agent'),
-    error: null,
-  };
+      : null;
 
-  // Insert log immediately in background
-  ApiLog.create(logEntry)
-    .then((doc) => {
-      const logId = doc._id;
+    const logEntry = {
+      method: request.method,
+      route: request.originalUrl || request.url,
 
-      // Update with response data when request finishes
-      const onFinished = () => {
-        const endTime = Date.now();
-        const updateData = {
-          status: res.statusCode,
-          endTime: new Date(endTime),
-          duration: endTime - startTime,
+      status: null,
+
+      userId: userSnapshot?.id ?? null,
+
+      userSnapshot: userSnapshot
+        ? {
+            name: userSnapshot.name,
+            email: userSnapshot.email,
+          }
+        : null,
+
+      startTime: new Date(startTime),
+      endTime: null,
+      duration: null,
+
+      body:
+        request.method !== 'GET' &&
+        request.method !== 'HEAD'
+          ? request.body
+          : undefined,
+
+      query:
+        request.query &&
+        Object.keys(request.query).length
+          ? request.query
+          : undefined,
+
+      ipAddress: request.ip,
+
+      userAgent: request.headers['user-agent'],
+
+      error: null,
+    };
+
+    // Fire-and-forget insert
+    this.apiLogModel
+      .create(logEntry)
+      .then((log) => {
+        const logId = log._id;
+
+        const finish = () => {
+          const endTime = Date.now();
+
+          const update: any = {
+            status: response.statusCode,
+            endTime: new Date(endTime),
+            duration: endTime - startTime,
+          };
+
+          if (response.statusCode >= 400) {
+            update.error =
+              response.statusMessage || 'Unknown Error';
+          }
+
+          this.apiLogModel
+            .updateOne(
+              { _id: logId },
+              {
+                $set: update,
+              },
+            )
+            .catch(console.error);
+
+          response.removeListener('finish', finish);
+          response.removeListener('close', finish);
         };
 
-        // Only log error if 4xx/5xx and no body was sent
-        if (res.statusCode >= 400) {
-          updateData.error = res.statusMessage || 'Unknown Error';
-        }
+        response.on('finish', finish);
+        response.on('close', finish);
+      })
+      .catch((err) => {
+        console.error('Failed to create API log', err);
+      });
 
-        // Fire-and-forget update
-        ApiLog.updateOne({ _id: logId }, { $set: updateData }).catch(
-          console.error,
-        );
-
-        res.removeListener('finish', onFinished);
-        res.removeListener('close', onFinished);
-      };
-
-      res.on('finish', onFinished);
-      res.on('close', onFinished); // Handles aborted requests
-    })
-    .catch((err) => {
-      console.error('Failed to create log entry:', err);
-    });
-
-  // Do NOT wait for anything — move on!
-  next();
-};
-
-module.exports = apiLogger;
+    return next.handle().pipe(
+      tap(() => {}),
+      catchError((err) => {
+        throw err;
+      }),
+    );
+  }
+}

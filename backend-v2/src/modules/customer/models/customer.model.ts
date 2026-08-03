@@ -10,10 +10,10 @@ import {
   ForeignKey,
 } from 'sequelize-typescript';
 
-import { Order } from '@/modules/orders/entities/order.entity';
-import { Address } from '@/modules/addresses/entities/address.entity';
-import { Vendor } from '@/modules/vendors/entities/vendor.entity';
-import { Quotation } from '@/modules/quotations/entities/quotation.entity';
+import { Order } from '@/modules/orders/models/order.model';
+import { Address } from '@/modules/address/models/address.model';
+import { Vendor } from '@/modules/vendor/models/vendor.model';
+import { Quotation } from '@/modules/quotation/models/quotation.model';
 
 export enum CustomerType {
   RETAIL = 'Retail',

@@ -10,9 +10,9 @@ import {
   HasMany,
 } from 'sequelize-typescript';
 
-import { Brand } from '@/modules/brands/entities/brand.entity';
-import { ParentCategory } from '@/modules/parent-categories/entities/parent-category.entity';
-import { Keyword } from '@/modules/keywords/entities/keyword.entity';
+import { Brand } from '@/modules/brands/models/brand.model';
+import { ParentCategory } from '@/modules/brands/models/parentcategory.model';
+import { Keyword } from '@/modules/brands/models/keyword.model';
 
 @Table({
   tableName: 'categories',

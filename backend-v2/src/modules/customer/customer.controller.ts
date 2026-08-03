@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { CustomerService } from './customer.service';
 import { CreateCustomerDto, UpdateCustomerDto } from './dto/customer.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'; // Adjust
+import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard'; // Adjust
 
 @Controller('customers')
 @UseGuards(JwtAuthGuard)

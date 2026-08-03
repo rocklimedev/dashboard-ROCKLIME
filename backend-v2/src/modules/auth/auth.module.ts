@@ -1,18 +1,18 @@
 // src/modules/auth/auth.module.ts
 import { Module } from '@nestjs/common';
 import { SequelizeModule } from '@nestjs/sequelize';
-import { AuthService } from './services/auth.service';
-import { AuthController } from './controllers/auth.controller';
-import { User } from '@/modules/users/entities/user.entity';
-import { Role } from '@/modules/roles/entities/role.entity';
-import { VerificationToken } from './entities/verification-token.entity';
-import { ActivityLoggerService } from '@/common/services/activity-logger.service';
-import { EmailService } from '@/common/services/email.service';
+import { AuthService } from './auth.service';
+import { AuthController } from './auth.controller';
+import { User } from '@/modules/users/models/user.model';
+import { Role } from '@/modules/rbac/models/role.model';
+import { VerificationToken } from '@/modules/auth/models/verification-token.model';
+import { ActivityLogService } from '@/modules/engagement/services/activity-log.service';
+import { MailService } from '@/modules/mail/mail.service';
 
 @Module({
   imports: [SequelizeModule.forFeature([User, Role, VerificationToken])],
   controllers: [AuthController],
-  providers: [AuthService, ActivityLoggerService, EmailService],
+  providers: [AuthService, ActivityLogService, MailService],
   exports: [AuthService],
 })
 export class AuthModule {}

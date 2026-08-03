@@ -11,16 +11,16 @@ import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
 import { Op } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
-import { User } from '@/modules/users/entities/user.entity';
-import { Role } from '@/modules/roles/entities/role.entity';
-import { RolePermission } from '@/modules/roles/entities/role-permission.entity';
-import { Permission } from '@/modules/roles/entities/permission.entity';
-import { VerificationToken } from '../entities/verification-token.entity';
-
-import { ActivityLoggerService } from '@/common/services/activity-logger.service';
-import { EmailService } from '@/common/services/email.service';
-
-import { LoginDto, RegisterDto, ResetPasswordDto, ChangePasswordDto } from '../dto';
+import { User } from '@/modules/users/models/user.model';
+import { Role } from '@/modules/rbac/models/role.model';
+import { RolePermission } from '@/modules/rbac/models/role-permission.model';
+import { Permission } from '@/modules/rbac/models/permission.model';
+import { VerificationToken } from '@/modules/auth/models/verification-token.model';
+import { ActivityLogService } from '@/modules/engagement/services/activity-log.service';
+import { MailService } from '@/modules/mail/mail.service';
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ROLES } from '@/config/constants';
 
 const JWT_SECRET = process.env.JWT_SECRET!;
@@ -35,8 +35,8 @@ export class AuthService {
     @InjectModel(RolePermission) private readonly rolePermissionModel: typeof RolePermission,
     @InjectModel(Permission) private readonly permissionModel: typeof Permission,
 
-    private readonly activityLogger: ActivityLoggerService,
-    private readonly emailService: EmailService,
+    private readonly activityLogger: ActivityLogService,
+    private readonly emailService: MailService,
     private readonly sequelize: Sequelize,
   ) {}
 

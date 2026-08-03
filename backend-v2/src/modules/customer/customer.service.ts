@@ -4,13 +4,13 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { Customer } from '../models/customer.model';
+import { Customer } from './models/customer.model';
 import {
   CreateCustomerDto,
   UpdateCustomerDto,
   CustomerType,
 } from './dto/customer.dto';
-import { ActivityLogService } from '../activity-log/activity-log.service'; // Adjust path
+import { ActivityLogService } from '@/modules/engagement/services/activity-log.service'; // Adjust path
 import { NotificationService } from '../notification/notification.service'; // Adjust path
 
 const ADMIN_USER_ID = '2ef0f07a-a275-4fe1-832d-fe9a5d145f60';

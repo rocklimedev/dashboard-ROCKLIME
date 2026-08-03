@@ -6,9 +6,9 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { BrandParentCategory } from '../entities/brand-parent-category.entity';
-import { Brand } from '../entities/brand.entity';
-import { ParentCategory } from '@/modules/categories/entities/parent-category.entity';
+import { BrandParentCategory } from '@/modules/brands/models/brand-parent-category.model';
+import { Brand } from '@/modules/brands/models/brand.model';
+import { ParentCategory } from '@/modules/brands/models/parentcategory.model';
 import { NotificationService } from '@/modules/notifications/services/notification.service';
 import * as slugify from 'slugify';
 import {

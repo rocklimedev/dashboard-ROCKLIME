@@ -10,9 +10,9 @@ import {
   BelongsToMany,
 } from 'sequelize-typescript';
 
-import { Brand } from '@/modules/brands/entities/brand.entity';
-import { ParentCategory } from '@/modules/parent-categories/entities/parent-category.entity';
-import { BrandParentCategoryBrand } from './brand-parent-category-brand.entity';
+import { Brand } from '@/modules/brands/models/brand.model';
+import { ParentCategory } from '@/modules/brands/models/parentcategory.model';
+import { BrandParentCategoryBrand } from '@/modules/brands/models/brand-parentcategory-brand.model';
 
 @Table({
   tableName: 'brand_parentcategories',

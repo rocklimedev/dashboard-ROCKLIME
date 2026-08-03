@@ -9,7 +9,7 @@ import {
   BelongsTo,
 } from 'sequelize-typescript';
 
-import { User } from '@/modules/users/entities/user.entity';
+import { User } from '@/modules/users/models/user.model';
 
 export enum JobStatus {
   PENDING = 'pending',
