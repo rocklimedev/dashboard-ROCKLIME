@@ -432,7 +432,12 @@ const NewQuotationsDetails = () => {
     });
 
     const pages = [];
-    // ❌ removed: let globalSno = 0;
+
+    // Tracks how many items have already been numbered for a given
+    // floor+room, so that when a room is split across a page break the
+    // S.No continues (e.g. 1..6 on page 1, 7..10 on page 2) instead of
+    // restarting at 1. Keyed by "floorName|||roomName".
+    const roomSnoTracker = new Map();
 
     const MAX_VISUAL_ROWS = 9;
 
@@ -535,6 +540,12 @@ const NewQuotationsDetails = () => {
             {currentPageRooms.map(({ roomGroup, roomMainItems }, idx) => {
               if (roomMainItems.length === 0) return null;
 
+              const roomKey = `${floorName}|||${roomGroup.roomName}`;
+              const startSno = roomSnoTracker.get(roomKey) || 0;
+              roomSnoTracker.set(roomKey, startSno + roomMainItems.length);
+
+              const isContinuation = startSno > 0;
+
               return (
                 <div
                   key={roomGroup.roomName + idx}
@@ -553,12 +564,13 @@ const NewQuotationsDetails = () => {
                     }}
                   >
                     {roomGroup.roomName}
+                    {isContinuation && " (Continued)"}
                   </h3>
 
                   {renderProductTable(
                     roomMainItems,
                     "",
-                    0, // ✅ every room starts its own S.No at 1
+                    startSno, // ✅ continues numbering if this room was split
                     shouldShowColumn,
                   )}
                 </div>
@@ -569,8 +581,6 @@ const NewQuotationsDetails = () => {
               renderFloorDiscountBox(floorName, floorAllProducts)}
           </div>,
         );
-
-        // ❌ removed: globalSno += currentPageRooms.reduce(...)
       }
     });
 
