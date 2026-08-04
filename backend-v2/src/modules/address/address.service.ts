@@ -11,7 +11,7 @@ import { Customer } from '../customer/models/customer.model';
 import { Op } from 'sequelize';
 import { v4 as uuidv4 } from 'uuid';
 import { NotificationService } from '@/modules/notifications/services/notification.service';
-import { ActivityLoggerService } from '@/common/services/activity-logger.service';
+import { ActivityLogService } from '@/modules/engagement/services/activity-log.service';
 import { CreateAddressDto, UpdateAddressDto } from './dto/create-address.dto';
 
 @Injectable()
@@ -21,7 +21,7 @@ export class AddressService {
     @InjectModel(User) private readonly userModel: typeof User,
     @InjectModel(Customer) private readonly customerModel: typeof Customer,
     private readonly notificationService: NotificationService,
-    private readonly activityLogger: ActivityLoggerService,
+    private readonly activityLogger: ActivityLogService,
   ) {}
 
   async createAddress(dto: CreateAddressDto, reqUser: any) {

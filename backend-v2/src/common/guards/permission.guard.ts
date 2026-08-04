@@ -1,113 +1,175 @@
-const jwt = require('jsonwebtoken');
-const User = require('../models/users');
-const Role = require('../models/roles');
-const Permission = require('../models/permission');
-const CachedPermission = require('../models/cachedPermission'); // <-- new Mongo model
-require('dotenv').config();
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  UnauthorizedException,
+  ForbiddenException,
+  InternalServerErrorException,
+} from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { JwtService } from '@nestjs/jwt';
+import { InjectModel } from '@nestjs/sequelize';
+import { InjectModel as InjectMongoModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 
-const checkPermission = (api, name, module, route) => {
-  return async (req, res, next) => {
+import { PERMISSION_KEY, PermissionMetadata } from '../decorators/permission.decorator';
+import { User } from '@/modules/users/models/user.model';
+import { Role } from '@/modules/rbac/models/role.model';
+import { Permission as PermissionEntity } from '@/modules/rbac/models/permission.model';
+
+import {
+  CachedPermission,
+  CachedPermissionDocument,
+} from '@/modules/rbac/models/cached-permission.model';
+
+@Injectable()
+export class PermissionGuard implements CanActivate {
+  constructor(
+    private readonly reflector: Reflector,
+    private readonly jwtService: JwtService,
+
+    @InjectModel(User)
+    private readonly userModel: typeof User,
+
+    @InjectMongoModel(CachedPermission.name)
+    private readonly cachedPermissionModel: Model<CachedPermissionDocument>,
+  ) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const permission = this.reflector.getAllAndOverride<PermissionMetadata>(
+      PERMISSION_KEY,
+      [context.getHandler(), context.getClass()],
+    );
+
+    // Route doesn't require permission
+    if (!permission) {
+      return true;
+    }
+
+    const request = context.switchToHttp().getRequest();
+
+    const authHeader = request.headers.authorization;
+
+    if (!authHeader) {
+      throw new UnauthorizedException('Unauthorized: No token provided');
+    }
+
+    const token = authHeader.split(' ')[1];
+
+    if (!token) {
+      throw new UnauthorizedException('Unauthorized: No token provided');
+    }
+
+    let decoded: any;
+
     try {
-      // 1️⃣ Extract JWT
-      const token = req.headers.authorization?.split(' ')[1];
-      if (!token)
-        return res
-          .status(401)
-          .json({ message: 'Unauthorized: No token provided' });
+      decoded = await this.jwtService.verifyAsync(token);
+    } catch (err) {
+      if (err.name === 'TokenExpiredError') {
+        throw new UnauthorizedException('Token expired');
+      }
 
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      if (!decoded.userId)
-        return res.status(401).json({ message: 'Unauthorized: Invalid token' });
+      throw new UnauthorizedException('Invalid token');
+    }
 
-      // 2️⃣ Check Mongo Cache First
-      let cached = await CachedPermission.findOne({ userId: decoded.userId });
+    if (!decoded.userId) {
+      throw new UnauthorizedException('Invalid token');
+    }
 
-      // 3️⃣ If cache exists and is fresh (< 24 hours), use it
-      const isFresh =
-        cached && new Date() - new Date(cached.fetchedAt) < 24 * 60 * 60 * 1000;
+    request.user = decoded;
 
-      if (!isFresh) {
-        // 4️⃣ Otherwise, fetch from SQL
-        const user = await User.findByPk(decoded.userId, {
-          include: [
-            {
-              model: Role,
-              include: [
-                {
-                  model: Permission,
-                  through: { attributes: [] },
-                },
-              ],
-            },
-          ],
-        });
+    let cached = await this.cachedPermissionModel.findOne({
+      userId: decoded.userId,
+    });
 
-        if (!user) return res.status(404).json({ message: 'User not found' });
+    const isFresh =
+      cached &&
+      Date.now() - new Date(cached.fetchedAt).getTime() <
+        24 * 60 * 60 * 1000;
 
-        const roles = user.Roles || [];
-
-        // Flatten all permissions
-        const permissions = roles.flatMap((r) =>
-          r.Permissions.map((perm) => ({
-            permissionId: perm.permissionId,
-            name: perm.name,
-            api: perm.api,
-            route: perm.route,
-            module: perm.module,
-          })),
-        );
-
-        // Update Mongo Cache
-        await CachedPermission.findOneAndUpdate(
-          { userId: decoded.userId },
+    if (!isFresh) {
+      const user = await this.userModel.findByPk(decoded.userId, {
+        include: [
           {
-            roleId: roles[0]?.roleId,
-            roleName: roles[0]?.roleName || null,
-            permissions,
-            fetchedAt: new Date(),
+            model: Role,
+            include: [
+              {
+                model: PermissionEntity,
+                through: {
+                  attributes: [],
+                },
+              },
+            ],
           },
-          { upsert: true, new: true },
-        );
+        ],
+      });
 
-        cached = await CachedPermission.findOne({ userId: decoded.userId });
+      if (!user) {
+        throw new UnauthorizedException('User not found');
       }
 
-      // 5️⃣ Super Admin Bypass
-      if (cached?.roleName?.toUpperCase() === 'SUPER_ADMIN') return next();
+      const roles = user.Roles || [];
 
-      // 6️⃣ Validate middleware config
-      if (!api || !name || !module || !route) {
-        return res
-          .status(500)
-          .json({ message: 'Invalid permission configuration in route' });
-      }
-
-      // 7️⃣ Check if permission exists in cache
-      const hasPermission = cached.permissions.some(
-        (perm) =>
-          perm.api === api &&
-          perm.name === name &&
-          perm.module === module &&
-          perm.route === route,
+      const permissions = roles.flatMap((role) =>
+        role.Permissions.map((perm) => ({
+          permissionId: perm.permissionId,
+          name: perm.name,
+          api: perm.api,
+          route: perm.route,
+          module: perm.module,
+        })),
       );
 
-      if (!hasPermission) {
-        return res.status(403).json({
-          message: `Forbidden: Missing permission "${name}" (${api.toUpperCase()} - ${module})`,
-        });
-      }
+      await this.cachedPermissionModel.findOneAndUpdate(
+        {
+          userId: decoded.userId,
+        },
+        {
+          roleId: roles[0]?.roleId,
+          roleName: roles[0]?.roleName ?? null,
+          permissions,
+          fetchedAt: new Date(),
+        },
+        {
+          upsert: true,
+          new: true,
+        },
+      );
 
-      next();
-    } catch (error) {
-      if (error.name === 'JsonWebTokenError')
-        return res.status(401).json({ message: 'Invalid token' });
-
-      if (error.name === 'TokenExpiredError')
-        return res.status(401).json({ message: 'Token expired' });
-
-      return res.status(500).json({ message: 'Permission validation failed' });
+      cached = await this.cachedPermissionModel.findOne({
+        userId: decoded.userId,
+      });
     }
-  };
-};
 
-module.exports = checkPermission;
+    if (cached?.roleName?.toUpperCase() === 'SUPER_ADMIN') {
+      return true;
+    }
+
+    if (
+      !permission.api ||
+      !permission.name ||
+      !permission.module ||
+      !permission.route
+    ) {
+      throw new InternalServerErrorException(
+        'Invalid permission configuration',
+      );
+    }
+
+    const hasPermission = cached.permissions.some(
+      (perm) =>
+        perm.api === permission.api &&
+        perm.name === permission.name &&
+        perm.module === permission.module &&
+        perm.route === permission.route,
+    );
+
+    if (!hasPermission) {
+      throw new ForbiddenException(
+        `Missing permission "${permission.name}" (${permission.api.toUpperCase()} - ${permission.module})`,
+      );
+    }
+
+    return true;
+  }
+}

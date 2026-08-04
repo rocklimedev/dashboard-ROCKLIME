@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { InjectModel } from '@nestjs/sequelize';
-import { Role } from '../models/role.model'; // Adjust path as needed
+import { Role } from '@/modules/rbac/models/role.model'; // Adjust path as needed
 
 @Injectable()
 export class RolesGuard implements CanActivate {

@@ -10,10 +10,10 @@ import {
   BelongsToMany,
 } from 'sequelize-typescript';
 
-import { Vendor } from '@/modules/vendors/entities/vendor.entity';
-import { Category } from '@/modules/categories/entities/category.entity';
-import { BrandParentCategory } from '@/modules/brand-parent-categories/entities/brand-parent-category.entity';
-import { BrandParentCategoryBrand } from '@/modules/brand-parent-categories/entities/brand-parent-category-brand.entity';
+import { Vendor } from '@/modules/vendor/models/vendor.model';
+import { Category } from '@/modules/brands/models/category.model';
+import { BrandParentCategory } from '@/modules/brands/models/brand-parent-category.model';
+import { BrandParentCategoryBrand } from '@/modules/brands/models/brand-parentcategory-brand.model';
 
 @Table({
   tableName: 'brands',

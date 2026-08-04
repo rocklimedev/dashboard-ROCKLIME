@@ -8,8 +8,8 @@ import {
   PrimaryKey,
 } from 'sequelize-typescript';
 
-import { Product } from '@/modules/products/entities/product.entity';
-import { Keyword } from '@/modules/keywords/entities/keyword.entity';
+import { Product } from '@/modules/product/models/product.model';
+import { Keyword } from '@/modules/brands/models/keyword.model';
 
 @Table({
   tableName: 'products_keywords',

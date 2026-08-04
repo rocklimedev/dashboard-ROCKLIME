@@ -396,7 +396,7 @@ const NewQuotationsDetails = () => {
 
   // ── Detailed Tabular Floor & Room Wise (Full Products) ──────────────────
 
-  const renderDetailedTabularFloorRoom = () => {
+  const renderDetailedTabularFloorRoom = (shouldShowColumn) => {
     const floorRoomGroups = groupProductsByFloorAndRoom(enrichedProducts);
 
     const floorMap = new Map();
@@ -585,7 +585,12 @@ const NewQuotationsDetails = () => {
                     {roomGroup.roomName}
                   </h3>
 
-                  {renderProductTable(roomMainItems, "", globalSno, () => true)}
+                  {renderProductTable(
+                    roomMainItems,
+                    "",
+                    globalSno,
+                    shouldShowColumn,
+                  )}
                 </div>
               );
             })}
@@ -1096,9 +1101,8 @@ const NewQuotationsDetails = () => {
 
     // Floor & Room Section — Tabular only (Site Map view removed)
     if (hasFloorLayout) {
-      pages.push(...renderDetailedTabularFloorRoom());
+      pages.push(...renderDetailedTabularFloorRoom(shouldShowColumn));
     }
-
     // Room-wise Summary (new dedicated page)
     pages.push(...renderRoomWiseSummaryPages());
 

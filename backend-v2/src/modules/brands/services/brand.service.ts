@@ -6,11 +6,12 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { Brand } from '../entities/brand.entity';
-import { Product } from '@/modules/products/entities/product.entity';
+import { Brand } from '@/modules/brands/models/brand.model';
+import { Product } from '@/modules/product/models/product.model';
 import { NotificationService } from '@/modules/notifications/services/notification.service';
-import { ActivityLoggerService } from '@/common/services/activity-logger.service';
-import { CreateBrandDto, UpdateBrandDto } from '../dto';
+import { ActivityLogService } from '@/modules/engagement/services/activity-log.service';
+import { CreateBrandDto } from '../dto/create-brand.dto';
+import { UpdateBrandDto } from '../dto/update-brand.dto';
 import { Op } from 'sequelize';
 
 const ADMIN_USER_ID = '2ef0f07a-a275-4fe1-832d-fe9a5d145f60';
@@ -21,7 +22,7 @@ export class BrandService {
     @InjectModel(Brand) private readonly brandModel: typeof Brand,
     @InjectModel(Product) private readonly productModel: typeof Product,
     private readonly notificationService: NotificationService,
-    private readonly activityLogger: ActivityLoggerService,
+    private readonly activityLogger: ActivityLogService,
   ) {}
 
   async createBrand(dto: CreateBrandDto, reqUser: any) {

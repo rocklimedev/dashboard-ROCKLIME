@@ -3,18 +3,18 @@ import { Module } from '@nestjs/common';
 import { SequelizeModule } from '@nestjs/sequelize';
 import { Sequelize } from 'sequelize-typescript';
 
-import { Category } from './entities/category.entity';
-import { ParentCategory } from './entities/parent-category.entity';
-import { Keyword } from './entities/keyword.entity';
-import { Brand } from '@/modules/brands/entities/brand.entity';
-import { BrandParentCategory } from '@/modules/brands/entities/brand-parent-category.entity';
+import { Category } from './models/category.model';
+import { ParentCategory } from './models/parentcategory.model';
+import { Keyword } from './models/keyword.model';
+import { Brand } from './models/brand.model';
+import { BrandParentCategory } from './models/brand-parent-category.model';
 
 import { CategoryService } from './services/category.service';
-import { CategoryController } from './controllers/category.controller';
+import { CategoryController } from './controller/category.controller';
 import { ParentCategoryService } from './services/parent-category.service';
-import { ParentCategoryController } from './controllers/parent-category.controller';
+import { ParentCategoryController } from './controller/parent-category.controller';
 import { KeywordService } from './services/keyword.service';
-import { KeywordController } from './controllers/keyword.controller';
+import { KeywordController } from './controller/keyword.controller';
 
 @Module({
   imports: [

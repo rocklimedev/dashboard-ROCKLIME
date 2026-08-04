@@ -8,8 +8,8 @@ import {
   BelongsTo,
 } from 'sequelize-typescript';
 
-import { Brand } from '@/modules/brands/entities/brand.entity';
-import { BrandParentCategory } from './brand-parent-category.entity';
+import { Brand } from '@/modules/brands/models/brand.model';
+import { BrandParentCategory } from '@/modules/brands/models/brand-parent-category.model';
 
 @Table({
   tableName: 'brand_parentcategory_brands',

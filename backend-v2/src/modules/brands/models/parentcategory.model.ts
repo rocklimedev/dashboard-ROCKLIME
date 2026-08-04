@@ -10,8 +10,8 @@ import {
   BeforeValidate,
 } from 'sequelize-typescript';
 
-import { Category } from '@/modules/categories/entities/category.entity';
-import { BrandParentCategory } from '@/modules/brand-parent-categories/entities/brand-parent-category.entity';
+import { Category } from '@/modules/brands/models/category.model';
+import { BrandParentCategory } from '@/modules/brands/models/brand-parent-category.model';
 
 @Table({
   tableName: 'parentcategories',

@@ -8,7 +8,7 @@ import {
   ForeignKey,
   BelongsTo,
 } from 'sequelize-typescript';
-import { User } from 'src/modules/users/models/user.model';
+import { User } from '@/modules/users/models/user.model';
 
 export enum ContextTags {
   AUTH = 'AUTH',

@@ -11,11 +11,9 @@ import {
   HttpCode,
 } from '@nestjs/common';
 import { BrandParentCategoryService } from '../services/brand-parent-category.service';
-import {
-  CreateBrandParentCategoryDto,
-  UpdateBrandParentCategoryDto,
-  AttachBrandsDto,
-} from '../dto';
+import { AttachBrandsDto } from '../dto/attach-brands.dto';
+import { UpdateBrandParentCategoryDto } from '../dto/update-brand-parent-category';
+import { CreateBrandParentCategoryDto } from '../dto/create-brand-parent-category.dto';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 
 @UseGuards(JwtAuthGuard)

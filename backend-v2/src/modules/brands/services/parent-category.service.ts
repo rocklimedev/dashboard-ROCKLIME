@@ -5,10 +5,11 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
-import { ParentCategory } from '../entities/parent-category.entity';
-import { Brand } from '@/modules/brands/entities/brand.entity';
-import { Category } from '../entities/category.entity';
-import { CreateParentCategoryDto, UpdateParentCategoryDto } from '../dto';
+import { ParentCategory } from '@/modules/brands/models/parentcategory.model';
+import { Brand } from '@/modules/brands/models/brand.model';
+import { Category } from '@/modules/brands/models/category.model';
+import { CreateParentCategoryDto } from '../dto/create-parent-category.dto';
+import { UpdateParentCategoryDto } from '../dto/update-parent-category.dto';
 import { Op } from 'sequelize';
 
 @Injectable()

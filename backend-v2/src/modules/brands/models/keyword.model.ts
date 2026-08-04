@@ -12,9 +12,9 @@ import {
   BeforeValidate,
 } from 'sequelize-typescript';
 
-import { Category } from '@/modules/categories/entities/category.entity';
-import { Product } from '@/modules/products/entities/product.entity';
-import { ProductKeyword } from '@/modules/product-keywords/entities/product-keyword.entity';
+import { Category } from '@/modules/brands/models/category.model';
+import { Product } from '@/modules/product/models/product.model';
+import { ProductKeyword } from '@/modules/product/models/product-keywords.model';
 
 @Table({
   tableName: 'keywords',
