@@ -33,12 +33,19 @@ export default function AssignItemModal({
     },
   ]);
 
+  // Resolve quantity regardless of which caller shape is passed in
+  // (AddQuotation uses `qty`, some older/other callers use `quantity`)
+  const itemQty = Number(item?.qty ?? item?.quantity) || 1;
+
+  // Resolve id regardless of which caller shape is passed in
+  const itemId = item?.productId ?? item?.id;
+
   const totalAssigned = assignments.reduce(
     (sum, a) => sum + (Number(a.assignedQuantity) || 0),
     0,
   );
 
-  const remaining = (Number(item?.quantity) || 1) - totalAssigned;
+  const remaining = itemQty - totalAssigned;
 
   // Reset when modal opens
   useEffect(() => {
@@ -47,12 +54,13 @@ export default function AssignItemModal({
         {
           floorId: null,
           roomId: null,
-          assignedQuantity: Number(item.quantity) || 1,
+          assignedQuantity: itemQty,
           floorName: null,
           roomName: null,
         },
       ]);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, item]);
 
   const addNewAssignment = () => {
@@ -100,17 +108,23 @@ export default function AssignItemModal({
   };
 
   const handleSubmit = () => {
+    if (!itemId) {
+      return message.error("Could not identify this item — please retry");
+    }
     if (totalAssigned === 0) {
       return message.error("Please assign at least some quantity");
     }
-    if (totalAssigned > (item?.quantity || 1)) {
+    if (assignments.some((a) => !a.floorId)) {
+      return message.error("Please select a floor for every assignment row");
+    }
+    if (totalAssigned > itemQty) {
       return message.error(
         "Assigned quantity cannot exceed available quantity",
       );
     }
 
     // Pass assignments with names to parent
-    onAssign(item?.id, assignments);
+    onAssign(itemId, assignments);
     onCancel();
   };
 
@@ -128,7 +142,7 @@ export default function AssignItemModal({
       <Space direction="vertical" style={{ width: "100%" }} size="large">
         <div>
           <Text strong>Available Quantity:</Text>{" "}
-          <Tag color="blue">{item?.quantity || 1}</Tag>
+          <Tag color="blue">{itemQty}</Tag>
           <Text type="secondary">
             {" "}
             | Assigned: {totalAssigned} | Remaining: {remaining}

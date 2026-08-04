@@ -247,7 +247,9 @@ const AddQuotation = () => {
       discount: safeNum(p.discount, 0),
       discountType: p.discountType || "fixed",
 
-      // Explicitly ensure location fields
+      // Preserve the multi-location split from the saved payload
+      locations: Array.isArray(p.locations) ? p.locations : [],
+
       floorId: p.floorId || null,
       floorName: p.floorName || null,
       roomId: p.roomId || null,
@@ -341,37 +343,48 @@ const AddQuotation = () => {
   };
 
   const handleAssignLocation = (productId, assignments) => {
-    if (!assignments || assignments.length === 0) {
+    if (!productId) {
+      message.error("Could not match this item — try again");
+      setShowAssignModal(false);
+      return;
+    }
+
+    const validAssignments = (assignments || []).filter((a) => a.floorId);
+    if (validAssignments.length === 0) {
       message.warning("No location selected");
       setShowAssignModal(false);
       return;
     }
 
-    const primary = assignments[assignments.length - 1] || assignments[0];
+    const primary = validAssignments[0];
 
     setFormData((prev) => ({
       ...prev,
       products: prev.products.map((p) => {
-        if (p.productId === productId) {
-          return {
-            ...p,
-            floorId: primary.floorId || null,
-            floorName: primary.floorName || null,
-            roomId: primary.roomId || null,
-            roomName: primary.roomName || null,
-            areaId: primary.areaId || null,
-            areaName: primary.areaName || null,
-          };
-        }
-        return p;
+        if (p.productId !== productId) return p;
+        return {
+          ...p,
+          // keep every split so submit can send them all
+          locations: validAssignments,
+          // keep the flat fields in sync for the table/back-compat display
+          floorId: primary.floorId || null,
+          floorName: primary.floorName || null,
+          roomId: primary.roomId || null,
+          roomName: primary.roomName || null,
+          areaId: primary.areaId || null,
+          areaName: primary.areaName || null,
+        };
       }),
     }));
 
-    const loc = [primary.floorName, primary.roomName, primary.areaName]
-      .filter(Boolean)
-      .join(" → ");
+    const label =
+      validAssignments.length > 1
+        ? `${validAssignments.length} locations`
+        : [primary.floorName, primary.roomName, primary.areaName]
+            .filter(Boolean)
+            .join(" → ");
 
-    message.success(`Assigned to ${loc}`);
+    message.success(`Assigned to ${label}`);
     setShowAssignModal(false);
     setItemToAssign(null);
   };
@@ -572,21 +585,33 @@ const AddQuotation = () => {
 
       const lineTotal = sellingPrice * qty - lineDiscount;
 
-      // Build locations array (This is what backend prefers)
+      // Prefer the full multi-location split captured by the assign modal;
+      // fall back to a single-entry array built from the flat fields
+      // (covers records loaded from an older payload shape).
       const locations =
-        p.areaId || p.roomId || p.floorId
-          ? [
-              {
-                floorId: p.floorId || null,
-                floorName: p.floorName || null,
-                roomId: p.roomId || null,
-                roomName: p.roomName || null,
-                areaId: p.areaId || null,
-                areaName: p.areaName || null,
-                assignedQuantity: qty,
-              },
-            ]
-          : [];
+        p.locations && p.locations.length > 0
+          ? p.locations.map((loc) => ({
+              floorId: loc.floorId || null,
+              floorName: loc.floorName || null,
+              roomId: loc.roomId || null,
+              roomName: loc.roomName || null,
+              areaId: loc.areaId || null,
+              areaName: loc.areaName || null,
+              assignedQuantity: safeNum(loc.assignedQuantity, qty),
+            }))
+          : p.areaId || p.roomId || p.floorId
+            ? [
+                {
+                  floorId: p.floorId || null,
+                  floorName: p.floorName || null,
+                  roomId: p.roomId || null,
+                  roomName: p.roomName || null,
+                  areaId: p.areaId || null,
+                  areaName: p.areaName || null,
+                  assignedQuantity: qty,
+                },
+              ]
+            : [];
 
       return {
         productId: p.productId,
@@ -600,10 +625,8 @@ const AddQuotation = () => {
         optionType: p.optionType || null,
         groupId: p.groupId,
         priority: safeNum(p.priority, 0),
-        // === NEW: Send locations array (Critical for Area) ===
         locations: locations,
 
-        // Backward compatibility (keep these)
         floorId: p.floorId || null,
         floorName: p.floorName || null,
         roomId: p.roomId || null,
