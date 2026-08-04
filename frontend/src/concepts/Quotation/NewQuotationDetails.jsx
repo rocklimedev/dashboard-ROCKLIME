@@ -79,7 +79,16 @@ const computePricing = (item) => {
 
   return { mrp, qty, unitPrice, lineTotal, displayDiscount };
 };
-
+const groupItemsWithOptions = (itemsList) => {
+  const mains = itemsList.filter((p) => p.isOptionFor == null);
+  const opts = itemsList.filter((p) => p.isOptionFor != null);
+  const optMap = new Map();
+  opts.forEach((opt) => {
+    if (!optMap.has(opt.isOptionFor)) optMap.set(opt.isOptionFor, []);
+    optMap.get(opt.isOptionFor).push(opt);
+  });
+  return mains.map((m) => ({ ...m, options: optMap.get(m.productId) || [] }));
+};
 // ── Floor-wise Totals Helper ──────────────────────────────────────────────
 // Given a flat list of products belonging to a single floor, computes the
 // gross (pre-discount) total, the discount amount, and the net total.
@@ -339,7 +348,21 @@ const NewQuotationsDetails = () => {
         const key = `${floor}|||${room}`;
         if (!map.has(key))
           map.set(key, { floorName: floor, roomName: room, products: [] });
-        map.get(key).products.push({ ...p, ...loc });
+
+        // `loc` only carries `assignedQuantity`, never `quantity`.
+        // p.quantity is the COMBINED quantity across all rooms — we must
+        // explicitly override it here with this room's assigned share,
+        // and blank out `total` so computePricing() recalculates the
+        // line total for the smaller per-room quantity instead of reusing
+        // the full-quantity total.
+        const assignedQty = Number(loc.assignedQuantity ?? p.quantity ?? 1);
+
+        map.get(key).products.push({
+          ...p,
+          ...loc,
+          quantity: assignedQty,
+          total: undefined,
+        });
       });
     });
 
@@ -405,20 +428,14 @@ const NewQuotationsDetails = () => {
       if (!floorMap.has(group.floorName)) {
         floorMap.set(group.floorName, []);
       }
-
       floorMap.get(group.floorName).push(group);
     });
 
     const pages = [];
-    let globalSno = 0;
+    // ❌ removed: let globalSno = 0;
 
-    // =========================================================
-    // SAFE VISUAL LIMIT
-    // (accounts for images + optional rows + headings)
-    // =========================================================
     const MAX_VISUAL_ROWS = 9;
 
-    // Estimate row count including options
     const getVisualRowCount = (items) => {
       return items.reduce((sum, item) => {
         return sum + 1 + (item.options?.length || 0);
@@ -426,10 +443,6 @@ const NewQuotationsDetails = () => {
     };
 
     floorMap.forEach((roomsInFloor, floorName) => {
-      // Snapshot this floor's full product list BEFORE the pagination/split
-      // logic below mutates `roomsInFloor` in place. This snapshot is what
-      // feeds the per-floor discount box, so it must reflect every product
-      // that belongs to the floor, independent of how pages get split.
       const floorAllProducts = enrichedProducts.filter(
         (p) => (p.floorName || "Unspecified Floor") === floorName,
       );
@@ -438,21 +451,13 @@ const NewQuotationsDetails = () => {
 
       while (roomIndex < roomsInFloor.length) {
         const currentPageRooms = [];
-
         let visualRowsUsed = 0;
 
         while (roomIndex < roomsInFloor.length) {
           const roomGroup = roomsInFloor[roomIndex];
-
-          const roomMainItems = groupedProductsWithOptions.filter((main) =>
-            roomGroup.products.some((p) => p.productId === main.productId),
-          );
-
+          const roomMainItems = groupItemsWithOptions(roomGroup.products);
           const roomVisualRows = getVisualRowCount(roomMainItems);
 
-          // =====================================================
-          // IF ROOM DOESN'T FIT → NEXT PAGE
-          // =====================================================
           if (
             visualRowsUsed > 0 &&
             visualRowsUsed + roomVisualRows > MAX_VISUAL_ROWS
@@ -460,37 +465,25 @@ const NewQuotationsDetails = () => {
             break;
           }
 
-          // =====================================================
-          // HUGE ROOM → SPLIT SAFELY
-          // =====================================================
           if (roomVisualRows > MAX_VISUAL_ROWS) {
             const splitItems = [];
-
             let tempRows = visualRowsUsed;
 
             for (const item of roomMainItems) {
               const itemRows = 1 + (item.options?.length || 0);
-
               if (
                 tempRows + itemRows > MAX_VISUAL_ROWS &&
                 splitItems.length > 0
               ) {
                 break;
               }
-
               splitItems.push(item);
-
               tempRows += itemRows;
             }
 
-            currentPageRooms.push({
-              roomGroup,
-              roomMainItems: splitItems,
-            });
+            currentPageRooms.push({ roomGroup, roomMainItems: splitItems });
 
-            // Remaining items stay for next page
             const remainingIds = splitItems.map((x) => x.productId);
-
             roomsInFloor[roomIndex] = {
               ...roomGroup,
               products: roomGroup.products.filter(
@@ -499,34 +492,18 @@ const NewQuotationsDetails = () => {
             };
 
             visualRowsUsed = tempRows;
-
             break;
           }
 
-          // =====================================================
-          // NORMAL ROOM
-          // =====================================================
-          currentPageRooms.push({
-            roomGroup,
-            roomMainItems,
-          });
-
+          currentPageRooms.push({ roomGroup, roomMainItems });
           visualRowsUsed += roomVisualRows;
-
           roomIndex++;
         }
 
-        if (currentPageRooms.length === 0) {
-          break;
-        }
+        if (currentPageRooms.length === 0) break;
 
-        // Is this the last page generated for this floor? If so, the
-        // per-floor discount box gets appended after the room tables.
         const isLastPageOfFloor = roomIndex >= roomsInFloor.length;
 
-        // =========================================================
-        // PAGE
-        // =========================================================
         pages.push(
           <div
             key={`floor-page-${floorName}-${pages.length}`}
@@ -535,19 +512,15 @@ const NewQuotationsDetails = () => {
               pageBreakBefore: pages.length === 0 ? "auto" : "always",
             }}
           >
-            {/* HEADER */}
             <div className={styles.pageTopHeader}>
               <div>
                 <div className={styles.clientName}>{customerName}</div>
-
                 <div className={styles.clientAddress}>{customerAddress}</div>
-
                 <div className={styles.clientAddress}>
                   {floorName.toUpperCase()}
                   {pages.length > 1 && " (Continued)"}
                 </div>
               </div>
-
               <div className={styles.pageDate}>
                 {new Date(
                   quotation.quotation_date || Date.now(),
@@ -559,11 +532,8 @@ const NewQuotationsDetails = () => {
               </div>
             </div>
 
-            {/* ROOMS */}
             {currentPageRooms.map(({ roomGroup, roomMainItems }, idx) => {
-              if (roomMainItems.length === 0) {
-                return null;
-              }
+              if (roomMainItems.length === 0) return null;
 
               return (
                 <div
@@ -588,23 +558,19 @@ const NewQuotationsDetails = () => {
                   {renderProductTable(
                     roomMainItems,
                     "",
-                    globalSno,
+                    0, // ✅ every room starts its own S.No at 1
                     shouldShowColumn,
                   )}
                 </div>
               );
             })}
 
-            {/* Per-floor discount / total box — only on the floor's last page */}
             {isLastPageOfFloor &&
               renderFloorDiscountBox(floorName, floorAllProducts)}
           </div>,
         );
 
-        globalSno += currentPageRooms.reduce(
-          (sum, { roomMainItems }) => sum + roomMainItems.length,
-          0,
-        );
+        // ❌ removed: globalSno += currentPageRooms.reduce(...)
       }
     });
 
@@ -838,9 +804,7 @@ const NewQuotationsDetails = () => {
 
     // One row per floor+room with item count & subtotal (mains + their options)
     const summaryRows = roomGroups.map((group) => {
-      const roomMainItems = groupedProductsWithOptions.filter((main) =>
-        group.products.some((p) => p.productId === main.productId),
-      );
+      const roomMainItems = groupItemsWithOptions(group.products);
 
       const itemCount = roomMainItems.reduce(
         (sum, item) => sum + 1 + (item.options?.length || 0),
