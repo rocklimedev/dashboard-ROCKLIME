@@ -40,7 +40,7 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             set -e
-            cd /root/cmtrading-api
+            cd /opt/apps/cm-sanitary-erp
 
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io \
               -u rocklimedev --password-stdin
