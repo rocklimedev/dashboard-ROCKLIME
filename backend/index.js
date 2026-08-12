@@ -9,38 +9,38 @@ const cron = require("node-cron");
 const db = require("./config/database");
 const connectMongoDB = require("./config/dbMongo");
 const keys = require("./config/keys");
-const { initSocket } = require("./controller/notificationController");
-const CachedPermission = require("./models/cachedPermission");
+const { initSocket } = require("./modules/engagement/notification.controller");
+const CachedPermission = require("./modules/rbac/models/cached-permission.model");
 const { apiLimiter, burstLimiter } = require("./middleware/rateLimit");
 
 // ------------------- Route Imports -------------------
 const routes = {
-  auth: require("./routes/auth"),
-  user: require("./routes/user"),
-  vendor: require("./routes/vendor"),
-  fgs: require("./routes/fgs"),
-  order: require("./routes/order"),
-  roles: require("./routes/roles"),
-  permission: require("./routes/permission"),
-  address: require("./routes/address"),
-  category: require("./routes/category"),
-  parentCategory: require("./routes/parentController"),
-  customer: require("./routes/customer"),
-  brand: require("./routes/brands"),
-  keyword: require("./routes/keyword"),
-  product: require("./routes/products"),
-  brandParent: require("./routes/brandParentCategory"),
-  rolePermission: require("./routes/rolePermission"),
-  search: require("./routes/search"),
-  jobs: require("./routes/jobs"),
-  cart: require("./routes/cart"),
-  quotation: require("./routes/quotation"),
-  team: require("./routes/teams"),
-  productMeta: require("./routes/productMeta"),
-  purchaseOrder: require("./routes/purchaseOrder"),
-  notification: require("./routes/notification"),
-  cachedPermission: require("./routes/cachedPermission"),
-  activity: require("./routes/activity"),
+  auth: require("./modules/auth/auth.route"),
+  user: require("./modules/users/user.route"),
+  vendor: require("./modules/vendors/vendor.route"),
+  fgs: require("./modules/purchase-order/fgs.route"),
+  order: require("./modules/orders/order.route"),
+  roles: require("./modules/rbac/roles.route"),
+  permission: require("./modules/rbac/permission.route"),
+  address: require("./modules/address/address.route"),
+  category: require("./modules/brands/category.route"),
+  parentCategory: require("./modules/brands/parent-category.route"),
+  customer: require("./modules/customers/customer.route"),
+  brand: require("./modules/brands/brands.route"),
+  keyword: require("./modules/brands/keyword.route"),
+  product: require("./modules/products/products.route"),
+  brandParent: require("./modules/brands/brand-parentcategory.route"),
+  rolePermission: require("./modules/rbac/role-permission.route"),
+  search: require("./modules/search/search.route"),
+  jobs: require("./modules/jobs/jobs.route"),
+  cart: require("./modules/cart/cart.route"),
+  quotation: require("./modules/quotations/quotation.route"),
+  team: require("./modules/users/teams.route"),
+  productMeta: require("./modules/products/product-meta.route"),
+  purchaseOrder: require("./modules/purchase-order/purchase-order.route"),
+  notification: require("./modules/engagement/notification.route"),
+  cachedPermission: require("./modules/rbac/cached-permission.route"),
+  activity: require("./modules/engagement/activity.route"),
 };
 
 // ------------------- Express App -------------------
