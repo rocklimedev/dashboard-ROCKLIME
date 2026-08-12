@@ -315,6 +315,9 @@ const NewQuotationsDetails = () => {
   }, [mainProducts]);
 
   const extraDiscount = Number(quotation?.extraDiscount ?? 0);
+  const shippingAmount = Number(
+    quotation?.shippingAmount ?? quotation?.calculated?.shippingAmount ?? 0,
+  );
   const finalAmount = Number(quotation?.finalAmount ?? 0);
   const finalAmountInWords = amountInWords(Math.round(finalAmount));
 
@@ -1135,6 +1138,14 @@ const NewQuotationsDetails = () => {
                     <span style={{ color: "#fa8c16" }}>Extra Discount</span>
                     <span style={{ color: "#fa8c16" }}>
                       -₹{Math.round(extraDiscount).toLocaleString("en-IN")}
+                    </span>
+                  </div>
+                )}
+                {shippingAmount > 0 && (
+                  <div className={styles.summaryRow}>
+                    <span style={{ color: "#1890ff" }}>Shipping</span>
+                    <span style={{ color: "#1890ff" }}>
+                      ₹{Math.round(shippingAmount).toLocaleString("en-IN")}
                     </span>
                   </div>
                 )}
