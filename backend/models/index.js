@@ -5,37 +5,109 @@ const { DataTypes } = require("sequelize");
 // -------------------------------
 // 1️⃣ Import all Sequelize models
 // -------------------------------
-const User = require("./users")(sequelize, DataTypes);
-const Role = require("./roles")(sequelize, DataTypes);
-const Permission = require("./permission")(sequelize, DataTypes);
-const RolePermission = require("./rolePermission")(sequelize, DataTypes);
-const Address = require("./address")(sequelize, DataTypes);
-const Team = require("./team")(sequelize, DataTypes);
-const TeamMember = require("./teamMember")(sequelize, DataTypes);
-const ProductKeyword = require("./productKeywords")(sequelize, DataTypes);
-const Product = require("./product")(sequelize, DataTypes);
-const ProductMeta = require("./productMeta")(sequelize, DataTypes);
-const Category = require("./category")(sequelize, DataTypes);
-const ParentCategory = require("./parentCategory")(sequelize, DataTypes);
-const Brand = require("./brand")(sequelize, DataTypes);
-const Vendor = require("./vendor")(sequelize, DataTypes);
-const Keyword = require("./keyword")(sequelize, DataTypes);
-const BrandParentCategory = require("./brandParentCategory")(
+const User = require("../modules/users/models/users.model")(
   sequelize,
   DataTypes,
 );
-const BrandParentCategoryBrand = require("./brandParentCategoryBrand")(
+const Role = require("../modules/rbac/models/roles.model")(
   sequelize,
   DataTypes,
 );
-const ActivityLog = require("./activityLog")(sequelize, DataTypes);
-const Job = require("./job")(sequelize, DataTypes);
-const FieldGuidedSheet = require("./fgs")(sequelize, DataTypes);
-const InventoryHistory = require("./history")(sequelize, DataTypes);
-const Customer = require("./customers")(sequelize, DataTypes);
-const Quotation = require("./quotation")(sequelize, DataTypes);
-const Order = require("./orders")(sequelize, DataTypes);
-const PurchaseOrder = require("./purchaseorder")(sequelize, DataTypes);
+const Permission = require("../modules/rbac/models/permission.model")(
+  sequelize,
+  DataTypes,
+);
+const RolePermission = require("../modules/rbac/models/role-permission.model")(
+  sequelize,
+  DataTypes,
+);
+const Address = require("../modules/address/models/address.model")(
+  sequelize,
+  DataTypes,
+);
+const Team = require("../modules/users/models/team.model")(
+  sequelize,
+  DataTypes,
+);
+const TeamMember = require("../modules/users/models/team-member.model")(
+  sequelize,
+  DataTypes,
+);
+const ProductKeyword =
+  require("../modules/products/models/product-keywords.model")(
+    sequelize,
+    DataTypes,
+  );
+const Product = require("../modules/products/models/product.model")(
+  sequelize,
+  DataTypes,
+);
+const ProductMeta = require("../modules/products/models/product-meta.model")(
+  sequelize,
+  DataTypes,
+);
+const Category = require("../modules/brands/models/category.model")(
+  sequelize,
+  DataTypes,
+);
+const ParentCategory =
+  require("../modules/brands/models/parent-category.model")(
+    sequelize,
+    DataTypes,
+  );
+const Brand = require("../modules/brands/models/brand.model")(
+  sequelize,
+  DataTypes,
+);
+const Vendor = require("../modules/vendors/models/vendor.model")(
+  sequelize,
+  DataTypes,
+);
+const Keyword = require("../modules/brands/models/keyword.model")(
+  sequelize,
+  DataTypes,
+);
+const BrandParentCategory =
+  require("../modules/brands/models/brand-parentcategory.model")(
+    sequelize,
+    DataTypes,
+  );
+const BrandParentCategoryBrand =
+  require("../modules/brands/models/brand-parentcategory-brand.model")(
+    sequelize,
+    DataTypes,
+  );
+const ActivityLog = require("../modules/engagement/models/activity-log.model")(
+  sequelize,
+  DataTypes,
+);
+const Job = require("../modules/jobs/models/job.model")(sequelize, DataTypes);
+const FieldGuidedSheet = require("../modules/purchase-order/models/fgs.model")(
+  sequelize,
+  DataTypes,
+);
+const InventoryHistory =
+  require("../modules/products/models/inventory-history.model")(
+    sequelize,
+    DataTypes,
+  );
+const Customer = require("../modules/customers/models/customers.model")(
+  sequelize,
+  DataTypes,
+);
+const Quotation = require("../modules/quotations/models/quotation.model")(
+  sequelize,
+  DataTypes,
+);
+const Order = require("../modules/orders/models/orders.model")(
+  sequelize,
+  DataTypes,
+);
+const PurchaseOrder =
+  require("../modules/purchase-order/models/purchaseorder.model")(
+    sequelize,
+    DataTypes,
+  );
 // -------------------------------
 // 2️⃣ Run associations if defined
 // -------------------------------

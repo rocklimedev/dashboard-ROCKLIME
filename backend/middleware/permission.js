@@ -1,8 +1,8 @@
 const jwt = require("jsonwebtoken");
-const User = require("../models/users");
-const Role = require("../models/roles");
-const Permission = require("../models/permission");
-const CachedPermission = require("../models/cachedPermission"); // <-- new Mongo model
+const User = require("../modules/users/models/users.model");
+const Role = require("../modules/rbac/models/roles.model");
+const Permission = require("../modules/rbac/models/permission.model");
+const CachedPermission = require("../modules/rbac/models/cached-permission.model"); // <-- new Mongo model
 require("dotenv").config();
 
 const checkPermission = (api, name, module, route) => {
@@ -54,7 +54,7 @@ const checkPermission = (api, name, module, route) => {
             api: perm.api,
             route: perm.route,
             module: perm.module,
-          }))
+          })),
         );
 
         // Update Mongo Cache
@@ -66,7 +66,7 @@ const checkPermission = (api, name, module, route) => {
             permissions,
             fetchedAt: new Date(),
           },
-          { upsert: true, new: true }
+          { upsert: true, new: true },
         );
 
         cached = await CachedPermission.findOne({ userId: decoded.userId });
@@ -88,7 +88,7 @@ const checkPermission = (api, name, module, route) => {
           perm.api === api &&
           perm.name === name &&
           perm.module === module &&
-          perm.route === route
+          perm.route === route,
       );
 
       if (!hasPermission) {
