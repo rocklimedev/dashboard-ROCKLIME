@@ -30,7 +30,6 @@ function withTitle(customerJson) {
     displayName: title ? `${title} ${customerJson.name}` : customerJson.name,
   };
 }
-// ---- end helper ----
 
 // Create a new customer
 exports.createCustomer = async (req, res) => {
@@ -308,6 +307,7 @@ exports.getCustomers = async (req, res) => {
     });
   }
 };
+
 // Get a single customer by ID (no notification needed)
 exports.getCustomerById = async (req, res) => {
   try {
@@ -324,6 +324,7 @@ exports.getCustomerById = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 exports.updateCustomer = async (req, res) => {
   try {
     const customer = await Customer.findByPk(req.params.id);
@@ -416,6 +417,7 @@ exports.updateCustomer = async (req, res) => {
     });
   }
 };
+
 // Delete a customer
 exports.deleteCustomer = async (req, res) => {
   try {

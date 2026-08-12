@@ -4,6 +4,7 @@ const { Op } = require("sequelize");
 const { v4: uuidv4 } = require("uuid");
 const logActivity = require("../../utils/activityLogger");
 const { ActivityLog } = require("../../models");
+
 // ─────────────────────────────────────────────────────────────────────────────
 // CREATE ADDRESS
 // ─────────────────────────────────────────────────────────────────────────────
@@ -401,6 +402,7 @@ exports.getAddressById = async (req, res) => {
     return res.status(500).json({ message: "Failed to fetch address" });
   }
 };
+
 // ─────────────────────────────────────────────────────────────────────────────
 // GET ALL USER ADDRESSES
 // ─────────────────────────────────────────────────────────────────────────────
@@ -440,6 +442,7 @@ exports.getAllUserAddresses = async (req, res) => {
     });
   }
 };
+
 // ─────────────────────────────────────────────────────────────────────────────
 // GET ALL CUSTOMER ADDRESSES
 // ─────────────────────────────────────────────────────────────────────────────

@@ -10,7 +10,6 @@ const assignRole = async (userId, role) => {
     const user = await User.findOne({ where: { id: userId } });
 
     if (!user) {
-      ``;
       return { success: false, message: "User not found" };
     }
 
@@ -87,6 +86,7 @@ const assignRole = async (userId, role) => {
     return { success: false, message: "Internal server error" };
   }
 };
+
 const getRecentRoleToGive = async () => {
   try {
     const fourteenDaysAgo = new Date();
@@ -327,6 +327,7 @@ const getRoleById = async (req, res) => {
     res.status(500).json({ message: "Error retrieving role" });
   }
 };
+
 const removePermissionFromRole = async (req, res) => {
   const { roleId } = req.params;
   const { permissionId } = req.body; // Accepts a single ID or an array
@@ -418,6 +419,7 @@ const getRolePermissions = async (req, res) => {
       .json({ message: "Failed to fetch role permissions", error });
   }
 };
+
 const updateRolePermissions = async (req, res) => {
   const { roleId } = req.params;
   const { permissions } = req.body; // Expect an array of permission IDs

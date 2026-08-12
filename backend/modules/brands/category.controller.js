@@ -10,6 +10,7 @@ const {
   ParentCategory,
   Category,
 } = require("../../models");
+
 // Create Category (with optional keywords)
 exports.createCategory = async (req, res) => {
   const t = await sequelize.transaction();
@@ -344,6 +345,7 @@ exports.replaceCategoryKeywords = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
 // Get all categories for a specific brandId
 exports.getAllCategoriesByBrand = async (req, res) => {
   try {

@@ -9,7 +9,6 @@ const Papa = require("papaparse");
 const XLSX = require("xlsx");
 
 // POST /api/jobs/bulk-import/start
-
 exports.startBulkImport = async (req, res) => {
   try {
     // 1. Validate file upload
@@ -152,6 +151,7 @@ exports.startBulkImport = async (req, res) => {
     });
   }
 };
+
 // GET /api/jobs/:jobId/status
 exports.getJobStatus = async (req, res) => {
   try {
@@ -175,7 +175,6 @@ exports.getJobStatus = async (req, res) => {
   }
 };
 
-// GET /api/jobs
 // GET /api/jobs
 exports.getAllJobs = async (req, res) => {
   try {
@@ -234,8 +233,6 @@ exports.getAllJobs = async (req, res) => {
     });
   }
 };
-
-// controllers/jobController.js
 
 // GET /api/jobs/:jobId
 exports.getJobById = async (req, res) => {
@@ -316,6 +313,7 @@ exports.getJobById = async (req, res) => {
     });
   }
 };
+
 // DELETE /api/jobs/:jobId
 exports.deleteJob = async (req, res) => {
   try {
@@ -571,7 +569,6 @@ exports.cancelJob = async (req, res) => {
 };
 
 // Example for another job type: POST /api/jobs/report-generation/start
-// This is a placeholder for how to add more job types
 exports.startReportGeneration = async (req, res) => {
   try {
     // Type-specific validation and params
@@ -610,7 +607,6 @@ exports.startReportGeneration = async (req, res) => {
     return res.status(500).json({ message: "Failed to queue job" });
   }
 };
-// controllers/jobController.js
 
 exports.downloadSuccessfulEntries = async (req, res) => {
   const { jobId } = req.params;

@@ -1,6 +1,7 @@
 const { Vendor } = require("../../models");
 const logActivity = require("../../utils/activityLogger");
 const { ActivityLog } = require("../../models");
+
 const createVendor = async (req, res) => {
   try {
     const { vendorId, vendorName, brandSlug, brandId } = req.body;

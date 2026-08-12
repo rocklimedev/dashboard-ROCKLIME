@@ -1464,6 +1464,7 @@ exports.restoreQuotationVersion = async (req, res) => {
       .json({ error: "Failed to restore quotation", details: error.message });
   }
 };
+
 // Get a single quotation by ID with items
 exports.getQuotationById = async (req, res) => {
   try {
@@ -1511,7 +1512,6 @@ exports.getQuotationById = async (req, res) => {
 };
 
 // Get all quotations with their items
-
 exports.getAllQuotations = async (req, res) => {
   try {
     // =====================================
@@ -1648,6 +1648,7 @@ exports.getAllQuotations = async (req, res) => {
     });
   }
 };
+
 // Delete a quotation and its items
 exports.deleteQuotation = async (req, res) => {
   try {
@@ -1703,6 +1704,7 @@ exports.deleteQuotation = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
 exports.getQuotationVersions = async (req, res) => {
   try {
     const { id } = req.params;

@@ -1,8 +1,8 @@
 -- --------------------------------------------------------
--- Host:                         119.18.54.11
+-- Host:                         116.206.104.225
 -- Server version:               5.7.23-23 - Percona Server (GPL), Release 23, Revision 500fcf5
 -- Server OS:                    Linux
--- HeidiSQL Version:             12.17.0.7270
+-- HeidiSQL Version:             12.11.0.7065
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS `products_keywords` (
 
 -- Dumping data for table spsyn8lm_rocklime_dashboard.products_keywords: ~3 rows (approximately)
 INSERT INTO `products_keywords` (`productId`, `keywordId`, `createdAt`, `updatedAt`) VALUES
-	('04201923-9f3b-486c-b5df-cbfd8c8bd910', 'e2cf5aa6-b133-4031-ba61-e15b8038b816', '2026-04-09 11:42:51', '2026-04-09 11:42:51'),
+	('04201923-9f3b-486c-b5df-cbfd8c8bd910', 'e2cf5aa6-b133-4031-ba61-e15b8038b816', '2026-06-21 10:47:13', '2026-06-21 10:47:13'),
 	('4b4070c2-e391-49a8-a56c-6ca01a576201', '147f299b-a77b-4a32-9469-7a4309e29483', '2026-05-04 07:11:46', '2026-05-04 07:11:46'),
 	('4b4070c2-e391-49a8-a56c-6ca01a576201', '8d4e6286-02ba-43ee-b57e-5791f6cfd0a6', '2026-05-04 07:04:38', '2026-05-04 07:04:38');
 

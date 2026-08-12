@@ -1,5 +1,6 @@
 const { Op } = require("sequelize");
 const { User, TeamMember, Team } = require("../../models");
+
 // Create a new team with members
 exports.createTeam = async (req, res) => {
   try {

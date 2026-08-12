@@ -289,6 +289,7 @@ exports.updateProfile = async (req, res) => {
     res.status(status).json({ message: err.message || "Server Error" });
   }
 };
+
 // Report User
 exports.reportUser = async (req, res) => {
   try {
@@ -356,6 +357,7 @@ exports.deleteUser = async (req, res) => {
     });
   }
 };
+
 // Get All Users
 exports.getAllUsers = async (req, res) => {
   try {
@@ -446,8 +448,6 @@ exports.getUserById = async (req, res) => {
 };
 
 // Update User
-// Update User (Admin / SuperAdmin only)
-// Update User (Admin / SuperAdmin only)
 exports.updateUser = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -601,6 +601,7 @@ exports.updateUser = async (req, res) => {
     });
   }
 };
+
 // Change Status to Inactive
 exports.changeStatusToInactive = async (req, res) => {
   try {
@@ -740,8 +741,6 @@ exports.assignRole = async (req, res) => {
 };
 
 // Update User Status (Admin/SuperAdmin only)
-
-// Update User Status (Admin/SuperAdmin only)
 exports.updateStatus = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -837,12 +836,12 @@ exports.updateStatus = async (req, res) => {
     });
   }
 };
+
 /**
  * POST /users/photo
  * Body: multipart/form-data → field "photo"
  * Auth: logged-in user (req.user.userId)
  */
-
 exports.uploadUserPhoto = async (req, res) => {
   try {
     // 1. Validate file

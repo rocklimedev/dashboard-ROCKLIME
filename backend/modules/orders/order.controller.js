@@ -230,7 +230,6 @@ const fetchCommentsWithUsers = async (
 };
 
 // Add a comment
-
 exports.addComment = async (req, res) => {
   try {
     const { resourceId, resourceType, userId: rawUserId, comment } = req.body;
@@ -677,7 +676,6 @@ async function restoreStock({ products, orderNo }) {
 }
 
 // ──────── CREATE ORDER ────────
-
 exports.createOrder = async (req, res) => {
   const t = await sequelize.transaction();
 
@@ -1180,8 +1178,6 @@ exports.createOrder = async (req, res) => {
   }
 };
 // ──────── UPDATE ORDER (by id) ────────
-// ──────── UPDATE ORDER (by id) ────────
-// ────────────────────────────────
 exports.updateOrderById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -1629,7 +1625,6 @@ exports.updateOrderById = async (req, res) => {
 };
 
 // ──────── UPDATE STATUS ONLY ────────
-// ──────── UPDATE STATUS ONLY ────────
 exports.updateOrderStatus = async (req, res) => {
   try {
     const { id, status } = req.body;
@@ -1717,7 +1712,7 @@ exports.updateOrderStatus = async (req, res) => {
     return sendErrorResponse(res, 500, "Failed to update status", err.message);
   }
 };
-// GET /api/orders/:id/download-invoice
+
 // GET /api/orders/:id/download-invoice
 exports.downloadInvoice = async (req, res) => {
   try {
@@ -2012,7 +2007,6 @@ exports.draftOrder = async (req, res) => {
 };
 
 // Get all orders (no notification needed)
-
 exports.getAllOrders = async (req, res) => {
   try {
     const { page = 1, limit = 20, search = "", status, priority } = req.query;
@@ -2725,6 +2719,7 @@ exports.downloadOrder = async (req, res) => {
     );
   }
 };
+
 // Get filtered orders (no notification needed)
 exports.getFilteredOrders = async (req, res) => {
   try {

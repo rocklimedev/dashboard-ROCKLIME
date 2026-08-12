@@ -93,6 +93,7 @@ exports.login = async (req, res) => {
     res.status(500).json({ message: "Server Error", error: err.message });
   }
 };
+
 // Register
 exports.register = async (req, res, next) => {
   try {
@@ -584,6 +585,7 @@ exports.resendVerificationEmail = async (req, res, next) => {
     next(err);
   }
 };
+
 exports.changePassword = async (req, res, next) => {
   try {
     const { password, newPassword } = req.body;

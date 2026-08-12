@@ -67,6 +67,7 @@ const parseJsonSafely = (input, fallback = {}, context = "") => {
     return fallback;
   }
 };
+
 async function generateProductCode({
   brandId,
   categoryId, // optional – can be ignored if not needed in code
@@ -142,6 +143,7 @@ async function generateProductCode({
 
   return newCode;
 }
+
 // ==================== CREATE PRODUCT ====================
 exports.createProduct = async (req, res) => {
   const t = await sequelize.transaction();
@@ -421,9 +423,6 @@ exports.createProduct = async (req, res) => {
 };
 
 // ==================== UPDATE PRODUCT ====================
-// ==================== UPDATE PRODUCT ====================
-// ==================== UPDATE PRODUCT ====================
-// ==================== UPDATE PRODUCT ====================
 exports.updateProduct = async (req, res) => {
   const t = await sequelize.transaction();
 
@@ -689,6 +688,7 @@ exports.updateProduct = async (req, res) => {
     });
   }
 };
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Get all products - OPTIMIZED FOR INVENTORY
 // ─────────────────────────────────────────────────────────────────────────────
@@ -890,6 +890,7 @@ exports.getAllProducts = async (req, res) => {
     });
   }
 };
+
 // ==================== GET SINGLE PRODUCT ====================
 exports.getProductById = async (req, res) => {
   try {
@@ -999,10 +1000,8 @@ exports.deleteProduct = async (req, res) => {
     res.status(500).json({ message: "Error deleting product" });
   }
 };
-// ─────────────────────────────────────────────────────────────────────────────
-// Get products by category
-// ─────────────────────────────────────────────────────────────────────────────
 
+// Get products by category
 exports.getProductsByCategory = async (req, res) => {
   const { categoryId } = req.params;
   const { page = 1, limit = 50, search } = req.query;
@@ -1197,9 +1196,8 @@ exports.getProductsByCategory = async (req, res) => {
     });
   }
 };
-// ─────────────────────────────────────────────────────────────────────────────
-// Get products by brandId (with pagination, search, and metaDetails)
 
+// Get products by brandId (with pagination, search, and metaDetails)
 exports.getProductsByBrand = async (req, res) => {
   const { brandId } = req.params;
   const { page = 1, limit = 50, search } = req.query;
@@ -1411,9 +1409,8 @@ exports.getProductsByBrand = async (req, res) => {
     });
   }
 };
-// ─────────────────────────────────────────────────────────────────────────────
+
 // Add stock to a product (NOW USING MYSQL + TRANSACTION)
-// ─────────────────────────────────────────────────────────────────────────────
 exports.addStock = async (req, res) => {
   const { productId } = req.params;
   const { quantity, orderNo, userId, message: customMessage } = req.body;
@@ -1484,9 +1481,7 @@ exports.addStock = async (req, res) => {
   }
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
 // Remove stock from a product (NOW USING MYSQL + TRANSACTION)
-// ─────────────────────────────────────────────────────────────────────────────
 exports.removeStock = async (req, res) => {
   const { productId } = req.params;
   const { quantity, orderNo, userId, message: customMessage } = req.body;
@@ -2378,7 +2373,6 @@ exports.createVariant = async (req, res) => {
     res.status(500).json({ message: e.message });
   }
 };
-// controllers/product.controller.js (add this function)
 
 exports.addKeywordsToProduct = async (req, res) => {
   const { productId } = req.params;
@@ -2690,7 +2684,6 @@ exports.getLowStockProducts = async (req, res) => {
     });
   }
 };
-// controller/productController.js
 
 exports.getTopSellingProducts = async (req, res) => {
   try {
@@ -2889,19 +2882,9 @@ exports.getTopSellingProducts = async (req, res) => {
   }
 };
 
-/**
- * Process a batch of products in a transaction
- * @param {Array<Object>} productsBatch - parsed rows with {name, product_code, categoryName, brandName?, vendorName?, ...}
- * @param {Sequelize.Transaction} t - active transaction
- * @param {Object} options
- * @param {string} [options.importJobId] - Job.id to update progress
- * @param {number} [options.selectedBrandId] - REQUIRED: global brand for this import
- * @returns {Promise<{created: Array, failed: Array, newCategories: number, newBrands: number, newVendors: number}>}
- */
 // ───────────────────────────────────────────────
 //   BULK IMPORT BATCH PROCESSOR (moved here so worker can use it)
 // ───────────────────────────────────────────────
-
 async function processProductBatch(productsBatch, t, options = {}) {
   const { importJobId, selectedBrandId } = options;
 

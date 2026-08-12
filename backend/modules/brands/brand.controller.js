@@ -167,6 +167,7 @@ const updateBrand = async (req, res) => {
     });
   }
 };
+
 const deleteBrand = async (req, res) => {
   try {
     const brand = await Brand.findByPk(req.params.id);
@@ -220,6 +221,7 @@ const deleteBrand = async (req, res) => {
     });
   }
 };
+
 module.exports = {
   createBrand,
   getBrands,

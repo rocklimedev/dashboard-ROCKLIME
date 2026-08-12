@@ -1,7 +1,8 @@
 // Create a new keyword
 const { Category, Keyword } = require("../../models");
 const { Op } = require("sequelize");
-const sequelize = require("../../config/database"); // <-- ADD THIS
+const sequelize = require("../../config/database");
+
 exports.createKeyword = async (req, res) => {
   try {
     const { keyword, categoryId } = req.body;
@@ -58,6 +59,7 @@ exports.createKeyword = async (req, res) => {
     return res.status(500).json({ message: "Failed to create keyword" });
   }
 };
+
 // Get all keywords (with category)
 exports.getAllKeywords = async (req, res) => {
   try {

@@ -1,8 +1,8 @@
 -- --------------------------------------------------------
--- Host:                         119.18.54.11
+-- Host:                         116.206.104.225
 -- Server version:               5.7.23-23 - Percona Server (GPL), Release 23, Revision 500fcf5
 -- Server OS:                    Linux
--- HeidiSQL Version:             12.17.0.7270
+-- HeidiSQL Version:             12.11.0.7065
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS `rolepermissions` (
   CONSTRAINT `rolepermissions_ibfk_2446` FOREIGN KEY (`permissionId`) REFERENCES `permissions` (`permissionId`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Dumping data for table spsyn8lm_rocklime_dashboard.rolepermissions: ~1,016 rows (approximately)
+-- Dumping data for table spsyn8lm_rocklime_dashboard.rolepermissions: ~1,020 rows (approximately)
 INSERT INTO `rolepermissions` (`id`, `createdAt`, `updatedAt`, `roleId`, `permissionId`) VALUES
 	('02c3ba43-2da8-4eae-94d4-f8fa2849cd49', '2025-11-02 15:27:43', '2025-11-02 15:27:43', '5bb7eed4-1106-4b93-9218-ad733cfc7b12', 'dc8197c2-1ff9-494c-9d59-e0d803d9aaf2'),
 	('0ef4cc02-4575-4da9-9fe0-1b2742ab67a3', '2025-11-19 04:21:23', '2025-11-19 04:21:23', 'c3893e5f-4b6c-43c5-83ec-bc74beecfb30', '0d41f3e7-f563-4164-924d-9171fb12e8e9'),
