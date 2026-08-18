@@ -3,13 +3,13 @@ const { Readable } = require("stream");
 const path = require("path");
 const { v4: uuidv4 } = require("uuid");
 const sanitizeHtml = require("sanitize-html");
-const User = require("../models/users");
-const Team = require("../models/team");
-const Task = require("../models/tasks");
-const { sendNotification } = require("../controller/notificationController");
-const TaskBoard = require("../models/taskBoard");
+const { User, Team, Task, TeamMember, TaskBoard } = require("../models");
+
+const {
+  sendNotification,
+} = require("../modules/engagement/notification.controller");
+
 const { Op } = require("sequelize");
-const TeamMember = require("../models/teamMember");
 
 require("dotenv").config();
 
@@ -172,27 +172,27 @@ async function validateTaskData({
     // Check assignedTo
     if (!teamMemberIds.includes(assignedTo)) {
       errors.push(
-        `User ${assignedTo} is not a member of team ${assignedTeamId}`
+        `User ${assignedTo} is not a member of team ${assignedTeamId}`,
       );
     }
 
     // Check secondaryAssignedTo (if provided)
     if (secondaryAssignedTo && !teamMemberIds.includes(secondaryAssignedTo)) {
       errors.push(
-        `Secondary user ${secondaryAssignedTo} is not a member of team ${assignedTeamId}`
+        `Secondary user ${secondaryAssignedTo} is not a member of team ${assignedTeamId}`,
       );
     }
 
     // Optional: Restrict watchers to team members
     if (watchers.length) {
       const invalidWatchers = watchers.filter(
-        (w) => !teamMemberIds.includes(w)
+        (w) => !teamMemberIds.includes(w),
       );
       if (invalidWatchers.length) {
         errors.push(
           `Watchers ${invalidWatchers.join(
-            ", "
-          )} are not members of team ${assignedTeamId}`
+            ", ",
+          )} are not members of team ${assignedTeamId}`,
         );
       }
     }
@@ -201,7 +201,7 @@ async function validateTaskData({
     const assignees = [assignedTo, secondaryAssignedTo].filter(Boolean);
     if (assignees.length > 2) {
       errors.push(
-        "Cannot assign more than two users when no team is specified"
+        "Cannot assign more than two users when no team is specified",
       );
     }
   }
@@ -291,7 +291,7 @@ async function notifyTaskStakeholders(
   assignedTo,
   watchers,
   assignedTeamId,
-  action
+  action,
 ) {
   const notificationRecipients = new Set([
     assignedTo,
@@ -308,10 +308,10 @@ async function notifyTaskStakeholders(
           userId === assignedTo
             ? " (primary assignee)"
             : userId === task.secondaryAssignedTo
-            ? " (secondary assignee)"
-            : " (watcher)"
+              ? " (secondary assignee)"
+              : " (watcher)"
         }`,
-      })
+      }),
     );
   }
   await Promise.all(notifications);

@@ -1,7 +1,6 @@
 const jwt = require("jsonwebtoken");
-const User = require("../modules/users/models/users.model");
-const Role = require("../modules/rbac/models/roles.model");
-const Permission = require("../modules/rbac/models/permission.model");
+const { User, Role, Permission } = require("../models");
+
 const CachedPermission = require("../modules/rbac/models/cached-permission.model"); // <-- new Mongo model
 require("dotenv").config();
 

@@ -1,4 +1,4 @@
-const Role = require("../models/roles");
+const Role = require("../modules/rbac/models/roles.model");
 
 const role = {
   check: (allowedRoleIds) => async (req, res, next) => {

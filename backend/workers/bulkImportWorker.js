@@ -6,7 +6,7 @@ const Papa = require("papaparse");
 const XLSX = require("xlsx");
 const { downloadFromFtp } = require("../middleware/upload");
 const { sequelize } = require("../config/database");
-const productController = require("../controller/productController");
+const productController = require("../modules/products/product.controller");
 const { Op } = require("sequelize");
 const { Keyword } = require("../models");
 

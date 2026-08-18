@@ -50,8 +50,6 @@ dayjs.extend(relativeTime);
 const { Title, Text } = Typography;
 
 // ── Shared Pricing Helper ────────────────────────────────────────────────
-// Computes the discounted unit price and line total for any product/option
-// item. Falls back gracefully if `total` is not present in the data.
 const computePricing = (item) => {
   const mrp = Number(item.price ?? 0);
   const qty = Number(item.quantity ?? 1);
@@ -79,6 +77,7 @@ const computePricing = (item) => {
 
   return { mrp, qty, unitPrice, lineTotal, displayDiscount };
 };
+
 const groupItemsWithOptions = (itemsList) => {
   const mains = itemsList.filter((p) => p.isOptionFor == null);
   const opts = itemsList.filter((p) => p.isOptionFor != null);
@@ -89,27 +88,40 @@ const groupItemsWithOptions = (itemsList) => {
   });
   return mains.map((m) => ({ ...m, options: optMap.get(m.productId) || [] }));
 };
-// ── Floor-wise Totals Helper ──────────────────────────────────────────────
-// Given a flat list of products belonging to a single floor, computes the
-// gross (pre-discount) total, the discount amount, and the net total.
-const computeFloorTotals = (floorProducts = []) => {
-  const gross = floorProducts.reduce(
-    (sum, p) => sum + Number(p.price ?? 0) * Number(p.quantity ?? 1),
-    0,
-  );
-  const net = floorProducts.reduce((sum, p) => {
-    const { lineTotal } = computePricing(p);
-    return sum + lineTotal;
+
+// ── Room-wise Totals Helper ───────────────────────────────────────────────
+const computeRoomTotals = (roomProducts = []) => {
+  const roomMainItems = groupItemsWithOptions(roomProducts);
+  const gross = roomMainItems.reduce((sum, item) => {
+    const mrp = Number(item.price ?? 0);
+    const qty = Number(item.quantity ?? 1);
+    const optionsGross = (item.options || []).reduce(
+      (s, opt) => s + Number(opt.price ?? 0) * Number(opt.quantity ?? 1),
+      0,
+    );
+    return sum + mrp * qty + optionsGross;
   }, 0);
+
+  const net = roomMainItems.reduce((sum, item) => {
+    const { lineTotal } = computePricing(item);
+    const optionsNet = (item.options || []).reduce((s, opt) => {
+      const { lineTotal: optTotal } = computePricing(opt);
+      return s + optTotal;
+    }, 0);
+    return sum + lineTotal + optionsNet;
+  }, 0);
+
   return { gross, discount: gross - net, net };
 };
+
 // ── Title by Gender Helper ─────────────────────────────────────────────
 const getTitleByGender = (gender) => {
   const g = (gender || "").toLowerCase();
   if (g === "male") return "Mr.";
   if (g === "female") return "Ms.";
-  return "Mx."; // other / unspecified / non-binary
+  return "Mx.";
 };
+
 const NewQuotationsDetails = () => {
   const { id } = useParams();
   const [activeVersion, setActiveVersion] = useState("current");
@@ -117,9 +129,10 @@ const NewQuotationsDetails = () => {
   const [isExporting, setIsExporting] = useState(false);
   const navigate = useNavigate();
 
-  // Toggle visibility of the two "extra" sections during export/preview
   const [includeProductListPage, setIncludeProductListPage] = useState(true);
   const [includeSummaryPage, setIncludeSummaryPage] = useState(true);
+  const [includeRoomWiseSummaryPage, setIncludeRoomWiseSummaryPage] =
+    useState(true);
 
   const [visibleColumns, setVisibleColumns] = useState({
     sno: true,
@@ -223,20 +236,17 @@ const NewQuotationsDetails = () => {
 
   const customerName = useMemo(() => {
     if (!customer?.name) return "Dear Client";
-
-    // Prefer API-provided displayName/title if present, else derive from gender
     if (customer.displayName) return customer.displayName;
-
     const title = customer.title || getTitleByGender(customer.gender);
     return `${title} ${customer.name}`;
   }, [customer]);
+
   const customerPhone = customer?.mobileNumber || customer?.phone || "";
   const customerAddress =
     [address.street, address.city, address.state].filter(Boolean).join(", ") +
       (address.postalCode ? ` - ${address.postalCode}` : "") || "--";
 
   // ── Products ────────────────────────────────────────────────────────────
-  // ── Products with Priority Sorting ─────────────────────────────────────
   const allProducts = useMemo(() => {
     const products = activeVersionData.products || [];
 
@@ -247,10 +257,11 @@ const NewQuotationsDetails = () => {
         roomName: p.roomName || "",
         imageUrl: p.imageUrl || "",
         companyCode: p.companyCode || p.productCode || "—",
-        priority: Number(p.priority ?? 9999), // Important
+        priority: Number(p.priority ?? 9999),
       }))
-      .sort((a, b) => a.priority - b.priority); // ← Sort by saved priority
+      .sort((a, b) => a.priority - b.priority);
   }, [activeVersionData.products]);
+
   const mainProducts = useMemo(
     () => allProducts.filter((p) => p.isOptionFor == null),
     [allProducts],
@@ -273,7 +284,6 @@ const NewQuotationsDetails = () => {
     }));
   }, [mainProducts, optionalProducts]);
 
-  // Main products without inline options (used for the primary product pages)
   const mainProductsOnly = useMemo(
     () =>
       groupedProductsWithOptions.map((item) => ({
@@ -324,8 +334,6 @@ const NewQuotationsDetails = () => {
     return Array.isArray(floors) && floors.length > 0;
   }, [activeVersionData.quotation, quotation]);
 
-  // Products already carry floorName/roomName directly — no enrichment
-  // needed now that Area has been removed.
   const enrichedProducts = allProducts;
 
   // ── Grouping Helpers ────────────────────────────────────────────────────
@@ -349,12 +357,6 @@ const NewQuotationsDetails = () => {
         if (!map.has(key))
           map.set(key, { floorName: floor, roomName: room, products: [] });
 
-        // `loc` only carries `assignedQuantity`, never `quantity`.
-        // p.quantity is the COMBINED quantity across all rooms — we must
-        // explicitly override it here with this room's assigned share,
-        // and blank out `total` so computePricing() recalculates the
-        // line total for the smaller per-room quantity instead of reusing
-        // the full-quantity total.
         const assignedQty = Number(loc.assignedQuantity ?? p.quantity ?? 1);
 
         map.get(key).products.push({
@@ -372,43 +374,40 @@ const NewQuotationsDetails = () => {
     });
   };
 
-  // ── Render Per-Floor Discount / Total Box ───────────────────────────────
-  // Shown at the bottom of each floor's final page so viewers can see that
-  // floor/option's own subtotal, discount, and net total without waiting
-  // for the global summary page.
-  const renderFloorDiscountBox = (floorName, floorProducts) => {
-    if (!floorProducts || floorProducts.length === 0) return null;
-    const { gross, discount, net } = computeFloorTotals(floorProducts);
+  // ── Render Per-Room Discount / Total Box ────────────────────────────────
+  const renderRoomDiscountBox = (roomName, roomProducts) => {
+    if (!roomProducts || roomProducts.length === 0) return null;
+    const { gross, discount, net } = computeRoomTotals(roomProducts);
 
     return (
       <div
-        key={`floor-discount-${floorName}`}
+        key={`room-discount-${roomName}`}
         style={{
-          marginTop: 20,
-          marginBottom: 10,
-          padding: "14px 20px",
-          border: "2px solid #d32f2f",
-          borderRadius: 8,
+          marginTop: 12,
+          marginBottom: 8,
+          padding: "10px 16px",
+          border: "1.5px solid #d32f2f",
+          borderRadius: 6,
           display: "flex",
           justifyContent: "flex-end",
           breakInside: "avoid",
           pageBreakInside: "avoid",
         }}
       >
-        <div style={{ minWidth: 260, textAlign: "right" }}>
-          <div style={{ fontSize: "0.85em", color: "#666" }}>
-            {floorName.toUpperCase()} — Total
+        <div style={{ minWidth: 220, textAlign: "right" }}>
+          <div style={{ fontSize: "0.8em", color: "#666" }}>
+            {roomName.toUpperCase()} — Total
           </div>
-          <div style={{ fontSize: "0.95em", color: "#333" }}>
+          <div style={{ fontSize: "0.9em", color: "#333" }}>
             ₹{gross.toLocaleString("en-IN")}
           </div>
           {discount > 0 && (
-            <div style={{ fontSize: "0.9em", color: "#f5222d" }}>
+            <div style={{ fontSize: "0.85em", color: "#f5222d" }}>
               Discount: −₹{Math.round(discount).toLocaleString("en-IN")}
             </div>
           )}
           <div
-            style={{ fontSize: "1.25em", fontWeight: 700, color: "#d32f2f" }}
+            style={{ fontSize: "1.15em", fontWeight: 700, color: "#d32f2f" }}
           >
             ₹{Math.round(net).toLocaleString("en-IN")}
           </div>
@@ -418,12 +417,10 @@ const NewQuotationsDetails = () => {
   };
 
   // ── Detailed Tabular Floor & Room Wise (Full Products) ──────────────────
-
   const renderDetailedTabularFloorRoom = (shouldShowColumn) => {
     const floorRoomGroups = groupProductsByFloorAndRoom(enrichedProducts);
 
     const floorMap = new Map();
-
     floorRoomGroups.forEach((group) => {
       if (!floorMap.has(group.floorName)) {
         floorMap.set(group.floorName, []);
@@ -432,13 +429,7 @@ const NewQuotationsDetails = () => {
     });
 
     const pages = [];
-
-    // Tracks how many items have already been numbered for a given
-    // floor+room, so that when a room is split across a page break the
-    // S.No continues (e.g. 1..6 on page 1, 7..10 on page 2) instead of
-    // restarting at 1. Keyed by "floorName|||roomName".
     const roomSnoTracker = new Map();
-
     const MAX_VISUAL_ROWS = 9;
 
     const getVisualRowCount = (items) => {
@@ -448,10 +439,6 @@ const NewQuotationsDetails = () => {
     };
 
     floorMap.forEach((roomsInFloor, floorName) => {
-      const floorAllProducts = enrichedProducts.filter(
-        (p) => (p.floorName || "Unspecified Floor") === floorName,
-      );
-
       let roomIndex = 0;
 
       while (roomIndex < roomsInFloor.length) {
@@ -507,8 +494,6 @@ const NewQuotationsDetails = () => {
 
         if (currentPageRooms.length === 0) break;
 
-        const isLastPageOfFloor = roomIndex >= roomsInFloor.length;
-
         pages.push(
           <div
             key={`floor-page-${floorName}-${pages.length}`}
@@ -546,6 +531,21 @@ const NewQuotationsDetails = () => {
 
               const isContinuation = startSno > 0;
 
+              // Last chunk of this room = no remaining products for this room left in queue
+              const isLastChunkOfRoom = !roomsInFloor.some(
+                (r, i) =>
+                  i >= roomIndex &&
+                  r.roomName === roomGroup.roomName &&
+                  (r.products?.length || 0) > 0,
+              );
+
+              const fullRoomProducts =
+                floorRoomGroups.find(
+                  (g) =>
+                    g.floorName === floorName &&
+                    g.roomName === roomGroup.roomName,
+                )?.products || roomGroup.products;
+
               return (
                 <div
                   key={roomGroup.roomName + idx}
@@ -570,15 +570,15 @@ const NewQuotationsDetails = () => {
                   {renderProductTable(
                     roomMainItems,
                     "",
-                    startSno, // ✅ continues numbering if this room was split
+                    startSno,
                     shouldShowColumn,
                   )}
+
+                  {isLastChunkOfRoom &&
+                    renderRoomDiscountBox(roomGroup.roomName, fullRoomProducts)}
                 </div>
               );
             })}
-
-            {isLastPageOfFloor &&
-              renderFloorDiscountBox(floorName, floorAllProducts)}
           </div>,
         );
       }
@@ -751,7 +751,6 @@ const NewQuotationsDetails = () => {
     const MAX_OPTIONAL_PER_PAGE = 10;
     const pages = [];
 
-    // Strip nested options (none expected, but keep table flat/consistent)
     const flatOptionalItems = optionalProducts.map((opt) => ({
       ...opt,
       options: [],
@@ -812,7 +811,6 @@ const NewQuotationsDetails = () => {
     const roomGroups = groupProductsByFloorAndRoom(enrichedProducts);
     if (roomGroups.length === 0) return [];
 
-    // One row per floor+room with item count & subtotal (mains + their options)
     const summaryRows = roomGroups.map((group) => {
       const roomMainItems = groupItemsWithOptions(group.products);
 
@@ -838,7 +836,6 @@ const NewQuotationsDetails = () => {
       };
     });
 
-    // Group rows by floor
     const floorWise = new Map();
     summaryRows.forEach((row) => {
       if (!floorWise.has(row.floorName)) floorWise.set(row.floorName, []);
@@ -975,14 +972,11 @@ const NewQuotationsDetails = () => {
   };
 
   // ── Render All Pages ────────────────────────────────────────────────────
-  // Accepts an options object so the caller can independently control:
-  //  - which export columns are visible (shouldShowColumn)
-  //  - whether the flat Product List page(s) are included
-  //  - whether the final global Summary page is included
   const renderPages = ({
     shouldShowColumn: getShouldShowColumn,
     includeProductList = true,
     includeSummary = true,
+    includeRoomWiseSummary = true,
   } = {}) => {
     const shouldShowColumn = getShouldShowColumn || (() => true);
     const pages = [];
@@ -1035,7 +1029,7 @@ const NewQuotationsDetails = () => {
       </div>,
     );
 
-    // Main Product Pages (options NOT shown inline here) — optional section
+    // Main Product Pages
     if (includeProductList) {
       let remainingItems = [...mainProductsOnly];
       let globalSno = 0;
@@ -1070,17 +1064,20 @@ const NewQuotationsDetails = () => {
       }
     }
 
-    // Optional Items — own dedicated page(s)
+    // Optional Items
     pages.push(...renderOptionalItemsPages(shouldShowColumn));
 
-    // Floor & Room Section — Tabular only (Site Map view removed)
+    // Floor & Room Section
     if (hasFloorLayout) {
       pages.push(...renderDetailedTabularFloorRoom(shouldShowColumn));
     }
-    // Room-wise Summary (new dedicated page)
-    pages.push(...renderRoomWiseSummaryPages());
 
-    // Final Summary — optional section
+    // Room-wise Summary (optional)
+    if (includeRoomWiseSummary) {
+      pages.push(...renderRoomWiseSummaryPages());
+    }
+
+    // Final Summary
     if (includeSummary) {
       pages.push(
         <div key="summary-page" className={`${styles.productPage} page`}>
@@ -1179,11 +1176,16 @@ const NewQuotationsDetails = () => {
           activeVersion,
           activeVersionData.quotation,
           `${fileName}.pdf`,
-          { visibleColumns, includeProductListPage, includeSummaryPage },
+          {
+            visibleColumns,
+            includeProductListPage,
+            includeSummaryPage,
+            includeRoomWiseSummaryPage,
+          },
         );
       } else {
         await exportToExcel({
-          products: mainProducts, // or allProducts if you want options included
+          products: mainProducts,
           brandNames,
           customerName,
           quotation: activeVersionData.quotation || quotation,
@@ -1351,6 +1353,14 @@ const NewQuotationsDetails = () => {
                           Product List Page
                         </Checkbox>
                         <Checkbox
+                          checked={includeRoomWiseSummaryPage}
+                          onChange={(e) =>
+                            setIncludeRoomWiseSummaryPage(e.target.checked)
+                          }
+                        >
+                          Room-wise Summary Page
+                        </Checkbox>
+                        <Checkbox
                           checked={includeSummaryPage}
                           onChange={(e) =>
                             setIncludeSummaryPage(e.target.checked)
@@ -1378,6 +1388,7 @@ const NewQuotationsDetails = () => {
                             total: true,
                           });
                           setIncludeProductListPage(true);
+                          setIncludeRoomWiseSummaryPage(true);
                           setIncludeSummaryPage(true);
                         }}
                       >
@@ -1433,6 +1444,7 @@ const NewQuotationsDetails = () => {
               </Space>
             </div>
           </div>
+
           {/* Preview */}
           <div
             style={{
@@ -1446,6 +1458,7 @@ const NewQuotationsDetails = () => {
                 shouldShowColumn: () => true,
                 includeProductList: includeProductListPage,
                 includeSummary: includeSummaryPage,
+                includeRoomWiseSummary: includeRoomWiseSummaryPage,
               })}
             </div>
           </div>
@@ -1461,6 +1474,7 @@ const NewQuotationsDetails = () => {
                   shouldShowColumn: (col) => visibleColumns[col] ?? true,
                   includeProductList: includeProductListPage,
                   includeSummary: includeSummaryPage,
+                  includeRoomWiseSummary: includeRoomWiseSummaryPage,
                 })}
               </div>
             )}

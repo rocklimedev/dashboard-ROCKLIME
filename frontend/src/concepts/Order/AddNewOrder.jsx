@@ -310,6 +310,19 @@ const AddNewOrder = ({ adminName }) => {
       return;
     }
 
+    // Guard: don't hit the API with data we already know is invalid
+    if (
+      !defaultAddress.street ||
+      !defaultAddress.city ||
+      !defaultAddress.state
+    ) {
+      message.error(
+        "This customer has no complete billing address. Please add a shipping address manually.",
+      );
+      setUseBillingAddress(false); // stop the effect from re-firing
+      return;
+    }
+
     const createBilling = async () => {
       setIsCreatingAddress(true);
       try {
@@ -326,10 +339,9 @@ const AddNewOrder = ({ adminName }) => {
         handleChange("shipTo", res.data.addressId);
       } catch (e) {
         message.error(
-          `Failed to create billing address: ${
-            e.data?.message || "Unknown error"
-          }`,
+          `Failed to create billing address: ${e.data?.message || "Unknown error"}`,
         );
+        setUseBillingAddress(false); // ← critical: prevents infinite retry
         handleChange("shipTo", null);
       } finally {
         setIsCreatingAddress(false);

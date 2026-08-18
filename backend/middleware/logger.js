@@ -1,6 +1,6 @@
 // middleware/logger.js
 const ApiLog = require("../models/apiLog");
-const { User } = require("../models/users"); // Sequelize MySQL
+const { User } = require("../models"); // Sequelize MySQL
 
 const apiLogger = (req, res, next) => {
   const startTime = Date.now();
@@ -59,7 +59,7 @@ const apiLogger = (req, res, next) => {
 
         // Fire-and-forget update
         ApiLog.updateOne({ _id: logId }, { $set: updateData }).catch(
-          console.error
+          console.error,
         );
 
         res.removeListener("finish", onFinished);

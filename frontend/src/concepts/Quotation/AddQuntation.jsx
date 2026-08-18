@@ -45,7 +45,7 @@ import { useSearchProductsQuery } from "../../api/productApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
 import { useGetAllAddressesQuery } from "../../api/addressApi";
 import { useGetProfileQuery } from "../../api/userApi";
-
+import QuotationProductSheet from "../../components/Quotation/QuotationProductSheet";
 // DND KIT IMPORTS
 import {
   DndContext,
@@ -550,9 +550,6 @@ const AddQuotation = () => {
   ]);
 
   // ── Submit ────────────────────────────────────────────────────────
-  // ── Submit ────────────────────────────────────────────────────────
-  // ── Submit ────────────────────────────────────────────────────────
-  // ── Submit ────────────────────────────────────────────────────────
   const handleSubmit = async () => {
     if (!formData.customerId) return message.error("Please select a customer");
     if (formData.products.length === 0)
@@ -672,102 +669,6 @@ const AddQuotation = () => {
       message.error(err?.data?.message || "Failed to save quotation");
     }
   };
-  // ── Table Columns ─────────────────────────────────────────────────
-  const columns = [
-    {
-      title: "Drag",
-      width: 50,
-      render: (_, record) =>
-        dragMode ? (
-          <div style={{ cursor: "grab", color: "#999", textAlign: "center" }}>
-            <DragOutlined />
-          </div>
-        ) : null,
-    },
-    {
-      title: "Product",
-      render: (_, record) => (
-        <div>
-          {record.isOptionFor && <Text type="secondary">↳ </Text>}
-          {record.name}
-        </div>
-      ),
-    },
-    {
-      title: "Qty",
-      width: 100,
-      render: (_, r) => (
-        <InputNumber
-          min={1}
-          value={r.qty}
-          onChange={(v) => updateProductField(r.productId, "qty", v)}
-        />
-      ),
-    },
-    {
-      title: "Price (₹)",
-      width: 120,
-      render: (_, r) => safeNum(r.sellingPrice, 0).toFixed(2),
-    },
-    {
-      title: "Discount",
-      width: 160,
-      render: (_, r) => (
-        <Space.Compact>
-          <InputNumber
-            min={0}
-            value={r.discount}
-            onChange={(v) => updateProductField(r.productId, "discount", v)}
-            style={{ width: 90 }}
-          />
-          <Select
-            value={r.discountType}
-            onChange={(v) => updateProductField(r.productId, "discountType", v)}
-            style={{ width: 70 }}
-          >
-            <Option value="fixed">₹</Option>
-            <Option value="percent">%</Option>
-          </Select>
-        </Space.Compact>
-      ),
-    },
-    {
-      title: "Location",
-      width: 300,
-      render: (_, record) => {
-        const location = [record.floorName, record.roomName, record.areaName]
-          .filter(Boolean)
-          .join(" → ");
-
-        return (
-          <Button
-            type="link"
-            onClick={() => openAssignModal(record)}
-            style={{
-              padding: 0,
-              textAlign: "left",
-              height: "auto",
-              whiteSpace: "normal",
-            }}
-          >
-            {location || "Assign Location"}
-          </Button>
-        );
-      },
-    },
-    {
-      title: "",
-      width: 80,
-      render: (_, r) => (
-        <Button
-          danger
-          size="small"
-          icon={<DeleteOutlined />}
-          onClick={() => removeProduct(r.productId)}
-        />
-      ),
-    },
-  ];
 
   if (loadingQuotation) {
     return (
@@ -1023,346 +924,39 @@ const AddQuotation = () => {
               </Col>
             </Row>
           </Card>
-          {/* Project Structure */}
-          <Card
-            title="Project Structure (Floors, Rooms & Areas)"
-            style={{
-              marginBottom: 24,
-              borderRadius: 12,
-            }}
-            bodyStyle={{ padding: 16 }}
-            extra={
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => setShowAddFloorModal(true)}
-                style={{ borderRadius: 8 }}
-              >
-                Add Floor
-              </Button>
-            }
-          >
-            {formData.floors.length === 0 ? (
-              <div style={{ padding: "20px 0", textAlign: "center" }}>
-                <Text type="secondary">No floors added yet</Text>
-              </div>
-            ) : (
-              <div
-                style={{ display: "flex", flexDirection: "column", gap: 12 }}
-              >
-                {formData.floors.map((floor) => (
-                  <Card
-                    key={floor.floorId}
-                    size="small"
-                    style={{
-                      borderRadius: 10,
-                      border: "1px solid #f0f0f0",
-                      background: "#fff",
-                    }}
-                    bodyStyle={{ padding: 12 }}
-                  >
-                    {/* FLOOR HEADER */}
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
-                      <div style={{ display: "flex", flexDirection: "column" }}>
-                        <Text strong style={{ fontSize: 15 }}>
-                          🏢 {floor.floorName}
-                        </Text>
-                        <Text type="secondary" style={{ fontSize: 12 }}>
-                          {floor.rooms?.length || 0} Rooms
-                        </Text>
-                      </div>
 
-                      <Space>
-                        <Button
-                          size="small"
-                          onClick={() => {
-                            setEditingFloor(floor);
-                            setShowEditFloorModal(true);
-                          }}
-                          style={{ borderRadius: 6 }}
-                        >
-                          Edit
-                        </Button>
-
-                        <Button
-                          type="primary"
-                          size="small"
-                          onClick={() => {
-                            setSelectedFloorId(floor.floorId);
-                            setShowAddRoomModal(true);
-                          }}
-                          style={{ borderRadius: 6 }}
-                        >
-                          + Room
-                        </Button>
-                      </Space>
-                    </div>
-
-                    {/* ROOMS PREVIEW */}
-                    {floor.rooms?.length > 0 && (
-                      <div
-                        style={{
-                          marginTop: 10,
-                          paddingLeft: 10,
-                          borderLeft: "2px solid #e6f4ff",
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: 6,
-                        }}
-                      >
-                        {floor.rooms.map((room) => (
-                          <div
-                            key={room.roomId}
-                            style={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              padding: "6px 8px",
-                              borderRadius: 6,
-                              background: "#fafafa",
-                            }}
-                          >
-                            <Text style={{ fontSize: 13 }}>
-                              🛏️ {room.roomName}
-                            </Text>
-
-                            <Text type="secondary" style={{ fontSize: 12 }}>
-                              {room.areas?.length || 0} Areas
-                            </Text>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </Card>
-                ))}
-              </div>
-            )}
-          </Card>
-          {/* Products & Options */}
+          {/*
+            Products & Options — Floors and Rooms are now created directly
+            from this sheet's own tabs (the trailing "+" tab on the floor
+            row, and the trailing "+" tab on each floor's room row), the
+            same way Excel adds a new sheet. The old standalone
+            "Project Structure" card has been removed since it just
+            duplicated that same add-floor/add-room job in a separate
+            place on the page.
+          */}
           <Card
             title="Products & Options"
-            style={{
-              borderRadius: 12,
-            }}
+            style={{ borderRadius: 12 }}
             bodyStyle={{ padding: 12 }}
-            extra={
-              <Space>
-                {/* PRODUCT SEARCH */}
-                <Select
-                  showSearch
-                  style={{ width: 720 }}
-                  size="large"
-                  placeholder="Search and add main product"
-                  onSearch={debouncedSearch}
-                  onChange={addProduct}
-                  filterOption={false}
-                  notFoundContent={
-                    isSearching ? <Spin size="small" /> : "No products found"
-                  }
-                >
-                  {searchResult.map((p) => {
-                    const price = safeNum(
-                      p.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"],
-                      0,
-                    );
-
-                    return (
-                      <Option
-                        key={p.id || p.productId}
-                        value={p.id || p.productId}
-                      >
-                        {p.name} — ₹{price.toFixed(2)}
-                      </Option>
-                    );
-                  })}
-                </Select>
-
-                {/* ADD OPTION */}
-                {mainProducts.length > 0 && (
-                  <Button
-                    type="primary"
-                    icon={<PlusOutlined />}
-                    onClick={() => setShowAddOptionModal(true)}
-                    style={{ borderRadius: 8 }}
-                  >
-                    Add Option
-                  </Button>
-                )}
-              </Space>
-            }
           >
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
-            >
-              <SortableContext
-                items={formData.products.map((p) => p.productId)}
-                strategy={verticalListSortingStrategy}
-              >
-                <Table
-                  components={{ body: { row: SortableRow } }}
-                  columns={[
-                    {
-                      title: "Drag",
-                      width: 50,
-                      render: () => (
-                        <div
-                          style={{
-                            cursor: "grab",
-                            color: "#999",
-                            textAlign: "center",
-                          }}
-                        >
-                          <DragOutlined style={{ fontSize: 18 }} />
-                        </div>
-                      ),
-                    },
-                    {
-                      title: "Product",
-                      width: 280,
-                      render: (_, record) => (
-                        <div
-                          style={{ display: "flex", flexDirection: "column" }}
-                        >
-                          <Text strong style={{ fontSize: 14 }}>
-                            {record.isOptionFor && (
-                              <span style={{ color: "#1677ff" }}>↳ </span>
-                            )}
-                            {record.name}
-                          </Text>
-                        </div>
-                      ),
-                    },
-
-                    {
-                      title: "Qty",
-                      width: 100,
-                      render: (_, r) => (
-                        <InputNumber
-                          min={1}
-                          value={r.qty}
-                          onChange={(v) =>
-                            updateProductField(r.productId, "qty", v)
-                          }
-                          style={{ width: "100%", borderRadius: 8 }}
-                        />
-                      ),
-                    },
-
-                    {
-                      title: "Price",
-                      width: 120,
-                      render: (_, r) => (
-                        <Text>₹{safeNum(r.sellingPrice, 0).toFixed(2)}</Text>
-                      ),
-                    },
-
-                    {
-                      title: "Discount",
-                      width: 180,
-                      render: (_, r) => (
-                        <Space.Compact style={{ width: "100%" }}>
-                          <InputNumber
-                            min={0}
-                            value={r.discount}
-                            onChange={(v) =>
-                              updateProductField(r.productId, "discount", v)
-                            }
-                            style={{ width: "60%" }}
-                          />
-                          <Select
-                            value={r.discountType}
-                            onChange={(v) =>
-                              updateProductField(r.productId, "discountType", v)
-                            }
-                            style={{ width: "40%" }}
-                          >
-                            <Option value="fixed">₹</Option>
-                            <Option value="percent">%</Option>
-                          </Select>
-                        </Space.Compact>
-                      ),
-                    },
-
-                    {
-                      title: "Priority",
-                      width: 110,
-                      render: (_, r) => (
-                        <InputNumber
-                          min={0}
-                          value={r.priority}
-                          onChange={(v) =>
-                            updateProductField(r.productId, "priority", v)
-                          }
-                          style={{ width: "100%", borderRadius: 8 }}
-                        />
-                      ),
-                    },
-
-                    {
-                      title: "Location",
-                      width: 260,
-                      render: (_, record) => {
-                        const location = [
-                          record.floorName,
-                          record.roomName,
-                          record.areaName,
-                        ]
-                          .filter(Boolean)
-                          .join(" → ");
-
-                        return (
-                          <Button
-                            type="link"
-                            onClick={() => openAssignModal(record)}
-                            style={{
-                              padding: 0,
-                              textAlign: "left",
-                              height: "auto",
-                              whiteSpace: "normal",
-                            }}
-                          >
-                            {location || (
-                              <Text type="secondary">Assign Location</Text>
-                            )}
-                          </Button>
-                        );
-                      },
-                    },
-
-                    {
-                      title: "",
-                      width: 60,
-                      render: (_, r) => (
-                        <Button
-                          danger
-                          size="small"
-                          icon={<DeleteOutlined />}
-                          onClick={() => removeProduct(r.productId)}
-                          style={{ borderRadius: 6 }}
-                        />
-                      ),
-                    },
-                  ]}
-                  dataSource={formData.products}
-                  rowKey="productId"
-                  pagination={false}
-                  scroll={{ y: 420, x: "max-content" }}
-                  size="middle"
-                  bordered={false}
-                  sticky
-                  rowClassName={(record) =>
-                    record.isOptionFor ? "option-row" : "main-row"
-                  }
-                />
-              </SortableContext>
-            </DndContext>
+            <QuotationProductSheet
+              formData={formData}
+              setFormData={setFormData}
+              searchResult={searchResult}
+              isSearching={isSearching}
+              searchTerm={searchTerm}
+              onSearch={debouncedSearch}
+              safeNum={safeNum}
+              onAddOption={(product) => {
+                setSelectedParentId(product.productId);
+                setShowAddOptionModal(true);
+              }}
+              onAddFloor={() => setShowAddFloorModal(true)}
+              onAddRoom={(floorId) => {
+                setSelectedFloorId(floorId);
+                setShowAddRoomModal(true);
+              }}
+            />
           </Card>
           {/* Financial Summary */}
           <Card
