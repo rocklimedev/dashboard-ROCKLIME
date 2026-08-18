@@ -47,18 +47,45 @@ export default function AssignItemModal({
 
   const remaining = itemQty - totalAssigned;
 
-  // Reset when modal opens
+  // Reset when modal opens — hydrate from existing split data if present,
+  // instead of always collapsing back to a single full-quantity row.
   useEffect(() => {
     if (visible && item) {
-      setAssignments([
-        {
-          floorId: null,
-          roomId: null,
-          assignedQuantity: itemQty,
-          floorName: null,
-          roomName: null,
-        },
-      ]);
+      const existingLocations = Array.isArray(item.locations)
+        ? item.locations
+        : item.floorId
+          ? [
+              {
+                floorId: item.floorId,
+                roomId: item.roomId || null,
+                assignedQuantity: item.qty ?? item.quantity ?? 1,
+                floorName: item.floorName || null,
+                roomName: item.roomName || null,
+              },
+            ]
+          : [];
+
+      if (existingLocations.length > 0) {
+        setAssignments(
+          existingLocations.map((loc) => ({
+            floorId: loc.floorId ?? null,
+            roomId: loc.roomId ?? null,
+            assignedQuantity: Number(loc.assignedQuantity) || 1,
+            floorName: loc.floorName ?? null,
+            roomName: loc.roomName ?? null,
+          })),
+        );
+      } else {
+        setAssignments([
+          {
+            floorId: null,
+            roomId: null,
+            assignedQuantity: itemQty,
+            floorName: null,
+            roomName: null,
+          },
+        ]);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, item]);

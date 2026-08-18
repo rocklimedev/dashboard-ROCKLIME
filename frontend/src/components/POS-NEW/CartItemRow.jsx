@@ -222,7 +222,7 @@ const CartItemRow = ({
   lineTotal,
   documentType,
   dragEnabled = false,
-  serialNumber, // ← new: 1-based S.No. for this row in the current view
+  serialNumber,
 
   /* Option handling */
   mainCartItems = [],
@@ -230,7 +230,8 @@ const CartItemRow = ({
 
   /* Site layout (quotation) */
   floors = [],
-  onSplit, // (itemId) => void
+  onSplit,
+  onUpdateAssignedQuantity, // NEW: updates allocated qty for current floor/room view
 }) => {
   const itemId = item?.productId || item?.id;
 
@@ -254,7 +255,7 @@ const CartItemRow = ({
     setNodeRef: setLocationRef,
     isDragging: isLocationDragging,
   } = useDraggable({
-    id: `loc-${itemId}`, // distinct id so we can detect location drag
+    id: `loc-${itemId}`,
     data: { type: "location-assign", itemId },
     disabled: !dragEnabled,
   });
@@ -306,6 +307,12 @@ const CartItemRow = ({
     item?._viewAssignedQty != null ? Number(item._viewAssignedQty) : null;
   const isPartialUnassignedView = Boolean(item?._partialUnassigned);
 
+  // When viewing a specific floor/room (or partial unassigned), show the allocated qty
+  const isLocationView = viewAssignedQty != null;
+  const displayQty = isLocationView
+    ? viewAssignedQty
+    : Number(item?.quantity) || 1;
+
   const locationLabel = useMemo(() => {
     if (!primaryLoc?.floorId) return null;
     const floorName =
@@ -337,6 +344,23 @@ const CartItemRow = ({
 
   const handleSplitClick = () => {
     onSplit?.(item.productId || item.id);
+  };
+
+  // Quantity change: edit allocated qty when in a location view, otherwise edit total
+  const handleQtyChange = (raw) => {
+    const newVal = Math.max(1, Number(raw) || 1);
+
+    if (isLocationView && typeof onUpdateAssignedQuantity === "function") {
+      onUpdateAssignedQuantity(
+        itemId,
+        newVal,
+        item._viewFloorId ?? null,
+        item._viewRoomId ?? null,
+        isPartialUnassignedView,
+      );
+    } else {
+      handleUpdateQuantity?.(item.productId, newVal);
+    }
   };
 
   if (isLoading) return <div style={{ padding: "20px" }}>Loading...</div>;
@@ -538,13 +562,8 @@ const CartItemRow = ({
           <Space size="small" wrap>
             <Button
               size="small"
-              onClick={() =>
-                handleUpdateQuantity(
-                  item.productId,
-                  Math.max(1, (item.quantity || 1) - 1),
-                )
-              }
-              disabled={updatingItems[item?.productId]}
+              onClick={() => handleQtyChange(displayQty - 1)}
+              disabled={updatingItems[item?.productId] || displayQty <= 1}
             >
               -
             </Button>
@@ -552,17 +571,15 @@ const CartItemRow = ({
             <InputNumber
               min={1}
               size="small"
-              value={item.quantity}
-              onChange={(v) => handleUpdateQuantity(item.productId, Number(v))}
+              value={displayQty}
+              onChange={handleQtyChange}
               style={{ width: 56 }}
               disabled={updatingItems[item?.productId]}
             />
 
             <Button
               size="small"
-              onClick={() =>
-                handleUpdateQuantity(item.productId, (item.quantity || 1) + 1)
-              }
+              onClick={() => handleQtyChange(displayQty + 1)}
               disabled={updatingItems[item?.productId]}
             >
               +

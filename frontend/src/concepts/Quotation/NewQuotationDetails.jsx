@@ -133,6 +133,7 @@ const NewQuotationsDetails = () => {
   const [includeSummaryPage, setIncludeSummaryPage] = useState(true);
   const [includeRoomWiseSummaryPage, setIncludeRoomWiseSummaryPage] =
     useState(true);
+  const [includeRoomTotals, setIncludeRoomTotals] = useState(true);
 
   const [visibleColumns, setVisibleColumns] = useState({
     sno: true,
@@ -420,7 +421,10 @@ const NewQuotationsDetails = () => {
   };
 
   // ── Detailed Tabular Floor & Room Wise (Full Products) ──────────────────
-  const renderDetailedTabularFloorRoom = (shouldShowColumn) => {
+  const renderDetailedTabularFloorRoom = (
+    shouldShowColumn,
+    showRoomTotals = true,
+  ) => {
     const floorRoomGroups = groupProductsByFloorAndRoom(enrichedProducts);
 
     const floorMap = new Map();
@@ -578,6 +582,7 @@ const NewQuotationsDetails = () => {
                   )}
 
                   {isLastChunkOfRoom &&
+                    showRoomTotals &&
                     renderRoomDiscountBox(roomGroup.roomName, fullRoomProducts)}
                 </div>
               );
@@ -980,6 +985,7 @@ const NewQuotationsDetails = () => {
     includeProductList = true,
     includeSummary = true,
     includeRoomWiseSummary = true,
+    includeRoomTotals: showRoomTotals = true,
   } = {}) => {
     const shouldShowColumn = getShouldShowColumn || (() => true);
     const pages = [];
@@ -1072,7 +1078,9 @@ const NewQuotationsDetails = () => {
 
     // Floor & Room Section
     if (hasFloorLayout) {
-      pages.push(...renderDetailedTabularFloorRoom(shouldShowColumn));
+      pages.push(
+        ...renderDetailedTabularFloorRoom(shouldShowColumn, showRoomTotals),
+      );
     }
 
     // Room-wise Summary (optional)
@@ -1192,6 +1200,7 @@ const NewQuotationsDetails = () => {
             includeProductListPage,
             includeSummaryPage,
             includeRoomWiseSummaryPage,
+            includeRoomTotals,
           },
         );
       } else {
@@ -1372,6 +1381,14 @@ const NewQuotationsDetails = () => {
                           Room-wise Summary Page
                         </Checkbox>
                         <Checkbox
+                          checked={includeRoomTotals}
+                          onChange={(e) =>
+                            setIncludeRoomTotals(e.target.checked)
+                          }
+                        >
+                          Room Totals
+                        </Checkbox>
+                        <Checkbox
                           checked={includeSummaryPage}
                           onChange={(e) =>
                             setIncludeSummaryPage(e.target.checked)
@@ -1400,6 +1417,7 @@ const NewQuotationsDetails = () => {
                           });
                           setIncludeProductListPage(true);
                           setIncludeRoomWiseSummaryPage(true);
+                          setIncludeRoomTotals(true);
                           setIncludeSummaryPage(true);
                         }}
                       >
@@ -1470,6 +1488,7 @@ const NewQuotationsDetails = () => {
                 includeProductList: includeProductListPage,
                 includeSummary: includeSummaryPage,
                 includeRoomWiseSummary: includeRoomWiseSummaryPage,
+                includeRoomTotals,
               })}
             </div>
           </div>
@@ -1486,6 +1505,7 @@ const NewQuotationsDetails = () => {
                   includeProductList: includeProductListPage,
                   includeSummary: includeSummaryPage,
                   includeRoomWiseSummary: includeRoomWiseSummaryPage,
+                  includeRoomTotals,
                 })}
               </div>
             )}

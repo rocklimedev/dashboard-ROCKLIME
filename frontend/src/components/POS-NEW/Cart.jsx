@@ -1,5 +1,5 @@
 // src/components/POS-NEW/Cart.jsx
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useCallback } from "react";
 import {
   DndContext,
   closestCenter,
@@ -885,7 +885,88 @@ const CartTab = ({
 
     setAssignModal({ visible: false, itemId: null });
   };
+  const handleUpdateAssignedQuantity = useCallback(
+    (itemId, newAssignedQty, viewFloorId, viewRoomId, isPartialUnassigned) => {
+      if (!itemId || newAssignedQty < 1) return;
 
+      const item =
+        mainCartItems.find((i) => getItemKey(i) === itemId) ||
+        safeCartItems.find((i) => getItemKey(i) === itemId);
+      if (!item) return;
+
+      const totalQty = Number(item.quantity) || 1;
+      let locs = getItemLocations(item);
+
+      // ── Partial-unassigned view (global “Unassigned” tab) ──
+      if (isPartialUnassigned) {
+        const assignedSum = locs.reduce(
+          (s, l) => s + (Number(l.assignedQuantity) || 0),
+          0,
+        );
+        const newTotal = assignedSum + newAssignedQty;
+        if (newTotal !== totalQty) {
+          handleUpdateQuantity?.(itemId, newTotal);
+        }
+        return;
+      }
+
+      // ── Concrete floor/room view ──
+      if (!viewFloorId) return;
+
+      const match = (l) =>
+        l.floorId === viewFloorId &&
+        (l.roomId || null) === (viewRoomId || null);
+
+      let found = false;
+      const updatedLocs = locs.map((l) => {
+        if (match(l)) {
+          found = true;
+          return { ...l, assignedQuantity: newAssignedQty };
+        }
+        return l;
+      });
+
+      if (!found && newAssignedQty > 0) {
+        // safety – should not normally happen
+        const floor = (quotationData.floors || []).find(
+          (f) => f.floorId === viewFloorId,
+        );
+        const room = floor?.rooms?.find((r) => r.roomId === viewRoomId);
+        updatedLocs.push({
+          floorId: viewFloorId,
+          roomId: viewRoomId || null,
+          floorName: floor?.floorName || null,
+          roomName: room?.roomName || null,
+          assignedQuantity: newAssignedQty,
+        });
+      }
+
+      const newSum = updatedLocs.reduce(
+        (s, l) => s + (Number(l.assignedQuantity) || 0),
+        0,
+      );
+
+      // Raise total if the new allocation exceeds it
+      if (newSum > totalQty) {
+        handleUpdateQuantity?.(itemId, newSum);
+      }
+
+      // Persist the new location split (filters out zero-qty entries)
+      if (typeof handleSetItemLocations === "function") {
+        handleSetItemLocations(
+          itemId,
+          updatedLocs.filter((l) => (Number(l.assignedQuantity) || 0) > 0),
+        );
+      }
+    },
+    [
+      mainCartItems,
+      safeCartItems,
+      quotationData.floors,
+      handleUpdateQuantity,
+      handleSetItemLocations,
+    ],
+  );
   const renderEmpty = () => (
     <EmptyCartWrapper>
       <Empty description="Your cart is empty" />
@@ -913,7 +994,7 @@ const CartTab = ({
               <CartItemRow
                 item={main}
                 serialNumber={mainSno}
-                // ... all other existing props
+                onUpdateAssignedQuantity={handleUpdateAssignedQuantity}
                 itemDiscounts={itemDiscounts}
                 itemDiscountTypes={itemDiscountTypes}
                 updatingItems={updatingItems}
