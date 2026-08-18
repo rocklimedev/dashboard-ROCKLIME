@@ -1,6 +1,7 @@
 // src/components/POS-NEW/CartItemRow.jsx
-import React from "react";
+import React, { useMemo } from "react";
 import { useSortable } from "@dnd-kit/sortable";
+import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import {
   Row,
@@ -14,7 +15,11 @@ import {
   Tag,
 } from "antd";
 import { LazyLoadImage } from "react-lazy-load-image-component";
-import { DeleteFilled, HolderOutlined } from "@ant-design/icons";
+import {
+  DeleteFilled,
+  HolderOutlined,
+  SplitCellsOutlined,
+} from "@ant-design/icons";
 import styled from "styled-components";
 import { useGetProductByIdQuery } from "../../api/productApi";
 
@@ -47,8 +52,6 @@ const ItemContainer = styled.div`
   }
 `;
 
-/* Main row: stacks vertically on small screens, becomes a horizontal
-   row (image | content | qty/total) from the sm breakpoint up. */
 const MainRow = styled(Row)`
   flex-wrap: wrap;
 
@@ -57,16 +60,42 @@ const MainRow = styled(Row)`
   }
 `;
 
-const DragHandle = styled.div`
+const SnoHandle = styled.div`
+  cursor: grab;
+  min-width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: #595959;
+  border-radius: 6px;
+  user-select: none;
+  background: #f5f5f5;
+
+  &:hover {
+    background: #e6f4ff;
+    color: #1677ff;
+  }
+
+  &:active {
+    cursor: grabbing;
+  }
+`;
+
+const LocationDragHandle = styled.div`
   cursor: grab;
   padding: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #999;
+  border-radius: 6px;
 
   &:hover {
     color: #1677ff;
+    background: rgba(22, 119, 255, 0.08);
   }
 
   &:active {
@@ -92,8 +121,6 @@ const CartItemImage = styled(LazyLoadImage)`
   }
 `;
 
-/* Quantity / total block: full-width row under content on mobile,
-   right-aligned fixed-width column from sm up. */
 const QtyTotalCol = styled(Col)`
   display: flex;
   flex-direction: row;
@@ -113,7 +140,6 @@ const QtyTotalCol = styled(Col)`
   }
 `;
 
-/* On mobile "Remove" collapses to just the icon to save space */
 const RemoveLabel = styled.span`
   display: none;
 
@@ -131,6 +157,58 @@ const ResponsiveDivider = styled(Divider)`
   }
 `;
 
+const LocationChip = styled(Tag)`
+  margin-top: 6px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
+const SplitTags = styled.div`
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+`;
+
+/* ===================== HELPERS ===================== */
+
+const getPrimaryLocation = (item) => {
+  if (Array.isArray(item?.locations) && item.locations.length > 0) {
+    return item.locations[0];
+  }
+  if (item?.floorId) {
+    return {
+      floorId: item.floorId,
+      roomId: item.roomId || null,
+      floorName: item.floorName,
+      roomName: item.roomName,
+      assignedQuantity: item.quantity || 1,
+    };
+  }
+  return null;
+};
+
+const getLocations = (item) => {
+  if (Array.isArray(item?.locations) && item.locations.length > 0) {
+    return item.locations;
+  }
+  if (item?.floorId) {
+    return [
+      {
+        floorId: item.floorId,
+        roomId: item.roomId || null,
+        floorName: item.floorName,
+        roomName: item.roomName,
+        assignedQuantity: item.quantity || 1,
+      },
+    ];
+  }
+  return [];
+};
+
+/* ===================== COMPONENT ===================== */
+
 const CartItemRow = ({
   item,
   itemDiscounts = {},
@@ -144,20 +222,40 @@ const CartItemRow = ({
   lineTotal,
   documentType,
   dragEnabled = false,
+  serialNumber, // ← new: 1-based S.No. for this row in the current view
 
-  /* New Props for Option Handling */
+  /* Option handling */
   mainCartItems = [],
   handleAssignOptionToParent,
+
+  /* Site layout (quotation) */
+  floors = [],
+  onSplit, // (itemId) => void
 }) => {
+  const itemId = item?.productId || item?.id;
+
+  // ── Sortable = reordering via S.No. ──
   const {
-    attributes,
-    listeners,
-    setNodeRef,
+    attributes: sortableAttributes,
+    listeners: sortableListeners,
+    setNodeRef: setSortableRef,
     transform,
     transition,
-    isDragging,
+    isDragging: isSorting,
   } = useSortable({
-    id: item?.productId || item?.id,
+    id: itemId,
+    disabled: !dragEnabled,
+  });
+
+  // ── Separate draggable = location assignment via corner handle ──
+  const {
+    attributes: locationAttributes,
+    listeners: locationListeners,
+    setNodeRef: setLocationRef,
+    isDragging: isLocationDragging,
+  } = useDraggable({
+    id: `loc-${itemId}`, // distinct id so we can detect location drag
+    data: { type: "location-assign", itemId },
     disabled: !dragEnabled,
   });
 
@@ -166,12 +264,12 @@ const CartItemRow = ({
     transition,
   };
 
-  // Fetch product details as fallback
+  const isDragging = isSorting || isLocationDragging;
+
   const { data: product, isLoading } = useGetProductByIdQuery(item?.productId, {
     skip: !item?.productId,
   });
 
-  // Priority: item.imageUrl (from cart/backend) > product.images > placeholder
   const imageUrl =
     item?.imageUrl ||
     (Array.isArray(product?.images) ? product?.images[0] : null) ||
@@ -191,17 +289,85 @@ const CartItemRow = ({
     ? mainCartItems.find((m) => m.productId === item.parentProductId)?.name
     : null;
 
+  /* ── Location (Floor / Room) ── */
+  const locations = useMemo(() => getLocations(item), [item]);
+  const primaryLoc = useMemo(() => getPrimaryLocation(item), [item]);
+
+  const totalQty = Number(item?.quantity) || 0;
+  const totalAssigned = locations.reduce(
+    (s, l) => s + (Number(l.assignedQuantity) || 0),
+    0,
+  );
+  const remainingQty = Math.max(0, totalQty - totalAssigned);
+  const isSplit = locations.length > 1;
+  const hasPartialUnassigned = remainingQty > 0 && locations.length > 0;
+
+  const viewAssignedQty =
+    item?._viewAssignedQty != null ? Number(item._viewAssignedQty) : null;
+  const isPartialUnassignedView = Boolean(item?._partialUnassigned);
+
+  const locationLabel = useMemo(() => {
+    if (!primaryLoc?.floorId) return null;
+    const floorName =
+      primaryLoc.floorName ||
+      floors.find((f) => f.floorId === primaryLoc.floorId)?.floorName ||
+      "Floor";
+    if (!primaryLoc.roomId) return floorName;
+    const floor = floors.find((f) => f.floorId === primaryLoc.floorId);
+    const roomName =
+      primaryLoc.roomName ||
+      floor?.rooms?.find((r) => r.roomId === primaryLoc.roomId)?.roomName ||
+      "Room";
+    return `${floorName} › ${roomName}`;
+  }, [primaryLoc, floors]);
+
+  const resolveLocLabel = (loc) => {
+    const floorName =
+      loc.floorName ||
+      floors.find((f) => f.floorId === loc.floorId)?.floorName ||
+      "Floor";
+    if (!loc.roomId) return floorName;
+    const floor = floors.find((f) => f.floorId === loc.floorId);
+    const roomName =
+      loc.roomName ||
+      floor?.rooms?.find((r) => r.roomId === loc.roomId)?.roomName ||
+      "Room";
+    return `${floorName} › ${roomName}`;
+  };
+
+  const handleSplitClick = () => {
+    onSplit?.(item.productId || item.id);
+  };
+
   if (isLoading) return <div style={{ padding: "20px" }}>Loading...</div>;
 
   return (
-    <ItemContainer ref={setNodeRef} style={style} isDragging={isDragging}>
+    <ItemContainer ref={setSortableRef} style={style} isDragging={isDragging}>
       <MainRow gutter={[12, 12]} align="middle">
-        {/* DRAG HANDLE */}
+        {/* S.No. — drag this to reorder (priority) */}
         {dragEnabled && (
+          <Col flex="0 0 36px">
+            <SnoHandle
+              {...sortableAttributes}
+              {...sortableListeners}
+              title="Drag to reorder"
+            >
+              {serialNumber ?? "–"}
+            </SnoHandle>
+          </Col>
+        )}
+
+        {/* Corner handle — drag this onto floor/room tabs to assign location */}
+        {dragEnabled && isQuotationMode && (
           <Col flex="0 0 32px">
-            <DragHandle {...attributes} {...listeners}>
+            <LocationDragHandle
+              ref={setLocationRef}
+              {...locationAttributes}
+              {...locationListeners}
+              title="Drag onto a floor or room tab to assign location"
+            >
               <HolderOutlined style={{ fontSize: 18 }} />
-            </DragHandle>
+            </LocationDragHandle>
           </Col>
         )}
 
@@ -225,9 +391,75 @@ const CartItemRow = ({
                 Optional
               </Tag>
             )}
+            {isSplit && (
+              <Tag color="purple" style={{ marginLeft: 8 }}>
+                Split
+              </Tag>
+            )}
           </div>
 
-          {/* Option Type Selector */}
+          {isQuotationMode && viewAssignedQty != null && (
+            <div style={{ marginTop: 4 }}>
+              {isPartialUnassignedView ? (
+                <Tag color="orange">Unassigned portion ×{viewAssignedQty}</Tag>
+              ) : (
+                <Tag color="cyan">Here ×{viewAssignedQty}</Tag>
+              )}
+            </div>
+          )}
+
+          {isQuotationMode && !isSplit && locationLabel && (
+            <LocationChip color="blue">{locationLabel}</LocationChip>
+          )}
+
+          {isQuotationMode && isSplit && (
+            <SplitTags>
+              {locations.map((l, idx) => (
+                <Tag
+                  key={`${l.floorId}-${l.roomId || "none"}-${idx}`}
+                  color="purple"
+                >
+                  {resolveLocLabel(l)} ×{l.assignedQuantity || 1}
+                </Tag>
+              ))}
+              {hasPartialUnassigned && (
+                <Tag color="orange">Unassigned ×{remainingQty}</Tag>
+              )}
+            </SplitTags>
+          )}
+
+          {isQuotationMode &&
+            !isSplit &&
+            hasPartialUnassigned &&
+            locations.length === 1 && (
+              <div style={{ marginTop: 4 }}>
+                <Tag color="orange">Unassigned ×{remainingQty}</Tag>
+              </div>
+            )}
+
+          {isQuotationMode && !primaryLoc?.floorId && (
+            <Text
+              type="secondary"
+              style={{ fontSize: 12, display: "block", marginTop: 4 }}
+            >
+              Drag the ⋮⋮ handle onto a floor/room tab to assign
+            </Text>
+          )}
+
+          {isQuotationMode && onSplit && (totalQty > 1 || isSplit) && (
+            <div style={{ marginTop: 6 }}>
+              <Button
+                type="link"
+                size="small"
+                icon={<SplitCellsOutlined />}
+                style={{ padding: 0, height: "auto" }}
+                onClick={handleSplitClick}
+              >
+                {isSplit ? "Edit split" : "Split across floors/rooms"}
+              </Button>
+            </div>
+          )}
+
           {isQuotationMode && handleMakeOption && (
             <Space style={{ marginTop: 8 }} wrap>
               <Select
@@ -249,7 +481,6 @@ const CartItemRow = ({
             </Space>
           )}
 
-          {/* Parent Product Selector - Only for Optional Items */}
           {isOption && isQuotationMode && mainCartItems.length > 0 && (
             <div style={{ marginTop: 8 }}>
               <Text type="secondary" style={{ fontSize: "12px" }}>
@@ -280,7 +511,6 @@ const CartItemRow = ({
             </div>
           )}
 
-          {/* Discount Controls */}
           {showDiscountAndTax && (
             <Space style={{ marginTop: 8 }} wrap>
               <Select
@@ -314,6 +544,7 @@ const CartItemRow = ({
                   Math.max(1, (item.quantity || 1) - 1),
                 )
               }
+              disabled={updatingItems[item?.productId]}
             >
               -
             </Button>
@@ -324,6 +555,7 @@ const CartItemRow = ({
               value={item.quantity}
               onChange={(v) => handleUpdateQuantity(item.productId, Number(v))}
               style={{ width: 56 }}
+              disabled={updatingItems[item?.productId]}
             />
 
             <Button
@@ -331,6 +563,7 @@ const CartItemRow = ({
               onClick={() =>
                 handleUpdateQuantity(item.productId, (item.quantity || 1) + 1)
               }
+              disabled={updatingItems[item?.productId]}
             >
               +
             </Button>

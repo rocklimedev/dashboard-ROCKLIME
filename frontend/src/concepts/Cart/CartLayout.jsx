@@ -124,7 +124,7 @@ const CartLayout = ({
     }
   }, [location.pathname]);
 
-  // Sync Server Cart to Local
+  // Sync Server Cart → Local (preserve location + option + priority)
   useEffect(() => {
     if (!allCartItems.length) {
       setLocalCartItems([]);
@@ -143,26 +143,29 @@ const CartLayout = ({
         return {
           ...serverItem,
           id,
-          floorId: local?.floorId || serverItem.floorId,
-          roomId: local?.roomId || serverItem.roomId,
-          areaId: local?.areaId || serverItem.areaId,
-          floorName: local?.floorName || serverItem.floorName,
-          roomName: local?.roomName || serverItem.roomName,
-          areaName: local?.areaName || serverItem.areaName,
-          assignedQuantity: local?.assignedQuantity || serverItem.quantity || 1,
+          floorId: local?.floorId ?? serverItem.floorId ?? null,
+          roomId: local?.roomId ?? serverItem.roomId ?? null,
+          areaId: local?.areaId ?? serverItem.areaId ?? null,
+          floorName: local?.floorName ?? serverItem.floorName ?? null,
+          roomName: local?.roomName ?? serverItem.roomName ?? null,
+          areaName: local?.areaName ?? serverItem.areaName ?? null,
+          assignedQuantity: local?.assignedQuantity ?? serverItem.quantity ?? 1,
+          locations: local?.locations ?? serverItem.locations ?? [],
 
           isOption: local?.isOption ?? serverItem.isOption ?? false,
           isOptionFor: local?.isOptionFor ?? serverItem.isOptionFor ?? null,
           optionType: local?.optionType ?? serverItem.optionType ?? null,
           parentProductId:
             local?.parentProductId ?? serverItem.parentProductId ?? null,
+
+          priority: local?.priority ?? serverItem.priority ?? 0,
         };
       });
     });
   }, [allCartItems]);
 
   // ─────────────────────────────────────────────────────────────
-  // SEPARATE MAIN & OPTIONAL ITEMS
+  // MAIN vs OPTIONAL
   // ─────────────────────────────────────────────────────────────
 
   const mainCartItems = useMemo(() => {
@@ -184,16 +187,14 @@ const CartLayout = ({
       );
     });
   }, [localCartItems]);
-  const calculationCartItems = mainCartItems; // For backward compatibility
 
-  const payloadCartItems = useMemo(() => {
-    return localCartItems; // Send ALL items (main + optional)
-  }, [localCartItems]);
+  const calculationCartItems = mainCartItems;
+  const payloadCartItems = useMemo(() => localCartItems, [localCartItems]);
 
   const { productsData: cartProductsData } = useProductsData(mainCartItems);
 
   // ─────────────────────────────────────────────────────────────
-  // CALCULATIONS (ONLY MAIN ITEMS)
+  // CALCULATIONS (MAIN ONLY)
   // ─────────────────────────────────────────────────────────────
 
   const subTotal = useMemo(() => {
@@ -256,17 +257,16 @@ const CartLayout = ({
   // ─────────────────────────────────────────────────────────────
   // HANDLERS
   // ─────────────────────────────────────────────────────────────
+
   const handleCartOrderChange = useCallback(
     (newOrderedCart) => {
-      // Ensure every item has a priority
       const withPriority = newOrderedCart.map((item, index) => ({
         ...item,
-        priority: index, // Force priority
+        priority: index,
       }));
 
       setLocalCartItems(withPriority);
 
-      // Optional: Sync to server cache
       dispatch(
         cartApi.util.updateQueryData("getCart", userId, (draft) => {
           if (!draft?.cart?.items) return;
@@ -281,6 +281,7 @@ const CartLayout = ({
     },
     [userId, dispatch],
   );
+
   const handleDocumentTypeChange = useCallback(
     (newType) => {
       setDocumentType(newType);
@@ -293,10 +294,41 @@ const CartLayout = ({
     },
     [navigate],
   );
+
   const handleUpdateQuantity = useCallback(
     async (productId, newQty) => {
       if (!userId || newQty < 1) return;
       setUpdatingItems((prev) => ({ ...prev, [productId]: true }));
+
+      // Clamp locations if total assigned > new qty
+      setLocalCartItems((prev) =>
+        prev.map((item) => {
+          if ((item.productId || item.id) !== productId) return item;
+          const locs = Array.isArray(item.locations) ? item.locations : [];
+          if (!locs.length) return item;
+
+          let remaining = Number(newQty) || 1;
+          const clamped = locs
+            .map((l) => {
+              const q = Math.min(Number(l.assignedQuantity) || 0, remaining);
+              remaining -= q;
+              return { ...l, assignedQuantity: q };
+            })
+            .filter((l) => (Number(l.assignedQuantity) || 0) > 0);
+
+          const primary = clamped[0] || null;
+          return {
+            ...item,
+            locations: clamped,
+            floorId: primary?.floorId || null,
+            roomId: primary?.roomId || null,
+            floorName: primary?.floorName || null,
+            roomName: primary?.roomName || null,
+            assignedQuantity: primary?.assignedQuantity ?? newQty,
+          };
+        }),
+      );
+
       try {
         await updateCart({
           userId,
@@ -348,6 +380,11 @@ const CartLayout = ({
     [userId, dispatch, removeFromCart],
   );
 
+  /**
+   * Single location assign (Floor/Room dropdowns).
+   * replacePrimary (default) → one location entry.
+   * append → multi-location fallback when handleSetItemLocations is missing.
+   */
   const handleAssignItemToLocation = useCallback(
     (
       itemId,
@@ -358,39 +395,156 @@ const CartLayout = ({
       roomName = null,
       areaName = null,
       assignedQuantity = null,
+      options = {},
     ) => {
       if (!itemId) return;
+
+      const { replacePrimary = true, append = false } = options;
 
       setLocalCartItems((prev) =>
         prev.map((item) => {
           const currentId = item.id || item.productId;
           if (currentId !== itemId) return item;
 
+          const qty = assignedQuantity ?? item.quantity ?? 1;
+
+          if (!floorId) {
+            return {
+              ...item,
+              floorId: null,
+              roomId: null,
+              areaId: null,
+              floorName: null,
+              roomName: null,
+              areaName: null,
+              assignedQuantity: qty,
+              locations: [],
+            };
+          }
+
+          const newLoc = {
+            floorId,
+            roomId: roomId || null,
+            areaId: areaId || null,
+            floorName: floorName || null,
+            roomName: roomName || null,
+            areaName: areaName || null,
+            assignedQuantity: qty,
+          };
+
+          let nextLocations;
+          if (append) {
+            const existing = Array.isArray(item.locations)
+              ? [...item.locations]
+              : [];
+            const idx = existing.findIndex(
+              (l) =>
+                l.floorId === floorId &&
+                (l.roomId || null) === (roomId || null),
+            );
+            if (idx >= 0) {
+              existing[idx] = { ...existing[idx], ...newLoc };
+            } else {
+              existing.push(newLoc);
+            }
+            nextLocations = existing;
+          } else if (replacePrimary) {
+            nextLocations = [newLoc];
+          } else {
+            nextLocations = item.locations || [newLoc];
+          }
+
           return {
             ...item,
             floorId,
-            roomId,
-            assignedQuantity: assignedQuantity || item.quantity,
-            floorName: floorName || item.floorName,
-            roomName: roomName || item.roomName,
-            locations: [
-              ...(item.locations || []),
-              {
-                floorId,
-                roomId,
-                floorName,
-                roomName,
-                assignedQuantity: assignedQuantity || item.quantity,
-              },
-            ],
+            roomId: roomId || null,
+            areaId: areaId || null,
+            floorName: floorName || item.floorName || null,
+            roomName: roomName || item.roomName || null,
+            areaName: areaName || item.areaName || null,
+            assignedQuantity: qty,
+            locations: nextLocations,
           };
         }),
       );
 
-      message.success(`Assigned to ${floorName || "floor"}`);
+      if (floorId) {
+        message.success(
+          `Assigned to ${floorName || "floor"}${
+            roomName ? ` › ${roomName}` : ""
+          }`,
+        );
+      } else {
+        message.info("Location cleared");
+      }
     },
     [],
   );
+
+  /**
+   * Replace ALL locations (Split / AssignItemModal).
+   * locations: [{ floorId, roomId, floorName, roomName, assignedQuantity }, ...]
+   * Sum of assignedQuantity must be ≤ item.quantity.
+   */
+  const handleSetItemLocations = useCallback((itemId, locations = []) => {
+    if (!itemId) return;
+
+    setLocalCartItems((prev) => {
+      const target = prev.find((i) => (i.id || i.productId) === itemId);
+      if (!target) return prev;
+
+      const totalQty = Number(target.quantity) || 1;
+      const normalized = (locations || [])
+        .filter((l) => l?.floorId)
+        .map((l) => ({
+          floorId: l.floorId,
+          roomId: l.roomId || null,
+          areaId: l.areaId || null,
+          floorName: l.floorName || null,
+          roomName: l.roomName || null,
+          areaName: l.areaName || null,
+          assignedQuantity: Number(l.assignedQuantity) || 1,
+        }));
+
+      const assignedSum = normalized.reduce(
+        (s, l) => s + (Number(l.assignedQuantity) || 0),
+        0,
+      );
+
+      if (assignedSum > totalQty) {
+        message.error(
+          `Assigned qty (${assignedSum}) exceeds item quantity (${totalQty})`,
+        );
+        return prev;
+      }
+
+      const primary = normalized[0] || null;
+
+      return prev.map((item) => {
+        if ((item.id || item.productId) !== itemId) return item;
+        return {
+          ...item,
+          floorId: primary?.floorId || null,
+          roomId: primary?.roomId || null,
+          areaId: primary?.areaId || null,
+          floorName: primary?.floorName || null,
+          roomName: primary?.roomName || null,
+          areaName: primary?.areaName || null,
+          assignedQuantity: primary?.assignedQuantity ?? item.quantity ?? 1,
+          locations: normalized,
+        };
+      });
+    });
+
+    // Toast after state update attempt (success only if we didn't early-return on error)
+    // Use a microtask-friendly message: callers already toast in Cart for multi-assign;
+    // keep a light confirmation here for split.
+    if (locations?.length) {
+      message.success(`Split across ${locations.length} location(s)`);
+    } else {
+      message.info("Location cleared");
+    }
+  }, []);
 
   const handleMakeOption = useCallback(
     (productId, optionType, parentProductId = null) => {
@@ -427,15 +581,14 @@ const CartLayout = ({
               optionType: null,
               parentProductId: null,
             };
-          } else {
-            return {
-              ...item,
-              isOption: true,
-              isOptionFor: parentProductId || null,
-              optionType: optionType,
-              parentProductId: parentProductId || null,
-            };
           }
+          return {
+            ...item,
+            isOption: true,
+            isOptionFor: parentProductId || null,
+            optionType,
+            parentProductId: parentProductId || null,
+          };
         }),
       );
 
@@ -460,7 +613,7 @@ const CartLayout = ({
     },
     [localCartItems],
   );
-  // NEW: Link Optional Item to a Main Product
+
   const handleAssignOptionToParent = useCallback(
     (optionProductId, parentProductId) => {
       if (!optionProductId) return;
@@ -472,7 +625,7 @@ const CartLayout = ({
               ...item,
               isOption: true,
               isOptionFor: parentProductId,
-              parentProductId: parentProductId,
+              parentProductId,
               optionType: item.optionType || "addon",
             };
           }
@@ -480,7 +633,6 @@ const CartLayout = ({
         }),
       );
 
-      // Also update Redux cache
       dispatch(
         cartApi.util.updateQueryData("getCart", userId, (draft) => {
           const item = draft.cart?.items?.find(
@@ -499,6 +651,7 @@ const CartLayout = ({
     },
     [userId, dispatch],
   );
+
   const handleDiscountChange = useCallback(
     (productId, value) =>
       setItemDiscounts((prev) => ({ ...prev, [productId]: value ?? 0 })),
@@ -558,20 +711,18 @@ const CartLayout = ({
     }
   }, [userId, clearCart, clearDraft]);
 
-  // ... [Keep all other handlers unchanged: handleUpdateQuantity, handleRemoveItem, handleMakeOption, etc.]
-
   // Common Props
   const commonProps = {
     localCartItems,
-    mainCartItems, // ← New
-    optionalCartItems, // ← New
+    mainCartItems,
+    optionalCartItems,
     calculationCartItems,
     payloadCartItems,
     cartProductsData,
     subTotal,
     totalDiscount,
     tax,
-    optionalTotal, // ← New
+    optionalTotal,
     shipping,
     gst,
     totalAmount,
@@ -586,6 +737,7 @@ const CartLayout = ({
     handleUpdateQuantity,
     handleRemoveItem,
     handleAssignItemToLocation,
+    handleSetItemLocations,
     handleDiscountChange,
     handleDiscountTypeChange,
     handleTaxChange,
@@ -599,9 +751,8 @@ const CartLayout = ({
     getParentName,
     forceSave,
     clearDraft,
-    handleAssignOptionToParent, // ← Add this
+    handleAssignOptionToParent,
     onCartOrderChange: handleCartOrderChange,
-    // Site Layout (quotation only) — needed so CartTab can render it
     quotationData,
     handleQuotationChange,
   };
