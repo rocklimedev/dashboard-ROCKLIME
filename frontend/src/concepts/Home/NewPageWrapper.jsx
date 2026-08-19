@@ -28,7 +28,7 @@ import { useAuth } from "../../context/AuthContext";
 import { FaShoppingBag } from "react-icons/fa";
 import { HiDocumentText } from "react-icons/hi";
 import { MdWarningAmber } from "react-icons/md";
-import "./reportdashboard.css";
+import "./pagewrapper.css";
 
 const BRAND_RED = "#e31e24";
 const TEXT_DARK = "#303030";
