@@ -244,20 +244,23 @@ export default function ReportingDashboard() {
     for (let i = 6; i >= 0; i--) {
       const d = new Date(end);
       d.setDate(d.getDate() - i);
+
       const dayOrders = orders.filter((o) => isSameDay(o.createdAt, d));
       const dayQuotes = quotations.filter((q) => isSameDay(q.createdAt, d));
+
       days.push({
         label: dayLabel(d.toISOString()),
-        orderValue: dayOrders.reduce((s, o) => s + getAmount(o), 0),
-        quotationValue: dayQuotes.reduce((s, q) => s + getAmount(q), 0),
+        orderCount: dayOrders.length,
+        quotationCount: dayQuotes.length,
       });
     }
+
     return days;
   }, [orders, quotations, rangeTo]);
 
   const maxChartValue = Math.max(
     1,
-    ...last7Days.map((d) => Math.max(d.orderValue, d.quotationValue)),
+    ...last7Days.map((d) => Math.max(d.orderCount, d.quotationCount)),
   );
 
   const latestQuotations = useMemo(
@@ -439,18 +442,26 @@ export default function ReportingDashboard() {
                     <div
                       className="rd-bar rd-bar-order"
                       style={{
-                        height: `${(d.orderValue / maxChartValue) * 100}%`,
+                        height: `${(d.orderCount / maxChartValue) * 100}%`,
                       }}
-                      title={`Orders: ${currency(d.orderValue)}`}
-                    />
+                    >
+                      <span className="rd-bar-tooltip">
+                        Orders: {d.orderCount}
+                      </span>
+                    </div>
+
                     <div
                       className="rd-bar rd-bar-quote"
                       style={{
-                        height: `${(d.quotationValue / maxChartValue) * 100}%`,
+                        height: `${(d.quotationCount / maxChartValue) * 100}%`,
                       }}
-                      title={`Quotations: ${currency(d.quotationValue)}`}
-                    />
+                    >
+                      <span className="rd-bar-tooltip">
+                        Quotations: {d.quotationCount}
+                      </span>
+                    </div>
                   </div>
+
                   <span className="rd-bar-label">{d.label}</span>
                 </div>
               ))}
@@ -460,7 +471,7 @@ export default function ReportingDashboard() {
           <div className="rd-card rd-conversion-card">
             <div className="rd-card-header">
               <div>
-                <h2 className="rd-card-title">Quote to order</h2>
+                <h2 className="rd-card-title">Order Conversion Rate</h2>
                 <p className="rd-card-subtitle">Conversion · {periodLabel}</p>
               </div>
             </div>
@@ -482,16 +493,19 @@ export default function ReportingDashboard() {
             <div className="rd-conversion-stats">
               <div>
                 <span className="rd-conversion-stat-label">
-                  Quotation value
+                  Total quotations
                 </span>
+
                 <span className="rd-conversion-stat-value">
-                  {currency(quotationAmountPeriod)}
+                  {loading ? "—" : filteredQuotations.length}
                 </span>
               </div>
+
               <div>
-                <span className="rd-conversion-stat-label">Order value</span>
+                <span className="rd-conversion-stat-label">Total orders</span>
+
                 <span className="rd-conversion-stat-value">
-                  {currency(orderAmountPeriod)}
+                  {loading ? "—" : filteredOrders.length}
                 </span>
               </div>
             </div>

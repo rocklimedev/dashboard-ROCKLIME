@@ -890,3 +890,71 @@
     width: 100%;
   }
 }
+/* =========================================================
+   BAR CHART TOOLTIP
+========================================================= */
+
+.rd-bar {
+  position: relative;
+  cursor: pointer;
+}
+
+.rd-bar-tooltip {
+  position: absolute;
+
+  left: 50%;
+  bottom: calc(100% + 8px);
+
+  transform: translateX(-50%) translateY(4px);
+
+  background: #212529;
+  color: #fff;
+
+  padding: 6px 9px;
+
+  border-radius: 6px;
+
+  font-size: 11px;
+  font-weight: 600;
+
+  line-height: 1;
+  white-space: nowrap;
+
+  opacity: 0;
+  visibility: hidden;
+
+  pointer-events: none;
+
+  z-index: 100;
+
+  transition:
+    opacity 0.15s ease,
+    visibility 0.15s ease,
+    transform 0.15s ease;
+}
+
+/* Small arrow */
+
+.rd-bar-tooltip::after {
+  content: "";
+
+  position: absolute;
+
+  top: 100%;
+  left: 50%;
+
+  transform: translateX(-50%);
+
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid #212529;
+}
+
+/* Show tooltip on hover */
+
+.rd-bar:hover .rd-bar-tooltip {
+  opacity: 1;
+  visibility: visible;
+
+  transform: translateX(-50%) translateY(0);
+}
