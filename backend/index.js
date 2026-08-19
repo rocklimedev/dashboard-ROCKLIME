@@ -12,7 +12,7 @@ const keys = require("./config/keys");
 const { initSocket } = require("./modules/engagement/notification.controller");
 const CachedPermission = require("./modules/rbac/models/cached-permission.model");
 const { apiLimiter, burstLimiter } = require("./middleware/rateLimit");
-/** */
+
 // ------------------- Route Imports -------------------
 const routes = {
   auth: require("./modules/auth/auth.route"),
@@ -41,6 +41,7 @@ const routes = {
   notification: require("./modules/engagement/notification.route"),
   cachedPermission: require("./modules/rbac/cached-permission.route"),
   activity: require("./modules/engagement/activity.route"),
+  reports: require("./modules/reports/report.route"),
 };
 
 // ------------------- Express App -------------------
@@ -152,6 +153,7 @@ app.use("/api/cached-permissions", routes.cachedPermission);
 app.use("/api/fgs", routes.fgs);
 app.use("/api/jobs", routes.jobs);
 app.use("/api/activity", routes.activity);
+app.use("/api/reports", routes.reports);
 // ------------------- Health Check -------------------
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", uptime: process.uptime() });
