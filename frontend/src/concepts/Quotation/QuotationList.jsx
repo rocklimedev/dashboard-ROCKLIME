@@ -466,103 +466,101 @@ const QuotationList = () => {
   return (
     <div className="page-wrapper">
       <div className="content">
-        <div className="card">
-          <PageHeader
-            title="Quotations"
-            subtitle="Manage your quotations"
-            onAdd={() => navigate("/quotation/add")}
-          />
+        <PageHeader
+          title="Quotations"
+          subtitle="Manage your quotations"
+          onAdd={() => navigate("/quotation/add")}
+        />
 
-          <div className="card-body">
-            {/* Filters */}
-            <div className="row mb-4 g-3 align-items-center">
-              <div className="col-lg-8">
-                <div className="d-flex flex-wrap gap-3">
-                  <Input
-                    prefix={<SearchOutlined />}
-                    placeholder="Search title, ref#, customer..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    allowClear
-                    style={{ width: 300 }}
-                    size="large"
-                  />
+        <div className="card-body">
+          {/* Filters */}
+          <div className="row mb-4 g-3 align-items-center">
+            <div className="col-lg-8">
+              <div className="d-flex flex-wrap gap-3">
+                <Input
+                  prefix={<SearchOutlined />}
+                  placeholder="Search title, ref#, customer..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  allowClear
+                  style={{ width: 300 }}
+                  size="large"
+                />
 
-                  <Select
-                    placeholder="Customer"
-                    value={customerFilter || undefined}
-                    onChange={(val) => setCustomerFilter(val || "")}
-                    allowClear
-                    style={{ width: 200 }}
-                    size="large"
-                  >
-                    {customers.map((c) => (
-                      <Option key={c.customerId} value={c.customerId}>
-                        {c.name}
-                      </Option>
-                    ))}
-                  </Select>
+                <Select
+                  placeholder="Customer"
+                  value={customerFilter || undefined}
+                  onChange={(val) => setCustomerFilter(val || "")}
+                  allowClear
+                  style={{ width: 200 }}
+                  size="large"
+                >
+                  {customers.map((c) => (
+                    <Option key={c.customerId} value={c.customerId}>
+                      {c.name}
+                    </Option>
+                  ))}
+                </Select>
 
-                  <RangePicker
-                    value={dateRange}
-                    onChange={(dates) => setDateRange(dates || [null, null])}
-                    size="large"
-                  />
-                </div>
-              </div>
-
-              <div className="col-lg-4 text-end">
-                <Button onClick={clearFilters} size="large">
-                  Clear Filters
-                </Button>
+                <RangePicker
+                  value={dateRange}
+                  onChange={(dates) => setDateRange(dates || [null, null])}
+                  size="large"
+                />
               </div>
             </div>
 
-            {/* List View */}
-            {isLoading ? (
-              <div className="text-center py-5">
-                <div className="spinner-border text-primary" role="status" />
+            <div className="col-lg-4 text-end">
+              <Button onClick={clearFilters} size="large">
+                Clear Filters
+              </Button>
+            </div>
+          </div>
+
+          {/* List View */}
+          {isLoading ? (
+            <div className="text-center py-5">
+              <div className="spinner-border text-primary" role="status" />
+            </div>
+          ) : isError ? (
+            <div className="alert alert-danger">
+              Error: {error?.data?.message || "Failed to load quotations"}
+            </div>
+          ) : quotations.length === 0 ? (
+            <div className="text-center py-5 text-muted">
+              No quotations found
+            </div>
+          ) : (
+            <>
+              <div className="table-responsive">
+                <Table
+                  columns={columns}
+                  dataSource={quotations}
+                  rowKey="quotationId"
+                  pagination={false}
+                  scroll={{ x: "max-content" }}
+                />
               </div>
-            ) : isError ? (
-              <div className="alert alert-danger">
-                Error: {error?.data?.message || "Failed to load quotations"}
-              </div>
-            ) : quotations.length === 0 ? (
-              <div className="text-center py-5 text-muted">
-                No quotations found
-              </div>
-            ) : (
-              <>
-                <div className="table-responsive">
-                  <Table
-                    columns={columns}
-                    dataSource={quotations}
-                    rowKey="quotationId"
-                    pagination={false}
-                    scroll={{ x: "max-content" }}
+
+              {pagination.total > 0 && (
+                <div className="mt-4 d-flex justify-content-between align-items-center">
+                  <div className="text-muted small">
+                    Showing {(currentPage - 1) * pageSize + 1}–{" "}
+                    {Math.min(currentPage * pageSize, pagination.total)} of{" "}
+                    {pagination.total} quotations
+                  </div>
+                  <Pagination
+                    current={currentPage}
+                    pageSize={pageSize}
+                    total={pagination.total}
+                    onChange={handlePageChange}
+                    showSizeChanger
+                    pageSizeOptions={["10", "20", "50", "100"]}
                   />
                 </div>
-
-                {pagination.total > 0 && (
-                  <div className="mt-4 d-flex justify-content-between align-items-center">
-                    <div className="text-muted small">
-                      Showing {(currentPage - 1) * pageSize + 1}–{" "}
-                      {Math.min(currentPage * pageSize, pagination.total)} of{" "}
-                      {pagination.total} quotations
-                    </div>
-                    <Pagination
-                      current={currentPage}
-                      pageSize={pageSize}
-                      total={pagination.total}
-                      onChange={handlePageChange}
-                      showSizeChanger
-                      pageSizeOptions={["10", "20", "50", "100"]}
-                    />
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+              )}
+            </>
+          )}
         </div>
 
         {/* Hidden container for export */}

@@ -1,4 +1,3 @@
-// src/routes/sidebarRoutes.js
 import {
   FaHome,
   FaTags,
@@ -8,17 +7,13 @@ import {
   FaUser,
   FaListUl,
   FaIdCard,
-  FaCog,
   FaBoxOpen,
 } from "react-icons/fa";
 
-import {
-  MdOutlineInventory2,
-  MdOutlineCategory,
-  MdLocalActivity,
-} from "react-icons/md";
+import { MdOutlineInventory2, MdLocalActivity } from "react-icons/md";
 
 import { FaShoppingCart, FaStore } from "react-icons/fa";
+
 import CategoryManagement from "../../concepts/Products/CategoryManagement";
 import PurchaseManagement from "../../concepts/PO/PurchaseManagement";
 import Product from "../../concepts/Products/Product";
@@ -27,12 +22,31 @@ import QuotationList from "../../concepts/Quotation/QuotationList";
 import InventoryWrapper from "../../concepts/Products/InventoryWrapper";
 import UserList from "../../concepts/User/UserList";
 import RolePermission from "../../concepts/RBAC/RolePermission";
-import NewPageWrapper from "../../concepts/Home/NewPageWrapper";
 import CustomerList from "../../concepts/Customers/CustomerList";
 import BrandList from "../../concepts/Brands/BrandsList";
 import ReportsPage from "../../concepts/Reports/page";
 import ActivityLogsPage from "../../concepts/Activity/page";
 import ReportDashboard from "../../concepts/Home/ReportDashboard";
+import NewDashboard from "../../concepts/Home/NewPageWrapper";
+import { useAuth } from "../../context/AuthContext";
+
+// ============================================================
+// ROLE BASED DASHBOARD
+// ============================================================
+
+const RoleBasedDashboard = () => {
+  const { auth } = useAuth();
+
+  const roles = Array.isArray(auth?.user?.roles) ? auth.user.roles : [];
+
+  const isAdmin = roles.includes("ADMIN") || roles.includes("SUPER_ADMIN");
+
+  return isAdmin ? <ReportDashboard /> : <NewDashboard />;
+};
+
+// ============================================================
+// SIDEBAR ROUTES
+// ============================================================
 
 export const sidebarRoutes = [
   {
@@ -40,8 +54,9 @@ export const sidebarRoutes = [
     name: "Dashboard",
     icon: <FaHome />,
     isSidebarActive: true,
-    element: <ReportDashboard />,
+    element: <RoleBasedDashboard />,
   },
+
   {
     path: "/category-selector",
     name: "Products",
@@ -57,6 +72,7 @@ export const sidebarRoutes = [
     element: <QuotationList />,
     isSidebarActive: true,
   },
+
   {
     path: "/orders/list",
     name: "Orders",
@@ -64,6 +80,7 @@ export const sidebarRoutes = [
     element: <OrderWrapper />,
     isSidebarActive: true,
   },
+
   {
     path: "/purchase-manager",
     name: "Purchase Manager",
@@ -71,6 +88,7 @@ export const sidebarRoutes = [
     element: <PurchaseManagement />,
     isSidebarActive: true,
   },
+
   {
     path: "/inventory/list",
     name: "Inventory",
@@ -78,6 +96,7 @@ export const sidebarRoutes = [
     isSidebarActive: true,
     element: <InventoryWrapper />,
   },
+
   {
     path: "/customers/list",
     name: "Customers",
@@ -85,6 +104,7 @@ export const sidebarRoutes = [
     isSidebarActive: true,
     element: <CustomerList />,
   },
+
   {
     path: "/reports/list",
     name: "Reports",
@@ -92,11 +112,13 @@ export const sidebarRoutes = [
     isSidebarActive: true,
     element: <ReportsPage />,
   },
+
   {
     path: "#",
     name: "Master Data",
     icon: <FaBoxOpen />,
     isSidebarActive: true,
+
     submenu: [
       {
         path: "/users/list",
@@ -105,13 +127,15 @@ export const sidebarRoutes = [
         isSidebarActive: true,
         element: <UserList />,
       },
+
       {
         path: "/meta/list",
         name: "Meta",
-        icon: <FaStore />, // ✅ Better icon for Product Meta
+        icon: <FaStore />,
         isSidebarActive: true,
         element: <BrandList />,
       },
+
       {
         path: "/categories-keywords/list",
         name: "Categories",
@@ -119,6 +143,7 @@ export const sidebarRoutes = [
         element: <CategoryManagement />,
         isSidebarActive: true,
       },
+
       {
         path: "/activity-logs",
         name: "Activity Logs",
@@ -126,6 +151,7 @@ export const sidebarRoutes = [
         isSidebarActive: true,
         element: <ActivityLogsPage />,
       },
+
       {
         path: "/roles-permission/list",
         name: "Roles & Permissions",

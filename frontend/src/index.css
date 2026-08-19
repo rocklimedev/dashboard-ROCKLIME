@@ -4,7 +4,7 @@
 @import url("./assets/css/animate.css");
 @import url("./assets/css/style.css");
 @import url("https://fonts.cdnfonts.com/css/neuropol-2");
-/* Remove default asterisk *//**/
+/* Remove default asterisk */ /**/
 .ant-form-item-required::before {
   display: none !important;
 }
@@ -246,7 +246,7 @@ body {
 }
 
 .btn-danger {
-  background-color: #E31E24;
+  background-color: #e31e24;
   border: none;
   color: #fff;
 }
@@ -288,7 +288,7 @@ body {
 
 .priority-badge.high {
   background-color: #f8d7da;
-  color: #E31E24;
+  color: #e31e24;
 }
 
 .priority-badge.medium {
@@ -345,7 +345,7 @@ body {
 
 .create-button {
   padding: 6px 12px;
-  background-color: #E31E24;
+  background-color: #e31e24;
   color: #fff;
   border: none;
   border-radius: 4px;
@@ -386,12 +386,12 @@ body {
 
 .cancelled {
   background-color: #f8d7da;
-  color: #E31E24;
+  color: #e31e24;
 }
 
 .rejected {
   background-color: #f5c6cb;
-  color: #E31E24;
+  color: #e31e24;
 }
 
 .draft {
@@ -489,7 +489,6 @@ body {
   }
 }
 
-
 /* Notification badge */
 .badge-count {
   background-color: #3e64ff;
@@ -585,15 +584,21 @@ body {
   border: none;
   border-radius: 12px;
   background: linear-gradient(145deg, #ffffff, #f8f9fa);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 6px 20px rgba(0, 0, 0, 0.08),
+    0 2px 4px rgba(0, 0, 0, 0.06);
   margin-bottom: 1.5rem;
   overflow: hidden;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 .elegant-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.08);
+  box-shadow:
+    0 10px 25px rgba(0, 0, 0, 0.12),
+    0 4px 8px rgba(0, 0, 0, 0.08);
 }
 
 /* Card Header */
@@ -855,7 +860,9 @@ body {
   border-radius: 6px;
   padding: 12px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .card-list:hover {
@@ -890,7 +897,9 @@ body {
   cursor: pointer;
   font-size: 16px;
   color: #747474;
-  transition: color 0.3s ease, transform 0.3s ease;
+  transition:
+    color 0.3s ease,
+    transform 0.3s ease;
 }
 
 .card-content .actions .edit-icon:hover {
@@ -954,7 +963,7 @@ body {
 }
 
 .error {
-  color: #E31E24;
+  color: #e31e24;
 }
 
 .signatures-grid {
@@ -1047,7 +1056,7 @@ body {
 }
 
 .error-text {
-  color: var(--error-color, #E31E24);
+  color: var(--error-color, #e31e24);
 }
 
 /* Responsive Design */
@@ -1193,7 +1202,9 @@ body {
   padding: 10px 20px;
   border: none;
   border-bottom: 2px solid transparent;
-  transition: color 0.3s ease, border-color 0.3s ease;
+  transition:
+    color 0.3s ease,
+    border-color 0.3s ease;
 }
 
 .nav-tabs .nav-link.active {
@@ -1269,7 +1280,10 @@ body {
   border-radius: 6px;
   padding: 8px 16px;
   font-weight: 500;
-  transition: background 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+  transition:
+    background 0.3s ease,
+    box-shadow 0.3s ease,
+    transform 0.3s ease;
 }
 
 .btn-#e31e24:hover {
@@ -1284,7 +1298,10 @@ body {
   border-radius: 6px;
   padding: 8px 16px;
   font-weight: 500;
-  transition: background 0.3s ease, color 0.3s ease, box-shadow 0.3s ease,
+  transition:
+    background 0.3s ease,
+    color 0.3s ease,
+    box-shadow 0.3s ease,
     transform 0.3s ease;
 }
 
@@ -1335,7 +1352,7 @@ body {
 }
 
 .priority-badge.low {
- background: green;
+  background: green;
   color: #fff;
 }
 
@@ -1345,7 +1362,7 @@ body {
 }
 
 .priority-badge.high {
-  background: #E31E24;
+  background: #e31e24;
   color: #fff;
 }
 
@@ -1407,11 +1424,11 @@ body {
 }
 
 .btn-delete {
-  background: #E31E24;
+  background: #e31e24;
 }
 
 .btn-delete:hover {
-  background: linear-gradient(90deg, #E31E24 0%, #27ae60 100%);
+  background: linear-gradient(90deg, #e31e24 0%, #27ae60 100%);
 }
 
 /* No data message */
@@ -1531,8 +1548,8 @@ body {
     font-size: 12px;
   }
 
-  .quotation-table-container .cm-table th:nth-child(n+6),
-  .quotation-table-container .cm-table td:nth-child(n+6) {
+  .quotation-table-container .cm-table th:nth-child(n + 6),
+  .quotation-table-container .cm-table td:nth-child(n + 6) {
     display: none; /* Hide less critical columns on small screens */
   }
 }
@@ -1544,8 +1561,8 @@ body {
     font-size: 10px;
   }
 
-  .quotation-table-container .cm-table th:nth-child(n+4),
-  .quotation-table-container .cm-table td:nth-child(n+4) {
+  .quotation-table-container .cm-table th:nth-child(n + 4),
+  .quotation-table-container .cm-table td:nth-child(n + 4) {
     display: none; /* Hide more columns on very small screens */
   }
 }
@@ -1555,17 +1572,16 @@ body {
   margin-top: 10px;
 }
 
-
 @media screen and (max-width: 1130px) {
   .products-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-}
+  }
 }
 @media screen and (max-width: 725px) {
   .products-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 16px;
-}
+  }
 }
 .cart-button {
   /* Default styles */
@@ -1574,14 +1590,13 @@ body {
   color: #000;
 }
 .ant-pagination .ant-pagination-item-active {
-
-    border-color: #e31e24;
+  border-color: #e31e24;
 }
 /* Remove blue focus border for AntD Select */
 .ant-select-focused .ant-select-selector,
 .ant-select-selector:focus,
 .ant-select-selector:active {
-  border-color: #d9d9d9 !important;   /* default gray */
+  border-color: #d9d9d9 !important; /* default gray */
   box-shadow: none !important;
 }
 
@@ -1665,7 +1680,8 @@ body {
 .email-modal .modal-content {
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
 }
 
 .email-header {
@@ -1755,7 +1771,6 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-
 }
 
 /* 2. Force react-avatar itself to never exceed the wrapper */
@@ -1802,7 +1817,7 @@ body {
    Global Search Input (YouTube Style)
    =================================== */
 .global-search-input .ant-input {
-    padding: 0 20px 0 50px !important;
+  padding: 0 20px 0 50px !important;
 }
 
 .global-search-input .ant-input:focus,
@@ -1822,8 +1837,6 @@ body {
   font-size: 20px;
   margin-left: 8px;
 }
-
-
 
 /* Mobile search open - full header takeover */
 .mobile-search-container.open.position-fixed {
@@ -1851,14 +1864,14 @@ body {
    =================================== */
 .search-overlay-backdrop {
   position: fixed;
-  top: 80px;                    /* Below header on desktop */
+  top: 80px; /* Below header on desktop */
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
   max-width: 700px;
   bottom: auto;
-  background: transparent;      /* Clean look, no dark overlay */
-  pointer-events: none;         /* Click through empty areas */
+  background: transparent; /* Clean look, no dark overlay */
+  pointer-events: none; /* Click through empty areas */
   z-index: 1050;
   padding: 8px 20px;
   animation: none;
@@ -2023,19 +2036,21 @@ body {
    =================================== */
 @media (max-width: 767px) {
   .search-overlay-backdrop {
-   top: 85px;
+    top: 85px;
     left: 0;
     right: 0;
     bottom: 0;
     transform: none;
     max-width: none;
-    background: rgba(0, 0, 0, 0.45);  /* Dark backdrop on mobile for focus */
-    padding: 10px 10px 80px 10px;     /* Leave space for bottom search bar */
+    background: rgba(0, 0, 0, 0.45); /* Dark backdrop on mobile for focus */
+    padding: 10px 10px 80px 10px; /* Leave space for bottom search bar */
     pointer-events: none;
   }
 
   .search-overlay-content {
-    max-height: calc(100vh - 140px);  /* Account for header + mobile search input */
+    max-height: calc(
+      100vh - 140px
+    ); /* Account for header + mobile search input */
     border-radius: 16px 16px 0 0;
     margin-top: 10px;
   }
@@ -2088,12 +2103,12 @@ body {
 }
 /* Override Ant Design badge color specifically for the cart */
 .header .cart-badge .ant-badge-count {
-  background-color: #E31E24 !important;
+  background-color: #e31e24 !important;
 }
 
 /* Optional: Also change the dot style if needed (for overflow cases) */
 .header .cart-badge .ant-badge-dot {
-  background-color: #E31E24 !important;
+  background-color: #e31e24 !important;
 }
 
 /* Optional: Adjust text color for better contrast if needed */
@@ -2104,11 +2119,11 @@ body {
 
 .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
   color: #333333 !important;
-  font-weight: 600;               /* optional – makes active tab bolder */
+  font-weight: 600; /* optional – makes active tab bolder */
 }
 .active-#e31e24-btn {
-  background-color: #e31e24  !important;
-  border-color: #e31e24  !important;
+  background-color: #e31e24 !important;
+  border-color: #e31e24 !important;
   color: #fff !important;
 }
 .black-code code {
@@ -2118,12 +2133,12 @@ body {
 /* Underline (ink bar) */
 :where(.ant-tabs).ant-tabs-top .ant-tabs-ink-bar,
 :where(.ant-tabs).ant-tabs-bottom .ant-tabs-ink-bar {
-  background: #8c8c8c !important;   /* your grey */
+  background: #8c8c8c !important; /* your grey */
 }
 
 /* Hover text color */
 .ant-tabs-tab:hover .ant-tabs-tab-btn {
-  color: #595959 !important;        /* grey on hover */
+  color: #595959 !important; /* grey on hover */
 }
 
 /* Optional: selected/active tab text */
@@ -2138,7 +2153,7 @@ body {
 
 .filter-card {
   border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
   margin-bottom: 32px;
   padding: 20px;
 }
@@ -2190,7 +2205,7 @@ body {
   background: white;
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
 .modern-inventory-table .ant-table-thead > tr > th {
@@ -2235,9 +2250,15 @@ body {
   justify-content: center;
 }
 
-.action-btn.add { color: #16a34a; }
-.action-btn.remove { color: #dc2626; }
-.action-btn.history { color: #7c3aed; }
+.action-btn.add {
+  color: #16a34a;
+}
+.action-btn.remove {
+  color: #dc2626;
+}
+.action-btn.history {
+  color: #7c3aed;
+}
 
 .action-btn:hover {
   background: #f1f5f9;
@@ -2253,7 +2274,7 @@ body {
   background: white;
   border-radius: 12px;
   padding: 60px 20px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
 .loading-full {
@@ -2285,7 +2306,7 @@ body {
   background: #f6f6f6;
   border-radius: 6px;
   padding: 18px 20px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   height: 100%;
   display: flex;
   flex-direction: column;

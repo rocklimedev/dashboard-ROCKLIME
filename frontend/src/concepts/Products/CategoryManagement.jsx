@@ -168,235 +168,233 @@ const CategoryManagement = () => {
   return (
     <div className="page-wrapper">
       <div className="content">
-        <div className="card">
-          <PageHeader
-            title="Category Management"
-            subtitle="Manage Parent Categories, Categories & Keywords"
-            onAdd={() => {
-              if (currentTab === "parent") openModal("parent");
-              else if (currentTab === "category") openModal("category");
-              else openModal("keyword");
-            }}
-          />
+        <PageHeader
+          title="Category Management"
+          subtitle="Manage Parent Categories, Categories & Keywords"
+          onAdd={() => {
+            if (currentTab === "parent") openModal("parent");
+            else if (currentTab === "category") openModal("category");
+            else openModal("keyword");
+          }}
+        />
 
-          <div className="card-body">
-            {/* Main Tabs */}
-            <Tabs
-              activeKey={currentTab}
-              onChange={handleTabChange}
-              className="mb-4"
-            >
-              <TabPane
-                tab={
-                  <span>
-                    <i className="fas fa-folder me-2" /> Parent Categories
-                  </span>
-                }
-                key="parent"
-              />
-              <TabPane
-                tab={
-                  <span>
-                    <i className="fas fa-folder me-2" /> Categories
-                  </span>
-                }
-                key="category"
-              />
-              <TabPane
-                tab={
-                  <span>
-                    <i className="fas fa-tags me-2" /> Keywords
-                  </span>
-                }
-                key="keyword"
-              />
-            </Tabs>
+        <div className="card-body">
+          {/* Main Tabs */}
+          <Tabs
+            activeKey={currentTab}
+            onChange={handleTabChange}
+            className="mb-4"
+          >
+            <TabPane
+              tab={
+                <span>
+                  <i className="fas fa-folder me-2" /> Parent Categories
+                </span>
+              }
+              key="parent"
+            />
+            <TabPane
+              tab={
+                <span>
+                  <i className="fas fa-folder me-2" /> Categories
+                </span>
+              }
+              key="category"
+            />
+            <TabPane
+              tab={
+                <span>
+                  <i className="fas fa-tags me-2" /> Keywords
+                </span>
+              }
+              key="keyword"
+            />
+          </Tabs>
 
-            {/* Search */}
-            <div className="row mb-4">
-              <div className="col-lg-6" />
-              <div className="col-lg-6 text-lg-end">
-                <div style={{ maxWidth: "340px", marginLeft: "auto" }}>
-                  <Search
-                    placeholder={
-                      currentTab === "parent"
-                        ? "Search parent categories..."
-                        : currentTab === "category"
-                          ? "Search categories..."
-                          : "Search keywords..."
-                    }
-                    allowClear
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
+          {/* Search */}
+          <div className="row mb-4">
+            <div className="col-lg-6" />
+            <div className="col-lg-6 text-lg-end">
+              <div style={{ maxWidth: "340px", marginLeft: "auto" }}>
+                <Search
+                  placeholder={
+                    currentTab === "parent"
+                      ? "Search parent categories..."
+                      : currentTab === "category"
+                        ? "Search categories..."
+                        : "Search keywords..."
+                  }
+                  allowClear
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
               </div>
             </div>
-
-            {/* Tables */}
-            {currentTab === "parent" && (
-              <div className="table-responsive">
-                <table className="table table-hover align-middle">
-                  <thead className="table-light">
-                    <tr>
-                      <th>Parent Category Name</th>
-                      <th style={{ width: 140 }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredParents.map((item) => (
-                      <tr key={item.id}>
-                        <td>
-                          <strong>{item.name}</strong>
-                        </td>
-                        <td>
-                          <Tooltip title="Edit">
-                            <EditOutlined
-                              className="me-3 text-primary"
-                              style={{ cursor: "pointer", fontSize: 18 }}
-                              onClick={() => openModal("parent", item)}
-                            />
-                          </Tooltip>
-                          <Dropdown
-                            overlay={
-                              <Menu>
-                                <Menu.Item
-                                  danger
-                                  onClick={() =>
-                                    openDeleteModal("parent", item.id)
-                                  }
-                                >
-                                  <DeleteOutlined /> Delete
-                                </Menu.Item>
-                              </Menu>
-                            }
-                            trigger={["click"]}
-                          >
-                            <Button
-                              type="text"
-                              icon={<MoreOutlined style={{ fontSize: 18 }} />}
-                            />
-                          </Dropdown>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {currentTab === "category" && (
-              <div className="table-responsive">
-                <table className="table table-hover align-middle">
-                  <thead className="table-light">
-                    <tr>
-                      <th>Category Name</th>
-                      <th>Parent Category</th>
-                      <th style={{ width: 140 }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredCategories.map((item) => (
-                      <tr key={item.categoryId}>
-                        <td>
-                          <strong>{item.name}</strong>
-                        </td>
-                        <td className="text-muted">
-                          {parentMap[item.parentCategoryId] || "—"}
-                        </td>
-                        <td>
-                          <Tooltip title="Edit">
-                            <EditOutlined
-                              className="me-3 text-primary"
-                              style={{ cursor: "pointer", fontSize: 18 }}
-                              onClick={() => openModal("category", item)}
-                            />
-                          </Tooltip>
-                          <Dropdown
-                            overlay={
-                              <Menu>
-                                <Menu.Item
-                                  danger
-                                  onClick={() =>
-                                    openDeleteModal("category", item.categoryId)
-                                  }
-                                >
-                                  <DeleteOutlined /> Delete
-                                </Menu.Item>
-                              </Menu>
-                            }
-                            trigger={["click"]}
-                          >
-                            <Button
-                              type="text"
-                              icon={<MoreOutlined style={{ fontSize: 18 }} />}
-                            />
-                          </Dropdown>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {currentTab === "keyword" && (
-              <div className="table-responsive">
-                <table className="table table-hover align-middle">
-                  <thead className="table-light">
-                    <tr>
-                      <th>Keyword</th>
-                      <th>Category</th>
-                      <th style={{ width: 140 }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredKeywords.map((item) => (
-                      <tr key={item.id}>
-                        <td>
-                          <strong>{item.keyword}</strong>
-                        </td>
-                        <td className="text-muted">
-                          {categories.find(
-                            (c) => c.categoryId === item.categoryId,
-                          )?.name || "—"}
-                        </td>
-                        <td>
-                          <Tooltip title="Edit">
-                            <EditOutlined
-                              className="me-3 text-primary"
-                              style={{ cursor: "pointer", fontSize: 18 }}
-                              onClick={() => openModal("keyword", item)}
-                            />
-                          </Tooltip>
-                          <Dropdown
-                            overlay={
-                              <Menu>
-                                <Menu.Item
-                                  danger
-                                  onClick={() =>
-                                    openDeleteModal("keyword", item.id)
-                                  }
-                                >
-                                  <DeleteOutlined /> Delete
-                                </Menu.Item>
-                              </Menu>
-                            }
-                            trigger={["click"]}
-                          >
-                            <Button
-                              type="text"
-                              icon={<MoreOutlined style={{ fontSize: 18 }} />}
-                            />
-                          </Dropdown>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
           </div>
+
+          {/* Tables */}
+          {currentTab === "parent" && (
+            <div className="table-responsive">
+              <table className="table table-hover align-middle">
+                <thead className="table-light">
+                  <tr>
+                    <th>Parent Category Name</th>
+                    <th style={{ width: 140 }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredParents.map((item) => (
+                    <tr key={item.id}>
+                      <td>
+                        <strong>{item.name}</strong>
+                      </td>
+                      <td>
+                        <Tooltip title="Edit">
+                          <EditOutlined
+                            className="me-3 text-primary"
+                            style={{ cursor: "pointer", fontSize: 18 }}
+                            onClick={() => openModal("parent", item)}
+                          />
+                        </Tooltip>
+                        <Dropdown
+                          overlay={
+                            <Menu>
+                              <Menu.Item
+                                danger
+                                onClick={() =>
+                                  openDeleteModal("parent", item.id)
+                                }
+                              >
+                                <DeleteOutlined /> Delete
+                              </Menu.Item>
+                            </Menu>
+                          }
+                          trigger={["click"]}
+                        >
+                          <Button
+                            type="text"
+                            icon={<MoreOutlined style={{ fontSize: 18 }} />}
+                          />
+                        </Dropdown>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {currentTab === "category" && (
+            <div className="table-responsive">
+              <table className="table table-hover align-middle">
+                <thead className="table-light">
+                  <tr>
+                    <th>Category Name</th>
+                    <th>Parent Category</th>
+                    <th style={{ width: 140 }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredCategories.map((item) => (
+                    <tr key={item.categoryId}>
+                      <td>
+                        <strong>{item.name}</strong>
+                      </td>
+                      <td className="text-muted">
+                        {parentMap[item.parentCategoryId] || "—"}
+                      </td>
+                      <td>
+                        <Tooltip title="Edit">
+                          <EditOutlined
+                            className="me-3 text-primary"
+                            style={{ cursor: "pointer", fontSize: 18 }}
+                            onClick={() => openModal("category", item)}
+                          />
+                        </Tooltip>
+                        <Dropdown
+                          overlay={
+                            <Menu>
+                              <Menu.Item
+                                danger
+                                onClick={() =>
+                                  openDeleteModal("category", item.categoryId)
+                                }
+                              >
+                                <DeleteOutlined /> Delete
+                              </Menu.Item>
+                            </Menu>
+                          }
+                          trigger={["click"]}
+                        >
+                          <Button
+                            type="text"
+                            icon={<MoreOutlined style={{ fontSize: 18 }} />}
+                          />
+                        </Dropdown>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {currentTab === "keyword" && (
+            <div className="table-responsive">
+              <table className="table table-hover align-middle">
+                <thead className="table-light">
+                  <tr>
+                    <th>Keyword</th>
+                    <th>Category</th>
+                    <th style={{ width: 140 }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredKeywords.map((item) => (
+                    <tr key={item.id}>
+                      <td>
+                        <strong>{item.keyword}</strong>
+                      </td>
+                      <td className="text-muted">
+                        {categories.find(
+                          (c) => c.categoryId === item.categoryId,
+                        )?.name || "—"}
+                      </td>
+                      <td>
+                        <Tooltip title="Edit">
+                          <EditOutlined
+                            className="me-3 text-primary"
+                            style={{ cursor: "pointer", fontSize: 18 }}
+                            onClick={() => openModal("keyword", item)}
+                          />
+                        </Tooltip>
+                        <Dropdown
+                          overlay={
+                            <Menu>
+                              <Menu.Item
+                                danger
+                                onClick={() =>
+                                  openDeleteModal("keyword", item.id)
+                                }
+                              >
+                                <DeleteOutlined /> Delete
+                              </Menu.Item>
+                            </Menu>
+                          }
+                          trigger={["click"]}
+                        >
+                          <Button
+                            type="text"
+                            icon={<MoreOutlined style={{ fontSize: 18 }} />}
+                          />
+                        </Dropdown>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         {/* Modals */}

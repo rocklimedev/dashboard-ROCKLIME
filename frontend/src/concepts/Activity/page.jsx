@@ -278,7 +278,7 @@ const ActivityLogsPage = () => {
     <div className="page-wrapper">
       <div className="content">
         {/* ── HEADER ─────────────────────────────────────────── */}
-        <div className="card mb-3">
+        <div className="mb-3">
           <div className="card-body d-flex justify-content-between align-items-center">
             <h4 className="mb-0">Activity Logs</h4>
             <span className="badge bg-primary">Total Events: {total}</span>

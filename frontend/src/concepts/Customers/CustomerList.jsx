@@ -191,278 +191,263 @@ const CustomerList = () => {
   return (
     <div className="page-wrapper">
       <div className="content">
-        <div className="card">
-          <PageHeader
-            title="Customers"
-            subtitle="Manage your customer database"
-            onAdd={handleAddCustomer}
-          />
+        <PageHeader
+          title="Customers"
+          subtitle="Manage your customer database"
+          onAdd={handleAddCustomer}
+        />
 
-          <div className="card-body">
-            {/* Filters */}
-            <div className="row mb-4 align-items-center g-3">
-              <div className="col-lg-3">
-                <Select
-                  value={customerTypeFilter}
-                  onChange={(val) => {
-                    setCustomerTypeFilter(val);
-                    setCurrentPage(1);
-                  }}
-                  style={{ width: "100%" }}
-                  size="large"
-                >
-                  {customerTypes.map((type) => (
-                    <Option key={type.value} value={type.value}>
-                      {type.label}
-                      {type.value !== "All" && (
-                        <span className="text-muted ms-2">
-                          (
-                          {
-                            customers.filter((c) =>
-                              type.value === "Retail"
-                                ? !c.customerType || c.customerType === "Retail"
-                                : c.customerType === type.value,
-                            ).length
-                          }
-                          )
-                        </span>
-                      )}
-                    </Option>
-                  ))}
-                </Select>
-              </div>
-
-              <div className="col-lg-4">
-                <Input
-                  prefix={<SearchOutlined className="text-muted" />}
-                  placeholder="Search name, email, phone..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  size="large"
-                  allowClear
-                />
-              </div>
-
-              <div className="col-lg-5 d-flex justify-content-end gap-2 flex-wrap">
-                <Select
-                  value={sortBy}
-                  onChange={setSortBy}
-                  style={{ width: 180 }}
-                  size="large"
-                >
-                  <Option value="Recently Added">Recently Added</Option>
-                  <Option value="Ascending">Name: A to Z</Option>
-                  <Option value="Descending">Name: Z to A</Option>
-                </Select>
-
-                <Button onClick={clearFilters} size="large">
-                  Clear
-                </Button>
-              </div>
+        <div className="card-body">
+          {/* Filters */}
+          <div className="row mb-4 align-items-center g-3">
+            <div className="col-lg-3">
+              <Select
+                value={customerTypeFilter}
+                onChange={(val) => {
+                  setCustomerTypeFilter(val);
+                  setCurrentPage(1);
+                }}
+                style={{ width: "100%" }}
+                size="large"
+              >
+                {customerTypes.map((type) => (
+                  <Option key={type.value} value={type.value}>
+                    {type.label}
+                    {type.value !== "All" && (
+                      <span className="text-muted ms-2">
+                        (
+                        {
+                          customers.filter((c) =>
+                            type.value === "Retail"
+                              ? !c.customerType || c.customerType === "Retail"
+                              : c.customerType === type.value,
+                          ).length
+                        }
+                        )
+                      </span>
+                    )}
+                  </Option>
+                ))}
+              </Select>
             </div>
 
-            {/* Loading indicator */}
-            {isFetching && !isLoading && (
-              <div className="text-center my-3">
-                <span className="text-muted">Updating...</span>
+            <div className="col-lg-4">
+              <Input
+                prefix={<SearchOutlined className="text-muted" />}
+                placeholder="Search name, email, phone..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                size="large"
+                allowClear
+              />
+            </div>
+
+            <div className="col-lg-5 d-flex justify-content-end gap-2 flex-wrap">
+              <Select
+                value={sortBy}
+                onChange={setSortBy}
+                style={{ width: 180 }}
+                size="large"
+              >
+                <Option value="Recently Added">Recently Added</Option>
+                <Option value="Ascending">Name: A to Z</Option>
+                <Option value="Descending">Name: Z to A</Option>
+              </Select>
+
+              <Button onClick={clearFilters} size="large">
+                Clear
+              </Button>
+            </div>
+          </div>
+
+          {/* Loading indicator */}
+          {isFetching && !isLoading && (
+            <div className="text-center my-3">
+              <span className="text-muted">Updating...</span>
+            </div>
+          )}
+
+          {/* LIST VIEW */}
+          <div className="table-responsive">
+            {filteredCustomers.length === 0 ? (
+              <div className="text-center py-5">
+                <p className="text-muted">No customers found.</p>
               </div>
-            )}
+            ) : (
+              <table className="table table-hover align-middle">
+                <thead className="table-light">
+                  <tr>
+                    <th>Customer</th>
+                    <th>Contact</th>
+                    <th>Quotations</th>
+                    <th>Orders</th>
+                    <th>Business Value</th>
+                    <th className="text-end">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredCustomers.map((c) => (
+                    <tr key={c.customerId}>
+                      <td>
+                        <div className="d-flex align-items-center gap-3">
+                          <Avatar
+                            name={c.name || c.companyName}
+                            round
+                            size="40"
+                            color="#e31e24"
+                            fgColor="#fff"
+                          />
 
-            {/* LIST VIEW */}
-            <div className="table-responsive">
-              {filteredCustomers.length === 0 ? (
-                <div className="text-center py-5">
-                  <p className="text-muted">No customers found.</p>
-                </div>
-              ) : (
-                <table className="table table-hover align-middle">
-                  <thead className="table-light">
-                    <tr>
-                      <th>Customer</th>
-                      <th>Contact</th>
-                      <th>Quotations</th>
-                      <th>Orders</th>
-                      <th>Business Value</th>
-                      <th className="text-end">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredCustomers.map((c) => (
-                      <tr key={c.customerId}>
-                        <td>
-                          <div className="d-flex align-items-center gap-3">
-                            <Avatar
-                              name={c.name || c.companyName}
-                              round
-                              size="40"
-                              color="#e31e24"
-                              fgColor="#fff"
-                            />
-
-                            <div>
-                              <a
-                                href={`/customer/${c.customerId}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="fw-semibold text-primary d-block"
-                              >
-                                {c.name || "Unnamed Customer"}
-                              </a>
-
-                              {c.companyName && (
-                                <small className="text-muted">
-                                  {c.companyName}
-                                </small>
-                              )}
-                              <span className="badge bg-light text-dark">
-                                {c.customerType || "Retail"}
-                              </span>
-                            </div>
-                          </div>
-                        </td>
-
-                        <td>
                           <div>
-                            <div>{c.mobileNumber || ""}</div>
-                            <small className="text-muted">
-                              {c.email || ""}
-                            </small>
+                            <a
+                              href={`/customer/${c.customerId}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="fw-semibold text-primary d-block"
+                            >
+                              {c.name || "Unnamed Customer"}
+                            </a>
+
+                            {c.companyName && (
+                              <small className="text-muted">
+                                {c.companyName}
+                              </small>
+                            )}
+                            <span className="badge bg-light text-dark">
+                              {c.customerType || "Retail"}
+                            </span>
                           </div>
-                        </td>
+                        </div>
+                      </td>
 
-                        <td>
-                          {Number(c.quotationValue || 0) > 0 ||
-                          Number(c.quotations || 0) > 0 ? (
-                            <small className="text-muted">
-                              ₹
-                              {Number(c.quotationValue || 0).toLocaleString(
-                                "en-IN",
-                              )}{" "}
-                              ({c.quotations || 0})
-                            </small>
-                          ) : (
-                            ""
-                          )}
-                        </td>
+                      <td>
+                        <div>
+                          <div>{c.mobileNumber || ""}</div>
+                          <small className="text-muted">{c.email || ""}</small>
+                        </div>
+                      </td>
 
-                        <td>
-                          {Number(c.orderValue || 0) > 0 ||
-                          Number(c.orders || 0) > 0 ? (
-                            <small className="text-success">
-                              ₹
-                              {Number(c.orderValue || 0).toLocaleString(
-                                "en-IN",
-                              )}{" "}
-                              ({c.orders || 0})
-                            </small>
-                          ) : (
-                            ""
-                          )}
-                        </td>
-                        <td>
-                          {Number(c.quotationValue || 0) +
-                            Number(c.orderValue || 0) >
-                          0 ? (
-                            <div className="small">
-                              ₹
-                              {(
-                                Number(c.quotationValue || 0) +
-                                Number(c.orderValue || 0)
-                              ).toLocaleString("en-IN")}
-                            </div>
-                          ) : (
-                            ""
-                          )}
-                        </td>
+                      <td>
+                        {Number(c.quotationValue || 0) > 0 ||
+                        Number(c.quotations || 0) > 0 ? (
+                          <small className="text-muted">
+                            ₹
+                            {Number(c.quotationValue || 0).toLocaleString(
+                              "en-IN",
+                            )}{" "}
+                            ({c.quotations || 0})
+                          </small>
+                        ) : (
+                          ""
+                        )}
+                      </td>
 
-                        <td className="text-end">
-                          <div className="d-flex justify-content-end gap-2">
-                            <PermissionGate api="edit" module="customers">
+                      <td>
+                        {Number(c.orderValue || 0) > 0 ||
+                        Number(c.orders || 0) > 0 ? (
+                          <small className="text-success">
+                            ₹{Number(c.orderValue || 0).toLocaleString("en-IN")}{" "}
+                            ({c.orders || 0})
+                          </small>
+                        ) : (
+                          ""
+                        )}
+                      </td>
+                      <td>
+                        {Number(c.quotationValue || 0) +
+                          Number(c.orderValue || 0) >
+                        0 ? (
+                          <div className="small">
+                            ₹
+                            {(
+                              Number(c.quotationValue || 0) +
+                              Number(c.orderValue || 0)
+                            ).toLocaleString("en-IN")}
+                          </div>
+                        ) : (
+                          ""
+                        )}
+                      </td>
+
+                      <td className="text-end">
+                        <div className="d-flex justify-content-end gap-2">
+                          <PermissionGate api="edit" module="customers">
+                            <Button
+                              size="small"
+                              icon={<EditOutlined />}
+                              onClick={() => handleEditCustomer(c)}
+                            />
+                          </PermissionGate>
+
+                          <PermissionGate api="view|delete" module="customers">
+                            <Dropdown
+                              trigger={["click"]}
+                              overlay={
+                                <Menu>
+                                  <PermissionGate api="view" module="customers">
+                                    <Menu.Item key="view">
+                                      <a
+                                        href={`/customer/${c.customerId}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                      >
+                                        <EyeOutlined className="me-2" />
+                                        View
+                                      </a>
+                                    </Menu.Item>
+                                  </PermissionGate>
+
+                                  <PermissionGate
+                                    api="delete"
+                                    module="customers"
+                                  >
+                                    <Menu.Item
+                                      key="delete"
+                                      danger
+                                      onClick={() => handleDelete(c.customerId)}
+                                    >
+                                      <BiTrash className="me-2" />
+                                      Delete
+                                    </Menu.Item>
+                                  </PermissionGate>
+                                </Menu>
+                              }
+                            >
                               <Button
                                 size="small"
-                                icon={<EditOutlined />}
-                                onClick={() => handleEditCustomer(c)}
+                                type="text"
+                                icon={<MoreOutlined />}
                               />
-                            </PermissionGate>
-
-                            <PermissionGate
-                              api="view|delete"
-                              module="customers"
-                            >
-                              <Dropdown
-                                trigger={["click"]}
-                                overlay={
-                                  <Menu>
-                                    <PermissionGate
-                                      api="view"
-                                      module="customers"
-                                    >
-                                      <Menu.Item key="view">
-                                        <a
-                                          href={`/customer/${c.customerId}`}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                        >
-                                          <EyeOutlined className="me-2" />
-                                          View
-                                        </a>
-                                      </Menu.Item>
-                                    </PermissionGate>
-
-                                    <PermissionGate
-                                      api="delete"
-                                      module="customers"
-                                    >
-                                      <Menu.Item
-                                        key="delete"
-                                        danger
-                                        onClick={() =>
-                                          handleDelete(c.customerId)
-                                        }
-                                      >
-                                        <BiTrash className="me-2" />
-                                        Delete
-                                      </Menu.Item>
-                                    </PermissionGate>
-                                  </Menu>
-                                }
-                              >
-                                <Button
-                                  size="small"
-                                  type="text"
-                                  icon={<MoreOutlined />}
-                                />
-                              </Dropdown>
-                            </PermissionGate>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-
-            {/* Pagination */}
-            {pagination.total > 0 && (
-              <div className="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
-                <div className="text-muted small">
-                  Showing {(currentPage - 1) * pageSize + 1}–
-                  {Math.min(currentPage * pageSize, pagination.total)} of{" "}
-                  {pagination.total} customers
-                </div>
-                <Pagination
-                  current={currentPage}
-                  pageSize={pageSize}
-                  total={pagination.total}
-                  onChange={handlePageChange}
-                  showSizeChanger
-                  pageSizeOptions={["10", "20", "50", "100"]}
-                  disabled={isFetching}
-                />
-              </div>
+                            </Dropdown>
+                          </PermissionGate>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             )}
           </div>
+
+          {/* Pagination */}
+          {pagination.total > 0 && (
+            <div className="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+              <div className="text-muted small">
+                Showing {(currentPage - 1) * pageSize + 1}–
+                {Math.min(currentPage * pageSize, pagination.total)} of{" "}
+                {pagination.total} customers
+              </div>
+              <Pagination
+                current={currentPage}
+                pageSize={pageSize}
+                total={pagination.total}
+                onChange={handlePageChange}
+                showSizeChanger
+                pageSizeOptions={["10", "20", "50", "100"]}
+                disabled={isFetching}
+              />
+            </div>
+          )}
         </div>
 
         <DeleteModal

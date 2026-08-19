@@ -244,366 +244,358 @@ const BrandList = () => {
   return (
     <div className="page-wrapper">
       <div className="content">
-        <div className="card">
-          <PageHeader
-            title="Brands & Meta Management"
-            subtitle="Manage Brands, Categories, Meta Fields and Vendors"
-            onAdd={() =>
-              activeMainTab === "brands"
-                ? openBrandModal()
-                : activeMainTab === "categories"
-                  ? openCategoryModal()
-                  : activeMainTab === "meta"
-                    ? openMetaModal()
-                    : openVendorModal()
-            }
-          />
+        <PageHeader
+          title="Brands & Meta Management"
+          subtitle="Manage Brands, Categories, Meta Fields and Vendors"
+          onAdd={() =>
+            activeMainTab === "brands"
+              ? openBrandModal()
+              : activeMainTab === "categories"
+                ? openCategoryModal()
+                : activeMainTab === "meta"
+                  ? openMetaModal()
+                  : openVendorModal()
+          }
+        />
 
-          <div className="card-body">
-            {/* Main Tabs */}
-            <Tabs
-              activeKey={activeMainTab}
-              onChange={handleTabChange}
-              className="mb-4"
-            >
-              <TabPane tab="Brands" key="brands" />
-              <TabPane tab="Brand Categories" key="categories" />
-              <TabPane tab="Meta Fields" key="meta" />
-              <TabPane tab="Vendors" key="vendors" />
-            </Tabs>
+        <div className="card-body">
+          {/* Main Tabs */}
+          <Tabs
+            activeKey={activeMainTab}
+            onChange={handleTabChange}
+            className="mb-4"
+          >
+            <TabPane tab="Brands" key="brands" />
+            <TabPane tab="Brand Categories" key="categories" />
+            <TabPane tab="Meta Fields" key="meta" />
+            <TabPane tab="Vendors" key="vendors" />
+          </Tabs>
 
-            {/* Search & Brand Sub-tabs */}
-            <div className="row mb-4 align-items-center">
-              <div className="col-lg-6">
-                {activeMainTab === "brands" && (
-                  <div className="d-flex align-items-center gap-3 flex-wrap">
-                    <div className="btn-group flex-wrap">
-                      {["All", ...brandParentCategories.map((c) => c.name)].map(
-                        (tab) => (
-                          <button
-                            key={tab}
-                            className={`btn btn-sm ${
-                              activeBrandTab === tab
-                                ? "btn-primary"
-                                : "btn-outline-secondary"
-                            }`}
-                            onClick={() => setActiveBrandTab(tab)}
-                          >
-                            {tab} ({groupedBrands[tab]?.length || 0})
-                          </button>
-                        ),
-                      )}
-                    </div>
+          {/* Search & Brand Sub-tabs */}
+          <div className="row mb-4 align-items-center">
+            <div className="col-lg-6">
+              {activeMainTab === "brands" && (
+                <div className="d-flex align-items-center gap-3 flex-wrap">
+                  <div className="btn-group flex-wrap">
+                    {["All", ...brandParentCategories.map((c) => c.name)].map(
+                      (tab) => (
+                        <button
+                          key={tab}
+                          className={`btn btn-sm ${
+                            activeBrandTab === tab
+                              ? "btn-primary"
+                              : "btn-outline-secondary"
+                          }`}
+                          onClick={() => setActiveBrandTab(tab)}
+                        >
+                          {tab} ({groupedBrands[tab]?.length || 0})
+                        </button>
+                      ),
+                    )}
                   </div>
-                )}
-              </div>
-
-              <div className="col-lg-6 text-lg-end">
-                <div style={{ maxWidth: "340px", marginLeft: "auto" }}>
-                  <Search
-                    placeholder={
-                      activeMainTab === "brands"
-                        ? "Search by brand name or slug..."
-                        : activeMainTab === "categories"
-                          ? "Search categories..."
-                          : activeMainTab === "meta"
-                            ? "Search meta fields by title, slug or type..."
-                            : "Search vendors by name or ID..."
-                    }
-                    allowClear
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
                 </div>
-              </div>
+              )}
             </div>
 
-            {/* ==================== BRANDS TABLE ==================== */}
-            {activeMainTab === "brands" && (
-              <div className="table-responsive">
-                <table className="table table-hover align-middle">
-                  <thead className="table-light">
-                    <tr>
-                      <th style={{ width: 70 }}>Logo</th>
-                      <th>Brand Name</th>
-                      <th>Slug</th>
-                      <th>Parent Categories</th>
-                      <th style={{ width: 140 }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredBrands.map((brand) => (
-                      <tr key={brand.id}>
-                        <td>
-                          <Avatar
-                            src={brand.logo}
-                            name={brand.brandName || ""}
-                            size="40"
-                            round
-                          />
-                        </td>
-                        <td>
-                          <a
-                            href="#"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handleViewBrand(brand);
-                            }}
-                            className="text-primary fw-medium"
-                          >
-                            {brand.brandName}
-                          </a>
-                        </td>
-                        <td className="text-muted">{brand.brandSlug}</td>
-                        <td>
-                          <span className="badge bg-light text-dark">
-                            {brandParentCategories
-                              .filter((cat) =>
-                                cat.brands?.some(
-                                  (b) => (b.brand || b).id === brand.id,
-                                ),
-                              )
-                              .map((cat) => cat.name)
-                              .join(", ") || "—"}
-                          </span>
-                        </td>
-                        <td>
-                          <Tooltip title="Edit">
-                            <EditOutlined
-                              className="me-3 text-primary"
-                              style={{ cursor: "pointer", fontSize: 18 }}
-                              onClick={() => handleEditBrand(brand)}
-                            />
-                          </Tooltip>
-                          <Dropdown
-                            overlay={
-                              <Menu>
-                                <Menu.Item
-                                  onClick={() => handleViewBrand(brand)}
-                                >
-                                  <EyeOutlined /> View
-                                </Menu.Item>
-                                <Menu.Item
-                                  danger
-                                  onClick={() =>
-                                    openDeleteModal("brand", brand.id)
-                                  }
-                                >
-                                  <DeleteOutlined /> Delete
-                                </Menu.Item>
-                              </Menu>
-                            }
-                            trigger={["click"]}
-                          >
-                            <Button
-                              type="text"
-                              icon={<MoreOutlined style={{ fontSize: 18 }} />}
-                            />
-                          </Dropdown>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {/* ==================== CATEGORIES TABLE ==================== */}
-            {activeMainTab === "categories" && (
-              <div className="table-responsive">
-                <table className="table table-hover align-middle">
-                  <thead className="table-light">
-                    <tr>
-                      <th>Name</th>
-                      <th>Slug</th>
-                      <th>Attached Brands</th>
-                      <th style={{ width: 140 }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredCategories.map((category) => (
-                      <tr key={category.id}>
-                        <td>
-                          <strong>{category.name}</strong>
-                        </td>
-                        <td className="text-muted">{category.slug}</td>
-                        <td>
-                          <span className="badge bg-primary">
-                            {category.brands?.length || 0} Brands
-                          </span>
-                        </td>
-                        <td>
-                          <Tooltip title="Edit">
-                            <EditOutlined
-                              className="me-3 text-primary"
-                              style={{ cursor: "pointer", fontSize: 18 }}
-                              onClick={() => handleEditCategory(category)}
-                            />
-                          </Tooltip>
-                          <Dropdown
-                            overlay={
-                              <Menu>
-                                <Menu.Item
-                                  onClick={() => handleViewCategory(category)}
-                                >
-                                  <EyeOutlined /> View Details
-                                </Menu.Item>
-                                <Menu.Item
-                                  danger
-                                  onClick={() =>
-                                    openDeleteModal("category", category.id)
-                                  }
-                                >
-                                  <DeleteOutlined /> Delete
-                                </Menu.Item>
-                              </Menu>
-                            }
-                            trigger={["click"]}
-                          >
-                            <Button
-                              type="text"
-                              icon={<MoreOutlined style={{ fontSize: 18 }} />}
-                            />
-                          </Dropdown>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {/* ==================== META FIELDS TABLE ==================== */}
-            {activeMainTab === "meta" && (
-              <div className="table-responsive">
-                <table className="table table-hover align-middle">
-                  <thead className="table-light">
-                    <tr>
-                      <th>Title</th>
-                      <th>Slug</th>
-                      <th>Field Type</th>
-                      <th>Unit</th>
-                      <th style={{ width: 140 }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredMeta.map((meta) => (
-                      <tr key={meta.id}>
-                        <td>
-                          <strong>{meta.title}</strong>
-                        </td>
-                        <td className="text-muted">{meta.slug || "—"}</td>
-                        <td>
-                          <span className="badge bg-info">
-                            {meta.fieldType}
-                          </span>
-                        </td>
-                        <td>{meta.unit || "—"}</td>
-                        <td>
-                          <Tooltip title="Edit">
-                            <EditOutlined
-                              className="me-3 text-primary"
-                              style={{ cursor: "pointer", fontSize: 18 }}
-                              onClick={() => openMetaModal(meta)}
-                            />
-                          </Tooltip>
-                          <Dropdown
-                            overlay={
-                              <Menu>
-                                <Menu.Item
-                                  danger
-                                  onClick={() =>
-                                    openDeleteModal("meta", meta.id)
-                                  }
-                                >
-                                  <DeleteOutlined /> Delete
-                                </Menu.Item>
-                              </Menu>
-                            }
-                            trigger={["click"]}
-                          >
-                            <Button
-                              type="text"
-                              icon={<MoreOutlined style={{ fontSize: 18 }} />}
-                            />
-                          </Dropdown>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {/* ==================== VENDORS TABLE ==================== */}
-            {activeMainTab === "vendors" && (
-              <div className="table-responsive">
-                <table className="table table-hover align-middle">
-                  <thead className="table-light">
-                    <tr>
-                      <th>Vendor ID</th>
-                      <th>Vendor Name</th>
-                      <th>Associated Brand</th>
-                      <th style={{ width: 140 }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredVendors.map((vendor) => (
-                      <tr key={vendor.id}>
-                        <td className="text-muted">{vendor.vendorId || "—"}</td>
-                        <td>
-                          <strong>{vendor.vendorName}</strong>
-                        </td>
-                        <td>
-                          {vendor.brandName || vendor.brandSlug ? (
-                            <span className="badge bg-light">
-                              {vendor.brandName} ({vendor.brandSlug})
-                            </span>
-                          ) : (
-                            "—"
-                          )}
-                        </td>
-                        <td>
-                          <Dropdown
-                            overlay={
-                              <Menu>
-                                <Menu.Item
-                                  danger
-                                  onClick={() =>
-                                    openDeleteModal("vendor", vendor.id)
-                                  }
-                                >
-                                  <DeleteOutlined /> Delete
-                                </Menu.Item>
-                              </Menu>
-                            }
-                            trigger={["click"]}
-                          >
-                            <Button
-                              type="text"
-                              icon={<MoreOutlined style={{ fontSize: 18 }} />}
-                            />
-                          </Dropdown>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {/* Pagination for Brands */}
-            {activeMainTab === "brands" && allBrands.length > itemsPerPage && (
-              <div className="d-flex justify-content-end mt-4">
-                <Pagination
-                  current={1}
-                  pageSize={itemsPerPage}
-                  total={allBrands.length}
-                  showSizeChanger={false}
+            <div className="col-lg-6 text-lg-end">
+              <div style={{ maxWidth: "340px", marginLeft: "auto" }}>
+                <Search
+                  placeholder={
+                    activeMainTab === "brands"
+                      ? "Search by brand name or slug..."
+                      : activeMainTab === "categories"
+                        ? "Search categories..."
+                        : activeMainTab === "meta"
+                          ? "Search meta fields by title, slug or type..."
+                          : "Search vendors by name or ID..."
+                  }
+                  allowClear
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-            )}
+            </div>
           </div>
+
+          {/* ==================== BRANDS TABLE ==================== */}
+          {activeMainTab === "brands" && (
+            <div className="table-responsive">
+              <table className="table table-hover align-middle">
+                <thead className="table-light">
+                  <tr>
+                    <th style={{ width: 70 }}>Logo</th>
+                    <th>Brand Name</th>
+                    <th>Slug</th>
+                    <th>Parent Categories</th>
+                    <th style={{ width: 140 }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredBrands.map((brand) => (
+                    <tr key={brand.id}>
+                      <td>
+                        <Avatar
+                          src={brand.logo}
+                          name={brand.brandName || ""}
+                          size="40"
+                          round
+                        />
+                      </td>
+                      <td>
+                        <a
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleViewBrand(brand);
+                          }}
+                          className="text-primary fw-medium"
+                        >
+                          {brand.brandName}
+                        </a>
+                      </td>
+                      <td className="text-muted">{brand.brandSlug}</td>
+                      <td>
+                        <span className="badge bg-light text-dark">
+                          {brandParentCategories
+                            .filter((cat) =>
+                              cat.brands?.some(
+                                (b) => (b.brand || b).id === brand.id,
+                              ),
+                            )
+                            .map((cat) => cat.name)
+                            .join(", ") || "—"}
+                        </span>
+                      </td>
+                      <td>
+                        <Tooltip title="Edit">
+                          <EditOutlined
+                            className="me-3 text-primary"
+                            style={{ cursor: "pointer", fontSize: 18 }}
+                            onClick={() => handleEditBrand(brand)}
+                          />
+                        </Tooltip>
+                        <Dropdown
+                          overlay={
+                            <Menu>
+                              <Menu.Item onClick={() => handleViewBrand(brand)}>
+                                <EyeOutlined /> View
+                              </Menu.Item>
+                              <Menu.Item
+                                danger
+                                onClick={() =>
+                                  openDeleteModal("brand", brand.id)
+                                }
+                              >
+                                <DeleteOutlined /> Delete
+                              </Menu.Item>
+                            </Menu>
+                          }
+                          trigger={["click"]}
+                        >
+                          <Button
+                            type="text"
+                            icon={<MoreOutlined style={{ fontSize: 18 }} />}
+                          />
+                        </Dropdown>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* ==================== CATEGORIES TABLE ==================== */}
+          {activeMainTab === "categories" && (
+            <div className="table-responsive">
+              <table className="table table-hover align-middle">
+                <thead className="table-light">
+                  <tr>
+                    <th>Name</th>
+                    <th>Slug</th>
+                    <th>Attached Brands</th>
+                    <th style={{ width: 140 }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredCategories.map((category) => (
+                    <tr key={category.id}>
+                      <td>
+                        <strong>{category.name}</strong>
+                      </td>
+                      <td className="text-muted">{category.slug}</td>
+                      <td>
+                        <span className="badge bg-primary">
+                          {category.brands?.length || 0} Brands
+                        </span>
+                      </td>
+                      <td>
+                        <Tooltip title="Edit">
+                          <EditOutlined
+                            className="me-3 text-primary"
+                            style={{ cursor: "pointer", fontSize: 18 }}
+                            onClick={() => handleEditCategory(category)}
+                          />
+                        </Tooltip>
+                        <Dropdown
+                          overlay={
+                            <Menu>
+                              <Menu.Item
+                                onClick={() => handleViewCategory(category)}
+                              >
+                                <EyeOutlined /> View Details
+                              </Menu.Item>
+                              <Menu.Item
+                                danger
+                                onClick={() =>
+                                  openDeleteModal("category", category.id)
+                                }
+                              >
+                                <DeleteOutlined /> Delete
+                              </Menu.Item>
+                            </Menu>
+                          }
+                          trigger={["click"]}
+                        >
+                          <Button
+                            type="text"
+                            icon={<MoreOutlined style={{ fontSize: 18 }} />}
+                          />
+                        </Dropdown>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* ==================== META FIELDS TABLE ==================== */}
+          {activeMainTab === "meta" && (
+            <div className="table-responsive">
+              <table className="table table-hover align-middle">
+                <thead className="table-light">
+                  <tr>
+                    <th>Title</th>
+                    <th>Slug</th>
+                    <th>Field Type</th>
+                    <th>Unit</th>
+                    <th style={{ width: 140 }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredMeta.map((meta) => (
+                    <tr key={meta.id}>
+                      <td>
+                        <strong>{meta.title}</strong>
+                      </td>
+                      <td className="text-muted">{meta.slug || "—"}</td>
+                      <td>
+                        <span className="badge bg-info">{meta.fieldType}</span>
+                      </td>
+                      <td>{meta.unit || "—"}</td>
+                      <td>
+                        <Tooltip title="Edit">
+                          <EditOutlined
+                            className="me-3 text-primary"
+                            style={{ cursor: "pointer", fontSize: 18 }}
+                            onClick={() => openMetaModal(meta)}
+                          />
+                        </Tooltip>
+                        <Dropdown
+                          overlay={
+                            <Menu>
+                              <Menu.Item
+                                danger
+                                onClick={() => openDeleteModal("meta", meta.id)}
+                              >
+                                <DeleteOutlined /> Delete
+                              </Menu.Item>
+                            </Menu>
+                          }
+                          trigger={["click"]}
+                        >
+                          <Button
+                            type="text"
+                            icon={<MoreOutlined style={{ fontSize: 18 }} />}
+                          />
+                        </Dropdown>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* ==================== VENDORS TABLE ==================== */}
+          {activeMainTab === "vendors" && (
+            <div className="table-responsive">
+              <table className="table table-hover align-middle">
+                <thead className="table-light">
+                  <tr>
+                    <th>Vendor ID</th>
+                    <th>Vendor Name</th>
+                    <th>Associated Brand</th>
+                    <th style={{ width: 140 }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredVendors.map((vendor) => (
+                    <tr key={vendor.id}>
+                      <td className="text-muted">{vendor.vendorId || "—"}</td>
+                      <td>
+                        <strong>{vendor.vendorName}</strong>
+                      </td>
+                      <td>
+                        {vendor.brandName || vendor.brandSlug ? (
+                          <span className="badge bg-light">
+                            {vendor.brandName} ({vendor.brandSlug})
+                          </span>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                      <td>
+                        <Dropdown
+                          overlay={
+                            <Menu>
+                              <Menu.Item
+                                danger
+                                onClick={() =>
+                                  openDeleteModal("vendor", vendor.id)
+                                }
+                              >
+                                <DeleteOutlined /> Delete
+                              </Menu.Item>
+                            </Menu>
+                          }
+                          trigger={["click"]}
+                        >
+                          <Button
+                            type="text"
+                            icon={<MoreOutlined style={{ fontSize: 18 }} />}
+                          />
+                        </Dropdown>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Pagination for Brands */}
+          {activeMainTab === "brands" && allBrands.length > itemsPerPage && (
+            <div className="d-flex justify-content-end mt-4">
+              <Pagination
+                current={1}
+                pageSize={itemsPerPage}
+                total={allBrands.length}
+                showSizeChanger={false}
+              />
+            </div>
+          )}
         </div>
 
         {/* Modals */}

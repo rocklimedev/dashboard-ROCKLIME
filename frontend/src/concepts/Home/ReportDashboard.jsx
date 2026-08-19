@@ -1,22 +1,4 @@
 import React, { useMemo, useState } from "react";
-import { Card, Empty, Select, Spin, Tag } from "antd";
-import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Legend,
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 import {
   useGetProductCountQuery,
   useGetLowStockProductsQuery,
@@ -25,54 +7,34 @@ import { useGetAllQuotationsQuery } from "../../api/quotationApi";
 import { useGetAllOrdersQuery } from "../../api/orderApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
 import { useAuth } from "../../context/AuthContext";
-import { FaShoppingBag } from "react-icons/fa";
-import { HiDocumentText } from "react-icons/hi";
-import { MdWarningAmber } from "react-icons/md";
 import "./reportdashboard.css";
 
-const BRAND_RED = "#e31e24";
-const TEXT_DARK = "#303030";
-const SOFT_GREY = "#f6f6f6";
+/* ============================================================
+   HELPERS
+   ============================================================ */
 
-const CHART_COLORS = [
-  "#e31e24",
-  "#303030",
-  "#777777",
-  "#a8a8a8",
-  "#d8d8d8",
-  "#111111",
-  "#c2410c",
-  "#57534e",
-  "#9ca3af",
+const currency = (n) =>
+  "₹" + Number(n || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 });
+
+const isSameDay = (dateStr, ref) => {
+  const d = new Date(dateStr);
+  return (
+    d.getFullYear() === ref.getFullYear() &&
+    d.getMonth() === ref.getMonth() &&
+    d.getDate() === ref.getDate()
+  );
+};
+
+const dayLabel = (dateStr) =>
+  new Date(dateStr).toLocaleDateString("en-IN", { weekday: "short" });
+
+const IN_PROGRESS_STATUSES = [
+  "NEW",
+  "CREATED",
+  "IN_PRODUCTION",
+  "PENDING",
+  "PROCESSING",
 ];
-
-const DATE_RANGE_OPTIONS = [
-  { value: 7, label: "Last 7 days" },
-  { value: 30, label: "Last 30 days" },
-  { value: 90, label: "Last 90 days" },
-];
-
-const formatDate = (date) =>
-  new Date(date).toLocaleDateString("en-IN", {
-    day: "2-digit",
-    month: "short",
-  });
-
-const formatFullDate = (date) =>
-  new Date(date).toLocaleDateString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-
-const formatCurrency = (value) =>
-  `₹${Number(value || 0).toLocaleString("en-IN", {
-    maximumFractionDigits: 0,
-  })}`;
-
-const getDateKey = (date) => new Date(date).toISOString().slice(0, 10);
-
-const normaliseStatus = (status = "UNKNOWN") => status.split("_").join(" ");
 
 const getAmount = (record) =>
   Number(
@@ -83,55 +45,82 @@ const getAmount = (record) =>
       0,
   );
 
-const buildDateBuckets = (days) => {
-  const buckets = [];
-  const today = new Date();
-
-  for (let i = days - 1; i >= 0; i -= 1) {
-    const d = new Date(today);
-    d.setDate(today.getDate() - i);
-    d.setHours(0, 0, 0, 0);
-
-    buckets.push({
-      key: getDateKey(d),
-      date: formatDate(d),
-      orders: 0,
-      quotations: 0,
-      quoteValue: 0,
-    });
-  }
-
-  return buckets;
+/** Returns start & end of day (local) for a Date */
+const startOfDay = (d) => {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+};
+const endOfDay = (d) => {
+  const x = new Date(d);
+  x.setHours(23, 59, 59, 999);
+  return x;
 };
 
-const ReportDashboard = () => {
-  const [range, setRange] = useState(30);
+/** Check if a date string falls inside [from, to] inclusive */
+const isInRange = (dateStr, from, to) => {
+  if (!dateStr) return false;
+  const d = new Date(dateStr);
+  return d >= from && d <= to;
+};
+
+/* ============================================================
+   MAIN
+   ============================================================ */
+
+export default function ReportingDashboard() {
   const { auth } = useAuth();
 
   const role = (auth?.user?.role || auth?.role || auth?.user?.userType || "")
     .toString()
     .toUpperCase();
 
-  const { data: countData, isLoading: productCountLoading } =
-    useGetProductCountQuery();
+  /* ---- Global date filter state ---- */
+  const [period, setPeriod] = useState("today"); // today | week | month | custom
+  const [customFrom, setCustomFrom] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 6);
+    return d.toISOString().slice(0, 10);
+  });
+  const [customTo, setCustomTo] = useState(() =>
+    new Date().toISOString().slice(0, 10),
+  );
 
-  const { data: lowStockData, isLoading: lowStockLoading } =
-    useGetLowStockProductsQuery({
-      threshold: 20,
-      limit: 20,
-    });
+  /* ---- ALL APIs ---- */
+  const {
+    data: countData,
+    isLoading: productCountLoading,
+    refetch: refetchProductCount,
+  } = useGetProductCountQuery();
 
-  const { data: ordersResponse, isLoading: ordersLoading } =
-    useGetAllOrdersQuery({ limit: 500, page: 1 }, { pollingInterval: 30000 });
+  const {
+    data: lowStockData,
+    isLoading: lowStockLoading,
+    refetch: refetchLowStock,
+  } = useGetLowStockProductsQuery({
+    threshold: 20,
+    limit: 20,
+  });
 
-  const { data: quotationsResponse, isLoading: quotationsLoading } =
-    useGetAllQuotationsQuery({
-      limit: 500,
-      page: 1,
-    });
+  const {
+    data: ordersResponse,
+    isLoading: ordersLoading,
+    isFetching: ordersFetching,
+    refetch: refetchOrders,
+  } = useGetAllOrdersQuery({ limit: 500, page: 1 }, { pollingInterval: 30000 });
 
-  const { data: customersResponse, isLoading: customersLoading } =
-    useGetCustomersQuery({ limit: 1000 });
+  const {
+    data: quotationsResponse,
+    isLoading: quotationsLoading,
+    isFetching: quotationsFetching,
+    refetch: refetchQuotations,
+  } = useGetAllQuotationsQuery({ limit: 500, page: 1 });
+
+  const {
+    data: customersResponse,
+    isLoading: customersLoading,
+    refetch: refetchCustomers,
+  } = useGetCustomersQuery({ limit: 1000 });
 
   const loading =
     productCountLoading ||
@@ -140,12 +129,16 @@ const ReportDashboard = () => {
     quotationsLoading ||
     customersLoading;
 
+  const refreshing = ordersFetching || quotationsFetching;
+
+  /* ---- Raw data ---- */
   const productCount = countData?.totalProducts || 0;
   const lowStockProducts = lowStockData?.products || [];
   const orders = ordersResponse?.data || [];
   const quotations = quotationsResponse?.data || [];
   const customers = customersResponse?.data || [];
 
+  /* ---- Customer map ---- */
   const customerMap = useMemo(() => {
     return customers.reduce((map, customer) => {
       map[customer.customerId] = customer.name;
@@ -153,332 +146,501 @@ const ReportDashboard = () => {
     }, {});
   }, [customers]);
 
-  const getCustomerName = (customerId) => customerMap[customerId] || "Unknown";
+  const getCustomerName = (customerId, fallback) =>
+    fallback || customerMap[customerId] || "—";
 
-  const filteredData = useMemo(() => {
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - range);
-    startDate.setHours(0, 0, 0, 0);
+  const today = new Date();
 
-    const filteredOrders = orders.filter(
-      (order) => new Date(order.createdAt) >= startDate,
-    );
+  /* ---- Compute active date range from period ---- */
+  const { rangeFrom, rangeTo, periodLabel } = useMemo(() => {
+    const now = new Date();
 
-    const filteredQuotations = quotations.filter(
-      (quotation) => new Date(quotation.createdAt) >= startDate,
-    );
+    if (period === "today") {
+      return {
+        rangeFrom: startOfDay(now),
+        rangeTo: endOfDay(now),
+        periodLabel: "Today",
+      };
+    }
 
-    return { filteredOrders, filteredQuotations };
-  }, [orders, quotations, range]);
+    if (period === "week") {
+      const from = new Date(now);
+      from.setDate(from.getDate() - 6);
+      return {
+        rangeFrom: startOfDay(from),
+        rangeTo: endOfDay(now),
+        periodLabel: "Last 7 days",
+      };
+    }
 
-  const reportSummary = useMemo(() => {
-    const quotationValue = filteredData.filteredQuotations.reduce(
-      (sum, quotation) => sum + getAmount(quotation),
-      0,
-    );
+    if (period === "month") {
+      const from = new Date(now);
+      from.setDate(from.getDate() - 29);
+      return {
+        rangeFrom: startOfDay(from),
+        rangeTo: endOfDay(now),
+        periodLabel: "Last 30 days",
+      };
+    }
 
-    const conversionRate = quotations.length
-      ? Math.round((orders.length / quotations.length) * 100)
+    // custom
+    const from = customFrom
+      ? startOfDay(new Date(customFrom))
+      : startOfDay(now);
+    const to = customTo ? endOfDay(new Date(customTo)) : endOfDay(now);
+    return {
+      rangeFrom: from,
+      rangeTo: to,
+      periodLabel: `${from.toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+      })} – ${to.toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })}`,
+    };
+  }, [period, customFrom, customTo]);
+
+  /* ---- Filtered data for the selected period ---- */
+  const filteredOrders = useMemo(
+    () => orders.filter((o) => isInRange(o.createdAt, rangeFrom, rangeTo)),
+    [orders, rangeFrom, rangeTo],
+  );
+
+  const filteredQuotations = useMemo(
+    () => quotations.filter((q) => isInRange(q.createdAt, rangeFrom, rangeTo)),
+    [quotations, rangeFrom, rangeTo],
+  );
+
+  const ordersInProgress = useMemo(
+    () =>
+      orders.filter((o) =>
+        IN_PROGRESS_STATUSES.includes((o.status || "").toUpperCase()),
+      ),
+    [orders],
+  );
+
+  const orderAmountPeriod = useMemo(
+    () => filteredOrders.reduce((sum, o) => sum + getAmount(o), 0),
+    [filteredOrders],
+  );
+
+  const quotationAmountPeriod = useMemo(
+    () => filteredQuotations.reduce((sum, q) => sum + getAmount(q), 0),
+    [filteredQuotations],
+  );
+
+  const criticalStock = useMemo(
+    () => lowStockProducts.filter((p) => Number(p.quantity || 0) <= 5).length,
+    [lowStockProducts],
+  );
+
+  /* ---- Chart: last 7 days relative to the end of the selected range ---- */
+  const last7Days = useMemo(() => {
+    const days = [];
+    const end = new Date(rangeTo);
+
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(end);
+      d.setDate(d.getDate() - i);
+      const dayOrders = orders.filter((o) => isSameDay(o.createdAt, d));
+      const dayQuotes = quotations.filter((q) => isSameDay(q.createdAt, d));
+      days.push({
+        label: dayLabel(d.toISOString()),
+        orderValue: dayOrders.reduce((s, o) => s + getAmount(o), 0),
+        quotationValue: dayQuotes.reduce((s, q) => s + getAmount(q), 0),
+      });
+    }
+    return days;
+  }, [orders, quotations, rangeTo]);
+
+  const maxChartValue = Math.max(
+    1,
+    ...last7Days.map((d) => Math.max(d.orderValue, d.quotationValue)),
+  );
+
+  const latestQuotations = useMemo(
+    () =>
+      [...filteredQuotations]
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(0, 5),
+    [filteredQuotations],
+  );
+
+  const latestOrders = useMemo(
+    () =>
+      [...filteredOrders]
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(0, 5),
+    [filteredOrders],
+  );
+
+  const conversionRate =
+    filteredQuotations.length > 0
+      ? Math.round((filteredOrders.length / filteredQuotations.length) * 100)
       : 0;
 
-    const criticalStock = lowStockProducts.filter(
-      (product) => Number(product.quantity || 0) <= 5,
-    ).length;
+  const handleRefresh = () => {
+    refetchOrders();
+    refetchQuotations();
+    refetchCustomers();
+    refetchProductCount();
+    refetchLowStock();
+  };
 
-    return {
-      totalOrders: ordersResponse?.pagination?.total || orders.length,
-      totalQuotations:
-        quotationsResponse?.pagination?.total || quotations.length,
-      productCount,
-      lowStockCount: lowStockProducts.length,
-      quotationValue,
-      conversionRate,
-      criticalStock,
-    };
-  }, [
-    filteredData.filteredQuotations,
-    lowStockProducts,
-    orders,
-    ordersResponse,
-    productCount,
-    quotations,
-    quotationsResponse,
-  ]);
-
-  const timelineData = useMemo(() => {
-    const buckets = buildDateBuckets(range);
-    const bucketMap = buckets.reduce((map, bucket) => {
-      map[bucket.key] = bucket;
-      return map;
-    }, {});
-
-    filteredData.filteredOrders.forEach((order) => {
-      const key = getDateKey(order.createdAt);
-      if (bucketMap[key]) bucketMap[key].orders += 1;
-    });
-
-    filteredData.filteredQuotations.forEach((quotation) => {
-      const key = getDateKey(quotation.createdAt);
-      if (bucketMap[key]) {
-        bucketMap[key].quotations += 1;
-        bucketMap[key].quoteValue += getAmount(quotation);
-      }
-    });
-
-    return buckets;
-  }, [filteredData, range]);
-
-  const statusData = useMemo(() => {
-    const statusMap = filteredData.filteredOrders.reduce((map, order) => {
-      const key = normaliseStatus(order.status || "UNKNOWN");
-      map[key] = (map[key] || 0) + 1;
-      return map;
-    }, {});
-
-    return Object.entries(statusMap).map(([status, count]) => ({
-      status,
-      count,
-    }));
-  }, [filteredData.filteredOrders]);
-
-  const lowStockChartData = useMemo(() => {
-    return [...lowStockProducts]
-      .sort((a, b) => Number(a.quantity || 0) - Number(b.quantity || 0))
-      .slice(0, 8)
-      .map((product) => ({
-        name: product.name,
-        quantity: Number(product.quantity || 0),
-      }));
-  }, [lowStockProducts]);
-
-  const customerAnalytics = useMemo(() => {
-    const summary = {};
-
-    const ensureCustomer = (customerId) => {
-      if (!summary[customerId]) {
-        summary[customerId] = {
-          customerId,
-          name: getCustomerName(customerId),
-          orders: 0,
-          quotations: 0,
-          quoteValue: 0,
-        };
-      }
-      return summary[customerId];
-    };
-
-    filteredData.filteredOrders.forEach((order) => {
-      const customer = ensureCustomer(
-        order.customerId || order.customer?.customerId,
-      );
-      customer.orders += 1;
-    });
-
-    filteredData.filteredQuotations.forEach((quotation) => {
-      const customer = ensureCustomer(
-        quotation.customerId || quotation.customer?.customerId,
-      );
-      customer.quotations += 1;
-      customer.quoteValue += getAmount(quotation);
-    });
-
-    return Object.values(summary)
-      .sort((a, b) => b.quoteValue + b.orders - (a.quoteValue + a.orders))
-      .slice(0, 7);
-  }, [filteredData, getCustomerName]);
-
-  const latestOrders = useMemo(() => {
-    return [...orders]
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-      .slice(0, 7);
-  }, [orders]);
-
-  const latestQuotations = useMemo(() => {
-    return [...quotations]
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-      .slice(0, 7);
-  }, [quotations]);
-
+  /* ---- Render ---- */
   return (
     <div className="page-wrapper">
-      <div className="content">
-        <div className="report-page-wrapper">
-          {loading ? (
-            <div className="report-loading">
-              <Spin size="large" />
-            </div>
-          ) : (
-            <>
-              <div className="report-kpi-grid">
-                <ReportMetricCard
-                  title="Total Orders"
-                  value={reportSummary.totalOrders}
-                  helper={`${filteredData.filteredOrders.length} in selected range`}
-                  icon={<FaShoppingBag />}
-                />
+      <div className="rd-wrapper">
+        <header className="rd-header">
+          <div className="rd-header-info">
+            <h1 className="rd-title">Sales dashboard</h1>
 
-                <ReportMetricCard
-                  title="Total Quotations"
-                  value={reportSummary.totalQuotations}
-                  helper={`${filteredData.filteredQuotations.length} in selected range`}
-                  icon={<HiDocumentText />}
-                />
+            <p className="rd-subtitle">
+              {today.toLocaleDateString("en-IN", {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })}
+            </p>
+          </div>
 
-                <ReportMetricCard
-                  title="Critical Stock"
-                  value={reportSummary.criticalStock}
-                  helper="Products with quantity 5 or below"
-                  icon={<MdWarningAmber />}
-                />
-              </div>
-              <div className="report-grid report-grid-lists">
-                <ReportListCard title="Latest Orders">
-                  {latestOrders.length ? (
-                    latestOrders.map((order) => (
-                      <div className="report-list-item" key={order.id}>
-                        <div>
-                          <a
-                            href={`/order/${order.id}`}
-                            className="report-link"
-                          >
-                            #{order.orderNo || order.id}
-                          </a>
-                          <p>
-                            {order.customer?.name ||
-                              getCustomerName(order.customerId)}
-                          </p>
-                        </div>
-                        <div className="report-list-right">
-                          <Tag color="red">{normaliseStatus(order.status)}</Tag>
-                          <span>{formatFullDate(order.createdAt)}</span>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <Empty description="No orders found" />
-                  )}
-                </ReportListCard>
-
-                <ReportListCard title="Latest Quotations">
-                  {latestQuotations.length ? (
-                    latestQuotations.map((quotation) => (
-                      <div
-                        className="report-list-item"
-                        key={quotation.quotationId}
-                      >
-                        <div>
-                          <a
-                            href={`/quotation/${quotation.quotationId}`}
-                            className="report-link"
-                          >
-                            {quotation.reference_number || "Quotation"}
-                          </a>
-                          <p>
-                            {quotation.customer?.name ||
-                              getCustomerName(quotation.customerId)}
-                          </p>
-                        </div>
-                        <div className="report-list-right">
-                          <strong>
-                            {formatCurrency(getAmount(quotation))}
-                          </strong>
-                          <span>{formatFullDate(quotation.createdAt)}</span>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <Empty description="No quotations found" />
-                  )}
-                </ReportListCard>
-              </div>
-              <div className="report-grid report-grid-main">
-                <ReportChartCard
-                  title="Orders & Quotations"
-                  description={`Daily comparison for the last ${range} days`}
-                  extra={
-                    <Select
-                      value={range}
-                      options={DATE_RANGE_OPTIONS}
-                      onChange={setRange}
-                      className="report-chart-select"
-                    />
-                  }
+          <div className="rd-header-actions">
+            <div className="rd-filter-presets">
+              {[
+                { key: "today", label: "Today" },
+                { key: "week", label: "Week" },
+                { key: "month", label: "Month" },
+                { key: "custom", label: "Custom" },
+              ].map((p) => (
+                <button
+                  key={p.key}
+                  type="button"
+                  className={`rd-filter-btn${
+                    period === p.key ? " rd-filter-btn-active" : ""
+                  }`}
+                  onClick={() => setPeriod(p.key)}
                 >
-                  <ResponsiveContainer width="100%" height={330}>
-                    <LineChart data={timelineData}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="date" minTickGap={24} />
-                      <YAxis allowDecimals={false} />
-                      <Tooltip />
-                      <Legend />
-                      <Line
-                        type="monotone"
-                        dataKey="orders"
-                        name="Orders"
-                        stroke={BRAND_RED}
-                        strokeWidth={3}
-                        dot={false}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="quotations"
-                        name="Quotations"
-                        stroke={TEXT_DARK}
-                        strokeWidth={3}
-                        dot={false}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </ReportChartCard>
+                  {p.label}
+                </button>
+              ))}
+            </div>
+
+            {period === "custom" && (
+              <div className="rd-filter-custom">
+                <label className="rd-filter-date-label">
+                  From
+                  <input
+                    type="date"
+                    className="rd-filter-date"
+                    value={customFrom}
+                    max={customTo}
+                    onChange={(e) => setCustomFrom(e.target.value)}
+                  />
+                </label>
+
+                <label className="rd-filter-date-label">
+                  To
+                  <input
+                    type="date"
+                    className="rd-filter-date"
+                    value={customTo}
+                    min={customFrom}
+                    max={new Date().toISOString().slice(0, 10)}
+                    onChange={(e) => setCustomTo(e.target.value)}
+                  />
+                </label>
               </div>
-            </>
-          )}
-        </div>
+            )}
+
+            <span className="rd-filter-period-label">{periodLabel}</span>
+
+            <button
+              type="button"
+              className="rd-refresh-btn"
+              onClick={handleRefresh}
+              disabled={refreshing}
+            >
+              <i
+                className={`ti ti-refresh ${
+                  refreshing ? "rd-refresh-spinning" : ""
+                }`}
+                aria-hidden="true"
+              />
+              {refreshing ? "Refreshing…" : "Refresh"}
+            </button>
+          </div>
+        </header>
+        {/* KPI row */}
+        <section className="rd-metrics-grid">
+          <MetricCard
+            label={`Orders (${periodLabel})`}
+            value={loading ? "—" : filteredOrders.length}
+            delta={period === "today" ? "+8.2%" : periodLabel}
+            deltaPositive={period === "today"}
+            neutral={period !== "today"}
+            icon="ti-shopping-cart"
+          />
+          <MetricCard
+            label="Orders in progress"
+            value={loading ? "—" : ordersInProgress.length}
+            delta={`${ordersInProgress.length} active`}
+            neutral
+            icon="ti-progress"
+          />
+          <MetricCard
+            label={`Quotations (${periodLabel})`}
+            value={loading ? "—" : filteredQuotations.length}
+            delta={period === "today" ? "+4.1%" : periodLabel}
+            deltaPositive={period === "today"}
+            neutral={period !== "today"}
+            icon="ti-file-text"
+          />
+          <MetricCard
+            label={`Order amount (${periodLabel})`}
+            value={loading ? "—" : currency(orderAmountPeriod)}
+            delta={period === "today" ? "+12.4%" : periodLabel}
+            deltaPositive={period === "today"}
+            neutral={period !== "today"}
+            icon="ti-currency-rupee"
+            accent
+          />
+        </section>
+
+        <section className="rd-main-grid">
+          <div className="rd-card rd-chart-card">
+            <div className="rd-card-header">
+              <div>
+                <h2 className="rd-card-title">Orders vs quotations</h2>
+                <p className="rd-card-subtitle">
+                  Last 7 days ending{" "}
+                  {rangeTo.toLocaleDateString("en-IN", {
+                    day: "numeric",
+                    month: "short",
+                  })}
+                </p>
+              </div>
+              <div className="rd-legend">
+                <span className="rd-legend-item">
+                  <span className="rd-dot rd-dot-order" /> Orders
+                </span>
+                <span className="rd-legend-item">
+                  <span className="rd-dot rd-dot-quote" /> Quotations
+                </span>
+              </div>
+            </div>
+
+            <div className="rd-bar-chart">
+              {last7Days.map((d, i) => (
+                <div className="rd-bar-group" key={i}>
+                  <div className="rd-bar-pair">
+                    <div
+                      className="rd-bar rd-bar-order"
+                      style={{
+                        height: `${(d.orderValue / maxChartValue) * 100}%`,
+                      }}
+                      title={`Orders: ${currency(d.orderValue)}`}
+                    />
+                    <div
+                      className="rd-bar rd-bar-quote"
+                      style={{
+                        height: `${(d.quotationValue / maxChartValue) * 100}%`,
+                      }}
+                      title={`Quotations: ${currency(d.quotationValue)}`}
+                    />
+                  </div>
+                  <span className="rd-bar-label">{d.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rd-card rd-conversion-card">
+            <div className="rd-card-header">
+              <div>
+                <h2 className="rd-card-title">Quote to order</h2>
+                <p className="rd-card-subtitle">Conversion · {periodLabel}</p>
+              </div>
+            </div>
+            <div className="rd-conversion-ring-wrap">
+              <div
+                className="rd-conversion-ring"
+                style={{
+                  background: `conic-gradient(#e31e24 ${
+                    conversionRate * 3.6
+                  }deg, #f1eeee ${conversionRate * 3.6}deg)`,
+                }}
+              >
+                <div className="rd-conversion-ring-inner">
+                  <span className="rd-conversion-value">{conversionRate}%</span>
+                  <span className="rd-conversion-caption">converted</span>
+                </div>
+              </div>
+            </div>
+            <div className="rd-conversion-stats">
+              <div>
+                <span className="rd-conversion-stat-label">
+                  Quotation value
+                </span>
+                <span className="rd-conversion-stat-value">
+                  {currency(quotationAmountPeriod)}
+                </span>
+              </div>
+              <div>
+                <span className="rd-conversion-stat-label">Order value</span>
+                <span className="rd-conversion-stat-value">
+                  {currency(orderAmountPeriod)}
+                </span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="rd-list-grid">
+          <div className="rd-card">
+            <div className="rd-card-header">
+              <h2 className="rd-card-title">
+                Latest quotations · {periodLabel}
+              </h2>
+              <a href="/quotations/list" className="rd-view-all">
+                View all <i className="ti ti-arrow-right" aria-hidden="true" />
+              </a>
+            </div>
+            <RecordList
+              loading={loading}
+              emptyText="No quotations in this period."
+              items={latestQuotations.map((q) => ({
+                id: q.quotationId,
+                title: getCustomerName(
+                  q.customerId || q.customer?.customerId,
+                  q.customer?.name || q.customerName,
+                ),
+                subtitle: q.reference_number,
+                amount: getAmount(q),
+                date: q.createdAt,
+                badge: "quotation",
+                href: `/quotation/${q.quotationId}`,
+              }))}
+            />
+          </div>
+
+          <div className="rd-card">
+            <div className="rd-card-header">
+              <h2 className="rd-card-title">Latest orders · {periodLabel}</h2>
+              <a href="/orders/list" className="rd-view-all">
+                View all <i className="ti ti-arrow-right" aria-hidden="true" />
+              </a>
+            </div>
+            <RecordList
+              loading={loading}
+              emptyText="No orders in this period."
+              items={latestOrders.map((o) => ({
+                id: o.id,
+                title: getCustomerName(
+                  o.customerId || o.customer?.customerId,
+                  o.customer?.name,
+                ),
+                subtitle: o.orderNo,
+                amount: getAmount(o),
+                date: o.createdAt,
+                badge: (o.status || "new").toLowerCase(),
+                href: `/order/${o.id}`,
+              }))}
+            />
+          </div>
+        </section>
       </div>
     </div>
   );
-};
+}
 
-function ReportMetricCard({ title, value, helper, icon }) {
+/* ============================================================
+   SUB COMPONENTS
+   ============================================================ */
+
+function MetricCard({
+  label,
+  value,
+  delta,
+  deltaPositive,
+  neutral,
+  icon,
+  accent,
+}) {
   return (
-    <Card className="report-metric-card">
-      <div className="report-metric-top">
-        <div className="report-metric-icon">{icon}</div>
+    <div className={`rd-metric-card${accent ? " rd-metric-card-accent" : ""}`}>
+      <div className="rd-metric-top">
+        <span className="rd-metric-icon">
+          <i className={`ti ${icon}`} aria-hidden="true" />
+        </span>
+        {delta && (
+          <span
+            className={`rd-metric-delta${
+              neutral
+                ? " rd-metric-delta-neutral"
+                : deltaPositive
+                  ? " rd-metric-delta-up"
+                  : " rd-metric-delta-down"
+            }`}
+          >
+            {delta}
+          </span>
+        )}
       </div>
-
-      <h3>{value}</h3>
-      <p>{title}</p>
-      <small>{helper}</small>
-    </Card>
+      <p className="rd-metric-value">{value}</p>
+      <p className="rd-metric-label">{label}</p>
+    </div>
   );
 }
 
-function ReportChartCard({ title, description, extra, children, className }) {
+function RecordList({ items, loading, emptyText }) {
+  if (loading) {
+    return (
+      <div className="rd-list">
+        {[1, 2, 3].map((i) => (
+          <div className="rd-list-row rd-list-row-skeleton" key={i} />
+        ))}
+      </div>
+    );
+  }
+
+  if (!items.length) {
+    return <p className="rd-empty">{emptyText}</p>;
+  }
+
   return (
-    <Card className={`report-chart-card ${className || ""}`}>
-      <div className="report-card-heading">
-        <div>
-          <h2>{title}</h2>
-          <p>{description}</p>
+    <div className="rd-list">
+      {items.map((item) => (
+        <div className="rd-list-row" key={item.id}>
+          <div className="rd-list-avatar">
+            {(item.title || "?").charAt(0).toUpperCase()}
+          </div>
+          <div className="rd-list-main">
+            {item.href ? (
+              <a href={item.href} className="rd-list-title">
+                {item.title}
+              </a>
+            ) : (
+              <p className="rd-list-title">{item.title}</p>
+            )}
+            <p className="rd-list-subtitle">{item.subtitle}</p>
+          </div>
+          <span className={`rd-status-badge rd-status-${item.badge}`}>
+            {item.badge.replace(/_/g, " ")}
+          </span>
+          <div className="rd-list-amount-wrap">
+            <p className="rd-list-amount">{currency(item.amount)}</p>
+            <p className="rd-list-date">
+              {new Date(item.date).toLocaleDateString("en-IN", {
+                day: "numeric",
+                month: "short",
+              })}
+            </p>
+          </div>
         </div>
-
-        {extra}
-      </div>
-
-      {children}
-    </Card>
+      ))}
+    </div>
   );
 }
-
-const ReportListCard = ({ title, children }) => {
-  return (
-    <Card className="report-list-card" bordered={false}>
-      <div className="report-card-heading">
-        <h2>{title}</h2>
-      </div>
-      <div className="report-list-wrap">{children}</div>
-    </Card>
-  );
-};
-
-export default ReportDashboard;

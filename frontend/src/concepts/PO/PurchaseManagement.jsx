@@ -2,15 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import {
-  message,
-  Tabs,
-  Select,
-  Pagination,
-  Button,
-  Modal,
-  Spin,
-} from "antd";
+import { message, Tabs, Select, Pagination, Button, Modal, Spin } from "antd";
 import { SearchOutlined } from "@ant-design/icons";
 
 import DeleteModal from "../../components/Common/DeleteModal";
@@ -92,7 +84,7 @@ const PurchaseManagement = () => {
       search: searchTerm,
       sort: sortBy,
     },
-    { skip: activeTab !== "po" }
+    { skip: activeTab !== "po" },
   );
 
   const [deletePurchaseOrder] = useDeletePurchaseOrderMutation();
@@ -112,7 +104,7 @@ const PurchaseManagement = () => {
       page: filters.page,
       limit: filters.limit,
     },
-    { skip: activeTab !== "fgs" }
+    { skip: activeTab !== "fgs" },
   );
 
   const [deleteFGS] = useDeleteFGSMutation();
@@ -140,7 +132,13 @@ const PurchaseManagement = () => {
 
   // ─── Constants ──────────────────────────────────────────────
   const poStatuses = ["pending", "confirmed", "delivered", "cancelled"];
-  const fgsStatuses = ["draft", "negotiating", "approved", "converted", "cancelled"];
+  const fgsStatuses = [
+    "draft",
+    "negotiating",
+    "approved",
+    "converted",
+    "cancelled",
+  ];
 
   const sortOptions = [
     "Recently Added",
@@ -279,7 +277,7 @@ const PurchaseManagement = () => {
         try {
           const result = await convertFgsToPo(fgsId).unwrap();
           message.success(
-            `Converted! New PO: ${result.purchaseOrder?.poNumber || "Generated"}`
+            `Converted! New PO: ${result.purchaseOrder?.poNumber || "Generated"}`,
           );
         } catch (err) {
           message.error(err.data?.message || "Conversion failed");
@@ -292,26 +290,42 @@ const PurchaseManagement = () => {
     let result = [...data];
     switch (sortBy?.trim()) {
       case "Recently Added":
-        return result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        return result.sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+        );
       case "Ascending":
         return result.sort((a, b) =>
-          (a.poNumber || a.fgsNumber || "").localeCompare(b.poNumber || b.fgsNumber || "")
+          (a.poNumber || a.fgsNumber || "").localeCompare(
+            b.poNumber || b.fgsNumber || "",
+          ),
         );
       case "Descending":
         return result.sort((a, b) =>
-          (b.poNumber || b.fgsNumber || "").localeCompare(a.poNumber || a.fgsNumber || "")
+          (b.poNumber || b.fgsNumber || "").localeCompare(
+            a.poNumber || a.fgsNumber || "",
+          ),
         );
       case "Order Date Ascending":
-        return result.sort((a, b) => new Date(a.orderDate) - new Date(b.orderDate));
+        return result.sort(
+          (a, b) => new Date(a.orderDate) - new Date(b.orderDate),
+        );
       case "Order Date Descending":
-        return result.sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate));
+        return result.sort(
+          (a, b) => new Date(b.orderDate) - new Date(a.orderDate),
+        );
       default:
         return result;
     }
   };
 
-  const sortedPOs = useMemo(() => getSortedData(purchaseOrders), [purchaseOrders, sortBy]);
-  const sortedFGS = useMemo(() => getSortedData(fieldGuidedSheets), [fieldGuidedSheets, sortBy]);
+  const sortedPOs = useMemo(
+    () => getSortedData(purchaseOrders),
+    [purchaseOrders, sortBy],
+  );
+  const sortedFGS = useMemo(
+    () => getSortedData(fieldGuidedSheets),
+    [fieldGuidedSheets, sortBy],
+  );
 
   const renderTable = () => {
     const isPO = activeTab === "po";
@@ -324,7 +338,11 @@ const PurchaseManagement = () => {
       return <div className="text-danger text-center">Error loading data</div>;
     }
     if (loading) {
-      return <div className="text-center"><Spin /> Loading...</div>;
+      return (
+        <div className="text-center">
+          <Spin /> Loading...
+        </div>
+      );
     }
     if (!data.length) {
       return <p className="text-muted text-center">No records found</p>;
@@ -384,7 +402,7 @@ const PurchaseManagement = () => {
                     getFGSStatusBg={getFGSStatusBg}
                     getFGSStatusColor={getFGSStatusColor}
                   />
-                )
+                ),
               )}
             </tbody>
           </table>
@@ -410,90 +428,93 @@ const PurchaseManagement = () => {
   return (
     <div className="page-wrapper">
       <div className="content">
-        <div className="card">
-          <PageHeader
-            title="Purchase Order"
-            subtitle="Manage Purchase Orders & Field Generated Sheets"
-            onAdd={() =>
-              activeTab === "po" ? handleOpenAddPO() : handleOpenAddFGS()
-            }
-          />
+        <PageHeader
+          title="Purchase Order"
+          subtitle="Manage Purchase Orders & Field Generated Sheets"
+          onAdd={() =>
+            activeTab === "po" ? handleOpenAddPO() : handleOpenAddFGS()
+          }
+        />
 
-          <div className="card-body">
-            <Tabs activeKey={activeTab} onChange={handleTabChange}>
-              <TabPane tab="Purchase Orders" key="po" />
-              <TabPane tab="Field Generated Sheets" key="fgs" />
-            </Tabs>
+        <div className="card-body">
+          <Tabs activeKey={activeTab} onChange={handleTabChange}>
+            <TabPane tab="Purchase Orders" key="po" />
+            <TabPane tab="Field Generated Sheets" key="fgs" />
+          </Tabs>
 
-            {/* Filters */}
-            <div className="row mb-4 align-items-center">
-              <div className="col-lg-7">
-                <div className="d-flex flex-wrap gap-3">
-                  <Select
-                    placeholder="All Statuses"
-                    allowClear
-                    style={{ width: 160 }}
-                    value={filters.status || undefined}
-                    onChange={(val) =>
-                      setFilters((p) => ({ ...p, status: val || "", page: 1 }))
-                    }
-                  >
-                    {(activeTab === "po" ? poStatuses : fgsStatuses).map((s) => (
-                      <Option key={s} value={s}>
-                        {s.charAt(0).toUpperCase() + s.slice(1)}
-                      </Option>
-                    ))}
-                  </Select>
+          {/* Filters */}
+          <div className="row mb-4 align-items-center">
+            <div className="col-lg-7">
+              <div className="d-flex flex-wrap gap-3">
+                <Select
+                  placeholder="All Statuses"
+                  allowClear
+                  style={{ width: 160 }}
+                  value={filters.status || undefined}
+                  onChange={(val) =>
+                    setFilters((p) => ({ ...p, status: val || "", page: 1 }))
+                  }
+                >
+                  {(activeTab === "po" ? poStatuses : fgsStatuses).map((s) => (
+                    <Option key={s} value={s}>
+                      {s.charAt(0).toUpperCase() + s.slice(1)}
+                    </Option>
+                  ))}
+                </Select>
 
-                  <Select
-                    value={sortBy}
-                    onChange={(v) => {
-                      setSortBy(v);
-                      resetPageOnFilterChange();
-                    }}
-                    style={{ width: 180 }}
-                  >
-                    {sortOptions.map((opt) => (
-                      <Option key={opt} value={opt}>
-                        {opt}
-                      </Option>
-                    ))}
-                  </Select>
-                </div>
-              </div>
-
-              <div className="col-lg-5">
-                <div className="d-flex justify-content-lg-end flex-wrap gap-2 mt-3 mt-lg-0">
-                  <div className="position-relative me-2 flex-grow-1">
-                    <span className="input-icon-addon">
-                      <SearchOutlined />
-                    </span>
-                    <input
-                      className="form-control"
-                      placeholder={`Search ${activeTab === "po" ? "POs" : "FGS"}...`}
-                      value={searchTerm}
-                      onChange={(e) => {
-                        setSearchTerm(e.target.value);
-                        resetPageOnFilterChange();
-                      }}
-                    />
-                  </div>
-                  <button className="btn btn-outline-secondary" onClick={handleClearFilters}>
-                    Clear
-                  </button>
-                </div>
+                <Select
+                  value={sortBy}
+                  onChange={(v) => {
+                    setSortBy(v);
+                    resetPageOnFilterChange();
+                  }}
+                  style={{ width: 180 }}
+                >
+                  {sortOptions.map((opt) => (
+                    <Option key={opt} value={opt}>
+                      {opt}
+                    </Option>
+                  ))}
+                </Select>
               </div>
             </div>
 
-            {renderTable()}
+            <div className="col-lg-5">
+              <div className="d-flex justify-content-lg-end flex-wrap gap-2 mt-3 mt-lg-0">
+                <div className="position-relative me-2 flex-grow-1">
+                  <span className="input-icon-addon">
+                    <SearchOutlined />
+                  </span>
+                  <input
+                    className="form-control"
+                    placeholder={`Search ${activeTab === "po" ? "POs" : "FGS"}...`}
+                    value={searchTerm}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value);
+                      resetPageOnFilterChange();
+                    }}
+                  />
+                </div>
+                <button
+                  className="btn btn-outline-secondary"
+                  onClick={handleClearFilters}
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
           </div>
+
+          {renderTable()}
         </div>
       </div>
 
       <DeleteModal
         isVisible={showDeleteModal}
         item={activeTab === "po" ? poToDelete : fgsToDelete}
-        itemType={activeTab === "po" ? "Purchase Order" : "Field Generated Sheet"}
+        itemType={
+          activeTab === "po" ? "Purchase Order" : "Field Generated Sheet"
+        }
         onConfirm={(id) =>
           activeTab === "po" ? handleDeletePO(id) : handleDeleteFGSConfirm(id)
         }
