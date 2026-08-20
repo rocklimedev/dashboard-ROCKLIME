@@ -25,14 +25,46 @@ import {
   DeleteOutlined,
   MoreOutlined,
   DownloadOutlined,
+  RollbackOutlined,
+  CarOutlined,
 } from "@ant-design/icons";
 import DatesModal from "../../components/Orders/DateModal";
+import DispatchModal from "../../components/modals/DispatchModal";
 import DeleteModal from "../../components/Common/DeleteModal";
 import PageHeader from "../../components/Common/PageHeader";
 import { useAuth } from "../../context/AuthContext";
 import moment from "moment";
-
+import OrderCreditNoteModal from "../../components/modals/OrderCreditNoteModal";
 const { Option } = Select;
+
+// Single source of truth for status options — used by both the filter bar
+// and the per-row status-change menu, so they can't drift out of sync.
+// DISPATCHED / PARTIALLY_DISPATCHED are intentionally left out of the
+// *settable* menu — those two are only ever reached through the Dispatch
+// modal, which tracks per-product quantities and (optionally) a gate-pass.
+// They're still valid filter values, though, so orders in that state show
+// up in searches.
+const ALL_STATUSES = [
+  "PREPARING",
+  "CHECKING",
+  "INVOICE",
+  "DISPATCHED",
+  "PARTIALLY_DISPATCHED",
+  "DELIVERED",
+  "PARTIALLY_DELIVERED",
+  "RETURNED",
+  "CANCELED",
+  "DRAFT",
+  "ONHOLD",
+  "CLOSED",
+];
+
+// Statuses a user can pick directly from the row-level status dropdown.
+// DISPATCHED/PARTIALLY_DISPATCHED are derived automatically by the backend
+// once dispatch batches are recorded, so they're excluded here.
+const DIRECTLY_SETTABLE_STATUSES = ALL_STATUSES.filter(
+  (s) => !["DISPATCHED", "PARTIALLY_DISPATCHED"].includes(s),
+);
 
 const OrderWrapper = () => {
   const navigate = useNavigate();
@@ -71,6 +103,12 @@ const OrderWrapper = () => {
     followupDates: [],
   });
 
+  // ← NEW: dispatch modal state
+  const [showDispatchModal, setShowDispatchModal] = useState(false);
+  const [orderToDispatch, setOrderToDispatch] = useState(null);
+
+  const [showCreditNoteModal, setShowCreditNoteModal] = useState(false);
+  const [orderForCreditNote, setOrderForCreditNote] = useState(null);
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -227,6 +265,41 @@ const OrderWrapper = () => {
     setShowDatesModal(true);
   };
 
+  // ← NEW: open the dispatch modal for a given order
+  const handleOpenDispatchModal = (order) => {
+    setOrderToDispatch(order);
+    setShowDispatchModal(true);
+  };
+  const handleOpenCreditNoteModal = (order) => {
+    if (!order) return;
+
+    if (
+      ![
+        "DISPATCHED",
+        "PARTIALLY_DISPATCHED",
+        "DELIVERED",
+        "PARTIALLY_DELIVERED",
+        "RETURNED",
+      ].includes(order.status)
+    ) {
+      message.warning("Credit notes can only be created after dispatch.");
+      return;
+    }
+
+    setOrderForCreditNote(order);
+    setShowCreditNoteModal(true);
+  };
+  // ← NEW: any other status change still goes straight through, but now
+  // reports errors (e.g. RETURNED without a credit note uploaded yet)
+  const handleStatusMenuClick = async (order, status) => {
+    try {
+      await updateOrderStatus({ orderId: order.id, status }).unwrap();
+      message.success(`Order status updated to ${status.replace("_", " ")}`);
+    } catch (err) {
+      message.error(err?.data?.message || "Failed to update order status");
+    }
+  };
+
   const handleDownloadOrder = async (orderId) => {
     try {
       const blob = await downloadOrderSummary(orderId).unwrap();
@@ -271,23 +344,12 @@ const OrderWrapper = () => {
                 <Select
                   placeholder="All Statuses"
                   value={committedFilters.status || undefined}
-                  style={{ width: 170 }}
+                  style={{ width: 190 }}
                   size="large"
                   onChange={handleStatusChange}
                   allowClear
                 >
-                  {[
-                    "PREPARING",
-                    "CHECKING",
-                    "INVOICE",
-                    "DISPATCHED",
-                    "DELIVERED",
-                    "PARTIALLY_DELIVERED",
-                    "CANCELED",
-                    "DRAFT",
-                    "ONHOLD",
-                    "CLOSED",
-                  ].map((s) => (
+                  {ALL_STATUSES.map((s) => (
                     <Option key={s} value={s}>
                       {s.replace("_", " ")}
                     </Option>
@@ -365,10 +427,20 @@ const OrderWrapper = () => {
                         [
                           "INVOICE",
                           "DISPATCHED",
+                          "PARTIALLY_DISPATCHED",
                           "DELIVERED",
                           "PARTIALLY_DELIVERED",
+                          "RETURNED",
                           "CLOSED",
                         ].includes(order.status) && order.invoiceLink;
+
+                      // Dispatch is only meaningful once an order is past
+                      // drafting/prep and not already closed out
+                      const canDispatchThisOrder =
+                        canUpdateOrderStatus &&
+                        !["DRAFT", "CANCELED", "CLOSED", "RETURNED"].includes(
+                          order.status,
+                        );
 
                       return (
                         <tr key={order.id}>
@@ -410,25 +482,11 @@ const OrderWrapper = () => {
                               <Dropdown
                                 overlay={
                                   <Menu>
-                                    {[
-                                      "PREPARING",
-                                      "CHECKING",
-                                      "INVOICE",
-                                      "DISPATCHED",
-                                      "DELIVERED",
-                                      "PARTIALLY_DELIVERED",
-                                      "CANCELED",
-                                      "DRAFT",
-                                      "ONHOLD",
-                                      "CLOSED",
-                                    ].map((s) => (
+                                    {DIRECTLY_SETTABLE_STATUSES.map((s) => (
                                       <Menu.Item
                                         key={s}
                                         onClick={() =>
-                                          updateOrderStatus({
-                                            orderId: order.id,
-                                            status: s,
-                                          })
+                                          handleStatusMenuClick(order, s)
                                         }
                                         disabled={order.status === s}
                                       >
@@ -516,6 +574,15 @@ const OrderWrapper = () => {
                           </td>
 
                           <td className="text-end">
+                            {canDispatchThisOrder && (
+                              <Button
+                                type="text"
+                                icon={<CarOutlined />}
+                                title="Dispatch"
+                                onClick={() => handleOpenDispatchModal(order)}
+                              />
+                            )}
+
                             {canEditOrder && (
                               <Button
                                 type="text"
@@ -542,6 +609,7 @@ const OrderWrapper = () => {
                                         <FileTextOutlined /> View Invoice
                                       </Menu.Item>
                                     )}
+
                                     <Menu.Item
                                       key="download_order"
                                       onClick={() =>
@@ -550,6 +618,26 @@ const OrderWrapper = () => {
                                     >
                                       <DownloadOutlined /> Download Order
                                     </Menu.Item>
+
+                                    {/* CREDIT NOTE */}
+                                    {canUpdateOrderStatus &&
+                                      [
+                                        "DISPATCHED",
+                                        "PARTIALLY_DISPATCHED",
+                                        "DELIVERED",
+                                        "PARTIALLY_DELIVERED",
+                                      ].includes(order.status) && (
+                                        <Menu.Item
+                                          key="credit_note"
+                                          onClick={() =>
+                                            handleOpenCreditNoteModal(order)
+                                          }
+                                        >
+                                          <RollbackOutlined /> Create Credit
+                                          Note
+                                        </Menu.Item>
+                                      )}
+
                                     {canDeleteOrder && (
                                       <Menu.Item
                                         key="delete"
@@ -618,6 +706,23 @@ const OrderWrapper = () => {
           onHide={() => setShowDatesModal(false)}
           dueDate={selectedDates.dueDate}
           followupDates={selectedDates.followupDates}
+        />
+        <OrderCreditNoteModal
+          visible={showCreditNoteModal}
+          order={orderForCreditNote}
+          onClose={() => {
+            setShowCreditNoteModal(false);
+            setOrderForCreditNote(null);
+          }}
+        />
+        {/* ← NEW: full/partial dispatch modal */}
+        <DispatchModal
+          visible={showDispatchModal}
+          order={orderToDispatch}
+          onClose={() => {
+            setShowDispatchModal(false);
+            setOrderToDispatch(null);
+          }}
         />
       </div>
     </div>

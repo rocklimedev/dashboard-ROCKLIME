@@ -70,6 +70,126 @@ export const orderApi = baseApi.injectEndpoints({
         { type: "Orders", id: "LIST" },
       ],
     }),
+    /* ──────────────────────── PARTIAL DISPATCH ──────────────────────── */
+    createDispatch: builder.mutation({
+      // formData: items (as a JSON string field), carrier, trackingNumber,
+      // remarks, and an optional "gatePass" file — OR pass a plain object
+      // and RTK Query/your fetchBaseQuery will JSON-encode it if you're not
+      // attaching a file. Use formData when uploading a gate-pass file.
+      query: ({ orderId, formData }) => ({
+        url: `/order/${orderId}/dispatch`,
+        method: "POST",
+        body: formData,
+      }),
+      invalidatesTags: (result, error, { orderId }) => [
+        { type: "Orders", id: orderId },
+        { type: "Orders", id: "LIST" },
+        { type: "OrderDispatches", id: orderId },
+        { type: "OrderActivity", id: orderId },
+      ],
+    }),
+    getOrderDispatches: builder.query({
+      query: (orderId) => `/order/${orderId}/dispatches`,
+      providesTags: (result, error, orderId) => [
+        { type: "OrderDispatches", id: orderId },
+      ],
+    }),
+    /* ──────────────────────── ORDER ACTIVITY ──────────────────────── */
+    getOrderActivity: builder.query({
+      query: ({ orderId, page = 1, limit = 20 }) => {
+        const params = new URLSearchParams({ page, limit });
+        return `/order/${orderId}/activity?${params.toString()}`;
+      },
+      providesTags: (result, error, { orderId }) => [
+        { type: "OrderActivity", id: orderId },
+      ],
+    }),
+    /* ──────────────────────── CREDIT NOTE ──────────────────────── */
+    uploadCreditNote: builder.mutation({
+      query: ({ orderId, formData }) => ({
+        url: `/order/${orderId}/credit-note`,
+        method: "POST",
+        body: formData,
+      }),
+      invalidatesTags: (result, error, { orderId }) => [
+        { type: "Orders", id: orderId },
+        { type: "Orders", id: "LIST" },
+        { type: "OrderActivity", id: orderId },
+      ],
+    }),
+    /* ──────────────────────── RECEIVING DOCUMENT ──────────────────────── */
+    uploadReceivingDocument: builder.mutation({
+      query: ({ orderId, formData }) => ({
+        url: `/order/${orderId}/receiving-document`,
+        method: "POST",
+        body: formData,
+      }),
+      invalidatesTags: (result, error, { orderId }) => [
+        { type: "Orders", id: orderId },
+        { type: "Orders", id: "LIST" },
+        { type: "OrderActivity", id: orderId },
+      ],
+    }),
+    /* ──────────────────────── CREDIT NOTE ──────────────────────── */
+
+    createCreditNote: builder.mutation({
+      query: ({ orderId, formData }) => ({
+        url: `/order/${orderId}/credit-note`,
+        method: "POST",
+        body: formData,
+      }),
+      invalidatesTags: (result, error, { orderId }) => [
+        { type: "Orders", id: orderId },
+        { type: "Orders", id: "LIST" },
+        { type: "OrderActivity", id: orderId },
+      ],
+    }),
+
+    getOrderCreditNotes: builder.query({
+      query: (orderId) => `/order/${orderId}/credit-notes`,
+      providesTags: (result, error, orderId) => [
+        { type: "OrderCreditNotes", id: orderId },
+      ],
+    }),
+
+    getOrderCreditNote: builder.query({
+      query: ({ orderId, creditNoteId }) =>
+        `/order/${orderId}/credit-note/${creditNoteId}`,
+      providesTags: (result, error, { orderId, creditNoteId }) => [
+        { type: "OrderCreditNotes", id: creditNoteId },
+        { type: "OrderCreditNotes", id: orderId },
+      ],
+    }),
+    /* ──────────────────────── CREDIT NOTE ACTIONS ──────────────────────── */
+
+    cancelOrderCreditNote: builder.mutation({
+      query: ({ orderId, creditNoteId }) => ({
+        url: `/order/${orderId}/credit-note/${creditNoteId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (result, error, { orderId, creditNoteId }) => [
+        { type: "Orders", id: orderId },
+        { type: "Orders", id: "LIST" },
+        { type: "OrderCreditNotes", id: creditNoteId },
+        { type: "OrderCreditNotes", id: orderId },
+        { type: "OrderActivity", id: orderId },
+      ],
+    }),
+
+    uploadCreditNoteDocument: builder.mutation({
+      query: ({ orderId, creditNoteId, formData }) => ({
+        url: `/order/${orderId}/credit-note/${creditNoteId}/document`,
+        method: "POST",
+        body: formData,
+      }),
+      invalidatesTags: (result, error, { orderId, creditNoteId }) => [
+        { type: "Orders", id: orderId },
+        { type: "Orders", id: "LIST" },
+        { type: "OrderCreditNotes", id: creditNoteId },
+        { type: "OrderCreditNotes", id: orderId },
+        { type: "OrderActivity", id: orderId },
+      ],
+    }),
     createOrder: builder.mutation({
       query: (orderData) => ({
         url: "/order/create",
@@ -219,4 +339,16 @@ export const {
   useUpdateOrderTeamMutation,
   useGetFilteredOrdersQuery,
   useLazyDownloadInvoiceQuery,
+  // ← NEW
+  useCreateDispatchMutation,
+  useGetOrderDispatchesQuery,
+  useGetOrderActivityQuery,
+  useUploadCreditNoteMutation,
+  useUploadReceivingDocumentMutation,
+  useCreateCreditNoteMutation,
+  useGetOrderCreditNotesQuery,
+  // NEW
+  useCancelOrderCreditNoteMutation,
+  useUploadCreditNoteDocumentMutation,
+  useGetOrderCreditNoteQuery,
 } = orderApi;

@@ -9,105 +9,152 @@ const User = require("../modules/users/models/users.model")(
   sequelize,
   DataTypes,
 );
+
 const Role = require("../modules/rbac/models/roles.model")(
   sequelize,
   DataTypes,
 );
+
 const Permission = require("../modules/rbac/models/permission.model")(
   sequelize,
   DataTypes,
 );
+
 const RolePermission = require("../modules/rbac/models/role-permission.model")(
   sequelize,
   DataTypes,
 );
+
 const Address = require("../modules/address/models/address.model")(
   sequelize,
   DataTypes,
 );
+
 const Team = require("../modules/users/models/team.model")(
   sequelize,
   DataTypes,
 );
+
 const TeamMember = require("../modules/users/models/team-member.model")(
   sequelize,
   DataTypes,
 );
+
 const ProductKeyword =
   require("../modules/products/models/product-keywords.model")(
     sequelize,
     DataTypes,
   );
+
 const Product = require("../modules/products/models/product.model")(
   sequelize,
   DataTypes,
 );
+
 const ProductMeta = require("../modules/products/models/product-meta.model")(
   sequelize,
   DataTypes,
 );
+
 const Category = require("../modules/brands/models/category.model")(
   sequelize,
   DataTypes,
 );
+
 const ParentCategory =
   require("../modules/brands/models/parent-category.model")(
     sequelize,
     DataTypes,
   );
+
 const Brand = require("../modules/brands/models/brand.model")(
   sequelize,
   DataTypes,
 );
+
 const Vendor = require("../modules/vendors/models/vendor.model")(
   sequelize,
   DataTypes,
 );
+
 const Keyword = require("../modules/brands/models/keyword.model")(
   sequelize,
   DataTypes,
 );
+
 const BrandParentCategory =
   require("../modules/brands/models/brand-parentcategory.model")(
     sequelize,
     DataTypes,
   );
+
 const BrandParentCategoryBrand =
   require("../modules/brands/models/brand-parentcategory-brand.model")(
     sequelize,
     DataTypes,
   );
+
 const ActivityLog = require("../modules/engagement/models/activity-log.model")(
   sequelize,
   DataTypes,
 );
+
 const Job = require("../modules/jobs/models/job.model")(sequelize, DataTypes);
+
 const FieldGuidedSheet = require("../modules/purchase-order/models/fgs.model")(
   sequelize,
   DataTypes,
 );
+
 const InventoryHistory =
   require("../modules/products/models/inventory-history.model")(
     sequelize,
     DataTypes,
   );
+
 const Customer = require("../modules/customers/models/customers.model")(
   sequelize,
   DataTypes,
 );
+
 const Quotation = require("../modules/quotations/models/quotation.model")(
   sequelize,
   DataTypes,
 );
+
 const Order = require("../modules/orders/models/orders.model")(
   sequelize,
   DataTypes,
 );
+
+const OrderDispatch = require("../modules/orders/models/order_dispatch.model")(
+  sequelize,
+  DataTypes,
+);
+
+const OrderActivity = require("../modules/orders/models/order_activity.model")(
+  sequelize,
+  DataTypes,
+);
+
+// ✅ NEW — Credit Note
+const OrderCreditNote = require("../modules/orders/models/order_credit_note")(
+  sequelize,
+  DataTypes,
+);
+
+const OrderCreditNoteItem =
+  require("../modules/orders/models/order_credit_note_item")(
+    sequelize,
+    DataTypes,
+  );
+
 const PurchaseOrder =
   require("../modules/purchase-order/models/purchaseorder.model")(
     sequelize,
     DataTypes,
   );
+
 // -------------------------------
 // 2️⃣ Run associations if defined
 // -------------------------------
@@ -130,11 +177,18 @@ const PurchaseOrder =
   Vendor,
   Keyword,
   BrandParentCategory,
-  ActivityLog, // ← add here
+  ActivityLog,
   BrandParentCategoryBrand,
   Customer,
   Quotation,
   Order,
+  OrderDispatch,
+  OrderActivity,
+
+  // ✅ NEW
+  OrderCreditNote,
+  OrderCreditNoteItem,
+
   PurchaseOrder,
   InventoryHistory,
 ].forEach((model) => {
@@ -162,9 +216,16 @@ const PurchaseOrder =
       Customer,
       Quotation,
       Order,
+      OrderDispatch,
+      OrderActivity,
+
+      // ✅ NEW
+      OrderCreditNote,
+      OrderCreditNoteItem,
+
       PurchaseOrder,
       InventoryHistory,
-      ActivityLog, // ← add here
+      ActivityLog,
     });
   }
 });
@@ -174,6 +235,7 @@ const PurchaseOrder =
 // -------------------------------
 module.exports = {
   sequelize,
+
   User,
   Role,
   Permission,
@@ -183,9 +245,11 @@ module.exports = {
   Team,
   Job,
   TeamMember,
+
   ProductKeyword,
   Product,
   ProductMeta,
+
   Category,
   ParentCategory,
   Brand,
@@ -193,10 +257,19 @@ module.exports = {
   Keyword,
   BrandParentCategory,
   BrandParentCategoryBrand,
+
   Customer,
   Quotation,
+
   Order,
+  OrderDispatch,
+  OrderActivity,
+
+  // ✅ NEW
+  OrderCreditNote,
+  OrderCreditNoteItem,
+
   PurchaseOrder,
-  ActivityLog, // ← add here
+  ActivityLog,
   InventoryHistory,
 };

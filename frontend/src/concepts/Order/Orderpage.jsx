@@ -10,6 +10,10 @@ import {
   useUploadInvoiceMutation,
   useLazyDownloadInvoiceQuery,
   useIssueGatePassMutation,
+  useGetOrderDispatchesQuery,
+  useGetOrderActivityQuery,
+  useUploadReceivingDocumentMutation,
+  useGetOrderCreditNotesQuery, // ← NEW
 } from "../../api/orderApi";
 import {
   useGetCustomerByIdQuery,
@@ -36,6 +40,10 @@ import {
   Upload,
   message,
   Form,
+  Timeline,
+  Tag,
+  Empty,
+  Pagination,
 } from "antd";
 import {
   EllipsisOutlined,
@@ -46,18 +54,37 @@ import {
   DownloadOutlined,
   FilePdfOutlined,
   SendOutlined,
+  CarOutlined,
+  HistoryOutlined,
+  RollbackOutlined, // ← NEW
 } from "@ant-design/icons";
 import { Document, Page, pdfjs } from "react-pdf";
 import noimg from "../../assets/img/noimg.jpg";
 import useProductsData from "../../utils/useProductdata";
 import AddAddress from "../../components/Address/AddAddressModal";
 import CommentRow from "../../components/Orders/CommentRow";
+import DispatchModal from "../../components/modals/DispatchModal";
+import OrderCreditNoteModal from "../../components/modals/OrderCreditNoteModal"; // ← NEW
 import { Helmet } from "react-helmet";
 import "../../components/Orders/orderpage.css"; // ← new / updated stylesheet
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`;
 
 const { Title, Text } = Typography;
+
+// Maps order_activity "action" values to a Tag color so the timeline is
+// scannable at a glance.
+const ACTIVITY_TAG_COLOR = {
+  DISPATCH_CREATED: "blue",
+  CREDIT_NOTE_UPLOADED: "purple",
+  RECEIVING_DOCUMENT_UPLOADED: "cyan",
+  GATE_PASS_ISSUED: "geekblue",
+  INVOICE_UPLOADED: "gold",
+  ORDER_CREATED: "green",
+  ORDER_UPDATED: "orange",
+  ORDER_STATUS_UPDATE: "orange",
+  ORDER_DELETED: "red",
+};
 
 const OrderPage = () => {
   const { id } = useParams();
@@ -68,10 +95,15 @@ const OrderPage = () => {
   const [commentPage, setCommentPage] = useState(1);
   const [invoiceFile, setInvoiceFile] = useState(null);
   const [gatePassFile, setGatePassFile] = useState(null);
+  const [receivingDocFile, setReceivingDocFile] = useState(null); // ← NEW
   const [isBillingModalVisible, setIsBillingModalVisible] = useState(false);
   const [isShippingModalVisible, setIsShippingModalVisible] = useState(false);
+  const [showDispatchModal, setShowDispatchModal] = useState(false); // ← NEW
+  const [showCreditNoteModal, setShowCreditNoteModal] = useState(false); // ← NEW
+  const [activityPage, setActivityPage] = useState(1); // ← NEW
 
   const commentLimit = 10;
+  const activityLimit = 10;
 
   // ── RTK QUERIES & MUTATIONS ──────────────────────
   const { data: profileData } = useGetProfileQuery();
@@ -94,6 +126,31 @@ const OrderPage = () => {
     },
     { skip: !id },
   );
+
+  // ← NEW: dispatch history
+  const {
+    data: dispatchesData,
+    isLoading: dispatchesLoading,
+    refetch: refetchDispatches,
+  } = useGetOrderDispatchesQuery(id, { skip: !id });
+  const dispatches = dispatchesData?.dispatches || [];
+
+  // ← NEW: credit note history
+  const {
+    data: creditNotesData,
+    isLoading: creditNotesLoading,
+    refetch: refetchCreditNotes,
+  } = useGetOrderCreditNotesQuery(id, { skip: !id });
+  const creditNotes = creditNotesData?.creditNotes || [];
+
+  // ← NEW: order activity feed
+  const { data: activityData, isLoading: activityLoading } =
+    useGetOrderActivityQuery(
+      { orderId: id, page: activityPage, limit: activityLimit },
+      { skip: !id },
+    );
+  const activities = activityData?.activities || [];
+  const activityTotal = activityData?.totalCount || 0;
 
   const { data: customerData } = useGetCustomerByIdQuery(order.createdFor, {
     skip: !order.createdFor,
@@ -120,6 +177,8 @@ const OrderPage = () => {
     useUploadInvoiceMutation();
   const [issueGatePass, { isLoading: isGatePassUploading }] =
     useIssueGatePassMutation();
+  const [uploadReceivingDocument, { isLoading: isReceivingDocUploading }] =
+    useUploadReceivingDocumentMutation(); // ← NEW
   const [triggerInvoiceDownload] = useLazyDownloadInvoiceQuery();
 
   // ── PRODUCTS & MERGING LOGIC (unchanged) ─────────
@@ -221,8 +280,24 @@ const OrderPage = () => {
 
   const invoiceUrl = order.invoiceLink ? `${order.invoiceLink}` : null;
   const gatePassUrl = order.gatePassLink ? `${order.gatePassLink}` : null;
+  const receivingDocUrl = order.receivingDocumentLink // ← NEW
+    ? `${order.receivingDocumentLink}`
+    : null;
 
   const isDispatched = order.status === "DISPATCHED";
+
+  // Dispatch is only meaningful once the order is past drafting/prep and
+  // hasn't already been closed out or returned.
+  const canDispatchThisOrder = ![
+    "DRAFT",
+    "CANCELED",
+    "CLOSED",
+    "RETURNED",
+  ].includes(order.status); // ← NEW
+
+  // Credit notes only make sense once the order has actually moved past
+  // drafting and hasn't been canceled outright.
+  const canCreateCreditNote = !["DRAFT", "CANCELED"].includes(order.status); // ← NEW
 
   // ── HANDLERS (mostly unchanged) ─────────────────
   const handleInvoiceChange = ({ file }) => {
@@ -234,6 +309,13 @@ const OrderPage = () => {
     const allowed = ["application/pdf", "image/png", "image/jpeg", "image/jpg"];
     if (allowed.includes(file.type)) setGatePassFile(file);
     else message.error("Only PDF, PNG, JPG allowed for gate pass.");
+  };
+
+  // ← NEW
+  const handleReceivingDocChange = ({ file }) => {
+    const allowed = ["application/pdf", "image/png", "image/jpeg", "image/jpg"];
+    if (allowed.includes(file.type)) setReceivingDocFile(file);
+    else message.error("Only PDF, PNG, JPG allowed for receiving document.");
   };
 
   const handleInvoiceSubmit = async () => {
@@ -259,6 +341,21 @@ const OrderPage = () => {
       setGatePassFile(null);
       refetchOrder();
       message.success("Gate pass issued");
+    } catch (err) {
+      message.error(err.data?.message || "Upload failed");
+    }
+  };
+
+  // ← NEW
+  const handleReceivingDocSubmit = async () => {
+    if (!receivingDocFile) return message.error("Select a file.");
+    const formData = new FormData();
+    formData.append("file", receivingDocFile);
+    try {
+      await uploadReceivingDocument({ orderId: id, formData }).unwrap();
+      setReceivingDocFile(null);
+      refetchOrder();
+      message.success("Receiving document uploaded");
     } catch (err) {
       message.error(err.data?.message || "Upload failed");
     }
@@ -339,6 +436,19 @@ const OrderPage = () => {
       message.error(err.message || "Download failed");
     }
   };
+
+  // ← NEW: dispatch modal success handler
+  const handleDispatchSuccess = () => {
+    refetchOrder();
+    refetchDispatches();
+  };
+
+  // ← NEW: credit note modal success handler
+  const handleCreditNoteSuccess = () => {
+    refetchOrder();
+    refetchCreditNotes();
+  };
+
   const menu = (
     <Menu>
       <Menu.Item key="edit" onClick={() => navigate(`/order/${id}/edit`)}>
@@ -389,19 +499,50 @@ const OrderPage = () => {
           <Col xs={24} lg={16} xl={18}>
             {/* Products Card */}
             <Card className="section-card products-card">
-              <Title level={3} style={{ margin: 0 }}>
-                Order #{order.orderNo}{" "}
-                <Badge
-                  status={
-                    order.status === "DRAFT"
-                      ? "warning"
-                      : order.status === "ONHOLD"
-                        ? "error"
-                        : "success"
-                  }
-                  text={order.status}
-                />
-              </Title>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: 12,
+                }}
+              >
+                <Title level={3} style={{ margin: 0 }}>
+                  Order #{order.orderNo}{" "}
+                  <Badge
+                    status={
+                      order.status === "DRAFT"
+                        ? "warning"
+                        : order.status === "ONHOLD"
+                          ? "error"
+                          : "success"
+                    }
+                    text={order.status?.replace(/_/g, " ")}
+                  />
+                </Title>
+
+                {/* ← NEW: Dispatch + Credit Note buttons */}
+                <Space wrap>
+                  {canDispatchThisOrder && (
+                    <Button
+                      type="primary"
+                      icon={<CarOutlined />}
+                      onClick={() => setShowDispatchModal(true)}
+                    >
+                      Dispatch
+                    </Button>
+                  )}
+                  {canCreateCreditNote && (
+                    <Button
+                      icon={<RollbackOutlined />}
+                      onClick={() => setShowCreditNoteModal(true)}
+                    >
+                      Add Credit Note
+                    </Button>
+                  )}
+                </Space>
+              </div>
 
               <Table
                 dataSource={mergedProducts}
@@ -541,8 +682,686 @@ const OrderPage = () => {
               />
             </Card>
 
+            {/* Dispatch History */}
+            <Card
+              title={
+                <span>
+                  <CarOutlined /> Dispatch History
+                </span>
+              }
+              className="section-card"
+              style={{ marginTop: 24 }}
+            >
+              {dispatchesLoading ? (
+                <div style={{ textAlign: "center", padding: "20px 0" }}>
+                  <Spin />
+                </div>
+              ) : dispatches.length === 0 ? (
+                <Empty
+                  description="No dispatches recorded yet"
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                />
+              ) : (
+                <Table
+                  dataSource={dispatches}
+                  rowKey="id"
+                  pagination={false}
+                  size="small"
+                  scroll={{ x: "max-content" }}
+                  expandable={{
+                    defaultExpandAllRows: false,
+
+                    expandedRowRender: (record) => (
+                      <div
+                        style={{
+                          padding: "12px 16px",
+                          background: "#fafafa",
+                          borderRadius: 6,
+                        }}
+                      >
+                        <Table
+                          dataSource={record.items || []}
+                          rowKey="productId"
+                          pagination={false}
+                          size="small"
+                          bordered
+                          columns={[
+                            {
+                              title: "Product",
+                              dataIndex: "name",
+                              key: "name",
+                              width: 320,
+                              render: (value) => (
+                                <span style={{ fontWeight: 500 }}>{value}</span>
+                              ),
+                            },
+                            {
+                              title: "Product Code",
+                              dataIndex: "productCode",
+                              key: "productCode",
+                              width: 160,
+                              render: (value) => value || "—",
+                            },
+                            {
+                              title: "Qty",
+                              dataIndex: "quantity",
+                              key: "quantity",
+                              width: 80,
+                              align: "center",
+                            },
+                            {
+                              title: "Unit Price",
+                              dataIndex: "price",
+                              key: "price",
+                              width: 120,
+                              align: "right",
+                              render: (value) =>
+                                Number(value || 0).toLocaleString("en-IN", {
+                                  style: "currency",
+                                  currency: "INR",
+                                  maximumFractionDigits: 2,
+                                }),
+                            },
+                            {
+                              title: "Total",
+                              dataIndex: "total",
+                              key: "total",
+                              width: 130,
+                              align: "right",
+                              render: (value) =>
+                                Number(value || 0).toLocaleString("en-IN", {
+                                  style: "currency",
+                                  currency: "INR",
+                                  maximumFractionDigits: 2,
+                                }),
+                            },
+                          ]}
+                          summary={() => (
+                            <Table.Summary>
+                              <Table.Summary.Row>
+                                <Table.Summary.Cell index={0} colSpan={2}>
+                                  <strong>Dispatch Total</strong>
+                                </Table.Summary.Cell>
+
+                                <Table.Summary.Cell index={2} align="center">
+                                  <strong>{record.totalQuantity || 0}</strong>
+                                </Table.Summary.Cell>
+
+                                <Table.Summary.Cell index={3} />
+
+                                <Table.Summary.Cell index={4} align="right">
+                                  <strong>
+                                    {Number(
+                                      record.totalAmount || 0,
+                                    ).toLocaleString("en-IN", {
+                                      style: "currency",
+                                      currency: "INR",
+                                      maximumFractionDigits: 2,
+                                    })}
+                                  </strong>
+                                </Table.Summary.Cell>
+                              </Table.Summary.Row>
+                            </Table.Summary>
+                          )}
+                        />
+
+                        {/* Dispatch metadata */}
+                        <div
+                          style={{
+                            marginTop: 16,
+                            display: "grid",
+                            gridTemplateColumns:
+                              "repeat(auto-fit, minmax(180px, 1fr))",
+                            gap: 12,
+                          }}
+                        >
+                          <div>
+                            <div className="text-muted small">Carrier</div>
+                            <div>{record.carrier || "—"}</div>
+                          </div>
+
+                          <div>
+                            <div className="text-muted small">
+                              Tracking Number
+                            </div>
+                            <div>{record.trackingNumber || "—"}</div>
+                          </div>
+
+                          <div>
+                            <div className="text-muted small">
+                              Dispatched On
+                            </div>
+                            <div>
+                              {record.dispatchDate
+                                ? new Date(record.dispatchDate).toLocaleString(
+                                    "en-IN",
+                                  )
+                                : "—"}
+                            </div>
+                          </div>
+
+                          <div>
+                            <div className="text-muted small">Status</div>
+                            <div>
+                              <Tag
+                                color={
+                                  record.status === "DISPATCHED"
+                                    ? "green"
+                                    : record.status === "PARTIALLY_DISPATCHED"
+                                      ? "orange"
+                                      : "blue"
+                                }
+                              >
+                                {record.status || "—"}
+                              </Tag>
+                            </div>
+                          </div>
+
+                          <div>
+                            <div className="text-muted small">Gate-Pass</div>
+                            <div>
+                              {record.gatePassLink ? (
+                                <a
+                                  href={record.gatePassLink}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  View Gate-Pass
+                                </a>
+                              ) : (
+                                "—"
+                              )}
+                            </div>
+                          </div>
+
+                          {record.remarks && (
+                            <div>
+                              <div className="text-muted small">Remarks</div>
+                              <div>{record.remarks}</div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ),
+
+                    rowExpandable: (record) =>
+                      Array.isArray(record.items) && record.items.length > 0,
+                  }}
+                  columns={[
+                    {
+                      title: "Dispatch #",
+                      dataIndex: "dispatchNumber",
+                      key: "dispatchNumber",
+                      width: 100,
+                      render: (value) => <strong>#{value}</strong>,
+                    },
+
+                    {
+                      title: "Date",
+                      dataIndex: "dispatchDate",
+                      key: "dispatchDate",
+                      width: 170,
+                      render: (value) =>
+                        value
+                          ? new Date(value).toLocaleString("en-IN", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : "—",
+                    },
+
+                    {
+                      title: "Products",
+                      key: "productCount",
+                      width: 100,
+                      align: "center",
+                      render: (_, record) => (
+                        <Tag>
+                          {(record.items || []).length}{" "}
+                          {(record.items || []).length === 1
+                            ? "Product"
+                            : "Products"}
+                        </Tag>
+                      ),
+                    },
+
+                    {
+                      title: "Qty",
+                      dataIndex: "totalQuantity",
+                      key: "totalQuantity",
+                      width: 80,
+                      align: "center",
+                    },
+
+                    {
+                      title: "Amount",
+                      dataIndex: "totalAmount",
+                      key: "totalAmount",
+                      width: 140,
+                      align: "right",
+                      render: (value) =>
+                        Number(value || 0).toLocaleString("en-IN", {
+                          style: "currency",
+                          currency: "INR",
+                          maximumFractionDigits: 2,
+                        }),
+                    },
+
+                    {
+                      title: "Carrier",
+                      dataIndex: "carrier",
+                      key: "carrier",
+                      width: 130,
+                      render: (value) => value || "—",
+                    },
+
+                    {
+                      title: "Tracking",
+                      dataIndex: "trackingNumber",
+                      key: "trackingNumber",
+                      width: 150,
+                      render: (value) => value || "—",
+                    },
+
+                    {
+                      title: "Status",
+                      dataIndex: "status",
+                      key: "status",
+                      width: 140,
+                      render: (value) => (
+                        <Tag
+                          color={
+                            value === "DISPATCHED"
+                              ? "green"
+                              : value === "PARTIALLY_DISPATCHED"
+                                ? "orange"
+                                : "blue"
+                          }
+                        >
+                          {value || "—"}
+                        </Tag>
+                      ),
+                    },
+
+                    {
+                      title: "Gate-Pass",
+                      key: "gatePass",
+                      width: 110,
+                      render: (_, record) =>
+                        record.gatePassLink ? (
+                          <a
+                            href={record.gatePassLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            View
+                          </a>
+                        ) : (
+                          "—"
+                        ),
+                    },
+                  ]}
+                />
+              )}
+            </Card>
+
+            {/* Credit Note History */}
+            <Card
+              title={
+                <span>
+                  <RollbackOutlined /> Credit Notes
+                </span>
+              }
+              className="section-card"
+              style={{ marginTop: 24 }}
+            >
+              {creditNotesLoading ? (
+                <div style={{ textAlign: "center", padding: "20px 0" }}>
+                  <Spin />
+                </div>
+              ) : creditNotes.length === 0 ? (
+                <Empty
+                  description="No credit notes recorded yet"
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                />
+              ) : (
+                <Table
+                  dataSource={creditNotes}
+                  rowKey="id"
+                  pagination={false}
+                  size="small"
+                  scroll={{ x: "max-content" }}
+                  expandable={{
+                    defaultExpandAllRows: false,
+
+                    expandedRowRender: (record) => (
+                      <div
+                        style={{
+                          padding: "12px 16px",
+                          background: "#fafafa",
+                          borderRadius: 6,
+                        }}
+                      >
+                        <Table
+                          dataSource={record.items || []}
+                          rowKey="id"
+                          pagination={false}
+                          size="small"
+                          bordered
+                          columns={[
+                            {
+                              title: "Product",
+                              dataIndex: "name",
+                              key: "name",
+                              render: (value, item) => (
+                                <div>
+                                  <div style={{ fontWeight: 500 }}>
+                                    {value || "—"}
+                                  </div>
+
+                                  {item.productCode && (
+                                    <div
+                                      style={{
+                                        fontSize: 12,
+                                        color: "#8c8c8c",
+                                        marginTop: 2,
+                                      }}
+                                    >
+                                      {item.productCode}
+                                    </div>
+                                  )}
+                                </div>
+                              ),
+                            },
+
+                            {
+                              title: "Qty Returned",
+                              dataIndex: "quantity",
+                              key: "quantity",
+                              width: 130,
+                              align: "center",
+                              render: (value) => Number(value || 0).toFixed(2),
+                            },
+
+                            {
+                              title: "Price",
+                              dataIndex: "price",
+                              key: "price",
+                              width: 140,
+                              align: "right",
+                              render: (value) =>
+                                Number(value || 0).toLocaleString("en-IN", {
+                                  style: "currency",
+                                  currency: "INR",
+                                  maximumFractionDigits: 2,
+                                }),
+                            },
+
+                            {
+                              title: "Discount",
+                              dataIndex: "discount",
+                              key: "discount",
+                              width: 110,
+                              align: "right",
+                              render: (value, item) => {
+                                const discount = Number(value || 0);
+
+                                return item.discountType === "percent"
+                                  ? `${discount.toFixed(2)}%`
+                                  : discount.toLocaleString("en-IN", {
+                                      style: "currency",
+                                      currency: "INR",
+                                      maximumFractionDigits: 2,
+                                    });
+                              },
+                            },
+
+                            {
+                              title: "Amount",
+                              dataIndex: "total",
+                              key: "total",
+                              width: 140,
+                              align: "right",
+                              render: (value) =>
+                                Number(value || 0).toLocaleString("en-IN", {
+                                  style: "currency",
+                                  currency: "INR",
+                                  maximumFractionDigits: 2,
+                                }),
+                            },
+                          ]}
+                        />
+
+                        {/* Credit note metadata */}
+                        <div
+                          style={{
+                            marginTop: 16,
+                            display: "grid",
+                            gridTemplateColumns:
+                              "repeat(auto-fit, minmax(180px, 1fr))",
+                            gap: 12,
+                          }}
+                        >
+                          <div>
+                            <div className="text-muted small">
+                              Credit Note Date
+                            </div>
+                            <div>
+                              {record.creditNoteDate
+                                ? new Date(
+                                    record.creditNoteDate,
+                                  ).toLocaleString("en-IN", {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })
+                                : "—"}
+                            </div>
+                          </div>
+
+                          <div>
+                            <div className="text-muted small">Issued On</div>
+                            <div>
+                              {record.createdAt
+                                ? new Date(record.createdAt).toLocaleString(
+                                    "en-IN",
+                                    {
+                                      day: "2-digit",
+                                      month: "short",
+                                      year: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    },
+                                  )
+                                : "—"}
+                            </div>
+                          </div>
+
+                          <div>
+                            <div className="text-muted small">Status</div>
+                            <div>
+                              <Tag
+                                color={
+                                  record.status === "CANCELED"
+                                    ? "red"
+                                    : record.status === "ISSUED"
+                                      ? "purple"
+                                      : "default"
+                                }
+                              >
+                                {record.status || "ISSUED"}
+                              </Tag>
+                            </div>
+                          </div>
+
+                          <div>
+                            <div className="text-muted small">
+                              Total Quantity
+                            </div>
+                            <div>
+                              {Number(record.totalQuantity || 0).toFixed(2)}
+                            </div>
+                          </div>
+
+                          <div>
+                            <div className="text-muted small">Total Amount</div>
+                            <div style={{ fontWeight: 600 }}>
+                              {Number(record.totalAmount || 0).toLocaleString(
+                                "en-IN",
+                                {
+                                  style: "currency",
+                                  currency: "INR",
+                                  maximumFractionDigits: 2,
+                                },
+                              )}
+                            </div>
+                          </div>
+
+                          <div>
+                            <div className="text-muted small">Document</div>
+                            <div>
+                              {record.creditNoteLink ? (
+                                <a
+                                  href={record.creditNoteLink}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  View Credit Note
+                                </a>
+                              ) : (
+                                "—"
+                              )}
+                            </div>
+                          </div>
+
+                          {record.reason && (
+                            <div>
+                              <div className="text-muted small">Reason</div>
+                              <div>{record.reason}</div>
+                            </div>
+                          )}
+
+                          {record.remarks && (
+                            <div>
+                              <div className="text-muted small">Remarks</div>
+                              <div>{record.remarks}</div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ),
+
+                    rowExpandable: (record) =>
+                      Array.isArray(record.items) && record.items.length > 0,
+                  }}
+                  columns={[
+                    {
+                      title: "Credit Note #",
+                      dataIndex: "creditNoteNumber",
+                      key: "creditNoteNumber",
+                      width: 180,
+                      render: (value) => <strong>#{value || "—"}</strong>,
+                    },
+
+                    {
+                      title: "Date",
+                      dataIndex: "creditNoteDate",
+                      key: "creditNoteDate",
+                      width: 170,
+                      render: (value) =>
+                        value
+                          ? new Date(value).toLocaleString("en-IN", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : "—",
+                    },
+
+                    {
+                      title: "Items",
+                      key: "itemCount",
+                      width: 90,
+                      align: "center",
+                      render: (_, record) => (
+                        <Tag>{(record.items || []).length}</Tag>
+                      ),
+                    },
+
+                    {
+                      title: "Qty Returned",
+                      dataIndex: "totalQuantity",
+                      key: "totalQuantity",
+                      width: 120,
+                      align: "center",
+                      render: (value) => Number(value || 0).toFixed(2),
+                    },
+
+                    {
+                      title: "Amount",
+                      dataIndex: "totalAmount",
+                      key: "totalAmount",
+                      width: 140,
+                      align: "right",
+                      render: (value) =>
+                        Number(value || 0).toLocaleString("en-IN", {
+                          style: "currency",
+                          currency: "INR",
+                          maximumFractionDigits: 2,
+                        }),
+                    },
+
+                    {
+                      title: "Status",
+                      dataIndex: "status",
+                      key: "status",
+                      width: 120,
+                      render: (value) => (
+                        <Tag
+                          color={
+                            value === "CANCELED"
+                              ? "red"
+                              : value === "ISSUED"
+                                ? "purple"
+                                : "default"
+                          }
+                        >
+                          {value || "ISSUED"}
+                        </Tag>
+                      ),
+                    },
+
+                    {
+                      title: "Document",
+                      key: "document",
+                      width: 140,
+                      render: (_, record) =>
+                        record.creditNoteLink ? (
+                          <a
+                            href={record.creditNoteLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            View
+                          </a>
+                        ) : (
+                          "—"
+                        ),
+                    },
+                  ]}
+                />
+              )}
+            </Card>
+
             {/* Addresses */}
-            <Row gutter={16}>
+            <Row gutter={16} style={{ marginTop: 24 }}>
               <Col xs={24} md={12}>
                 <Card
                   title="Billing Address"
@@ -613,7 +1432,7 @@ const OrderPage = () => {
           <Col xs={24} lg={8} xl={6}>
             <Space direction="vertical" size={20} style={{ width: "100%" }}>
               {/* Customer */}
-              <Card title="Customer" className="info-card">
+              <Card className="info-card">
                 <div className="customer-info">
                   <div className="avatar-circle">
                     {customer.name?.[0]?.toUpperCase() || "?"}
@@ -741,12 +1560,107 @@ const OrderPage = () => {
                     </Button>
                   )}
                 </div>
+
+                {/* ← NEW: Receiving Document */}
+                <div className="document-item" style={{ marginTop: 16 }}>
+                  <div className="document-label">
+                    <FilePdfOutlined /> Receiving Document
+                  </div>
+                  {receivingDocUrl ? (
+                    <Space>
+                      <a
+                        href={receivingDocUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        View
+                      </a>
+                    </Space>
+                  ) : (
+                    <Upload
+                      accept="application/pdf,image/*"
+                      beforeUpload={() => false}
+                      onChange={handleReceivingDocChange}
+                      fileList={
+                        receivingDocFile
+                          ? [{ name: receivingDocFile.name, status: "done" }]
+                          : []
+                      }
+                    >
+                      <Button size="small">Upload Receiving Doc</Button>
+                    </Upload>
+                  )}
+                  {receivingDocFile && (
+                    <Button
+                      type="primary"
+                      size="small"
+                      onClick={handleReceivingDocSubmit}
+                      loading={isReceivingDocUploading}
+                      style={{ marginTop: 8 }}
+                    >
+                      Confirm Upload
+                    </Button>
+                  )}
+                </div>
+              </Card>
+
+              {/* ← NEW: Order Activity */}
+              <Card
+                title={
+                  <span>
+                    <HistoryOutlined /> Order Activity
+                  </span>
+                }
+                className="info-card"
+              >
+                {activityLoading ? (
+                  <div style={{ textAlign: "center", padding: "12px 0" }}>
+                    <Spin size="small" />
+                  </div>
+                ) : activities.length === 0 ? (
+                  <Empty
+                    description="No activity yet"
+                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  />
+                ) : (
+                  <>
+                    <Timeline
+                      items={activities.map((a) => ({
+                        color: ACTIVITY_TAG_COLOR[a.action] || "gray",
+                        children: (
+                          <div key={a.id}>
+                            <Tag
+                              color={ACTIVITY_TAG_COLOR[a.action] || "default"}
+                            >
+                              {a.action?.replace(/_/g, " ")}
+                            </Tag>
+                            <div style={{ marginTop: 4 }}>{a.description}</div>
+                            <Text type="secondary" style={{ fontSize: 12 }}>
+                              {new Date(a.createdAt).toLocaleString()}
+                            </Text>
+                          </div>
+                        ),
+                      }))}
+                    />
+                    {activityTotal > activityLimit && (
+                      <div style={{ textAlign: "center", marginTop: 12 }}>
+                        <Pagination
+                          size="small"
+                          current={activityPage}
+                          pageSize={activityLimit}
+                          total={activityTotal}
+                          onChange={setActivityPage}
+                          showSizeChanger={false}
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
               </Card>
             </Space>
           </Col>
         </Row>
 
-        {/* ── COMMENTS ──────────────────────────────────────────────────── */}
         {/* ── COMMENTS ──────────────────────────────────────────────────── */}
         <Card
           title={
@@ -861,6 +1775,22 @@ const OrderPage = () => {
             selectedCustomer={order.createdFor}
           />
         )}
+
+        {/* ← NEW: Dispatch modal */}
+        <DispatchModal
+          visible={showDispatchModal}
+          order={order}
+          onClose={() => setShowDispatchModal(false)}
+          onSuccess={handleDispatchSuccess}
+        />
+
+        {/* ← NEW: Credit Note modal */}
+        <OrderCreditNoteModal
+          visible={showCreditNoteModal}
+          order={order}
+          onClose={() => setShowCreditNoteModal(false)}
+          onSuccess={handleCreditNoteSuccess}
+        />
       </div>
     </div>
   );
