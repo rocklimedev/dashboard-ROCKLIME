@@ -5,7 +5,7 @@ const moment = require("moment");
 const sequelize = require("../../config/database");
 const { sendNotification } = require("../engagement/notification.controller");
 const { Product, Vendor, PurchaseOrder, User } = require("../../models");
-const PoItem = require("../products/models/po-item.model"); // Mongoose model
+const PoItem = require("./models/po-item.model"); // Mongoose model
 const { ActivityLog } = require("../../models");
 const logActivity = require("../../utils/activityLogger");
 

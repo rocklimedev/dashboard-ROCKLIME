@@ -14,25 +14,27 @@
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
--- Dumping structure for table spsyn8lm_rocklime_dashboard.categories
-CREATE TABLE IF NOT EXISTS `categories` (
-  `categoryId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-  `name` varchar(100) NOT NULL,
-  `parentCategoryId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+-- Dumping structure for table spsyn8lm_rocklime_dashboard.order_activity
+CREATE TABLE IF NOT EXISTS `order_activity` (
+  `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `orderId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `orderNo` varchar(30) NOT NULL,
+  `action` varchar(60) NOT NULL,
+  `description` text,
+  `oldValue` json DEFAULT NULL,
+  `newValue` json DEFAULT NULL,
+  `performedBy` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  `metadata` json DEFAULT NULL,
+  `ipAddress` varchar(64) DEFAULT NULL,
   `createdAt` datetime NOT NULL,
-  `updatedAt` datetime NOT NULL,
-  `slug` varchar(255) NOT NULL,
-  `brandId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
-  PRIMARY KEY (`categoryId`),
-  UNIQUE KEY `categories_slug` (`slug`),
-  UNIQUE KEY `slug` (`slug`),
-  UNIQUE KEY `unique_category_name_per_brand` (`name`,`brandId`),
-  UNIQUE KEY `categories_name_brand_id` (`name`,`brandId`),
-  KEY `parentCategoryId` (`parentCategoryId`),
-  KEY `categories_brand_id` (`brandId`),
-  KEY `categories_parent_category_id` (`parentCategoryId`),
-  CONSTRAINT `categories_ibfk_1379` FOREIGN KEY (`parentCategoryId`) REFERENCES `parentcategories` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  CONSTRAINT `categories_ibfk_1380` FOREIGN KEY (`brandId`) REFERENCES `brands` (`id`) ON DELETE NO ACTION ON UPDATE CASCADE
+  PRIMARY KEY (`id`) USING BTREE,
+  KEY `idx_order_activity_order_id` (`orderId`) USING BTREE,
+  KEY `idx_order_activity_order_no` (`orderNo`) USING BTREE,
+  KEY `idx_order_activity_action` (`action`) USING BTREE,
+  KEY `idx_order_activity_created_at` (`createdAt`) USING BTREE,
+  KEY `fk_order_activity_performed_by` (`performedBy`),
+  CONSTRAINT `fk_order_activity_order` FOREIGN KEY (`orderId`) REFERENCES `orders` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_order_activity_performed_by` FOREIGN KEY (`performedBy`) REFERENCES `users` (`userId`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Data exporting was unselected.

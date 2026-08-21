@@ -11,10 +11,12 @@ const {
 } = require("../../models");
 
 const { Op } = require("sequelize");
+const { v7: uuidv7 } = require("uuid");
 
 const logActivity = require("../../utils/activityLogger");
 const logOrderActivity = require("./order-activity-logger");
 const { sendNotification } = require("../engagement/notification.controller");
+const { uploadToFtp } = require("../../middleware/upload");
 
 // Assume an admin user ID or system channel for notifications
 const ADMIN_USER_ID = "2ef0f07a-a275-4fe1-832d-fe9a5d145f60"; // Replace with actual admin user ID or channel
@@ -32,6 +34,24 @@ const sendErrorResponse = (res, status, message, details = null) => {
 const roundMoney = (value) => {
   return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
 };
+
+/**
+ * Upload a credit note document (buffer, from multer memoryStorage)
+ * to FTP and return the public URL. Returns null if no file given.
+ *
+ * multer is configured with memoryStorage() for the credit-note
+ * routes, so req.file only ever has a `buffer` — there is no
+ * `.location` / `.url` / `.path` to read off it. This is the one
+ * place that actually persists the file and gets back a URL.
+ */
+const uploadCreditNoteFile = async (file) => {
+  if (!file || !file.buffer) return null;
+
+  return uploadToFtp(file.buffer, file.originalname, {
+    remoteDir: "/invoice_pdfs",
+  });
+};
+
 /**
  * Reduce stock + log history (shared by create & update)
  */
@@ -102,6 +122,7 @@ async function reduceStockAndLog({
     }
   }
 }
+
 /**
  * Parse `items` from the request body.
  *
@@ -241,15 +262,6 @@ const getOrderProduct = (order, productId) => {
   );
 };
 
-/**
- * Resolve a document URL from an uploaded file object,
- * regardless of which storage middleware populated it.
- */
-const resolveUploadedDocumentUrl = (file) => {
-  if (!file) return null;
-  return file.location || file.url || file.path || null;
-};
-
 // ============================================================
 // CREATE CREDIT NOTE
 // ============================================================
@@ -295,6 +307,40 @@ exports.createOrderCreditNote = async (req, res) => {
         400,
         "At least one return item is required",
       );
+    }
+
+    if (!req.file) {
+      await transaction.rollback();
+      return sendErrorResponse(res, 400, "Credit note document is required");
+    }
+
+    // --------------------------------------------------------
+    // UPLOAD CREDIT NOTE DOCUMENT
+    // --------------------------------------------------------
+    //
+    // Done up front, before any row locks are taken below, so a
+    // slow FTP round-trip doesn't hold the order/product locks
+    // open any longer than necessary.
+    // --------------------------------------------------------
+
+    let creditNoteLink;
+
+    try {
+      creditNoteLink = await uploadCreditNoteFile(req.file);
+    } catch (uploadErr) {
+      await transaction.rollback();
+      console.error("Credit note file upload failed:", uploadErr);
+      return sendErrorResponse(
+        res,
+        500,
+        "Failed to upload credit note document",
+        uploadErr.message,
+      );
+    }
+
+    if (!creditNoteLink) {
+      await transaction.rollback();
+      return sendErrorResponse(res, 500, "File upload did not return a URL");
     }
 
     // --------------------------------------------------------
@@ -554,12 +600,6 @@ exports.createOrderCreditNote = async (req, res) => {
         "Credit note amount must be greater than zero",
       );
     }
-
-    // --------------------------------------------------------
-    // OPTIONAL DOCUMENT UPLOAD
-    // --------------------------------------------------------
-
-    const creditNoteLink = resolveUploadedDocumentUrl(req.file);
 
     // --------------------------------------------------------
     // CREATE CREDIT NOTE HEADER
@@ -1409,27 +1449,26 @@ exports.uploadCreditNoteDocument = async (req, res) => {
     // UPLOAD FILE
     // --------------------------------------------------------
     //
-    // Replace this section with your existing media upload
-    // helper/service if you have one, e.g.:
-    //
-    // const uploaded = await uploadToMediaServer({
-    //   file: req.file,
-    //   folder: "credit_notes",
-    // });
-    // const documentUrl = uploaded.url;
-    //
-    // Fallback below covers middlewares that already put the
-    // URL onto req.file.location/url/path.
+    // req.file only has a `buffer` (multer memoryStorage), so it
+    // has to actually be shipped to FTP here to get a public URL.
     // --------------------------------------------------------
 
-    const documentUrl = resolveUploadedDocumentUrl(req.file);
+    let documentUrl;
 
-    if (!documentUrl) {
+    try {
+      documentUrl = await uploadCreditNoteFile(req.file);
+    } catch (uploadErr) {
+      console.error("Credit note file upload failed:", uploadErr);
       return sendErrorResponse(
         res,
         500,
-        "File uploaded but no document URL was returned. Connect the media upload service here.",
+        "Failed to upload credit note document",
+        uploadErr.message,
       );
+    }
+
+    if (!documentUrl) {
+      return sendErrorResponse(res, 500, "File upload did not return a URL");
     }
 
     creditNote.creditNoteLink = documentUrl;

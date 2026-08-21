@@ -1,8 +1,8 @@
 -- --------------------------------------------------------
--- Host:                         116.206.104.225
+-- Host:                         119.18.54.11
 -- Server version:               5.7.23-23 - Percona Server (GPL), Release 23, Revision 500fcf5
 -- Server OS:                    Linux
--- HeidiSQL Version:             12.11.0.7065
+-- HeidiSQL Version:             12.17.0.7270
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -47,16 +47,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   CONSTRAINT `users_ibfk_64` FOREIGN KEY (`addressId`) REFERENCES `addresses` (`addressId`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Dumping data for table spsyn8lm_rocklime_dashboard.users: ~8 rows (approximately)
-INSERT INTO `users` (`userId`, `username`, `name`, `email`, `mobileNumber`, `roles`, `status`, `password`, `createdAt`, `updatedAt`, `dateOfBirth`, `shiftFrom`, `shiftTo`, `bloodGroup`, `emergencyNumber`, `roleId`, `isEmailVerified`, `photo_thumbnail`, `photo_original`, `addressId`) VALUES
-	('12c1816f-87f3-4dc6-9432-942a007b6a4b', 'NITISHCMT', 'NITISH ', 'nitish7834@gmail.com', NULL, 'SALES', 'active', '$2b$10$WRBrNzfBASVV65i7E27yIehOKdKrzhTIj0/1YeUJVoIA6SfvJJTaC', '2026-03-07 06:11:10', '2026-03-31 05:09:32', NULL, NULL, NULL, NULL, NULL, 'c3893e5f-4b6c-43c5-83ec-bc74beecfb30', 1, 'https://media.cmtradingco.com/user_photos/c97e9b4c-1526-454f-ae40-787218e949e2_thumb', 'https://media.cmtradingco.com/user_photos/c97e9b4c-1526-454f-ae40-787218e949e2', NULL),
-	('2ef0f07a-a275-4fe1-832d-fe9a5d145f60', 'ajaychhabra', 'Ajay Chhabra', 'ajay@rocklime.com', NULL, 'SUPER_ADMIN', 'active', '$2b$10$uXMciajyt/hN0sP3tHZgZefGP5AUEcwALAziH6wrV64ETcvL6YPkC', '2025-08-07 07:10:26', '2026-02-07 11:52:11', NULL, NULL, NULL, NULL, NULL, 'c2eaf23a-765c-4ee5-91bf-cbc37fbdea21', 1, NULL, NULL, NULL),
-	('419d694e-1e85-418f-a40d-5969195360c0', 'sajjan.dagaura', 'Sajjan Dagaura', 'sdagaura@rocklime.com', '8278978827', 'SALES', 'active', '$2b$10$obUQqA7CW501oWe67rm5zed9EdbZ380snobMlKS8UGc.ghWDsqj0O', '2025-10-31 11:43:58', '2025-11-17 13:12:08', NULL, NULL, NULL, NULL, NULL, 'c3893e5f-4b6c-43c5-83ec-bc74beecfb30', 1, 'https://media.cmtradingco.com/user_photos/38fb3dc7-f9e4-43fd-bff3-8d6a5b8559fd_thumb', 'https://media.cmtradingco.com/user_photos/38fb3dc7-f9e4-43fd-bff3-8d6a5b8559fd', NULL),
-	('4b8b62f3-f6ce-4e46-87c8-c713a02ae71b', 'hemraj', 'Hemraj ', 'accounts@embarkent.in', NULL, 'ACCOUNTS', 'active', '$2b$10$sCaRfZrQIv/3JhtHVWWn5.ECN0qclarGkYa9Rclo/uBYzHYiQOZwO', '2025-11-29 10:28:50', '2025-11-29 10:32:54', NULL, NULL, NULL, NULL, NULL, 'cfbe02d3-c61d-4f09-9bc7-88fb2493f31d', 1, NULL, NULL, NULL),
-	('4d2fa2dc-afed-4b76-bf80-11ef73b8ad21', 'pgalhotra', 'Priya Galhotra', 'pgalhotra@rocklime.com', NULL, 'ADMIN', 'active', '$2b$10$78ycx1lAjkTDUtI3ZjBTEOwJZ9QMOS0HX7OeGjPy9PVQh37ECsPqO', '2026-07-17 05:08:54', '2026-07-17 05:08:54', NULL, NULL, NULL, NULL, NULL, 'ffb71a9e-3f2e-4e26-97e4-8611591356b0', 1, NULL, NULL, NULL),
-	('5ee872f3-a316-4de6-a55e-959a762f2327', 'd.verma', 'Dhruv Verma', 'dverma@rocklime.com', '8278978827', 'DEVELOPER', 'active', '$2b$10$rLCS.g1mh5hYAIgZJ21j9.OXhrZjdhoUhkeyJKKypgd3FPevN078C', '2025-10-13 10:44:07', '2026-06-02 06:48:48', '2002-11-09', '09:00:00', '17:30:00', 'B+', '', '5bb7eed4-1106-4b93-9218-ad733cfc7b12', 1, 'https://media.cmtradingco.com/user_photos/f382836a-1985-4ecd-b104-3c9bacf6982e_thumb', 'https://media.cmtradingco.com/user_photos/f382836a-1985-4ecd-b104-3c9bacf6982e', '9bb30911-a061-4079-bf84-4765df476b8d'),
-	('ae80f818-b3e8-455f-b7db-61764d8d459e', 'lakshay', 'lakshay', 'accounts@chhabramarble.com', NULL, 'ACCOUNTS', 'active', '$2b$10$VEu7TfGAc/X2yF4QuAJ/BeZ4D0A1Q2v7CyL3V3TTMV6QKHBRbQI86', '2025-11-29 10:47:24', '2025-11-29 10:50:26', NULL, NULL, NULL, NULL, NULL, 'cfbe02d3-c61d-4f09-9bc7-88fb2493f31d', 1, NULL, NULL, NULL),
-	('d90fcfe6-05a7-471b-b122-36b04e53aac2', 'bhav.rocklime', 'Bhav Lamba', 'bhav.lamba@rocklime.com', '9250206208', 'SUPER_ADMIN', 'active', '$2b$10$TNTPy/V1doDth3RzJH2inOw/ISInFGnkQ69XzaXNHrlWQt8i1SoUi', '2025-10-13 10:23:46', '2026-07-15 09:19:58', '2000-01-07', NULL, NULL, 'B+', '9250206207', 'c2eaf23a-765c-4ee5-91bf-cbc37fbdea21', 1, 'https://media.cmtradingco.com/user_photos/772d56d2-25e4-4e49-beb6-f9274c649601_thumb', 'https://media.cmtradingco.com/user_photos/772d56d2-25e4-4e49-beb6-f9274c649601', '5d5fe8c4-92de-4eb6-9dca-cb27b62336d6');
+-- Data exporting was unselected.
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
