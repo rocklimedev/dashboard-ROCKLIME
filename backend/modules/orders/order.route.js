@@ -4,7 +4,7 @@ const router = express.Router();
 const orderController = require("./order.controller");
 const orderDispatchController = require("./order-dispatch.controller");
 const orderCreditNoteController = require("./order-credit-note.controller");
-
+const orderProductController = require("./order-product.controller");
 const { auth } = require("../../middleware/auth");
 
 const multer = require("multer");
@@ -171,7 +171,7 @@ router.put("/update-team", orderController.updateOrderTeam);
 // ============================================================
 
 router.post("/draft", orderController.draftOrder);
-
+router.get("/dispatch-history", orderDispatchController.getAllDispatchHistory);
 // ============================================================
 // ORDER DELETE
 // ============================================================
@@ -188,7 +188,11 @@ router.put(
   handleUpload(uploadInvoice),
   orderController.uploadInvoiceAndLinkOrder,
 );
-
+// Check products before the order exists
+router.post(
+  "/low-stock-products",
+  orderProductController.getLowStockProductsForIncomingOrder,
+);
 // Gate pass upload
 router.post(
   "/:orderId/gatepass",
@@ -247,7 +251,53 @@ router.post(
 
 // Get all dispatches for order
 router.get("/:id/dispatches", orderDispatchController.getOrderDispatches);
+// ============================================================
+// DISPATCH
+// ============================================================
 
+// Create partial/full dispatch
+//
+// POST /api/order/:id/dispatch
+//
+// multipart/form-data:
+// - invoice
+// - gatePass
+//
+// body:
+// {
+//   items: [
+//     {
+//       productId,
+//       quantity
+//     }
+//   ],
+//   carrier,
+//   trackingNumber,
+//   remarks
+// }
+//
+router.post(
+  "/:id/dispatch",
+  handleFieldsUpload(uploadDispatchDocuments),
+  orderDispatchController.createDispatch,
+);
+
+// Get all dispatches for order
+router.get("/:id/dispatches", orderDispatchController.getOrderDispatches);
+
+// Download a specific dispatch's own invoice or gate-pass
+//
+// GET /api/order/:orderId/dispatches/:dispatchId/download?type=invoice
+// GET /api/order/:orderId/dispatches/:dispatchId/download?type=gatepass
+//
+// Unlike the generic /:orderId/download route (which only ever reflects
+// the MOST RECENT dispatch's mirrored doc on the order), this always
+// returns the document that belongs to that exact dispatch batch.
+//
+router.get(
+  "/:orderId/dispatches/:dispatchId/download",
+  orderDispatchController.getDispatchDocument,
+);
 // ============================================================
 // ORDER ACTIVITY
 // ============================================================
@@ -329,6 +379,19 @@ router.post(
 
 // Get single order
 router.get("/:id", orderController.getOrderDetails);
+
+// ============================================================
+// ORDER PRODUCT / STOCK
+// ============================================================
+
+// Get low-stock products belonging to an order
+//
+// GET /api/order/:id/low-stock-products
+//
+router.get(
+  "/:id/low-stock-products",
+  orderProductController.getLowStockProductByOrderId,
+);
 
 // Update complete order
 router.put("/:id", orderController.updateOrderById);

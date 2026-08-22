@@ -3,12 +3,10 @@ import React, { useMemo, useState, useEffect, useCallback } from "react";
 import {
   DndContext,
   closestCenter,
-  pointerWithin,
   PointerSensor,
   KeyboardSensor,
   useSensor,
   useSensors,
-  useDroppable,
 } from "@dnd-kit/core";
 
 import {
@@ -134,35 +132,6 @@ const getItemLocations = (item) => {
 };
 
 const getItemKey = (item) => item?.productId || item?.id;
-
-/* ── Droppable tab label (assign location by dropping items) ── */
-const DroppableTabLabel = ({ id, children }) => {
-  const { setNodeRef, isOver } = useDroppable({ id });
-  return (
-    <div
-      ref={setNodeRef}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        padding: "2px 6px",
-        borderRadius: 6,
-        transition: "background 0.15s, outline 0.15s",
-        background: isOver ? "rgba(22, 119, 255, 0.12)" : undefined,
-        outline: isOver ? "2px dashed #1677ff" : "2px solid transparent",
-      }}
-    >
-      {children}
-    </div>
-  );
-};
-
-/** Prefer location droppables under pointer; otherwise sort list */
-const locationAwareCollision = (args) => {
-  const pointerHits = pointerWithin(args);
-  const locationHit = pointerHits.find((c) => String(c.id).startsWith("drop-"));
-  if (locationHit) return [locationHit];
-  return closestCenter(args);
-};
 
 /* ────────────────────── Component ────────────────────── */
 
@@ -305,7 +274,13 @@ const CartTab = ({
     handleQuotationChange,
   ]);
 
-  /* ── layoutTree: item can appear under multiple locations (split) ── */
+  /**
+   * layoutTree: item can appear under multiple locations (split).
+   * An item only counts as "assigned" when it has BOTH a floorId AND a
+   * roomId. Anything with a floor but no room (or a room that no longer
+   * exists) falls back to the single global "Unassigned" bucket — there
+   * is no per-floor unassigned tab anymore.
+   */
   const layoutTree = useMemo(() => {
     const floors = quotationData.floors || [];
     const tree = floors.map((floor) => ({
@@ -314,11 +289,18 @@ const CartTab = ({
         ...room,
         items: [],
       })),
-      unassignedItems: [],
     }));
 
     const globalUnassigned = [];
     const pushedToGlobal = new Set();
+
+    const pushGlobal = (item) => {
+      const key = getItemKey(item);
+      if (!pushedToGlobal.has(key)) {
+        globalUnassigned.push(item);
+        pushedToGlobal.add(key);
+      }
+    };
 
     const sourceItems =
       mainCartItems.length > 0
@@ -335,50 +317,45 @@ const CartTab = ({
 
       // Fully unassigned
       if (!locs.length) {
-        globalUnassigned.push(item);
+        pushGlobal(item);
         return;
       }
 
       // Partial split → remaining qty also counts as unassigned
       if (assignedSum < totalQty) {
-        const key = getItemKey(item);
-        if (!pushedToGlobal.has(key)) {
-          globalUnassigned.push({
-            ...item,
-            _viewAssignedQty: totalQty - assignedSum,
-            _partialUnassigned: true,
-          });
-          pushedToGlobal.add(key);
-        }
+        pushGlobal({
+          ...item,
+          _viewAssignedQty: totalQty - assignedSum,
+          _partialUnassigned: true,
+        });
       }
 
       locs.forEach((loc) => {
-        if (!loc?.floorId) return;
-
-        const floorNode = tree.find((f) => f.floorId === loc.floorId);
-        if (!floorNode) {
-          const key = getItemKey(item);
-          if (!pushedToGlobal.has(key)) {
-            globalUnassigned.push(item);
-            pushedToGlobal.add(key);
-          }
+        // Require BOTH floor and room — anything less is not a valid
+        // assignment and shows up under the global Unassigned tab.
+        if (!loc?.floorId || !loc?.roomId) {
+          pushGlobal(item);
           return;
         }
 
-        const viewItem = {
+        const floorNode = tree.find((f) => f.floorId === loc.floorId);
+        if (!floorNode) {
+          pushGlobal(item);
+          return;
+        }
+
+        const roomNode = floorNode.rooms.find((r) => r.roomId === loc.roomId);
+        if (!roomNode) {
+          pushGlobal(item);
+          return;
+        }
+
+        roomNode.items.push({
           ...item,
           _viewFloorId: loc.floorId,
-          _viewRoomId: loc.roomId || null,
+          _viewRoomId: loc.roomId,
           _viewAssignedQty: Number(loc.assignedQuantity) || 0,
-        };
-
-        if (loc.roomId) {
-          const roomNode = floorNode.rooms.find((r) => r.roomId === loc.roomId);
-          if (roomNode) roomNode.items.push(viewItem);
-          else floorNode.unassignedItems.push(viewItem);
-        } else {
-          floorNode.unassignedItems.push(viewItem);
-        }
+        });
       });
     });
 
@@ -405,18 +382,21 @@ const CartTab = ({
 
     if (activeFloorId) {
       const floor = floors.find((f) => f.floorId === activeFloorId);
-      if (
-        activeRoomId &&
-        activeRoomId !== null &&
-        activeRoomId !== "__global__" &&
-        !floor?.rooms?.some((r) => r.roomId === activeRoomId)
-      ) {
+      const rooms = floor?.rooms || [];
+      if (!rooms.length) {
         setActiveRoomId(null);
+      } else if (!rooms.some((r) => r.roomId === activeRoomId)) {
+        setActiveRoomId(rooms[0].roomId);
       }
     }
   }, [layoutTree.floors, activeFloorId, activeRoomId, isQuotationMode]);
 
   /* ── Items visible under current floor / room ── */
+  const activeFloorNode = useMemo(
+    () => layoutTree.floors.find((f) => f.floorId === activeFloorId) || null,
+    [layoutTree.floors, activeFloorId],
+  );
+
   const visibleMainItems = useMemo(() => {
     if (!isQuotationMode) return [];
 
@@ -424,14 +404,18 @@ const CartTab = ({
       return layoutTree.globalUnassigned;
     }
 
-    const floor = layoutTree.floors.find((f) => f.floorId === activeFloorId);
-    if (!floor) return [];
+    if (!activeFloorNode) return [];
+    if (!activeRoomId) return []; // floor selected but no room chosen yet
 
-    if (activeRoomId === null) return floor.unassignedItems;
-
-    const room = floor.rooms.find((r) => r.roomId === activeRoomId);
+    const room = activeFloorNode.rooms.find((r) => r.roomId === activeRoomId);
     return room ? room.items : [];
-  }, [layoutTree, activeFloorId, activeRoomId, isQuotationMode]);
+  }, [
+    layoutTree,
+    activeFloorId,
+    activeFloorNode,
+    activeRoomId,
+    isQuotationMode,
+  ]);
 
   /**
    * Build grouped rows for the current tab.
@@ -485,17 +469,17 @@ const CartTab = ({
     }
   }, [isQuotationMode, visibleGrouped, safeCartItems]);
 
-  /** Single location assign → replace primary (clears split) */
+  /**
+   * Assign / reassign / clear an item's location.
+   * Assignment REQUIRES both a floorId and a roomId — a floor alone is
+   * not a valid assignment. Passing floorId=null clears the assignment.
+   */
   const handleLocationChange = (itemId, floorId, roomId) => {
     const item =
       mainCartItems.find((i) => getItemKey(i) === itemId) ||
       safeCartItems.find((i) => getItemKey(i) === itemId);
 
-    const floor = (quotationData.floors || []).find(
-      (f) => f.floorId === floorId,
-    );
-    const room = floor?.rooms?.find((r) => r.roomId === roomId);
-
+    // Clear assignment entirely
     if (!floorId) {
       if (typeof handleSetItemLocations === "function") {
         handleSetItemLocations(itemId, []);
@@ -511,13 +495,25 @@ const CartTab = ({
           item?.quantity || 1,
         );
       }
+      message.info("Location cleared");
       return;
     }
+
+    // Floor without a room is not a valid assignment
+    if (!roomId) {
+      message.error("Select both a floor and a room to assign this item");
+      return;
+    }
+
+    const floor = (quotationData.floors || []).find(
+      (f) => f.floorId === floorId,
+    );
+    const room = floor?.rooms?.find((r) => r.roomId === roomId);
 
     const assignment = [
       {
         floorId,
-        roomId: roomId || null,
+        roomId,
         floorName: floor?.floorName || null,
         roomName: room?.roomName || null,
         assignedQuantity: item?.quantity || 1,
@@ -530,7 +526,7 @@ const CartTab = ({
       handleAssignItemToLocation?.(
         itemId,
         floorId,
-        roomId || null,
+        roomId,
         null,
         floor?.floorName || null,
         room?.roomName || null,
@@ -538,45 +534,18 @@ const CartTab = ({
         item?.quantity || 1,
       );
     }
+
+    message.success(
+      `Assigned to ${floor?.floorName || "floor"} › ${room?.roomName || "room"}`,
+    );
   };
 
   const handleDragEnd = (event) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
-    const overId = String(over.id);
-    const activeId = String(active.id);
-
-    // ── Location assignment (corner handle → drop-*) ──
-    // active.id will be "loc-{productId}" when dragged from the corner handle
-    const isLocationDrag = activeId.startsWith("loc-");
-    const itemId = isLocationDrag ? activeId.slice(4) : activeId;
-
-    if (overId.startsWith("drop-")) {
-      if (overId === "drop-unassigned") {
-        handleLocationChange(itemId, null, null);
-        return;
-      }
-      if (overId.startsWith("drop-floor-")) {
-        const floorId = overId.slice("drop-floor-".length);
-        handleLocationChange(itemId, floorId, null);
-        return;
-      }
-      if (overId.startsWith("drop-room-")) {
-        const rest = overId.slice("drop-room-".length);
-        const [floorId, roomId] = rest.split("__");
-        if (floorId) {
-          handleLocationChange(itemId, floorId, roomId || null);
-        }
-        return;
-      }
-      return;
-    }
-
-    // ── Reorder (only when dragged from S.No.) ──
-    // Ignore location-drags that somehow land on another item
-    if (isLocationDrag) return;
-
+    // Reordering only — location assignment is handled via the
+    // Floor/Room selects on each row, not drag-and-drop.
     const oldIndex = orderedIds.indexOf(active.id);
     const newIndex = orderedIds.indexOf(over.id);
     if (oldIndex === -1 || newIndex === -1) return;
@@ -618,13 +587,10 @@ const CartTab = ({
       const totalQty = Number(item.quantity) || 0;
       const assignedQty =
         Array.isArray(item.locations) && item.locations.length > 0
-          ? item.locations.reduce(
-              (s, l) => s + (Number(l.assignedQuantity) || 0),
-              0,
-            )
-          : item.floorId
-            ? totalQty
-            : 0;
+          ? item.locations
+              .filter((l) => l.floorId && l.roomId)
+              .reduce((s, l) => s + (Number(l.assignedQuantity) || 0), 0)
+          : 0;
       return assignedQty < totalQty;
     }).length;
   }, [mainCartItems]);
@@ -791,10 +757,18 @@ const CartTab = ({
   /**
    * Split / multi-location assign from AssignItemModal.
    * assignments: [{ floorId, roomId, floorName, roomName, assignedQuantity }, ...]
+   * Every assignment MUST include a roomId.
    */
   const handleMultiAssign = (itemId, assignments) => {
     if (!assignments?.length) {
       return message.error("No assignment data received");
+    }
+
+    const missingRoom = assignments.some((a) => !a.floorId || !a.roomId);
+    if (missingRoom) {
+      return message.error(
+        "Select both a floor and a room for each assignment",
+      );
     }
 
     const item =
@@ -816,8 +790,6 @@ const CartTab = ({
     let updatedFloors = [...(quotationData.floors || [])];
 
     assignments.forEach((ass) => {
-      if (!ass.floorId) return;
-
       const floorIndex = updatedFloors.findIndex(
         (f) => f.floorId === ass.floorId,
       );
@@ -827,15 +799,13 @@ const CartTab = ({
           floorId: ass.floorId,
           floorName: ass.floorName || `Floor ${updatedFloors.length + 1}`,
           sortOrder: updatedFloors.length,
-          rooms: ass.roomId
-            ? [
-                {
-                  roomId: ass.roomId,
-                  roomName: ass.roomName || "Room",
-                  sortOrder: 0,
-                },
-              ]
-            : [],
+          rooms: [
+            {
+              roomId: ass.roomId,
+              roomName: ass.roomName || "Room",
+              sortOrder: 0,
+            },
+          ],
         });
       } else {
         if (ass.floorName) {
@@ -844,21 +814,19 @@ const CartTab = ({
             floorName: ass.floorName,
           };
         }
-        if (ass.roomId) {
-          const rooms = updatedFloors[floorIndex].rooms || [];
-          if (!rooms.some((r) => r.roomId === ass.roomId)) {
-            updatedFloors[floorIndex] = {
-              ...updatedFloors[floorIndex],
-              rooms: [
-                ...rooms,
-                {
-                  roomId: ass.roomId,
-                  roomName: ass.roomName || "Room",
-                  sortOrder: rooms.length,
-                },
-              ],
-            };
-          }
+        const rooms = updatedFloors[floorIndex].rooms || [];
+        if (!rooms.some((r) => r.roomId === ass.roomId)) {
+          updatedFloors[floorIndex] = {
+            ...updatedFloors[floorIndex],
+            rooms: [
+              ...rooms,
+              {
+                roomId: ass.roomId,
+                roomName: ass.roomName || "Room",
+                sortOrder: rooms.length,
+              },
+            ],
+          };
         }
       }
     });
@@ -872,7 +840,7 @@ const CartTab = ({
         handleAssignItemToLocation(
           itemId,
           ass.floorId,
-          ass.roomId || null,
+          ass.roomId,
           null,
           ass.floorName || null,
           ass.roomName || null,
@@ -885,6 +853,7 @@ const CartTab = ({
 
     setAssignModal({ visible: false, itemId: null });
   };
+
   const handleUpdateAssignedQuantity = useCallback(
     (itemId, newAssignedQty, viewFloorId, viewRoomId, isPartialUnassigned) => {
       if (!itemId || newAssignedQty < 1) return;
@@ -911,11 +880,9 @@ const CartTab = ({
       }
 
       // ── Concrete floor/room view ──
-      if (!viewFloorId) return;
+      if (!viewFloorId || !viewRoomId) return;
 
-      const match = (l) =>
-        l.floorId === viewFloorId &&
-        (l.roomId || null) === (viewRoomId || null);
+      const match = (l) => l.floorId === viewFloorId && l.roomId === viewRoomId;
 
       let found = false;
       const updatedLocs = locs.map((l) => {
@@ -927,14 +894,13 @@ const CartTab = ({
       });
 
       if (!found && newAssignedQty > 0) {
-        // safety – should not normally happen
         const floor = (quotationData.floors || []).find(
           (f) => f.floorId === viewFloorId,
         );
         const room = floor?.rooms?.find((r) => r.roomId === viewRoomId);
         updatedLocs.push({
           floorId: viewFloorId,
-          roomId: viewRoomId || null,
+          roomId: viewRoomId,
           floorName: floor?.floorName || null,
           roomName: room?.roomName || null,
           assignedQuantity: newAssignedQty,
@@ -967,6 +933,7 @@ const CartTab = ({
       handleSetItemLocations,
     ],
   );
+
   const renderEmpty = () => (
     <EmptyCartWrapper>
       <Empty description="Your cart is empty" />
@@ -1020,7 +987,6 @@ const CartTab = ({
                     <CartItemRow
                       item={opt}
                       serialNumber={sno}
-                      // ... same props
                       itemDiscounts={itemDiscounts}
                       itemDiscountTypes={itemDiscountTypes}
                       updatingItems={updatingItems}
@@ -1055,7 +1021,6 @@ const CartTab = ({
                   key={getItemKey(opt)}
                   item={opt}
                   serialNumber={sno}
-                  // ... same props
                   itemDiscounts={itemDiscounts}
                   itemDiscountTypes={itemDiscountTypes}
                   updatingItems={updatingItems}
@@ -1081,22 +1046,18 @@ const CartTab = ({
     );
   };
 
-  /* ── Floor tabs (droppable) ── */
+  /* ── Floor tabs (plain labels — no more droppables) ── */
   const floorTabItems = useMemo(() => {
     const items = layoutTree.floors.map((f) => {
-      const count =
-        f.rooms.reduce((s, r) => s + r.items.length, 0) +
-        f.unassignedItems.length;
+      const count = f.rooms.reduce((s, r) => s + r.items.length, 0);
       return {
         key: f.floorId,
         label: (
-          <DroppableTabLabel id={`drop-floor-${f.floorId}`}>
-            <Space size={4}>
-              <HomeOutlined />
-              <span>{f.floorName}</span>
-              <Tag style={{ marginRight: 0 }}>{count}</Tag>
-            </Space>
-          </DroppableTabLabel>
+          <Space size={4}>
+            <HomeOutlined />
+            <span>{f.floorName}</span>
+            <Tag style={{ marginRight: 0 }}>{count}</Tag>
+          </Space>
         ),
         closable: true,
       };
@@ -1105,14 +1066,12 @@ const CartTab = ({
     items.push({
       key: "__global__",
       label: (
-        <DroppableTabLabel id="drop-unassigned">
-          <Space size={4}>
-            <span>Unassigned</span>
-            <Tag color="orange" style={{ marginRight: 0 }}>
-              {layoutTree.globalUnassigned.length}
-            </Tag>
-          </Space>
-        </DroppableTabLabel>
+        <Space size={4}>
+          <span>Unassigned</span>
+          <Tag color="orange" style={{ marginRight: 0 }}>
+            {layoutTree.globalUnassigned.length}
+          </Tag>
+        </Space>
       ),
       closable: false,
     });
@@ -1120,49 +1079,27 @@ const CartTab = ({
     return items;
   }, [layoutTree]);
 
-  /* ── Room tabs (droppable) ── */
+  /* ── Room tabs (plain labels — only real rooms, no floor-level "Unassigned") ── */
   const roomTabItems = useMemo(() => {
-    if (!activeFloorId) return [];
+    if (!activeFloorNode) return [];
 
-    const floor = layoutTree.floors.find((f) => f.floorId === activeFloorId);
-    if (!floor) return [];
-
-    const items = floor.rooms.map((r) => ({
+    return activeFloorNode.rooms.map((r) => ({
       key: r.roomId,
       label: (
-        <DroppableTabLabel id={`drop-room-${activeFloorId}__${r.roomId}`}>
-          <Space size={4}>
-            <span>{r.roomName}</span>
-            <Tag style={{ marginRight: 0 }}>{r.items.length}</Tag>
-          </Space>
-        </DroppableTabLabel>
+        <Space size={4}>
+          <span>{r.roomName}</span>
+          <Tag style={{ marginRight: 0 }}>{r.items.length}</Tag>
+        </Space>
       ),
       closable: true,
     }));
-
-    items.push({
-      key: "__floor_unassigned__",
-      label: (
-        <DroppableTabLabel id={`drop-floor-${activeFloorId}`}>
-          <Space size={4}>
-            <span>Unassigned</span>
-            <Tag color="orange" style={{ marginRight: 0 }}>
-              {floor.unassignedItems.length}
-            </Tag>
-          </Space>
-        </DroppableTabLabel>
-      ),
-      closable: false,
-    });
-
-    return items;
-  }, [layoutTree, activeFloorId]);
+  }, [activeFloorNode]);
 
   return (
     <>
       <DndContext
         sensors={sensors}
-        collisionDetection={locationAwareCollision}
+        collisionDetection={closestCenter}
         onDragEnd={handleDragEnd}
       >
         <SortableContext
@@ -1269,44 +1206,38 @@ const CartTab = ({
                       }
                     />
 
-                    {activeFloorId && (
-                      <LayoutTabs
-                        size="small"
-                        type="editable-card"
-                        hideAdd
-                        activeKey={
-                          activeRoomId === null
-                            ? "__floor_unassigned__"
-                            : activeRoomId
-                        }
-                        onChange={(key) => {
-                          setActiveRoomId(
-                            key === "__floor_unassigned__" ? null : key,
-                          );
-                        }}
-                        onEdit={(targetKey, action) => {
-                          if (
-                            action === "remove" &&
-                            targetKey !== "__floor_unassigned__"
-                          ) {
-                            const floor = (quotationData.floors || []).find(
-                              (f) => f.floorId === activeFloorId,
-                            );
-                            const room = floor?.rooms?.find(
-                              (r) => r.roomId === targetKey,
-                            );
-                            if (room) {
-                              showDeleteRoomConfirm(
-                                activeFloorId,
-                                room.roomId,
-                                room.roomName,
+                    {activeFloorId &&
+                      (activeFloorNode?.rooms?.length ? (
+                        <LayoutTabs
+                          size="small"
+                          type="editable-card"
+                          hideAdd
+                          activeKey={activeRoomId || undefined}
+                          onChange={(key) => setActiveRoomId(key)}
+                          onEdit={(targetKey, action) => {
+                            if (action === "remove") {
+                              const room = activeFloorNode.rooms.find(
+                                (r) => r.roomId === targetKey,
                               );
+                              if (room) {
+                                showDeleteRoomConfirm(
+                                  activeFloorId,
+                                  room.roomId,
+                                  room.roomName,
+                                );
+                              }
                             }
-                          }
-                        }}
-                        items={roomTabItems}
-                      />
-                    )}
+                          }}
+                          items={roomTabItems}
+                        />
+                      ) : (
+                        <Alert
+                          message="Add a room to this floor before assigning items"
+                          type="info"
+                          showIcon
+                          style={{ marginBottom: 12 }}
+                        />
+                      ))}
 
                     {isQuotationMode && safeCartItems.length > 0 && (
                       <Text
@@ -1317,7 +1248,8 @@ const CartTab = ({
                           fontSize: 12,
                         }}
                       >
-                        Drag items onto a floor or room tab to assign location
+                        Use the Floor / Room selectors on an item to assign it —
+                        both must be selected before it can be assigned.
                       </Text>
                     )}
 
@@ -1337,7 +1269,7 @@ const CartTab = ({
                         description={
                           activeRoomId === "__global__" || !activeFloorId
                             ? "No unassigned items"
-                            : "No items in this location"
+                            : "No items in this room"
                         }
                         style={{ padding: "24px 0" }}
                       />

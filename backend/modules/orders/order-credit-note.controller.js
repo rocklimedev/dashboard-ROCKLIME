@@ -384,7 +384,13 @@ exports.createOrderCreditNote = async (req, res) => {
     // ORDER RETURN VALIDATION
     // --------------------------------------------------------
 
-    const allowedStatuses = ["DELIVERED", "PARTIALLY_DELIVERED", "RETURNED"];
+    const allowedStatuses = [
+      "DELIVERED",
+      "PARTIALLY_DISPATCHED",
+      "PARTIALLY_DELIVERED",
+      "RETURNED",
+      "DISPATCHED",
+    ];
 
     if (!allowedStatuses.includes(order.status)) {
       await transaction.rollback();

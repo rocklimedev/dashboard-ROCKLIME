@@ -70,12 +70,50 @@ export const orderApi = baseApi.injectEndpoints({
         { type: "Orders", id: "LIST" },
       ],
     }),
+    getAllDispatchHistory: builder.query({
+      query: (filters = {}) => {
+        const params = new URLSearchParams();
+
+        const fields = [
+          "search",
+          "product",
+          "productId",
+          "status",
+          "carrier",
+          "trackingNumber",
+          "orderNo",
+          "dispatchNumber",
+          "dateFrom",
+          "dateTo",
+        ];
+
+        fields.forEach((field) => {
+          const value = filters[field];
+
+          if (
+            value !== undefined &&
+            value !== null &&
+            String(value).trim() !== ""
+          ) {
+            params.append(field, String(value).trim());
+          }
+        });
+
+        params.append("page", filters.page ?? 1);
+        params.append("limit", filters.limit ?? 20);
+
+        return `/order/dispatch-history?${params.toString()}`;
+      },
+
+      providesTags: ["OrderDispatches"],
+    }),
     /* ──────────────────────── PARTIAL DISPATCH ──────────────────────── */
+    // Each dispatch now REQUIRES its own invoice + gate-pass (no
+    // fallback to the order's existing docs). formData must always
+    // include "items" plus "invoice" and "gatePass" files (or
+    // invoiceLink / gatePassLink string fields if you're pointing at
+    // an already-hosted document instead of uploading a new one).
     createDispatch: builder.mutation({
-      // formData: items (as a JSON string field), carrier, trackingNumber,
-      // remarks, and an optional "gatePass" file — OR pass a plain object
-      // and RTK Query/your fetchBaseQuery will JSON-encode it if you're not
-      // attaching a file. Use formData when uploading a gate-pass file.
       query: ({ orderId, formData }) => ({
         url: `/order/${orderId}/dispatch`,
         method: "POST",
@@ -93,6 +131,17 @@ export const orderApi = baseApi.injectEndpoints({
       providesTags: (result, error, orderId) => [
         { type: "OrderDispatches", id: orderId },
       ],
+    }),
+    /* ──────────────────────── DISPATCH DOCUMENT DOWNLOAD ──────────────────────── */
+    // Downloads the invoice OR gate-pass belonging to ONE specific
+    // dispatch batch (not the order-level "latest" mirror).
+    // Usage: trigger(...).unwrap() from a lazy query, or use as a blob.
+    downloadDispatchDocument: builder.query({
+      query: ({ orderId, dispatchId, type }) => ({
+        url: `/order/${orderId}/dispatches/${dispatchId}/download?type=${type}`,
+        responseHandler: "content-type",
+        cache: "no-cache",
+      }),
     }),
     /* ──────────────────────── ORDER ACTIVITY ──────────────────────── */
     getOrderActivity: builder.query({
@@ -129,6 +178,30 @@ export const orderApi = baseApi.injectEndpoints({
         { type: "Orders", id: "LIST" },
         { type: "OrderActivity", id: orderId },
       ],
+    }),
+
+    getLowStockProductsByOrderId: builder.query({
+      query: (orderId) => `/order/${orderId}/low-stock-products`,
+
+      providesTags: (result, error, orderId) => [
+        { type: "Orders", id: orderId },
+      ],
+    }),
+
+    // ============================================================
+    // LOW STOCK - CREATE ORDER / PRODUCT IDS
+    // ============================================================
+
+    getLowStockProductsByProductIds: builder.query({
+      query: (products = []) => ({
+        url: "/order/low-stock-products",
+        method: "POST",
+        body: {
+          products,
+        },
+      }),
+
+      providesTags: ["ProductInventory"],
     }),
     /* ──────────────────────── CREDIT NOTE ──────────────────────── */
 
@@ -342,6 +415,7 @@ export const {
   // ← NEW
   useCreateDispatchMutation,
   useGetOrderDispatchesQuery,
+  useLazyDownloadDispatchDocumentQuery,
   useGetOrderActivityQuery,
   useUploadCreditNoteMutation,
   useUploadReceivingDocumentMutation,
@@ -351,4 +425,9 @@ export const {
   useCancelOrderCreditNoteMutation,
   useUploadCreditNoteDocumentMutation,
   useGetOrderCreditNoteQuery,
+  useGetAllDispatchHistoryQuery,
+
+  // LOW STOCK
+  useGetLowStockProductsByOrderIdQuery,
+  useGetLowStockProductsByProductIdsQuery,
 } = orderApi;

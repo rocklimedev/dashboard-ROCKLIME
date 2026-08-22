@@ -3,6 +3,8 @@ import { FaFileAlt, FaUsers } from "react-icons/fa";
 import AddNewOrder from "../../concepts/Order/AddNewOrder";
 import OrderPage from "../../concepts/Order/Orderpage";
 import OrderWrapper from "../../concepts/Order/OrderWrapper";
+import DispatchHistory from "../../concepts/Order/DispatchHistory";
+
 export const orderRoutes = [
   {
     path: "/orders/list",
@@ -31,5 +33,12 @@ export const orderRoutes = [
     icon: <FaFileAlt />,
     isSidebarActive: false,
     element: <AddNewOrder />,
+  },
+  {
+    path: "/orders/dispatch/all",
+    name: "Dispatch History",
+    icon: <FaFileAlt />,
+    element: <DispatchHistory />,
+    isSidebarActive: true,
   },
 ];

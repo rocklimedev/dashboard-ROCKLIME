@@ -11,9 +11,10 @@ import {
   useLazyDownloadInvoiceQuery,
   useIssueGatePassMutation,
   useGetOrderDispatchesQuery,
+  useLazyDownloadDispatchDocumentQuery, // ← NEW
   useGetOrderActivityQuery,
   useUploadReceivingDocumentMutation,
-  useGetOrderCreditNotesQuery, // ← NEW
+  useGetOrderCreditNotesQuery,
 } from "../../api/orderApi";
 import {
   useGetCustomerByIdQuery,
@@ -67,7 +68,7 @@ import DispatchModal from "../../components/modals/DispatchModal";
 import OrderCreditNoteModal from "../../components/modals/OrderCreditNoteModal"; // ← NEW
 import { Helmet } from "react-helmet";
 import "../../components/Orders/orderpage.css"; // ← new / updated stylesheet
-
+import DownloadDispatchListButton from "../../components/Orders/DownloadDispatchListButton";
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`;
 
 const { Title, Text } = Typography;
@@ -100,7 +101,10 @@ const OrderPage = () => {
   const [isShippingModalVisible, setIsShippingModalVisible] = useState(false);
   const [showDispatchModal, setShowDispatchModal] = useState(false); // ← NEW
   const [showCreditNoteModal, setShowCreditNoteModal] = useState(false); // ← NEW
+  const [productPage, setProductPage] = useState(1);
+  const productPageSize = 8;
   const [activityPage, setActivityPage] = useState(1); // ← NEW
+  const [triggerDispatchDocDownload] = useLazyDownloadDispatchDocumentQuery();
 
   const commentLimit = 10;
   const activityLimit = 10;
@@ -398,6 +402,37 @@ const OrderPage = () => {
       message.error(err.data?.message || "Delete failed");
     }
   };
+
+  // Downloads the invoice or gate-pass belonging to ONE specific dispatch
+  // batch, using the auth-aware lazy query (RTK Query attaches headers via
+  // baseApi's prepareHeaders).
+  const handleDownloadDispatchDocument = async (
+    dispatchId,
+    dispatchNumber,
+    type,
+  ) => {
+    try {
+      const result = await triggerDispatchDocDownload({
+        orderId: id,
+        dispatchId,
+        type,
+      }).unwrap();
+
+      const blob = result instanceof Blob ? result : new Blob([result]);
+      const blobUrl = window.URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = `${type === "invoice" ? "Invoice" : "GatePass"}-${order.orderNo}-Dispatch${dispatchNumber}.pdf`;
+
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      message.error(err?.data?.message || "Download failed");
+    }
+  };
   const handleDownloadFile = async (type) => {
     if (!id) return;
     try {
@@ -547,8 +582,14 @@ const OrderPage = () => {
               <Table
                 dataSource={mergedProducts}
                 rowKey="productId"
-                pagination={false}
                 scroll={{ x: "max-content" }}
+                pagination={{
+                  current: productPage,
+                  pageSize: productPageSize,
+                  total: mergedProducts.length,
+                  onChange: (page) => setProductPage(page),
+                  showSizeChanger: false,
+                }}
                 columns={[
                   {
                     title: "Product",
@@ -689,6 +730,15 @@ const OrderPage = () => {
                   <CarOutlined /> Dispatch History
                 </span>
               }
+              extra={
+                <DownloadDispatchListButton
+                  order={order}
+                  dispatches={dispatches}
+                  products={mergedProducts}
+                  customer={customer}
+                  // detailed // uncomment to also print each dispatch's line items
+                />
+              }
               className="section-card"
               style={{ marginTop: 24 }}
             >
@@ -711,178 +761,386 @@ const OrderPage = () => {
                   expandable={{
                     defaultExpandAllRows: false,
 
-                    expandedRowRender: (record) => (
-                      <div
-                        style={{
-                          padding: "12px 16px",
-                          background: "#fafafa",
-                          borderRadius: 6,
-                        }}
-                      >
-                        <Table
-                          dataSource={record.items || []}
-                          rowKey="productId"
-                          pagination={false}
-                          size="small"
-                          bordered
-                          columns={[
-                            {
-                              title: "Product",
-                              dataIndex: "name",
-                              key: "name",
-                              width: 320,
-                              render: (value) => (
-                                <span style={{ fontWeight: 500 }}>{value}</span>
-                              ),
-                            },
-                            {
-                              title: "Product Code",
-                              dataIndex: "productCode",
-                              key: "productCode",
-                              width: 160,
-                              render: (value) => value || "—",
-                            },
-                            {
-                              title: "Qty",
-                              dataIndex: "quantity",
-                              key: "quantity",
-                              width: 80,
-                              align: "center",
-                            },
-                            {
-                              title: "Unit Price",
-                              dataIndex: "price",
-                              key: "price",
-                              width: 120,
-                              align: "right",
-                              render: (value) =>
-                                Number(value || 0).toLocaleString("en-IN", {
-                                  style: "currency",
-                                  currency: "INR",
-                                  maximumFractionDigits: 2,
-                                }),
-                            },
-                            {
-                              title: "Total",
-                              dataIndex: "total",
-                              key: "total",
-                              width: 130,
-                              align: "right",
-                              render: (value) =>
-                                Number(value || 0).toLocaleString("en-IN", {
-                                  style: "currency",
-                                  currency: "INR",
-                                  maximumFractionDigits: 2,
-                                }),
-                            },
-                          ]}
-                          summary={() => (
-                            <Table.Summary>
-                              <Table.Summary.Row>
-                                <Table.Summary.Cell index={0} colSpan={2}>
-                                  <strong>Dispatch Total</strong>
-                                </Table.Summary.Cell>
+                    expandedRowRender: (record) => {
+                      const money = (value) =>
+                        Number(value || 0).toLocaleString("en-IN", {
+                          style: "currency",
+                          currency: "INR",
+                          maximumFractionDigits: 2,
+                        });
 
-                                <Table.Summary.Cell index={2} align="center">
-                                  <strong>{record.totalQuantity || 0}</strong>
-                                </Table.Summary.Cell>
-
-                                <Table.Summary.Cell index={3} />
-
-                                <Table.Summary.Cell index={4} align="right">
-                                  <strong>
-                                    {Number(
-                                      record.totalAmount || 0,
-                                    ).toLocaleString("en-IN", {
-                                      style: "currency",
-                                      currency: "INR",
-                                      maximumFractionDigits: 2,
-                                    })}
-                                  </strong>
-                                </Table.Summary.Cell>
-                              </Table.Summary.Row>
-                            </Table.Summary>
-                          )}
-                        />
-
-                        {/* Dispatch metadata */}
+                      return (
                         <div
                           style={{
-                            marginTop: 16,
-                            display: "grid",
-                            gridTemplateColumns:
-                              "repeat(auto-fit, minmax(180px, 1fr))",
-                            gap: 12,
+                            padding: "16px",
+                            background: "#fafafa",
+                            borderRadius: 6,
                           }}
                         >
-                          <div>
-                            <div className="text-muted small">Carrier</div>
-                            <div>{record.carrier || "—"}</div>
-                          </div>
+                          <Table
+                            dataSource={record.items || []}
+                            rowKey={(item, index) =>
+                              `${item.productId}-${index}`
+                            }
+                            pagination={false}
+                            size="small"
+                            bordered
+                            scroll={{ x: "max-content" }}
+                            columns={[
+                              {
+                                title: "Product",
+                                dataIndex: "name",
+                                key: "name",
+                                width: 280,
+                                fixed: "left",
+                                render: (value, item) => (
+                                  <div>
+                                    <div style={{ fontWeight: 600 }}>
+                                      {value || "—"}
+                                    </div>
 
-                          <div>
-                            <div className="text-muted small">
-                              Tracking Number
-                            </div>
-                            <div>{record.trackingNumber || "—"}</div>
-                          </div>
+                                    {item.companyCode && (
+                                      <div
+                                        className="text-muted small"
+                                        style={{ marginTop: 2 }}
+                                      >
+                                        {item.companyCode}
+                                      </div>
+                                    )}
+                                  </div>
+                                ),
+                              },
 
-                          <div>
-                            <div className="text-muted small">
-                              Dispatched On
-                            </div>
-                            <div>
-                              {record.dispatchDate
-                                ? new Date(record.dispatchDate).toLocaleString(
-                                    "en-IN",
-                                  )
-                                : "—"}
-                            </div>
-                          </div>
+                              {
+                                title: "Qty",
+                                dataIndex: "quantity",
+                                key: "quantity",
+                                width: 80,
+                                align: "center",
+                                render: (value) => (
+                                  <strong>{Number(value || 0)}</strong>
+                                ),
+                              },
 
-                          <div>
-                            <div className="text-muted small">Status</div>
-                            <div>
-                              <Tag
-                                color={
-                                  record.status === "DISPATCHED"
-                                    ? "green"
-                                    : record.status === "PARTIALLY_DISPATCHED"
-                                      ? "orange"
-                                      : "blue"
-                                }
+                              {
+                                title: "Unit Price",
+                                dataIndex: "price",
+                                key: "price",
+                                width: 130,
+                                align: "right",
+                                render: (value) => money(value),
+                              },
+
+                              {
+                                title: "Discount",
+                                key: "discount",
+                                width: 150,
+                                align: "right",
+                                render: (_, item) => {
+                                  const discount = Number(item.discount || 0);
+
+                                  const discountAmount = Number(
+                                    item.discountAmount || 0,
+                                  );
+
+                                  if (!discount && !discountAmount) {
+                                    return "—";
+                                  }
+
+                                  return (
+                                    <div>
+                                      <div>
+                                        {item.discountType === "percent"
+                                          ? `${discount}%`
+                                          : money(discount)}
+                                      </div>
+
+                                      <div
+                                        className="text-muted small"
+                                        style={{ marginTop: 2 }}
+                                      >
+                                        −{money(discountAmount)} / unit
+                                      </div>
+                                    </div>
+                                  );
+                                },
+                              },
+
+                              {
+                                title: "Net Unit",
+                                dataIndex: "unitNetPrice",
+                                key: "unitNetPrice",
+                                width: 130,
+                                align: "right",
+                                render: (value) => money(value),
+                              },
+
+                              {
+                                title: "Final Unit",
+                                dataIndex: "unitFinalPrice",
+                                key: "unitFinalPrice",
+                                width: 140,
+                                align: "right",
+                                render: (value) => (
+                                  <strong>{money(value)}</strong>
+                                ),
+                              },
+
+                              {
+                                title: "Subtotal",
+                                dataIndex: "subtotal",
+                                key: "subtotal",
+                                width: 140,
+                                align: "right",
+                                render: (value, item) => {
+                                  const subtotal =
+                                    value !== undefined
+                                      ? value
+                                      : Number(item.price || 0) *
+                                        Number(item.quantity || 0);
+
+                                  return money(subtotal);
+                                },
+                              },
+
+                              {
+                                title: "Discount Total",
+                                dataIndex: "totalDiscount",
+                                key: "totalDiscount",
+                                width: 150,
+                                align: "right",
+                                render: (value) =>
+                                  Number(value || 0) > 0
+                                    ? `-${money(value)}`
+                                    : "—",
+                              },
+
+                              {
+                                title: "Line Total",
+                                dataIndex: "total",
+                                key: "total",
+                                width: 150,
+                                align: "right",
+                                render: (value) => (
+                                  <strong>{money(value)}</strong>
+                                ),
+                              },
+                            ]}
+                          />
+
+                          {/* Dispatch Financial Summary */}
+                          <div
+                            style={{
+                              marginTop: 16,
+                              padding: "14px 16px",
+                              background: "#fff",
+                              border: "1px solid #f0f0f0",
+                              borderRadius: 6,
+                            }}
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                justifyContent: "flex-end",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  minWidth: 320,
+                                  width: "100%",
+                                  maxWidth: 420,
+                                }}
                               >
-                                {record.status || "—"}
-                              </Tag>
-                            </div>
-                          </div>
-
-                          <div>
-                            <div className="text-muted small">Gate-Pass</div>
-                            <div>
-                              {record.gatePassLink ? (
-                                <a
-                                  href={record.gatePassLink}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    marginBottom: 6,
+                                  }}
                                 >
-                                  View Gate-Pass
-                                </a>
-                              ) : (
-                                "—"
-                              )}
+                                  <span>Subtotal</span>
+
+                                  <strong>
+                                    {money(
+                                      record.subtotal ??
+                                        record.totalDispatchSubtotal ??
+                                        0,
+                                    )}
+                                  </strong>
+                                </div>
+
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    marginBottom: 6,
+                                  }}
+                                >
+                                  <span>Discount</span>
+
+                                  <strong>
+                                    {Number(record.totalDiscount || 0) > 0
+                                      ? `-${money(record.totalDiscount)}`
+                                      : money(0)}
+                                  </strong>
+                                </div>
+
+                                <div
+                                  style={{
+                                    borderTop: "1px solid #e8e8e8",
+                                    marginTop: 8,
+                                    paddingTop: 10,
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    fontSize: 15,
+                                  }}
+                                >
+                                  <strong>Dispatch Total</strong>
+
+                                  <strong>{money(record.totalAmount)}</strong>
+                                </div>
+                              </div>
                             </div>
                           </div>
 
-                          {record.remarks && (
+                          {/* Dispatch Metadata */}
+                          <div
+                            style={{
+                              marginTop: 16,
+                              display: "grid",
+                              gridTemplateColumns:
+                                "repeat(auto-fit, minmax(180px, 1fr))",
+                              gap: 14,
+                            }}
+                          >
                             <div>
-                              <div className="text-muted small">Remarks</div>
-                              <div>{record.remarks}</div>
+                              <div className="text-muted small">Carrier</div>
+
+                              <div>{record.carrier || "—"}</div>
                             </div>
-                          )}
+
+                            <div>
+                              <div className="text-muted small">
+                                Tracking Number
+                              </div>
+
+                              <div>{record.trackingNumber || "—"}</div>
+                            </div>
+
+                            <div>
+                              <div className="text-muted small">
+                                Dispatched On
+                              </div>
+
+                              <div>
+                                {record.dispatchDate
+                                  ? new Date(
+                                      record.dispatchDate,
+                                    ).toLocaleString("en-IN", {
+                                      day: "2-digit",
+                                      month: "short",
+                                      year: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })
+                                  : "—"}
+                              </div>
+                            </div>
+
+                            <div>
+                              <div className="text-muted small">
+                                Dispatched By
+                              </div>
+
+                              <div>
+                                {record.dispatcher?.name ||
+                                  record.dispatcher?.username ||
+                                  "—"}
+                              </div>
+                            </div>
+
+                            <div>
+                              <div className="text-muted small">Status</div>
+
+                              <div>
+                                <Tag
+                                  color={
+                                    record.status === "DISPATCHED"
+                                      ? "green"
+                                      : record.status === "DELIVERED"
+                                        ? "blue"
+                                        : record.status === "RETURNED"
+                                          ? "red"
+                                          : "orange"
+                                  }
+                                >
+                                  {record.status || "—"}
+                                </Tag>
+                              </div>
+                            </div>
+
+                            <div>
+                              <div className="text-muted small">
+                                Total Quantity
+                              </div>
+
+                              <div>
+                                <strong>{record.totalQuantity || 0}</strong>{" "}
+                                unit(s)
+                              </div>
+                            </div>
+
+                            <div>
+                              <div className="text-muted small">Invoice</div>
+
+                              <div>
+                                {record.invoiceLink ? (
+                                  <a
+                                    href={record.invoiceLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
+                                    View / Download Invoice
+                                  </a>
+                                ) : (
+                                  "—"
+                                )}
+                              </div>
+                            </div>
+
+                            <div>
+                              <div className="text-muted small">Gate-Pass</div>
+
+                              <div>
+                                {record.gatePassLink ? (
+                                  <a
+                                    href={record.gatePassLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
+                                    View / Download Gate-Pass
+                                  </a>
+                                ) : (
+                                  "—"
+                                )}
+                              </div>
+                            </div>
+
+                            {record.remarks && (
+                              <div
+                                style={{
+                                  gridColumn: "span 2",
+                                }}
+                              >
+                                <div className="text-muted small">Remarks</div>
+
+                                <div>{record.remarks}</div>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ),
+                      );
+                    },
 
                     rowExpandable: (record) =>
                       Array.isArray(record.items) && record.items.length > 0,
@@ -893,6 +1151,7 @@ const OrderPage = () => {
                       dataIndex: "dispatchNumber",
                       key: "dispatchNumber",
                       width: 100,
+                      fixed: "left",
                       render: (value) => <strong>#{value}</strong>,
                     },
 
@@ -916,16 +1175,19 @@ const OrderPage = () => {
                     {
                       title: "Products",
                       key: "productCount",
-                      width: 100,
+                      width: 110,
                       align: "center",
-                      render: (_, record) => (
-                        <Tag>
-                          {(record.items || []).length}{" "}
-                          {(record.items || []).length === 1
-                            ? "Product"
-                            : "Products"}
-                        </Tag>
-                      ),
+                      render: (_, record) => {
+                        const count = Array.isArray(record.items)
+                          ? record.items.length
+                          : 0;
+
+                        return (
+                          <Tag>
+                            {count} {count === 1 ? "Product" : "Products"}
+                          </Tag>
+                        );
+                      },
                     },
 
                     {
@@ -934,13 +1196,64 @@ const OrderPage = () => {
                       key: "totalQuantity",
                       width: 80,
                       align: "center",
+                      render: (value) => <strong>{value || 0}</strong>,
                     },
 
                     {
-                      title: "Amount",
-                      dataIndex: "totalAmount",
-                      key: "totalAmount",
+                      title: "Subtotal",
+                      dataIndex: "subtotal",
+                      key: "subtotal",
                       width: 140,
+                      align: "right",
+                      render: (value, record) => {
+                        const calculated = Array.isArray(record.items)
+                          ? record.items.reduce(
+                              (sum, item) =>
+                                sum +
+                                Number(
+                                  item.subtotal ??
+                                    Number(item.price || 0) *
+                                      Number(item.quantity || 0),
+                                ),
+                              0,
+                            )
+                          : 0;
+
+                        return Number(value ?? calculated).toLocaleString(
+                          "en-IN",
+                          {
+                            style: "currency",
+                            currency: "INR",
+                            maximumFractionDigits: 2,
+                          },
+                        );
+                      },
+                    },
+
+                    {
+                      title: "Discount",
+                      dataIndex: "totalDiscount",
+                      key: "totalDiscount",
+                      width: 130,
+                      align: "right",
+                      render: (value) => {
+                        const amount = Number(value || 0);
+
+                        return amount > 0
+                          ? `-${amount.toLocaleString("en-IN", {
+                              style: "currency",
+                              currency: "INR",
+                              maximumFractionDigits: 2,
+                            })}`
+                          : "—";
+                      },
+                    },
+
+                    {
+                      title: "Tax",
+                      dataIndex: "totalTax",
+                      key: "totalTax",
+                      width: 130,
                       align: "right",
                       render: (value) =>
                         Number(value || 0).toLocaleString("en-IN", {
@@ -948,6 +1261,23 @@ const OrderPage = () => {
                           currency: "INR",
                           maximumFractionDigits: 2,
                         }),
+                    },
+
+                    {
+                      title: "Amount",
+                      dataIndex: "totalAmount",
+                      key: "totalAmount",
+                      width: 150,
+                      align: "right",
+                      render: (value) => (
+                        <strong>
+                          {Number(value || 0).toLocaleString("en-IN", {
+                            style: "currency",
+                            currency: "INR",
+                            maximumFractionDigits: 2,
+                          })}
+                        </strong>
+                      ),
                     },
 
                     {
@@ -970,20 +1300,41 @@ const OrderPage = () => {
                       title: "Status",
                       dataIndex: "status",
                       key: "status",
-                      width: 140,
+                      width: 130,
                       render: (value) => (
                         <Tag
                           color={
                             value === "DISPATCHED"
                               ? "green"
-                              : value === "PARTIALLY_DISPATCHED"
-                                ? "orange"
-                                : "blue"
+                              : value === "DELIVERED"
+                                ? "blue"
+                                : value === "RETURNED"
+                                  ? "red"
+                                  : "orange"
                           }
                         >
                           {value || "—"}
                         </Tag>
                       ),
+                    },
+
+                    {
+                      title: "Invoice",
+                      key: "invoice",
+                      width: 100,
+                      render: (_, record) =>
+                        record.invoiceLink ? (
+                          <a
+                            href={record.invoiceLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ color: "#1677ff" }}
+                          >
+                            View
+                          </a>
+                        ) : (
+                          "—"
+                        ),
                     },
 
                     {
@@ -996,6 +1347,7 @@ const OrderPage = () => {
                             href={record.gatePassLink}
                             target="_blank"
                             rel="noopener noreferrer"
+                            style={{ color: "#1677ff" }}
                           >
                             View
                           </a>
@@ -1007,7 +1359,6 @@ const OrderPage = () => {
                 />
               )}
             </Card>
-
             {/* Credit Note History */}
             <Card
               title={

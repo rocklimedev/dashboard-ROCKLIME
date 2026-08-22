@@ -8,8 +8,12 @@
 //   - You can freely move any share between floors/rooms
 //   - "Split" button (when qty ≥ 2) creates a new share of 1 in Unassigned
 //   - Editing qty on a share only affects that location's assignedQuantity
+//   - Drag the S.No. handle to reorder rows within a section (like the Cart)
+//   - A share is only ever "Unassigned" or "Floor + Room" — never a bare
+//     floor. There is exactly ONE Unassigned tab, at the top level; there
+//     is no per-floor "Unassigned" sub-tab anymore.
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   Tabs,
   Input,
@@ -20,6 +24,7 @@ import {
   Typography,
   Space,
   Tooltip,
+  Alert,
   message,
 } from "antd";
 import {
@@ -28,18 +33,39 @@ import {
   SearchOutlined,
   ScissorOutlined,
 } from "@ant-design/icons";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import "./quotationproductsheet.css";
 
 const { Option } = Select;
 const { Text } = Typography;
 
 const UNASSIGNED = "__unassigned__";
-const FLOOR_ROOT = "__floor_root__";
 
+// A section only ever exists for the single global Unassigned bucket, or
+// for a concrete floor+room pair. A floor without a room is not a valid
+// section, so it collapses to Unassigned.
 const sectionKey = (floorId, roomId) =>
-  !floorId ? UNASSIGNED : `${floorId}::${roomId || FLOOR_ROOT}`;
+  floorId && roomId ? `${floorId}::${roomId}` : UNASSIGNED;
 
 const locationKey = (loc) => `${loc?.floorId || ""}::${loc?.roomId || ""}`;
+
+// Stable row id used both as React key and as the dnd-kit sortable id.
+const rowId = (p) => `${p.productId}::${p._locationKey || "root"}`;
 
 const lineTotal = (p, qtyOverride) => {
   const qty =
@@ -71,23 +97,126 @@ function CatalogItem({ product, price, onAdd, alreadyAdded }) {
   );
 }
 
+/* ───────────────────────── S.No. drag handle (reorder) ───────────────────────── */
+const SNO_HANDLE_STYLE = {
+  cursor: "grab",
+  minWidth: 28,
+  height: 28,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: 12,
+  fontWeight: 600,
+  color: "#595959",
+  borderRadius: 6,
+  userSelect: "none",
+  background: "#f5f5f5",
+};
+
 /* ───────────────────────── Product row ───────────────────────── */
 function ProductRow({
   product,
+  serialNumber,
   floors,
   onChangeSectionQty,
   onMoveShare,
   onSplitShare,
   onRemove,
   onAddOption,
+  dragEnabled = true,
 }) {
-  const floor = floors.find((f) => f.floorId === product.floorId);
   const sectionQty = product._sectionQty ?? product.qty;
   const hasMultipleLocations =
     Array.isArray(product.locations) && product.locations.length > 1;
 
+  /**
+   * Floor selection is staged locally and does NOT move the item by
+   * itself — a floor with no room is not a valid assignment. The move
+   * only commits (via onMoveShare) once a room is also chosen.
+   */
+  const [pendingFloorId, setPendingFloorId] = useState(
+    product.floorId || undefined,
+  );
+
+  useEffect(() => {
+    setPendingFloorId(product.floorId || undefined);
+  }, [product.floorId, product.roomId]);
+
+  const pendingFloor = floors.find((f) => f.floorId === pendingFloorId);
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: rowId(product),
+    disabled: !dragEnabled,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.75 : 1,
+    background: isDragging ? "#fafafa" : undefined,
+    boxShadow: isDragging ? "0 10px 25px rgba(0,0,0,0.15)" : undefined,
+    position: "relative",
+    zIndex: isDragging ? 100 : "auto",
+  };
+
+  const handleFloorChange = (floorId) => {
+    if (!floorId) {
+      // Clearing the floor clears the whole assignment outright — there
+      // is nothing partial worth keeping.
+      setPendingFloorId(undefined);
+      onMoveShare(product.productId, product._locationKey, {
+        floorId: null,
+        roomId: null,
+      });
+      return;
+    }
+    // Stage locally; wait for a room pick before this actually moves.
+    setPendingFloorId(floorId);
+  };
+
+  const handleRoomChange = (roomId) => {
+    if (!roomId || !pendingFloorId) {
+      // No room chosen → nothing to commit, stays/returns to Unassigned.
+      onMoveShare(product.productId, product._locationKey, {
+        floorId: null,
+        roomId: null,
+      });
+      return;
+    }
+    onMoveShare(product.productId, product._locationKey, {
+      floorId: pendingFloorId,
+      roomId,
+    });
+  };
+
+  const isFullyAssigned = Boolean(product.floorId && product.roomId);
+
   return (
-    <tr className={`qs-row${product.isOptionFor ? " qs-option-row" : ""}`}>
+    <tr
+      ref={setNodeRef}
+      style={style}
+      className={`qs-row${product.isOptionFor ? " qs-option-row" : ""}`}
+    >
+      {dragEnabled && (
+        <td className="qs-cell qs-sno-cell" style={{ width: 40 }}>
+          <div
+            {...attributes}
+            {...listeners}
+            style={SNO_HANDLE_STYLE}
+            title="Drag to reorder"
+          >
+            {serialNumber ?? "–"}
+          </div>
+        </td>
+      )}
+
       <td className="qs-cell qs-name-cell">
         {product.isOptionFor && <span className="qs-option-arrow">↳ </span>}
         {product.name}
@@ -148,15 +277,10 @@ function ProductRow({
           <Select
             size="small"
             placeholder="Floor"
-            value={product.floorId || undefined}
+            value={pendingFloorId}
             style={{ width: 110 }}
             allowClear
-            onChange={(floorId) =>
-              onMoveShare(product.productId, product._locationKey, {
-                floorId: floorId || null,
-                roomId: null,
-              })
-            }
+            onChange={handleFloorChange}
           >
             {floors.map((f) => (
               <Option key={f.floorId} value={f.floorId}>
@@ -170,21 +294,25 @@ function ProductRow({
             value={product.roomId || undefined}
             style={{ width: 110 }}
             allowClear
-            disabled={!product.floorId}
-            onChange={(roomId) =>
-              onMoveShare(product.productId, product._locationKey, {
-                floorId: product.floorId,
-                roomId: roomId || null,
-              })
-            }
+            disabled={!pendingFloorId}
+            onChange={handleRoomChange}
           >
-            {(floor?.rooms || []).map((r) => (
+            {(pendingFloor?.rooms || []).map((r) => (
               <Option key={r.roomId} value={r.roomId}>
                 {r.roomName}
               </Option>
             ))}
           </Select>
         </Space.Compact>
+
+        {!isFullyAssigned && (
+          <Text
+            type="secondary"
+            style={{ fontSize: 11, display: "block", marginTop: 2 }}
+          >
+            Pick both a floor and a room to assign
+          </Text>
+        )}
       </td>
 
       <td className="qs-cell qs-readonly qs-total-cell">
@@ -240,11 +368,33 @@ function SheetSection({
   onSplitShare,
   onRemove,
   onAddOption,
+  onReorder,
 }) {
   const subtotal = products.reduce(
     (sum, p) => sum + lineTotal(p, p._sectionQty ?? p.qty),
     0,
   );
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
+  const ids = useMemo(() => products.map((p) => rowId(p)), [products]);
+
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = ids.indexOf(active.id);
+    const newIndex = ids.indexOf(over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const reordered = arrayMove(products, oldIndex, newIndex);
+    onReorder?.(reordered);
+  };
 
   return (
     <div className="qs-section">
@@ -266,33 +416,43 @@ function SheetSection({
           No products here yet — search the catalog above and hit “+” to add
         </div>
       ) : (
-        <table className="qs-table">
-          <thead>
-            <tr>
-              <th>Product</th>
-              <th style={{ width: 90 }}>Qty</th>
-              <th style={{ width: 100 }}>Price</th>
-              <th style={{ width: 160 }}>Discount</th>
-              <th style={{ width: 240 }}>Location</th>
-              <th style={{ width: 110 }}>Total</th>
-              <th style={{ width: 100 }} />
-            </tr>
-          </thead>
-          <tbody>
-            {products.map((p) => (
-              <ProductRow
-                key={`${p.productId}::${p._locationKey || "root"}`}
-                product={p}
-                floors={floors}
-                onChangeSectionQty={onChangeSectionQty}
-                onMoveShare={onMoveShare}
-                onSplitShare={onSplitShare}
-                onRemove={onRemove}
-                onAddOption={onAddOption}
-              />
-            ))}
-          </tbody>
-        </table>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+            <table className="qs-table">
+              <thead>
+                <tr>
+                  <th style={{ width: 40 }}>S.No.</th>
+                  <th>Product</th>
+                  <th style={{ width: 90 }}>Qty</th>
+                  <th style={{ width: 100 }}>Price</th>
+                  <th style={{ width: 160 }}>Discount</th>
+                  <th style={{ width: 240 }}>Location</th>
+                  <th style={{ width: 110 }}>Total</th>
+                  <th style={{ width: 100 }} />
+                </tr>
+              </thead>
+              <tbody>
+                {products.map((p, idx) => (
+                  <ProductRow
+                    key={rowId(p)}
+                    product={p}
+                    serialNumber={idx + 1}
+                    floors={floors}
+                    onChangeSectionQty={onChangeSectionQty}
+                    onMoveShare={onMoveShare}
+                    onSplitShare={onSplitShare}
+                    onRemove={onRemove}
+                    onAddOption={onAddOption}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </SortableContext>
+        </DndContext>
       )}
     </div>
   );
@@ -318,6 +478,8 @@ export default function QuotationProductSheet({
     safeNum(p.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"], 0);
 
   // ─── Group by exploding locations[] ──────────────────────────────
+  // Anything that isn't a concrete floor+room pair (including legacy
+  // floor-only records) falls into the single global Unassigned bucket.
   const productsBySection = useMemo(() => {
     const map = {};
 
@@ -337,14 +499,20 @@ export default function QuotationProductSheet({
 
       locs.forEach((loc) => {
         const key = sectionKey(loc.floorId, loc.roomId);
+        // A floor-only (no room) entry is not a valid assignment —
+        // normalize it to Unassigned so it doesn't silently disappear.
+        const isValidAssignment = Boolean(loc.floorId && loc.roomId);
+
         (map[key] = map[key] || []).push({
           ...p,
-          floorId: loc.floorId || null,
-          roomId: loc.roomId || null,
-          floorName: loc.floorName || null,
-          roomName: loc.roomName || null,
+          floorId: isValidAssignment ? loc.floorId : null,
+          roomId: isValidAssignment ? loc.roomId : null,
+          floorName: isValidAssignment ? loc.floorName : null,
+          roomName: isValidAssignment ? loc.roomName : null,
           _sectionQty: Number(loc.assignedQuantity) || 0,
-          _locationKey: locationKey(loc),
+          _locationKey: locationKey(
+            isValidAssignment ? loc : { floorId: null, roomId: null },
+          ),
         });
       });
     });
@@ -366,13 +534,13 @@ export default function QuotationProductSheet({
   };
 
   const buildSingleLocation = (floorId, roomId, floorName, roomName, qty) =>
-    floorId
+    floorId && roomId
       ? [
           {
             floorId,
             floorName,
-            roomId: roomId || null,
-            roomName: roomName || null,
+            roomId,
+            roomName,
             areaId: null,
             areaName: null,
             assignedQuantity: qty,
@@ -382,11 +550,11 @@ export default function QuotationProductSheet({
 
   const syncSingularFields = (product) => {
     const locs = product.locations || [];
-    if (locs.length === 1) {
+    if (locs.length === 1 && locs[0].floorId && locs[0].roomId) {
       return {
         ...product,
-        floorId: locs[0].floorId || null,
-        roomId: locs[0].roomId || null,
+        floorId: locs[0].floorId,
+        roomId: locs[0].roomId,
         floorName: locs[0].floorName || null,
         roomName: locs[0].roomName || null,
       };
@@ -448,8 +616,14 @@ export default function QuotationProductSheet({
   };
 
   // ─── Move one share to another floor/room ────────────────────────
+  // A share is only ever "Unassigned" (null/null) or "Floor + Room"
+  // (both set) — never a bare floor. Any call missing one half is
+  // treated as a full clear back to Unassigned.
   const moveShare = (productId, locKey, { floorId, roomId }) => {
-    const { floorName, roomName } = resolveNames(floorId, roomId);
+    const isValidTarget = Boolean(floorId && roomId);
+    const targetFloorId = isValidTarget ? floorId : null;
+    const targetRoomId = isValidTarget ? roomId : null;
+    const { floorName, roomName } = resolveNames(targetFloorId, targetRoomId);
 
     setFormData((prev) => ({
       ...prev,
@@ -475,24 +649,13 @@ export default function QuotationProductSheet({
         const idx = locs.findIndex((l) => locationKey(l) === locKey);
         if (idx === -1) return p;
 
-        // Moving to Unassigned → just clear floor/room on this entry
-        if (!floorId) {
-          locs[idx] = {
-            ...locs[idx],
-            floorId: null,
-            floorName: null,
-            roomId: null,
-            roomName: null,
-          };
-        } else {
-          locs[idx] = {
-            ...locs[idx],
-            floorId,
-            floorName,
-            roomId: roomId || null,
-            roomName: roomName || null,
-          };
-        }
+        locs[idx] = {
+          ...locs[idx],
+          floorId: targetFloorId,
+          floorName: targetFloorId ? floorName : null,
+          roomId: targetRoomId,
+          roomName: targetRoomId ? roomName : null,
+        };
 
         // Merge if target already exists
         const targetKey = locationKey(locs[idx]);
@@ -585,7 +748,7 @@ export default function QuotationProductSheet({
       }),
     }));
 
-    message.success("Split 1 qty → Unassigned. Move it to another floor.");
+    message.success("Split 1 qty → Unassigned. Assign it to a floor + room.");
   };
 
   const removeProduct = (productId) => {
@@ -595,32 +758,51 @@ export default function QuotationProductSheet({
     }));
   };
 
+  /**
+   * Reorder handler passed to each SheetSection.
+   * `reorderedSectionProducts` is the section's exploded rows in their
+   * new visual order. We map that order back onto `priority` for just
+   * those productIds — mirrors handleCartOrderChange in Cart.jsx.
+   */
+  const reorderSection = (reorderedSectionProducts) => {
+    const priorityByProductId = new Map();
+    reorderedSectionProducts.forEach((row, idx) => {
+      priorityByProductId.set(row.productId, idx);
+    });
+
+    setFormData((prev) => ({
+      ...prev,
+      products: prev.products.map((p) =>
+        priorityByProductId.has(p.productId)
+          ? { ...p, priority: priorityByProductId.get(p.productId) }
+          : p,
+      ),
+    }));
+  };
+
   // ─── Catalog add ─────────────────────────────────────────────────
+  // Adding from the catalog while viewing a floor tab only targets a
+  // real floor+room pair. If the floor has no rooms (or none is
+  // selected), the new item goes to the global Unassigned tab instead
+  // of landing on a bare floor.
   const getCurrentTarget = () => {
     if (activeTab === UNASSIGNED || !activeTab) {
       return { floorId: null, roomId: null, floorName: null, roomName: null };
     }
     const floor = formData.floors.find((f) => f.floorId === activeTab);
-    if (!floor) {
+    if (!floor || !floor.rooms?.length) {
       return { floorId: null, roomId: null, floorName: null, roomName: null };
     }
-    const rootKey = sectionKey(floor.floorId, null);
-    const roomTabKey = activeRoomTab[floor.floorId] || rootKey;
-    if (roomTabKey === rootKey) {
-      return {
-        floorId: floor.floorId,
-        roomId: null,
-        floorName: floor.floorName,
-        roomName: null,
-      };
+    const roomId = activeRoomTab[floor.floorId] || floor.rooms[0].roomId;
+    const room = floor.rooms.find((r) => r.roomId === roomId);
+    if (!room) {
+      return { floorId: null, roomId: null, floorName: null, roomName: null };
     }
-    const roomId = roomTabKey.split("::")[1];
-    const room = floor.rooms?.find((r) => r.roomId === roomId);
     return {
       floorId: floor.floorId,
-      roomId,
+      roomId: room.roomId,
       floorName: floor.floorName,
-      roomName: room?.roomName || null,
+      roomName: room.roomName,
     };
   };
 
@@ -668,6 +850,9 @@ export default function QuotationProductSheet({
   );
 
   // ─── Tabs ────────────────────────────────────────────────────────
+  // Only ONE Unassigned tab exists, at the top level. Each floor tab
+  // shows just its rooms — no per-floor "Unassigned" sub-tab, since a
+  // floor with no room is never a valid place for an item to live.
   const tabItems = [
     {
       key: UNASSIGNED,
@@ -688,66 +873,68 @@ export default function QuotationProductSheet({
           onSplitShare={splitShare}
           onRemove={removeProduct}
           onAddOption={onAddOption}
+          onReorder={reorderSection}
         />
       ),
     },
     ...formData.floors.map((floor) => {
-      const rootKey = sectionKey(floor.floorId, null);
-      const rootProducts = productsBySection[rootKey] || [];
       const rooms = floor.rooms || [];
-      const roomCount = rooms.reduce(
+      const total = rooms.reduce(
         (sum, r) =>
           sum +
           (productsBySection[sectionKey(floor.floorId, r.roomId)]?.length || 0),
         0,
       );
-      const total = rootProducts.length + roomCount;
 
-      const roomTabItems = [
-        {
-          key: rootKey,
+      if (!rooms.length) {
+        return {
+          key: floor.floorId,
           closable: false,
-          label: `Unassigned${
-            rootProducts.length ? ` (${rootProducts.length})` : ""
+          label: `🏢 ${floor.floorName}`,
+          children: (
+            <div style={{ padding: 12 }}>
+              <Alert
+                message="Add a room to this floor before assigning items"
+                type="info"
+                showIcon
+                action={
+                  <Button
+                    size="small"
+                    onClick={() => onAddRoom?.(floor.floorId)}
+                  >
+                    Add Room
+                  </Button>
+                }
+              />
+            </div>
+          ),
+        };
+      }
+
+      const roomTabItems = rooms.map((room) => {
+        const roomKey = sectionKey(floor.floorId, room.roomId);
+        const roomProducts = productsBySection[roomKey] || [];
+        return {
+          key: room.roomId,
+          closable: false,
+          label: `🛏️ ${room.roomName}${
+            roomProducts.length ? ` (${roomProducts.length})` : ""
           }`,
           children: (
             <SheetSection
-              title="Unassigned on this floor"
-              subtitle="Not placed in a specific room yet"
-              products={rootProducts}
+              title={room.roomName}
+              products={roomProducts}
               floors={formData.floors}
               onChangeSectionQty={updateSectionQty}
               onMoveShare={moveShare}
               onSplitShare={splitShare}
               onRemove={removeProduct}
               onAddOption={onAddOption}
+              onReorder={reorderSection}
             />
           ),
-        },
-        ...rooms.map((room) => {
-          const roomKey = sectionKey(floor.floorId, room.roomId);
-          const roomProducts = productsBySection[roomKey] || [];
-          return {
-            key: roomKey,
-            closable: false,
-            label: `🛏️ ${room.roomName}${
-              roomProducts.length ? ` (${roomProducts.length})` : ""
-            }`,
-            children: (
-              <SheetSection
-                title={room.roomName}
-                products={roomProducts}
-                floors={formData.floors}
-                onChangeSectionQty={updateSectionQty}
-                onMoveShare={moveShare}
-                onSplitShare={splitShare}
-                onRemove={removeProduct}
-                onAddOption={onAddOption}
-              />
-            ),
-          };
-        }),
-      ];
+        };
+      });
 
       return {
         key: floor.floorId,
@@ -756,7 +943,7 @@ export default function QuotationProductSheet({
         children: (
           <div className="qs-floor-sheet">
             <Tabs
-              activeKey={activeRoomTab[floor.floorId] || rootKey}
+              activeKey={activeRoomTab[floor.floorId] || rooms[0].roomId}
               onChange={(key) =>
                 setActiveRoomTab((prev) => ({
                   ...prev,

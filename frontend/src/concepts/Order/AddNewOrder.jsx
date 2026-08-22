@@ -4,6 +4,7 @@ import {
   PlusOutlined,
   DeleteOutlined,
   UserAddOutlined,
+  WarningOutlined,
 } from "@ant-design/icons";
 import {
   Select,
@@ -44,7 +45,7 @@ import AddNewTeam from "../../components/Orders/AddNewTeam";
 import AddCustomerModal from "../../components/Customers/AddCustomerModal";
 import AddAddress from "../../components/Address/AddAddressModal";
 import DatePicker from "react-datepicker";
-
+import LowStockProductsModal from "../../components/Orders/LowStockProductsModal";
 const { Option } = Select;
 const { Text } = Typography;
 const { Panel } = Collapse;
@@ -207,6 +208,7 @@ const AddNewOrder = ({ adminName }) => {
   const [useBillingAddress, setUseBillingAddress] = useState(false);
   const [isCreatingAddress, setIsCreatingAddress] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [showLowStockModal, setShowLowStockModal] = useState(false);
 
   /* ────────────────────── Memoised Helpers ────────────────────── */
   const filteredAddresses = useMemo(() => {
@@ -639,9 +641,17 @@ const AddNewOrder = ({ adminName }) => {
               </Typography.Text>
             </div>
             <Space>
+              <Button
+                danger
+                icon={<WarningOutlined />}
+                onClick={() => setShowLowStockModal(true)}
+              >
+                Low Stock Products
+              </Button>
               <Link to="/orders/list">
                 <Button type="default">Back</Button>
               </Link>
+
               <Button type="default" onClick={clearForm}>
                 Clear
               </Button>
@@ -1180,7 +1190,16 @@ const AddNewOrder = ({ adminName }) => {
               </Col>
             </Row>
           </form>
-
+          <LowStockProductsModal
+            visible={showLowStockModal}
+            orderId={isEditMode ? id : null}
+            products={
+              quotationData.products?.length > 0
+                ? quotationData.products
+                : products
+            }
+            onClose={() => setShowLowStockModal(false)}
+          />
           {/* ---------- Modals ---------- */}
           {showNewTeamModal && (
             <AddNewTeam

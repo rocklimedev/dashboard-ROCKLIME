@@ -63,6 +63,12 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
       },
 
+      // [3-4 lines above gatePassLink, same style]
+      invoiceLink: {
+        type: DataTypes.STRING(500),
+        allowNull: true,
+      },
+
       // Gate-pass specific to THIS dispatch batch (a partial shipment may
       // need its own gate-pass). The order's top-level gatePassLink is kept
       // in sync with the most recent one for backward compatibility.
@@ -70,7 +76,6 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING(500),
         allowNull: true,
       },
-
       remarks: {
         type: DataTypes.TEXT,
         allowNull: true,

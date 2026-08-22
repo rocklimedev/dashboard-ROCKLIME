@@ -1,7 +1,6 @@
 // src/components/POS-NEW/CartItemRow.jsx
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useSortable } from "@dnd-kit/sortable";
-import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import {
   Row,
@@ -15,11 +14,7 @@ import {
   Tag,
 } from "antd";
 import { LazyLoadImage } from "react-lazy-load-image-component";
-import {
-  DeleteFilled,
-  HolderOutlined,
-  SplitCellsOutlined,
-} from "@ant-design/icons";
+import { DeleteFilled, SplitCellsOutlined } from "@ant-design/icons";
 import styled from "styled-components";
 import { useGetProductByIdQuery } from "../../api/productApi";
 
@@ -77,25 +72,6 @@ const SnoHandle = styled.div`
   &:hover {
     background: #e6f4ff;
     color: #1677ff;
-  }
-
-  &:active {
-    cursor: grabbing;
-  }
-`;
-
-const LocationDragHandle = styled.div`
-  cursor: grab;
-  padding: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #999;
-  border-radius: 6px;
-
-  &:hover {
-    color: #1677ff;
-    background: rgba(22, 119, 255, 0.08);
   }
 
   &:active {
@@ -171,6 +147,10 @@ const SplitTags = styled.div`
   gap: 4px;
 `;
 
+const AssignRow = styled.div`
+  margin-top: 8px;
+`;
+
 /* ===================== HELPERS ===================== */
 
 const getPrimaryLocation = (item) => {
@@ -231,11 +211,12 @@ const CartItemRow = ({
   /* Site layout (quotation) */
   floors = [],
   onSplit,
-  onUpdateAssignedQuantity, // NEW: updates allocated qty for current floor/room view
+  onLocationChange, // NEW: assigns item to a floor+room together (replaces drag/drop)
+  onUpdateAssignedQuantity, // updates allocated qty for current floor/room view
 }) => {
   const itemId = item?.productId || item?.id;
 
-  // ── Sortable = reordering via S.No. ──
+  // ── Sortable = reordering via S.No. only (location drag removed) ──
   const {
     attributes: sortableAttributes,
     listeners: sortableListeners,
@@ -248,24 +229,12 @@ const CartItemRow = ({
     disabled: !dragEnabled,
   });
 
-  // ── Separate draggable = location assignment via corner handle ──
-  const {
-    attributes: locationAttributes,
-    listeners: locationListeners,
-    setNodeRef: setLocationRef,
-    isDragging: isLocationDragging,
-  } = useDraggable({
-    id: `loc-${itemId}`,
-    data: { type: "location-assign", itemId },
-    disabled: !dragEnabled,
-  });
-
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
   };
 
-  const isDragging = isSorting || isLocationDragging;
+  const isDragging = isSorting;
 
   const { data: product, isLoading } = useGetProductByIdQuery(item?.productId, {
     skip: !item?.productId,
@@ -307,7 +276,6 @@ const CartItemRow = ({
     item?._viewAssignedQty != null ? Number(item._viewAssignedQty) : null;
   const isPartialUnassignedView = Boolean(item?._partialUnassigned);
 
-  // When viewing a specific floor/room (or partial unassigned), show the allocated qty
   const isLocationView = viewAssignedQty != null;
   const displayQty = isLocationView
     ? viewAssignedQty
@@ -363,6 +331,39 @@ const CartItemRow = ({
     }
   };
 
+  /* ── Floor / Room assignment via explicit selects (no drag-drop) ── */
+  const [selectedFloorId, setSelectedFloorId] = useState(
+    primaryLoc?.floorId || undefined,
+  );
+  const [selectedRoomId, setSelectedRoomId] = useState(
+    primaryLoc?.roomId || undefined,
+  );
+
+  // Keep selects in sync if the item's assignment changes externally
+  useEffect(() => {
+    setSelectedFloorId(primaryLoc?.floorId || undefined);
+    setSelectedRoomId(primaryLoc?.roomId || undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [primaryLoc?.floorId, primaryLoc?.roomId]);
+
+  const roomsForSelectedFloor = useMemo(() => {
+    const floor = floors.find((f) => f.floorId === selectedFloorId);
+    return floor?.rooms || [];
+  }, [floors, selectedFloorId]);
+
+  const canAssign = Boolean(selectedFloorId && selectedRoomId);
+
+  const handleAssignClick = () => {
+    if (!canAssign) return;
+    onLocationChange?.(itemId, selectedFloorId, selectedRoomId);
+  };
+
+  const handleClearAssignment = () => {
+    setSelectedFloorId(undefined);
+    setSelectedRoomId(undefined);
+    onLocationChange?.(itemId, null, null);
+  };
+
   if (isLoading) return <div style={{ padding: "20px" }}>Loading...</div>;
 
   return (
@@ -378,20 +379,6 @@ const CartItemRow = ({
             >
               {serialNumber ?? "–"}
             </SnoHandle>
-          </Col>
-        )}
-
-        {/* Corner handle — drag this onto floor/room tabs to assign location */}
-        {dragEnabled && isQuotationMode && (
-          <Col flex="0 0 32px">
-            <LocationDragHandle
-              ref={setLocationRef}
-              {...locationAttributes}
-              {...locationListeners}
-              title="Drag onto a floor or room tab to assign location"
-            >
-              <HolderOutlined style={{ fontSize: 18 }} />
-            </LocationDragHandle>
           </Col>
         )}
 
@@ -461,13 +448,67 @@ const CartItemRow = ({
               </div>
             )}
 
-          {isQuotationMode && !primaryLoc?.floorId && (
-            <Text
-              type="secondary"
-              style={{ fontSize: 12, display: "block", marginTop: 4 }}
-            >
-              Drag the ⋮⋮ handle onto a floor/room tab to assign
-            </Text>
+          {/* ── Explicit Floor + Room assignment (replaces drag/drop) ── */}
+          {isQuotationMode && onLocationChange && (
+            <AssignRow>
+              <Space wrap size={4}>
+                <Select
+                  size="small"
+                  placeholder="Select floor"
+                  style={{ width: 130 }}
+                  value={selectedFloorId}
+                  onChange={(val) => {
+                    setSelectedFloorId(val);
+                    setSelectedRoomId(undefined);
+                  }}
+                >
+                  {floors.map((f) => (
+                    <Option key={f.floorId} value={f.floorId}>
+                      {f.floorName}
+                    </Option>
+                  ))}
+                </Select>
+
+                <Select
+                  size="small"
+                  placeholder="Select room"
+                  style={{ width: 130 }}
+                  value={selectedRoomId}
+                  onChange={setSelectedRoomId}
+                  disabled={
+                    !selectedFloorId || roomsForSelectedFloor.length === 0
+                  }
+                >
+                  {roomsForSelectedFloor.map((r) => (
+                    <Option key={r.roomId} value={r.roomId}>
+                      {r.roomName}
+                    </Option>
+                  ))}
+                </Select>
+
+                <Button
+                  size="small"
+                  type="primary"
+                  disabled={!canAssign}
+                  onClick={handleAssignClick}
+                >
+                  Assign
+                </Button>
+
+                {primaryLoc?.floorId && (
+                  <Button size="small" onClick={handleClearAssignment}>
+                    Clear
+                  </Button>
+                )}
+              </Space>
+
+              <Text
+                type="secondary"
+                style={{ fontSize: 11, display: "block", marginTop: 4 }}
+              >
+                Select both a floor and a room to assign this item
+              </Text>
+            </AssignRow>
           )}
 
           {isQuotationMode && onSplit && (totalQty > 1 || isSplit) && (

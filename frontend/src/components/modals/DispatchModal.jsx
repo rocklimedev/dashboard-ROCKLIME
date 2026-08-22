@@ -10,11 +10,7 @@ import {
   message,
   Alert,
 } from "antd";
-import {
-  UploadOutlined,
-  FilePdfOutlined,
-  CheckCircleOutlined,
-} from "@ant-design/icons";
+import { UploadOutlined, FilePdfOutlined } from "@ant-design/icons";
 import {
   useCreateDispatchMutation,
   useGetOrderDispatchesQuery,
@@ -28,13 +24,13 @@ const { TextArea } = Input;
  * Supports:
  * - Full dispatch
  * - Partial dispatch
- * - Existing invoice on order
- * - Upload invoice + gate pass during dispatch
- * - Optional carrier / tracking / remarks
+ * - Carrier / tracking / remarks
  *
- * Invoice rules:
- * - If order.invoiceLink exists, no invoice upload is required.
- * - If order.invoiceLink does not exist, an invoice file MUST be selected.
+ * Document rules (per dispatch batch):
+ * - EVERY dispatch must carry its OWN invoice.
+ * - EVERY dispatch must carry its OWN gate-pass.
+ * - Neither is inherited from the order or from a previous dispatch —
+ *   each shipment is its own paperwork event.
  * - Invoice is submitted as multipart field: "invoice"
  * - Gate pass is submitted as multipart field: "gatePass"
  */
@@ -58,13 +54,13 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
     useCreateDispatchMutation();
 
   // ------------------------------------------------------------
-  // Invoice availability
+  // Document availability — always requires a fresh file for
+  // THIS dispatch batch.
   // ------------------------------------------------------------
 
-  const hasExistingInvoice = Boolean(order?.invoiceLink);
-  const hasNewInvoice = Boolean(invoiceFile);
-
-  const invoiceAvailable = hasExistingInvoice || hasNewInvoice;
+  const invoiceReady = Boolean(invoiceFile);
+  const gatePassReady = Boolean(gatePassFile);
+  const documentsReady = invoiceReady && gatePassReady;
 
   // ------------------------------------------------------------
   // Already dispatched quantities
@@ -211,10 +207,15 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
   // ------------------------------------------------------------
 
   const handleSubmit = async () => {
-    // Invoice validation
-    if (!invoiceAvailable) {
+    // Document validation — both are mandatory for THIS dispatch
+    if (!invoiceReady) {
+      message.error("This dispatch needs its own invoice. Please upload one.");
+      return;
+    }
+
+    if (!gatePassReady) {
       message.error(
-        "Invoice is required before dispatch. Please upload the invoice.",
+        "This dispatch needs its own gate-pass. Please upload one.",
       );
       return;
     }
@@ -250,24 +251,9 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
       formData.append("remarks", remarks.trim());
     }
 
-    // ----------------------------------------------------------
-    // Invoice
-    //
-    // Only send invoice file when the order does not already
-    // have an invoice.
-    // ----------------------------------------------------------
-
-    if (!hasExistingInvoice && invoiceFile) {
-      formData.append("invoice", invoiceFile);
-    }
-
-    // ----------------------------------------------------------
-    // Gate pass
-    // ----------------------------------------------------------
-
-    if (gatePassFile) {
-      formData.append("gatePass", gatePassFile);
-    }
+    // This dispatch's own documents — always sent
+    formData.append("invoice", invoiceFile);
+    formData.append("gatePass", gatePassFile);
 
     try {
       const result = await createDispatch({
@@ -352,7 +338,7 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
       okButtonProps={{
         loading: isSubmitting,
         disabled:
-          !hasAnythingRemaining || totalSelectedQty === 0 || !invoiceAvailable,
+          !hasAnythingRemaining || totalSelectedQty === 0 || !documentsReady,
       }}
       width={720}
       destroyOnClose
@@ -392,44 +378,33 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
           />
 
           {/* -------------------------------------------------- */}
-          {/* Invoice */}
+          {/* Invoice — mandatory per dispatch */}
           {/* -------------------------------------------------- */}
 
-          {hasExistingInvoice ? (
+          <div style={{ marginBottom: 16 }}>
             <Alert
-              type="success"
+              type="warning"
               showIcon
-              icon={<CheckCircleOutlined />}
-              message="Invoice already uploaded"
-              description="This order already has an invoice. You can proceed with dispatch."
-              style={{ marginBottom: 16 }}
+              message="Invoice required for this dispatch"
+              description="Every dispatch batch needs its own invoice, even if earlier dispatches on this order already had one."
+              style={{ marginBottom: 12 }}
             />
-          ) : (
-            <div style={{ marginBottom: 16 }}>
-              <Alert
-                type="warning"
-                showIcon
-                message="Invoice required"
-                description="This order cannot be dispatched without an invoice. You can upload the invoice now and dispatch in the same operation."
-                style={{ marginBottom: 12 }}
-              />
 
-              <Upload
-                beforeUpload={handleInvoiceBeforeUpload}
-                onRemove={handleInvoiceRemove}
-                maxCount={1}
-                accept=".pdf,.png,.jpg,.jpeg"
-              >
-                <Button icon={<FilePdfOutlined />}>Upload Invoice</Button>
-              </Upload>
+            <Upload
+              beforeUpload={handleInvoiceBeforeUpload}
+              onRemove={handleInvoiceRemove}
+              maxCount={1}
+              accept=".pdf,.png,.jpg,.jpeg"
+            >
+              <Button icon={<FilePdfOutlined />}>Upload Invoice</Button>
+            </Upload>
 
-              {invoiceFile && (
-                <div className="text-muted small mt-2">
-                  Selected invoice: <strong>{invoiceFile.name}</strong>
-                </div>
-              )}
-            </div>
-          )}
+            {invoiceFile && (
+              <div className="text-muted small mt-2">
+                Selected invoice: <strong>{invoiceFile.name}</strong>
+              </div>
+            )}
+          </div>
 
           {/* -------------------------------------------------- */}
           {/* Carrier / Tracking */}
@@ -466,19 +441,25 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
           />
 
           {/* -------------------------------------------------- */}
-          {/* Gate Pass */}
+          {/* Gate Pass — mandatory per dispatch */}
           {/* -------------------------------------------------- */}
 
           <div style={{ marginBottom: 16 }}>
+            <Alert
+              type="warning"
+              showIcon
+              message="Gate-pass required for this dispatch"
+              description="This shipment batch needs its own gate-pass — it is not carried over from a previous dispatch."
+              style={{ marginBottom: 12 }}
+            />
+
             <Upload
               beforeUpload={handleGatePassBeforeUpload}
               onRemove={handleGatePassRemove}
               maxCount={1}
               accept=".pdf,.png,.jpg,.jpeg"
             >
-              <Button icon={<UploadOutlined />}>
-                Attach Gate-Pass (optional, for this batch)
-              </Button>
+              <Button icon={<UploadOutlined />}>Upload Gate-Pass</Button>
             </Upload>
 
             {gatePassFile && (
@@ -500,9 +481,10 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
             .
           </div>
 
-          {!invoiceAvailable && (
+          {!documentsReady && (
             <div className="text-danger small mt-2">
-              An invoice must be available before the dispatch can be submitted.
+              Both an invoice and a gate-pass must be uploaded for this dispatch
+              before it can be submitted.
             </div>
           )}
         </>

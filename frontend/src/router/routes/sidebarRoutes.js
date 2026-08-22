@@ -28,6 +28,7 @@ import ReportsPage from "../../concepts/Reports/page";
 import ActivityLogsPage from "../../concepts/Activity/page";
 import ReportDashboard from "../../concepts/Home/ReportDashboard";
 import NewDashboard from "../../concepts/Home/NewPageWrapper";
+import DispatchHistory from "../../concepts/Order/DispatchHistory";
 import { useAuth } from "../../context/AuthContext";
 
 // ============================================================
@@ -80,7 +81,13 @@ export const sidebarRoutes = [
     element: <OrderWrapper />,
     isSidebarActive: true,
   },
-
+  {
+    path: "/orders/dispatch/all",
+    name: "Dispatch History",
+    icon: <FaFileAlt />,
+    element: <DispatchHistory />,
+    isSidebarActive: true,
+  },
   {
     path: "/purchase-manager",
     name: "Purchase Manager",

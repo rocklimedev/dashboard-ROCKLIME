@@ -1656,14 +1656,15 @@ exports.deleteQuotation = async (req, res) => {
     if (!quotation) {
       return res.status(404).json({ message: "Quotation not found" });
     }
-    // Check if user is admin or the creator
+    // Check if user is admin, super admin, or the creator
     if (
       !req.user.roles.includes("ADMIN") &&
+      !req.user.roles.includes("SUPER_ADMIN") &&
       req.user.userId !== quotation.createdBy
     ) {
       return res.status(403).json({
         message:
-          "Unauthorized: Only admins or the creator can delete this quotation",
+          "Unauthorized: Only admins, super admins, or the creator can delete this quotation",
       });
     }
     await Quotation.destroy({
