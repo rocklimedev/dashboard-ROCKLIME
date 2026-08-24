@@ -24,13 +24,7 @@ const sendErrorResponse = (res, status, message, details = null) => {
 // ──────── CREATE PARTIAL/FULL DISPATCH ────────
 // POST /orders/:id/dispatch
 // body: { items: [{ productId, quantity }], carrier, trackingNumber, remarks }
-// files (both required, or provide the matching *Link string instead):
-//   invoice  — this dispatch's own invoice
-//   gatePass — this dispatch's own gate-pass
-//
-// IMPORTANT: Every dispatch batch must carry its OWN invoice and gate-pass.
-// Nothing is inherited from the order or from a prior dispatch — a partial
-// shipment is its own legal/paperwork event.
+
 exports.createDispatch = async (req, res) => {
   const t = await sequelize.transaction();
 
@@ -417,29 +411,6 @@ exports.createDispatch = async (req, res) => {
 // ─────────────────────────────────────────────────────────────
 // GLOBAL DISPATCH HISTORY
 // GET /order/dispatch-history
-//
-// Supports searching/filtering by:
-//
-// General:
-//   search
-//
-// Product:
-//   product
-//   productId
-//
-// Dispatch:
-//   status
-//   carrier
-//   trackingNumber
-//   orderNo
-//   dispatchNumber
-//   dateFrom
-//   dateTo
-//
-// Pagination:
-//   page
-//   limit
-// ─────────────────────────────────────────────────────────────
 
 exports.getAllDispatchHistory = async (req, res) => {
   try {
@@ -698,23 +669,6 @@ exports.getAllDispatchHistory = async (req, res) => {
 };
 // ──────── LIST DISPATCH HISTORY FOR AN ORDER ────────
 // GET /orders/:id/dispatches
-
-// Returns all dispatches for a single order with:
-// - Complete dispatch information
-// - Complete product snapshots
-// - Discount information
-// - Tax information
-// - Per-unit pricing
-// - Dispatch totals
-// - Order-level financial summary
-//
-// Important:
-// OrderDispatch.items contains the pricing snapshot captured
-// when each dispatch was created. We do NOT recalculate prices
-// from the current Product table.
-//
-// Each dispatch's `invoiceLink` and `gatePassLink` below are that
-// specific shipment's documents — NOT the order-level mirror fields.
 
 exports.getOrderDispatches = async (req, res) => {
   try {
@@ -1561,10 +1515,7 @@ exports.getOrderDispatches = async (req, res) => {
 
 // ──────── DOWNLOAD A SPECIFIC DISPATCH'S DOCUMENT ────────
 // GET /orders/:orderId/dispatches/:dispatchId/download?type=invoice|gatepass
-//
-// Unlike the order-level getDownloadDocument (which only ever returns
-// the MOST RECENT dispatch's mirrored doc), this always returns the
-// document that belongs to that exact dispatch batch.
+
 exports.getDispatchDocument = async (req, res) => {
   try {
     const { orderId, dispatchId } = req.params;
@@ -1670,9 +1621,7 @@ exports.getOrderActivity = async (req, res) => {
 
 // ──────── UPLOAD CREDIT NOTE ────────
 // POST /orders/:orderId/credit-note
-// Uploads the document and stores the link. Does NOT change status by
-// itself — the order can only move to RETURNED once this link is set
-// (see the gate check added to updateOrderStatus / updateOrderById).
+
 exports.uploadCreditNote = async (req, res) => {
   try {
     if (!req.file) return sendErrorResponse(res, 400, "No file uploaded");

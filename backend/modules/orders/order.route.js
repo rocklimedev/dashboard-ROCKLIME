@@ -207,12 +207,6 @@ router.post(
 // Invoice download
 router.get("/:id/download-invoice", auth, orderController.downloadInvoice);
 
-// Generic order document download
-//
-// Example:
-// GET /api/order/:orderId/download?type=invoice
-// GET /api/order/:orderId/download?type=gatepass
-//
 router.get("/:orderId/download", orderController.getDownloadDocument);
 
 // Order summary/download
@@ -222,60 +216,6 @@ router.get("/:id/download-order", orderController.downloadOrder);
 // DISPATCH
 // ============================================================
 
-// Create partial/full dispatch
-//
-// POST /api/order/:id/dispatch
-//
-// multipart/form-data:
-// - invoice
-// - gatePass
-//
-// body:
-// {
-//   items: [
-//     {
-//       productId,
-//       quantity
-//     }
-//   ],
-//   carrier,
-//   trackingNumber,
-//   remarks
-// }
-//
-router.post(
-  "/:id/dispatch",
-  handleFieldsUpload(uploadDispatchDocuments),
-  orderDispatchController.createDispatch,
-);
-
-// Get all dispatches for order
-router.get("/:id/dispatches", orderDispatchController.getOrderDispatches);
-// ============================================================
-// DISPATCH
-// ============================================================
-
-// Create partial/full dispatch
-//
-// POST /api/order/:id/dispatch
-//
-// multipart/form-data:
-// - invoice
-// - gatePass
-//
-// body:
-// {
-//   items: [
-//     {
-//       productId,
-//       quantity
-//     }
-//   ],
-//   carrier,
-//   trackingNumber,
-//   remarks
-// }
-//
 router.post(
   "/:id/dispatch",
   handleFieldsUpload(uploadDispatchDocuments),
@@ -285,15 +225,15 @@ router.post(
 // Get all dispatches for order
 router.get("/:id/dispatches", orderDispatchController.getOrderDispatches);
 
-// Download a specific dispatch's own invoice or gate-pass
-//
-// GET /api/order/:orderId/dispatches/:dispatchId/download?type=invoice
-// GET /api/order/:orderId/dispatches/:dispatchId/download?type=gatepass
-//
-// Unlike the generic /:orderId/download route (which only ever reflects
-// the MOST RECENT dispatch's mirrored doc on the order), this always
-// returns the document that belongs to that exact dispatch batch.
-//
+router.post(
+  "/:id/dispatch",
+  handleFieldsUpload(uploadDispatchDocuments),
+  orderDispatchController.createDispatch,
+);
+
+// Get all dispatches for order
+router.get("/:id/dispatches", orderDispatchController.getOrderDispatches);
+
 router.get(
   "/:orderId/dispatches/:dispatchId/download",
   orderDispatchController.getDispatchDocument,
@@ -308,25 +248,6 @@ router.get("/:id/activity", orderDispatchController.getOrderActivity);
 // CREDIT NOTES
 // ============================================================
 
-// Create credit note
-//
-// POST /api/order/:orderId/credit-note
-//
-// multipart/form-data:
-// - file
-//
-// body:
-// {
-//   items: [
-//     {
-//       productId,
-//       quantity,
-//       reason
-//     }
-//   ],
-//   remarks
-// }
-//
 router.post(
   "/:id/credit-note",
   handleUpload(uploadCreditNote),
@@ -367,15 +288,6 @@ router.post(
   handleUpload(uploadReceivingDocument),
   orderDispatchController.uploadReceivingDocument,
 );
-
-// ============================================================
-// GENERIC ORDER ROUTES
-// ============================================================
-//
-// IMPORTANT:
-// These parameter routes stay AFTER all static routes.
-//
-// ============================================================
 
 // Get single order
 router.get("/:id", orderController.getOrderDetails);

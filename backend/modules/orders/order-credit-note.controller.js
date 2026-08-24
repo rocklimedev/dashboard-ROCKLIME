@@ -35,15 +35,6 @@ const roundMoney = (value) => {
   return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
 };
 
-/**
- * Upload a credit note document (buffer, from multer memoryStorage)
- * to FTP and return the public URL. Returns null if no file given.
- *
- * multer is configured with memoryStorage() for the credit-note
- * routes, so req.file only ever has a `buffer` — there is no
- * `.location` / `.url` / `.path` to read off it. This is the one
- * place that actually persists the file and gets back a URL.
- */
 const uploadCreditNoteFile = async (file) => {
   if (!file || !file.buffer) return null;
 
@@ -123,13 +114,6 @@ async function reduceStockAndLog({
   }
 }
 
-/**
- * Parse `items` from the request body.
- *
- * Because credit note creation accepts a file upload
- * (multipart/form-data), `items` arrives as a JSON string,
- * not a parsed array. Handle both cases defensively.
- */
 const parseItems = (rawItems) => {
   if (Array.isArray(rawItems)) return rawItems;
 
@@ -145,10 +129,6 @@ const parseItems = (rawItems) => {
   return null;
 };
 
-/**
- * Restore stock when order is canceled / deleted / returned.
- * Must run inside the same transaction as the rest of the write.
- */
 async function restoreStock({ products, orderNo, transaction }) {
   if (!products?.length) return;
 
@@ -178,13 +158,6 @@ async function restoreStock({ products, orderNo, transaction }) {
   }
 }
 
-/**
- * Build a map:
- *
- * productId -> already returned quantity
- *
- * across all existing (non-canceled) credit notes for an order.
- */
 const getReturnedQuantityMap = async (orderId, transaction) => {
   const creditNotes = await OrderCreditNote.findAll({
     where: {
@@ -270,11 +243,6 @@ exports.createOrderCreditNote = async (req, res) => {
   const transaction = await Order.sequelize.transaction();
 
   try {
-    // --------------------------------------------------------
-    // orderId comes from the route param (":id" in
-    // POST /order/:id/credit-note), NOT the body.
-    // --------------------------------------------------------
-
     const orderId = req.params.id;
 
     const {
@@ -314,15 +282,6 @@ exports.createOrderCreditNote = async (req, res) => {
       return sendErrorResponse(res, 400, "Credit note document is required");
     }
 
-    // --------------------------------------------------------
-    // UPLOAD CREDIT NOTE DOCUMENT
-    // --------------------------------------------------------
-    //
-    // Done up front, before any row locks are taken below, so a
-    // slow FTP round-trip doesn't hold the order/product locks
-    // open any longer than necessary.
-    // --------------------------------------------------------
-
     let creditNoteLink;
 
     try {
@@ -342,14 +301,6 @@ exports.createOrderCreditNote = async (req, res) => {
       await transaction.rollback();
       return sendErrorResponse(res, 500, "File upload did not return a URL");
     }
-
-    // --------------------------------------------------------
-    // OPTIONAL: lock/statement timeout so a stuck transaction
-    // fails fast instead of hanging indefinitely on a row lock.
-    // Adjust/remove based on your DB dialect if this errors out
-    // in your environment (Postgres syntax shown; no-op-safe to
-    // wrap in try/catch since it's a defensive guard only).
-    // --------------------------------------------------------
 
     try {
       await transaction.sequelize.query("SET LOCAL lock_timeout = '10s'", {
@@ -446,19 +397,6 @@ exports.createOrderCreditNote = async (req, res) => {
     // --------------------------------------------------------
 
     const requestedProductIds = new Set();
-
-    // --------------------------------------------------------
-    // VALIDATE RETURN ITEMS
-    // --------------------------------------------------------
-    //
-    // IMPORTANT: iterate in a stable, sorted order (by productId)
-    // rather than whatever order the client sent them in. Two
-    // concurrent requests touching overlapping products but with
-    // items in different orders can otherwise lock rows in
-    // inconsistent sequence and deadlock, which shows up to the
-    // client as a hung request until the DB's lock/deadlock
-    // timeout kicks in.
-    // --------------------------------------------------------
 
     const sortedItems = [...items].sort((a, b) =>
       String(a.productId || a.id).localeCompare(String(b.productId || b.id)),
@@ -744,13 +682,6 @@ exports.createOrderCreditNote = async (req, res) => {
 
     await transaction.commit();
 
-    // --------------------------------------------------------
-    // RESPOND IMMEDIATELY — the write already succeeded, so the
-    // client must not be made to wait on anything below this
-    // point (notifications, etc). This is what prevents the
-    // request from appearing to "hang" after a successful commit.
-    // --------------------------------------------------------
-
     const createdCreditNote = await OrderCreditNote.findByPk(creditNote.id, {
       include: [
         {
@@ -778,17 +709,6 @@ exports.createOrderCreditNote = async (req, res) => {
         })),
       },
     });
-
-    // --------------------------------------------------------
-    // NOTIFICATIONS (fire-and-forget, after the response is sent)
-    // --------------------------------------------------------
-    //
-    // These run after res.json() above, so a slow or hanging
-    // notification service can no longer block or delay the
-    // client response. Each call is capped with a timeout so a
-    // stuck promise can't linger indefinitely in the background
-    // either.
-    // --------------------------------------------------------
 
     const withTimeout = (promise, ms = 5000) =>
       Promise.race([
@@ -944,11 +864,6 @@ exports.getOrderCreditNotes = async (req, res) => {
 
 // ============================================================
 // GET RETURNABLE QUANTITIES FOR AN ORDER
-// ============================================================
-//
-// Useful for the frontend — tells the UI exactly how much of
-// each product can still be returned.
-//
 
 exports.getOrderReturnableItems = async (req, res) => {
   const transaction = await Order.sequelize.transaction();
@@ -1044,12 +959,6 @@ exports.getOrderReturnableItems = async (req, res) => {
 // ============================================================
 // CANCEL CREDIT NOTE
 // ============================================================
-//
-// IMPORTANT:
-// If a credit note is canceled, the stock restored by that
-// credit note must be deducted again, to prevent inventory
-// from remaining artificially increased.
-//
 
 exports.cancelOrderCreditNote = async (req, res) => {
   const transaction = await Order.sequelize.transaction();
@@ -1227,20 +1136,6 @@ exports.cancelOrderCreditNote = async (req, res) => {
 
 // ============================================================
 // UPDATE CREDIT NOTE
-// ============================================================
-//
-// Allows updating:
-// - reason
-// - remarks
-// - credit note number
-// - status (DRAFT / ISSUED / RECEIVED only)
-//
-// Items should NOT be freely changed after issuance because
-// changing quantities would affect stock and return calculations.
-// To change returned quantities, cancel the existing credit
-// note and create a new one.
-//
-// ============================================================
 
 exports.updateCreditNote = async (req, res) => {
   const transaction = await Order.sequelize.transaction();
@@ -1412,13 +1307,6 @@ exports.updateCreditNote = async (req, res) => {
 
 // ============================================================
 // UPLOAD / REPLACE CREDIT NOTE DOCUMENT
-// ============================================================
-//
-// Route:
-// POST /orders/:orderId/credit-notes/:creditNoteId/document
-// Multer field: file
-//
-// ============================================================
 
 exports.uploadCreditNoteDocument = async (req, res) => {
   try {

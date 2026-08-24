@@ -169,18 +169,6 @@ const normalizeOrderItem = (item) => {
 // ============================================================
 // GET LOW STOCK / INVENTORY PRODUCTS
 // ============================================================
-//
-// IMPORTANT:
-//
-// This function returns EVERY requested product.
-//
-// The controller can decide later whether it wants:
-// - all products
-// - only low-stock products
-//
-// This prevents the frontend from treating missing products
-// as UNKNOWN.
-//
 
 const getInventoryProducts = async (productIds, orderItemMap = new Map()) => {
   const normalizedProductIds = normalizeProductIds(productIds);
@@ -387,14 +375,6 @@ const getInventoryProducts = async (productIds, orderItemMap = new Map()) => {
 
 // ============================================================
 // GET LOW STOCK PRODUCTS BY ORDER ID
-// ============================================================
-//
-// GET /order/:id/low-stock-products
-//
-// Existing saved order.
-//
-// Returns ONLY products requiring attention.
-//
 
 exports.getLowStockProductByOrderId = async (req, res) => {
   try {
@@ -532,39 +512,6 @@ exports.getLowStockProductByOrderId = async (req, res) => {
     );
   }
 };
-
-// ============================================================
-// CHECK INCOMING PRODUCTS
-// ============================================================
-//
-// POST /order/low-stock-products
-//
-// Body:
-//
-// {
-//   products: [
-//     {
-//       productId,
-//       quantity,
-//       name,
-//       productCode,
-//       imageUrl,
-//       companyCode,
-//       price,
-//       discount,
-//       discountType,
-//       tax,
-//       total
-//     }
-//   ]
-// }
-//
-// IMPORTANT:
-//
-// This endpoint returns ALL products.
-//
-// The frontend decides which products require attention.
-//
 
 exports.getLowStockProductsForIncomingOrder = async (req, res) => {
   try {

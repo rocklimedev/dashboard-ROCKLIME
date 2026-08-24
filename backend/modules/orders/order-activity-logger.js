@@ -1,10 +1,3 @@
-// Dedicated logger for the order_activity table. Kept separate from the
-// existing generic logActivity()/ActivityLog so order-specific tooling
-// (timelines, audit views, dispatch/return history) can query a narrow,
-// purpose-built table instead of filtering the generic activity feed.
-//
-// Never throws — a logging failure should never fail the caller's request.
-
 const { OrderActivity } = require("../../models");
 
 function extractIp(req) {

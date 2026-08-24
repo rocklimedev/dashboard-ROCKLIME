@@ -1,5 +1,4 @@
 // src/pages/quotations/NewQuotationsDetails.jsx
-
 import React, { useRef, useState, useMemo, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
@@ -20,6 +19,9 @@ import {
   FileExcelFilled,
   HistoryOutlined,
   SettingOutlined,
+  ArrowUpOutlined,
+  ArrowDownOutlined,
+  OrderedListOutlined,
 } from "@ant-design/icons";
 import { Helmet } from "react-helmet";
 import dayjs from "dayjs";
@@ -46,7 +48,6 @@ import {
 import { amountInWords } from "../../components/Quotation/hooks/calcHelpers";
 
 dayjs.extend(relativeTime);
-
 const { Title, Text } = Typography;
 
 // ── Shared Pricing Helper ────────────────────────────────────────────────
@@ -92,6 +93,7 @@ const groupItemsWithOptions = (itemsList) => {
 // ── Room-wise Totals Helper ───────────────────────────────────────────────
 const computeRoomTotals = (roomProducts = []) => {
   const roomMainItems = groupItemsWithOptions(roomProducts);
+
   const gross = roomMainItems.reduce((sum, item) => {
     const mrp = Number(item.price ?? 0);
     const qty = Number(item.quantity ?? 1);
@@ -147,9 +149,19 @@ const NewQuotationsDetails = () => {
     total: true,
   });
 
+  // ── Floor & Room Ordering (UI-only, no backend field) ───────────────────
+  // floorOrder: null = no custom order set -> fall back to original
+  // alphabetical order exactly as before. Once reordered via the UI it
+  // becomes an array of floor names in the user's chosen order.
+  const [floorOrder, setFloorOrder] = useState(null);
+  // roomOrderMap: { [floorName]: string[] } — per-floor room order. A floor
+  // missing from this map (or with an empty array) falls back to the
+  // original alphabetical room order within that floor.
+  const [roomOrderMap, setRoomOrderMap] = useState({});
+
   const quotationRef = useRef(null);
 
-  // ── Data Fetching ───────────────────────────────────────────────────────
+  // ── Data Fetching ─────────────────────────────────────────────────────
   const {
     data: quotation,
     isLoading: qLoading,
@@ -172,10 +184,9 @@ const NewQuotationsDetails = () => {
     return [];
   };
 
-  // ── Versions Logic ──────────────────────────────────────────────────────
+  // ── Versions Logic ───────────────────────────────────────────────────
   const versions = useMemo(() => {
     const list = Array.isArray(versionsData) ? [...versionsData] : [];
-
     if (quotation) {
       list.unshift({
         version: "current",
@@ -188,7 +199,6 @@ const NewQuotationsDetails = () => {
         isCurrent: true,
       });
     }
-
     return list
       .map((v) => ({
         ...v,
@@ -217,20 +227,15 @@ const NewQuotationsDetails = () => {
     [activeVersionObj, quotation],
   );
 
-  // ── Customer & Address ──────────────────────────────────────────────────
+  // ── Customer & Address ───────────────────────────────────────────────
   const customerId =
     activeVersionData.quotation?.customerId || quotation?.customerId;
   const shipToId = activeVersionData.quotation?.shipTo || quotation?.shipTo;
 
   const { data: customerResponse, isFetching: custLoading } =
-    useGetCustomerByIdQuery(customerId, {
-      skip: !customerId,
-    });
-
+    useGetCustomerByIdQuery(customerId, { skip: !customerId });
   const { data: addressResponse, isFetching: addrLoading } =
-    useGetAddressByIdQuery(shipToId, {
-      skip: !shipToId,
-    });
+    useGetAddressByIdQuery(shipToId, { skip: !shipToId });
 
   const customer = customerResponse?.data || {};
   const address = addressResponse || {};
@@ -247,10 +252,9 @@ const NewQuotationsDetails = () => {
     [address.street, address.city, address.state].filter(Boolean).join(", ") +
       (address.postalCode ? ` - ${address.postalCode}` : "") || "--";
 
-  // ── Products ────────────────────────────────────────────────────────────
+  // ── Products ───────────────────────────────────────────────────────────
   const allProducts = useMemo(() => {
     const products = activeVersionData.products || [];
-
     return products
       .map((p) => ({
         ...p,
@@ -267,6 +271,7 @@ const NewQuotationsDetails = () => {
     () => allProducts.filter((p) => p.isOptionFor == null),
     [allProducts],
   );
+
   const optionalProducts = useMemo(
     () => allProducts.filter((p) => p.isOptionFor != null),
     [allProducts],
@@ -278,7 +283,6 @@ const NewQuotationsDetails = () => {
       if (!optionMap.has(opt.isOptionFor)) optionMap.set(opt.isOptionFor, []);
       optionMap.get(opt.isOptionFor).push(opt);
     });
-
     return mainProducts.map((mainItem) => ({
       ...mainItem,
       options: optionMap.get(mainItem.productId) || [],
@@ -294,7 +298,7 @@ const NewQuotationsDetails = () => {
     [groupedProductsWithOptions],
   );
 
-  // ── Brand Names ─────────────────────────────────────────────────────────
+  // ── Brand Names ──────────────────────────────────────────────────────
   const brandNames = useMemo(() => {
     const brands = new Set();
     mainProducts.forEach((p) => {
@@ -308,7 +312,7 @@ const NewQuotationsDetails = () => {
       : "GROHE / AMERICAN STANDARD";
   }, [mainProducts]);
 
-  // ── Calculations ────────────────────────────────────────────────────────
+  // ── Calculations ─────────────────────────────────────────────────────
   const grossTotalBeforeDiscount = useMemo(() => {
     return mainProducts.reduce(
       (sum, p) => sum + Number(p.price ?? 0) * Number(p.quantity ?? 1),
@@ -340,7 +344,123 @@ const NewQuotationsDetails = () => {
 
   const enrichedProducts = allProducts;
 
-  // ── Grouping Helpers ────────────────────────────────────────────────────
+  // ── Floor Order (UI-only) ────────────────────────────────────────────
+  // Default floor list in the app's original alphabetical order — this is
+  // exactly what would render if the user never touches the new control.
+  const defaultFloorNames = useMemo(() => {
+    const names = new Set();
+    enrichedProducts.forEach((p) => {
+      const locations =
+        Array.isArray(p.locations) && p.locations.length > 0
+          ? p.locations
+          : [{ floorName: p.floorName || "Unspecified Floor" }];
+      locations.forEach((loc) => {
+        names.add((loc.floorName || "Unspecified Floor").trim());
+      });
+    });
+    return [...names].sort((a, b) => a.localeCompare(b));
+  }, [enrichedProducts]);
+
+  // Effective floor order: the user's custom order if one has been set
+  // (merged with any newly-appearing floors), otherwise the original
+  // alphabetical default as-is.
+  const effectiveFloorOrder = useMemo(() => {
+    if (!floorOrder || floorOrder.length === 0) return defaultFloorNames;
+    const known = floorOrder.filter((f) => defaultFloorNames.includes(f));
+    const missing = defaultFloorNames.filter((f) => !known.includes(f));
+    return [...known, ...missing];
+  }, [floorOrder, defaultFloorNames]);
+
+  const floorOrderIndexMap = useMemo(() => {
+    const m = new Map();
+    effectiveFloorOrder.forEach((name, idx) => m.set(name, idx));
+    return m;
+  }, [effectiveFloorOrder]);
+
+  // ── Room Order (UI-only, per floor) ──────────────────────────────────
+  // Default rooms per floor, alphabetical — same as the app's original
+  // room ordering within a floor.
+  const defaultRoomsByFloor = useMemo(() => {
+    const map = new Map(); // floorName -> Set(roomName)
+    enrichedProducts.forEach((p) => {
+      const locations =
+        Array.isArray(p.locations) && p.locations.length > 0
+          ? p.locations
+          : [
+              {
+                floorName: p.floorName || "Unspecified Floor",
+                roomName: p.roomName || "Unspecified Room",
+              },
+            ];
+      locations.forEach((loc) => {
+        const floor = (loc.floorName || "Unspecified Floor").trim();
+        const room = (loc.roomName || "Unspecified Room").trim();
+        if (!map.has(floor)) map.set(floor, new Set());
+        map.get(floor).add(room);
+      });
+    });
+    const result = new Map();
+    map.forEach((rooms, floor) => {
+      result.set(
+        floor,
+        [...rooms].sort((a, b) => a.localeCompare(b)),
+      );
+    });
+    return result;
+  }, [enrichedProducts]);
+
+  // Effective rooms per floor: user's custom order (merged with any new
+  // rooms) if set for that floor, otherwise the original alphabetical
+  // default as-is — exactly the prior behavior when untouched.
+  const effectiveRoomsByFloor = useMemo(() => {
+    const result = new Map();
+    defaultRoomsByFloor.forEach((defaultRooms, floor) => {
+      const custom = roomOrderMap[floor];
+      if (!custom || custom.length === 0) {
+        result.set(floor, defaultRooms);
+        return;
+      }
+      const known = custom.filter((r) => defaultRooms.includes(r));
+      const missing = defaultRooms.filter((r) => !known.includes(r));
+      result.set(floor, [...known, ...missing]);
+    });
+    return result;
+  }, [defaultRoomsByFloor, roomOrderMap]);
+
+  const roomOrderIndexMap = useMemo(() => {
+    const outer = new Map(); // floorName -> Map(roomName -> idx)
+    effectiveRoomsByFloor.forEach((rooms, floor) => {
+      const inner = new Map();
+      rooms.forEach((room, idx) => inner.set(room, idx));
+      outer.set(floor, inner);
+    });
+    return outer;
+  }, [effectiveRoomsByFloor]);
+
+  const moveFloor = (floorName, direction) => {
+    const base = [...effectiveFloorOrder];
+    const idx = base.indexOf(floorName);
+    const swapWith = direction === "up" ? idx - 1 : idx + 1;
+    if (idx === -1 || swapWith < 0 || swapWith >= base.length) return;
+    [base[idx], base[swapWith]] = [base[swapWith], base[idx]];
+    setFloorOrder(base);
+  };
+
+  const moveRoom = (floorName, roomName, direction) => {
+    const base = [...(effectiveRoomsByFloor.get(floorName) || [])];
+    const idx = base.indexOf(roomName);
+    const swapWith = direction === "up" ? idx - 1 : idx + 1;
+    if (idx === -1 || swapWith < 0 || swapWith >= base.length) return;
+    [base[idx], base[swapWith]] = [base[swapWith], base[idx]];
+    setRoomOrderMap((prev) => ({ ...prev, [floorName]: base }));
+  };
+
+  const resetFloorAndRoomOrder = () => {
+    setFloorOrder(null);
+    setRoomOrderMap({});
+  };
+
+  // ── Grouping Helpers ─────────────────────────────────────────────────
   const groupProductsByFloorAndRoom = (products = []) => {
     const map = new Map();
     products.forEach((p) => {
@@ -360,9 +480,7 @@ const NewQuotationsDetails = () => {
         const key = `${floor}|||${room}`;
         if (!map.has(key))
           map.set(key, { floorName: floor, roomName: room, products: [] });
-
         const assignedQty = Number(loc.assignedQuantity ?? p.quantity ?? 1);
-
         map.get(key).products.push({
           ...p,
           ...loc,
@@ -373,12 +491,24 @@ const NewQuotationsDetails = () => {
     });
 
     return Array.from(map.values()).sort((a, b) => {
-      const floorCmp = a.floorName.localeCompare(b.floorName);
-      return floorCmp !== 0 ? floorCmp : a.roomName.localeCompare(b.roomName);
+      // Floor order first (UI-set order, falling back to alphabetical)
+      const floorCmp =
+        (floorOrderIndexMap.get(a.floorName) ?? Infinity) -
+        (floorOrderIndexMap.get(b.floorName) ?? Infinity);
+      if (floorCmp !== 0) return floorCmp;
+
+      // Then room order within that floor (UI-set order, falling back to
+      // alphabetical) — only meaningful when both rows share a floor.
+      const roomMapForFloor = roomOrderIndexMap.get(a.floorName);
+      const aRoomIdx = roomMapForFloor?.get(a.roomName) ?? Infinity;
+      const bRoomIdx = roomMapForFloor?.get(b.roomName) ?? Infinity;
+      if (aRoomIdx !== bRoomIdx) return aRoomIdx - bRoomIdx;
+
+      return a.roomName.localeCompare(b.roomName);
     });
   };
 
-  // ── Render Per-Room Discount / Total Box ────────────────────────────────
+  // ── Render Per-Room Discount / Total Box ────────────────────────────
   const renderRoomDiscountBox = (roomName, roomProducts) => {
     if (!roomProducts || roomProducts.length === 0) return null;
     const { gross, discount, net } = computeRoomTotals(roomProducts);
@@ -420,13 +550,15 @@ const NewQuotationsDetails = () => {
     );
   };
 
-  // ── Detailed Tabular Floor & Room Wise (Full Products) ──────────────────
+  // ── Detailed Tabular Floor & Room Wise (Full Products) ──────────────
   const renderDetailedTabularFloorRoom = (
     shouldShowColumn,
     showRoomTotals = true,
   ) => {
+    // floorRoomGroups already comes out floor-ordered then room-ordered
+    // from groupProductsByFloorAndRoom, so iteration order below is
+    // preserved automatically — no extra sorting needed here.
     const floorRoomGroups = groupProductsByFloorAndRoom(enrichedProducts);
-
     const floorMap = new Map();
     floorRoomGroups.forEach((group) => {
       if (!floorMap.has(group.floorName)) {
@@ -434,6 +566,10 @@ const NewQuotationsDetails = () => {
       }
       floorMap.get(group.floorName).push(group);
     });
+
+    // Preserve insertion order of floorMap, which already reflects the
+    // effective floor order (Map preserves insertion order in JS).
+    const orderedFloorNames = [...floorMap.keys()];
 
     const pages = [];
     const roomSnoTracker = new Map();
@@ -445,7 +581,8 @@ const NewQuotationsDetails = () => {
       }, 0);
     };
 
-    floorMap.forEach((roomsInFloor, floorName) => {
+    orderedFloorNames.forEach((floorName) => {
+      const roomsInFloor = floorMap.get(floorName);
       let roomIndex = 0;
 
       while (roomIndex < roomsInFloor.length) {
@@ -467,7 +604,6 @@ const NewQuotationsDetails = () => {
           if (roomVisualRows > MAX_VISUAL_ROWS) {
             const splitItems = [];
             let tempRows = visualRowsUsed;
-
             for (const item of roomMainItems) {
               const itemRows = 1 + (item.options?.length || 0);
               if (
@@ -479,9 +615,7 @@ const NewQuotationsDetails = () => {
               splitItems.push(item);
               tempRows += itemRows;
             }
-
             currentPageRooms.push({ roomGroup, roomMainItems: splitItems });
-
             const remainingIds = splitItems.map((x) => x.productId);
             roomsInFloor[roomIndex] = {
               ...roomGroup,
@@ -489,7 +623,6 @@ const NewQuotationsDetails = () => {
                 (p) => !remainingIds.includes(p.productId),
               ),
             };
-
             visualRowsUsed = tempRows;
             break;
           }
@@ -535,10 +668,8 @@ const NewQuotationsDetails = () => {
               const roomKey = `${floorName}|||${roomGroup.roomName}`;
               const startSno = roomSnoTracker.get(roomKey) || 0;
               roomSnoTracker.set(roomKey, startSno + roomMainItems.length);
-
               const isContinuation = startSno > 0;
 
-              // Last chunk of this room = no remaining products for this room left in queue
               const isLastChunkOfRoom = !roomsInFloor.some(
                 (r, i) =>
                   i >= roomIndex &&
@@ -570,17 +701,14 @@ const NewQuotationsDetails = () => {
                       paddingBottom: 8,
                     }}
                   >
-                    {roomGroup.roomName}
-                    {isContinuation && " (Continued)"}
+                    {roomGroup.roomName} {isContinuation && " (Continued)"}
                   </h3>
-
                   {renderProductTable(
                     roomMainItems,
                     "",
                     startSno,
                     shouldShowColumn,
                   )}
-
                   {isLastChunkOfRoom &&
                     showRoomTotals &&
                     renderRoomDiscountBox(roomGroup.roomName, fullRoomProducts)}
@@ -595,7 +723,7 @@ const NewQuotationsDetails = () => {
     return pages;
   };
 
-  // ── Render Product Table ────────────────────────────────────────────────
+  // ── Render Product Table ────────────────────────────────────────────
   const renderProductTable = (
     itemsWithOptions,
     title = "",
@@ -641,7 +769,6 @@ const NewQuotationsDetails = () => {
               const img = mainItem.imageUrl || "";
               const { mrp, qty, unitPrice, lineTotal, displayDiscount } =
                 computePricing(mainItem);
-
               localSno++;
 
               return (
@@ -752,13 +879,12 @@ const NewQuotationsDetails = () => {
     );
   };
 
-  // ── Render Optional Items on their own dedicated page(s) ────────────────
+  // ── Render Optional Items on their own dedicated page(s) ────────────
   const renderOptionalItemsPages = (shouldShowColumn) => {
     if (optionalProducts.length === 0) return [];
 
     const MAX_OPTIONAL_PER_PAGE = 10;
     const pages = [];
-
     const flatOptionalItems = optionalProducts.map((opt) => ({
       ...opt,
       options: [],
@@ -812,21 +938,21 @@ const NewQuotationsDetails = () => {
     return pages;
   };
 
-  // ── Render Room-wise Summary Page(s) ────────────────────────────────────
+  // ── Render Room-wise Summary Page(s) ─────────────────────────────────
   const renderRoomWiseSummaryPages = () => {
     if (!hasFloorLayout) return [];
 
+    // roomGroups comes out already floor-ordered then room-ordered from
+    // groupProductsByFloorAndRoom.
     const roomGroups = groupProductsByFloorAndRoom(enrichedProducts);
     if (roomGroups.length === 0) return [];
 
     const summaryRows = roomGroups.map((group) => {
       const roomMainItems = groupItemsWithOptions(group.products);
-
       const itemCount = roomMainItems.reduce(
         (sum, item) => sum + 1 + (item.options?.length || 0),
         0,
       );
-
       const roomSubtotal = roomMainItems.reduce((sum, item) => {
         const { lineTotal } = computePricing(item);
         const optionsTotal = (item.options || []).reduce((optSum, opt) => {
@@ -844,6 +970,8 @@ const NewQuotationsDetails = () => {
       };
     });
 
+    // Preserve the already-correct floor+room order by inserting into a Map
+    // in the order rows appear (Map preserves insertion order in JS).
     const floorWise = new Map();
     summaryRows.forEach((row) => {
       if (!floorWise.has(row.floorName)) floorWise.set(row.floorName, []);
@@ -979,7 +1107,7 @@ const NewQuotationsDetails = () => {
     return pages;
   };
 
-  // ── Render All Pages ────────────────────────────────────────────────────
+  // ── Render All Pages ─────────────────────────────────────────────────
   const renderPages = ({
     shouldShowColumn: getShouldShowColumn,
     includeProductList = true,
@@ -1028,10 +1156,8 @@ const NewQuotationsDetails = () => {
         <div className={styles.letterheadFooter}>
           <img src={logo} alt="Logo" />
           <div>
-            487/65, National Market, Peera Garhi, Delhi, 110087
-            <br />
-            0991180605
-            <br />
+            487/65, National Market, Peera Garhi, Delhi, 110087 <br />
+            0991180605 <br />
             www.cmtradingco.com
           </div>
         </div>
@@ -1045,6 +1171,7 @@ const NewQuotationsDetails = () => {
 
       while (remainingItems.length > 0) {
         const itemsThisPage = remainingItems.slice(0, MAX_PRODUCTS_NORMAL);
+
         pages.push(
           <div
             key={`main-page-${globalSno}`}
@@ -1068,6 +1195,7 @@ const NewQuotationsDetails = () => {
             {renderProductTable(itemsThisPage, "", globalSno, shouldShowColumn)}
           </div>,
         );
+
         globalSno += itemsThisPage.length;
         remainingItems = remainingItems.slice(itemsThisPage.length);
       }
@@ -1155,6 +1283,7 @@ const NewQuotationsDetails = () => {
                   </div>
                 )}
               </div>
+
               <div className={styles.summaryRight}>
                 <div className={styles.totalAmount}>
                   <strong>GRAND TOTAL</strong>
@@ -1184,7 +1313,6 @@ const NewQuotationsDetails = () => {
         .replace(/[\\/:*?"<>|]/g, "_")
         .replace(/\s+/g, "_")
         .substring(0, 50);
-
       const versionLabel = activeVersionObj.shortLabel || "Latest";
       const fileName = `${safeTitle}_${versionLabel}`;
 
@@ -1215,6 +1343,7 @@ const NewQuotationsDetails = () => {
           activeVersion,
         });
       }
+
       message.success(`${exportFormat.toUpperCase()} exported successfully!`);
     } catch (err) {
       message.error("Export failed. Please try again.");
@@ -1290,12 +1419,10 @@ const NewQuotationsDetails = () => {
                   >
                     {quotation.document_title || "Quotation"}
                   </Title>
-
                   {activeVersion !== "current" && (
                     <Tag color="blue">v{activeVersion}</Tag>
                   )}
                 </div>
-
                 <div
                   style={{
                     marginTop: 4,
@@ -1313,6 +1440,163 @@ const NewQuotationsDetails = () => {
 
               {/* RIGHT: Actions */}
               <Space size={12} wrap align="center">
+                {/* Floor & Room Order Config */}
+                {hasFloorLayout && (
+                  <Dropdown
+                    trigger={["click"]}
+                    placement="bottomRight"
+                    dropdownRender={() => (
+                      <div
+                        style={{
+                          padding: 16,
+                          background: "#fff",
+                          borderRadius: 10,
+                          boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
+                          width: 300,
+                        }}
+                      >
+                        <div style={{ fontWeight: 600, marginBottom: 10 }}>
+                          Floor &amp; Room Order
+                        </div>
+                        <Space
+                          direction="vertical"
+                          size={12}
+                          style={{
+                            width: "100%",
+                            maxHeight: 340,
+                            overflowY: "auto",
+                            paddingRight: 4,
+                          }}
+                        >
+                          {effectiveFloorOrder.map((floorName, idx) => {
+                            const rooms =
+                              effectiveRoomsByFloor.get(floorName) || [];
+                            return (
+                              <div key={floorName}>
+                                {/* Floor row */}
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "space-between",
+                                    gap: 8,
+                                  }}
+                                >
+                                  <span
+                                    style={{
+                                      fontSize: 13,
+                                      fontWeight: 600,
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
+                                      whiteSpace: "nowrap",
+                                    }}
+                                    title={floorName}
+                                  >
+                                    {idx + 1}. {floorName}
+                                  </span>
+                                  <Space size={4}>
+                                    <Button
+                                      size="small"
+                                      icon={<ArrowUpOutlined />}
+                                      disabled={idx === 0}
+                                      onClick={() => moveFloor(floorName, "up")}
+                                    />
+                                    <Button
+                                      size="small"
+                                      icon={<ArrowDownOutlined />}
+                                      disabled={
+                                        idx === effectiveFloorOrder.length - 1
+                                      }
+                                      onClick={() =>
+                                        moveFloor(floorName, "down")
+                                      }
+                                    />
+                                  </Space>
+                                </div>
+
+                                {/* Rooms within this floor */}
+                                {rooms.length > 0 && (
+                                  <div
+                                    style={{
+                                      marginTop: 6,
+                                      paddingLeft: 14,
+                                      borderLeft: "2px solid #f0f0f0",
+                                    }}
+                                  >
+                                    {rooms.map((roomName, rIdx) => (
+                                      <div
+                                        key={roomName}
+                                        style={{
+                                          display: "flex",
+                                          alignItems: "center",
+                                          justifyContent: "space-between",
+                                          gap: 8,
+                                          padding: "3px 0",
+                                        }}
+                                      >
+                                        <span
+                                          style={{
+                                            fontSize: 12,
+                                            color: "#555",
+                                            overflow: "hidden",
+                                            textOverflow: "ellipsis",
+                                            whiteSpace: "nowrap",
+                                          }}
+                                          title={roomName}
+                                        >
+                                          {rIdx + 1}. {roomName}
+                                        </span>
+                                        <Space size={4}>
+                                          <Button
+                                            size="small"
+                                            icon={<ArrowUpOutlined />}
+                                            disabled={rIdx === 0}
+                                            onClick={() =>
+                                              moveRoom(
+                                                floorName,
+                                                roomName,
+                                                "up",
+                                              )
+                                            }
+                                          />
+                                          <Button
+                                            size="small"
+                                            icon={<ArrowDownOutlined />}
+                                            disabled={rIdx === rooms.length - 1}
+                                            onClick={() =>
+                                              moveRoom(
+                                                floorName,
+                                                roomName,
+                                                "down",
+                                              )
+                                            }
+                                          />
+                                        </Space>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </Space>
+                        <Divider style={{ margin: "10px 0" }} />
+                        <Button
+                          type="link"
+                          block
+                          onClick={resetFloorAndRoomOrder}
+                        >
+                          Reset to Default (A–Z)
+                        </Button>
+                      </div>
+                    )}
+                  >
+                    <Button size="middle" icon={<OrderedListOutlined />}>
+                      Floor &amp; Room Order
+                    </Button>
+                  </Dropdown>
+                )}
+
                 {/* Export Column Config */}
                 <Dropdown
                   trigger={["click"]}
@@ -1330,7 +1614,6 @@ const NewQuotationsDetails = () => {
                       <div style={{ fontWeight: 600, marginBottom: 10 }}>
                         Export Columns
                       </div>
-
                       <Checkbox.Group
                         style={{ width: "100%" }}
                         value={Object.keys(visibleColumns).filter(
@@ -1362,7 +1645,6 @@ const NewQuotationsDetails = () => {
                       <div style={{ fontWeight: 600, marginBottom: 10 }}>
                         Include Sections
                       </div>
-
                       <Space direction="vertical" size={6}>
                         <Checkbox
                           checked={includeProductListPage}
