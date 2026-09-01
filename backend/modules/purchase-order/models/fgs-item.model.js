@@ -1,7 +1,3 @@
-// ─────────────────────────────────────────────────────────────
-// NEW MongoDB Model: models/fgsItem.js
-// Similar to poItem
-// ─────────────────────────────────────────────────────────────
 const mongoose = require("mongoose");
 
 const fgsItemSchema = new mongoose.Schema(

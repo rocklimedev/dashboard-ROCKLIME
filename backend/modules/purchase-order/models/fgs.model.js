@@ -1,7 +1,3 @@
-// ─────────────────────────────────────────────────────────────
-// NEW Model: models/FieldGuidedSheet.js
-// Similar to PurchaseOrder, but for temporary/draft/negotiable sheets
-// ─────────────────────────────────────────────────────────────
 module.exports = (sequelize, DataTypes) => {
   const FieldGuidedSheet = sequelize.define(
     "FieldGuidedSheet",
