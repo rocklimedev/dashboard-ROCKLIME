@@ -587,48 +587,41 @@ const NewQuotationsDetails = () => {
 
       while (roomIndex < roomsInFloor.length) {
         const currentPageRooms = [];
-        let visualRowsUsed = 0;
 
-        while (roomIndex < roomsInFloor.length) {
-          const roomGroup = roomsInFloor[roomIndex];
-          const roomMainItems = groupItemsWithOptions(roomGroup.products);
-          const roomVisualRows = getVisualRowCount(roomMainItems);
+        const roomGroup = roomsInFloor[roomIndex];
+        const roomMainItems = groupItemsWithOptions(roomGroup.products);
+        const roomVisualRows = getVisualRowCount(roomMainItems);
 
-          if (
-            visualRowsUsed > 0 &&
-            visualRowsUsed + roomVisualRows > MAX_VISUAL_ROWS
-          ) {
-            break;
-          }
-
-          if (roomVisualRows > MAX_VISUAL_ROWS) {
-            const splitItems = [];
-            let tempRows = visualRowsUsed;
-            for (const item of roomMainItems) {
-              const itemRows = 1 + (item.options?.length || 0);
-              if (
-                tempRows + itemRows > MAX_VISUAL_ROWS &&
-                splitItems.length > 0
-              ) {
-                break;
-              }
-              splitItems.push(item);
-              tempRows += itemRows;
+        if (roomVisualRows > MAX_VISUAL_ROWS) {
+          // Room itself is too big for one page — split it across pages,
+          // but never mix it with another room on the same page.
+          const splitItems = [];
+          let tempRows = 0;
+          for (const item of roomMainItems) {
+            const itemRows = 1 + (item.options?.length || 0);
+            if (
+              tempRows + itemRows > MAX_VISUAL_ROWS &&
+              splitItems.length > 0
+            ) {
+              break;
             }
-            currentPageRooms.push({ roomGroup, roomMainItems: splitItems });
-            const remainingIds = splitItems.map((x) => x.productId);
-            roomsInFloor[roomIndex] = {
-              ...roomGroup,
-              products: roomGroup.products.filter(
-                (p) => !remainingIds.includes(p.productId),
-              ),
-            };
-            visualRowsUsed = tempRows;
-            break;
+            splitItems.push(item);
+            tempRows += itemRows;
           }
-
+          currentPageRooms.push({ roomGroup, roomMainItems: splitItems });
+          const remainingIds = splitItems.map((x) => x.productId);
+          roomsInFloor[roomIndex] = {
+            ...roomGroup,
+            products: roomGroup.products.filter(
+              (p) => !remainingIds.includes(p.productId),
+            ),
+          };
+          // Don't advance roomIndex — the remainder of this same room
+          // continues on the next page.
+        } else {
+          // Room fits comfortably on one page — give it the whole page
+          // to itself, regardless of how few products it has.
           currentPageRooms.push({ roomGroup, roomMainItems });
-          visualRowsUsed += roomVisualRows;
           roomIndex++;
         }
 
