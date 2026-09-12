@@ -464,14 +464,79 @@ const AddQuotation = () => {
     setSearchTerm("");
     message.success(`Added ${optionType}`);
   };
-
   const removeProduct = (productId) => {
     setFormData((prev) => ({
       ...prev,
       products: prev.products.filter((p) => p.productId !== productId),
     }));
   };
+  // ── Remove Product (location-aware) ──────────────────────────────
+  // If the product isn't split across multiple rooms, this behaves like a
+  // normal delete. If it IS split, deleting from one room only removes
+  // that room's share — other rooms' quantities are left untouched.
+  const removeProductFromLocation = (productId, location) => {
+    setFormData((prev) => ({
+      ...prev,
+      products: prev.products.reduce((acc, p) => {
+        if (p.productId !== productId) {
+          acc.push(p);
+          return acc;
+        }
 
+        // Not split (or no location info passed) — full delete, same as before.
+        if (
+          !Array.isArray(p.locations) ||
+          p.locations.length <= 1 ||
+          !location
+        ) {
+          return acc; // drop it
+        }
+
+        // Remove only the split matching this specific floor/room/area.
+        const remainingLocations = p.locations.filter(
+          (loc) =>
+            !(
+              loc.floorId === location.floorId &&
+              loc.roomId === location.roomId &&
+              loc.areaId === location.areaId
+            ),
+        );
+
+        // Nothing matched — leave product untouched (shouldn't normally happen).
+        if (remainingLocations.length === p.locations.length) {
+          acc.push(p);
+          return acc;
+        }
+
+        // That was the last split — drop the product entirely.
+        if (remainingLocations.length === 0) {
+          return acc;
+        }
+
+        // Recompute overall qty from remaining splits and re-sync the
+        // flat floor/room/area fields (used for table display) to the
+        // new primary (first remaining) split.
+        const newQty = remainingLocations.reduce(
+          (sum, loc) => sum + safeNum(loc.assignedQuantity, 0),
+          0,
+        );
+        const primary = remainingLocations[0];
+
+        acc.push({
+          ...p,
+          qty: newQty,
+          locations: remainingLocations,
+          floorId: primary.floorId || null,
+          floorName: primary.floorName || null,
+          roomId: primary.roomId || null,
+          roomName: primary.roomName || null,
+          areaId: primary.areaId || null,
+          areaName: primary.areaName || null,
+        });
+        return acc;
+      }, []),
+    }));
+  };
   const updateProductField = (productId, field, value) => {
     setFormData((prev) => ({
       ...prev,
@@ -956,6 +1021,8 @@ const AddQuotation = () => {
                 setSelectedFloorId(floorId);
                 setShowAddRoomModal(true);
               }}
+              onRemoveFromLocation={removeProductFromLocation} // ← new
+              onRemoveProduct={removeProduct} // keep for full/unsplit delete
             />
           </Card>
           {/* Financial Summary */}
