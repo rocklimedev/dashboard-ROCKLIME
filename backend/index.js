@@ -41,6 +41,7 @@ const routes = {
   notification: require("./modules/engagement/notification.route"),
   cachedPermission: require("./modules/rbac/cached-permission.route"),
   activity: require("./modules/engagement/activity.route"),
+  devices: require("./modules/device-management/device.routes"),
 };
 
 // ------------------- Express App -------------------
@@ -152,6 +153,7 @@ app.use("/api/cached-permissions", routes.cachedPermission);
 app.use("/api/fgs", routes.fgs);
 app.use("/api/jobs", routes.jobs);
 app.use("/api/activity", routes.activity);
+app.use("/api/devices", routes.devices);
 // ------------------- Health Check -------------------
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", uptime: process.uptime() });

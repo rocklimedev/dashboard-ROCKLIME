@@ -11,9 +11,9 @@ import {
 } from "react-icons/fa";
 
 import { MdOutlineInventory2, MdLocalActivity } from "react-icons/md";
-
+import DevicesPage from "./pages/DevicesPage";
 import { FaShoppingCart, FaStore } from "react-icons/fa";
-
+import { FaExclamationCircle } from "react-icons/fa";
 import CategoryManagement from "../../concepts/Products/CategoryManagement";
 import PurchaseManagement from "../../concepts/PO/PurchaseManagement";
 import Product from "../../concepts/Products/Product";
@@ -111,7 +111,13 @@ export const sidebarRoutes = [
     isSidebarActive: true,
     element: <CustomerList />,
   },
-
+  {
+    path: "/devices",
+    name: "Devices",
+    element: <DevicesPage />,
+    isSidebarActive: true,
+    icon: <FaExclamationCircle />,
+  },
   {
     path: "/reports/list",
     name: "Reports",

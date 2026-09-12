@@ -10,7 +10,7 @@ import { quotationRoutes } from "./routes/quotationRoutes";
 import { purchaseRoutes } from "./routes/purchaseRoutes";
 import { errorRoutes } from "./routes/errorRoutes";
 import { otherRoutes } from "./routes/otherRoutes";
-
+import { deviceManagementRoutes } from "./routes/devicesRoutes";
 const masterRoutes = [
   ...authRoutes,
   ...userRoutes,
@@ -22,6 +22,7 @@ const masterRoutes = [
   ...errorRoutes,
   ...otherRoutes,
   ...sidebarRoutes,
+  ...deviceManagementRoutes,
 ];
 
 export default masterRoutes;
