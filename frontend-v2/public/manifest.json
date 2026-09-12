@@ -1,0 +1,30 @@
+{
+  "short_name": "CM Trading",
+  "name": "CM Trading Co. - Inventory & Orders Dashboard",
+  "icons": [
+    {
+      "src": "/favicon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "/web-app-manifest-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/web-app-manifest-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "theme_color": "#0d6efd",
+  "background_color": "#ffffff",
+  "orientation": "portrait",
+  "description": "CM Trading Co. Dashboard - Manage inventory, sales, and customer orders efficiently."
+}
