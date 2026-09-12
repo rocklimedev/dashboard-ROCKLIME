@@ -1,0 +1,186 @@
+.order-page-modern {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.section-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  margin-bottom: 24px;
+}
+
+.product-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.product-thumb {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #f0f0f0;
+}
+
+.product-name {
+  font-weight: 500;
+}
+
+.product-meta {
+  font-size: 12px;
+  color: #8c8c8c;
+}
+
+.table-summary {
+  padding: 16px 24px;
+  background: #fafafa;
+  border-top: 1px solid #f0f0f0;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 14px;
+}
+
+.summary-row.final {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e8e8e8;
+  font-size: 16px;
+}
+
+.final-amount {
+  color: #e31e24;
+  font-weight: 600;
+}
+
+.discount {
+  color: #cf1322;
+}
+
+.address-card .ant-card-head {
+  background: #f9f9f9;
+}
+
+.address-content {
+  line-height: 1.6;
+}
+
+.address-name {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.info-card .ant-card-body {
+  padding: 20px;
+}
+
+.customer-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.avatar-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #e31e24;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.customer-name {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.customer-contact {
+  color: #555;
+  font-size: 14px;
+  margin-top: 2px;
+}
+
+.summary-list {
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 8px 16px;
+}
+
+.summary-list dt {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.summary-list dd {
+  margin: 0;
+  text-align: right;
+}
+
+.highlight {
+  color: #e31e24;
+  font-weight: 600;
+}
+
+.document-item {
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.document-item:last-child {
+  border-bottom: none;
+}
+
+.document-label {
+  font-weight: 500;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.comments-section .ant-card-body {
+  padding: 24px;
+}
+
+.comments-list {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.page-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  gap: 16px;
+  color: #555;
+}

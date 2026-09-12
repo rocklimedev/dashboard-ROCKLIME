@@ -1,0 +1,110 @@
+.customer-details-modern {
+  padding: 24px;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.header-info h3 {
+  margin: 0 0 4px 0;
+}
+
+.stats-row .ant-card {
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.stat-card .ant-statistic-title {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.info-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.customer-meta > div {
+  margin-bottom: 16px;
+}
+
+.customer-meta .value {
+  font-weight: 500;
+  font-size: 15px;
+  margin-top: 4px;
+}
+
+.address-block {
+  line-height: 1.6;
+  font-size: 15px;
+}
+
+.tabs-card {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.section-card {
+  border-radius: 10px;
+}
+
+.timeline-item {
+  padding: 4px 0;
+}
+
+.text-secondary { color: #555; font-size: 14px; }
+.text-tiny     { font-size: 12px; color: #888; }
+.text-muted    { color: #aaa; }
+
+.address-card {
+  border-radius: 10px;
+  transition: all 0.2s;
+}
+
+.address-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+}
+
+.address-text {
+  line-height: 1.6;
+  color: #444;
+}
+
+.table-link {
+  color: #1890ff;
+  font-weight: 500;
+}
+
+.table-link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 992px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .stats-row > div {
+    margin-bottom: 12px;
+  }
+}

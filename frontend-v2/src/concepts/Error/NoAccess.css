@@ -1,0 +1,75 @@
+.no-access-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f9fafb;
+  padding: 24px;
+}
+
+.no-access-card {
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  padding: 40px 32px;
+}
+
+.no-access-icon-wrapper {
+  margin-bottom: 32px;
+}
+
+.no-access-icon {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto;
+  position: relative;
+}
+
+/* Friendlier icon — orange circle + email symbol or keep your red one */
+.no-access-icon::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  border: 10px solid #f97316;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.15);
+}
+
+.no-access-icon::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 70%;
+  height: 14px;
+  background: #f97316;
+  transform: translate(-50%, -50%) rotate(45deg);
+  border-radius: 7px;
+}
+
+.return-link {
+  color: #f97316;
+  font-weight: 500;
+  margin-top: 16px;
+  display: inline-block;
+}
+
+.return-link:hover {
+  text-decoration: underline;
+  color: #fb923c;
+}
+
+/* Mobile adjustments */
+@media (max-width: 480px) {
+  .no-access-card {
+    padding: 32px 20px;
+  }
+  
+  .no-access-icon {
+    width: 100px;
+    height: 100px;
+  }
+}
