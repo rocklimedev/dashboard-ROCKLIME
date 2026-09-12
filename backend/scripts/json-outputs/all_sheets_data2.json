@@ -1,527 +1,1208 @@
-[
-  {
-    "organisation": "Rippotai",
-    "holder_name": "DHAIRYA",
-    "category_name": "Desktop PC",
-    "asset_name": "SPRP-PC1",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Rippotai",
-    "holder_name": "DHAIRYA",
-    "category_name": "Monitor",
-    "asset_name": "Gigabyte : GS27QA",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Rippotai",
-    "holder_name": "DHAIRYA",
-    "category_name": "Keyboard",
-    "asset_name": "Cosmic Byte CB-GK-37",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Rippotai",
-    "holder_name": "DHAIRYA",
-    "category_name": "Mouse",
-    "asset_name": "Logitech G102",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Rippotai",
-    "holder_name": "SARTHI",
-    "category_name": "Desktop PC",
-    "asset_name": "SPRP-PC2",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Rippotai",
-    "holder_name": "SARTHI",
-    "category_name": "Monitor",
-    "asset_name": "lenovo Q27h-10",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Rippotai",
-    "holder_name": "SARTHI",
-    "category_name": "Keyboard",
-    "asset_name": "RedGear MK853",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Rippotai",
-    "holder_name": "SARTHI",
-    "category_name": "Mouse",
-    "asset_name": "Logitech G102",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Rippotai",
-    "holder_name": "NEW JOINING",
-    "category_name": "Desktop PC",
-    "asset_name": "SPRP-PC3",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Rippotai",
-    "holder_name": "NEW JOINING",
-    "category_name": "Monitor",
-    "asset_name": "LG-24MR400-BA",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Rippotai",
-    "holder_name": "NEW JOINING",
-    "category_name": "Keyboard",
-    "asset_name": "Cosmic Byte CB-GK-18",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Rippotai",
-    "holder_name": "NEW JOINING",
-    "category_name": "Mouse",
-    "asset_name": "HP Gaming Mouse G200",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Rippotai",
-    "holder_name": "NEW JOINING",
-    "category_name": "Desktop PC",
-    "asset_name": "SPRP-PC4",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Rippotai",
-    "holder_name": "NEW JOINING",
-    "category_name": "Monitor",
-    "asset_name": "LG-24MR400-BA",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Rippotai",
-    "holder_name": "NEW JOINING",
-    "category_name": "Keyboard",
-    "asset_name": "K68 BT5.0",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Rippotai",
-    "holder_name": "Mamta",
-    "category_name": "Desktop PC",
-    "asset_name": "Admin",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Rippotai",
-    "holder_name": "Mamta",
-    "category_name": "Monitor",
-    "asset_name": "LG 22MP58VQ-P",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Rippotai",
-    "holder_name": "Mamta",
-    "category_name": "Keyboard",
-    "asset_name": "LOGITECH K345",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Rippotai",
-    "holder_name": "Mamta",
-    "category_name": "Mouse",
-    "asset_name": "Logitech G102",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Rippotai",
-    "holder_name": "Mamta",
-    "category_name": "Mobile Phone",
-    "asset_name": "CMF by Nothing Phone1",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Rocklime",
-    "holder_name": "Sajjan Dangaura",
-    "category_name": "Desktop PC",
-    "asset_name": "MAC MINI M4",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Rocklime",
-    "holder_name": "Sajjan Dangaura",
-    "category_name": "Monitor",
-    "asset_name": "LG ULTRAFINE",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Rocklime",
-    "holder_name": "Sajjan Dangaura",
-    "category_name": "Keyboard",
-    "asset_name": "EVOFOX RONIN WIRELESS",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Rocklime",
-    "holder_name": "Sajjan Dangaura",
-    "category_name": "Mouse",
-    "asset_name": "Logitech G304",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Rocklime",
-    "holder_name": "Sajjan Dangaura",
-    "category_name": "Tablet",
-    "asset_name": "Ipad 7Gen",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Rocklime",
-    "holder_name": "Bhav Lamba",
-    "category_name": "Laptop",
-    "asset_name": "MACBOOK AIR M1",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Rocklime",
-    "holder_name": "Bhav Lamba",
-    "category_name": "Monitor",
-    "asset_name": "OnePlus E24",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Rocklime",
-    "holder_name": "Bhav Lamba",
-    "category_name": "Keyboard",
-    "asset_name": "Keychron K8",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Rocklime",
-    "holder_name": "Bhav Lamba",
-    "category_name": "Mouse",
-    "asset_name": "Apple Mouse",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Rocklime",
-    "holder_name": "Bhav Lamba",
-    "category_name": "Tablet",
-    "asset_name": "Ipad 6Gen",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Rocklime",
-    "holder_name": "Bhav Lamba",
-    "category_name": "Mobile Phone",
-    "asset_name": "samsung galaxy note 10 lite",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Rocklime",
-    "holder_name": "DHRUV",
-    "category_name": "Desktop PC",
-    "asset_name": "SPRL - PC1",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Rocklime",
-    "holder_name": "DHRUV",
-    "category_name": "Monitor",
-    "asset_name": "LG 29WL50S",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Rocklime",
-    "holder_name": "DHRUV",
-    "category_name": "Keyboard",
-    "asset_name": "Cosmic Byte CB-GK-18",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Rocklime",
-    "holder_name": "DHRUV",
-    "category_name": "Mouse",
-    "asset_name": "Logitech G102",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Rocklime",
-    "holder_name": "Nitin",
-    "category_name": "Laptop",
-    "asset_name": "HP EliteBook 840 G6",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Rocklime",
-    "holder_name": "Nitin",
-    "category_name": "Mobile Phone",
-    "asset_name": "CMF by Nothing Phone2 Pro",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Rocklime",
-    "holder_name": "Nitin",
-    "category_name": "Mouse",
-    "asset_name": "Portronics TOAD 23 Wireless Mouse",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Chhabra Marble",
-    "holder_name": "PRIYA",
-    "category_name": "Laptop",
-    "asset_name": "acer  TL04-S1M",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Chhabra Marble",
-    "holder_name": "PRIYA",
-    "category_name": "Mobile Phone",
-    "asset_name": "CMF by Nothing Phone2 Pro",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Chhabra Marble",
-    "holder_name": "PRIYA",
-    "category_name": "Mouse",
-    "asset_name": "Logitech M171",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Chhabra Marble",
-    "holder_name": "Lakshay",
-    "category_name": "Laptop",
-    "asset_name": "Lenevo Thinkpad - PF42QRHA",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Chhabra Marble",
-    "holder_name": "Lakshay",
-    "category_name": "Mobile Phone",
-    "asset_name": "Samsung F36",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Chhabra Marble",
-    "holder_name": "Lakshay",
-    "category_name": "Mouse",
-    "asset_name": "Rapoo Bluetooth",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Chhabra Marble",
-    "holder_name": "Hemant",
-    "category_name": "Laptop",
-    "asset_name": "Lenovo L480",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Chhabra Marble",
-    "holder_name": "Hemant",
-    "category_name": "Mobile Phone",
-    "asset_name": "Moto G45 5G",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Chhabra Marble",
-    "holder_name": "Hemant",
-    "category_name": "Mouse",
-    "asset_name": "Logitech M171",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Chhabra Marble",
-    "holder_name": "NITISH",
-    "category_name": "Laptop",
-    "asset_name": "Samsung Galaxy Book 2",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Chhabra Marble",
-    "holder_name": "NITISH",
-    "category_name": "Mobile Phone",
-    "asset_name": "Xiaomi 11",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "Chhabra Marble",
-    "holder_name": "SHIV KUMAR",
-    "category_name": "Mobile Phone",
-    "asset_name": "One Plus Nord CE 3 Lite",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "SP Syndicate",
-    "holder_name": "MAMTA MA'AM HR",
-    "category_name": "Laptop",
-    "asset_name": "Dell Latitude i7 - Touch Screen",
-    "status": "Assigned"
-  },
-  {
-    "organisation": "",
-    "holder_name": "",
-    "category_name": "Laptop",
-    "asset_name": "LEGION ( MOTHERBOARD DEAD )",
-    "status": "Unassigned"
-  },
-  {
-    "organisation": "",
-    "holder_name": "",
-    "category_name": "Mobile Phone",
-    "asset_name": "Ipad",
-    "status": "Unassigned"
-  },
-  {
-    "organisation": "",
-    "holder_name": "",
-    "category_name": "Monitor",
-    "asset_name": "LG - 22MP57HQ - P",
-    "status": "Unassigned"
-  },
-  {
-    "organisation": "",
-    "holder_name": "",
-    "category_name": "Desktop PC",
-    "asset_name": "Rocklime Storage PC",
-    "status": "Unassigned"
-  },
-  {
-    "organisation": "",
-    "holder_name": "",
-    "category_name": "Keyboard",
-    "asset_name": "APPLE  ( Not working )",
-    "status": "Unassigned"
-  },
-  {
-    "organisation": "",
-    "holder_name": "",
-    "category_name": "Mouse",
-    "asset_name": "Logitech - B100",
-    "status": "Unassigned"
-  },
-  {
-    "organisation": "",
-    "holder_name": "",
-    "category_name": "Speaker",
-    "asset_name": "Zebronics",
-    "status": "Unassigned"
-  },
-  {
-    "organisation": "",
-    "holder_name": "",
-    "category_name": "Camera",
-    "asset_name": "Canon 600D",
-    "status": "Unassigned"
-  },
-  {
-    "organisation": "",
-    "holder_name": "",
-    "category_name": "Laptop",
-    "asset_name": "DELL ( SCREEN BROKEN)",
-    "status": "Unassigned"
-  },
-  {
-    "organisation": "",
-    "holder_name": "",
-    "category_name": "Mobile Phone",
-    "asset_name": "iphone 5s",
-    "status": "Unassigned"
-  },
-  {
-    "organisation": "",
-    "holder_name": "",
-    "category_name": "Monitor",
-    "asset_name": "AOPEN LCD MONITOR 22CH1Q",
-    "status": "Unassigned"
-  },
-  {
-    "organisation": "",
-    "holder_name": "",
-    "category_name": "Keyboard",
-    "asset_name": "Zebronics - Zeb - Max Pro",
-    "status": "Unassigned"
-  },
-  {
-    "organisation": "",
-    "holder_name": "",
-    "category_name": "Mouse",
-    "asset_name": "Logitech - B101",
-    "status": "Unassigned"
-  },
-  {
-    "organisation": "",
-    "holder_name": "",
-    "category_name": "Speaker",
-    "asset_name": "AKG K52 headphone",
-    "status": "Unassigned"
-  },
-  {
-    "organisation": "",
-    "holder_name": "",
-    "category_name": "Camera",
-    "asset_name": "Canon 700D",
-    "status": "Unassigned"
-  },
-  {
-    "organisation": "",
-    "holder_name": "",
-    "category_name": "Laptop",
-    "asset_name": "HP-AIO6TQ8",
-    "status": "Unassigned"
-  },
-  {
-    "organisation": "",
-    "holder_name": "",
-    "category_name": "Mobile Phone",
-    "asset_name": "Galaxy F16 5G",
-    "status": "Unassigned"
-  },
-  {
-    "organisation": "",
-    "holder_name": "",
-    "category_name": "Monitor",
-    "asset_name": "LG - 24MP88HV",
-    "status": "Unassigned"
-  },
-  {
-    "organisation": "",
-    "holder_name": "",
-    "category_name": "Keyboard",
-    "asset_name": "Varna Pro ( Not working )",
-    "status": "Unassigned"
-  },
-  {
-    "organisation": "",
-    "holder_name": "",
-    "category_name": "Laptop",
-    "asset_name": "Lenovo Thinkpad L14 - 256GB",
-    "status": "Unassigned"
-  },
-  {
-    "organisation": "",
-    "holder_name": "",
-    "category_name": "Monitor",
-    "asset_name": "LG - 22MP57HQ - P",
-    "status": "Unassigned"
-  },
-  {
-    "organisation": "",
-    "holder_name": "",
-    "category_name": "Monitor",
-    "asset_name": "SAMSUNG LC24F390FHWXXL",
-    "status": "Unassigned"
-  },
-  {
-    "organisation": "",
-    "holder_name": "",
-    "category_name": "Monitor",
-    "asset_name": "LG-24QP550",
-    "status": "Unassigned"
-  },
-  {
-    "organisation": "",
-    "holder_name": "",
-    "category_name": "Monitor",
-    "asset_name": "LG 29WL50S",
-    "status": "Unassigned"
-  }
-]
+{
+  "MACBOOK AIR M1": [
+    {
+      "A": "PC NAME",
+      "B": "SPRP-PC1"
+    },
+    {
+      "A": "HOLDER NAME",
+      "B": "DHAIRYA"
+    },
+    {
+      "A": "Processor",
+      "B": "AMD Ryzen 9 7900 12-Core Processor"
+    },
+    {
+      "A": "RAM",
+      "B": "32GB Speed 4800 MT/s"
+    },
+    {
+      "A": "Graphics Card",
+      "B": "MSI GeForce RTX 4070 VENTUS 3X 12G OC Black"
+    },
+    {
+      "A": "Local Storage",
+      "B": "1TB"
+    },
+    {
+      "A": "OneDrive Storage",
+      "B": "1TB"
+    },
+    {
+      "A": "ADDITIONAL"
+    },
+    {
+      "A": "Monitor",
+      "B": "Gigabyte : GS27QA"
+    },
+    {
+      "A": "Keyboard",
+      "B": "Cosmic Byte CB-GK-37"
+    },
+    {
+      "A": "Mouse",
+      "B": "Logitech G102"
+    },
+    {
+      "A": "Rippotai"
+    },
+    {
+      "A": "PC NAME",
+      "B": "SPRP-PC2"
+    },
+    {
+      "A": "HOLDER NAME",
+      "B": "SARTHI"
+    },
+    {
+      "A": "Processor",
+      "B": "AMD Ryzen 5 5600X 6-Core Processor"
+    },
+    {
+      "A": "RAM",
+      "B": "32GB Speed 2133 MT/s"
+    },
+    {
+      "A": "Graphics Card",
+      "B": "8GB  NVIDIA GeForce RTR 4060"
+    },
+    {
+      "A": "Local Storage",
+      "B": "1TB"
+    },
+    {
+      "A": "OneDrive Storage",
+      "B": "1TB"
+    },
+    {
+      "A": "ADDITIONAL"
+    },
+    {
+      "A": "Monitor",
+      "B": "lenovo Q27h-10"
+    },
+    {
+      "A": "Keyboard",
+      "B": "RedGear MK853"
+    },
+    {
+      "A": "Mouse",
+      "B": "Logitech G102"
+    },
+    {
+      "A": "Rippotai"
+    },
+    {
+      "A": "PC NAME",
+      "B": "SPRP-PC3"
+    },
+    {
+      "A": "HOLDER NAME",
+      "B": "NEW JOINING"
+    },
+    {
+      "A": "Processor",
+      "B": "Intel ® Core™ i7-6700 CPU @ 3.40GHz 3.40 GHz"
+    },
+    {
+      "A": "RAM",
+      "B": "16GB Speed 2133MHz"
+    },
+    {
+      "A": "Graphics Card",
+      "B": "NVIDIA GeForce GTX 1050 Ti (4 GB)"
+    },
+    {
+      "A": "Local Storage",
+      "B": "233GB + samsung ssd 860 EVO 250GB"
+    },
+    {
+      "A": "OneDrive Storage",
+      "B": "1TB"
+    },
+    {
+      "A": "ADDITIONAL"
+    },
+    {
+      "A": "Monitor",
+      "B": "LG-24MR400-BA"
+    },
+    {
+      "A": "Keyboard",
+      "B": "Cosmic Byte CB-GK-18"
+    },
+    {
+      "A": "Mouse",
+      "B": "HP Gaming Mouse G200"
+    },
+    {
+      "A": "Rippotai"
+    },
+    {
+      "A": "PC NAME",
+      "B": "SPRP-PC4"
+    },
+    {
+      "A": "HOLDER NAME",
+      "B": "NEW JOINING"
+    },
+    {
+      "A": "Processor",
+      "B": "AMD Ryzen 5 3600 6-Core Processor"
+    },
+    {
+      "A": "RAM",
+      "B": "16GB Speed 3200MT/s"
+    },
+    {
+      "A": "Graphics Card",
+      "B": "8GB AMD Radeon RX 6600"
+    },
+    {
+      "A": "Local Storage",
+      "B": "1TB"
+    },
+    {
+      "A": "OneDrive Storage",
+      "B": "1TB"
+    },
+    {
+      "A": "ADDITIONAL"
+    },
+    {
+      "A": "Monitor",
+      "B": "LG-24MR400-BA"
+    },
+    {
+      "A": "Keyboard",
+      "B": "K68 BT5.0"
+    },
+    {
+      "A": "Rippotai"
+    },
+    {
+      "A": "PC NAME",
+      "B": "Admin"
+    },
+    {
+      "A": "HOLDER NAME",
+      "B": "Mamta"
+    },
+    {
+      "A": "Processor",
+      "B": "Intel(R) Core(TM) i5-4460 CPU @ 3.20GHz"
+    },
+    {
+      "A": "RAM",
+      "B": "8GB DDR3"
+    },
+    {
+      "A": "Graphics Card",
+      "B": "4GB  NVIDIA GeForce GTX 1050 Ti"
+    },
+    {
+      "A": "Local Storage",
+      "B": "256GB"
+    },
+    {
+      "A": "OneDrive Storage",
+      "B": "1TB"
+    },
+    {
+      "A": "ADDITIONAL"
+    },
+    {
+      "A": "Monitor",
+      "B": "LG 22MP58VQ-P"
+    },
+    {
+      "A": "Keyboard",
+      "B": "LOGITECH K345"
+    },
+    {
+      "A": "Mouse",
+      "B": "Logitech G102"
+    },
+    {
+      "A": "Mobile Phone",
+      "B": "CMF by Nothing Phone1"
+    },
+    {
+      "A": "Rocklime"
+    },
+    {
+      "A": "MAC NAME",
+      "B": "MAC MINI M4"
+    },
+    {
+      "A": "HOLDER NAME",
+      "B": "Sajjan Dangaura"
+    },
+    {
+      "A": "Monitor",
+      "B": "LG ULTRAFINE"
+    },
+    {
+      "A": "Keyboard",
+      "B": "EVOFOX RONIN WIRELESS"
+    },
+    {
+      "A": "Mouse",
+      "B": "Logitech G304"
+    },
+    {
+      "A": "Ipad",
+      "B": "Ipad 7Gen"
+    },
+    {
+      "A": "Local Storage",
+      "B": "256GB"
+    },
+    {
+      "A": "OneDrive Storage",
+      "B": "1TB"
+    },
+    {
+      "A": "Rocklime"
+    },
+    {
+      "A": "MACBOOK NAME",
+      "B": "MACBOOK AIR M1"
+    },
+    {
+      "A": "HOLDER NAME",
+      "B": "Bhav Lamba"
+    },
+    {
+      "A": "Monitor",
+      "B": "OnePlus E24"
+    },
+    {
+      "A": "Keyboard",
+      "B": "Keychron K8"
+    },
+    {
+      "A": "Mouse",
+      "B": "Apple Mouse"
+    },
+    {
+      "A": "Ipad",
+      "B": "Ipad 6Gen"
+    },
+    {
+      "A": "Mobile Phone",
+      "B": "samsung galaxy note 10 lite"
+    },
+    {
+      "A": "Local Storage",
+      "B": "256GB"
+    },
+    {
+      "A": "OneDrive Storage",
+      "B": "1TB"
+    },
+    {
+      "A": "Rocklime"
+    },
+    {
+      "A": "PC NAME",
+      "B": "SPRL - PC1"
+    },
+    {
+      "A": "HOLDER NAME",
+      "B": "DHRUV"
+    },
+    {
+      "A": "Processor",
+      "B": "Intel(R) Core(TM) i5-9400F CPU @ 2.90GHz"
+    },
+    {
+      "A": "RAM",
+      "B": "16GB Speed 2133 MT/s"
+    },
+    {
+      "A": "Graphics Card",
+      "B": "NVIDIA GeForce RTX 2060"
+    },
+    {
+      "A": "Local Storage",
+      "B": "512GB"
+    },
+    {
+      "A": "OneDrive Storage",
+      "B": "1TB"
+    },
+    {
+      "A": "ADDITIONAL"
+    },
+    {
+      "A": "Laptop",
+      "B": "Lenovo Thinkpad L14"
+    },
+    {
+      "A": "Monitor",
+      "B": "LG 29WL50S"
+    },
+    {
+      "A": "Keyboard",
+      "B": "Cosmic Byte CB-GK-18"
+    },
+    {
+      "A": "Mouse",
+      "B": "Logitech G102"
+    },
+    {
+      "A": "Rocklime"
+    },
+    {
+      "A": "Laptop NAME",
+      "B": "HP EliteBook 840 G6"
+    },
+    {
+      "A": "HOLDER NAME",
+      "B": "Nitin"
+    },
+    {
+      "A": "Processor",
+      "B": "Intel(R) Core(TM) i7-8665U CPU @ 1.90GHz"
+    },
+    {
+      "A": "RAM",
+      "B": "16GB Speed 2400MT/s"
+    },
+    {
+      "A": "Graphics Card",
+      "B": "128MB Intel(R) UHD Graphics 620"
+    },
+    {
+      "A": "Local Storage",
+      "B": "256GB"
+    },
+    {
+      "A": "Mobile Phone",
+      "B": "CMF by Nothing Phone2 Pro"
+    },
+    {
+      "A": "Mouse",
+      "B": "Portronics TOAD 23 Wireless Mouse"
+    },
+    {
+      "A": "Chhabra Marble"
+    },
+    {
+      "A": "Laptop NAME",
+      "B": "acer  TL04-S1M"
+    },
+    {
+      "A": "HOLDER NAME",
+      "B": "PRIYA"
+    },
+    {
+      "A": "Processor",
+      "B": "Intel(R) Core(TM) i5-1334U CPU @ 1.30GHz"
+    },
+    {
+      "A": "RAM",
+      "B": "8GB Speed 2400MT/s"
+    },
+    {
+      "A": "Graphics Card",
+      "B": "128GB Intel (R) UHD Graphics 620"
+    },
+    {
+      "A": "Local Storage",
+      "B": "512GB"
+    },
+    {
+      "A": "OneDrive Storage",
+      "B": "1TB"
+    },
+    {
+      "A": "Mobile Phone",
+      "B": "CMF by Nothing Phone2 Pro"
+    },
+    {
+      "A": "Mouse",
+      "B": "Logitech M171"
+    },
+    {
+      "A": "Chhabra Marble"
+    },
+    {
+      "A": "Laptop NAME",
+      "B": "Lenevo Thinkpad - PF42QRHA"
+    },
+    {
+      "A": "HOLDER NAME",
+      "B": "Lakshay"
+    },
+    {
+      "A": "Processor",
+      "B": "12th Gen Intel(R) Core (TM) i3-1215U 1.20GHz"
+    },
+    {
+      "A": "RAM",
+      "B": "8GB Speed 3200MT/s"
+    },
+    {
+      "A": "Graphics Card",
+      "B": "128MB Intel(R) UHD Graphics"
+    },
+    {
+      "A": "Local Storage",
+      "B": "512GB"
+    },
+    {
+      "A": "OneDrive Storage",
+      "B": "1TB"
+    },
+    {
+      "A": "Mobile Phone",
+      "B": "Samsung F36"
+    },
+    {
+      "A": "Mouse",
+      "B": "Rapoo Bluetooth"
+    },
+    {
+      "A": "Chhabra Marble"
+    },
+    {
+      "A": "Laptop NAME",
+      "B": "Lenovo L480"
+    },
+    {
+      "A": "HOLDER NAME",
+      "B": "Hemant"
+    },
+    {
+      "A": "Processor",
+      "B": "Intel(R) Core(TM) i5-8350U CPU @ 1.70GHz"
+    },
+    {
+      "A": "RAM",
+      "B": "16GB Speed 2400MHz"
+    },
+    {
+      "A": "Graphics Card",
+      "B": "128MB Intel(R) UHD Graphics 620"
+    },
+    {
+      "A": "Local Storage",
+      "B": "512GB"
+    },
+    {
+      "A": "OneDrive Storage",
+      "B": "1TB"
+    },
+    {
+      "A": "Mobile Phone",
+      "B": "Moto G45 5G"
+    },
+    {
+      "A": "Mouse",
+      "B": "Logitech M171"
+    },
+    {
+      "A": "Chhabra Marble"
+    },
+    {
+      "A": "Laptop NAME",
+      "B": "Samsung Galaxy Book 2"
+    },
+    {
+      "A": "HOLDER NAME",
+      "B": "NITISH"
+    },
+    {
+      "A": "Processor",
+      "B": "12th Gen Intel(R) Core (TM) i5-1235U 1.30GHz"
+    },
+    {
+      "A": "RAM",
+      "B": "8GB Speed 4267MT/s"
+    },
+    {
+      "A": "Graphics Card",
+      "B": "128MB Intel(R) Xe Graphics"
+    },
+    {
+      "A": "Local Storage",
+      "B": "512GB"
+    },
+    {
+      "A": "OneDrive Storage",
+      "B": "1TB"
+    },
+    {
+      "A": "Mobile Phone",
+      "B": "Xiaomi 11"
+    },
+    {
+      "A": "Chhabra Marble"
+    },
+    {
+      "A": "HOLDER NAME",
+      "B": "SHIV KUMAR"
+    },
+    {
+      "A": "Mobile Phone",
+      "B": "One Plus Nord CE 3 Lite"
+    },
+    {
+      "A": "SP Syndicate"
+    },
+    {
+      "A": "HOLDER NAME",
+      "B": "MAMTA MA'AM HR"
+    },
+    {
+      "A": "Mobile Phone",
+      "B": "Dell Latitude i7 - Touch Screen"
+    }
+  ],
+  "PDF": [
+    {
+      "A": "Processor"
+    },
+    {
+      "A": "AMD Ryzen 5 5600X 6-Core Processor"
+    },
+    {
+      "A": "RAM"
+    },
+    {
+      "A": "32GB Speed 2133 MT/s"
+    },
+    {
+      "A": "Graphics Card"
+    },
+    {
+      "A": "8GB  NVIDIA GeForce RTR 4060"
+    },
+    {
+      "A": "Local Storage"
+    },
+    {
+      "A": "1TB"
+    }
+  ],
+  "RIPOOTAI PC": [
+    {
+      "A": "PC NAME",
+      "B": "SPRP-PC1"
+    },
+    {
+      "A": "HOLDER NAME",
+      "B": "DHAIRYA"
+    },
+    {
+      "A": "Processor",
+      "B": "AMD Ryzen 9 7900 12-Core Processor"
+    },
+    {
+      "A": "RAM",
+      "B": "32GB Speed 4800 MT/s"
+    },
+    {
+      "A": "Graphics Card",
+      "B": "MSI GeForce RTX 4070 VENTUS 3X 12G OC Black"
+    },
+    {
+      "A": "Local Storage",
+      "B": "1TB"
+    },
+    {
+      "A": "OneDrive Storage",
+      "B": "1TB"
+    },
+    {
+      "A": "ADDITIONAL"
+    },
+    {
+      "A": "Monitor",
+      "B": "Gigabyte : GS27QA"
+    },
+    {
+      "A": "Keyboard",
+      "B": "Cosmic Byte CB-GK-37"
+    },
+    {
+      "A": "Mouse",
+      "B": "Logitech G102"
+    },
+    {
+      "A": "Rippotai"
+    },
+    {
+      "A": "PC NAME",
+      "B": "SPRP-PC2"
+    },
+    {
+      "A": "HOLDER NAME",
+      "B": "SARTHI"
+    },
+    {
+      "A": "Processor",
+      "B": "AMD Ryzen 5 5600X 6-Core Processor"
+    },
+    {
+      "A": "RAM",
+      "B": "32GB Speed 2133 MT/s"
+    },
+    {
+      "A": "Graphics Card",
+      "B": "8GB  NVIDIA GeForce RTR 4060"
+    },
+    {
+      "A": "Local Storage",
+      "B": "1TB"
+    },
+    {
+      "A": "OneDrive Storage",
+      "B": "1TB"
+    },
+    {
+      "A": "ADDITIONAL"
+    },
+    {
+      "A": "Monitor",
+      "B": "lenovo Q27h-10"
+    },
+    {
+      "A": "Keyboard",
+      "B": "RedGear MK853"
+    },
+    {
+      "A": "Mouse",
+      "B": "Logitech G102"
+    },
+    {
+      "A": "Rippotai"
+    },
+    {
+      "A": "PC NAME",
+      "B": "SPRP-PC3"
+    },
+    {
+      "A": "HOLDER NAME",
+      "B": "NEW JOINING"
+    },
+    {
+      "A": "Processor",
+      "B": "Intel ® Core™ i7-6700 CPU @ 3.40GHz 3.40 GHz"
+    },
+    {
+      "A": "RAM",
+      "B": "16GB Speed 2133MHz"
+    },
+    {
+      "A": "Graphics Card",
+      "B": "NVIDIA GeForce GTX 1050 Ti (4 GB)"
+    },
+    {
+      "A": "Local Storage",
+      "B": "233GB + samsung ssd 860 EVO 250GB"
+    },
+    {
+      "A": "OneDrive Storage",
+      "B": "1TB"
+    },
+    {
+      "A": "ADDITIONAL"
+    },
+    {
+      "A": "Monitor",
+      "B": "LG-24MR400-BA"
+    },
+    {
+      "A": "Keyboard",
+      "B": "Cosmic Byte CB-GK-18"
+    },
+    {
+      "A": "Mouse",
+      "B": "HP Gaming Mouse G200"
+    },
+    {
+      "A": "Rippotai"
+    },
+    {
+      "A": "PC NAME",
+      "B": "SPRP-PC4"
+    },
+    {
+      "A": "HOLDER NAME",
+      "B": "NEW JOINING"
+    },
+    {
+      "A": "Processor",
+      "B": "AMD Ryzen 5 3600 6-Core Processor"
+    },
+    {
+      "A": "RAM",
+      "B": "16GB Speed 3200MT/s"
+    },
+    {
+      "A": "Graphics Card",
+      "B": "8GB AMD Radeon RX 6600"
+    },
+    {
+      "A": "Local Storage",
+      "B": "1TB"
+    },
+    {
+      "A": "OneDrive Storage",
+      "B": "1TB"
+    },
+    {
+      "A": "ADDITIONAL"
+    },
+    {
+      "A": "Monitor",
+      "B": "LG-24MR400-BA"
+    },
+    {
+      "A": "Keyboard",
+      "B": "K68 BT5.0"
+    },
+    {
+      "A": "Rippotai"
+    },
+    {
+      "A": "HOLDER NAME",
+      "B": "MAMTA MA'AM HR"
+    },
+    {
+      "A": "Mobile Phone",
+      "B": "Dell Latitude i7 - Touch Screen"
+    }
+  ],
+  "Rocklime PC": [
+    {
+      "A": "MAC NAME",
+      "B": "MAC MINI M4"
+    },
+    {
+      "A": "HOLDER NAME",
+      "B": "Sajjan Dangaura"
+    },
+    {
+      "A": "Monitor",
+      "B": "LG ULTRAFINE"
+    },
+    {
+      "A": "Keyboard",
+      "B": "EVOFOX RONIN WIRELESS"
+    },
+    {
+      "A": "Mouse",
+      "B": "Logitech G304"
+    },
+    {
+      "A": "Ipad",
+      "B": "Ipad 7Gen"
+    },
+    {
+      "A": "Local Storage",
+      "B": "256GB"
+    },
+    {
+      "A": "OneDrive Storage",
+      "B": "1TB"
+    },
+    {
+      "A": "Rocklime"
+    },
+    {
+      "A": "MACBOOK NAME",
+      "B": "MACBOOK AIR M1"
+    },
+    {
+      "A": "HOLDER NAME",
+      "B": "Bhav Lamba"
+    },
+    {
+      "A": "Monitor",
+      "B": "OnePlus E24"
+    },
+    {
+      "A": "Keyboard",
+      "B": "Keychron K8"
+    },
+    {
+      "A": "Mouse",
+      "B": "Apple Mouse"
+    },
+    {
+      "A": "Ipad",
+      "B": "Ipad 6Gen"
+    },
+    {
+      "A": "Mobile Phone",
+      "B": "samsung galaxy note 10 lite"
+    },
+    {
+      "A": "Local Storage",
+      "B": "256GB"
+    },
+    {
+      "A": "OneDrive Storage",
+      "B": "1TB"
+    },
+    {
+      "A": "Rocklime"
+    },
+    {
+      "A": "PC NAME",
+      "B": "SPRL - PC1"
+    },
+    {
+      "A": "HOLDER NAME",
+      "B": "DHRUV"
+    },
+    {
+      "A": "Processor",
+      "B": "Intel(R) Core(TM) i5-9400F CPU @ 2.90GHz"
+    },
+    {
+      "A": "RAM",
+      "B": "16GB Speed 2133 MT/s"
+    },
+    {
+      "A": "Graphics Card",
+      "B": "NVIDIA GeForce RTX 2060"
+    },
+    {
+      "A": "Local Storage",
+      "B": "512GB"
+    },
+    {
+      "A": "OneDrive Storage",
+      "B": "1TB"
+    },
+    {
+      "A": "ADDITIONAL"
+    },
+    {
+      "A": "Laptop",
+      "B": "Lenovo Thinkpad L14"
+    },
+    {
+      "A": "Monitor",
+      "B": "LG 29WL50S"
+    },
+    {
+      "A": "Keyboard",
+      "B": "Cosmic Byte CB-GK-18"
+    },
+    {
+      "A": "Mouse",
+      "B": "Logitech G102"
+    },
+    {
+      "A": "Rocklime"
+    },
+    {
+      "A": "Laptop NAME",
+      "B": "HP EliteBook 840 G6"
+    },
+    {
+      "A": "HOLDER NAME",
+      "B": "Nitin"
+    },
+    {
+      "A": "Processor",
+      "B": "Intel(R) Core(TM) i7-8665U CPU @ 1.90GHz"
+    },
+    {
+      "A": "RAM",
+      "B": "16GB Speed 2400MT/s"
+    },
+    {
+      "A": "Graphics Card",
+      "B": "128MB Intel(R) UHD Graphics 620"
+    },
+    {
+      "A": "Local Storage",
+      "B": "256GB"
+    },
+    {
+      "A": "Mobile Phone",
+      "B": "CMF by Nothing Phone2 Pro"
+    },
+    {
+      "A": "Mouse",
+      "B": "Portronics TOAD 23 Wireless Mouse"
+    }
+  ],
+  "CM PC": [
+    {
+      "A": "PC NAME",
+      "B": "Admin"
+    },
+    {
+      "A": "HOLDER NAME",
+      "B": "Mamta"
+    },
+    {
+      "A": "Processor",
+      "B": "Intel(R) Core(TM) i5-4460 CPU @ 3.20GHz"
+    },
+    {
+      "A": "RAM",
+      "B": "8GB DDR3"
+    },
+    {
+      "A": "Graphics Card",
+      "B": "4GB  NVIDIA GeForce GTX 1050 Ti"
+    },
+    {
+      "A": "Local Storage",
+      "B": "256GB"
+    },
+    {
+      "A": "OneDrive Storage",
+      "B": "1TB"
+    },
+    {
+      "A": "ADDITIONAL"
+    },
+    {
+      "A": "Monitor",
+      "B": "LG 22MP58VQ-P"
+    },
+    {
+      "A": "Keyboard",
+      "B": "LOGITECH K345"
+    },
+    {
+      "A": "Mouse",
+      "B": "Logitech G102"
+    },
+    {
+      "A": "Mobile Phone",
+      "B": "CMF by Nothing Phone1"
+    },
+    {
+      "A": "Chhabra Marble"
+    },
+    {
+      "A": "Laptop NAME",
+      "B": "acer  TL04-S1M"
+    },
+    {
+      "A": "HOLDER NAME",
+      "B": "PRIYA"
+    },
+    {
+      "A": "Processor",
+      "B": "Intel(R) Core(TM) i5-1334U CPU @ 1.30GHz"
+    },
+    {
+      "A": "RAM",
+      "B": "8GB Speed 2400MT/s"
+    },
+    {
+      "A": "Graphics Card",
+      "B": "128GB Intel (R) UHD Graphics 620"
+    },
+    {
+      "A": "Local Storage",
+      "B": "512GB"
+    },
+    {
+      "A": "OneDrive Storage",
+      "B": "1TB"
+    },
+    {
+      "A": "Mobile Phone",
+      "B": "CMF by Nothing Phone2 Pro"
+    },
+    {
+      "A": "Mouse",
+      "B": "Logitech M171"
+    },
+    {
+      "A": "Chhabra Marble"
+    },
+    {
+      "A": "Laptop NAME",
+      "B": "Lenevo Thinkpad - PF42QRHA"
+    },
+    {
+      "A": "HOLDER NAME",
+      "B": "Lakshay"
+    },
+    {
+      "A": "Processor",
+      "B": "12th Gen Intel(R) Core (TM) i3-1215U 1.20GHz"
+    },
+    {
+      "A": "RAM",
+      "B": "8GB Speed 3200MT/s"
+    },
+    {
+      "A": "Graphics Card",
+      "B": "128MB Intel(R) UHD Graphics"
+    },
+    {
+      "A": "Local Storage",
+      "B": "512GB"
+    },
+    {
+      "A": "OneDrive Storage",
+      "B": "1TB"
+    },
+    {
+      "A": "Mobile Phone",
+      "B": "Samsung F36"
+    },
+    {
+      "A": "Mouse",
+      "B": "Rapoo Bluetooth"
+    },
+    {
+      "A": "Chhabra Marble"
+    },
+    {
+      "A": "Laptop NAME",
+      "B": "Lenovo L480"
+    },
+    {
+      "A": "HOLDER NAME",
+      "B": "Hemant"
+    },
+    {
+      "A": "Processor",
+      "B": "Intel(R) Core(TM) i5-8350U CPU @ 1.70GHz"
+    },
+    {
+      "A": "RAM",
+      "B": "16GB Speed 2400MHz"
+    },
+    {
+      "A": "Graphics Card",
+      "B": "128MB Intel(R) UHD Graphics 620"
+    },
+    {
+      "A": "Local Storage",
+      "B": "512GB"
+    },
+    {
+      "A": "OneDrive Storage",
+      "B": "1TB"
+    },
+    {
+      "A": "Mobile Phone",
+      "B": "Moto G45 5G"
+    },
+    {
+      "A": "Mouse",
+      "B": "Logitech M171"
+    },
+    {
+      "A": "Chhabra Marble"
+    },
+    {
+      "A": "Laptop NAME",
+      "B": "Samsung Galaxy Book 2"
+    },
+    {
+      "A": "HOLDER NAME",
+      "B": "NITISH"
+    },
+    {
+      "A": "Processor",
+      "B": "12th Gen Intel(R) Core (TM) i5-1235U 1.30GHz"
+    },
+    {
+      "A": "RAM",
+      "B": "8GB Speed 4267MT/s"
+    },
+    {
+      "A": "Graphics Card",
+      "B": "128MB Intel(R) Xe Graphics"
+    },
+    {
+      "A": "Local Storage",
+      "B": "512GB"
+    },
+    {
+      "A": "OneDrive Storage",
+      "B": "1TB"
+    },
+    {
+      "A": "Mobile Phone",
+      "B": "Xiaomi 11"
+    },
+    {
+      "A": "Chhabra Marble"
+    },
+    {
+      "A": "HOLDER NAME",
+      "B": "SHIV KUMAR"
+    },
+    {
+      "A": "Mobile Phone",
+      "B": "One Plus Nord CE 3 Lite"
+    }
+  ],
+  "Inventory": [
+    {
+      "A": "S.NO",
+      "B": "Laptop",
+      "C": "Mobile Phone",
+      "D": "Monitor",
+      "E": "PC",
+      "F": "Keyboard",
+      "G": "Mouse",
+      "H": "Speaker",
+      "I": "Camera"
+    },
+    {
+      "A": 1,
+      "B": "LEGION ( MOTHERBOARD DEAD )",
+      "C": "Ipad",
+      "D": "LG - 22MP57HQ - P",
+      "E": "Rocklime Storage PC",
+      "F": "APPLE  ( Not working )",
+      "G": "Logitech - B100",
+      "H": "Zebronics",
+      "I": "Canon 600D"
+    },
+    {
+      "A": 2,
+      "B": "DELL ( SCREEN BROKEN)",
+      "C": "iphone 5s",
+      "D": "AOPEN LCD MONITOR 22CH1Q",
+      "F": "Zebronics - Zeb - Max Pro",
+      "G": "Logitech - B101",
+      "H": "AKG K52 headphone",
+      "I": "Canon 700D"
+    },
+    {
+      "A": 3,
+      "B": "HP-AIO6TQ8",
+      "C": "Galaxy F16 5G",
+      "D": "LG - 24MP88HV",
+      "F": "Varna Pro ( Not working )"
+    },
+    {
+      "A": 4,
+      "B": "Lenovo Thinkpad L14 - 256GB",
+      "D": "LG - 22MP57HQ - P"
+    },
+    {
+      "A": 5,
+      "D": "SAMSUNG LC24F390FHWXXL"
+    },
+    {
+      "A": 6,
+      "D": "LG-24QP550"
+    },
+    {
+      "A": 7,
+      "D": "LG 29WL50S"
+    }
+  ]
+}

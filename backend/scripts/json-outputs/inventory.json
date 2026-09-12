@@ -1,0 +1,81 @@
+{
+  "Inventory": [
+    {
+      "s_no": 1,
+      "laptop": "LEGION (MOTHERBOARD DEAD)",
+      "mobile_phone": "Ipad",
+      "monitor": "LG - 22MP57HQ - P",
+      "pc": "Rocklime Storage PC",
+      "keyboard": "APPLE (Not working)",
+      "mouse": "Logitech - B100",
+      "speaker": "Zebronics",
+      "camera": "Canon 600D"
+    },
+    {
+      "s_no": 2,
+      "laptop": "DELL (SCREEN BROKEN)",
+      "mobile_phone": "iPhone 5s",
+      "monitor": "AOPEN LCD MONITOR 22CH1Q",
+      "pc": null,
+      "keyboard": "Zebronics - Zeb-Max Pro",
+      "mouse": "Logitech - B101",
+      "speaker": "AKG K52 headphone",
+      "camera": "Canon 700D"
+    },
+    {
+      "s_no": 3,
+      "laptop": "HP-AIO6TQ8",
+      "mobile_phone": "Galaxy F16 5G",
+      "monitor": "LG - 24MP88HV",
+      "pc": null,
+      "keyboard": "Varna Pro (Not working)",
+      "mouse": null,
+      "speaker": null,
+      "camera": null
+    },
+    {
+      "s_no": 4,
+      "laptop": "Lenovo Thinkpad L14 - 256GB",
+      "mobile_phone": null,
+      "monitor": "LG - 22MP57HQ - P",
+      "pc": null,
+      "keyboard": null,
+      "mouse": null,
+      "speaker": null,
+      "camera": null
+    },
+    {
+      "s_no": 5,
+      "laptop": null,
+      "mobile_phone": null,
+      "monitor": "SAMSUNG LC24F390FHWXXL",
+      "pc": null,
+      "keyboard": null,
+      "mouse": null,
+      "speaker": null,
+      "camera": null
+    },
+    {
+      "s_no": 6,
+      "laptop": null,
+      "mobile_phone": null,
+      "monitor": "LG-24QP550",
+      "pc": null,
+      "keyboard": null,
+      "mouse": null,
+      "speaker": null,
+      "camera": null
+    },
+    {
+      "s_no": 7,
+      "laptop": null,
+      "mobile_phone": null,
+      "monitor": "LG 29WL50S",
+      "pc": null,
+      "keyboard": null,
+      "mouse": null,
+      "speaker": null,
+      "camera": null
+    }
+  ]
+}

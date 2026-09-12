@@ -1,0 +1,236 @@
+/* QuotationProductSheet.css — spreadsheet/workbook look & feel */
+
+.qs-workbook {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── Catalog bar (source rows) — full-width strip that sits over the
+   whole sheet, search on top, results below ─────────────────────── */
+.qs-catalog-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #fafafa;
+}
+
+.qs-catalog-search {
+  width: 100%;
+}
+
+.qs-catalog-list-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #999;
+}
+
+.qs-catalog-list-horizontal {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 2px 4px;
+  min-height: 34px;
+}
+.qs-catalog-list-horizontal::-webkit-scrollbar {
+  height: 6px;
+}
+.qs-catalog-list-horizontal::-webkit-scrollbar-thumb {
+  background: #ddd;
+  border-radius: 3px;
+}
+
+.qs-catalog-empty-hint {
+  font-size: 13px;
+  white-space: nowrap;
+  padding: 0 8px;
+}
+
+.qs-catalog-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 6px 5px 10px;
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 6px;
+  font-size: 13px;
+  flex-shrink: 0;
+  max-width: 260px;
+}
+.qs-catalog-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.qs-catalog-price {
+  color: #888;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+/* ── Workbook body / tabs (floors = sheets) ────────────────────── */
+.qs-workbook-body {
+  width: 100%;
+}
+
+/* Give the antd tabs (card or editable-card) an Excel-sheet-tab feel.
+   Selectors are unqualified by tab "type" so this covers both. */
+.qs-workbook-body .ant-tabs-nav .ant-tabs-tab {
+  border-radius: 6px 6px 0 0;
+  background: #f0f0f0;
+}
+.qs-workbook-body .ant-tabs-nav .ant-tabs-tab-active {
+  background: #fff;
+  border-bottom-color: #fff;
+  font-weight: 600;
+}
+
+/* The trailing "+" add-sheet tab (Excel's "new sheet" button) */
+.qs-workbook-body .ant-tabs-nav-add,
+.qs-room-tabs .ant-tabs-nav-add {
+  border-radius: 6px !important;
+  color: #1677ff !important;
+  font-weight: 600;
+}
+.qs-workbook-body .ant-tabs-nav-add:hover,
+.qs-room-tabs .ant-tabs-nav-add:hover {
+  color: #fff !important;
+  background: #1677ff !important;
+  border-color: #1677ff !important;
+}
+
+.qs-floor-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ── Room tabs nested inside a floor tab (rooms = sub-sheets) ──── */
+.qs-room-tabs .ant-tabs-nav {
+  margin-bottom: 10px;
+}
+.qs-room-tabs .ant-tabs-nav .ant-tabs-tab {
+  border-radius: 5px 5px 0 0;
+  background: #f5f7fa;
+  font-size: 12.5px;
+  padding: 5px 12px;
+}
+.qs-room-tabs .ant-tabs-nav .ant-tabs-tab-active {
+  background: #fff;
+  border-bottom-color: #fff;
+  font-weight: 600;
+  border-color: #d9d9d9;
+}
+.qs-room-tabs .ant-tabs-nav::before {
+  border-bottom: 1px solid #eee;
+}
+
+/* ── Room / floor section (a "block" within the sheet) ─────────── */
+.qs-section {
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.qs-section-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #fafafa;
+  border-bottom: 1px solid #f0f0f0;
+}
+.qs-section-subtitle {
+  font-size: 12px;
+}
+.qs-section-summary {
+  margin-left: auto;
+  font-size: 12px;
+}
+
+.qs-section-empty {
+  padding: 18px;
+  text-align: center;
+  color: #bbb;
+  font-size: 13px;
+  border: 1px dashed #e0e0e0;
+  margin: 8px;
+  border-radius: 6px;
+}
+
+/* ── Spreadsheet-style table ────────────────────────────────────── */
+.qs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.qs-table thead th {
+  text-align: left;
+  padding: 6px 8px;
+  background: #f5f5f5;
+  border-bottom: 1px solid #e5e5e5;
+  border-right: 1px solid #eee;
+  font-weight: 600;
+  color: #555;
+}
+.qs-table thead th:last-child {
+  border-right: none;
+}
+
+.qs-row {
+  border-bottom: 1px solid #f0f0f0;
+}
+.qs-row:hover {
+  background: #f6faff;
+}
+.qs-option-row {
+  background: #fbfbfb;
+}
+.qs-option-arrow {
+  color: #1677ff;
+}
+
+.qs-cell {
+  padding: 4px 8px;
+  border-right: 1px solid #f0f0f0;
+  vertical-align: middle;
+}
+.qs-cell:last-child {
+  border-right: none;
+}
+.qs-readonly {
+  color: #555;
+}
+.qs-total-cell {
+  font-weight: 600;
+}
+.qs-name-cell {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 260px;
+}
+
+.qs-location-cell {
+  white-space: nowrap;
+}
+.qs-location-selects .ant-select {
+  min-width: 106px;
+}
+
+.qs-cell-input {
+  width: 100%;
+}
+
+.qs-actions {
+  white-space: nowrap;
+  text-align: right;
+}

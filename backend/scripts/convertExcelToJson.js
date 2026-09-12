@@ -4,7 +4,7 @@ const excelToJson = require("convert-excel-to-json");
 
 // === CONFIG ===
 
-const inputFilePath = path.join(__dirname, "./data/inventory_master.xlsx");
+const inputFilePath = path.join(__dirname, "./data/it_data.xlsx");
 const outputFolder = path.join(__dirname, "json-outputs");
 const outputFile = path.join(outputFolder, "all_sheets_data2.json");
 
