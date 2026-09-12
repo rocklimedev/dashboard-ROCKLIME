@@ -1,0 +1,293 @@
+import { baseApi } from "../store/baseApi";
+
+export const productApi = baseApi.injectEndpoints({
+  endpoints: (builder) => ({
+    // CREATE PRODUCT
+    createProduct: builder.mutation({
+      query: (formData) => ({
+        url: "/products/",
+        method: "POST",
+        body: formData,
+        formData: true,
+      }),
+      transformResponse: (response) => response.product,
+      invalidatesTags: [
+        "Product",
+        "ProductCode",
+        { type: "Product", id: "LIST" },
+      ],
+    }),
+    bulkImportProducts: builder.mutation({
+      query: (products) => ({
+        url: "/products/bulk-import",
+        method: "POST",
+        body: { products },
+      }),
+      invalidatesTags: [
+        "Product",
+        { type: "Product", id: "LIST" },
+        "ProductCode",
+      ],
+    }),
+    // UPDATE PRODUCT (images + fields)
+    updateProduct: builder.mutation({
+      query: ({ productId, formData }) => ({
+        url: `/products/${productId}`,
+        method: "PUT",
+        body: formData,
+        formData: true,
+      }),
+      transformResponse: (response) => response.product,
+      invalidatesTags: (result, error, { productId }) => [
+        { type: "Product", id: productId },
+        { type: "Product", id: "LIST" },
+        "ProductCode",
+      ],
+    }),
+
+    // REPLACE ALL KEYWORDS — CRITICAL ENDPOINT
+    replaceAllKeywordsForProduct: builder.mutation({
+      query: ({ productId, keywordIds = [] }) => ({
+        url: `/products/${productId}/keywords`,
+        method: "PUT",
+        body: { keywordIds },
+        // No Content-Type header needed — RTK handles JSON automatically
+      }),
+      invalidatesTags: (result, error, { productId }) => [
+        { type: "Product", id: productId },
+        { type: "Product", id: "LIST" },
+      ],
+    }),
+
+    // Optional: add single keywords (if needed elsewhere)
+    addKeywordsToProduct: builder.mutation({
+      query: ({ productId, keywords }) => ({
+        url: `/products/${productId}/keywords`,
+        method: "POST",
+        body: { keywords },
+      }),
+      invalidatesTags: (result, error, { productId }) => [
+        { type: "Product", id: productId },
+        { type: "Product", id: "LIST" },
+      ],
+    }),
+
+    // CHECK PRODUCT CODE UNIQUENESS
+    checkProductCode: builder.query({
+      query: (code) => `/products/check-code?code=${encodeURIComponent(code)}`,
+      providesTags: (result, error, code) => [
+        { type: "ProductCode", id: code },
+      ],
+      keepUnusedDataFor: 30, // slightly longer cache
+    }),
+
+    // GET ALL PRODUCTS — NOW PAGINATED!
+    getAllProducts: builder.query({
+      query: ({
+        page = 1,
+        limit = 50,
+        search,
+        tab = "all",
+        lowStockThreshold,
+      } = {}) => ({
+        url: "/products",
+        params: {
+          page,
+          limit,
+          search: search?.trim() || undefined,
+          tab,
+          ...(lowStockThreshold && { lowStockThreshold }), // only send when needed
+        },
+      }),
+
+      providesTags: (result) =>
+        result?.data
+          ? [
+              ...result.data.map(({ productId }) => ({
+                type: "Product",
+                id: productId,
+              })),
+              { type: "Product", id: "LIST" },
+            ]
+          : [{ type: "Product", id: "LIST" }],
+
+      // Optional: Keep data fresh when switching tabs or filters
+      keepUnusedDataFor: 30, // seconds
+    }),
+    // GET SINGLE PRODUCT
+    getProductById: builder.query({
+      query: (productId) => `/products/${productId}`,
+      providesTags: (result, error, productId) => [
+        { type: "Product", id: productId },
+      ],
+    }),
+
+    // DELETE PRODUCT
+    deleteProduct: builder.mutation({
+      query: (productId) => ({
+        url: `/products/${productId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (result, error, productId) => [
+        { type: "Product", id: productId },
+        { type: "Product", id: "LIST" },
+        "ProductCode",
+      ],
+    }),
+
+    // STOCK MANAGEMENT
+    addStock: builder.mutation({
+      query: ({ productId, quantity }) => ({
+        url: `/products/${productId}/add-stock`,
+        method: "POST",
+        body: { quantity },
+      }),
+      invalidatesTags: (result, error, { productId }) => [
+        { type: "Product", id: productId },
+        { type: "Product", id: "LIST" },
+      ],
+    }),
+
+    removeStock: builder.mutation({
+      query: ({ productId, quantity }) => ({
+        url: `/products/${productId}/remove-stock`,
+        method: "POST",
+        body: { quantity },
+      }),
+      invalidatesTags: (result, error, { productId }) => [
+        { type: "Product", id: productId },
+        { type: "Product", id: "LIST" },
+      ],
+    }),
+    /** Get only total product count - Very fast */
+    getProductCount: builder.query({
+      query: () => "/products/count",
+      providesTags: ["ProductCount"],
+      keepUnusedDataFor: 60, // Cache for 1 minute
+    }),
+
+    // BULK FETCH BY IDS (for top products, etc.)
+    getProductsByIds: builder.query({
+      query: (productIds) => ({
+        url: "/products/by-ids",
+        method: "POST",
+        body: { productIds },
+      }),
+      // FIX: Safely handle both { data: [...] } and direct array responses
+      providesTags: (result) => {
+        const products = Array.isArray(result) ? result : result?.data || [];
+
+        return products.map(({ productId }) => ({
+          type: "Product",
+          id: productId,
+        }));
+      },
+    }),
+    // OTHER ENDPOINTS
+    getAllProductsByCategory: builder.query({
+      query: (categoryId) => `/products/category/${categoryId}`,
+      providesTags: ["Product"],
+    }),
+    getProductsByBrand: builder.query({
+      query: ({ brandId, page = 1, limit = 50, search }) => ({
+        url: `/products/brand/${brandId}`,
+        params: { page, limit, search },
+      }),
+    }),
+    getLowStockProducts: builder.query({
+      query: ({ page = 1, limit = 100000, threshold = 20 }) =>
+        `/products/low-stock?page=${page}&limit=${limit}&threshold=${threshold}`,
+    }),
+    // productApi.js
+    getTopSellingProducts: builder.query({
+      query: (limit = 10) => `/products/top-selling?limit=${limit}`,
+      providesTags: ["Product"],
+    }),
+
+    getHistoryByProductId: builder.query({
+      query: (productId) => `/products/${productId}/history`,
+      providesTags: (result, error, productId) => [
+        { type: "Product", id: productId },
+      ],
+    }),
+
+    searchProducts: builder.query({
+      query: (searchTerm) =>
+        `/products/search/all?q=${encodeURIComponent(searchTerm)}`,
+      providesTags: ["Product"],
+    }),
+
+    getAllProductCodes: builder.query({
+      query: () => "/products/search/get-product-codes",
+      providesTags: ["ProductCode"],
+    }),
+
+    getAllProductCodesBrandWise: builder.query({
+      query: () => "/products/codes/brand-wise",
+      providesTags: ["ProductCode"],
+    }),
+
+    updateProductFeatured: builder.mutation({
+      query: ({ productId, isFeatured }) => ({
+        url: `/products/${productId}/featured`,
+        method: "PATCH",
+        body: { isFeatured },
+      }),
+      invalidatesTags: (result, error, { productId }) => [
+        { type: "Product", id: productId },
+        { type: "Product", id: "LIST" },
+      ],
+    }),
+    // ─────────────────────────────────────────────
+    // NEW: BULK INVENTORY UPDATE
+    // ─────────────────────────────────────────────
+    bulkInventoryUpdate: builder.mutation({
+      query: (payload) => ({
+        url: "/products/bulk-inventory-update",
+        method: "POST",
+        body: payload, // { updates: [{ product_code, quantity, warehouse?, message?, userId? }, ...] }
+      }),
+      invalidatesTags: [
+        "Product",
+        { type: "Product", id: "LIST" },
+        "ProductCount",
+        // Optionally invalidate specific products if you return their IDs
+      ],
+      // Optional: transform response for better usability
+      transformResponse: (response) => ({
+        ...response,
+        successCount: response.success?.length || 0,
+        failedCount: response.failed?.length || 0,
+      }),
+    }),
+  }),
+});
+
+export const {
+  useCreateProductMutation,
+  useUpdateProductMutation,
+  useGetAllProductsQuery,
+  useLazyGetAllProductsQuery, // ← useful for pagination
+  useGetProductsByBrandQuery,
+  useBulkImportProductsMutation,
+  useGetTopSellingProductsQuery,
+  useGetProductByIdQuery,
+  useLazyGetProductByIdQuery,
+  useDeleteProductMutation,
+  useAddStockMutation,
+  useRemoveStockMutation,
+  useGetLowStockProductsQuery,
+  useGetHistoryByProductIdQuery,
+  useSearchProductsQuery,
+  useGetAllProductCodesQuery,
+  useGetAllProductCodesBrandWiseQuery,
+  useGetProductsByIdsQuery,
+  useCheckProductCodeQuery,
+  useLazyCheckProductCodeQuery,
+  useReplaceAllKeywordsForProductMutation,
+  useAddKeywordsToProductMutation,
+  useUpdateProductFeaturedMutation,
+  useBulkInventoryUpdateMutation,
+  useGetAllProductsByCategoryQuery,
+  useGetProductCountQuery,
+} = productApi;

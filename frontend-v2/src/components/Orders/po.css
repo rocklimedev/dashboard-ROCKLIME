@@ -1,0 +1,112 @@
+:root {
+  /* A4 page size at 96dpi (210mm x 297mm) */
+  --po-page-width: 794px;
+  --po-page-min-height: 1123px;
+}
+
+/* Backdrop wrapper that centers the document and gives it a page-like
+   canvas to sit on, similar to a print preview. */
+.po-page-preview {
+  background-color: #e9ecef;
+  padding: 24px;
+  display: flex;
+  justify-content: center;
+  overflow-x: auto;
+}
+
+.po-container {
+  width: 100%;
+  max-width: var(--po-page-width);
+  min-height: var(--po-page-min-height);
+  margin: 0 auto;
+  padding: 40px;
+  background-color: #ffffff;
+  box-sizing: border-box;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.15);
+  font-family: Arial, sans-serif;
+}
+
+.po-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.po-table th,
+.po-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.po-table th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+
+.po-table .label-cell {
+  font-weight: bold;
+  background-color: #f9f9f9;
+}
+
+.po-table .title-cell {
+  font-size: 18px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.po-table .brand-cell {
+  font-size: 14px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.po-table.bordered td,
+.po-table.bordered th {
+  border: 1px solid #000;
+}
+
+.po-table .text-right {
+  text-align: right;
+}
+
+.po-table .fw-bold {
+  font-weight: bold;
+}
+
+.logo-img {
+  max-width: 100px;
+  height: auto;
+}
+
+.product-img {
+  max-width: 50px;
+  height: auto;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.back-icon {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.back-icon:hover {
+  text-decoration: underline;
+}
+
+/* Keep the page a clean, unshadowed A4 sheet when printed directly
+   (e.g. via Ctrl+P) instead of the exported PDF flow. */
+@media print {
+  .po-page-preview {
+    background-color: #ffffff;
+    padding: 0;
+  }
+
+  .po-container {
+    box-shadow: none;
+    margin: 0;
+  }
+}

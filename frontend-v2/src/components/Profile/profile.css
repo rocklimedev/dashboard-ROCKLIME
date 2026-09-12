@@ -1,0 +1,178 @@
+.profile-page {
+  padding: 24px;
+  background: #f8fafc;
+  min-height: 100vh;
+}
+
+.profile-container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.profile-hero {
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  padding: 32px;
+  background: white;
+  margin-bottom: 32px;
+}
+
+.hero-content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 32px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.hero-avatar {
+  border: 6px solid white;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+
+.hero-name {
+  margin: 0;
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.hero-username {
+  margin: 4px 0 12px;
+  color: #6b7280;
+  font-size: 1.1rem;
+}
+
+.role-tag {
+  background: #f3f4f6;
+  color: #374151;
+  border: none;
+  padding: 4px 12px;
+  font-size: 0.9rem;
+}
+
+.edit-profile-btn {
+  background: #e31e24 !important;
+  border-color: #e31e24 !important;
+  height: 48px;
+  border-radius: 10px;
+  font-weight: 500;
+}
+
+.hero-stats .ant-statistic-title {
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.hero-stats .ant-statistic-content {
+  font-size: 1.6rem;
+  font-weight: 600;
+}
+
+.info-card,
+.address-card,
+.tabs-card {
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+  background: white;
+}
+
+.info-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.info-icon {
+  font-size: 1.4rem;
+  color: #6b7280;
+  min-width: 28px;
+}
+
+.info-label {
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin-bottom: 2px;
+}
+
+.info-value {
+  font-weight: 500;
+  color: #111827;
+}
+
+.address-content {
+  display: flex;
+  gap: 16px;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.address-icon {
+  font-size: 1.6rem;
+  color: #3b82f6;
+  margin-top: 4px;
+}
+
+.address-street {
+  font-weight: 600;
+}
+
+.address-city,
+.address-country {
+  color: #4b5563;
+}
+
+.quotation-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.quotation-card {
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.quotation-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.quotation-title {
+  margin: 0 0 4px;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.quotation-ref,
+.quotation-due {
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.quotation-amount {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #15803d;
+}
+
+@media (max-width: 1024px) {
+  .hero-content {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .edit-profile-btn {
+    margin-top: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .profile-page {
+    padding: 16px;
+  }
+
+  .hero-stats .ant-statistic-content {
+    font-size: 1.4rem;
+  }
+}
