@@ -81,7 +81,7 @@ const SidebarNew = ({
           href="#"
           onClick={(e) => {
             e.preventDefault();
-            if (window.innerWidth < 768) toggleSidebar(!isSidebarOpen);
+            toggleSidebar(!isSidebarOpen);
           }}
         >
           <ChevronsLeft size={16} />

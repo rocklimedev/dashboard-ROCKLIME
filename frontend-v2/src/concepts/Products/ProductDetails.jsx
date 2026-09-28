@@ -1,5 +1,5 @@
 // ProductDetails.jsx
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
   useGetProductByIdQuery,
@@ -21,9 +21,17 @@ import {
   Tabs,
   Menu,
   Tooltip,
+  Modal,
 } from "antd";
 import { LazyLoadImage } from "react-lazy-load-image-component";
-import { ShoppingCartOutlined, EditOutlined } from "@ant-design/icons";
+import {
+  ShoppingCartOutlined,
+  EditOutlined,
+  LeftOutlined,
+  RightOutlined,
+  CloseOutlined,
+  ZoomInOutlined,
+} from "@ant-design/icons";
 import ProductCard from "../../components/Product/ProductCard";
 import styles from "../../components/Product/productdetails.module.css";
 import noimage from "../../assets/img/default.png";
@@ -76,6 +84,10 @@ const ProductDetails = () => {
   const [activeImage, setActiveImage] = useState(0);
   const barcodeRef = useRef(null);
   const [cartLoadingStates, setCartLoadingStates] = useState({});
+
+  // ── Image gallery modal state ───────────────────────────────
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+  const [galleryIndex, setGalleryIndex] = useState(0);
 
   // ── Helpers ────────────────────────────────────────────────
   const safeParseImages = (images) => {
@@ -178,6 +190,36 @@ const ProductDetails = () => {
     }
   };
 
+  // ── Gallery modal handlers ──────────────────────────────────
+  const openGallery = (index) => {
+    setGalleryIndex(index);
+    setIsGalleryOpen(true);
+  };
+
+  const closeGallery = () => setIsGalleryOpen(false);
+
+  const showPrevImage = useCallback(() => {
+    setGalleryIndex((prev) => (prev - 1 + images.length) % images.length);
+  }, [images.length]);
+
+  const showNextImage = useCallback(() => {
+    setGalleryIndex((prev) => (prev + 1) % images.length);
+  }, [images.length]);
+
+  // Keyboard navigation while modal is open
+  useEffect(() => {
+    if (!isGalleryOpen) return;
+
+    const handleKeyDown = (e) => {
+      if (e.key === "ArrowLeft") showPrevImage();
+      else if (e.key === "ArrowRight") showNextImage();
+      else if (e.key === "Escape") closeGallery();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isGalleryOpen, showPrevImage, showNextImage]);
+
   // ── Related products ───────────────────────────────────────
   const relatedProducts = React.useMemo(() => {
     if (!product?.productId) return [];
@@ -240,7 +282,11 @@ const ProductDetails = () => {
           <div className={styles.mainGrid}>
             {/* Gallery */}
             <div className={styles.gallery}>
-              <div className={styles.heroImageWrapper}>
+              <div
+                className={styles.heroImageWrapper}
+                onClick={() => openGallery(activeImage)}
+                style={{ cursor: "zoom-in", position: "relative" }}
+              >
                 <LazyLoadImage
                   src={images[activeImage] || noimage}
                   alt={product.name}
@@ -249,6 +295,23 @@ const ProductDetails = () => {
                   className={styles.heroImage}
                   onError={(e) => (e.target.src = noimage)}
                 />
+                <div
+                  style={{
+                    position: "absolute",
+                    bottom: 10,
+                    right: 10,
+                    background: "rgba(0,0,0,0.55)",
+                    color: "#fff",
+                    borderRadius: "50%",
+                    width: 32,
+                    height: 32,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <ZoomInOutlined />
+                </div>
               </div>
 
               {images.length > 1 && (
@@ -259,6 +322,7 @@ const ProductDetails = () => {
                       type="button"
                       className={`${styles.thumbnailBtn} ${activeImage === idx ? styles.active : ""}`}
                       onClick={() => setActiveImage(idx)}
+                      onDoubleClick={() => openGallery(idx)}
                       aria-label={`View image ${idx + 1}`}
                     >
                       <LazyLoadImage
@@ -441,6 +505,139 @@ const ProductDetails = () => {
           </section>
         </div>
       </div>
+
+      {/* ── Image Gallery Modal ───────────────────────────────── */}
+      <Modal
+        open={isGalleryOpen}
+        onCancel={closeGallery}
+        footer={null}
+        closable={false}
+        centered
+        width="80vw"
+        styles={{
+          body: { padding: 0, background: "#000" },
+        }}
+      >
+        <div
+          style={{
+            position: "relative",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: "70vh",
+            background: "#000",
+          }}
+        >
+          {/* Close button */}
+          <Button
+            shape="circle"
+            icon={<CloseOutlined />}
+            onClick={closeGallery}
+            style={{
+              position: "absolute",
+              top: 12,
+              right: 12,
+              zIndex: 10,
+            }}
+          />
+
+          {/* Prev arrow */}
+          {images.length > 1 && (
+            <Button
+              shape="circle"
+              icon={<LeftOutlined />}
+              onClick={showPrevImage}
+              style={{
+                position: "absolute",
+                left: 12,
+                top: "50%",
+                transform: "translateY(-50%)",
+                zIndex: 10,
+              }}
+            />
+          )}
+
+          {/* Main image */}
+          <img
+            src={images[galleryIndex] || noimage}
+            alt={`${product.name} ${galleryIndex + 1}`}
+            style={{
+              maxWidth: "100%",
+              maxHeight: "70vh",
+              objectFit: "contain",
+            }}
+            onError={(e) => (e.target.src = noimage)}
+          />
+
+          {/* Next arrow */}
+          {images.length > 1 && (
+            <Button
+              shape="circle"
+              icon={<RightOutlined />}
+              onClick={showNextImage}
+              style={{
+                position: "absolute",
+                right: 12,
+                top: "50%",
+                transform: "translateY(-50%)",
+                zIndex: 10,
+              }}
+            />
+          )}
+
+          {/* Counter */}
+          <div
+            style={{
+              position: "absolute",
+              bottom: 12,
+              color: "#fff",
+              fontSize: 14,
+              background: "rgba(0,0,0,0.5)",
+              padding: "2px 10px",
+              borderRadius: 12,
+            }}
+          >
+            {galleryIndex + 1} / {images.length}
+          </div>
+        </div>
+
+        {/* Thumbnail strip inside modal */}
+        {images.length > 1 && (
+          <div
+            style={{
+              display: "flex",
+              gap: 8,
+              padding: 12,
+              overflowX: "auto",
+              background: "#111",
+            }}
+          >
+            {images.map((img, idx) => (
+              <img
+                key={idx}
+                src={img}
+                alt={`Modal thumbnail ${idx + 1}`}
+                onClick={() => setGalleryIndex(idx)}
+                onError={(e) => (e.target.src = noimage)}
+                style={{
+                  width: 56,
+                  height: 56,
+                  objectFit: "cover",
+                  borderRadius: 4,
+                  cursor: "pointer",
+                  flexShrink: 0,
+                  border:
+                    galleryIndex === idx
+                      ? "2px solid #e31e24"
+                      : "2px solid transparent",
+                  opacity: galleryIndex === idx ? 1 : 0.6,
+                }}
+              />
+            ))}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };
