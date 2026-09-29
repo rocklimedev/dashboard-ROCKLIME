@@ -139,6 +139,10 @@ const AddQuotation = () => {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showVersionsModal, setShowVersionsModal] = useState(false);
 
+  // Delete confirmation (controlled modal instead of static Modal.confirm)
+  // { type: "floor", floor } | { type: "room", floorId, room } | null
+  const [deleteTarget, setDeleteTarget] = useState(null);
+
   // Option Modal States
   const [showAddOptionModal, setShowAddOptionModal] = useState(false);
   const [selectedParentId, setSelectedParentId] = useState(null);
@@ -327,31 +331,6 @@ const AddQuotation = () => {
     floorEditForm.resetFields();
   };
 
-  const deleteFloor = (floor) => {
-    const affected = countItemsIn(floor.floorId);
-    Modal.confirm({
-      title: `Delete "${floor.floorName}"?`,
-      content:
-        affected > 0
-          ? `This floor and its rooms will be removed. ${affected} item(s) placed here will move back to Unassigned.`
-          : "This floor and its rooms will be removed.",
-      okText: "Delete",
-      okButtonProps: { danger: true },
-      onOk: () => {
-        setFormData((prev) => ({
-          ...prev,
-          floors: prev.floors.filter((f) => f.floorId !== floor.floorId),
-          products: prev.products.map((p) =>
-            remapProductLocations(p, (l) =>
-              l.floorId === floor.floorId ? { ...l, ...CLEARED } : l,
-            ),
-          ),
-        }));
-        message.success("Floor deleted");
-      },
-    });
-  };
-
   // ── Room Handlers ─────────────────────────────────────────────────
   const addRoom = (values) => {
     if (!selectedFloorId) return;
@@ -416,41 +395,79 @@ const AddQuotation = () => {
     setEditingRoom(null);
   };
 
-  const deleteRoom = (floorId, room) => {
-    const affected = countItemsIn(floorId, room.roomId);
-    Modal.confirm({
-      title: `Delete "${room.roomName}"?`,
-      content:
-        affected > 0
-          ? `${affected} item(s) placed in this room will move back to Unassigned.`
-          : "This room will be removed.",
-      okText: "Delete",
-      okButtonProps: { danger: true },
-      onOk: () => {
-        setFormData((prev) => ({
-          ...prev,
-          floors: prev.floors.map((f) =>
-            f.floorId !== floorId
-              ? f
-              : {
-                  ...f,
-                  rooms: (f.rooms || []).filter(
-                    (r) => r.roomId !== room.roomId,
-                  ),
-                },
+  // ── Delete Floor / Room (controlled confirm modal) ────────────────
+  const deleteFloor = (floor) => setDeleteTarget({ type: "floor", floor });
+
+  const deleteRoom = (floorId, room) =>
+    setDeleteTarget({ type: "room", floorId, room });
+
+  const confirmDelete = () => {
+    if (!deleteTarget) return;
+
+    if (deleteTarget.type === "floor") {
+      const { floor } = deleteTarget;
+      setFormData((prev) => ({
+        ...prev,
+        floors: prev.floors.filter((f) => f.floorId !== floor.floorId),
+        products: prev.products.map((p) =>
+          remapProductLocations(p, (l) =>
+            l.floorId === floor.floorId ? { ...l, ...CLEARED } : l,
           ),
-          products: prev.products.map((p) =>
-            remapProductLocations(p, (l) =>
-              l.floorId === floorId && l.roomId === room.roomId
-                ? { ...l, ...CLEARED }
-                : l,
-            ),
+        ),
+      }));
+      message.success("Floor deleted");
+    } else {
+      const { floorId, room } = deleteTarget;
+      setFormData((prev) => ({
+        ...prev,
+        floors: prev.floors.map((f) =>
+          f.floorId !== floorId
+            ? f
+            : {
+                ...f,
+                rooms: (f.rooms || []).filter((r) => r.roomId !== room.roomId),
+              },
+        ),
+        products: prev.products.map((p) =>
+          remapProductLocations(p, (l) =>
+            l.floorId === floorId && l.roomId === room.roomId
+              ? { ...l, ...CLEARED }
+              : l,
           ),
-        }));
-        message.success("Room deleted");
-      },
-    });
+        ),
+      }));
+      message.success("Room deleted");
+    }
+
+    setDeleteTarget(null);
   };
+
+  // Text shown inside the delete confirm modal
+  const deleteInfo = (() => {
+    if (!deleteTarget) return null;
+
+    if (deleteTarget.type === "floor") {
+      const { floor } = deleteTarget;
+      const n = countItemsIn(floor.floorId);
+      return {
+        title: `Delete "${floor.floorName}"?`,
+        body:
+          n > 0
+            ? `This floor and its rooms will be removed. ${n} item(s) placed here will move back to Unassigned.`
+            : "This floor and its rooms will be removed.",
+      };
+    }
+
+    const { floorId, room } = deleteTarget;
+    const n = countItemsIn(floorId, room.roomId);
+    return {
+      title: `Delete "${room.roomName}"?`,
+      body:
+        n > 0
+          ? `${n} item(s) placed in this room will move back to Unassigned.`
+          : "This room will be removed.",
+    };
+  })();
 
   // ── Assign Location ───────────────────────────────────────────────
   const handleAssignLocation = (productId, assignments) => {
@@ -1292,6 +1309,19 @@ const AddQuotation = () => {
             item={itemToAssign}
             floors={formData.floors}
           />
+
+          {/* Delete Floor / Room confirmation */}
+          <Modal
+            open={Boolean(deleteTarget)}
+            title={deleteInfo?.title}
+            okText="Delete"
+            okButtonProps={{ danger: true }}
+            onOk={confirmDelete}
+            onCancel={() => setDeleteTarget(null)}
+            destroyOnClose
+          >
+            {deleteInfo?.body}
+          </Modal>
 
           {/* Add Option Modal */}
           <Modal

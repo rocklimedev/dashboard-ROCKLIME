@@ -83,39 +83,26 @@ const lineTotal = (p, qtyOverride) => {
 /* ───────────────────────── Tab label with rename / delete ───────────────────────── */
 /* ───────────────────────── Tab label with rename / delete ───────────────────────── */
 function TabLabel({ text, onEdit, onDelete }) {
-  // Stop both mousedown (Tabs use this to switch) and click
-  const stop = (fn) => (e) => {
-    e.preventDefault();
+  // Only the icons swallow the click, so the label text still
+  // bubbles up to the Tabs and switches the tab.
+  const handle = (fn) => (e) => {
     e.stopPropagation();
-    e.nativeEvent?.stopImmediatePropagation?.();
     fn?.();
   };
 
   return (
-    <span
-      style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
-      onClick={(e) => e.stopPropagation()}
-      onMouseDown={(e) => e.stopPropagation()} // ← critical for Tabs
-    >
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
       {text}
       <Tooltip title="Rename">
         <EditOutlined
           style={{ fontSize: 12, cursor: "pointer" }}
-          onClick={stop(onEdit)}
-          onMouseDown={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
+          onClick={handle(onEdit)}
         />
       </Tooltip>
       <Tooltip title="Delete">
         <DeleteOutlined
           style={{ fontSize: 12, color: "#ff4d4f", cursor: "pointer" }}
-          onClick={stop(onDelete)}
-          onMouseDown={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
+          onClick={handle(onDelete)}
         />
       </Tooltip>
     </span>
