@@ -69,7 +69,11 @@ const locationKey = (loc) => `${loc?.floorId || ""}::${loc?.roomId || ""}`;
 
 // Stable row id used both as React key and as the dnd-kit sortable id.
 const rowId = (p) => `${p.productId}::${p._locationKey || "root"}`;
+// Company code lives in product.meta under this key.
+// Display-only. Never sent to the API (see cleanProducts in AddQuotation).
+const COMPANY_CODE_META_KEY = "d11da9f9-3f2e-4536-8236-9671200cca4a";
 
+const codeOf = (p) => p?.companyCode || p?.meta?.[COMPANY_CODE_META_KEY] || "";
 const lineTotal = (p, qtyOverride) => {
   const qty =
     qtyOverride !== undefined ? Number(qtyOverride) : Number(p.qty) || 0;
@@ -111,9 +115,17 @@ function TabLabel({ text, onEdit, onDelete }) {
 
 /* ───────────────────────── Catalog row ───────────────────────── */
 function CatalogItem({ product, price, onAdd, alreadyAdded }) {
+  const code = codeOf(product);
   return (
     <div className="qs-catalog-item">
-      <span className="qs-catalog-name">{product.name}</span>
+      <span className="qs-catalog-name">
+        {product.name}
+        {code && (
+          <Text type="secondary" style={{ fontSize: 11, display: "block" }}>
+            {code}
+          </Text>
+        )}
+      </span>
       <span className="qs-catalog-price">₹{price.toFixed(2)}</span>
       <Button
         type="text"
@@ -254,7 +266,7 @@ function ProductRow({
           </Text>
         )}
       </td>
-
+      <td className="qs-cell qs-readonly">{codeOf(product) || "–"}</td>
       <td className="qs-cell">
         <InputNumber
           size="small"
@@ -459,7 +471,7 @@ function SheetSection({
               <thead>
                 <tr>
                   <th style={{ width: 40 }}>S.No.</th>
-                  <th>Product</th>
+                  <th>Product</th> <th style={{ width: 130 }}>Code</th>
                   <th style={{ width: 90 }}>Qty</th>
                   <th style={{ width: 100 }}>Price</th>
                   <th style={{ width: 160 }}>Discount</th>
