@@ -15,7 +15,7 @@
 //     Deleting moves that tab's items back to Unassigned (handled by the
 //     parent via onDeleteFloor / onDeleteRoom).
 
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useCallback } from "react";
 import {
   Tabs,
   Input,
@@ -84,7 +84,6 @@ const lineTotal = (p, qtyOverride) => {
   return price * qty - discAmt;
 };
 
-/* ───────────────────────── Tab label with rename / delete ───────────────────────── */
 /* ───────────────────────── Tab label with rename / delete ───────────────────────── */
 function TabLabel({ text, onEdit, onDelete }) {
   // Only the icons swallow the click, so the label text still
@@ -458,7 +457,7 @@ function SheetSection({
 
       {products.length === 0 ? (
         <div className="qs-section-empty">
-          No products here yet — search the catalog above and hit “+” to add
+          No products here yet — search the catalog above and hit "+" to add
         </div>
       ) : (
         <DndContext
@@ -471,7 +470,8 @@ function SheetSection({
               <thead>
                 <tr>
                   <th style={{ width: 40 }}>S.No.</th>
-                  <th>Product</th> <th style={{ width: 130 }}>Code</th>
+                  <th>Product</th>
+                  <th style={{ width: 130 }}>Code</th>
                   <th style={{ width: 90 }}>Qty</th>
                   <th style={{ width: 100 }}>Price</th>
                   <th style={{ width: 160 }}>Discount</th>
@@ -560,6 +560,7 @@ export default function QuotationProductSheet({
                 assignedQuantity: Number(p.qty) || 0,
                 floorName: p.floorName || null,
                 roomName: p.roomName || null,
+                priority: p.priority ?? 0,
               },
             ];
 
@@ -577,13 +578,17 @@ export default function QuotationProductSheet({
           _locationKey: locationKey(
             isValidAssignment ? loc : { floorId: null, roomId: null },
           ),
+          // prefer location priority
+          _sectionPriority: loc.priority ?? p.priority ?? 0,
         });
       });
     });
 
+    // Sort each section independently using the per-location priority
     Object.values(map).forEach((arr) =>
-      arr.sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0)),
+      arr.sort((a, b) => (a._sectionPriority ?? 0) - (b._sectionPriority ?? 0)),
     );
+
     return map;
   }, [formData.products]);
 
@@ -597,7 +602,14 @@ export default function QuotationProductSheet({
     };
   };
 
-  const buildSingleLocation = (floorId, roomId, floorName, roomName, qty) =>
+  const buildSingleLocation = (
+    floorId,
+    roomId,
+    floorName,
+    roomName,
+    qty,
+    priority = 0,
+  ) =>
     floorId && roomId
       ? [
           {
@@ -608,6 +620,7 @@ export default function QuotationProductSheet({
             areaId: null,
             areaName: null,
             assignedQuantity: qty,
+            priority,
           },
         ]
       : [];
@@ -633,14 +646,21 @@ export default function QuotationProductSheet({
   };
 
   // ─── Change qty of one share ─────────────────────────────────────
-  const updateSectionQty = (productId, locKey, newQty, extraFields = null) => {
-    setFormData((prev) => ({
-      ...prev,
-      products: prev.products.map((p) => {
-        if (p.productId !== productId) return p;
+  // ✅ OPTIMIZED: useCallback prevents re-renders of child components
+  const updateSectionQty = useCallback(
+    (productId, locKey, newQty, extraFields = null) => {
+      setFormData((prev) => {
+        const productIndex = prev.products.findIndex(
+          (p) => p.productId === productId,
+        );
+        if (productIndex === -1) return prev;
+
+        const p = prev.products[productIndex];
 
         if (extraFields) {
-          return { ...p, ...extraFields };
+          const updated = [...prev.products];
+          updated[productIndex] = { ...p, ...extraFields };
+          return { ...prev, products: updated };
         }
 
         let locs = Array.isArray(p.locations) ? [...p.locations] : [];
@@ -655,12 +675,13 @@ export default function QuotationProductSheet({
               areaId: null,
               areaName: null,
               assignedQuantity: Number(p.qty) || 0,
+              priority: p.priority ?? 0,
             },
           ];
         }
 
         const idx = locs.findIndex((l) => locationKey(l) === locKey);
-        if (idx === -1) return p;
+        if (idx === -1) return prev;
 
         const safeQty = Math.max(1, Number(newQty) || 1);
         locs[idx] = { ...locs[idx], assignedQuantity: safeQty };
@@ -670,148 +691,167 @@ export default function QuotationProductSheet({
           0,
         );
 
-        return syncSingularFields({
+        const updated = [...prev.products];
+        updated[productIndex] = syncSingularFields({
           ...p,
           locations: locs,
           qty: total,
         });
-      }),
-    }));
-  };
+
+        return { ...prev, products: updated };
+      });
+    },
+    [],
+  );
 
   // ─── Move one share to another floor/room ────────────────────────
   // A share is only ever "Unassigned" (null/null) or "Floor + Room"
   // (both set) — never a bare floor. Any call missing one half is
   // treated as a full clear back to Unassigned.
-  const moveShare = (productId, locKey, { floorId, roomId }) => {
+  // ✅ OPTIMIZED: useCallback prevents re-renders of child components
+  const moveShare = useCallback((productId, locKey, { floorId, roomId }) => {
     const isValidTarget = Boolean(floorId && roomId);
     const targetFloorId = isValidTarget ? floorId : null;
     const targetRoomId = isValidTarget ? roomId : null;
     const { floorName, roomName } = resolveNames(targetFloorId, targetRoomId);
 
-    setFormData((prev) => ({
-      ...prev,
-      products: prev.products.map((p) => {
-        if (p.productId !== productId) return p;
+    setFormData((prev) => {
+      const productIndex = prev.products.findIndex(
+        (p) => p.productId === productId,
+      );
+      if (productIndex === -1) return prev;
 
-        let locs = Array.isArray(p.locations) ? [...p.locations] : [];
+      const p = prev.products[productIndex];
+      let locs = Array.isArray(p.locations) ? [...p.locations] : [];
 
-        if (locs.length === 0) {
-          locs = [
-            {
-              floorId: p.floorId || null,
-              roomId: p.roomId || null,
-              floorName: p.floorName || null,
-              roomName: p.roomName || null,
-              areaId: null,
-              areaName: null,
-              assignedQuantity: Number(p.qty) || 0,
-            },
-          ];
-        }
+      if (locs.length === 0) {
+        locs = [
+          {
+            floorId: p.floorId || null,
+            roomId: p.roomId || null,
+            floorName: p.floorName || null,
+            roomName: p.roomName || null,
+            areaId: null,
+            areaName: null,
+            assignedQuantity: Number(p.qty) || 0,
+            priority: p.priority ?? 0,
+          },
+        ];
+      }
 
-        const idx = locs.findIndex((l) => locationKey(l) === locKey);
-        if (idx === -1) return p;
+      const idx = locs.findIndex((l) => locationKey(l) === locKey);
+      if (idx === -1) return prev;
 
-        locs[idx] = {
-          ...locs[idx],
-          floorId: targetFloorId,
-          floorName: targetFloorId ? floorName : null,
-          roomId: targetRoomId,
-          roomName: targetRoomId ? roomName : null,
+      locs[idx] = {
+        ...locs[idx],
+        floorId: targetFloorId,
+        floorName: targetFloorId ? floorName : null,
+        roomId: targetRoomId,
+        roomName: targetRoomId ? roomName : null,
+      };
+
+      // Merge if target already exists
+      const targetKey = locationKey(locs[idx]);
+      const otherIdx = locs.findIndex(
+        (l, i) => i !== idx && locationKey(l) === targetKey,
+      );
+      if (otherIdx !== -1) {
+        locs[otherIdx] = {
+          ...locs[otherIdx],
+          assignedQuantity:
+            (Number(locs[otherIdx].assignedQuantity) || 0) +
+            (Number(locs[idx].assignedQuantity) || 0),
         };
+        locs.splice(idx, 1);
+      }
 
-        // Merge if target already exists
-        const targetKey = locationKey(locs[idx]);
-        const otherIdx = locs.findIndex(
-          (l, i) => i !== idx && locationKey(l) === targetKey,
-        );
-        if (otherIdx !== -1) {
-          locs[otherIdx] = {
-            ...locs[otherIdx],
-            assignedQuantity:
-              (Number(locs[otherIdx].assignedQuantity) || 0) +
-              (Number(locs[idx].assignedQuantity) || 0),
-          };
-          locs.splice(idx, 1);
-        }
+      const total = locs.reduce(
+        (s, l) => s + (Number(l.assignedQuantity) || 0),
+        0,
+      );
 
-        const total = locs.reduce(
-          (s, l) => s + (Number(l.assignedQuantity) || 0),
-          0,
-        );
+      const updated = [...prev.products];
+      updated[productIndex] = syncSingularFields({
+        ...p,
+        locations: locs,
+        qty: total,
+      });
 
-        return syncSingularFields({
-          ...p,
-          locations: locs,
-          qty: total,
-        });
-      }),
-    }));
-  };
+      return { ...prev, products: updated };
+    });
+  }, []);
 
   // ─── Split 1 qty from current share into a new Unassigned share ──
-  const splitShare = (productId, locKey) => {
-    setFormData((prev) => ({
-      ...prev,
-      products: prev.products.map((p) => {
-        if (p.productId !== productId) return p;
+  // ✅ OPTIMIZED: useCallback prevents re-renders of child components
+  const splitShare = useCallback((productId, locKey) => {
+    setFormData((prev) => {
+      const productIndex = prev.products.findIndex(
+        (p) => p.productId === productId,
+      );
+      if (productIndex === -1) return prev;
 
-        let locs = Array.isArray(p.locations) ? [...p.locations] : [];
+      const p = prev.products[productIndex];
+      let locs = Array.isArray(p.locations) ? [...p.locations] : [];
 
-        if (locs.length === 0) {
-          locs = [
-            {
-              floorId: p.floorId || null,
-              roomId: p.roomId || null,
-              floorName: p.floorName || null,
-              roomName: p.roomName || null,
-              areaId: null,
-              areaName: null,
-              assignedQuantity: Number(p.qty) || 0,
-            },
-          ];
-        }
+      if (locs.length === 0) {
+        locs = [
+          {
+            floorId: p.floorId || null,
+            roomId: p.roomId || null,
+            floorName: p.floorName || null,
+            roomName: p.roomName || null,
+            areaId: null,
+            areaName: null,
+            assignedQuantity: Number(p.qty) || 0,
+            priority: p.priority ?? 0,
+          },
+        ];
+      }
 
-        const idx = locs.findIndex((l) => locationKey(l) === locKey);
-        if (idx === -1) return p;
+      const idx = locs.findIndex((l) => locationKey(l) === locKey);
+      if (idx === -1) return prev;
 
-        const currentQty = Number(locs[idx].assignedQuantity) || 0;
-        if (currentQty < 2) {
-          message.warning("Need at least 2 quantity to split");
-          return p;
-        }
+      const currentQty = Number(locs[idx].assignedQuantity) || 0;
+      if (currentQty < 2) {
+        message.warning("Need at least 2 quantity to split");
+        return prev;
+      }
 
-        locs[idx] = {
-          ...locs[idx],
-          assignedQuantity: currentQty - 1,
-        };
+      locs[idx] = {
+        ...locs[idx],
+        assignedQuantity: currentQty - 1,
+      };
 
-        locs.push({
-          floorId: null,
-          floorName: null,
-          roomId: null,
-          roomName: null,
-          areaId: null,
-          areaName: null,
-          assignedQuantity: 1,
-        });
+      // Find max priority and add 1 so new split goes to the end
+      const maxPriority = Math.max(...locs.map((l) => l.priority ?? 0), -1);
 
-        const total = locs.reduce(
-          (s, l) => s + (Number(l.assignedQuantity) || 0),
-          0,
-        );
+      locs.push({
+        floorId: null,
+        floorName: null,
+        roomId: null,
+        roomName: null,
+        areaId: null,
+        areaName: null,
+        assignedQuantity: 1,
+        priority: maxPriority + 1,
+      });
 
-        return syncSingularFields({
-          ...p,
-          locations: locs,
-          qty: total,
-        });
-      }),
-    }));
+      const total = locs.reduce(
+        (s, l) => s + (Number(l.assignedQuantity) || 0),
+        0,
+      );
 
-    message.success("Split 1 qty → Unassigned. Assign it to a floor + room.");
-  };
+      const updated = [...prev.products];
+      updated[productIndex] = syncSingularFields({
+        ...p,
+        locations: locs,
+        qty: total,
+      });
+
+      message.success("Split 1 qty → Unassigned. Assign it to a floor + room.");
+      return { ...prev, products: updated };
+    });
+  }, []);
 
   // ── Remove Product (location-aware) ──────────────────────────────
   // If the product isn't split across multiple rooms, this behaves like a
@@ -879,22 +919,73 @@ export default function QuotationProductSheet({
    * `reorderedSectionProducts` is the section's exploded rows in their
    * new visual order. We map that order back onto `priority` for just
    * those productIds — mirrors handleCartOrderChange in Cart.jsx.
+   *
+   * FIXED: When a product is split across multiple locations, we track
+   * priority PER LOCATION KEY, not just per productId.
+   *
+   * ✅ OPTIMIZED: useCallback prevents re-renders of child components
    */
-  const reorderSection = (reorderedSectionProducts) => {
-    const priorityByProductId = new Map();
+  const reorderSection = useCallback((reorderedSectionProducts) => {
+    // Map of (productId + locationKey) → new index
+    // This ensures split products maintain independent priorities per location
+    const newOrderByLocation = new Map();
     reorderedSectionProducts.forEach((row, idx) => {
-      priorityByProductId.set(row.productId, idx);
+      const key = `${row.productId}::${row._locationKey}`;
+      newOrderByLocation.set(key, idx);
     });
 
     setFormData((prev) => ({
       ...prev,
-      products: prev.products.map((p) =>
-        priorityByProductId.has(p.productId)
-          ? { ...p, priority: priorityByProductId.get(p.productId) }
-          : p,
-      ),
+      products: prev.products.map((p) => {
+        let locs = Array.isArray(p.locations) ? [...p.locations] : [];
+
+        // Ensure we have a locations array (legacy single-location products)
+        if (locs.length === 0) {
+          locs = [
+            {
+              floorId: p.floorId || null,
+              roomId: p.roomId || null,
+              floorName: p.floorName || null,
+              roomName: p.roomName || null,
+              areaId: null,
+              areaName: null,
+              assignedQuantity: Number(p.qty) || 0,
+              priority: p.priority ?? 0,
+            },
+          ];
+        }
+
+        // Update priority for each location that was reordered in this section
+        let hasUpdates = false;
+        const updatedLocs = locs.map((loc) => {
+          const locKey = locationKey(loc);
+          const lookupKey = `${p.productId}::${locKey}`;
+
+          if (newOrderByLocation.has(lookupKey)) {
+            hasUpdates = true;
+            return {
+              ...loc,
+              priority: newOrderByLocation.get(lookupKey),
+            };
+          }
+          // Locations not in this section keep their existing priority
+          return loc;
+        });
+
+        if (!hasUpdates) {
+          return p; // No changes needed
+        }
+
+        return {
+          ...p,
+          locations: updatedLocs,
+          // Only sync product-level priority when there's a single location
+          priority:
+            updatedLocs.length === 1 ? updatedLocs[0].priority : p.priority,
+        };
+      }),
     }));
-  };
+  }, []);
 
   // ─── Catalog add ─────────────────────────────────────────────────
   // Adding from the catalog while viewing a floor tab only targets a
@@ -954,6 +1045,7 @@ export default function QuotationProductSheet({
         target.floorName,
         target.roomName,
         1,
+        formData.products.length,
       ),
     };
 
@@ -1115,7 +1207,7 @@ export default function QuotationProductSheet({
         />
         {(searchTerm || searchResult.length > 0) && (
           <Text className="qs-catalog-list-label">
-            Click “+” to add a result into the floor/room tab you're viewing
+            Click "+" to add a result into the floor/room tab you're viewing
             below
           </Text>
         )}

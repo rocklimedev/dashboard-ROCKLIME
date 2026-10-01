@@ -733,6 +733,7 @@ const AddQuotation = () => {
               areaId: loc.areaId || null,
               areaName: loc.areaName || null,
               assignedQuantity: safeNum(loc.assignedQuantity, qty),
+              priority: loc.priority ?? 0, // ← add this
             }))
           : p.areaId || p.roomId || p.floorId
             ? [
@@ -744,10 +745,10 @@ const AddQuotation = () => {
                   areaId: p.areaId || null,
                   areaName: p.areaName || null,
                   assignedQuantity: qty,
+                  priority: p.priority ?? 0, // ← and here
                 },
               ]
             : [];
-
       return {
         productId: p.productId,
         name: p.name,

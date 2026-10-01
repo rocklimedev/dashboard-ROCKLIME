@@ -366,6 +366,7 @@ exports.createQuotation = async (req, res) => {
             areaId: loc.areaId || null,
             areaName: loc.areaName || null,
             assignedQuantity: Number(loc.assignedQuantity),
+            priority: Number(loc.priority ?? 0), // ← ADD THIS
           }));
       } else if (p.floorId) {
         // Backward compatibility
@@ -376,6 +377,7 @@ exports.createQuotation = async (req, res) => {
             roomId: p.roomId || null,
             roomName: p.roomName || null,
             assignedQuantity: quantity,
+            priority: Number(p.priority ?? 0), // ← ADD THIS
           },
         ];
       }
@@ -692,6 +694,7 @@ exports.updateQuotation = async (req, res) => {
               areaId: loc.areaId || null,
               areaName: loc.areaName || null,
               assignedQuantity: assignedQty,
+              priority: Number(loc.priority ?? 0), // ← ADD THIS
             });
           }
         });
@@ -704,6 +707,7 @@ exports.updateQuotation = async (req, res) => {
           roomId: p.roomId || null,
           roomName: p.roomName || null,
           assignedQuantity: totalQuantity,
+          priority: Number(p.priority ?? 0), // ← ADD THIS
         });
         validatedTotalAssignedQty = totalQuantity;
       }

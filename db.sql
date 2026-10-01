@@ -14,6 +14,11 @@
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
+
+-- Dumping database structure for spsyn8lm_rocklime_dashboard
+CREATE DATABASE IF NOT EXISTS `spsyn8lm_rocklime_dashboard` /*!40100 DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci */;
+USE `spsyn8lm_rocklime_dashboard`;
+
 -- Dumping structure for table spsyn8lm_rocklime_dashboard.activity_logs
 CREATE TABLE IF NOT EXISTS `activity_logs` (
   `activityLogId` char(36) COLLATE utf8mb4_bin NOT NULL,
@@ -341,6 +346,7 @@ CREATE TABLE IF NOT EXISTS `order_dispatches` (
   `dispatchDate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `carrier` varchar(150) DEFAULT NULL,
   `trackingNumber` varchar(150) DEFAULT NULL,
+  `invoiceLink` varchar(500) DEFAULT NULL,
   `gatePassLink` varchar(500) DEFAULT NULL,
   `remarks` text,
   `dispatchedBy` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
