@@ -16,6 +16,135 @@ const META_SLUGS = {
   productGroup: "81cd6d76-d7d2-4226-b48e-6704e6224c2b",
 };
 
+const num = (v, d = 0) => (Number.isFinite(Number(v)) ? Number(v) : d);
+
+// A share is either Unassigned ("::") or a concrete floor+room pair.
+const locKey = (l) =>
+  l.floorId && l.roomId ? `${l.floorId}::${l.roomId}` : "::";
+
+/**
+ * Cleans a product's locations[].
+ * - Bare-floor shares collapse to Unassigned (floorId/roomId = null)
+ * - Unassigned shares are KEPT (the old code dropped them)
+ * - Shares with the same floor+room are merged (qty summed, lowest priority wins)
+ * - Missing priority inherits the product priority, never a hard 0
+ * - Under-assigned quantity is topped up as an Unassigned share, so the
+ *   shares always add up to `quantity` (which drives the price)
+ * - Over-assigned quantity throws
+ * Returns null for products with no location info at all (e.g. options).
+ */
+function normalizeLocations(p, totalQuantity, floors = []) {
+  const src =
+    Array.isArray(p.locations) && p.locations.length > 0
+      ? p.locations
+      : p.floorId || p.roomId
+        ? [
+            {
+              floorId: p.floorId,
+              floorName: p.floorName,
+              roomId: p.roomId,
+              roomName: p.roomName,
+              assignedQuantity: totalQuantity,
+              priority: p.priority,
+            },
+          ]
+        : [];
+
+  if (src.length === 0) return null;
+
+  const merged = new Map();
+
+  src.forEach((l) => {
+    const qty = num(l.assignedQuantity, 0);
+    if (qty <= 0) return;
+
+    const valid = Boolean(l.floorId && l.roomId);
+    const floor = valid ? floors.find((f) => f.floorId === l.floorId) : null;
+    const room = floor?.rooms?.find((r) => r.roomId === l.roomId);
+
+    const loc = {
+      floorId: valid ? l.floorId : null,
+      floorName: valid ? l.floorName || floor?.floorName || null : null,
+      roomId: valid ? l.roomId : null,
+      roomName: valid ? l.roomName || room?.roomName || null : null,
+      areaId: l.areaId || null,
+      areaName: l.areaName || null,
+      assignedQuantity: qty,
+      priority: num(l.priority ?? p.priority, 0),
+    };
+
+    const k = locKey(loc);
+    const existing = merged.get(k);
+    if (existing) {
+      existing.assignedQuantity += qty;
+      existing.priority = Math.min(existing.priority, loc.priority);
+    } else {
+      merged.set(k, loc);
+    }
+  });
+
+  const locations = [...merged.values()];
+  const assigned = locations.reduce((s, l) => s + l.assignedQuantity, 0);
+
+  if (assigned > totalQuantity) {
+    throw new Error(
+      `Quantity overflow for product ${p.name || p.productId}. Total assigned (${assigned}) > available (${totalQuantity})`,
+    );
+  }
+
+  if (assigned < totalQuantity) {
+    const remainder = totalQuantity - assigned;
+    const un = locations.find((l) => locKey(l) === "::");
+    if (un) {
+      un.assignedQuantity += remainder;
+    } else {
+      locations.push({
+        floorId: null,
+        floorName: null,
+        roomId: null,
+        roomName: null,
+        areaId: null,
+        areaName: null,
+        assignedQuantity: remainder,
+        priority: num(p.priority, 0),
+      });
+    }
+  }
+
+  return locations;
+}
+
+// Flat fields kept for old readers: the first concrete floor+room share.
+function flatFromLocations(locations) {
+  const first = (locations || []).find((l) => l.floorId && l.roomId);
+  return {
+    floorId: first?.floorId || null,
+    floorName: first?.floorName || null,
+    roomId: first?.roomId || null,
+    roomName: first?.roomName || null,
+  };
+}
+
+// Re-rank every section 0..n. Ties keep their incoming array order.
+// Idempotent, so a clean payload comes back unchanged.
+function rankPerSection(products) {
+  const buckets = {};
+  products.forEach((p, order) =>
+    (p.locations || []).forEach((l) =>
+      (buckets[locKey(l)] ||= []).push({ l, order }),
+    ),
+  );
+  Object.values(buckets).forEach((arr) => {
+    arr.sort((a, b) => a.l.priority - b.l.priority || a.order - b.order);
+    arr.forEach(({ l }, i) => {
+      l.priority = i;
+    });
+  });
+  products.forEach((p) => {
+    if (p.locations?.length === 1) p.priority = p.locations[0].priority;
+  });
+  return products;
+}
 // Safe meta value extractor (reuse from your cart code)
 const getMetaValue = (meta, uuid) => {
   if (!meta || !uuid) return null;
@@ -344,7 +473,6 @@ exports.createQuotation = async (req, res) => {
       const discount = Number(p.discount || 0);
       const discountType = p.discountType || db.discountType || "percent";
 
-      // === Option / Addon Handling ===
       const isOption =
         Boolean(p.isOption) ||
         Boolean(p.isOptionFor) ||
@@ -353,34 +481,7 @@ exports.createQuotation = async (req, res) => {
       const optionType = p.optionType || null;
       const parentProductId = p.parentProductId || p.isOptionFor || null;
 
-      // === Location Handling ===
-      let locations = [];
-      if (Array.isArray(p.locations) && p.locations.length > 0) {
-        locations = p.locations
-          .filter((loc) => loc.floorId && Number(loc.assignedQuantity) > 0)
-          .map((loc) => ({
-            floorId: loc.floorId,
-            floorName: loc.floorName || `Floor ${loc.floorId}`,
-            roomId: loc.roomId || null,
-            roomName: loc.roomName || null,
-            areaId: loc.areaId || null,
-            areaName: loc.areaName || null,
-            assignedQuantity: Number(loc.assignedQuantity),
-            priority: Number(loc.priority ?? 0), // ← ADD THIS
-          }));
-      } else if (p.floorId) {
-        // Backward compatibility
-        locations = [
-          {
-            floorId: p.floorId,
-            floorName: p.floorName || null,
-            roomId: p.roomId || null,
-            roomName: p.roomName || null,
-            assignedQuantity: quantity,
-            priority: Number(p.priority ?? 0), // ← ADD THIS
-          },
-        ];
-      }
+      const locations = normalizeLocations(p, quantity, incomingFloors);
 
       return {
         productId: id,
@@ -397,24 +498,18 @@ exports.createQuotation = async (req, res) => {
 
         priority: Number(p.priority ?? index),
 
-        // === OPTION FIELDS - CRITICAL ===
-        isOption: isOption,
-        optionType: optionType,
+        isOption,
+        optionType,
         isOptionFor: isOption ? parentProductId : null,
-        parentProductId: parentProductId,
+        parentProductId,
         groupId: p.groupId || (isOption ? null : generateGroupId()),
 
-        // Locations
-        locations: locations.length > 0 ? locations : null,
-
-        // Backward compatibility fields
-        floorId: locations[0]?.floorId || null,
-        floorName: locations[0]?.floorName || null,
-        roomId: locations[0]?.roomId || null,
-        roomName: locations[0]?.roomName || null,
+        locations,
+        ...flatFromLocations(locations),
       };
     });
 
+    rankPerSection(enrichedProducts);
     // ─── Determine floors ───
     const floors =
       Array.isArray(incomingFloors) && incomingFloors.length > 0
@@ -677,50 +772,7 @@ exports.updateQuotation = async (req, res) => {
       const discount = Number(p.discount || 0);
       const discountType = p.discountType || db.discountType || "percent";
 
-      // === Location Quantity Validation ===
-      let locations = [];
-      let validatedTotalAssignedQty = 0;
-
-      if (Array.isArray(p.locations) && p.locations.length > 0) {
-        p.locations.forEach((loc) => {
-          const assignedQty = Number(loc.assignedQuantity) || 0;
-          if (assignedQty > 0) {
-            validatedTotalAssignedQty += assignedQty;
-            locations.push({
-              floorId: loc.floorId,
-              floorName: loc.floorName || `Floor ${loc.floorId}`,
-              roomId: loc.roomId || null,
-              roomName: loc.roomName || null,
-              areaId: loc.areaId || null,
-              areaName: loc.areaName || null,
-              assignedQuantity: assignedQty,
-              priority: Number(loc.priority ?? 0), // ← ADD THIS
-            });
-          }
-        });
-      }
-      // Backward compatibility
-      else if (p.floorId) {
-        locations.push({
-          floorId: p.floorId,
-          floorName: p.floorName || null,
-          roomId: p.roomId || null,
-          roomName: p.roomName || null,
-          assignedQuantity: totalQuantity,
-          priority: Number(p.priority ?? 0), // ← ADD THIS
-        });
-        validatedTotalAssignedQty = totalQuantity;
-      }
-
-      if (validatedTotalAssignedQty > totalQuantity) {
-        throw new Error(
-          `Quantity overflow for product ${p.name || id}. Total assigned (${validatedTotalAssignedQty}) > available (${totalQuantity})`,
-        );
-      }
-
-      if (locations.length === 0) {
-        locations = null;
-      }
+      const locations = normalizeLocations(p, totalQuantity, incomingFloors);
 
       const isOption = !!p.isOptionFor;
 
@@ -728,7 +780,6 @@ exports.updateQuotation = async (req, res) => {
         productId: id,
         name: p.name || db.name || "Unknown Product",
 
-        // ← FIXED: Now properly saving imageUrl and companyCode
         imageUrl: p.imageUrl || db.imageUrl || null,
         companyCode: p.companyCode || db.companyCode || null,
         productCode: p.productCode || db.productCode || null,
@@ -749,14 +800,12 @@ exports.updateQuotation = async (req, res) => {
         optionType: p.optionType || null,
         groupId: p.groupId || (isOption ? null : generateGroupId()),
 
-        locations, // New split support
-        // Backward compatibility
-        floorId: locations?.[0]?.floorId || null,
-        floorName: locations?.[0]?.floorName || null,
-        roomId: locations?.[0]?.roomId || null,
-        roomName: locations?.[0]?.roomName || null,
+        locations,
+        ...flatFromLocations(locations),
       };
     });
+
+    rankPerSection(enrichedProducts);
     // Floors: prefer incoming → fallback to derived
     let floors =
       Array.isArray(incomingFloors) && incomingFloors.length > 0
@@ -1178,10 +1227,11 @@ exports.cloneQuotation = async (req, res) => {
       return res.status(404).json({ message: "Quotation not found" });
     }
 
-    // Fetch items from MongoDB (or fallback to PG field)
     const originalItemsDoc = await QuotationItem.findOne({ quotationId: id });
-    let originalProducts = originalItemsDoc?.items || original.products || [];
-
+    let originalProducts =
+      Array.isArray(original.products) && original.products.length > 0
+        ? original.products
+        : originalItemsDoc?.items || [];
     if (!Array.isArray(originalProducts) || originalProducts.length === 0) {
       await t.rollback();
       return res
@@ -1239,6 +1289,10 @@ exports.cloneQuotation = async (req, res) => {
     }
 
     // ─── Enrich products (same logic as createQuotation) ───
+    const originalFloors = Array.isArray(original.floors)
+      ? original.floors
+      : [];
+
     const enrichedProducts = originalProducts.map((p) => {
       const id = p.productId || p.id;
       const db = productMap[id] || {};
@@ -1248,33 +1302,7 @@ exports.cloneQuotation = async (req, res) => {
       const discount = Number(p.discount || 0);
       const discountType = p.discountType || db.discountType || "percent";
 
-      // Location handling
-      let locations = null;
-      let validatedTotalAssignedQty = 0;
-
-      if (Array.isArray(p.locations) && p.locations.length > 0) {
-        p.locations.forEach((loc) => {
-          const assignedQty = Number(loc.assignedQuantity) || 0;
-          if (assignedQty > 0) validatedTotalAssignedQty += assignedQty;
-        });
-        locations = p.locations;
-      } else if (p.floorId) {
-        locations = [
-          {
-            floorId: p.floorId,
-            floorName: p.floorName || null,
-            roomId: p.roomId || null,
-            roomName: p.roomName || null,
-            assignedQuantity: totalQuantity,
-          },
-        ];
-      }
-
-      if (validatedTotalAssignedQty > totalQuantity) {
-        throw new Error(`Quantity overflow for product ${p.name || id}`);
-      }
-
-      if (locations && locations.length === 0) locations = null;
+      const locations = normalizeLocations(p, totalQuantity, originalFloors);
 
       const isOption = Boolean(p.isOption) || Boolean(p.isOptionFor);
 
@@ -1302,13 +1330,11 @@ exports.cloneQuotation = async (req, res) => {
         groupId: p.groupId || (isOption ? null : generateGroupId()),
 
         locations,
-        floorId: locations?.[0]?.floorId || null,
-        floorName: locations?.[0]?.floorName || null,
-        roomId: locations?.[0]?.roomId || null,
-        roomName: locations?.[0]?.roomName || null,
+        ...flatFromLocations(locations),
       };
     });
 
+    rankPerSection(enrichedProducts);
     // ─── Determine floors ───
     const floors =
       Array.isArray(original.floors) && original.floors.length > 0
