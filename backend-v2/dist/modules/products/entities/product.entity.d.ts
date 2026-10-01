@@ -1,0 +1,30 @@
+import { Model } from 'sequelize-typescript';
+import { Keyword } from './keyword.entity';
+import { ProductKeyword } from './product-keyword.entity';
+import { Vendor } from '../../vendors/entities/vendor.entity';
+export declare class Product extends Model<Product> {
+    productId: string;
+    name: string;
+    product_code: string;
+    quantity: number;
+    masterProductId: string;
+    isMaster: boolean;
+    variantOptions: Record<string, any>;
+    variantKey: string;
+    skuSuffix: string;
+    discountType: string;
+    alert_quantity: number;
+    tax: number;
+    description: string;
+    images: string;
+    isFeatured: boolean;
+    status: string;
+    brandId: string;
+    categoryId: string;
+    vendorId: string;
+    brand_parentcategoriesId: string;
+    meta: Record<string, any>;
+    vendor: Vendor;
+    keywords: Keyword[];
+    productKeywords: ProductKeyword[];
+}

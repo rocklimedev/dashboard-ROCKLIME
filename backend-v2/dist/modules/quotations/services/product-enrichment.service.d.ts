@@ -1,0 +1,84 @@
+import { Transaction } from 'sequelize';
+import { Product } from '../../products/entities/product.entity';
+interface ProductMapEntry {
+    name: string;
+    imageUrl: string | null;
+    productCode: string | null;
+    companyCode: string | null;
+    tax: number;
+    discountType: string;
+}
+export declare class ProductEnrichmentService {
+    private readonly productModel;
+    constructor(productModel: typeof Product);
+    fetchProductMap(productIds: string[], transaction?: Transaction): Promise<Record<string, ProductMapEntry>>;
+    fetchProductMapForUpdate(productIds: string[], transaction?: Transaction): Promise<Record<string, ProductMapEntry>>;
+    enrichProductsForCreate(incomingProducts: any[], productMap: Record<string, ProductMapEntry>): {
+        productId: any;
+        name: any;
+        imageUrl: any;
+        companyCode: any;
+        productCode: any;
+        quantity: number;
+        price: number;
+        discount: number;
+        discountType: any;
+        tax: number;
+        priority: number;
+        isOption: boolean;
+        optionType: any;
+        isOptionFor: any;
+        parentProductId: any;
+        groupId: any;
+        locations: any[] | null;
+        floorId: any;
+        floorName: any;
+        roomId: any;
+        roomName: any;
+    }[];
+    enrichProductsForUpdate(incomingProducts: any[], productMap: Record<string, ProductMapEntry>): {
+        productId: any;
+        name: any;
+        imageUrl: any;
+        companyCode: any;
+        productCode: any;
+        quantity: number;
+        price: number;
+        discount: number;
+        discountType: any;
+        tax: number;
+        priority: number;
+        total: number;
+        isOptionFor: any;
+        optionType: any;
+        groupId: any;
+        locations: any[] | null;
+        floorId: any;
+        floorName: any;
+        roomId: any;
+        roomName: any;
+    }[];
+    enrichProductsForClone(originalProducts: any[], productMap: Record<string, ProductMapEntry>): {
+        productId: any;
+        name: any;
+        imageUrl: any;
+        companyCode: any;
+        productCode: any;
+        quantity: number;
+        price: number;
+        discount: number;
+        discountType: any;
+        tax: number;
+        priority: number;
+        total: number;
+        isOptionFor: any;
+        optionType: any;
+        groupId: any;
+        locations: any[] | null;
+        floorId: any;
+        floorName: any;
+        roomId: any;
+        roomName: any;
+    }[];
+}
+export {};

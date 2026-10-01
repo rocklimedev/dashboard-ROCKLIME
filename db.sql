@@ -252,6 +252,122 @@ CREATE TABLE IF NOT EXISTS `keywords` (
 
 -- Data exporting was unselected.
 
+<<<<<<< HEAD
+=======
+-- Dumping structure for table spsyn8lm_rocklime_dashboard.order_activity
+CREATE TABLE IF NOT EXISTS `order_activity` (
+  `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `orderId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `orderNo` varchar(30) NOT NULL,
+  `action` varchar(60) NOT NULL,
+  `description` text,
+  `oldValue` json DEFAULT NULL,
+  `newValue` json DEFAULT NULL,
+  `performedBy` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  `metadata` json DEFAULT NULL,
+  `ipAddress` varchar(64) DEFAULT NULL,
+  `createdAt` datetime NOT NULL,
+  PRIMARY KEY (`id`) USING BTREE,
+  KEY `idx_order_activity_order_id` (`orderId`) USING BTREE,
+  KEY `idx_order_activity_order_no` (`orderNo`) USING BTREE,
+  KEY `idx_order_activity_action` (`action`) USING BTREE,
+  KEY `idx_order_activity_created_at` (`createdAt`) USING BTREE,
+  KEY `fk_order_activity_performed_by` (`performedBy`),
+  CONSTRAINT `fk_order_activity_order` FOREIGN KEY (`orderId`) REFERENCES `orders` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_order_activity_performed_by` FOREIGN KEY (`performedBy`) REFERENCES `users` (`userId`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Data exporting was unselected.
+
+-- Dumping structure for table spsyn8lm_rocklime_dashboard.order_credit_note_items
+CREATE TABLE IF NOT EXISTS `order_credit_note_items` (
+  `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `creditNoteId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `orderId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `productId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `productCode` varchar(100) DEFAULT NULL,
+  `name` varchar(500) NOT NULL,
+  `quantity` decimal(14,2) NOT NULL,
+  `price` decimal(14,2) NOT NULL,
+  `discount` decimal(14,2) NOT NULL DEFAULT '0.00',
+  `discountType` enum('percent','fixed') NOT NULL DEFAULT 'percent',
+  `tax` decimal(14,2) NOT NULL DEFAULT '0.00',
+  `total` decimal(14,2) NOT NULL,
+  `reason` varchar(255) DEFAULT NULL,
+  `createdAt` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`) USING BTREE,
+  KEY `idx_credit_note_items_credit_note_id` (`creditNoteId`) USING BTREE,
+  KEY `idx_credit_note_items_order_id` (`orderId`) USING BTREE,
+  KEY `idx_credit_note_items_product_id` (`productId`) USING BTREE,
+  CONSTRAINT `fk_credit_note_items_credit_note` FOREIGN KEY (`creditNoteId`) REFERENCES `order_credit_notes` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_credit_note_items_order` FOREIGN KEY (`orderId`) REFERENCES `orders` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_credit_note_items_product` FOREIGN KEY (`productId`) REFERENCES `products` (`productId`) ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Data exporting was unselected.
+
+-- Dumping structure for table spsyn8lm_rocklime_dashboard.order_credit_notes
+CREATE TABLE IF NOT EXISTS `order_credit_notes` (
+  `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `orderId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `orderNo` varchar(30) NOT NULL,
+  `creditNoteNumber` varchar(100) DEFAULT NULL,
+  `creditNoteLink` varchar(500) DEFAULT NULL,
+  `creditNoteDate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `totalQuantity` decimal(14,2) NOT NULL DEFAULT '0.00',
+  `totalAmount` decimal(14,2) NOT NULL DEFAULT '0.00',
+  `reason` text,
+  `remarks` text,
+  `status` enum('DRAFT','ISSUED','RECEIVED','CANCELED') NOT NULL DEFAULT 'ISSUED',
+  `createdBy` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `createdAt` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`) USING BTREE,
+  KEY `idx_order_credit_notes_order_id` (`orderId`) USING BTREE,
+  KEY `idx_order_credit_notes_order_no` (`orderNo`) USING BTREE,
+  KEY `idx_order_credit_notes_number` (`creditNoteNumber`) USING BTREE,
+  KEY `idx_order_credit_notes_status` (`status`) USING BTREE,
+  KEY `idx_order_credit_notes_date` (`creditNoteDate`) USING BTREE,
+  KEY `fk_order_credit_notes_created_by` (`createdBy`),
+  CONSTRAINT `fk_order_credit_notes_created_by` FOREIGN KEY (`createdBy`) REFERENCES `users` (`userId`) ON UPDATE CASCADE,
+  CONSTRAINT `fk_order_credit_notes_order` FOREIGN KEY (`orderId`) REFERENCES `orders` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Data exporting was unselected.
+
+-- Dumping structure for table spsyn8lm_rocklime_dashboard.order_dispatches
+CREATE TABLE IF NOT EXISTS `order_dispatches` (
+  `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `orderId` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `orderNo` varchar(30) NOT NULL,
+  `dispatchNumber` int(11) NOT NULL,
+  `items` json NOT NULL,
+  `totalQuantity` int(11) NOT NULL DEFAULT '0',
+  `totalAmount` decimal(14,2) NOT NULL DEFAULT '0.00',
+  `dispatchDate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `carrier` varchar(150) DEFAULT NULL,
+  `trackingNumber` varchar(150) DEFAULT NULL,
+  `invoiceLink` varchar(500) DEFAULT NULL,
+  `gatePassLink` varchar(500) DEFAULT NULL,
+  `remarks` text,
+  `dispatchedBy` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `status` enum('DISPATCHED','DELIVERED','RETURNED') NOT NULL DEFAULT 'DISPATCHED',
+  `createdAt` datetime NOT NULL,
+  `updatedAt` datetime NOT NULL,
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `uniq_order_dispatch_number` (`orderId`,`dispatchNumber`) USING BTREE,
+  KEY `idx_order_dispatches_order_id` (`orderId`) USING BTREE,
+  KEY `idx_order_dispatches_order_no` (`orderNo`) USING BTREE,
+  KEY `idx_order_dispatches_dispatch_date` (`dispatchDate`) USING BTREE,
+  KEY `fk_order_dispatches_dispatched_by` (`dispatchedBy`),
+  CONSTRAINT `fk_order_dispatches_dispatched_by` FOREIGN KEY (`dispatchedBy`) REFERENCES `users` (`userId`) ON UPDATE CASCADE,
+  CONSTRAINT `fk_order_dispatches_order` FOREIGN KEY (`orderId`) REFERENCES `orders` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Data exporting was unselected.
+
+>>>>>>> b8542dc4426d767bf134f1854cdf5ce82c1f4a52
 -- Dumping structure for table spsyn8lm_rocklime_dashboard.orders
 CREATE TABLE IF NOT EXISTS `orders` (
   `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,

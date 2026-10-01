@@ -1,0 +1,32 @@
+import { Model } from 'sequelize-typescript';
+import { Customer } from '../../customers/entities/customer.entity';
+import { User } from '../../users/entities/user.entity';
+export declare class Quotation extends Model<Quotation> {
+    quotationId: string;
+    document_title: string;
+    quotation_date: string;
+    due_date: string;
+    followupDates: string[];
+    reference_number: string;
+    totalFloors: number;
+    floors: Record<string, any>[];
+    products: Record<string, any>[];
+    customerId: string;
+    shipTo: string;
+    createdBy: string;
+    extraDiscount: number;
+    extraDiscountType: string;
+    discountAmount: number;
+    shippingAmount: number;
+    gst: number;
+    gstAmount: number;
+    optionalTotal: number;
+    optionalItemsCount: number;
+    roundOff: number;
+    finalAmount: number;
+    signature_name: string;
+    signature_image: string;
+    status: string;
+    customer: Customer;
+    creator: User;
+}

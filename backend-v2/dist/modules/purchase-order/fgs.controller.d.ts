@@ -1,0 +1,156 @@
+import { FgsService } from './fgs.service';
+import { CreateFgsDto, UpdateFgsDto, UpdateFgsStatusDto } from './dto/purchase-order.dto';
+export declare class FgsController {
+    private readonly fgsService;
+    constructor(fgsService: FgsService);
+    create(dto: CreateFgsDto, userId: string): Promise<{
+        message: string;
+        fieldGuidedSheet: {
+            items: any[];
+            id: string;
+            fgsNumber: string;
+            vendorId: string;
+            userId: string;
+            status: string;
+            orderDate: Date;
+            expectDeliveryDate: Date;
+            totalAmount: number;
+            mongoItemsId: string;
+            vendor: import("../vendors/entities/vendor.entity").Vendor;
+            createdBy: import("../users/entities/user.entity").User;
+            purchaseOrder: import("./entities/purchase-order.entity").PurchaseOrder;
+            createdAt?: Date | any;
+            updatedAt?: Date | any;
+            deletedAt?: Date | any;
+            version?: number | any;
+            _attributes: import("./entities/fgs.entity").FieldGuidedSheet;
+            dataValues: import("./entities/fgs.entity").FieldGuidedSheet;
+            _creationAttributes: import("./entities/fgs.entity").FieldGuidedSheet;
+            isNewRecord: boolean;
+            sequelize: import("sequelize").Sequelize;
+            _model: import("sequelize").Model<import("./entities/fgs.entity").FieldGuidedSheet, import("./entities/fgs.entity").FieldGuidedSheet>;
+        };
+    }>;
+    findAll(query: any): Promise<{
+        data: {
+            items: any;
+            id: string;
+            fgsNumber: string;
+            vendorId: string;
+            userId: string;
+            status: string;
+            orderDate: Date;
+            expectDeliveryDate: Date;
+            totalAmount: number;
+            mongoItemsId: string;
+            vendor: import("../vendors/entities/vendor.entity").Vendor;
+            createdBy: import("../users/entities/user.entity").User;
+            purchaseOrder: import("./entities/purchase-order.entity").PurchaseOrder;
+            createdAt?: Date | any;
+            updatedAt?: Date | any;
+            deletedAt?: Date | any;
+            version?: number | any;
+            _attributes: import("./entities/fgs.entity").FieldGuidedSheet;
+            dataValues: import("./entities/fgs.entity").FieldGuidedSheet;
+            _creationAttributes: import("./entities/fgs.entity").FieldGuidedSheet;
+            isNewRecord: boolean;
+            sequelize: import("sequelize").Sequelize;
+            _model: import("sequelize").Model<import("./entities/fgs.entity").FieldGuidedSheet, import("./entities/fgs.entity").FieldGuidedSheet>;
+        }[];
+        pagination: {
+            total: number;
+            page: number;
+            limit: number;
+            totalPages: number;
+        };
+    }>;
+    findOne(id: string): Promise<{
+        items: any;
+        id: string;
+        fgsNumber: string;
+        vendorId: string;
+        userId: string;
+        status: string;
+        orderDate: Date;
+        expectDeliveryDate: Date;
+        totalAmount: number;
+        mongoItemsId: string;
+        vendor: import("../vendors/entities/vendor.entity").Vendor;
+        createdBy: import("../users/entities/user.entity").User;
+        purchaseOrder: import("./entities/purchase-order.entity").PurchaseOrder;
+        createdAt?: Date | any;
+        updatedAt?: Date | any;
+        deletedAt?: Date | any;
+        version?: number | any;
+        _attributes: import("./entities/fgs.entity").FieldGuidedSheet;
+        dataValues: import("./entities/fgs.entity").FieldGuidedSheet;
+        _creationAttributes: import("./entities/fgs.entity").FieldGuidedSheet;
+        isNewRecord: boolean;
+        sequelize: import("sequelize").Sequelize;
+        _model: import("sequelize").Model<import("./entities/fgs.entity").FieldGuidedSheet, import("./entities/fgs.entity").FieldGuidedSheet>;
+    }>;
+    update(id: string, dto: UpdateFgsDto, userId: string): Promise<{
+        message: string;
+        fieldGuidedSheet: {
+            items: any;
+            id: string;
+            fgsNumber: string;
+            vendorId: string;
+            userId: string;
+            status: string;
+            orderDate: Date;
+            expectDeliveryDate: Date;
+            totalAmount: number;
+            mongoItemsId: string;
+            vendor: import("../vendors/entities/vendor.entity").Vendor;
+            createdBy: import("../users/entities/user.entity").User;
+            purchaseOrder: import("./entities/purchase-order.entity").PurchaseOrder;
+            createdAt?: Date | any;
+            updatedAt?: Date | any;
+            deletedAt?: Date | any;
+            version?: number | any;
+            _attributes: import("./entities/fgs.entity").FieldGuidedSheet;
+            dataValues: import("./entities/fgs.entity").FieldGuidedSheet;
+            _creationAttributes: import("./entities/fgs.entity").FieldGuidedSheet;
+            isNewRecord: boolean;
+            sequelize: import("sequelize").Sequelize;
+            _model: import("sequelize").Model<import("./entities/fgs.entity").FieldGuidedSheet, import("./entities/fgs.entity").FieldGuidedSheet>;
+        };
+    }>;
+    remove(id: string, userId: string): Promise<{
+        message: string;
+    }>;
+    convertToPo(id: string, userId: string): Promise<{
+        message: string;
+        purchaseOrder: {
+            items: any[];
+            id: string;
+            poNumber: string;
+            vendorId: string;
+            userId: string;
+            fgsId: string;
+            status: string;
+            orderDate: Date;
+            expectDeliveryDate: Date;
+            totalAmount: number;
+            mongoItemsId: string;
+            vendor: import("../vendors/entities/vendor.entity").Vendor;
+            fgs: import("./entities/fgs.entity").FieldGuidedSheet;
+            createdBy: import("../users/entities/user.entity").User;
+            createdAt?: Date | any;
+            updatedAt?: Date | any;
+            deletedAt?: Date | any;
+            version?: number | any;
+            _attributes: import("./entities/purchase-order.entity").PurchaseOrder;
+            dataValues: import("./entities/purchase-order.entity").PurchaseOrder;
+            _creationAttributes: import("./entities/purchase-order.entity").PurchaseOrder;
+            isNewRecord: boolean;
+            sequelize: import("sequelize").Sequelize;
+            _model: import("sequelize").Model<import("./entities/purchase-order.entity").PurchaseOrder, import("./entities/purchase-order.entity").PurchaseOrder>;
+        };
+    }>;
+    updateStatus(id: string, dto: UpdateFgsStatusDto, userId: string): Promise<{
+        message: string;
+        fieldGuidedSheet: import("./entities/fgs.entity").FieldGuidedSheet;
+    }>;
+}

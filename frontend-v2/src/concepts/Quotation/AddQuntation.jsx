@@ -5,7 +5,6 @@ import {
   message,
   Input,
   Select,
-  Table,
   InputNumber,
   Space,
   Button,
@@ -16,16 +15,13 @@ import {
   Row,
   Col,
   Spin,
-  Divider,
   Statistic,
-  Tag,
 } from "antd";
 import {
   ArrowLeftOutlined,
   PlusOutlined,
   DeleteOutlined,
   SaveOutlined,
-  DragOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
 import { debounce } from "lodash";
@@ -46,23 +42,6 @@ import { useGetCustomersQuery } from "../../api/customerApi";
 import { useGetAllAddressesQuery } from "../../api/addressApi";
 import { useGetProfileQuery } from "../../api/userApi";
 import QuotationProductSheet from "../../components/Quotation/QuotationProductSheet";
-// DND KIT IMPORTS
-import {
-  DndContext,
-  closestCenter,
-  PointerSensor,
-  KeyboardSensor,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import AddAddress from "../../components/Address/AddAddressModal";
 
 // Import Modals
@@ -73,52 +52,25 @@ import EditFloorModal from "../../components/modals/EditFloorModal";
 
 const { Text } = Typography;
 const { Option } = Select;
-// Sortable Row Component
-const SortableRow = ({ children, ...props }) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
-    id: props["data-row-key"],
-  });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.6 : 1,
-    background: isDragging ? "#f0f0f0" : "transparent",
-  };
-
-  return (
-    <tr
-      ref={setNodeRef}
-      style={style}
-      {...props}
-      {...attributes}
-      {...listeners}
-    >
-      {children}
-    </tr>
-  );
+// Cleared location fields — used when a floor/room is deleted and its
+// items fall back to Unassigned.
+const CLEARED = {
+  floorId: null,
+  floorName: null,
+  roomId: null,
+  roomName: null,
+  areaId: null,
+  areaName: null,
 };
+
 const AddQuotation = () => {
   const { id } = useParams();
   const isEditMode = Boolean(id);
-  const navigate = useNavigate(); // NEW: Drag & Drop State
-  const [dragMode, setDragMode] = useState(false);
+  const navigate = useNavigate();
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  );
-  // After other modal states
   const [showCustomerModal, setShowCustomerModal] = useState(false);
+
   // ── API Hooks ─────────────────────────────────────────────────────
   const { data: existingQuotation, isLoading: loadingQuotation } =
     useGetQuotationByIdQuery(id, { skip: !isEditMode });
@@ -171,26 +123,40 @@ const AddQuotation = () => {
 
   const [formData, setFormData] = useState(initialFormData);
 
-  // Modal Forms
-  const [floorForm] = Form.useForm();
-  const [roomForm] = Form.useForm();
+  // Modal Forms — each modal gets its own instance so one modal's
+  // resetFields() can never wipe another's values.
+  const [floorForm] = Form.useForm(); // add floor
+  const [floorEditForm] = Form.useForm(); // edit floor
+  const [roomForm] = Form.useForm(); // add room
+  const [roomEditForm] = Form.useForm(); // edit room
 
   // Modal Visibility States
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [showAddFloorModal, setShowAddFloorModal] = useState(false);
   const [showAddRoomModal, setShowAddRoomModal] = useState(false);
   const [showEditFloorModal, setShowEditFloorModal] = useState(false);
+  const [showEditRoomModal, setShowEditRoomModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showVersionsModal, setShowVersionsModal] = useState(false);
 
-  // Option Modal States (Fixed)
+  // Delete confirmation (controlled modal instead of static Modal.confirm)
+  // { type: "floor", floor } | { type: "room", floorId, room } | null
+  const [deleteTarget, setDeleteTarget] = useState(null);
+
+  // Option Modal States
   const [showAddOptionModal, setShowAddOptionModal] = useState(false);
   const [selectedParentId, setSelectedParentId] = useState(null);
   const [optionType, setOptionType] = useState("addon");
 
   const [selectedFloorId, setSelectedFloorId] = useState(null);
   const [editingFloor, setEditingFloor] = useState(null);
+  const [editingRoom, setEditingRoom] = useState(null); // { floorId, roomId, roomName, type }
   const [itemToAssign, setItemToAssign] = useState(null);
+
+  const editRoomInitialValues = useMemo(
+    () => ({ name: editingRoom?.roomName, type: editingRoom?.type }),
+    [editingRoom],
+  );
 
   // ── Helpers ───────────────────────────────────────────────────────
   const safeNum = (val, fallback = 0) =>
@@ -206,31 +172,7 @@ const AddQuotation = () => {
       return fallback;
     }
   };
-  // ── Drag Reorder Handler ─────────────────────────────────────────
-  const handleDragEnd = (event) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
 
-    setFormData((prev) => {
-      const oldIndex = prev.products.findIndex(
-        (item) => item.productId === active.id,
-      );
-      const newIndex = prev.products.findIndex(
-        (item) => item.productId === over.id,
-      );
-
-      if (oldIndex === -1 || newIndex === -1) return prev;
-
-      const newProducts = arrayMove(prev.products, oldIndex, newIndex).map(
-        (item, index) => ({
-          ...item,
-          priority: index,
-        }),
-      );
-
-      return { ...prev, products: newProducts };
-    });
-  };
   const generateId = () => `id_${uuidv4().slice(0, 8)}`;
 
   // ── Load Existing Quotation ───────────────────────────────────────
@@ -282,9 +224,74 @@ const AddQuotation = () => {
         .map((d) => (d ? new Date(d) : null))
         .filter(Boolean),
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditMode, existingQuotation, userId]);
 
-  // ── Floor / Room Handlers ─────────────────────────────────────────
+  // ── Location remapping ────────────────────────────────────────────
+  // Rewrites a product's locations[] with `mapLoc`, merges shares that end
+  // up at the same floor/room, and re-syncs the flat fields the sheet uses.
+  const remapProductLocations = (p, mapLoc) => {
+    const locs =
+      Array.isArray(p.locations) && p.locations.length > 0
+        ? p.locations
+        : p.floorId || p.roomId
+          ? [
+              {
+                floorId: p.floorId || null,
+                floorName: p.floorName || null,
+                roomId: p.roomId || null,
+                roomName: p.roomName || null,
+                areaId: null,
+                areaName: null,
+                assignedQuantity: safeNum(p.qty, 1),
+              },
+            ]
+          : [];
+    if (locs.length === 0) return p;
+
+    const merged = [];
+    locs.map(mapLoc).forEach((l) => {
+      const k = `${l.floorId || ""}::${l.roomId || ""}`;
+      const existing = merged.find(
+        (m) => `${m.floorId || ""}::${m.roomId || ""}` === k,
+      );
+      if (existing) {
+        existing.assignedQuantity =
+          safeNum(existing.assignedQuantity) + safeNum(l.assignedQuantity);
+      } else {
+        merged.push({ ...l });
+      }
+    });
+
+    const single =
+      merged.length === 1 && merged[0].floorId && merged[0].roomId
+        ? merged[0]
+        : null;
+
+    return {
+      ...p,
+      locations: merged,
+      floorId: single?.floorId || null,
+      floorName: single?.floorName || null,
+      roomId: single?.roomId || null,
+      roomName: single?.roomName || null,
+      areaId: null,
+      areaName: null,
+    };
+  };
+
+  // How many products have at least one share in this floor (or room).
+  const countItemsIn = (floorId, roomId = null) =>
+    formData.products.filter((p) => {
+      const locs = p.locations?.length
+        ? p.locations
+        : [{ floorId: p.floorId, roomId: p.roomId }];
+      return locs.some(
+        (l) => l.floorId === floorId && (!roomId || l.roomId === roomId),
+      );
+    }).length;
+
+  // ── Floor Handlers ────────────────────────────────────────────────
   const addFloor = (values) => {
     const newFloor = {
       floorId: generateId(),
@@ -297,22 +304,34 @@ const AddQuotation = () => {
     floorForm.resetFields();
   };
 
+  const openEditFloor = (floor) => {
+    setEditingFloor(floor);
+    setShowEditFloorModal(true);
+  };
+
+  // Also renames the denormalized floorName stored on assigned items.
   const editFloor = (values) => {
     if (!editingFloor) return;
+    const name = values.name.trim();
+    const { floorId } = editingFloor;
     setFormData((prev) => ({
       ...prev,
       floors: prev.floors.map((f) =>
-        f.floorId === editingFloor.floorId
-          ? { ...f, floorName: values.name.trim() }
-          : f,
+        f.floorId === floorId ? { ...f, floorName: name } : f,
+      ),
+      products: prev.products.map((p) =>
+        remapProductLocations(p, (l) =>
+          l.floorId === floorId ? { ...l, floorName: name } : l,
+        ),
       ),
     }));
     message.success("Floor updated");
     setShowEditFloorModal(false);
     setEditingFloor(null);
-    floorForm.resetFields();
+    floorEditForm.resetFields();
   };
 
+  // ── Room Handlers ─────────────────────────────────────────────────
   const addRoom = (values) => {
     if (!selectedFloorId) return;
     const newRoom = {
@@ -335,13 +354,122 @@ const AddQuotation = () => {
     roomForm.resetFields();
   };
 
-  // ── Assign Location ───────────────────────────────────────────────
-  // ── Assign Location ───────────────────────────────────────────────
-  const openAssignModal = (product) => {
-    setItemToAssign(product);
-    setShowAssignModal(true);
+  const openEditRoom = (floorId, room) => {
+    setEditingRoom({
+      floorId,
+      roomId: room.roomId,
+      roomName: room.roomName,
+      type: room.type || undefined,
+    });
+    setShowEditRoomModal(true);
   };
 
+  const editRoom = (values) => {
+    if (!editingRoom) return;
+    const name = values.name.trim();
+    const { floorId, roomId } = editingRoom;
+    setFormData((prev) => ({
+      ...prev,
+      floors: prev.floors.map((f) =>
+        f.floorId !== floorId
+          ? f
+          : {
+              ...f,
+              rooms: (f.rooms || []).map((r) =>
+                r.roomId === roomId
+                  ? { ...r, roomName: name, type: values.type || null }
+                  : r,
+              ),
+            },
+      ),
+      products: prev.products.map((p) =>
+        remapProductLocations(p, (l) =>
+          l.floorId === floorId && l.roomId === roomId
+            ? { ...l, roomName: name }
+            : l,
+        ),
+      ),
+    }));
+    message.success("Room updated");
+    setShowEditRoomModal(false);
+    setEditingRoom(null);
+  };
+
+  // ── Delete Floor / Room (controlled confirm modal) ────────────────
+  const deleteFloor = (floor) => setDeleteTarget({ type: "floor", floor });
+
+  const deleteRoom = (floorId, room) =>
+    setDeleteTarget({ type: "room", floorId, room });
+
+  const confirmDelete = () => {
+    if (!deleteTarget) return;
+
+    if (deleteTarget.type === "floor") {
+      const { floor } = deleteTarget;
+      setFormData((prev) => ({
+        ...prev,
+        floors: prev.floors.filter((f) => f.floorId !== floor.floorId),
+        products: prev.products.map((p) =>
+          remapProductLocations(p, (l) =>
+            l.floorId === floor.floorId ? { ...l, ...CLEARED } : l,
+          ),
+        ),
+      }));
+      message.success("Floor deleted");
+    } else {
+      const { floorId, room } = deleteTarget;
+      setFormData((prev) => ({
+        ...prev,
+        floors: prev.floors.map((f) =>
+          f.floorId !== floorId
+            ? f
+            : {
+                ...f,
+                rooms: (f.rooms || []).filter((r) => r.roomId !== room.roomId),
+              },
+        ),
+        products: prev.products.map((p) =>
+          remapProductLocations(p, (l) =>
+            l.floorId === floorId && l.roomId === room.roomId
+              ? { ...l, ...CLEARED }
+              : l,
+          ),
+        ),
+      }));
+      message.success("Room deleted");
+    }
+
+    setDeleteTarget(null);
+  };
+
+  // Text shown inside the delete confirm modal
+  const deleteInfo = (() => {
+    if (!deleteTarget) return null;
+
+    if (deleteTarget.type === "floor") {
+      const { floor } = deleteTarget;
+      const n = countItemsIn(floor.floorId);
+      return {
+        title: `Delete "${floor.floorName}"?`,
+        body:
+          n > 0
+            ? `This floor and its rooms will be removed. ${n} item(s) placed here will move back to Unassigned.`
+            : "This floor and its rooms will be removed.",
+      };
+    }
+
+    const { floorId, room } = deleteTarget;
+    const n = countItemsIn(floorId, room.roomId);
+    return {
+      title: `Delete "${room.roomName}"?`,
+      body:
+        n > 0
+          ? `${n} item(s) placed in this room will move back to Unassigned.`
+          : "This room will be removed.",
+    };
+  })();
+
+  // ── Assign Location ───────────────────────────────────────────────
   const handleAssignLocation = (productId, assignments) => {
     if (!productId) {
       message.error("Could not match this item — try again");
@@ -364,9 +492,7 @@ const AddQuotation = () => {
         if (p.productId !== productId) return p;
         return {
           ...p,
-          // keep every split so submit can send them all
           locations: validAssignments,
-          // keep the flat fields in sync for the table/back-compat display
           floorId: primary.floorId || null,
           floorName: primary.floorName || null,
           roomId: primary.roomId || null,
@@ -390,40 +516,6 @@ const AddQuotation = () => {
   };
 
   // ── Product Handlers ──────────────────────────────────────────────
-  const addProduct = (productId) => {
-    const prod = searchResult.find((p) => (p.id || p.productId) === productId);
-    if (
-      !prod ||
-      formData.products.some((item) => item.productId === productId)
-    ) {
-      return message.info("Product already added or not found");
-    }
-
-    const price = safeNum(
-      prod.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"],
-      0,
-    );
-
-    setFormData((prev) => ({
-      ...prev,
-      products: [
-        ...prev.products,
-        {
-          productId: prod.id || prod.productId,
-          name: prod.name || "Unknown",
-          qty: 1,
-          sellingPrice: price,
-          discount: 0,
-          discountType: "fixed",
-          priority: prev.products.length, // ← Updated
-          isOptionFor: null,
-          groupId: `grp-${uuidv4().slice(0, 8)}`,
-        },
-      ],
-    }));
-    setSearchTerm("");
-  };
-
   const addOption = (productId) => {
     if (!selectedParentId)
       return message.error("Please select a parent product");
@@ -452,7 +544,7 @@ const AddQuotation = () => {
           sellingPrice: price,
           discount: 0,
           discountType: "fixed",
-          priority: prev.products.length, // ← Updated
+          priority: prev.products.length,
           isOptionFor: selectedParentId,
           optionType,
           groupId: parent.groupId,
@@ -464,16 +556,15 @@ const AddQuotation = () => {
     setSearchTerm("");
     message.success(`Added ${optionType}`);
   };
+
   const removeProduct = (productId) => {
     setFormData((prev) => ({
       ...prev,
       products: prev.products.filter((p) => p.productId !== productId),
     }));
   };
+
   // ── Remove Product (location-aware) ──────────────────────────────
-  // If the product isn't split across multiple rooms, this behaves like a
-  // normal delete. If it IS split, deleting from one room only removes
-  // that room's share — other rooms' quantities are left untouched.
   const removeProductFromLocation = (productId, location) => {
     setFormData((prev) => ({
       ...prev,
@@ -483,7 +574,6 @@ const AddQuotation = () => {
           return acc;
         }
 
-        // Not split (or no location info passed) — full delete, same as before.
         if (
           !Array.isArray(p.locations) ||
           p.locations.length <= 1 ||
@@ -492,7 +582,6 @@ const AddQuotation = () => {
           return acc; // drop it
         }
 
-        // Remove only the split matching this specific floor/room/area.
         const remainingLocations = p.locations.filter(
           (loc) =>
             !(
@@ -502,20 +591,15 @@ const AddQuotation = () => {
             ),
         );
 
-        // Nothing matched — leave product untouched (shouldn't normally happen).
         if (remainingLocations.length === p.locations.length) {
           acc.push(p);
           return acc;
         }
 
-        // That was the last split — drop the product entirely.
         if (remainingLocations.length === 0) {
           return acc;
         }
 
-        // Recompute overall qty from remaining splits and re-sync the
-        // flat floor/room/area fields (used for table display) to the
-        // new primary (first remaining) split.
         const newQty = remainingLocations.reduce(
           (sum, loc) => sum + safeNum(loc.assignedQuantity, 0),
           0,
@@ -535,14 +619,6 @@ const AddQuotation = () => {
         });
         return acc;
       }, []),
-    }));
-  };
-  const updateProductField = (productId, field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      products: prev.products.map((p) =>
-        p.productId === productId ? { ...p, [field]: value } : p,
-      ),
     }));
   };
 
@@ -607,6 +683,7 @@ const AddQuotation = () => {
       roundOff: Number(roundOff.toFixed(2)),
       finalAmount: rounded,
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     mainProducts,
     formData.shippingAmount,
@@ -633,7 +710,6 @@ const AddQuotation = () => {
     const finalShipTo =
       formData.shipTo && formData.shipTo.trim() !== "" ? formData.shipTo : null;
 
-    // Build clean products payload
     const cleanProducts = formData.products.map((p) => {
       const qty = safeNum(p.qty, 1);
       const sellingPrice = safeNum(p.sellingPrice, 0);
@@ -647,9 +723,6 @@ const AddQuotation = () => {
 
       const lineTotal = sellingPrice * qty - lineDiscount;
 
-      // Prefer the full multi-location split captured by the assign modal;
-      // fall back to a single-entry array built from the flat fields
-      // (covers records loaded from an older payload shape).
       const locations =
         p.locations && p.locations.length > 0
           ? p.locations.map((loc) => ({
@@ -660,6 +733,7 @@ const AddQuotation = () => {
               areaId: loc.areaId || null,
               areaName: loc.areaName || null,
               assignedQuantity: safeNum(loc.assignedQuantity, qty),
+              priority: loc.priority ?? 0, // ← add this
             }))
           : p.areaId || p.roomId || p.floorId
             ? [
@@ -671,10 +745,10 @@ const AddQuotation = () => {
                   areaId: p.areaId || null,
                   areaName: p.areaName || null,
                   assignedQuantity: qty,
+                  priority: p.priority ?? 0, // ← and here
                 },
               ]
             : [];
-
       return {
         productId: p.productId,
         name: p.name,
@@ -800,7 +874,7 @@ const AddQuotation = () => {
                           <Option
                             key={c.customerId}
                             value={c.customerId}
-                            label={displayName} // ← Important for filtering
+                            label={displayName}
                           >
                             {displayName}
                           </Option>
@@ -821,7 +895,7 @@ const AddQuotation = () => {
                   <Space.Compact style={{ width: "100%" }}>
                     <Select
                       placeholder="Select shipping address (optional)"
-                      value={formData.shipTo || undefined} // ← Important
+                      value={formData.shipTo || undefined}
                       onChange={(v) =>
                         setFormData({
                           ...formData,
@@ -830,7 +904,7 @@ const AddQuotation = () => {
                       }
                       disabled={!formData.customerId}
                       style={{ flex: 1 }}
-                      allowClear // Allows clearing
+                      allowClear
                     >
                       {(addressesData || [])
                         .filter((a) => a.customerId === formData.customerId)
@@ -859,7 +933,6 @@ const AddQuotation = () => {
             styles={{ body: { paddingTop: 16 } }}
           >
             <Row gutter={[24, 16]}>
-              {/* Title */}
               <Col xs={24} md={12}>
                 <Form.Item
                   label="Quotation Title"
@@ -879,14 +952,12 @@ const AddQuotation = () => {
                 </Form.Item>
               </Col>
 
-              {/* Number */}
               <Col xs={24} md={12}>
                 <Form.Item label="Quotation Number" style={{ marginBottom: 8 }}>
                   <Input value="Auto-generated" disabled />
                 </Form.Item>
               </Col>
 
-              {/* Dates Section */}
               <Col xs={24}>
                 <Card
                   size="small"
@@ -896,7 +967,6 @@ const AddQuotation = () => {
                   }}
                 >
                   <Row gutter={[16, 16]}>
-                    {/* Quotation Date */}
                     <Col xs={24} md={12}>
                       <Form.Item
                         label="Quotation Date"
@@ -917,7 +987,6 @@ const AddQuotation = () => {
                       </Form.Item>
                     </Col>
 
-                    {/* Due Date */}
                     <Col xs={24} md={12}>
                       <Form.Item label="Due Date" style={{ marginBottom: 0 }}>
                         <DatePicker
@@ -938,7 +1007,6 @@ const AddQuotation = () => {
                 </Card>
               </Col>
 
-              {/* Follow-up Dates */}
               <Col xs={24}>
                 <Form.Item
                   label="Follow-up Schedule"
@@ -991,13 +1059,8 @@ const AddQuotation = () => {
           </Card>
 
           {/*
-            Products & Options — Floors and Rooms are now created directly
-            from this sheet's own tabs (the trailing "+" tab on the floor
-            row, and the trailing "+" tab on each floor's room row), the
-            same way Excel adds a new sheet. The old standalone
-            "Project Structure" card has been removed since it just
-            duplicated that same add-floor/add-room job in a separate
-            place on the page.
+            Products & Options — floors and rooms are created, renamed and
+            deleted directly from the sheet's tabs.
           */}
           <Card
             title="Products & Options"
@@ -1017,14 +1080,19 @@ const AddQuotation = () => {
                 setShowAddOptionModal(true);
               }}
               onAddFloor={() => setShowAddFloorModal(true)}
+              onEditFloor={openEditFloor}
+              onDeleteFloor={deleteFloor}
               onAddRoom={(floorId) => {
                 setSelectedFloorId(floorId);
                 setShowAddRoomModal(true);
               }}
-              onRemoveFromLocation={removeProductFromLocation} // ← new
-              onRemoveProduct={removeProduct} // keep for full/unsplit delete
+              onEditRoom={openEditRoom}
+              onDeleteRoom={deleteRoom}
+              onRemoveFromLocation={removeProductFromLocation}
+              onRemoveProduct={removeProduct}
             />
           </Card>
+
           {/* Financial Summary */}
           <Card
             title="Financial Summary"
@@ -1035,14 +1103,10 @@ const AddQuotation = () => {
             bodyStyle={{ padding: 16 }}
           >
             <Row gutter={[16, 16]}>
-              {/* TOP KPIs */}
               <Col xs={24} sm={8}>
                 <Card
                   size="small"
-                  style={{
-                    borderRadius: 10,
-                    background: "#fafafa",
-                  }}
+                  style={{ borderRadius: 10, background: "#fafafa" }}
                 >
                   <Statistic
                     title="Main Subtotal"
@@ -1056,10 +1120,7 @@ const AddQuotation = () => {
               <Col xs={24} sm={8}>
                 <Card
                   size="small"
-                  style={{
-                    borderRadius: 10,
-                    background: "#fff1f0",
-                  }}
+                  style={{ borderRadius: 10, background: "#fff1f0" }}
                 >
                   <Statistic
                     title="Line Discounts"
@@ -1074,10 +1135,7 @@ const AddQuotation = () => {
               <Col xs={24} sm={8}>
                 <Card
                   size="small"
-                  style={{
-                    borderRadius: 10,
-                    background: "#fff7e6",
-                  }}
+                  style={{ borderRadius: 10, background: "#fff7e6" }}
                 >
                   <Statistic
                     title="Extra Discount"
@@ -1089,7 +1147,6 @@ const AddQuotation = () => {
                 </Card>
               </Col>
 
-              {/* INPUT CONTROLS */}
               <Col xs={24} sm={12}>
                 <Card size="small" style={{ borderRadius: 10 }}>
                   <Form.Item label="Shipping Charges">
@@ -1118,7 +1175,6 @@ const AddQuotation = () => {
                 </Card>
               </Col>
 
-              {/* FINAL AMOUNT (HIGHLIGHTED) */}
               <Col xs={24}>
                 <Card
                   style={{
@@ -1158,7 +1214,6 @@ const AddQuotation = () => {
                 </Card>
               </Col>
 
-              {/* OPTIONAL ITEMS */}
               {calculations.optionalPotential > 0 && (
                 <Col xs={24}>
                   <Card
@@ -1226,7 +1281,7 @@ const AddQuotation = () => {
               setEditingFloor(null);
             }}
             onFinish={editFloor}
-            form={floorForm}
+            form={floorEditForm}
           />
 
           <AddEditRoomModal
@@ -1234,6 +1289,18 @@ const AddQuotation = () => {
             onCancel={() => setShowAddRoomModal(false)}
             onFinish={addRoom}
             form={roomForm}
+          />
+
+          <AddEditRoomModal
+            visible={showEditRoomModal}
+            isEdit
+            initialValues={editRoomInitialValues}
+            onCancel={() => {
+              setShowEditRoomModal(false);
+              setEditingRoom(null);
+            }}
+            onFinish={editRoom}
+            form={roomEditForm}
           />
 
           <AssignItemModal
@@ -1244,7 +1311,20 @@ const AddQuotation = () => {
             floors={formData.floors}
           />
 
-          {/* Add Option Modal (Fixed) */}
+          {/* Delete Floor / Room confirmation */}
+          <Modal
+            open={Boolean(deleteTarget)}
+            title={deleteInfo?.title}
+            okText="Delete"
+            okButtonProps={{ danger: true }}
+            onOk={confirmDelete}
+            onCancel={() => setDeleteTarget(null)}
+            destroyOnClose
+          >
+            {deleteInfo?.body}
+          </Modal>
+
+          {/* Add Option Modal */}
           <Modal
             title="Add Option / Variant / Upgrade"
             open={showAddOptionModal}
@@ -1329,13 +1409,13 @@ const AddQuotation = () => {
               </div>
             </Space>
           </Modal>
+
           {/* Add Customer Modal */}
           <AddCustomerModal
             visible={showCustomerModal}
             onClose={() => setShowCustomerModal(false)}
-            // Optional: if you want to pass customer for editing later
-            // customer={null}
           />
+
           {/* Add Address Modal */}
           {showAddressModal && (
             <AddAddress
