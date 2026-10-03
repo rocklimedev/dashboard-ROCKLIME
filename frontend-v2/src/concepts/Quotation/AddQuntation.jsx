@@ -63,7 +63,86 @@ const CLEARED = {
   areaId: null,
   areaName: null,
 };
+// Legacy quotations: locations may be missing or lack `priority`, and product
+// priorities collide within a section. Inherit the product priority, collapse
+// bare-floor shares to Unassigned, merge duplicate shares, then re-rank each
+// section 0..n (ties broken by original array order). Idempotent.
+const normalizeLoadedProducts = (products) => {
+  const num = (v, d = 0) => (Number.isFinite(Number(v)) ? Number(v) : d);
+  const secKey = (l) =>
+    l.floorId && l.roomId ? `${l.floorId}::${l.roomId}` : "::";
 
+  const prods = products.map((p, order) => {
+    const base =
+      Array.isArray(p.locations) && p.locations.length > 0
+        ? p.locations
+        : [
+            {
+              floorId: p.floorId || null,
+              floorName: p.floorName || null,
+              roomId: p.roomId || null,
+              roomName: p.roomName || null,
+              assignedQuantity: num(p.qty, 1),
+            },
+          ];
+
+    // Collapse invalid (bare-floor) shares to Unassigned, then merge
+    // shares that land on the same key so keys stay unique per product.
+    const merged = new Map();
+    base.forEach((l) => {
+      const valid = Boolean(l.floorId && l.roomId);
+      const loc = {
+        floorId: valid ? l.floorId : null,
+        floorName: valid ? l.floorName || null : null,
+        roomId: valid ? l.roomId : null,
+        roomName: valid ? l.roomName || null : null,
+        areaId: l.areaId || null,
+        areaName: l.areaName || null,
+        assignedQuantity: num(l.assignedQuantity, 0),
+        priority: num(l.priority ?? p.priority, 0), // inherit legacy order
+        _order: order,
+      };
+      const k = secKey(loc);
+      const ex = merged.get(k);
+      if (ex) {
+        ex.assignedQuantity += loc.assignedQuantity;
+        ex.priority = Math.min(ex.priority, loc.priority);
+      } else {
+        merged.set(k, loc);
+      }
+    });
+
+    return { ...p, locations: [...merged.values()] };
+  });
+
+  // Re-rank within each section
+  const buckets = {};
+  prods.forEach((p) =>
+    p.locations.forEach((l) => (buckets[secKey(l)] ||= []).push(l)),
+  );
+  Object.values(buckets).forEach((arr) => {
+    arr.sort((a, b) => a.priority - b.priority || a._order - b._order);
+    arr.forEach((l, i) => (l.priority = i));
+  });
+
+  return prods.map((p) => {
+    const locations = p.locations.map(({ _order, ...l }) => l);
+    const single =
+      locations.length === 1 && locations[0].floorId && locations[0].roomId
+        ? locations[0]
+        : null;
+    return {
+      ...p,
+      locations,
+      qty: locations.reduce((s, l) => s + l.assignedQuantity, 0) || p.qty,
+      floorId: single?.floorId || null,
+      floorName: single?.floorName || null,
+      roomId: single?.roomId || null,
+      roomName: single?.roomName || null,
+      priority: locations.length === 1 ? locations[0].priority : p.priority,
+    };
+  });
+};
 const AddQuotation = () => {
   const { id } = useParams();
   const isEditMode = Boolean(id);
@@ -218,7 +297,7 @@ const AddQuotation = () => {
       customerId: existingQuotation.customerId || "",
       shipTo: existingQuotation.shipTo || "",
       createdBy: userId,
-      products: mappedProducts,
+      products: normalizeLoadedProducts(mappedProducts),
       floors: parsedFloors,
       followupDates: safeJsonParse(existingQuotation.followupDates, [])
         .map((d) => (d ? new Date(d) : null))
