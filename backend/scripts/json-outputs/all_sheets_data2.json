@@ -1,1208 +1,2407 @@
 {
-  "MACBOOK AIR M1": [
+  "Summary": [
     {
-      "A": "PC NAME",
-      "B": "SPRP-PC1"
+      "A": "This Excel contains the remaining products not fully covered in the first Excel file."
     },
     {
-      "A": "HOLDER NAME",
-      "B": "DHAIRYA"
+      "A": "Covers: Remaining Faucet collections, Bath Accessories, Smart Sanitaryware, Coloured WCs, Bidets, Metallic & Designer Basins."
     },
     {
-      "A": "Processor",
-      "B": "AMD Ryzen 9 7900 12-Core Processor"
+      "A": "Source: Colston Bath & Spa Pvt. Ltd. | Price Book W.e.f. 1 Oct 2026"
     },
     {
-      "A": "RAM",
-      "B": "32GB Speed 4800 MT/s"
+      "A": "Sheets in this file:"
     },
     {
-      "A": "Graphics Card",
-      "B": "MSI GeForce RTX 4070 VENTUS 3X 12G OC Black"
+      "A": "1. Faucets_Leftover - Vegas, Lexa, Matrix 3D, Black Haute, Theo/Lava, Sensa, Krust, Prime Madrid, Crown, French + Free-standing fillers"
     },
     {
-      "A": "Local Storage",
-      "B": "1TB"
+      "A": "2. Bath_Accessories - Hubb Collection & Coupe Collection (Towel racks, hooks, soap dishes, health faucets, drains etc.)"
     },
     {
-      "A": "OneDrive Storage",
-      "B": "1TB"
-    },
-    {
-      "A": "ADDITIONAL"
-    },
-    {
-      "A": "Monitor",
-      "B": "Gigabyte : GS27QA"
-    },
-    {
-      "A": "Keyboard",
-      "B": "Cosmic Byte CB-GK-37"
-    },
-    {
-      "A": "Mouse",
-      "B": "Logitech G102"
-    },
-    {
-      "A": "Rippotai"
-    },
-    {
-      "A": "PC NAME",
-      "B": "SPRP-PC2"
-    },
-    {
-      "A": "HOLDER NAME",
-      "B": "SARTHI"
-    },
-    {
-      "A": "Processor",
-      "B": "AMD Ryzen 5 5600X 6-Core Processor"
-    },
-    {
-      "A": "RAM",
-      "B": "32GB Speed 2133 MT/s"
-    },
-    {
-      "A": "Graphics Card",
-      "B": "8GB  NVIDIA GeForce RTR 4060"
-    },
-    {
-      "A": "Local Storage",
-      "B": "1TB"
-    },
-    {
-      "A": "OneDrive Storage",
-      "B": "1TB"
-    },
-    {
-      "A": "ADDITIONAL"
-    },
-    {
-      "A": "Monitor",
-      "B": "lenovo Q27h-10"
-    },
-    {
-      "A": "Keyboard",
-      "B": "RedGear MK853"
-    },
-    {
-      "A": "Mouse",
-      "B": "Logitech G102"
-    },
-    {
-      "A": "Rippotai"
-    },
-    {
-      "A": "PC NAME",
-      "B": "SPRP-PC3"
-    },
-    {
-      "A": "HOLDER NAME",
-      "B": "NEW JOINING"
-    },
-    {
-      "A": "Processor",
-      "B": "Intel ® Core™ i7-6700 CPU @ 3.40GHz 3.40 GHz"
-    },
-    {
-      "A": "RAM",
-      "B": "16GB Speed 2133MHz"
-    },
-    {
-      "A": "Graphics Card",
-      "B": "NVIDIA GeForce GTX 1050 Ti (4 GB)"
-    },
-    {
-      "A": "Local Storage",
-      "B": "233GB + samsung ssd 860 EVO 250GB"
-    },
-    {
-      "A": "OneDrive Storage",
-      "B": "1TB"
-    },
-    {
-      "A": "ADDITIONAL"
-    },
-    {
-      "A": "Monitor",
-      "B": "LG-24MR400-BA"
-    },
-    {
-      "A": "Keyboard",
-      "B": "Cosmic Byte CB-GK-18"
-    },
-    {
-      "A": "Mouse",
-      "B": "HP Gaming Mouse G200"
-    },
-    {
-      "A": "Rippotai"
-    },
-    {
-      "A": "PC NAME",
-      "B": "SPRP-PC4"
-    },
-    {
-      "A": "HOLDER NAME",
-      "B": "NEW JOINING"
-    },
-    {
-      "A": "Processor",
-      "B": "AMD Ryzen 5 3600 6-Core Processor"
-    },
-    {
-      "A": "RAM",
-      "B": "16GB Speed 3200MT/s"
-    },
-    {
-      "A": "Graphics Card",
-      "B": "8GB AMD Radeon RX 6600"
-    },
-    {
-      "A": "Local Storage",
-      "B": "1TB"
-    },
-    {
-      "A": "OneDrive Storage",
-      "B": "1TB"
-    },
-    {
-      "A": "ADDITIONAL"
-    },
-    {
-      "A": "Monitor",
-      "B": "LG-24MR400-BA"
-    },
-    {
-      "A": "Keyboard",
-      "B": "K68 BT5.0"
-    },
-    {
-      "A": "Rippotai"
-    },
-    {
-      "A": "PC NAME",
-      "B": "Admin"
-    },
-    {
-      "A": "HOLDER NAME",
-      "B": "Mamta"
-    },
-    {
-      "A": "Processor",
-      "B": "Intel(R) Core(TM) i5-4460 CPU @ 3.20GHz"
-    },
-    {
-      "A": "RAM",
-      "B": "8GB DDR3"
-    },
-    {
-      "A": "Graphics Card",
-      "B": "4GB  NVIDIA GeForce GTX 1050 Ti"
-    },
-    {
-      "A": "Local Storage",
-      "B": "256GB"
-    },
-    {
-      "A": "OneDrive Storage",
-      "B": "1TB"
-    },
-    {
-      "A": "ADDITIONAL"
-    },
-    {
-      "A": "Monitor",
-      "B": "LG 22MP58VQ-P"
-    },
-    {
-      "A": "Keyboard",
-      "B": "LOGITECH K345"
-    },
-    {
-      "A": "Mouse",
-      "B": "Logitech G102"
-    },
-    {
-      "A": "Mobile Phone",
-      "B": "CMF by Nothing Phone1"
-    },
-    {
-      "A": "Rocklime"
-    },
-    {
-      "A": "MAC NAME",
-      "B": "MAC MINI M4"
-    },
-    {
-      "A": "HOLDER NAME",
-      "B": "Sajjan Dangaura"
-    },
-    {
-      "A": "Monitor",
-      "B": "LG ULTRAFINE"
-    },
-    {
-      "A": "Keyboard",
-      "B": "EVOFOX RONIN WIRELESS"
-    },
-    {
-      "A": "Mouse",
-      "B": "Logitech G304"
-    },
-    {
-      "A": "Ipad",
-      "B": "Ipad 7Gen"
-    },
-    {
-      "A": "Local Storage",
-      "B": "256GB"
-    },
-    {
-      "A": "OneDrive Storage",
-      "B": "1TB"
-    },
-    {
-      "A": "Rocklime"
-    },
-    {
-      "A": "MACBOOK NAME",
-      "B": "MACBOOK AIR M1"
-    },
-    {
-      "A": "HOLDER NAME",
-      "B": "Bhav Lamba"
-    },
-    {
-      "A": "Monitor",
-      "B": "OnePlus E24"
-    },
-    {
-      "A": "Keyboard",
-      "B": "Keychron K8"
-    },
-    {
-      "A": "Mouse",
-      "B": "Apple Mouse"
-    },
-    {
-      "A": "Ipad",
-      "B": "Ipad 6Gen"
-    },
-    {
-      "A": "Mobile Phone",
-      "B": "samsung galaxy note 10 lite"
-    },
-    {
-      "A": "Local Storage",
-      "B": "256GB"
-    },
-    {
-      "A": "OneDrive Storage",
-      "B": "1TB"
-    },
-    {
-      "A": "Rocklime"
-    },
-    {
-      "A": "PC NAME",
-      "B": "SPRL - PC1"
-    },
-    {
-      "A": "HOLDER NAME",
-      "B": "DHRUV"
-    },
-    {
-      "A": "Processor",
-      "B": "Intel(R) Core(TM) i5-9400F CPU @ 2.90GHz"
-    },
-    {
-      "A": "RAM",
-      "B": "16GB Speed 2133 MT/s"
-    },
-    {
-      "A": "Graphics Card",
-      "B": "NVIDIA GeForce RTX 2060"
-    },
-    {
-      "A": "Local Storage",
-      "B": "512GB"
-    },
-    {
-      "A": "OneDrive Storage",
-      "B": "1TB"
-    },
-    {
-      "A": "ADDITIONAL"
-    },
-    {
-      "A": "Laptop",
-      "B": "Lenovo Thinkpad L14"
-    },
-    {
-      "A": "Monitor",
-      "B": "LG 29WL50S"
-    },
-    {
-      "A": "Keyboard",
-      "B": "Cosmic Byte CB-GK-18"
-    },
-    {
-      "A": "Mouse",
-      "B": "Logitech G102"
-    },
-    {
-      "A": "Rocklime"
-    },
-    {
-      "A": "Laptop NAME",
-      "B": "HP EliteBook 840 G6"
-    },
-    {
-      "A": "HOLDER NAME",
-      "B": "Nitin"
-    },
-    {
-      "A": "Processor",
-      "B": "Intel(R) Core(TM) i7-8665U CPU @ 1.90GHz"
-    },
-    {
-      "A": "RAM",
-      "B": "16GB Speed 2400MT/s"
-    },
-    {
-      "A": "Graphics Card",
-      "B": "128MB Intel(R) UHD Graphics 620"
-    },
-    {
-      "A": "Local Storage",
-      "B": "256GB"
-    },
-    {
-      "A": "Mobile Phone",
-      "B": "CMF by Nothing Phone2 Pro"
-    },
-    {
-      "A": "Mouse",
-      "B": "Portronics TOAD 23 Wireless Mouse"
-    },
-    {
-      "A": "Chhabra Marble"
-    },
-    {
-      "A": "Laptop NAME",
-      "B": "acer  TL04-S1M"
-    },
-    {
-      "A": "HOLDER NAME",
-      "B": "PRIYA"
-    },
-    {
-      "A": "Processor",
-      "B": "Intel(R) Core(TM) i5-1334U CPU @ 1.30GHz"
-    },
-    {
-      "A": "RAM",
-      "B": "8GB Speed 2400MT/s"
-    },
-    {
-      "A": "Graphics Card",
-      "B": "128GB Intel (R) UHD Graphics 620"
-    },
-    {
-      "A": "Local Storage",
-      "B": "512GB"
-    },
-    {
-      "A": "OneDrive Storage",
-      "B": "1TB"
-    },
-    {
-      "A": "Mobile Phone",
-      "B": "CMF by Nothing Phone2 Pro"
-    },
-    {
-      "A": "Mouse",
-      "B": "Logitech M171"
-    },
-    {
-      "A": "Chhabra Marble"
-    },
-    {
-      "A": "Laptop NAME",
-      "B": "Lenevo Thinkpad - PF42QRHA"
-    },
-    {
-      "A": "HOLDER NAME",
-      "B": "Lakshay"
-    },
-    {
-      "A": "Processor",
-      "B": "12th Gen Intel(R) Core (TM) i3-1215U 1.20GHz"
-    },
-    {
-      "A": "RAM",
-      "B": "8GB Speed 3200MT/s"
-    },
-    {
-      "A": "Graphics Card",
-      "B": "128MB Intel(R) UHD Graphics"
-    },
-    {
-      "A": "Local Storage",
-      "B": "512GB"
-    },
-    {
-      "A": "OneDrive Storage",
-      "B": "1TB"
-    },
-    {
-      "A": "Mobile Phone",
-      "B": "Samsung F36"
-    },
-    {
-      "A": "Mouse",
-      "B": "Rapoo Bluetooth"
-    },
-    {
-      "A": "Chhabra Marble"
-    },
-    {
-      "A": "Laptop NAME",
-      "B": "Lenovo L480"
-    },
-    {
-      "A": "HOLDER NAME",
-      "B": "Hemant"
-    },
-    {
-      "A": "Processor",
-      "B": "Intel(R) Core(TM) i5-8350U CPU @ 1.70GHz"
-    },
-    {
-      "A": "RAM",
-      "B": "16GB Speed 2400MHz"
-    },
-    {
-      "A": "Graphics Card",
-      "B": "128MB Intel(R) UHD Graphics 620"
-    },
-    {
-      "A": "Local Storage",
-      "B": "512GB"
-    },
-    {
-      "A": "OneDrive Storage",
-      "B": "1TB"
-    },
-    {
-      "A": "Mobile Phone",
-      "B": "Moto G45 5G"
-    },
-    {
-      "A": "Mouse",
-      "B": "Logitech M171"
-    },
-    {
-      "A": "Chhabra Marble"
-    },
-    {
-      "A": "Laptop NAME",
-      "B": "Samsung Galaxy Book 2"
-    },
-    {
-      "A": "HOLDER NAME",
-      "B": "NITISH"
-    },
-    {
-      "A": "Processor",
-      "B": "12th Gen Intel(R) Core (TM) i5-1235U 1.30GHz"
-    },
-    {
-      "A": "RAM",
-      "B": "8GB Speed 4267MT/s"
-    },
-    {
-      "A": "Graphics Card",
-      "B": "128MB Intel(R) Xe Graphics"
-    },
-    {
-      "A": "Local Storage",
-      "B": "512GB"
-    },
-    {
-      "A": "OneDrive Storage",
-      "B": "1TB"
-    },
-    {
-      "A": "Mobile Phone",
-      "B": "Xiaomi 11"
-    },
-    {
-      "A": "Chhabra Marble"
-    },
-    {
-      "A": "HOLDER NAME",
-      "B": "SHIV KUMAR"
-    },
-    {
-      "A": "Mobile Phone",
-      "B": "One Plus Nord CE 3 Lite"
-    },
-    {
-      "A": "SP Syndicate"
-    },
-    {
-      "A": "HOLDER NAME",
-      "B": "MAMTA MA'AM HR"
-    },
-    {
-      "A": "Mobile Phone",
-      "B": "Dell Latitude i7 - Touch Screen"
+      "A": "3. Sanitaryware - Smart WCs, Heritage/Texture/Elite WCs, Bidet WCs, Coloured Nicola, Metallic, Stella, X-Stella, Mustang Tornado, Voila/Nick Basins"
     }
   ],
-  "PDF": [
+  "Faucets_Leftover": [
     {
-      "A": "Processor"
+      "A": "FAUCETS",
+      "B": "Vegas Collection",
+      "C": "SINGLE LEVER BASIN MIXER",
+      "D": "FU-VE-13992",
+      "E": "",
+      "F": "Chrome",
+      "G": 24998,
+      "H": "",
+      "I": 36
     },
     {
-      "A": "AMD Ryzen 5 5600X 6-Core Processor"
+      "A": "FAUCETS",
+      "B": "Vegas Collection",
+      "C": "SINGLE LEVER TALL BASIN MIXER",
+      "D": "FU-VE-13908",
+      "E": "",
+      "F": "Chrome",
+      "G": 37998,
+      "H": "",
+      "I": 36
     },
     {
-      "A": "RAM"
+      "A": "FAUCETS",
+      "B": "Vegas Collection",
+      "C": "BATHTUB SPOUT WITH WALL FLANGE",
+      "D": "FU-VE-13955",
+      "E": "",
+      "F": "Chrome",
+      "G": 17998,
+      "H": "",
+      "I": 36
     },
     {
-      "A": "32GB Speed 2133 MT/s"
+      "A": "FAUCETS",
+      "B": "Vegas Collection",
+      "C": "WALL MOUNTED CONCEALED BASIN MIXER WITH SPOUT",
+      "D": "FU-VE-13861",
+      "E": "",
+      "F": "Chrome",
+      "G": 37998,
+      "H": "",
+      "I": 36
     },
     {
-      "A": "Graphics Card"
+      "A": "FAUCETS",
+      "B": "Vegas Collection",
+      "C": "SINGLE LEVER CONCEALED DIVERTER (2 Outlets)",
+      "D": "FU-VE-13991",
+      "E": "",
+      "F": "Chrome",
+      "G": 24998,
+      "H": "",
+      "I": 36
     },
     {
-      "A": "8GB  NVIDIA GeForce RTR 4060"
+      "A": "FAUCETS",
+      "B": "Vegas Collection",
+      "C": "OREO S.S Shower",
+      "D": "LS-RS-13946",
+      "E": "350 mm",
+      "F": "",
+      "G": 16998,
+      "H": "S.S Shower",
+      "I": 36
     },
     {
-      "A": "Local Storage"
+      "A": "FAUCETS",
+      "B": "Vegas Collection",
+      "C": "LGT1004 WALL MOUNTED SQUARE SHOWER ARM WITH FLANGE",
+      "D": "AA-FA-13488",
+      "E": "300 mm",
+      "F": "",
+      "G": 3998,
+      "H": "",
+      "I": 36
     },
     {
-      "A": "1TB"
+      "A": "FAUCETS",
+      "B": "Lexa Collection",
+      "C": "SINGLE LEVER TALL BASIN MIXER",
+      "D": "FU-LX-13982",
+      "E": "",
+      "F": "Chrome",
+      "G": 32998,
+      "H": "",
+      "I": 37
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Lexa Collection",
+      "C": "SINGLE LEVER WALL MIXER WITH FLIP (Optional Hand shower provision)",
+      "D": "FU-LX-13868",
+      "E": "",
+      "F": "Chrome",
+      "G": 30998,
+      "H": "",
+      "I": 37
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Lexa Collection",
+      "C": "SINGLE LEVER CONCEALED DIVERTER (2 Outlets) WITH TRIM & HANDLE",
+      "D": "FU-LX-32060",
+      "E": "",
+      "F": "Chrome",
+      "G": 24998,
+      "H": "",
+      "I": 37
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Lexa Collection",
+      "C": "LEXA HAND SHOWER",
+      "D": "FU-LX-13808",
+      "E": "",
+      "F": "Chrome",
+      "G": 6798,
+      "H": "",
+      "I": 37
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Lexa Collection",
+      "C": "LEXA SHOWER HEAD",
+      "D": "FU-LX-13837",
+      "E": "",
+      "F": "Chrome",
+      "G": 10998,
+      "H": "",
+      "I": 37
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Lexa Collection",
+      "C": "RETRO MAXX 3+ (Trim + Handle)",
+      "D": "LS-MD-11201",
+      "E": "200x185 mm",
+      "F": "Matte Black",
+      "G": 26998,
+      "H": "3 Outlet High Flow Thermostatic Diverter • With Volume Control",
+      "I": 37
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Lexa Collection",
+      "C": "RETRO MAXX 3+ (Diverter Body)",
+      "D": "LS-MD-11204",
+      "E": "",
+      "F": "",
+      "G": 47998,
+      "H": "3 Outlet High Flow Thermostatic Diverter • With Volume Control",
+      "I": 37
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Matrix 3D",
+      "C": "MATRIX 3D FAUCET",
+      "D": "FU-CR-13857",
+      "E": "",
+      "F": "Black",
+      "G": 69998,
+      "H": "",
+      "I": 38
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Matrix 3D",
+      "C": "MATRIX 3D SHOWER PANEL",
+      "D": "FU-CR-14013",
+      "E": "",
+      "F": "Black",
+      "G": 129998,
+      "H": "",
+      "I": 38
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Black Haute",
+      "C": "DECK MOUNTED BASIN MIXER",
+      "D": "DB-FU-13103",
+      "E": "",
+      "F": "Black",
+      "G": 69998,
+      "H": "",
+      "I": 38
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Black Haute",
+      "C": "BATHROOM SET",
+      "D": "DB-FU-13230",
+      "E": "",
+      "F": "Black",
+      "G": 129998,
+      "H": "",
+      "I": 38
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Single Lever Basin Mixture",
+      "C": "NEW YORK",
+      "D": "FU-NY-13576",
+      "E": "",
+      "F": "",
+      "G": 34998,
+      "H": "",
+      "I": 38
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Single Lever Basin Mixture",
+      "C": "MADRID",
+      "D": "FU-MD-13939",
+      "E": "",
+      "F": "",
+      "G": 11998,
+      "H": "",
+      "I": 38
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Single Lever Basin Mixture",
+      "C": "ALPINE",
+      "D": "FU-AP-13967",
+      "E": "",
+      "F": "",
+      "G": 16998,
+      "H": "",
+      "I": 38
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Single Lever Basin Mixture",
+      "C": "ERA",
+      "D": "FU-ER-13873",
+      "E": "",
+      "F": "",
+      "G": 8498,
+      "H": "",
+      "I": 38
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Lava Collection",
+      "C": "LAVA WALL MOUNT FAUCET",
+      "D": "FU-LV-21083",
+      "E": "",
+      "F": "Brush Gold",
+      "G": 44998,
+      "H": "",
+      "I": 39
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Lava Collection",
+      "C": "LAVA WALL MOUNT FAUCET",
+      "D": "FU-LV-21082",
+      "E": "",
+      "F": "Rose Gold",
+      "G": 44998,
+      "H": "",
+      "I": 39
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Lava Collection",
+      "C": "LAVA WALL MOUNT FAUCET",
+      "D": "FU-LV-21084",
+      "E": "",
+      "F": "Black",
+      "G": 44998,
+      "H": "",
+      "I": 39
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Theo Collection",
+      "C": "THEO WALL MOUNT FAUCET",
+      "D": "FU-CR-21206",
+      "E": "",
+      "F": "Brush Gold",
+      "G": 44998,
+      "H": "",
+      "I": 39
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Theo Collection",
+      "C": "THEO WALL MOUNT FAUCET",
+      "D": "FU-CR-21081",
+      "E": "",
+      "F": "Rose Gold",
+      "G": 44998,
+      "H": "",
+      "I": 39
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Theo Collection",
+      "C": "THEO WALL MOUNT FAUCET",
+      "D": "FU-CR-21207",
+      "E": "",
+      "F": "Black",
+      "G": 44998,
+      "H": "",
+      "I": 39
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Theo Collection",
+      "C": "META WALL MOUNT MIXER",
+      "D": "FU-CR-21079",
+      "E": "",
+      "F": "Brush Gold",
+      "G": 16998,
+      "H": "",
+      "I": 39
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Theo Collection",
+      "C": "META WALL MOUNT MIXER",
+      "D": "FU-CR-21078",
+      "E": "",
+      "F": "Rose Gold",
+      "G": 16998,
+      "H": "",
+      "I": 39
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Theo Collection",
+      "C": "META WALL MOUNT MIXER",
+      "D": "FU-CR-21080",
+      "E": "",
+      "F": "Black",
+      "G": 16998,
+      "H": "",
+      "I": 39
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Theo Collection",
+      "C": "META DECK MOUNT MIXER",
+      "D": "FU-CR-21076",
+      "E": "",
+      "F": "Brush Gold",
+      "G": 16998,
+      "H": "",
+      "I": 39
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Theo Collection",
+      "C": "META DECK MOUNT MIXER",
+      "D": "FU-CR-21075",
+      "E": "",
+      "F": "Rose Gold",
+      "G": 16998,
+      "H": "",
+      "I": 39
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Theo Collection",
+      "C": "META DECK MOUNT MIXER",
+      "D": "FU-CR-21077",
+      "E": "",
+      "F": "Black",
+      "G": 16998,
+      "H": "",
+      "I": 39
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Sensa Matrix",
+      "C": "SENSA MATRIX Sensor Ceiling Faucet",
+      "D": "FU-SF-13225",
+      "E": "",
+      "F": "Rose Gold",
+      "G": 159998,
+      "H": "Sensor Ceiling Faucet",
+      "I": 40
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Sensa",
+      "C": "SENSA TL (Deck Mounted Sensor Faucet)",
+      "D": "FU-SF-13360",
+      "E": "",
+      "F": "",
+      "G": 14998,
+      "H": "",
+      "I": 40
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Sensa",
+      "C": "SENSA WM (Wall Mounted Sensor Faucet)",
+      "D": "FU-SF-13848",
+      "E": "",
+      "F": "",
+      "G": 14998,
+      "H": "",
+      "I": 40
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Krust",
+      "C": "KRUST Wall Mounted Faucet",
+      "D": "FU-KR-13252",
+      "E": "",
+      "F": "Gold",
+      "G": 49998,
+      "H": "",
+      "I": 40
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Krust",
+      "C": "KRUST Wall Mounted Faucet",
+      "D": "FU-KR-13253",
+      "E": "",
+      "F": "Black",
+      "G": 49998,
+      "H": "",
+      "I": 40
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Free-standing Basin Filler",
+      "C": "LOTTO SINGLE LEVER FLOOR MOUNTED BASIN FILLER",
+      "D": "FU-BA-12953",
+      "E": "",
+      "F": "Rose Gold",
+      "G": 119998,
+      "H": "",
+      "I": 40
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Free-standing Basin Filler",
+      "C": "LOTTO SINGLE LEVER FLOOR MOUNTED BASIN FILLER",
+      "D": "FU-BA-12954",
+      "E": "",
+      "F": "Black",
+      "G": 119998,
+      "H": "",
+      "I": 40
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Free-standing Basin Filler",
+      "C": "LOTTO SINGLE LEVER FLOOR MOUNTED BASIN FILLER",
+      "D": "FU-BA-12955",
+      "E": "",
+      "F": "Chrome",
+      "G": 89998,
+      "H": "",
+      "I": 40
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Free-standing Basin Filler",
+      "C": "EDEN SINGLE LEVER FLOOR MOUNTED BATH FILLER WITH HAND SHOWER",
+      "D": "FU-ED-10997",
+      "E": "",
+      "F": "Rose Gold",
+      "G": 139998,
+      "H": "",
+      "I": 40
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Free-standing Basin Filler",
+      "C": "EDEN SINGLE LEVER FLOOR MOUNTED BATH FILLER WITH HAND SHOWER",
+      "D": "FU-ED-12995",
+      "E": "",
+      "F": "Black",
+      "G": 139998,
+      "H": "",
+      "I": 40
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Free-standing Basin Filler",
+      "C": "EDEN SINGLE LEVER FLOOR MOUNTED BATH FILLER WITH HAND SHOWER",
+      "D": "FU-ED-13858",
+      "E": "",
+      "F": "Chrome",
+      "G": 89998,
+      "H": "",
+      "I": 40
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Prime Madrid",
+      "C": "SINGLE LEVER BASIN MIXER",
+      "D": "FU-PM-13880",
+      "E": "",
+      "F": "",
+      "G": 11998,
+      "H": "",
+      "I": 41
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Prime Madrid",
+      "C": "SINGLE LEVER CONCEALED DIVERTER (2 Inlet)",
+      "D": "FU-PM-13890",
+      "E": "",
+      "F": "",
+      "G": 10498,
+      "H": "",
+      "I": 41
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Prime Madrid",
+      "C": "SINGLE LEVER CONCEALED DIVERTER+TRIM (3 Inlet)",
+      "D": "FU-PM-13818",
+      "E": "",
+      "F": "",
+      "G": 10998,
+      "H": "",
+      "I": 41
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Prime Madrid",
+      "C": "WALL MOUNTED CONCEALED BASIN MIXER",
+      "D": "FU-PM-13821",
+      "E": "",
+      "F": "",
+      "G": 14998,
+      "H": "",
+      "I": 41
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Prime Madrid",
+      "C": "BATHTUB SPOUT WITH WALL FLANGE",
+      "D": "FU-PM-13831",
+      "E": "",
+      "F": "",
+      "G": 4398,
+      "H": "",
+      "I": 41
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Prime Madrid",
+      "C": "TIP-TON SPOUT",
+      "D": "FU-PM-13818",
+      "E": "",
+      "F": "",
+      "G": 4798,
+      "H": "",
+      "I": 41
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Prime Madrid",
+      "C": "BIB COCK",
+      "D": "FU-PM-13825",
+      "E": "",
+      "F": "",
+      "G": 3998,
+      "H": "",
+      "I": 41
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Prime Madrid",
+      "C": "PILLAR TAP",
+      "D": "FU-PM-13814",
+      "E": "",
+      "F": "",
+      "G": 3398,
+      "H": "",
+      "I": 41
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Prime Madrid",
+      "C": "ANGULAR STOP COCK",
+      "D": "FU-PM-13820",
+      "E": "",
+      "F": "",
+      "G": 2398,
+      "H": "",
+      "I": 41
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Prime Madrid",
+      "C": "CONCEALED STOP COCK",
+      "D": "FU-PM-13907",
+      "E": "",
+      "F": "",
+      "G": 2998,
+      "H": "",
+      "I": 41
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Crown Collection",
+      "C": "SINGLE LEVER BASIN MIXER",
+      "D": "FU-CR-11041",
+      "E": "",
+      "F": "",
+      "G": 6498,
+      "H": "",
+      "I": 42
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Crown Collection",
+      "C": "SINGLE LEVER TALL BASIN MIXER",
+      "D": "FU-CR-21181",
+      "E": "",
+      "F": "",
+      "G": 7498,
+      "H": "",
+      "I": 42
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Crown Collection",
+      "C": "PILLAR TAP",
+      "D": "FU-CR-10924",
+      "E": "",
+      "F": "",
+      "G": 2298,
+      "H": "",
+      "I": 42
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Crown Collection",
+      "C": "BIB COCK WITH FLANGE",
+      "D": "FU-CR-11046",
+      "E": "",
+      "F": "",
+      "G": 2498,
+      "H": "",
+      "I": 42
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Crown Collection",
+      "C": "2-IN-1 BIB COCK WITH FLANGE",
+      "D": "FU-CR-11042",
+      "E": "",
+      "F": "",
+      "G": 2998,
+      "H": "",
+      "I": 42
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Crown Collection",
+      "C": "CONCEALED STOP COCK WITH SLEEVE OPERATING LEVER & WALL FLANGE",
+      "D": "FU-CR-10814",
+      "E": "",
+      "F": "",
+      "G": 998,
+      "H": "",
+      "I": 42
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Crown Collection",
+      "C": "SINK COCK TAP",
+      "D": "FU-CR-21119",
+      "E": "",
+      "F": "",
+      "G": 3598,
+      "H": "",
+      "I": 42
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Crown Collection",
+      "C": "ANGLE VALVE WITH FLANGE",
+      "D": "FU-CR-11047",
+      "E": "",
+      "F": "",
+      "G": 1598,
+      "H": "",
+      "I": 42
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Crown Collection",
+      "C": "CONCEALED COCK 20 MM",
+      "D": "FU-CR-10820",
+      "E": "",
+      "F": "",
+      "G": 1998,
+      "H": "",
+      "I": 42
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Crown Collection",
+      "C": "BATH SPOUT WITH FLANGE",
+      "D": "FU-CR-10760",
+      "E": "",
+      "F": "",
+      "G": 2398,
+      "H": "",
+      "I": 42
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Crown Collection",
+      "C": "TIP-TON SPOUT WITH FLANGE",
+      "D": "FU-CR-10759",
+      "E": "",
+      "F": "",
+      "G": 2798,
+      "H": "",
+      "I": 42
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Crown Collection",
+      "C": "SINGLE LEVER CONCEALED DIVERTER 2-INLET FORGED BODY 35 MM",
+      "D": "FU-CR-10867",
+      "E": "",
+      "F": "",
+      "G": 5498,
+      "H": "",
+      "I": 42
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Crown Collection",
+      "C": "SINGLE LEVER CONCEALED DIVERTER 35 MM",
+      "D": "FU-CR-10825",
+      "E": "",
+      "F": "",
+      "G": 1998,
+      "H": "",
+      "I": 42
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Crown Collection",
+      "C": "SINGLE LEVER WALL MOUNTED CONCEALED BASIN MIXER 35 MM",
+      "D": "FU-CR-10815",
+      "E": "",
+      "F": "",
+      "G": 4498,
+      "H": "",
+      "I": 42
+    },
+    {
+      "A": "FAUCETS",
+      "B": "Crown Collection",
+      "C": "SINGLE LEVER CONCEALED BASIN MIXER WALL MOUNTED",
+      "D": "FU-CR-10816",
+      "E": "",
+      "F": "",
+      "G": 3798,
+      "H": "",
+      "I": 42
+    },
+    {
+      "A": "FAUCETS",
+      "B": "French Collection",
+      "C": "SINGLE LEVER BASIN MIXER",
+      "D": "FU-FR-11034",
+      "E": "",
+      "F": "",
+      "G": 5998,
+      "H": "",
+      "I": 43
+    },
+    {
+      "A": "FAUCETS",
+      "B": "French Collection",
+      "C": "SINGLE LEVER TALL BASIN MIXER",
+      "D": "FU-FR-10763",
+      "E": "",
+      "F": "",
+      "G": 7498,
+      "H": "",
+      "I": 43
+    },
+    {
+      "A": "FAUCETS",
+      "B": "French Collection",
+      "C": "BIB COCK WITH FLANGE",
+      "D": "FU-FR-11039",
+      "E": "",
+      "F": "",
+      "G": 2498,
+      "H": "",
+      "I": 43
+    },
+    {
+      "A": "FAUCETS",
+      "B": "French Collection",
+      "C": "ANGLE VALVE WITH FLANGE",
+      "D": "FU-FR-11040",
+      "E": "",
+      "F": "",
+      "G": 1598,
+      "H": "",
+      "I": 43
+    },
+    {
+      "A": "FAUCETS",
+      "B": "French Collection",
+      "C": "2-IN-1 ANGLE VALVE WITH FLANGE",
+      "D": "FU-FR-10688",
+      "E": "",
+      "F": "",
+      "G": 2798,
+      "H": "",
+      "I": 43
+    },
+    {
+      "A": "FAUCETS",
+      "B": "French Collection",
+      "C": "CONCEALED COCK 15 MM",
+      "D": "FU-FR-10725",
+      "E": "",
+      "F": "",
+      "G": 1998,
+      "H": "",
+      "I": 43
+    },
+    {
+      "A": "FAUCETS",
+      "B": "French Collection",
+      "C": "CONCEALED COCK 20 MM",
+      "D": "FU-FR-10724",
+      "E": "",
+      "F": "",
+      "G": 1998,
+      "H": "",
+      "I": 43
+    },
+    {
+      "A": "FAUCETS",
+      "B": "French Collection",
+      "C": "CONCEALED STOP COCK WITH SLEEVE OPERATING LEVER & WALL FLANGE",
+      "D": "FU-FR-10683",
+      "E": "",
+      "F": "",
+      "G": 998,
+      "H": "",
+      "I": 43
+    },
+    {
+      "A": "FAUCETS",
+      "B": "French Collection",
+      "C": "BATH SPOUT WITH FLANGE",
+      "D": "FU-FR-10719",
+      "E": "",
+      "F": "",
+      "G": 2398,
+      "H": "",
+      "I": 43
+    },
+    {
+      "A": "FAUCETS",
+      "B": "French Collection",
+      "C": "TIP-TON BATH SPOUT WITH FLANGE",
+      "D": "FU-FR-10718",
+      "E": "",
+      "F": "",
+      "G": 2998,
+      "H": "",
+      "I": 43
+    },
+    {
+      "A": "FAUCETS",
+      "B": "French Collection",
+      "C": "SINGLE LEVER CONCEALED DIVERTER 2-INLET FORGED BODY 35 MM",
+      "D": "FU-CR-10867",
+      "E": "",
+      "F": "",
+      "G": 5498,
+      "H": "",
+      "I": 43
+    },
+    {
+      "A": "FAUCETS",
+      "B": "French Collection",
+      "C": "SINGLE LEVER CONCEALED DIVERTER 35 MM",
+      "D": "FU-FR-10714",
+      "E": "",
+      "F": "",
+      "G": 1998,
+      "H": "",
+      "I": 43
+    },
+    {
+      "A": "FAUCETS",
+      "B": "French Collection",
+      "C": "SINGLE LEVER CONCEALED BASIN MIXER WALL MOUNTED",
+      "D": "FU-FR-21191",
+      "E": "",
+      "F": "",
+      "G": 3698,
+      "H": "",
+      "I": 43
+    },
+    {
+      "A": "FAUCETS",
+      "B": "French Collection",
+      "C": "SINGLE LEVER WALL MOUNTED CONCEALED BASIN MIXER 35 MM",
+      "D": "FU-FR-10711",
+      "E": "",
+      "F": "",
+      "G": 4498,
+      "H": "",
+      "I": 43
     }
   ],
-  "RIPOOTAI PC": [
+  "Bath_Accessories": [
     {
-      "A": "PC NAME",
-      "B": "SPRP-PC1"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "TOWEL RACK WITH LOWER HANGER",
+      "D": "AA-FA-13713",
+      "E": "",
+      "F": "Gold",
+      "G": 15998,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "HOLDER NAME",
-      "B": "DHAIRYA"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "TOWEL RACK WITH LOWER HANGER",
+      "D": "AA-FA-13703",
+      "E": "",
+      "F": "Rose Gold",
+      "G": 21998,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "Processor",
-      "B": "AMD Ryzen 9 7900 12-Core Processor"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "TOWEL RACK WITH LOWER HANGER",
+      "D": "AA-FA-13683",
+      "E": "",
+      "F": "Gun Metal",
+      "G": 22998,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "RAM",
-      "B": "32GB Speed 4800 MT/s"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "TOWEL RACK WITH LOWER HANGER",
+      "D": "AA-FA-13693",
+      "E": "",
+      "F": "Nickle Polish",
+      "G": 15998,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "Graphics Card",
-      "B": "MSI GeForce RTX 4070 VENTUS 3X 12G OC Black"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "SINGLE TOWEL RAIL",
+      "D": "AA-FA-13714",
+      "E": "",
+      "F": "Gold",
+      "G": 5998,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "Local Storage",
-      "B": "1TB"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "SINGLE TOWEL RAIL",
+      "D": "AA-FA-13704",
+      "E": "",
+      "F": "Rose Gold",
+      "G": 6498,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "OneDrive Storage",
-      "B": "1TB"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "SINGLE TOWEL RAIL",
+      "D": "AA-FA-13684",
+      "E": "",
+      "F": "Gun Metal",
+      "G": 6298,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "ADDITIONAL"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "SINGLE TOWEL RAIL",
+      "D": "AA-FA-13694",
+      "E": "",
+      "F": "Nickle Polish",
+      "G": 6298,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "Monitor",
-      "B": "Gigabyte : GS27QA"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "ROBE HOOK",
+      "D": "AA-FA-13712",
+      "E": "",
+      "F": "Gold",
+      "G": 3798,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "Keyboard",
-      "B": "Cosmic Byte CB-GK-37"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "ROBE HOOK",
+      "D": "AA-FA-13702",
+      "E": "",
+      "F": "Rose Gold",
+      "G": 4798,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "Mouse",
-      "B": "Logitech G102"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "ROBE HOOK",
+      "D": "AA-FA-13682",
+      "E": "",
+      "F": "Gun Metal",
+      "G": 4498,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "Rippotai"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "ROBE HOOK",
+      "D": "AA-FA-13692",
+      "E": "",
+      "F": "Nickle Polish",
+      "G": 2998,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "PC NAME",
-      "B": "SPRP-PC2"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "TOWEL RING",
+      "D": "AA-FA-13701",
+      "E": "",
+      "F": "Rose Gold",
+      "G": 5498,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "HOLDER NAME",
-      "B": "SARTHI"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "TOWEL RING",
+      "D": "AA-FA-13681",
+      "E": "",
+      "F": "Gun Metal",
+      "G": 6298,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "Processor",
-      "B": "AMD Ryzen 5 5600X 6-Core Processor"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "TOWEL RING",
+      "D": "AA-FA-13691",
+      "E": "",
+      "F": "Nickle Polish",
+      "G": 4998,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "RAM",
-      "B": "32GB Speed 2133 MT/s"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "PAPER HOLDER",
+      "D": "AA-FA-13710",
+      "E": "",
+      "F": "Gold",
+      "G": 5598,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "Graphics Card",
-      "B": "8GB  NVIDIA GeForce RTR 4060"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "PAPER HOLDER",
+      "D": "AA-FA-13700",
+      "E": "",
+      "F": "Rose Gold",
+      "G": 4798,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "Local Storage",
-      "B": "1TB"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "PAPER HOLDER",
+      "D": "AA-FA-13680",
+      "E": "",
+      "F": "Gun Metal",
+      "G": 4998,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "OneDrive Storage",
-      "B": "1TB"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "PAPER HOLDER",
+      "D": "AA-FA-13690",
+      "E": "",
+      "F": "Nickle Polish",
+      "G": 4498,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "ADDITIONAL"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "SOAP BASKET",
+      "D": "AA-FA-13706",
+      "E": "",
+      "F": "Gold",
+      "G": 4998,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "Monitor",
-      "B": "lenovo Q27h-10"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "SOAP BASKET",
+      "D": "AA-FA-13648",
+      "E": "",
+      "F": "Gun Metal",
+      "G": 5498,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "Keyboard",
-      "B": "RedGear MK853"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "SOAP BASKET",
+      "D": "AA-FA-13686",
+      "E": "",
+      "F": "Nickle Polish",
+      "G": 4498,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "Mouse",
-      "B": "Logitech G102"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "W.C. BRUSH HOLDER",
+      "D": "AA-FA-13705",
+      "E": "",
+      "F": "Gold",
+      "G": 5498,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "Rippotai"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "W.C. BRUSH HOLDER",
+      "D": "AA-FA-13695",
+      "E": "",
+      "F": "Rose Gold",
+      "G": 4998,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "PC NAME",
-      "B": "SPRP-PC3"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "W.C. BRUSH HOLDER",
+      "D": "AA-FA-13648",
+      "E": "",
+      "F": "Gun Metal",
+      "G": 5798,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "HOLDER NAME",
-      "B": "NEW JOINING"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "W.C. BRUSH HOLDER",
+      "D": "AA-FA-13685",
+      "E": "",
+      "F": "Nickle Polish",
+      "G": 4798,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "Processor",
-      "B": "Intel ® Core™ i7-6700 CPU @ 3.40GHz 3.40 GHz"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "TUMBLER HOLDER",
+      "D": "AA-FA-13709",
+      "E": "",
+      "F": "Gold",
+      "G": 4598,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "RAM",
-      "B": "16GB Speed 2133MHz"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "TUMBLER HOLDER",
+      "D": "AA-FA-13699",
+      "E": "",
+      "F": "Rose Gold",
+      "G": 4798,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "Graphics Card",
-      "B": "NVIDIA GeForce GTX 1050 Ti (4 GB)"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "TUMBLER HOLDER",
+      "D": "AA-FA-13679",
+      "E": "",
+      "F": "Gun Metal",
+      "G": 4998,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "Local Storage",
-      "B": "233GB + samsung ssd 860 EVO 250GB"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "TUMBLER HOLDER",
+      "D": "AA-FA-13689",
+      "E": "",
+      "F": "Nickle Polish",
+      "G": 4298,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "OneDrive Storage",
-      "B": "1TB"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "SOAP DISH HOLDER",
+      "D": "AA-FA-13698",
+      "E": "",
+      "F": "Rose Gold",
+      "G": 4798,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "ADDITIONAL"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "SOAP DISH HOLDER",
+      "D": "AA-FA-13678",
+      "E": "",
+      "F": "Gun Metal",
+      "G": 4998,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "Monitor",
-      "B": "LG-24MR400-BA"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "SOAP DISH HOLDER",
+      "D": "AA-FA-13688",
+      "E": "",
+      "F": "Nickle Polish",
+      "G": 4298,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "Keyboard",
-      "B": "Cosmic Byte CB-GK-18"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "CORNER BASKET",
+      "D": "AA-FA-13707",
+      "E": "",
+      "F": "Gold",
+      "G": 5598,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "Mouse",
-      "B": "HP Gaming Mouse G200"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "TAP CONNECTOR HOSE PIPE - 60CM",
+      "D": "AA-FA-13600",
+      "E": "",
+      "F": "Gold",
+      "G": 1398,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "Rippotai"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "TAP CONNECTOR HOSE PIPE - 60CM",
+      "D": "AA-FA-13601",
+      "E": "",
+      "F": "Silver Gray",
+      "G": 998,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "PC NAME",
-      "B": "SPRP-PC4"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "TAP CONNECTOR HOSE PIPE - 60CM",
+      "D": "AA-FA-13599",
+      "E": "",
+      "F": "Black",
+      "G": 1798,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "HOLDER NAME",
-      "B": "NEW JOINING"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "TAP CONNECTOR HOSE PIPE - 150CM",
+      "D": "AA-FA-13597",
+      "E": "",
+      "F": "Gold",
+      "G": 1998,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "Processor",
-      "B": "AMD Ryzen 5 3600 6-Core Processor"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "TAP CONNECTOR HOSE PIPE - 150CM",
+      "D": "AA-FA-13598",
+      "E": "",
+      "F": "Silver Gray",
+      "G": 1498,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "RAM",
-      "B": "16GB Speed 3200MT/s"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "TAP CONNECTOR HOSE PIPE - 150CM",
+      "D": "AA-FA-13596",
+      "E": "",
+      "F": "Black",
+      "G": 1998,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "Graphics Card",
-      "B": "8GB AMD Radeon RX 6600"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "WOW HEALTH FAUCET",
+      "D": "AA-FA-12935",
+      "E": "",
+      "F": "Gold",
+      "G": 4798,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "Local Storage",
-      "B": "1TB"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "WOW HEALTH FAUCET",
+      "D": "AA-FA-12910",
+      "E": "",
+      "F": "Brush Gold",
+      "G": 4798,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "OneDrive Storage",
-      "B": "1TB"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "WOW HEALTH FAUCET",
+      "D": "AA-FA-12936",
+      "E": "",
+      "F": "Rose Gold",
+      "G": 4798,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "ADDITIONAL"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "WOW HEALTH FAUCET",
+      "D": "AA-FA-30858",
+      "E": "",
+      "F": "Platinum Black",
+      "G": 4798,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "Monitor",
-      "B": "LG-24MR400-BA"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "WOW HEALTH FAUCET",
+      "D": "AA-FA-12934",
+      "E": "",
+      "F": "Gun Metal",
+      "G": 4798,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "Keyboard",
-      "B": "K68 BT5.0"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "WOW HEALTH FAUCET",
+      "D": "AA-FA-12937",
+      "E": "",
+      "F": "Matte Black",
+      "G": 4798,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "Rippotai"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "WOW HEALTH FAUCET",
+      "D": "AA-FA-12938",
+      "E": "",
+      "F": "Chrome",
+      "G": 3798,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "HOLDER NAME",
-      "B": "MAMTA MA'AM HR"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "MARVELLA (Pop Up Drain)",
+      "D": "AA-FA-13605",
+      "E": "",
+      "F": "Marvella Gold",
+      "G": 1998,
+      "H": "",
+      "I": 44
     },
     {
-      "A": "Mobile Phone",
-      "B": "Dell Latitude i7 - Touch Screen"
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "OLIVE (Pop Up Drain)",
+      "D": "AA-FA-13603",
+      "E": "",
+      "F": "Olive Rose Gold",
+      "G": 1998,
+      "H": "",
+      "I": 44
+    },
+    {
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "OLIVE (Pop Up Drain)",
+      "D": "AA-FA-13602",
+      "E": "",
+      "F": "Olive Black",
+      "G": 1998,
+      "H": "",
+      "I": 44
+    },
+    {
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "MARVELLA DRAIN TRAP",
+      "D": "AA-FA-33829",
+      "E": "",
+      "F": "Marvella Brush Gold",
+      "G": 6498,
+      "H": "",
+      "I": 44
+    },
+    {
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "MARVELLA DRAIN TRAP",
+      "D": "AA-FA-33830",
+      "E": "",
+      "F": "Marvella Brush Rose Gold",
+      "G": 6498,
+      "H": "",
+      "I": 44
+    },
+    {
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "MARVELLA DRAIN TRAP",
+      "D": "AA-FA-33831",
+      "E": "",
+      "F": "Marvella Gun Metal",
+      "G": 6498,
+      "H": "",
+      "I": 44
+    },
+    {
+      "A": "BATH ACCESSORIES",
+      "B": "Hubb Collection",
+      "C": "MARVELLA DRAIN TRAP",
+      "D": "AA-FA-13608",
+      "E": "",
+      "F": "Marvella Chrome",
+      "G": 3998,
+      "H": "",
+      "I": 44
+    },
+    {
+      "A": "BATH ACCESSORIES",
+      "B": "Coupe Collection",
+      "C": "SHORT TOWEL BAR",
+      "D": "AA-FA-31315",
+      "E": "",
+      "F": "Brush Gold",
+      "G": 6798,
+      "H": "",
+      "I": 45
+    },
+    {
+      "A": "BATH ACCESSORIES",
+      "B": "Coupe Collection",
+      "C": "SHORT TOWEL BAR",
+      "D": "AA-FA-31316",
+      "E": "",
+      "F": "Rose Gold",
+      "G": 6798,
+      "H": "",
+      "I": 45
+    },
+    {
+      "A": "BATH ACCESSORIES",
+      "B": "Coupe Collection",
+      "C": "SHORT TOWEL BAR",
+      "D": "AA-FA-31317",
+      "E": "",
+      "F": "Black",
+      "G": 6798,
+      "H": "",
+      "I": 45
+    },
+    {
+      "A": "BATH ACCESSORIES",
+      "B": "Coupe Collection",
+      "C": "TOWEL RACK WITH LOWER HANGER",
+      "D": "AA-FA-31302",
+      "E": "",
+      "F": "Brush Gold",
+      "G": 19998,
+      "H": "",
+      "I": 45
+    },
+    {
+      "A": "BATH ACCESSORIES",
+      "B": "Coupe Collection",
+      "C": "TOWEL RACK WITH LOWER HANGER",
+      "D": "AA-FA-31303",
+      "E": "",
+      "F": "Rose Gold",
+      "G": 15998,
+      "H": "",
+      "I": 45
+    },
+    {
+      "A": "BATH ACCESSORIES",
+      "B": "Coupe Collection",
+      "C": "TOWEL RACK WITH LOWER HANGER",
+      "D": "AA-FA-31305",
+      "E": "",
+      "F": "Black",
+      "G": 15998,
+      "H": "",
+      "I": 45
+    },
+    {
+      "A": "BATH ACCESSORIES",
+      "B": "Coupe Collection",
+      "C": "SOAP DISH HOLDER",
+      "D": "AA-FA-31322",
+      "E": "",
+      "F": "Brush Gold",
+      "G": 4798,
+      "H": "",
+      "I": 45
+    },
+    {
+      "A": "BATH ACCESSORIES",
+      "B": "Coupe Collection",
+      "C": "SOAP DISH HOLDER",
+      "D": "AA-FA-31323",
+      "E": "",
+      "F": "Rose Gold",
+      "G": 4798,
+      "H": "",
+      "I": 45
+    },
+    {
+      "A": "BATH ACCESSORIES",
+      "B": "Coupe Collection",
+      "C": "SOAP DISH HOLDER",
+      "D": "AA-FA-31325",
+      "E": "",
+      "F": "Black",
+      "G": 3898,
+      "H": "",
+      "I": 45
+    },
+    {
+      "A": "BATH ACCESSORIES",
+      "B": "Coupe Collection",
+      "C": "TUMBLER HOLDER",
+      "D": "AA-FA-31327",
+      "E": "",
+      "F": "Brush Gold",
+      "G": 5298,
+      "H": "",
+      "I": 45
+    },
+    {
+      "A": "BATH ACCESSORIES",
+      "B": "Coupe Collection",
+      "C": "TUMBLER HOLDER",
+      "D": "AA-FA-31326",
+      "E": "",
+      "F": "Rose Gold",
+      "G": 5298,
+      "H": "",
+      "I": 45
+    },
+    {
+      "A": "BATH ACCESSORIES",
+      "B": "Coupe Collection",
+      "C": "TUMBLER HOLDER",
+      "D": "AA-FA-31329",
+      "E": "",
+      "F": "Black",
+      "G": 4298,
+      "H": "",
+      "I": 45
+    },
+    {
+      "A": "BATH ACCESSORIES",
+      "B": "Coupe Collection",
+      "C": "TOWEL RING",
+      "D": "AA-FA-33644",
+      "E": "",
+      "F": "Brush Gold",
+      "G": 5298,
+      "H": "",
+      "I": 45
+    },
+    {
+      "A": "BATH ACCESSORIES",
+      "B": "Coupe Collection",
+      "C": "TOWEL RING",
+      "D": "AA-FA-33645",
+      "E": "",
+      "F": "Rose Gold",
+      "G": 5298,
+      "H": "",
+      "I": 45
+    },
+    {
+      "A": "BATH ACCESSORIES",
+      "B": "Coupe Collection",
+      "C": "TOWEL RING",
+      "D": "AA-FA-33589",
+      "E": "",
+      "F": "Black",
+      "G": 4298,
+      "H": "",
+      "I": 45
+    },
+    {
+      "A": "BATH ACCESSORIES",
+      "B": "Coupe Collection",
+      "C": "PAPER HOLDER",
+      "D": "AA-FA-31318",
+      "E": "",
+      "F": "Brush Gold",
+      "G": 4298,
+      "H": "",
+      "I": 45
+    },
+    {
+      "A": "BATH ACCESSORIES",
+      "B": "Coupe Collection",
+      "C": "PAPER HOLDER",
+      "D": "AA-FA-31319",
+      "E": "",
+      "F": "Rose Gold",
+      "G": 4298,
+      "H": "",
+      "I": 45
+    },
+    {
+      "A": "BATH ACCESSORIES",
+      "B": "Coupe Collection",
+      "C": "PAPER HOLDER",
+      "D": "AA-FA-31321",
+      "E": "",
+      "F": "Black",
+      "G": 3398,
+      "H": "",
+      "I": 45
+    },
+    {
+      "A": "BATH ACCESSORIES",
+      "B": "Coupe Collection",
+      "C": "ROBE HOOK",
+      "D": "AA-FA-31306",
+      "E": "",
+      "F": "Brush Gold",
+      "G": 3798,
+      "H": "",
+      "I": 45
+    },
+    {
+      "A": "BATH ACCESSORIES",
+      "B": "Coupe Collection",
+      "C": "ROBE HOOK",
+      "D": "AA-FA-31307",
+      "E": "",
+      "F": "Rose Gold",
+      "G": 3798,
+      "H": "",
+      "I": 45
+    },
+    {
+      "A": "BATH ACCESSORIES",
+      "B": "Coupe Collection",
+      "C": "ROBE HOOK",
+      "D": "AA-FA-31313",
+      "E": "",
+      "F": "Black",
+      "G": 3198,
+      "H": "",
+      "I": 45
     }
   ],
-  "Rocklime PC": [
-    {
-      "A": "MAC NAME",
-      "B": "MAC MINI M4"
-    },
-    {
-      "A": "HOLDER NAME",
-      "B": "Sajjan Dangaura"
-    },
-    {
-      "A": "Monitor",
-      "B": "LG ULTRAFINE"
-    },
-    {
-      "A": "Keyboard",
-      "B": "EVOFOX RONIN WIRELESS"
-    },
-    {
-      "A": "Mouse",
-      "B": "Logitech G304"
-    },
-    {
-      "A": "Ipad",
-      "B": "Ipad 7Gen"
-    },
-    {
-      "A": "Local Storage",
-      "B": "256GB"
-    },
-    {
-      "A": "OneDrive Storage",
-      "B": "1TB"
-    },
-    {
-      "A": "Rocklime"
-    },
-    {
-      "A": "MACBOOK NAME",
-      "B": "MACBOOK AIR M1"
-    },
-    {
-      "A": "HOLDER NAME",
-      "B": "Bhav Lamba"
-    },
-    {
-      "A": "Monitor",
-      "B": "OnePlus E24"
-    },
-    {
-      "A": "Keyboard",
-      "B": "Keychron K8"
-    },
-    {
-      "A": "Mouse",
-      "B": "Apple Mouse"
-    },
-    {
-      "A": "Ipad",
-      "B": "Ipad 6Gen"
-    },
-    {
-      "A": "Mobile Phone",
-      "B": "samsung galaxy note 10 lite"
-    },
-    {
-      "A": "Local Storage",
-      "B": "256GB"
-    },
-    {
-      "A": "OneDrive Storage",
-      "B": "1TB"
-    },
-    {
-      "A": "Rocklime"
-    },
-    {
-      "A": "PC NAME",
-      "B": "SPRL - PC1"
-    },
-    {
-      "A": "HOLDER NAME",
-      "B": "DHRUV"
-    },
-    {
-      "A": "Processor",
-      "B": "Intel(R) Core(TM) i5-9400F CPU @ 2.90GHz"
-    },
-    {
-      "A": "RAM",
-      "B": "16GB Speed 2133 MT/s"
-    },
-    {
-      "A": "Graphics Card",
-      "B": "NVIDIA GeForce RTX 2060"
-    },
-    {
-      "A": "Local Storage",
-      "B": "512GB"
-    },
-    {
-      "A": "OneDrive Storage",
-      "B": "1TB"
-    },
-    {
-      "A": "ADDITIONAL"
-    },
-    {
-      "A": "Laptop",
-      "B": "Lenovo Thinkpad L14"
-    },
-    {
-      "A": "Monitor",
-      "B": "LG 29WL50S"
-    },
-    {
-      "A": "Keyboard",
-      "B": "Cosmic Byte CB-GK-18"
-    },
-    {
-      "A": "Mouse",
-      "B": "Logitech G102"
-    },
-    {
-      "A": "Rocklime"
-    },
-    {
-      "A": "Laptop NAME",
-      "B": "HP EliteBook 840 G6"
-    },
-    {
-      "A": "HOLDER NAME",
-      "B": "Nitin"
-    },
-    {
-      "A": "Processor",
-      "B": "Intel(R) Core(TM) i7-8665U CPU @ 1.90GHz"
-    },
-    {
-      "A": "RAM",
-      "B": "16GB Speed 2400MT/s"
-    },
-    {
-      "A": "Graphics Card",
-      "B": "128MB Intel(R) UHD Graphics 620"
-    },
-    {
-      "A": "Local Storage",
-      "B": "256GB"
-    },
-    {
-      "A": "Mobile Phone",
-      "B": "CMF by Nothing Phone2 Pro"
-    },
-    {
-      "A": "Mouse",
-      "B": "Portronics TOAD 23 Wireless Mouse"
-    }
-  ],
-  "CM PC": [
-    {
-      "A": "PC NAME",
-      "B": "Admin"
-    },
-    {
-      "A": "HOLDER NAME",
-      "B": "Mamta"
-    },
-    {
-      "A": "Processor",
-      "B": "Intel(R) Core(TM) i5-4460 CPU @ 3.20GHz"
-    },
-    {
-      "A": "RAM",
-      "B": "8GB DDR3"
-    },
-    {
-      "A": "Graphics Card",
-      "B": "4GB  NVIDIA GeForce GTX 1050 Ti"
-    },
-    {
-      "A": "Local Storage",
-      "B": "256GB"
-    },
-    {
-      "A": "OneDrive Storage",
-      "B": "1TB"
-    },
-    {
-      "A": "ADDITIONAL"
-    },
-    {
-      "A": "Monitor",
-      "B": "LG 22MP58VQ-P"
-    },
-    {
-      "A": "Keyboard",
-      "B": "LOGITECH K345"
-    },
-    {
-      "A": "Mouse",
-      "B": "Logitech G102"
-    },
-    {
-      "A": "Mobile Phone",
-      "B": "CMF by Nothing Phone1"
-    },
-    {
-      "A": "Chhabra Marble"
-    },
-    {
-      "A": "Laptop NAME",
-      "B": "acer  TL04-S1M"
-    },
-    {
-      "A": "HOLDER NAME",
-      "B": "PRIYA"
-    },
-    {
-      "A": "Processor",
-      "B": "Intel(R) Core(TM) i5-1334U CPU @ 1.30GHz"
-    },
-    {
-      "A": "RAM",
-      "B": "8GB Speed 2400MT/s"
-    },
-    {
-      "A": "Graphics Card",
-      "B": "128GB Intel (R) UHD Graphics 620"
-    },
-    {
-      "A": "Local Storage",
-      "B": "512GB"
-    },
-    {
-      "A": "OneDrive Storage",
-      "B": "1TB"
-    },
-    {
-      "A": "Mobile Phone",
-      "B": "CMF by Nothing Phone2 Pro"
-    },
-    {
-      "A": "Mouse",
-      "B": "Logitech M171"
-    },
-    {
-      "A": "Chhabra Marble"
-    },
-    {
-      "A": "Laptop NAME",
-      "B": "Lenevo Thinkpad - PF42QRHA"
-    },
-    {
-      "A": "HOLDER NAME",
-      "B": "Lakshay"
-    },
-    {
-      "A": "Processor",
-      "B": "12th Gen Intel(R) Core (TM) i3-1215U 1.20GHz"
-    },
-    {
-      "A": "RAM",
-      "B": "8GB Speed 3200MT/s"
-    },
-    {
-      "A": "Graphics Card",
-      "B": "128MB Intel(R) UHD Graphics"
-    },
-    {
-      "A": "Local Storage",
-      "B": "512GB"
-    },
-    {
-      "A": "OneDrive Storage",
-      "B": "1TB"
-    },
-    {
-      "A": "Mobile Phone",
-      "B": "Samsung F36"
-    },
-    {
-      "A": "Mouse",
-      "B": "Rapoo Bluetooth"
-    },
-    {
-      "A": "Chhabra Marble"
-    },
-    {
-      "A": "Laptop NAME",
-      "B": "Lenovo L480"
-    },
-    {
-      "A": "HOLDER NAME",
-      "B": "Hemant"
-    },
-    {
-      "A": "Processor",
-      "B": "Intel(R) Core(TM) i5-8350U CPU @ 1.70GHz"
-    },
-    {
-      "A": "RAM",
-      "B": "16GB Speed 2400MHz"
-    },
-    {
-      "A": "Graphics Card",
-      "B": "128MB Intel(R) UHD Graphics 620"
-    },
-    {
-      "A": "Local Storage",
-      "B": "512GB"
-    },
-    {
-      "A": "OneDrive Storage",
-      "B": "1TB"
-    },
-    {
-      "A": "Mobile Phone",
-      "B": "Moto G45 5G"
-    },
-    {
-      "A": "Mouse",
-      "B": "Logitech M171"
-    },
-    {
-      "A": "Chhabra Marble"
-    },
-    {
-      "A": "Laptop NAME",
-      "B": "Samsung Galaxy Book 2"
-    },
-    {
-      "A": "HOLDER NAME",
-      "B": "NITISH"
-    },
-    {
-      "A": "Processor",
-      "B": "12th Gen Intel(R) Core (TM) i5-1235U 1.30GHz"
-    },
-    {
-      "A": "RAM",
-      "B": "8GB Speed 4267MT/s"
-    },
-    {
-      "A": "Graphics Card",
-      "B": "128MB Intel(R) Xe Graphics"
-    },
-    {
-      "A": "Local Storage",
-      "B": "512GB"
-    },
-    {
-      "A": "OneDrive Storage",
-      "B": "1TB"
-    },
-    {
-      "A": "Mobile Phone",
-      "B": "Xiaomi 11"
-    },
-    {
-      "A": "Chhabra Marble"
-    },
-    {
-      "A": "HOLDER NAME",
-      "B": "SHIV KUMAR"
-    },
-    {
-      "A": "Mobile Phone",
-      "B": "One Plus Nord CE 3 Lite"
-    }
-  ],
-  "Inventory": [
-    {
-      "A": "S.NO",
-      "B": "Laptop",
-      "C": "Mobile Phone",
-      "D": "Monitor",
-      "E": "PC",
-      "F": "Keyboard",
-      "G": "Mouse",
-      "H": "Speaker",
-      "I": "Camera"
-    },
-    {
-      "A": 1,
-      "B": "LEGION ( MOTHERBOARD DEAD )",
-      "C": "Ipad",
-      "D": "LG - 22MP57HQ - P",
-      "E": "Rocklime Storage PC",
-      "F": "APPLE  ( Not working )",
-      "G": "Logitech - B100",
-      "H": "Zebronics",
-      "I": "Canon 600D"
-    },
-    {
-      "A": 2,
-      "B": "DELL ( SCREEN BROKEN)",
-      "C": "iphone 5s",
-      "D": "AOPEN LCD MONITOR 22CH1Q",
-      "F": "Zebronics - Zeb - Max Pro",
-      "G": "Logitech - B101",
-      "H": "AKG K52 headphone",
-      "I": "Canon 700D"
-    },
-    {
-      "A": 3,
-      "B": "HP-AIO6TQ8",
-      "C": "Galaxy F16 5G",
-      "D": "LG - 24MP88HV",
-      "F": "Varna Pro ( Not working )"
-    },
-    {
-      "A": 4,
-      "B": "Lenovo Thinkpad L14 - 256GB",
-      "D": "LG - 22MP57HQ - P"
-    },
-    {
-      "A": 5,
-      "D": "SAMSUNG LC24F390FHWXXL"
-    },
-    {
-      "A": 6,
-      "D": "LG-24QP550"
-    },
-    {
-      "A": 7,
-      "D": "LG 29WL50S"
+  "Sanitaryware": [
+    {
+      "A": "SANITARYWARE",
+      "B": "Smart WC",
+      "C": "E-SMART",
+      "D": "SN-WC-20994",
+      "E": "590x380x370 mm",
+      "F": "Black",
+      "G": 159998,
+      "H": "Automatic Opening & Closing • Wireless remote control • Seat ring heating • Warm air drying • IPX4 Waterproof • Spray wand self cleaning • Rear wash cleaning • Female cleaning",
+      "I": 46
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Smart WC",
+      "C": "E-SMART",
+      "D": "SN-WC-21142",
+      "E": "590x380x370 mm",
+      "F": "White",
+      "G": 109998,
+      "H": "Automatic Opening & Closing • Wireless remote control • Seat ring heating • Warm air drying • IPX4 Waterproof • Spray wand self cleaning • Rear wash cleaning • Female cleaning",
+      "I": 46
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Smart WC",
+      "C": "VE-SMART",
+      "D": "SN-WC-32039",
+      "E": "550x360x340 mm",
+      "F": "Black",
+      "G": 199998,
+      "H": "Wireless remote control • Air temperature regulation • Water temperature regulation • Warm air drying • Water source filtration • Smart flushing • Auto open/close lid with laser • IPX4 Waterproof • Rear wash cleaning • Female cleaning",
+      "I": 46
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Smart WC",
+      "C": "VE-SMART",
+      "D": "SN-WC-30818",
+      "E": "550x360x340 mm",
+      "F": "White",
+      "G": 159998,
+      "H": "Wireless remote control • Air temperature regulation • Water temperature regulation • Warm air drying • Water source filtration • Smart flushing • Auto open/close lid with laser • IPX4 Waterproof • Rear wash cleaning • Female cleaning",
+      "I": 46
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Smart WC",
+      "C": "ATOM",
+      "D": "SN-WC-10686",
+      "E": "695x350x500 mm",
+      "F": "",
+      "G": 59998,
+      "H": "Inbuilt tank • Floor Mounted • Floor & Side Flushing • Rear Wash • Soft Close • Nozzle Cleaning",
+      "I": 46
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Heritage",
+      "C": "ITALIA",
+      "D": "SN-WC-21004",
+      "E": "520x367x350 mm",
+      "F": "Gloss White",
+      "G": 44998,
+      "H": "Soft Close Seat Cover • Detachable Cover • Rim-Free System",
+      "I": 46
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Heritage",
+      "C": "NIXON",
+      "D": "SN-WC-20978",
+      "E": "520x345x365 mm",
+      "F": "Gloss White",
+      "G": 24998,
+      "H": "Soft Close Seat Cover • Detachable Cover • Rim-Free System • Cyclone Flush",
+      "I": 46
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Heritage",
+      "C": "NIVADA",
+      "D": "SN-WC-20977",
+      "E": "530x365x380 mm",
+      "F": "Gloss White",
+      "G": 21998,
+      "H": "Soft Close Seat Cover • Detachable Cover • Rim-Free System • Cyclone Flush",
+      "I": 46
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Texture",
+      "C": "ZAVA BLACK",
+      "D": "SN-WC-10955",
+      "E": "530x365x360 mm",
+      "F": "Gloss Black",
+      "G": 48998,
+      "H": "Soft Close Seat Cover • Detachable Cover • Rim-Free System • Cyclone Flush",
+      "I": 46
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Texture",
+      "C": "ZAVA WHITE",
+      "D": "SN-WC-11004",
+      "E": "530x365x360 mm",
+      "F": "Gloss White",
+      "G": 42998,
+      "H": "Soft Close Seat Cover • Detachable Cover • Rim-Free System • Cyclone Flush",
+      "I": 46
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Texture",
+      "C": "VENTURA",
+      "D": "SN-WC-21007",
+      "E": "510x350x320 mm",
+      "F": "Gloss White",
+      "G": 25998,
+      "H": "Soft Close Seat Cover • Detachable Cover • Rim-Free System",
+      "I": 46
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Texture",
+      "C": "TUDOR",
+      "D": "SN-WC-21006",
+      "E": "540x370x390 mm",
+      "F": "Gloss White",
+      "G": 25998,
+      "H": "Soft Close Seat Cover • Detachable Cover • Rim-Free System",
+      "I": 46
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Elite",
+      "C": "MARIO OVAL",
+      "D": "SN-WH-11088",
+      "E": "500x370x360 mm",
+      "F": "Gloss White",
+      "G": 15998,
+      "H": "Soft Close Seat Cover • Detachable Cover • Rim-Free System",
+      "I": 46
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Elite",
+      "C": "LIVING",
+      "D": "SN-WH-10776",
+      "E": "525x355x340 mm",
+      "F": "Gloss White",
+      "G": 16498,
+      "H": "Soft Close Seat Cover • Detachable Cover • Rim-Free System",
+      "I": 46
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "WC Collection",
+      "C": "KRYSTAL",
+      "D": "SN-WH-11003",
+      "E": "521x365x347 mm",
+      "F": "Gloss White",
+      "G": 28998,
+      "H": "Thin Rim Seat • Soft Close Seat Cover • Detachable Cover • Rim-Free System",
+      "I": 47
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "WC Collection",
+      "C": "DRILL",
+      "D": "SN-WH-11002",
+      "E": "520x390x345 mm",
+      "F": "Gloss White",
+      "G": 25998,
+      "H": "Soft Close Seat Cover • Detachable Cover • Rim-Free System • Cyclone Flush",
+      "I": 47
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "WC Collection",
+      "C": "SMASH",
+      "D": "SN-WH-11089",
+      "E": "530x370x350 mm",
+      "F": "Gloss White",
+      "G": 24998,
+      "H": "Soft Close Seat Cover • Detachable Cover • Rim-Free System",
+      "I": 47
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "WC Collection",
+      "C": "DUKE",
+      "D": "SN-WH-11001",
+      "E": "535x360x340 mm",
+      "F": "Gloss White",
+      "G": 23998,
+      "H": "Soft Close Seat Cover • Detachable Cover • Rim-Free System",
+      "I": 47
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "WC Collection",
+      "C": "FOXX",
+      "D": "SN-WH-10999",
+      "E": "500x365x350 mm",
+      "F": "Gloss White",
+      "G": 21998,
+      "H": "Soft Close Seat Cover • Detachable Cover • Rim-Free System",
+      "I": 47
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "WC Collection",
+      "C": "ROOT WHITE",
+      "D": "SN-WH-13338",
+      "E": "605x350x370 mm",
+      "F": "Gloss White",
+      "G": 15498,
+      "H": "Soft Close Seat Cover • Detachable Cover • Rim-Free System",
+      "I": 47
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "WC Collection",
+      "C": "CARDIN",
+      "D": "SN-WC-21010",
+      "E": "530x350x370 mm",
+      "F": "Gloss White",
+      "G": 11998,
+      "H": "Soft Close Seat Cover • Detachable Cover • Rim-Free System",
+      "I": 47
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Bidet WC",
+      "C": "RING",
+      "D": "SN-WH-11480",
+      "E": "515x360x355 mm",
+      "F": "Gloss White",
+      "G": 25998,
+      "H": "Soft Close Seat Cover • Detachable Cover • Rim-Free System • Bidet Jet",
+      "I": 47
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Bidet WC",
+      "C": "SMACK",
+      "D": "SN-WH-10764",
+      "E": "530x360x365 mm",
+      "F": "Gloss White",
+      "G": 28998,
+      "H": "Soft Close Seat Cover • Detachable Cover • Rim-Free System • With Bidet Function Controller • Bidet Jet",
+      "I": 47
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Bidet WC",
+      "C": "MOVADO",
+      "D": "SN-WC-21140",
+      "E": "530x360x350 mm",
+      "F": "Gloss White",
+      "G": 25998,
+      "H": "Soft Close Seat Cover • Detachable Cover • Rim-Free System • Cyclone Flush • Bidet Jet",
+      "I": 47
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Valentino Bidet",
+      "C": "MATTE PEACH",
+      "D": "SN-WC-11378",
+      "E": "530x405x375 mm",
+      "F": "Matte Peach",
+      "G": 59998,
+      "H": "",
+      "I": 47
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Valentino Bidet",
+      "C": "MATTE DARK GREY",
+      "D": "SN-WC-11375",
+      "E": "530x405x375 mm",
+      "F": "Matte Dark Grey",
+      "G": 59998,
+      "H": "",
+      "I": 47
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Nicola Coloured",
+      "C": "DARK BLUE",
+      "D": "DB-WC-11351",
+      "E": "545x380x330 mm",
+      "F": "Dark Blue",
+      "G": 59998,
+      "H": "",
+      "I": 48
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Nicola Coloured",
+      "C": "MANGO",
+      "D": "DB-WC-11357",
+      "E": "545x380x330 mm",
+      "F": "Mango",
+      "G": 59998,
+      "H": "",
+      "I": 48
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Nicola Coloured",
+      "C": "BLACK",
+      "D": "DB-WC-11356",
+      "E": "545x380x330 mm",
+      "F": "Black",
+      "G": 59998,
+      "H": "",
+      "I": 48
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Nicola Coloured",
+      "C": "WHITE",
+      "D": "DB-WC-11359",
+      "E": "545x380x330 mm",
+      "F": "White",
+      "G": 59998,
+      "H": "",
+      "I": 48
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Metallic",
+      "C": "BULLION BRUSH GOLD",
+      "D": "SN-WH-10899",
+      "E": "530x370x350 mm",
+      "F": "Brush Gold",
+      "G": 47998,
+      "H": "",
+      "I": 48
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Metallic",
+      "C": "BULLION BRUSH ROSE GOLD",
+      "D": "SN-WC-30002",
+      "E": "530x370x350 mm",
+      "F": "Brush Rose Gold",
+      "G": 47998,
+      "H": "",
+      "I": 48
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Pure",
+      "C": "PURE ROSE GOLD",
+      "D": "SN-WH-13756",
+      "E": "520x360x370 mm",
+      "F": "Rose Gold",
+      "G": 59998,
+      "H": "",
+      "I": 48
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Pure",
+      "C": "PURE SILVER",
+      "D": "SN-WH-13757",
+      "E": "520x360x370 mm",
+      "F": "Silver",
+      "G": 59998,
+      "H": "",
+      "I": 48
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Stella",
+      "C": "MATTE CAPPUCCINO",
+      "D": "SN-WC-11573",
+      "E": "550x365x340 mm",
+      "F": "Matte Cappuccino",
+      "G": 59998,
+      "H": "",
+      "I": 48
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Stella",
+      "C": "MATTE BURGUNDY",
+      "D": "SN-WC-11367",
+      "E": "550x365x340 mm",
+      "F": "Matte Burgundy",
+      "G": 59998,
+      "H": "",
+      "I": 48
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Stella",
+      "C": "MATTE ROYAL BLUE",
+      "D": "SN-WC-11368",
+      "E": "550x365x340 mm",
+      "F": "Matte Royal Blue",
+      "G": 59998,
+      "H": "",
+      "I": 48
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "X-Stella",
+      "C": "PRIME WHITE",
+      "D": "SN-WC-11576",
+      "E": "550x365x340 mm",
+      "F": "Prime White",
+      "G": 39998,
+      "H": "",
+      "I": 49
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "X-Stella",
+      "C": "MATTE BLACK",
+      "D": "SN-WC-30816",
+      "E": "550x365x340 mm",
+      "F": "Matte Black",
+      "G": 49998,
+      "H": "",
+      "I": 49
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Mustang Tornado",
+      "C": "GLOSS WHITE",
+      "D": "SN-WH-11278",
+      "E": "530x365x365 mm",
+      "F": "Gloss White",
+      "G": 26998,
+      "H": "",
+      "I": 49
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Mustang Tornado",
+      "C": "MATTE BLACK",
+      "D": "SN-WH-11279",
+      "E": "530x365x365 mm",
+      "F": "Matte Black",
+      "G": 39998,
+      "H": "",
+      "I": 49
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Mustang Tornado",
+      "C": "MATTE DARK GREEN",
+      "D": "SN-WH-11281",
+      "E": "530x365x365 mm",
+      "F": "Matte Dark Green",
+      "G": 39998,
+      "H": "",
+      "I": 49
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Mustang Tornado",
+      "C": "MATTE BEIGE",
+      "D": "SN-WH-11277",
+      "E": "530x365x365 mm",
+      "F": "Matte Beige",
+      "G": 39998,
+      "H": "",
+      "I": 49
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Mustang Tornado",
+      "C": "MATTE GRAY",
+      "D": "SN-WH-11280",
+      "E": "530x365x365 mm",
+      "F": "Matte Gray",
+      "G": 39998,
+      "H": "",
+      "I": 49
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Basins - Voila XL",
+      "C": "MATTE PEACH",
+      "D": "SN-BA-11363",
+      "E": "540x450x142 mm",
+      "F": "Matte Peach",
+      "G": 39998,
+      "H": "",
+      "I": 50
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Basins - Voila XL",
+      "C": "MATTE DARK GREY",
+      "D": "SN-BA-11362",
+      "E": "540x450x142 mm",
+      "F": "Matte Dark Grey",
+      "G": 39998,
+      "H": "",
+      "I": 50
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Basins - Voila XL",
+      "C": "GLOSSY WHITE",
+      "D": "SN-BA-11361",
+      "E": "540x450x142 mm",
+      "F": "Glossy White",
+      "G": 25998,
+      "H": "",
+      "I": 50
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Basins - Voila XL",
+      "C": "MATTE BLACK",
+      "D": "SN-BA-11360",
+      "E": "540x450x142 mm",
+      "F": "Matte Black",
+      "G": 39998,
+      "H": "",
+      "I": 50
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Basins - Voila XXL",
+      "C": "GLOSSY WHITE",
+      "D": "SN-BA-11349",
+      "E": "900x460x110 mm",
+      "F": "Glossy White",
+      "G": 48998,
+      "H": "",
+      "I": 50
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Basins - Voila XXL",
+      "C": "MATTE BLACK",
+      "D": "SN-BA-11350",
+      "E": "900x460x110 mm",
+      "F": "Matte Black",
+      "G": 59998,
+      "H": "",
+      "I": 50
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Basins - Metallic",
+      "C": "BULLION BRUSH GOLD",
+      "D": "SN-BA-10781",
+      "E": "610x345x115 mm",
+      "F": "Brush Gold",
+      "G": 23998,
+      "H": "",
+      "I": 50
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Basins - Metallic",
+      "C": "BULLION BRUSH ROSE GOLD",
+      "D": "SN-BA-30003",
+      "E": "610x345x115 mm",
+      "F": "Brush Rose Gold",
+      "G": 20998,
+      "H": "",
+      "I": 50
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Basins - Metallic",
+      "C": "PURE ROSE GOLD",
+      "D": "SN-BA-13759",
+      "E": "500x400x140 mm",
+      "F": "Rose Gold",
+      "G": 19998,
+      "H": "",
+      "I": 50
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Basins - Metallic",
+      "C": "PURE SILVER",
+      "D": "SN-BA-13760",
+      "E": "500x400x140 mm",
+      "F": "Silver",
+      "G": 19998,
+      "H": "",
+      "I": 50
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Basins - Nick",
+      "C": "DARK BLUE",
+      "D": "SN-BA-11348",
+      "E": "550x380x115 mm",
+      "F": "Dark Blue",
+      "G": 29998,
+      "H": "",
+      "I": 50
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Basins - Nick",
+      "C": "MANGO",
+      "D": "SN-BA-11353",
+      "E": "550x380x115 mm",
+      "F": "Mango",
+      "G": 29998,
+      "H": "",
+      "I": 50
+    },
+    {
+      "A": "SANITARYWARE",
+      "B": "Basins - Nick",
+      "C": "BLACK",
+      "D": "SN-BA-11352",
+      "E": "550x380x115 mm",
+      "F": "Black",
+      "G": 29998,
+      "H": "",
+      "I": 50
     }
   ]
 }

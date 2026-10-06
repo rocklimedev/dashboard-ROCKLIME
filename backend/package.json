@@ -9,7 +9,11 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "jest"
+    "test": "jest",
+    "inventory:reconcile": "node scripts/reconcileInventory.js",
+    "inventory:reconcile:test": "node --test scripts/reconcileInventory.test.js",
+    "inventory:seed": "sequelize-cli db:seed --seed 20261006000100-seed-colston-reconciled-inventory.js",
+    "inventory:seed:test": "node --test scripts/seedReconciledInventory.test.js"
   },
   "dependencies": {
     "adm-zip": "^0.5.16",
