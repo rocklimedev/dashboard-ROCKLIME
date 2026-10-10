@@ -72,8 +72,10 @@
     <!-- Apple Touch Icon -->
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
 
-    <!-- PWA Manifest -->
-    <link rel="manifest" href="/manifest.json" />
+    <!-- iOS home-screen support -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="CM Trading" />
+    <!-- PWA manifest and service worker are injected by vite-plugin-pwa -->
   </head>
 
   <body>

@@ -10,6 +10,7 @@ import Loader from "./components/Common/Loader";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import SidebarNew from "./components/Common/SidebarNew2";
 import { useAuth } from "./context/AuthContext";
+import PwaManager from "./components/Common/PwaManager";
 
 function App() {
   const { auth, setAuth, authChecked, logout } = useAuth();
@@ -198,6 +199,7 @@ function App() {
   return (
     <>
       <Loader loading={isProfileLoading} />
+      <PwaManager />
       <div className={`main-wrapper ${isSidebarOpen ? "slide-nav" : ""}`}>
         {!isAuthPage && (
           <Header
