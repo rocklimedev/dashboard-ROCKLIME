@@ -31,6 +31,7 @@ import { Link } from "react-router-dom";
 import { useSearchAllQuery } from "../../api/searchApi";
 import { useAddProductToCartMutation } from "../../api/cartApi";
 import { useGetProfileQuery } from "../../api/userApi";
+import { searchProductSummary } from "../../utils/searchProductSummary";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -225,7 +226,7 @@ const SearchPage = () => {
       case "customer":
         return item.email || item.mobileNumber || null;
       case "product":
-        return item.product_code || null;
+        return searchProductSummary(item);
       case "order":
         return item.status ? `Status: ${item.status}` : null;
       case "quotation":
@@ -257,7 +258,7 @@ const SearchPage = () => {
       },
       product: {
         to: `/product/${item.productId || item.id}`,
-        title: item.name || item.product_code || "Product",
+        title: item.name || "Product",
       },
       order: {
         to: `/order/${item.id || item.orderId}`,

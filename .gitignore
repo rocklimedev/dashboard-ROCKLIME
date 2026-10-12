@@ -1,4 +1,6 @@
 node_modules
+/backend/storage/operations/
+/backend/scripts/json-outputs/duplicate-products/
 .env
 /static.cmtradingco.com
 /product_images
