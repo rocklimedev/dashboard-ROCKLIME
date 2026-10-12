@@ -2,6 +2,9 @@ import { baseApi } from '../store/baseApi';
 
 export const inventoryBulkApi = baseApi.injectEndpoints({
   endpoints: builder => ({
+    previewProductDeletion: builder.mutation({
+      query: productIds => ({ url: '/products/inventory-bulk/delete-preview', method: 'POST', body: { productIds } }),
+    }),
     previewProductMerge: builder.mutation({
       query: body => ({ url: '/products/inventory-bulk/merge-preview', method: 'POST', body }),
     }),
@@ -22,4 +25,4 @@ export const inventoryBulkApi = baseApi.injectEndpoints({
     }),
   }),
 });
-export const { useUpdateSelectedInventoryMutation, useDeleteSelectedInventoryMutation, useExportSelectedInventoryMutation, usePreviewProductMergeMutation, useMergeInventoryProductsMutation } = inventoryBulkApi;
+export const { usePreviewProductDeletionMutation, useUpdateSelectedInventoryMutation, useDeleteSelectedInventoryMutation, useExportSelectedInventoryMutation, usePreviewProductMergeMutation, useMergeInventoryProductsMutation } = inventoryBulkApi;

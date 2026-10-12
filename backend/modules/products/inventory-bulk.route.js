@@ -16,6 +16,7 @@ const {
   countMongoReferences,
 } = require("./product-merge.service");
 const productMerge = createProductMergeService(models, countMongoReferences);
+const productDeletion = require('./product-delete.service').createProductDeletionService(models);
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const fail = (message, status = 400) =>
   Object.assign(new Error(message), { status });
@@ -53,7 +54,7 @@ async function authorize(req, res, next) {
       }));
     if (!role) return res.status(403).json({ message: "User role not found." });
     const action =
-      req.path === "/delete"
+      ["/delete", "/delete-preview"].includes(req.path)
         ? "delete"
         : req.path === "/export"
           ? "export"
@@ -251,78 +252,18 @@ router.post("/update", async (req, res, next) => {
     next(error);
   }
 });
+router.post("/delete-preview", async (req, res, next) => {
+  try { res.json(await productDeletion.preview(idsFrom(req.body))); }
+  catch (error) {
+    if (error.status) return res.status(error.status).json({ message: error.message });
+    next(error);
+  }
+});
 router.post("/delete", async (req, res, next) => {
-  try {
-    const ids = idsFrom(req.body);
-    await sequelize.transaction(async (transaction) => {
-      const products = await selectedProducts(ids, transaction, true);
-      if (
-        await InventoryHistory.count({
-          where: { productId: { [Op.in]: ids } },
-          transaction,
-        })
-      )
-        throw fail(
-          "Selected products have inventory history. Deselect them before deleting.",
-          409,
-        );
-      if (
-        await Product.count({
-          where: { masterProductId: { [Op.in]: ids } },
-          transaction,
-        })
-      )
-        throw fail(
-          "Selected products own variants. Deselect their master products before deleting.",
-          409,
-        );
-      // Preserve references held in JSON snapshots as well as relational records.
-      for (const model of Object.values(sequelize.models)) {
-        if (
-          model === Product ||
-          model === models.ProductKeyword ||
-          model === ProductMeta
-        )
-          continue;
-        const attributes = model.rawAttributes || {};
-        const conditions = [];
-        if (attributes.productId)
-          conditions.push({ productId: { [Op.in]: ids } });
-        for (const [key, attribute] of Object.entries(attributes))
-          if (attribute.type?.key === "JSON") {
-            for (const id of ids)
-              conditions.push(
-                sequelize.where(sequelize.cast(sequelize.col(key), "CHAR"), {
-                  [Op.like]: `%${id}%`,
-                }),
-              );
-          }
-        if (
-          conditions.length &&
-          (await model.count({ where: { [Op.or]: conditions }, transaction }))
-        )
-          throw fail(
-            `Selected products are referenced by ${model.name}. Deselect them before deleting.`,
-            409,
-          );
-      }
-      await models.ProductKeyword.destroy({
-        where: { productId: { [Op.in]: ids } },
-        transaction,
-      });
-      for (const product of products) await product.destroy({ transaction });
-    });
-    res.json({ message: `Deleted ${ids.length} products.`, productIds: ids });
-  } catch (error) {
-    if (error.status)
-      return res.status(error.status).json({ message: error.message });
-    if (error.name === "SequelizeForeignKeyConstraintError")
-      return res
-        .status(409)
-        .json({
-          message:
-            "Selected products are referenced by other records and cannot be deleted.",
-        });
+  try { res.json(await productDeletion.remove(idsFrom(req.body))); }
+  catch (error) {
+    if (error.status) return res.status(error.status).json({ message: error.message, references: error.references });
+    if (error.name === 'SequelizeForeignKeyConstraintError') return res.status(409).json({ message: 'Products are referenced by other records and cannot be deleted.' });
     next(error);
   }
 });

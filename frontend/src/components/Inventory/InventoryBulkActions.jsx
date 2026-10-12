@@ -1,3 +1,4 @@
+import ProductDeleteModal from './ProductDeleteModal';
 import { useState } from 'react';
 import { Alert, Button, Card, Input, InputNumber, Modal, Select, Space, Table, Typography, message } from 'antd';
 import { useAuth } from '../../context/AuthContext';
@@ -79,10 +80,7 @@ export default function InventoryBulkActions({ products, clearSelection, getComp
       </Space>
     </Card>
     {mode === 'merge' && <MergeProductsModal products={products} onCancel={() => setMode(null)} onMerged={() => { setMode(null); clearSelection(); onComplete('merge'); }} />}
-    <Modal title={`Delete ${products.length} selected products?`} open={mode === 'delete'} onCancel={() => !busy && setMode(null)} onOk={deleteSelected} confirmLoading={deleting} okText="Delete selected" okButtonProps={{ danger: true }} cancelButtonProps={{ disabled: deleting }} closable={!deleting} maskClosable={!deleting}>
-      <Typography.Paragraph>This permanently deletes the selected products. Products with inventory history, variants or references in other records cannot be deleted.</Typography.Paragraph>
-      <div style={{ maxHeight: 240, overflow: 'auto' }}>{products.map(product => <div key={product.productId}>{product.name} · {getCompanyCode(product.metaDetails)}</div>)}</div>
-    </Modal>
+    {mode === 'delete' && <ProductDeleteModal products={products} onCancel={() => !busy && setMode(null)} onConfirm={deleteSelected} isLoading={deleting} />}
     <Modal title={mode === 'stock' ? 'Update selected stock' : 'Update selected selling prices'} open={mode === 'stock' || mode === 'price'} width={900} onCancel={() => !updating && setMode(null)} onOk={save} confirmLoading={updating} okText="Save changes" cancelButtonProps={{ disabled: updating }} closable={!updating} maskClosable={!updating}>
       <Alert type="info" showIcon message="Review the new values for each product. If stock or prices have changed since selection, the whole update is rejected so you can refresh and try again." style={{ marginBottom: 16 }} />
       <Space wrap style={{ marginBottom: 16 }}>

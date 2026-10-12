@@ -148,4 +148,4 @@ async function countMongoReferences(sourceId) {
   for (const [model, collection, paths] of registry) references.push({ model, records: await collection.collection.countDocuments({ $or: paths.map(path => ({ [path]: sourceId })) }, { maxTimeMS: 10000 }) });
   return references;
 }
-module.exports = { createProductMergeService, countMongoReferences, rewriteProductReferences };
+module.exports = { createProductMergeService, countMongoReferences, rewriteProductReferences, containsReference };

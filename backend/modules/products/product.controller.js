@@ -992,15 +992,17 @@ exports.getProductById = async (req, res) => {
 // ==================== DELETE PRODUCT ====================
 exports.deleteProduct = async (req, res) => {
   try {
-    const product = await Product.findByPk(req.params.productId);
-    if (!product) return res.status(404).json({ message: "Product not found" });
-    await product.destroy();
-    res.json({ message: "Product deleted successfully" });
+    const models = require('../../models');
+    const user = await models.User.findByPk(req.user.userId);
+    const role = user && await models.Role.findByPk(user.roleId, { include: [{ model: models.Permission, as: 'permissions', through: { attributes: [] } }] });
+    if (!role || (!['SUPER_ADMIN', 'DEVELOPER'].includes(role.roleName) && !(role.permissions || []).some(permission => permission.api === 'delete' && ['products', 'inventory'].includes(permission.module)))) return res.status(403).json({ message: 'Missing delete permission for products.' });
+    const service = require('./product-delete.service').createProductDeletionService(models);
+    res.json(await service.remove([req.params.productId]));
   } catch (error) {
-    res.status(500).json({ message: "Error deleting product" });
+    const status = error.status || (error.name === 'SequelizeForeignKeyConstraintError' ? 409 : 500);
+    res.status(status).json({ message: error.status ? error.message : status === 409 ? 'Product is referenced by other records and cannot be deleted.' : 'Error checking references or deleting product.', references: error.references });
   }
 };
-
 // Get products by category
 exports.getProductsByCategory = async (req, res) => {
   const { categoryId } = req.params;

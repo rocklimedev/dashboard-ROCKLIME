@@ -13,6 +13,7 @@ const models = {
   Product: {
     findAll: async options => products.filter(product => options.where.productId[Op.in].includes(product.productId)).map(data => ({ ...data, update: async changes => Object.assign(data, changes), toJSON: () => clone(data), destroy: async () => { products = products.filter(product => product.productId !== data.productId); } })),
     count: async () => 0,
+    destroy: async options => { products = products.filter(product => !options.where.productId[Op.in].includes(product.productId)); },
   },
   ProductMeta: { findAll: async () => [{ id: 'price', slug: 'sellingPrice' }, { id: 'code', slug: 'companyCode' }] },
   InventoryHistory: { count: async () => history.length, create: async data => { if (failHistory) throw Error('History write failed'); history.push(clone(data)); }, findAll: async () => clone(history) },
@@ -21,8 +22,10 @@ const models = {
   Role: { findByPk: async () => ({ roleName: 'USERS', permissions: (Array.isArray(permission) ? permission : [permission]).map(api => ({ api, module: 'products' })) }) },
   Permission: {},
 };
+models.InventoryHistory.name = 'InventoryHistory';
+models.InventoryHistory.rawAttributes = { productId: {} };
 models.sequelize = {
-  models: { Order: { name: 'Order', rawAttributes: { products: { type: { key: 'JSON' } } }, count: async () => referenced ? 1 : 0 } },
+  models: { InventoryHistory: models.InventoryHistory, Order: { name: 'Order', rawAttributes: { products: { type: { key: 'JSON' } } }, findAll: async () => referenced ? [{ id: 'order', products: [{ productId: ids[0] }] }] : [] } },
   col: key => key, cast: value => value, where: (...values) => values,
   transaction: async (options, callback) => {
     const before = clone({ products, history });
@@ -31,6 +34,9 @@ models.sequelize = {
   },
 };
 require.cache[modelPath] = { id: modelPath, filename: modelPath, loaded: true, exports: models };
+const deletionPath = require.resolve('../modules/products/product-delete.service');
+const deletionModule = require(deletionPath);
+require.cache[deletionPath].exports = { ...deletionModule, createProductDeletionService: database => deletionModule.createProductDeletionService(database, async () => []) };
 const router = require('../modules/products/inventory-bulk.route');
 async function call(path, body) {
   const req = { path, body, user: { userId: 'actor' } };
@@ -78,6 +84,14 @@ test('delete requires permission and preserves history and JSON references', asy
   assert.equal((await call('/delete', { productIds: ids })).status, 409); assert.equal(products.length, 2);
   referenced = false;
   assert.equal((await call('/delete', { productIds: ids })).status, 200); assert.equal(products.length, 0);
+});
+test('delete preview requires delete permission and shows reference counts', async () => {
+  reset();
+  assert.equal((await call('/delete-preview', { productIds: ids })).status, 403);
+  permission = 'delete'; referenced = true;
+  const result = await call('/delete-preview', { productIds: ids });
+  assert.equal(result.status, 200); assert.equal(result.body.canDelete, false);
+  assert.equal(result.body.references.find(group => group.category === 'Order').count, 1);
 });
 test('history export includes all records beyond the default history page size', async () => {
   reset(); permission = 'export';
