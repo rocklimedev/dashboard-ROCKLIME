@@ -15,6 +15,7 @@ const { apiLimiter, burstLimiter } = require("./middleware/rateLimit");
 /** */
 // ------------------- Route Imports -------------------
 const routes = {
+  operations: require("./modules/operations/operations.route"),
   auth: require("./modules/auth/auth.route"),
   user: require("./modules/users/user.route"),
   vendor: require("./modules/vendors/vendor.route"),
@@ -152,6 +153,7 @@ app.use("/api/cached-permissions", routes.cachedPermission);
 app.use("/api/fgs", routes.fgs);
 app.use("/api/jobs", routes.jobs);
 app.use("/api/activity", routes.activity);
+app.use("/api/operations", routes.operations);
 // ------------------- Health Check -------------------
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", uptime: process.uptime() });

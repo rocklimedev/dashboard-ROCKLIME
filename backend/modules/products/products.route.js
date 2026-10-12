@@ -6,6 +6,7 @@ const multer = require("multer");
 const path = require("path");
 
 router.use(auth);
+router.use("/inventory-bulk", require("./inventory-bulk.route"));
 
 // ====================== MULTER CONFIG ======================
 const productUpload = multer({

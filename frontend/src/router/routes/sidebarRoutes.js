@@ -30,6 +30,7 @@ import ReportDashboard from "../../concepts/Home/ReportDashboard";
 import NewDashboard from "../../concepts/Home/NewPageWrapper";
 import DispatchHistory from "../../concepts/Order/DispatchHistory";
 import { useAuth } from "../../context/AuthContext";
+import Operations from "../../concepts/Operations/Operations";
 
 // ============================================================
 // ROLE BASED DASHBOARD
@@ -50,6 +51,7 @@ const RoleBasedDashboard = () => {
 // ============================================================
 
 export const sidebarRoutes = [
+  { path: "/operations", name: "Operations", icon: <FaBoxOpen />, isSidebarActive: true, element: <Operations /> },
   {
     path: "/",
     name: "Dashboard",

@@ -1,7 +1,8 @@
-import React from "react";
 import { Modal, Button } from "react-bootstrap";
 import { DeleteOutlined } from "@ant-design/icons";
-const DeleteModal = ({ item, itemType, onConfirm, onCancel, isVisible }) => {
+import ProductDeleteModal from '../Inventory/ProductDeleteModal';
+const DeleteModal = ({ item, itemType, onConfirm, onCancel, isVisible, isLoading }) => {
+  if (itemType === 'Product') return isVisible && item ? <ProductDeleteModal products={[item]} onConfirm={() => onConfirm(item)} onCancel={onCancel} isLoading={isLoading} /> : null;
   return (
     <Modal
       show={isVisible}

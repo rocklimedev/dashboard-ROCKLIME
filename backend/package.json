@@ -7,6 +7,11 @@
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
+    "products:duplicates": "node scripts/findDuplicateProducts.js",
+    "products:duplicates:test": "node --test scripts/findDuplicateProducts.test.js scripts/dateDuplicateReport.test.js",
+    "operations:test": "node --test scripts/operations.test.js",
+    "inventory:bulk:test": "node --test scripts/inventoryBulk.test.js scripts/inventoryExcel.test.js",
+    "products:merge:test": "node --test scripts/productMerge.test.js",
     "start": "node index.js",
     "dev": "nodemon index.js",
     "test": "jest",

@@ -48,6 +48,9 @@ const SidebarNew = ({
   // 2. Filter routes: hide Master Table & Purchase Orders if not allowed
   // --------------------------------------------------------------
   const visibleRoutes = sidebarRoutes.filter((section) => {
+    if (section.name === "Operations") {
+      return [...(auth?.user?.roles || []), auth?.role].includes("DEVELOPER");
+    }
     if (section.name === "Master Table") {
       return canSeeMasterTable;
     }

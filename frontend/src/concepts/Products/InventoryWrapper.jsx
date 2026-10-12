@@ -46,6 +46,7 @@ import ReportBuilderModal from "../../components/modals/ReportBuilderModal";
 import DeleteModal from "../../components/Common/DeleteModal";
 import PermissionGate from "../../context/PermissionGate";
 import { generatePDF, generateExcel } from "../../utils/helpers";
+import InventoryBulkActions from "../../components/Inventory/InventoryBulkActions";
 
 const { Text } = Typography;
 
@@ -87,6 +88,8 @@ const InventoryWrapper = () => {
   const [stockAction, setStockAction] = useState("add");
   const [selectedReportProducts, setSelectedReportProducts] = useState([]);
   const [generatingMonthly, setGeneratingMonthly] = useState(false);
+  const [selectedInventory, setSelectedInventory] = useState({});
+  const selectedInventoryProducts = Object.values(selectedInventory);
 
   // ==================== MAIN QUERY (Optimized) ====================
   const queryArgs = useMemo(
@@ -114,6 +117,16 @@ const InventoryWrapper = () => {
   const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation();
 
   const products = useMemo(() => response?.data || [], [response?.data]);
+  useEffect(() => {
+    setSelectedInventory(previous => {
+      const refreshed = { ...previous };
+      let changed = false;
+      for (const product of products) if (previous[product.productId] && previous[product.productId] !== product) {
+        refreshed[product.productId] = product; changed = true;
+      }
+      return changed ? refreshed : previous;
+    });
+  }, [products]);
   const paginationInfo = response?.pagination || {
     total: 0,
     page: 1,
@@ -123,41 +136,15 @@ const InventoryWrapper = () => {
     if (!Array.isArray(metaDetails) || metaDetails.length === 0) return null;
 
     // Primary: Exact match on slug or title (most reliable)
-    const priceField = metaDetails.find(
-      (d) =>
-        d.slug === "sellingPrice" ||
-        d.title?.toLowerCase() === "selling price" ||
-        d.slug?.toLowerCase().includes("sellingprice") ||
-        d.title?.toLowerCase().includes("selling price"),
-    );
+    const priceField = metaDetails.find(d => d.slug?.replace(/[_\s-]/g, "").toLowerCase() === "sellingprice" || d.id === "9ba862ef-f993-4873-95ef-1fef10036aa5" || d.id === "sellingPrice" || d.id === "selling_price");
 
     if (priceField) {
+      if (priceField.value == null || String(priceField.value).trim() === "") return null;
       const num = Number(priceField.value);
-      return isNaN(num) ? null : num;
+      return Number.isFinite(num) ? num : null;
     }
 
-    // Secondary: Any field with "price" in slug/title
-    const anyPriceField = metaDetails.find(
-      (d) =>
-        d.slug?.toLowerCase().includes("price") ||
-        d.title?.toLowerCase().includes("price"),
-    );
-
-    if (anyPriceField) {
-      const num = Number(anyPriceField.value);
-      return isNaN(num) ? null : num;
-    }
-
-    // Fallback: Largest reasonable number (as safety net)
-    let maxPrice = null;
-    for (const d of metaDetails) {
-      const num = Number(d.value);
-      if (!isNaN(num) && num > 100 && (maxPrice === null || num > maxPrice)) {
-        maxPrice = num;
-      }
-    }
-
-    return maxPrice;
+    return null;
   };
   // ==================== CLIENT-SIDE FILTERS ====================
   const filteredProducts = useMemo(() => {
@@ -273,14 +260,8 @@ const InventoryWrapper = () => {
 
   const getCompanyCode = (metaDetails) => {
     if (!Array.isArray(metaDetails) || !metaDetails.length) return "N/A";
-    const last = metaDetails[metaDetails.length - 1];
-    if (last?.value && typeof last.value === "string" && last.value.trim()) {
-      return last.value.trim();
-    }
-    const codeLike = metaDetails.find((d) =>
-      d.value?.match?.(/^[A-Za-z0-9]{6,12}$/),
-    );
-    return codeLike ? String(codeLike.value).trim() : "N/A";
+    const field = metaDetails.find(d => d.slug?.replace(/[_\s-]/g, "").toLowerCase() === "companycode" || d.id === "d11da9f9-3f2e-4536-8236-9671200cca4a" || d.id === "companyCode" || d.id === "company_code");
+    return field?.value != null && String(field.value).trim() ? String(field.value).trim() : "N/A";
   };
 
   // ==================== ACTIONS ====================
@@ -460,7 +441,7 @@ const InventoryWrapper = () => {
       responsive: ["md"],
       render: (_, r) => {
         const price = getSellingPrice(r.metaDetails);
-        return price ? (
+        return price !== null ? (
           <strong className="price-text">
             ₹{price.toLocaleString("en-IN")}
           </strong>
@@ -703,6 +684,14 @@ const InventoryWrapper = () => {
           </div>
         </Card>
 
+        <InventoryBulkActions
+          products={selectedInventoryProducts}
+          clearSelection={() => setSelectedInventory({})}
+          getCompanyCode={getCompanyCode}
+          getSellingPrice={getSellingPrice}
+          onComplete={action => { if (["delete", "merge"].includes(action)) setCurrentPage(1); refetch(); }}
+        />
+
         {/* Status Chips */}
         <div style={{ margin: "24px 0" }}>
           <Space wrap size={[8, 12]}>
@@ -768,6 +757,15 @@ const InventoryWrapper = () => {
                 columns={columns}
                 dataSource={filteredProducts}
                 rowKey="productId"
+                rowSelection={{
+                  selectedRowKeys: Object.keys(selectedInventory),
+                  preserveSelectedRowKeys: true,
+                  onChange: (keys, rows) => {
+                    if (keys.length > 500) { message.warning("Select at most 500 products at a time."); return; }
+                    const known = { ...selectedInventory, ...Object.fromEntries(rows.filter(Boolean).map(product => [product.productId, product])) };
+                    setSelectedInventory(Object.fromEntries(keys.filter(key => known[key]).map(key => [key, known[key]])));
+                  },
+                }}
                 pagination={false}
                 loading={isFetching}
                 scroll={{ x: isMobile ? "max-content" : undefined }}

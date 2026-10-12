@@ -13,6 +13,7 @@ import {
 // Cart & User APIs
 import { useAddProductToCartMutation } from "../../api/cartApi";
 import { useGetProfileQuery } from "../../api/userApi";
+import { searchProductSummary } from "../../utils/searchProductSummary";
 
 const SearchOverlay = ({ visible, loading, results, onClose, query }) => {
   const overlayRef = useRef(null);
@@ -157,7 +158,7 @@ const SearchOverlay = ({ visible, loading, results, onClose, query }) => {
             shape="square"
             size={40}
             style={{ objectFit: "cover" }}
-            alt={item.name || item.product_code}
+            alt={item.name || "Product"}
           />
         ) : (
           <Avatar icon={<ShoppingOutlined />} shape="square" size={40} />
@@ -195,7 +196,7 @@ const SearchOverlay = ({ visible, loading, results, onClose, query }) => {
       case "User":
         return item.email || item.mobileNumber || item.username;
       case "Product":
-        return item.product_code;
+        return searchProductSummary(item);
       case "Customer":
         return item.email || item.mobileNumber;
       case "Order":
@@ -226,7 +227,7 @@ const SearchOverlay = ({ visible, loading, results, onClose, query }) => {
       },
       Product: {
         link: `/product/${item.productId || item.id}`,
-        title: item.name || item.product_code || "Product",
+        title: item.name || "Product",
       },
       Customer: {
         link: `/customer/${item.customerId || item.id}`,
