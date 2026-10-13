@@ -575,9 +575,7 @@ export default function QuotationProductSheet({
           floorName: isValidAssignment ? loc.floorName : null,
           roomName: isValidAssignment ? loc.roomName : null,
           _sectionQty: Number(loc.assignedQuantity) || 0,
-          _locationKey: locationKey(
-            isValidAssignment ? loc : { floorId: null, roomId: null },
-          ),
+          _locationKey: locationKey(loc),
           // prefer location priority
           _sectionPriority: loc.priority ?? p.priority ?? 0,
         });
