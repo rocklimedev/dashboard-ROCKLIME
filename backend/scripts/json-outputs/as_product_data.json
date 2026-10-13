@@ -1,0 +1,3301 @@
+{
+  "products": [
+    {
+      "sno": 1,
+      "product_code": "FFAS1304-101GL0BF0",
+      "product_name": "Acacia E In-Wall Vessel Mixer",
+      "collection": "Acacia Evolution",
+      "product_type": "Vessel Mixer",
+      "category": "Acacia Evolution Faucets",
+      "finish": "Polished Cool Sunrise",
+      "catalogue_pages": "pp. 10-11",
+      "pdf_page": 6,
+      "image_filename": "FFAS1304-101GL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1304-101GL0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 2,
+      "product_code": "FFAS1703-101GL0BF0",
+      "product_name": "Signature 3-Hole Basin Mixer",
+      "collection": "Signature",
+      "product_type": "Basin Mixer",
+      "category": "Signature Faucets",
+      "finish": "Polished Cool Sunrise",
+      "catalogue_pages": "pp. 10-11",
+      "pdf_page": 6,
+      "image_filename": "FFAS1703-101GL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1703-101GL0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 3,
+      "product_code": "FFAS1701-101GL0BF0",
+      "product_name": "Signature Single Hole Basin Mixer",
+      "collection": "Signature",
+      "product_type": "Basin Mixer",
+      "category": "Signature Faucets",
+      "finish": "Polished Cool Sunrise",
+      "catalogue_pages": "pp. 10-11",
+      "pdf_page": 6,
+      "image_filename": "FFAS1701-101GL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1701-101GL0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 4,
+      "product_code": "FFAS1704-101GL0BF0",
+      "product_name": "Signature Wall Mounted Basin Mixer",
+      "collection": "Signature",
+      "product_type": "Basin Mixer",
+      "category": "Signature Faucets",
+      "finish": "Polished Cool Sunrise",
+      "catalogue_pages": "pp. 10-11",
+      "pdf_page": 6,
+      "image_filename": "FFAS1704-101GL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1704-101GL0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 5,
+      "product_code": "FFAS1303-101GL0BF0",
+      "product_name": "Acacia E 8” Spread Basin Faucet",
+      "collection": "Acacia Evolution",
+      "product_type": "Basin Faucet (3-hole)",
+      "category": "Acacia Evolution Faucets",
+      "finish": "Polished Cool Sunrise",
+      "catalogue_pages": "pp. 10-11",
+      "pdf_page": 6,
+      "image_filename": "FFAS1303-101GL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1303-101GL0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 6,
+      "product_code": "FFAS1702-101GL0BF0",
+      "product_name": "Signature Single Hole Extended Basin M",
+      "collection": "Signature",
+      "product_type": "Basin Mixer",
+      "category": "Signature Faucets",
+      "finish": "Polished Cool Sunrise",
+      "catalogue_pages": "pp. 10-11",
+      "pdf_page": 6,
+      "image_filename": "FFAS1702-101GL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1702-101GL0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 7,
+      "product_code": "FFAS1302-101GL0BF0",
+      "product_name": "Acacia E SH SL vessel mixer-F",
+      "collection": "Acacia Evolution",
+      "product_type": "Vessel Mixer",
+      "category": "Acacia Evolution Faucets",
+      "finish": "Polished Cool Sunrise",
+      "catalogue_pages": "pp. 10-11",
+      "pdf_page": 6,
+      "image_filename": "FFAS1302-101GL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1302-101GL0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 8,
+      "product_code": "FFAS1301-101GL0BF0",
+      "product_name": "Acacia E SH SL basin mixer-C1",
+      "collection": "Acacia Evolution",
+      "product_type": "Basin Mixer",
+      "category": "Acacia Evolution Faucets",
+      "finish": "Polished Cool Sunrise",
+      "catalogue_pages": "pp. 10-11",
+      "pdf_page": 6,
+      "image_filename": "FFAS1301-101GL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1301-101GL0BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 9,
+      "product_code": "FFAS1305-101GL0BF0",
+      "product_name": "Acacia E Single Hole Side Lava Faucet",
+      "collection": "Acacia Evolution",
+      "product_type": "Side Lava Faucet",
+      "category": "Acacia Evolution Faucets",
+      "finish": "Polished Cool Sunrise",
+      "catalogue_pages": "pp. 10-11",
+      "pdf_page": 6,
+      "image_filename": "FFAS1305-101GL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1305-101GL0BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 338
+      }
+    },
+    {
+      "sno": 10,
+      "product_code": "FFAS1712-709GL0BF0",
+      "product_name": "Signature Exposed Shower Mixer",
+      "collection": "Signature",
+      "product_type": "Shower Mixer",
+      "category": "Signature Bath & Shower Fittings",
+      "finish": "Polished Cool Sunrise",
+      "catalogue_pages": "pp. 10-11",
+      "pdf_page": 6,
+      "image_filename": "FFAS1712-709GL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1712-709GL0BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 11,
+      "product_code": "FFAS1711-609GL0BF0",
+      "product_name": "Signature Exposed Bath & Shower Mixer",
+      "collection": "Signature",
+      "product_type": "Bath & Shower Mixer",
+      "category": "Signature Bath & Shower Fittings",
+      "finish": "Polished Cool Sunrise",
+      "catalogue_pages": "pp. 10-11",
+      "pdf_page": 6,
+      "image_filename": "FFAS1711-609GL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1711-609GL0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 12,
+      "product_code": "FFAS1721-609GL0BF0",
+      "product_name": "Signature Concealed Bath & Shower Mixer",
+      "collection": "Signature",
+      "product_type": "Bath & Shower Mixer",
+      "category": "Signature Bath & Shower Fittings",
+      "finish": "Polished Cool Sunrise",
+      "catalogue_pages": "pp. 10-11",
+      "pdf_page": 6,
+      "image_filename": "FFAS1721-609GL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1721-609GL0BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 13,
+      "product_code": "FFAS1722-709GL0BF0",
+      "product_name": "Signature Concealed Shower Mixer",
+      "collection": "Signature",
+      "product_type": "Shower Mixer",
+      "category": "Signature Bath & Shower Fittings",
+      "finish": "Polished Cool Sunrise",
+      "catalogue_pages": "pp. 10-11",
+      "pdf_page": 6,
+      "image_filename": "FFAS1722-709GL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1722-709GL0BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 14,
+      "product_code": "FFAS1772-701GL0BF0",
+      "product_name": "Signature Exposed Bath & Shower Mixer",
+      "collection": "Signature",
+      "product_type": "Bath & Shower Mixer",
+      "category": "Signature Bath & Shower Fittings",
+      "finish": "Polished Cool Sunrise",
+      "catalogue_pages": "pp. 10-11",
+      "pdf_page": 6,
+      "image_filename": "FFAS1772-701GL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1772-701GL0BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 338
+      }
+    },
+    {
+      "sno": 15,
+      "product_code": "FFAS1321-608GL0BF0",
+      "product_name": "Acacia Evolution Concealed Bath & Shower Mixer",
+      "collection": "Acacia Evolution",
+      "product_type": "Bath & Shower Mixer",
+      "category": "Acacia Evolution Bath & Shower Fittings",
+      "finish": "Polished Cool Sunrise",
+      "catalogue_pages": "pp. 10-11",
+      "pdf_page": 6,
+      "image_filename": "FFAS1321-608GL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1321-608GL0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 338
+      }
+    },
+    {
+      "sno": 16,
+      "product_code": "FFAS1300-601GL0BF0",
+      "product_name": "Acacia Evolution Deck Mount Bath & Shower Mixer with Shower Kit",
+      "collection": "Acacia Evolution",
+      "product_type": "Bath & Shower Mixer",
+      "category": "Acacia Evolution Bath & Shower Fittings",
+      "finish": "Polished Cool Sunrise",
+      "catalogue_pages": "pp. 10-11",
+      "pdf_page": 6,
+      "image_filename": "FFAS1300-601GL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1300-601GL0BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 338
+      }
+    },
+    {
+      "sno": 17,
+      "product_code": "FFAS1322-708GL0BF0",
+      "product_name": "Acacia E Concealed Shower Main Mixer",
+      "collection": "Acacia Evolution",
+      "product_type": "Shower Mixer",
+      "category": "Acacia Evolution Bath & Shower Fittings",
+      "finish": "Polished Cool Sunrise",
+      "catalogue_pages": "pp. 10-11",
+      "pdf_page": 6,
+      "image_filename": "FFAS1322-708GL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1322-708GL0BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 338
+      }
+    },
+    {
+      "sno": 18,
+      "product_code": "FFAS9908-000GL0BF0",
+      "product_name": "Top Installation Shower Arm",
+      "collection": "Shower Accessories",
+      "product_type": "Shower Arm",
+      "category": "Shower Accessories",
+      "finish": "Polished Cool Sunrise",
+      "catalogue_pages": "pp. 12-13",
+      "pdf_page": 7,
+      "image_filename": "FFAS9908-000GL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS9908-000GL0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 19,
+      "product_code": "FFAS9909-000GL0BF0",
+      "product_name": "Wall Mounted Shower Arm-C1",
+      "collection": "Shower Accessories",
+      "product_type": "Shower Arm",
+      "category": "Shower Accessories",
+      "finish": "Polished Cool Sunrise",
+      "catalogue_pages": "pp. 12-13",
+      "pdf_page": 7,
+      "image_filename": "FFAS9909-000GL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS9909-000GL0BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 20,
+      "product_code": "FFAS9127-000GL0BF0",
+      "product_name": "1.5m PVC Twist-free Flexible Hose",
+      "collection": "Shower Accessories",
+      "product_type": "Flexible Hose",
+      "category": "Shower Accessories",
+      "finish": "Polished Cool Sunrise",
+      "catalogue_pages": "pp. 12-13",
+      "pdf_page": 7,
+      "image_filename": "FFAS9127-000GL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS9127-000GL0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 21,
+      "product_code": "FFAS9142-000GL0BF0",
+      "product_name": "Wall outlet - (G1/2”)",
+      "collection": "Shower Accessories",
+      "product_type": "Wall Outlet",
+      "category": "Shower Accessories",
+      "finish": "Polished Cool Sunrise",
+      "catalogue_pages": "pp. 12-13",
+      "pdf_page": 7,
+      "image_filename": "FFAS9142-000GL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS9142-000GL0BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 22,
+      "product_code": "FFAS0927-709GL0BF0",
+      "product_name": "EasySET for Body Shower",
+      "collection": "EasySet",
+      "product_type": "Body Shower",
+      "category": "EasySet Concealed Auto Temperature Mixer",
+      "finish": "Polished Cool Sunrise",
+      "catalogue_pages": "pp. 12-13",
+      "pdf_page": 7,
+      "image_filename": "FFAS0927-709GL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS0927-709GL0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 338
+      }
+    },
+    {
+      "sno": 23,
+      "product_code": "FFAS0930-709GL0BF0",
+      "product_name": "Conceal Thermostatic Mixer with Trim",
+      "collection": "EasySet",
+      "product_type": "Thermostatic Mixer",
+      "category": "EasySet Concealed Auto Temperature Mixer",
+      "finish": "Polished Cool Sunrise",
+      "catalogue_pages": "pp. 12-13",
+      "pdf_page": 7,
+      "image_filename": "FFAS0930-709GL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS0930-709GL0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 338
+      }
+    },
+    {
+      "sno": 24,
+      "product_code": "FFAS0925-709GL0BF0",
+      "product_name": "EasySet for Hand Shower",
+      "collection": "EasySet",
+      "product_type": "Hand Shower",
+      "category": "EasySet Concealed Auto Temperature Mixer",
+      "finish": "Polished Cool Sunrise",
+      "catalogue_pages": "pp. 12-13",
+      "pdf_page": 7,
+      "image_filename": "FFAS0925-709GL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS0925-709GL0BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 25,
+      "product_code": "FFAS0926-709GL0BF0",
+      "product_name": "EasySet for Head Shower",
+      "collection": "EasySet",
+      "product_type": "Head Shower",
+      "category": "EasySet Concealed Auto Temperature Mixer",
+      "finish": "Polished Cool Sunrise",
+      "catalogue_pages": "pp. 12-13",
+      "pdf_page": 7,
+      "image_filename": "FFAS0926-709GL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS0926-709GL0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 26,
+      "product_code": "FFAS9143-000GL0BF0",
+      "product_name": "Square Wall Outlet with Holder",
+      "collection": "Shower Accessories",
+      "product_type": "Wall Outlet",
+      "category": "Shower Accessories",
+      "finish": "Polished Cool Sunrise",
+      "catalogue_pages": "pp. 12-13",
+      "pdf_page": 7,
+      "image_filename": "FFAS9143-000GL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS9143-000GL0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 27,
+      "product_code": "FFAS4956-601GL0BC0",
+      "product_name": "EasySet Exposed Auto Temperature Mixer",
+      "collection": "EasySet",
+      "product_type": "Exposed Thermostatic Shower",
+      "category": "EasySet Exposed Auto Temperature Mixer",
+      "finish": "Polished Cool Sunrise",
+      "catalogue_pages": "pp. 12-13",
+      "pdf_page": 7,
+      "image_filename": "FFAS4956-601GL0BC0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS4956-601GL0BC0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 329
+      }
+    },
+    {
+      "sno": 28,
+      "product_code": "137441GL00",
+      "product_name": "Onyx Bath Spout",
+      "collection": "Onyx",
+      "product_type": "Bath Spout",
+      "category": "Spouts",
+      "finish": "Polished Cool Sunrise",
+      "catalogue_pages": "pp. 12-13",
+      "pdf_page": 7,
+      "image_filename": "137441GL00.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/137441GL00.png",
+      "image_size_px": {
+        "width": 340,
+        "height": 292
+      }
+    },
+    {
+      "sno": 29,
+      "product_code": "103835GL01",
+      "product_name": "Simplicity Square Bath Spout",
+      "collection": "Simplicity Square",
+      "product_type": "Bath Spout",
+      "category": "Spouts",
+      "finish": "Polished Cool Sunrise",
+      "catalogue_pages": "pp. 12-13",
+      "pdf_page": 7,
+      "image_filename": "103835GL01.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/103835GL01.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 30,
+      "product_code": "FFAS0495-908GL0BF0",
+      "product_name": "Concept Square Towel Shelf",
+      "collection": "Concept Square",
+      "product_type": "Towel Shelf",
+      "category": "Other Accessories",
+      "finish": "Polished Cool Sunrise",
+      "catalogue_pages": "pp. 12-13",
+      "pdf_page": 7,
+      "image_filename": "FFAS0495-908GL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS0495-908GL0BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 31,
+      "product_code": "FFAS0493-908GL0BF0",
+      "product_name": "Concept Square Towel Rack",
+      "collection": "Concept Square",
+      "product_type": "Towel Rack",
+      "category": "Other Accessories",
+      "finish": "Polished Cool Sunrise",
+      "catalogue_pages": "pp. 12-13",
+      "pdf_page": 7,
+      "image_filename": "FFAS0493-908GL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS0493-908GL0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 32,
+      "product_code": "FFAS0498-908GL0BF0",
+      "product_name": "Concept Square Single Tissue Holder",
+      "collection": "Concept Square",
+      "product_type": "Tissue Holder",
+      "category": "Other Accessories",
+      "finish": "Polished Cool Sunrise",
+      "catalogue_pages": "pp. 12-13",
+      "pdf_page": 7,
+      "image_filename": "FFAS0498-908GL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS0498-908GL0BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 33,
+      "product_code": "FFASTS28-000GL0BF0",
+      "product_name": "DuoSTiX™ Hygiene Spray",
+      "collection": "DuoSTiX",
+      "product_type": "Hygiene Spray",
+      "category": "Other Accessories",
+      "finish": "Polished Cool Sunrise",
+      "catalogue_pages": "pp. 12-13",
+      "pdf_page": 7,
+      "image_filename": "FFASTS28-000GL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFASTS28-000GL0BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 34,
+      "product_code": "FFASS515-000GL0BF0",
+      "product_name": "EasySet Headshower",
+      "collection": "EasySet",
+      "product_type": "Headshower",
+      "category": "Showers",
+      "finish": "Polished Cool Sunrise",
+      "catalogue_pages": "pp. 12-13",
+      "pdf_page": 7,
+      "image_filename": "FFASS515-000GL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFASS515-000GL0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 35,
+      "product_code": "FFAS9H11-000GL0BF0",
+      "product_name": "RainClick 130 Round 3F Hand Shower",
+      "collection": "RainClick",
+      "product_type": "Hand Shower",
+      "category": "Showers",
+      "finish": "Polished Cool Sunrise",
+      "catalogue_pages": "pp. 12-13",
+      "pdf_page": 7,
+      "image_filename": "FFAS9H11-000GL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS9H11-000GL0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 36,
+      "product_code": "FFASS054-000GL0BC0",
+      "product_name": "Body Showers with conceal body(G1/2”)",
+      "collection": "Shower Accessories",
+      "product_type": "Body Shower",
+      "category": "Showers",
+      "finish": "Polished Cool Sunrise",
+      "catalogue_pages": "pp. 12-13",
+      "pdf_page": 7,
+      "image_filename": "FFASS054-000GL0BC0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFASS054-000GL0BC0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 37,
+      "product_code": "FFAS0481-908GL0BF0",
+      "product_name": "Concept Square Robe Hook",
+      "collection": "Concept Square",
+      "product_type": "Robe Hook",
+      "category": "Other Accessories",
+      "finish": "Polished Cool Sunrise",
+      "catalogue_pages": "pp. 12-13",
+      "pdf_page": 7,
+      "image_filename": "FFAS0481-908GL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS0481-908GL0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 38,
+      "product_code": "103650GL01",
+      "product_name": "Stop Valve Ceramic Valve",
+      "collection": "Waste & Valves",
+      "product_type": "Stop Valve",
+      "category": "Other Accessories",
+      "finish": "Polished Cool Sunrise",
+      "catalogue_pages": "pp. 12-13",
+      "pdf_page": 7,
+      "image_filename": "103650GL01.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/103650GL01.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 39,
+      "product_code": "103836GL01",
+      "product_name": "Push-open Waste with overflow",
+      "collection": "Waste & Valves",
+      "product_type": "Waste",
+      "category": "Other Accessories",
+      "finish": "Polished Cool Sunrise",
+      "catalogue_pages": "pp. 12-13",
+      "pdf_page": 7,
+      "image_filename": "103836GL01.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/103836GL01.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 40,
+      "product_code": "FFAS1304-101DA0BF0",
+      "product_name": "Acacia E In-Wall Vessel Mixer",
+      "collection": "Acacia Evolution",
+      "product_type": "Vessel Mixer",
+      "category": "Acacia Evolution Faucets",
+      "finish": "Polished Warm Sunset",
+      "catalogue_pages": "pp. 16-17",
+      "pdf_page": 9,
+      "image_filename": "FFAS1304-101DA0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1304-101DA0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 41,
+      "product_code": "FFAS1704-101DA0BF0",
+      "product_name": "Signature Wall Mounted Basin Mixer",
+      "collection": "Signature",
+      "product_type": "Basin Mixer",
+      "category": "Signature Faucets",
+      "finish": "Polished Warm Sunset",
+      "catalogue_pages": "pp. 16-17",
+      "pdf_page": 9,
+      "image_filename": "FFAS1704-101DA0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1704-101DA0BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 338
+      }
+    },
+    {
+      "sno": 42,
+      "product_code": "FFAS1701-101DA0BF0",
+      "product_name": "Signature Single Hole Basin Mixer",
+      "collection": "Signature",
+      "product_type": "Basin Mixer",
+      "category": "Signature Faucets",
+      "finish": "Polished Warm Sunset",
+      "catalogue_pages": "pp. 16-17",
+      "pdf_page": 9,
+      "image_filename": "FFAS1701-101DA0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1701-101DA0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 338
+      }
+    },
+    {
+      "sno": 43,
+      "product_code": "FFAS1703-101DA0BF0",
+      "product_name": "Signature 3-Hole Basin Mixer",
+      "collection": "Signature",
+      "product_type": "Basin Mixer",
+      "category": "Signature Faucets",
+      "finish": "Polished Warm Sunset",
+      "catalogue_pages": "pp. 16-17",
+      "pdf_page": 9,
+      "image_filename": "FFAS1703-101DA0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1703-101DA0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 338
+      }
+    },
+    {
+      "sno": 44,
+      "product_code": "FFAS1301-101DA0BF0",
+      "product_name": "Acacia E SH SL basin mixer-C1",
+      "collection": "Acacia Evolution",
+      "product_type": "Basin Mixer",
+      "category": "Acacia Evolution Faucets",
+      "finish": "Polished Warm Sunset",
+      "catalogue_pages": "pp. 16-17",
+      "pdf_page": 9,
+      "image_filename": "FFAS1301-101DA0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1301-101DA0BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 338
+      }
+    },
+    {
+      "sno": 45,
+      "product_code": "FFAS1302-101DA0BF0",
+      "product_name": "Acacia E SH SL vessel mixer",
+      "collection": "Acacia Evolution",
+      "product_type": "Vessel Mixer",
+      "category": "Acacia Evolution Faucets",
+      "finish": "Polished Warm Sunset",
+      "catalogue_pages": "pp. 16-17",
+      "pdf_page": 9,
+      "image_filename": "FFAS1302-101DA0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1302-101DA0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 338
+      }
+    },
+    {
+      "sno": 46,
+      "product_code": "FFAS1303-101DA0BF0",
+      "product_name": "Acacia E 8” Spread Basin Faucet",
+      "collection": "Acacia Evolution",
+      "product_type": "Basin Faucet (3-hole)",
+      "category": "Acacia Evolution Faucets",
+      "finish": "Polished Warm Sunset",
+      "catalogue_pages": "pp. 16-17",
+      "pdf_page": 9,
+      "image_filename": "FFAS1303-101DA0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1303-101DA0BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 47,
+      "product_code": "FFAS1702-101DA0BF0",
+      "product_name": "Signature Single Hole Extended Basin M",
+      "collection": "Signature",
+      "product_type": "Basin Mixer",
+      "category": "Signature Faucets",
+      "finish": "Polished Warm Sunset",
+      "catalogue_pages": "pp. 16-17",
+      "pdf_page": 9,
+      "image_filename": "FFAS1702-101DA0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1702-101DA0BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 48,
+      "product_code": "FFAS1712-709DA0BF0",
+      "product_name": "Signature Exposed Shower Mixer",
+      "collection": "Signature",
+      "product_type": "Shower Mixer",
+      "category": "Signature Bath & Shower Fittings",
+      "finish": "Polished Warm Sunset",
+      "catalogue_pages": "pp. 16-17",
+      "pdf_page": 9,
+      "image_filename": "FFAS1712-709DA0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1712-709DA0BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 338
+      }
+    },
+    {
+      "sno": 49,
+      "product_code": "FFAS1711-609DA0BF0",
+      "product_name": "Signature Exposed Bath & Shower Mixer",
+      "collection": "Signature",
+      "product_type": "Bath & Shower Mixer",
+      "category": "Signature Bath & Shower Fittings",
+      "finish": "Polished Warm Sunset",
+      "catalogue_pages": "pp. 16-17",
+      "pdf_page": 9,
+      "image_filename": "FFAS1711-609DA0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1711-609DA0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 338
+      }
+    },
+    {
+      "sno": 50,
+      "product_code": "FFAS1300-601DA0BF0",
+      "product_name": "Acacia E Deck mounted Bath & Shower Faucet",
+      "collection": "Acacia Evolution",
+      "product_type": "Bath & Shower Mixer",
+      "category": "Acacia Evolution Bath & Shower Fittings",
+      "finish": "Polished Warm Sunset",
+      "catalogue_pages": "pp. 16-17",
+      "pdf_page": 9,
+      "image_filename": "FFAS1300-601DA0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1300-601DA0BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 51,
+      "product_code": "FFAS1322-708DA0BF0",
+      "product_name": "Acacia E Concealed Shower Mixer",
+      "collection": "Acacia Evolution",
+      "product_type": "Shower Mixer",
+      "category": "Acacia Evolution Bath & Shower Fittings",
+      "finish": "Polished Warm Sunset",
+      "catalogue_pages": "pp. 16-17",
+      "pdf_page": 9,
+      "image_filename": "FFAS1322-708DA0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1322-708DA0BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 52,
+      "product_code": "FFAS1321-608DA0BF0",
+      "product_name": "Acacia E Concealed Bath & Shower Mixer",
+      "collection": "Acacia Evolution",
+      "product_type": "Bath & Shower Mixer",
+      "category": "Acacia Evolution Bath & Shower Fittings",
+      "finish": "Polished Warm Sunset",
+      "catalogue_pages": "pp. 16-17",
+      "pdf_page": 9,
+      "image_filename": "FFAS1321-608DA0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1321-608DA0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 338
+      }
+    },
+    {
+      "sno": 53,
+      "product_code": "FFAS1722-701DA0BF0",
+      "product_name": "Signature Concealed Shower Mixer",
+      "collection": "Signature",
+      "product_type": "Shower Mixer",
+      "category": "Signature Bath & Shower Fittings",
+      "finish": "Polished Warm Sunset",
+      "catalogue_pages": "pp. 16-17",
+      "pdf_page": 9,
+      "image_filename": "FFAS1722-701DA0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1722-701DA0BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 338
+      }
+    },
+    {
+      "sno": 54,
+      "product_code": "FFAS1721-609DA0BF0",
+      "product_name": "Signature Concealed Bath & Shower Mixer",
+      "collection": "Signature",
+      "product_type": "Bath & Shower Mixer",
+      "category": "Signature Bath & Shower Fittings",
+      "finish": "Polished Warm Sunset",
+      "catalogue_pages": "pp. 16-17",
+      "pdf_page": 9,
+      "image_filename": "FFAS1721-609DA0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1721-609DA0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 338
+      }
+    },
+    {
+      "sno": 55,
+      "product_code": "FFAS1772-701DA0BF0",
+      "product_name": "Signature Exposed Bath & Shower Mixer",
+      "collection": "Signature",
+      "product_type": "Bath & Shower Mixer",
+      "category": "Signature Bath & Shower Fittings",
+      "finish": "Polished Warm Sunset",
+      "catalogue_pages": "pp. 16-17",
+      "pdf_page": 9,
+      "image_filename": "FFAS1772-701DA0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1772-701DA0BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 56,
+      "product_code": "FFAS9909-000DA0BF0",
+      "product_name": "Wall Mounted Shower Arm",
+      "collection": "Shower Accessories",
+      "product_type": "Shower Arm",
+      "category": "Shower Accessories",
+      "finish": "Polished Warm Sunset",
+      "catalogue_pages": "pp. 18-19",
+      "pdf_page": 10,
+      "image_filename": "FFAS9909-000DA0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS9909-000DA0BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 338
+      }
+    },
+    {
+      "sno": 57,
+      "product_code": "FFAS9142-000DA0BF0",
+      "product_name": "Wall outlet - (G1/2”)",
+      "collection": "Shower Accessories",
+      "product_type": "Wall Outlet",
+      "category": "Shower Accessories",
+      "finish": "Polished Warm Sunset",
+      "catalogue_pages": "pp. 18-19",
+      "pdf_page": 10,
+      "image_filename": "FFAS9142-000DA0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS9142-000DA0BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 58,
+      "product_code": "FFAS9908-000DA0BF0",
+      "product_name": "Top Installation Shower Arm",
+      "collection": "Shower Accessories",
+      "product_type": "Shower Arm",
+      "category": "Shower Accessories",
+      "finish": "Polished Warm Sunset",
+      "catalogue_pages": "pp. 18-19",
+      "pdf_page": 10,
+      "image_filename": "FFAS9908-000DA0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS9908-000DA0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 59,
+      "product_code": "FFAS9127-000DA0BF0",
+      "product_name": "1.5m PVC Twist-free Flexible Hose",
+      "collection": "Shower Accessories",
+      "product_type": "Flexible Hose",
+      "category": "Shower Accessories",
+      "finish": "Polished Warm Sunset",
+      "catalogue_pages": "pp. 18-19",
+      "pdf_page": 10,
+      "image_filename": "FFAS9127-000DA0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS9127-000DA0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 60,
+      "product_code": "FFAS0926-709DA0BF0",
+      "product_name": "EasySet for Head Shower",
+      "collection": "EasySet",
+      "product_type": "Head Shower",
+      "category": "EasySet Concealed Auto Temperature Mixer",
+      "finish": "Polished Warm Sunset",
+      "catalogue_pages": "pp. 18-19",
+      "pdf_page": 10,
+      "image_filename": "FFAS0926-709DA0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS0926-709DA0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 338
+      }
+    },
+    {
+      "sno": 61,
+      "product_code": "FFAS0930-000DA0BF0",
+      "product_name": "Conceal Thermostatic Mixer with Trim",
+      "collection": "EasySet",
+      "product_type": "Thermostatic Mixer",
+      "category": "EasySet Concealed Auto Temperature Mixer",
+      "finish": "Polished Warm Sunset",
+      "catalogue_pages": "pp. 18-19",
+      "pdf_page": 10,
+      "image_filename": "FFAS0930-000DA0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS0930-000DA0BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 338
+      }
+    },
+    {
+      "sno": 62,
+      "product_code": "FFAS0925-709DA0BF0",
+      "product_name": "EasySet for Hand Shower",
+      "collection": "EasySet",
+      "product_type": "Hand Shower",
+      "category": "EasySet Concealed Auto Temperature Mixer",
+      "finish": "Polished Warm Sunset",
+      "catalogue_pages": "pp. 18-19",
+      "pdf_page": 10,
+      "image_filename": "FFAS0925-709DA0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS0925-709DA0BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 338
+      }
+    },
+    {
+      "sno": 63,
+      "product_code": "FFAS0927-709DA0BF0",
+      "product_name": "EasySET for Body Shower",
+      "collection": "EasySet",
+      "product_type": "Body Shower",
+      "category": "EasySet Concealed Auto Temperature Mixer",
+      "finish": "Polished Warm Sunset",
+      "catalogue_pages": "pp. 18-19",
+      "pdf_page": 10,
+      "image_filename": "FFAS0927-709DA0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS0927-709DA0BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 338
+      }
+    },
+    {
+      "sno": 64,
+      "product_code": "FFAS9143-000DA0BF0",
+      "product_name": "Square Wall Outlet With Holder",
+      "collection": "Shower Accessories",
+      "product_type": "Wall Outlet",
+      "category": "Shower Accessories",
+      "finish": "Polished Warm Sunset",
+      "catalogue_pages": "pp. 18-19",
+      "pdf_page": 10,
+      "image_filename": "FFAS9143-000DA0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS9143-000DA0BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 65,
+      "product_code": "137441DA00",
+      "product_name": "Onyx Bath Spout",
+      "collection": "Onyx",
+      "product_type": "Bath Spout",
+      "category": "Spouts",
+      "finish": "Polished Warm Sunset",
+      "catalogue_pages": "pp. 18-19",
+      "pdf_page": 10,
+      "image_filename": "137441DA00.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/137441DA00.png",
+      "image_size_px": {
+        "width": 339,
+        "height": 286
+      }
+    },
+    {
+      "sno": 66,
+      "product_code": "FFAS4956-601DA0BF0",
+      "product_name": "EasySET Exposed 3-Way Shower Mixer with Rainshower Kit",
+      "collection": "EasySet",
+      "product_type": "Shower Mixer",
+      "category": "EasySet Exposed Auto Temperature Mixer",
+      "finish": "Polished Warm Sunset",
+      "catalogue_pages": "pp. 18-19",
+      "pdf_page": 10,
+      "image_filename": "FFAS4956-601DA0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS4956-601DA0BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 67,
+      "product_code": "103835DA01",
+      "product_name": "Simplicity Square Bath Spout",
+      "collection": "Simplicity Square",
+      "product_type": "Bath Spout",
+      "category": "Spouts",
+      "finish": "Polished Warm Sunset",
+      "catalogue_pages": "pp. 18-19",
+      "pdf_page": 10,
+      "image_filename": "103835DA01.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/103835DA01.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 338
+      }
+    },
+    {
+      "sno": 68,
+      "product_code": "FFAS0495-908DA0BF0",
+      "product_name": "Concept Square Towel Shelf",
+      "collection": "Concept Square",
+      "product_type": "Towel Shelf",
+      "category": "Other Accessories",
+      "finish": "Polished Warm Sunset",
+      "catalogue_pages": "pp. 18-19",
+      "pdf_page": 10,
+      "image_filename": "FFAS0495-908DA0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS0495-908DA0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 338
+      }
+    },
+    {
+      "sno": 69,
+      "product_code": "FFAS0481-908DA0BF0",
+      "product_name": "Concept Square Robe Hook",
+      "collection": "Concept Square",
+      "product_type": "Robe Hook",
+      "category": "Other Accessories",
+      "finish": "Polished Warm Sunset",
+      "catalogue_pages": "pp. 18-19",
+      "pdf_page": 10,
+      "image_filename": "FFAS0481-908DA0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS0481-908DA0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 70,
+      "product_code": "FFAS0493-908DA0BF0",
+      "product_name": "Concept Square Towel Rack",
+      "collection": "Concept Square",
+      "product_type": "Towel Rack",
+      "category": "Other Accessories",
+      "finish": "Polished Warm Sunset",
+      "catalogue_pages": "pp. 18-19",
+      "pdf_page": 10,
+      "image_filename": "FFAS0493-908DA0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS0493-908DA0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 71,
+      "product_code": "FFAS0498-908DA0BF0",
+      "product_name": "Concept Square Single Tissue Holder",
+      "collection": "Concept Square",
+      "product_type": "Tissue Holder",
+      "category": "Other Accessories",
+      "finish": "Polished Warm Sunset",
+      "catalogue_pages": "pp. 18-19",
+      "pdf_page": 10,
+      "image_filename": "FFAS0498-908DA0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS0498-908DA0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 72,
+      "product_code": "FFAS9H11-000DA0BF0",
+      "product_name": "RainClick 130 Round 3F Hand Shower",
+      "collection": "RainClick",
+      "product_type": "Hand Shower",
+      "category": "Showers",
+      "finish": "Polished Warm Sunset",
+      "catalogue_pages": "pp. 18-19",
+      "pdf_page": 10,
+      "image_filename": "FFAS9H11-000DA0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS9H11-000DA0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 73,
+      "product_code": "FFASS054-000DA0BC0",
+      "product_name": "Body Showers with conceal body(G1/2”)",
+      "collection": "Shower Accessories",
+      "product_type": "Body Shower",
+      "category": "Showers",
+      "finish": "Polished Warm Sunset",
+      "catalogue_pages": "pp. 18-19",
+      "pdf_page": 10,
+      "image_filename": "FFASS054-000DA0BC0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFASS054-000DA0BC0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 74,
+      "product_code": "FFASS515-000DA0BF0",
+      "product_name": "EasySet Headshower",
+      "collection": "EasySet",
+      "product_type": "Headshower",
+      "category": "Showers",
+      "finish": "Polished Warm Sunset",
+      "catalogue_pages": "pp. 18-19",
+      "pdf_page": 10,
+      "image_filename": "FFASS515-000DA0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFASS515-000DA0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 75,
+      "product_code": "103650DA01",
+      "product_name": "Stop Valve Ceramic Valve",
+      "collection": "Waste & Valves",
+      "product_type": "Stop Valve",
+      "category": "Other Accessories",
+      "finish": "Polished Warm Sunset",
+      "catalogue_pages": "pp. 18-19",
+      "pdf_page": 10,
+      "image_filename": "103650DA01.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/103650DA01.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 76,
+      "product_code": "103836DA01",
+      "product_name": "Push-open Waste with overflow",
+      "collection": "Waste & Valves",
+      "product_type": "Waste",
+      "category": "Other Accessories",
+      "finish": "Polished Warm Sunset",
+      "catalogue_pages": "pp. 18-19",
+      "pdf_page": 10,
+      "image_filename": "103836DA01.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/103836DA01.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 77,
+      "product_code": "FFASTS28-000DA0BF0",
+      "product_name": "DuoSTiX™ Hygiene Spray",
+      "collection": "DuoSTiX",
+      "product_type": "Hygiene Spray",
+      "category": "Other Accessories",
+      "finish": "Polished Warm Sunset",
+      "catalogue_pages": "pp. 18-19",
+      "pdf_page": 10,
+      "image_filename": "FFASTS28-000DA0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFASTS28-000DA0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 78,
+      "product_code": "FFAS1704-101A00BF0",
+      "product_name": "Signature Wall Mounted Basin Mixer",
+      "collection": "Signature",
+      "product_type": "Basin Mixer",
+      "category": "Signature Faucets",
+      "finish": "Polished Hard Graphite",
+      "catalogue_pages": "pp. 22-23",
+      "pdf_page": 12,
+      "image_filename": "FFAS1704-101A00BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1704-101A00BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 338
+      }
+    },
+    {
+      "sno": 79,
+      "product_code": "FFAS1703-101A00BF0",
+      "product_name": "Signature 3-Hole Basin Mixer",
+      "collection": "Signature",
+      "product_type": "Basin Mixer",
+      "category": "Signature Faucets",
+      "finish": "Polished Hard Graphite",
+      "catalogue_pages": "pp. 22-23",
+      "pdf_page": 12,
+      "image_filename": "FFAS1703-101A00BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1703-101A00BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 338
+      }
+    },
+    {
+      "sno": 80,
+      "product_code": "FFAS1702-101A00BF0",
+      "product_name": "Signature Single Hole Extended Basin M",
+      "collection": "Signature",
+      "product_type": "Basin Mixer",
+      "category": "Signature Faucets",
+      "finish": "Polished Hard Graphite",
+      "catalogue_pages": "pp. 22-23",
+      "pdf_page": 12,
+      "image_filename": "FFAS1702-101A00BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1702-101A00BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 81,
+      "product_code": "FFAS1701-101A00BF0",
+      "product_name": "Signature Basin Mixer",
+      "collection": "Signature",
+      "product_type": "Basin Mixer",
+      "category": "Signature Faucets",
+      "finish": "Polished Hard Graphite",
+      "catalogue_pages": "pp. 22-23",
+      "pdf_page": 12,
+      "image_filename": "FFAS1701-101A00BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1701-101A00BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 82,
+      "product_code": "FFAS0927-709A00BF0",
+      "product_name": "EasySET for Body Shower",
+      "collection": "EasySet",
+      "product_type": "Body Shower",
+      "category": "EasySet Concealed Auto Temperature Mixer",
+      "finish": "Polished Hard Graphite",
+      "catalogue_pages": "pp. 22-23",
+      "pdf_page": 12,
+      "image_filename": "FFAS0927-709A00BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS0927-709A00BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 83,
+      "product_code": "FFAS0930-000A00BF0",
+      "product_name": "Conceal Thermostatic Mixer with Trim",
+      "collection": "EasySet",
+      "product_type": "Thermostatic Mixer",
+      "category": "EasySet Concealed Auto Temperature Mixer",
+      "finish": "Polished Hard Graphite",
+      "catalogue_pages": "pp. 22-23",
+      "pdf_page": 12,
+      "image_filename": "FFAS0930-000A00BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS0930-000A00BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 84,
+      "product_code": "FFAS0925-709A00BF0",
+      "product_name": "EasySet for Hand Shower",
+      "collection": "EasySet",
+      "product_type": "Hand Shower",
+      "category": "EasySet Concealed Auto Temperature Mixer",
+      "finish": "Polished Hard Graphite",
+      "catalogue_pages": "pp. 22-23",
+      "pdf_page": 12,
+      "image_filename": "FFAS0925-709A00BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS0925-709A00BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 338
+      }
+    },
+    {
+      "sno": 85,
+      "product_code": "FFAS0926-709A00BF0",
+      "product_name": "EasySet for Head Shower",
+      "collection": "EasySet",
+      "product_type": "Head Shower",
+      "category": "EasySet Concealed Auto Temperature Mixer",
+      "finish": "Polished Hard Graphite",
+      "catalogue_pages": "pp. 22-23",
+      "pdf_page": 12,
+      "image_filename": "FFAS0926-709A00BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS0926-709A00BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 338
+      }
+    },
+    {
+      "sno": 86,
+      "product_code": "FFAS4956-601A00BF0",
+      "product_name": "EasySET Exposed Auto Temperature Shower",
+      "collection": "EasySet",
+      "product_type": "Exposed Thermostatic Shower",
+      "category": "EasySet Exposed Auto Temperature Mixer",
+      "finish": "Polished Hard Graphite",
+      "catalogue_pages": "pp. 22-23",
+      "pdf_page": 12,
+      "image_filename": "FFAS4956-601A00BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS4956-601A00BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 87,
+      "product_code": "FFAS1722-709A00BF0",
+      "product_name": "Signature Concealed Shower Mixer",
+      "collection": "Signature",
+      "product_type": "Shower Mixer",
+      "category": "Signature Bath & Shower Fittings",
+      "finish": "Polished Hard Graphite",
+      "catalogue_pages": "pp. 22-23",
+      "pdf_page": 12,
+      "image_filename": "FFAS1722-709A00BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1722-709A00BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 88,
+      "product_code": "FFAS1721-609A00BF0",
+      "product_name": "Signature Concealed Bath & Shower Mixer",
+      "collection": "Signature",
+      "product_type": "Bath & Shower Mixer",
+      "category": "Signature Bath & Shower Fittings",
+      "finish": "Polished Hard Graphite",
+      "catalogue_pages": "pp. 22-23",
+      "pdf_page": 12,
+      "image_filename": "FFAS1721-609A00BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1721-609A00BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 89,
+      "product_code": "FFAS1711-609A00BF0",
+      "product_name": "Signature Exposed Bath & Shower Mixer",
+      "collection": "Signature",
+      "product_type": "Bath & Shower Mixer",
+      "category": "Signature Bath & Shower Fittings",
+      "finish": "Polished Hard Graphite",
+      "catalogue_pages": "pp. 22-23",
+      "pdf_page": 12,
+      "image_filename": "FFAS1711-609A00BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1711-609A00BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 90,
+      "product_code": "FFAS1712-709A00BF0",
+      "product_name": "Signature Exposed Shower Mixer",
+      "collection": "Signature",
+      "product_type": "Shower Mixer",
+      "category": "Signature Bath & Shower Fittings",
+      "finish": "Polished Hard Graphite",
+      "catalogue_pages": "pp. 22-23",
+      "pdf_page": 12,
+      "image_filename": "FFAS1712-709A00BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1712-709A00BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 91,
+      "product_code": "FFAS1772-701A00BF0",
+      "product_name": "Signature Exposed Bath & Shower Mixer",
+      "collection": "Signature",
+      "product_type": "Bath & Shower Mixer",
+      "category": "Signature Bath & Shower Fittings",
+      "finish": "Polished Hard Graphite",
+      "catalogue_pages": "pp. 22-23",
+      "pdf_page": 12,
+      "image_filename": "FFAS1772-701A00BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1772-701A00BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 338
+      }
+    },
+    {
+      "sno": 92,
+      "product_code": "137441A000",
+      "product_name": "Onyx Bath Spout",
+      "collection": "Onyx",
+      "product_type": "Bath Spout",
+      "category": "Spouts",
+      "finish": "Polished Hard Graphite",
+      "catalogue_pages": "pp. 22-23",
+      "pdf_page": 12,
+      "image_filename": "137441A000.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/137441A000.png",
+      "image_size_px": {
+        "width": 342,
+        "height": 287
+      }
+    },
+    {
+      "sno": 93,
+      "product_code": "103835A001",
+      "product_name": "Simplicity Square Bath Spout",
+      "collection": "Simplicity Square",
+      "product_type": "Bath Spout",
+      "category": "Spouts",
+      "finish": "Polished Hard Graphite",
+      "catalogue_pages": "pp. 22-23",
+      "pdf_page": 12,
+      "image_filename": "103835A001.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/103835A001.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 94,
+      "product_code": "FFASS054-000A00BC0",
+      "product_name": "Body Showers with conceal body(G1/2”)",
+      "collection": "Shower Accessories",
+      "product_type": "Body Shower",
+      "category": "Showers",
+      "finish": "Polished Hard Graphite",
+      "catalogue_pages": "pp. 24-25",
+      "pdf_page": 13,
+      "image_filename": "FFASS054-000A00BC0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFASS054-000A00BC0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 95,
+      "product_code": "FFAS0481-908A00BF0",
+      "product_name": "Concept Square Robe Hook",
+      "collection": "Concept Square",
+      "product_type": "Robe Hook",
+      "category": "Other Accessories",
+      "finish": "Polished Hard Graphite",
+      "catalogue_pages": "pp. 24-25",
+      "pdf_page": 13,
+      "image_filename": "FFAS0481-908A00BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS0481-908A00BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 96,
+      "product_code": "FFAS9H11-000A00BF0",
+      "product_name": "RainClick 130 Round 3F Hand Shower",
+      "collection": "RainClick",
+      "product_type": "Hand Shower",
+      "category": "Showers",
+      "finish": "Polished Hard Graphite",
+      "catalogue_pages": "pp. 24-25",
+      "pdf_page": 13,
+      "image_filename": "FFAS9H11-000A00BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS9H11-000A00BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 338
+      }
+    },
+    {
+      "sno": 97,
+      "product_code": "FFASS515-000A00BF0",
+      "product_name": "EasySet Headshower",
+      "collection": "EasySet",
+      "product_type": "Headshower",
+      "category": "Showers",
+      "finish": "Polished Hard Graphite",
+      "catalogue_pages": "pp. 24-25",
+      "pdf_page": 13,
+      "image_filename": "FFASS515-000A00BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFASS515-000A00BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 338
+      }
+    },
+    {
+      "sno": 98,
+      "product_code": "FFAS0498-908A00BF0",
+      "product_name": "Concept Square Single Tissue Holder",
+      "collection": "Concept Square",
+      "product_type": "Tissue Holder",
+      "category": "Other Accessories",
+      "finish": "Polished Hard Graphite",
+      "catalogue_pages": "pp. 24-25",
+      "pdf_page": 13,
+      "image_filename": "FFAS0498-908A00BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS0498-908A00BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 338
+      }
+    },
+    {
+      "sno": 99,
+      "product_code": "FFAS0493-908A00BF0",
+      "product_name": "Concept Square Towel Rack",
+      "collection": "Concept Square",
+      "product_type": "Towel Rack",
+      "category": "Other Accessories",
+      "finish": "Polished Hard Graphite",
+      "catalogue_pages": "pp. 24-25",
+      "pdf_page": 13,
+      "image_filename": "FFAS0493-908A00BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS0493-908A00BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 338
+      }
+    },
+    {
+      "sno": 100,
+      "product_code": "FFAS0495-908A00BF0",
+      "product_name": "Concept Square Towel Shelf",
+      "collection": "Concept Square",
+      "product_type": "Towel Shelf",
+      "category": "Other Accessories",
+      "finish": "Polished Hard Graphite",
+      "catalogue_pages": "pp. 24-25",
+      "pdf_page": 13,
+      "image_filename": "FFAS0495-908A00BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS0495-908A00BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 101,
+      "product_code": "FFASTS28-000A00BF0",
+      "product_name": "DuoSTiX™ Hygiene Spray",
+      "collection": "DuoSTiX",
+      "product_type": "Hygiene Spray",
+      "category": "Other Accessories",
+      "finish": "Polished Hard Graphite",
+      "catalogue_pages": "pp. 24-25",
+      "pdf_page": 13,
+      "image_filename": "FFASTS28-000A00BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFASTS28-000A00BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 338
+      }
+    },
+    {
+      "sno": 102,
+      "product_code": "103650A001",
+      "product_name": "Stop Valve Ceramic Valve",
+      "collection": "Waste & Valves",
+      "product_type": "Stop Valve",
+      "category": "Other Accessories",
+      "finish": "Polished Hard Graphite",
+      "catalogue_pages": "pp. 24-25",
+      "pdf_page": 13,
+      "image_filename": "103650A001.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/103650A001.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 338
+      }
+    },
+    {
+      "sno": 103,
+      "product_code": "103836A001",
+      "product_name": "Push-open Waste with overflow",
+      "collection": "Waste & Valves",
+      "product_type": "Waste",
+      "category": "Other Accessories",
+      "finish": "Polished Hard Graphite",
+      "catalogue_pages": "pp. 24-25",
+      "pdf_page": 13,
+      "image_filename": "103836A001.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/103836A001.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 338
+      }
+    },
+    {
+      "sno": 104,
+      "product_code": "FFAS9909-000A00BF0",
+      "product_name": "Wall Mounted Shower Arm",
+      "collection": "Shower Accessories",
+      "product_type": "Shower Arm",
+      "category": "Shower Accessories",
+      "finish": "Polished Hard Graphite",
+      "catalogue_pages": "pp. 24-25",
+      "pdf_page": 13,
+      "image_filename": "FFAS9909-000A00BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS9909-000A00BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 105,
+      "product_code": "FFAS9908-000A00BF0",
+      "product_name": "Top Installation Shower Arm",
+      "collection": "Shower Accessories",
+      "product_type": "Shower Arm",
+      "category": "Shower Accessories",
+      "finish": "Polished Hard Graphite",
+      "catalogue_pages": "pp. 24-25",
+      "pdf_page": 13,
+      "image_filename": "FFAS9908-000A00BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS9908-000A00BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 106,
+      "product_code": "FFAS9127-000A00BF0",
+      "product_name": "1.5m PVC Twist-free Flexible Hose",
+      "collection": "Shower Accessories",
+      "product_type": "Flexible Hose",
+      "category": "Shower Accessories",
+      "finish": "Polished Hard Graphite",
+      "catalogue_pages": "pp. 24-25",
+      "pdf_page": 13,
+      "image_filename": "FFAS9127-000A00BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS9127-000A00BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 338
+      }
+    },
+    {
+      "sno": 107,
+      "product_code": "FFAS9142-000A00BF0",
+      "product_name": "Wall outlet Square - (G1/2”)",
+      "collection": "Shower Accessories",
+      "product_type": "Wall Outlet",
+      "category": "Shower Accessories",
+      "finish": "Polished Hard Graphite",
+      "catalogue_pages": "pp. 24-25",
+      "pdf_page": 13,
+      "image_filename": "FFAS9142-000A00BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS9142-000A00BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 108,
+      "product_code": "FFAS9143-000A00BF0",
+      "product_name": "Square Wall Outlet With Holder",
+      "collection": "Shower Accessories",
+      "product_type": "Wall Outlet",
+      "category": "Shower Accessories",
+      "finish": "Polished Hard Graphite",
+      "catalogue_pages": "pp. 24-25",
+      "pdf_page": 13,
+      "image_filename": "FFAS9143-000A00BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS9143-000A00BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 109,
+      "product_code": "FFAS1302-101AL0BF0",
+      "product_name": "Acacia E SH SL Vessel Mixer-F",
+      "collection": "Acacia Evolution",
+      "product_type": "Vessel Mixer",
+      "category": "Acacia Evolution Faucets",
+      "finish": "Brushed Hard Graphite",
+      "catalogue_pages": "pp. 28-29",
+      "pdf_page": 15,
+      "image_filename": "FFAS1302-101AL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1302-101AL0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 338
+      }
+    },
+    {
+      "sno": 110,
+      "product_code": "FFAS1301-101AL0BF0",
+      "product_name": "Acacia E SH SL Basin Mixer-C1",
+      "collection": "Acacia Evolution",
+      "product_type": "Basin Mixer",
+      "category": "Acacia Evolution Faucets",
+      "finish": "Brushed Hard Graphite",
+      "catalogue_pages": "pp. 28-29",
+      "pdf_page": 15,
+      "image_filename": "FFAS1301-101AL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1301-101AL0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 338
+      }
+    },
+    {
+      "sno": 111,
+      "product_code": "FFAS1303-101AL0BF0",
+      "product_name": "Acacia E 8” Spread Basin Faucet",
+      "collection": "Acacia Evolution",
+      "product_type": "Basin Faucet (3-hole)",
+      "category": "Acacia Evolution Faucets",
+      "finish": "Brushed Hard Graphite",
+      "catalogue_pages": "pp. 28-29",
+      "pdf_page": 15,
+      "image_filename": "FFAS1303-101AL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1303-101AL0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 338
+      }
+    },
+    {
+      "sno": 112,
+      "product_code": "FFAS1304-101AL0BF0",
+      "product_name": "Acacia E In-Wall Vessel Mixer",
+      "collection": "Acacia Evolution",
+      "product_type": "Vessel Mixer",
+      "category": "Acacia Evolution Faucets",
+      "finish": "Brushed Hard Graphite",
+      "catalogue_pages": "pp. 28-29",
+      "pdf_page": 15,
+      "image_filename": "FFAS1304-101AL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1304-101AL0BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 113,
+      "product_code": "FFAS0925-709AL0BF0",
+      "product_name": "EasySET for Hand Shower",
+      "collection": "EasySet",
+      "product_type": "Hand Shower",
+      "category": "EasySet Concealed Auto Temperature Mixer",
+      "finish": "Brushed Hard Graphite",
+      "catalogue_pages": "pp. 28-29",
+      "pdf_page": 15,
+      "image_filename": "FFAS0925-709AL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS0925-709AL0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 114,
+      "product_code": "FFAS0926-709AL0BF0",
+      "product_name": "EasySET for Head Shower",
+      "collection": "EasySet",
+      "product_type": "Head Shower",
+      "category": "EasySet Concealed Auto Temperature Mixer",
+      "finish": "Brushed Hard Graphite",
+      "catalogue_pages": "pp. 28-29",
+      "pdf_page": 15,
+      "image_filename": "FFAS0926-709AL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS0926-709AL0BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 115,
+      "product_code": "FFAS0927-709AL0BF0",
+      "product_name": "EasySET for Body Shower",
+      "collection": "EasySet",
+      "product_type": "Body Shower",
+      "category": "EasySet Concealed Auto Temperature Mixer",
+      "finish": "Brushed Hard Graphite",
+      "catalogue_pages": "pp. 28-29",
+      "pdf_page": 15,
+      "image_filename": "FFAS0927-709AL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS0927-709AL0BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 116,
+      "product_code": "FFAS0930-709AL0BF0",
+      "product_name": "Conceal Thermostatic Mixer with Trim",
+      "collection": "EasySet",
+      "product_type": "Thermostatic Mixer",
+      "category": "EasySet Concealed Auto Temperature Mixer",
+      "finish": "Brushed Hard Graphite",
+      "catalogue_pages": "pp. 28-29",
+      "pdf_page": 15,
+      "image_filename": "FFAS0930-709AL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS0930-709AL0BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 117,
+      "product_code": "FFAS1305-101AL0BF0",
+      "product_name": "Acacia E Single Hole Side Lava Faucet",
+      "collection": "Acacia Evolution",
+      "product_type": "Side Lava Faucet",
+      "category": "Acacia Evolution Faucets",
+      "finish": "Brushed Hard Graphite",
+      "catalogue_pages": "pp. 28-29",
+      "pdf_page": 15,
+      "image_filename": "FFAS1305-101AL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1305-101AL0BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 118,
+      "product_code": "FFAS4956-601AL0BF0",
+      "product_name": "EasySET Exposed Auto Temperature Shower",
+      "collection": "EasySet",
+      "product_type": "Exposed Thermostatic Shower",
+      "category": "EasySet Exposed Auto Temperature Mixer",
+      "finish": "Brushed Hard Graphite",
+      "catalogue_pages": "pp. 28-29",
+      "pdf_page": 15,
+      "image_filename": "FFAS4956-601AL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS4956-601AL0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 333
+      }
+    },
+    {
+      "sno": 119,
+      "product_code": "FFAS1322-708AL0BF0",
+      "product_name": "Acacia E Concealed Shower Main Mixer",
+      "collection": "Acacia Evolution",
+      "product_type": "Shower Mixer",
+      "category": "Acacia Evolution Bath & Shower Fittings",
+      "finish": "Brushed Hard Graphite",
+      "catalogue_pages": "pp. 28-29",
+      "pdf_page": 15,
+      "image_filename": "FFAS1322-708AL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1322-708AL0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 338
+      }
+    },
+    {
+      "sno": 120,
+      "product_code": "FFAS1300-601AL0BF0",
+      "product_name": "Acacia Evolution Deck mount Bath & Shower Mixer with Shower Kit",
+      "collection": "Acacia Evolution",
+      "product_type": "Bath & Shower Mixer",
+      "category": "Acacia Evolution Bath & Shower Fittings",
+      "finish": "Brushed Hard Graphite",
+      "catalogue_pages": "pp. 28-29",
+      "pdf_page": 15,
+      "image_filename": "FFAS1300-601AL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1300-601AL0BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 121,
+      "product_code": "FFAS1321-608AL0BF0",
+      "product_name": "Acacia E Concealed Bath & Shower Main Mixing Val",
+      "collection": "Acacia Evolution",
+      "product_type": "Bath & Shower Mixer",
+      "category": "Acacia Evolution Bath & Shower Fittings",
+      "finish": "Brushed Hard Graphite",
+      "catalogue_pages": "pp. 28-29",
+      "pdf_page": 15,
+      "image_filename": "FFAS1321-608AL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1321-608AL0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 122,
+      "product_code": "103835AL01",
+      "product_name": "Simplicity Square Bath Spout",
+      "collection": "Simplicity Square",
+      "product_type": "Bath Spout",
+      "category": "Simplicity Square",
+      "finish": "Brushed Hard Graphite",
+      "catalogue_pages": "pp. 28-29",
+      "pdf_page": 15,
+      "image_filename": "103835AL01.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/103835AL01.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 123,
+      "product_code": "FFASS054-000AL0BC0",
+      "product_name": "Body Showers with conceal body(G1/2”)",
+      "collection": "Shower Accessories",
+      "product_type": "Body Shower",
+      "category": "Showers",
+      "finish": "Brushed Hard Graphite",
+      "catalogue_pages": "pp. 30-31",
+      "pdf_page": 16,
+      "image_filename": "FFASS054-000AL0BC0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFASS054-000AL0BC0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 124,
+      "product_code": "FFAS0495-908AL0BF0",
+      "product_name": "Concept Square Towel Shelf",
+      "collection": "Concept Square",
+      "product_type": "Towel Shelf",
+      "category": "Other Accessories",
+      "finish": "Brushed Hard Graphite",
+      "catalogue_pages": "pp. 30-31",
+      "pdf_page": 16,
+      "image_filename": "FFAS0495-908AL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS0495-908AL0BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 125,
+      "product_code": "FFAS0493-908AL0BF0",
+      "product_name": "Concept Square Towel Rack",
+      "collection": "Concept Square",
+      "product_type": "Towel Rack",
+      "category": "Other Accessories",
+      "finish": "Brushed Hard Graphite",
+      "catalogue_pages": "pp. 30-31",
+      "pdf_page": 16,
+      "image_filename": "FFAS0493-908AL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS0493-908AL0BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 126,
+      "product_code": "FFAS0481-908AL0BF0",
+      "product_name": "Concept Square Robe Hook",
+      "collection": "Concept Square",
+      "product_type": "Robe Hook",
+      "category": "Other Accessories",
+      "finish": "Brushed Hard Graphite",
+      "catalogue_pages": "pp. 30-31",
+      "pdf_page": 16,
+      "image_filename": "FFAS0481-908AL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS0481-908AL0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 127,
+      "product_code": "FFAS0498-908AL0BF0",
+      "product_name": "Concept Square Single Tissue Holder",
+      "collection": "Concept Square",
+      "product_type": "Tissue Holder",
+      "category": "Other Accessories",
+      "finish": "Brushed Hard Graphite",
+      "catalogue_pages": "pp. 30-31",
+      "pdf_page": 16,
+      "image_filename": "FFAS0498-908AL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS0498-908AL0BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 338
+      }
+    },
+    {
+      "sno": 128,
+      "product_code": "FFAS9H11-000AL0BF0",
+      "product_name": "RainClick 130 Round 3F Hand Shower",
+      "collection": "RainClick",
+      "product_type": "Hand Shower",
+      "category": "Showers",
+      "finish": "Brushed Hard Graphite",
+      "catalogue_pages": "pp. 30-31",
+      "pdf_page": 16,
+      "image_filename": "FFAS9H11-000AL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS9H11-000AL0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 338
+      }
+    },
+    {
+      "sno": 129,
+      "product_code": "FFASS515-000AL0BF0",
+      "product_name": "EasySet Headshower",
+      "collection": "EasySet",
+      "product_type": "Headshower",
+      "category": "Showers",
+      "finish": "Brushed Hard Graphite",
+      "catalogue_pages": "pp. 30-31",
+      "pdf_page": 16,
+      "image_filename": "FFASS515-000AL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFASS515-000AL0BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 338
+      }
+    },
+    {
+      "sno": 130,
+      "product_code": "FFASTS28-000AL0BF0",
+      "product_name": "DuoSTiX™ Hygiene Spray",
+      "collection": "DuoSTiX",
+      "product_type": "Hygiene Spray",
+      "category": "Other Accessories",
+      "finish": "Brushed Hard Graphite",
+      "catalogue_pages": "pp. 30-31",
+      "pdf_page": 16,
+      "image_filename": "FFASTS28-000AL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFASTS28-000AL0BF0.png",
+      "image_size_px": {
+        "width": 329,
+        "height": 329
+      }
+    },
+    {
+      "sno": 131,
+      "product_code": "FFAS9909-000AL0BF0",
+      "product_name": "Wall Mounted Shower Arm-C1",
+      "collection": "Shower Accessories",
+      "product_type": "Shower Arm",
+      "category": "Shower Accessories",
+      "finish": "Brushed Hard Graphite",
+      "catalogue_pages": "pp. 30-31",
+      "pdf_page": 16,
+      "image_filename": "FFAS9909-000AL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS9909-000AL0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 132,
+      "product_code": "FFAS9908-000AL0BF0",
+      "product_name": "Top Installation Shower Arm",
+      "collection": "Shower Accessories",
+      "product_type": "Shower Arm",
+      "category": "Shower Accessories",
+      "finish": "Brushed Hard Graphite",
+      "catalogue_pages": "pp. 30-31",
+      "pdf_page": 16,
+      "image_filename": "FFAS9908-000AL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS9908-000AL0BF0.png",
+      "image_size_px": {
+        "width": 329,
+        "height": 329
+      }
+    },
+    {
+      "sno": 133,
+      "product_code": "FFAS9127-000AL0BF0",
+      "product_name": "1.5m PVC Twist-free Flexible Hose",
+      "collection": "Shower Accessories",
+      "product_type": "Flexible Hose",
+      "category": "Shower Accessories",
+      "finish": "Brushed Hard Graphite",
+      "catalogue_pages": "pp. 30-31",
+      "pdf_page": 16,
+      "image_filename": "FFAS9127-000AL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS9127-000AL0BF0.png",
+      "image_size_px": {
+        "width": 329,
+        "height": 329
+      }
+    },
+    {
+      "sno": 134,
+      "product_code": "FFAS9142-000AL0BF0",
+      "product_name": "Wall outlet - (G1/2”)",
+      "collection": "Shower Accessories",
+      "product_type": "Wall Outlet",
+      "category": "Shower Accessories",
+      "finish": "Brushed Hard Graphite",
+      "catalogue_pages": "pp. 30-31",
+      "pdf_page": 16,
+      "image_filename": "FFAS9142-000AL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS9142-000AL0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 135,
+      "product_code": "FFAS9143-000AL0BF0",
+      "product_name": "Square Wall Outlet With Holder (G1/2”)",
+      "collection": "Shower Accessories",
+      "product_type": "Wall Outlet",
+      "category": "Shower Accessories",
+      "finish": "Brushed Hard Graphite",
+      "catalogue_pages": "pp. 30-31",
+      "pdf_page": 16,
+      "image_filename": "FFAS9143-000AL0BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS9143-000AL0BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 338
+      }
+    },
+    {
+      "sno": 136,
+      "product_code": "FFAS1303-101440BF0",
+      "product_name": "Acacia E 8” Spread Basin Faucet",
+      "collection": "Acacia Evolution",
+      "product_type": "Basin Faucet (3-hole)",
+      "category": "Acacia Evolution Faucets",
+      "finish": "Matte Black",
+      "catalogue_pages": "pp. 34-35",
+      "pdf_page": 18,
+      "image_filename": "FFAS1303-101440BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1303-101440BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 338
+      }
+    },
+    {
+      "sno": 137,
+      "product_code": "FFAS1301-101440BF0",
+      "product_name": "Acacia E SH SL basin mixer-C1",
+      "collection": "Acacia Evolution",
+      "product_type": "Basin Mixer",
+      "category": "Acacia Evolution Faucets",
+      "finish": "Matte Black",
+      "catalogue_pages": "pp. 34-35",
+      "pdf_page": 18,
+      "image_filename": "FFAS1301-101440BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1301-101440BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 138,
+      "product_code": "FFAS1302-101440BF0",
+      "product_name": "Acacia E SH SL vessel mixer-F",
+      "collection": "Acacia Evolution",
+      "product_type": "Vessel Mixer",
+      "category": "Acacia Evolution Faucets",
+      "finish": "Matte Black",
+      "catalogue_pages": "pp. 34-35",
+      "pdf_page": 18,
+      "image_filename": "FFAS1302-101440BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1302-101440BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 139,
+      "product_code": "FFAS1304-101440BF0",
+      "product_name": "Acacia E In-Wall Vessel Mixer",
+      "collection": "Acacia Evolution",
+      "product_type": "Vessel Mixer",
+      "category": "Acacia Evolution Faucets",
+      "finish": "Matte Black",
+      "catalogue_pages": "pp. 34-35",
+      "pdf_page": 18,
+      "image_filename": "FFAS1304-101440BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1304-101440BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 140,
+      "product_code": "FFAS0927-709440BF0",
+      "product_name": "EasySET for Body Shower",
+      "collection": "EasySet",
+      "product_type": "Body Shower",
+      "category": "EasySet Concealed Auto Temperature Mixer",
+      "finish": "Matte Black",
+      "catalogue_pages": "pp. 34-35",
+      "pdf_page": 18,
+      "image_filename": "FFAS0927-709440BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS0927-709440BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 141,
+      "product_code": "FFAS0925-709440BF0",
+      "product_name": "EasySET for Hand Shower",
+      "collection": "EasySet",
+      "product_type": "Hand Shower",
+      "category": "EasySet Concealed Auto Temperature Mixer",
+      "finish": "Matte Black",
+      "catalogue_pages": "pp. 34-35",
+      "pdf_page": 18,
+      "image_filename": "FFAS0925-709440BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS0925-709440BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 142,
+      "product_code": "FFAS0926-709440BF0",
+      "product_name": "EasySET for Head Shower",
+      "collection": "EasySet",
+      "product_type": "Head Shower",
+      "category": "EasySet Concealed Auto Temperature Mixer",
+      "finish": "Matte Black",
+      "catalogue_pages": "pp. 34-35",
+      "pdf_page": 18,
+      "image_filename": "FFAS0926-709440BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS0926-709440BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 143,
+      "product_code": "FFAS0930-709440BF0",
+      "product_name": "Conceal Thermostatic Mixer with Trim",
+      "collection": "EasySet",
+      "product_type": "Thermostatic Mixer",
+      "category": "EasySet Concealed Auto Temperature Mixer",
+      "finish": "Matte Black",
+      "catalogue_pages": "pp. 34-35",
+      "pdf_page": 18,
+      "image_filename": "FFAS0930-709440BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS0930-709440BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 144,
+      "product_code": "FFAS1306-1T1440BF0",
+      "product_name": "Acacia E Basin mono_Matt Black",
+      "collection": "Acacia Evolution",
+      "product_type": "Basin Mixer",
+      "category": "Acacia Evolution Faucets",
+      "finish": "Matte Black",
+      "catalogue_pages": "pp. 34-35",
+      "pdf_page": 18,
+      "image_filename": "FFAS1306-1T1440BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1306-1T1440BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 145,
+      "product_code": "FFAS4956-601440BF0",
+      "product_name": "EasySET Exposed Auto Temperature Shower",
+      "collection": "EasySet",
+      "product_type": "Exposed Thermostatic Shower",
+      "category": "EasySet Exposed Auto Temperature Mixer",
+      "finish": "Matte Black",
+      "catalogue_pages": "pp. 34-35",
+      "pdf_page": 18,
+      "image_filename": "FFAS4956-601440BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS4956-601440BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 331
+      }
+    },
+    {
+      "sno": 146,
+      "product_code": "FFAS4955-701440BF0",
+      "product_name": "EasySET Exposed Shower Auto Temperature",
+      "collection": "EasySet",
+      "product_type": "Exposed Thermostatic Shower",
+      "category": "EasySet Exposed Auto Temperature Mixer",
+      "finish": "Matte Black",
+      "catalogue_pages": "pp. 34-35",
+      "pdf_page": 18,
+      "image_filename": "FFAS4955-701440BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS4955-701440BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 329
+      }
+    },
+    {
+      "sno": 147,
+      "product_code": "FFAS1300-601440BF0",
+      "product_name": "Acacia Evolution Deck Mount Bath & Shower Mixer with Shower Kit",
+      "collection": "Acacia Evolution",
+      "product_type": "Bath & Shower Mixer",
+      "category": "Acacia Evolution Bath & Shower Fittings",
+      "finish": "Matte Black",
+      "catalogue_pages": "pp. 34-35",
+      "pdf_page": 18,
+      "image_filename": "FFAS1300-601440BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1300-601440BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 148,
+      "product_code": "FFAS1326-7T1440BF0",
+      "product_name": "Acacia Evolution Shower Mono",
+      "collection": "Acacia Evolution",
+      "product_type": "Shower Mixer",
+      "category": "Acacia Evolution Bath & Shower Fittings",
+      "finish": "Matte Black",
+      "catalogue_pages": "pp. 34-35",
+      "pdf_page": 18,
+      "image_filename": "FFAS1326-7T1440BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1326-7T1440BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 149,
+      "product_code": "FFAS1321-608440BF0",
+      "product_name": "Acacia Evolution Concealed Bath & Shower Mixing",
+      "collection": "Acacia Evolution",
+      "product_type": "Bath & Shower Mixer",
+      "category": "Acacia Evolution Bath & Shower Fittings",
+      "finish": "Matte Black",
+      "catalogue_pages": "pp. 34-35",
+      "pdf_page": 18,
+      "image_filename": "FFAS1321-608440BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1321-608440BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 150,
+      "product_code": "FF1-CN521X44000480",
+      "product_name": "Simplicity Square Bath Spout",
+      "collection": "Simplicity Square",
+      "product_type": "Bath Spout",
+      "category": "Simplicity Square",
+      "finish": "Matte Black",
+      "catalogue_pages": "pp. 34-35",
+      "pdf_page": 18,
+      "image_filename": "FF1-CN521X44000480.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FF1-CN521X44000480.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 151,
+      "product_code": "FFASS515-000440BF0",
+      "product_name": "EasySet Headshower",
+      "collection": "EasySet",
+      "product_type": "Headshower",
+      "category": "Showers",
+      "finish": "Matte Black",
+      "catalogue_pages": "pp. 36-37",
+      "pdf_page": 19,
+      "image_filename": "FFASS515-000440BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFASS515-000440BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 152,
+      "product_code": "FFAS9H11-000440BF0",
+      "product_name": "RainClick 130 Round 3F Hand Shower",
+      "collection": "RainClick",
+      "product_type": "Hand Shower",
+      "category": "Showers",
+      "finish": "Matte Black",
+      "catalogue_pages": "pp. 36-37",
+      "pdf_page": 19,
+      "image_filename": "FFAS9H11-000440BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS9H11-000440BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 153,
+      "product_code": "FFAS1387-908440BF0",
+      "product_name": "Acacia E Tissue Holder",
+      "collection": "Acacia Evolution",
+      "product_type": "Tissue Holder",
+      "category": "Other Accessories",
+      "finish": "Matte Black",
+      "catalogue_pages": "pp. 36-37",
+      "pdf_page": 19,
+      "image_filename": "FFAS1387-908440BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1387-908440BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 154,
+      "product_code": "FFAS0498-908440BF0",
+      "product_name": "Concept Square Single TissueHolder w/S_MB",
+      "collection": "Concept Square",
+      "product_type": "Tissue Holder",
+      "category": "Other Accessories",
+      "finish": "Matte Black",
+      "catalogue_pages": "pp. 36-37",
+      "pdf_page": 19,
+      "image_filename": "FFAS0498-908440BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS0498-908440BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 338
+      }
+    },
+    {
+      "sno": 155,
+      "product_code": "FFASTS28-000441BF0",
+      "product_name": "DuoSTiX™ Hygiene Spray",
+      "collection": "DuoSTiX",
+      "product_type": "Hygiene Spray",
+      "category": "Other Accessories",
+      "finish": "Matte Black",
+      "catalogue_pages": "pp. 36-37",
+      "pdf_page": 19,
+      "image_filename": "FFASTS28-000441BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFASTS28-000441BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 338
+      }
+    },
+    {
+      "sno": 156,
+      "product_code": "FFAS1381-908440BF0",
+      "product_name": "Acacia E Robe Hook",
+      "collection": "Acacia Evolution",
+      "product_type": "Robe Hook",
+      "category": "Other Accessories",
+      "finish": "Matte Black",
+      "catalogue_pages": "pp. 36-37",
+      "pdf_page": 19,
+      "image_filename": "FFAS1381-908440BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1381-908440BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 338
+      }
+    },
+    {
+      "sno": 157,
+      "product_code": "FFASS054-000440BF0",
+      "product_name": "Body Showers with conceal body(G1/2”)- C",
+      "collection": "Shower Accessories",
+      "product_type": "Body Shower",
+      "category": "Showers",
+      "finish": "Matte Black",
+      "catalogue_pages": "pp. 36-37",
+      "pdf_page": 19,
+      "image_filename": "FFASS054-000440BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image; name as printed in catalogue",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFASS054-000440BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 338
+      }
+    },
+    {
+      "sno": 158,
+      "product_code": "FFASTA15-000440BF0",
+      "product_name": "Push Lock Waste & Overflow For Lava Type A",
+      "collection": "Waste & Valves",
+      "product_type": "Waste",
+      "category": "Other Accessories",
+      "finish": "Matte Black",
+      "catalogue_pages": "pp. 36-37",
+      "pdf_page": 19,
+      "image_filename": "FFASTA15-000440BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFASTA15-000440BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 159,
+      "product_code": "FFAS1393-908440BF0",
+      "product_name": "Acacia E Towel Rack",
+      "collection": "Acacia Evolution",
+      "product_type": "Towel Rack",
+      "category": "Other Accessories",
+      "finish": "Matte Black",
+      "catalogue_pages": "pp. 36-37",
+      "pdf_page": 19,
+      "image_filename": "FFAS1393-908440BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS1393-908440BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 160,
+      "product_code": "1024362430",
+      "product_name": "Stop Valve Ceramic Valve",
+      "collection": "Waste & Valves",
+      "product_type": "Stop Valve",
+      "category": "Other Accessories",
+      "finish": "Matte Black",
+      "catalogue_pages": "pp. 36-37",
+      "pdf_page": 19,
+      "image_filename": "1024362430.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/1024362430.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 161,
+      "product_code": "FFAS9908-000440BF0",
+      "product_name": "Top Installation Shower Arm",
+      "collection": "Shower Accessories",
+      "product_type": "Shower Arm",
+      "category": "Shower Accessories",
+      "finish": "Matte Black",
+      "catalogue_pages": "pp. 36-37",
+      "pdf_page": 19,
+      "image_filename": "FFAS9908-000440BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS9908-000440BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 162,
+      "product_code": "FFAS9127-000440BF0",
+      "product_name": "1.5m PVC Twist-free Flexible Hose",
+      "collection": "Shower Accessories",
+      "product_type": "Flexible Hose",
+      "category": "Shower Accessories",
+      "finish": "Matte Black",
+      "catalogue_pages": "pp. 36-37",
+      "pdf_page": 19,
+      "image_filename": "FFAS9127-000440BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS9127-000440BF0.png",
+      "image_size_px": {
+        "width": 337,
+        "height": 337
+      }
+    },
+    {
+      "sno": 163,
+      "product_code": "FFAS9143-000440BF0",
+      "product_name": "Square Wall Outlet With Holder (G1/2”)",
+      "collection": "Shower Accessories",
+      "product_type": "Wall Outlet",
+      "category": "Shower Accessories",
+      "finish": "Matte Black",
+      "catalogue_pages": "pp. 36-37",
+      "pdf_page": 19,
+      "image_filename": "FFAS9143-000440BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS9143-000440BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 337
+      }
+    },
+    {
+      "sno": 164,
+      "product_code": "FFAS9909-000440BF0",
+      "product_name": "Wall Mounted Shower Arm-C1",
+      "collection": "Shower Accessories",
+      "product_type": "Shower Arm",
+      "category": "Shower Accessories",
+      "finish": "Matte Black",
+      "catalogue_pages": "pp. 36-37",
+      "pdf_page": 19,
+      "image_filename": "FFAS9909-000440BF0.png",
+      "brand": "American Standard",
+      "notes": "Colour may differ slightly from printed brochure image",
+      "has_image": true,
+      "image_path": "https://media.cmtradingco.com/product_images/FFAS9909-000440BF0.png",
+      "image_size_px": {
+        "width": 338,
+        "height": 338
+      }
+    },
+    {
+      "sno": 165,
+      "product_code": "103650AL01",
+      "product_name": "Stop Valve Ceramic Valve",
+      "collection": "Waste & Valves",
+      "product_type": "Stop Valve",
+      "category": "Other Accessories",
+      "finish": "Brushed Hard Graphite",
+      "catalogue_pages": "pp. 30-31",
+      "pdf_page": 16,
+      "image_filename": null,
+      "image_path": null,
+      "has_image": false,
+      "image_size_px": null,
+      "brand": "American Standard",
+      "notes": "Marked 'COMING SOON' in catalogue; no photo available"
+    }
+  ]
+}
