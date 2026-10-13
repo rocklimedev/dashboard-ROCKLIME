@@ -516,15 +516,14 @@ export default function QuotationProductSheet({
           floorName: isValidAssignment ? loc.floorName : null,
           roomName: isValidAssignment ? loc.roomName : null,
           _sectionQty: Number(loc.assignedQuantity) || 0,
-          _locationKey: locationKey(
-            isValidAssignment ? loc : { floorId: null, roomId: null },
-          ),
+          _locationKey: locationKey(loc),
+          _sectionPriority: loc.priority ?? p.priority ?? 0,
         });
       });
     });
 
     Object.values(map).forEach((arr) =>
-      arr.sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0)),
+      arr.sort((a, b) => (a._sectionPriority ?? 0) - (b._sectionPriority ?? 0)),
     );
     return map;
   }, [formData.products]);
@@ -837,18 +836,64 @@ export default function QuotationProductSheet({
    * those productIds — mirrors handleCartOrderChange in Cart.jsx.
    */
   const reorderSection = (reorderedSectionProducts) => {
-    const priorityByProductId = new Map();
+    // Map of (productId + locationKey) → new index
+    // This ensures split products maintain independent priorities per location
+    const newOrderByLocation = new Map();
     reorderedSectionProducts.forEach((row, idx) => {
-      priorityByProductId.set(row.productId, idx);
+      const key = `${row.productId}::${row._locationKey}`;
+      newOrderByLocation.set(key, idx);
     });
 
     setFormData((prev) => ({
       ...prev,
-      products: prev.products.map((p) =>
-        priorityByProductId.has(p.productId)
-          ? { ...p, priority: priorityByProductId.get(p.productId) }
-          : p,
-      ),
+      products: prev.products.map((p) => {
+        let locs = Array.isArray(p.locations) ? [...p.locations] : [];
+
+        // Ensure we have a locations array (legacy single-location products)
+        if (locs.length === 0) {
+          locs = [
+            {
+              floorId: p.floorId || null,
+              roomId: p.roomId || null,
+              floorName: p.floorName || null,
+              roomName: p.roomName || null,
+              areaId: null,
+              areaName: null,
+              assignedQuantity: Number(p.qty) || 0,
+              priority: p.priority ?? 0,
+            },
+          ];
+        }
+
+        // Update priority for each location that was reordered in this section
+        let hasUpdates = false;
+        const updatedLocs = locs.map((loc) => {
+          const locKey = locationKey(loc);
+          const lookupKey = `${p.productId}::${locKey}`;
+
+          if (newOrderByLocation.has(lookupKey)) {
+            hasUpdates = true;
+            return {
+              ...loc,
+              priority: newOrderByLocation.get(lookupKey),
+            };
+          }
+          // Locations not in this section keep their existing priority
+          return loc;
+        });
+
+        if (!hasUpdates) {
+          return p; // No changes needed
+        }
+
+        return {
+          ...p,
+          locations: updatedLocs,
+          // Only sync product-level priority when there's a single location
+          priority:
+            updatedLocs.length === 1 ? updatedLocs[0].priority : p.priority,
+        };
+      }),
     }));
   };
 

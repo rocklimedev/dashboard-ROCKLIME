@@ -660,6 +660,7 @@ const AddQuotation = () => {
               areaId: loc.areaId || null,
               areaName: loc.areaName || null,
               assignedQuantity: safeNum(loc.assignedQuantity, qty),
+              priority: loc.priority ?? p.priority ?? 0,
             }))
           : p.areaId || p.roomId || p.floorId
             ? [
@@ -671,6 +672,7 @@ const AddQuotation = () => {
                   areaId: p.areaId || null,
                   areaName: p.areaName || null,
                   assignedQuantity: qty,
+                  priority: p.priority ?? 0,
                 },
               ]
             : [];
