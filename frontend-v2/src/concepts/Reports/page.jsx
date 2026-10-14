@@ -33,6 +33,7 @@ import { generateOrderReportPDF } from "../../components/Reports/generateOrderRe
 import { generatePOReportPDF } from "../../components/Reports/generatePOReport";
 import { generateInventoryReportPDF } from "../../components/Reports/generateInventoryReport";
 import { generateLowStockReportPDF } from "../../components/Reports/lowStockReport";
+import InventoryReportActions from "../../components/Reports/InventoryReportActions";
 const { Title } = Typography;
 const { RangePicker } = DatePicker;
 
@@ -257,6 +258,7 @@ const ReportsPage = () => {
         {isLoading && <Spin size="large" tip="Loading report data..." />}
 
         {/* Stats Overview */}
+        <InventoryReportActions products={products} loading={loadingProducts} />
         <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
           <Col xs={12} sm={6}>
             <Card>

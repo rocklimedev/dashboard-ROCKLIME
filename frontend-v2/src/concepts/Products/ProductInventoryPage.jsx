@@ -896,6 +896,9 @@ const ProductInventoryPage = () => {
             </div>
 
             <div className="header-meta">
+              <Button onClick={() => navigate(`/inventory/${encodeURIComponent(id)}/references`)}>
+                References
+              </Button>
               <span className="product-code-tag">
                 <BarcodeOutlined />
                 {product?.product_code || "No Code"}

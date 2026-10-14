@@ -8,8 +8,15 @@ import BrandSelection from "../../concepts/Products/BrandSelection";
 
 import BulkProductImportJob from "../../concepts/Products/ImportJob";
 import ProductInventoryPage from "../../concepts/Products/ProductInventoryPage";
+import ProductReferencesPage from "../../concepts/Products/ProductReferencesPage";
 
 export const productRoutes = [
+  {
+    path: "/inventory/:productId/references",
+    name: "Product References",
+    isSidebarActive: false,
+    element: <ProductReferencesPage />,
+  },
   {
     path: "/product/add",
     name: "Create Product",

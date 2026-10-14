@@ -8,7 +8,6 @@ import {
   Space,
   Typography,
   message,
-  Empty,
   Row,
   Col,
   Grid,
@@ -19,15 +18,19 @@ import {
   Tooltip,
   Dropdown,
   Menu,
+  Select,
+  Drawer,
+  Checkbox,
 } from "antd";
 import {
   SearchOutlined,
   PlusOutlined,
   MinusOutlined,
   HistoryOutlined,
-  FileTextOutlined,
-  DownloadOutlined,
+
+
   ReloadOutlined,
+  FilterOutlined,
   MoreOutlined,
 } from "@ant-design/icons";
 
@@ -42,11 +45,12 @@ import {
 import PageHeader from "../../components/Common/PageHeader";
 import pos from "../../assets/img/default.png";
 import HistoryModalAntD from "../../components/modals/HistoryModal";
-import ReportBuilderModal from "../../components/modals/ReportBuilderModal";
+
 import DeleteModal from "../../components/Common/DeleteModal";
 import PermissionGate from "../../context/PermissionGate";
-import { generatePDF, generateExcel } from "../../utils/helpers";
+
 import InventoryBulkActions from "../../components/Inventory/InventoryBulkActions";
+import { useGetAllBrandsQuery } from "../../api/brandsApi";
 
 const { Text } = Typography;
 
@@ -65,7 +69,7 @@ const InventoryWrapper = () => {
 
   const [activeTab, setActiveTab] = useState(initialTab);
   const [currentPage, setCurrentPage] = useState(
-    Number(queryParams.get("page")) || 1,
+    Math.max(1, parseInt(queryParams.get("page"), 10) || 1),
   );
   const [pageSize, setPageSize] = useState(() => {
     const limit = Number(queryParams.get("limit"));
@@ -73,21 +77,31 @@ const InventoryWrapper = () => {
   });
 
   const [search, setSearch] = useState(queryParams.get("search") || "");
+  const [brandId, setBrandId] = useState(
+    queryParams.get("brandId") || queryParams.get("brand") || undefined,
+  );
+  const { data: brands = [], isFetching: loadingBrands } = useGetAllBrandsQuery();
+  const [advancedFilterOpen, setAdvancedFilterOpen] = useState(false);
+  const [duplicateCompanyCode, setDuplicateCompanyCode] = useState(
+    queryParams.get("duplicateCompanyCode") === "true",
+  );
   const [lowStockThreshold, setLowStockThreshold] = useState(
     Number(queryParams.get("lowStockThreshold")) || 10,
   );
-  const [maxStockFilter, setMaxStockFilter] = useState(null);
-  const [priceRange, setPriceRange] = useState([null, null]);
+  const numberParam = (key) => queryParams.has(key) && queryParams.get(key) !== "" &&
+    Number.isFinite(Number(queryParams.get(key))) ? Number(queryParams.get(key)) : null;
+  const [maxStockFilter, setMaxStockFilter] = useState(numberParam("maxStock"));
+  const [priceRange, setPriceRange] = useState([numberParam("minPrice"), numberParam("maxPrice")]);
 
   // Modals
   const [stockModalOpen, setStockModalOpen] = useState(false);
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
-  const [reportModalOpen, setReportModalOpen] = useState(false);
+
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [stockAction, setStockAction] = useState("add");
-  const [selectedReportProducts, setSelectedReportProducts] = useState([]);
-  const [generatingMonthly, setGeneratingMonthly] = useState(false);
+
+
   const [selectedInventory, setSelectedInventory] = useState({});
   const selectedInventoryProducts = Object.values(selectedInventory);
 
@@ -98,14 +112,18 @@ const InventoryWrapper = () => {
       limit: pageSize,
       search: search.trim() || undefined,
       tab: activeTab,
-      lowStockThreshold:
-        activeTab === "low-stock" ? lowStockThreshold : undefined,
+      brandId,
+      duplicateCompanyCode,
+      maxStock: maxStockFilter,
+      minPrice: priceRange[0],
+      maxPrice: priceRange[1],
+      lowStockThreshold,
     }),
-    [currentPage, pageSize, search, activeTab, lowStockThreshold],
+    [currentPage, pageSize, search, activeTab, lowStockThreshold, brandId, duplicateCompanyCode, maxStockFilter, priceRange],
   );
 
   const {
-    data: response,
+    currentData: response,
     error,
     isLoading,
     isFetching,
@@ -132,6 +150,11 @@ const InventoryWrapper = () => {
     page: 1,
     limit: 50,
   };
+  useEffect(() => {
+    if (response?.pagination && response.pagination.page !== currentPage) {
+      setCurrentPage(response.pagination.page);
+    }
+  }, [response, currentPage]);
   const getSellingPrice = (metaDetails) => {
     if (!Array.isArray(metaDetails) || metaDetails.length === 0) return null;
 
@@ -146,54 +169,8 @@ const InventoryWrapper = () => {
 
     return null;
   };
-  // ==================== CLIENT-SIDE FILTERS ====================
-  const filteredProducts = useMemo(() => {
-    return products.filter((p) => {
-      const matchesMax =
-        maxStockFilter === null || p.quantity <= maxStockFilter;
-      const price = getSellingPrice(p.metaDetails);
-      const matchesPrice =
-        (priceRange[0] == null || price >= priceRange[0]) &&
-        (priceRange[1] == null || price <= priceRange[1]);
-      return matchesMax && matchesPrice;
-    });
-  }, [products, maxStockFilter, priceRange]);
-
-  // ==================== COUNTS ====================
-  const counts = useMemo(() => {
-    const hasExtraFilter =
-      maxStockFilter !== null ||
-      priceRange[0] !== null ||
-      priceRange[1] !== null;
-
-    if (hasExtraFilter) {
-      const inStock = filteredProducts.filter((p) => p.quantity > 0).length;
-      const lowStock = filteredProducts.filter(
-        (p) => p.quantity > 0 && p.quantity <= lowStockThreshold,
-      ).length;
-      const outStock = filteredProducts.filter((p) => p.quantity === 0).length;
-
-      return { all: filteredProducts.length, inStock, lowStock, outStock };
-    }
-
-    return {
-      all: paginationInfo.total,
-      inStock: products.filter((p) => p.quantity > 0).length,
-      lowStock: products.filter(
-        (p) => p.quantity > 0 && p.quantity <= lowStockThreshold,
-      ).length,
-      outStock: products.filter((p) => p.quantity === 0).length,
-    };
-  }, [
-    filteredProducts,
-    products,
-    paginationInfo.total,
-    activeTab,
-    maxStockFilter,
-    priceRange,
-    lowStockThreshold,
-  ]);
-
+  const filteredProducts = products;
+  const counts = response?.counts || { all: 0, inStock: 0, lowStock: 0, outStock: 0 };
   // ==================== URL SYNC ====================
   useEffect(() => {
     const params = new URLSearchParams();
@@ -202,7 +179,12 @@ const InventoryWrapper = () => {
     if (currentPage > 1) params.set("page", currentPage);
     if (pageSize !== 50) params.set("limit", pageSize);
     if (search.trim()) params.set("search", search.trim());
-    if (activeTab === "low-stock" && lowStockThreshold !== 10) {
+    if (brandId) params.set("brandId", brandId);
+    if (duplicateCompanyCode) params.set("duplicateCompanyCode", "true");
+    if (maxStockFilter !== null) params.set("maxStock", maxStockFilter);
+    if (priceRange[0] !== null) params.set("minPrice", priceRange[0]);
+    if (priceRange[1] !== null) params.set("maxPrice", priceRange[1]);
+    if (lowStockThreshold !== 10) {
       params.set("lowStockThreshold", lowStockThreshold);
     }
 
@@ -217,6 +199,10 @@ const InventoryWrapper = () => {
     currentPage,
     pageSize,
     search,
+    brandId,
+    duplicateCompanyCode,
+    maxStockFilter,
+    priceRange,
     lowStockThreshold,
     navigate,
     location.pathname,
@@ -241,7 +227,7 @@ const InventoryWrapper = () => {
   };
 
   const handlePageChange = (page, size) => {
-    setCurrentPage(page);
+    setCurrentPage(size && size !== pageSize ? 1 : page);
     if (size) setPageSize(size);
   };
 
@@ -319,66 +305,13 @@ const InventoryWrapper = () => {
     }
   };
 
-  // Optimized Monthly Report (using already loaded data)
-  const generateMonthlyReport = () => {
-    setGeneratingMonthly(true);
-    try {
-      const now = new Date();
-      const monthName = now.toLocaleString("default", {
-        month: "long",
-        year: "numeric",
-      });
-
-      const reportData = products.map((p, index) => ({
-        "S.No": index + 1,
-        "Company Code": getCompanyCode(p.metaDetails) || "—",
-        Name: p.name || "Unnamed Product",
-        Quantity: Number(p.quantity) || 0,
-        Updated: p.updatedAt
-          ? new Date(p.updatedAt).toLocaleDateString("en-IN")
-          : "—",
-      }));
-
-      generatePDF(reportData, `Monthly Stock Report - ${monthName}`);
-      message.success(`Monthly report generated successfully!`);
-    } catch (err) {
-      message.error("Failed to generate monthly report");
-    } finally {
-      setGeneratingMonthly(false);
-    }
-  };
-
-  const generateCustomReport = (format) => {
-    const selectedData = products.filter((p) =>
-      selectedReportProducts.includes(p.productId),
-    );
-    const reportData = selectedData.map((p) => ({
-      Name: p.name || "Unnamed Product",
-      "Product Code": p.product_code || "—",
-      "Company Code": getCompanyCode(p.metaDetails),
-      "Selling Price": getSellingPrice(p.metaDetails)
-        ? `₹${getSellingPrice(p.metaDetails).toLocaleString("en-IN")}`
-        : "—",
-      Stock: p.quantity,
-      Status:
-        p.quantity === 0
-          ? "Out of Stock"
-          : p.quantity <= lowStockThreshold
-            ? "Low Stock"
-            : "In Stock",
-    }));
-
-    const title = `Custom Inventory Report - ${new Date().toLocaleDateString("en-IN")}`;
-    if (format === "pdf") generatePDF(reportData, title);
-    else generateExcel(reportData, title);
-
-    setReportModalOpen(false);
-    setSelectedReportProducts([]);
-    message.success("Report generated successfully!");
-  };
-
   const moreMenu = (record) => (
     <Menu>
+      <Menu.Item key="references">
+        <Link to={`/inventory/${encodeURIComponent(record.productId)}/references`}>
+          References
+        </Link>
+      </Menu.Item>
       <Menu.Item key="inventory">
         <Link to={`/product/${record.productId}/inventory`}>
           Check Inventory
@@ -556,7 +489,7 @@ const InventoryWrapper = () => {
       <div className="content">
         <PageHeader
           title="Inventory"
-          subtitle="Manage stock levels, update quantities, and generate reports"
+          subtitle="Manage stock levels and update quantities"
           exportOptions={{ pdf: false, excel: false }}
         />
 
@@ -586,6 +519,25 @@ const InventoryWrapper = () => {
               />
             </Col>
 
+            <Col xs={24} sm={12} md={8} lg={5}>
+              <Select
+                aria-label="Filter inventory by brand"
+                placeholder="All brands"
+                size="large"
+                style={{ width: "100%" }}
+                showSearch
+                allowClear
+                optionFilterProp="label"
+                loading={loadingBrands}
+                value={brandId}
+                options={brands.map((brand) => ({ value: brand.id, label: brand.brandName }))}
+                onChange={(value) => {
+                  setBrandId(value);
+                  setCurrentPage(1);
+                }}
+              />
+            </Col>
+
             <Col xs={12} sm={6} md={5} lg={4}>
               <InputNumber
                 placeholder="Low Stock ≤"
@@ -593,7 +545,7 @@ const InventoryWrapper = () => {
                 size="large"
                 style={{ width: "100%" }}
                 value={lowStockThreshold}
-                onChange={(v) => setLowStockThreshold(v || 10)}
+                onChange={(v) => { setLowStockThreshold(v || 10); setCurrentPage(1); }}
               />
             </Col>
 
@@ -604,7 +556,7 @@ const InventoryWrapper = () => {
                 size="large"
                 style={{ width: "100%" }}
                 value={maxStockFilter}
-                onChange={setMaxStockFilter}
+                onChange={(v) => { setMaxStockFilter(v); setCurrentPage(1); }}
               />
             </Col>
 
@@ -615,14 +567,14 @@ const InventoryWrapper = () => {
                   min={0}
                   style={{ flex: 1 }}
                   value={priceRange[0]}
-                  onChange={(v) => setPriceRange([v, priceRange[1]])}
+                  onChange={(v) => { setPriceRange([v, priceRange[1]]); setCurrentPage(1); }}
                 />
                 <InputNumber
                   placeholder="Max ₹"
                   min={0}
                   style={{ flex: 1 }}
                   value={priceRange[1]}
-                  onChange={(v) => setPriceRange([priceRange[0], v])}
+                  onChange={(v) => { setPriceRange([priceRange[0], v]); setCurrentPage(1); }}
                 />
               </Space.Compact>
             </Col>
@@ -636,6 +588,8 @@ const InventoryWrapper = () => {
                 icon={<ReloadOutlined />}
                 onClick={() => {
                   setSearch("");
+                  setBrandId(undefined);
+                  setDuplicateCompanyCode(false);
                   setPriceRange([null, null]);
                   setMaxStockFilter(null);
                   setLowStockThreshold(10);
@@ -653,18 +607,11 @@ const InventoryWrapper = () => {
           >
             <Space wrap size="middle">
               <Button
-                type="primary"
-                icon={<FileTextOutlined />}
-                onClick={() => setReportModalOpen(true)}
+                icon={<FilterOutlined />}
+                type={duplicateCompanyCode ? "primary" : "default"}
+                onClick={() => setAdvancedFilterOpen(true)}
               >
-                Build Report
-              </Button>
-              <Button
-                icon={<DownloadOutlined />}
-                onClick={generateMonthlyReport}
-                loading={generatingMonthly}
-              >
-                Monthly Report
+                Advanced Filter{duplicateCompanyCode ? " (1)" : ""}
               </Button>
               <Button
                 type="primary"
@@ -734,15 +681,6 @@ const InventoryWrapper = () => {
           </Space>
         </div>
 
-        {filteredProducts.length === 0 ? (
-          <Card
-            bordered={false}
-            style={{ marginTop: 24, textAlign: "center", padding: "60px 20px" }}
-          >
-            <Empty description="No products match your filters" />
-          </Card>
-        ) : (
-          <>
             <Card
               bordered={false}
               style={{
@@ -783,6 +721,7 @@ const InventoryWrapper = () => {
               style={{ marginTop: 24, padding: "16px 0", textAlign: "center" }}
             >
               <Pagination
+                disabled={isFetching}
                 current={currentPage}
                 pageSize={pageSize}
                 total={paginationInfo.total}
@@ -794,23 +733,23 @@ const InventoryWrapper = () => {
                 }
               />
             </div>
-          </>
-        )}
+
 
         {/* Modals */}
-        <ReportBuilderModal
-          open={reportModalOpen}
-          onClose={() => setReportModalOpen(false)}
-          products={products}
-          getCompanyCode={getCompanyCode}
-          getSellingPrice={getSellingPrice}
-          generatePDF={generatePDF}
-          generateExcel={generateExcel}
-          onGenerate={generateCustomReport}
-          selectedProducts={selectedReportProducts}
-          setSelectedProducts={setSelectedReportProducts}
-        />
-
+        <Drawer title="Advanced Filter" open={advancedFilterOpen}
+          onClose={() => setAdvancedFilterOpen(false)} width={380}>
+          <Space direction="vertical" size="middle">
+            <Checkbox checked={duplicateCompanyCode} onChange={(e) => {
+              setDuplicateCompanyCode(e.target.checked);
+              setCurrentPage(1);
+            }}>
+              Only products with duplicate company codes
+            </Checkbox>
+            <Text type="secondary">
+              Shows every product whose non-empty company code is shared by another product in the catalog.
+            </Text>
+          </Space>
+        </Drawer>
         <StockModal
           open={stockModalOpen}
           onCancel={() => {

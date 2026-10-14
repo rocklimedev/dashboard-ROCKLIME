@@ -7,6 +7,8 @@
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
+    "products:am:seed": "sequelize-cli db:seed --seed 20261013000100-seed-am-products.js",
+    "products:am:seed:test": "node --test scripts/seedAmProducts.test.js",
     "products:duplicates": "node scripts/findDuplicateProducts.js",
     "products:duplicates:test": "node --test scripts/findDuplicateProducts.test.js scripts/dateDuplicateReport.test.js",
     "operations:test": "node --test scripts/operations.test.js",

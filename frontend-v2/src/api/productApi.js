@@ -88,6 +88,11 @@ export const productApi = baseApi.injectEndpoints({
         limit = 50,
         search,
         tab = "all",
+        brandId,
+        duplicateCompanyCode,
+        maxStock,
+        minPrice,
+        maxPrice,
         lowStockThreshold,
       } = {}) => ({
         url: "/products",
@@ -96,6 +101,11 @@ export const productApi = baseApi.injectEndpoints({
           limit,
           search: search?.trim() || undefined,
           tab,
+          brandId: brandId || undefined,
+          duplicateCompanyCode: duplicateCompanyCode || undefined,
+          maxStock: maxStock ?? undefined,
+          minPrice: minPrice ?? undefined,
+          maxPrice: maxPrice ?? undefined,
           ...(lowStockThreshold && { lowStockThreshold }), // only send when needed
         },
       }),
@@ -115,6 +125,12 @@ export const productApi = baseApi.injectEndpoints({
       keepUnusedDataFor: 30, // seconds
     }),
     // GET SINGLE PRODUCT
+    getProductReferences: builder.query({
+      query: (productId) => `/products/${encodeURIComponent(productId)}/references`,
+      providesTags: (result, error, productId) => [
+        { type: "Product", id: productId }, "Quotations", "Orders", "PurchaseOrders", "FGS",
+      ],
+    }),
     getProductById: builder.query({
       query: (productId) => `/products/${productId}`,
       providesTags: (result, error, productId) => [
@@ -272,6 +288,7 @@ export const {
   useBulkImportProductsMutation,
   useGetTopSellingProductsQuery,
   useGetProductByIdQuery,
+  useGetProductReferencesQuery,
   useLazyGetProductByIdQuery,
   useDeleteProductMutation,
   useAddStockMutation,
@@ -282,6 +299,7 @@ export const {
   useGetAllProductCodesQuery,
   useGetAllProductCodesBrandWiseQuery,
   useGetProductsByIdsQuery,
+  useLazyGetProductsByIdsQuery,
   useCheckProductCodeQuery,
   useLazyCheckProductCodeQuery,
   useReplaceAllKeywordsForProductMutation,

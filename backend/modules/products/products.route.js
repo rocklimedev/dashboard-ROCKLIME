@@ -67,6 +67,7 @@ router.get("/brand/:brandId", productController.getProductsByBrand);
 router.post("/by-ids", productController.getProductsByIds);
 
 // 4. DYNAMIC ID ROUTE - MUST BE AFTER ALL STATIC ROUTES
+router.get("/:productId/references", require("./productReferences.controller"));
 router.get("/:productId", productController.getProductById);
 
 // 5. UPDATE & DELETE

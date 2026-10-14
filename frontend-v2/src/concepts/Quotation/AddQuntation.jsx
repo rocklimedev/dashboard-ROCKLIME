@@ -42,6 +42,8 @@ import { useGetCustomersQuery } from "../../api/customerApi";
 import { useGetAllAddressesQuery } from "../../api/addressApi";
 import { useGetProfileQuery } from "../../api/userApi";
 import QuotationProductSheet from "../../components/Quotation/QuotationProductSheet";
+import QuotationResyncModal from "../../components/Quotation/QuotationResyncModal";
+import { productImage } from "../../components/Quotation/productSyncHelpers";
 import AddAddress from "../../components/Address/AddAddressModal";
 
 // Import Modals
@@ -92,6 +94,7 @@ const normalizeLoadedProducts = (products) => {
     base.forEach((l) => {
       const valid = Boolean(l.floorId && l.roomId);
       const loc = {
+        ...(l.shareId ? { shareId: l.shareId } : {}),
         floorId: valid ? l.floorId : null,
         floorName: valid ? l.floorName || null : null,
         roomId: valid ? l.roomId : null,
@@ -102,7 +105,7 @@ const normalizeLoadedProducts = (products) => {
         priority: num(l.priority ?? p.priority, 0), // inherit legacy order
         _order: order,
       };
-      const k = secKey(loc);
+      const k = loc.shareId || secKey(loc);
       const ex = merged.get(k);
       if (ex) {
         ex.assignedQuantity += loc.assignedQuantity;
@@ -217,6 +220,7 @@ const AddQuotation = () => {
   const [showEditRoomModal, setShowEditRoomModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showVersionsModal, setShowVersionsModal] = useState(false);
+  const [showResyncModal, setShowResyncModal] = useState(false);
 
   // Delete confirmation (controlled modal instead of static Modal.confirm)
   // { type: "floor", floor } | { type: "room", floorId, room } | null
@@ -330,9 +334,9 @@ const AddQuotation = () => {
 
     const merged = [];
     locs.map(mapLoc).forEach((l) => {
-      const k = `${l.floorId || ""}::${l.roomId || ""}`;
+      const k = l.shareId || `${l.floorId || ""}::${l.roomId || ""}`;
       const existing = merged.find(
-        (m) => `${m.floorId || ""}::${m.roomId || ""}` === k,
+        (m) => (m.shareId || `${m.floorId || ""}::${m.roomId || ""}`) === k,
       );
       if (existing) {
         existing.assignedQuantity =
@@ -619,6 +623,7 @@ const AddQuotation = () => {
         {
           productId: prod.id || prod.productId,
           name: prod.name || "Unknown",
+          imageUrl: productImage(prod),
           qty: 1,
           sellingPrice: price,
           discount: 0,
@@ -805,6 +810,7 @@ const AddQuotation = () => {
       const locations =
         p.locations && p.locations.length > 0
           ? p.locations.map((loc) => ({
+              ...(loc.shareId ? { shareId: loc.shareId } : {}),
               floorId: loc.floorId || null,
               floorName: loc.floorName || null,
               roomId: loc.roomId || null,
@@ -831,6 +837,7 @@ const AddQuotation = () => {
       return {
         productId: p.productId,
         name: p.name,
+        imageUrl: productImage(p),
         quantity: qty,
         price: sellingPrice,
         sellingPrice: sellingPrice,
@@ -912,6 +919,9 @@ const AddQuotation = () => {
             onClick={() => navigate("/quotations/list")}
           >
             Back
+          </Button>
+          <Button disabled={!formData.products.length} onClick={() => setShowResyncModal(true)}>
+            RESYNC
           </Button>
           {isEditMode && versionsData.length > 0 && (
             <Button onClick={() => setShowVersionsModal(true)}>
@@ -1404,6 +1414,19 @@ const AddQuotation = () => {
           </Modal>
 
           {/* Add Option Modal */}
+          {showResyncModal && <QuotationResyncModal
+            open={showResyncModal}
+            products={formData.products}
+            onCancel={() => setShowResyncModal(false)}
+            onApply={(updates) => {
+              setFormData((prev) => ({
+                ...prev,
+                products: prev.products.map((p) => updates[p.productId]
+                  ? { ...p, ...updates[p.productId] } : p),
+              }));
+              setShowResyncModal(false);
+            }}
+          />}
           <Modal
             title="Add Option / Variant / Upgrade"
             open={showAddOptionModal}
