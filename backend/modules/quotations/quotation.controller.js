@@ -26,7 +26,7 @@ const locKey = (l) =>
  * Cleans a product's locations[].
  * - Bare-floor shares collapse to Unassigned (floorId/roomId = null)
  * - Unassigned shares are KEPT (the old code dropped them)
- * - Shares with the same floor+room are merged (qty summed, lowest priority wins)
+ * - Legacy shares with the same floor+room are merged; identified splits remain separate
  * - Missing priority inherits the product priority, never a hard 0
  * - Under-assigned quantity is topped up as an Unassigned share, so the
  *   shares always add up to `quantity` (which drives the price)
@@ -63,6 +63,7 @@ function normalizeLocations(p, totalQuantity, floors = []) {
     const room = floor?.rooms?.find((r) => r.roomId === l.roomId);
 
     const loc = {
+      ...(l.shareId ? { shareId: l.shareId } : {}),
       floorId: valid ? l.floorId : null,
       floorName: valid ? l.floorName || floor?.floorName || null : null,
       roomId: valid ? l.roomId : null,
@@ -73,7 +74,7 @@ function normalizeLocations(p, totalQuantity, floors = []) {
       priority: num(l.priority ?? p.priority, 0),
     };
 
-    const k = locKey(loc);
+    const k = loc.shareId || locKey(loc);
     const existing = merged.get(k);
     if (existing) {
       existing.assignedQuantity += qty;

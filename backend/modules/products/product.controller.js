@@ -1,4 +1,5 @@
 const { Op } = require("sequelize");
+const inventoryPagination = require("./inventoryPagination");
 const sequelize = require("../../config/database");
 const slugify = require("slugify"); // npm install slugify — highly recommended
 const {
@@ -696,15 +697,37 @@ exports.getAllProducts = async (req, res) => {
   try {
     ensureAssociations();
 
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 50;
-    const offset = (page - 1) * limit;
+    const requestedPage = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.max(1, parseInt(req.query.limit) || 50);
 
     const searchTerm = req.query.search?.trim();
     const tab = req.query.tab || "all";
     const lowStockThreshold = parseInt(req.query.lowStockThreshold) || 10;
 
     let whereClause = {};
+
+    // Apply brand before pagination so it combines with search and stock tabs.
+    const brandId = req.query.brandId || req.query.brand;
+    if (brandId) whereClause.brandId = brandId;
+
+    if (req.query.duplicateCompanyCode === "true") {
+      const companyCode = sequelize.fn("TRIM", sequelize.fn("JSON_UNQUOTE",
+        sequelize.fn("JSON_EXTRACT", sequelize.col("Product.meta"),
+          sequelize.literal(`'$."${COMPANY_CODE_META_ID}"'`))));
+      const duplicateCodes = await Product.findAll({
+        attributes: [[companyCode, "companyCode"]],
+        where: { [Op.and]: [
+          sequelize.where(companyCode, { [Op.ne]: "" }),
+          sequelize.where(companyCode, { [Op.ne]: "null" }),
+        ] },
+        group: [companyCode],
+        having: sequelize.where(sequelize.fn("COUNT", sequelize.col("Product.productId")), { [Op.gt]: 1 }),
+        raw: true,
+      });
+      whereClause[Op.and] = [sequelize.where(companyCode, {
+        [Op.in]: duplicateCodes.map((p) => p.companyCode),
+      })];
+    }
 
     // === Search ===
     if (searchTerm) {
@@ -741,13 +764,20 @@ exports.getAllProducts = async (req, res) => {
       ];
     }
 
-    // === Tab filtering ===
-    if (tab === "in-stock") {
-      whereClause.quantity = { [Op.gt]: 0 };
-    } else if (tab === "out-of-stock") {
-      whereClause.quantity = 0;
-    } else if (tab === "low-stock") {
-      whereClause.quantity = { [Op.gt]: 0, [Op.lte]: lowStockThreshold };
+    const optionalNumber = (value) => value !== undefined && value !== null && value !== "" &&
+      Number.isFinite(Number(value)) ? Number(value) : null;
+    const maxStock = optionalNumber(req.query.maxStock);
+    if (maxStock !== null) whereClause.quantity = { [Op.lte]: maxStock };
+    const minPrice = optionalNumber(req.query.minPrice);
+    const maxPrice = optionalNumber(req.query.maxPrice);
+    if (minPrice !== null || maxPrice !== null) {
+      const rawPrice = sequelize.fn("JSON_UNQUOTE", sequelize.fn("JSON_EXTRACT",
+        sequelize.col("Product.meta"), sequelize.literal(`'$."9ba862ef-f993-4873-95ef-1fef10036aa5"'`)));
+      const price = sequelize.cast(rawPrice, "DECIMAL(20,4)");
+      const predicates = [sequelize.where(rawPrice, { [Op.regexp]: "^[0-9]+([.][0-9]+)?$" })];
+      if (minPrice !== null) predicates.push(sequelize.where(price, { [Op.gte]: minPrice }));
+      if (maxPrice !== null) predicates.push(sequelize.where(price, { [Op.lte]: maxPrice }));
+      whereClause[Op.and] = [...(whereClause[Op.and] || []), ...predicates];
     }
 
     // === ORDERING: Priority to latest InventoryHistory ===
@@ -775,37 +805,18 @@ exports.getAllProducts = async (req, res) => {
       ["updatedAt", "DESC"],
       // 4. Name
       ["name", "ASC"],
+      ["productId", "ASC"],
     ];
 
-    const { count: totalProducts, rows: products } =
-      await Product.findAndCountAll({
-        where: whereClause,
-        order,
-        offset,
-        limit,
-        distinct: true,
-        subQuery: false,
-        include: [
-          {
-            model: Keyword,
-            as: "keywords",
-            attributes: ["id", "keyword"],
-            through: { attributes: [] },
-            include: [
-              {
-                model: Category,
-                as: "categories",
-                attributes: ["categoryId", "name", "slug"],
-              },
-            ],
-          },
-        ],
-      });
-
+    const { products, total: totalProducts, page, counts } = await inventoryPagination({
+      Product, Keyword, Category, where: whereClause, order,
+      page: requestedPage, limit, tab, threshold: lowStockThreshold,
+    });
     if (totalProducts === 0) {
       return res.json({
         data: [],
         pagination: { total: 0, page, limit, totalPages: 0 },
+        counts,
       });
     }
 
@@ -874,6 +885,7 @@ exports.getAllProducts = async (req, res) => {
     });
 
     res.json({
+      counts,
       data: enrichedProducts,
       pagination: {
         total: totalProducts,

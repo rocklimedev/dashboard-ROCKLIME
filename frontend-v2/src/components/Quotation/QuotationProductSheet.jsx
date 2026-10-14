@@ -28,6 +28,7 @@ import {
   Tooltip,
   Alert,
   message,
+  Image,
 } from "antd";
 import {
   DeleteOutlined,
@@ -53,6 +54,9 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import "./quotationproductsheet.css";
+import { productImage } from "./productSyncHelpers";
+import { v4 as uuidv4 } from "uuid";
+import { shareKey, nextSectionPriority, reorderShares } from "./shareHelpers";
 
 const { Option } = Select;
 const { Text } = Typography;
@@ -65,7 +69,7 @@ const UNASSIGNED = "__unassigned__";
 const sectionKey = (floorId, roomId) =>
   floorId && roomId ? `${floorId}::${roomId}` : UNASSIGNED;
 
-const locationKey = (loc) => `${loc?.floorId || ""}::${loc?.roomId || ""}`;
+const locationKey = shareKey;
 
 // Stable row id used both as React key and as the dnd-kit sortable id.
 const rowId = (p) => `${p.productId}::${p._locationKey || "root"}`;
@@ -256,6 +260,12 @@ function ProductRow({
         </td>
       )}
 
+      <td className="qs-cell">
+        {productImage(product) ? (
+          <Image src={productImage(product)} alt={product.name} width={48} height={48}
+            style={{ objectFit: "contain" }} />
+        ) : <Text type="secondary">—</Text>}
+      </td>
       <td className="qs-cell qs-name-cell">
         {product.isOptionFor && <span className="qs-option-arrow">↳ </span>}
         {product.name}
@@ -390,6 +400,7 @@ function ProductRow({
           icon={<DeleteOutlined />}
           onClick={() =>
             onRemove(product.productId, {
+              _locationKey: product._locationKey,
               floorId: product.floorId || null,
               roomId: product.roomId || null,
               areaId: product.areaId || null,
@@ -470,6 +481,7 @@ function SheetSection({
               <thead>
                 <tr>
                   <th style={{ width: 40 }}>S.No.</th>
+                  <th style={{ width: 72 }}>Image</th>
                   <th>Product</th>
                   <th style={{ width: 130 }}>Code</th>
                   <th style={{ width: 90 }}>Qty</th>
@@ -591,15 +603,6 @@ export default function QuotationProductSheet({
   }, [formData.products]);
 
   // ─── Helpers ─────────────────────────────────────────────────────
-  const resolveNames = (floorId, roomId) => {
-    const floor = formData.floors.find((f) => f.floorId === floorId);
-    const room = floor?.rooms?.find((r) => r.roomId === roomId);
-    return {
-      floorName: floor?.floorName || null,
-      roomName: room?.roomName || null,
-    };
-  };
-
   const buildSingleLocation = (
     floorId,
     roomId,
@@ -711,9 +714,12 @@ export default function QuotationProductSheet({
     const isValidTarget = Boolean(floorId && roomId);
     const targetFloorId = isValidTarget ? floorId : null;
     const targetRoomId = isValidTarget ? roomId : null;
-    const { floorName, roomName } = resolveNames(targetFloorId, targetRoomId);
 
     setFormData((prev) => {
+      const floor = prev.floors.find((f) => f.floorId === targetFloorId);
+      const room = floor?.rooms?.find((r) => r.roomId === targetRoomId);
+      const floorName = floor?.floorName || null;
+      const roomName = room?.roomName || null;
       const productIndex = prev.products.findIndex(
         (p) => p.productId === productId,
       );
@@ -746,12 +752,13 @@ export default function QuotationProductSheet({
         floorName: targetFloorId ? floorName : null,
         roomId: targetRoomId,
         roomName: targetRoomId ? roomName : null,
+        priority: nextSectionPriority(prev.products, targetFloorId, targetRoomId),
       };
 
       // Merge if target already exists
-      const targetKey = locationKey(locs[idx]);
+      const targetKey = sectionKey(locs[idx].floorId, locs[idx].roomId);
       const otherIdx = locs.findIndex(
-        (l, i) => i !== idx && locationKey(l) === targetKey,
+        (l, i) => i !== idx && sectionKey(l.floorId, l.roomId) === targetKey,
       );
       if (otherIdx !== -1) {
         locs[otherIdx] = {
@@ -821,9 +828,10 @@ export default function QuotationProductSheet({
       };
 
       // Find max priority and add 1 so new split goes to the end
-      const maxPriority = Math.max(...locs.map((l) => l.priority ?? 0), -1);
+      const priority = nextSectionPriority(prev.products, null, null);
 
       locs.push({
+        shareId: uuidv4(),
         floorId: null,
         floorName: null,
         roomId: null,
@@ -831,7 +839,7 @@ export default function QuotationProductSheet({
         areaId: null,
         areaName: null,
         assignedQuantity: 1,
-        priority: maxPriority + 1,
+        priority,
       });
 
       const total = locs.reduce(
@@ -874,11 +882,7 @@ export default function QuotationProductSheet({
 
         const remainingLocations = p.locations.filter(
           (loc) =>
-            !(
-              loc.floorId === location.floorId &&
-              loc.roomId === location.roomId &&
-              loc.areaId === location.areaId
-            ),
+            locationKey(loc) !== location._locationKey,
         );
 
         if (remainingLocations.length === p.locations.length) {
@@ -924,67 +928,11 @@ export default function QuotationProductSheet({
    * ✅ OPTIMIZED: useCallback prevents re-renders of child components
    */
   const reorderSection = useCallback((reorderedSectionProducts) => {
-    // Map of (productId + locationKey) → new index
-    // This ensures split products maintain independent priorities per location
-    const newOrderByLocation = new Map();
-    reorderedSectionProducts.forEach((row, idx) => {
-      const key = `${row.productId}::${row._locationKey}`;
-      newOrderByLocation.set(key, idx);
-    });
-
     setFormData((prev) => ({
       ...prev,
-      products: prev.products.map((p) => {
-        let locs = Array.isArray(p.locations) ? [...p.locations] : [];
-
-        // Ensure we have a locations array (legacy single-location products)
-        if (locs.length === 0) {
-          locs = [
-            {
-              floorId: p.floorId || null,
-              roomId: p.roomId || null,
-              floorName: p.floorName || null,
-              roomName: p.roomName || null,
-              areaId: null,
-              areaName: null,
-              assignedQuantity: Number(p.qty) || 0,
-              priority: p.priority ?? 0,
-            },
-          ];
-        }
-
-        // Update priority for each location that was reordered in this section
-        let hasUpdates = false;
-        const updatedLocs = locs.map((loc) => {
-          const locKey = locationKey(loc);
-          const lookupKey = `${p.productId}::${locKey}`;
-
-          if (newOrderByLocation.has(lookupKey)) {
-            hasUpdates = true;
-            return {
-              ...loc,
-              priority: newOrderByLocation.get(lookupKey),
-            };
-          }
-          // Locations not in this section keep their existing priority
-          return loc;
-        });
-
-        if (!hasUpdates) {
-          return p; // No changes needed
-        }
-
-        return {
-          ...p,
-          locations: updatedLocs,
-          // Only sync product-level priority when there's a single location
-          priority:
-            updatedLocs.length === 1 ? updatedLocs[0].priority : p.priority,
-        };
-      }),
+      products: reorderShares(prev.products, reorderedSectionProducts),
     }));
   }, []);
-
   // ─── Catalog add ─────────────────────────────────────────────────
   // Adding from the catalog while viewing a floor tab only targets a
   // real floor+room pair. If the floor has no rooms (or none is
@@ -1024,6 +972,7 @@ export default function QuotationProductSheet({
     const newProduct = {
       productId,
       name: product.name || "Unknown",
+      imageUrl: productImage(product),
       qty: 1,
       sellingPrice: price,
       discount: 0,
