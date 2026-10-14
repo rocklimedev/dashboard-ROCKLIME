@@ -37,7 +37,7 @@ export default function ProductReferencesPage() {
       <PageHeader title="References" subtitle="Where this product is used across your documents" />
       <div className="content">
         <Space wrap style={{ marginBottom: 20 }}>
-          <Link to="/inventory"><Button icon={<ArrowLeftOutlined />}>Inventory</Button></Link>
+          <Link to="/inventory/list"><Button icon={<ArrowLeftOutlined />}>Inventory</Button></Link>
           <Link to={`/product/${encodeURIComponent(productId)}`}><Button>Product details</Button></Link>
           <Link to={`/product/${encodeURIComponent(productId)}/inventory`}><Button>Stock history</Button></Link>
           <Button icon={<ReloadOutlined />} loading={isFetching} onClick={refetch}>Refresh references</Button>

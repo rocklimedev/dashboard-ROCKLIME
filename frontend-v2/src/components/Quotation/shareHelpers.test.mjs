@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import test from "node:test";
-import { shareKey, reorderShares, nextSectionPriority } from "./shareHelpers.js";
+import { shareKey, reorderShares, nextSectionPriority, addCatalogShare } from "./shareHelpers.js";
+import { productCompanyCode } from "./productSyncHelpers.js";
 
 const fixtures = () => [
   { productId: "a", qty: 4, priority: 0, locations: [
@@ -17,6 +18,40 @@ const orderedRows = [
   { productId: "b", _locationKey: "::" },
   { productId: "a", _locationKey: "::" },
 ];
+
+test("company codes are read from catalog metadata and preserved as text", () => {
+  const key = "d11da9f9-3f2e-4536-8236-9671200cca4a";
+  assert.equal(productCompanyCode({ meta: { [key]: "00123" } }), "00123");
+  assert.equal(productCompanyCode({ meta: JSON.stringify({ [key]: "00123" }) }), "00123");
+  assert.equal(productCompanyCode({ meta: { [key]: 0 } }), "0");
+  assert.equal(productCompanyCode({ companyCode: "ABC", meta: { [key]: "Other" } }), "ABC");
+});
+
+test("adding an existing product to the same room increments only that share", () => {
+  const products = fixtures();
+  products[0].sellingPrice = 99; products[0].discount = 10;
+  const target = { floorId: "f", roomId: "r", floorName: "Floor", roomName: "Room" };
+  const updated = addCatalogShare(products, { productId: "a", sellingPrice: 200, companyCode: "00123" }, target, "unused");
+  assert.equal(updated.length, 2);
+  assert.equal(updated[0].qty, 5);
+  assert.deepEqual(updated[0].locations.map((l) => l.assignedQuantity), [2, 1, 2]);
+  assert.equal(updated[0].locations[2].shareId, "split-2");
+  assert.equal(updated[0].sellingPrice, 99);
+  assert.equal(updated[0].discount, 10);
+  assert.equal(updated[0].companyCode, "00123");
+  assert.equal(products[0].qty, 4);
+});
+
+test("adding to another room creates a share, including legacy/unassigned products", () => {
+  const target = { floorId: "other", roomId: "room", floorName: "Other floor", roomName: "Room" };
+  const updated = addCatalogShare(fixtures(), { productId: "b" }, target, "new-share");
+  assert.equal(updated[1].qty, 2);
+  assert.equal(updated[1].locations[0].assignedQuantity, 1);
+  assert.equal(updated[1].locations[1].shareId, "new-share");
+  const added = addCatalogShare([], { productId: "c", qty: 1, companyCode: "C" }, { floorId: null, roomId: null }, "initial");
+  assert.equal(added[0].locations[0].shareId, "initial");
+  assert.equal(added[0].companyCode, "C");
+});
 
 test("split shares in the same section have distinct drag identities and reorder independently", () => {
   const products = fixtures();

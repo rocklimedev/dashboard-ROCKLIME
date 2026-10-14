@@ -4,6 +4,17 @@ export const catalogPrice = (product) => {
     Number.isFinite(Number(value)) && Number(value) >= 0 ? Number(value) : null;
 };
 
+export const productCompanyCode = (product) => {
+  let meta = product?.meta;
+  if (typeof meta === "string") {
+    try { meta = JSON.parse(meta); } catch { meta = {}; }
+  }
+  const key = "d11da9f9-3f2e-4536-8236-9671200cca4a";
+  const value = [product?.companyCode, meta?.[key], product?.metaDetails?.find((d) => d.id === key)?.value]
+    .find((v) => v != null && String(v).trim() !== "");
+  return value == null ? "" : String(value).trim();
+};
+
 export const productImage = (product) => {
   if (product?.imageUrl) return product.imageUrl;
   let images = product?.images;

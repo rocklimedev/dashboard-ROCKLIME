@@ -333,7 +333,9 @@ const NewQuotationsDetails = () => {
   const shippingAmount = Number(
     quotation?.shippingAmount ?? quotation?.calculated?.shippingAmount ?? 0,
   );
-  const finalAmount = Number(quotation?.finalAmount ?? 0);
+  const gstRate = Number(quotation?.gst ?? 0);
+  const gstAmount = Number(quotation?.gstAmount ?? quotation?.calculated?.gstAmount ?? 0);
+  const finalAmount = Number(quotation?.finalAmount ?? quotation?.calculated?.finalAmount ?? 0);
   const finalAmountInWords = amountInWords(Math.round(finalAmount));
 
   const hasFloorLayout = useMemo(() => {
@@ -1275,6 +1277,13 @@ const NewQuotationsDetails = () => {
                     </span>
                   </div>
                 )}
+                <div className={styles.summaryRow}>
+                  <span>GST ({gstRate}%)</span>
+                  <span>₹{gstAmount.toLocaleString("en-IN", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}</span>
+                </div>
               </div>
 
               <div className={styles.summaryRight}>

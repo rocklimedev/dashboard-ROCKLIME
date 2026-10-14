@@ -613,6 +613,7 @@ const InventoryWrapper = () => {
               >
                 Advanced Filter{duplicateCompanyCode ? " (1)" : ""}
               </Button>
+              <Link to="/inventory/onboard-new-brand"><Button icon={<PlusOutlined />}>Onboard New Brand Workspace</Button></Link>
               <Button
                 type="primary"
                 icon={<PlusOutlined />}

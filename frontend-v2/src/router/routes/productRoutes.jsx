@@ -9,8 +9,10 @@ import BrandSelection from "../../concepts/Products/BrandSelection";
 import BulkProductImportJob from "../../concepts/Products/ImportJob";
 import ProductInventoryPage from "../../concepts/Products/ProductInventoryPage";
 import ProductReferencesPage from "../../concepts/Products/ProductReferencesPage";
+import OnboardNewBrandWorkspace from "../../concepts/Products/OnboardNewBrandWorkspace";
 
 export const productRoutes = [
+  { path: "/inventory/onboard-new-brand", name: "Onboard New Brand Workspace", isSidebarActive: false, element: <OnboardNewBrandWorkspace /> },
   {
     path: "/inventory/:productId/references",
     name: "Product References",
