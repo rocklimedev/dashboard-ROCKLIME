@@ -160,7 +160,7 @@ const getMetaValue = (meta, uuid) => {
   }
   if (!parsed || typeof parsed !== "object") return null;
 
-  return parsed[uuid] || null;
+  return parsed[uuid] ?? null;
 };
 // ─────────────────────────────────────────────
 // Helpers
@@ -754,7 +754,7 @@ exports.updateQuotation = async (req, res) => {
           name: p.name?.trim() || "Unnamed Product",
           imageUrl,
           productCode: p.product_code || null,
-          companyCode: p.meta?.["d11da9f9-3f2e-4536-8236-9671200cca4a"] || null,
+          companyCode: getMetaValue(p.meta, META_SLUGS.companyCode),
           tax: p.tax || 0,
           discountType: p.discountType || "percent",
         };

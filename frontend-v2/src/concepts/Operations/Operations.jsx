@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Alert, Button, Card, Col, InputNumber, Row, Space, Table, Typography, message } from 'antd';
 import { useAuth } from '../../context/AuthContext';
 import { useGetOperationsQuery, useRunOperationMutation, useDownloadOperationMutation } from '../../api/operationsApi';
@@ -35,6 +36,7 @@ export default function Operations() {
   if (!allowed) return <div className="page-wrapper"><div className="content"><Alert type="warning" showIcon message="Operations requires an administrator role." /></div></div>;
   return <div className="page-wrapper"><div className="content">
     <Typography.Title level={2}>Operations</Typography.Title>
+    <Link to="/inventory/onboard-new-brand"><Button type="primary" style={{ marginBottom: 20 }}>Onboard New Brand Workspace</Button></Link>
     <Typography.Paragraph>Back up product data and review possible duplicates. More maintenance services can be added here later.</Typography.Paragraph>
     <Alert type="info" showIcon message="Product snapshots include products and metadata definitions. Duplicate scans never change data; review candidates before any cleanup." style={{ marginBottom: 24 }} />
     {error && <Alert type="error" showIcon message={error?.data?.message || 'Unable to load operations.'} action={<Button onClick={refetch}>Retry</Button>} style={{ marginBottom: 16 }} />}

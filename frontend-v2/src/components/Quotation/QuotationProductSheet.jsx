@@ -54,9 +54,9 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import "./quotationproductsheet.css";
-import { productImage } from "./productSyncHelpers";
+import { productImage, productCompanyCode } from "./productSyncHelpers";
 import { v4 as uuidv4 } from "uuid";
-import { shareKey, nextSectionPriority, reorderShares } from "./shareHelpers";
+import { shareKey, nextSectionPriority, reorderShares, addCatalogShare } from "./shareHelpers";
 
 const { Option } = Select;
 const { Text } = Typography;
@@ -74,10 +74,8 @@ const locationKey = shareKey;
 // Stable row id used both as React key and as the dnd-kit sortable id.
 const rowId = (p) => `${p.productId}::${p._locationKey || "root"}`;
 // Company code lives in product.meta under this key.
-// Display-only. Never sent to the API (see cleanProducts in AddQuotation).
-const COMPANY_CODE_META_KEY = "d11da9f9-3f2e-4536-8236-9671200cca4a";
-
-const codeOf = (p) => p?.companyCode || p?.meta?.[COMPANY_CODE_META_KEY] || "";
+// Copy into quotation items so the code is shown immediately and survives saving.
+const codeOf = productCompanyCode;
 const lineTotal = (p, qtyOverride) => {
   const qty =
     qtyOverride !== undefined ? Number(qtyOverride) : Number(p.qty) || 0;
@@ -134,9 +132,8 @@ function CatalogItem({ product, price, onAdd, alreadyAdded }) {
         type="text"
         size="small"
         icon={<PlusOutlined />}
-        disabled={alreadyAdded}
         title={
-          alreadyAdded ? "Already added" : "Add to the section you're viewing"
+          alreadyAdded ? "Add one more quantity to the section you're viewing" : "Add to the section you're viewing"
         }
         onClick={() => onAdd(product)}
       />
@@ -964,7 +961,6 @@ export default function QuotationProductSheet({
 
   const addFromCatalog = (product) => {
     const productId = product.id || product.productId;
-    if (formData.products.some((p) => p.productId === productId)) return;
 
     const target = getCurrentTarget();
     const price = priceOf(product);
@@ -972,6 +968,7 @@ export default function QuotationProductSheet({
     const newProduct = {
       productId,
       name: product.name || "Unknown",
+      companyCode: productCompanyCode(product),
       imageUrl: productImage(product),
       qty: 1,
       sellingPrice: price,
@@ -998,7 +995,7 @@ export default function QuotationProductSheet({
 
     setFormData((prev) => ({
       ...prev,
-      products: [...prev.products, newProduct],
+      products: addCatalogShare(prev.products, newProduct, target, uuidv4()),
     }));
   };
 
@@ -1154,8 +1151,8 @@ export default function QuotationProductSheet({
         />
         {(searchTerm || searchResult.length > 0) && (
           <Text className="qs-catalog-list-label">
-            Click "+" to add a result into the floor/room tab you're viewing
-            below
+            Click "+" to add a result into the floor/room tab you're viewing.
+            If it is already there, one more quantity is added.
           </Text>
         )}
         <div className="qs-catalog-list-horizontal">

@@ -43,7 +43,7 @@ import { useGetAllAddressesQuery } from "../../api/addressApi";
 import { useGetProfileQuery } from "../../api/userApi";
 import QuotationProductSheet from "../../components/Quotation/QuotationProductSheet";
 import QuotationResyncModal from "../../components/Quotation/QuotationResyncModal";
-import { productImage } from "../../components/Quotation/productSyncHelpers";
+import { productImage, productCompanyCode } from "../../components/Quotation/productSyncHelpers";
 import AddAddress from "../../components/Address/AddAddressModal";
 
 // Import Modals
@@ -269,6 +269,7 @@ const AddQuotation = () => {
       ...p,
       qty: safeNum(p.quantity ?? p.qty, 1),
       sellingPrice: safeNum(p.price ?? p.sellingPrice, 0),
+      companyCode: productCompanyCode(p),
       discount: safeNum(p.discount, 0),
       discountType: p.discountType || "fixed",
 
@@ -294,6 +295,7 @@ const AddQuotation = () => {
         ? new Date(existingQuotation.due_date)
         : null,
       shippingAmount: safeNum(existingQuotation.shippingAmount, 0),
+      gst: safeNum(existingQuotation.gst, 0),
       extraDiscount: safeNum(existingQuotation.extraDiscount, 0),
       extraDiscountType: existingQuotation.extraDiscountType || "fixed",
       signature_name: existingQuotation.signature_name || "",
@@ -623,6 +625,7 @@ const AddQuotation = () => {
         {
           productId: prod.id || prod.productId,
           name: prod.name || "Unknown",
+          companyCode: productCompanyCode(prod),
           imageUrl: productImage(prod),
           qty: 1,
           sellingPrice: price,
@@ -748,16 +751,17 @@ const AddQuotation = () => {
       mainLineDiscount += lineDisc;
     });
 
+    const shipping = safeNum(formData.shippingAmount);
+    const baseForExtraDiscount = mainSubtotal + shipping;
     const extraDiscAmt =
       formData.extraDiscountType === "percent"
-        ? (mainSubtotal * safeNum(formData.extraDiscount)) / 100
+        ? (baseForExtraDiscount * safeNum(formData.extraDiscount)) / 100
         : safeNum(formData.extraDiscount);
 
-    const afterExtra = mainSubtotal - extraDiscAmt;
-    const shipping = safeNum(formData.shippingAmount);
-    const totalBeforeRound = afterExtra + shipping;
+    const totalBeforeRound = baseForExtraDiscount - extraDiscAmt;
     const rounded = Math.round(totalBeforeRound);
     const roundOff = rounded - totalBeforeRound;
+    const gstAmount = rounded * safeNum(formData.gst) / 100;
 
     return {
       mainSubtotal: Number(mainSubtotal.toFixed(2)),
@@ -765,12 +769,15 @@ const AddQuotation = () => {
       extraDiscAmt: Number(extraDiscAmt.toFixed(2)),
       shipping,
       roundOff: Number(roundOff.toFixed(2)),
-      finalAmount: rounded,
+      gstAmount: Number(gstAmount.toFixed(2)),
+      roundedAmount: rounded,
+      finalAmount: Number((rounded + gstAmount).toFixed(2)),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     mainProducts,
     formData.shippingAmount,
+    formData.gst,
     formData.extraDiscount,
     formData.extraDiscountType,
   ]);
@@ -837,6 +844,7 @@ const AddQuotation = () => {
       return {
         productId: p.productId,
         name: p.name,
+        companyCode: productCompanyCode(p),
         imageUrl: productImage(p),
         quantity: qty,
         price: sellingPrice,
@@ -867,6 +875,7 @@ const AddQuotation = () => {
       quotation_date: formatDateSafe(formData.quotation_date),
       due_date: formatDateSafe(formData.due_date),
       shippingAmount: safeNum(formData.shippingAmount),
+      gst: safeNum(formData.gst),
       extraDiscount: safeNum(formData.extraDiscount),
       extraDiscountType: formData.extraDiscountType || "fixed",
       signature_name: formData.signature_name || "",
@@ -1264,6 +1273,22 @@ const AddQuotation = () => {
                 </Card>
               </Col>
 
+              <Col xs={24} sm={12}>
+                <Card size="small" style={{ borderRadius: 10 }}>
+                  <Form.Item label="Global GST (%)">
+                    <InputNumber min={0} max={100} precision={2}
+                      value={formData.gst} addonAfter="%"
+                      onChange={(v) => setFormData((prev) => ({ ...prev, gst: v ?? 0 }))}
+                      style={{ width: "100%", borderRadius: 8 }} />
+                  </Form.Item>
+                </Card>
+              </Col>
+              <Col xs={24} sm={12}>
+                <Card size="small" style={{ borderRadius: 10 }}>
+                  <Statistic title="GST Amount" value={calculations.gstAmount} precision={2} prefix="₹" />
+                </Card>
+              </Col>
+
               <Col xs={24}>
                 <Card
                   style={{
@@ -1289,14 +1314,14 @@ const AddQuotation = () => {
                           color: "#1677ff",
                         }}
                       >
-                        ₹{calculations.finalAmount}
+                        ₹{calculations.finalAmount.toFixed(2)}
                       </div>
                     </div>
 
                     <div style={{ textAlign: "right" }}>
-                      <Text type="secondary">Rounded Amount</Text>
+                      <Text type="secondary">Rounded Amount Before GST</Text>
                       <div style={{ fontSize: 16 }}>
-                        ₹{Math.round(calculations.finalAmount)}
+                        ₹{calculations.roundedAmount.toFixed(2)}
                       </div>
                     </div>
                   </div>
