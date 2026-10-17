@@ -1,11 +1,12 @@
+import { lazy } from "react";
 // src/routes/authRoutes.js
 import { FaSignInAlt, FaExclamationCircle } from "react-icons/fa";
-import AccountVerify from "../../concepts/Auth/AccountVerify";
-import Login from "../../concepts/Auth/Login";
-import Signup from "../../concepts/Auth/Signup";
-import ForgotPassword from "../../concepts/Auth/ForgotPassword";
-import ResetPassword from "../../concepts/Auth/ResetPassword";
-import EmailVerification from "../../concepts/Auth/EmailVerifications";
+const AccountVerify = lazy(() => import("../../concepts/Auth/AccountVerify"));
+const Login = lazy(() => import("../../concepts/Auth/Login"));
+const Signup = lazy(() => import("../../concepts/Auth/Signup"));
+const ForgotPassword = lazy(() => import("../../concepts/Auth/ForgotPassword"));
+const ResetPassword = lazy(() => import("../../concepts/Auth/ResetPassword"));
+const EmailVerification = lazy(() => import("../../concepts/Auth/EmailVerifications"));
 export const authRoutes = [
   {
     path: "/login",
@@ -41,6 +42,11 @@ export const authRoutes = [
     icon: <FaSignInAlt />,
     isSidebarActive: false,
     element: <EmailVerification />,
+  },
+  {
+    path: "/verify-account/:token",
+    name: "Verify Account",
+    element: <AccountVerify />,
   },
   {
     path: "/account-verify",

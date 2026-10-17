@@ -1,436 +1,361 @@
-// src/pages/quotations/PurchaseOrderForm.jsx
-import React, { useEffect } from "react";
-import {
-  Card,
-  Button,
-  Select,
-  Table,
-  DatePicker,
-  Row,
-  Col,
-  Empty,
-  InputNumber,
-  Typography,
-  Collapse,
-  Space,
-  Divider,
-  Image,
-} from "antd";
-import {
-  CheckCircleOutlined,
-  ArrowLeftOutlined,
-  DeleteOutlined,
-} from "@ant-design/icons";
-import styled from "styled-components";
-import moment from "moment";
+// Purchase order checkout: vendor (with its GST and address), deliver-to
+// godown, dates, terms, freight, notes and the lines (qty, rate, discount,
+// GST %). Totals use the same maths as the server and the PO PDF (utils/poMath).
+import React, { useEffect, useMemo, useState } from "react";
+import { Alert, Button, Card, Col, DatePicker, Divider, Empty, Form, Image, Input, InputNumber, Modal, Row, Select, Space, Table, Tag, Typography, message } from "antd";
+import { ArrowLeftOutlined, CheckCircleOutlined, DeleteOutlined, EditOutlined, ShopOutlined } from "@ant-design/icons";
+import dayjs from "dayjs";
+import { poTotals } from "../../utils/poMath";
+import { inr } from "../../utils/quotationMath";
+import { useUpdateVendorMutation } from "../../api/vendorApi";
+import { useGetWarehousesQuery } from "../../api/stockApi";
+import { useGetSettingsQuery } from "../../api/settingsApi";
 
 const { Text, Title } = Typography;
-const { Option } = Select;
-const { Panel } = Collapse;
+const GST = [0, 5, 12, 18, 28];
 
-const CompactCard = styled(Card)`
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  .ant-card-body {
-    padding: 12px 16px;
-  }
-`;
-
-const TightRow = styled(Row)`
-  margin-bottom: 6px;
-  .ant-col {
-    padding: 0 4px;
-  }
-`;
-
-const MiniSelect = styled(Select)`
-  width: 100%;
-  .ant-select-selector {
-    padding: 0 6px;
-    height: 28px;
-  }
-`;
-
-const MiniNumber = styled(InputNumber)`
-  width: 100%;
-  height: 28px;
-  .ant-input-number-input {
-    height: 26px;
-  }
-`;
-
-const MiniDate = styled(DatePicker)`
-  width: 100%;
-  height: 28px;
-  .ant-picker-input input {
-    height: 28px;
-  }
-`;
-
-const CheckoutBtn = styled(Button)`
-  height: 36px;
-  font-weight: 600;
-  background: #e31e24;
-  border-color: #e31e24;
-  &:hover {
-    background: #ff4d4f;
-    border-color: #ff4d4f;
-  }
-`;
-
-const CompactTable = styled(Table)`
-  .ant-table-tbody > tr > td {
-    padding: 6px 8px;
-  }
-  .ant-table-thead > tr > th {
-    padding: 8px;
-    font-size: 12px;
-  }
-`;
+function VendorDetailsModal({ vendor, open, onClose }) {
+  const [form] = Form.useForm();
+  const [save, { isLoading }] = useUpdateVendorMutation();
+  useEffect(() => {
+    if (open && vendor) form.setFieldsValue(vendor);
+  }, [open, vendor, form]);
+  return (
+    <Modal
+      open={open}
+      title={`Vendor details · ${vendor?.vendorName || ""}`}
+      onCancel={onClose}
+      onOk={() => form.submit()}
+      okText="Save"
+      confirmLoading={isLoading}
+      destroyOnClose
+    >
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={async (v) => {
+          try {
+            await save({ id: vendor.id, updatedVendor: { vendorId: vendor.vendorId, vendorName: vendor.vendorName, brandId: vendor.brandId, brandSlug: vendor.brandSlug, ...v } }).unwrap();
+            message.success("Vendor saved");
+            onClose();
+          } catch (e) {
+            message.error(e?.data?.message || "Could not save");
+          }
+        }}
+      >
+        <Row gutter={12}>
+          <Col span={12}>
+            <Form.Item name="gstin" label="GSTIN" normalize={(x) => (x || "").toUpperCase().trim()}>
+              <Input placeholder="07AABCC1234D1Z5" maxLength={15} />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item name="paymentTerms" label="Usual payment terms">
+              <Input placeholder="e.g. 30 days from invoice" />
+            </Form.Item>
+          </Col>
+          <Col span={24}>
+            <Form.Item name="address" label="Address">
+              <Input.TextArea rows={2} />
+            </Form.Item>
+          </Col>
+          <Col span={9}>
+            <Form.Item name="city" label="City">
+              <Input />
+            </Form.Item>
+          </Col>
+          <Col span={9}>
+            <Form.Item name="state" label="State" tooltip="Decides CGST + SGST (same state) or IGST">
+              <Input placeholder="Delhi" />
+            </Form.Item>
+          </Col>
+          <Col span={6}>
+            <Form.Item name="pincode" label="PIN">
+              <Input />
+            </Form.Item>
+          </Col>
+          <Col span={8}>
+            <Form.Item name="contactPerson" label="Contact person">
+              <Input />
+            </Form.Item>
+          </Col>
+          <Col span={8}>
+            <Form.Item name="phone" label="Phone">
+              <Input />
+            </Form.Item>
+          </Col>
+          <Col span={8}>
+            <Form.Item name="email" label="Email">
+              <Input />
+            </Form.Item>
+          </Col>
+        </Row>
+      </Form>
+    </Modal>
+  );
+}
 
 const PurchaseOrderForm = ({
   purchaseOrderData,
   setPurchaseOrderData,
   selectedVendor,
   setSelectedVendor,
-  vendors = [], // Default empty array
+  vendors = [],
   isVendorsLoading = false,
   cartItems = [],
   setActiveTab,
   handleCreateDocument,
 }) => {
-  // Sync Cart Items → Purchase Order Items (runs when switching to checkout tab)
+  const [editVendor, setEditVendor] = useState(false);
+  const { data: whData } = useGetWarehousesQuery();
+  const warehouses = whData?.data || [];
+  const { data: settingsData } = useGetSettingsQuery();
+  const company = settingsData?.data?.company || {};
+  const purchase = settingsData?.data?.purchase || {};
+  const vendor = (Array.isArray(vendors) ? vendors : []).find((v) => (v.id || v._id) === selectedVendor);
+  const set = (patch) => setPurchaseOrderData((prev) => ({ ...prev, ...patch }));
+
+  // cart → PO lines (first time on this tab)
   useEffect(() => {
-    if (!cartItems?.length || (purchaseOrderData?.items?.length || 0) > 0) {
-      return;
-    }
-
-    const mappedItems = cartItems.map((item) => {
-      const price = Number(item.price || item.mrp || item.unitPrice || 0.01);
-      return {
-        productId: item.productId || item.id,
-        name: item.name || "Unnamed Product",
-        quantity: Number(item.quantity) || 1,
-        unitPrice: price,
-        mrp: price,
-        tax: 0,
-        total: price * (Number(item.quantity) || 1),
-        imageUrl: item.imageUrl || item.images?.[0],
-        productCode: item.product_code || item.code || "",
-      };
-    });
-
-    const totalAmount = mappedItems
-      .reduce((sum, item) => sum + (item.total || 0), 0)
-      .toFixed(2);
-
+    if (!cartItems?.length || (purchaseOrderData?.items?.length || 0) > 0) return;
     setPurchaseOrderData((prev) => ({
       ...prev,
-      items: mappedItems,
-      totalAmount,
+      items: cartItems.map((item) => ({
+        productId: item.productId || item.id,
+        name: item.name || "Unnamed product",
+        quantity: Number(item.quantity) || 1,
+        unitPrice: Number(item.price || item.mrp || item.unitPrice || 0),
+        mrp: Number(item.mrp || item.price || 0),
+        discount: 0,
+        discountType: "percent",
+        tax: 18,
+        imageUrl: item.imageUrl || item.images?.[0],
+        productCode: item.product_code || item.code || "",
+      })),
     }));
   }, [cartItems, purchaseOrderData?.items?.length, setPurchaseOrderData]);
 
-  // Update single item field
-  const updateItem = (index, field, value) => {
+  // vendor's usual payment terms fill in when the vendor is chosen
+  useEffect(() => {
+    if (vendor && !purchaseOrderData.paymentTermsTouched) set({ paymentTerms: vendor.paymentTerms || purchase.paymentTerms || "" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vendor?.id, purchase.paymentTerms]);
+
+  const items = purchaseOrderData?.items || [];
+  const norm = (x) => String(x || "").trim().toLowerCase();
+  const interState = Boolean(vendor?.state && company.state && norm(vendor.state) !== norm(company.state));
+  const t = useMemo(() => poTotals({ items, freight: Number(purchaseOrderData.freight) || 0, interState }), [items, purchaseOrderData.freight, interState]);
+
+  const updateItem = (index, patch) =>
     setPurchaseOrderData((prev) => {
-      const items = [...(prev.items || [])];
-      items[index] = { ...items[index], [field]: value };
-
-      // Recalculate line total
-      if (["quantity", "unitPrice", "tax"].includes(field)) {
-        const q = Number(items[index].quantity) || 1;
-        const p = Number(items[index].unitPrice) || 0.01;
-        const t = Number(items[index].tax) || 0;
-        items[index].total = q * p * (1 + t / 100);
-      }
-
-      const totalAmount = items
-        .reduce((sum, item) => sum + (item.total || 0), 0)
-        .toFixed(2);
-
-      return { ...prev, items, totalAmount };
+      const next = [...(prev.items || [])];
+      next[index] = { ...next[index], ...patch };
+      return { ...prev, items: next };
     });
-  };
+  const removeItem = (index) => setPurchaseOrderData((prev) => ({ ...prev, items: (prev.items || []).filter((_, i) => i !== index) }));
+  const setAllGst = (rate) => setPurchaseOrderData((prev) => ({ ...prev, items: (prev.items || []).map((i) => ({ ...i, tax: rate })) }));
 
-  // Remove item
-  const removeItem = (index) => {
-    setPurchaseOrderData((prev) => {
-      const newItems = (prev.items || []).filter((_, i) => i !== index);
-      const totalAmount = newItems
-        .reduce((sum, item) => sum + (item.total || 0), 0)
-        .toFixed(2);
+  if (!items.length) {
+    return (
+      <Card>
+        <Empty description="Add products to the cart first" />
+        <Button type="primary" icon={<ArrowLeftOutlined />} onClick={() => setActiveTab?.("cart")} block>
+          Back to cart
+        </Button>
+      </Card>
+    );
+  }
 
-      return { ...prev, items: newItems, totalAmount };
-    });
-  };
-
-  // Table Columns
   const columns = [
     {
       title: "Product",
-      dataIndex: "name",
-      key: "name",
-      width: 200,
-      render: (_, record) => (
+      render: (_, r) => (
         <Space>
-          {record.imageUrl && (
-            <Image
-              src={record.imageUrl}
-              alt={record.name}
-              width={40}
-              height={40}
-              preview={false}
-              fallback="/placeholder-product.png"
-            />
-          )}
+          {r.imageUrl ? <Image src={r.imageUrl} width={38} height={38} preview={false} style={{ objectFit: "contain" }} /> : null}
           <div>
-            {record.name}
-            {record.productCode && (
-              <div style={{ fontSize: 12, color: "#666" }}>
-                {record.productCode}
-              </div>
+            <div>{r.name}</div>
+            {r.productCode && (
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                {r.productCode}
+              </Text>
             )}
           </div>
         </Space>
       ),
     },
+    { title: "Qty", width: 80, render: (_, r, i) => <InputNumber size="small" min={1} value={r.quantity} onChange={(v) => updateItem(i, { quantity: v || 1 })} style={{ width: "100%" }} /> },
+    { title: "Rate (₹)", width: 110, render: (_, r, i) => <InputNumber size="small" min={0} value={r.unitPrice} onChange={(v) => updateItem(i, { unitPrice: v || 0 })} style={{ width: "100%" }} /> },
     {
-      title: "Qty",
-      key: "quantity",
-      width: 90,
-      render: (_, record, index) => (
-        <MiniNumber
-          min={1}
-          value={record.quantity}
-          onChange={(v) => updateItem(index, "quantity", v)}
-        />
+      title: "Discount",
+      width: 140,
+      render: (_, r, i) => (
+        <Space.Compact size="small">
+          <InputNumber size="small" min={0} value={r.discount} onChange={(v) => updateItem(i, { discount: v || 0 })} style={{ width: 70 }} />
+          <Select size="small" value={r.discountType || "percent"} onChange={(v) => updateItem(i, { discountType: v })} style={{ width: 62 }} options={[{ value: "percent", label: "%" }, { value: "fixed", label: "₹/pc" }]} />
+        </Space.Compact>
       ),
     },
-    {
-      title: "Unit Price (₹)",
-      key: "unitPrice",
-      width: 120,
-      render: (_, record, index) => (
-        <MiniNumber
-          min={0.01}
-          step={0.01}
-          precision={2}
-          value={record.unitPrice}
-          onChange={(v) => updateItem(index, "unitPrice", v)}
-        />
-      ),
-    },
-    {
-      title: "Tax %",
-      key: "tax",
-      width: 100,
-      render: (_, record, index) => (
-        <MiniNumber
-          min={0}
-          max={100}
-          step={0.1}
-          precision={1}
-          value={record.tax ?? 0}
-          onChange={(v) => updateItem(index, "tax", v)}
-        />
-      ),
-    },
-    {
-      title: "Line Total (₹)",
-      key: "total",
-      width: 120,
-      render: (_, record) =>
-        (
-          record.quantity *
-          record.unitPrice *
-          (1 + (record.tax || 0) / 100)
-        ).toFixed(2),
-    },
-    {
-      title: "",
-      key: "action",
-      width: 60,
-      render: (_, __, index) => (
-        <Button
-          type="text"
-          danger
-          size="small"
-          icon={<DeleteOutlined />}
-          onClick={() => removeItem(index)}
-        />
-      ),
-    },
+    { title: "GST", width: 82, render: (_, r, i) => <Select size="small" value={Number(r.tax) || 0} onChange={(v) => updateItem(i, { tax: v })} style={{ width: "100%" }} options={GST.map((g) => ({ value: g, label: `${g}%` }))} /> },
+    { title: "Amount", width: 110, align: "right", render: (_, r, i) => <Text strong>{inr(t.lines[i]?.net || 0)}</Text> },
+    { width: 40, render: (_, __, i) => <Button type="text" danger size="small" icon={<DeleteOutlined />} onClick={() => removeItem(i)} /> },
   ];
 
-  const hasItems = (purchaseOrderData?.items || []).length > 0;
-
-  // Empty State
-  if (!hasItems) {
-    return (
-      <CompactCard>
-        <Empty
-          description="No items in cart for Purchase Order"
-          image={<DeleteOutlined style={{ fontSize: 48 }} />}
-        />
-        <Button
-          type="primary"
-          icon={<ArrowLeftOutlined />}
-          onClick={() => setActiveTab?.("cart")}
-          block
-        >
-          Back to Cart
-        </Button>
-      </CompactCard>
-    );
-  }
+  const missingVendorInfo = vendor && (!vendor.gstin || !vendor.state);
 
   return (
-    <Row gutter={12}>
-      {/* LEFT: FORM SECTION */}
-      <Col xs={24} md={16}>
-        <CompactCard title={<Title level={5}>Create Purchase Order</Title>}>
-          <Collapse defaultActiveKey={["1", "2"]} ghost>
-            {/* Vendor & Basic Info */}
-            <Panel header="Vendor & Basic Info" key="1">
-              <TightRow gutter={8}>
-                <Col span={8}>
-                  <Text strong>
-                    Vendor <span style={{ color: "red" }}>*</span>
-                  </Text>
-                </Col>
-                <Col span={16}>
-                  <MiniSelect
-                    value={selectedVendor}
-                    onChange={setSelectedVendor}
-                    loading={isVendorsLoading}
-                    showSearch
-                    placeholder="Select vendor"
-                    filterOption={(input, option) =>
-                      (option?.children || "")
-                        .toLowerCase()
-                        .includes(input.toLowerCase())
-                    }
-                  >
-                    {Array.isArray(vendors) &&
-                      vendors.map((v) => (
-                        <Option key={v.id || v._id} value={v.id || v._id}>
-                          {v.vendorName || v.name || "Unnamed Vendor"}
-                        </Option>
-                      ))}
-                  </MiniSelect>
-                </Col>
-              </TightRow>
-
-              <TightRow gutter={8} style={{ marginTop: 12 }}>
-                <Col span={8}>
-                  <Text strong>Order Date</Text>
-                </Col>
-                <Col span={16}>
-                  <MiniDate
-                    value={moment(purchaseOrderData.orderDate)}
-                    disabled
-                  />
-                </Col>
-              </TightRow>
-
-              <TightRow gutter={8} style={{ marginTop: 12 }}>
-                <Col span={8}>
-                  <Text strong>Expected Delivery</Text>
-                </Col>
-                <Col span={16}>
-                  <MiniDate
-                    value={
-                      purchaseOrderData.expectDeliveryDate
-                        ? moment(purchaseOrderData.expectDeliveryDate)
-                        : null
-                    }
-                    onChange={(date) =>
-                      setPurchaseOrderData((prev) => ({
-                        ...prev,
-                        expectDeliveryDate: date
-                          ? date.format("YYYY-MM-DD")
-                          : null,
-                      }))
-                    }
-                    disabledDate={(current) =>
-                      current && current < moment().startOf("day")
-                    }
-                  />
-                </Col>
-              </TightRow>
-            </Panel>
-
-            {/* Products Table */}
-            <Panel header="Products" key="2">
-              <CompactTable
-                columns={columns}
-                dataSource={purchaseOrderData?.items || []}
-                rowKey={(record, index) => `po-item-${index}`}
-                pagination={false}
-                size="small"
+    <Row gutter={16}>
+      <Col xs={24} lg={16}>
+        <Card style={{ borderRadius: 12 }}>
+          <Title level={5} style={{ marginTop: 0 }}>
+            Purchase order
+          </Title>
+          <Row gutter={12}>
+            <Col xs={24} md={12}>
+              <Text strong>Vendor *</Text>
+              <Select
+                style={{ width: "100%", marginTop: 4 }}
+                value={selectedVendor || undefined}
+                onChange={setSelectedVendor}
+                loading={isVendorsLoading}
+                showSearch
+                optionFilterProp="label"
+                placeholder="Choose vendor"
+                options={(Array.isArray(vendors) ? vendors : []).map((v) => ({ value: v.id || v._id, label: v.vendorName || "Unnamed vendor" }))}
               />
-
-              {hasItems && (
-                <div style={{ marginTop: 12, textAlign: "right" }}>
-                  <Text strong>Total: ₹{purchaseOrderData.totalAmount}</Text>
+              {vendor && (
+                <div className="po-vendor-card">
+                  <ShopOutlined />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div>{[vendor.address, vendor.city, vendor.state].filter(Boolean).join(", ") || <Text type="secondary">No address</Text>}</div>
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      {[vendor.gstin ? `GSTIN ${vendor.gstin}` : "No GSTIN", vendor.contactPerson, vendor.phone].filter(Boolean).join(" · ")}
+                    </Text>
+                  </div>
+                  <Button size="small" type="link" icon={<EditOutlined />} onClick={() => setEditVendor(true)}>
+                    Edit
+                  </Button>
                 </div>
               )}
-            </Panel>
-          </Collapse>
-        </CompactCard>
-      </Col>
-
-      {/* RIGHT: SUMMARY SECTION */}
-      <Col xs={24} md={8}>
-        <CompactCard
-          title={<Text strong>Order Summary</Text>}
-          style={{ position: "sticky", top: 16 }}
-        >
-          <Space direction="vertical" style={{ width: "100%" }}>
-            <div>
-              <Text type="secondary">Vendor</Text>
-              <div>
-                {Array.isArray(vendors)
-                  ? vendors.find((v) => (v.id || v._id) === selectedVendor)
-                      ?.vendorName || "Not selected"
-                  : "Not selected"}
-              </div>
-            </div>
-
-            <Divider style={{ margin: "12px 0" }} />
-
-            <div>
-              <Text type="secondary">Items</Text>
-              <div>{(purchaseOrderData?.items || []).length}</div>
-            </div>
-
-            <div>
-              <Text type="secondary">Grand Total</Text>
-              <div style={{ fontSize: 18, fontWeight: 600 }}>
-                ₹{purchaseOrderData.totalAmount || 0}
-              </div>
-            </div>
-
-            <Divider style={{ margin: "12px 0" }} />
-
-            <CheckoutBtn
-              block
-              icon={<CheckCircleOutlined />}
-              onClick={handleCreateDocument}
-              disabled={
-                !selectedVendor || (purchaseOrderData?.items || []).length === 0
+            </Col>
+            <Col xs={24} md={12}>
+              <Text strong>Deliver to</Text>
+              <Select
+                style={{ width: "100%", marginTop: 4 }}
+                value={purchaseOrderData.warehouseId || warehouses.find((w) => w.isDefault)?.id}
+                onChange={(v) => set({ warehouseId: v })}
+                placeholder="Main godown"
+                options={warehouses.map((w) => ({ value: w.id, label: w.name }))}
+              />
+            </Col>
+          </Row>
+          {missingVendorInfo && (
+            <Alert
+              style={{ marginTop: 10 }}
+              type="info"
+              showIcon
+              message="Add the vendor's GSTIN and state so the PO shows the right tax (CGST + SGST or IGST)."
+              action={
+                <Button size="small" onClick={() => setEditVendor(true)}>
+                  Add details
+                </Button>
               }
-            >
-              Create Purchase Order
-            </CheckoutBtn>
+            />
+          )}
 
-            <Button block onClick={() => setActiveTab?.("cart")}>
-              Back to Cart
-            </Button>
+          <Row gutter={12} style={{ marginTop: 12 }}>
+            <Col xs={24} md={8}>
+              <Text strong>Deliver by</Text>
+              <DatePicker
+                style={{ width: "100%", marginTop: 4 }}
+                format="D MMM YYYY"
+                value={purchaseOrderData.expectDeliveryDate ? dayjs(purchaseOrderData.expectDeliveryDate) : null}
+                onChange={(d) => set({ expectDeliveryDate: d ? d.format("YYYY-MM-DD") : null })}
+                disabledDate={(d) => d && d < dayjs().startOf("day")}
+              />
+              <Space size={4} style={{ marginTop: 4 }}>
+                {[3, 7, 15].map((n) => (
+                  <Tag key={n} style={{ cursor: "pointer" }} onClick={() => set({ expectDeliveryDate: dayjs().add(n, "day").format("YYYY-MM-DD") })}>
+                    +{n} days
+                  </Tag>
+                ))}
+              </Space>
+            </Col>
+            <Col xs={24} md={8}>
+              <Text strong>Vendor's quote / ref no.</Text>
+              <Input style={{ marginTop: 4 }} value={purchaseOrderData.vendorRef} onChange={(e) => set({ vendorRef: e.target.value })} placeholder="e.g. SGT/Q/2391" />
+            </Col>
+            <Col xs={24} md={8}>
+              <Text strong>Freight (₹)</Text>
+              <InputNumber style={{ width: "100%", marginTop: 4 }} min={0} value={purchaseOrderData.freight} onChange={(v) => set({ freight: v || 0 })} placeholder="0" />
+            </Col>
+            <Col xs={24} md={12} style={{ marginTop: 10 }}>
+              <Text strong>Payment terms</Text>
+              <Input style={{ marginTop: 4 }} value={purchaseOrderData.paymentTerms} onChange={(e) => set({ paymentTerms: e.target.value, paymentTermsTouched: true })} placeholder={purchase.paymentTerms} />
+            </Col>
+            <Col xs={24} md={12} style={{ marginTop: 10 }}>
+              <Text strong>Delivery terms</Text>
+              <Input style={{ marginTop: 4 }} value={purchaseOrderData.deliveryTerms} onChange={(e) => set({ deliveryTerms: e.target.value })} placeholder={purchase.deliveryTerms} />
+            </Col>
+            <Col span={24} style={{ marginTop: 10 }}>
+              <Text strong>Notes for the vendor</Text>
+              <Input.TextArea style={{ marginTop: 4 }} rows={2} value={purchaseOrderData.notes} onChange={(e) => set({ notes: e.target.value })} placeholder="Delivery timing, packing, contact at site…" />
+            </Col>
+          </Row>
+
+          <Divider style={{ margin: "16px 0 10px" }} />
+          <Space style={{ width: "100%", justifyContent: "space-between", marginBottom: 8 }} wrap>
+            <Text strong>
+              {items.length} product{items.length === 1 ? "" : "s"}
+            </Text>
+            <Space size={4}>
+              <Text type="secondary">GST for all:</Text>
+              {GST.map((g) => (
+                <Tag key={g} style={{ cursor: "pointer" }} onClick={() => setAllGst(g)}>
+                  {g}%
+                </Tag>
+              ))}
+            </Space>
           </Space>
-        </CompactCard>
+          <Table size="small" columns={columns} dataSource={items} rowKey={(r, i) => `${r.productId}-${i}`} pagination={false} scroll={{ x: 720 }} />
+        </Card>
       </Col>
+
+      <Col xs={24} lg={8}>
+        <Card style={{ borderRadius: 12, position: "sticky", top: 80 }} title="Summary">
+          {[
+            ["Value before discount", t.subTotal],
+            ["Discount", -t.discount],
+            ["Freight", t.freight],
+            ["Taxable value", t.taxableValue, true],
+            ...(interState ? [["IGST", t.igst]] : [["CGST", t.cgst], ["SGST", t.sgst]]),
+            ["Round off", t.roundOff],
+          ].map(([k, v, bold]) => (
+            <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #f3f3f3" }}>
+              <Text strong={bold} type={k === "Round off" ? "secondary" : undefined}>
+                {k}
+              </Text>
+              <Text strong={bold} style={{ color: v < 0 ? "#cf1322" : undefined }}>
+                {v < 0 ? "− " : ""}
+                {inr(Math.abs(v))}
+              </Text>
+            </div>
+          ))}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10, padding: "12px 14px", background: "#d7232f", borderRadius: 10, color: "#fff" }}>
+            <span style={{ letterSpacing: "0.08em", fontSize: 12, textTransform: "uppercase" }}>PO total</span>
+            <span style={{ fontSize: 20, fontWeight: 600 }}>{inr(t.grandTotal)}</span>
+          </div>
+          <Text type="secondary" style={{ display: "block", marginTop: 6, fontSize: 12 }}>
+            {interState ? "Vendor in another state: IGST" : "Same state: CGST + SGST"}
+          </Text>
+          <Button type="primary" block size="large" icon={<CheckCircleOutlined />} style={{ marginTop: 14 }} onClick={handleCreateDocument} disabled={!selectedVendor || !items.length}>
+            Create purchase order
+          </Button>
+          <Button block style={{ marginTop: 8 }} onClick={() => setActiveTab?.("cart")}>
+            Back to cart
+          </Button>
+        </Card>
+      </Col>
+      <VendorDetailsModal vendor={vendor} open={editVendor} onClose={() => setEditVendor(false)} />
     </Row>
   );
 };

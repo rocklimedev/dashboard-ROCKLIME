@@ -1,6 +1,7 @@
 const { Op } = require("sequelize");
 const inventoryPagination = require("./inventoryPagination");
 const sequelize = require("../../config/database");
+const stock = require("../stock/stock.service");
 const slugify = require("slugify"); // npm install slugify — highly recommended
 const {
   Product,
@@ -13,6 +14,8 @@ const {
   Category,
   Quotation,
   Order,
+  Vendor,
+  Job,
 } = require("../../models");
 // ─────────────────────────────────────────────────────────────────────────────
 // Create a product with meta data
@@ -20,6 +23,9 @@ const {
 // Correct import
 const { uploadToFtp } = require("../../middleware/upload"); // ← this is where it really is
 // controllers/productController.js
+const generateSlug = (name) =>
+  slugify(String(name || ""), { lower: true, strict: true });
+
 const COMPANY_CODE_META_ID = "d11da9f9-3f2e-4536-8236-9671200cca4a"; // ← your existing UUID
 // THIS IS THE MAGIC FIX — RUN IT ON EVERY REQUEST
 const ensureAssociations = () => {
@@ -202,7 +208,7 @@ exports.createProduct = async (req, res) => {
     const productData = {
       name: name?.trim() || "Unnamed Product",
       quantity: parseInt(quantity, 10) || 0,
-      images: imageUrls.length > 0 ? JSON.stringify(imageUrls) : null,
+      images: imageUrls.length > 0 ? imageUrls : [],
       meta: Object.keys(metaObj).length > 0 ? metaObj : null,
       isFeatured: isFeatured === "true" || isFeatured === true,
       status: status || (quantity > 0 ? "active" : "out_of_stock"),
@@ -330,7 +336,7 @@ exports.createProduct = async (req, res) => {
             restFields.brand_parentcategoriesId ||
             master.brand_parentcategoriesId,
           images:
-            imageUrls.length > 0 ? JSON.stringify(imageUrls) : master.images,
+            imageUrls.length > 0 ? imageUrls : master.images,
           meta: Object.keys(metaObj).length > 0 ? metaObj : master.meta,
           description: restFields.description?.trim() || master.description,
         },
@@ -362,6 +368,21 @@ exports.createProduct = async (req, res) => {
 
     if (cleanKeywordIds.length > 0) {
       await finalProduct.setKeywords(cleanKeywordIds, { transaction: t });
+    }
+
+    // Opening stock goes through the stock engine (it keeps
+    // products.quantity equal to the available stock).
+    const openingQty = parseInt(quantity, 10) || 0;
+    await finalProduct.update({ quantity: 0 }, { transaction: t });
+    if (openingQty > 0) {
+      await stock.receiveGoods(
+        {
+          items: [{ productId: finalProduct.productId, productName: finalProduct.name, quantity: openingQty }],
+          userId: req.user?.userId || null,
+          notes: "Opening stock when the product was created",
+        },
+        { t },
+      );
     }
 
     await t.commit();
@@ -403,7 +424,7 @@ exports.createProduct = async (req, res) => {
       message: "Product created successfully",
       product: {
         ...createdProduct.toJSON(),
-        images: createdProduct.images ? JSON.parse(createdProduct.images) : [],
+        images: Array.isArray(createdProduct.images) ? createdProduct.images : [],
         meta: createdProduct.meta || {},
         keywords,
         variantOptions: createdProduct.variantOptions || {},
@@ -506,9 +527,7 @@ exports.updateProduct = async (req, res) => {
     let updateData = {
       name: name?.trim() || product.name,
       product_code: product_code?.trim() || product.product_code,
-      quantity:
-        quantity !== undefined ? parseInt(quantity, 10) : product.quantity,
-      images: JSON.stringify(currentImages),
+      images: currentImages,
       meta: Object.keys(metaObj).length > 0 ? metaObj : null,
       isFeatured:
         isFeatured === "true" || isFeatured === true || product.isFeatured,
@@ -614,6 +633,24 @@ exports.updateProduct = async (req, res) => {
     // 5. Update the product
     await product.update(updateData, { transaction: t });
 
+    // The form's stock field shows AVAILABLE stock. If it was changed, set
+    // on-hand so that available becomes the new figure (reserved stays).
+    if (quantity !== undefined && quantity !== "" && !isNaN(parseInt(quantity, 10))) {
+      const wanted = Math.max(parseInt(quantity, 10), 0);
+      const { totals } = await stock.productStock(product.productId, { t });
+      if (wanted !== totals.available) {
+        await stock.setOnHand(
+          {
+            productId: product.productId,
+            counted: wanted + totals.reserved,
+            reason: `Stock edited on the product form (available ${totals.available} → ${wanted})`,
+            userId: req.user?.userId || null,
+          },
+          { t },
+        );
+      }
+    }
+
     // 6. Update keywords
     const cleanKeywordIds = Array.isArray(keywordIds)
       ? keywordIds.filter(Boolean)
@@ -665,7 +702,7 @@ exports.updateProduct = async (req, res) => {
       message: "Product updated successfully",
       product: {
         ...updated.toJSON(),
-        images: updated.images ? JSON.parse(updated.images) : [],
+        images: Array.isArray(updated.images) ? updated.images : [],
         meta: updated.meta || {},
         keywords,
         variantOptions: updated.variantOptions || {},
@@ -693,6 +730,41 @@ exports.updateProduct = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // Get all products - OPTIMIZED FOR INVENTORY
 // ─────────────────────────────────────────────────────────────────────────────
+exports.getCompanyCodes = async (req, res) => {
+  try {
+    const code = sequelize.fn(
+      "TRIM",
+      sequelize.fn(
+        "JSON_UNQUOTE",
+        sequelize.fn(
+          "JSON_EXTRACT",
+          sequelize.col("Product.meta"),
+          sequelize.literal(`'$."${COMPANY_CODE_META_ID}"'`),
+        ),
+      ),
+    );
+    const rows = await Product.findAll({
+      attributes: [[code, "companyCode"]],
+      where: {
+        [Op.and]: [
+          sequelize.where(code, { [Op.ne]: "" }),
+          sequelize.where(code, { [Op.ne]: "null" }),
+        ],
+      },
+      group: [code],
+      having: sequelize.where(
+        sequelize.fn("COUNT", sequelize.col("Product.productId")),
+        { [Op.gt]: 1 },
+      ),
+      order: [[code, "ASC"]],
+      raw: true,
+    });
+    return res.json(rows.map((row) => row.companyCode));
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to fetch company codes" });
+  }
+};
+
 exports.getAllProducts = async (req, res) => {
   try {
     ensureAssociations();
@@ -711,22 +783,55 @@ exports.getAllProducts = async (req, res) => {
     if (brandId) whereClause.brandId = brandId;
 
     if (req.query.duplicateCompanyCode === "true") {
-      const companyCode = sequelize.fn("TRIM", sequelize.fn("JSON_UNQUOTE",
-        sequelize.fn("JSON_EXTRACT", sequelize.col("Product.meta"),
-          sequelize.literal(`'$."${COMPANY_CODE_META_ID}"'`))));
+      const companyCode = sequelize.fn(
+        "TRIM",
+        sequelize.fn(
+          "JSON_UNQUOTE",
+          sequelize.fn(
+            "JSON_EXTRACT",
+            sequelize.col("Product.meta"),
+            sequelize.literal(`'$."${COMPANY_CODE_META_ID}"'`),
+          ),
+        ),
+      );
       const duplicateCodes = await Product.findAll({
         attributes: [[companyCode, "companyCode"]],
-        where: { [Op.and]: [
-          sequelize.where(companyCode, { [Op.ne]: "" }),
-          sequelize.where(companyCode, { [Op.ne]: "null" }),
-        ] },
+        where: {
+          [Op.and]: [
+            sequelize.where(companyCode, { [Op.ne]: "" }),
+            sequelize.where(companyCode, { [Op.ne]: "null" }),
+          ],
+        },
         group: [companyCode],
-        having: sequelize.where(sequelize.fn("COUNT", sequelize.col("Product.productId")), { [Op.gt]: 1 }),
+        having: sequelize.where(
+          sequelize.fn("COUNT", sequelize.col("Product.productId")),
+          { [Op.gt]: 1 },
+        ),
         raw: true,
       });
-      whereClause[Op.and] = [sequelize.where(companyCode, {
-        [Op.in]: duplicateCodes.map((p) => p.companyCode),
-      })];
+      whereClause[Op.and] = [
+        sequelize.where(companyCode, {
+          [Op.in]: duplicateCodes.map((p) => p.companyCode),
+        }),
+      ];
+    }
+
+    if (req.query.companyCode?.trim()) {
+      const code = sequelize.fn(
+        "TRIM",
+        sequelize.fn(
+          "JSON_UNQUOTE",
+          sequelize.fn(
+            "JSON_EXTRACT",
+            sequelize.col("Product.meta"),
+            sequelize.literal(`'$."${COMPANY_CODE_META_ID}"'`),
+          ),
+        ),
+      );
+      whereClause[Op.and] = [
+        ...(whereClause[Op.and] || []),
+        sequelize.where(code, { [Op.eq]: req.query.companyCode.trim() }),
+      ];
     }
 
     // === Search ===
@@ -764,19 +869,34 @@ exports.getAllProducts = async (req, res) => {
       ];
     }
 
-    const optionalNumber = (value) => value !== undefined && value !== null && value !== "" &&
-      Number.isFinite(Number(value)) ? Number(value) : null;
+    const optionalNumber = (value) =>
+      value !== undefined &&
+      value !== null &&
+      value !== "" &&
+      Number.isFinite(Number(value))
+        ? Number(value)
+        : null;
     const maxStock = optionalNumber(req.query.maxStock);
     if (maxStock !== null) whereClause.quantity = { [Op.lte]: maxStock };
     const minPrice = optionalNumber(req.query.minPrice);
     const maxPrice = optionalNumber(req.query.maxPrice);
     if (minPrice !== null || maxPrice !== null) {
-      const rawPrice = sequelize.fn("JSON_UNQUOTE", sequelize.fn("JSON_EXTRACT",
-        sequelize.col("Product.meta"), sequelize.literal(`'$."9ba862ef-f993-4873-95ef-1fef10036aa5"'`)));
+      const rawPrice = sequelize.fn(
+        "JSON_UNQUOTE",
+        sequelize.fn(
+          "JSON_EXTRACT",
+          sequelize.col("Product.meta"),
+          sequelize.literal(`'$."9ba862ef-f993-4873-95ef-1fef10036aa5"'`),
+        ),
+      );
       const price = sequelize.cast(rawPrice, "DECIMAL(20,4)");
-      const predicates = [sequelize.where(rawPrice, { [Op.regexp]: "^[0-9]+([.][0-9]+)?$" })];
-      if (minPrice !== null) predicates.push(sequelize.where(price, { [Op.gte]: minPrice }));
-      if (maxPrice !== null) predicates.push(sequelize.where(price, { [Op.lte]: maxPrice }));
+      const predicates = [
+        sequelize.where(rawPrice, { [Op.regexp]: "^[0-9]+([.][0-9]+)?$" }),
+      ];
+      if (minPrice !== null)
+        predicates.push(sequelize.where(price, { [Op.gte]: minPrice }));
+      if (maxPrice !== null)
+        predicates.push(sequelize.where(price, { [Op.lte]: maxPrice }));
       whereClause[Op.and] = [...(whereClause[Op.and] || []), ...predicates];
     }
 
@@ -808,9 +928,21 @@ exports.getAllProducts = async (req, res) => {
       ["productId", "ASC"],
     ];
 
-    const { products, total: totalProducts, page, counts } = await inventoryPagination({
-      Product, Keyword, Category, where: whereClause, order,
-      page: requestedPage, limit, tab, threshold: lowStockThreshold,
+    const {
+      products,
+      total: totalProducts,
+      page,
+      counts,
+    } = await inventoryPagination({
+      Product,
+      Keyword,
+      Category,
+      where: whereClause,
+      order,
+      page: requestedPage,
+      limit,
+      tab,
+      threshold: lowStockThreshold,
     });
     if (totalProducts === 0) {
       return res.json({
@@ -1004,15 +1136,48 @@ exports.getProductById = async (req, res) => {
 // ==================== DELETE PRODUCT ====================
 exports.deleteProduct = async (req, res) => {
   try {
-    const models = require('../../models');
+    const models = require("../../models");
     const user = await models.User.findByPk(req.user.userId);
-    const role = user && await models.Role.findByPk(user.roleId, { include: [{ model: models.Permission, as: 'permissions', through: { attributes: [] } }] });
-    if (!role || (!['SUPER_ADMIN', 'DEVELOPER'].includes(role.roleName) && !(role.permissions || []).some(permission => permission.api === 'delete' && ['products', 'inventory'].includes(permission.module)))) return res.status(403).json({ message: 'Missing delete permission for products.' });
-    const service = require('./product-delete.service').createProductDeletionService(models);
+    const role =
+      user &&
+      (await models.Role.findByPk(user.roleId, {
+        include: [
+          {
+            model: models.Permission,
+            as: "permissions",
+            through: { attributes: [] },
+          },
+        ],
+      }));
+    if (
+      !role ||
+      (!["SUPER_ADMIN", "DEVELOPER"].includes(role.roleName) &&
+        !(role.permissions || []).some(
+          (permission) =>
+            permission.api === "delete" &&
+            ["products", "inventory"].includes(permission.module),
+        ))
+    )
+      return res
+        .status(403)
+        .json({ message: "Missing delete permission for products." });
+    const service =
+      require("./product-delete.service").createProductDeletionService(models);
     res.json(await service.remove([req.params.productId]));
   } catch (error) {
-    const status = error.status || (error.name === 'SequelizeForeignKeyConstraintError' ? 409 : 500);
-    res.status(status).json({ message: error.status ? error.message : status === 409 ? 'Product is referenced by other records and cannot be deleted.' : 'Error checking references or deleting product.', references: error.references });
+    const status =
+      error.status ||
+      (error.name === "SequelizeForeignKeyConstraintError" ? 409 : 500);
+    res
+      .status(status)
+      .json({
+        message: error.status
+          ? error.message
+          : status === 409
+            ? "Product is referenced by other records and cannot be deleted."
+            : "Error checking references or deleting product.",
+        references: error.references,
+      });
   }
 };
 // Get products by category
@@ -1425,152 +1590,59 @@ exports.getProductsByBrand = async (req, res) => {
 };
 
 // Add stock to a product (NOW USING MYSQL + TRANSACTION)
-exports.addStock = async (req, res) => {
+// Add or remove stock by hand (breakage, found pieces, corrections).
+// Goes through the stock engine: a reason is required, and stock that is
+// reserved for orders cannot be removed.
+const manualStockChange = (sign) => async (req, res) => {
   const { productId } = req.params;
-  const { quantity, orderNo, userId, message: customMessage } = req.body;
-
-  if (!quantity || isNaN(quantity) || Number(quantity) <= 0) {
-    return res.status(400).json({ message: "Valid quantity is required" });
-  }
-
+  const { quantity, orderNo, message: customMessage, reason, warehouseId } = req.body;
+  const userId = req.user?.userId || null;
   const qty = Number(quantity);
-
+  if (!qty || isNaN(qty) || qty <= 0 || !Number.isInteger(qty)) {
+    return res.status(400).json({ message: "Enter a whole quantity greater than 0." });
+  }
+  const why =
+    String(reason || customMessage || "").trim() ||
+    (sign > 0 ? "Stock added by hand" : "Stock removed by hand");
   try {
     const result = await sequelize.transaction(async (t) => {
-      const product = await Product.findByPk(productId, {
-        lock: t.LOCK.UPDATE,
-        transaction: t,
-      });
-
-      if (!product) throw new Error("Product not found");
-
-      const newQuantity = product.quantity + qty;
-      await product.update({ quantity: newQuantity }, { transaction: t });
-
-      let username = "unknown";
-      if (userId) {
-        const user = await User.findByPk(userId, {
-          attributes: ["username"],
-          transaction: t,
-        });
-        if (user) username = user.username;
-      }
-
-      const finalMessage =
-        customMessage?.trim() ||
-        `Stock added by ${username}${orderNo ? ` (Order #${orderNo})` : ""}`;
-
-      const history = await InventoryHistory.create(
+      const posted = await stock.adjust(
         {
           productId,
-          change: qty,
-          quantityAfter: newQuantity,
-          action: "add-stock",
-          orderNo: orderNo || null,
-          userId: userId || null,
-          message: finalMessage,
+          warehouseId: warehouseId || null,
+          change: sign * qty,
+          reason: orderNo ? `${why} (Order #${orderNo})` : why,
+          userId,
         },
-        { transaction: t },
+        { t },
       );
-
-      return { product, history };
+      if (sign > 0) await stock.allocateBackorders([productId], { t, userId });
+      const product = await Product.findByPk(productId, { transaction: t });
+      const totals = (await stock.productStock(productId, { t })).totals;
+      return { posted, product, totals };
     });
-
     res.json({
-      message: "Stock added successfully",
+      message: sign > 0 ? "Stock added successfully" : "Stock removed successfully",
       product: result.product,
+      stock: result.totals,
       inventoryHistory: {
-        id: result.history.id,
-        action: result.history.action,
-        change: result.history.change,
-        quantityAfter: result.history.quantityAfter,
-        timestamp: result.history.createdAt,
-        orderNo: result.history.orderNo,
-        userId: result.history.userId,
-        message: result.history.message,
+        action: sign > 0 ? "add-stock" : "remove-stock",
+        change: sign * qty,
+        quantityAfter: result.product?.quantity,
+        timestamp: new Date(),
+        orderNo: orderNo || null,
+        userId,
+        message: why,
       },
     });
   } catch (error) {
-    res.status(500).json({ message: error.message || "Error adding stock" });
+    res.status(error.status || 500).json({ message: error.message || "Error changing stock" });
   }
 };
 
-// Remove stock from a product (NOW USING MYSQL + TRANSACTION)
-exports.removeStock = async (req, res) => {
-  const { productId } = req.params;
-  const { quantity, orderNo, userId, message: customMessage } = req.body;
+exports.addStock = manualStockChange(1);
+exports.removeStock = manualStockChange(-1);
 
-  if (!quantity || isNaN(quantity) || Number(quantity) <= 0) {
-    return res.status(400).json({ message: "Valid quantity is required" });
-  }
-
-  const qty = Number(quantity);
-
-  try {
-    const result = await sequelize.transaction(async (t) => {
-      const product = await Product.findByPk(productId, {
-        lock: t.LOCK.UPDATE,
-        transaction: t,
-      });
-
-      if (!product) throw new Error("Product not found");
-      if (product.quantity < qty) throw new Error("Insufficient stock");
-
-      const newQuantity = product.quantity - qty;
-      await product.update({ quantity: newQuantity }, { transaction: t });
-
-      let username = "unknown";
-      if (userId) {
-        const user = await User.findByPk(userId, {
-          attributes: ["username"],
-          transaction: t,
-        });
-        if (user) username = user.username;
-      }
-
-      const finalMessage =
-        customMessage?.trim() ||
-        `Stock removed by ${username}${orderNo ? ` (Order #${orderNo})` : ""}`;
-
-      const history = await InventoryHistory.create(
-        {
-          productId,
-          change: -qty,
-          quantityAfter: newQuantity,
-          action: "remove-stock",
-          orderNo: orderNo || null,
-          userId: userId || null,
-          message: finalMessage,
-        },
-        { transaction: t },
-      );
-
-      return { product, history };
-    });
-
-    res.json({
-      message: "Stock removed successfully",
-      product: result.product,
-      inventoryHistory: {
-        id: result.history.id,
-        action: result.history.action,
-        change: result.history.change,
-        quantityAfter: result.history.quantityAfter,
-        timestamp: result.history.createdAt,
-        orderNo: result.history.orderNo,
-        userId: result.history.userId,
-        message: result.history.message,
-      },
-    });
-  } catch (error) {
-    const status = error.message === "Insufficient stock" ? 400 : 500;
-    res.status(status).json({ message: error.message });
-  }
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Get inventory history for a specific product (NOW FROM MYSQL)
-// ─────────────────────────────────────────────────────────────────────────────
 exports.getHistoryByProductId = async (req, res) => {
   try {
     const { productId } = req.params;
@@ -1620,131 +1692,8 @@ exports.getHistoryByProductId = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // Get low-stock products
 // ─────────────────────────────────────────────────────────────────────────────
-exports.getLowStockProducts = async (req, res) => {
-  try {
-    ensureAssociations();
+// (An older duplicate of getLowStockProducts was removed; the version below is the one in use.)
 
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 100;
-    const offset = (page - 1) * limit;
-
-    const threshold = parseInt(req.query.threshold) || 20;
-
-    const whereClause = {
-      quantity: {
-        [Op.lte]: threshold,
-      },
-    };
-
-    const { count: totalLowStock, rows: products } =
-      await Product.findAndCountAll({
-        where: whereClause,
-        order: [
-          ["quantity", "ASC"],
-          ["updatedAt", "DESC"],
-        ],
-        offset,
-        limit,
-        distinct: true,
-        subQuery: false,
-        include: [
-          {
-            model: Keyword,
-            as: "keywords",
-            attributes: ["id", "keyword"],
-            through: { attributes: [] },
-            include: [
-              {
-                model: Category,
-                as: "categories",
-                attributes: ["categoryId", "name", "slug"],
-              },
-            ],
-          },
-        ],
-      });
-
-    // ===== META ENRICHMENT =====
-    const metaIds = new Set();
-
-    products.forEach((p) => {
-      const meta =
-        typeof p.meta === "string" ? JSON.parse(p.meta || "{}") : p.meta || {};
-
-      Object.keys(meta).forEach((id) => metaIds.add(id));
-    });
-
-    const metaDefs =
-      metaIds.size > 0
-        ? await ProductMeta.findAll({
-            where: {
-              id: {
-                [Op.in]: [...metaIds],
-              },
-            },
-            attributes: ["id", "title", "slug", "fieldType", "unit"],
-          })
-        : [];
-
-    const metaMap = Object.fromEntries(metaDefs.map((m) => [m.id, m.toJSON()]));
-
-    const enrichedProducts = products.map((product) => {
-      const raw = product.toJSON();
-
-      const meta =
-        typeof raw.meta === "string"
-          ? JSON.parse(raw.meta || "{}")
-          : raw.meta || {};
-
-      const images =
-        typeof raw.images === "string"
-          ? JSON.parse(raw.images || "[]")
-          : raw.images || [];
-
-      const metaDetails = Object.entries(meta).map(([id, value]) => {
-        const def = metaMap[id] || {};
-
-        return {
-          id,
-          title: def.title || "Unknown Field",
-          slug: def.slug || null,
-          value: value != null ? String(value) : "",
-          fieldType: def.fieldType || "text",
-          unit: def.unit || null,
-        };
-      });
-
-      return {
-        ...raw,
-        images,
-        meta,
-        metaDetails,
-        quantity: Number(raw.quantity) || 0,
-      };
-    });
-
-    return res.status(200).json({
-      success: true,
-      totalLowStock,
-      threshold,
-      data: enrichedProducts,
-      pagination: {
-        total: totalLowStock,
-        page,
-        limit,
-        totalPages: Math.ceil(totalLowStock / limit),
-      },
-    });
-  } catch (error) {
-    console.error("Low Stock Products Error:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: "Error fetching low stock products",
-      error: error.message,
-    });
-  }
-};
 // ─────────────────────────────────────────────────────────────────────────────
 // Search products with meta data
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1805,7 +1754,7 @@ exports.searchProducts = async (req, res) => {
     }
 
     // Additional exact filters (same as before)
-    if (name) filters.name = { [Op.iLike]: `%${name}%` };
+    if (name) filters.name = { [Op.like]: `%${name}%` };
     if (sellingPrice) filters["meta->sellingPrice"] = Number(sellingPrice);
     if (minSellingPrice)
       filters["meta->sellingPrice"] = { [Op.gte]: Number(minSellingPrice) };
@@ -2309,6 +2258,16 @@ exports.checkproductCode = async (req, res) => {
   }
 };
 // GET /api/products/:productId/with-variants
+const enrichProduct = (product) => {
+  if (!product) return null;
+  const json = product.toJSON ? product.toJSON() : product;
+  return {
+    ...json,
+    meta: parseJsonSafely(json.meta, {}),
+    images: parseJsonSafely(json.images, []),
+  };
+};
+
 exports.getProductWithVariants = async (req, res) => {
   try {
     const { productId } = req.params;
@@ -2573,16 +2532,18 @@ exports.getLowStockProducts = async (req, res) => {
     const limit = parseInt(req.query.limit) || 20;
     const offset = (page - 1) * limit;
 
-    const threshold = parseInt(req.query.threshold) || 20;
+    // An explicit ?threshold= wins; otherwise each product's own alert
+    // quantity is used, or 10 when none is set (same rule as the dashboard).
+    const explicit = req.query.threshold !== undefined && req.query.threshold !== "";
+    const threshold = explicit ? parseInt(req.query.threshold, 10) || 0 : null;
+    const lowStockWhere = explicit
+      ? { quantity: { [Op.lte]: threshold } }
+      : sequelize.literal("quantity <= COALESCE(NULLIF(alert_quantity, 0), 10)");
 
     // ================= FETCH LOW STOCK =================
     const { count: totalLowStock, rows: products } =
       await Product.findAndCountAll({
-        where: {
-          quantity: {
-            [Op.lte]: threshold,
-          },
-        },
+        where: lowStockWhere,
         attributes: [
           "productId",
           "name",
@@ -2934,8 +2895,8 @@ async function processProductBatch(productsBatch, t, options = {}) {
         transaction: t,
       }),
       Vendor.findAll({
-        where: { name: vendorNames },
-        attributes: ["id", "name"],
+        where: { vendorName: vendorNames },
+        attributes: ["id", "vendorName"],
         transaction: t,
       }),
       Brand.findByPk(selectedBrandId, {
@@ -2952,7 +2913,7 @@ async function processProductBatch(productsBatch, t, options = {}) {
     existingCategories.map((c) => [c.name.trim().toLowerCase(), c]),
   );
   const vendorMap = new Map(
-    existingVendors.map((v) => [v.name.trim().toLowerCase(), v]),
+    existingVendors.map((v) => [v.vendorName.trim().toLowerCase(), v]),
   );
 
   // 2. Create missing categories & vendors
@@ -2980,8 +2941,11 @@ async function processProductBatch(productsBatch, t, options = {}) {
 
     if (!vendorMap.has(venKey)) {
       const [newVen] = await Vendor.findOrCreate({
-        where: { name: venName },
-        defaults: { name: venName },
+        where: { vendorName: venName },
+        defaults: {
+          vendorName: venName,
+          vendorId: `V_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`.toUpperCase(),
+        },
         transaction: t,
       });
       vendorMap.set(venKey, newVen);
@@ -3031,6 +2995,20 @@ async function processProductBatch(productsBatch, t, options = {}) {
       };
 
       const newProduct = await Product.create(productData, { transaction: t });
+
+      // Opening stock goes through the stock engine
+
+      if (Number(productData.quantity) > 0) {
+
+        const stockEngine = require("../stock/stock.service");
+
+        const wh = await stockEngine.getDefaultWarehouse(t);
+
+        await newProduct.update({ quantity: 0 }, { transaction: t });
+
+        await stockEngine.post(t, { productId: newProduct.productId, warehouseId: wh.id, movement: "OPENING", onHand: Math.trunc(Number(productData.quantity)), ref: { type: "IMPORT" }, reason: "Opening stock from product import" });
+
+      }
 
       // Keywords (many-to-many)
       if (Array.isArray(p.keywords) && p.keywords.length > 0) {
@@ -3188,6 +3166,7 @@ exports.bulkInventoryUpdate = async (req, res) => {
       });
     }
 
+    const received = [];
     const results = {
       successCount: 0,
       failedCount: 0,
@@ -3230,9 +3209,6 @@ exports.bulkInventoryUpdate = async (req, res) => {
           throw new Error("Quantity must be positive");
         }
 
-        // Enable SQL logging temporarily
-        sequelize.options.logging = console.log;
-
         const product = await Product.findOne({
           where: {
             [Op.or]: [
@@ -3262,45 +3238,25 @@ exports.bulkInventoryUpdate = async (req, res) => {
         }
 
         const oldQuantity = Number(product.quantity || 0);
-        const newQuantity = oldQuantity + qty;
-
-        const updateData = {
-          quantity: newQuantity,
-        };
 
         if (
           selling_price !== undefined &&
           selling_price !== null &&
           !isNaN(selling_price)
         ) {
-          updateData.selling_price = Number(selling_price);
+          await product.update(
+            { selling_price: Number(selling_price) },
+            { transaction: t },
+          );
         }
 
-        await product.update(updateData, {
-          transaction: t,
+        // Goods in: one goods receipt for the whole upload (below)
+        received.push({
+          productId: product.productId,
+          productName: product.name,
+          quantity: qty,
         });
-
-        const finalMessage =
-          customMessage?.trim() ||
-          `Bulk stock update (+${qty}) ${
-            warehouse ? `at ${warehouse}` : ""
-          } by System`;
-
-        await InventoryHistory.create(
-          {
-            productId: product.productId,
-            change: qty,
-            quantityAfter: newQuantity,
-            action: "add-stock",
-            orderNo: null,
-            userId: userId || null,
-            message: finalMessage,
-            warehouse: warehouse || null,
-          },
-          {
-            transaction: t,
-          },
-        );
+        const newQuantity = oldQuantity + qty;
 
         results.success.push({
           productId: product.productId,
@@ -3322,6 +3278,17 @@ exports.bulkInventoryUpdate = async (req, res) => {
       }
     }
 
+    if (received.length) {
+      await stock.receiveGoods(
+        {
+          items: received,
+          userId: req.user?.userId || null,
+          notes: "Bulk inventory update (upload)",
+        },
+        { t },
+      );
+    }
+
     await t.commit();
 
     return res.status(200).json({
@@ -3338,9 +3305,6 @@ exports.bulkInventoryUpdate = async (req, res) => {
       message: "Bulk inventory update failed",
       error: error.message,
     });
-  } finally {
-    // disable SQL logging again
-    sequelize.options.logging = false;
   }
 };
 // Export the reusable batch function so worker can use it

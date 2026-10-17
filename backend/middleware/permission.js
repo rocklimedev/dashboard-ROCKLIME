@@ -1,112 +1,142 @@
-const jwt = require("jsonwebtoken");
-const { User, Role, Permission } = require("../models");
+// ---------------------------------------------------------------------------
+// Role-based access control.
+//
+// A permission is a (module, action) pair stored in the `permissions` table and
+// granted to roles through `rolepermissions`. Actions: view, write, edit,
+// delete, export. A role that holds ANY permission row with the right module
+// and action passes, whatever that row's name or route says, so older,
+// route-specific rows keep working.
+//
+// SUPER_ADMIN always passes. Each role's permission set is cached for
+// ROLE_CACHE_MS and cleared whenever roles or permissions change.
+// ---------------------------------------------------------------------------
+const ROLE_CACHE_MS = Number(process.env.PERMISSION_CACHE_MS) || 60 * 1000;
+const roleCache = new Map();
 
-const CachedPermission = require("../modules/rbac/models/cached-permission.model"); // <-- new Mongo model
-require("dotenv").config();
+const BYPASS_ROLES = new Set(["SUPER_ADMIN"]);
+const ACTIONS = new Set(["view", "write", "edit", "delete", "export"]);
+const METHOD_ACTION = {
+  GET: "view",
+  HEAD: "view",
+  OPTIONS: null,
+  POST: "write",
+  PUT: "edit",
+  PATCH: "edit",
+  DELETE: "delete",
+};
 
-const checkPermission = (api, name, module, route) => {
-  return async (req, res, next) => {
-    try {
-      // 1️⃣ Extract JWT
-      const token = req.headers.authorization?.split(" ")[1];
-      if (!token)
-        return res
-          .status(401)
-          .json({ message: "Unauthorized: No token provided" });
+async function loadRolePermissions(roleId) {
+  const hit = roleCache.get(roleId);
+  if (hit && Date.now() - hit.at < ROLE_CACHE_MS) return hit.value;
 
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      if (!decoded.userId)
-        return res.status(401).json({ message: "Unauthorized: Invalid token" });
-
-      // 2️⃣ Check Mongo Cache First
-      let cached = await CachedPermission.findOne({ userId: decoded.userId });
-
-      // 3️⃣ If cache exists and is fresh (< 24 hours), use it
-      const isFresh =
-        cached && new Date() - new Date(cached.fetchedAt) < 24 * 60 * 60 * 1000;
-
-      if (!isFresh) {
-        // 4️⃣ Otherwise, fetch from SQL
-        const user = await User.findByPk(decoded.userId, {
-          include: [
-            {
-              model: Role,
-              include: [
-                {
-                  model: Permission,
-                  through: { attributes: [] },
-                },
-              ],
-            },
-          ],
-        });
-
-        if (!user) return res.status(404).json({ message: "User not found" });
-
-        const roles = user.Roles || [];
-
-        // Flatten all permissions
-        const permissions = roles.flatMap((r) =>
-          r.Permissions.map((perm) => ({
-            permissionId: perm.permissionId,
-            name: perm.name,
-            api: perm.api,
-            route: perm.route,
-            module: perm.module,
-          })),
-        );
-
-        // Update Mongo Cache
-        await CachedPermission.findOneAndUpdate(
-          { userId: decoded.userId },
-          {
-            roleId: roles[0]?.roleId,
-            roleName: roles[0]?.roleName || null,
-            permissions,
-            fetchedAt: new Date(),
-          },
-          { upsert: true, new: true },
-        );
-
-        cached = await CachedPermission.findOne({ userId: decoded.userId });
+  const { Role, RolePermission, Permission } = require("../models");
+  const role = await Role.findByPk(roleId, {
+    attributes: ["roleId", "roleName"],
+    include: [
+      {
+        model: RolePermission,
+        as: "rolepermissions",
+        attributes: ["permissionId"],
+        include: [
+          { model: Permission, as: "permission", attributes: ["module", "api"] },
+        ],
+      },
+    ],
+  });
+  const value = role
+    ? {
+        roleName: role.roleName,
+        grants: new Set(
+          (role.rolepermissions || [])
+            .filter((rp) => rp.permission)
+            .map((rp) => `${rp.permission.module}:${rp.permission.api}`),
+        ),
       }
+    : null;
+  roleCache.set(roleId, { at: Date.now(), value });
+  return value;
+}
 
-      // 5️⃣ Super Admin Bypass
-      if (cached?.roleName?.toUpperCase() === "SUPER_ADMIN") return next();
+const clearPermissionCache = () => roleCache.clear();
 
-      // 6️⃣ Validate middleware config
-      if (!api || !name || !module || !route) {
-        return res
-          .status(500)
-          .json({ message: "Invalid permission configuration in route" });
-      }
+/** True when the authenticated user may perform `action` in `module`. */
+async function can(user, module, action) {
+  if (!user) return false;
+  const roles = Array.isArray(user.roles) ? user.roles : [];
+  if (roles.some((r) => BYPASS_ROLES.has(r))) return true;
+  if (!user.roleId) return false;
+  const perms = await loadRolePermissions(user.roleId);
+  if (!perms) return false;
+  if (BYPASS_ROLES.has(perms.roleName)) return true;
+  return perms.grants.has(`${module}:${action}`);
+}
 
-      // 7️⃣ Check if permission exists in cache
-      const hasPermission = cached.permissions.some(
-        (perm) =>
-          perm.api === api &&
-          perm.name === name &&
-          perm.module === module &&
-          perm.route === route,
-      );
+const deny = (res, module, action) =>
+  res.status(403).json({
+    message: `Forbidden: you need "${action}" permission on ${module}.`,
+    module,
+    action,
+  });
 
-      if (!hasPermission) {
-        return res.status(403).json({
-          message: `Forbidden: Missing permission "${name}" (${api.toUpperCase()} - ${module})`,
-        });
-      }
+/** Route middleware: requires `action` on `module`. Must run after `auth`. */
+const requirePermission = (module, action) => async (req, res, next) => {
+  if (!req.user) return res.status(401).json({ message: "Not logged in." });
+  try {
+    if (await can(req.user, module, action)) return next();
+    return deny(res, module, action);
+  } catch (err) {
+    next(err);
+  }
+};
 
-      next();
-    } catch (error) {
-      if (error.name === "JsonWebTokenError")
-        return res.status(401).json({ message: "Invalid token" });
+/**
+ * Router-level guard: the action comes from the HTTP method (GET = view,
+ * POST = write, PUT/PATCH = edit, DELETE = delete). `rules` adjusts specific
+ * paths: [{ method, path: RegExp, module?, action? | skip: true }]. A rule
+ * with `skip` only needs a logged-in user (for self-service endpoints).
+ */
+const guardModule = (module, rules = []) => async (req, res, next) => {
+  if (!req.user) return res.status(401).json({ message: "Not logged in." });
+  const rule = rules.find(
+    (r) => (!r.method || r.method === req.method) && r.path.test(req.path),
+  );
+  if (rule?.skip) return next();
+  const action = rule?.action || METHOD_ACTION[req.method];
+  if (!action) return next();
+  try {
+    if (await can(req.user, rule?.module || module, action)) return next();
+    return deny(res, rule?.module || module, action);
+  } catch (err) {
+    next(err);
+  }
+};
 
-      if (error.name === "TokenExpiredError")
-        return res.status(401).json({ message: "Token expired" });
+/**
+ * Backwards-compatible signature used by the route files:
+ * checkPermission(api, name, module, route). Only module + action are checked.
+ */
+const checkPermission = (api, _name, module) => {
+  const action = api === "post" ? "write" : api;
+  if (!ACTIONS.has(action)) {
+    throw new Error(`checkPermission: unknown action "${api}" for module "${module}"`);
+  }
+  return requirePermission(module, action);
+};
 
-      return res.status(500).json({ message: "Permission validation failed" });
-    }
-  };
+/** Clears cached permissions after any successful change request. */
+const clearCacheOnWrite = (req, res, next) => {
+  if (req.method !== "GET") {
+    res.on("finish", () => {
+      if (res.statusCode < 400) clearPermissionCache();
+    });
+  }
+  next();
 };
 
 module.exports = checkPermission;
+module.exports.checkPermission = checkPermission;
+module.exports.requirePermission = requirePermission;
+module.exports.guardModule = guardModule;
+module.exports.can = can;
+module.exports.clearPermissionCache = clearPermissionCache;
+module.exports.clearCacheOnWrite = clearCacheOnWrite;

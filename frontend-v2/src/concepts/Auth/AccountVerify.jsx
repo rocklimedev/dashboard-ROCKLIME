@@ -21,8 +21,7 @@ const AccountVerify = () => {
         message.success("Account verified successfully!");
         setTimeout(() => navigate("/login"), 2000);
       } catch (error) {
-        const message = error?.data?.message || "Failed to verify account.";
-        message.error(message);
+        message.error(error?.data?.message || "Failed to verify account.");
         setTimeout(() => navigate("/login"), 2000);
       }
     };

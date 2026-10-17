@@ -1,8 +1,8 @@
 const express = require("express");
 const router = express.Router();
-const { auth } = require("../../middleware/auth"); // Authentication Middleware
+const { auth, invalidateUserCache } = require("../../middleware/auth");
 const userController = require("./user.controller");
-const checkPermission = require("../../middleware/permission");
+const { guardModule } = require("../../middleware/permission");
 const multer = require("multer");
 router.use(auth);
 const upload = multer({
@@ -19,88 +19,37 @@ const upload = multer({
     }
   },
 });
-// ✅ General User Routes (For All Logged-in Users)
-router.get(
-  "/me",
-  auth,
-  // checkPermission("view", "get_profile", "users", "/users/me"),
-  userController.getProfile,
-); // Get logged-in user's profile
-router.put(
-  "/",
-  auth,
-  //checkPermission("edit", "update_profile", "users", "/users"),
-  userController.updateProfile,
-); // edit logged-in user's profile
-
-// ✅ Admin-Only Routes
-router.get(
-  "/",
-  auth,
-  // checkPermission("view", "get_all_users", "users", "/users"),
-  //role([ROLES.Admin]),
-  userController.getAllUsers,
-); // View all users
-router.post(
-  "/add",
-  auth,
-  //checkPermission("write", "create_user", "users", "/users/add"),
-  userController.createUser,
-); // Add a new user
-router.delete(
-  "/:userId",
-  auth,
-  //  checkPermission("delete", "delete_user", "users", "/users/:userId"),
-  userController.deleteUser,
-); // Delete a user
-router.put(
-  "/:userId",
-  auth,
-  //checkPermission("edit", "update_user", "users", "/users/:userId"),
-  userController.updateUser,
-);
-// ✅ Admin & Moderator Routes
-router.get(
-  "/search",
-  auth,
-  // checkPermission("view", "search_user", "users", "/users/search"),
-  userController.searchUser,
-);
-router.get(
-  "/:userId",
-  auth,
-  //checkPermission("view", "get_user_by_id", "users", "/users/:userId"),
-  userController.getUserById,
+// Self-service endpoints need only a login; everything else needs "users"
+// permissions (view / write / edit / delete by HTTP method).
+router.use(
+  guardModule("users", [
+    { method: "GET", path: /^\/me$/, skip: true },
+    { method: "PUT", path: /^\/$/, skip: true },
+    { method: "POST", path: /^\/photo$/, skip: true },
+    { method: "POST", path: /^\/report\//, skip: true },
+  ]),
 );
 
-// ✅ Public Reporting Route (Any Logged-in User)
-router.post(
-  "/report/:userId",
-  auth,
-  //checkPermission("post", "report_user", "users", "/users/report/:userId"),
-  userController.reportUser,
-);
-router.put(
-  "/assign-role/:userId",
-  //checkPermission("edit", "assign_role", "users", "/users/assign-role/:userId"),
-  userController.assignRole,
-);
-router.put(
-  "/:userId",
-  auth,
-  // checkPermission(
-  //   "edit",
-  //   "change_status_to_inactive",
-  //   "users",
-  //   "/users/:userId"
-  // ),
-  userController.changeStatusToInactive,
-);
-router.patch("/:userId/status", auth, userController.updateStatus);
-router.post(
-  "/photo",
-  auth,
-  upload.single("photo"), // 'photo' is the field name in FormData
-  userController.uploadUserPhoto,
-);
+// A changed user (status, role) must not keep cached access.
+router.use((req, res, next) => {
+  if (req.method !== "GET") res.on("finish", () => invalidateUserCache());
+  next();
+});
+
+// Logged-in user's own profile
+router.get("/me", userController.getProfile);
+router.put("/", userController.updateProfile);
+router.post("/photo", upload.single("photo"), userController.uploadUserPhoto);
+router.post("/report/:userId", userController.reportUser);
+
+// User management (fixed paths before "/:userId")
+router.get("/", userController.getAllUsers);
+router.post("/add", userController.createUser);
+router.get("/search", userController.searchUser);
+router.put("/assign-role/:userId", userController.assignRole);
+router.get("/:userId", userController.getUserById);
+router.put("/:userId", userController.updateUser);
+router.patch("/:userId/status", userController.updateStatus);
+router.delete("/:userId", userController.deleteUser);
+
 module.exports = router;

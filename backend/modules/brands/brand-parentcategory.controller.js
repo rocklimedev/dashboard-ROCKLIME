@@ -1,7 +1,12 @@
 const slugify = require("slugify");
 const { sendNotification } = require("../engagement/notification.controller");
 
-const { BrandParentCategory, Brand, ParentCategory } = require("../../models");
+const {
+  BrandParentCategory,
+  BrandParentCategoryBrand,
+  Brand,
+  ParentCategory,
+} = require("../../models");
 
 const ADMIN_USER_ID = "2ef0f07a-a275-4fe1-832d-fe9a5d145f60";
 

@@ -122,9 +122,29 @@ export const orderApi = baseApi.injectEndpoints({
       invalidatesTags: (result, error, { orderId }) => [
         { type: "Orders", id: orderId },
         { type: "Orders", id: "LIST" },
+        "Orders",
+        "Invoices",
+        "Payments",
         { type: "OrderDispatches", id: orderId },
         { type: "OrderActivity", id: orderId },
       ],
+    }),
+    markDispatchDelivered: builder.mutation({
+      query: ({ orderId, dispatchId, formData }) => ({
+        url: `/order/${orderId}/dispatches/${dispatchId}/delivered`,
+        method: "POST",
+        body: formData,
+      }),
+      invalidatesTags: (result, error, { orderId }) => [
+        { type: "Orders", id: orderId },
+        "Orders",
+        { type: "OrderDispatches", id: orderId },
+        { type: "OrderActivity", id: orderId },
+      ],
+    }),
+    getOrderStatusCounts: builder.query({
+      query: () => "/order/status-counts",
+      providesTags: ["Orders"],
     }),
     getOrderDispatches: builder.query({
       query: (orderId) => `/order/${orderId}/dispatches`,
@@ -273,7 +293,7 @@ export const orderApi = baseApi.injectEndpoints({
           previousOrderNo: orderData.previousOrderNo || null,
         },
       }),
-      invalidatesTags: ["Orders"],
+      invalidatesTags: ["Orders", "Quotations"],
     }),
     getOrderDetails: builder.query({
       query: (orderId) => `/order/${orderId}`,
@@ -287,14 +307,14 @@ export const orderApi = baseApi.injectEndpoints({
         method: "PUT",
         body: { id: orderId, status }, // <-- id, not orderId
       }),
-      invalidatesTags: ["Orders"],
+      invalidatesTags: ["Orders", "Quotations"],
     }),
     deleteOrder: builder.mutation({
       query: (orderId) => ({
         url: `/order/delete/${orderId}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Orders"],
+      invalidatesTags: ["Orders", "Quotations"],
     }),
     recentOrders: builder.query({
       query: () => "/order/recent",
@@ -314,6 +334,9 @@ export const orderApi = baseApi.injectEndpoints({
         if (filters.priority?.trim()) {
           params.append("priority", filters.priority.trim());
         }
+        if (filters.sort) params.append("sort", filters.sort);
+        if (filters.late) params.append("late", "1");
+        if (filters.customerId) params.append("customerId", filters.customerId);
 
         // Always include pagination
         params.append("page", filters.page ?? 1);
@@ -337,7 +360,7 @@ export const orderApi = baseApi.injectEndpoints({
           previousOrderNo: orderData.previousOrderNo || null,
         },
       }),
-      invalidatesTags: ["Orders"],
+      invalidatesTags: ["Orders", "Quotations"],
     }),
     draftOrder: builder.mutation({
       query: (orderData) => ({
@@ -349,7 +372,7 @@ export const orderApi = baseApi.injectEndpoints({
           previousOrderNo: orderData.previousOrderNo || null,
         },
       }),
-      invalidatesTags: ["Orders"],
+      invalidatesTags: ["Orders", "Quotations"],
     }),
     updateOrderTeam: builder.mutation({
       query: (teamData) => ({
@@ -392,6 +415,8 @@ export const orderApi = baseApi.injectEndpoints({
 });
 
 export const {
+  useMarkDispatchDeliveredMutation,
+  useGetOrderStatusCountsQuery,
   useIssueGatePassMutation,
   useGetOrderCountByDateQuery,
   useUploadInvoiceMutation,

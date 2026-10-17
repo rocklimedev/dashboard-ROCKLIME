@@ -81,6 +81,10 @@ export const productApi = baseApi.injectEndpoints({
       keepUnusedDataFor: 30, // slightly longer cache
     }),
 
+    getCompanyCodes: builder.query({
+      query: () => "/products/company-codes",
+      providesTags: [{ type: "Product", id: "LIST" }],
+    }),
     // GET ALL PRODUCTS — NOW PAGINATED!
     getAllProducts: builder.query({
       query: ({
@@ -90,6 +94,7 @@ export const productApi = baseApi.injectEndpoints({
         tab = "all",
         brandId,
         duplicateCompanyCode,
+        companyCode,
         maxStock,
         minPrice,
         maxPrice,
@@ -103,6 +108,7 @@ export const productApi = baseApi.injectEndpoints({
           tab,
           brandId: brandId || undefined,
           duplicateCompanyCode: duplicateCompanyCode || undefined,
+          companyCode: companyCode || undefined,
           maxStock: maxStock ?? undefined,
           minPrice: minPrice ?? undefined,
           maxPrice: maxPrice ?? undefined,
@@ -283,6 +289,7 @@ export const {
   useCreateProductMutation,
   useUpdateProductMutation,
   useGetAllProductsQuery,
+  useGetCompanyCodesQuery,
   useLazyGetAllProductsQuery, // ← useful for pagination
   useGetProductsByBrandQuery,
   useBulkImportProductsMutation,

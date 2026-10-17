@@ -14,7 +14,7 @@ import { Dropdown, Button, Menu, Badge, Input, Spin, message } from "antd";
 import {
   BellOutlined,
   ShoppingCartOutlined,
-  FullscreenOutlined,
+  AppstoreOutlined,
   LogoutOutlined,
   UserOutlined,
   SettingOutlined,
@@ -27,9 +27,11 @@ import { useAuth } from "../../context/AuthContext";
 import PermissionsGate from "../../context/PermissionGate";
 import { useSearchAllQuery } from "../../api/searchApi";
 import NotificationsOverlay from "../Notifications/NotificationsWrapper";
+import AppSwitcher from "./AppSwitcher";
+import logoImg from "../../assets/img/logo.png";
 import { debounce } from "lodash";
 
-const Header = ({ toggleSidebar, isSidebarOpen }) => {
+const Header = ({ toggleSidebar, isSidebarOpen, home = false }) => {
   const navigate = useNavigate();
   const { logout } = useAuth();
 
@@ -57,6 +59,21 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
 
   const searchRef = useRef(null);
   const mobileSearchInputRef = useRef(null);
+  const desktopSearchInputRef = useRef(null);
+
+  // Cmd+K / Ctrl+K (or "/" when not typing) jumps to the search box from anywhere
+  useEffect(() => {
+    const onKey = (e) => {
+      const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName) || e.target?.isContentEditable;
+      if (((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") || (e.key === "/" && !typing)) {
+        e.preventDefault();
+        desktopSearchInputRef.current?.focus();
+        desktopSearchInputRef.current?.select?.();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   // Search API
   const { data: searchResponse, isFetching: searchFetching } =
@@ -128,13 +145,6 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
     debouncedSetQuery(value);
   };
 
-  const handleFullscreenToggle = useCallback(() => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen?.();
-    } else {
-      document.exitFullscreen?.();
-    }
-  }, []);
 
   const handleLogout = useCallback(async () => {
     try {
@@ -206,9 +216,15 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
     <>
       <header className="header bg-white shadow-sm">
         <div className="main-header d-flex align-items-center justify-content-between px-3 px-md-4 py-2">
-          {/* Left: Hamburger */}
+          {/* Left: logo on the apps home, menu button inside an app */}
           <div className="d-flex align-items-center">
+            {home && (
+              <Link to="/" className="cm-header-logo">
+                <img src={logoImg} alt="Chhabra Marble" />
+              </Link>
+            )}
             <a
+              style={home ? { display: "none" } : undefined}
               className="mobile_btn me-3 d-lg-none"
               onClick={() => toggleSidebar(!isSidebarOpen)}
             >
@@ -264,9 +280,18 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
               {/* Desktop Search Bar */}
               <div className="d-none d-md-block">
                 <Input
+                  ref={desktopSearchInputRef}
                   prefix={<SearchOutlined />}
-                  suffix={searchFetching ? <Spin size="small" /> : null}
-                  placeholder="Search products, users, orders..."
+                  suffix={
+                    searchFetching ? (
+                      <Spin size="small" />
+                    ) : (
+                      <span style={{ color: "#bfbfbf", fontSize: 12, border: "1px solid #e8e8e8", borderRadius: 4, padding: "0 5px" }}>
+                        {/Mac/.test(navigator.platform) ? "⌘K" : "Ctrl K"}
+                      </span>
+                    )
+                  }
+                  placeholder="Search customers, quotations, orders, products…"
                   value={searchQuery}
                   onChange={handleSearchChange}
                   onKeyDown={handleSearchSubmit} // ← Enter key handler
@@ -294,11 +319,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
           <div className="d-flex align-items-center gap-2 gap-md-3">
             {/* Desktop Icons */}
             <div className="d-none d-md-flex align-items-center gap-3">
-              <Button type="link" onClick={handleFullscreenToggle}>
-                <FullscreenOutlined
-                  style={{ fontSize: 18, color: "#333333" }}
-                />
-              </Button>
+              <AppSwitcher />
 
               <Button type="link" onClick={() => setShowNotifications(true)}>
                 <Badge count={notificationCount} size="small" offset={[-4, 4]}>
@@ -320,14 +341,8 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
               <Dropdown
                 overlay={
                   <Menu>
-                    <Menu.Item
-                      key="fullscreen"
-                      onClick={handleFullscreenToggle}
-                      icon={<FullscreenOutlined />}
-                    >
-                      {document.fullscreenElement
-                        ? "Exit Fullscreen"
-                        : "Enter Fullscreen"}
+                    <Menu.Item key="apps" icon={<AppstoreOutlined />}>
+                      <Link to="/">All apps</Link>
                     </Menu.Item>
                     <Menu.Item
                       key="notifications"

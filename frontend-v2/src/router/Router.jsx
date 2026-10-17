@@ -1,4 +1,5 @@
-import React from "react";
+import React, { Suspense } from "react";
+import { Spin } from "antd";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
 
@@ -66,11 +67,22 @@ const generateRoutes = (routes) =>
     },
   );
 
+// Each screen is loaded on first use (smaller first download).
+const PageLoading = () => (
+  <div className="page-wrapper">
+    <div className="content" style={{ display: "flex", justifyContent: "center", paddingTop: 80 }}>
+      <Spin size="large" />
+    </div>
+  </div>
+);
+
 const Router = () => (
-  <Routes>
-    {generateRoutes(masterRoutes)}
-    <Route path="*" element={<Navigate to="/404" replace />} />
-  </Routes>
+  <Suspense fallback={<PageLoading />}>
+    <Routes>
+      {generateRoutes(masterRoutes)}
+      <Route path="*" element={<Navigate to="/404" replace />} />
+    </Routes>
+  </Suspense>
 );
 
 export default Router;

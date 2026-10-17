@@ -46,6 +46,7 @@ import AddCustomerModal from "../../components/Customers/AddCustomerModal";
 import AddAddress from "../../components/Address/AddAddressModal";
 import DatePicker from "react-datepicker";
 import LowStockProductsModal from "../../components/Orders/LowStockProductsModal";
+import CreditAlert from "../../components/Customers/CreditAlert";
 const { Option } = Select;
 const { Text } = Typography;
 const { Panel } = Collapse;
@@ -162,7 +163,7 @@ const AddNewOrder = ({ adminName }) => {
     skip: !isEditMode || !id,
   });
   const { data: teamsData, refetch: refetchTeams } = useGetAllTeamsQuery();
-  const { data: customersData } = useGetCustomersQuery();
+  const { data: customersData } = useGetCustomersQuery({ limit: 10000 });
   const { data: usersData } = useGetAllUsersQuery();
   const { data: profileData } = useGetProfileQuery();
   const { data: allOrdersData } = useGetAllOrdersQuery({ skip: isEditMode });
@@ -697,6 +698,22 @@ const AddNewOrder = ({ adminName }) => {
                   </Space>
                 </FormSection>
               </Col>
+
+              {formData.createdFor && (
+                <Col xs={24}>
+                  <CreditAlert
+                    customerId={formData.createdFor}
+                    amount={
+                      quotationData.finalAmount ||
+                      products.reduce(
+                        (a, p) => a + (Number(p.total) || (Number(p.price) || 0) * (Number(p.quantity) || 0)),
+                        0,
+                      )
+                    }
+                    style={{ marginBottom: 8 }}
+                  />
+                </Col>
+              )}
 
               {/* ---------- Shipping Address ---------- */}
               <Col xs={24} md={12}>

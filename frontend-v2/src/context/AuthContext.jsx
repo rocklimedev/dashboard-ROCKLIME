@@ -102,7 +102,10 @@ export const AuthProvider = ({ children }) => {
   const login = (token, user = null) => {
     return new Promise((resolve) => {
       setAuth({ token, user, permissions: null });
-      sessionStorage.setItem("token", token);
+      // Keep "remember me" logins in localStorage; others stay per-tab.
+      if (localStorage.getItem("token") !== token) {
+        sessionStorage.setItem("token", token);
+      }
       resolve();
     });
   };

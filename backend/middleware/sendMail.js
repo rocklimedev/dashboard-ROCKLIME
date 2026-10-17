@@ -6,20 +6,25 @@ require("dotenv").config();
    1. Transporter Setup
 ------------------------------------------------------------ */
 const transporter = nodemailer.createTransport({
-  host: "sh200.bigrock.com",
-  port: 465,
-  secure: true,
+  host: process.env.SMTP_HOST || "sh200.bigrock.com",
+  port: Number(process.env.SMTP_PORT) || 465,
+  secure: process.env.SMTP_SECURE !== "false",
   auth: {
-    user: "no-reply@static.cmtradingco.com",
-    pass: process.env.SMTP_PASS || "KB_*d-~[!ST=",
+    user: process.env.SMTP_USER || "no-reply@static.cmtradingco.com",
+    pass: process.env.SMTP_PASS,
   },
-  logger: true,
-  debug: true,
+  logger: process.env.NODE_ENV !== "production",
+  debug: process.env.NODE_ENV !== "production",
 });
 
+// Links in emails open the CM ERP front end (APP_URL), e.g. https://erp.cmtradingco.com
+const APP_URL = (process.env.APP_URL || process.env.CLIENT_URL || "https://erp.cmtradingco.com").replace(/\/+$/, "");
+
 // Verify connection
-transporter
-  .verify()
+const SMTP_DISABLED = process.env.SMTP_DISABLED === "true" || !process.env.SMTP_PASS;
+if (SMTP_DISABLED) console.log("ℹ️  SMTP disabled (SMTP_DISABLED=true or no SMTP_PASS) — emails are only logged");
+(SMTP_DISABLED ? Promise.resolve() : transporter
+  .verify())
   .then(() => console.log("✅ SMTP connected successfully"))
   .catch((err) => console.error("❌ SMTP connection failed:", err));
 
@@ -27,6 +32,10 @@ transporter
    2. Send Mail Helper
 ------------------------------------------------------------ */
 async function sendMail(to, subject, text, html) {
+  if (SMTP_DISABLED) {
+    console.log(`📭 [SMTP disabled] Would send "${subject}" to ${to}`);
+    return { messageId: "local-disabled" };
+  }
   try {
     const info = await transporter.sendMail({
       from: `"CM Trading Co" <no-reply@static.cmtradingco.com>`, // Must match cPanel email
@@ -100,7 +109,7 @@ function baseTemplate(title, body) {
 // Password Reset
 function resetEmail(host, resetToken) {
   const appHost = process.env.APP_HOST || host || "cmtradingco.com";
-  const url = `https://dashboard-rocklime.vercel.app/reset-password/${resetToken}`;
+  const url = `${APP_URL}/reset-password/${resetToken}`;
   const subject = "Reset Your Password";
 
   const text = `
@@ -156,7 +165,7 @@ function confirmChangePasswordEmail(name) {
 }
 // Account Verification
 function accountVerificationEmail(host, verificationToken) {
-  const url = `https://dashboard-rocklime.vercel.app/verify-account/${verificationToken}`;
+  const url = `${APP_URL}/verify-account/${verificationToken}`;
   const subject = "Verify Your Account";
 
   const text = `
@@ -207,7 +216,7 @@ Hi ${name}!\n\nYour account has been successfully verified. You can now log in t
     `<p style="margin-bottom: 20px; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">Hi ${name}!</p>
      <p style="margin-bottom: 20px; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">Your account has been successfully verified. You can now log in to your account.</p>
      <p style="text-align: center; margin: 20px 0;">
-       <a href="https://dashboard-rocklime.vercel.app/login" style="background-color: #3eb780; color: #fff; padding: 12px 20px; border-radius: 5px; text-decoration: none; font-weight: bold; font-family: 'Lato', Arial, sans-serif;">Log In Now</a>
+       <a href="${APP_URL}/login" style="background-color: #3eb780; color: #fff; padding: 12px 20px; border-radius: 5px; text-decoration: none; font-weight: bold; font-family: 'Lato', Arial, sans-serif;">Log In Now</a>
      </p>
      <p style="margin-bottom: 0; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">If you did not initiate this verification, please contact our support team immediately.</p>`,
   );

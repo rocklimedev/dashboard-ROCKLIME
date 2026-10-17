@@ -1,8 +1,9 @@
+import { lazy } from "react";
 // src/routes/quotationRoutes.js
 import { FaTags } from "react-icons/fa";
-import QuotationList from "../../concepts/Quotation/QuotationList";
-import AddQuotation from "../../concepts/Quotation/AddQuntation";
-import NewQuotationsDetails from "../../concepts/Quotation/NewQuotationDetails";
+const QuotationList = lazy(() => import("../../concepts/Quotation/QuotationList"));
+const AddQuotation = lazy(() => import("../../concepts/Quotation/AddQuntation"));
+const NewQuotationsDetails = lazy(() => import("../../concepts/Quotation/NewQuotationDetails"));
 
 export const quotationRoutes = [
   {

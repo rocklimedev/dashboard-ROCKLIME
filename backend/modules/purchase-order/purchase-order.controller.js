@@ -23,6 +23,44 @@ const PO_STATUSES = {
 };
 
 const VALID_PO_STATUSES = Object.values(PO_STATUSES);
+const stock = require("../stock/stock.service");
+
+const COUNTS_AS_INCOMING = ["confirmed", "partial_delivered"];
+
+/** Apply the stock side of a PO status change (see updatePurchaseOrderStatus). */
+async function applyStatusStock(po, status, t, userId) {
+  if (po.status === status) return;
+  if (po.status === PO_STATUSES.DELIVERED) {
+    throw new Error("This PO is already delivered; its stock has been received.");
+  }
+  if (status === PO_STATUSES.CONFIRMED && !COUNTS_AS_INCOMING.includes(po.status)) {
+    await stock.poIncoming(po, await fetchPoItems(po.id), 1, { t, userId });
+  }
+  if (status === PO_STATUSES.DELIVERED) {
+    const toReceive = (await remainingItems(po, t)).filter((i) => i.quantity > 0);
+    if (toReceive.length) {
+      await stock.receiveGoods({ po, items: toReceive, userId, notes: "Marked delivered" }, { t });
+    }
+  }
+  if (status === PO_STATUSES.CANCELLED && COUNTS_AS_INCOMING.includes(po.status)) {
+    const left = (await remainingItems(po, t)).filter((i) => i.quantity > 0);
+    await stock.poIncoming(po, left, -1, { t, userId });
+  }
+}
+
+/** Lines still to be received: ordered minus everything received so far. */
+async function remainingItems(po, t) {
+  const items = await fetchPoItems(po.id);
+  const received = await stock.receivedForPo(po.id, t);
+  return items
+    .map((i) => ({
+      productId: i.productId,
+      productName: i.productName,
+      ordered: Number(i.quantity) || 0,
+      received: received[i.productId] || 0,
+      quantity: Math.max((Number(i.quantity) || 0) - (received[i.productId] || 0), 0),
+    }));
+}
 
 // ─────────────────────────────────────────────────────────────
 // Helpers
@@ -73,7 +111,37 @@ async function generateDailyPONumber(t) {
   );
 }
 
-async function validateAndCalculateItems(items, transaction) {
+// PO header fields that come from the form (all optional)
+const { poTotals } = require("../../lib/poMath");
+function poHeader(body = {}) {
+  const out = {};
+  const str = (k, n) => {
+    if (k in body) out[k] = body[k] === "" || body[k] == null ? null : String(body[k]).trim().slice(0, n);
+  };
+  str("vendorRef", 80);
+  str("paymentTerms", 255);
+  str("deliveryTerms", 255);
+  str("notes", 4000);
+  if ("warehouseId" in body) out.warehouseId = body.warehouseId || null;
+  if ("freight" in body) out.freight = Math.max(Number(body.freight) || 0, 0);
+  return out;
+}
+async function isInterState(vendor) {
+  const company = await require("../settings/settings.service").getSetting("company");
+  const norm = (x) => String(x || "").trim().toLowerCase();
+  return Boolean(vendor?.state && company.state && norm(vendor.state) !== norm(company.state));
+}
+const totalsFields = (t) => ({
+  totalAmount: t.grandTotal,
+  subTotal: t.subTotal,
+  discountTotal: t.discount,
+  taxableValue: t.taxableValue,
+  gstAmount: t.gstAmount,
+  interState: t.interState,
+  roundOff: t.roundOff,
+});
+
+async function validateAndCalculateItems(items, transaction, { freight = 0, interState = false } = {}) {
   if (!Array.isArray(items) || items.length === 0) {
     throw new Error("Items must be a non-empty array");
   }
@@ -95,7 +163,7 @@ async function validateAndCalculateItems(items, transaction) {
     if (price <= 0 || isNaN(price))
       throw new Error(`Invalid unit price: ${item.productId}`);
 
-    const lineTotal = qty * price;
+    const lineTotal = qty * price; // replaced by the full line total below
     total += lineTotal;
 
     let imageUrl = null;
@@ -127,9 +195,15 @@ async function validateAndCalculateItems(items, transaction) {
     });
   }
 
+  // discount and GST per line, freight, CGST/SGST or IGST, round off
+  const totals = poTotals({ items: prepared, freight, interState });
+  totals.lines.forEach((l, i) => {
+    prepared[i].total = l.total;
+  });
   return {
-    totalAmount: Number(total.toFixed(2)),
+    totalAmount: totals.grandTotal,
     preparedItems: prepared,
+    totals,
   };
 }
 
@@ -158,10 +232,9 @@ exports.createPurchaseOrder = async (req, res) => {
     const vendor = await Vendor.findByPk(vendorId, { transaction: t });
     if (!vendor) throw new Error("Vendor not found");
 
-    const { totalAmount, preparedItems } = await validateAndCalculateItems(
-      items,
-      t,
-    );
+    const header = poHeader(req.body);
+    const interState = await isInterState(vendor);
+    const { totalAmount, preparedItems, totals } = await validateAndCalculateItems(items, t, { freight: header.freight || 0, interState });
 
     const poNumber = await generateDailyPONumber(t);
 
@@ -176,6 +249,9 @@ exports.createPurchaseOrder = async (req, res) => {
         expectDeliveryDate: expectDeliveryDate
           ? new Date(expectDeliveryDate)
           : null,
+        paymentTerms: vendor.paymentTerms || null,
+        ...header,
+        ...totalsFields(totals),
         totalAmount,
       },
       { transaction: t },
@@ -277,14 +353,24 @@ exports.updatePurchaseOrder = async (req, res) => {
         ? new Date(expectDeliveryDate)
         : null;
     }
+    Object.assign(updateData, poHeader(req.body));
 
     let returnedItems = null;
 
-    if (Array.isArray(items) && items.length > 0) {
-      const { totalAmount, preparedItems } = await validateAndCalculateItems(
-        items,
-        t,
-      );
+    const beforeRemaining = COUNTS_AS_INCOMING.includes(po.status)
+      ? await remainingItems(po, t)
+      : null;
+
+    // freight or vendor changes also change the totals: recalculate from the saved lines
+    const vendorNow = await Vendor.findByPk(updateData.vendorId || po.vendorId, { transaction: t });
+    const freightNow = updateData.freight ?? Number(po.freight) ?? 0;
+    const linesNow = Array.isArray(items) && items.length > 0 ? items : "freight" in updateData || updateData.vendorId ? await fetchPoItems(po.id) : null;
+    if (linesNow && linesNow.length) {
+      const { totalAmount, preparedItems, totals } = await validateAndCalculateItems(linesNow, t, {
+        freight: freightNow,
+        interState: await isInterState(vendorNow),
+      });
+      Object.assign(updateData, totalsFields(totals));
       updateData.totalAmount = totalAmount;
 
       await PoItem.findOneAndUpdate(
@@ -298,6 +384,30 @@ exports.updatePurchaseOrder = async (req, res) => {
       );
 
       returnedItems = preparedItems;
+    }
+
+    // Keep Incoming in step with edited quantities on a confirmed PO
+    if (beforeRemaining && returnedItems) {
+      const after = await remainingItems(po, t);
+      const was = Object.fromEntries(beforeRemaining.map((r) => [r.productId, r.quantity]));
+      const now = Object.fromEntries(after.map((r) => [r.productId, r.quantity]));
+      for (const pid of new Set([...Object.keys(was), ...Object.keys(now)])) {
+        const diff = (now[pid] || 0) - (was[pid] || 0);
+        if (!diff) continue;
+        const wh = await stock.getDefaultWarehouse(t);
+        await stock.post(t, {
+          productId: pid,
+          warehouseId: wh.id,
+          movement: diff > 0 ? "INCOMING" : "INCOMING_CANCEL",
+          incoming: diff,
+          ref: { type: "PO", id: po.id, no: po.poNumber },
+          userId: req.user?.userId || null,
+          reason: `PO ${po.poNumber} quantities edited`,
+        });
+      }
+    }
+    if (updateData.status && updateData.status !== po.status) {
+      await applyStatusStock(po, updateData.status, t, req.user?.userId || null);
     }
 
     await po.update(updateData, { transaction: t });
@@ -416,7 +526,24 @@ exports.getAllPurchaseOrders = async (req, res) => {
     const limit = Math.min(50, Math.max(5, parseInt(req.query.limit) || 20));
     const offset = (page - 1) * limit;
 
+    // filters: status (comma list), vendor, search (PO no. or vendor), order date range; sort
+    const where = {};
+    if (req.query.status) where.status = { [Op.in]: String(req.query.status).split(",").filter((x) => VALID_PO_STATUSES.includes(x)) };
+    if (req.query.vendorId) where.vendorId = req.query.vendorId;
+    if (req.query.from || req.query.to) {
+      where.orderDate = {};
+      if (req.query.from) where.orderDate[Op.gte] = new Date(`${req.query.from}T00:00:00`);
+      if (req.query.to) where.orderDate[Op.lte] = new Date(`${req.query.to}T23:59:59`);
+    }
+    const term = String(req.query.search || "").trim();
+    if (term) where[Op.or] = [{ poNumber: { [Op.like]: `%${term}%` } }, { "$vendor.vendorName$": { [Op.like]: `%${term}%` } }];
+    const SORT_FIELDS = { createdAt: "createdAt", orderDate: "orderDate", orderNumber: "poNumber", poNumber: "poNumber", totalAmount: "totalAmount", expectDeliveryDate: "expectDeliveryDate" };
+    const sortField = SORT_FIELDS[req.query.sortField] || "createdAt";
+    const sortOrder = String(req.query.sortOrder || "DESC").toUpperCase() === "ASC" ? "ASC" : "DESC";
+
     const { count, rows } = await PurchaseOrder.findAndCountAll({
+      where,
+      distinct: true,
       include: [
         { model: Vendor, as: "vendor", attributes: ["id", "vendorName"] },
         {
@@ -425,7 +552,7 @@ exports.getAllPurchaseOrders = async (req, res) => {
           attributes: ["userId", "name", "email", "username"],
         },
       ],
-      order: [["createdAt", "DESC"]],
+      order: [[sortField, sortOrder]],
       limit,
       offset,
       subQuery: false,
@@ -551,14 +678,13 @@ exports.confirmPurchaseOrder = async (req, res) => {
     const items = await fetchPoItems(po.id);
     if (items.length === 0) throw new Error("No items in PO");
 
-    for (const item of items) {
-      const product = await Product.findByPk(item.productId, {
-        transaction: t,
-      });
-      if (product) {
-        product.quantity = Number(product.quantity || 0) + item.quantity;
-        await product.save({ transaction: t });
-      }
+    // Receive whatever is still outstanding (one goods receipt)
+    const toReceive = (await remainingItems(po, t)).filter((i) => i.quantity > 0);
+    if (toReceive.length) {
+      await stock.receiveGoods(
+        { po, items: toReceive, userId: req.user?.userId || null, notes: "Received in full (confirm)" },
+        { t },
+      );
     }
 
     await po.update({ status: PO_STATUSES.DELIVERED }, { transaction: t });
@@ -643,22 +769,12 @@ exports.updatePurchaseOrderStatus = async (req, res) => {
 
     if (po.status === status) throw new Error("Status already set");
 
-    // Auto-update stock when moving to delivered
-    if (
-      status === PO_STATUSES.DELIVERED &&
-      po.status !== PO_STATUSES.DELIVERED
-    ) {
-      const items = await fetchPoItems(po.id);
-      for (const item of items) {
-        const product = await Product.findByPk(item.productId, {
-          transaction: t,
-        });
-        if (product) {
-          product.quantity = Number(product.quantity || 0) + item.quantity;
-          await product.save({ transaction: t });
-        }
-      }
-    }
+    // Stock follows the PO:
+    //   confirmed  -> quantities count as Incoming
+    //   delivered  -> everything not yet received is received now
+    //   cancelled  -> what was never received leaves Incoming
+    // Part deliveries are recorded with "Receive goods" (POST /:id/receive).
+    await applyStatusStock(po, status, t, req.user?.userId || null);
 
     const oldStatus = po.status;
     await po.update({ status }, { transaction: t });
@@ -849,3 +965,61 @@ exports.createPurchaseOrderFromData = async (data, transaction = null) => {
   }
 };
 module.exports = exports;
+
+
+// ─────────────────────────────────────────────────────────────
+// RECEIVE GOODS (part or full) against a PO
+// POST /api/purchase-orders/:id/receive
+// body: { items: [{ productId, quantity, damaged? }], warehouseId?, notes? }
+// ─────────────────────────────────────────────────────────────
+exports.receivePurchaseOrder = async (req, res) => {
+  try {
+    const result = await sequelize.transaction(async (t) => {
+      const po = await PurchaseOrder.findByPk(req.params.id, { transaction: t, lock: t.LOCK.UPDATE });
+      if (!po) throw new stock.StockError("Purchase order not found", 404);
+      if ([PO_STATUSES.CANCELLED, PO_STATUSES.DELIVERED].includes(po.status)) {
+        throw new stock.StockError(`Cannot receive goods on a ${po.status} PO.`);
+      }
+      const remaining = await remainingItems(po, t);
+      const byId = Object.fromEntries(remaining.map((r) => [r.productId, r]));
+      const items = (req.body.items || []).map((i) => {
+        const line = byId[i.productId];
+        if (!line) throw new stock.StockError(`Product ${i.productId} is not on this PO.`);
+        const qty = Math.max(Number(i.quantity) || 0, 0);
+        const bad = Math.max(Number(i.damaged) || 0, 0);
+        if (qty + bad > line.quantity) {
+          throw new stock.StockError(`Only ${line.quantity} of "${line.productName}" are still to be received.`);
+        }
+        return { productId: i.productId, productName: line.productName, quantity: qty, damaged: bad };
+      });
+      const { grn, allocations } = await stock.receiveGoods(
+        { po, items, warehouseId: req.body.warehouseId || null, userId: req.user?.userId || null, notes: req.body.notes || null },
+        { t },
+      );
+      const after = await remainingItems(po, t);
+      const allIn = after.every((r) => r.quantity === 0);
+      await po.update({ status: allIn ? PO_STATUSES.DELIVERED : PO_STATUSES.PARTIAL_DELIVERED }, { transaction: t });
+      return { grn, po, remaining: after, ordersFilled: allocations.filter((a) => a.lines.some((l) => l.reserved > 0)).length };
+    });
+    return res.status(201).json({ message: `Goods received (${result.grn.grnNo})`, ...result });
+  } catch (err) {
+    return res.status(err.status || 400).json({ message: err.message });
+  }
+};
+
+// GET /api/purchase-orders/:id/receipts — goods receipts and what is still due
+exports.getPurchaseOrderReceipts = async (req, res) => {
+  try {
+    const { GoodsReceipt, GoodsReceiptItem } = require("../../models");
+    const po = await PurchaseOrder.findByPk(req.params.id);
+    if (!po) return res.status(404).json({ message: "Purchase order not found" });
+    const receipts = await GoodsReceipt.findAll({
+      where: { poId: po.id },
+      include: [{ model: GoodsReceiptItem, as: "items" }],
+      order: [["receivedAt", "DESC"]],
+    });
+    return res.json({ receipts, remaining: await remainingItems(po) });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};

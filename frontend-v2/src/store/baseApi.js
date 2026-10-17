@@ -2,9 +2,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { API_URL } from "./config";
 
 // Shared baseApi
-export const baseApi = createApi({
-  reducerPath: "baseApi",
-  baseQuery: fetchBaseQuery({
+const rawBaseQuery = fetchBaseQuery({
     baseUrl: `${API_URL}`,
     prepareHeaders: (headers) => {
       // Check both localStorage and sessionStorage
@@ -16,8 +14,33 @@ export const baseApi = createApi({
       }
       return headers;
     },
-  }), // adjust to your backend URL
+});
+
+// A 401 means the login is no longer valid (expired, or the user was
+// deactivated): clear it and send the user to the login page once.
+let redirecting = false;
+const baseQueryWithAuthCheck = async (args, api, extraOptions) => {
+  const result = await rawBaseQuery(args, api, extraOptions);
+  const url = typeof args === "string" ? args : args?.url || "";
+  if (
+    result.error?.status === 401 &&
+    !url.startsWith("/auth/login") &&
+    !redirecting &&
+    window.location.pathname !== "/login"
+  ) {
+    redirecting = true;
+    localStorage.removeItem("token");
+    sessionStorage.removeItem("token");
+    window.location.assign("/login?expired=1");
+  }
+  return result;
+};
+
+export const baseApi = createApi({
+  reducerPath: "baseApi",
+  baseQuery: baseQueryWithAuthCheck,
   tagTypes: [
+    "Crm",
     "Addresses",
     "Auth",
     "Users",
@@ -55,6 +78,12 @@ export const baseApi = createApi({
     "Vendors",
     "SiteMap",
     "SiteMapsByCustomer",
+    "Stock",
+    "Catalogues",
+    "Warehouses",
+    "StockCounts",
+    "Settings",
+    "Payments",
   ],
   endpoints: (builder) => ({}), // endpoints will be injected per module
 });

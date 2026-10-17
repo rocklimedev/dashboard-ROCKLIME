@@ -1,6 +1,6 @@
 // src/pages/quotations/NewQuotation.jsx
 import React, { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { message, Button, Modal, Descriptions, Typography, Space } from "antd";
 import {
   DeleteOutlined,
@@ -14,11 +14,12 @@ import { v4 as uuidv4 } from "uuid";
 import CreateProductModal from "../../components/modals/CreateProductModal";
 import CartLayout from "./CartLayout";
 import QuotationForm from "../../components/POS-NEW/QuotationForm";
-import PreviewQuotation from "../../components/Quotation/PreviewQuotation";
+import DraftPdfPreview from "../../components/Quotation/DraftPdfPreview";
 import AddAddress from "../../components/Address/AddAddressModal";
 import AddCustomerModal from "../../components/Customers/AddCustomerModal";
 
 import { useCreateQuotationMutation } from "../../api/quotationApi";
+import { useLinkDealQuotationMutation } from "../../api/crmApi";
 import { useGetCustomersQuery } from "../../api/customerApi";
 import {
   useGetAllAddressesQuery,
@@ -112,11 +113,16 @@ const NewQuotation = () => {
   });
 
   const [selectedCustomer, setSelectedCustomer] = useState("");
+  // opened from a CRM deal: /cart/quotation?customer=…&deal=…
+  const [searchParams] = useSearchParams();
+  const dealId = searchParams.get("deal");
+  const presetCustomer = searchParams.get("customer");
+  const [linkDealQuotation] = useLinkDealQuotationMutation();
   const [useBillingAddress, setUseBillingAddress] = useState(false);
   const [billingAddressId, setBillingAddressId] = useState(null);
 
   // ==================== DATA FETCHING ====================
-  const { data: customersData } = useGetCustomersQuery({ limit: 500 });
+  const { data: customersData } = useGetCustomersQuery({ limit: 10000 });
   const { data: addressesData, refetch: refetchAddresses } =
     useGetAllAddressesQuery(selectedCustomer || undefined, {
       skip: !selectedCustomer,
@@ -126,7 +132,7 @@ const NewQuotation = () => {
   const addresses = addressesData || [];
 
   // ==================== AUTOSAVE ====================
-  const draftKey = `draft_quotation_${auth?.userId || "guest"}`;
+  const draftKey = `draft_quotation_${auth?.user?.userId || "guest"}`;
 
   const draftData = useMemo(
     () => ({
@@ -160,7 +166,9 @@ const NewQuotation = () => {
 
       message.info("Previous draft has been restored", 2);
     }
-  }, [loadDraft]);
+    // the customer of the CRM deal wins over a restored draft
+    if (presetCustomer) setSelectedCustomer(presetCustomer);
+  }, [loadDraft, presetCustomer]);
 
   // ==================== DRAFT HANDLERS ====================
   const checkCurrentDraft = () => {
@@ -187,7 +195,8 @@ const NewQuotation = () => {
     setQuotationData((prev) => ({ ...prev, [key]: value }));
 
   // ==================== CREATE QUOTATION ====================
-  const handleCreateQuotation = async (layoutProps = {}) => {
+  // One payload for saving and for the PDF preview
+  const buildQuotationPayload = (layoutProps = {}) => {
     const {
       payloadCartItems = [],
       shipping = 0,
@@ -195,11 +204,10 @@ const NewQuotation = () => {
       itemDiscounts = {},
       itemDiscountTypes = {},
       itemTaxes = {},
-      handleClearCart,
     } = layoutProps;
 
-    if (!selectedCustomer) return message.error("Please select a customer.");
-    if (payloadCartItems.length === 0) return message.error("Cart is empty.");
+    if (!selectedCustomer) return { error: "Please select a customer." };
+    if (payloadCartItems.length === 0) return { error: "Cart is empty." };
 
     // Shipping Address Logic
     let finalShipTo = quotationData.shipTo;
@@ -274,17 +282,15 @@ const NewQuotation = () => {
       floors: finalFloors,
       products: enrichedItems,
       followupDates: quotationData.followupDates?.filter(Boolean) || [],
-      createdBy: auth?.userId,
+      createdBy: auth?.user?.userId,
     };
-    console.log("=== FINAL PAYLOAD ===");
-    console.log(
-      "Products:",
-      JSON.stringify(quotationPayload.products, null, 2),
-    );
-    console.log(
-      "Has Options?",
-      quotationPayload.products.some((p) => p.isOption || p.optionType),
-    );
+    return { payload: quotationPayload };
+  };
+
+  const handleCreateQuotation = async (layoutProps = {}) => {
+    const { handleClearCart } = layoutProps;
+    const { payload: quotationPayload, error } = buildQuotationPayload(layoutProps);
+    if (error) return message.error(error);
     try {
       const result = await createQuotation(quotationPayload).unwrap();
       message.success(
@@ -297,6 +303,17 @@ const NewQuotation = () => {
 
       clearDraft();
       if (typeof handleClearCart === "function") handleClearCart();
+      if (dealId) {
+        const quotationId = result.quotation?.quotationId || quotationPayload.quotationId;
+        try {
+          await linkDealQuotation({ id: dealId, quotationId }).unwrap();
+          message.success("Linked to the CRM deal");
+        } catch {
+          message.warning("Quotation saved, but it could not be linked to the deal");
+        }
+        navigate(`/quotation/${quotationId}`);
+        return;
+      }
       navigate("/quotations/list");
     } catch (err) {
       message.error(err?.data?.message || "Failed to create quotation.");
@@ -375,23 +392,10 @@ const NewQuotation = () => {
               handleClearCart={layoutProps.handleClearCart}
             />
 
-            <PreviewQuotation
-              visible={previewVisible}
+            <DraftPdfPreview
+              open={previewVisible}
               onClose={() => setPreviewVisible(false)}
-              cartItems={layoutProps.calculationCartItems}
-              productsData={layoutProps.cartProductsData}
-              customer={customers.find(
-                (c) => c.customerId === selectedCustomer,
-              )}
-              address={addresses.find(
-                (a) => a.addressId === quotationData.shipTo,
-              )}
-              quotationData={quotationData}
-              itemDiscounts={layoutProps.itemDiscounts}
-              itemDiscountTypes={layoutProps.itemDiscountTypes}
-              itemTaxes={layoutProps.itemTaxes}
-              gstRate={layoutProps.gst}
-              includeGst
+              getDraft={() => buildQuotationPayload(layoutProps)}
             />
           </>
         )}

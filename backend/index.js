@@ -42,6 +42,15 @@ const routes = {
   notification: require("./modules/engagement/notification.route"),
   cachedPermission: require("./modules/rbac/cached-permission.route"),
   activity: require("./modules/engagement/activity.route"),
+  dashboard: require("./modules/dashboard/dashboard.route"),
+  stock: require("./modules/stock/stock.route"),
+  settings: require("./modules/settings/settings.route"),
+  public: require("./modules/public/public.route"),
+  payments: require("./modules/payments/payment.route"),
+  invoices: require("./modules/invoices/invoice.route"),
+  reports: require("./modules/reports/reports.route"),
+  catalogues: require("./modules/catalogues/catalogue.route"),
+  crm: require("./modules/crm/crm.route"),
 };
 
 // ------------------- Express App -------------------
@@ -81,8 +90,10 @@ const corsOptions = {
     "https://dashboard-cmtradingco.vercel.app",
     "http://erp.cmtradingco.com",
     "https://erp.cmtradingco.com",
+    ...(process.env.APP_URL ? [process.env.APP_URL] : []),
   ],
   credentials: true,
+  exposedHeaders: ["Content-Disposition", "Accept-Ranges", "Content-Range", "Content-Length"],
 };
 
 app.use(cors(corsOptions));
@@ -122,6 +133,20 @@ app.use((req, res, next) => {
   next();
 });
 
+// ------------------- Local uploads (UPLOAD_MODE=local) -------------------
+{
+  const path = require("path");
+  const uploadDir = path.resolve(process.env.UPLOAD_DIR || path.join(__dirname, "uploads"));
+  app.use(
+    "/uploads",
+    (req, res, next) => {
+      res.set("Cross-Origin-Resource-Policy", "cross-origin");
+      next();
+    },
+    express.static(uploadDir),
+  );
+}
+
 // ------------------- Route Mounting -------------------
 app.use("/api", apiLimiter);
 app.use("/api/carts", burstLimiter);
@@ -154,6 +179,15 @@ app.use("/api/fgs", routes.fgs);
 app.use("/api/jobs", routes.jobs);
 app.use("/api/activity", routes.activity);
 app.use("/api/operations", routes.operations);
+app.use("/api/dashboard", routes.dashboard);
+app.use("/api/stock", routes.stock);
+app.use("/api/settings", routes.settings);
+app.use("/api/payments", routes.payments);
+app.use("/api/invoices", routes.invoices);
+app.use("/api/reports", routes.reports);
+app.use("/api/catalogues", routes.catalogues);
+app.use("/api/crm", routes.crm);
+app.use("/api/public", burstLimiter, routes.public);
 // ------------------- Health Check -------------------
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", uptime: process.uptime() });
@@ -209,6 +243,40 @@ cron.schedule("0 2 * * *", async () => {
     );
   } catch (err) {
     console.error("[CRON] Failed to clear cache:", err);
+  }
+});
+
+// ------------------- Daily Cron: release stock of long on-hold orders -------------------
+cron.schedule("15 3 * * *", async () => {
+  try {
+    const n = await require("./modules/stock/stock.service").releaseStaleOnHold();
+    if (n) console.log(`[CRON] Released stock of ${n} long on-hold order(s)`);
+  } catch (err) {
+    console.error("[CRON] On-hold release failed:", err.message);
+  }
+});
+
+// ------------------- Daily Cron: owner's summary email at 8 pm IST -------------------
+cron.schedule(
+  "0 20 * * *",
+  async () => {
+    try {
+      const r = await require("./modules/dashboard/daily-summary").sendSummary();
+      console.log(`[CRON] Daily summary: ${r.sent ? `sent to ${r.to.join(", ")}` : r.reason}`);
+    } catch (err) {
+      console.error("[CRON] Daily summary failed:", err.message);
+    }
+  },
+  { timezone: "Asia/Kolkata" },
+);
+
+// ------------------- Daily Cron: expire quotations past their valid-till date -------------------
+cron.schedule("5 0 * * *", async () => {
+  try {
+    const n = await require("./modules/quotations/pipeline").expireOverdue({ force: true });
+    if (n) console.log(`[CRON] ${n} quotation(s) expired`);
+  } catch (err) {
+    console.error("[CRON] Quotation expiry failed:", err.message);
   }
 });
 

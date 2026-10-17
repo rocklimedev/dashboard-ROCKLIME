@@ -37,6 +37,9 @@ import styles from "../../components/Product/productdetails.module.css";
 import noimage from "../../assets/img/default.png";
 import { Helmet } from "react-helmet";
 import PermissionGate from "../../context/PermissionGate"; // ← Added for permission control
+import ProductStockDrawer from "../../components/Stock/ProductStockDrawer";
+import StockBadge from "../../components/Stock/StockBadge";
+import useStockAvailability from "../../components/Stock/useStockAvailability";
 
 const ProductDetails = () => {
   const { id } = useParams();
@@ -47,6 +50,8 @@ const ProductDetails = () => {
     isLoading: isProductLoading,
     refetch,
   } = useGetProductByIdQuery(id);
+  const { stock: stockById } = useStockAvailability(product?.productId ? [product.productId] : []);
+  const stockInfo = product?.productId ? stockById[product.productId] : null;
 
   const { data: categoryData } = useGetCategoryByIdQuery(product?.categoryId, {
     skip: !product?.categoryId,
@@ -81,6 +86,7 @@ const ProductDetails = () => {
     useAddProductToCartMutation();
 
   const [quantity, setQuantity] = useState(1);
+  const [stockOpen, setStockOpen] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
   const barcodeRef = useRef(null);
   const [cartLoadingStates, setCartLoadingStates] = useState({});
@@ -374,6 +380,22 @@ const ProductDetails = () => {
                 </span>
               </div>
 
+              {stockInfo && (
+                <div style={{ display: "flex", gap: 8, alignItems: "center", margin: "8px 0 12px" }}>
+                  <StockBadge
+                    available={stockInfo.available}
+                    reserved={stockInfo.reserved}
+                    incoming={stockInfo.incoming}
+                    lowAt={stockInfo.lowAt}
+                    nextDate={stockInfo.nextIncoming}
+                    need={quantity}
+                  />
+                  <Button type="link" size="small" onClick={() => setStockOpen(true)}>
+                    Stock details
+                  </Button>
+                </div>
+              )}
+
               <p className={styles.description}>
                 {product.description || "No description provided."}
               </p>
@@ -638,6 +660,11 @@ const ProductDetails = () => {
           </div>
         )}
       </Modal>
+      <ProductStockDrawer
+        productId={product.productId}
+        open={stockOpen}
+        onClose={() => setStockOpen(false)}
+      />
     </div>
   );
 };

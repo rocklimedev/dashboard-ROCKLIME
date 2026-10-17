@@ -25,6 +25,7 @@ import { useGetProfileQuery } from "../../api/userApi";
 import { useAuth } from "../../context/AuthContext";
 import useAutoSave from "../../utils/useAutoSave";
 import AddCustomerModal from "../../components/Customers/AddCustomerModal";
+import CreditAlert from "../../components/Customers/CreditAlert";
 const NewOrder = () => {
   const navigate = useNavigate();
   const { auth } = useAuth();
@@ -63,9 +64,9 @@ const NewOrder = () => {
 
   // ==================== QUERIES ====================
   const { data: profileData } = useGetProfileQuery();
-  const userId = profileData?.user?.userId || auth?.userId;
+  const userId = profileData?.user?.userId || auth?.user?.userId;
 
-  const { data: customersData } = useGetCustomersQuery({ limit: 500 });
+  const { data: customersData } = useGetCustomersQuery({ limit: 10000 });
   const { data: addressesData } = useGetAllAddressesQuery(
     selectedCustomer || undefined,
     { skip: !selectedCustomer },
@@ -87,7 +88,7 @@ const NewOrder = () => {
   }, [userId]);
 
   // ==================== AUTOSAVE SETUP ====================
-  const draftKey = `draft_order_${auth?.userId || "guest"}`;
+  const draftKey = `draft_order_${auth?.user?.userId || "guest"}`;
 
   const draftData = useMemo(
     () => ({
@@ -287,6 +288,12 @@ const NewOrder = () => {
                 Manage Draft
               </Button>
             </div>
+
+            <CreditAlert
+              customerId={selectedCustomer}
+              amount={layoutProps.totalAmount}
+              style={{ marginBottom: 16 }}
+            />
 
             <OrderForm
               {...layoutProps}

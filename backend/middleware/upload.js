@@ -31,7 +31,33 @@ function createBufferWritable() {
 /**
  * FINAL ROBUST UPLOAD FUNCTION
  */
+// Local setup: when UPLOAD_MODE=local (or no FTP_HOST), files are written to
+// UPLOAD_DIR and served by the backend at /uploads.
+const fsLocal = require("fs");
+function useLocalUploads() {
+  return process.env.UPLOAD_MODE === "local" || !process.env.FTP_HOST;
+}
+function localDirFor(options) {
+  let remoteDir = "/product_images";
+  if (typeof options === "string") remoteDir = options;
+  else if (options?.remoteDir) remoteDir = options.remoteDir;
+  return remoteDir.replace(/^\/+/, "").replace(/\.\./g, "");
+}
+async function uploadLocal(buffer, filename, options) {
+  const root = path.resolve(process.env.UPLOAD_DIR || path.join(__dirname, "../uploads"));
+  const sub = localDirFor(options);
+  const dir = path.join(root, sub);
+  await fsLocal.promises.mkdir(dir, { recursive: true });
+  const uniqueName = `${uuidv4()}${path.extname(filename) || ".jpg"}`;
+  await fsLocal.promises.writeFile(path.join(dir, uniqueName), buffer);
+  const base = (process.env.PUBLIC_BACKEND_URL || `http://localhost:${process.env.PORT || 5050}`).replace(/\/+$/, "");
+  const url = `${base}/uploads/${sub ? sub + "/" : ""}${uniqueName}`;
+  console.log("✅ Saved locally:", url);
+  return url;
+}
+
 async function uploadToFtp(buffer, filename, options = {}) {
+  if (useLocalUploads()) return uploadLocal(buffer, filename, options);
   const client = new ftp.Client();
   client.ftp.verbose = process.env.NODE_ENV === "development";
 
@@ -108,6 +134,11 @@ async function uploadToFtp(buffer, filename, options = {}) {
  * Download function (unchanged)
  */
 async function downloadFromFtp(ftpPath) {
+  if (useLocalUploads() && /\/uploads\//.test(ftpPath)) {
+    const root = path.resolve(process.env.UPLOAD_DIR || path.join(__dirname, "../uploads"));
+    const rel = decodeURIComponent(ftpPath.split("/uploads/")[1] || "").replace(/\.\./g, "");
+    return fsLocal.promises.readFile(path.join(root, rel));
+  }
   const client = new ftp.Client();
   client.ftp.verbose = process.env.NODE_ENV === "development";
 

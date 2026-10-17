@@ -3,12 +3,15 @@
 const express = require("express");
 const router = express.Router();
 const { auth } = require("../../middleware/auth");
-//router.use(auth);
+const { guardModule } = require("../../middleware/permission");
 const fieldGuidedSheetController = require("./fgs.controller");
 
-// Optional: Add middleware for authentication / authorization if needed
-// const { authenticate, authorize } = require('../middleware/auth');
-router.use(auth); // protect all routes
+router.use(auth);
+router.use(
+  guardModule("field_guided_sheets", [
+    { method: "POST", path: /^\/[^/]+\/convert$/, action: "write", module: "purchase_orders" },
+  ]),
+);
 // or per-route: router.post('/', authorize('admin'), controller.create...)
 
 // ─────────────────────────────────────────────────────────────

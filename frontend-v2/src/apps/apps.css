@@ -1,0 +1,99 @@
+/* ---------- apps home: icons and names only ---------- */
+.apps-home .content {
+  min-height: calc(100vh - 140px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.app-icons {
+  display: grid;
+  grid-template-columns: repeat(5, 132px);
+  gap: 34px 28px;
+  justify-content: center;
+  padding: 24px 0 48px;
+}
+@media (max-width: 860px) {
+  .app-icons {
+    grid-template-columns: repeat(4, 110px);
+  }
+}
+@media (max-width: 575px) {
+  .app-icons {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 26px 10px;
+    width: 100%;
+  }
+}
+.app-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: #1a1a1a;
+  text-align: center;
+}
+.app-icon:hover {
+  color: #1a1a1a;
+}
+.app-icon__logo {
+  width: 88px;
+  height: 88px;
+  border-radius: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 36px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.app-icon:hover .app-icon__logo {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.16);
+}
+.app-icon__name {
+  font-size: 14.5px;
+  font-weight: 500;
+}
+@media (max-width: 575px) {
+  .app-icon__logo {
+    width: 68px;
+    height: 68px;
+    border-radius: 18px;
+    font-size: 28px;
+  }
+}
+
+/* ---------- app switcher (header) ---------- */
+.app-switcher {
+  display: grid;
+  grid-template-columns: repeat(3, 96px);
+  gap: 4px;
+  padding: 8px;
+}
+.app-switcher__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 4px;
+  border-radius: 10px;
+  color: #262626;
+  font-size: 12px;
+  text-align: center;
+}
+.app-switcher__item:hover,
+.app-switcher__item.is-current {
+  background: #f5f5f5;
+  color: #262626;
+}
+.app-switcher__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 16px;
+}

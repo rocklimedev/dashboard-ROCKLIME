@@ -1,3 +1,4 @@
+const { quotationTotals, r2 } = require("../../lib/quotationMath");
 const OrderItem = require("./models/order-item.model");
 const Comment = require("./models/comment.model");
 const path = require("path");
@@ -56,7 +57,9 @@ const canDispatch = (order) => {
   return order.gatePassLink !== null && order.gatePassLink.trim() !== "";
 };
 // Assume an admin user ID or system channel for notifications
-const ADMIN_USER_ID = "2ef0f07a-a275-4fe1-832d-fe9a5d145f60"; // Replace with actual admin user ID or channel
+// Who receives order notifications meant for "the admin". Set ADMIN_USER_ID in .env.
+const ADMIN_USER_ID = process.env.ADMIN_USER_ID || null;
+const stock = require("../stock/stock.service");
 
 function bufferToStream(buffer) {
   const stream = new Readable();
@@ -236,10 +239,10 @@ const fetchCommentsWithUsers = async (
 // Add a comment
 exports.addComment = async (req, res) => {
   try {
-    const { resourceId, resourceType, userId: rawUserId, comment } = req.body;
+    const { resourceId, resourceType, comment } = req.body;
 
-    // 1. Normalize userId
-    const userId = String(rawUserId || "").trim();
+    // 1. The author is always the logged-in user
+    const userId = String(req.user?.userId || "").trim();
     if (!userId || userId === "null" || userId === "undefined") {
       return sendErrorResponse(
         res,
@@ -419,7 +422,7 @@ exports.deleteCommentsByResource = async (req, res) => {
 exports.deleteComment = async (req, res) => {
   try {
     const { commentId } = req.params;
-    const { userId } = req.body;
+    const userId = req.user?.userId; // only the author may delete
 
     const comment = await Comment.findById(commentId);
     if (!comment) {
@@ -482,44 +485,30 @@ function computeTotals({
   gst = 0,
   extraDiscount = 0,
   extraDiscountType = "fixed",
-  amountPaid = 0,
 }) {
-  // 1. Sub-total (price * qty after line-discount)
-  const subTotal = products.reduce((sum, p) => sum + (p.total ?? 0), 0);
-
-  // 2. Shipping
-  const totalWithShipping = subTotal + Number(shipping);
-
-  // 3. GST
-  const gstValue = (totalWithShipping * Number(gst)) / 100;
-
-  // 4. Extra discount
-  let extraDiscountValue = 0;
-  if (extraDiscount > 0) {
-    extraDiscountValue =
-      extraDiscountType === "percent"
-        ? (totalWithShipping * Number(extraDiscount)) / 100
-        : Number(extraDiscount);
-  }
-
-  // 5. **FINAL AMOUNT**
-  const finalAmount = totalWithShipping + gstValue - extraDiscountValue;
-
-  // // 6. amountPaid must not exceed final amount
-  // if (Number(amountPaid) > finalAmount + 0.01) {
-  //   throw new Error(
-  //     `amountPaid (${amountPaid}) cannot exceed final amount (${finalAmount.toFixed(
-  //       2
-  //     )})`
-  //   );
-  // }
-
+  // Same maths as quotations (lib/quotationMath): discounts → taxable value →
+  // GST on the taxable value → round to the rupee at the very end.
+  const t = quotationTotals({
+    items: products.map((p) => ({
+      price:
+        p.total != null
+          ? Number(p.total) || 0
+          : (Number(p.price) || 0) * (Number(p.quantity) || 1),
+      quantity: 1,
+    })),
+    shipping,
+    gstRate: gst,
+    extraDiscount,
+    extraDiscountType,
+  });
   return {
-    subTotal,
-    totalWithShipping,
-    gstValue,
-    extraDiscountValue,
-    finalAmount, // <-- NEW
+    subTotal: t.goodsValue,
+    totalWithShipping: r2(t.goodsValue + t.freight),
+    gstValue: t.gstAmount,
+    extraDiscountValue: t.extraDiscountAmount,
+    taxableValue: t.taxableValue,
+    roundOff: t.roundOff,
+    finalAmount: t.grandTotal,
   };
 }
 // ─────────────────────────────────────────────────────────────
@@ -580,104 +569,7 @@ async function generateDailyOrderNumber(t) {
     `Failed to generate unique order number after ${MAX_ATTEMPTS} attempts`,
   );
 }
-/**
- * Reduce stock + log history (shared by create & update)
- */
-async function reduceStockAndLog({
-  productUpdates,
-  createdBy,
-  orderNo,
-  customMessage,
-  transaction,
-}) {
-  if (!transaction) throw new Error("Transaction is required");
-
-  const username =
-    (
-      await User.findByPk(createdBy, {
-        attributes: ["username"],
-        transaction,
-      })
-    )?.username || "System";
-
-  const autoMsg = `Stock removed by ${username} (Order #${orderNo})`;
-  const msg = customMessage?.trim() ? `${customMessage} (${autoMsg})` : autoMsg;
-
-  for (const upd of productUpdates) {
-    const { productId, quantityToReduce, productRecord } = upd;
-
-    if (quantityToReduce <= 0) continue; // safety
-
-    const newQty = productRecord.quantity - quantityToReduce;
-
-    // 1. Update product quantity
-    await Product.update(
-      { quantity: newQty },
-      { where: { productId }, transaction },
-    );
-
-    // Inside the loop in reduceStockAndLog:
-    await InventoryHistory.create(
-      {
-        id: uuidv7(), // ← Explicitly set the ID here!
-        productId,
-        change: -quantityToReduce,
-        quantityAfter: newQty,
-        action: "sale",
-        orderNo: String(orderNo),
-        userId: createdBy,
-        message: msg,
-      },
-      { transaction },
-    );
-
-    // 3. Update status if needed
-    let newStatus = "active";
-    if (newQty === 0) {
-      newStatus = "out_of_stock";
-    } else if (
-      productRecord.alert_quantity != null &&
-      newQty <= productRecord.alert_quantity
-    ) {
-      newStatus = "low_stock";
-    }
-
-    if (newStatus !== productRecord.status) {
-      await Product.update(
-        { status: newStatus },
-        { where: { productId }, transaction },
-      );
-    }
-  }
-}
-/**
- * Restore stock when order is canceled / deleted
- */
-async function restoreStock({ products, orderNo }) {
-  if (!products?.length) return;
-
-  for (const p of products) {
-    const prod = await Product.findByPk(p.id || p.productId);
-    if (!prod) continue;
-
-    const qtyToAdd = p.quantity ?? 0;
-    const newQty = prod.quantity + qtyToAdd;
-
-    await Product.update(
-      { quantity: newQty },
-      { where: { productId: prod.productId } },
-    );
-
-    await InventoryHistory.create({
-      productId: prod.productId,
-      change: qtyToAdd,
-      quantityAfter: newQty,
-      action: "add-stock",
-      orderNo,
-      message: `Stock restored (order #${orderNo} cancelled/deleted)`,
-    });
-  }
-}
+// Stock is moved only by the stock engine (modules/stock/stock.service.js).
 
 // ──────── CREATE ORDER ────────
 exports.createOrder = async (req, res) => {
@@ -912,18 +804,8 @@ exports.createOrder = async (req, res) => {
 
       const prod = lockedProducts[productId];
 
-      // ─────────────────────────────────────
-      // CLEAR STOCK ERROR
-      // ─────────────────────────────────────
-      if (prod.quantity < quantity) {
-        await t.rollback();
-
-        return sendErrorResponse(
-          res,
-          400,
-          `Insufficient stock for "${prod.name}". Requested: ${quantity}, Available: ${prod.quantity}`,
-        );
-      }
+      // Not enough stock is no longer an error: the order reserves what is
+      // available and the rest becomes a backorder (see the stock engine).
 
       const discount = Number(p.discount) || 0;
       const discountType = p.discountType || "percent";
@@ -1043,16 +925,30 @@ exports.createOrder = async (req, res) => {
     );
 
     // ─────────────────────────────────────
-    // REDUCE STOCK
+    // RESERVE STOCK (confirmed orders only; drafts reserve nothing)
     // ─────────────────────────────────────
-    if (productUpdates.length > 0) {
-      await reduceStockAndLog({
-        productUpdates,
-        createdBy,
-        orderNo: order.orderNo,
-        customMessage,
-        transaction: t,
-      });
+    const stockStatus = await stock.syncOrder(order.id, {
+      t,
+      userId: createdBy,
+    });
+
+    // An advance entered on the order form is recorded as the first payment
+    if (parsedAmountPaid > 0) {
+      const { OrderPayment } = require("../../models");
+      await OrderPayment.create(
+        {
+          receiptNo: `ADV-${order.orderNo}`,
+          orderId: order.id,
+          orderNo: order.orderNo,
+          customerId: createdFor,
+          amount: parsedAmountPaid,
+          mode: "OTHER",
+          receivedAt: new Date(),
+          notes: "Advance entered on the order form",
+          userId: createdBy,
+        },
+        { transaction: t },
+      );
     }
 
     // ─────────────────────────────────────
@@ -1181,6 +1077,7 @@ exports.createOrder = async (req, res) => {
       message: "Order created successfully",
       id: order.id,
       orderNo: order.orderNo,
+      stock: stockStatus,
     });
   } catch (err) {
     // ALWAYS rollback if transaction not finished
@@ -1213,6 +1110,9 @@ exports.createOrder = async (req, res) => {
       );
     }
 
+    if (err instanceof stock.StockError) {
+      return sendErrorResponse(res, err.status, err.message);
+    }
     return sendErrorResponse(res, 500, "Failed to create order", err.message);
   }
 };
@@ -1543,18 +1443,6 @@ exports.updateOrderById = async (req, res) => {
           );
         }
 
-        const oldQty =
-          order.products?.find((x) => (x.id || x.productId) === id)?.quantity ||
-          0;
-
-        if (prod.quantity + oldQty < quantity) {
-          return sendErrorResponse(
-            res,
-            400,
-            `Insufficient stock for ${prod.name}`,
-          );
-        }
-
         newProductUpdates.push({
           productId: id,
           quantityToReduce: quantity,
@@ -1621,15 +1509,8 @@ exports.updateOrderById = async (req, res) => {
       }
     }
 
-    if (updates.amountPaid !== undefined) {
-      const a = parseFloat(updates.amountPaid) || 0;
-
-      if (isNaN(a) || a < 0) {
-        return sendErrorResponse(res, 400, "Invalid amountPaid");
-      }
-
-      updates.amountPaid = a;
-    }
+    // Amount paid is the sum of recorded payments (Accounts app); it is not edited here.
+    delete updates.amountPaid;
 
     // ─────────────────────────────────────
     // RECALCULATE TOTALS
@@ -1657,28 +1538,20 @@ exports.updateOrderById = async (req, res) => {
     updates.finalAmount = finalAmount;
 
     // ─────────────────────────────────────
-    // STOCK
-    // Restore old → deduct new
+    // SAVE, THEN BRING RESERVATIONS IN LINE
+    // (new lines reserve, removed lines release, status decides holding)
     // ─────────────────────────────────────
-    if (newProductUpdates.length > 0) {
-      if (order.products && order.products.length > 0) {
-        await restoreStock({
-          products: order.products,
-          orderNo: order.orderNo,
-        });
-      }
-
-      await reduceStockAndLog({
-        productUpdates: newProductUpdates,
-        createdBy: order.createdBy,
-        orderNo: order.orderNo,
-      });
+    if (updates.status !== undefined) {
+      updates.status = String(updates.status).toUpperCase();
     }
-
-    // ─────────────────────────────────────
-    // SAVE TO MYSQL
-    // ─────────────────────────────────────
-    await order.update(updates);
+    let stockStatus = null;
+    await sequelize.transaction(async (t) => {
+      await order.update(updates, { transaction: t });
+      stockStatus = await stock.syncOrder(order.id, {
+        t,
+        userId: req.user?.userId || null,
+      });
+    });
     await order.reload();
 
     // ─────────────────────────────────────
@@ -1972,9 +1845,13 @@ exports.updateOrderById = async (req, res) => {
       message: "Order updated successfully",
 
       order,
+      stock: stockStatus,
     });
   } catch (err) {
     console.error("Update Order Error:", err);
+    if (err instanceof stock.StockError) {
+      return sendErrorResponse(res, err.status, err.message);
+    }
 
     return sendErrorResponse(res, 500, "Failed to update order", err.message);
   }
@@ -2018,6 +1895,28 @@ exports.updateOrderStatus = async (req, res) => {
     // =========================================================
     // DISPATCH VALIDATION
     // =========================================================
+
+    // Goods leave stock only through Dispatch records, so a "sent" status
+    // must match what was actually dispatched.
+    if (["DISPATCHED", "DELIVERED", "PARTIALLY_DISPATCHED"].includes(norm)) {
+      const needs = await stock.orderNeeds(order);
+      const remaining = needs.reduce((s, n) => s + n.needed, 0);
+      const sent = needs.reduce((s, n) => s + n.dispatched, 0);
+      if (norm !== "PARTIALLY_DISPATCHED" && remaining > 0) {
+        return sendErrorResponse(
+          res,
+          400,
+          `${remaining} item(s) are not dispatched yet. Use Dispatch on the order page to send them; the status updates itself.`,
+        );
+      }
+      if (norm === "PARTIALLY_DISPATCHED" && sent === 0) {
+        return sendErrorResponse(
+          res,
+          400,
+          "Nothing has been dispatched yet. Use Dispatch on the order page.",
+        );
+      }
+    }
 
     if (norm === "DISPATCHED" && !order.gatePassLink?.trim()) {
       return sendErrorResponse(
@@ -2123,15 +2022,16 @@ exports.updateOrderStatus = async (req, res) => {
     await order.save();
 
     // =========================================================
-    // RESTORE STOCK
+    // STOCK RESERVATIONS
     // =========================================================
 
-    if (["CANCELED", "CLOSED"].includes(norm) && order.products?.length) {
-      await restoreStock({
-        products: order.products,
-        orderNo: order.orderNo,
-      });
-    }
+    // Reservations follow the status: confirmed statuses hold stock,
+    // cancelled / dispatched / delivered / closed release whatever is left.
+    // Closing never adds stock back; cancelling never touches what was
+    // already dispatched (it only releases the reservation).
+    const stockStatus = await sequelize.transaction((t) =>
+      stock.syncOrder(order.id, { t, userId: req.user?.userId || null }),
+    );
 
     // =========================================================
     // ORDER ACTIVITY LOG
@@ -2266,9 +2166,13 @@ exports.updateOrderStatus = async (req, res) => {
     return res.status(200).json({
       message: "Status updated",
       order,
+      stock: stockStatus,
     });
   } catch (err) {
     console.error("Update Order Status Error:", err);
+    if (err instanceof stock.StockError) {
+      return sendErrorResponse(res, err.status, err.message);
+    }
 
     return sendErrorResponse(res, 500, "Failed to update status", err.message);
   }
@@ -2368,7 +2272,10 @@ exports.deleteOrder = async (req, res) => {
 
     // restore stock
     if (order.products?.length) {
-      await restoreStock({ products: order.products, orderNo: order.orderNo });
+      // Free whatever this order still holds; dispatched goods stay out.
+      await sequelize.transaction((t) =>
+        stock.releaseOrder(order.id, { t, userId: req.user?.userId || null }),
+      );
     }
 
     // notifications
@@ -2567,22 +2474,113 @@ exports.draftOrder = async (req, res) => {
   }
 };
 
+// Statuses after which an order can no longer be "late"
+const LATE_DONE_STATUSES = ["DISPATCHED", "DELIVERED", "PARTIALLY_DELIVERED", "CLOSED", "CANCELED", "RETURNED"];
+const ORDER_SORTS = {
+  createdAt_desc: [["createdAt", "DESC"]],
+  dueDate_asc: [["dueDate", "ASC"], ["createdAt", "DESC"]],
+  dueDate_desc: [["dueDate", "DESC"], ["createdAt", "DESC"]],
+  amount_desc: [["finalAmount", "DESC"]],
+};
+
+/**
+ * Money and dispatch progress for a page of orders, in three small queries:
+ * billed (final − credit notes), paid (payments), due, and items dispatched.
+ */
+async function orderListProgress(orders) {
+  const ids = orders.map((o) => o.id);
+  const out = {};
+  if (!ids.length) return out;
+  const [paid, credited, shipped] = await Promise.all([
+    sequelize.query(
+      "SELECT orderId, SUM(amount) AS v FROM order_payments WHERE status = 'RECEIVED' AND orderId IN (:ids) GROUP BY orderId",
+      { replacements: { ids }, type: sequelize.QueryTypes.SELECT },
+    ).catch(() => []),
+    sequelize.query(
+      "SELECT orderId, SUM(totalAmount) AS v FROM order_credit_notes WHERE status IN ('ISSUED','RECEIVED') AND orderId IN (:ids) GROUP BY orderId",
+      { replacements: { ids }, type: sequelize.QueryTypes.SELECT },
+    ).catch(() => []),
+    sequelize.query(
+      "SELECT orderId, SUM(totalQuantity) AS v FROM order_dispatches WHERE status <> 'RETURNED' AND orderId IN (:ids) GROUP BY orderId",
+      { replacements: { ids }, type: sequelize.QueryTypes.SELECT },
+    ).catch(() => []),
+  ]);
+  const map = (rows) => Object.fromEntries(rows.map((r) => [r.orderId, Number(r.v) || 0]));
+  const P = map(paid);
+  const C = map(credited);
+  const D = map(shipped);
+  for (const o of orders) {
+    const lines = Array.isArray(o.products) ? o.products : [];
+    const orderedQty = lines.reduce((a, l) => a + (Number(l.quantity) || 0), 0);
+    const billed = ["DRAFT", "CANCELED"].includes(o.status) ? 0 : r2(Number(o.finalAmount || 0) - (C[o.id] || 0));
+    const paidAmt = r2(P[o.id] || 0);
+    out[o.id] = {
+      orderedQty,
+      dispatchedQty: Math.min(D[o.id] || 0, orderedQty || D[o.id] || 0),
+      billed,
+      paid: paidAmt,
+      due: r2(Math.max(billed - paidAmt, 0)),
+      isLate:
+        !!o.dueDate &&
+        String(o.dueDate).slice(0, 10) < moment().format("YYYY-MM-DD") &&
+        !LATE_DONE_STATUSES.includes(o.status),
+    };
+  }
+  return out;
+}
+
+// GET /api/order/status-counts → orders per status, plus late and "to dispatch"
+exports.statusCounts = async (req, res) => {
+  try {
+    const rows = await sequelize.query("SELECT status, COUNT(*) AS n FROM orders GROUP BY status", {
+      type: sequelize.QueryTypes.SELECT,
+    });
+    const byStatus = Object.fromEntries(rows.map((r) => [r.status, Number(r.n)]));
+    const [{ late }] = await sequelize.query(
+      "SELECT COUNT(*) AS late FROM orders WHERE dueDate < CURDATE() AND status NOT IN (:done)",
+      { replacements: { done: LATE_DONE_STATUSES }, type: sequelize.QueryTypes.SELECT },
+    );
+    const sum = (list) => list.reduce((a, s) => a + (byStatus[s] || 0), 0);
+    return res.json({
+      byStatus,
+      total: Object.values(byStatus).reduce((a, n) => a + n, 0),
+      late: Number(late),
+      active: sum(["PREPARING", "CHECKING", "INVOICE", "PARTIALLY_DISPATCHED", "ONHOLD"]),
+      toDispatch: sum(["PREPARING", "CHECKING", "INVOICE", "PARTIALLY_DISPATCHED"]),
+      inTransit: sum(["DISPATCHED", "PARTIALLY_DELIVERED"]),
+      done: sum(["DELIVERED", "CLOSED"]),
+    });
+  } catch (err) {
+    return sendErrorResponse(res, 500, "Failed to count orders", err.message);
+  }
+};
+
 // Get all orders (no notification needed)
 exports.getAllOrders = async (req, res) => {
   try {
-    const { page = 1, limit = 20, search = "", status, priority } = req.query;
+    const { page = 1, limit = 20, search = "", status, priority, sort, late, customerId } = req.query;
 
-    const pageNum = parseInt(page, 10);
-    const limitNum = parseInt(limit, 10);
+    const pageNum = Math.max(parseInt(page, 10) || 1, 1);
+    const limitNum = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 500);
     const offset = (pageNum - 1) * limitNum;
 
     // Build the where condition dynamically
     const where = {};
 
-    // Status filter (exact match)
+    // Status filter: one status, or a comma-separated list
     if (status && status.trim() !== "") {
-      where.status = status.trim();
+      const list = status.split(",").map((x) => x.trim().toUpperCase()).filter(Boolean);
+      where.status = list.length === 1 ? list[0] : { [Op.in]: list };
     }
+    // Late: due date passed and not yet delivered/closed
+    if (late) {
+      where.dueDate = { [Op.lt]: moment().format("YYYY-MM-DD") };
+      where[Op.and] = [
+        ...(where[Op.and] || []),
+        { status: { [Op.notIn]: LATE_DONE_STATUSES } },
+      ];
+    }
+    if (customerId) where.createdFor = customerId;
 
     // Priority filter (exact match)
     if (priority && priority.trim() !== "") {
@@ -2641,19 +2639,26 @@ exports.getAllOrders = async (req, res) => {
         {
           model: Address,
           as: "shippingAddress",
-          attributes: ["addressId"],
+        },
+        {
+          model: Quotation,
+          as: "quotation",
+          attributes: ["quotationId", "reference_number"],
+          required: false,
         },
       ],
-      order: [["createdAt", "DESC"]],
+      order: ORDER_SORTS[sort] || ORDER_SORTS.createdAt_desc,
       offset,
       limit: limitNum,
       subQuery: false,
+      distinct: true,
     });
 
     const totalPages = Math.ceil(totalOrders / limitNum);
+    const progress = await orderListProgress(orders);
 
     return res.status(200).json({
-      data: orders.map((order) => order.toJSON()),
+      data: orders.map((order) => ({ ...order.toJSON(), ...progress[order.id] })),
       pagination: {
         total: totalOrders,
         page: pageNum,
@@ -2672,6 +2677,21 @@ exports.getAllOrders = async (req, res) => {
   }
 };
 // Get order details (no notification needed)
+// Line amount before order-level GST: qty × price, less the line discount
+// (percent of price, or a fixed amount per unit). Saved totals win when present.
+const lineTotal = (item) => {
+  const saved = Number(item.total);
+  if (Number.isFinite(saved) && saved > 0) return Math.round(saved * 100) / 100;
+  const qty = Number(item.quantity) || 0;
+  const price = Number(item.price) || 0;
+  const d = Number(item.discount) || 0;
+  const unit =
+    (item.discountType || "percent") === "percent"
+      ? price * (1 - d / 100)
+      : price - d;
+  return Math.round(Math.max(unit, 0) * qty * 100) / 100;
+};
+
 exports.getOrderDetails = async (req, res) => {
   const { id } = req.params;
 
@@ -2726,7 +2746,6 @@ exports.getOrderDetails = async (req, res) => {
         {
           model: Address,
           as: "shippingAddress",
-          attributes: ["addressId"],
         },
         {
           model: Quotation,
@@ -2787,7 +2806,7 @@ exports.getOrderDetails = async (req, res) => {
           discount: item.discount || 0,
           discountType: item.discountType || "percent",
           tax: item.tax || 0,
-          total: item.total || 0,
+          total: lineTotal(item),
           // Do NOT add: productDetails, sellingPrice
         }));
 
@@ -2831,7 +2850,7 @@ exports.getOrderDetails = async (req, res) => {
         discount: item.discount || 0,
         discountType: item.discountType || "percent",
         tax: item.tax || 0,
-        total: item.total || item.price * (item.quantity || 1),
+        total: lineTotal({ quantity: 1, ...item }),
       }));
     } else {
       orderWithDetails.products = [];
@@ -2961,7 +2980,6 @@ exports.orderById = async (req, res) => {
         {
           model: Address,
           as: "shippingAddress",
-          attributes: ["addressId"],
         },
       ],
     });
@@ -3037,7 +3055,6 @@ exports.downloadOrder = async (req, res) => {
         {
           model: Address,
           as: "shippingAddress",
-          attributes: ["addressId"],
         },
         {
           model: Quotation,
@@ -3071,22 +3088,31 @@ exports.downloadOrder = async (req, res) => {
 
     const quotationProducts = data.quotation?.products || [];
 
-    const products =
-      data.products?.length > 0 ? data.products : quotationProducts;
+    const parseList = (v) => {
+      if (Array.isArray(v)) return v;
+      try {
+        const parsed = typeof v === "string" ? JSON.parse(v) : [];
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    };
+    const orderLines = parseList(data.products);
+    const products = orderLines.length ? orderLines : parseList(quotationProducts);
 
+    // Build the whole PDF in memory first. Streaming straight into the
+    // response meant an error half-way wrote to a closed response and crashed
+    // the server ("write after end").
     const doc = new PDFDocument({
       margin: 40,
       size: "A4",
     });
-
-    res.setHeader("Content-Type", "application/pdf");
-
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename=Order-${data.orderNo}.pdf`,
-    );
-
-    doc.pipe(res);
+    const chunks = [];
+    doc.on("data", (c) => chunks.push(c));
+    const finished = new Promise((resolve, reject) => {
+      doc.on("end", resolve);
+      doc.on("error", reject);
+    });
 
     // ==========================
     // HEADER
@@ -3179,7 +3205,7 @@ exports.downloadOrder = async (req, res) => {
 
       grandTotal += total;
 
-      doc.text(index + 1, 40, y);
+      doc.text(String(index + 1), 40, y);
 
       doc.text(item.name || "-", 70, y, {
         width: 220,
@@ -3187,9 +3213,9 @@ exports.downloadOrder = async (req, res) => {
 
       doc.text(String(item.quantity || 0), 320, y);
 
-      doc.text(`₹${Number(item.price || 0).toFixed(2)}`, 380, y);
+      doc.text(`Rs. ${Number(item.price || 0).toFixed(2)}`, 380, y);
 
-      doc.text(`₹${total.toFixed(2)}`, 470, y);
+      doc.text(`Rs. ${total.toFixed(2)}`, 470, y);
 
       y += 25;
 
@@ -3211,15 +3237,15 @@ exports.downloadOrder = async (req, res) => {
 
     doc.fontSize(11);
 
-    doc.text(`Product Total : ₹${grandTotal.toFixed(2)}`);
+    doc.text(`Product Total : Rs. ${grandTotal.toFixed(2)}`);
 
-    doc.text(`Quotation Amount : ₹${data.quotation?.finalAmount || 0}`);
+    doc.text(`Quotation Amount : Rs. ${data.quotation?.finalAmount || 0}`);
 
-    doc.text(`Shipping : ₹${data.shipping || 0}`);
+    doc.text(`Shipping : Rs. ${data.shipping || 0}`);
 
-    doc.text(`GST : ₹${data.gstValue || 0}`);
+    doc.text(`GST : Rs. ${data.gstValue || 0}`);
 
-    doc.text(`Extra Discount : ₹${data.extraDiscountValue || 0}`);
+    doc.text(`Extra Discount : Rs. ${data.extraDiscountValue || 0}`);
 
     doc.moveDown();
 
@@ -3228,11 +3254,11 @@ exports.downloadOrder = async (req, res) => {
         ? data.finalAmount
         : data.quotation?.finalAmount || 0;
 
-    doc.fontSize(14).text(`Final Amount : ₹${finalAmount}`, {
+    doc.fontSize(14).text(`Final Amount : Rs. ${finalAmount}`, {
       underline: true,
     });
 
-    doc.text(`Amount Paid : ₹${data.amountPaid || 0}`);
+    doc.text(`Amount Paid : Rs. ${data.amountPaid || 0}`);
 
     doc.moveDown(2);
 
@@ -3272,7 +3298,16 @@ exports.downloadOrder = async (req, res) => {
       });
 
     doc.end();
+    await finished;
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=Order-${data.orderNo}.pdf`,
+    );
+    return res.send(Buffer.concat(chunks));
   } catch (err) {
+    if (res.headersSent) return res.end();
     return sendErrorResponse(
       res,
       500,
@@ -3460,7 +3495,6 @@ exports.getFilteredOrders = async (req, res) => {
       {
         model: Address,
         as: "shippingAddress",
-        attributes: ["addressId"],
       },
     ];
 
@@ -3524,7 +3558,6 @@ exports.updateOrderTeam = async (req, res) => {
         {
           model: Address,
           as: "shippingAddress",
-          attributes: ["addressId"],
         },
       ],
     });

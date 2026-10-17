@@ -10,6 +10,9 @@ export const poApi = baseApi.injectEndpoints({
         status = "",
         search = "",
         sort = "",
+        vendorId = "",
+        from = "",
+        to = "",
       }) => {
         const params = new URLSearchParams({
           page,
@@ -17,6 +20,9 @@ export const poApi = baseApi.injectEndpoints({
         });
         if (status) params.append("status", status);
         if (search) params.append("search", search);
+        if (vendorId) params.append("vendorId", vendorId);
+        if (from) params.append("from", from);
+        if (to) params.append("to", to);
         if (sort) {
           let sortField = "createdAt";
           let sortOrder = "DESC";
@@ -111,6 +117,24 @@ export const poApi = baseApi.injectEndpoints({
       invalidatesTags: ["PurchaseOrders"],
     }),
 
+    // Goods received against a PO (GRN) and what is still due
+    getPurchaseOrderReceipts: builder.query({
+      query: (id) => `/purchase-orders/${id}/receipts`,
+      providesTags: (r, e, id) => [{ type: "PurchaseOrders", id: `grn-${id}` }],
+    }),
+    receivePurchaseOrder: builder.mutation({
+      query: ({ id, ...body }) => ({
+        url: `/purchase-orders/${id}/receive`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: (r, e, { id }) => [
+        "PurchaseOrders",
+        { type: "PurchaseOrders", id: `grn-${id}` },
+        "Stock",
+      ],
+    }),
+
     // Get purchase orders by vendor
     getPurchaseOrdersByVendor: builder.query({
       query: (vendorId) => `/purchase-orders/vendor/${vendorId}`,
@@ -136,4 +160,6 @@ export const {
   useGetPurchaseOrdersByVendorQuery,
   useUpdatePurchaseOrderStatusMutation, // ✅ add this line
   useGetVendorsQuery,
+  useGetPurchaseOrderReceiptsQuery,
+  useReceivePurchaseOrderMutation,
 } = poApi;

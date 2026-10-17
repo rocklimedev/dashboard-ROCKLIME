@@ -32,6 +32,15 @@ module.exports = (sequelize, DataTypes) => {
         onDelete: "SET NULL",
       },
 
+      contactPerson: { type: DataTypes.STRING(120), allowNull: true },
+      phone: { type: DataTypes.STRING(30), allowNull: true },
+      email: { type: DataTypes.STRING(160), allowNull: true },
+      gstin: { type: DataTypes.STRING(15), allowNull: true },
+      address: { type: DataTypes.TEXT, allowNull: true },
+      city: { type: DataTypes.STRING(80), allowNull: true },
+      state: { type: DataTypes.STRING(60), allowNull: true },
+      pincode: { type: DataTypes.STRING(10), allowNull: true },
+      paymentTerms: { type: DataTypes.STRING(255), allowNull: true },
       brandSlug: {
         type: DataTypes.STRING,
         allowNull: true,

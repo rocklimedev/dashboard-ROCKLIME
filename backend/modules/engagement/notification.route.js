@@ -8,7 +8,22 @@ const {
   deleteOldNotifications,
   clearAllNotifications, // <-- NEW IMPORT
 } = require("./notification.controller");
-const { auth } = require("../../middleware/auth");
+const { auth, isAdmin } = require("../../middleware/auth");
+const Notification = require("./models/notification.model");
+
+// Users may only read, mark or delete their own notifications.
+const ownNotification = async (req, res, next) => {
+  try {
+    const n = await Notification.findById(req.params.id).select("userId");
+    if (!n) return res.status(404).json({ message: "Notification not found" });
+    if (String(n.userId) !== String(req.user.userId) && !isAdmin(req.user)) {
+      return res.status(403).json({ message: "Not your notification" });
+    }
+    next();
+  } catch (e) {
+    return res.status(400).json({ message: "Invalid notification id" });
+  }
+};
 
 // GET all notifications
 router.get("/", auth, async (req, res) => {
@@ -22,7 +37,7 @@ router.get("/", auth, async (req, res) => {
 });
 
 // MARK AS READ
-router.put("/:id/read", auth, async (req, res) => {
+router.put("/:id/read", auth, ownNotification, async (req, res) => {
   try {
     const notification = await markAsRead(req.params.id);
     if (!notification) {
@@ -45,7 +60,7 @@ router.put("/:id/read", auth, async (req, res) => {
 router.post("/", auth, async (req, res) => {
   try {
     const { userId, title, message } = req.body;
-    if (!req.user.isAdmin && userId !== req.user.userId) {
+    if (!isAdmin(req.user) && userId !== req.user.userId) {
       return res.status(403).json({ message: "Unauthorized" });
     }
     const notification = await sendNotification({ userId, title, message });
@@ -58,7 +73,7 @@ router.post("/", auth, async (req, res) => {
 
 // DELETE OLD NOTIFICATIONS (admin only)
 router.delete("/old", auth, async (req, res) => {
-  if (!req.user.isAdmin) {
+  if (!isAdmin(req.user)) {
     return res.status(403).json({ message: "Unauthorized" });
   }
   try {
@@ -96,7 +111,7 @@ router.delete("/clear", auth, async (req, res) => {
     res.status(500).json({ message: error.message || "Server error" });
   }
 });
-router.delete("/:id", auth, async (req, res) => {
+router.delete("/:id", auth, ownNotification, async (req, res) => {
   try {
     const result = await Notification.findByIdAndDelete(req.params.id);
     if (!result) return res.status(404).json({ message: "Not found" });

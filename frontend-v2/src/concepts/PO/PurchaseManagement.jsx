@@ -2,7 +2,8 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { message, Tabs, Select, Pagination, Button, Modal, Spin } from "antd";
+import { message, Tabs, Select, Pagination, Button, Modal, Spin, DatePicker } from "antd";
+import dayjs from "dayjs";
 import { SearchOutlined } from "@ant-design/icons";
 
 import DeleteModal from "../../components/Common/DeleteModal";
@@ -57,6 +58,8 @@ const PurchaseManagement = () => {
   const [sortBy, setSortBy] = useState("Recently Added");
   const [filters, setFilters] = useState({
     status: "",
+    vendorId: "",
+    range: null,
     page: 1,
     limit: 10,
   });
@@ -83,6 +86,9 @@ const PurchaseManagement = () => {
       status: filters.status,
       search: searchTerm,
       sort: sortBy,
+      vendorId: filters.vendorId,
+      from: filters.range?.[0]?.format("YYYY-MM-DD") || "",
+      to: filters.range?.[1]?.format("YYYY-MM-DD") || "",
     },
     { skip: activeTab !== "po" },
   );
@@ -131,7 +137,7 @@ const PurchaseManagement = () => {
   const [editingFGSStatusId, setEditingFGSStatusId] = useState(null);
 
   // ─── Constants ──────────────────────────────────────────────
-  const poStatuses = ["pending", "confirmed", "delivered", "cancelled"];
+  const poStatuses = ["pending", "in_negotiation", "confirmed", "partial_delivered", "delivered", "cancelled"];
   const fgsStatuses = [
     "draft",
     "negotiating",
@@ -195,10 +201,10 @@ const PurchaseManagement = () => {
   const handleClearFilters = () => {
     setSearchTerm("");
     setSortBy("Recently Added");
-    setFilters({ status: "", page: 1, limit: 10 });
+    setFilters({ status: "", vendorId: "", range: null, page: 1, limit: 10 });
   };
 
-  const handleOpenAddPO = () => navigate("/po/add");
+  const handleOpenAddPO = () => navigate("/cart/purchase-order");
   const handleEditPO = (po) => navigate(`/po/${po.id}/edit`, { state: { po } });
   const handleDeletePOClick = (poId) => {
     setPOToDelete(poId);
@@ -457,11 +463,35 @@ const PurchaseManagement = () => {
                 >
                   {(activeTab === "po" ? poStatuses : fgsStatuses).map((s) => (
                     <Option key={s} value={s}>
-                      {s.charAt(0).toUpperCase() + s.slice(1)}
+                      {(s.charAt(0).toUpperCase() + s.slice(1)).replace(/_/g, " ")}
                     </Option>
                   ))}
                 </Select>
 
+                {activeTab === "po" && (
+                  <>
+                    <Select
+                      placeholder="All vendors"
+                      allowClear
+                      showSearch
+                      optionFilterProp="label"
+                      style={{ width: 200 }}
+                      value={filters.vendorId || undefined}
+                      onChange={(v) => setFilters((p) => ({ ...p, vendorId: v || "", page: 1 }))}
+                      options={(vendorsData || []).map((v) => ({ value: v.id, label: v.vendorName }))}
+                    />
+                    <DatePicker.RangePicker
+                      format="D MMM YY"
+                      value={filters.range}
+                      onChange={(v) => setFilters((p) => ({ ...p, range: v, page: 1 }))}
+                      presets={[
+                        { label: "This month", value: [dayjs().startOf("month"), dayjs()] },
+                        { label: "Last 30 days", value: [dayjs().subtract(30, "day"), dayjs()] },
+                        { label: "This year", value: [dayjs().startOf("year"), dayjs()] },
+                      ]}
+                    />
+                  </>
+                )}
                 <Select
                   value={sortBy}
                   onChange={(v) => {

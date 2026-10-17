@@ -32,7 +32,7 @@ const AddAddress = ({
   const [updateAddress, { isLoading: isUpdating }] = useUpdateAddressMutation();
 
   const { data: customersData, isLoading: isCustomersLoading } =
-    useGetCustomersQuery();
+    useGetCustomersQuery({ limit: 10000 });
   const { data: usersData, isLoading: isUsersLoading } = useGetAllUsersQuery();
 
   const { data: addressesData, isLoading: isAddressesLoading } =

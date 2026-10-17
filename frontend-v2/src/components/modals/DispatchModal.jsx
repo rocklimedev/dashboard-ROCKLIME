@@ -8,7 +8,6 @@ import {
   Upload,
   Button,
   message,
-  Alert,
 } from "antd";
 import { UploadOutlined, FilePdfOutlined } from "@ant-design/icons";
 import {
@@ -41,6 +40,14 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
   const [carrier, setCarrier] = useState("");
   const [trackingNumber, setTrackingNumber] = useState("");
   const [remarks, setRemarks] = useState("");
+  // Vehicle / driver / LR / e-way bill for this dispatch
+  const [transport, setTransport] = useState({
+    vehicleNo: "",
+    driverName: "",
+    driverPhone: "",
+    ewayBillNo: "",
+  });
+  const setT = (k) => (e) => setTransport((t) => ({ ...t, [k]: e.target.value }));
 
   const [invoiceFile, setInvoiceFile] = useState(null);
   const [gatePassFile, setGatePassFile] = useState(null);
@@ -58,8 +65,11 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
   // THIS dispatch batch.
   // ------------------------------------------------------------
 
-  const invoiceReady = Boolean(invoiceFile);
-  const gatePassReady = Boolean(gatePassFile);
+  // "make" = the ERP makes the document after the dispatch is saved; "upload" = attach a file
+  const [invoiceMode, setInvoiceMode] = useState("make");
+  const [gatePassMode, setGatePassMode] = useState("make");
+  const invoiceReady = invoiceMode === "make" || Boolean(invoiceFile);
+  const gatePassReady = gatePassMode === "make" || Boolean(gatePassFile);
   const documentsReady = invoiceReady && gatePassReady;
 
   // ------------------------------------------------------------
@@ -119,9 +129,12 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
     setCarrier("");
     setTrackingNumber("");
     setRemarks("");
+    setTransport({ vehicleNo: "", driverName: "", driverPhone: "", ewayBillNo: "" });
 
     setInvoiceFile(null);
     setGatePassFile(null);
+    setInvoiceMode("make");
+    setGatePassMode("make");
   }, [visible, order?.id]);
 
   // ------------------------------------------------------------
@@ -209,14 +222,12 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
   const handleSubmit = async () => {
     // Document validation — both are mandatory for THIS dispatch
     if (!invoiceReady) {
-      message.error("This dispatch needs its own invoice. Please upload one.");
+      message.error("Upload this dispatch's invoice, or let the ERP make the GST invoice.");
       return;
     }
 
     if (!gatePassReady) {
-      message.error(
-        "This dispatch needs its own gate-pass. Please upload one.",
-      );
+      message.error("Upload this dispatch's gate pass, or let the ERP make it.");
       return;
     }
 
@@ -251,9 +262,23 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
       formData.append("remarks", remarks.trim());
     }
 
+    // Transport: the carrier doubles as the transporter, tracking as the LR no.
+    if (carrier.trim()) formData.append("transporter", carrier.trim());
+    if (trackingNumber.trim()) formData.append("lrNumber", trackingNumber.trim());
+    for (const [k, v] of Object.entries(transport)) {
+      if (String(v).trim()) formData.append(k, String(v).trim());
+    }
+    const eway = transport.ewayBillNo.replace(/\s/g, "");
+    if (eway && !/^\d{12}$/.test(eway)) {
+      message.error("E-way bill number must be 12 digits");
+      return;
+    }
+
     // This dispatch's own documents — always sent
-    formData.append("invoice", invoiceFile);
-    formData.append("gatePass", gatePassFile);
+    if (invoiceMode === "make") formData.append("makeInvoice", "1");
+    else formData.append("invoice", invoiceFile);
+    if (gatePassMode === "make") formData.append("makeGatePass", "1");
+    else formData.append("gatePass", gatePassFile);
 
     try {
       const result = await createDispatch({
@@ -262,10 +287,10 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
       }).unwrap();
 
       message.success(
-        result?.orderStatus === "DISPATCHED"
-          ? "Order fully dispatched"
-          : "Partial dispatch recorded",
+        (result?.orderStatus === "DISPATCHED" ? "Order fully dispatched" : "Partial dispatch recorded") +
+          (result?.invoice ? ` · invoice ${result.invoice.invoiceNo}` : ""),
       );
+      if (result?.note) message.info(result.note, 6);
 
       onSuccess?.(result);
       onClose();
@@ -335,6 +360,7 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
       onCancel={onClose}
       onOk={handleSubmit}
       okText={dispatchType === "full" ? "Dispatch All" : "Dispatch Selected"}
+      footer={hasAnythingRemaining ? undefined : null}
       okButtonProps={{
         loading: isSubmitting,
         disabled:
@@ -345,7 +371,9 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
     >
       {!hasAnythingRemaining && !loadingDispatches ? (
         <div className="text-muted py-3">
-          Everything on this order has already been dispatched.
+          {lines.length === 0
+            ? "This order has no items to dispatch."
+            : "Everything on this order has already been dispatched."}
         </div>
       ) : (
         <>
@@ -382,26 +410,35 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
           {/* -------------------------------------------------- */}
 
           <div style={{ marginBottom: 16 }}>
-            <Alert
-              type="warning"
-              showIcon
-              message="Invoice required for this dispatch"
-              description="Every dispatch batch needs its own invoice, even if earlier dispatches on this order already had one."
-              style={{ marginBottom: 12 }}
+            <div className="fw-semibold mb-2">Invoice for this dispatch</div>
+            <Radio.Group
+              value={invoiceMode}
+              onChange={(e) => setInvoiceMode(e.target.value)}
+              options={[
+                { value: "make", label: "Make the GST invoice in the ERP" },
+                { value: "upload", label: "Upload an invoice made elsewhere" },
+              ]}
             />
-
-            <Upload
-              beforeUpload={handleInvoiceBeforeUpload}
-              onRemove={handleInvoiceRemove}
-              maxCount={1}
-              accept=".pdf,.png,.jpg,.jpeg"
-            >
-              <Button icon={<FilePdfOutlined />}>Upload Invoice</Button>
-            </Upload>
-
-            {invoiceFile && (
-              <div className="text-muted small mt-2">
-                Selected invoice: <strong>{invoiceFile.name}</strong>
+            {invoiceMode === "make" ? (
+              <div className="text-muted small mt-1">
+                Numbered automatically (CM/26-27/…), at the order's prices, with HSN and CGST/SGST or IGST. If these
+                pieces are already on an invoice, the dispatch is linked to it.
+              </div>
+            ) : (
+              <div className="mt-2">
+                <Upload
+                  beforeUpload={handleInvoiceBeforeUpload}
+                  onRemove={handleInvoiceRemove}
+                  maxCount={1}
+                  accept=".pdf,.png,.jpg,.jpeg"
+                >
+                  <Button icon={<FilePdfOutlined />}>Upload invoice</Button>
+                </Upload>
+                {invoiceFile && (
+                  <div className="text-muted small mt-2">
+                    Selected invoice: <strong>{invoiceFile.name}</strong>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -410,20 +447,42 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
           {/* Carrier / Tracking */}
           {/* -------------------------------------------------- */}
 
-          <div className="row g-3 mb-3">
-            <div className="col-md-6">
+          <div className="fw-semibold mb-2">Transport (optional)</div>
+          <div className="row g-2 mb-3">
+            <div className="col-md-4">
               <Input
-                placeholder="Carrier (optional)"
+                placeholder="Vehicle no. e.g. DL1LAB1234"
+                value={transport.vehicleNo}
+                onChange={setT("vehicleNo")}
+              />
+            </div>
+            <div className="col-md-4">
+              <Input placeholder="Driver name" value={transport.driverName} onChange={setT("driverName")} />
+            </div>
+            <div className="col-md-4">
+              <Input placeholder="Driver phone" value={transport.driverPhone} onChange={setT("driverPhone")} inputMode="tel" />
+            </div>
+            <div className="col-md-4">
+              <Input
+                placeholder="Transporter / carrier"
                 value={carrier}
                 onChange={(e) => setCarrier(e.target.value)}
               />
             </div>
-
-            <div className="col-md-6">
+            <div className="col-md-4">
               <Input
-                placeholder="Tracking Number (optional)"
+                placeholder="LR / tracking no."
                 value={trackingNumber}
                 onChange={(e) => setTrackingNumber(e.target.value)}
+              />
+            </div>
+            <div className="col-md-4">
+              <Input
+                placeholder="E-way bill no. (12 digits)"
+                value={transport.ewayBillNo}
+                onChange={setT("ewayBillNo")}
+                inputMode="numeric"
+                maxLength={14}
               />
             </div>
           </div>
@@ -445,26 +504,30 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
           {/* -------------------------------------------------- */}
 
           <div style={{ marginBottom: 16 }}>
-            <Alert
-              type="warning"
-              showIcon
-              message="Gate-pass required for this dispatch"
-              description="This shipment batch needs its own gate-pass — it is not carried over from a previous dispatch."
-              style={{ marginBottom: 12 }}
+            <div className="fw-semibold mb-2">Gate pass</div>
+            <Radio.Group
+              value={gatePassMode}
+              onChange={(e) => setGatePassMode(e.target.value)}
+              options={[
+                { value: "make", label: "Make the gate pass in the ERP" },
+                { value: "upload", label: "Upload a signed gate pass" },
+              ]}
             />
-
-            <Upload
-              beforeUpload={handleGatePassBeforeUpload}
-              onRemove={handleGatePassRemove}
-              maxCount={1}
-              accept=".pdf,.png,.jpg,.jpeg"
-            >
-              <Button icon={<UploadOutlined />}>Upload Gate-Pass</Button>
-            </Upload>
-
-            {gatePassFile && (
-              <div className="text-muted small mt-2">
-                Selected gate pass: <strong>{gatePassFile.name}</strong>
+            {gatePassMode === "upload" && (
+              <div className="mt-2">
+                <Upload
+                  beforeUpload={handleGatePassBeforeUpload}
+                  onRemove={handleGatePassRemove}
+                  maxCount={1}
+                  accept=".pdf,.png,.jpg,.jpeg"
+                >
+                  <Button icon={<UploadOutlined />}>Upload gate pass</Button>
+                </Upload>
+                {gatePassFile && (
+                  <div className="text-muted small mt-2">
+                    Selected gate pass: <strong>{gatePassFile.name}</strong>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -483,8 +546,7 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
 
           {!documentsReady && (
             <div className="text-danger small mt-2">
-              Both an invoice and a gate-pass must be uploaded for this dispatch
-              before it can be submitted.
+              Attach the invoice and gate pass files, or let the ERP make them.
             </div>
           )}
         </>

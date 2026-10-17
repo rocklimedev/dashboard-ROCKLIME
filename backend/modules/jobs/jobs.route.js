@@ -3,9 +3,11 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer"); // if not already set up globally
 const { auth } = require("../../middleware/auth");
+const { guardModule } = require("../../middleware/permission");
 const jobController = require("./job.controller");
 
 router.use(auth);
+router.use(guardModule("jobs"));
 // Optional: Configure multer for file uploads (if not global)
 // You can also handle this in app.js or middleware
 const upload = multer({

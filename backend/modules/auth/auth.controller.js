@@ -2,6 +2,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { Op } = require("sequelize");
 const { User, Role, RolePermission, Permission } = require("../../models");
+const { generateToken } = require("../../middleware/auth");
 const VerificationToken = require("./models/verification-token.model");
 const emails = require("../../middleware/sendMail");
 const ROLES = require("../../config/constant");
@@ -11,7 +12,9 @@ require("dotenv").config();
 
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { password } = req.body;
+    // Local fix: ignore spaces around the email (pasted/autofilled values)
+    const email = String(req.body.email || "").trim();
     const user = await User.findOne({ where: { email: email.toLowerCase() } });
     if (!user) {
       return res.status(400).json({ message: "Invalid credentials" });
@@ -22,19 +25,16 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    // Allow login regardless of isEmailVerified or status
-    const now = Math.floor(Date.now() / 1000);
-    const accessToken = jwt.sign(
-      {
-        userId: user.userId,
-        email: user.email,
-        roles: user.roles,
-        roleId: user.roleId,
-        iat: now,
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" },
-    );
+    if (user.status !== "active") {
+      return res.status(403).json({
+        message:
+          user.status === "inactive"
+            ? "Your account is waiting for approval by an administrator."
+            : "Your account has been disabled. Contact an administrator.",
+      });
+    }
+
+    const accessToken = generateToken(user);
 
     const refreshToken = jwt.sign(
       {
@@ -501,22 +501,29 @@ exports.logout = async (req, res) => {
 
 exports.refreshToken = async (req, res) => {
   try {
-    const { refreshToken } = req.body;
-    if (!refreshToken || !refreshTokens.has(refreshToken)) {
-      return res.status(403).json({ message: "Invalid refresh token" });
+    const cookieToken = (req.headers.cookie || "")
+      .split(";")
+      .map((c) => c.trim())
+      .find((c) => c.startsWith("refreshToken="))
+      ?.slice("refreshToken=".length);
+    const refreshToken = req.body?.refreshToken || cookieToken;
+    if (!refreshToken || !process.env.REFRESH_SECRET) {
+      return res.status(401).json({ message: "Invalid refresh token" });
     }
 
-    jwt.verify(refreshToken, process.env.REFRESH_SECRET, (err, user) => {
-      if (err) return res.status(403).json({ message: "Invalid token" });
+    let payload;
+    try {
+      payload = jwt.verify(refreshToken, process.env.REFRESH_SECRET);
+    } catch {
+      return res.status(401).json({ message: "Invalid refresh token" });
+    }
 
-      const newAccessToken = jwt.sign(
-        { userId: user.userId, roles: user.roles, roleId: user.roleId },
-        process.env.JWT_SECRET,
-        { expiresIn: "1h" },
-      );
+    const user = await User.findByPk(payload.userId);
+    if (!user || user.status !== "active") {
+      return res.status(401).json({ message: "Account is not active" });
+    }
 
-      res.status(200).json({ accessToken: newAccessToken });
-    });
+    return res.status(200).json({ accessToken: generateToken(user) });
   } catch (err) {
     res.status(500).json({ message: "Server Error", error: err.message });
   }
@@ -817,6 +824,7 @@ exports.deactivateAccount = async (req, res, next) => {
     }
 
     // Soft deactivate
+    const oldStatus = user.status;
     user.status = "inactive";
     await user.save();
     // Activity Log

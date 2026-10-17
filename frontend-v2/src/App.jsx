@@ -3,14 +3,15 @@ import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Header from "./components/Common/Header";
 import Router from "./router/Router";
-import Footer from "./components/Common/Footer";
 import { message } from "antd";
 import { useGetProfileQuery } from "./api/userApi";
 import Loader from "./components/Common/Loader";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
-import SidebarNew from "./components/Common/SidebarNew2";
+import AppSidebar from "./components/Common/AppSidebar";
 import { useAuth } from "./context/AuthContext";
 import PwaManager from "./components/Common/PwaManager";
+import { HOME_PATHS } from "./apps/registry";
+import "./apps/shell.css";
 
 function App() {
   const { auth, setAuth, authChecked, logout } = useAuth();
@@ -23,17 +24,24 @@ function App() {
   const MAINTENANCE_MODE = false;
 
   const isMaintenancePage = location.pathname === "/under-maintenance";
-  const isAuthPage = [
+  // Pages that work without a login (paths with a token use a prefix match).
+  const AUTH_PAGES = [
     "/login",
     "/signup",
     "/404",
-    "/reset-password/:token",
     "/forgot-password",
     "/under-maintenance",
     "/coming-soon",
     "/no-access",
     "/verify-account",
-  ].includes(location.pathname);
+    "/account-verify",
+  ];
+  const AUTH_PREFIXES = ["/reset-password/", "/verify-account/"];
+  const isAuthPage =
+    AUTH_PAGES.includes(location.pathname) ||
+    AUTH_PREFIXES.some((p) => location.pathname.startsWith(p));
+  // The apps home (first screen after login) has no app sidebar.
+  const isHome = HOME_PATHS.includes(location.pathname);
 
   // Toggle sidebar
   const toggleSidebar = (open) => setSidebarOpen(open);
@@ -200,24 +208,24 @@ function App() {
     <>
       <Loader loading={isProfileLoading} />
       <PwaManager />
-      <div className={`main-wrapper ${isSidebarOpen ? "slide-nav" : ""}`}>
+      <div className={`main-wrapper cm-shell ${isHome ? "cm-shell--home" : ""} ${isSidebarOpen && !isHome ? "slide-nav" : ""}`}>
         {!isAuthPage && (
           <Header
+            home={isHome}
             isSidebarOpen={isSidebarOpen}
             toggleSidebar={() => toggleSidebar(!isSidebarOpen)}
           />
         )}
-        {!isAuthPage && (
-          <SidebarNew
+        {!isAuthPage && !isHome && (
+          <AppSidebar
             isSidebarOpen={isSidebarOpen}
             toggleSidebar={() => toggleSidebar(!isSidebarOpen)}
             layoutMode={layoutMode}
           />
         )}
         <Router />
-        <Footer />
 
-        {isSidebarOpen && (
+        {isSidebarOpen && !isHome && (
           <div
             className="sidebar-overlay active"
             onClick={() => toggleSidebar(false)}

@@ -21,9 +21,7 @@ import {
   useGetProductCountQuery,
   useGetLowStockProductsQuery,
 } from "../../api/productApi";
-import { useGetAllQuotationsQuery } from "../../api/quotationApi";
-import { useGetAllOrdersQuery } from "../../api/orderApi";
-import { useGetCustomersQuery } from "../../api/customerApi";
+import { useGetDashboardSummaryQuery } from "../../api/dashboardApi";
 import { useAuth } from "../../context/AuthContext";
 import { FaShoppingBag } from "react-icons/fa";
 import { HiDocumentText } from "react-icons/hi";
@@ -112,192 +110,58 @@ const NewDashboard = () => {
     .toString()
     .toUpperCase();
 
-  const { data: countData, isLoading: productCountLoading } =
-    useGetProductCountQuery();
+  // Every number comes from one server-side summary for the chosen range.
+  const { fromIso, toIso } = useMemo(() => {
+    const to = new Date();
+    const from = new Date();
+    from.setDate(from.getDate() - (range - 1));
+    from.setHours(0, 0, 0, 0);
+    return { fromIso: from.toISOString(), toIso: to.toISOString() };
+  }, [range]);
 
-  const { data: lowStockData, isLoading: lowStockLoading } =
-    useGetLowStockProductsQuery({
-      threshold: 20,
-      limit: 20,
-    });
+  const { data: summary, isLoading: loading } = useGetDashboardSummaryQuery(
+    { from: fromIso, to: toIso, days: range, latest: 7 },
+    { pollingInterval: 60000 },
+  );
 
-  const { data: ordersResponse, isLoading: ordersLoading } =
-    useGetAllOrdersQuery({ limit: 500, page: 1 }, { pollingInterval: 30000 });
+  const getCustomerName = () => "Unknown";
 
-  const { data: quotationsResponse, isLoading: quotationsLoading } =
-    useGetAllQuotationsQuery({
-      limit: 500,
-      page: 1,
-    });
+  const reportSummary = {
+    totalOrders: summary?.orders?.count ?? 0,
+    totalQuotations: summary?.quotations?.count ?? 0,
+    quotationValue: summary?.quotations?.amount ?? 0,
+    conversionRate: summary?.conversionRate ?? 0,
+    lowStockCount: summary?.lowStock?.count ?? 0,
+    criticalStock: summary?.lowStock?.count ?? 0,
+  };
 
-  const { data: customersResponse, isLoading: customersLoading } =
-    useGetCustomersQuery({ limit: 1000 });
+  const timelineData = (summary?.daily || []).map((d) => ({
+    key: d.date,
+    date: formatDate(d.date),
+    orders: d.orders,
+    quotations: d.quotations,
+  }));
 
-  const loading =
-    productCountLoading ||
-    lowStockLoading ||
-    ordersLoading ||
-    quotationsLoading ||
-    customersLoading;
+  const statusData = (summary?.statusBreakdown || []).map((r) => ({
+    status: normaliseStatus(r.status || "UNKNOWN"),
+    count: r.count,
+  }));
 
-  const productCount = countData?.totalProducts || 0;
-  const lowStockProducts = lowStockData?.products || [];
-  const orders = ordersResponse?.data || [];
-  const quotations = quotationsResponse?.data || [];
-  const customers = customersResponse?.data || [];
+  const lowStockChartData = (summary?.lowStockItems || []).map((p) => ({
+    name: p.name,
+    quantity: Number(p.quantity || 0),
+  }));
 
-  const customerMap = useMemo(() => {
-    return customers.reduce((map, customer) => {
-      map[customer.customerId] = customer.name;
-      return map;
-    }, {});
-  }, [customers]);
+  const customerAnalytics = (summary?.topCustomers || []).map((c) => ({
+    customerId: c.customerId,
+    name: c.name,
+    orders: c.orders,
+    quotations: c.quotations,
+    quoteValue: c.quoteValue,
+  }));
 
-  const getCustomerName = (customerId) => customerMap[customerId] || "Unknown";
-
-  const filteredData = useMemo(() => {
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - range);
-    startDate.setHours(0, 0, 0, 0);
-
-    const filteredOrders = orders.filter(
-      (order) => new Date(order.createdAt) >= startDate,
-    );
-
-    const filteredQuotations = quotations.filter(
-      (quotation) => new Date(quotation.createdAt) >= startDate,
-    );
-
-    return { filteredOrders, filteredQuotations };
-  }, [orders, quotations, range]);
-
-  const reportSummary = useMemo(() => {
-    const quotationValue = filteredData.filteredQuotations.reduce(
-      (sum, quotation) => sum + getAmount(quotation),
-      0,
-    );
-
-    const conversionRate = quotations.length
-      ? Math.round((orders.length / quotations.length) * 100)
-      : 0;
-
-    const criticalStock = lowStockProducts.filter(
-      (product) => Number(product.quantity || 0) <= 5,
-    ).length;
-
-    return {
-      totalOrders: ordersResponse?.pagination?.total || orders.length,
-      totalQuotations:
-        quotationsResponse?.pagination?.total || quotations.length,
-      productCount,
-      lowStockCount: lowStockProducts.length,
-      quotationValue,
-      conversionRate,
-      criticalStock,
-    };
-  }, [
-    filteredData.filteredQuotations,
-    lowStockProducts,
-    orders,
-    ordersResponse,
-    productCount,
-    quotations,
-    quotationsResponse,
-  ]);
-
-  const timelineData = useMemo(() => {
-    const buckets = buildDateBuckets(range);
-    const bucketMap = buckets.reduce((map, bucket) => {
-      map[bucket.key] = bucket;
-      return map;
-    }, {});
-
-    filteredData.filteredOrders.forEach((order) => {
-      const key = getDateKey(order.createdAt);
-      if (bucketMap[key]) bucketMap[key].orders += 1;
-    });
-
-    filteredData.filteredQuotations.forEach((quotation) => {
-      const key = getDateKey(quotation.createdAt);
-      if (bucketMap[key]) {
-        bucketMap[key].quotations += 1;
-        bucketMap[key].quoteValue += getAmount(quotation);
-      }
-    });
-
-    return buckets;
-  }, [filteredData, range]);
-
-  const statusData = useMemo(() => {
-    const statusMap = filteredData.filteredOrders.reduce((map, order) => {
-      const key = normaliseStatus(order.status || "UNKNOWN");
-      map[key] = (map[key] || 0) + 1;
-      return map;
-    }, {});
-
-    return Object.entries(statusMap).map(([status, count]) => ({
-      status,
-      count,
-    }));
-  }, [filteredData.filteredOrders]);
-
-  const lowStockChartData = useMemo(() => {
-    return [...lowStockProducts]
-      .sort((a, b) => Number(a.quantity || 0) - Number(b.quantity || 0))
-      .slice(0, 8)
-      .map((product) => ({
-        name: product.name,
-        quantity: Number(product.quantity || 0),
-      }));
-  }, [lowStockProducts]);
-
-  const customerAnalytics = useMemo(() => {
-    const summary = {};
-
-    const ensureCustomer = (customerId) => {
-      if (!summary[customerId]) {
-        summary[customerId] = {
-          customerId,
-          name: getCustomerName(customerId),
-          orders: 0,
-          quotations: 0,
-          quoteValue: 0,
-        };
-      }
-      return summary[customerId];
-    };
-
-    filteredData.filteredOrders.forEach((order) => {
-      const customer = ensureCustomer(
-        order.customerId || order.customer?.customerId,
-      );
-      customer.orders += 1;
-    });
-
-    filteredData.filteredQuotations.forEach((quotation) => {
-      const customer = ensureCustomer(
-        quotation.customerId || quotation.customer?.customerId,
-      );
-      customer.quotations += 1;
-      customer.quoteValue += getAmount(quotation);
-    });
-
-    return Object.values(summary)
-      .sort((a, b) => b.quoteValue + b.orders - (a.quoteValue + a.orders))
-      .slice(0, 7);
-  }, [filteredData, getCustomerName]);
-
-  const latestOrders = useMemo(() => {
-    return [...orders]
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-      .slice(0, 7);
-  }, [orders]);
-
-  const latestQuotations = useMemo(() => {
-    return [...quotations]
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-      .slice(0, 7);
-  }, [quotations]);
+  const latestOrders = summary?.latestOrders || [];
+  const latestQuotations = summary?.latestQuotations || [];
 
   return (
     <div className="page-wrapper">
@@ -313,14 +177,14 @@ const NewDashboard = () => {
                 <ReportMetricCard
                   title="Total Orders"
                   value={reportSummary.totalOrders}
-                  helper={`${filteredData.filteredOrders.length} in selected range`}
+                  helper={`${reportSummary.totalOrders} in selected range`}
                   icon={<FaShoppingBag />}
                 />
 
                 <ReportMetricCard
                   title="Total Quotations"
                   value={reportSummary.totalQuotations}
-                  helper={`${filteredData.filteredQuotations.length} in selected range`}
+                  helper={`${reportSummary.totalQuotations} in selected range`}
                   icon={<HiDocumentText />}
                 />
 

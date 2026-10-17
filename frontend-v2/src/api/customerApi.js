@@ -19,6 +19,7 @@ export const customerApi = baseApi.injectEndpoints({
         if (filters.search?.trim()) {
           params.append("search", filters.search.trim());
         }
+        for (const k of ["type", "owes", "sort"]) if (filters[k]) params.append(k, filters[k]);
         const queryString = params.toString();
         return queryString ? `/customers/?${queryString}` : "/customers/";
       },
@@ -71,10 +72,21 @@ export const customerApi = baseApi.injectEndpoints({
         { type: "Customers", id: "LIST" },
       ],
     }),
+    // Customer 360: figures, credit, referrals, timeline
+    getCustomerOverview: builder.query({
+      query: (id) => `/customers/${id}/overview`,
+      providesTags: (r, e, id) => [{ type: "Customers", id }, "Orders", "Quotations", "Payments", "Invoices"],
+    }),
+    getCustomerCredit: builder.query({
+      query: ({ id, amount = 0 }) => `/customers/${id}/credit?amount=${amount}`,
+      providesTags: ["Payments", "Orders"],
+    }),
   }),
 });
 
 export const {
+  useGetCustomerOverviewQuery,
+  useGetCustomerCreditQuery,
   useCreateCustomerMutation,
   useGetCustomersQuery,
   useGetCustomerByIdQuery,

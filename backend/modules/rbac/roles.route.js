@@ -14,82 +14,24 @@ const {
 } = require("./role.controller");
 
 const { auth } = require("../../middleware/auth"); // Authentication middleware
-const checkPermission = require("../../middleware/permission"); // Permission middleware
+const {
+  guardModule,
+  clearCacheOnWrite,
+} = require("../../middleware/permission");
 
 router.use(auth);
-// ✅ Create a new role (Only Admins)
-router.post(
-  "/",
-  auth,
-  // checkPermission("write", "create_role", "roles", "/roles"),
-  createRole,
-);
+router.use(guardModule("roles"), clearCacheOnWrite);
 
-// ✅ Get all roles (Only Admins & Managers)
-router.get(
-  "/",
-  auth,
-  //  checkPermission("view", "get_all_roles", "roles", "/roles"),
-  getAllRoles,
-);
+// Fixed paths before "/:roleId"
+router.get("/", getAllRoles);
+router.post("/", createRole);
+router.get("/recent", getRecentRoleToGive);
+router.post("/assign-role", assignRole);
+router.get("/:roleId", getRoleById);
+router.get("/:roleId/permissions", getRolePermissions);
+router.put("/:roleId", updateRolePermissions);
+router.delete("/:roleId", deleteRole);
+router.post("/:roleId/permissions", assignPermissionsToRole);
+router.delete("/:roleId/permissions", removePermissionFromRole);
 
-// ✅ edit role permissions (Only Admins)
-router.put(
-  "/:roleId",
-  auth,
-  // checkPermission("edit", "update_role_permissions", "roles", "/roles/:roleId"),
-  updateRolePermissions,
-);
-
-// ✅ Delete a role (Only Admins)
-router.delete(
-  "/:roleId",
-  auth,
-  // checkPermission("delete", "delete_role", "roles", "/roles/:roleId"),
-  deleteRole,
-);
-
-// ✅ Assign permissions to a role (Only Admins)
-router.post(
-  "/:roleId/permissions",
-  auth,
-  // checkPermission(
-  //   "edit",
-  //   "assign_permissions_to_role",
-  //   "roles",
-  //   "/roles/:roleId/permissions"
-  // ),
-  assignPermissionsToRole,
-);
-router.delete(
-  "/:roleId/permissions",
-  auth,
-  // checkPermission(
-  //   "delete",
-  //   "remove_permission_from_role",
-  //   "roles",
-  //   "/roles/:roleId/permissions"
-  // ),
-  removePermissionFromRole,
-);
-router.post(
-  "/assign-role",
-  // checkPermission("write", "assign_role", "roles", "/roles/assign-role"),
-  assignRole,
-);
-router.get(
-  "/:roleId",
-  // checkPermission("view", "get_role_by_id", "roles", "/roles/:roleId"),
-  getRoleById,
-);
-router.get(
-  "/:roleId",
-  //checkPermission("view", "get_role_permissions", "roles", "/roles/:roleId"),
-  getRolePermissions,
-);
-router.get(
-  "/recent",
-  // checkPermission("view", "get_recent_role_to_give", "roles", "/roles/recent"),
-  getRecentRoleToGive,
-);
 module.exports = router;

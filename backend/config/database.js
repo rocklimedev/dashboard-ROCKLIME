@@ -31,7 +31,7 @@ function createSequelize() {
       },
 
       pool: {
-        max: 3, // Slightly up from 2 → allows brief bursts; still very safe for shared hosting
+        max: Number(process.env.DB_POOL_MAX) || 10, // size to the host's connection limit
         min: 0,
         acquire: 15000, // Fail fast if can't get conn in 15s
         idle: 10000, // Close idle after 10s (aggressive to free up shared resources)
@@ -64,7 +64,7 @@ function createSequelize() {
         },
 
         pool: {
-          max: 5,
+          max: Number(process.env.DB_POOL_MAX) || 10,
           min: 1,
           acquire: 20000,
           idle: 30000,
@@ -126,6 +126,8 @@ async function gracefulShutdown(signal) {
   }
 }
 
+// After an uncaught exception the process state is unknown, so it exits and
+// the process manager (PM2, see ecosystem.config.js) starts it again.
 process.on("uncaughtException", async (err) => {
   console.error("Uncaught Exception:", err);
   try {
@@ -135,13 +137,10 @@ process.on("uncaughtException", async (err) => {
   }
 });
 
-process.on("unhandledRejection", async (err) => {
+// A rejected promise nobody awaited is a bug to log, not a reason to take the
+// whole server down for every user.
+process.on("unhandledRejection", (err) => {
   console.error("Unhandled Rejection:", err);
-  try {
-    if (sequelize) await sequelize.close();
-  } finally {
-    process.exit(1);
-  }
 });
 
 process.on("SIGTERM", gracefulShutdown);

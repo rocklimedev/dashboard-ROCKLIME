@@ -17,5 +17,19 @@ export default defineConfig([
       globals: globals.browser,
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
+    rules: {
+      // React 17+ JSX needs no React import; "_" marks intentionally unused values
+      'no-unused-vars': ['error', { varsIgnorePattern: '^(React|_)$', argsIgnorePattern: '^_', caughtErrors: 'none' }],
+      'no-empty': ['error', { allowEmptyCatch: true }],
+    },
+  },
+  {
+    // route tables and the app registry are data, not components
+    files: ['src/router/routes/**', 'src/apps/registry.jsx'],
+    rules: { 'react-refresh/only-export-components': 'off' },
+  },
+  {
+    files: ['vite.config.js', 'eslint.config.js'],
+    languageOptions: { globals: globals.node },
   },
 ])

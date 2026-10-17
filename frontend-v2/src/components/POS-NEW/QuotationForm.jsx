@@ -87,6 +87,10 @@ const QuotationForm = ({
   tax = 0,
   shipping = 0,
   gst = 0,
+  setGst,
+  setShipping,
+  mainCartItems = [],
+  optionalTotal = 0,
 
   // Quotation props from NewQuotation
   quotationData = {
@@ -384,8 +388,14 @@ const QuotationForm = ({
           <OrderTotal
             subTotal={subTotal}
             discount={discount}
-            tax={tax}
             shipping={shipping}
+            gst={gst}
+            extraDiscount={Number(quotationData.discountAmount) || 0}
+            extraDiscountType={quotationData.discountType || "fixed"}
+            itemCount={mainCartItems.length || null}
+            optionalTotal={optionalTotal}
+            onGstChange={setGst}
+            onShippingChange={setShipping}
           />
           <Divider />
           <Button block size="large" onClick={() => setPreviewVisible(true)}>

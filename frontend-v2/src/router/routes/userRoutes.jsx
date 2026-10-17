@@ -1,9 +1,10 @@
+import { lazy } from "react";
 // src/routes/userRoutes.js
 import { FaUser, FaIdCard, FaUserCircle } from "react-icons/fa";
-import NewAddUser from "../../concepts/User/NewAddUser";
-import UserPage from "../../concepts/User/UserPage";
-import Profile from "../../concepts/User/Profile";
-import Permissions from "../../concepts/RBAC/Permissions";
+const NewAddUser = lazy(() => import("../../concepts/User/NewAddUser"));
+const UserPage = lazy(() => import("../../concepts/User/UserPage"));
+const Profile = lazy(() => import("../../concepts/User/Profile"));
+const Permissions = lazy(() => import("../../concepts/RBAC/Permissions"));
 
 export const userRoutes = [
   {

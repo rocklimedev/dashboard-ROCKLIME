@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { API_URL } from "../../store/config";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   useGetOrderDetailsQuery,
@@ -58,18 +59,25 @@ import {
   CarOutlined,
   HistoryOutlined,
   RollbackOutlined, // ← NEW
+  PrinterOutlined,
 } from "@ant-design/icons";
-import { Document, Page, pdfjs } from "react-pdf";
+import { Document, Page } from "react-pdf";
 import noimg from "../../assets/img/noimg.jpg";
 import useProductsData from "../../utils/useProductdata";
 import AddAddress from "../../components/Address/AddAddressModal";
 import CommentRow from "../../components/Orders/CommentRow";
 import DispatchModal from "../../components/modals/DispatchModal";
+import OrderStockPanel from "../../components/Stock/OrderStockPanel";
+import OrderPaymentsCard from "../../components/Accounts/OrderPaymentsCard";
 import OrderCreditNoteModal from "../../components/modals/OrderCreditNoteModal"; // ← NEW
 import { Helmet } from "react-helmet";
 import "../../components/Orders/orderpage.css"; // ← new / updated stylesheet
 import DownloadDispatchListButton from "../../components/Orders/DownloadDispatchListButton";
-pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js`;
+import OrderProgress from "../../components/Orders/OrderProgress";
+import OrderInvoicesCard from "../../components/Accounts/OrderInvoicesCard";
+import MarkDeliveredModal from "../../components/Orders/MarkDeliveredModal";
+import { useGetOrderPaymentsQuery } from "../../api/paymentsApi";
+import "../../utils/pdfjs"; // local worker matching the installed pdf.js
 
 const { Title, Text } = Typography;
 
@@ -138,6 +146,28 @@ const OrderPage = () => {
     refetch: refetchDispatches,
   } = useGetOrderDispatchesQuery(id, { skip: !id });
   const dispatches = dispatchesData?.dispatches || [];
+  const { data: balance } = useGetOrderPaymentsQuery(id, { skip: !id });
+  const [deliveredFor, setDeliveredFor] = useState(null);
+  const [pickBusy, setPickBusy] = useState(false);
+  // Pick list PDF for the godown (opens in a new tab)
+  const openPickList = async () => {
+    setPickBusy(true);
+    const win = window.open("", "_blank");
+    try {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const res = await fetch(`${API_URL}/order/${id}/pick-list`, { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || "Could not make the pick list");
+      const url = URL.createObjectURL(await res.blob());
+      if (win) win.location.href = url;
+      else window.open(url, "_blank");
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (e) {
+      if (win) win.close();
+      message.error(e.message);
+    } finally {
+      setPickBusy(false);
+    }
+  };
 
   // ← NEW: credit note history
   const {
@@ -172,7 +202,7 @@ const OrderPage = () => {
     skip: !quotationId,
   });
 
-  const { data: customersData } = useGetCustomersQuery();
+  const { data: customersData } = useGetCustomersQuery({ limit: 10000 });
 
   const [deleteOrder] = useDeleteOrderMutation();
   const [addComment] = useAddCommentMutation();
@@ -187,6 +217,9 @@ const OrderPage = () => {
 
   // ── PRODUCTS & MERGING LOGIC (unchanged) ─────────
   const products = useMemo(() => {
+    // The order's own lines are what was sold; the quotation is only a fallback.
+    if (Array.isArray(order?.products) && order.products.length)
+      return order.products;
     if (fullQuotation?.products && Array.isArray(fullQuotation.products))
       return fullQuotation.products;
     if (
@@ -243,15 +276,28 @@ const OrderPage = () => {
         sku: code,
         brand,
         image: imageUrl,
+        // The order's own price (what the customer was quoted); the catalogue
+        // price only when an old line has none.
         price: parseFloat(
-          pd.metaDetails?.find((m) => m.title === "Selling Price")?.value ||
-            original.price ||
+          original.price ||
+            pd.metaDetails?.find((m) => m.title === "Selling Price")?.value ||
             0,
         ),
         quantity: original.quantity || 1,
         discount: parseFloat(original.discount || 0),
-        discountType: original.discountType || "fixed", // ← added
-        total: parseFloat(original.total || 0),
+        discountType: original.discountType || "percent",
+        total: (() => {
+          const saved = parseFloat(original.total || 0);
+          if (saved > 0) return saved;
+          const qty = Number(original.quantity) || 1;
+          const price = Number(original.price) || 0;
+          const d = Number(original.discount) || 0;
+          const unit =
+            (original.discountType || "percent") === "percent"
+              ? price * (1 - d / 100)
+              : price - d;
+          return Math.round(Math.max(unit, 0) * qty * 100) / 100;
+        })(),
       };
     });
   }, [products, productsData]);
@@ -292,12 +338,13 @@ const OrderPage = () => {
 
   // Dispatch is only meaningful once the order is past drafting/prep and
   // hasn't already been closed out or returned.
-  const canDispatchThisOrder = ![
-    "DRAFT",
-    "CANCELED",
-    "CLOSED",
-    "RETURNED",
-  ].includes(order.status); // ← NEW
+  // Nothing to dispatch once everything has gone out.
+  const canDispatchThisOrder = [
+    "PREPARING",
+    "CHECKING",
+    "INVOICE",
+    "PARTIALLY_DISPATCHED",
+  ].includes(order.status);
 
   // Credit notes only make sense once the order has actually moved past
   // drafting and hasn't been canceled outright.
@@ -442,7 +489,7 @@ const OrderPage = () => {
       if (!token) throw new Error("Not authenticated");
 
       const res = await fetch(
-        `https://api.cmtradingco.com/api/order/${id}/download?type=${type}`,
+        `${API_URL}/order/${id}/download?type=${type}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -560,6 +607,11 @@ const OrderPage = () => {
                 {/* ← NEW: Dispatch + Credit Note buttons */}
                 <Space wrap>
                   {canDispatchThisOrder && (
+                    <Button icon={<PrinterOutlined />} loading={pickBusy} onClick={openPickList}>
+                      Pick list
+                    </Button>
+                  )}
+                  {canDispatchThisOrder && (
                     <Button
                       type="primary"
                       icon={<CarOutlined />}
@@ -578,6 +630,8 @@ const OrderPage = () => {
                   )}
                 </Space>
               </div>
+
+              <OrderProgress order={order} dispatches={dispatches} due={balance?.due || 0} />
 
               <Table
                 dataSource={mergedProducts}
@@ -722,6 +776,12 @@ const OrderPage = () => {
                 }}
               />
             </Card>
+
+            <OrderStockPanel orderId={id} status={order.status} />
+
+            <OrderPaymentsCard orderId={id} customerName={order.customer?.name} />
+
+            <OrderInvoicesCard orderId={id} />
 
             {/* Dispatch History */}
             <Card
@@ -1281,19 +1341,31 @@ const OrderPage = () => {
                     },
 
                     {
-                      title: "Carrier",
-                      dataIndex: "carrier",
-                      key: "carrier",
-                      width: 130,
-                      render: (value) => value || "—",
+                      title: "Transport",
+                      key: "transport",
+                      width: 170,
+                      render: (_, r) => (
+                        <div style={{ lineHeight: 1.3 }}>
+                          <div>{r.vehicleNo || r.transporter || r.carrier || "—"}</div>
+                          {(r.driverName || r.driverPhone) && (
+                            <div className="text-muted small">
+                              {[r.driverName, r.driverPhone].filter(Boolean).join(" · ")}
+                            </div>
+                          )}
+                        </div>
+                      ),
                     },
 
                     {
-                      title: "Tracking",
-                      dataIndex: "trackingNumber",
-                      key: "trackingNumber",
+                      title: "LR / e-way bill",
+                      key: "lr",
                       width: 150,
-                      render: (value) => value || "—",
+                      render: (_, r) => (
+                        <div style={{ lineHeight: 1.3 }}>
+                          <div>{r.lrNumber || r.trackingNumber || "—"}</div>
+                          {r.ewayBillNo && <div className="text-muted small">EWB {r.ewayBillNo}</div>}
+                        </div>
+                      ),
                     },
 
                     {
@@ -1316,6 +1388,34 @@ const OrderPage = () => {
                           {value || "—"}
                         </Tag>
                       ),
+                    },
+
+                    {
+                      title: "Delivery",
+                      key: "delivery",
+                      width: 170,
+                      render: (_, r) =>
+                        r.status === "DELIVERED" ? (
+                          <div style={{ lineHeight: 1.3 }}>
+                            <div>
+                              {r.deliveredAt
+                                ? new Date(r.deliveredAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })
+                                : "Delivered"}
+                              {r.receivedBy ? ` · ${r.receivedBy}` : ""}
+                            </div>
+                            {r.deliveryProofLink && (
+                              <a href={r.deliveryProofLink} target="_blank" rel="noopener noreferrer" className="small">
+                                Proof
+                              </a>
+                            )}
+                          </div>
+                        ) : r.status === "DISPATCHED" ? (
+                          <Button size="small" onClick={() => setDeliveredFor(r)}>
+                            Mark delivered
+                          </Button>
+                        ) : (
+                          "—"
+                        ),
                     },
 
                     {
@@ -2133,6 +2233,13 @@ const OrderPage = () => {
           order={order}
           onClose={() => setShowDispatchModal(false)}
           onSuccess={handleDispatchSuccess}
+        />
+
+        <MarkDeliveredModal
+          orderId={id}
+          dispatch={deliveredFor}
+          open={!!deliveredFor}
+          onClose={() => setDeliveredFor(null)}
         />
 
         {/* ← NEW: Credit Note modal */}

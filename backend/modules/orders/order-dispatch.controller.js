@@ -13,7 +13,9 @@ const {
   OrderActivity,
 } = require("../../models");
 
-const ADMIN_USER_ID = "2ef0f07a-a275-4fe1-832d-fe9a5d145f60";
+// Who receives order notifications meant for "the admin". Set ADMIN_USER_ID in .env.
+const ADMIN_USER_ID = process.env.ADMIN_USER_ID || null;
+const stock = require("../stock/stock.service");
 
 const sendErrorResponse = (res, status, message, details = null) => {
   const response = { message };
@@ -25,6 +27,30 @@ const sendErrorResponse = (res, status, message, details = null) => {
 // POST /orders/:id/dispatch
 // body: { items: [{ productId, quantity }], carrier, trackingNumber, remarks }
 
+// Vehicle, driver, transporter, LR and e-way bill from a dispatch form.
+// Vehicle numbers are stored upper-case without spaces (DL1LAB1234).
+function transportFields(body = {}) {
+  const clean = (v, max) => {
+    const s = String(v ?? "").trim();
+    return s ? s.slice(0, max) : null;
+  };
+  const values = {
+    vehicleNo: clean(body.vehicleNo, 20)?.toUpperCase().replace(/[\s-]/g, "") || null,
+    driverName: clean(body.driverName, 80),
+    driverPhone: clean(body.driverPhone, 20)?.replace(/[^\d+]/g, "") || null,
+    transporter: clean(body.transporter, 120),
+    lrNumber: clean(body.lrNumber, 60),
+    ewayBillNo: clean(body.ewayBillNo, 20)?.replace(/\s/g, "") || null,
+  };
+  if (values.ewayBillNo && !/^\d{12}$/.test(values.ewayBillNo)) {
+    return { error: "E-way bill number must be 12 digits." };
+  }
+  if (values.driverPhone && values.driverPhone.replace(/\D/g, "").length < 10) {
+    return { error: "Driver phone number looks too short." };
+  }
+  return { values };
+}
+
 exports.createDispatch = async (req, res) => {
   const t = await sequelize.transaction();
 
@@ -32,6 +58,15 @@ exports.createDispatch = async (req, res) => {
     const { id } = req.params;
     const { carrier, trackingNumber, remarks, invoiceLink, gatePassLink } =
       req.body;
+    const flag = (v) => ["1", "true", "yes", "on"].includes(String(v ?? "").toLowerCase());
+    // Instead of uploading files, the ERP can make this dispatch's GST invoice and gate pass.
+    const makeInvoice = flag(req.body.makeInvoice);
+    const makeGatePass = flag(req.body.makeGatePass);
+    const transport = transportFields(req.body);
+    if (transport.error) {
+      await t.rollback();
+      return sendErrorResponse(res, 400, transport.error);
+    }
 
     let items;
 
@@ -115,6 +150,8 @@ exports.createDispatch = async (req, res) => {
       }
     } else if (invoiceLink && String(invoiceLink).trim()) {
       finalInvoiceLink = String(invoiceLink).trim();
+    } else if (makeInvoice) {
+      finalInvoiceLink = null; // made after the dispatch is saved
     } else {
       await t.rollback();
 
@@ -159,6 +196,8 @@ exports.createDispatch = async (req, res) => {
       }
     } else if (gatePassLink && String(gatePassLink).trim()) {
       finalGatePassLink = String(gatePassLink).trim();
+    } else if (makeGatePass) {
+      finalGatePassLink = null; // made after the dispatch is saved
     } else {
       await t.rollback();
 
@@ -277,9 +316,28 @@ exports.createDispatch = async (req, res) => {
         gatePassLink: finalGatePassLink,
         remarks: remarks || null,
         dispatchedBy: req.user?.userId || order.createdBy,
+        ...transport.values,
       },
       { transaction: t },
     );
+
+    // -------------------------------------------------------
+    // STOCK: goods leave the godown here (reserved stock first)
+    // -------------------------------------------------------
+    try {
+      await stock.dispatchOut(order, dispatchItems, {
+        t,
+        userId: req.user?.userId || null,
+        dispatchId: dispatch.id,
+        dispatchNo: dispatch.dispatchNumber,
+      });
+    } catch (stockErr) {
+      await t.rollback();
+      if (stockErr instanceof stock.StockError) {
+        return sendErrorResponse(res, stockErr.status, stockErr.message);
+      }
+      throw stockErr;
+    }
 
     // -------------------------------------------------------
     // CALCULATE NEW STATUS
@@ -321,8 +379,8 @@ exports.createDispatch = async (req, res) => {
     // for that shipment's actual invoice/gate-pass.
     // -------------------------------------------------------
 
-    order.invoiceLink = finalInvoiceLink;
-    order.gatePassLink = finalGatePassLink;
+    if (finalInvoiceLink) order.invoiceLink = finalInvoiceLink;
+    if (finalGatePassLink) order.gatePassLink = finalGatePassLink;
 
     order.status = newStatus;
 
@@ -330,7 +388,39 @@ exports.createDispatch = async (req, res) => {
       transaction: t,
     });
 
+    // Fully dispatched orders release anything still reserved
+    await stock.syncOrder(order.id, { t, userId: req.user?.userId || null });
+
     await t.commit();
+
+    // -------------------------------------------------------
+    // DOCUMENTS MADE BY THE ERP (after the dispatch is saved)
+    // -------------------------------------------------------
+    let madeInvoice = null;
+    let docNote = null;
+    if (makeGatePass) {
+      const { gatePassLink: gpLink } = require("./gate-pass");
+      finalGatePassLink = gpLink(dispatch);
+      await dispatch.update({ gatePassLink: finalGatePassLink });
+      await Order.update({ gatePassLink: finalGatePassLink }, { where: { id: order.id } });
+    }
+    if (makeInvoice) {
+      const invoices = require("../invoices/invoice.service");
+      try {
+        madeInvoice = await invoices.createInvoice({ orderId: order.id, dispatchId: dispatch.id, userId: req.user?.userId || null });
+        finalInvoiceLink = invoices.publicLink(madeInvoice);
+      } catch (invErr) {
+        // Pieces already billed on an earlier ERP invoice (e.g. the whole order was invoiced first)
+        const fresh = await Order.findByPk(order.id, { attributes: ["invoiceLink"] });
+        if (fresh?.invoiceLink) {
+          finalInvoiceLink = fresh.invoiceLink;
+          await dispatch.update({ invoiceLink: finalInvoiceLink });
+          docNote = "These pieces were already on an invoice; the dispatch points to it.";
+        } else {
+          docNote = `The dispatch is saved, but the invoice could not be made: ${invErr.message}`;
+        }
+      }
+    }
 
     // -------------------------------------------------------
     // ACTIVITY
@@ -394,6 +484,8 @@ exports.createDispatch = async (req, res) => {
       orderStatus: newStatus,
       invoiceLink: finalInvoiceLink,
       gatePassLink: finalGatePassLink,
+      invoice: madeInvoice ? { id: madeInvoice.id, invoiceNo: madeInvoice.invoiceNo, total: Number(madeInvoice.total) } : null,
+      note: docNote,
     });
   } catch (err) {
     try {
@@ -1158,6 +1250,17 @@ exports.getOrderDispatches = async (req, res) => {
 
         trackingNumber: dispatch.trackingNumber || null,
 
+        vehicleNo: dispatch.vehicleNo || null,
+        driverName: dispatch.driverName || null,
+        driverPhone: dispatch.driverPhone || null,
+        transporter: dispatch.transporter || null,
+        lrNumber: dispatch.lrNumber || null,
+        ewayBillNo: dispatch.ewayBillNo || null,
+        deliveredAt: dispatch.deliveredAt || null,
+        receivedBy: dispatch.receivedBy || null,
+        deliveryProofLink: dispatch.deliveryProofLink || null,
+        deliveryNote: dispatch.deliveryNote || null,
+
         // -----------------------------------------------------
         // DISPATCH-SPECIFIC DOCUMENTS
         // -----------------------------------------------------
@@ -1788,5 +1891,98 @@ exports.uploadReceivingDocument = async (req, res) => {
       "Failed to upload receiving document",
       err.message,
     );
+  }
+};
+
+
+// POST /api/order/:orderId/dispatches/:dispatchId/delivered  (multipart, optional "file" = proof)
+// body: { receivedBy, deliveredAt, deliveryNote }
+// Marks one dispatch delivered. When every dispatch of a fully dispatched order
+// is delivered, the order becomes DELIVERED; otherwise PARTIALLY_DELIVERED.
+exports.markDispatchDelivered = async (req, res) => {
+  try {
+    const { orderId, dispatchId } = req.params;
+    const dispatch = await OrderDispatch.findOne({ where: { id: dispatchId, orderId } });
+    if (!dispatch) return sendErrorResponse(res, 404, "Dispatch not found");
+    if (dispatch.status === "RETURNED") return sendErrorResponse(res, 400, "This dispatch was returned.");
+    const order = await Order.findByPk(orderId);
+    if (!order) return sendErrorResponse(res, 404, "Order not found");
+
+    const receivedBy = String(req.body?.receivedBy || "").trim().slice(0, 120);
+    if (!receivedBy && !req.file) {
+      return sendErrorResponse(res, 400, "Enter who received the goods, or attach the signed delivery note / photo.");
+    }
+    let deliveredAt = req.body?.deliveredAt ? new Date(req.body.deliveredAt) : new Date();
+    if (Number.isNaN(deliveredAt.getTime())) deliveredAt = new Date();
+    if (deliveredAt > new Date(Date.now() + 5 * 60 * 1000)) {
+      return sendErrorResponse(res, 400, "Delivery time can't be in the future.");
+    }
+
+    let proofLink = dispatch.deliveryProofLink || null;
+    if (req.file) {
+      const ext = path.extname(req.file.originalname) || ".jpg";
+      try {
+        proofLink = await uploadToFtp(req.file.buffer, `${uuidv4()}${ext}`, { remoteDir: "/invoice_pdfs", chmod: "644" });
+      } catch (ftpErr) {
+        return sendErrorResponse(res, 500, "Proof upload failed", ftpErr.message);
+      }
+    }
+
+    await dispatch.update({
+      status: "DELIVERED",
+      deliveredAt,
+      receivedBy: receivedBy || null,
+      deliveryProofLink: proofLink,
+      deliveryNote: String(req.body?.deliveryNote || "").trim() || null,
+    });
+
+    // Order status follows its dispatches
+    const all = await OrderDispatch.findAll({ where: { orderId }, attributes: ["status"] });
+    const live = all.filter((d) => d.status !== "RETURNED");
+    const needs = await stock.orderNeeds(order);
+    const fullyDispatched = needs.length > 0 && needs.every((n) => n.needed === 0);
+    const allDelivered = live.length > 0 && live.every((d) => d.status === "DELIVERED");
+    const oldStatus = order.status;
+    let next = oldStatus;
+    if (allDelivered && fullyDispatched) next = "DELIVERED";
+    else if (["DISPATCHED", "PARTIALLY_DISPATCHED", "PARTIALLY_DELIVERED"].includes(oldStatus)) next = "PARTIALLY_DELIVERED";
+    if (next !== oldStatus) {
+      order.status = next;
+      await order.save();
+    }
+
+    await logOrderActivity({
+      orderId: order.id,
+      orderNo: order.orderNo,
+      action: "DISPATCH_DELIVERED",
+      description: `Dispatch #${dispatch.dispatchNumber} of order ${order.orderNo} delivered${receivedBy ? ` — received by ${receivedBy}` : ""}`,
+      oldValue: { status: oldStatus },
+      newValue: { status: next, dispatchStatus: "DELIVERED" },
+      performedBy: req.user?.userId || null,
+      metadata: { dispatchId, proof: !!proofLink },
+      req,
+    });
+
+    return res.json({ message: "Marked delivered", dispatch, orderStatus: next });
+  } catch (err) {
+    return sendErrorResponse(res, 500, "Could not mark the dispatch delivered", err.message);
+  }
+};
+
+// GET /api/order/:id/pick-list → PDF for the godown: what to pick for this order
+exports.pickList = async (req, res) => {
+  try {
+    const order = await Order.findByPk(req.params.id, {
+      include: [{ model: Customer, as: "customer", attributes: ["name", "mobileNumber"] }],
+    });
+    if (!order) return sendErrorResponse(res, 404, "Order not found");
+    const { buildPickList } = require("./pick-list");
+    const buffer = await buildPickList(order);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `inline; filename="PickList-${order.orderNo}.pdf"`);
+    res.setHeader("Cache-Control", "no-store");
+    return res.send(buffer);
+  } catch (err) {
+    return sendErrorResponse(res, err.status || 500, err.message || "Could not make the pick list");
   }
 };

@@ -1,17 +1,22 @@
+import { lazy } from "react";
 // src/routes/productRoutes.js
 import { FaThLarge } from "react-icons/fa";
-import ProductsList from "../../concepts/Products/ProductList";
-import CreateProduct from "../../concepts/Products/CreateProduct";
-import ProductDetails from "../../concepts/Products/ProductDetails";
-import BulkProductImport from "../../concepts/Products/BulkProductImport";
-import BrandSelection from "../../concepts/Products/BrandSelection";
+const ProductsList = lazy(() => import("../../concepts/Products/ProductList"));
+const CreateProduct = lazy(() => import("../../concepts/Products/CreateProduct"));
+const ProductDetails = lazy(() => import("../../concepts/Products/ProductDetails"));
+const BulkProductImport = lazy(() => import("../../concepts/Products/BulkProductImport"));
+const BrandSelection = lazy(() => import("../../concepts/Products/BrandSelection"));
 
-import BulkProductImportJob from "../../concepts/Products/ImportJob";
-import ProductInventoryPage from "../../concepts/Products/ProductInventoryPage";
-import ProductReferencesPage from "../../concepts/Products/ProductReferencesPage";
-import OnboardNewBrandWorkspace from "../../concepts/Products/OnboardNewBrandWorkspace";
+const BulkProductImportJob = lazy(() => import("../../concepts/Products/ImportJob"));
+const ProductInventoryPage = lazy(() => import("../../concepts/Products/ProductInventoryPage"));
+const ProductReferencesPage = lazy(() => import("../../concepts/Products/ProductReferencesPage"));
+const OnboardNewBrandWorkspace = lazy(() => import("../../concepts/Products/OnboardNewBrandWorkspace"));
+const InventoryWrapper = lazy(() => import("../../concepts/Products/InventoryWrapper"));
+const ReorderPage = lazy(() => import("../../concepts/Inventory/ReorderPage"));
 
 export const productRoutes = [
+  { path: "/inventory/products", name: "Product Tools", isSidebarActive: false, element: <InventoryWrapper /> },
+  { path: "/inventory/reorder", name: "Reorder", isSidebarActive: false, element: <ReorderPage /> },
   { path: "/inventory/onboard-new-brand", name: "Onboard New Brand Workspace", isSidebarActive: false, element: <OnboardNewBrandWorkspace /> },
   {
     path: "/inventory/:productId/references",
