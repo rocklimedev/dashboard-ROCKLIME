@@ -1,11 +1,13 @@
 // src/pages/quotations/CartLayout.jsx
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Tabs, Modal, Typography, Segmented, message } from "antd";
-import { ShoppingCartOutlined, CheckCircleOutlined } from "@ant-design/icons";
+import { Tabs, Modal, Typography, Segmented, Button, message } from "antd";
+import { ShoppingCartOutlined, CheckCircleOutlined, FileTextOutlined } from "@ant-design/icons";
+import NewOrderModal from "../../components/Orders/QuotationPicker";
 import { useDispatch } from "react-redux";
 import { v4 as uuidv4 } from "uuid";
 
+import { quotationTotals } from "../../utils/quotationMath";
 import CartTab from "../../components/POS-NEW/Cart";
 import {
   useGetCartQuery,
@@ -56,6 +58,7 @@ const CartLayout = ({
     getDocumentTypeFromPath(location.pathname),
   );
   const [activeTab, setActiveTab] = useState("cart");
+  const [pickQuotation, setPickQuotation] = useState(false);
 
   const [localCartItems, setLocalCartItems] = useState([]);
   const [showClearCartModal, setShowClearCartModal] = useState(false);
@@ -236,23 +239,18 @@ const CartLayout = ({
     );
   }, [optionalCartItems]);
 
-  const amountBeforeGst = useMemo(
-    () => parseFloat((subTotal - totalDiscount + tax + shipping).toFixed(2)),
-    [subTotal, totalDiscount, tax, shipping],
+  // Same maths as the server and the PDF: GST on the taxable value, round at the end
+  const totalsCalc = useMemo(
+    () =>
+      quotationTotals({
+        items: [{ price: subTotal - totalDiscount, quantity: 1 }],
+        shipping,
+        gstRate: gst,
+      }),
+    [subTotal, totalDiscount, shipping, gst],
   );
-
-  const roundOff = useMemo(() => {
-    const rupees = Math.floor(amountBeforeGst);
-    const paise = Math.round((amountBeforeGst - rupees) * 100);
-    if (paise > 0 && paise <= 50) return -paise / 100;
-    if (paise > 50) return (100 - paise) / 100;
-    return 0;
-  }, [amountBeforeGst]);
-
-  const roundedAmount = amountBeforeGst + roundOff;
-  const gstAmount =
-    gst > 0 ? parseFloat(((roundedAmount * gst) / 100).toFixed(2)) : 0;
-  const totalAmount = parseFloat((roundedAmount + gstAmount).toFixed(2));
+  const roundOff = totalsCalc.roundOff;
+  const totalAmount = totalsCalc.grandTotal;
 
   // ─────────────────────────────────────────────────────────────
   // HANDLERS
@@ -470,9 +468,7 @@ const CartLayout = ({
 
       if (floorId) {
         message.success(
-          `Assigned to ${floorName || "floor"}${
-            roomName ? ` › ${roomName}` : ""
-          }`,
+          floorName ? `Assigned to ${floorName}${roomName ? ` › ${roomName}` : ""}` : `Assigned to ${roomName || "room"}`,
         );
       } else {
         message.info("Location cleared");
@@ -539,11 +535,8 @@ const CartLayout = ({
     // Toast after state update attempt (success only if we didn't early-return on error)
     // Use a microtask-friendly message: callers already toast in Cart for multi-assign;
     // keep a light confirmation here for split.
-    if (locations?.length) {
-      message.success(`Split across ${locations.length} location(s)`);
-    } else {
-      message.info("Location cleared");
-    }
+    // one location is a plain assignment (the cart already says where); only real splits get a note
+    if (locations?.length > 1) message.success(`Split across ${locations.length} rooms`);
   }, []);
 
   const handleMakeOption = useCallback(
@@ -769,6 +762,17 @@ const CartLayout = ({
             size="large"
           />
         </div>
+
+        {documentType === "order" && (
+          <div className="cm-quote-hint">
+            <FileTextOutlined />
+            <span>Order for a quotation the customer agreed to? Start from it and skip adding products again.</span>
+            <Button type="primary" size="small" onClick={() => setPickQuotation(true)}>
+              Choose quotation
+            </Button>
+          </div>
+        )}
+        <NewOrderModal open={pickQuotation} onClose={() => setPickQuotation(false)} />
 
         <Tabs activeKey={activeTab} onChange={setActiveTab} type="card">
           <TabPane

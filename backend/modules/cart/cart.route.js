@@ -1,64 +1,44 @@
 const express = require("express");
 const router = express.Router();
 const cartController = require("./cart.controller");
-const { auth } = require("../../middleware/auth");
-const checkPermission = require("../../middleware/permission");
-// Cart Routes
-router.post(
-  "/add",
-  auth,
-  // checkPermission("write", "add_to_cart", "cart", "/cart/add"),
-  cartController.addToCart,
-);
-router.get(
-  "/:userId",
-  // checkPermission("view", "get_cart_of_user", "cart", "/cart/:userId"),
-  cartController.getCart,
-);
-router.post(
-  "/remove",
-  // checkPermission("write", "remove_from_cart", "cart", "/cart/remove"),
-  cartController.removeFromCart,
-);
-router.get(
-  "/:cartId",
-  // checkPermission("view", "get_cart", "cart", "/cart/:cartId"),
-  cartController.getCartById,
-);
+const { auth, isAdmin } = require("../../middleware/auth");
+const { guardModule } = require("../../middleware/permission");
+
+router.use(auth);
+router.use(guardModule("cart"));
+
+// A user works on their own cart. The userId sent by the client must be the
+// logged-in user's, unless an admin is acting on someone else's cart.
+const ownCartOnly = (req, res, next) => {
+  const own = req.user.userId;
+  const asked = req.params.userId || req.body?.userId;
+  if (asked && asked !== own && !isAdmin(req.user)) {
+    return res.status(403).json({ message: "You can only use your own cart." });
+  }
+  if (req.body && typeof req.body === "object" && !req.body.userId) {
+    req.body.userId = own;
+  }
+  next();
+};
+
+// Fixed paths before "/:userId"
+router.get("/all", (req, res, next) => {
+  if (!isAdmin(req.user)) {
+    return res.status(403).json({ message: "Only admins can list all carts." });
+  }
+  next();
+}, cartController.getAllCarts);
+router.post("/add", ownCartOnly, cartController.addToCart);
+router.post("/add-to-cart", ownCartOnly, cartController.addProductToCart);
+router.post("/update", ownCartOnly, cartController.updateCart);
+router.post("/remove", ownCartOnly, cartController.removeFromCart);
+router.post("/reduce", ownCartOnly, cartController.reduceQuantity);
+router.post("/clear", ownCartOnly, cartController.clearCart);
 router.post(
   "/convert-to-cart/:quotationId",
-  // checkPermission(
-  //   "write",
-  //   "convert_quotation_to_cart",
-  //   "cart",
-  //   "/cart/convert-to-cart/:quotationId"
-  // ),
+  ownCartOnly,
   cartController.convertQuotationToCart,
 );
-router.post(
-  "/clear",
-  // checkPermission("post", "clear_cart", "cart", "/cart/clear"),
-  cartController.clearCart,
-);
-router.post(
-  "/add-to-cart",
-  //  checkPermission("write", "add_product_to_cart", "cart", "/cart/add-to-cart"),
-  cartController.addProductToCart,
-);
-// Update cart item
-router.post(
-  "/update",
-  //checkPermission("write", "update_cart", "cart", "/cart/update"),
-  cartController.updateCart,
-);
-router.get(
-  "/all",
-  // checkPermission("view", "get_all_carts", "cart", "/cart/all"),
-  cartController.getAllCarts,
-);
-router.post(
-  "/reduce",
-  // checkPermission("post", "reuce_product_quantity", "cart", "/cart/reduce"),
-  cartController.reduceQuantity,
-);
+router.get("/:userId", ownCartOnly, cartController.getCart);
+
 module.exports = router;

@@ -35,8 +35,9 @@ import {
 import { message } from "antd";
 import "../../components/Product/productdetails.css";
 import DeleteModal from "../../components/Common/DeleteModal";
-import HistoryModalAntD from "../../components/modals/HistoryModal";
-import StockModal from "../../components/modals/StockModal";
+import ProductStockDrawer from "../../components/Stock/ProductStockDrawer";
+import StockBadge from "../../components/Stock/StockBadge";
+import useStockAvailability from "../../components/Stock/useStockAvailability";
 import ProductCard from "../../components/Product/ProductCard";
 import PageHeader from "../../components/Common/PageHeader";
 import Breadcrumb from "../../components/Common/Breadcrumb";
@@ -191,6 +192,7 @@ const ProductsList = () => {
   const { data: productsResponse, isLoading, isFetching, error } = queryResult;
 
   const products = productsResponse?.data || [];
+  const { stock: stockById } = useStockAvailability(products.map((p) => p.productId));
   const pagination = productsResponse?.pagination || {
     total: 0,
     page: currentPage,
@@ -411,12 +413,22 @@ const ProductsList = () => {
       title: "Stock",
       dataIndex: "quantity",
       key: "quantity",
-      render: (qty) =>
-        qty > 0 ? (
-          `${qty} in stock`
+      render: (qty, record) => {
+        const st = stockById[record.productId];
+        return st ? (
+          <StockBadge
+            available={st.available}
+            reserved={st.reserved}
+            incoming={st.incoming}
+            lowAt={st.lowAt}
+            nextDate={st.nextIncoming}
+          />
+        ) : qty > 0 ? (
+          `${qty} available`
         ) : (
           <span style={{ color: "#ff4d4f" }}>Out of stock</span>
-        ),
+        );
+      },
     },
     // Inside the columns array → Actions column
     {
@@ -469,17 +481,8 @@ const ProductsList = () => {
           <Link to={`/product/${product.productId}/edit`}>Edit</Link>
         </Menu.Item>
       </PermissionGate>
-      <Menu.Item key="add-stock" onClick={() => openStockModal(product, "add")}>
-        Add Stock
-      </Menu.Item>
-      <Menu.Item
-        key="remove-stock"
-        onClick={() => openStockModal(product, "remove")}
-      >
-        Remove Stock
-      </Menu.Item>
-      <Menu.Item key="history" onClick={() => openHistoryModal(product)}>
-        View History
+      <Menu.Item key="stock" onClick={() => setStockDrawerId(product.productId)}>
+        Stock, reservations &amp; movements
       </Menu.Item>
       <PermissionGate api="delete" module="products">
         <Menu.Item
@@ -522,20 +525,7 @@ const ProductsList = () => {
   };
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isDeleteModalVisible, setDeleteModalVisible] = useState(false);
-  const [stockModalOpen, setStockModalOpen] = useState(false);
-  const [historyModalOpen, setHistoryModalOpen] = useState(false);
-  const [stockAction, setStockAction] = useState("add");
-
-  const openStockModal = (product, action = "add") => {
-    setSelectedProduct(product);
-    setStockAction(action);
-    setStockModalOpen(true);
-  };
-
-  const openHistoryModal = (product) => {
-    setSelectedProduct(product);
-    setHistoryModalOpen(true);
-  };
+  const [stockDrawerId, setStockDrawerId] = useState(null);
 
   const handleDeleteClick = (product) => {
     setSelectedProduct(product);
@@ -714,6 +704,7 @@ const ProductsList = () => {
                   <ProductCard
                     key={product.productId}
                     product={product}
+                    stock={stockById[product.productId]}
                     getBrandsName={getBrandsName}
                     getCategoryName={getCategoryName}
                     handleAddToCart={handleAddToCart}
@@ -766,16 +757,10 @@ const ProductsList = () => {
         itemType="Product"
         isLoading={isDeleting}
       />
-      <StockModal
-        open={stockModalOpen}
-        onCancel={() => setStockModalOpen(false)}
-        product={selectedProduct}
-        action={stockAction}
-      />
-      <HistoryModalAntD
-        open={historyModalOpen}
-        onCancel={() => setHistoryModalOpen(false)}
-        product={selectedProduct}
+      <ProductStockDrawer
+        productId={stockDrawerId}
+        open={!!stockDrawerId}
+        onClose={() => setStockDrawerId(null)}
       />
     </div>
   );

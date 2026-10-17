@@ -26,6 +26,7 @@ const SearchOverlay = ({ visible, loading, results, onClose, query }) => {
   const [addToCart, { isLoading: isCartLoadingGlobal }] =
     useAddProductToCartMutation();
   const [cartLoadingStates, setCartLoadingStates] = useState({});
+  const [only, setOnly] = useState(null); // show one kind of result
 
   // Keyboard navigation (unchanged)
   useEffect(() => {
@@ -113,6 +114,8 @@ const SearchOverlay = ({ visible, loading, results, onClose, query }) => {
   });
 
   const hasResults = prioritizedGroups.length > 0;
+  const LABELS = { Product: "Products", PurchaseOrder: "Purchase orders", Order: "Orders", Quotation: "Quotations", Customer: "Customers", Category: "Categories", Brand: "Brands", Vendor: "Vendors", User: "Users", Invoice: "Invoices" };
+  const shownGroups = only && prioritizedGroups.some(([m]) => m === only) ? prioritizedGroups.filter(([m]) => m === only) : prioritizedGroups;
 
   // Safe text highlighter (unchanged)
   const highlightText = (text, highlight) => {
@@ -301,7 +304,27 @@ const SearchOverlay = ({ visible, loading, results, onClose, query }) => {
                 style={{ margin: "60px 0" }}
               />
             ) : (
-              prioritizedGroups.map(([modelName, group]) => {
+              <>
+              <div className="search-filter-chips">
+                <button className={`search-chip ${!only ? "is-on" : ""}`} onClick={() => setOnly(null)}>
+                  All
+                </button>
+                {prioritizedGroups.map(([m, g]) => (
+                  <button key={m} className={`search-chip ${only === m ? "is-on" : ""}`} onClick={() => setOnly(only === m ? null : m)}>
+                    {LABELS[m] || m} <span>{g.total ?? g.items.length}</span>
+                  </button>
+                ))}
+                <button
+                  className="search-chip search-chip--link"
+                  onClick={() => {
+                    onClose?.();
+                    navigate(`/catalogues?q=${encodeURIComponent(query.trim())}`);
+                  }}
+                >
+                  Search in brand catalogues →
+                </button>
+              </div>
+              {shownGroups.map(([modelName, group]) => {
                 const { items, total } = group;
 
                 return (
@@ -382,7 +405,8 @@ const SearchOverlay = ({ visible, loading, results, onClose, query }) => {
                     })}
                   </div>
                 );
-              })
+              })}
+              </>
             )}
           </div>
         </Spin>

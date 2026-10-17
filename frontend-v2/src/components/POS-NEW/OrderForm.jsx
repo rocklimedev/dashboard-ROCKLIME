@@ -303,8 +303,6 @@ const OrderForm = ({
       : v.toFixed(2);
   }, [base, extraDiscount, extraDiscountType]);
 
-  const gstBase = (base - Number(extraDiscAmt)).toFixed(2);
-  const gstAmt = ((Number(gstBase) * gst) / 100).toFixed(2);
 
   const availableSecondaryUsers = useMemo(() => {
     if (!orderData?.assignedUserId) return users;
@@ -960,13 +958,11 @@ const OrderForm = ({
       <Col xs={24} md={8}>
         <CompactCard title={<Text strong>Summary</Text>}>
           <OrderTotal
-            tax={tax}
             discount={totalDiscount}
-            roundOff={roundOff}
             subTotal={subTotal}
+            shipping={safeShipping}
             extraDiscount={Number(extraDiscAmt)}
             gst={gst}
-            gstAmount={Number(gstAmt)}
           />
           <Divider style={{ margin: "8px 0" }} />
           <CheckoutBtn

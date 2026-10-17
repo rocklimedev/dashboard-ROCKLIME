@@ -18,7 +18,7 @@ const META_KEYS = {
   COMPANY_CODE: "d11da9f9-3f2e-4536-8236-9671200cca4a",
 };
 
-const ProductCard = ({ product, handleAddToCart, cartLoadingStates, menu }) => {
+const ProductCard = ({ product, stock, handleAddToCart, cartLoadingStates, menu }) => {
   const { auth } = useAuth();
 
   const [quantity, setQuantity] = useState(1);
@@ -58,7 +58,7 @@ const ProductCard = ({ product, handleAddToCart, cartLoadingStates, menu }) => {
     (p) => ["edit", "delete"].includes(p.action) && p.module === "products"
   );
 
-  const isOutOfStock = product.quantity <= 0;
+  const isOutOfStock = (stock ? stock.available : product.quantity) <= 0;
 
   // UPDATED: Allow any quantity (no stock limit)
   const updateCartQuantity = (newQty) => {
@@ -97,9 +97,13 @@ const ProductCard = ({ product, handleAddToCart, cartLoadingStates, menu }) => {
         />
 
         {isOutOfStock ? (
-          <div className="status-bar out-of-stock">Out of Stock</div>
+          <div className="status-bar out-of-stock">
+            {stock?.incoming > 0 ? `Out of stock · ${stock.incoming} coming` : "Out of Stock"}
+          </div>
         ) : (
-          <div className="status-bar in-stock">{product.quantity}</div>
+          <div className="status-bar in-stock">
+            {Number(stock ? stock.available : product.quantity).toLocaleString("en-IN")} available
+          </div>
         )}
       </div>
 

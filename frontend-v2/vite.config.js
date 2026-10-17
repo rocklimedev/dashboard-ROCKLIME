@@ -115,4 +115,13 @@ export default defineConfig({
       devOptions: { enabled: false },
     }),
   ],
+  // Local dev: optional same-origin proxy to the backend (used when
+  // VITE_BACKEND_URL points at the Vite server itself, e.g. http://localhost:5174)
+  server: {
+    proxy: {
+      "/api": { target: process.env.BACKEND_PROXY_TARGET || "http://localhost:5050", changeOrigin: true },
+      "/uploads": { target: process.env.BACKEND_PROXY_TARGET || "http://localhost:5050", changeOrigin: true },
+      "/socket.io": { target: process.env.BACKEND_PROXY_TARGET || "http://localhost:5050", ws: true, changeOrigin: true },
+    },
+  },
 });

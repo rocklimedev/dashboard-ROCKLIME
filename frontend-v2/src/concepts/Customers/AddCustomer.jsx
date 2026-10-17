@@ -1,6 +1,6 @@
 // src/components/Customers/AddCustomer.jsx   (or wherever your page is)
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   useCreateCustomerMutation,
@@ -9,7 +9,7 @@ import {
 } from "../../api/customerApi";
 import { useGetVendorsQuery } from "../../api/vendorApi";
 import { message } from "antd";
-import { Form, Input, Select, Button, Tabs, Row, Col, Spin, Alert } from "antd";
+import { Form, Input, InputNumber, Select, Button, Tabs, Row, Col, Spin, Alert } from "antd";
 import { LeftOutlined } from "@ant-design/icons";
 
 const { TabPane } = Tabs;
@@ -68,7 +68,7 @@ const AddCustomer = () => {
     useUpdateCustomerMutation();
 
   const { data: allCustomersData, isLoading: isCustomersLoading } =
-    useGetCustomersQuery({ limit: 500 });
+    useGetCustomersQuery({ limit: 10000 });
 
   const { data: vendorsData, isLoading: isVendorsLoading } = useGetVendorsQuery(
     undefined,
@@ -76,6 +76,16 @@ const AddCustomer = () => {
   );
 
   const vendors = vendorsData?.data || [];
+  const referrers = (allCustomersData?.data || [])
+    .filter(
+      (c) =>
+        ["Architect", "Interior", "Contractor", "Builder"].includes(c.customerType) &&
+        c.customerId !== existingCustomer?.customerId,
+    )
+    .map((c) => ({
+      value: c.customerId,
+      label: `${c.name}${c.companyName ? ` (${c.companyName})` : ""} · ${c.customerType}`,
+    }));
 
   // Populate form when editing
   useEffect(() => {
@@ -91,6 +101,10 @@ const AddCustomer = () => {
         gstNumber: existingCustomer.gstNumber || "",
         isVendor: existingCustomer.isVendor ? "true" : "false",
         vendorId: existingCustomer.vendorId || "",
+        creditLimit: existingCustomer.creditLimit ?? null,
+        creditDays: existingCustomer.creditDays ?? null,
+        referredBy: existingCustomer.referredBy || undefined,
+        notes: existingCustomer.notes || "",
         address: existingCustomer.address || {
           street: "",
           city: "",
@@ -154,6 +168,10 @@ const AddCustomer = () => {
         phone2: values.phone2?.trim() || null,
         gstNumber: values.gstNumber?.trim() || null,
         address: hasAddressContent(values.address) ? values.address : null,
+        creditLimit: values.creditLimit ?? null,
+        creditDays: values.creditDays ?? null,
+        referredBy: values.referredBy || null,
+        notes: values.notes?.trim() || null,
         isVendor: values.isVendor === "true",
         vendorId:
           values.isVendor === "true" && values.vendorId?.trim()
@@ -363,6 +381,47 @@ const AddCustomer = () => {
                           placeholder="22AAAAA0000A1Z5 (optional)"
                           allowClear
                         />
+                      </Form.Item>
+                    </Col>
+
+                    {/* Credit & referral */}
+                    <Col lg={6} xs={12}>
+                      <Form.Item
+                        label="Credit limit (₹)"
+                        name="creditLimit"
+                        tooltip="Order forms warn when what this customer owes would go over this. Leave blank for no limit."
+                      >
+                        <InputNumber min={0} step={10000} style={{ width: "100%" }} placeholder="No limit" />
+                      </Form.Item>
+                    </Col>
+                    <Col lg={6} xs={12}>
+                      <Form.Item
+                        label="Credit days"
+                        name="creditDays"
+                        tooltip="Unpaid amounts older than this count as overdue. Default 30."
+                      >
+                        <InputNumber min={0} max={365} style={{ width: "100%" }} placeholder="30" />
+                      </Form.Item>
+                    </Col>
+                    <Col lg={12} xs={24}>
+                      <Form.Item
+                        label="Referred by"
+                        name="referredBy"
+                        tooltip="The architect, interior designer or contractor who brought this customer."
+                      >
+                        <Select
+                          showSearch
+                          allowClear
+                          placeholder="Search architects, interiors, contractors"
+                          loading={isCustomersLoading}
+                          optionFilterProp="label"
+                          options={referrers}
+                        />
+                      </Form.Item>
+                    </Col>
+                    <Col lg={24} xs={24}>
+                      <Form.Item label="Notes" name="notes">
+                        <Input.TextArea rows={2} maxLength={2000} placeholder="Site details, preferences, anything the team should know" />
                       </Form.Item>
                     </Col>
 

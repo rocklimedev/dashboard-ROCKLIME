@@ -76,6 +76,11 @@ module.exports = (sequelize, DataTypes) => {
           isAlphanumeric: true,
         },
       },
+      // Customer 360 (migration 20261016000700)
+      creditLimit: { type: DataTypes.DECIMAL(14, 2), allowNull: true },
+      creditDays: { type: DataTypes.INTEGER, allowNull: true },
+      referredBy: { type: DataTypes.CHAR(36), allowNull: true },
+      notes: { type: DataTypes.TEXT, allowNull: true },
     },
     {
       tableName: "customers",

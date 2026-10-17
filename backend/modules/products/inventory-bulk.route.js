@@ -11,12 +11,14 @@ const {
   sequelize,
 } = models;
 const router = express.Router();
+const stock = require("../stock/stock.service");
 const {
   createProductMergeService,
   countMongoReferences,
 } = require("./product-merge.service");
 const productMerge = createProductMergeService(models, countMongoReferences);
-const productDeletion = require('./product-delete.service').createProductDeletionService(models);
+const productDeletion =
+  require("./product-delete.service").createProductDeletionService(models);
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const fail = (message, status = 400) =>
   Object.assign(new Error(message), { status });
@@ -53,12 +55,11 @@ async function authorize(req, res, next) {
         ],
       }));
     if (!role) return res.status(403).json({ message: "User role not found." });
-    const action =
-      ["/delete", "/delete-preview"].includes(req.path)
-        ? "delete"
-        : req.path === "/export"
-          ? "export"
-          : "edit";
+    const action = ["/delete", "/delete-preview"].includes(req.path)
+      ? "delete"
+      : req.path === "/export"
+        ? "export"
+        : "edit";
     const requiredActions = ["/merge", "/merge-preview"].includes(req.path)
       ? ["edit", "delete"]
       : [action];
@@ -102,12 +103,10 @@ router.post("/merge", async (req, res, next) => {
         "SequelizeUniqueConstraintError",
       ].includes(error.name)
     )
-      return res
-        .status(409)
-        .json({
-          message:
-            "A referenced record prevents this merge. No products were changed.",
-        });
+      return res.status(409).json({
+        message:
+          "A referenced record prevents this merge. No products were changed.",
+      });
     next(error);
   }
 });
@@ -216,28 +215,28 @@ router.post("/update", async (req, res, next) => {
             409,
           );
         const changes = {};
-        if (update.quantity !== undefined) changes.quantity = update.quantity;
         if (update.sellingPrice !== undefined) {
           const price = Math.round(update.sellingPrice * 100) / 100;
           changes.meta = { ...values.meta, [definitions.price.id]: price };
           for (const key of ["sellingPrice", "selling_price"])
             if (Object.hasOwn(changes.meta, key)) changes.meta[key] = price;
         }
-        await product.update(changes, { transaction });
-        if (changes.quantity !== undefined && changes.quantity !== oldQuantity)
-          await InventoryHistory.create(
+        if (Object.keys(changes).length)
+          await product.update(changes, { transaction });
+        // The stock shown in the grid is AVAILABLE stock; keep reservations
+        // and set on-hand so that available becomes the new figure.
+        if (update.quantity !== undefined && update.quantity !== oldQuantity) {
+          const { totals } = await stock.productStock(product.productId, { t: transaction });
+          await stock.setOnHand(
             {
               productId: product.productId,
-              change: changes.quantity - oldQuantity,
-              quantityAfter: changes.quantity,
-              action: "adjustment",
+              counted: update.quantity + totals.reserved,
+              reason: String(req.body.message || "Bulk inventory adjustment").slice(0, 2000),
               userId: req.user.userId,
-              message: String(
-                req.body.message || "Bulk inventory adjustment",
-              ).slice(0, 2000),
             },
-            { transaction },
+            { t: transaction },
           );
+        }
         changed.push(product.productId);
       }
       return changed;
@@ -253,17 +252,29 @@ router.post("/update", async (req, res, next) => {
   }
 });
 router.post("/delete-preview", async (req, res, next) => {
-  try { res.json(await productDeletion.preview(idsFrom(req.body))); }
-  catch (error) {
-    if (error.status) return res.status(error.status).json({ message: error.message });
+  try {
+    res.json(await productDeletion.preview(idsFrom(req.body)));
+  } catch (error) {
+    if (error.status)
+      return res.status(error.status).json({ message: error.message });
     next(error);
   }
 });
 router.post("/delete", async (req, res, next) => {
-  try { res.json(await productDeletion.remove(idsFrom(req.body))); }
-  catch (error) {
-    if (error.status) return res.status(error.status).json({ message: error.message, references: error.references });
-    if (error.name === 'SequelizeForeignKeyConstraintError') return res.status(409).json({ message: 'Products are referenced by other records and cannot be deleted.' });
+  try {
+    res.json(await productDeletion.remove(idsFrom(req.body)));
+  } catch (error) {
+    if (error.status)
+      return res
+        .status(error.status)
+        .json({ message: error.message, references: error.references });
+    if (error.name === "SequelizeForeignKeyConstraintError")
+      return res
+        .status(409)
+        .json({
+          message:
+            "Products are referenced by other records and cannot be deleted.",
+        });
     next(error);
   }
 });

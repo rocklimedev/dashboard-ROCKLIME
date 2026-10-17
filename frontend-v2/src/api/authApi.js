@@ -57,9 +57,8 @@ export const authApi = baseApi.injectEndpoints({
     }),
     verifyAccount: builder.mutation({
       query: ({ token }) => ({
-        url: "/auth/verify-account",
-        method: "POST",
-        body: { token },
+        url: `/auth/verify-account/${encodeURIComponent(token)}`,
+        method: "GET",
       }),
     }),
     resetPassword: builder.mutation({

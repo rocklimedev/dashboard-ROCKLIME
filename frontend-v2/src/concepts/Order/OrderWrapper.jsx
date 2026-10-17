@@ -1,22 +1,26 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import {
   useGetAllOrdersQuery,
   useDeleteOrderMutation,
   useUpdateOrderStatusMutation,
   useLazyDownloadOrderSummaryQuery,
+  useGetOrderStatusCountsQuery,
 } from "../../api/orderApi";
-import { useGetAllTeamsQuery } from "../../api/teamApi";
-import { useGetAllUsersQuery } from "../../api/userApi";
-import { useGetAllQuotationsQuery } from "../../api/quotationApi";
 import {
   message,
   Input,
   Button,
   Select,
-  Pagination,
   Dropdown,
-  Menu,
+  Table,
+  Tabs,
+  Tag,
+  Badge,
+  Progress,
+  Tooltip,
+  Typography,
+  Space,
 } from "antd";
 import {
   SearchOutlined,
@@ -27,703 +31,433 @@ import {
   DownloadOutlined,
   RollbackOutlined,
   CarOutlined,
+  SwapOutlined,
 } from "@ant-design/icons";
-import DatesModal from "../../components/Orders/DateModal";
+import dayjs from "dayjs";
 import DispatchModal from "../../components/modals/DispatchModal";
 import DeleteModal from "../../components/Common/DeleteModal";
 import PageHeader from "../../components/Common/PageHeader";
-import { useAuth } from "../../context/AuthContext";
-import moment from "moment";
 import OrderCreditNoteModal from "../../components/modals/OrderCreditNoteModal";
-const { Option } = Select;
+import useCan from "../../utils/useCan";
+import NewOrderModal from "../../components/Orders/QuotationPicker";
 
-// Single source of truth for status options — used by both the filter bar
-// and the per-row status-change menu, so they can't drift out of sync.
-// DISPATCHED / PARTIALLY_DISPATCHED are intentionally left out of the
-// *settable* menu — those two are only ever reached through the Dispatch
-// modal, which tracks per-product quantities and (optionally) a gate-pass.
-// They're still valid filter values, though, so orders in that state show
-// up in searches.
-const ALL_STATUSES = [
-  "PREPARING",
-  "CHECKING",
-  "INVOICE",
-  "DISPATCHED",
-  "PARTIALLY_DISPATCHED",
-  "DELIVERED",
-  "PARTIALLY_DELIVERED",
-  "RETURNED",
-  "CANCELED",
-  "DRAFT",
-  "ONHOLD",
-  "CLOSED",
+const { Text } = Typography;
+
+// Statuses a person can pick by hand. DISPATCHED / PARTIALLY_DISPATCHED come
+// only from recorded dispatches; DELIVERED from "Mark delivered".
+const SETTABLE = ["DRAFT", "PREPARING", "CHECKING", "INVOICE", "ONHOLD", "DELIVERED", "PARTIALLY_DELIVERED", "RETURNED", "CANCELED", "CLOSED"];
+
+const STATUS_TAG = {
+  DRAFT: "default",
+  PREPARING: "processing",
+  CHECKING: "cyan",
+  INVOICE: "purple",
+  PARTIALLY_DISPATCHED: "gold",
+  DISPATCHED: "blue",
+  PARTIALLY_DELIVERED: "lime",
+  DELIVERED: "green",
+  CLOSED: "success",
+  ONHOLD: "orange",
+  RETURNED: "magenta",
+  CANCELED: "red",
+};
+
+const TABS = [
+  { key: "", label: "All", count: (c) => c.total },
+  { key: "ACTIVE", label: "Active", statuses: "PREPARING,CHECKING,INVOICE,PARTIALLY_DISPATCHED,ONHOLD", count: (c) => c.active },
+  { key: "TODISPATCH", label: "To dispatch", statuses: "PREPARING,CHECKING,INVOICE,PARTIALLY_DISPATCHED", count: (c) => c.toDispatch },
+  { key: "LATE", label: "Late", late: true, count: (c) => c.late, danger: true },
+  { key: "TRANSIT", label: "Dispatched", statuses: "DISPATCHED,PARTIALLY_DELIVERED", count: (c) => c.inTransit },
+  { key: "DONE", label: "Delivered / closed", statuses: "DELIVERED,CLOSED", count: (c) => c.done },
+  { key: "DRAFT", label: "Draft", statuses: "DRAFT", count: (c) => c.byStatus?.DRAFT || 0 },
+  { key: "CANCELED", label: "Cancelled", statuses: "CANCELED,RETURNED", count: (c) => (c.byStatus?.CANCELED || 0) + (c.byStatus?.RETURNED || 0) },
 ];
 
-// Statuses a user can pick directly from the row-level status dropdown.
-// DISPATCHED/PARTIALLY_DISPATCHED are derived automatically by the backend
-// once dispatch batches are recorded, so they're excluded here.
-const DIRECTLY_SETTABLE_STATUSES = ALL_STATUSES.filter(
-  (s) => !["DISPATCHED", "PARTIALLY_DISPATCHED"].includes(s),
-);
+const inr = (n) => `₹${Number(n || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+const label = (s) => (s || "").replace(/_/g, " ").toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
 
 const OrderWrapper = () => {
   const navigate = useNavigate();
-  const { auth } = useAuth();
-  const permissions = auth?.permissions || [];
+  const [params0] = useSearchParams();
+  const [newOrderOpen, setNewOrderOpen] = useState(params0.get("new") === "1");
+  const can = useCan();
+  const [params, setParams] = useSearchParams();
   const [downloadOrderSummary] = useLazyDownloadOrderSummaryQuery();
 
-  const canEditOrder = permissions.some(
-    (p) => p.action === "edit" && p.module === "orders",
-  );
-  const canDeleteOrder = permissions.some(
-    (p) => p.action === "delete" && p.module === "orders",
-  );
-  const canUpdateOrderStatus = permissions.some(
-    (p) => p.action === "write" && p.module === "orders",
-  );
+  const canEdit = can("orders", "edit");
+  const canDelete = can("orders", "delete");
+  const canWrite = can("orders", "write");
 
-  // ==================== STATE ====================
+  const tab = params.get("tab") || "";
+  const tabDef = TABS.find((t) => t.key === tab) || TABS[0];
+
   const [searchTerm, setSearchTerm] = useState("");
-  const [committedFilters, setCommittedFilters] = useState({
-    search: "",
-    status: "",
-    priority: "",
-    sort: "createdAt_desc",
-    page: 1,
-    limit: 20,
-  });
+  const [search, setSearch] = useState("");
+  const [priority, setPriority] = useState("");
+  const [sort, setSort] = useState("createdAt_desc");
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
 
-  const [sortBy, setSortBy] = useState("Recently Added");
-
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState(null);
-  const [showDatesModal, setShowDatesModal] = useState(false);
-  const [selectedDates, setSelectedDates] = useState({
-    dueDate: null,
-    followupDates: [],
-  });
-
-  // ← NEW: dispatch modal state
-  const [showDispatchModal, setShowDispatchModal] = useState(false);
   const [orderToDispatch, setOrderToDispatch] = useState(null);
-
-  const [showCreditNoteModal, setShowCreditNoteModal] = useState(false);
   const [orderForCreditNote, setOrderForCreditNote] = useState(null);
-  // Debounce search
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setCommittedFilters((prev) => ({
-        ...prev,
-        search: searchTerm.trim(),
-        page: 1,
-      }));
-    }, 500);
-    return () => clearTimeout(timer);
+    const t = setTimeout(() => {
+      setSearch(searchTerm.trim());
+      setPage(1);
+    }, 400);
+    return () => clearTimeout(t);
   }, [searchTerm]);
 
-  // ==================== API QUERY ====================
-  const {
-    data: response,
-    error,
-    isLoading,
-    isFetching,
-  } = useGetAllOrdersQuery(committedFilters);
+  const { data: response, error, isLoading, isFetching } = useGetAllOrdersQuery({
+    search,
+    status: tabDef.statuses || "",
+    late: !!tabDef.late,
+    priority,
+    sort,
+    page,
+    limit,
+  });
+  const { data: counts } = useGetOrderStatusCountsQuery();
 
   const orders = response?.data || [];
-  const pagination = response?.pagination || {
-    total: 0,
-    page: 1,
-    limit: 20,
-    totalPages: 0,
-  };
-
-  // Supporting Data
-  const { data: teamsData } = useGetAllTeamsQuery();
-  const { data: usersData } = useGetAllUsersQuery();
-  const { data: quotationsData } = useGetAllQuotationsQuery();
+  const total = response?.pagination?.total || 0;
 
   const [deleteOrder] = useDeleteOrderMutation();
   const [updateOrderStatus] = useUpdateOrderStatusMutation();
 
-  // Maps
-  const teamMap = useMemo(() => {
-    return (teamsData?.teams || []).reduce((acc, t) => {
-      acc[t.id] = t.teamName || "—";
-      return acc;
-    }, {});
-  }, [teamsData]);
-
-  const userMap = useMemo(() => {
-    return (usersData?.users || []).reduce((acc, u) => {
-      acc[u.userId] = u.username || u.name || "—";
-      return acc;
-    }, {});
-  }, [usersData]);
-
-  const quotationMap = useMemo(() => {
-    if (!quotationsData?.data) return {};
-    return quotationsData.data.reduce((acc, q) => {
-      acc[q.quotationId] = q.reference_number || "—";
-      return acc;
-    }, {});
-  }, [quotationsData]);
-
-  const getAssignedToDisplay = (order) => {
-    const parts = [];
-    if (order.assignedTeam?.id && teamMap[order.assignedTeam.id]) {
-      parts.push(`${teamMap[order.assignedTeam.id]} (Team)`);
-    }
-    if (order.assignedUser?.userId && userMap[order.assignedUser.userId]) {
-      parts.push(`${userMap[order.assignedUser.userId]} (User)`);
-    }
-    if (order.secondaryUser?.userId && userMap[order.secondaryUser.userId]) {
-      parts.push(`${userMap[order.secondaryUser.userId]} (User)`);
-    }
-    return parts.length ? parts.join(", ") : "—";
+  const setTab = (key) => {
+    const next = new URLSearchParams(params);
+    if (key) next.set("tab", key);
+    else next.delete("tab");
+    setParams(next, { replace: true });
+    setPage(1);
   };
 
-  const isDueDateClose = (dueDate) => {
-    if (!dueDate) return false;
-    const diffDays = (new Date(dueDate) - Date.now()) / (1000 * 60 * 60 * 24);
-    return diffDays <= 3 && diffDays >= 0;
-  };
-
-  // ==================== HANDLERS ====================
-  const handleStatusChange = (value) => {
-    setCommittedFilters((prev) => ({ ...prev, status: value || "", page: 1 }));
-  };
-
-  const handlePriorityChange = (value) => {
-    setCommittedFilters((prev) => ({
-      ...prev,
-      priority: value || "",
-      page: 1,
-    }));
-  };
-
-  const handleSortChange = (value) => {
-    let sortValue = "createdAt_desc";
-    switch (value) {
-      case "Recently Added":
-        sortValue = "createdAt_desc";
-        break;
-      case "Due Date Ascending":
-        sortValue = "dueDate_asc";
-        break;
-      case "Due Date Descending":
-        sortValue = "dueDate_desc";
-        break;
-      default:
-        break;
-    }
-    setCommittedFilters((prev) => ({ ...prev, sort: sortValue, page: 1 }));
-    setSortBy(value);
-  };
-
-  const handlePageChange = (page, pageSize) => {
-    setCommittedFilters((prev) => ({ ...prev, page, limit: pageSize }));
-  };
-
-  const handleClearFilters = () => {
+  const clearFilters = () => {
     setSearchTerm("");
-    setSortBy("Recently Added");
-    setCommittedFilters({
-      search: "",
-      status: "",
-      priority: "",
-      sort: "createdAt_desc",
-      page: 1,
-      limit: 20,
-    });
+    setPriority("");
+    setSort("createdAt_desc");
+    setPage(1);
   };
 
-  const handleDeleteClick = (orderId) => {
-    if (!canDeleteOrder) return message.error("No permission to delete");
-    setOrderToDelete(orderId);
-    setShowDeleteModal(true);
-  };
-
-  const handleDeleteOrder = async () => {
+  const handleDelete = async () => {
     if (!orderToDelete) return;
     try {
       await deleteOrder(orderToDelete).unwrap();
-      message.success("Order deleted successfully");
+      message.success("Order deleted");
     } catch (err) {
       message.error(err?.data?.message || "Failed to delete order");
     } finally {
-      setShowDeleteModal(false);
       setOrderToDelete(null);
     }
   };
 
-  const handleViewInvoice = (invoiceLink) => {
-    if (invoiceLink) window.open(invoiceLink, "_blank", "noopener,noreferrer");
-  };
-
-  const handleOpenDatesModal = (dueDate, followupDates = []) => {
-    setSelectedDates({ dueDate, followupDates });
-    setShowDatesModal(true);
-  };
-
-  // ← NEW: open the dispatch modal for a given order
-  const handleOpenDispatchModal = (order) => {
-    setOrderToDispatch(order);
-    setShowDispatchModal(true);
-  };
-  const handleOpenCreditNoteModal = (order) => {
-    if (!order) return;
-
-    if (
-      ![
-        "DISPATCHED",
-        "PARTIALLY_DISPATCHED",
-        "DELIVERED",
-        "PARTIALLY_DELIVERED",
-        "RETURNED",
-      ].includes(order.status)
-    ) {
-      message.warning("Credit notes can only be created after dispatch.");
-      return;
-    }
-
-    setOrderForCreditNote(order);
-    setShowCreditNoteModal(true);
-  };
-  // ← NEW: any other status change still goes straight through, but now
-  // reports errors (e.g. RETURNED without a credit note uploaded yet)
-  const handleStatusMenuClick = async (order, status) => {
+  const changeStatus = async (order, status) => {
     try {
       await updateOrderStatus({ orderId: order.id, status }).unwrap();
-      message.success(`Order status updated to ${status.replace("_", " ")}`);
+      message.success(`Order #${order.orderNo} → ${label(status)}`);
     } catch (err) {
-      message.error(err?.data?.message || "Failed to update order status");
+      message.error(err?.data?.message || "Could not change the status");
     }
   };
 
-  const handleDownloadOrder = async (orderId) => {
+  const downloadSummary = async (order) => {
     try {
-      const blob = await downloadOrderSummary(orderId).unwrap();
+      const blob = await downloadOrderSummary(order.id).unwrap();
       const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `Order-${orderId}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Order-${order.orderNo}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
       window.URL.revokeObjectURL(url);
-    } catch (err) {
-      message.error("Failed to download order summary");
+    } catch {
+      message.error("Failed to download the order summary");
     }
   };
+
+  const assigned = (o) =>
+    [o.assignedTeam?.teamName, o.assignedUser?.name || o.assignedUser?.username, o.secondaryUser?.name || o.secondaryUser?.username]
+      .filter(Boolean)
+      .join(", ") || "—";
+
+  const columns = [
+    {
+      title: "Order",
+      key: "order",
+      render: (_, o) => (
+        <div>
+          <Link to={`/order/${o.id}`} className="fw-medium">
+            #{o.orderNo}
+          </Link>
+          {o.priority === "high" && (
+            <Tag color="red" style={{ marginInlineStart: 6 }}>
+              High
+            </Tag>
+          )}
+          <div>
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              {dayjs(o.createdAt).format("D MMM YYYY")}
+              {o.quotation?.reference_number && (
+                <>
+                  {" · "}
+                  <Link to={`/quotation/${o.quotationId}`}>{o.quotation.reference_number}</Link>
+                </>
+              )}
+            </Text>
+          </div>
+        </div>
+      ),
+    },
+    {
+      title: "Customer",
+      key: "customer",
+      render: (_, o) =>
+        o.customer ? <Link to={`/customer/${o.customer.customerId}`}>{o.customer.name}</Link> : <Text type="secondary">—</Text>,
+    },
+    {
+      title: "Status",
+      key: "status",
+      render: (_, o) => {
+        const tag = <Tag color={STATUS_TAG[o.status] || "default"}>{label(o.status)}</Tag>;
+        if (!canWrite) return tag;
+        return (
+          <Dropdown
+            trigger={["click"]}
+            menu={{
+              items: SETTABLE.map((s) => ({ key: s, label: label(s), disabled: s === o.status })),
+              onClick: ({ key }) => changeStatus(o, key),
+            }}
+          >
+            <span style={{ cursor: "pointer" }}>
+              {tag}
+              <SwapOutlined style={{ fontSize: 11, color: "#8c8c8c" }} />
+            </span>
+          </Dropdown>
+        );
+      },
+    },
+    {
+      title: "Amount",
+      key: "amount",
+      align: "right",
+      render: (_, o) => inr(o.finalAmount),
+    },
+    {
+      title: "Paid / due",
+      key: "due",
+      align: "right",
+      render: (_, o) =>
+        ["DRAFT", "CANCELED"].includes(o.status) ? (
+          <Text type="secondary">—</Text>
+        ) : o.due > 0.5 ? (
+          <Tooltip title={`Paid ${inr(o.paid)} of ${inr(o.billed)}`}>
+            <Text type="danger">{inr(o.due)} due</Text>
+          </Tooltip>
+        ) : (
+          <Text type="success">Paid</Text>
+        ),
+    },
+    {
+      title: "Dispatched",
+      key: "dispatched",
+      width: 130,
+      render: (_, o) =>
+        o.orderedQty ? (
+          <Tooltip title={`${o.dispatchedQty} of ${o.orderedQty} items sent`}>
+            <Progress
+              percent={Math.round((o.dispatchedQty / o.orderedQty) * 100)}
+              size="small"
+              format={() => `${o.dispatchedQty}/${o.orderedQty}`}
+              status={o.dispatchedQty >= o.orderedQty ? "success" : "active"}
+            />
+          </Tooltip>
+        ) : (
+          <Text type="secondary">—</Text>
+        ),
+    },
+    {
+      title: "Due date",
+      key: "dueDate",
+      render: (_, o) =>
+        o.dueDate ? (
+          <Text type={o.isLate ? "danger" : undefined} strong={o.isLate}>
+            {dayjs(o.dueDate).format("D MMM")}
+            {o.isLate ? " · late" : ""}
+          </Text>
+        ) : (
+          "—"
+        ),
+    },
+    {
+      title: "Assigned to",
+      key: "assigned",
+      render: (_, o) => <Text type="secondary">{assigned(o)}</Text>,
+    },
+    {
+      title: "",
+      key: "actions",
+      fixed: "right",
+      width: 110,
+      render: (_, o) => {
+        const dispatchable = canWrite && ["PREPARING", "CHECKING", "INVOICE", "PARTIALLY_DISPATCHED"].includes(o.status);
+        const shipped = ["DISPATCHED", "PARTIALLY_DISPATCHED", "DELIVERED", "PARTIALLY_DELIVERED"].includes(o.status);
+        const items = [
+          canEdit && { key: "edit", icon: <EditOutlined />, label: "Edit" },
+          { key: "summary", icon: <DownloadOutlined />, label: "Download order summary" },
+          o.invoiceLink && { key: "invoice", icon: <FileTextOutlined />, label: "View invoice" },
+          canWrite && shipped && { key: "credit", icon: <RollbackOutlined />, label: "Credit note (return)" },
+          canDelete && { type: "divider" },
+          canDelete && { key: "delete", icon: <DeleteOutlined />, label: "Delete", danger: true },
+        ].filter(Boolean);
+        const onMenu = ({ key }) => {
+          if (key === "edit") navigate(`/order/${o.id}/edit`, { state: { order: o } });
+          if (key === "summary") downloadSummary(o);
+          if (key === "invoice") window.open(o.invoiceLink, "_blank", "noopener,noreferrer");
+          if (key === "credit") setOrderForCreditNote(o);
+          if (key === "delete") setOrderToDelete(o.id);
+        };
+        return (
+          <Space size={2}>
+            {dispatchable && (
+              <Tooltip title="Dispatch">
+                <Button type="text" icon={<CarOutlined />} onClick={() => setOrderToDispatch(o)} />
+              </Tooltip>
+            )}
+            <Dropdown menu={{ items, onClick: onMenu }} trigger={["click"]}>
+              <Button type="text" icon={<MoreOutlined />} />
+            </Dropdown>
+          </Space>
+        );
+      },
+    },
+  ];
 
   return (
     <div className="page-wrapper">
       <div className="content">
         <PageHeader
           title="Orders"
-          subtitle="Manage your Orders"
-          onAdd={() => navigate("/order/add")}
+          subtitle={
+            counts
+              ? `${counts.toDispatch} to dispatch${counts.late ? ` · ${counts.late} late` : ""}`
+              : "Confirm orders, reserve stock, track status"
+          }
+          onAdd={canWrite ? () => setNewOrderOpen(true) : undefined}
+          addLabel="+ New order"
         />
 
         <div className="card-body">
-          {/* Filters */}
-          <div className="row mb-4 align-items-center g-3">
-            <div className="col-12 col-md-7 col-lg-6 col-xl-5">
-              <Input
-                prefix={<SearchOutlined />}
-                placeholder="Search order no, customer, quotation..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                allowClear
-                size="large"
-              />
-            </div>
+          <Tabs
+            activeKey={tab}
+            onChange={setTab}
+            items={TABS.map((t) => {
+              const n = counts ? t.count(counts) : null;
+              return {
+                key: t.key,
+                label: (
+                  <span>
+                    {t.label}{" "}
+                    {n != null && (
+                      <Badge
+                        count={n}
+                        showZero
+                        overflowCount={9999}
+                        color={t.danger && n ? "#cf1322" : undefined}
+                        style={t.danger && n ? undefined : { background: "#f0f0f0", color: "#595959" }}
+                      />
+                    )}
+                  </span>
+                ),
+              };
+            })}
+          />
 
-            <div className="col-12 col-md-5 col-lg-6 col-xl-7">
-              <div className="d-flex gap-3 flex-wrap justify-content-md-end">
-                <Select
-                  placeholder="All Statuses"
-                  value={committedFilters.status || undefined}
-                  style={{ width: 190 }}
-                  size="large"
-                  onChange={handleStatusChange}
-                  allowClear
-                >
-                  {ALL_STATUSES.map((s) => (
-                    <Option key={s} value={s}>
-                      {s.replace("_", " ")}
-                    </Option>
-                  ))}
-                </Select>
-
-                <Select
-                  placeholder="All Priorities"
-                  value={committedFilters.priority || undefined}
-                  style={{ width: 130 }}
-                  size="large"
-                  onChange={handlePriorityChange}
-                  allowClear
-                >
-                  <Option value="high">High</Option>
-                  <Option value="medium">Medium</Option>
-                  <Option value="low">Low</Option>
-                </Select>
-
-                <Select
-                  value={sortBy}
-                  style={{ width: 190 }}
-                  size="large"
-                  onChange={handleSortChange}
-                >
-                  <Option value="Recently Added">Recently Added</Option>
-                  <Option value="Due Date Ascending">Due Date (Soonest)</Option>
-                  <Option value="Due Date Descending">Due Date (Latest)</Option>
-                </Select>
-
-                <Button size="large" onClick={handleClearFilters}>
-                  Clear Filters
-                </Button>
-              </div>
-            </div>
+          <div className="d-flex flex-wrap gap-2 mb-3 align-items-center">
+            <Input
+              prefix={<SearchOutlined />}
+              placeholder="Search order no. or customer"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              allowClear
+              style={{ width: 280 }}
+            />
+            <Select
+              placeholder="Priority"
+              value={priority || undefined}
+              onChange={(v) => {
+                setPriority(v || "");
+                setPage(1);
+              }}
+              allowClear
+              style={{ width: 130 }}
+              options={[
+                { value: "high", label: "High" },
+                { value: "medium", label: "Medium" },
+                { value: "low", label: "Low" },
+              ]}
+            />
+            <Select
+              value={sort}
+              onChange={(v) => {
+                setSort(v);
+                setPage(1);
+              }}
+              style={{ width: 190 }}
+              options={[
+                { value: "createdAt_desc", label: "Newest first" },
+                { value: "dueDate_asc", label: "Due date (soonest)" },
+                { value: "dueDate_desc", label: "Due date (latest)" },
+                { value: "amount_desc", label: "Amount (highest)" },
+              ]}
+            />
+            <Button onClick={clearFilters}>Clear</Button>
           </div>
 
-          {/* LIST MODE */}
-          {isLoading ? (
-            <div className="text-center py-5">
-              <div className="spinner-border text-primary" role="status" />
-            </div>
-          ) : error ? (
-            <div className="alert alert-danger">
-              {error?.data?.message || "Failed to load orders"}
-            </div>
-          ) : orders.length === 0 ? (
-            <div className="text-center py-5 text-muted">No orders found</div>
+          {error ? (
+            <div className="alert alert-danger">{error?.data?.message || "Failed to load orders"}</div>
           ) : (
-            <>
-              <div className="table-responsive">
-                <table className="table table-hover align-middle">
-                  <thead className="table-light">
-                    <tr>
-                      <th>S.No.</th>
-                      <th>Order No.</th>
-                      <th>STATUS</th>
-                      <th>QUOTATION</th>
-                      <th>CUSTOMER</th>
-                      <th>PRIORITY</th>
-                      <th>ASSIGNED TO</th>
-                      <th>CREATED BY</th>
-                      <th>DUE DATE</th>
-                      <th className="text-end">ACTIONS</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {orders.map((order) => {
-                      const serialNo =
-                        (committedFilters.page - 1) * committedFilters.limit +
-                        orders.indexOf(order) +
-                        1;
-
-                      const hasInvoice =
-                        [
-                          "INVOICE",
-                          "DISPATCHED",
-                          "PARTIALLY_DISPATCHED",
-                          "DELIVERED",
-                          "PARTIALLY_DELIVERED",
-                          "RETURNED",
-                          "CLOSED",
-                        ].includes(order.status) && order.invoiceLink;
-
-                      // Dispatch is only meaningful once an order is past
-                      // drafting/prep and not already closed out
-                      const canDispatchThisOrder =
-                        canUpdateOrderStatus &&
-                        !["DRAFT", "CANCELED", "CLOSED", "RETURNED"].includes(
-                          order.status,
-                        );
-
-                      return (
-                        <tr key={order.id}>
-                          <td>{serialNo}</td>
-                          <td>
-                            <Link
-                              to={`/order/${order.id}`}
-                              className="fw-medium"
-                            >
-                              {order.orderNo}
-                            </Link>
-                            <span
-                              className="badge ms-2"
-                              style={{
-                                backgroundColor: order.quotationId
-                                  ? "#d4edda"
-                                  : "#f8d7da",
-                                color: order.quotationId
-                                  ? "#155724"
-                                  : "#721c24",
-                              }}
-                            >
-                              {order.quotationId ? "Linked" : "Idle"}
-                            </span>
-                          </td>
-
-                          <td>
-                            <span
-                              className="badge"
-                              style={{
-                                backgroundColor: "#e6eaed",
-                                color: "black",
-                              }}
-                            >
-                              {order.status || "PREPARING"}
-                            </span>
-
-                            {canUpdateOrderStatus && (
-                              <Dropdown
-                                overlay={
-                                  <Menu>
-                                    {DIRECTLY_SETTABLE_STATUSES.map((s) => (
-                                      <Menu.Item
-                                        key={s}
-                                        onClick={() =>
-                                          handleStatusMenuClick(order, s)
-                                        }
-                                        disabled={order.status === s}
-                                      >
-                                        {s.replace("_", " ")}
-                                      </Menu.Item>
-                                    ))}
-                                  </Menu>
-                                }
-                                trigger={["click"]}
-                              >
-                                <EditOutlined
-                                  className="ms-2 text-primary"
-                                  style={{ cursor: "pointer" }}
-                                />
-                              </Dropdown>
-                            )}
-                          </td>
-
-                          <td>
-                            {order.quotationId ? (
-                              <Link to={`/quotation/${order.quotationId}`}>
-                                {quotationMap[order.quotationId] || "—"}
-                              </Link>
-                            ) : (
-                              "—"
-                            )}
-                          </td>
-
-                          <td>
-                            {order.customer ? (
-                              <Link
-                                to={`/customer/${order.customer.customerId}`}
-                              >
-                                {order.customer.name}
-                              </Link>
-                            ) : (
-                              "N/A"
-                            )}
-                          </td>
-
-                          <td>
-                            <span
-                              className={`badge bg-${
-                                order.priority === "high"
-                                  ? "danger"
-                                  : order.priority === "low"
-                                    ? "info"
-                                    : "warning"
-                              }`}
-                            >
-                              {order.priority || "Medium"}
-                            </span>
-                          </td>
-
-                          <td>{getAssignedToDisplay(order)}</td>
-
-                          <td>
-                            {order.creator?.name ||
-                              order.creator?.username ||
-                              "N/A"}
-                          </td>
-
-                          <td
-                            className={
-                              isDueDateClose(order.dueDate)
-                                ? "text-danger fw-bold"
-                                : ""
-                            }
-                          >
-                            {order.dueDate ? (
-                              <span
-                                className="cursor-pointer text-decoration-underline"
-                                onClick={() =>
-                                  handleOpenDatesModal(
-                                    order.dueDate,
-                                    order.followupDates,
-                                  )
-                                }
-                              >
-                                {new Date(order.dueDate).toLocaleDateString()}
-                              </span>
-                            ) : (
-                              "—"
-                            )}
-                          </td>
-
-                          <td className="text-end">
-                            {canDispatchThisOrder && (
-                              <Button
-                                type="text"
-                                icon={<CarOutlined />}
-                                title="Dispatch"
-                                onClick={() => handleOpenDispatchModal(order)}
-                              />
-                            )}
-
-                            {canEditOrder && (
-                              <Button
-                                type="text"
-                                icon={<EditOutlined />}
-                                onClick={() =>
-                                  navigate(`/order/${order.id}/edit`, {
-                                    state: { order },
-                                  })
-                                }
-                              />
-                            )}
-
-                            {(canDeleteOrder || hasInvoice) && (
-                              <Dropdown
-                                overlay={
-                                  <Menu>
-                                    {hasInvoice && (
-                                      <Menu.Item
-                                        key="invoice"
-                                        onClick={() =>
-                                          handleViewInvoice(order.invoiceLink)
-                                        }
-                                      >
-                                        <FileTextOutlined /> View Invoice
-                                      </Menu.Item>
-                                    )}
-
-                                    <Menu.Item
-                                      key="download_order"
-                                      onClick={() =>
-                                        handleDownloadOrder(order.id)
-                                      }
-                                    >
-                                      <DownloadOutlined /> Download Order
-                                    </Menu.Item>
-
-                                    {/* CREDIT NOTE */}
-                                    {canUpdateOrderStatus &&
-                                      [
-                                        "DISPATCHED",
-                                        "PARTIALLY_DISPATCHED",
-                                        "DELIVERED",
-                                        "PARTIALLY_DELIVERED",
-                                      ].includes(order.status) && (
-                                        <Menu.Item
-                                          key="credit_note"
-                                          onClick={() =>
-                                            handleOpenCreditNoteModal(order)
-                                          }
-                                        >
-                                          <RollbackOutlined /> Create Credit
-                                          Note
-                                        </Menu.Item>
-                                      )}
-
-                                    {canDeleteOrder && (
-                                      <Menu.Item
-                                        key="delete"
-                                        danger
-                                        onClick={() =>
-                                          handleDeleteClick(order.id)
-                                        }
-                                      >
-                                        <DeleteOutlined /> Delete
-                                      </Menu.Item>
-                                    )}
-                                  </Menu>
-                                }
-                                trigger={["click"]}
-                              >
-                                <Button type="text" icon={<MoreOutlined />} />
-                              </Dropdown>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              {pagination.total > 0 && (
-                <div className="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
-                  <div className="text-muted small">
-                    Showing{" "}
-                    {(committedFilters.page - 1) * committedFilters.limit + 1}–
-                    {Math.min(
-                      committedFilters.page * committedFilters.limit,
-                      pagination.total,
-                    )}{" "}
-                    of {pagination.total} orders
-                  </div>
-                  <Pagination
-                    current={committedFilters.page}
-                    pageSize={committedFilters.limit}
-                    total={pagination.total}
-                    onChange={handlePageChange}
-                    showSizeChanger
-                    pageSizeOptions={["10", "20", "50", "100"]}
-                    disabled={isFetching}
-                  />
-                </div>
-              )}
-            </>
+            <Table
+              columns={columns}
+              dataSource={orders}
+              rowKey="id"
+              loading={isLoading || isFetching}
+              size="middle"
+              scroll={{ x: "max-content" }}
+              rowClassName={(o) => (o.isLate ? "order-row-late" : "")}
+              locale={{ emptyText: tab === "LATE" ? "No late orders" : "No orders match these filters" }}
+              pagination={{
+                current: page,
+                pageSize: limit,
+                total,
+                showSizeChanger: true,
+                pageSizeOptions: ["10", "20", "50", "100"],
+                showTotal: (t, r) => `${r[0]}–${r[1]} of ${t}`,
+                onChange: (p, s) => {
+                  setPage(s !== limit ? 1 : p);
+                  setLimit(s);
+                },
+              }}
+            />
           )}
         </div>
 
-        {/* Modals */}
         <DeleteModal
-          isVisible={showDeleteModal}
-          onConfirm={handleDeleteOrder}
-          onCancel={() => {
-            setShowDeleteModal(false);
-            setOrderToDelete(null);
-          }}
+          isVisible={!!orderToDelete}
+          onConfirm={handleDelete}
+          onCancel={() => setOrderToDelete(null)}
           itemType="Order"
         />
-
-        <DatesModal
-          show={showDatesModal}
-          onHide={() => setShowDatesModal(false)}
-          dueDate={selectedDates.dueDate}
-          followupDates={selectedDates.followupDates}
-        />
         <OrderCreditNoteModal
-          visible={showCreditNoteModal}
+          visible={!!orderForCreditNote}
           order={orderForCreditNote}
-          onClose={() => {
-            setShowCreditNoteModal(false);
-            setOrderForCreditNote(null);
-          }}
+          onClose={() => setOrderForCreditNote(null)}
         />
-        {/* ← NEW: full/partial dispatch modal */}
-        <DispatchModal
-          visible={showDispatchModal}
-          order={orderToDispatch}
-          onClose={() => {
-            setShowDispatchModal(false);
-            setOrderToDispatch(null);
-          }}
-        />
+        <DispatchModal visible={!!orderToDispatch} order={orderToDispatch} onClose={() => setOrderToDispatch(null)} />
+        <NewOrderModal open={newOrderOpen} onClose={() => setNewOrderOpen(false)} />
       </div>
     </div>
   );

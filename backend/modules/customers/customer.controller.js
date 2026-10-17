@@ -32,6 +32,28 @@ function withTitle(customerJson) {
 }
 
 // Create a new customer
+
+// Credit and referral fields: blank → null, numbers clamped, no self-referral.
+function creditFields(body, selfId) {
+  const out = {};
+  if ("creditLimit" in body) {
+    const v = body.creditLimit === "" || body.creditLimit == null ? null : Number(body.creditLimit);
+    if (v != null && (!Number.isFinite(v) || v < 0)) throw Object.assign(new Error("Credit limit must be 0 or more"), { status: 400 });
+    out.creditLimit = v || null;
+  }
+  if ("creditDays" in body) {
+    const v = body.creditDays === "" || body.creditDays == null ? null : Math.round(Number(body.creditDays));
+    if (v != null && (!Number.isFinite(v) || v < 0 || v > 365)) throw Object.assign(new Error("Credit days must be between 0 and 365"), { status: 400 });
+    out.creditDays = v;
+  }
+  if ("referredBy" in body) {
+    out.referredBy = body.referredBy || null;
+    if (out.referredBy && selfId && out.referredBy === selfId) throw Object.assign(new Error("A customer can't refer themselves"), { status: 400 });
+  }
+  if ("notes" in body) out.notes = body.notes ? String(body.notes).slice(0, 2000) : null;
+  return out;
+}
+
 exports.createCustomer = async (req, res) => {
   try {
     const requiredFields = ["name"]; // phone2, customerType, gstNumber optional
@@ -74,8 +96,15 @@ exports.createCustomer = async (req, res) => {
       });
     }
 
+    let credit;
+    try {
+      credit = creditFields(req.body);
+    } catch (e) {
+      return res.status(e.status || 400).json({ success: false, message: e.message });
+    }
     const newCustomer = await Customer.create({
       ...req.body,
+      ...credit,
       phone2: req.body.phone2 || null,
       customerType: req.body.customerType || null,
       gstNumber: req.body.gstNumber || null,
@@ -135,7 +164,7 @@ exports.createCustomer = async (req, res) => {
 exports.getCustomers = async (req, res) => {
   try {
     const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 20;
+    const limit = Math.min(parseInt(req.query.limit, 10) || 20, 10000);
     const offset = (page - 1) * limit;
 
     const where = {};
@@ -153,12 +182,23 @@ exports.getCustomers = async (req, res) => {
       ];
     }
 
+    // filters: type (Retail also covers "no type"), who owes money, sort
+    const type = req.query.type && req.query.type !== "All" ? String(req.query.type) : null;
+    if (type === "Retail") where[Op.and] = [...(where[Op.and] || []), { [Op.or]: [{ customerType: "Retail" }, { customerType: null }] }];
+    else if (type) where.customerType = type;
+    if (req.query.owes === "1") {
+      const owing = (await require("../payments/payment.controller").orderBalances()).filter((b) => b.due > 0.009).map((b) => b.customerId);
+      where.customerId = { [Op.in]: owing.length ? [...new Set(owing)] : ["-"] };
+    }
+    const SORTS = { name_asc: [["name", "ASC"]], name_desc: [["name", "DESC"]], recent: [["createdAt", "DESC"]], oldest: [["createdAt", "ASC"]] };
+    const order = SORTS[req.query.sort] || SORTS.recent;
+
     const { count: totalCustomers, rows: customers } =
       await Customer.findAndCountAll({
         where,
         offset,
         limit,
-        order: [["createdAt", "DESC"]],
+        order,
         distinct: true,
 
         attributes: {
@@ -211,17 +251,43 @@ exports.getCustomers = async (req, res) => {
       raw: true,
     });
 
+    // Quotations not (yet) turned into a live order: the open pipeline.
+    const openQuotationStats = await Quotation.findAll({
+      where: {
+        customerId: { [Op.in]: customerIds },
+        quotationId: {
+          [Op.notIn]: sequelize.literal(
+            "(SELECT quotationId FROM orders WHERE quotationId IS NOT NULL AND status <> 'CANCELED')",
+          ),
+        },
+      },
+      attributes: [
+        "customerId",
+        [
+          sequelize.fn("COALESCE", sequelize.fn("SUM", sequelize.col("finalAmount")), 0),
+          "openValue",
+        ],
+      ],
+      group: ["customerId"],
+      raw: true,
+    });
+    const openMap = new Map(
+      openQuotationStats.map((r) => [r.customerId, Number(r.openValue || 0)]),
+    );
+
     const orderStats = await Order.findAll({
       where: {
         createdFor: {
           [Op.in]: customerIds,
         },
+        status: { [Op.ne]: "CANCELED" },
       },
 
       attributes: [
         "createdFor",
 
         [sequelize.fn("COUNT", sequelize.col("id")), "orders"],
+        [sequelize.fn("MAX", sequelize.col("createdAt")), "lastOrder"],
 
         [
           sequelize.fn(
@@ -252,8 +318,15 @@ exports.getCustomers = async (req, res) => {
       orderMap.set(item.createdFor, {
         orders: Number(item.orders || 0),
         orderValue: Number(item.orderValue || 0),
+        lastOrder: item.lastOrder || null,
       });
     });
+
+    // What each customer on this page still owes
+    const dueMap = new Map();
+    for (const b of await require("../payments/payment.controller").orderBalances({ customerIds })) {
+      if (b.due > 0.009) dueMap.set(b.customerId, (dueMap.get(b.customerId) || 0) + b.due);
+    }
 
     const data = customers.map((customer) => {
       const customerJson = customer.toJSON();
@@ -278,6 +351,13 @@ exports.getCustomers = async (req, res) => {
 
         orders,
         orderValue,
+
+        // Won orders + quotations still open; a converted quotation is not
+        // counted twice.
+        openQuotationValue: openMap.get(customer.customerId) || 0,
+        lastOrder: orderData.lastOrder || null,
+        due: Math.round((dueMap.get(customer.customerId) || 0) * 100) / 100,
+        businessValue: orderValue + (openMap.get(customer.customerId) || 0),
 
         customerStatus:
           quotations === 0 && orders === 0 ? "INACTIVE" : "ACTIVE",
@@ -364,9 +444,17 @@ exports.updateCustomer = async (req, res) => {
     // ✅ Capture OLD values BEFORE update
     const oldValues = customer.get({ plain: true });
 
+    let credit;
+    try {
+      credit = creditFields(req.body, customer.customerId);
+    } catch (e) {
+      return res.status(e.status || 400).json({ success: false, message: e.message });
+    }
+
     // Update customer
     await customer.update({
       ...req.body,
+      ...credit,
       phone2: req.body.phone2 !== undefined ? req.body.phone2 : customer.phone2,
       customerType:
         req.body.customerType !== undefined
@@ -476,5 +564,28 @@ exports.deleteCustomer = async (req, res) => {
       success: false,
       message: error.message,
     });
+  }
+};
+
+// Invoiced orders for one customer (orders with an invoice uploaded).
+exports.getCustomerInvoices = async (req, res) => {
+  try {
+    const rows = await Order.findAll({
+      where: {
+        createdFor: req.params.id,
+        status: { [Op.ne]: "CANCELED" },
+        invoiceLink: { [Op.and]: [{ [Op.ne]: null }, { [Op.ne]: "" }] },
+      },
+      attributes: ["id", "orderNo", "status", "finalAmount", "amountPaid", "invoiceLink", "createdAt"],
+      order: [["createdAt", "DESC"]],
+    });
+    const data = rows.map((o) => ({
+      ...o.toJSON(),
+      finalAmount: Number(o.finalAmount || 0),
+      paidAmount: Number(o.amountPaid || 0),
+    }));
+    return res.status(200).json({ success: true, data });
+  } catch (err) {
+    return res.status(500).json({ message: "Failed to load invoices", error: err.message });
   }
 };

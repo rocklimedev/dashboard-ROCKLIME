@@ -1,12 +1,21 @@
 import React, { useMemo, useState } from "react";
+import { useGetDashboardSummaryQuery } from "../../api/dashboardApi";
 import {
-  useGetProductCountQuery,
-  useGetLowStockProductsQuery,
-} from "../../api/productApi";
-import { useGetAllQuotationsQuery } from "../../api/quotationApi";
-import { useGetAllOrdersQuery } from "../../api/orderApi";
-import { useGetCustomersQuery } from "../../api/customerApi";
-import { useAuth } from "../../context/AuthContext";
+  FiShoppingCart,
+  FiClock,
+  FiFileText,
+  FiRefreshCw,
+  FiArrowRight,
+} from "react-icons/fi";
+import { FaRupeeSign } from "react-icons/fa";
+
+// The Tabler icon font is not bundled, so KPI icons use react-icons.
+const METRIC_ICONS = {
+  "ti-shopping-cart": FiShoppingCart,
+  "ti-progress": FiClock,
+  "ti-file-text": FiFileText,
+  "ti-currency-rupee": FaRupeeSign,
+};
 import "./reportdashboard.css";
 
 /* ============================================================
@@ -16,34 +25,15 @@ import "./reportdashboard.css";
 const currency = (n) =>
   "₹" + Number(n || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 });
 
-const isSameDay = (dateStr, ref) => {
-  const d = new Date(dateStr);
-  return (
-    d.getFullYear() === ref.getFullYear() &&
-    d.getMonth() === ref.getMonth() &&
-    d.getDate() === ref.getDate()
-  );
-};
-
 const dayLabel = (dateStr) =>
   new Date(dateStr).toLocaleDateString("en-IN", { weekday: "short" });
 
-const IN_PROGRESS_STATUSES = [
-  "NEW",
-  "CREATED",
-  "IN_PRODUCTION",
-  "PENDING",
-  "PROCESSING",
-];
-
 const getAmount = (record) =>
-  Number(
-    record?.finalAmount ||
-      record?.grandTotal ||
-      record?.totalAmount ||
-      record?.amount ||
-      0,
-  );
+  Number(record?.finalAmount || record?.grandTotal || record?.totalAmount || 0);
+
+/** "+8.2%" style label for a change against the previous period */
+const changeLabel = (pct) =>
+  pct === null || pct === undefined ? "new" : `${pct > 0 ? "+" : ""}${pct}%`;
 
 /** Returns start & end of day (local) for a Date */
 const startOfDay = (d) => {
@@ -57,23 +47,12 @@ const endOfDay = (d) => {
   return x;
 };
 
-/** Check if a date string falls inside [from, to] inclusive */
-const isInRange = (dateStr, from, to) => {
-  if (!dateStr) return false;
-  const d = new Date(dateStr);
-  return d >= from && d <= to;
-};
-
 /* ============================================================
    MAIN
    ============================================================ */
 
 export default function ReportingDashboard() {
-  const { auth } = useAuth();
 
-  const role = (auth?.user?.role || auth?.role || auth?.user?.userType || "")
-    .toString()
-    .toUpperCase();
 
   /* ---- Global date filter state ---- */
   const [period, setPeriod] = useState("today"); // today | week | month | custom
@@ -85,69 +64,6 @@ export default function ReportingDashboard() {
   const [customTo, setCustomTo] = useState(() =>
     new Date().toISOString().slice(0, 10),
   );
-
-  /* ---- ALL APIs ---- */
-  const {
-    data: countData,
-    isLoading: productCountLoading,
-    refetch: refetchProductCount,
-  } = useGetProductCountQuery();
-
-  const {
-    data: lowStockData,
-    isLoading: lowStockLoading,
-    refetch: refetchLowStock,
-  } = useGetLowStockProductsQuery({
-    threshold: 20,
-    limit: 20,
-  });
-
-  const {
-    data: ordersResponse,
-    isLoading: ordersLoading,
-    isFetching: ordersFetching,
-    refetch: refetchOrders,
-  } = useGetAllOrdersQuery({ limit: 500, page: 1 }, { pollingInterval: 30000 });
-
-  const {
-    data: quotationsResponse,
-    isLoading: quotationsLoading,
-    isFetching: quotationsFetching,
-    refetch: refetchQuotations,
-  } = useGetAllQuotationsQuery({ limit: 500, page: 1 });
-
-  const {
-    data: customersResponse,
-    isLoading: customersLoading,
-    refetch: refetchCustomers,
-  } = useGetCustomersQuery({ limit: 1000 });
-
-  const loading =
-    productCountLoading ||
-    lowStockLoading ||
-    ordersLoading ||
-    quotationsLoading ||
-    customersLoading;
-
-  const refreshing = ordersFetching || quotationsFetching;
-
-  /* ---- Raw data ---- */
-  const productCount = countData?.totalProducts || 0;
-  const lowStockProducts = lowStockData?.products || [];
-  const orders = ordersResponse?.data || [];
-  const quotations = quotationsResponse?.data || [];
-  const customers = customersResponse?.data || [];
-
-  /* ---- Customer map ---- */
-  const customerMap = useMemo(() => {
-    return customers.reduce((map, customer) => {
-      map[customer.customerId] = customer.name;
-      return map;
-    }, {});
-  }, [customers]);
-
-  const getCustomerName = (customerId, fallback) =>
-    fallback || customerMap[customerId] || "—";
 
   const today = new Date();
 
@@ -202,95 +118,39 @@ export default function ReportingDashboard() {
     };
   }, [period, customFrom, customTo]);
 
-  /* ---- Filtered data for the selected period ---- */
-  const filteredOrders = useMemo(
-    () => orders.filter((o) => isInRange(o.createdAt, rangeFrom, rangeTo)),
-    [orders, rangeFrom, rangeTo],
+  /* ---- One server call for every number on this page ---- */
+  const {
+    data: summary,
+    isLoading: loading,
+    isFetching: refreshing,
+    refetch,
+  } = useGetDashboardSummaryQuery(
+    { from: rangeFrom.toISOString(), to: rangeTo.toISOString() },
+    { pollingInterval: 60000 },
   );
 
-  const filteredQuotations = useMemo(
-    () => quotations.filter((q) => isInRange(q.createdAt, rangeFrom, rangeTo)),
-    [quotations, rangeFrom, rangeTo],
-  );
+  const ordersCount = summary?.orders?.count ?? 0;
+  const quotationsCount = summary?.quotations?.count ?? 0;
+  const ordersInProgress = summary?.orders?.inProgress ?? 0;
+  const orderAmountPeriod = summary?.orders?.amount ?? 0;
+  const conversionRate = summary?.conversionRate ?? 0;
 
-  const ordersInProgress = useMemo(
-    () =>
-      orders.filter((o) =>
-        IN_PROGRESS_STATUSES.includes((o.status || "").toUpperCase()),
-      ),
-    [orders],
-  );
-
-  const orderAmountPeriod = useMemo(
-    () => filteredOrders.reduce((sum, o) => sum + getAmount(o), 0),
-    [filteredOrders],
-  );
-
-  const quotationAmountPeriod = useMemo(
-    () => filteredQuotations.reduce((sum, q) => sum + getAmount(q), 0),
-    [filteredQuotations],
-  );
-
-  const criticalStock = useMemo(
-    () => lowStockProducts.filter((p) => Number(p.quantity || 0) <= 5).length,
-    [lowStockProducts],
-  );
-
-  /* ---- Chart: last 7 days relative to the end of the selected range ---- */
-  const last7Days = useMemo(() => {
-    const days = [];
-    const end = new Date(rangeTo);
-
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(end);
-      d.setDate(d.getDate() - i);
-
-      const dayOrders = orders.filter((o) => isSameDay(o.createdAt, d));
-      const dayQuotes = quotations.filter((q) => isSameDay(q.createdAt, d));
-
-      days.push({
-        label: dayLabel(d.toISOString()),
-        orderCount: dayOrders.length,
-        quotationCount: dayQuotes.length,
-      });
-    }
-
-    return days;
-  }, [orders, quotations, rangeTo]);
+  const last7Days = (summary?.daily || []).map((d) => ({
+    label: dayLabel(d.date),
+    orderCount: d.orders,
+    quotationCount: d.quotations,
+  }));
 
   const maxChartValue = Math.max(
     1,
     ...last7Days.map((d) => Math.max(d.orderCount, d.quotationCount)),
   );
 
-  const latestQuotations = useMemo(
-    () =>
-      [...filteredQuotations]
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-        .slice(0, 5),
-    [filteredQuotations],
-  );
+  const latestQuotations = summary?.latestQuotations || [];
+  const latestOrders = summary?.latestOrders || [];
+  const getCustomerName = (_id, name) => name || "—";
 
-  const latestOrders = useMemo(
-    () =>
-      [...filteredOrders]
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-        .slice(0, 5),
-    [filteredOrders],
-  );
-
-  const conversionRate =
-    filteredQuotations.length > 0
-      ? Math.round((filteredOrders.length / filteredQuotations.length) * 100)
-      : 0;
-
-  const handleRefresh = () => {
-    refetchOrders();
-    refetchQuotations();
-    refetchCustomers();
-    refetchProductCount();
-    refetchLowStock();
-  };
+  const handleRefresh = () => refetch();
 
   /* ---- Render ---- */
   return (
@@ -366,47 +226,43 @@ export default function ReportingDashboard() {
               onClick={handleRefresh}
               disabled={refreshing}
             >
-              <i
-                className={`ti ti-refresh ${
-                  refreshing ? "rd-refresh-spinning" : ""
-                }`}
-                aria-hidden="true"
-              />
+              <FiRefreshCw className={refreshing ? "rd-refresh-spinning" : ""} aria-hidden="true" />
               {refreshing ? "Refreshing…" : "Refresh"}
             </button>
           </div>
         </header>
+        {/* What needs doing today */}
         {/* KPI row */}
         <section className="rd-metrics-grid">
           <MetricCard
             label={`Orders (${periodLabel})`}
-            value={loading ? "—" : filteredOrders.length}
-            delta={period === "today" ? "+8.2%" : periodLabel}
-            deltaPositive={period === "today"}
-            neutral={period !== "today"}
+            value={loading ? "—" : ordersCount}
+            delta={`${changeLabel(summary?.orders?.change)} vs previous`}
+            deltaPositive={(summary?.orders?.change ?? 0) >= 0}
+            neutral={summary?.orders?.change == null}
             icon="ti-shopping-cart"
           />
           <MetricCard
             label="Orders in progress"
-            value={loading ? "—" : ordersInProgress.length}
-            delta={`${ordersInProgress.length} active`}
+            value={loading ? "—" : ordersInProgress}
+            delta="not yet dispatched"
             neutral
             icon="ti-progress"
           />
           <MetricCard
             label={`Quotations (${periodLabel})`}
-            value={loading ? "—" : filteredQuotations.length}
-            delta={period === "today" ? "+4.1%" : periodLabel}
-            deltaPositive={period === "today"}
-            neutral={period !== "today"}
+            value={loading ? "—" : quotationsCount}
+            delta={`${changeLabel(summary?.quotations?.change)} vs previous`}
+            deltaPositive={(summary?.quotations?.change ?? 0) >= 0}
+            neutral={summary?.quotations?.change == null}
             icon="ti-file-text"
           />
           <MetricCard
             label={`Order amount (${periodLabel})`}
             value={loading ? "—" : currency(orderAmountPeriod)}
-            delta={period === "today" ? "+12.4%" : periodLabel}
-            deltaPositive={period === "today"}
-            neutral={period !== "today"}
+            delta={`${changeLabel(summary?.orders?.amountChange)} vs previous`}
+            deltaPositive={(summary?.orders?.amountChange ?? 0) >= 0}
+            neutral={summary?.orders?.amountChange == null}
             icon="ti-currency-rupee"
             accent
           />
@@ -497,15 +353,15 @@ export default function ReportingDashboard() {
                 </span>
 
                 <span className="rd-conversion-stat-value">
-                  {loading ? "—" : filteredQuotations.length}
+                  {loading ? "—" : quotationsCount}
                 </span>
               </div>
 
               <div>
-                <span className="rd-conversion-stat-label">Total orders</span>
+                <span className="rd-conversion-stat-label">Converted to orders</span>
 
                 <span className="rd-conversion-stat-value">
-                  {loading ? "—" : filteredOrders.length}
+                  {loading ? "—" : summary?.quotations?.converted ?? 0}
                 </span>
               </div>
             </div>
@@ -519,7 +375,7 @@ export default function ReportingDashboard() {
                 Latest quotations · {periodLabel}
               </h2>
               <a href="/quotations/list" className="rd-view-all">
-                View all <i className="ti ti-arrow-right" aria-hidden="true" />
+                View all <FiArrowRight aria-hidden="true" />
               </a>
             </div>
             <RecordList
@@ -544,7 +400,7 @@ export default function ReportingDashboard() {
             <div className="rd-card-header">
               <h2 className="rd-card-title">Latest orders · {periodLabel}</h2>
               <a href="/orders/list" className="rd-view-all">
-                View all <i className="ti ti-arrow-right" aria-hidden="true" />
+                View all <FiArrowRight aria-hidden="true" />
               </a>
             </div>
             <RecordList
@@ -587,7 +443,10 @@ function MetricCard({
     <div className={`rd-metric-card${accent ? " rd-metric-card-accent" : ""}`}>
       <div className="rd-metric-top">
         <span className="rd-metric-icon">
-          <i className={`ti ${icon}`} aria-hidden="true" />
+          {(() => {
+            const Icon = METRIC_ICONS[icon];
+            return Icon ? <Icon aria-hidden="true" /> : null;
+          })()}
         </span>
         {delta && (
           <span

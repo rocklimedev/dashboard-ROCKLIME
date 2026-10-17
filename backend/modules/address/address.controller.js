@@ -196,6 +196,14 @@ exports.updateAddress = async (req, res) => {
     }
 
     // ── Update address ────────────────────────────────────────────────────
+    const oldValues = {
+      street: address.street,
+      city: address.city,
+      state: address.state,
+      postalCode: address.postalCode,
+      country: address.country,
+      status: address.status,
+    };
     await address.update({
       street: street || address.street,
       city: city || address.city,

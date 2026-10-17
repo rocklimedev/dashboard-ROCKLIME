@@ -6,6 +6,7 @@ const orderDispatchController = require("./order-dispatch.controller");
 const orderCreditNoteController = require("./order-credit-note.controller");
 const orderProductController = require("./order-product.controller");
 const { auth } = require("../../middleware/auth");
+const { guardModule } = require("../../middleware/permission");
 
 const multer = require("multer");
 require("dotenv").config();
@@ -129,6 +130,30 @@ const handleFieldsUpload = (uploader) => (req, res, next) => {
 };
 
 // ============================================================
+// ACCESS: every order route needs a login plus "orders" permission
+// ============================================================
+
+router.use(auth);
+router.use(
+  guardModule("orders", [
+    { path: /^\/comments/, action: "view" },
+    { method: "POST", path: /^\/delete-comment$/, action: "view" },
+    { method: "POST", path: /^\/low-stock-products$/, action: "view" },
+  ]),
+);
+
+// Who did it always comes from the login, never from the request body.
+router.use((req, res, next) => {
+  if (req.body && typeof req.body === "object" && !Array.isArray(req.body)) {
+    if ("userId" in req.body) req.body.userId = req.user.userId;
+    if (req.method === "POST" && /^\/(create|draft)$/.test(req.path)) {
+      req.body.createdBy = req.user.userId;
+    }
+  }
+  next();
+});
+
+// ============================================================
 // COMMENTS
 // ============================================================
 
@@ -147,6 +172,8 @@ router.post("/delete-comment", orderController.deleteCommentsByResource);
 router.post("/create", orderController.createOrder);
 
 router.get("/all", orderController.getAllOrders);
+
+router.get("/status-counts", orderController.statusCounts);
 
 router.get("/recent", orderController.recentOrders);
 
@@ -205,7 +232,7 @@ router.post(
 // ============================================================
 
 // Invoice download
-router.get("/:id/download-invoice", auth, orderController.downloadInvoice);
+router.get("/:id/download-invoice", orderController.downloadInvoice);
 
 router.get("/:orderId/download", orderController.getDownloadDocument);
 
@@ -225,14 +252,13 @@ router.post(
 // Get all dispatches for order
 router.get("/:id/dispatches", orderDispatchController.getOrderDispatches);
 
-router.post(
-  "/:id/dispatch",
-  handleFieldsUpload(uploadDispatchDocuments),
-  orderDispatchController.createDispatch,
-);
 
-// Get all dispatches for order
-router.get("/:id/dispatches", orderDispatchController.getOrderDispatches);
+router.post(
+  "/:orderId/dispatches/:dispatchId/delivered",
+  handleUpload(createUploader("file")),
+  orderDispatchController.markDispatchDelivered,
+);
+router.get("/:id/pick-list", orderDispatchController.pickList);
 
 router.get(
   "/:orderId/dispatches/:dispatchId/download",

@@ -1,3 +1,4 @@
+import { lazy } from "react";
 import {
   FaHome,
   FaTags,
@@ -14,23 +15,36 @@ import { MdOutlineInventory2, MdLocalActivity } from "react-icons/md";
 
 import { FaShoppingCart, FaStore } from "react-icons/fa";
 
-import CategoryManagement from "../../concepts/Products/CategoryManagement";
-import PurchaseManagement from "../../concepts/PO/PurchaseManagement";
-import Product from "../../concepts/Products/Product";
-import OrderWrapper from "../../concepts/Order/OrderWrapper";
-import QuotationList from "../../concepts/Quotation/QuotationList";
-import InventoryWrapper from "../../concepts/Products/InventoryWrapper";
-import UserList from "../../concepts/User/UserList";
-import RolePermission from "../../concepts/RBAC/RolePermission";
-import CustomerList from "../../concepts/Customers/CustomerList";
-import BrandList from "../../concepts/Brands/BrandsList";
-import ReportsPage from "../../concepts/Reports/page";
-import ActivityLogsPage from "../../concepts/Activity/page";
-import ReportDashboard from "../../concepts/Home/ReportDashboard";
-import NewDashboard from "../../concepts/Home/NewPageWrapper";
-import DispatchHistory from "../../concepts/Order/DispatchHistory";
+const CategoryManagement = lazy(() => import("../../concepts/Products/CategoryManagement"));
+const PurchaseManagement = lazy(() => import("../../concepts/PO/PurchaseManagement"));
+const Product = lazy(() => import("../../concepts/Products/Product"));
+const OrderWrapper = lazy(() => import("../../concepts/Order/OrderWrapper"));
+const QuotationList = lazy(() => import("../../concepts/Quotation/QuotationList"));
+const StockPage = lazy(() => import("../../concepts/Stock/StockPage"));
+const UserList = lazy(() => import("../../concepts/User/UserList"));
+const RolePermission = lazy(() => import("../../concepts/RBAC/RolePermission"));
+const CustomerList = lazy(() => import("../../concepts/Customers/CustomerList"));
+const BrandList = lazy(() => import("../../concepts/Brands/BrandsList"));
+const ReportsPage = lazy(() => import("../../concepts/Reports/ReportsHub"));
+const PdfReportsPage = lazy(() => import("../../concepts/Reports/page"));
+const ActivityLogsPage = lazy(() => import("../../concepts/Activity/page"));
+const ReportDashboard = lazy(() => import("../../concepts/Home/ReportDashboard"));
+const NewDashboard = lazy(() => import("../../concepts/Home/NewPageWrapper"));
+const DispatchHistory = lazy(() => import("../../concepts/Order/DispatchHistory"));
 import { useAuth } from "../../context/AuthContext";
-import Operations from "../../concepts/Operations/Operations";
+const Operations = lazy(() => import("../../concepts/Operations/Operations"));
+const AppsHome = lazy(() => import("../../apps/AppsHome"));
+const OpsToday = lazy(() => import("../../concepts/Operations/OpsToday"));
+const StockEntry = lazy(() => import("../../concepts/Operations/StockEntry"));
+const ReceiveGoods = lazy(() => import("../../concepts/Operations/ReceiveGoods"));
+const GatePasses = lazy(() => import("../../concepts/Operations/GatePasses"));
+const OrderFromQuotation = lazy(() => import("../../concepts/Order/OrderFromQuotation"));
+const Catalogues = lazy(() => import("../../concepts/Catalogue/Catalogues"));
+const CrmBoard = lazy(() => import("../../concepts/CRM/CrmBoard"));
+const CrmFollowUps = lazy(() => import("../../concepts/CRM/CrmFollowUps"));
+const CrmSettings = lazy(() => import("../../concepts/CRM/CrmSettings"));
+const CatalogueViewer = lazy(() => import("../../concepts/Catalogue/CatalogueViewer"));
+const MyDayPage = lazy(() => import("../../components/Home/MyDayPage"));
 
 // ============================================================
 // ROLE BASED DASHBOARD
@@ -53,9 +67,28 @@ const RoleBasedDashboard = () => {
 export const sidebarRoutes = [
   {
     path: "/",
-    name: "Dashboard",
+    name: "Apps",
     icon: <FaHome />,
     isSidebarActive: true,
+    element: <AppsHome />,
+  },
+  { path: "/orders/from-quotation", name: "Order from quotation", isSidebarActive: false, element: <OrderFromQuotation /> },
+  { path: "/crm", name: "CRM", isSidebarActive: false, element: <CrmBoard /> },
+  { path: "/crm/follow-ups", name: "Follow-ups", isSidebarActive: false, element: <CrmFollowUps /> },
+  { path: "/crm/settings", name: "Bigin connection", isSidebarActive: false, element: <CrmSettings /> },
+  { path: "/catalogues", name: "Brand catalogues", isSidebarActive: false, element: <Catalogues /> },
+  { path: "/catalogues/:id", name: "Catalogue", isSidebarActive: false, element: <CatalogueViewer /> },
+  { path: "/my-day", name: "My day", isSidebarActive: false, element: <MyDayPage /> },
+  // Operations app
+  { path: "/operations", name: "Operations", isSidebarActive: false, element: <OpsToday /> },
+  { path: "/operations/stock-entry", name: "Stock entry", isSidebarActive: false, element: <StockEntry /> },
+  { path: "/operations/receive", name: "Receive goods", isSidebarActive: false, element: <ReceiveGoods /> },
+  { path: "/operations/gate-passes", name: "Gate passes", isSidebarActive: false, element: <GatePasses /> },
+  {
+    path: "/dashboard",
+    name: "Sales dashboard",
+    icon: <FaHome />,
+    isSidebarActive: false,
     element: <RoleBasedDashboard />,
   },
 
@@ -102,7 +135,7 @@ export const sidebarRoutes = [
     name: "Inventory",
     icon: <MdOutlineInventory2 />,
     isSidebarActive: true,
-    element: <InventoryWrapper />,
+    element: <StockPage />,
   },
 
   {
@@ -121,8 +154,14 @@ export const sidebarRoutes = [
     element: <ReportsPage />,
   },
   {
-    path: "/operations",
-    name: "Operations",
+    path: "/reports/pdf",
+    name: "PDF reports",
+    isSidebarActive: false,
+    element: <PdfReportsPage />,
+  },
+  {
+    path: "/settings/maintenance",
+    name: "Maintenance tools",
     icon: <FaBoxOpen />,
     isSidebarActive: true,
     element: <Operations />,

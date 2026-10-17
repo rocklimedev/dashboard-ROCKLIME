@@ -1,6 +1,7 @@
 // src/components/Quotation/AddQuotation.jsx
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { quotationTotals } from "../../utils/quotationMath";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
   message,
   Input,
@@ -161,7 +162,7 @@ const AddQuotation = () => {
   });
 
   const { data: userData } = useGetProfileQuery();
-  const { data: customersData } = useGetCustomersQuery({ limit: 500 });
+  const { data: customersData } = useGetCustomersQuery({ limit: 10000 });
   const { data: addressesData, refetch: refetchAddresses } =
     useGetAllAddressesQuery();
 
@@ -183,6 +184,8 @@ const AddQuotation = () => {
   );
 
   // ── State ─────────────────────────────────────────────────────────
+  // "New quotation" from a customer's page opens with that customer chosen.
+  const presetCustomerId = useLocation().state?.customerId;
   const userId = userData?.user?.userId || "system";
 
   const initialFormData = {
@@ -195,7 +198,7 @@ const AddQuotation = () => {
     extraDiscountType: "fixed",
     signature_name: "",
     signature_image: "",
-    customerId: "",
+    customerId: presetCustomerId || "",
     shipTo: "",
     createdBy: userId,
     products: [],
@@ -735,45 +738,30 @@ const AddQuotation = () => {
     [formData.products],
   );
 
+  // Same maths as the server and the PDF (utils/quotationMath)
   const calculations = useMemo(() => {
-    let mainSubtotal = 0;
-    let mainLineDiscount = 0;
-
-    mainProducts.forEach((p) => {
-      const qty = safeNum(p.qty, 1);
-      const price = safeNum(p.sellingPrice, 0);
-      const disc = safeNum(p.discount, 0);
-      const discType = p.discountType || "fixed";
-
-      const lineDisc =
-        discType === "percent" ? (price * qty * disc) / 100 : disc * qty;
-      mainSubtotal += price * qty - lineDisc;
-      mainLineDiscount += lineDisc;
+    const t = quotationTotals({
+      items: mainProducts.map((p) => ({
+        price: safeNum(p.sellingPrice, 0),
+        quantity: safeNum(p.qty, 1),
+        discount: safeNum(p.discount, 0),
+        discountType: p.discountType || "fixed",
+      })),
+      shipping: safeNum(formData.shippingAmount),
+      extraDiscount: safeNum(formData.extraDiscount),
+      extraDiscountType: formData.extraDiscountType || "percent",
+      gstRate: safeNum(formData.gst),
     });
-
-    const shipping = safeNum(formData.shippingAmount);
-    const baseForExtraDiscount = mainSubtotal + shipping;
-    const extraDiscAmt =
-      formData.extraDiscountType === "percent"
-        ? (baseForExtraDiscount * safeNum(formData.extraDiscount)) / 100
-        : safeNum(formData.extraDiscount);
-
-    const totalBeforeRound = baseForExtraDiscount - extraDiscAmt;
-    const rounded = Math.round(totalBeforeRound);
-    const roundOff = rounded - totalBeforeRound;
-    const gstAmount = rounded * safeNum(formData.gst) / 100;
-
     return {
-      mainSubtotal: Number(mainSubtotal.toFixed(2)),
-      mainLineDiscount: Number(mainLineDiscount.toFixed(2)),
-      extraDiscAmt: Number(extraDiscAmt.toFixed(2)),
-      shipping,
-      roundOff: Number(roundOff.toFixed(2)),
-      gstAmount: Number(gstAmount.toFixed(2)),
-      roundedAmount: rounded,
-      finalAmount: Number((rounded + gstAmount).toFixed(2)),
+      mainSubtotal: t.goodsValue,
+      mainLineDiscount: t.lineDiscount,
+      extraDiscAmt: t.extraDiscountAmount,
+      shipping: t.freight,
+      taxableValue: t.taxableValue,
+      roundOff: t.roundOff,
+      gstAmount: t.gstAmount,
+      finalAmount: t.grandTotal,
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     mainProducts,
     formData.shippingAmount,
@@ -1207,7 +1195,7 @@ const AddQuotation = () => {
                   style={{ borderRadius: 10, background: "#fafafa" }}
                 >
                   <Statistic
-                    title="Main Subtotal"
+                    title="Goods value (after line discounts)"
                     value={calculations.mainSubtotal}
                     precision={2}
                     prefix="₹"
@@ -1319,9 +1307,9 @@ const AddQuotation = () => {
                     </div>
 
                     <div style={{ textAlign: "right" }}>
-                      <Text type="secondary">Rounded Amount Before GST</Text>
+                      <Text type="secondary">Taxable value (before GST)</Text>
                       <div style={{ fontSize: 16 }}>
-                        ₹{calculations.roundedAmount.toFixed(2)}
+                        ₹{calculations.taxableValue.toFixed(2)}
                       </div>
                     </div>
                   </div>

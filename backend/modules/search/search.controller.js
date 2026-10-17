@@ -34,6 +34,12 @@ const searchAll = async (req, res) => {
 
     const results = {};
 
+    // Quotations and orders also match on their customer's name or phone.
+    const escaped = sequelize.escape(searchTerm);
+    const customerIds = sequelize.literal(
+      `(SELECT customerId FROM customers WHERE name LIKE ${escaped} OR mobileNumber LIKE ${escaped} OR companyName LIKE ${escaped})`,
+    );
+
     const searchConfigs = [
       {
         key: "Product",
@@ -77,6 +83,7 @@ const searchAll = async (req, res) => {
           "mobileNumber",
           "customerType",
         ],
+        fields: ["name", "email", "mobileNumber", "companyName", "gstNumber"],
       },
       {
         key: "Quotation",
@@ -88,31 +95,48 @@ const searchAll = async (req, res) => {
           "finalAmount",
           "quotation_date",
         ],
+        customWhere: () => ({
+          [Op.or]: [
+            { document_title: { [Op.like]: searchTerm } },
+            { reference_number: { [Op.like]: searchTerm } },
+            { customerId: { [Op.in]: customerIds } },
+          ],
+        }),
       },
       {
         key: "Order",
         model: Order,
         attributes: ["id", "orderNo", "status", "finalAmount", "createdAt"],
+        customWhere: () => ({
+          [Op.or]: [
+            { orderNo: { [Op.like]: searchTerm } },
+            { createdFor: { [Op.in]: customerIds } },
+          ],
+        }),
       },
       {
         key: "Brand",
         model: Brand,
         attributes: ["id", "brandName", "brandSlug"],
+        fields: ["brandName", "brandSlug"],
       },
       {
         key: "Category",
         model: Category,
         attributes: ["categoryId", "name"],
+        fields: ["name"],
       },
       {
         key: "Vendor",
         model: Vendor,
         attributes: ["id", "vendorName"],
+        fields: ["vendorName", "vendorId"],
       },
       {
         key: "PurchaseOrder",
         model: PurchaseOrder,
         attributes: ["id", "poNumber", "status", "totalAmount", "orderDate"],
+        fields: ["poNumber"],
       },
     ];
 
@@ -151,6 +175,7 @@ const searchAll = async (req, res) => {
             totalPages: Math.ceil(count / limitToUse),
           };
         } catch (err) {
+          console.error(`[search] ${config.key} failed:`, err.message);
           results[config.key] = {
             items: [],
             total: 0,

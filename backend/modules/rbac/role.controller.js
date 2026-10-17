@@ -394,9 +394,10 @@ const getRolePermissions = async (req, res) => {
     const rolePermissions = await RolePermission.findAll({
       where: { roleId },
       include: [
-        { model: Roles, attributes: ["roleId", "roleName"] },
+        { model: Role, as: "role", attributes: ["roleId", "roleName"] },
         {
           model: Permission,
+          as: "permission",
           attributes: ["permissionId", "module", "api", "route"],
         },
       ],
@@ -500,6 +501,5 @@ module.exports = {
   getRoleById,
   removePermissionFromRole,
   getRolePermissions,
-  updateRolePermissions,
   getRecentRoleToGive,
 };

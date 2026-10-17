@@ -1,7 +1,8 @@
+import { lazy } from "react";
 // src/routes/customerRoutes.js
 import { FaUsers } from "react-icons/fa";
-import CustomerDetails from "../../concepts/Customers/CustomerDetails";
-import AddCustomer from "../../concepts/Customers/AddCustomer";
+const CustomerDetails = lazy(() => import("../../concepts/Customers/CustomerDetails"));
+const AddCustomer = lazy(() => import("../../concepts/Customers/AddCustomer"));
 
 export const customerRoutes = [
   {

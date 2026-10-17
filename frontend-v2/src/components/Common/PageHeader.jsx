@@ -3,20 +3,21 @@ import { jsPDF } from "jspdf";
 import "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { FilePdfFilled, FileExcelFilled } from "@ant-design/icons";
-import { Tooltip, Switch } from "antd";
+import { Tooltip, Switch, message } from "antd";
 import { AppstoreOutlined, UnorderedListOutlined } from "@ant-design/icons";
 const PageHeader = ({
   title,
   subtitle,
   onAdd,
-  tableData = [],
+  addLabel, // ← Text of the add button (default "+ Add <title>")
+  tableData, // ← Rows for the PDF/Excel buttons; without it the buttons are hidden
   exportOptions = { pdf: true, excel: true },
   extra, // ← Accepts any JSX (buttons, toggles, etc.)
   viewToggle, // ← Optional: For card/list toggle
 }) => {
   const handleDownloadPDF = () => {
-    if (tableData.length === 0) {
-      alert("No data available to export");
+    if (!tableData?.length) {
+      message.info("Nothing to export yet");
       return;
     }
 
@@ -41,8 +42,8 @@ const PageHeader = ({
   };
 
   const handleDownloadExcel = () => {
-    if (tableData.length === 0) {
-      alert("No data available to export");
+    if (!tableData?.length) {
+      message.info("Nothing to export yet");
       return;
     }
     const worksheet = XLSX.utils.json_to_sheet(tableData);
@@ -67,6 +68,7 @@ const PageHeader = ({
       {/* Right Side - Actions */}
       <div className="d-flex align-items-center gap-3">
         {/* Export Buttons */}
+        {Array.isArray(tableData) && (
         <ul className="table-top-head d-flex align-items-center gap-2 mb-0">
           {exportOptions.pdf && (
             <li>
@@ -102,6 +104,7 @@ const PageHeader = ({
             </li>
           )}
         </ul>
+        )}
 
         {/* View Toggle (Card/List) - Optional */}
         {viewToggle && (
@@ -123,7 +126,7 @@ const PageHeader = ({
         {/* Add Button */}
         {onAdd && (
           <button onClick={onAdd} className="btn btn-primary">
-            + Add {title}
+            {addLabel || `+ Add ${title}`}
           </button>
         )}
       </div>

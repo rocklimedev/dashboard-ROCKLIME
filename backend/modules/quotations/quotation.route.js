@@ -2,21 +2,30 @@ const express = require("express");
 const router = express.Router();
 const quotationController = require("./quotation.controller");
 const { auth } = require("../../middleware/auth"); // Authentication middleware
-const checkPermission = require("../../middleware/permission"); // Permission middleware
+const { guardModule } = require("../../middleware/permission");
 
 router.use(auth);
+router.use(guardModule("quotations", [
+    { method: "POST", path: /^\/export\//, action: "view" },
+    { method: "POST", path: /^\/[^/]+\/share$/, action: "view" },
+    { method: "POST", path: /^\/preview-pdf$/, action: "view" },
+    { method: "POST", path: /^\/[^/]+\/restore\//, action: "edit" },
+    { method: "POST", path: /^\/[^/]+\/followups$/, action: "edit" },
+  ]));
 // ✅ Create a new quotation (Only Admins & Managers)
 router.post(
   "/add",
   auth,
-  //checkPermission("write", "create_quotation", "quotations", "/quotations/add"),
   quotationController.createQuotation,
 );
+
+// Pipeline: counts per status, follow-ups due (before "/:id")
+router.get("/pipeline/summary", quotationController.pipelineSummary);
+router.post("/preview-pdf", quotationController.previewDraftPdf);
 
 // ✅ Get all quotations (Admins, Managers & Sales Team)
 router.get(
   "/",
-  // checkPermission("view", "get_all_quotations", "quotations", "/quotations"),
   quotationController.getAllQuotations,
 );
 
@@ -24,12 +33,6 @@ router.get(
 router.get(
   "/:id",
 
-  // checkPermission(
-  //   "view",
-  //   "get_quotation_by_id",
-  //   "quotations",
-  //   "/quotations/:id"
-  // ),
   quotationController.getQuotationById,
 );
 
@@ -37,7 +40,6 @@ router.get(
 router.put(
   "/:id",
   auth,
-  // checkPermission("edit", "update_quotation", "quotations", "/quotations/:id"),
   quotationController.updateQuotation,
 );
 
@@ -45,12 +47,6 @@ router.put(
 router.delete(
   "/:id",
   auth,
-  // checkPermission(
-  //   "delete",
-  //   "delete_quotation",
-  //   "quotations",
-  //   "/quotations/:id"
-  // ),
   quotationController.deleteQuotation,
 );
 
@@ -58,25 +54,24 @@ router.delete(
 router.post(
   "/export/:id/:version?",
   auth,
-  // checkPermission("export", "export_quotation", "quotations", "/quotations/export/:id"),
   quotationController.exportQuotation,
 );
 router.post(
   "/:id/clone",
-  // checkPermission(
-  //   "post",
-  //   "clone_quotation",
-  //   "quotations",
-  //   "/quotations/clone/:id"
-  // ),
   quotationController.cloneQuotation,
 );
 
 // New routes for versioning
 router.get("/:id/versions/:version?", quotationController.getQuotationVersions);
+router.get("/:id/pdf", quotationController.getQuotationPdf);
+router.post("/:id/share", quotationController.createShareLink);
 router.post(
   "/:id/restore/:version",
   quotationController.restoreQuotationVersion,
 );
+
+router.patch("/:id/status", quotationController.updateStatus);
+router.get("/:id/followups", quotationController.listFollowUps);
+router.post("/:id/followups", quotationController.addFollowUp);
 
 module.exports = router;

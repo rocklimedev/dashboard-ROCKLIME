@@ -19,7 +19,9 @@ const { sendNotification } = require("../engagement/notification.controller");
 const { uploadToFtp } = require("../../middleware/upload");
 
 // Assume an admin user ID or system channel for notifications
-const ADMIN_USER_ID = "2ef0f07a-a275-4fe1-832d-fe9a5d145f60"; // Replace with actual admin user ID or channel
+// Who receives order notifications meant for "the admin". Set ADMIN_USER_ID in .env.
+const ADMIN_USER_ID = process.env.ADMIN_USER_ID || null;
+const stock = require("../stock/stock.service");
 
 const sendErrorResponse = (res, status, message, details = null) => {
   const response = { message };
@@ -43,120 +45,7 @@ const uploadCreditNoteFile = async (file) => {
   });
 };
 
-/**
- * Reduce stock + log history (shared by create & update)
- */
-async function reduceStockAndLog({
-  productUpdates,
-  createdBy,
-  orderNo,
-  customMessage,
-  transaction,
-}) {
-  if (!transaction) throw new Error("Transaction is required");
-
-  const username =
-    (
-      await User.findByPk(createdBy, {
-        attributes: ["username"],
-        transaction,
-      })
-    )?.username || "System";
-
-  const autoMsg = `Stock removed by ${username} (Order #${orderNo})`;
-  const msg = customMessage?.trim() ? `${customMessage} (${autoMsg})` : autoMsg;
-
-  for (const upd of productUpdates) {
-    const { productId, quantityToReduce, productRecord } = upd;
-
-    if (quantityToReduce <= 0) continue; // safety
-
-    const newQty = productRecord.quantity - quantityToReduce;
-
-    // 1. Update product quantity
-    await Product.update(
-      { quantity: newQty },
-      { where: { productId }, transaction },
-    );
-
-    // Inside the loop in reduceStockAndLog:
-    await InventoryHistory.create(
-      {
-        id: uuidv7(), // ← Explicitly set the ID here!
-        productId,
-        change: -quantityToReduce,
-        quantityAfter: newQty,
-        action: "sale",
-        orderNo: String(orderNo),
-        userId: createdBy,
-        message: msg,
-      },
-      { transaction },
-    );
-
-    // 3. Update status if needed
-    let newStatus = "active";
-    if (newQty === 0) {
-      newStatus = "out_of_stock";
-    } else if (
-      productRecord.alert_quantity != null &&
-      newQty <= productRecord.alert_quantity
-    ) {
-      newStatus = "low_stock";
-    }
-
-    if (newStatus !== productRecord.status) {
-      await Product.update(
-        { status: newStatus },
-        { where: { productId }, transaction },
-      );
-    }
-  }
-}
-
-const parseItems = (rawItems) => {
-  if (Array.isArray(rawItems)) return rawItems;
-
-  if (typeof rawItems === "string") {
-    try {
-      const parsed = JSON.parse(rawItems);
-      return Array.isArray(parsed) ? parsed : null;
-    } catch {
-      return null;
-    }
-  }
-
-  return null;
-};
-
-async function restoreStock({ products, orderNo, transaction }) {
-  if (!products?.length) return;
-
-  for (const p of products) {
-    const prod = await Product.findByPk(p.id || p.productId, { transaction });
-    if (!prod) continue;
-
-    const qtyToAdd = p.quantity ?? 0;
-    const newQty = prod.quantity + qtyToAdd;
-
-    await Product.update(
-      { quantity: newQty },
-      { where: { productId: prod.productId }, transaction },
-    );
-
-    await InventoryHistory.create(
-      {
-        productId: prod.productId,
-        change: qtyToAdd,
-        quantityAfter: newQty,
-        action: "add-stock",
-        orderNo,
-        message: `Stock restored (order #${orderNo} credit note issued)`,
-      },
-      { transaction },
-    );
-  }
-}
+// Stock moves through the stock engine (modules/stock/stock.service.js).
 
 const getReturnedQuantityMap = async (orderId, transaction) => {
   const creditNotes = await OrderCreditNote.findAll({
@@ -224,6 +113,22 @@ const isOrderFullyReturned = ({ orderedQuantityMap, returnedQuantityMap }) => {
 
     return returned >= ordered;
   });
+};
+
+/**
+ * Items arrive as an array (JSON body) or a JSON string (multipart form).
+ */
+const parseItems = (rawItems) => {
+  if (Array.isArray(rawItems)) return rawItems;
+  if (typeof rawItems === "string") {
+    try {
+      const parsed = JSON.parse(rawItems);
+      return Array.isArray(parsed) ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+  return null;
 };
 
 /**
@@ -597,15 +502,28 @@ exports.createOrderCreditNote = async (req, res) => {
     // RESTORE ONLY RETURNED STOCK (inside the transaction)
     // --------------------------------------------------------
 
-    await restoreStock({
-      products: validatedItems.map((item) => ({
-        id: item.productId,
-        productId: item.productId,
-        quantity: item.quantity,
-      })),
-      orderNo: order.orderNo,
-      transaction,
-    });
+    // Returned pieces go back on hand; pieces marked damaged go to Damaged.
+    const damagedById = Object.fromEntries(
+      (items || []).map((i) => [
+        String(i.productId || i.id),
+        Math.max(Number(i.damagedQuantity ?? (i.condition === "damaged" ? i.quantity : 0)) || 0, 0),
+      ]),
+    );
+    for (const item of validatedItems) {
+      const bad = Math.min(damagedById[String(item.productId)] || 0, item.quantity);
+      await stock.returnIn(
+        {
+          productId: item.productId,
+          quantity: item.quantity - bad,
+          damaged: bad,
+          ref: { type: "CREDIT_NOTE", id: creditNote.id, no: creditNote.creditNoteNumber || order.orderNo },
+          userId: req.user?.userId || null,
+          reason: `Customer return on order ${order.orderNo}`,
+          key: `RETURN:${creditNote.id}:${item.productId}`,
+        },
+        { t: transaction },
+      );
+    }
 
     // --------------------------------------------------------
     // CALCULATE NEW RETURNED QUANTITIES
@@ -1032,13 +950,32 @@ exports.cancelOrderCreditNote = async (req, res) => {
       });
     }
 
-    if (productsForReduction.length > 0) {
-      await reduceStockAndLog({
-        productUpdates: productsForReduction,
-        createdBy: req.user?.userId || order.createdBy,
-        orderNo: order.orderNo,
+    // Undo the return in stock (the ledger shows what came back as good/damaged)
+    const { StockLedger } = require("../../models");
+    for (const item of productsForReduction) {
+      const earlier = await StockLedger.findAll({
+        where: { refType: "CREDIT_NOTE", refId: String(creditNote.id), productId: item.productId, movement: "RETURN" },
         transaction,
       });
+      const good = earlier.reduce((s, l) => s + l.onHandChange, 0) || item.quantityToReduce;
+      const bad = earlier.reduce((s, l) => s + l.damagedChange, 0);
+      try {
+        await stock.returnOut(
+          {
+            productId: item.productId,
+            quantity: good,
+            damaged: bad,
+            ref: { type: "CREDIT_NOTE", id: creditNote.id, no: creditNote.creditNoteNumber || order.orderNo },
+            userId: req.user?.userId || null,
+            reason: `Credit note cancelled on order ${order.orderNo}`,
+            key: `RETURN-CANCEL:${creditNote.id}:${item.productId}`,
+          },
+          { t: transaction },
+        );
+      } catch (stockErr) {
+        await transaction.rollback();
+        return sendErrorResponse(res, stockErr.status || 409, stockErr.message);
+      }
     }
 
     // --------------------------------------------------------

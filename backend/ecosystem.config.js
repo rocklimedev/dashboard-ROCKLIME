@@ -6,6 +6,9 @@ module.exports = {
       instances: 1, // or 'max' / -1 for cluster mode
       exec_mode: "fork", // or 'cluster' if stateless
       env: { NODE_ENV: "production" },
+      autorestart: true,
+      restart_delay: 2000,
+      max_memory_restart: "1G",
     },
     {
       name: "bulk-import-worker",

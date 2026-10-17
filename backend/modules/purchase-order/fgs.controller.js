@@ -268,6 +268,7 @@ exports.updateFieldGuidedSheet = async (req, res) => {
       throw new Error("Cannot modify converted Field Guided Sheet");
     }
 
+    const oldSnapshot = fgs.toJSON();
     const updateData = {};
 
     if (vendorId) {

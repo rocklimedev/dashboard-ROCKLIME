@@ -1,0 +1,68 @@
+.ops-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+.ops-stats {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+@media (max-width: 991px) {
+  .ops-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 575px) {
+  .ops-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.ops-stat {
+  background: #fff;
+  border: 1px solid #ececec;
+  border-radius: 12px;
+  padding: 14px 16px;
+  color: #1a1a1a;
+  height: 100%;
+  transition: border-color 0.15s ease;
+}
+a:hover > .ops-stat {
+  border-color: #d0d0d0;
+}
+.ops-stat__value {
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.1;
+}
+.ops-stat__label {
+  font-size: 12.5px;
+  color: #8c8c8c;
+  margin-top: 4px;
+}
+.ops-stat__hint {
+  font-size: 11.5px;
+  color: #a6a6a6;
+  margin-top: 2px;
+}
+.ops-stat.is-danger .ops-stat__value {
+  color: #cf1322;
+}
+.ops-stat.is-warn .ops-stat__value {
+  color: #d46b08;
+}
+.ops-panel {
+  border-radius: 12px;
+  height: 100%;
+}
+.ops-row {
+  cursor: pointer;
+  border-radius: 6px;
+}
+.ops-row:hover {
+  background: #fafafa;
+}

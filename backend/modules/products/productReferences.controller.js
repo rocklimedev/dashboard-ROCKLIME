@@ -9,7 +9,10 @@ module.exports = async (req, res) => {
   try {
     const product = await models.Product.findByPk(req.params.productId);
     if (!product) return res.status(404).json({ message: "Product not found" });
-    const references = await loadReferences({ ...models, QuotationItem, OrderItem, PoItem, FgsItem }, req.params.productId);
+    const references = await loadReferences(
+      { ...models, QuotationItem, OrderItem, PoItem, FgsItem },
+      req.params.productId,
+    );
     res.json({ references });
   } catch (error) {
     console.error("Product references error:", error);

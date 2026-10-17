@@ -1,0 +1,162 @@
+/* App shell: apps home without a sidebar; inside an app, a sidebar with only
+   that app's menu. Loaded after the template styles. */
+
+/* ---------- apps home ---------- */
+.cm-shell--home .page-wrapper {
+  margin-left: 0 !important;
+}
+.cm-shell--home .header {
+  left: 0 !important;
+}
+.cm-header-logo {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 18px;
+}
+.cm-header-logo img {
+  height: 34px;
+  width: auto;
+}
+@media (max-width: 575px) {
+  .cm-header-logo img {
+    height: 26px;
+  }
+}
+
+/* ---------- app sidebar ---------- */
+.cm-app-sidebar .sidebar-inner {
+  padding-top: 8px;
+}
+.cm-app-sidebar__back {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 14px 6px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: #8c8c8c;
+}
+.cm-app-sidebar__back:hover {
+  background: #f5f5f5;
+  color: #262626;
+}
+.cm-app-sidebar__app {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 14px 8px;
+  padding: 8px;
+  border-radius: 10px;
+  color: #1a1a1a;
+}
+.cm-app-sidebar__app:hover {
+  color: #1a1a1a;
+  background: #fafafa;
+}
+.cm-app-sidebar__icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 15px;
+  flex: 0 0 auto;
+}
+.cm-app-sidebar__name {
+  font-weight: 600;
+  font-size: 15px;
+}
+.cm-app-sidebar__section {
+  margin: 14px 0 4px;
+  padding: 0 14px;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #a6a6a6;
+}
+.cm-app-sidebar .sidebar-menu > ul > li > a {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+}
+.cm-app-sidebar .sidebar-menu > ul > li > a .anticon {
+  font-size: 15px;
+  color: #8c8c8c;
+}
+.cm-app-sidebar .sidebar-menu > ul > li > a.active .anticon {
+  color: inherit;
+}
+/* collapsed sidebar: icons only */
+.mini-sidebar .cm-app-sidebar:not(.expand-menu) .cm-app-sidebar__back span,
+.mini-sidebar .cm-app-sidebar:not(.expand-menu) .cm-app-sidebar__name,
+.mini-sidebar .cm-app-sidebar:not(.expand-menu) .cm-app-sidebar__section {
+  display: none;
+}
+
+/* "Start from a quotation" hint on the order cart */
+.cm-quote-hint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  background: #fff7f0;
+  border: 1px solid #ffd8bf;
+  border-radius: 10px;
+  color: #873800;
+}
+.cm-quote-hint > span {
+  flex: 1;
+  min-width: 200px;
+}
+
+/* vendor summary on the purchase order form */
+.po-vendor-card {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+/* global search: filter by kind */
+.search-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px 4px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 8px;
+}
+.search-chip {
+  border: 1px solid #e5e5e5;
+  background: #fff;
+  border-radius: 999px;
+  padding: 3px 12px;
+  font-size: 12.5px;
+  cursor: pointer;
+  color: #434343;
+}
+.search-chip span {
+  color: #8c8c8c;
+  margin-left: 2px;
+}
+.search-chip.is-on {
+  background: #d7232f;
+  border-color: #d7232f;
+  color: #fff;
+}
+.search-chip.is-on span {
+  color: #ffe0e0;
+}
+.search-chip--link {
+  border-style: dashed;
+  color: #d7232f;
+}

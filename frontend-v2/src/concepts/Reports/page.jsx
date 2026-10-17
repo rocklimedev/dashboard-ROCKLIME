@@ -61,7 +61,7 @@ const ReportsPage = () => {
     useGetLowStockProductsQuery({
       page: 1,
       limit: 100000,
-      threshold: 20,
+      threshold: 10,
     });
   const quotations = quotationsData?.data || [];
   const orders = ordersData?.data || [];
@@ -140,13 +140,16 @@ const ReportsPage = () => {
             "S.No": i + 1,
             "Product Name": p.name,
             "Company Code":
-              p.metaDetails?.find((d) => d.value?.match(/^[A-Za-z0-9]{6,12}$/))
-                ?.value || "—",
+              p.metaDetails?.find(
+                (d) =>
+                  d.id === "d11da9f9-3f2e-4536-8236-9671200cca4a" || // Company Code field
+                  d.slug === "companyCode",
+              )?.value || "—",
             "Current Stock": p.quantity,
             Status:
-              p.quantity === 0
+              p.quantity <= 0
                 ? "OUT OF STOCK"
-                : p.quantity <= 20
+                : p.quantity <= (Number(p.alert_quantity) || 10)
                   ? "LOW STOCK"
                   : "IN STOCK",
             "Last Updated": p.updatedAt

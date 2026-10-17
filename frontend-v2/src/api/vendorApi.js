@@ -36,7 +36,7 @@ export const vendorApi = baseApi.injectEndpoints({
           "Content-Type": "application/json",
         },
       }),
-      invalidatesTags: (result, error, { id }) => [{ type: "Vendors", id }],
+      invalidatesTags: (result, error, { id }) => [{ type: "Vendors", id }, { type: "Vendors", id: "LIST" }],
     }),
     checkVendorId: builder.query({
       query: (vendorId) => `/vendors/check-vendor-id/${vendorId}`,

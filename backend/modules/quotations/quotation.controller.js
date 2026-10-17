@@ -7,6 +7,9 @@ const QuotationItem = require("./models/quotation-item.model"); // MongoDB model
 const QuotationVersion = require("./models/quotation-version.model");
 const { ActivityLog } = require("../../models");
 const logActivity = require("../../utils/activityLogger");
+const { quotationTotals } = require("../../lib/quotationMath");
+const { sendNotification } = require("../engagement/notification.controller");
+const pipeline = require("./pipeline");
 
 // META_SLUGS (same as you have in your Cart controller)
 const META_SLUGS = {
@@ -263,73 +266,31 @@ function calculateTotals(
   shippingAmount = 0,
   gst = 0,
 ) {
-  // STRONGER FILTERING FOR OPTIONAL ITEMS
-  const mainItems = items.filter((item) => {
-    const isOptional =
-      Boolean(item.isOption) ||
-      Boolean(item.isOptionFor) ||
-      (item.optionType && item.optionType !== "main");
-
-    return !isOptional;
+  // One set of maths for screens, saved totals and the PDF (lib/quotationMath).
+  // GST is charged on the taxable value; rounding to the rupee happens last.
+  const t = quotationTotals({
+    items,
+    extraDiscount,
+    extraDiscountType,
+    shipping: shippingAmount,
+    gstRate: gst,
   });
-
-  const optionalItems = items.filter((item) => {
-    return (
-      Boolean(item.isOption) ||
-      Boolean(item.isOptionFor) ||
-      (item.optionType && item.optionType !== "main")
-    );
-  });
-
-  let subTotal = 0;
-  let totalItemDiscount = 0;
-  let taxableAmount = 0;
-
-  mainItems.forEach((p) => {
-    const lineGross = (Number(p.price) || 0) * (Number(p.quantity) || 1);
-    const discountAmount =
-      p.discountType === "percent"
-        ? (lineGross * (Number(p.discount) || 0)) / 100
-        : (Number(p.discount) || 0) * (Number(p.quantity) || 1);
-
-    const lineAfterDiscount = lineGross - discountAmount;
-
-    subTotal += lineGross;
-    totalItemDiscount += discountAmount;
-    taxableAmount += lineAfterDiscount;
-  });
-
-  const baseForExtraDiscount = taxableAmount + Number(shippingAmount || 0);
-  const extraDiscountAmount =
-    extraDiscountType === "percent"
-      ? (baseForExtraDiscount * Number(extraDiscount || 0)) / 100
-      : Number(extraDiscount || 0);
-
-  const amountBeforeGst = baseForExtraDiscount - extraDiscountAmount;
-  const roundedAmount = Math.round(amountBeforeGst);
-  const roundOff = roundedAmount - amountBeforeGst;
-
-  const gstAmount = roundedAmount * (Number(gst || 0) / 100);
-  const finalAmount = roundedAmount + gstAmount;
-
-  const optionalTotal = optionalItems.reduce((sum, item) => {
-    return sum + (Number(item.price) || 0) * (Number(item.quantity) || 1);
-  }, 0);
-
   return {
-    subTotal: Number(subTotal.toFixed(2)),
-    totalItemDiscount: Number(totalItemDiscount.toFixed(2)),
-    taxableAmount: Number(taxableAmount.toFixed(2)),
-    extraDiscountAmount: Number(extraDiscountAmount.toFixed(2)),
-    shippingAmount: Number(shippingAmount || 0),
-    amountBeforeGst: Number(amountBeforeGst.toFixed(2)),
-    roundOff: Number(roundOff.toFixed(2)),
-    gstAmount: Number(gstAmount.toFixed(2)),
-    finalAmount: Number(finalAmount.toFixed(2)),
+    subTotal: t.mrpValue,
+    totalItemDiscount: t.lineDiscount,
+    taxableAmount: t.goodsValue,
+    extraDiscountAmount: t.extraDiscountAmount,
+    shippingAmount: t.freight,
+    amountBeforeGst: t.taxableValue,
+    taxableValue: t.taxableValue,
+    gstAmount: t.gstAmount,
+    beforeRound: t.beforeRound,
+    roundOff: t.roundOff,
+    finalAmount: t.grandTotal,
 
-    optionalItems,
-    optionalTotal: Number(optionalTotal.toFixed(2)),
-    optionalItemsCount: optionalItems.length,
+    optionalItems: t.optionalLines,
+    optionalTotal: t.optionalTotal,
+    optionalItemsCount: t.optionalLines.length,
   };
 }
 async function generateQuotationNumber(t) {
@@ -747,7 +708,8 @@ exports.updateQuotation = async (req, res) => {
         let imageUrl = null;
         if (p.images) {
           try {
-            imageUrl = JSON.parse(p.images)?.[0] ?? null;
+            const imgs = Array.isArray(p.images) ? p.images : JSON.parse(p.images);
+            imageUrl = imgs?.[0] ?? null;
           } catch {}
         }
         productMap[p.productId] = {
@@ -903,6 +865,7 @@ exports.updateQuotation = async (req, res) => {
 
       req,
     });
+    await pipeline.reopenIfExtended(id).catch(() => {});
     return res.status(200).json({
       message: "Quotation updated successfully",
       version: newVersionNumber,
@@ -946,13 +909,13 @@ exports.exportQuotation = async (req, res) => {
       floors = quotation.floors || [];
     }
 
-    // We still calculate totals from main (non-optional) items
+    // Same totals as the screens and the PDF
     const {
       subTotal,
       totalItemDiscount,
-      itemTax: totalTax, // usually 0
       extraDiscountAmount,
       gstAmount,
+      finalAmount: finalTotal,
     } = calculateTotals(
       quotationItems,
       quotation.extraDiscount || 0,
@@ -960,15 +923,7 @@ exports.exportQuotation = async (req, res) => {
       quotation.shippingAmount || 0,
       quotation.gst || 0,
     );
-
-    const finalTotal =
-      subTotal +
-      totalTax +
-      (quotation.shippingAmount || 0) +
-      gstAmount -
-      totalItemDiscount -
-      extraDiscountAmount +
-      (quotation.roundOff || 0);
+    const totalTax = 0;
 
     // ─────────────────────────────────────────────
     // Build grouped sheet data
@@ -1531,8 +1486,15 @@ exports.getQuotationById = async (req, res) => {
       quotation.gst,
     );
 
+    const days = await pipeline.validityDays();
+    const orders = await sequelize.query(
+      "SELECT id, orderNo, status FROM orders WHERE quotationId = ? ORDER BY createdAt",
+      { replacements: [quotation.quotationId], type: sequelize.QueryTypes.SELECT },
+    );
     res.status(200).json({
       ...quotation.toJSON(),
+      validTill: pipeline.validTill(quotation, days),
+      orders,
       items,
       groupedItems,
       calculated,
@@ -1563,6 +1525,8 @@ exports.getAllQuotations = async (req, res) => {
       where[Op.or] = [
         { document_title: { [Op.like]: searchTerm } },
         { reference_number: { [Op.like]: searchTerm } },
+        { "$customer.name$": { [Op.like]: searchTerm } },
+        { "$customer.mobileNumber$": { [Op.like]: searchTerm } },
       ];
     }
 
@@ -1570,8 +1534,17 @@ exports.getAllQuotations = async (req, res) => {
       where.customerId = req.query.customerId;
     }
 
+    await pipeline.expireOverdue().catch(() => {});
     if (req.query.status) {
-      where.status = req.query.status;
+      const list = String(req.query.status).toUpperCase().split(",").filter((s) => pipeline.STATUSES.includes(s));
+      if (list.length) where.status = list.length === 1 ? list[0] : { [Op.in]: list };
+    }
+    if (req.query.followUpDue) {
+      where.status = { [Op.in]: pipeline.OPEN };
+      where.nextFollowUp = { [Op.lte]: new Date().toISOString().slice(0, 10) };
+    }
+    if (req.query.mine) {
+      where.createdBy = req.user?.userId || null;
     }
 
     // Date range filter
@@ -1628,6 +1601,7 @@ exports.getAllQuotations = async (req, res) => {
     // MongoDB Items Enrichment
     // =====================================
     const quotationIds = quotations.map((q) => q.quotationId);
+    const validDays = await pipeline.validityDays();
 
     const mongoItems = await QuotationItem.find({
       quotationId: { $in: quotationIds },
@@ -1646,6 +1620,7 @@ exports.getAllQuotations = async (req, res) => {
 
       return {
         ...plain,
+        validTill: pipeline.validTill(plain, validDays),
         items: itemsMap[plain.quotationId] || [],
 
         // Flattened fields (Best for Reports / PDF)
@@ -1772,5 +1747,149 @@ exports.getQuotationVersions = async (req, res) => {
       error: "Failed to retrieve versions",
       details: error.message,
     });
+  }
+};
+
+
+// ─────────────────────────────────────────────────────────────
+// New quotation format: server-made PDF and customer share links
+// ─────────────────────────────────────────────────────────────
+const { buildQuotationPdf, buildDraftQuotationPdf } = require("./quotation-pdf");
+const { signShare } = require("../../lib/shareToken");
+
+// GET /api/quotation/:id/pdf?style=detailed|compact|areawise&cover=1&version=N&download=1
+exports.getQuotationPdf = async (req, res) => {
+  try {
+    const { buffer, filename } = await buildQuotationPdf(req.params.id, {
+      style: req.query.style,
+      // no "cover" in the link → the cover-page setting decides
+      cover: req.query.cover == null || req.query.cover === "" ? null : ["1", "true", "yes"].includes(String(req.query.cover)),
+      version: req.query.version || null,
+    });
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `${req.query.download ? "attachment" : "inline"}; filename="${filename}"`,
+    );
+    res.setHeader("Cache-Control", "no-store");
+    return res.send(buffer);
+  } catch (err) {
+    console.error("Quotation PDF:", err);
+    return res.status(err.status || 500).json({ message: err.message || "Could not make the PDF" });
+  }
+};
+
+// POST /api/quotation/preview-pdf { draft, style, cover } → PDF of an unsaved quotation (cart preview)
+exports.previewDraftPdf = async (req, res) => {
+  try {
+    const draft = req.body?.draft || {};
+    if (!Array.isArray(draft.products) || !draft.products.length) return res.status(400).json({ message: "Add products to preview" });
+    const { buffer } = await buildDraftQuotationPdf(draft, {
+      style: req.body?.style,
+      cover: req.body?.cover == null ? null : Boolean(req.body.cover),
+    });
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", 'inline; filename="Quotation-draft.pdf"');
+    res.setHeader("Cache-Control", "no-store");
+    return res.send(buffer);
+  } catch (err) {
+    console.error("Draft quotation PDF:", err);
+    return res.status(err.status || 500).json({ message: err.message || "Could not make the PDF" });
+  }
+};
+
+// POST /api/quotation/:id/share { style, cover, days } → a link the customer can open without logging in
+exports.createShareLink = async (req, res) => {
+  try {
+    const quotation = await Quotation.findByPk(req.params.id, {
+      attributes: ["quotationId", "reference_number", "customerId", "finalAmount"],
+    });
+    if (!quotation) return res.status(404).json({ message: "Quotation not found" });
+    const style = ["detailed", "compact", "areawise"].includes(req.body?.style) ? req.body.style : "detailed";
+    const days = Math.min(Math.max(Number(req.body?.days) || 30, 1), 90);
+    const token = signShare({ t: "q", id: quotation.quotationId, s: style, c: req.body?.cover == null ? null : req.body.cover ? 1 : 0 }, days);
+    const base = (process.env.PUBLIC_BACKEND_URL || `${req.protocol}://${req.get("host")}`).replace(/\/+$/, "");
+    const url = `${base}/api/public/q/${token}.pdf`;
+    const customer = quotation.customerId ? await Customer.findByPk(quotation.customerId, { attributes: ["name", "mobileNumber"] }) : null;
+    const itemsDoc = await QuotationItem.findOne({ quotationId: quotation.quotationId }).lean();
+    const full = await Quotation.findByPk(quotation.quotationId);
+    const total = calculateTotals(
+      itemsDoc?.items || [],
+      full.extraDiscount || 0,
+      full.extraDiscountType || "percent",
+      full.shippingAmount || 0,
+      full.gst || 0,
+    ).finalAmount;
+    const amount = Number(total || quotation.finalAmount || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 });
+    const message = `Dear ${customer?.name || "Sir/Madam"}, please find our quotation ${quotation.reference_number} for ₹${amount}: ${url}\n— CM Trading Co.`;
+    const phone = String(customer?.mobileNumber || "").replace(/\D/g, "");
+    const waPhone = phone.length === 10 ? `91${phone}` : phone;
+    await pipeline.markSent(quotation.quotationId, { userId: req.user?.userId }).catch(() => {});
+    logActivity({
+      userId: req.user?.userId,
+      contextTag: ActivityLog.CONTEXT_TAGS?.SALES || "SALES",
+      subContext: "QUOTATION",
+      action: "SHARE_LINK_CREATED",
+      entityId: quotation.quotationId,
+      entityName: quotation.reference_number,
+      description: `Share link created for quotation ${quotation.reference_number} (${days} days)`,
+    });
+    return res.json({
+      url,
+      expiresInDays: days,
+      message,
+      whatsapp: `https://wa.me/${waPhone}?text=${encodeURIComponent(message)}`,
+    });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+};
+
+
+// ───────────────────────── Pipeline ─────────────────────────
+const pipelineFail = (res, err) =>
+  res.status(err.status || 500).json({ message: err.message || "Request failed" });
+
+// GET /api/quotation/pipeline/summary?mine=1
+exports.pipelineSummary = async (req, res) => {
+  try {
+    const data = await pipeline.summary({ createdBy: req.query.mine ? req.user?.userId : null });
+    res.json({ ...data, statuses: pipeline.STATUSES, lostReasons: pipeline.LOST_REASONS, channels: pipeline.CHANNELS });
+  } catch (err) {
+    pipelineFail(res, err);
+  }
+};
+
+// PATCH /api/quotation/:id/status { status, lostReason, lostNote }
+exports.updateStatus = async (req, res) => {
+  try {
+    const q = await pipeline.setStatus(req.params.id, req.body?.status, {
+      userId: req.user?.userId,
+      lostReason: req.body?.lostReason,
+      lostNote: req.body?.lostNote,
+      req,
+    });
+    res.json({ message: `Quotation marked ${q.status.toLowerCase()}`, quotation: q });
+  } catch (err) {
+    pipelineFail(res, err);
+  }
+};
+
+// GET /api/quotation/:id/followups
+exports.listFollowUps = async (req, res) => {
+  try {
+    res.json({ data: await pipeline.listFollowUps(req.params.id) });
+  } catch (err) {
+    pipelineFail(res, err);
+  }
+};
+
+// POST /api/quotation/:id/followups { channel, note, nextDate }
+exports.addFollowUp = async (req, res) => {
+  try {
+    const f = await pipeline.addFollowUp(req.params.id, { ...req.body, userId: req.user?.userId });
+    res.status(201).json({ message: "Follow-up saved", followUp: f });
+  } catch (err) {
+    pipelineFail(res, err);
   }
 };

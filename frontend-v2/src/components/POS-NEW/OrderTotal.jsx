@@ -1,230 +1,121 @@
-// src/components/Quotation/OrderTotal.jsx
+// Totals box for the cart, quotation and order forms. Every line is shown
+// (zero lines too) so the customer's price is never a surprise. Same maths as
+// the server and the PDF (utils/quotationMath). GST rate and freight can be
+// changed right here when the form passes onGstChange / onShippingChange.
 import React, { useMemo } from "react";
 import PropTypes from "prop-types";
-import { Table, Typography } from "antd";
+import { InputNumber, Select, Typography } from "antd";
+import { quotationTotals, inr } from "../../utils/quotationMath";
 
 const { Text } = Typography;
+const GST_RATES = [0, 5, 12, 18, 28];
 
-const formatCurrency = (value, currency = "INR") =>
-  new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(Math.abs(value) || 0);
+const Line = ({ label, sub, value, strong, muted, negative, control }) => (
+  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, padding: "7px 2px", borderBottom: "1px solid #f3f3f3" }}>
+    <div style={{ minWidth: 0 }}>
+      <Text strong={strong} type={muted ? "secondary" : undefined}>
+        {label}
+      </Text>
+      {sub && (
+        <div>
+          <Text type="secondary" style={{ fontSize: 11.5 }}>
+            {sub}
+          </Text>
+        </div>
+      )}
+    </div>
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      {control}
+      <Text strong={strong} type={muted && !negative ? "secondary" : undefined} style={{ color: negative && value ? "#cf1322" : undefined, whiteSpace: "nowrap" }}>
+        {negative && value ? "− " : ""}
+        {inr(Math.abs(value))}
+      </Text>
+    </div>
+  </div>
+);
 
 const OrderTotal = React.memo(
   ({
-    subTotal = 0,
-    discount = 0, // total item-level discounts
-    tax = 0,
-    extraDiscount = 0, // global / additional discount
-    roundOff: parentRoundOff = 0, // parent's preferred round-off value
-    autoRound = true, // whether to auto-calculate if parentRoundOff === 0
-    shipping = 0, // optional shipping line
-    showHeader = false, // optional: show column headers
+    subTotal = 0, // MRP value (price × qty)
+    discount = 0, // line discounts
+    extraDiscount = 0, // extra discount amount (or % with extraDiscountType "percent")
+    extraDiscountType = "fixed",
+    shipping = 0, // freight / installation
+    gst = 0, // GST rate %
+    interState = false,
+    itemCount = null,
+    optionalTotal = 0,
+    onGstChange,
+    onShippingChange,
   }) => {
-    const safe = (n) => (typeof n === "number" && !isNaN(n) ? Number(n) : 0);
-
-    const values = {
-      subTotal: safe(subTotal),
-      discount: safe(discount),
-      tax: safe(tax),
-      extraDiscount: safe(extraDiscount),
-      shipping: safe(shipping),
-      parentRoundOff: safe(parentRoundOff),
-    };
-
-    const calculations = useMemo(() => {
-      let amount = values.subTotal;
-
-      // Step 1: subtract item-level discount
-      amount -= values.discount;
-
-      // Step 2: add tax
-      amount += values.tax;
-
-      // Step 3: add shipping (if any)
-      amount += values.shipping;
-
-      // Step 4: subtract global/extra discount
-      amount -= values.extraDiscount;
-
-      const beforeRound = amount;
-
-      // Rounding logic
-      let roundOff = values.parentRoundOff;
-      let finalTotal = beforeRound + roundOff;
-
-      // If parent didn't provide roundOff and autoRound is allowed → do Indian-style rounding
-      if (Math.abs(roundOff) < 0.001 && autoRound) {
-        const rupees = Math.floor(beforeRound);
-        const paise = Math.round((beforeRound - rupees) * 100);
-
-        if (paise === 0) {
-          roundOff = 0;
-        } else if (paise <= 50) {
-          roundOff = -paise / 100;
-        } else {
-          roundOff = (100 - paise) / 100;
-        }
-
-        finalTotal = Math.round(beforeRound + roundOff);
-      }
-
-      return {
-        taxableAmount: values.subTotal - values.discount,
-        amountAfterTaxAndShipping:
-          values.subTotal - values.discount + values.tax + values.shipping,
-        beforeRound,
-        roundOff,
-        finalTotal,
-      };
-    }, [values, autoRound]);
-
-    const columns = [
-      {
-        title: "Description",
-        dataIndex: "label",
-        key: "label",
-        render: (text, record) =>
-          record.bold ? <Text strong>{text}</Text> : text,
-      },
-      {
-        title: "Amount",
-        dataIndex: "amount",
-        key: "amount",
-        align: "right",
-        width: 140,
-        render: (amount, record) => {
-          const formatted = formatCurrency(amount);
-
-          if (record.bold) {
-            return (
-              <Text strong style={{ fontSize: "1.18em", color: "#d32f2f" }}>
-                {formatted}
-              </Text>
-            );
-          }
-          if (record.negative) {
-            return <span style={{ color: "#e74c3c" }}>-{formatted}</span>;
-          }
-          if (record.positive) {
-            return <span style={{ color: "#27ae60" }}>+{formatted}</span>;
-          }
-          return formatted;
-        },
-      },
-    ];
-
-    const dataSource = [
-      {
-        key: "1",
-        label: "Sub Total",
-        amount: values.subTotal,
-      },
-
-      ...(values.discount > 0
-        ? [
-            {
-              key: "2",
-              label: "Discount (on items)",
-              amount: values.discount,
-              negative: true,
-            },
-          ]
-        : []),
-
-      {
-        key: "3",
-        label: "Taxable Amount",
-        amount: calculations.taxableAmount,
-      },
-
-      ...(values.tax > 0
-        ? [
-            {
-              key: "4",
-              label: "Tax (GST)",
-              amount: values.tax,
-              positive: true,
-            },
-          ]
-        : []),
-
-      ...(values.shipping > 0
-        ? [
-            {
-              key: "shipping",
-              label: "Shipping / Delivery Charges",
-              amount: values.shipping,
-              positive: true,
-            },
-          ]
-        : []),
-
-      ...(values.extraDiscount > 0
-        ? [
-            {
-              key: "5",
-              label: "Extra / Global Discount",
-              amount: values.extraDiscount,
-              negative: true,
-            },
-          ]
-        : []),
-
-      {
-        key: "6",
-        label: "Amount Before Round-off",
-        amount: calculations.beforeRound,
-      },
-
-      ...(Math.abs(calculations.roundOff) > 0.0001
-        ? [
-            {
-              key: "7",
-              label: calculations.roundOff > 0 ? "Round Up" : "Round Down",
-              amount: Math.abs(calculations.roundOff),
-              positive: calculations.roundOff > 0,
-              negative: calculations.roundOff < 0,
-            },
-          ]
-        : []),
-
-      {
-        key: "final",
-        label: "Grand Total",
-        amount: calculations.finalTotal,
-        bold: true,
-      },
-    ];
+    const n = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
+    const t = useMemo(
+      () =>
+        quotationTotals({
+          items: [{ price: n(subTotal) - n(discount), quantity: 1 }],
+          shipping: n(shipping),
+          extraDiscount: n(extraDiscount),
+          extraDiscountType,
+          gstRate: n(gst),
+          interState,
+        }),
+      [subTotal, discount, extraDiscount, extraDiscountType, shipping, gst, interState],
+    );
+    const avg = n(subTotal) ? Math.round((n(discount) / n(subTotal)) * 100) : 0;
+    const half = t.gstRate / 2;
 
     return (
       <div>
-        <Table
-          columns={columns}
-          dataSource={dataSource}
-          pagination={false}
-          bordered={false}
-          size="middle"
-          showHeader={showHeader}
-          rowClassName={(record) =>
-            record.bold ? "ant-table-row-bold-total" : ""
+        <Line label="MRP value" sub={itemCount != null ? `${itemCount} item${itemCount === 1 ? "" : "s"}` : null} value={n(subTotal)} />
+        <Line label="Item discounts" sub={avg ? `${avg}% average` : null} value={n(discount)} negative />
+        <Line label="Goods value" value={t.goodsValue} />
+        <Line
+          label="Freight / installation"
+          value={t.freight}
+          control={
+            onShippingChange ? (
+              <InputNumber size="small" min={0} value={n(shipping) || null} placeholder="0" onChange={(v) => onShippingChange(v || 0)} style={{ width: 90 }} />
+            ) : null
           }
         />
-
-        <style jsx>{`
-          .ant-table-row-bold-total td {
-            background: #fff1f0 !important;
-            border-top: 2px solid #ffccc7 !important;
-          }
-          .ant-table-cell {
-            padding: 8px 12px !important;
-          }
-        `}</style>
+        <Line
+          label="Extra discount"
+          sub={extraDiscountType === "percent" && n(extraDiscount) ? `${n(extraDiscount)}%` : null}
+          value={t.extraDiscountAmount}
+          negative
+        />
+        <Line label="Taxable value" value={t.taxableValue} strong />
+        {interState ? (
+          <Line label={`IGST ${t.gstRate}%`} value={t.igst} control={gstControl()} />
+        ) : (
+          <>
+            <Line label={`CGST ${half}%`} value={t.cgst} control={gstControl()} />
+            <Line label={`SGST ${half}%`} value={t.sgst} />
+          </>
+        )}
+        <Line label="Round off" value={t.roundOff} muted negative={t.roundOff < 0} />
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10, padding: "12px 14px", background: "#d7232f", borderRadius: 10, color: "#fff" }}>
+          <span style={{ letterSpacing: "0.08em", fontSize: 12, textTransform: "uppercase" }}>Grand total</span>
+          <span style={{ fontSize: 20, fontWeight: 600 }}>{inr(t.grandTotal)}</span>
+        </div>
+        {n(discount) + t.extraDiscountAmount > 0 && (
+          <Text type="secondary" style={{ display: "block", textAlign: "right", fontSize: 12, marginTop: 6 }}>
+            Customer saves {inr(n(discount) + t.extraDiscountAmount)} on MRP
+          </Text>
+        )}
+        {n(optionalTotal) > 0 && (
+          <Text type="secondary" style={{ display: "block", textAlign: "right", fontSize: 12 }}>
+            Optional items (not in total): {inr(optionalTotal)}
+          </Text>
+        )}
       </div>
     );
+
+    function gstControl() {
+      return onGstChange ? (
+        <Select size="small" value={t.gstRate} onChange={onGstChange} style={{ width: 76 }} options={GST_RATES.map((r) => ({ value: r, label: `${r}%` }))} />
+      ) : null;
+    }
   },
 );
 
@@ -233,23 +124,15 @@ OrderTotal.displayName = "OrderTotal";
 OrderTotal.propTypes = {
   subTotal: PropTypes.number,
   discount: PropTypes.number,
-  tax: PropTypes.number,
   extraDiscount: PropTypes.number,
-  roundOff: PropTypes.number,
-  autoRound: PropTypes.bool,
+  extraDiscountType: PropTypes.string,
   shipping: PropTypes.number,
-  showHeader: PropTypes.bool,
-};
-
-OrderTotal.defaultProps = {
-  subTotal: 0,
-  discount: 0,
-  tax: 0,
-  extraDiscount: 0,
-  roundOff: 0,
-  autoRound: true,
-  shipping: 0,
-  showHeader: false,
+  gst: PropTypes.number,
+  interState: PropTypes.bool,
+  itemCount: PropTypes.number,
+  optionalTotal: PropTypes.number,
+  onGstChange: PropTypes.func,
+  onShippingChange: PropTypes.func,
 };
 
 export default OrderTotal;

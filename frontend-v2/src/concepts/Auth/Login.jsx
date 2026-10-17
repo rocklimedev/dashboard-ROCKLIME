@@ -26,6 +26,13 @@ const Login = () => {
     }
   }, [auth?.token, navigate]);
 
+  // Sent here because the login expired or the account was disabled
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("expired")) {
+      message.warning("Your session has ended. Please sign in again.");
+    }
+  }, []);
+
   // Early return to avoid flash
   if (auth?.token) return null;
 

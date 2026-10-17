@@ -19,9 +19,14 @@ import {
   Pagination,
   Select,
   Input,
+  Segmented,
+  Space,
+  Tag,
 } from "antd";
 import DeleteModal from "../../components/Common/DeleteModal";
 import PageHeader from "../../components/Common/PageHeader";
+
+const Checkable = Tag.CheckableTag;
 import { useNavigate } from "react-router-dom";
 import PermissionGate from "../../context/PermissionGate";
 
@@ -61,6 +66,9 @@ const CustomerList = () => {
     page: currentPage,
     limit: pageSize,
     search: debouncedSearch || undefined,
+    type: customerTypeFilter !== "All" ? customerTypeFilter : undefined,
+    owes: statusFilter === "OWES" ? "1" : undefined,
+    sort: { "Recently Added": "recent", Ascending: "name_asc", Descending: "name_desc", Oldest: "oldest" }[sortBy],
   });
 
   const customers = response?.data || [];
@@ -82,40 +90,8 @@ const CustomerList = () => {
     { value: "Contractor", label: "Contractor" },
   ];
 
-  // Client-side filtering & sorting
-  const filteredCustomers = React.useMemo(() => {
-    let result = customers;
-
-    if (customerTypeFilter !== "All") {
-      result = result.filter((c) => {
-        if (customerTypeFilter === "Retail") {
-          return !c.customerType || c.customerType === "Retail";
-        }
-        return c.customerType === customerTypeFilter;
-      });
-    }
-    if (statusFilter !== "ALL") {
-      result = result.filter(
-        (customer) => customer.customerStatus === statusFilter,
-      );
-    }
-    switch (sortBy) {
-      case "Ascending":
-        return [...result].sort((a, b) =>
-          (a.name || "").localeCompare(b.name || ""),
-        );
-      case "Descending":
-        return [...result].sort((a, b) =>
-          (b.name || "").localeCompare(a.name || ""),
-        );
-      case "Recently Added":
-        return [...result].sort(
-          (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
-        );
-      default:
-        return result;
-    }
-  }, [customers, customerTypeFilter, sortBy]);
+  // filtering and sorting happen on the server (all customers, not just this page)
+  const filteredCustomers = customers;
 
   // Handlers
   const handlePageChange = (page, newPageSize) => {
@@ -163,6 +139,7 @@ const CustomerList = () => {
   const clearFilters = () => {
     setSearchTerm("");
     setCustomerTypeFilter("All");
+    setStatusFilter("ALL");
     setSortBy("Recently Added");
     setCurrentPage(1);
   };
@@ -200,35 +177,26 @@ const CustomerList = () => {
         <div className="card-body">
           {/* Filters */}
           <div className="row mb-4 align-items-center g-3">
-            <div className="col-lg-3">
-              <Select
-                value={customerTypeFilter}
-                onChange={(val) => {
-                  setCustomerTypeFilter(val);
-                  setCurrentPage(1);
-                }}
-                style={{ width: "100%" }}
-                size="large"
-              >
-                {customerTypes.map((type) => (
-                  <Option key={type.value} value={type.value}>
-                    {type.label}
-                    {type.value !== "All" && (
-                      <span className="text-muted ms-2">
-                        (
-                        {
-                          customers.filter((c) =>
-                            type.value === "Retail"
-                              ? !c.customerType || c.customerType === "Retail"
-                              : c.customerType === type.value,
-                          ).length
-                        }
-                        )
-                      </span>
-                    )}
-                  </Option>
-                ))}
-              </Select>
+            <div className="col-12">
+              <Space wrap size={8}>
+                <Segmented
+                  value={customerTypeFilter}
+                  onChange={(val) => {
+                    setCustomerTypeFilter(val);
+                    setCurrentPage(1);
+                  }}
+                  options={customerTypes.map((t) => ({ value: t.value, label: t.value === "All" ? "All" : t.label }))}
+                />
+                <Checkable
+                  checked={statusFilter === "OWES"}
+                  onChange={(on) => {
+                    setStatusFilter(on ? "OWES" : "ALL");
+                    setCurrentPage(1);
+                  }}
+                >
+                  Owes money
+                </Checkable>
+              </Space>
             </div>
 
             <div className="col-lg-4">
@@ -249,7 +217,8 @@ const CustomerList = () => {
                 style={{ width: 180 }}
                 size="large"
               >
-                <Option value="Recently Added">Recently Added</Option>
+                <Option value="Recently Added">Newest first</Option>
+                <Option value="Oldest">Oldest first</Option>
                 <Option value="Ascending">Name: A to Z</Option>
                 <Option value="Descending">Name: Z to A</Option>
               </Select>
@@ -281,7 +250,9 @@ const CustomerList = () => {
                     <th>Contact</th>
                     <th>Quotations</th>
                     <th>Orders</th>
-                    <th>Business Value</th>
+                    <th title="Orders won (not cancelled) plus quotations not yet converted">Business Value</th>
+                    <th>Owes</th>
+                    <th>Last order</th>
                     <th className="text-end">Actions</th>
                   </tr>
                 </thead>
@@ -354,19 +325,33 @@ const CustomerList = () => {
                         )}
                       </td>
                       <td>
-                        {Number(c.quotationValue || 0) +
-                          Number(c.orderValue || 0) >
-                        0 ? (
+                        {Number(c.businessValue || 0) > 0 ? (
                           <div className="small">
                             ₹
-                            {(
-                              Number(c.quotationValue || 0) +
-                              Number(c.orderValue || 0)
-                            ).toLocaleString("en-IN")}
+                            {Number(c.businessValue || 0).toLocaleString(
+                              "en-IN",
+                              { maximumFractionDigits: 2 },
+                            )}
                           </div>
                         ) : (
                           ""
                         )}
+                      </td>
+                      <td>
+                        {Number(c.due || 0) > 0.5 ? (
+                          <small className="text-danger fw-semibold">
+                            ₹{Math.round(Number(c.due)).toLocaleString("en-IN")}
+                          </small>
+                        ) : (
+                          <small className="text-muted">—</small>
+                        )}
+                      </td>
+                      <td>
+                        <small className="text-muted">
+                          {c.lastOrder
+                            ? new Date(c.lastOrder).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+                            : "—"}
+                        </small>
                       </td>
 
                       <td className="text-end">

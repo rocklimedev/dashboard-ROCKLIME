@@ -527,6 +527,20 @@ async function processProductBatch(productsBatch, t, options = {}) {
 
       const newProduct = await Product.create(productData, { transaction: t });
 
+      // Opening stock goes through the stock engine
+
+      if (Number(productData.quantity) > 0) {
+
+        const stockEngine = require("../modules/stock/stock.service");
+
+        const wh = await stockEngine.getDefaultWarehouse(t);
+
+        await newProduct.update({ quantity: 0 }, { transaction: t });
+
+        await stockEngine.post(t, { productId: newProduct.productId, warehouseId: wh.id, movement: "OPENING", onHand: Math.trunc(Number(productData.quantity)), ref: { type: "IMPORT" }, reason: "Opening stock from product import" });
+
+      }
+
       // Keywords
       if (Array.isArray(p.keywords) && p.keywords.length > 0) {
         const keywords = p.keywords.map((k) => k.trim()).filter(Boolean);

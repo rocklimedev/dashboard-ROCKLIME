@@ -91,6 +91,20 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         defaultValue: "DISPATCHED",
       },
+
+      // Transport (migration 20261016000500)
+      vehicleNo: { type: DataTypes.STRING(20), allowNull: true },
+      driverName: { type: DataTypes.STRING(80), allowNull: true },
+      driverPhone: { type: DataTypes.STRING(20), allowNull: true },
+      transporter: { type: DataTypes.STRING(120), allowNull: true },
+      lrNumber: { type: DataTypes.STRING(60), allowNull: true },
+      ewayBillNo: { type: DataTypes.STRING(20), allowNull: true },
+
+      // Delivery confirmation
+      deliveredAt: { type: DataTypes.DATE, allowNull: true },
+      receivedBy: { type: DataTypes.STRING(120), allowNull: true },
+      deliveryProofLink: { type: DataTypes.STRING(500), allowNull: true },
+      deliveryNote: { type: DataTypes.TEXT, allowNull: true },
     },
     {
       tableName: "order_dispatches",

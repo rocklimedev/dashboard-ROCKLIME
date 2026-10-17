@@ -23,7 +23,7 @@ function bufferToStream(buffer) {
 // Middleware to check if user is authorized (e.g., Admin or SuperAdmin)
 const isAdminOrSuperAdmin = async (req, res, next) => {
   const user = await User.findByPk(req.user.userId, excludeSensitiveFields);
-  if (!user || !["ADMIN", "SUPER_ADMIN"].includes(user.roles)) {
+  if (!user || !user.roles.some((r) => ["ADMIN", "SUPER_ADMIN"].includes(r))) {
     return res
       .status(403)
       .json({ message: "Unauthorized: Admin access required" });
@@ -566,7 +566,7 @@ exports.updateUser = async (req, res) => {
       const requester = await User.findByPk(req.user.userId);
       if (
         !requester ||
-        !["ADMIN", "SUPER_ADMIN", "DEVELOPER"].includes(requester.roles)
+        !requester.roles.some((r) => ["ADMIN", "SUPER_ADMIN", "DEVELOPER"].includes(r))
       ) {
         return res.status(403).json({
           message:

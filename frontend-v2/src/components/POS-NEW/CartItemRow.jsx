@@ -1,5 +1,5 @@
 // src/components/POS-NEW/CartItemRow.jsx
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
@@ -17,6 +17,8 @@ import { LazyLoadImage } from "react-lazy-load-image-component";
 import { DeleteFilled, SplitCellsOutlined } from "@ant-design/icons";
 import styled from "styled-components";
 import { useGetProductByIdQuery } from "../../api/productApi";
+import StockBadge from "../Stock/StockBadge";
+import TileCalculator from "./TileCalculator";
 
 const { Text } = Typography;
 const { Option } = Select;
@@ -191,6 +193,7 @@ const getLocations = (item) => {
 
 const CartItemRow = ({
   item,
+  stockInfo,
   itemDiscounts = {},
   itemDiscountTypes = {},
   updatingItems = {},
@@ -293,7 +296,7 @@ const CartItemRow = ({
       primaryLoc.roomName ||
       floor?.rooms?.find((r) => r.roomId === primaryLoc.roomId)?.roomName ||
       "Room";
-    return `${floorName} › ${roomName}`;
+    return floor?.implicit || !floor?.floorName ? roomName : `${floorName} › ${roomName}`;
   }, [primaryLoc, floors]);
 
   const resolveLocLabel = (loc) => {
@@ -307,6 +310,7 @@ const CartItemRow = ({
       loc.roomName ||
       floor?.rooms?.find((r) => r.roomId === loc.roomId)?.roomName ||
       "Room";
+    if (floor?.implicit || !floor?.floorName) return roomName;
     return `${floorName} › ${roomName}`;
   };
 
@@ -331,37 +335,20 @@ const CartItemRow = ({
     }
   };
 
-  /* ── Floor / Room assignment via explicit selects (no drag-drop) ── */
-  const [selectedFloorId, setSelectedFloorId] = useState(
-    primaryLoc?.floorId || undefined,
-  );
-  const [selectedRoomId, setSelectedRoomId] = useState(
-    primaryLoc?.roomId || undefined,
-  );
-
-  // Keep selects in sync if the item's assignment changes externally
-  useEffect(() => {
-    setSelectedFloorId(primaryLoc?.floorId || undefined);
-    setSelectedRoomId(primaryLoc?.roomId || undefined);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [primaryLoc?.floorId, primaryLoc?.roomId]);
-
-  const roomsForSelectedFloor = useMemo(() => {
-    const floor = floors.find((f) => f.floorId === selectedFloorId);
-    return floor?.rooms || [];
-  }, [floors, selectedFloorId]);
-
-  const canAssign = Boolean(selectedFloorId && selectedRoomId);
-
-  const handleAssignClick = () => {
-    if (!canAssign) return;
-    onLocationChange?.(itemId, selectedFloorId, selectedRoomId);
-  };
-
-  const handleClearAssignment = () => {
-    setSelectedFloorId(undefined);
-    setSelectedRoomId(undefined);
-    onLocationChange?.(itemId, null, null);
+  /* ── Room assignment: one picker, assigns on choice ── */
+  // Rooms-only quotations keep their rooms under a hidden floor (implicit).
+  const roomOptions = useMemo(() => {
+    const rows = floors.filter((f) => (f.rooms || []).length);
+    const opt = (f, r) => ({ value: `${f.floorId}|${r.roomId}`, label: r.roomName });
+    if (rows.every((f) => f.implicit || !f.floorName)) return rows.flatMap((f) => f.rooms.map((r) => opt(f, r)));
+    return rows.map((f) => ({ label: f.implicit ? "Rooms" : f.floorName, options: f.rooms.map((r) => opt(f, r)) }));
+  }, [floors]);
+  const hasRooms = floors.some((f) => (f.rooms || []).length);
+  const assignedValue = primaryLoc?.floorId && primaryLoc?.roomId ? `${primaryLoc.floorId}|${primaryLoc.roomId}` : undefined;
+  const handleRoomPick = (v) => {
+    if (!v) return onLocationChange?.(itemId, null, null);
+    const [floorId, roomId] = String(v).split("|");
+    onLocationChange?.(itemId, floorId, roomId);
   };
 
   if (isLoading) return <div style={{ padding: "20px" }}>Loading...</div>;
@@ -408,6 +395,18 @@ const CartItemRow = ({
               </Tag>
             )}
           </div>
+          {stockInfo && (
+            <div style={{ marginTop: 4 }}>
+              <StockBadge
+                available={stockInfo.available}
+                reserved={stockInfo.reserved}
+                incoming={stockInfo.incoming}
+                lowAt={stockInfo.lowAt}
+                nextDate={stockInfo.nextIncoming}
+                need={Number(item?.quantity) || 0}
+              />
+            </div>
+          )}
 
           {isQuotationMode && viewAssignedQty != null && (
             <div style={{ marginTop: 4 }}>
@@ -448,66 +447,20 @@ const CartItemRow = ({
               </div>
             )}
 
-          {/* ── Explicit Floor + Room assignment (replaces drag/drop) ── */}
-          {isQuotationMode && onLocationChange && (
+          {/* ── Room: pick it and the item is assigned ── */}
+          {isQuotationMode && onLocationChange && hasRooms && !isSplit && (
             <AssignRow>
-              <Space wrap size={4}>
-                <Select
-                  size="small"
-                  placeholder="Select floor"
-                  style={{ width: 130 }}
-                  value={selectedFloorId}
-                  onChange={(val) => {
-                    setSelectedFloorId(val);
-                    setSelectedRoomId(undefined);
-                  }}
-                >
-                  {floors.map((f) => (
-                    <Option key={f.floorId} value={f.floorId}>
-                      {f.floorName}
-                    </Option>
-                  ))}
-                </Select>
-
-                <Select
-                  size="small"
-                  placeholder="Select room"
-                  style={{ width: 130 }}
-                  value={selectedRoomId}
-                  onChange={setSelectedRoomId}
-                  disabled={
-                    !selectedFloorId || roomsForSelectedFloor.length === 0
-                  }
-                >
-                  {roomsForSelectedFloor.map((r) => (
-                    <Option key={r.roomId} value={r.roomId}>
-                      {r.roomName}
-                    </Option>
-                  ))}
-                </Select>
-
-                <Button
-                  size="small"
-                  type="primary"
-                  disabled={!canAssign}
-                  onClick={handleAssignClick}
-                >
-                  Assign
-                </Button>
-
-                {primaryLoc?.floorId && (
-                  <Button size="small" onClick={handleClearAssignment}>
-                    Clear
-                  </Button>
-                )}
-              </Space>
-
-              <Text
-                type="secondary"
-                style={{ fontSize: 11, display: "block", marginTop: 4 }}
-              >
-                Select both a floor and a room to assign this item
-              </Text>
+              <Select
+                size="small"
+                allowClear
+                showSearch
+                optionFilterProp="label"
+                placeholder="Choose room"
+                style={{ width: 220 }}
+                value={assignedValue}
+                onChange={handleRoomPick}
+                options={roomOptions}
+              />
             </AssignRow>
           )}
 
@@ -625,6 +578,11 @@ const CartItemRow = ({
             >
               +
             </Button>
+            <TileCalculator
+              product={product}
+              onApply={handleQtyChange}
+              disabled={updatingItems[item?.productId]}
+            />
           </Space>
 
           <div style={{ textAlign: "right" }}>

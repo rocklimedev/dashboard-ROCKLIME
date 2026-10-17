@@ -1,9 +1,10 @@
+import { lazy } from "react";
 // src/routes/orderRoutes.js
 import { FaFileAlt, FaUsers } from "react-icons/fa";
-import AddNewOrder from "../../concepts/Order/AddNewOrder";
-import OrderPage from "../../concepts/Order/Orderpage";
-import OrderWrapper from "../../concepts/Order/OrderWrapper";
-import DispatchHistory from "../../concepts/Order/DispatchHistory";
+const AddNewOrder = lazy(() => import("../../concepts/Order/AddNewOrder"));
+const OrderPage = lazy(() => import("../../concepts/Order/Orderpage"));
+const OrderWrapper = lazy(() => import("../../concepts/Order/OrderWrapper"));
+const DispatchHistory = lazy(() => import("../../concepts/Order/DispatchHistory"));
 
 export const orderRoutes = [
   {

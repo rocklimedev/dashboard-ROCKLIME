@@ -25,6 +25,9 @@ export const quotationApi = baseApi.injectEndpoints({
           params.append("status", filters.status);
         }
 
+        if (filters.followUpDue) params.append("followUpDue", "1");
+        if (filters.mine) params.append("mine", "1");
+
         // Date range
         if (
           filters.dateRange &&
@@ -115,6 +118,36 @@ export const quotationApi = baseApi.injectEndpoints({
         "Quotations",
       ],
     }),
+
+    // Pipeline
+    getQuotationPipeline: builder.query({
+      query: ({ mine } = {}) => `/quotation/pipeline/summary${mine ? "?mine=1" : ""}`,
+      providesTags: ["Quotations"],
+    }),
+    updateQuotationStatus: builder.mutation({
+      query: ({ id, ...body }) => ({
+        url: `/quotation/${id}/status`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: (result, error, { id }) => [{ type: "Quotations", id }, "Quotations"],
+    }),
+    getQuotationFollowUps: builder.query({
+      query: (id) => `/quotation/${id}/followups`,
+      providesTags: (result, error, id) => [{ type: "Quotations", id: `fu-${id}` }],
+    }),
+    addQuotationFollowUp: builder.mutation({
+      query: ({ id, ...body }) => ({
+        url: `/quotation/${id}/followups`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "Quotations", id: `fu-${id}` },
+        { type: "Quotations", id },
+        "Quotations",
+      ],
+    }),
   }),
 });
 
@@ -128,4 +161,8 @@ export const {
   useExportQuotationMutation,
   useGetQuotationVersionsQuery,
   useRestoreQuotationVersionMutation,
+  useGetQuotationPipelineQuery,
+  useUpdateQuotationStatusMutation,
+  useGetQuotationFollowUpsQuery,
+  useAddQuotationFollowUpMutation,
 } = quotationApi;

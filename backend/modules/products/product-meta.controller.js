@@ -1,4 +1,5 @@
-const { Product, ProductMeta } = require("../../models");
+const { Op } = require("sequelize");
+const { Product, ProductMeta, sequelize } = require("../../models");
 
 // Create a new ProductMeta
 exports.createProductMeta = async (req, res) => {
@@ -141,9 +142,11 @@ exports.deleteProductMeta = async (req, res) => {
     // Check if any products reference this ProductMeta in their meta field
     const productsUsingMeta = await Product.findAll({
       where: {
-        meta: {
-          [Op.contains]: { [productMeta.id]: { [Op.ne]: null } },
-        },
+        // MySQL: JSON_EXTRACT instead of the Postgres-only Op.contains
+        [Op.and]: sequelize.where(
+          sequelize.fn("JSON_EXTRACT", sequelize.col("meta"), sequelize.literal(sequelize.escape(`$."${productMeta.id}"`))),
+          { [Op.ne]: null },
+        ),
       },
     });
 
@@ -178,7 +181,7 @@ exports.getProductMetaByTitle = async (req, res) => {
 
     const productMetas = await ProductMeta.findAll({
       where: {
-        title: { [Op.iLike]: `%${title}%` },
+        title: { [Op.like]: `%${title}%` },
       },
       attributes: ["id", "title", "slug", "fieldType", "unit", "createdAt"],
     });
@@ -210,7 +213,7 @@ exports.getProductMetaBySlug = async (req, res) => {
 
     const productMetas = await ProductMeta.findAll({
       where: {
-        slug: { [Op.iLike]: `%${slug}%` },
+        slug: { [Op.like]: `%${slug}%` },
       },
       attributes: ["id", "title", "slug", "fieldType", "unit", "createdAt"],
     });

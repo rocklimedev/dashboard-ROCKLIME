@@ -2,10 +2,21 @@ const express = require("express");
 const router = express.Router();
 const productController = require("./product.controller");
 const { auth } = require("../../middleware/auth");
+const { guardModule } = require("../../middleware/permission");
 const multer = require("multer");
 const path = require("path");
 
 router.use(auth);
+// "products" permission by HTTP method; stock changes need "inventory" edit.
+router.use(
+  guardModule("products", [
+    { path: /^\/inventory-bulk\//, skip: true }, // checks its own permissions
+    { method: "POST", path: /^\/by-ids$/, action: "view" },
+    { method: "POST", path: /^\/[^/]+\/(add-stock|remove-stock)$/, module: "inventory", action: "edit" },
+    { method: "POST", path: /^\/bulk-inventory-update$/, module: "inventory", action: "edit" },
+    { method: "GET", path: /^\/[^/]+\/history$/, module: "inventory", action: "view" },
+  ]),
+);
 router.use("/onboard-brand", require("./brandOnboarding.route"));
 router.use("/inventory-bulk", require("./inventory-bulk.route"));
 
@@ -55,6 +66,7 @@ router.post("/bulk-import", productController.bulkImportProducts);
 
 // 2. STATIC / UTILITY ROUTES (These must come BEFORE dynamic routes)
 router.get("/count", productController.getProductCount);
+router.get("/company-codes", productController.getCompanyCodes);
 router.get("/low-stock", productController.getLowStockProducts);
 router.get("/top-selling", productController.getTopSellingProducts);
 router.get("/search/all", productController.searchProducts);

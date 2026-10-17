@@ -45,6 +45,7 @@ import { v4 as uuidv4 } from "uuid";
 import "./cartitem.css";
 import OrderTotal from "../../components/POS-NEW/OrderTotal";
 import CartItemRow from "../../components/POS-NEW/CartItemRow";
+import useStockAvailability from "../Stock/useStockAvailability";
 
 import AddFloorModal from "../../components/modals/AddFloorModal";
 import EditFloorModal from "../../components/modals/EditFloorModal";
@@ -141,9 +142,12 @@ const CartTab = ({
   mainCartItems = [],
   optionalCartItems = [],
   subTotal = 0,
-  discount = 0,
-  roundOff = 0,
+  totalDiscount = 0,
+  optionalTotal = 0,
   shipping = 0,
+  gst = 0,
+  setGst,
+  onShippingChange,
   itemDiscounts = {},
   itemDiscountTypes = {},
   itemTaxes = {},
@@ -155,7 +159,6 @@ const CartTab = ({
   handleTaxChange,
   setShowClearCartModal,
   setActiveTab,
-  onShippingChange,
   handleMakeOption,
   documentType = "quotation",
   onCartOrderChange,
@@ -177,6 +180,11 @@ const CartTab = ({
   }, [localCartItems, cartItems]);
 
   const isQuotationMode = documentType?.toLowerCase() === "quotation";
+
+  // Live stock for every product in the cart (available / reserved / incoming)
+  const { stock: stockById } = useStockAvailability(
+    safeCartItems.map((i) => i.productId || i.id),
+  );
 
   const lineTotal = (item) => {
     if (!item) return "0.00";
@@ -535,9 +543,7 @@ const CartTab = ({
       );
     }
 
-    message.success(
-      `Assigned to ${floor?.floorName || "floor"} › ${room?.roomName || "room"}`,
-    );
+    message.success(floor?.implicit || !floor?.floorName ? `Assigned to ${room?.roomName || "room"}` : `Assigned to ${floor.floorName} › ${room?.roomName || "room"}`);
   };
 
   const handleDragEnd = (event) => {
@@ -596,9 +602,46 @@ const CartTab = ({
   }, [mainCartItems]);
 
   /* ────────────────────── Floor / Room CRUD ────────────────────── */
+  // Layout: by floor (floor → rooms) or rooms only. Rooms-only quotations keep
+  // their rooms under one hidden floor (implicit: true) that is never shown.
+  const IMPLICIT_FLOOR = "__rooms__";
+  const allFloors = quotationData.floors || [];
+  const implicitFloor = allFloors.find((f) => f.implicit);
+  const roomsOnly = allFloors.length > 0 && allFloors.every((f) => f.implicit);
+
+  const openAddRoom = () => {
+    if (!allFloors.length || roomsOnly) {
+      setRoomModal({
+        visible: true,
+        floorId: implicitFloor?.floorId || IMPLICIT_FLOOR,
+      });
+    } else {
+      setRoomModal({
+        visible: true,
+        floorId: activeFloorId || allFloors[0].floorId,
+      });
+    }
+  };
 
   const addFloor = (values) => {
     const current = quotationData.floors || [];
+    if (roomsOnly && implicitFloor) {
+      // first floor of a rooms-only quotation: the rooms move under it
+      const named = {
+        ...implicitFloor,
+        implicit: false,
+        floorName: values.name || "Floor 1",
+      };
+      handleQuotationChange(
+        "floors",
+        current.map((f) => (f.floorId === implicitFloor.floorId ? named : f)),
+      );
+      setFloorModalVisible(false);
+      floorForm.resetFields();
+      setActiveFloorId(named.floorId);
+      message.success(`Rooms moved under ${named.floorName}`);
+      return;
+    }
     const newFloor = {
       floorId: generateFloorId(),
       floorName: values.name || `Floor ${current.length + 1}`,
@@ -665,6 +708,28 @@ const CartTab = ({
   };
 
   const addRoom = (values) => {
+    if (roomModal.floorId === IMPLICIT_FLOOR && !implicitFloor) {
+      const floor = {
+        floorId: IMPLICIT_FLOOR,
+        floorName: "",
+        implicit: true,
+        sortOrder: 0,
+        rooms: [],
+      };
+      const room = {
+        roomId: generateRoomId(IMPLICIT_FLOOR),
+        roomName: values.name,
+        sortOrder: 0,
+        type: values.type,
+      };
+      handleQuotationChange("floors", [{ ...floor, rooms: [room] }]);
+      setRoomModal({ visible: false, floorId: null });
+      roomForm.resetFields();
+      setActiveFloorId(IMPLICIT_FLOOR);
+      setActiveRoomId(room.roomId);
+      message.success("Room added");
+      return;
+    }
     const updatedFloors = (quotationData.floors || []).map((floor) =>
       floor.floorId === roomModal.floorId
         ? {
@@ -959,6 +1024,7 @@ const CartTab = ({
           return (
             <React.Fragment key={getItemKey(main)}>
               <CartItemRow
+                stockInfo={stockById[main.productId || main.id]}
                 item={main}
                 serialNumber={mainSno}
                 onUpdateAssignedQuantity={handleUpdateAssignedQuantity}
@@ -985,6 +1051,7 @@ const CartTab = ({
                 return (
                   <OptionGroupWrapper key={getItemKey(opt)}>
                     <CartItemRow
+                      stockInfo={stockById[opt.productId || opt.id]}
                       item={opt}
                       serialNumber={sno}
                       itemDiscounts={itemDiscounts}
@@ -1019,6 +1086,7 @@ const CartTab = ({
               return (
                 <CartItemRow
                   key={getItemKey(opt)}
+                  stockInfo={stockById[opt.productId || opt.id]}
                   item={opt}
                   serialNumber={sno}
                   itemDiscounts={itemDiscounts}
@@ -1119,12 +1187,22 @@ const CartTab = ({
 
                     <Space>
                       {isQuotationMode && (
-                        <Button
-                          icon={<PlusOutlined />}
-                          onClick={() => setFloorModalVisible(true)}
-                        >
-                          Add Floor
-                        </Button>
+                        <>
+                          <Button
+                            type="primary"
+                            ghost
+                            icon={<PlusOutlined />}
+                            onClick={openAddRoom}
+                          >
+                            Add room
+                          </Button>
+                          <Button
+                            icon={<HomeOutlined />}
+                            onClick={() => setFloorModalVisible(true)}
+                          >
+                            {roomsOnly ? "Group rooms by floor" : "Add floor"}
+                          </Button>
+                        </>
                       )}
                       <Button
                         danger
@@ -1141,117 +1219,214 @@ const CartTab = ({
                   renderEmpty()
                 ) : isQuotationMode ? (
                   <>
-                    <LayoutTabs
-                      type="editable-card"
-                      hideAdd
-                      activeKey={activeFloorId || "__global__"}
-                      onChange={(key) => {
-                        if (key === "__global__") {
-                          setActiveFloorId(null);
-                          setActiveRoomId("__global__");
-                        } else {
-                          setActiveFloorId(key);
-                          setActiveRoomId(null);
+                    {roomsOnly ? (
+                      <LayoutTabs
+                        type="editable-card"
+                        hideAdd
+                        activeKey={
+                          activeFloorId &&
+                          activeRoomId &&
+                          activeRoomId !== "__global__"
+                            ? activeRoomId
+                            : "__global__"
                         }
-                      }}
-                      onEdit={(targetKey, action) => {
-                        if (action === "remove" && targetKey !== "__global__") {
-                          const floor = (quotationData.floors || []).find(
-                            (f) => f.floorId === targetKey,
-                          );
-                          if (floor) {
-                            showDeleteFloorConfirm(
-                              floor.floorId,
-                              floor.floorName,
-                            );
+                        onChange={(key) => {
+                          if (key === "__global__") {
+                            setActiveFloorId(null);
+                            setActiveRoomId("__global__");
+                          } else {
+                            setActiveFloorId(implicitFloor.floorId);
+                            setActiveRoomId(key);
                           }
-                        }
-                      }}
-                      items={floorTabItems}
-                      tabBarExtraContent={
-                        activeFloorId ? (
-                          <Space size="small">
+                        }}
+                        onEdit={(targetKey, action) => {
+                          if (action !== "remove" || targetKey === "__global__")
+                            return;
+                          const room = (implicitFloor.rooms || []).find(
+                            (r) => r.roomId === targetKey,
+                          );
+                          if (room)
+                            showDeleteRoomConfirm(
+                              implicitFloor.floorId,
+                              room.roomId,
+                              room.roomName,
+                            );
+                        }}
+                        items={[
+                          ...(
+                            layoutTree.floors.find(
+                              (f) => f.floorId === implicitFloor.floorId,
+                            )?.rooms || []
+                          ).map((r) => ({
+                            key: r.roomId,
+                            label: (
+                              <Space size={4}>
+                                <span>{r.roomName}</span>
+                                <Tag style={{ marginRight: 0 }}>
+                                  {r.items.length}
+                                </Tag>
+                              </Space>
+                            ),
+                            closable: true,
+                          })),
+                          {
+                            key: "__global__",
+                            label: (
+                              <Space size={4}>
+                                <span>Unassigned</span>
+                                <Tag color="orange" style={{ marginRight: 0 }}>
+                                  {layoutTree.globalUnassigned.length}
+                                </Tag>
+                              </Space>
+                            ),
+                            closable: false,
+                          },
+                        ]}
+                        tabBarExtraContent={
+                          activeRoomId && activeRoomId !== "__global__" ? (
                             <Button
                               size="small"
                               icon={<EditOutlined />}
                               onClick={() => {
-                                const floor = (quotationData.floors || []).find(
-                                  (f) => f.floorId === activeFloorId,
+                                const room = (implicitFloor.rooms || []).find(
+                                  (r) => r.roomId === activeRoomId,
                                 );
-                                if (floor) {
-                                  floorForm.setFieldsValue({
-                                    name: floor.floorName,
+                                if (room) {
+                                  roomForm.setFieldsValue({
+                                    name: room.roomName,
+                                    type: room.type,
                                   });
-                                  setEditFloorModal({
+                                  setEditRoomModal({
                                     visible: true,
-                                    floorId: floor.floorId,
+                                    floorId: implicitFloor.floorId,
+                                    roomId: room.roomId,
                                   });
                                 }
                               }}
                             />
-                            <Button
-                              size="small"
-                              icon={<PlusOutlined />}
-                              onClick={() =>
-                                setRoomModal({
-                                  visible: true,
-                                  floorId: activeFloorId,
-                                })
-                              }
-                            >
-                              Room
-                            </Button>
-                          </Space>
-                        ) : null
-                      }
-                    />
-
-                    {activeFloorId &&
-                      (activeFloorNode?.rooms?.length ? (
+                          ) : null
+                        }
+                      />
+                    ) : (
+                      <>
                         <LayoutTabs
-                          size="small"
                           type="editable-card"
                           hideAdd
-                          activeKey={activeRoomId || undefined}
-                          onChange={(key) => setActiveRoomId(key)}
+                          activeKey={activeFloorId || "__global__"}
+                          onChange={(key) => {
+                            if (key === "__global__") {
+                              setActiveFloorId(null);
+                              setActiveRoomId("__global__");
+                            } else {
+                              setActiveFloorId(key);
+                              setActiveRoomId(null);
+                            }
+                          }}
                           onEdit={(targetKey, action) => {
-                            if (action === "remove") {
-                              const room = activeFloorNode.rooms.find(
-                                (r) => r.roomId === targetKey,
+                            if (
+                              action === "remove" &&
+                              targetKey !== "__global__"
+                            ) {
+                              const floor = (quotationData.floors || []).find(
+                                (f) => f.floorId === targetKey,
                               );
-                              if (room) {
-                                showDeleteRoomConfirm(
-                                  activeFloorId,
-                                  room.roomId,
-                                  room.roomName,
+                              if (floor) {
+                                showDeleteFloorConfirm(
+                                  floor.floorId,
+                                  floor.floorName,
                                 );
                               }
                             }
                           }}
-                          items={roomTabItems}
+                          items={floorTabItems}
+                          tabBarExtraContent={
+                            activeFloorId ? (
+                              <Space size="small">
+                                <Button
+                                  size="small"
+                                  icon={<EditOutlined />}
+                                  onClick={() => {
+                                    const floor = (
+                                      quotationData.floors || []
+                                    ).find((f) => f.floorId === activeFloorId);
+                                    if (floor) {
+                                      floorForm.setFieldsValue({
+                                        name: floor.floorName,
+                                      });
+                                      setEditFloorModal({
+                                        visible: true,
+                                        floorId: floor.floorId,
+                                      });
+                                    }
+                                  }}
+                                />
+                                <Button
+                                  size="small"
+                                  icon={<PlusOutlined />}
+                                  onClick={() =>
+                                    setRoomModal({
+                                      visible: true,
+                                      floorId: activeFloorId,
+                                    })
+                                  }
+                                >
+                                  Room
+                                </Button>
+                              </Space>
+                            ) : null
+                          }
                         />
-                      ) : (
-                        <Alert
-                          message="Add a room to this floor before assigning items"
-                          type="info"
-                          showIcon
-                          style={{ marginBottom: 12 }}
-                        />
-                      ))}
 
-                    {isQuotationMode && safeCartItems.length > 0 && (
-                      <Text
-                        type="secondary"
-                        style={{
-                          display: "block",
-                          marginBottom: 8,
-                          fontSize: 12,
-                        }}
-                      >
-                        Use the Floor / Room selectors on an item to assign it —
-                        both must be selected before it can be assigned.
-                      </Text>
+                        {activeFloorId &&
+                          (activeFloorNode?.rooms?.length ? (
+                            <LayoutTabs
+                              size="small"
+                              type="editable-card"
+                              hideAdd
+                              activeKey={activeRoomId || undefined}
+                              onChange={(key) => setActiveRoomId(key)}
+                              onEdit={(targetKey, action) => {
+                                if (action === "remove") {
+                                  const room = activeFloorNode.rooms.find(
+                                    (r) => r.roomId === targetKey,
+                                  );
+                                  if (room) {
+                                    showDeleteRoomConfirm(
+                                      activeFloorId,
+                                      room.roomId,
+                                      room.roomName,
+                                    );
+                                  }
+                                }
+                              }}
+                              items={roomTabItems}
+                            />
+                          ) : (
+                            <Alert
+                              message="Add a room to this floor before assigning items"
+                              type="info"
+                              showIcon
+                              style={{ marginBottom: 12 }}
+                            />
+                          ))}
+                      </>
                     )}
+
+                    {isQuotationMode &&
+                      safeCartItems.length > 0 &&
+                      !allFloors.some((f) => (f.rooms || []).length) && (
+                        <Text
+                          type="secondary"
+                          style={{
+                            display: "block",
+                            marginBottom: 8,
+                            fontSize: 12,
+                          }}
+                        >
+                          Add rooms to group the quotation room by room, or
+                          leave it as one list.
+                        </Text>
+                      )}
 
                     {unassignedCount > 0 &&
                       (activeRoomId === "__global__" || !activeFloorId) && (
@@ -1296,10 +1471,14 @@ const CartTab = ({
 
                 <OrderTotal
                   shipping={shipping}
-                  tax={0}
-                  discount={discount}
-                  roundOff={roundOff}
+                  discount={totalDiscount}
                   subTotal={subTotal}
+                  gst={gst}
+                  extraDiscount={Number(quotationData.discountAmount ?? quotationData.extraDiscount) || 0}
+                  extraDiscountType={quotationData.discountType || quotationData.extraDiscountType || "fixed"}
+                  itemCount={mainCartItems.length}
+                  optionalTotal={optionalTotal}
+                  onGstChange={setGst}
                   onShippingChange={onShippingChange}
                 />
 

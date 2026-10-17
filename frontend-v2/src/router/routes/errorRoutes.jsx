@@ -1,7 +1,8 @@
+import { lazy } from "react";
 // src/routes/errorRoutes.js
 import { FaExclamationCircle } from "react-icons/fa";
-import NoAccess from "../../concepts/Error/NoAccess";
-import Error404 from "../../concepts/Error/Error404";
+const NoAccess = lazy(() => import("../../concepts/Error/NoAccess"));
+const Error404 = lazy(() => import("../../concepts/Error/Error404"));
 export const errorRoutes = [
   {
     path: "/no-access",

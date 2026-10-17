@@ -98,6 +98,17 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
         comment: "GST percentage applied on total amount",
       },
+      // Pipeline (see modules/quotations/pipeline.js)
+      status: {
+        type: DataTypes.STRING(16),
+        allowNull: false,
+        defaultValue: "DRAFT",
+      },
+      statusChangedAt: { type: DataTypes.DATE, allowNull: true },
+      sentAt: { type: DataTypes.DATE, allowNull: true },
+      lostReason: { type: DataTypes.STRING(120), allowNull: true },
+      lostNote: { type: DataTypes.TEXT, allowNull: true },
+      nextFollowUp: { type: DataTypes.DATEONLY, allowNull: true },
     },
     {
       tableName: "quotations",

@@ -1,6 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { unstableSetRender } from "antd";
+import { ConfigProvider, unstableSetRender } from "antd";
 import "./index.css";
 import App from "./App.jsx";
 
@@ -26,7 +26,10 @@ createRoot(document.getElementById("root")).render(
     <Provider store={store}>
       <BrowserRouter>
         <AuthProvider>
-          <App />
+          {/* popups (modals, drawers, dropdowns) above the fixed sidebar (z-index 1001) */}
+          <ConfigProvider theme={{ token: { zIndexPopupBase: 1100 } }}>
+            <App />
+          </ConfigProvider>
         </AuthProvider>
       </BrowserRouter>
     </Provider>
