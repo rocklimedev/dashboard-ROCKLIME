@@ -40,6 +40,9 @@ const STYLE_HELP = {
  */
 export default function QuotationPdfActions({
   quotationId,
+  resourcePath = null,
+  documentLabel = "Quotation",
+  allowShare = true,
   version = null,
   // optional: let the page own the options (the details page shows the PDF itself)
   style: styleProp,
@@ -71,7 +74,7 @@ export default function QuotationPdfActions({
   const run = async (kind) => {
     setBusy(kind);
     try {
-      const { blob, name } = await fetchPdf(quotationId, { style, cover, version, exportOptions, pageOrder });
+      const { blob, name } = await fetchPdf(quotationId, { style, cover, version, exportOptions, pageOrder, resourcePath, documentLabel });
       const url = URL.createObjectURL(blob);
       if (kind === "preview") {
         setPreview({ url, name });
@@ -94,7 +97,7 @@ export default function QuotationPdfActions({
   const makeLink = async () => {
     setBusy("share");
     try {
-      const r = await fetch(`${API_URL}/quotation/${quotationId}/share`, {
+      const r = await fetch(`${API_URL}${resourcePath || `/quotation/${quotationId}`}/share`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token()}`, "Content-Type": "application/json" },
         body: JSON.stringify({ style, cover }),
@@ -103,7 +106,7 @@ export default function QuotationPdfActions({
       if (!r.ok) throw new Error(data.message || "Could not create a link");
       setShare(data);
       // Sharing moves a Draft quotation to Sent
-      dispatch(baseApi.util.invalidateTags(["Quotations", { type: "Quotations", id: quotationId }]));
+      if (!resourcePath) dispatch(baseApi.util.invalidateTags(["Quotations", { type: "Quotations", id: quotationId }]));
     } catch (e) {
       message.error(e.message);
     } finally {
@@ -137,9 +140,9 @@ export default function QuotationPdfActions({
         <Button type="primary" icon={<DownloadOutlined />} loading={busy === "download"} onClick={() => run("download")}>
           PDF
         </Button>
-        <Button disabled={!!pageOrder || !!exportOptions?.hidden?.length} title={pageOrder || exportOptions?.hidden?.length ? "Reset export options to share the standard quotation link" : undefined} icon={<ShareAltOutlined />} loading={busy === "share"} onClick={makeLink}>
+        {allowShare && <Button disabled={!!pageOrder || !!exportOptions?.hidden?.length} title={pageOrder || exportOptions?.hidden?.length ? `Reset export options to share the standard ${documentLabel.toLowerCase()} link` : undefined} icon={<ShareAltOutlined />} loading={busy === "share"} onClick={makeLink}>
           Share
-        </Button>
+        </Button>}
       </Space>
 
       <Modal
@@ -159,7 +162,7 @@ export default function QuotationPdfActions({
         styles={{ body: { padding: 0 } }}
       >
         {preview ? (
-          <iframe title="Quotation PDF" src={preview.url} style={{ width: "100%", height: "78vh", border: 0 }} />
+          <iframe title={`${documentLabel} PDF`} src={preview.url} style={{ width: "100%", height: "78vh", border: 0 }} />
         ) : (
           <Spin />
         )}

@@ -9,6 +9,8 @@ const quotationItemSchema = new mongoose.Schema({
   companyCode: { type: String, trim: true },
   quantity: Number,
   price: Number,
+  additionalDiscount: { type: Number, default: 0 },
+  flatPrice: { type: Number, default: null },
   discount: Number,
   discountType: {
     type: String,

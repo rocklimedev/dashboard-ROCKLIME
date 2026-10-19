@@ -11,7 +11,7 @@
 const path = require("path");
 const PDFDocument = require("pdfkit");
 const QRCode = require("qrcode");
-const { quotationTotals, lineAmounts, amountInWords, inr, isOptional } = require("../../lib/quotationMath");
+const { normalizeCharges, quotationTotals, lineAmounts, amountInWords, inr, isOptional } = require("../../lib/quotationMath");
 const { getSetting } = require("../settings/settings.service");
 
 const models = () => require("../../models");
@@ -397,7 +397,7 @@ async function buildQuotationPdf(quotationId, { style = "detailed", cover = null
  *   style  detailed (photos) | compact (no photos, with product codes) | areawise (= detailed)
  *   cover  true / false; null uses the "cover page" setting (on by default)
  */
-async function renderQuotationPdf(data, { company, settings, style = "detailed", cover = null, exportOptions = {} }) {
+async function renderQuotationPdf(data, { company, settings, style = "detailed", cover = null, exportOptions = {}, documentLabel = "Quotation" }) {
   const { quotation, items, customer, shipTo, billing, creator, productInfo, versionNo } = data;
   style = ["detailed", "compact", "areawise"].includes(style) ? style : "detailed";
   const hidden = new Set(Array.isArray(exportOptions?.hidden) ? exportOptions.hidden : []);
@@ -412,6 +412,10 @@ async function renderQuotationPdf(data, { company, settings, style = "detailed",
     extraDiscount: quotation.extraDiscount,
     extraDiscountType: quotation.extraDiscountType,
     shipping: quotation.shippingAmount,
+    miscellaneousCharges: quotation.miscellaneousCharges,
+    miscellaneousChargeItems: quotation.miscellaneousChargeItems,
+    additionalDiscount: quotation.additionalDiscount,
+    flatPrice: quotation.flatPrice,
     gstRate: quotation.gst,
     interState,
   });
@@ -466,7 +470,7 @@ async function renderQuotationPdf(data, { company, settings, style = "detailed",
     }
     const nameSize = client.length > 26 ? 22 : 28;
     const ny = A4.h - 102;
-    const tag = "QUOTATION FOR";
+    const tag = `${documentLabel.toUpperCase()} FOR`;
     doc.font("R").fontSize(7);
     const tw = doc.widthOfString(tag, { characterSpacing: 1.8 }) + 14;
     doc.rect(50, ny - 26, tw, 15).fill(RED);
@@ -485,7 +489,7 @@ async function renderQuotationPdf(data, { company, settings, style = "detailed",
   } catch {
     text(doc, brand, M, y + 6, { size: 16, bold: true, color: RED });
   }
-  text(doc, "Quotation", A4.w - M - 200, y - 2, { size: 19, bold: true, width: 200, align: "right" });
+  text(doc, documentLabel, A4.w - M - 200, y - 2, { size: 19, bold: true, width: 200, align: "right" });
   const meta = [
     ["No.", `${ref}${versionNo > 1 ? ` · rev ${versionNo - 1}` : ""}`],
     ["Date", fmtDate(qDate)],
@@ -640,16 +644,16 @@ async function renderQuotationPdf(data, { company, settings, style = "detailed",
       rule(doc, y);
     }
     y += 12;
-    text(doc, "Room-wise product details follow, with the complete quotation summary, inclusions and exclusions after the last room.", M, y, { size: 8, color: MUTED, width: CONTENT_W });
+    text(doc, `Room-wise product details follow, with the complete ${documentLabel.toLowerCase()} summary, inclusions and exclusions after the last room.`, M, y, { size: 8, color: MUTED, width: CONTENT_W });
     groups.forEach((g, i) => { pageLabel = g.name; rowsTable(g, { no: two(i + 1), startY: newPage() }); });
   } else {
     // no rooms: the items follow the customer details on the same page
     for (const g of groups) y = rowsTable(g, { no: null, startY: y + 4 }) + 12;
   }
 
-  pageLabel = "Quotation summary";
+  pageLabel = `${documentLabel} summary`;
   // ---------------- summary ----------------
-  y = pageTitle(doc, newPage(), { title: "Quotation summary", right: `${ref} · ${fmtDate(qDate)}` });
+  y = pageTitle(doc, newPage(), { title: `${documentLabel} summary`, right: `${ref} · ${fmtDate(qDate)}` });
   if (groups.length > 1 || hasAreas) {
     const sc = [
       { label: "Area", x: M, w: 200, align: "left" },
@@ -696,6 +700,9 @@ async function renderQuotationPdf(data, { company, settings, style = "detailed",
       ...(!hidden.has("mrp") ? [["Total MRP value", whole(totals.mrpValue)]] : []),
       ...(!hidden.has("discount") && totals.lineDiscount ? [[`Discount (${avg}% average)`, `−${whole(totals.lineDiscount)}`, { color: RED }]] : []),
       ...(totals.freight ? [["Freight / installation", whole(totals.freight)]] : []),
+      ...normalizeCharges(quotation.miscellaneousChargeItems ?? quotation.miscellaneousCharges).map(row => [row.name, whole(row.amount)]),
+      ...(Number(quotation.additionalDiscount) ? [["Additional discount", `−${whole(quotation.additionalDiscount)}`]] : []),
+      ...(quotation.flatPrice != null ? [["Flat goods price", whole(quotation.flatPrice)]] : []),
       ...(!hidden.has("discount") && totals.extraDiscountAmount ? [["Extra discount", `−${whole(totals.extraDiscountAmount)}`, { color: RED }]] : []),
       ["Net amount (excl. GST)", whole(totals.taxableValue), { bold: true }],
       ...(totals.gstRate
@@ -847,7 +854,7 @@ async function renderQuotationPdf(data, { company, settings, style = "detailed",
     doc.switchToPage(i);
     const fy = A4.h - 30;
     rule(doc, fy - 8, { color: "#efefef" });
-    text(doc, [brand, `Quotation ${ref}`, client].filter(Boolean).join(" · "), M, fy, { size: 6.5, color: INK, width: 380, lineBreak: false, ellipsis: true });
+    text(doc, [brand, `${documentLabel} ${ref}`, client].filter(Boolean).join(" · "), M, fy, { size: 6.5, color: INK, width: 380, lineBreak: false, ellipsis: true });
     text(doc, `${i - firstNumbered + 1} / ${count}`, A4.w - M - 60, fy, { size: 6.5, color: INK, width: 60, align: "right", lineBreak: false });
   }
 
@@ -866,4 +873,4 @@ async function buildDraftQuotationPdf(draft, { style = "detailed", cover = null 
   return renderQuotationPdf(data, { company, settings, style, cover });
 }
 
-module.exports = { buildQuotationPdf, buildDraftQuotationPdf, renderQuotationPdf, loadQuotation, customerName };
+module.exports = { enrichQuotation, buildQuotationPdf, buildDraftQuotationPdf, renderQuotationPdf, loadQuotation, customerName };

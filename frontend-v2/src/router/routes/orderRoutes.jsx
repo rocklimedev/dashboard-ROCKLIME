@@ -4,9 +4,11 @@ import { FaFileAlt, FaUsers } from "react-icons/fa";
 const AddNewOrder = lazy(() => import("../../concepts/Order/AddNewOrder"));
 const OrderPage = lazy(() => import("../../concepts/Order/Orderpage"));
 const OrderWrapper = lazy(() => import("../../concepts/Order/OrderWrapper"));
+const DispatchDetails = lazy(() => import("../../concepts/Order/DispatchDetails"));
 const DispatchHistory = lazy(() => import("../../concepts/Order/DispatchHistory"));
 
 export const orderRoutes = [
+  { path: "/dispatch/:dispatchId", name: "Dispatch Details", element: <DispatchDetails />, isSidebarActive: false },
   {
     path: "/orders/list",
     name: "Orders",

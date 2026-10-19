@@ -131,6 +131,13 @@ export const sidebarRoutes = [
   },
 
   {
+    path: "/inventory/counts/:id",
+    name: "Stock Count Workspace",
+    isSidebarActive: false,
+    element: <StockPage />,
+  },
+
+  {
     path: "/inventory/list",
     name: "Inventory",
     icon: <MdOutlineInventory2 />,

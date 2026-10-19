@@ -1,6 +1,6 @@
 // src/components/Quotation/AddQuotation.jsx
-import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { quotationTotals } from "../../utils/quotationMath";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { normalizeCharges, lineAmounts, quotationTotals } from "../../utils/quotationMath";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
   message,
@@ -194,6 +194,9 @@ const AddQuotation = () => {
     due_date: null,
     gst: 0,
     shippingAmount: 0,
+    miscellaneousChargeItems: [],
+    additionalDiscount: 0,
+    flatPrice: null,
     extraDiscount: 0,
     extraDiscountType: "fixed",
     signature_name: "",
@@ -207,6 +210,55 @@ const AddQuotation = () => {
   };
 
   const [formData, setFormData] = useState(initialFormData);
+
+  const draftKey = userData?.user?.userId ? `quotation-draft:${userData.user.userId}:${id || "new"}` : null;
+  const initializedDraft = useRef(null);
+  const latestDraft = useRef(null);
+  const submitted = useRef(false);
+  const [draftStatus, setDraftStatus] = useState("");
+  const restoreDraft = (base) => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(draftKey));
+      if (!saved?.formData) return base;
+      const data = saved.formData;
+      data.miscellaneousChargeItems = normalizeCharges(data.miscellaneousChargeItems ?? data.miscellaneousCharges);
+      setDraftStatus("Draft restored from this browser");
+      return { ...base, ...data,
+        quotation_date: data.quotation_date ? new Date(data.quotation_date) : null,
+        due_date: data.due_date ? new Date(data.due_date) : null,
+        followupDates: (data.followupDates || []).map(d => new Date(d)),
+      };
+    } catch { return base; }
+  };
+  useEffect(() => {
+    if (isEditMode || !draftKey || initializedDraft.current === draftKey) return;
+    initializedDraft.current = draftKey;
+    submitted.current = false;
+    setFormData(restoreDraft({ ...initialFormData, createdBy: userId }));
+  }, [draftKey, isEditMode]);
+  useEffect(() => {
+    if (!draftKey || initializedDraft.current !== draftKey || submitted.current) return;
+    latestDraft.current = { key: draftKey, formData };
+    setDraftStatus("Saving draft…");
+    const timer = setTimeout(() => {
+      try {
+        localStorage.setItem(draftKey, JSON.stringify({ formData, savedAt: new Date().toISOString() }));
+        setDraftStatus("Draft saved in this browser");
+      } catch { setDraftStatus("Draft could not be saved: browser storage unavailable or full"); }
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [draftKey, formData]);
+  useEffect(() => {
+    const flush = () => {
+      if (submitted.current || !latestDraft.current) return;
+      try {
+        const { key, formData } = latestDraft.current;
+        localStorage.setItem(key, JSON.stringify({ formData, savedAt: new Date().toISOString() }));
+      } catch { /* Keep manual save available when browser storage is unavailable. */ }
+    };
+    window.addEventListener("pagehide", flush);
+    return () => { window.removeEventListener("pagehide", flush); flush(); };
+  }, []);
 
   // Modal Forms — each modal gets its own instance so one modal's
   // resetFields() can never wipe another's values.
@@ -263,7 +315,9 @@ const AddQuotation = () => {
 
   // ── Load Existing Quotation ───────────────────────────────────────
   useEffect(() => {
-    if (!isEditMode || !existingQuotation) return;
+    if (!isEditMode || !existingQuotation || !draftKey || initializedDraft.current === draftKey) return;
+    initializedDraft.current = draftKey;
+    submitted.current = false;
 
     const parsedProducts = safeJsonParse(existingQuotation.products, []);
     const parsedFloors = safeJsonParse(existingQuotation.floors, []);
@@ -287,7 +341,7 @@ const AddQuotation = () => {
       areaName: p.areaName || null,
     }));
 
-    setFormData({
+    setFormData(restoreDraft({
       ...initialFormData,
       quotationId: id,
       document_title: existingQuotation.document_title || "",
@@ -297,6 +351,9 @@ const AddQuotation = () => {
       due_date: existingQuotation.due_date
         ? new Date(existingQuotation.due_date)
         : null,
+      miscellaneousChargeItems: normalizeCharges(existingQuotation.miscellaneousChargeItems ?? existingQuotation.miscellaneousCharges),
+      additionalDiscount: safeNum(existingQuotation.additionalDiscount),
+      flatPrice: existingQuotation.flatPrice == null ? null : safeNum(existingQuotation.flatPrice),
       shippingAmount: safeNum(existingQuotation.shippingAmount, 0),
       gst: safeNum(existingQuotation.gst, 0),
       extraDiscount: safeNum(existingQuotation.extraDiscount, 0),
@@ -311,9 +368,9 @@ const AddQuotation = () => {
       followupDates: safeJsonParse(existingQuotation.followupDates, [])
         .map((d) => (d ? new Date(d) : null))
         .filter(Boolean),
-    });
+    }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isEditMode, existingQuotation, userId]);
+  }, [isEditMode, existingQuotation, userId, draftKey]);
 
   // ── Location remapping ────────────────────────────────────────────
   // Rewrites a product's locations[] with `mapLoc`, merges shares that end
@@ -741,7 +798,11 @@ const AddQuotation = () => {
   // Same maths as the server and the PDF (utils/quotationMath)
   const calculations = useMemo(() => {
     const t = quotationTotals({
+      miscellaneousChargeItems: formData.miscellaneousChargeItems,
+      additionalDiscount: formData.additionalDiscount,
+      flatPrice: formData.flatPrice,
       items: mainProducts.map((p) => ({
+        ...p,
         price: safeNum(p.sellingPrice, 0),
         quantity: safeNum(p.qty, 1),
         discount: safeNum(p.discount, 0),
@@ -764,6 +825,9 @@ const AddQuotation = () => {
     };
   }, [
     mainProducts,
+    formData.miscellaneousChargeItems,
+    formData.additionalDiscount,
+    formData.flatPrice,
     formData.shippingAmount,
     formData.gst,
     formData.extraDiscount,
@@ -772,6 +836,8 @@ const AddQuotation = () => {
 
   // ── Submit ────────────────────────────────────────────────────────
   const handleSubmit = async () => {
+    if ((formData.miscellaneousChargeItems || []).some(charge => !charge.name?.trim()))
+      return message.error("Please enter a name for each miscellaneous charge");
     if (!formData.customerId) return message.error("Please select a customer");
     if (formData.products.length === 0)
       return message.error("Please add at least one product");
@@ -795,12 +861,7 @@ const AddQuotation = () => {
       const discount = safeNum(p.discount, 0);
       const discountType = p.discountType || "fixed";
 
-      const lineDiscount =
-        discountType === "percent"
-          ? (sellingPrice * qty * discount) / 100
-          : discount * qty;
-
-      const lineTotal = sellingPrice * qty - lineDiscount;
+      const lineTotal = lineAmounts({ ...p, price: sellingPrice, quantity: qty }).net;
 
       const locations =
         p.locations && p.locations.length > 0
@@ -837,6 +898,8 @@ const AddQuotation = () => {
         quantity: qty,
         price: sellingPrice,
         sellingPrice: sellingPrice,
+        additionalDiscount: safeNum(p.additionalDiscount),
+        flatPrice: p.flatPrice == null ? null : safeNum(p.flatPrice),
         discount: discount,
         discountType: discountType,
         isOptionFor: p.isOptionFor || null,
@@ -862,6 +925,9 @@ const AddQuotation = () => {
       shipTo: finalShipTo,
       quotation_date: formatDateSafe(formData.quotation_date),
       due_date: formatDateSafe(formData.due_date),
+      miscellaneousChargeItems: formData.miscellaneousChargeItems,
+      additionalDiscount: safeNum(formData.additionalDiscount),
+      flatPrice: formData.flatPrice == null ? null : safeNum(formData.flatPrice),
       shippingAmount: safeNum(formData.shippingAmount),
       gst: safeNum(formData.gst),
       extraDiscount: safeNum(formData.extraDiscount),
@@ -886,6 +952,9 @@ const AddQuotation = () => {
         await createQuotation(payload).unwrap();
         message.success("Quotation created successfully");
       }
+      submitted.current = true;
+      latestDraft.current = null;
+      try { localStorage.removeItem(draftKey); } catch { /* Saved quotation is authoritative. */ }
       navigate("/quotations/list");
     } catch (err) {
       message.error(err?.data?.message || "Failed to save quotation");
@@ -1188,7 +1257,29 @@ const AddQuotation = () => {
             }}
             bodyStyle={{ padding: 16 }}
           >
+            <Text type="secondary" role="status">{draftStatus}</Text>
+            <p><Text type="secondary">Item additional discounts apply per unit. Flat price replaces the discounted goods price. Quotation adjustments, shipping and GST apply afterward.</Text></p>
+            <Form.Item label="Miscellaneous charges">
+              {(formData.miscellaneousChargeItems || []).map((charge, index) => (
+                <Space key={index} style={{ display: "flex", marginBottom: 8 }}>
+                  <Input placeholder="Charge name (e.g. Packing)" aria-label="Charge name" value={charge.name}
+                    onChange={event => setFormData(prev => ({ ...prev, miscellaneousChargeItems: prev.miscellaneousChargeItems.map((row, i) => i === index ? { ...row, name: event.target.value } : row) }))} />
+                  <InputNumber min={0} precision={2} addonBefore="₹" aria-label="Charge amount" value={charge.amount}
+                    onChange={amount => setFormData(prev => ({ ...prev, miscellaneousChargeItems: prev.miscellaneousChargeItems.map((row, i) => i === index ? { ...row, amount: amount ?? 0 } : row) }))} />
+                  <Button danger icon={<DeleteOutlined />} aria-label="Remove charge" onClick={() => setFormData(prev => ({ ...prev, miscellaneousChargeItems: prev.miscellaneousChargeItems.filter((_, i) => i !== index) }))} />
+                </Space>
+              ))}
+              <Button icon={<PlusOutlined />} onClick={() => setFormData(prev => ({ ...prev, miscellaneousChargeItems: [...(prev.miscellaneousChargeItems || []), { name: "", amount: 0 }] }))}>Add charge</Button>
+            </Form.Item>
             <Row gutter={[16, 16]}>
+              {[["additionalDiscount", "Additional discount (₹)"], ["flatPrice", "Flat goods price before GST (₹, optional)"]].map(([field, label]) => (
+                <Col xs={24} sm={8} key={field}>
+                  <Form.Item label={label}>
+                    <InputNumber min={0} precision={2} value={formData[field]} style={{ width: "100%" }}
+                      onChange={value => setFormData(prev => ({ ...prev, [field]: field === "flatPrice" ? value : value ?? 0 }))} />
+                  </Form.Item>
+                </Col>
+              ))}
               <Col xs={24} sm={8}>
                 <Card
                   size="small"

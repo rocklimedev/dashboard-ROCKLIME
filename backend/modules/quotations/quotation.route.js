@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const quotationDispatch = require("../orders/quotation-dispatch.controller");
 const quotationController = require("./quotation.controller");
 const { auth } = require("../../middleware/auth"); // Authentication middleware
 const { guardModule } = require("../../middleware/permission");
@@ -28,6 +29,9 @@ router.get(
   "/",
   quotationController.getAllQuotations,
 );
+
+router.get("/:id/dispatches", quotationDispatch.list);
+router.post("/:id/dispatches", quotationDispatch.create);
 
 // ✅ Get a single quotation by ID (Admins, Managers & Sales Team)
 router.get(

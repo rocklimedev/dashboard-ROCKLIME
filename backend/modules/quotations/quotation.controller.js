@@ -7,7 +7,7 @@ const QuotationItem = require("./models/quotation-item.model"); // MongoDB model
 const QuotationVersion = require("./models/quotation-version.model");
 const { ActivityLog } = require("../../models");
 const logActivity = require("../../utils/activityLogger");
-const { quotationTotals } = require("../../lib/quotationMath");
+const { normalizeCharges, lineAmounts, quotationTotals } = require("../../lib/quotationMath");
 const { sendNotification } = require("../engagement/notification.controller");
 const pipeline = require("./pipeline");
 
@@ -265,10 +265,15 @@ function calculateTotals(
   extraDiscountType = "percent",
   shippingAmount = 0,
   gst = 0,
+  adjustments = {},
 ) {
   // One set of maths for screens, saved totals and the PDF (lib/quotationMath).
   // GST is charged on the taxable value; rounding to the rupee happens last.
   const t = quotationTotals({
+    miscellaneousCharges: adjustments.miscellaneousCharges,
+    miscellaneousChargeItems: adjustments.miscellaneousChargeItems,
+    additionalDiscount: adjustments.additionalDiscount,
+    flatPrice: adjustments.flatPrice,
     items,
     extraDiscount,
     extraDiscountType,
@@ -353,6 +358,8 @@ exports.createQuotation = async (req, res) => {
       floors: incomingFloors = [],
       extraDiscount = 0,
       extraDiscountType = "percent",
+      miscellaneousChargeItems = null,
+      miscellaneousCharges = 0, additionalDiscount = 0, flatPrice = null,
       shippingAmount = 0,
       gst = 0,
       customerId,
@@ -455,7 +462,10 @@ exports.createQuotation = async (req, res) => {
         quantity,
         price: Number(price.toFixed(2)),
         discount: Number(discount.toFixed(2)),
+        additionalDiscount: Number(p.additionalDiscount) || 0,
+        flatPrice: p.flatPrice == null || p.flatPrice === "" ? null : Number(p.flatPrice),
         discountType,
+        total: lineAmounts({ ...p, price, quantity }).net,
         tax: Number(p.tax || 0),
 
         priority: Number(p.priority ?? index),
@@ -485,6 +495,7 @@ exports.createQuotation = async (req, res) => {
       extraDiscountType,
       Number(shippingAmount),
       Number(gst),
+      { miscellaneousChargeItems, miscellaneousCharges, additionalDiscount, flatPrice },
     );
     // ─── Generate unique reference number ───
     const reference_number = await generateQuotationNumber(t);
@@ -507,6 +518,10 @@ exports.createQuotation = async (req, res) => {
         extraDiscount: Number(extraDiscount) || 0,
         extraDiscountType: extraDiscountType || "percent",
         discountAmount: totals.extraDiscountAmount,
+        miscellaneousChargeItems: normalizeCharges(miscellaneousChargeItems ?? miscellaneousCharges),
+        miscellaneousCharges: normalizeCharges(miscellaneousChargeItems ?? miscellaneousCharges).reduce((sum, row) => sum + row.amount, 0),
+        additionalDiscount: Number(additionalDiscount) || 0,
+        flatPrice: flatPrice == null || flatPrice === "" ? null : Number(flatPrice),
         shippingAmount: Number(shippingAmount) || 0,
         gst: Number(gst) || 0,
         gstAmount: totals.gstAmount,
@@ -595,6 +610,8 @@ exports.updateQuotation = async (req, res) => {
       followupDates = [],
       extraDiscount = 0,
       extraDiscountType = "percent",
+      miscellaneousChargeItems = null,
+      miscellaneousCharges = 0, additionalDiscount = 0, flatPrice = null,
       shippingAmount = 0,
       gst = 0,
       ...quotationData
@@ -640,6 +657,10 @@ exports.updateQuotation = async (req, res) => {
           "extraDiscount",
           "extraDiscountType",
           "discountAmount",
+          "miscellaneousChargeItems",
+          "miscellaneousCharges",
+          "additionalDiscount",
+          "flatPrice",
           "shippingAmount",
           "gst",
           "gstAmount",
@@ -750,14 +771,12 @@ exports.updateQuotation = async (req, res) => {
         quantity: totalQuantity,
         price: Number(price.toFixed(2)),
         discount: Number(discount.toFixed(2)),
+        additionalDiscount: Number(p.additionalDiscount) || 0,
+        flatPrice: p.flatPrice == null || p.flatPrice === "" ? null : Number(p.flatPrice),
         discountType,
         tax: 0,
         priority: Number(p.priority ?? db.priority ?? 0),
-        total: Number(
-          discountType === "percent"
-            ? price * totalQuantity * (1 - discount / 100)
-            : (price - discount) * totalQuantity,
-        ).toFixed(2),
+        total: lineAmounts({ ...p, price, quantity: totalQuantity }).net,
 
         isOptionFor: isOption ? p.isOptionFor : null,
         optionType: p.optionType || null,
@@ -781,6 +800,7 @@ exports.updateQuotation = async (req, res) => {
       extraDiscountType,
       Number(shippingAmount),
       Number(gst),
+      { miscellaneousChargeItems, miscellaneousCharges, additionalDiscount, flatPrice },
     );
 
     await Quotation.update(
@@ -792,6 +812,10 @@ exports.updateQuotation = async (req, res) => {
         extraDiscount: Number(extraDiscount) || 0,
         extraDiscountType: extraDiscountType || "percent",
         discountAmount: totals.extraDiscountAmount,
+        miscellaneousChargeItems: normalizeCharges(miscellaneousChargeItems ?? miscellaneousCharges),
+        miscellaneousCharges: normalizeCharges(miscellaneousChargeItems ?? miscellaneousCharges).reduce((sum, row) => sum + row.amount, 0),
+        additionalDiscount: Number(additionalDiscount) || 0,
+        flatPrice: flatPrice == null || flatPrice === "" ? null : Number(flatPrice),
         shippingAmount: Number(shippingAmount) || 0,
         gst: Number(gst) || 0,
         gstAmount: totals.gstAmount,
@@ -922,6 +946,7 @@ exports.exportQuotation = async (req, res) => {
       quotation.extraDiscountType || "percent",
       quotation.shippingAmount || 0,
       quotation.gst || 0,
+      quotation,
     );
     const totalTax = 0;
 
@@ -1029,11 +1054,11 @@ exports.exportQuotation = async (req, res) => {
             p.imageUrl || "N/A",
             p.name || "—",
             p.productCode || p.product_code || "—",
-            Number(p.price * (1 + (p.discount || 0) / 100))?.toFixed(2) || "—", // approximate MRP
+            Number(p.price || 0).toFixed(2),
             discountDisplay,
-            Number(p.price || p.total || 0).toFixed(2),
+            lineAmounts(p).rate.toFixed(2),
             Number(p.quantity || 1),
-            Number(p.total || 0).toFixed(2),
+            lineAmounts(p).net.toFixed(2),
           ]);
         });
 
@@ -1104,6 +1129,12 @@ exports.exportQuotation = async (req, res) => {
       "",
       (quotation.shippingAmount || 0).toFixed(2),
     ]);
+    for (const row of normalizeCharges(quotation.miscellaneousChargeItems ?? quotation.miscellaneousCharges)) {
+      sheetData.push(["", "", "", "", "", "", row.name, "", row.amount.toFixed(2)]);
+    }
+    for (const [key, label] of [["additionalDiscount", "Additional discount"], ["flatPrice", "Flat goods price (override)"]]) {
+      if (quotation[key] != null && (key === "flatPrice" || Number(quotation[key]))) sheetData.push(["", "", "", "", "", "", label, "", Number(quotation[key]).toFixed(2)]);
+    }
     sheetData.push(["", "", "", "", "", "", "GST", "", gstAmount.toFixed(2)]);
     sheetData.push([
       "",
@@ -1272,14 +1303,12 @@ exports.cloneQuotation = async (req, res) => {
         quantity: totalQuantity,
         price: Number(price.toFixed(2)),
         discount: Number(discount.toFixed(2)),
+        additionalDiscount: Number(p.additionalDiscount) || 0,
+        flatPrice: p.flatPrice == null || p.flatPrice === "" ? null : Number(p.flatPrice),
         discountType,
         tax: 0,
         priority: Number(p.priority ?? 0),
-        total: Number(
-          discountType === "percent"
-            ? price * totalQuantity * (1 - discount / 100)
-            : (price - discount) * totalQuantity,
-        ).toFixed(2),
+        total: lineAmounts({ ...p, price, quantity: totalQuantity }).net,
 
         isOptionFor: isOption ? p.isOptionFor || p.parentProductId : null,
         optionType: p.optionType || null,
@@ -1304,6 +1333,7 @@ exports.cloneQuotation = async (req, res) => {
       original.extraDiscountType || "percent",
       Number(original.shippingAmount || 0),
       Number(original.gst || 0),
+      original,
     );
 
     // ─── Generate new reference number ───
@@ -1330,6 +1360,8 @@ exports.cloneQuotation = async (req, res) => {
         extraDiscount: Number(original.extraDiscount) || 0,
         extraDiscountType: original.extraDiscountType || "percent",
         discountAmount: totals.extraDiscountAmount,
+        miscellaneousChargeItems: original.miscellaneousChargeItems,
+        miscellaneousCharges: original.miscellaneousCharges, additionalDiscount: original.additionalDiscount, flatPrice: original.flatPrice,
         shippingAmount: Number(original.shippingAmount) || 0,
         gst: Number(original.gst) || 0,
         gstAmount: totals.gstAmount,
@@ -1484,6 +1516,7 @@ exports.getQuotationById = async (req, res) => {
       quotation.extraDiscountType,
       quotation.shippingAmount,
       quotation.gst,
+      quotation,
     );
 
     const days = await pipeline.validityDays();
@@ -1822,6 +1855,7 @@ exports.createShareLink = async (req, res) => {
       full.extraDiscountType || "percent",
       full.shippingAmount || 0,
       full.gst || 0,
+      full,
     ).finalAmount;
     const amount = Number(total || quotation.finalAmount || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 });
     const message = `Dear ${customer?.name || "Sir/Madam"}, please find our quotation ${quotation.reference_number} for ₹${amount}: ${url}\n— CM Trading Co.`;

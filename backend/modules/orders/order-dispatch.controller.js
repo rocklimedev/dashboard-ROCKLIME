@@ -1,3 +1,4 @@
+const { can } = require("../../middleware/permission");
 const axios = require("axios");
 const path = require("path");
 const { v4: uuidv4 } = require("uuid");
@@ -7,6 +8,7 @@ const { uploadToFtp } = require("../../middleware/upload");
 const { sendNotification } = require("../engagement/notification.controller");
 const logOrderActivity = require("./order-activity-logger");
 const {
+  Quotation,
   Order,
   Customer,
   OrderDispatch,
@@ -85,10 +87,10 @@ exports.createDispatch = async (req, res) => {
       return sendErrorResponse(res, 400, "items array is required");
     }
 
-    const order = await Order.findByPk(id, {
-      transaction: t,
-      lock: t.LOCK.UPDATE,
-    });
+    // Serialize quotation and order shipments against the same quantity budget.
+    const sourceOrder = await Order.findByPk(id, { attributes: ["quotationId"], transaction: t });
+    if (sourceOrder?.quotationId) await Quotation.findByPk(sourceOrder.quotationId, { transaction: t, lock: t.LOCK.UPDATE });
+    const order = await Order.findByPk(id, { transaction: t, lock: t.LOCK.UPDATE });
 
     if (!order) {
       await t.rollback();
@@ -218,6 +220,7 @@ exports.createDispatch = async (req, res) => {
       transaction: t,
     });
 
+    priorDispatches.push(...await require("./quotation-dispatch.controller").creditedDispatches(order, t));
     const alreadyDispatchedMap = {};
 
     for (const d of priorDispatches) {
@@ -235,20 +238,18 @@ exports.createDispatch = async (req, res) => {
     let totalQuantity = 0;
     let totalAmount = 0;
 
-    for (const reqItem of items) {
-      const productId = reqItem.productId || reqItem.id;
-      const qty = Number(reqItem.quantity);
-
-      if (!productId || !qty || qty < 1) {
+    const mergedItems = new Map();
+    for (const item of items) {
+      const productId = item.productId || item.id;
+      const quantity = Number(item.quantity);
+      if (!productId || !Number.isSafeInteger(quantity) || quantity <= 0) {
         await t.rollback();
-
-        return sendErrorResponse(
-          res,
-          400,
-          "Each dispatch item needs a productId and quantity >= 1",
-        );
+        return sendErrorResponse(res, 400, "Each dispatch item needs a productId and a positive whole quantity");
       }
-
+      mergedItems.set(productId, (mergedItems.get(productId) || 0) + quantity);
+    }
+    for (const [productId, quantity] of mergedItems) {
+      const qty = quantity;
       const orderedLine = orderProducts.find(
         (p) => (p.productId || p.id) === productId,
       );
@@ -302,8 +303,21 @@ exports.createDispatch = async (req, res) => {
       transaction: t,
     });
 
+    if (order.quotationId) {
+      const source = await Quotation.findByPk(order.quotationId, { transaction: t });
+      const { quotationHistory } = require("./quotation-dispatch.controller");
+      const { asList, remainingLines, selectDispatchItems } = require("./dispatch-document");
+      const quotedIds = new Set(asList(source?.products).map(p => p.productId));
+      const quotedItems = dispatchItems.filter(p => quotedIds.has(p.productId));
+      if (source && quotedItems.length) selectDispatchItems(remainingLines(source.products, await quotationHistory(source.quotationId, t)), quotedItems);
+    }
+    const { snapshotForOrder } = require("./quotation-dispatch.controller");
+    const documentSnapshot = await snapshotForOrder(order, dispatchItems, dispatchCount + 1);
     const dispatch = await OrderDispatch.create(
       {
+        documentSnapshot,
+        quotationId: order.quotationId || null,
+        quotationRef: documentSnapshot.sourceQuotationRef || null,
         orderId: order.id,
         orderNo: order.orderNo,
         dispatchNumber: dispatchCount + 1,
@@ -494,7 +508,7 @@ exports.createDispatch = async (req, res) => {
 
     return sendErrorResponse(
       res,
-      500,
+      err.status || 500,
       "Failed to create dispatch",
       err.message,
     );
@@ -506,6 +520,8 @@ exports.createDispatch = async (req, res) => {
 
 exports.getAllDispatchHistory = async (req, res) => {
   try {
+    const orderAccess = await can(req.user, "orders", "view");
+    if (!orderAccess && !await can(req.user, "quotations", "view")) return sendErrorResponse(res, 403, "You do not have permission to view dispatch history");
     const {
       search = "",
       product = "",
@@ -515,6 +531,7 @@ exports.getAllDispatchHistory = async (req, res) => {
       trackingNumber = "",
       orderNo = "",
       dispatchNumber = "",
+      quotationId = "",
       dateFrom = "",
       dateTo = "",
       page = 1,
@@ -526,6 +543,7 @@ exports.getAllDispatchHistory = async (req, res) => {
 
     const where = {
       [Op.and]: [],
+      ...(!orderAccess ? { orderId: null } : {}),
     };
 
     // ---------------------------------------------------------
@@ -548,6 +566,7 @@ exports.getAllDispatchHistory = async (req, res) => {
       where[Op.and].push({
         [Op.or]: [
           { orderNo: { [Op.like]: searchLike } },
+          { quotationRef: { [Op.like]: searchLike } },
           { carrier: { [Op.like]: searchLike } },
           { trackingNumber: { [Op.like]: searchLike } },
           { remarks: { [Op.like]: searchLike } },
@@ -707,9 +726,14 @@ exports.getAllDispatchHistory = async (req, res) => {
     // QUERY
     // ---------------------------------------------------------
 
+    if (quotationId) {
+      const linked = await Order.findAll({ where: { quotationId }, attributes: ["id"] });
+      where[Op.and].push({ [Op.or]: [{ quotationId }, ...(linked.length ? [{ orderId: { [Op.in]: linked.map(order => order.id) } }] : [])] });
+    }
     const offset = (pageNum - 1) * limitNum;
 
     const { count, rows } = await OrderDispatch.findAndCountAll({
+      attributes: { exclude: ["documentSnapshot"] },
       where,
 
       include: [
@@ -778,6 +802,7 @@ exports.getOrderDispatches = async (req, res) => {
         "products",
         "finalAmount",
         "amountPaid",
+        "quotationId",
         "invoiceLink",
         "gatePassLink",
       ],
@@ -824,6 +849,7 @@ exports.getOrderDispatches = async (req, res) => {
     // It is NOT used to recalculate the financial value of a
     // dispatch when the dispatch already contains its own snapshot.
 
+    dispatches.push(...await require("./quotation-dispatch.controller").creditedDispatches(order));
     const orderProducts = Array.isArray(order.products) ? order.products : [];
 
     const orderedMap = {};
@@ -1196,7 +1222,8 @@ exports.getOrderDispatches = async (req, res) => {
 
       return {
         id: dispatch.id,
-
+        sourceQuotationDispatch: Boolean(dispatch.sourceQuotationDispatch),
+        quotationId: dispatch.quotationId || null,
         orderId: dispatch.orderId,
 
         orderNo: dispatch.orderNo,
@@ -1901,12 +1928,13 @@ exports.uploadReceivingDocument = async (req, res) => {
 // is delivered, the order becomes DELIVERED; otherwise PARTIALLY_DELIVERED.
 exports.markDispatchDelivered = async (req, res) => {
   try {
-    const { orderId, dispatchId } = req.params;
-    const dispatch = await OrderDispatch.findOne({ where: { id: dispatchId, orderId } });
+    let { orderId, dispatchId } = req.params;
+    const dispatch = await OrderDispatch.findOne({ where: { id: dispatchId, ...(orderId ? { orderId } : {}) } });
     if (!dispatch) return sendErrorResponse(res, 404, "Dispatch not found");
     if (dispatch.status === "RETURNED") return sendErrorResponse(res, 400, "This dispatch was returned.");
-    const order = await Order.findByPk(orderId);
-    if (!order) return sendErrorResponse(res, 404, "Order not found");
+    orderId = orderId || dispatch.orderId;
+    const order = orderId ? await Order.findByPk(orderId) : null;
+    if (orderId && !order) return sendErrorResponse(res, 404, "Order not found");
 
     const receivedBy = String(req.body?.receivedBy || "").trim().slice(0, 120);
     if (!receivedBy && !req.file) {
@@ -1936,8 +1964,24 @@ exports.markDispatchDelivered = async (req, res) => {
       deliveryNote: String(req.body?.deliveryNote || "").trim() || null,
     });
 
+    if (!order) {
+      const { asList } = require("./dispatch-document");
+      const ids = [...new Set(asList(dispatch.items).flatMap(item => asList(item.orderAllocations).map(a => a.orderId)))];
+      for (const id of ids) {
+        const linked = await Order.findByPk(id);
+        if (!linked || ["CANCELED", "CLOSED"].includes(linked.status)) continue;
+        const own = await OrderDispatch.findAll({ where: { orderId: id }, attributes: ["status"] });
+        const credited = await require("./quotation-dispatch.controller").creditedDispatches(linked);
+        const live = own.concat(credited).filter(d => d.status !== "RETURNED");
+        const needs = await stock.orderNeeds(linked);
+        const complete = needs.length && needs.every(n => n.needed === 0) && live.every(d => d.status === "DELIVERED");
+        await linked.update({ status: complete ? "DELIVERED" : "PARTIALLY_DELIVERED" });
+      }
+      return res.json({ message: "Marked delivered", dispatch });
+    }
     // Order status follows its dispatches
     const all = await OrderDispatch.findAll({ where: { orderId }, attributes: ["status"] });
+    all.push(...await require("./quotation-dispatch.controller").creditedDispatches(order));
     const live = all.filter((d) => d.status !== "RETURNED");
     const needs = await stock.orderNeeds(order);
     const fullyDispatched = needs.length > 0 && needs.every((n) => n.needed === 0);
@@ -1986,3 +2030,5 @@ exports.pickList = async (req, res) => {
     return sendErrorResponse(res, err.status || 500, err.message || "Could not make the pick list");
   }
 };
+
+exports.transportFields = transportFields;

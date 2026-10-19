@@ -28,6 +28,7 @@ const HOLDING_STATUSES = [
   "CHECKING",
   "INVOICE",
   "PARTIALLY_DISPATCHED",
+  "PARTIALLY_DELIVERED",
   "ONHOLD",
 ];
 
@@ -294,6 +295,14 @@ async function orderNeeds(order, t) {
       dispatched[item.productId] = (dispatched[item.productId] || 0) + (Number(item.quantity) || 0);
     }
   }
+  if (order.quotationId) {
+    const { allocatedItems } = require("../orders/dispatch-document");
+    const direct = await OrderDispatch.findAll({ where: { quotationId: order.quotationId, orderId: null }, attributes: ["items", "status"], transaction: t });
+    for (const d of direct) {
+      if (d.status === "RETURNED") continue;
+      for (const item of allocatedItems(d, order.id)) dispatched[item.productId] = (dispatched[item.productId] || 0) + item.quantity;
+    }
+  }
   const ids = new Set([...Object.keys(ordered), ...Object.keys(dispatched)]);
   return [...ids].sort().map((productId) => ({
     productId,
@@ -395,7 +404,7 @@ const releaseOrder = (orderId, opts) => syncOrder(orderId, { ...opts, release: t
  * Take dispatched goods out of stock: first from the order's reservation,
  * then from free stock. items: [{ productId, quantity }]
  */
-async function dispatchOut(order, items, { t, userId = null, dispatchId, dispatchNo } = {}) {
+async function dispatchOut(order, items, { t, userId = null, dispatchId, dispatchNo, reservationLimits = null } = {}) {
   const { StockReservation } = models();
   const defaultWh = await getDefaultWarehouse(t);
   const ref = { type: "DISPATCH", id: dispatchId || order.id, no: dispatchNo ? `${order.orderNo}/D${dispatchNo}` : order.orderNo };
@@ -410,14 +419,18 @@ async function dispatchOut(order, items, { t, userId = null, dispatchId, dispatc
   for (const productId of Object.keys(merged).sort()) {
     let left = merged[productId];
     if (left <= 0) continue;
-    const reservations = await StockReservation.findAll({
-      where: { orderId: order.id, productId, status: "ACTIVE", quantity: { [Op.gt]: 0 } },
+    const limits = reservationLimits?.[productId] || {};
+    const reservationOrders = reservationLimits ? Object.keys(limits) : [order.id];
+    const reservations = reservationOrders.length ? await StockReservation.findAll({
+      where: { orderId: { [Op.in]: reservationOrders }, productId, status: "ACTIVE", quantity: { [Op.gt]: 0 } },
       transaction: t,
-    });
+    }) : [];
     reservations.sort((a, b) => (a.warehouseId === defaultWh.id ? -1 : b.warehouseId === defaultWh.id ? 1 : 0));
     for (const r of reservations) {
       if (left <= 0) break;
-      const take = Math.min(r.quantity, left);
+      const take = Math.min(r.quantity, left, reservationLimits ? limits[r.orderId] || 0 : left);
+      if (take <= 0) continue;
+      if (reservationLimits) limits[r.orderId] -= take;
       await post(t, {
         productId,
         warehouseId: r.warehouseId,
@@ -426,8 +439,8 @@ async function dispatchOut(order, items, { t, userId = null, dispatchId, dispatc
         reserved: -take,
         ref,
         userId,
-        reason: `Dispatched for order ${order.orderNo}`,
-        key: dispatchId ? `DISPATCH:${dispatchId}:${productId}:${r.warehouseId}:R` : null,
+        reason: `Dispatched for ${order.sourceLabel || "order"} ${order.orderNo}`,
+        key: dispatchId ? `DISPATCH:${dispatchId}:${productId}:${r.warehouseId}:${r.id}:R` : null,
       });
       await r.update({ quantity: r.quantity - take, status: r.quantity - take > 0 ? "ACTIVE" : "CONSUMED" }, { transaction: t });
       left -= take;
@@ -451,7 +464,7 @@ async function dispatchOut(order, items, { t, userId = null, dispatchId, dispatc
         onHand: -left,
         ref,
         userId,
-        reason: `Dispatched for order ${order.orderNo} (from free stock)`,
+        reason: `Dispatched for ${order.sourceLabel || "order"} ${order.orderNo} (from free stock)`,
         key: dispatchId ? `DISPATCH:${dispatchId}:${productId}:${defaultWh.id}:F` : null,
       });
     }

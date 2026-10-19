@@ -15,7 +15,7 @@ import {
   SearchOutlined,
   TruckOutlined,
 } from "@ant-design/icons";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import moment from "moment";
 
 import PageHeader from "../../components/Common/PageHeader";
@@ -26,6 +26,8 @@ const { RangePicker } = DatePicker;
 
 const DispatchHistory = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const quotationId = searchParams.get("quotationId") || "";
 
   const [search, setSearch] = useState("");
 
@@ -59,7 +61,7 @@ const DispatchHistory = () => {
     isLoading,
     isFetching,
     error,
-  } = useGetAllDispatchHistoryQuery(filters);
+  } = useGetAllDispatchHistoryQuery({ ...filters, quotationId });
 
   const dispatches = response?.data || [];
 
@@ -184,8 +186,10 @@ const DispatchHistory = () => {
       <div className="content">
         <PageHeader
           title="Dispatch History"
-          subtitle="Global dispatch register"
-          onAdd={() => navigate("/orders")}
+          subtitle="Quotation and order dispatch register"
+          addLabel="Dispatch from quotation"
+          onAdd={() => navigate("/quotations/list")}
+          extra={quotationId ? <Button onClick={() => navigate("/orders/dispatch/all")}>Show all dispatches</Button> : null}
         />
 
         <div className="card">
@@ -197,7 +201,7 @@ const DispatchHistory = () => {
                 <Input
                   size="large"
                   prefix={<SearchOutlined />}
-                  placeholder="Search order, product, code, carrier, tracking..."
+                  placeholder="Search quotation, order, product, carrier, tracking..."
                   value={search}
                   allowClear
                   onChange={(e) => setSearch(e.target.value)}
@@ -242,7 +246,7 @@ const DispatchHistory = () => {
               <div className="col-12 col-md-4">
                 <Input
                   size="large"
-                  placeholder="Order number"
+                  placeholder="Order / quotation reference"
                   value={filters.orderNo}
                   allowClear
                   onChange={(e) => handleOrderNoChange(e.target.value)}
@@ -310,7 +314,7 @@ const DispatchHistory = () => {
                       <tr>
                         <th>S.No.</th>
                         <th>DISPATCH</th>
-                        <th>ORDER</th>
+                        <th>SOURCE</th>
                         <th>PRODUCTS</th>
                         <th>QTY</th>
                         <th>AMOUNT</th>
@@ -334,7 +338,7 @@ const DispatchHistory = () => {
 
                             <td>
                               <div className="fw-semibold">
-                                #{dispatch.dispatchNumber}
+                                <Link to={`/dispatch/${dispatch.id}`}>#{dispatch.dispatchNumber}</Link>
                               </div>
 
                               <div className="small text-muted">
@@ -343,12 +347,12 @@ const DispatchHistory = () => {
                             </td>
 
                             <td>
-                              {dispatch.orderId ? (
+                              {dispatch.orderId || dispatch.quotationId ? (
                                 <Link
-                                  to={`/order/${dispatch.orderId}`}
+                                  to={dispatch.orderId ? `/order/${dispatch.orderId}` : `/quotation/${dispatch.quotationId}`}
                                   className="fw-semibold"
                                 >
-                                  {dispatch.orderNo}
+                                  {dispatch.orderId ? "Order " + dispatch.orderNo : "Quotation " + (dispatch.quotationRef || dispatch.orderNo)}
                                 </Link>
                               ) : (
                                 dispatch.orderNo || "—"
@@ -426,8 +430,8 @@ const DispatchHistory = () => {
                             </td>
 
                             <td>
-                              <Tooltip title="View Order">
-                                <Link to={`/order/${dispatch.orderId}`}>
+                              <Tooltip title="View Dispatch Details">
+                                <Link to={`/dispatch/${dispatch.id}`}>
                                   <Button type="text" icon={<EyeOutlined />} />
                                 </Link>
                               </Tooltip>

@@ -3,7 +3,7 @@
 const fs = require("fs");
 const path = require("path");
 const server = fs.readFileSync(path.join(__dirname, "../lib/quotationMath.js"), "utf8");
-const screen = fs.readFileSync(path.join(__dirname, "../../frontend/src/utils/quotationMath.js"), "utf8");
+const screen = fs.readFileSync(path.join(__dirname, "../../frontend-v2/src/utils/quotationMath.js"), "utf8");
 const body = (s) =>
   s
     .replace(/^\/\/.*$/gm, "")

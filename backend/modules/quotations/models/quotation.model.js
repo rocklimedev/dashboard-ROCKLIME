@@ -89,6 +89,10 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.ENUM("percent", "fixed"),
         allowNull: true,
       },
+      miscellaneousChargeItems: { type: DataTypes.JSON, allowNull: true, defaultValue: null },
+      miscellaneousCharges: { type: DataTypes.DECIMAL(10, 2), defaultValue: 0 },
+      additionalDiscount: { type: DataTypes.DECIMAL(10, 2), defaultValue: 0 },
+      flatPrice: { type: DataTypes.DECIMAL(10, 2), allowNull: true },
       shippingAmount: {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: true,
