@@ -1760,12 +1760,15 @@ const { signShare } = require("../../lib/shareToken");
 // GET /api/quotation/:id/pdf?style=detailed|compact|areawise&cover=1&version=N&download=1
 exports.getQuotationPdf = async (req, res) => {
   try {
-    const { buffer, filename } = await buildQuotationPdf(req.params.id, {
+    const { buffer, filename, pageLabels } = await buildQuotationPdf(req.params.id, {
       style: req.query.style,
+      exportOptions: req.query.exportOptions ? JSON.parse(req.query.exportOptions) : {},
       // no "cover" in the link → the cover-page setting decides
       cover: req.query.cover == null || req.query.cover === "" ? null : ["1", "true", "yes"].includes(String(req.query.cover)),
       version: req.query.version || null,
     });
+    res.setHeader("X-Quotation-Pages", encodeURIComponent(JSON.stringify(pageLabels)));
+    res.setHeader("Access-Control-Expose-Headers", "Content-Disposition, X-Quotation-Pages");
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
       "Content-Disposition",

@@ -56,7 +56,7 @@ router.post("/:id/share", async (req, res) => {
 router.get("/:id/pdf", async (req, res) => {
   try {
     const { buildPoPdf } = require("./po-pdf");
-    const { buffer, filename } = await buildPoPdf(req.params.id);
+    const { buffer, filename } = await buildPoPdf(req.params.id, req.query.exportOptions ? JSON.parse(req.query.exportOptions) : {});
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `${req.query.download ? "attachment" : "inline"}; filename="${filename}"`);
     res.setHeader("Cache-Control", "no-store");

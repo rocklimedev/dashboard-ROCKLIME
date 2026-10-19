@@ -67,12 +67,13 @@ async function loadPo(poId) {
   };
 }
 
-async function buildPoPdf(poId) {
+async function buildPoPdf(poId, exportOptions = {}) {
   const [data, company, purchase] = await Promise.all([loadPo(poId), getSetting("company"), getSetting("purchase")]);
-  return renderPoPdf({ ...data, company, purchase });
+  return renderPoPdf({ ...data, company, purchase, exportOptions });
 }
 
-async function renderPoPdf({ po, items, vendor = {}, creator, warehouse, company, purchase = {} }) {
+async function renderPoPdf({ po, items, vendor = {}, creator, warehouse, company, purchase = {}, exportOptions = {} }) {
+  const hidden = new Set(Array.isArray(exportOptions?.hidden) ? exportOptions.hidden : []);
   const brand = company.brandName || company.name || "";
   const norm = (x) => String(x || "").trim().toLowerCase();
   const interState = po.interState ?? Boolean(vendor.state && company.state && norm(vendor.state) !== norm(company.state));
@@ -142,7 +143,7 @@ async function renderPoPdf({ po, items, vendor = {}, creator, warehouse, company
     warehouse?.address || company.address,
     company.gstin ? `GSTIN ${company.gstin}` : null,
     [company.phone, String(company.website || "").replace(/^https?:\/\/(www\.)?/i, "")].filter(Boolean).join(" · "),
-    creator ? `Contact: ${[creator.name || creator.username, creator.mobileNumber].filter(Boolean).join(" · ")}` : null,
+
   ].filter(Boolean);
   for (const l of dLines) {
     text(l, A4.w - M - half, ry, { size: 8.5, width: half, align: "right" });
@@ -155,7 +156,7 @@ async function renderPoPdf({ po, items, vendor = {}, creator, warehouse, company
     ["Your reference", po.vendorRef],
     ["Payment", po.paymentTerms || vendor.paymentTerms || purchase.paymentTerms],
     ["Delivery", po.deliveryTerms || purchase.deliveryTerms],
-    ["Tax", interState ? "IGST (other state)" : "CGST + SGST"],
+    ...(!hidden.has("gst") ? [["Tax", interState ? "IGST (other state)" : "CGST + SGST"]] : []),
   ];
   const bw = W / refs.length;
   const stripH = Math.max(46, ...refs.map(([, v]) => hOf(v || "—", bw - 18, 8, true) + 28));
@@ -178,15 +179,18 @@ async function renderPoPdf({ po, items, vendor = {}, creator, warehouse, company
     { k: "gst", l: "GST", x: M + 391, w: 36, a: "right" },
     { k: "amt", l: "Amount", x: M + 427, w: W - 427, a: "right" },
   ];
+  const keys = { no: "sno", rate: "price", disc: "discount", amt: "total" };
+  const visible = cols.filter(c => c.k === "name" ? !(hidden.has("name") && hidden.has("code") && hidden.has("hsn")) : !hidden.has(keys[c.k] || c.k));
+  // Keep the original positions, widths and combined product/code/HSN cell.
   const head = () => {
-    for (const c of cols) label(c.l, c.x + (c.a === "right" ? 0 : 3), y + 8, { width: c.w - 3, align: c.a || "left" });
+    for (const c of visible) label(c.k === "name" && hidden.has("name") ? "Code / HSN" : c.l, c.x + (c.a === "right" ? 0 : 3), y + 8, { width: c.w - 3, align: c.a || "left" });
     y += 22;
     rule(y);
   };
-  head();
-  t.lines.forEach((l, i) => {
-    const sub = [l.companyCode || l.productCode, l.hsn ? `HSN ${l.hsn}` : null].filter(Boolean).join(" · ");
-    const nh = hOf(l.productName || "Item", 215);
+  if (visible.length) head();
+  if (visible.length) t.lines.forEach((l, i) => {
+    const sub = [!hidden.has("code") && (l.companyCode || l.productCode), !hidden.has("hsn") && l.hsn ? `HSN ${l.hsn}` : null].filter(Boolean).join(" · ");
+    const nh = hidden.has("name") ? 0 : hOf(l.productName || "Item", 215);
     const h = Math.max(28, nh + (sub ? 11 : 0) + 14);
     if (y + h > BOTTOM - 40) {
       doc.addPage();
@@ -197,13 +201,13 @@ async function renderPoPdf({ po, items, vendor = {}, creator, warehouse, company
     }
     const mid = y + h / 2;
     const block = nh + (sub ? 11 : 0);
-    text(String(i + 1), M + 3, mid - 5, { size: 8.5, color: MUTED, lineBreak: false });
-    text(l.productName || "Item", M + 25, mid - block / 2, { size: 8.5, width: 215 });
+    if (!hidden.has("sno")) text(String(i + 1), M + 3, mid - 5, { size: 8.5, color: MUTED, lineBreak: false });
+    if (!hidden.has("name")) text(l.productName || "Item", M + 25, mid - block / 2, { size: 8.5, width: 215 });
     if (sub) text(sub, M + 25, mid - block / 2 + nh + 1, { size: 7, color: MUTED, width: 215, lineBreak: false, ellipsis: true });
     const d = Number(l.discountInput) || 0;
     const disc = d ? (String(l.discountType || "percent") === "percent" ? `${d % 1 ? d.toFixed(1) : d}%` : `−${whole(d)}`) : "—";
     const vals = { qty: Number(l.qty).toLocaleString("en-IN"), rate: money(l.rate), disc, gst: `${l.gstRate}%`, amt: money(l.net) };
-    for (const c of cols.slice(2)) {
+    for (const c of visible.filter(c => c.k !== "no" && c.k !== "name")) {
       text(vals[c.k], c.x, mid - 5, { size: 8.5, width: c.w - 3, align: "right", lineBreak: false, bold: c.k === "amt", color: c.k === "disc" || c.k === "gst" ? MUTED : INK });
     }
     y += h;
@@ -219,6 +223,7 @@ async function renderPoPdf({ po, items, vendor = {}, creator, warehouse, company
   const top = y;
   const gx = M;
   const gw = W / 2 - 24;
+  if (!hidden.has("gst") && !hidden.has("total")) {
   label("GST summary", gx, y, { color: RED, size: 7 });
   y += 14;
   const gc = interState
@@ -241,6 +246,7 @@ async function renderPoPdf({ po, items, vendor = {}, creator, warehouse, company
     y += 18;
     rule(y, { x2: gx + gw, color: "#ececec" });
   }
+  }
   // notes sit under the GST summary, where the page has room
   if (po.notes) {
     y += 16;
@@ -251,14 +257,15 @@ async function renderPoPdf({ po, items, vendor = {}, creator, warehouse, company
   }
   const leftEnd = y;
 
+  if (!hidden.has("total")) {
   y = top;
   const bx = A4.w - M - 230;
   const lines = [
-    ["Value before discount", money(t.subTotal)],
-    ["Discount", t.discount ? `−${money(t.discount)}` : money(0), t.discount ? RED : null],
+    [hidden.has("discount") ? "Goods value" : "Value before discount", money(t.subTotal)],
+    ...(!hidden.has("discount") ? [["Discount", t.discount ? `−${money(t.discount)}` : money(0), t.discount ? RED : null]] : []),
     ["Freight", money(t.freight)],
     ["Taxable value", money(t.taxableValue), null, true],
-    ...(interState ? [["IGST", money(t.igst)]] : [["CGST", money(t.cgst)], ["SGST", money(t.sgst)]]),
+    ...(!hidden.has("gst") ? (interState ? [["IGST", money(t.igst)]] : [["CGST", money(t.cgst)], ["SGST", money(t.sgst)]]) : []),
     ["Round off", `${t.roundOff < 0 ? "−" : "+"}${money(Math.abs(t.roundOff))}`, MUTED],
   ];
   for (const [k, v, color, bold] of lines) {
@@ -273,6 +280,8 @@ async function renderPoPdf({ po, items, vendor = {}, creator, warehouse, company
   const words = amountInWords(t.grandTotal);
   text(words, bx - 60, y, { size: 7.5, color: MUTED, width: 286, align: "right" });
   y = Math.max(leftEnd, y + hOf(words, 286, 7.5)) + 12;
+
+  }
 
   // terms
   const terms = (purchase.terms || []).filter(Boolean);

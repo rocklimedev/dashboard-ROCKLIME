@@ -47,6 +47,8 @@ export default function QuotationPdfActions({
   cover: coverProp,
   onCoverChange,
   showPreview = true,
+  exportOptions,
+  pageOrder,
 }) {
   const dispatch = useDispatch();
   const [styleState, setStyleState] = useState("detailed");
@@ -69,7 +71,7 @@ export default function QuotationPdfActions({
   const run = async (kind) => {
     setBusy(kind);
     try {
-      const { blob, name } = await fetchPdf(quotationId, { style, cover, version });
+      const { blob, name } = await fetchPdf(quotationId, { style, cover, version, exportOptions, pageOrder });
       const url = URL.createObjectURL(blob);
       if (kind === "preview") {
         setPreview({ url, name });
@@ -135,7 +137,7 @@ export default function QuotationPdfActions({
         <Button type="primary" icon={<DownloadOutlined />} loading={busy === "download"} onClick={() => run("download")}>
           PDF
         </Button>
-        <Button icon={<ShareAltOutlined />} loading={busy === "share"} onClick={makeLink}>
+        <Button disabled={!!pageOrder || !!exportOptions?.hidden?.length} title={pageOrder || exportOptions?.hidden?.length ? "Reset export options to share the standard quotation link" : undefined} icon={<ShareAltOutlined />} loading={busy === "share"} onClick={makeLink}>
           Share
         </Button>
       </Space>

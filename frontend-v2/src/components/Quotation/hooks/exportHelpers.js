@@ -245,11 +245,25 @@ export const exportToExcel = async ({
   accountDetails,
   id,
   activeVersion = "current",
+  exportOptions = {},
 } = {}) => {
   if (!products || products.length === 0) {
     message.warning("No products found to export.");
   }
 
+  const hidden = new Set(exportOptions.hidden || []);
+  const columns = [
+    { key: "sno", label: "S.No", value: "idx", width: 6 },
+    { key: "image", label: "Image", value: "img", width: 12 },
+    { key: "name", label: "Product Name", value: "name", width: 35 },
+    { key: "code", label: "Code", value: "code", width: 14 },
+    { key: "mrp", label: "MRP", value: "mrpDisplay", width: 12 },
+    { key: "discount", label: "Discount", value: "discount", width: 12 },
+    { key: "price", label: "Rate", value: "rateDisplay", width: 12 },
+    { key: "qty", label: "Unit", value: "qty", width: 8 },
+    { key: "total", label: "Total", value: "totalDisplay", width: 14 },
+  ].filter(column => !hidden.has(column.key));
+  const imageColumn = columns.findIndex(column => column.key === "image");
   /* ---------- 1. Build rows directly from product objects ---------- */
   const rows = products.map((p, i) => {
     const { mrp, qty, unitPrice, lineTotal, displayDiscount } =
@@ -274,7 +288,7 @@ export const exportToExcel = async ({
   /* ---------- 2. Load images ---------- */
   const logoImg = logo ? await fetchImg(logo) : placeholder;
   const prodImgPromises = rows.map((r) =>
-    r.img ? fetchImg(r.img) : Promise.resolve(placeholder),
+    !hidden.has("image") && r.img ? fetchImg(r.img) : Promise.resolve(null),
   );
   const prodImgs = await Promise.all(prodImgPromises);
 
@@ -286,17 +300,7 @@ export const exportToExcel = async ({
   });
 
   /* ---------- 4. Column widths ---------- */
-  ws.columns = [
-    { width: 6 }, // S.No
-    { width: 12 }, // Image
-    { width: 35 }, // Product
-    { width: 14 }, // Code
-    { width: 12 }, // MRP
-    { width: 12 }, // Discount
-    { width: 12 }, // Rate
-    { width: 8 }, // Unit
-    { width: 14 }, // Total
-  ];
+  ws.columns = columns.map(column => ({ width: column.width }));
 
   /* ---------- 5. LOGO ---------- */
   if (logoImg?.buffer) {
@@ -336,17 +340,7 @@ export const exportToExcel = async ({
   ws.getCell("B6").value = address || "N/A";
 
   /* ---------- 8. Product table header ---------- */
-  const header = ws.addRow([
-    "S.No",
-    "Image",
-    "Product Name",
-    "Code",
-    "MRP",
-    "Discount",
-    "Rate",
-    "Unit",
-    "Total",
-  ]);
+  const header = ws.addRow(columns.map(column => column.label));
   header.font = { bold: true };
   header.eachCell((c) => {
     c.fill = {
@@ -366,33 +360,23 @@ export const exportToExcel = async ({
 
   /* ---------- 9. Product rows ---------- */
   rows.forEach((r, i) => {
-    const row = ws.addRow([
-      r.idx,
-      "",
-      r.name,
-      r.code,
-      r.mrpDisplay,
-      r.discount,
-      r.rateDisplay,
-      r.qty,
-      r.totalDisplay,
-    ]);
-    row.height = 60;
+    const row = ws.addRow(columns.map(column => column.key === "image" ? "" : r[column.value]));
+    row.height = imageColumn >= 0 ? 60 : 24;
 
     const img = prodImgs[i];
-    if (img?.buffer) {
+    if (imageColumn >= 0 && img?.buffer) {
       const imgId = wb.addImage({
         buffer: img.buffer,
         extension: img.extension || "png",
       });
       ws.addImage(imgId, {
-        tl: { col: 1, row: ws.rowCount - 1 },
+        tl: { col: imageColumn, row: ws.rowCount - 1 },
         ext: { width: 50, height: 50 },
       });
     }
 
     row.eachCell((c, n) => {
-      if (n === 2) return; // skip image column
+      if (n === imageColumn + 1) return; // skip image column
       c.border = {
         top: { style: "thin" },
         left: { style: "thin" },
@@ -414,80 +398,83 @@ export const exportToExcel = async ({
     quotation?.include_gst ?? false,
   );
 
-  ws.addRow([]);
-  ws.mergeCells(`A${ws.rowCount}:I${ws.rowCount}`);
-  ws.getCell(`A${ws.rowCount}`).value =
-    `Amount Chargeable (in words): ${amountInWords(finalTotal)}`;
-  ws.getCell(`A${ws.rowCount}`).font = { bold: true };
+  if (!hidden.has("total")) {
+    ws.addRow([]);
+    ws.mergeCells(`A${ws.rowCount}:I${ws.rowCount}`);
+    ws.getCell(`A${ws.rowCount}`).value =
+      `Amount Chargeable (in words): ${amountInWords(finalTotal)}`;
+    ws.getCell(`A${ws.rowCount}`).font = { bold: true };
 
-  /* ---------- 11. Tax summary ---------- */
-  const taxHeader = ws.addRow([
-    "HSN/SAC",
-    "Taxable Value",
-    "CGST",
-    "CGST Amt",
-    "SGST",
-    "SGST Amt",
-    "Total",
-  ]);
-  taxHeader.font = { bold: true };
-  taxHeader.eachCell((c) => {
-    c.fill = {
-      type: "pattern",
-      pattern: "solid",
-      fgColor: { argb: "FFD9D9D9" },
-    };
-    c.border = {
-      top: { style: "thin" },
-      left: { style: "thin" },
-      bottom: { style: "thin" },
-      right: { style: "thin" },
-    };
-  });
-
-  // No separate productsData catalog anymore — HSN/SAC pulled straight
-  // off each product if present, otherwise grouped under "N/A".
-  const taxMap = new Map();
-  products.forEach((p) => {
-    const hsn = p.hsnSac || p.hsn || "N/A";
-    const { lineTotal } = computeRowPricing(p);
-    const rate = quotation?.gst_value || 0;
-    const cgst = (lineTotal * rate) / 200;
-
-    if (!taxMap.has(hsn)) taxMap.set(hsn, { taxable: 0, cgst: 0 });
-    const e = taxMap.get(hsn);
-    e.taxable += lineTotal;
-    e.cgst += cgst;
-  });
-
-  Array.from(taxMap).forEach(([hsn, { taxable, cgst }]) => {
-    ws.addRow([
-      hsn,
-      `₹${taxable.toFixed(2)}`,
-      `${(quotation?.gst_value / 2 || 0).toFixed(1)}%`,
-      `₹${cgst.toFixed(2)}`,
-      `${(quotation?.gst_value / 2 || 0).toFixed(1)}%`,
-      `₹${cgst.toFixed(2)}`,
-      `₹${(taxable + cgst * 2).toFixed(2)}`,
+    /* ---------- 11. Tax summary ---------- */
+    const taxHeader = ws.addRow([
+      "HSN/SAC",
+      "Taxable Value",
+      "CGST",
+      "CGST Amt",
+      "SGST",
+      "SGST Amt",
+      "Total",
     ]);
-  });
+    taxHeader.font = { bold: true };
+    taxHeader.eachCell((c) => {
+      c.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFD9D9D9" },
+      };
+      c.border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+      };
+    });
 
-  const totalTaxRow = ws.addRow([
-    "Total",
-    `₹${subtotal.toFixed(2)}`,
-    "",
-    `₹${(gstAmount / 2).toFixed(2)}`,
-    "",
-    `₹${(gstAmount / 2).toFixed(2)}`,
-    `₹${finalTotal.toFixed(2)}`,
-  ]);
-  totalTaxRow.eachCell((c) => (c.font = { bold: true }));
+    // No separate productsData catalog anymore — HSN/SAC pulled straight
+    // off each product if present, otherwise grouped under "N/A".
+    const taxMap = new Map();
+    products.forEach((p) => {
+      const hsn = p.hsnSac || p.hsn || "N/A";
+      const { lineTotal } = computeRowPricing(p);
+      const rate = quotation?.gst_value || 0;
+      const cgst = (lineTotal * rate) / 200;
 
-  ws.addRow([]);
-  ws.mergeCells(`A${ws.rowCount}:G${ws.rowCount}`);
-  ws.getCell(`A${ws.rowCount}`).value =
-    `Tax Amount (in words): ${amountInWords(gstAmount)}`;
-  ws.getCell(`A${ws.rowCount}`).font = { bold: true };
+      if (!taxMap.has(hsn)) taxMap.set(hsn, { taxable: 0, cgst: 0 });
+      const e = taxMap.get(hsn);
+      e.taxable += lineTotal;
+      e.cgst += cgst;
+    });
+
+    Array.from(taxMap).forEach(([hsn, { taxable, cgst }]) => {
+      ws.addRow([
+        hsn,
+        `₹${taxable.toFixed(2)}`,
+        `${(quotation?.gst_value / 2 || 0).toFixed(1)}%`,
+        `₹${cgst.toFixed(2)}`,
+        `${(quotation?.gst_value / 2 || 0).toFixed(1)}%`,
+        `₹${cgst.toFixed(2)}`,
+        `₹${(taxable + cgst * 2).toFixed(2)}`,
+      ]);
+    });
+
+    const totalTaxRow = ws.addRow([
+      "Total",
+      `₹${subtotal.toFixed(2)}`,
+      "",
+      `₹${(gstAmount / 2).toFixed(2)}`,
+      "",
+      `₹${(gstAmount / 2).toFixed(2)}`,
+      `₹${finalTotal.toFixed(2)}`,
+    ]);
+    totalTaxRow.eachCell((c) => (c.font = { bold: true }));
+
+    ws.addRow([]);
+    ws.mergeCells(`A${ws.rowCount}:G${ws.rowCount}`);
+    ws.getCell(`A${ws.rowCount}`).value =
+      `Tax Amount (in words): ${amountInWords(gstAmount)}`;
+    ws.getCell(`A${ws.rowCount}`).font = { bold: true };
+
+  }
 
   /* ---------- 12. Bank details ---------- */
   const bank = accountDetails || {};
