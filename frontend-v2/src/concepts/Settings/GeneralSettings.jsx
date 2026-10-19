@@ -117,7 +117,7 @@ const GeneralSettings = () => {
         <div className="card">
           <div className="card-header d-flex align-items-center">
             <PageHeader
-              title="Settings"
+              title="My Account Settings"
               subtitle="Manage your account settings"
               exportOptions={{ pdf: false, excel: false }}
             />

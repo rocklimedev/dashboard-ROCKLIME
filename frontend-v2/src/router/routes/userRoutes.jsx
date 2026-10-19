@@ -1,12 +1,20 @@
 import { lazy } from "react";
 // src/routes/userRoutes.js
 import { FaUser, FaIdCard, FaUserCircle } from "react-icons/fa";
+import PersonalRoute from "../PersonalRoute";
 const NewAddUser = lazy(() => import("../../concepts/User/NewAddUser"));
 const UserPage = lazy(() => import("../../concepts/User/UserPage"));
 const Profile = lazy(() => import("../../concepts/User/Profile"));
 const Permissions = lazy(() => import("../../concepts/RBAC/Permissions"));
+const GeneralSettings = lazy(() => import("../../concepts/Settings/GeneralSettings"));
 
 export const userRoutes = [
+  {
+    path: "/u/:id/settings",
+    name: "My Account Settings",
+    isSidebarActive: false,
+    element: <PersonalRoute><GeneralSettings /></PersonalRoute>,
+  },
   {
     path: "/user/add",
     name: "Create User",
@@ -40,6 +48,6 @@ export const userRoutes = [
     name: "Profile",
     icon: <FaUserCircle />,
     isSidebarActive: false,
-    element: <Profile />,
+    element: <PersonalRoute><Profile /></PersonalRoute>,
   },
 ];

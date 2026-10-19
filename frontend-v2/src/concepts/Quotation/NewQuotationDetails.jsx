@@ -11,7 +11,7 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import DocumentExportOptions from "../../components/Quotation/DocumentExportOptions";
 import QuotationDispatchModal from "../../components/Orders/QuotationDispatchModal";
 import logo from "../../assets/img/logo-quotation.png";
-import { useGetQuotationByIdQuery, useGetQuotationVersionsQuery, useCloneQuotationMutation } from "../../api/quotationApi";
+import { useGetQuotationByIdQuery, useGetQuotationVersionsQuery, useCloneQuotationMutation, useGetQuotationDispatchesQuery } from "../../api/quotationApi";
 import { useGetCustomerByIdQuery } from "../../api/customerApi";
 import { useGetAddressByIdQuery } from "../../api/addressApi";
 import { exportToExcel } from "../../components/Quotation/hooks/exportHelpers";
@@ -54,6 +54,9 @@ export default function NewQuotationsDetails() {
 
   const { data: quotation, isLoading: qLoading, error: qError } = useGetQuotationByIdQuery(id);
   const { data: versionsData } = useGetQuotationVersionsQuery(id);
+  const { data: dispatchData, isFetching: dispatchLoading } = useGetQuotationDispatchesQuery(id);
+  const fullyDispatched = dispatchData?.fullyDispatched === true;
+  const linkedOrder = dispatchData?.orders?.[0];
   const [cloneQuotation] = useCloneQuotationMutation();
 
   // saved versions, newest first; "current" is the live quotation
@@ -126,7 +129,9 @@ export default function NewQuotationsDetails() {
                 </div>
               </div>
               <Space size={10} wrap align="center">
-                {can("quotations", "write") && <Button type="primary" disabled={version !== "current"} onClick={() => setDispatchOpen(true)}>Dispatch products</Button>}
+                {fullyDispatched && linkedOrder
+                  ? <Button type="primary" onClick={() => navigate(`/order/${linkedOrder.id}`)}>View order #{linkedOrder.orderNo}</Button>
+                  : !fullyDispatched && can("quotations", "write") && can("orders", "view") && can("orders", "write") && <Button type="primary" disabled={version !== "current" || dispatchLoading} onClick={() => setDispatchOpen(true)}>Dispatch products</Button>}
                 <Button onClick={() => navigate(`/orders/dispatch/all?quotationId=${id}`)}>Dispatch history</Button>
                 {versions.length > 0 && (
                   <Select
@@ -168,7 +173,7 @@ export default function NewQuotationsDetails() {
             <QuotationPipelineBar
               quotation={quotation}
               canEdit={can("quotations", "edit")}
-              canConvert={can("orders", "write")}
+              canConvert={!fullyDispatched && !linkedOrder && !dispatchLoading && can("orders", "view") && can("orders", "write")}
               onConvert={() => navigate("/order/add", { state: orderStateFromQuotation(quotation) })}
               onEdit={() => navigate(`/quotation/${id}/edit`, { state: { quotation } })}
               onDuplicate={

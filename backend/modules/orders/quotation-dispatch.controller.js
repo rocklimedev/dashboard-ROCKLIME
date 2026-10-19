@@ -8,6 +8,7 @@ const { enrichQuotation, renderQuotationPdf } = require("../quotations/quotation
 const { quotationTotals } = require("../../lib/quotationMath");
 const { asList, remainingLines, selectDispatchItems, batchQuotation, allocateOrders, allocatedItems } = require("./dispatch-document");
 const { transportFields } = require("./order-dispatch.controller");
+const { createQuotationOrder } = require("./quotation-order");
 
 async function quotationHistory(quotationId, transaction) {
  const orders = await Order.findAll({ where: { quotationId }, attributes: ["id"], transaction });
@@ -25,20 +26,28 @@ exports.list = async (req, res) => {
   const quotation = await Quotation.findByPk(req.params.id);
   if (!quotation) return res.status(404).json({ message: "Quotation not found" });
   const dispatches = await quotationHistory(quotation.quotationId);
-  res.json({ dispatches, lines: remainingLines(quotation.products, dispatches) });
+  const orders = await Order.findAll({ where: { quotationId: quotation.quotationId, status: { [Op.ne]: "CANCELED" } }, attributes: ["id", "orderNo", "status", "shipTo", "description", "assignedUserId"], order: [["createdAt", "ASC"]] });
+  const lines = remainingLines(quotation.products, dispatches);
+  res.json({ dispatches, lines, orders, fullyDispatched: lines.length > 0 && lines.every(line => line.remaining === 0) });
  } catch (e) { res.status(e.status || 500).json({ message: e.message }); }
 };
 exports.create = async (req, res) => {
  try {
   const transport = transportFields(req.body);
   if (transport.error) return res.status(400).json({ message: transport.error });
-  const dispatch = await sequelize.transaction(async t => {
+  if (!await can(req.user, "orders", "view") || !await can(req.user, "orders", "write")) return res.status(403).json({ message: "Quotation dispatch requires orders → view and orders → write permissions." });
+  const result = await sequelize.transaction(async t => {
    const quotation = await Quotation.findByPk(req.params.id, { transaction: t, lock: t.LOCK.UPDATE });
    if (!quotation) throw Object.assign(new Error("Quotation not found"), { status: 404 });
    if (["LOST", "EXPIRED"].includes(quotation.status)) throw Object.assign(new Error("Reopen this quotation before dispatching."), { status: 400 });
    const previous = await quotationHistory(quotation.quotationId, t);
    const selected = selectDispatchItems(remainingLines(quotation.products, previous), req.body.items);
    const linkedOrders = await Order.findAll({ where: { quotationId: quotation.quotationId, status: { [Op.in]: ["PREPARING", "CHECKING", "INVOICE", "PARTIALLY_DISPATCHED", "PARTIALLY_DELIVERED", "ONHOLD"] } }, order: [["createdAt", "ASC"], ["id", "ASC"]], transaction: t, lock: t.LOCK.UPDATE });
+   if (!linkedOrders.length) {
+    const order = await createQuotationOrder(quotation, previous, req.body, req.user.userId, t);
+    linkedOrders.push(order);
+    await stock.syncOrder(order.id, { t, userId: req.user.userId });
+   }
    const items = allocateOrders(selected, linkedOrders, previous);
    const reservationLimits = {};
    for (const item of items) for (const allocation of item.orderAllocations) {
@@ -48,7 +57,7 @@ exports.create = async (req, res) => {
    const count = await OrderDispatch.count({ where: { quotationId: quotation.quotationId, orderId: null }, transaction: t });
    const reference = quotation.reference_number + "/D" + (count + 1);
    const date = new Date();
-   const q = batchQuotation(quotation.toJSON(), asList(quotation.products), items, reference, date);
+   const q = batchQuotation({ ...quotation.toJSON(), shipTo: linkedOrders[0].shipTo }, asList(quotation.products), items, reference, date);
    const documentSnapshot = await enrichQuotation(q, items);
    documentSnapshot.companyState = (await getSetting("company")).state;
    const totals = quotationTotals({ ...q, items, shipping: q.shippingAmount, gstRate: q.gst });
@@ -65,9 +74,10 @@ exports.create = async (req, res) => {
     await order.update({ status: needs.every(line => line.needed === 0) ? "DISPATCHED" : "PARTIALLY_DISPATCHED" }, { transaction: t });
     await stock.syncOrder(order.id, { t, userId: req.user.userId });
    }
-   return saved;
+   await quotation.update({ status: "WON", statusChangedAt: new Date(), nextFollowUp: null, lostReason: null, lostNote: null }, { transaction: t });
+   return { dispatch: saved, orders: linkedOrders.map(order => ({ id: order.id, orderNo: order.orderNo, status: order.status })), fullyDispatched: remainingLines(quotation.products, [...previous, saved]).every(line => line.remaining === 0) };
   });
-  res.status(201).json({ message: "Quotation dispatch recorded", dispatch });
+  res.status(201).json({ message: "Quotation dispatch recorded", ...result });
  } catch (e) { res.status(e.status || 500).json({ message: e.message }); }
 };
 

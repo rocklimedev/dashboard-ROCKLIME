@@ -11,3 +11,5 @@ new_images
 /vps-cmtrading-co
 OnePager_Colston (2).xlsx
 /processed_data
+# Uploaded catalogue files
+backend/storage/catalogues/
