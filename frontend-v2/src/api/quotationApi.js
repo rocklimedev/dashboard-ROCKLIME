@@ -44,6 +44,18 @@ export const quotationApi = baseApi.injectEndpoints({
       providesTags: ["Quotations"],
     }),
 
+    getQuotationDispatches: builder.query({
+      query: id => `/quotation/${id}/dispatches`,
+      providesTags: ["OrderDispatches"],
+    }),
+    createQuotationDispatch: builder.mutation({
+      query: ({ id, ...body }) => ({ url: `/quotation/${id}/dispatches`, method: "POST", body }),
+      invalidatesTags: ["OrderDispatches", "Quotations", "Orders", "Stock"],
+    }),
+    getDispatchDetails: builder.query({
+      query: id => `/order/dispatch/${id}`,
+      providesTags: ["OrderDispatches"],
+    }),
     getQuotationById: builder.query({
       query: (id) => `/quotation/${id}`,
       providesTags: (result, error, id) => [{ type: "Quotations", id }],
@@ -152,6 +164,9 @@ export const quotationApi = baseApi.injectEndpoints({
 });
 
 export const {
+  useGetQuotationDispatchesQuery,
+  useCreateQuotationDispatchMutation,
+  useGetDispatchDetailsQuery,
   useGetAllQuotationsQuery,
   useGetQuotationByIdQuery,
   useCreateQuotationMutation,

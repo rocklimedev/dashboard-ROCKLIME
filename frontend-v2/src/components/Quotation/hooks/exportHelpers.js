@@ -207,10 +207,12 @@ const computeRowPricing = (item) => {
     unitPrice =
       discType === "percent" ? mrp * (1 - discValue / 100) : mrp - discValue;
   }
+  if (item.flatPrice != null && item.flatPrice !== "") unitPrice = Number(item.flatPrice);
+  unitPrice -= Number(item.additionalDiscount) || 0;
   unitPrice = Math.round(unitPrice * 100) / 100;
 
   const lineTotal =
-    item.total !== undefined && item.total !== null && Number(item.total) > 0
+    item.total !== undefined && item.total !== null && Number(item.total) >= 0
       ? Number(item.total)
       : Math.round(unitPrice * qty * 100) / 100;
 
@@ -246,6 +248,8 @@ export const exportToExcel = async ({
   id,
   activeVersion = "current",
   exportOptions = {},
+  documentLabel = "Quotation",
+  documentTotals = null,
 } = {}) => {
   if (!products || products.length === 0) {
     message.warning("No products found to export.");
@@ -294,7 +298,7 @@ export const exportToExcel = async ({
 
   /* ---------- 3. Workbook ---------- */
   const wb = new ExcelJS.Workbook();
-  const ws = wb.addWorksheet("Quotation", {
+  const ws = wb.addWorksheet(documentLabel, {
     pageSetup: { paperSize: 9, orientation: "portrait", fitToPage: true },
     properties: { defaultRowHeight: 20 },
   });
@@ -317,7 +321,7 @@ export const exportToExcel = async ({
 
   /* ---------- 6. Title + Brand ---------- */
   ws.mergeCells("B2:E2");
-  ws.getCell("B2").value = "Estimate / Quotation";
+  ws.getCell("B2").value = documentLabel === "Quotation" ? "Estimate / Quotation" : documentLabel;
   ws.getCell("B2").font = { bold: true, size: 16 };
   ws.getCell("B2").alignment = { horizontal: "center", vertical: "middle" };
 
@@ -392,13 +396,22 @@ export const exportToExcel = async ({
     subtotal,
     gst: gstAmount,
     total: finalTotal,
-  } = calcTotals(
+  } = documentTotals ? { subtotal: documentTotals.taxableValue, gst: documentTotals.gstAmount, total: documentTotals.grandTotal } : calcTotals(
     rows.map((r) => ({ total: r.total })),
     quotation?.gst_value ?? 0,
     quotation?.include_gst ?? false,
   );
 
   if (!hidden.has("total")) {
+    if (documentTotals) {
+      const summaries = [
+        ["Goods value", documentTotals.goodsValue], ["Freight / installation", documentTotals.freight],
+        ...(documentTotals.miscellaneousChargeItems || []).map(row => [row.name, row.amount]),
+        ["Extra discount", -documentTotals.extraDiscountAmount], ["Additional discount", -Number(quotation.additionalDiscount || 0)],
+        ["Taxable value", documentTotals.taxableValue], ["GST", documentTotals.gstAmount], ["Round off", documentTotals.roundOff], ["Grand total", documentTotals.grandTotal],
+      ];
+      for (const [label, value] of summaries) ws.addRow([label, Number(value || 0).toFixed(2)]);
+    }
     ws.addRow([]);
     ws.mergeCells(`A${ws.rowCount}:I${ws.rowCount}`);
     ws.getCell(`A${ws.rowCount}`).value =
@@ -409,10 +422,10 @@ export const exportToExcel = async ({
     const taxHeader = ws.addRow([
       "HSN/SAC",
       "Taxable Value",
-      "CGST",
-      "CGST Amt",
-      "SGST",
-      "SGST Amt",
+      documentTotals?.interState ? "IGST" : "CGST",
+      documentTotals?.interState ? "IGST Amt" : "CGST Amt",
+      documentTotals?.interState ? "" : "SGST",
+      documentTotals?.interState ? "" : "SGST Amt",
       "Total",
     ]);
     taxHeader.font = { bold: true };
@@ -436,12 +449,14 @@ export const exportToExcel = async ({
     products.forEach((p) => {
       const hsn = p.hsnSac || p.hsn || "N/A";
       const { lineTotal } = computeRowPricing(p);
-      const rate = quotation?.gst_value || 0;
-      const cgst = (lineTotal * rate) / 200;
+      const rate = Number(quotation?.gst ?? quotation?.gst_value) || 0;
+      const goods = rows.reduce((sum, row) => sum + row.total, 0);
+      const taxableLine = documentTotals && goods ? lineTotal * documentTotals.taxableValue / goods : lineTotal;
+      const cgst = (taxableLine * rate) / (documentTotals?.interState ? 100 : 200);
 
       if (!taxMap.has(hsn)) taxMap.set(hsn, { taxable: 0, cgst: 0 });
       const e = taxMap.get(hsn);
-      e.taxable += lineTotal;
+      e.taxable += taxableLine;
       e.cgst += cgst;
     });
 
@@ -449,11 +464,11 @@ export const exportToExcel = async ({
       ws.addRow([
         hsn,
         `₹${taxable.toFixed(2)}`,
-        `${(quotation?.gst_value / 2 || 0).toFixed(1)}%`,
+        `${(Number(quotation?.gst ?? quotation?.gst_value ?? 0) / (documentTotals?.interState ? 1 : 2)).toFixed(1)}%`,
         `₹${cgst.toFixed(2)}`,
-        `${(quotation?.gst_value / 2 || 0).toFixed(1)}%`,
-        `₹${cgst.toFixed(2)}`,
-        `₹${(taxable + cgst * 2).toFixed(2)}`,
+        documentTotals?.interState ? "" : `${(Number(quotation?.gst ?? quotation?.gst_value ?? 0) / 2).toFixed(1)}%`,
+        documentTotals?.interState ? "" : `₹${cgst.toFixed(2)}`,
+        `₹${(taxable + cgst * (documentTotals?.interState ? 1 : 2)).toFixed(2)}`,
       ]);
     });
 
@@ -461,9 +476,9 @@ export const exportToExcel = async ({
       "Total",
       `₹${subtotal.toFixed(2)}`,
       "",
-      `₹${(gstAmount / 2).toFixed(2)}`,
+      `₹${(gstAmount / (documentTotals?.interState ? 1 : 2)).toFixed(2)}`,
       "",
-      `₹${(gstAmount / 2).toFixed(2)}`,
+      documentTotals?.interState ? "" : `₹${(gstAmount / 2).toFixed(2)}`,
       `₹${finalTotal.toFixed(2)}`,
     ]);
     totalTaxRow.eachCell((c) => (c.font = { bold: true }));
@@ -486,7 +501,7 @@ export const exportToExcel = async ({
 
   ws.mergeCells(`E${ws.rowCount}:I${ws.rowCount}`);
   ws.getCell(`E${ws.rowCount}`).value =
-    `PAN: AALFE0496K\nDeclaration: We declare that this quotation shows the actual price...`;
+    `PAN: AALFE0496K\nDeclaration: We declare that this ${documentLabel.toLowerCase()} shows the actual price...`;
   ws.getCell(`E${ws.rowCount}`).alignment = {
     horizontal: "right",
     vertical: "top",
@@ -511,7 +526,7 @@ export const exportToExcel = async ({
   const safeVersion = activeVersion === "current" ? "Latest" : activeVersion;
   const safeTitle = getSafeTitle(quotation);
   const titlePart = safeTitle ? `${safeTitle}_` : "";
-  const excelFilename = `${titlePart}V${safeVersion}.xlsx`;
+  const excelFilename = `${documentLabel === "Dispatch" ? "Dispatch_" : ""}${titlePart}V${safeVersion}.xlsx`;
 
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], {

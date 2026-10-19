@@ -75,6 +75,7 @@ export const orderApi = baseApi.injectEndpoints({
         const params = new URLSearchParams();
 
         const fields = [
+          "quotationId",
           "search",
           "product",
           "productId",
@@ -125,19 +126,21 @@ export const orderApi = baseApi.injectEndpoints({
         "Orders",
         "Invoices",
         "Payments",
+        "OrderDispatches",
         { type: "OrderDispatches", id: orderId },
         { type: "OrderActivity", id: orderId },
       ],
     }),
     markDispatchDelivered: builder.mutation({
       query: ({ orderId, dispatchId, formData }) => ({
-        url: `/order/${orderId}/dispatches/${dispatchId}/delivered`,
+        url: orderId ? `/order/${orderId}/dispatches/${dispatchId}/delivered` : `/order/dispatch/${dispatchId}/delivered`,
         method: "POST",
         body: formData,
       }),
       invalidatesTags: (result, error, { orderId }) => [
         { type: "Orders", id: orderId },
         "Orders",
+        "OrderDispatches",
         { type: "OrderDispatches", id: orderId },
         { type: "OrderActivity", id: orderId },
       ],

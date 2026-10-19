@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   Alert,
   Button,
@@ -34,6 +34,10 @@ import {
   useSaveStockCountLinesMutation,
   useSaveWarehouseMutation,
 } from "../../api/stockApi";
+import { useGetProductsByIdsQuery } from "../../api/productApi";
+import { productCompanyCode } from "../../components/Quotation/productSyncHelpers";
+import useStockCountDraft from "../../components/Stock/useStockCountDraft";
+import { useGetProfileQuery } from "../../api/userApi";
 import ProductStockDrawer from "../../components/Stock/ProductStockDrawer";
 import StockBadge from "../../components/Stock/StockBadge";
 import {
@@ -301,38 +305,66 @@ function Movements({ onOpen }) {
 // ---------------------------------------------------------------------------
 function CountSheet({ id, onBack }) {
   const can = useCan();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { data, isFetching, refetch } = useGetStockCountQuery(id, { refetchOnMountOrArgChange: true });
   const [save, { isLoading: saving }] = useSaveStockCountLinesMutation();
   const [approve, { isLoading: approving }] = useApproveStockCountMutation();
-  const [edits, setEdits] = useState({});
+  const { data: profile, error: profileError } = useGetProfileQuery();
+  const [approvalPending, setApprovalPending] = useState(false);
   const [onlyCounted, setOnlyCounted] = useState(false);
   const [search, setSearch] = useState("");
   const count = data?.data;
+  // Hydrate missing company codes from the catalog, including older count responses.
+  const missingCodeIds = (data?.lines || []).filter(line => !productCompanyCode(line)).map(line => line.productId);
+  const { data: catalogResponse, isFetching: loadingCodes } = useGetProductsByIdsQuery(missingCodeIds, {
+    skip: !missingCodeIds.length || !can("products", "view"),
+  });
+  const catalog = Array.isArray(catalogResponse) ? catalogResponse : catalogResponse?.data || [];
+  const companyCodes = new Map(catalog.map(product => [product.productId, productCompanyCode(product)]));
   const draft = count?.status === "DRAFT";
+  const { edits, pendingCount, status: draftStatus, ready: draftReady, edit: editCount, flush: flushDraft } = useStockCountDraft({
+    countId: id, userId: profile?.user?.userId, data, enabled: draft && can("inventory", "edit"), save,
+  });
   const lines = (data?.lines || []).map((l) => {
     const counted = edits[l.productId] !== undefined ? edits[l.productId] : l.countedQty;
-    return { ...l, counted, variance: counted == null || counted === "" ? null : Number(counted) - l.systemQty };
+    return { ...l, companyCode: productCompanyCode(l) || companyCodes.get(l.productId) || "", counted, variance: counted == null || counted === "" ? null : Number(counted) - l.systemQty };
   });
   const shown = lines.filter(
     (l) =>
       (!onlyCounted || l.counted != null) &&
-      (!search || `${l.name} ${l.product_code}`.toLowerCase().includes(search.toLowerCase())),
+      (!search || `${l.name || ""} ${l.companyCode || ""}`.toLowerCase().includes(search.toLowerCase())),
   );
+  const rawPage = searchParams.get("page");
+  const parsedPage = Number(rawPage);
+  const requestedPage = Number.isSafeInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+  const pageSize = 100;
+  const page = data && !isFetching && !loadingCodes
+    ? Math.min(requestedPage, Math.max(1, Math.ceil(shown.length / pageSize)))
+    : requestedPage;
+  const changePage = nextPage => {
+    if (searchParams.get("page") === String(nextPage)) return;
+    setSearchParams(current => {
+      const next = new URLSearchParams(current);
+      next.set("page", String(nextPage));
+      return next;
+    });
+  };
+  useEffect(() => {
+    if (rawPage === String(page)) return;
+    setSearchParams(current => {
+      const next = new URLSearchParams(current);
+      next.set("page", String(page));
+      return next;
+    }, { replace: true });
+  }, [rawPage, page, setSearchParams]);
   const countedN = lines.filter((l) => l.counted != null && l.counted !== "").length;
   const diffN = lines.filter((l) => l.variance).length;
-  const doSave = async () => {
-    const payload = Object.entries(edits).map(([productId, countedQty]) => ({ productId, countedQty }));
-    if (!payload.length) return true;
-    try {
-      await save({ id, lines: payload }).unwrap();
-      setEdits({});
-      await refetch();
-      message.success("Counts saved");
-      return true;
-    } catch (e) {
-      message.error(e?.data?.message || "Could not save");
-      return false;
-    }
+  const doSave = async (silent = false) => {
+    if (!draftReady) { message.error("Please wait for the draft to load"); return false; }
+    if (!await flushDraft()) { message.error("Could not save the draft. Keep this page open and retry Save."); return false; }
+    await refetch();
+    if (!silent) message.success("Counts saved");
+    return true;
   };
   const doApprove = () =>
     Modal.confirm({
@@ -340,13 +372,17 @@ function CountSheet({ id, onBack }) {
       content: `On hand will be set to the counted figure for ${countedN} product(s); ${diffN} differ from the system. Products left blank are not changed.`,
       okText: "Approve and update stock",
       onOk: async () => {
-        if (!(await doSave())) return;
+        setApprovalPending(true);
         try {
+          if (!(await doSave(true))) throw new Error("Save the draft before approving");
           const r = await approve(id).unwrap();
           message.success(r?.message || "Count approved");
           refetch();
         } catch (e) {
-          message.error(e?.data?.message || "Could not approve");
+          message.error(e?.data?.message || e?.message || "Could not approve");
+          throw e;
+        } finally {
+          setApprovalPending(false);
         }
       },
     });
@@ -359,22 +395,23 @@ function CountSheet({ id, onBack }) {
             {count?.countNo}
           </Title>
           {count && <Tag color={draft ? "blue" : "green"}>{draft ? "In progress" : "Approved"}</Tag>}
+          {draft && can("inventory", "edit") && <Text type="secondary" role="status">{profileError ? "Account unavailable. Reload to enable draft autosave." : draftStatus}</Text>}
           <Text type="secondary">
             {countedN} of {lines.length} counted · {diffN} different
           </Text>
         </Space>
         <Space wrap>
-          <Input allowClear placeholder="Find product" value={search} onChange={(e) => setSearch(e.target.value)} style={{ width: 200 }} />
+          <Input allowClear placeholder="Product name or company code" value={search} onChange={(e) => { setSearch(e.target.value); changePage(1); }} style={{ width: 200 }} />
           <Space>
-            <Switch size="small" checked={onlyCounted} onChange={setOnlyCounted} />
+            <Switch size="small" checked={onlyCounted} onChange={value => { setOnlyCounted(value); changePage(1); }} />
             <Text>Counted only</Text>
           </Space>
           {draft && can("inventory", "edit") && (
             <>
-              <Button onClick={doSave} loading={saving} disabled={!Object.keys(edits).length}>
+              <Button onClick={() => doSave()} loading={saving} disabled={!pendingCount || !draftReady || approvalPending}>
                 Save
               </Button>
-              <Button type="primary" onClick={doApprove} loading={approving} disabled={!countedN}>
+              <Button type="primary" onClick={doApprove} loading={approving || approvalPending} disabled={!countedN || !draftReady || approvalPending}>
                 Approve count
               </Button>
             </>
@@ -386,9 +423,10 @@ function CountSheet({ id, onBack }) {
         size="small"
         loading={isFetching}
         dataSource={shown}
-        pagination={{ pageSize: 100, showSizeChanger: false }}
+        pagination={{ current: page, pageSize, showSizeChanger: false, onChange: changePage }}
         columns={[
-          { title: "Product", dataIndex: "name", render: (v, r) => <span>{v} <Text type="secondary">· {r.product_code}</Text></span> },
+          { title: "Product", dataIndex: "name" },
+          { title: "Company code", dataIndex: "companyCode", render: value => value || (loadingCodes ? "Loading…" : "—") },
           { title: "System", dataIndex: "systemQty", align: "right", width: 100, render: fmtQty },
           {
             title: "Counted",
@@ -400,7 +438,8 @@ function CountSheet({ id, onBack }) {
                   min={0}
                   precision={0}
                   value={v}
-                  onChange={(val) => setEdits((e) => ({ ...e, [r.productId]: val }))}
+                  disabled={!draftReady || approvalPending || !can("inventory", "edit")}
+                  onChange={(val) => editCount(r.productId, val)}
                   style={{ width: 110 }}
                 />
               ) : v == null ? (
@@ -424,17 +463,16 @@ function CountSheet({ id, onBack }) {
 
 function Counts({ warehouses }) {
   const can = useCan();
-  const [openId, setOpenId] = useState(null);
+  const navigate = useNavigate();
   const { data, isFetching } = useGetStockCountsQuery(undefined, { refetchOnMountOrArgChange: true });
   const [create, { isLoading }] = useCreateStockCountMutation();
   const [wh, setWh] = useState();
-  if (openId) return <CountSheet id={openId} onBack={() => setOpenId(null)} />;
   const whName = Object.fromEntries(warehouses.map((w) => [w.id, w.name]));
   const start = async () => {
     try {
       const r = await create({ warehouseId: wh || warehouses[0]?.id }).unwrap();
       message.success(`Count ${r.data.countNo} started with ${r.lines} products`);
-      setOpenId(r.data.id);
+      navigate(`/inventory/counts/${r.data.id}?page=1`);
     } catch (e) {
       message.error(e?.data?.message || "Could not start a count");
     }
@@ -464,10 +502,10 @@ function Counts({ warehouses }) {
         rowKey="id"
         loading={isFetching}
         dataSource={data?.data || []}
-        onRow={(r) => ({ onClick: () => setOpenId(r.id), style: { cursor: "pointer" } })}
+        onRow={(r) => ({ onClick: () => navigate(`/inventory/counts/${r.id}?page=1`), style: { cursor: "pointer" } })}
         locale={{ emptyText: <Empty description="No stock counts yet" /> }}
         columns={[
-          { title: "Count", dataIndex: "countNo" },
+          { title: "Count", dataIndex: "countNo", render: (value, row) => <Link to={`/inventory/counts/${row.id}?page=1`} onClick={event => event.stopPropagation()}>{value}</Link> },
           { title: "Godown", dataIndex: "warehouseId", render: (v) => whName[v] || "—" },
           { title: "Started", dataIndex: "createdAt", render: fmtDateTime },
           { title: "Status", dataIndex: "status", render: (s) => <Tag color={s === "DRAFT" ? "blue" : "green"}>{s === "DRAFT" ? "In progress" : "Approved"}</Tag> },
@@ -561,8 +599,10 @@ function Godowns({ warehouses, loading }) {
 // Page
 // ---------------------------------------------------------------------------
 export default function StockPage() {
+  const { id: countId } = useParams();
+  const navigate = useNavigate();
   const [params] = useSearchParams();
-  const tab = params.get("tab") || "live";
+  const tab = countId ? "counts" : params.get("tab") || "live";
   const [warehouseId, setWarehouseId] = useState();
   const [drawer, setDrawer] = useState(null);
   const { data: whData, isFetching: whLoading } = useGetWarehousesQuery();
@@ -575,7 +615,9 @@ export default function StockPage() {
     counts: { title: "Stock counts", help: "Count a godown and correct the system to match", body: <Counts warehouses={warehouses} /> },
     godowns: { title: "Godowns", help: "Where stock is kept", body: <Godowns warehouses={warehouses} loading={whLoading} /> },
   };
-  const view = VIEWS[tab] || VIEWS.live;
+  const view = countId
+    ? { title: "Stock count", help: "Count a godown and correct the system to match", body: <CountSheet key={countId} id={countId} onBack={() => navigate("/inventory/list?tab=counts")} /> }
+    : VIEWS[tab] || VIEWS.live;
 
   return (
     <div className="page-wrapper">

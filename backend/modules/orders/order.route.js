@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
+const quotationDispatch = require("./quotation-dispatch.controller");
 const orderController = require("./order.controller");
 const orderDispatchController = require("./order-dispatch.controller");
 const orderCreditNoteController = require("./order-credit-note.controller");
@@ -136,6 +137,9 @@ const handleFieldsUpload = (uploader) => (req, res, next) => {
 router.use(auth);
 router.use(
   guardModule("orders", [
+    { method: "POST", path: /^\/dispatch\/[^/]+\/(?:delivered|share)$/, skip: true },
+    { method: "GET", path: /^\/dispatch-history$/, skip: true },
+    { method: "GET", path: /^\/dispatch\/[^/]+(?:\/pdf)?$/, skip: true },
     { path: /^\/comments/, action: "view" },
     { method: "POST", path: /^\/delete-comment$/, action: "view" },
     { method: "POST", path: /^\/low-stock-products$/, action: "view" },
@@ -199,6 +203,10 @@ router.put("/update-team", orderController.updateOrderTeam);
 
 router.post("/draft", orderController.draftOrder);
 router.get("/dispatch-history", orderDispatchController.getAllDispatchHistory);
+router.get("/dispatch/:dispatchId", quotationDispatch.details);
+router.get("/dispatch/:dispatchId/pdf", quotationDispatch.pdf);
+router.post("/dispatch/:dispatchId/share", quotationDispatch.share);
+router.post("/dispatch/:dispatchId/delivered", quotationDispatch.authorizeDelivery, handleUpload(createUploader("file")), orderDispatchController.markDispatchDelivered);
 // ============================================================
 // ORDER DELETE
 // ============================================================

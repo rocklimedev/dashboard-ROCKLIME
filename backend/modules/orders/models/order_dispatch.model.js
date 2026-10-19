@@ -12,9 +12,12 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: DataTypes.UUIDV4,
       },
 
+      quotationId: { type: DataTypes.UUID, allowNull: true },
+      quotationRef: { type: DataTypes.STRING(50), allowNull: true },
+      documentSnapshot: { type: DataTypes.JSON, allowNull: true },
       orderId: {
         type: DataTypes.UUID,
-        allowNull: false,
+        allowNull: true,
       },
 
       // Denormalized for fast display / search without a join
@@ -123,6 +126,7 @@ module.exports = (sequelize, DataTypes) => {
   );
 
   OrderDispatch.associate = (models) => {
+    OrderDispatch.belongsTo(models.Quotation, { foreignKey: "quotationId", as: "quotation" });
     OrderDispatch.belongsTo(models.Order, {
       foreignKey: "orderId",
       as: "order",

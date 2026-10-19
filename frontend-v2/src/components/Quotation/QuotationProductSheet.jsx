@@ -1,3 +1,4 @@
+import { lineAmounts } from "../../utils/quotationMath";
 // src/components/Quotation/QuotationProductSheet.jsx
 //
 // Fully self-contained multi-location quantity split support.
@@ -80,10 +81,7 @@ const lineTotal = (p, qtyOverride) => {
   const qty =
     qtyOverride !== undefined ? Number(qtyOverride) : Number(p.qty) || 0;
   const price = Number(p.sellingPrice) || 0;
-  const disc = Number(p.discount) || 0;
-  const discAmt =
-    p.discountType === "percent" ? (price * qty * disc) / 100 : disc * qty;
-  return price * qty - discAmt;
+  return lineAmounts({ ...p, price, quantity: qty }).net;
 };
 
 /* ───────────────────────── Tab label with rename / delete ───────────────────────── */
@@ -316,6 +314,14 @@ function ProductRow({
             <Option value="percent">%</Option>
           </Select>
         </Space.Compact>
+        {[["additionalDiscount", "Additional discount / unit ₹"], ["flatPrice", "Flat price / unit ₹"]].map(([field, label]) => (
+          <div key={field} style={{ marginTop: 6 }}>
+            <label style={{ fontSize: 11 }}>{label}</label>
+            <InputNumber size="small" min={0} precision={2} value={product[field]} placeholder={field === "flatPrice" ? "Optional" : "0"}
+              style={{ width: "100%" }} aria-label={label}
+              onChange={value => onChangeSectionQty(product.productId, null, null, { [field]: value })} />
+          </div>
+        ))}
       </td>
 
       <td className="qs-cell qs-location-cell">

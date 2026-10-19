@@ -126,8 +126,8 @@ export const APPS = [
     icon: <FaWarehouse />,
     module: "inventory",
     home: "/operations",
-    match: ["/operations", "/inventory/list", "/inventory/reorder", "/orders/dispatch"],
-    shared: ["/order/", "/orders/list", "/product/", "/po/"],
+    match: ["/operations", "/inventory/list", "/inventory/counts/", "/inventory/reorder", "/orders/dispatch", "/dispatch/", "/disptach"],
+    shared: ["/order/", "/orders/list", "/product/", "/po/", "/disptach"],
     items: [
       { label: "Today", to: "/operations", icon: <HomeOutlined /> },
       { section: "Dispatch", label: "To dispatch", to: "/orders/list?tab=TODISPATCH", module: "orders", icon: <CarOutlined /> },

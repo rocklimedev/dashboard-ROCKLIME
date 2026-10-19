@@ -77,4 +77,22 @@ router.get("/po/:token", async (req, res) => {
   }
 });
 
+// Dispatch links use the same document renderer and expiring signature as quotations.
+router.get("/dispatch/:token", async (req, res) => {
+  const p = verifyShare(req.params.token);
+  if (!p || p.t !== "dispatch") return res.status(404).type("text/plain").send("This dispatch link has expired or is not valid.");
+  try {
+    const { dispatchData } = require("../orders/quotation-dispatch.controller");
+    const { document } = await dispatchData(p.id);
+    const { getSetting } = require("../settings/settings.service");
+    const [company, settings] = await Promise.all([getSetting("company"), getSetting("quotation")]);
+    const { renderQuotationPdf } = require("../quotations/quotation-pdf");
+    const { buffer, filename } = await renderQuotationPdf(document, { company, settings, documentLabel: "Dispatch", style: p.s, cover: p.c == null ? null : Boolean(p.c) });
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", 'inline; filename="Dispatch-' + filename.replace(/["\r\n]/g, "").replace(/[/\\]/g, "-") + '"');
+    res.setHeader("Cache-Control", "private, max-age=300");
+    res.setHeader("X-Robots-Tag", "noindex");
+    return res.send(buffer);
+  } catch (err) { return res.status(err.status === 404 ? 404 : 500).type("text/plain").send("This dispatch is not available."); }
+});
 module.exports = router;

@@ -2,6 +2,7 @@
 // adjustments, transfers, godowns and physical stock counts.
 const { Op, QueryTypes } = require("sequelize");
 const stock = require("./stock.service");
+const { productCompanyCode } = require("../../lib/productCompanyCode");
 
 const m = () => require("../../models");
 const fail = (res, err) =>
@@ -398,15 +399,18 @@ exports.listCounts = async (req, res) => {
 
 exports.getCount = async (req, res) => {
   try {
-    const { StockCount, StockCountLine, Product } = m();
+    const { StockCount, StockCountLine, Product, ProductMeta } = m();
     const count = await StockCount.findByPk(req.params.id, { include: [{ model: StockCountLine, as: "lines" }] });
     if (!count) return res.status(404).json({ message: "Count not found" });
-    const products = await Product.findAll({ where: { productId: count.lines.map((l) => l.productId) }, attributes: ["productId", "name", "product_code"] });
+    const [products, definitions] = await Promise.all([
+      Product.findAll({ where: { productId: count.lines.map((l) => l.productId) }, attributes: ["productId", "name", "product_code", "meta"], raw: true }),
+      ProductMeta.findAll({ attributes: ["id", "slug", "title"], raw: true }),
+    ]);
     const pm = Object.fromEntries(products.map((p) => [p.productId, p]));
     res.json({
       data: count,
       lines: count.lines
-        .map((l) => ({ ...l.toJSON(), name: pm[l.productId]?.name, product_code: pm[l.productId]?.product_code, variance: l.countedQty == null ? null : l.countedQty - l.systemQty }))
+        .map((l) => ({ ...l.toJSON(), name: pm[l.productId]?.name, product_code: pm[l.productId]?.product_code, companyCode: productCompanyCode(pm[l.productId], definitions) || null, variance: l.countedQty == null ? null : l.countedQty - l.systemQty }))
         .sort((a, b) => String(a.name).localeCompare(String(b.name))),
     });
   } catch (err) {

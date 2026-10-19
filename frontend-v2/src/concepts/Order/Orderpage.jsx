@@ -1212,7 +1212,7 @@ const OrderPage = () => {
                       key: "dispatchNumber",
                       width: 100,
                       fixed: "left",
-                      render: (value) => <strong>#{value}</strong>,
+                      render: (value, record) => <Button type="link" onClick={() => navigate(`/dispatch/${record.id}`)}>#{value}</Button>,
                     },
 
                     {
@@ -1395,7 +1395,9 @@ const OrderPage = () => {
                       key: "delivery",
                       width: 170,
                       render: (_, r) =>
-                        r.status === "DELIVERED" ? (
+                        r.sourceQuotationDispatch ? (
+                          <Button type="link" onClick={() => navigate(`/dispatch/${r.id}`)}>Open dispatch</Button>
+                        ) : r.status === "DELIVERED" ? (
                           <div style={{ lineHeight: 1.3 }}>
                             <div>
                               {r.deliveredAt

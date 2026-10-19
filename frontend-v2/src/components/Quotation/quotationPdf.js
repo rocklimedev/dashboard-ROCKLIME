@@ -4,12 +4,12 @@ import { API_URL } from "../../store/config";
 export const token = () => localStorage.getItem("token") || sessionStorage.getItem("token");
 
 // cover: true / false, or null to follow the "cover page" setting
-export async function fetchPdf(id, { style = "detailed", cover = null, version = null, exportOptions, pageOrder } = {}) {
+export async function fetchPdf(id, { style = "detailed", cover = null, version = null, exportOptions, pageOrder, resourcePath = null, documentLabel = "Quotation" } = {}) {
   const p = new URLSearchParams({ style });
   if (cover != null) p.set("cover", cover ? "1" : "0");
   if (exportOptions) p.set("exportOptions", JSON.stringify(exportOptions));
   if (version) p.set("version", version);
-  const r = await fetch(`${API_URL}/quotation/${id}/pdf?${p}`, {
+  const r = await fetch(`${API_URL}${resourcePath || `/quotation/${id}`}/pdf?${p}`, {
     headers: { Authorization: `Bearer ${token()}` },
   });
   if (!r.ok) {
@@ -22,7 +22,7 @@ export async function fetchPdf(id, { style = "detailed", cover = null, version =
     throw new Error(msg);
   }
   const name =
-    /filename="([^"]+)"/.exec(r.headers.get("Content-Disposition") || "")?.[1] || "Quotation.pdf";
+    /filename="([^"]+)"/.exec(r.headers.get("Content-Disposition") || "")?.[1] || `${documentLabel}.pdf`;
   let blob = await r.blob();
   const source = await PDFDocument.load(await blob.arrayBuffer());
   let labels = [];
@@ -33,7 +33,7 @@ export async function fetchPdf(id, { style = "detailed", cover = null, version =
   const names = Array.isArray(labels) ? labels : [];
   const occurrences = new Map();
   const pages = source.getPageIndices().map(i => {
-    const name = names[i] || `Quotation page ${i + 1}`;
+    const name = names[i] || `${documentLabel} page ${i + 1}`;
     const part = (occurrences.get(name) || 0) + 1;
     occurrences.set(name, part);
     return { id: i, label: part > 1 ? `${name} (continued ${part})` : name };

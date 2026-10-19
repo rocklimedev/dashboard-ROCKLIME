@@ -27,7 +27,14 @@ const isOptional = (item) =>
   Boolean(item?.isOptionFor) ||
   (item?.optionType && item.optionType !== "main");
 
-/** One line: gross, discount, net (all rounded to paise). */
+/** Normalize named quotation charges, including older amount-only quotations. */
+function normalizeCharges(value) {
+  if (Array.isArray(value)) return value.map(row => ({ name: String(row?.name || "Miscellaneous charges").trim() || "Miscellaneous charges", amount: Math.max(0, num(row?.amount)) }));
+  return num(value) ? [{ name: "Miscellaneous charges", amount: Math.max(0, num(value)) }] : [];
+}
+
+/** Additional discount is per unit. A non-null flat price
+ * replaces the ordinary discounted unit price; zero is a valid override. */
 function lineAmounts(item) {
   const qty = num(item.quantity ?? item.qty, 1);
   const price = num(item.price ?? item.sellingPrice, 0);
@@ -35,7 +42,8 @@ function lineAmounts(item) {
   const type = (item.discountType || "percent").toLowerCase();
   const gross = r2(price * qty);
   const discount = r2(type === "percent" ? (gross * disc) / 100 : disc * qty);
-  const net = r2(gross - discount);
+  const base = item.flatPrice != null && item.flatPrice !== "" ? num(item.flatPrice) * qty : gross - discount;
+  const net = r2(base - num(item.additionalDiscount) * qty);
   const rate = qty ? r2(net / qty) : 0;
   return { qty, price, gross, discount, net, rate, discountPercent: gross ? r2((discount / gross) * 100) : 0 };
 }
@@ -54,6 +62,10 @@ function quotationTotals({
   extraDiscount = 0,
   extraDiscountType = "percent",
   shipping = 0,
+  miscellaneousCharges = 0,
+  miscellaneousChargeItems = null,
+  additionalDiscount = 0,
+  flatPrice = null,
   gstRate = 0,
   interState = false,
 } = {}) {
@@ -63,23 +75,28 @@ function quotationTotals({
 
   let mrpValue = 0;
   let lineDiscount = 0;
+  let netValue = 0;
   const lines = main.map((it) => {
     const a = lineAmounts(it);
     mrpValue += a.gross;
     lineDiscount += a.discount;
+    netValue += a.net;
     return { ...it, ...a };
   });
   mrpValue = r2(mrpValue);
   lineDiscount = r2(lineDiscount);
-  const goodsValue = r2(mrpValue - lineDiscount);
+  // A quotation flat price replaces the goods subtotal before quotation adjustments and GST.
+  const goodsValue = r2(flatPrice != null && flatPrice !== "" ? num(flatPrice) : netValue);
   const freight = r2(num(shipping));
-  const extraBase = r2(goodsValue + freight);
+  const chargeItems = normalizeCharges(miscellaneousChargeItems ?? miscellaneousCharges);
+  const chargesAmount = r2(chargeItems.reduce((sum, row) => sum + row.amount, 0));
+  const extraBase = r2(goodsValue + freight + chargesAmount);
   const extraDiscountAmount = r2(
     (extraDiscountType || "percent").toLowerCase() === "percent"
       ? (extraBase * num(extraDiscount)) / 100
       : num(extraDiscount),
   );
-  const taxableValue = r2(extraBase - extraDiscountAmount);
+  const taxableValue = r2(extraBase - extraDiscountAmount - num(additionalDiscount));
   const rate = num(gstRate);
   const gstAmount = r2((taxableValue * rate) / 100);
   const cgst = interState ? 0 : r2(gstAmount / 2);
@@ -99,6 +116,8 @@ function quotationTotals({
     lineDiscount,
     goodsValue,
     freight,
+    miscellaneousChargeItems: chargeItems,
+    miscellaneousCharges: chargesAmount,
     extraDiscountAmount,
     taxableValue,
     gstRate: rate,
@@ -151,4 +170,4 @@ function amountInWords(amount) {
 const inr = (v, { symbol = true, decimals = 2 } = {}) =>
   `${symbol ? "₹" : ""}${num(v).toLocaleString("en-IN", { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`;
 
-module.exports = { quotationTotals, lineAmounts, amountInWords, inr, isOptional, r2 };
+module.exports = { normalizeCharges, quotationTotals, lineAmounts, amountInWords, inr, isOptional, r2 };
