@@ -193,10 +193,10 @@ const Header = ({ toggleSidebar, isSidebarOpen, home = false }) => {
         </Menu.Item>
         <Menu.Item
           key="settings"
-          onClick={() => navigate("/settings")}
+          onClick={() => navigate(`/u/${userId}/settings`)}
           icon={<SettingOutlined className="me-2" />}
         >
-          Settings
+          Account settings
         </Menu.Item>
         <Menu.Divider />
         <Menu.Item

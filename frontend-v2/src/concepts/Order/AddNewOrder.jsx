@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate, useParams, Link, useLocation } from "react-router-dom";
 import {
   PlusOutlined,
@@ -119,6 +119,8 @@ const AddNewOrder = ({ adminName }) => {
   const isEditMode = Boolean(id);
   const navigate = useNavigate();
   const location = useLocation();
+  const submissionInFlight = useRef(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [createOrder] = useCreateOrderMutation();
   const [updateOrder] = useUpdateOrderByIdMutation();
@@ -463,6 +465,7 @@ const AddNewOrder = ({ adminName }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submissionInFlight.current) return;
 
     // ---------- validation ----------
     if (!formData.createdFor) return message.error("Please select a Customer.");
@@ -586,9 +589,11 @@ const AddNewOrder = ({ adminName }) => {
           }),
     };
 
+    // Lock synchronously so repeated submissions before React renders are ignored.
+    submissionInFlight.current = true;
+    setIsSubmitting(true);
     try {
       if (isEditMode) {
-        if (!id) return message.error("Invalid order ID.");
         await updateOrder({ id, ...payload }).unwrap();
         message.success("Order updated successfully");
       } else {
@@ -597,6 +602,8 @@ const AddNewOrder = ({ adminName }) => {
       }
       navigate("/orders/list");
     } catch (err) {
+      submissionInFlight.current = false;
+      setIsSubmitting(false);
       const msg =
         err?.status === 400
           ? `Bad Request: ${err.data?.message || "Invalid data."}`
@@ -1200,7 +1207,12 @@ const AddNewOrder = ({ adminName }) => {
                   >
                     Cancel
                   </Button>
-                  <Button type="primary" htmlType="submit">
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    loading={isSubmitting}
+                    disabled={isSubmitting}
+                  >
                     {isEditMode ? "Update Order" : "Create Order"}
                   </Button>
                 </Space>

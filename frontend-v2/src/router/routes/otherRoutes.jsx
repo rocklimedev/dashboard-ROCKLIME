@@ -1,4 +1,5 @@
 import { lazy } from "react";
+import { Navigate } from "react-router-dom";
 // src/routes/othersRoutes.js
 import { FaListUl, FaShoppingCart, FaBell } from "react-icons/fa";
 import { FaCog } from "react-icons/fa";
@@ -7,7 +8,6 @@ const AddFieldgeneratedSheet = lazy(() => import("../../concepts/PO/AddFgs"));
 const FGSDetails = lazy(() => import("../../concepts/PO/FGSDetails"));
 const JobList = lazy(() => import("../../concepts/Jobs/JobsList"));
 const JobDetails = lazy(() => import("../../concepts/Jobs/JobDetails"));
-const GeneralSettings = lazy(() => import("../../concepts/Settings/GeneralSettings"));
 const NewQuotation = lazy(() => import("../../concepts/Cart/NewQuotation"));
 const NewOrder = lazy(() => import("../../concepts/Cart/NewOrder"));
 const NewPurchaseOrder = lazy(() => import("../../concepts/Cart/NewPurchaseOrder"));
@@ -83,6 +83,6 @@ export const otherRoutes = [
     name: "Settings",
     icon: <FaCog />,
     isSidebarActive: false,
-    element: <GeneralSettings />,
+    element: <Navigate to="/settings/company" replace />,
   },
 ];

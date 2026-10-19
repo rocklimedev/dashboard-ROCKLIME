@@ -233,10 +233,9 @@ export const APPS = [
     description: "Users, roles, company and document formats",
     color: "#434343",
     icon: <FaCog />,
-    home: "/settings",
-    match: ["/settings", "/users/", "/user/", "/roles-permission", "/u/"],
+    home: "/settings/company",
+    match: ["/settings", "/users/", "/user/", "/roles-permission"],
     items: [
-      { label: "My account", to: "/settings", icon: <UserOutlined /> },
       { label: "Company & documents", to: "/settings/company", adminOnly: true, icon: <BankOutlined /> },
       { label: "Users", to: "/users/list", module: "users", icon: <TeamOutlined /> },
       { label: "Roles & permissions", to: "/roles-permission/list", module: "roles", icon: <SafetyOutlined /> },
@@ -256,7 +255,7 @@ export function visibleApps(can, roles = []) {
   return APPS.map((app) => ({
     ...app,
     items: app.items.filter((i) => allowed({ ...i, module: i.module || app.module, action: i.action })),
-  })).filter((app) => app.items.length && (!app.adminOnly || admin) && (!app.module || app.items.length));
+  })).filter((app) => app.items.length && (!app.adminOnly || admin) && (!app.module || can(app.module, "view")));
 }
 
 const longest = (apps, pathname, key) => {

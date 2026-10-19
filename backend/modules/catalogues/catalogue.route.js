@@ -15,6 +15,8 @@ const express = require("express");
 const path = require("path");
 const fs = require("fs");
 const multer = require("multer");
+const axios = require("axios");
+const cdn = require("./catalogue-storage");
 const { randomUUID } = require("crypto");
 const { QueryTypes } = require("sequelize");
 const { auth } = require("../../middleware/auth");
@@ -22,15 +24,12 @@ const { guardModule } = require("../../middleware/permission");
 
 const router = express.Router();
 const DIR = path.resolve(process.env.CATALOGUE_DIR || path.join(__dirname, "../../storage/catalogues"));
-fs.mkdirSync(DIR, { recursive: true });
 const upload = multer({
-  storage: multer.diskStorage({
-    destination: (req, file, cb) => cb(null, DIR),
-    filename: (req, file, cb) => cb(null, `${randomUUID()}${file.fieldname === "cover" ? ".jpg" : ".pdf"}`),
-  }),
+  storage: cdn.storage,
   limits: { fileSize: 300 * 1024 * 1024, fieldSize: 60 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (file.fieldname === "file" && !/pdf$/i.test(file.mimetype) && !/\.pdf$/i.test(file.originalname)) return cb(Object.assign(new Error("Only PDF catalogues can be uploaded"), { status: 400 }));
+    if (file.fieldname === "cover" && !/^image\/jpeg$/i.test(file.mimetype)) return cb(Object.assign(new Error("Catalogue covers must be JPEG images"), { status: 400 }));
     cb(null, true);
   },
 });
@@ -41,13 +40,42 @@ const fail = (res, err) => res.status(err.status || 500).json({ message: err.mes
 const clean = (v, n = 200) => (v == null || v === "" ? null : String(v).trim().slice(0, n));
 const normText = (t) => String(t || "").replace(/\s+/g, " ").trim().slice(0, 200000);
 
+const removeFile = name => cdn.isCdn(name) ? cdn.remove(name) : name ? fs.promises.unlink(path.join(DIR, path.basename(name))).catch(err => { if (err.code !== "ENOENT") throw err; }) : Promise.resolve();
+
+// Serve PDFs through the authenticated endpoint without buffering or exposing
+// the user's Authorization header to the CDN. Forward byte ranges for pdf.js.
+async function sendCatalogueFile(req, res, name) {
+  if (!cdn.isCdn(name)) return res.sendFile(path.join(DIR, path.basename(name)), { acceptRanges: true, maxAge: "1d" });
+  const controller = new AbortController();
+  const abort = () => controller.abort();
+  res.on("close", abort);
+  try {
+    const upstream = await axios.get(cdn.cdnUrl(name), { responseType: "stream", signal: controller.signal,
+      headers: req.headers.range ? { Range: req.headers.range } : {}, validateStatus: () => true });
+    if (![200, 206, 304, 416].includes(upstream.status)) {
+      upstream.data.destroy();
+      return res.status(upstream.status === 404 ? 404 : 502).json({ message: "Catalogue file is unavailable on the CDN" });
+    }
+    res.status(upstream.status);
+    for (const header of ["content-length", "content-range", "accept-ranges", "etag", "last-modified"]) {
+      if (upstream.headers[header]) res.setHeader(header, upstream.headers[header]);
+    }
+    res.setHeader("Cache-Control", "private, max-age=86400");
+    upstream.data.on("error", error => res.destroy(error));
+    upstream.data.pipe(res);
+  } catch (error) {
+    if (!res.destroyed) throw error;
+  }
+}
+
 // Covers are brand artwork shown in <img> tags, so they need no login (the id is a random UUID).
 router.get("/:id/cover", async (req, res) => {
   try {
     const [row] = await q("SELECT coverName FROM catalogues WHERE id = ?", [req.params.id]);
     if (!row?.coverName) return res.status(404).end();
     res.set("Cross-Origin-Resource-Policy", "cross-origin");
-    res.sendFile(path.join(DIR, row.coverName), { maxAge: "7d" });
+    if (cdn.isCdn(row.coverName)) return res.redirect(cdn.cdnUrl(row.coverName));
+    res.sendFile(path.join(DIR, path.basename(row.coverName)), { maxAge: "7d" });
   } catch (err) {
     fail(res, err);
   }
@@ -63,15 +91,15 @@ router.use(
   ]),
 );
 
-async function savePages(id, pages) {
+async function savePages(id, pages, transaction) {
   const list = Array.isArray(pages) ? pages : [];
-  await db().query("DELETE FROM catalogue_pages WHERE catalogueId = ?", { replacements: [id] });
+  await db().query("DELETE FROM catalogue_pages WHERE catalogueId = ?", { replacements: [id], transaction });
   for (let i = 0; i < list.length; i += 200) {
     const chunk = list.slice(i, i + 200).map((t, k) => [id, i + k + 1, normText(t)]);
     if (!chunk.length) continue;
-    await db().query(`INSERT INTO catalogue_pages (catalogueId, page, text) VALUES ${chunk.map(() => "(?,?,?)").join(",")}`, { replacements: chunk.flat() });
+    await db().query(`INSERT INTO catalogue_pages (catalogueId, page, text) VALUES ${chunk.map(() => "(?,?,?)").join(",")}`, { replacements: chunk.flat(), transaction });
   }
-  await db().query("UPDATE catalogues SET textIndexed = ?, updatedAt = NOW() WHERE id = ?", { replacements: [list.some((t) => normText(t)) ? 1 : 0, id] });
+  await db().query("UPDATE catalogues SET textIndexed = ?, updatedAt = NOW() WHERE id = ?", { replacements: [list.some((t) => normText(t)) ? 1 : 0, id], transaction });
 }
 
 const shape = (r) => ({ ...r, sizeBytes: Number(r.sizeBytes), pages: Number(r.pages), textIndexed: !!r.textIndexed, hasCover: !!r.coverName });
@@ -149,10 +177,12 @@ router.post("/", upload.fields([{ name: "file", maxCount: 1 }, { name: "cover", 
       brandName = b?.brandName || brandName;
     }
     const title = clean(req.body.title) || file.originalname.replace(/\.pdf$/i, "");
+    const row = await db().transaction(async transaction => {
     await db().query(
       `INSERT INTO catalogues (id, title, brandId, brandName, category, year, fileName, storedName, coverName, sizeBytes, pages, uploadedBy, createdAt, updatedAt)
        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,NOW(),NOW())`,
       {
+        transaction,
         replacements: [
           id,
           title,
@@ -175,11 +205,13 @@ router.post("/", upload.fields([{ name: "file", maxCount: 1 }, { name: "cover", 
     } catch {
       pages = [];
     }
-    if (pages.length) await savePages(id, pages);
-    const [row] = await q("SELECT * FROM catalogues WHERE id = ?", [id]);
+    if (pages.length) await savePages(id, pages, transaction);
+    const [saved] = await db().query("SELECT * FROM catalogues WHERE id = ?", { replacements: [id], type: QueryTypes.SELECT, transaction });
+    return saved;
+    });
     res.status(201).json({ message: "Catalogue uploaded", catalogue: shape(row) });
   } catch (err) {
-    for (const f of [file, cover]) if (f) fs.promises.unlink(f.path).catch(() => {});
+    for (const f of [file, cover]) if (f) await removeFile(f.filename).catch(cleanupError => console.error("Catalogue upload cleanup failed:", cleanupError.message));
     fail(res, err);
   }
 });
@@ -203,7 +235,7 @@ router.get("/:id/file", async (req, res) => {
     const row = await load(req.params.id);
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `inline; filename="${encodeURIComponent(row.fileName)}"`);
-    res.sendFile(path.join(DIR, row.storedName), { acceptRanges: true, cacheControl: true, maxAge: "1d" });
+    await sendCatalogueFile(req, res, row.storedName);
   } catch (err) {
     fail(res, err);
   }
@@ -242,7 +274,7 @@ router.delete("/:id", async (req, res) => {
     const row = await load(req.params.id);
     await db().query("DELETE FROM catalogue_pages WHERE catalogueId = ?", { replacements: [row.id] });
     await db().query("DELETE FROM catalogues WHERE id = ?", { replacements: [row.id] });
-    for (const n of [row.storedName, row.coverName]) if (n) fs.promises.unlink(path.join(DIR, n)).catch(() => {});
+    for (const n of [row.storedName, row.coverName]) if (n) await removeFile(n).catch(err => console.error("Catalogue delete cleanup failed:", err.message));
     res.json({ message: "Catalogue deleted" });
   } catch (err) {
     fail(res, err);

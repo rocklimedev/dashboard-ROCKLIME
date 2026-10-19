@@ -1,7 +1,8 @@
 import { useEffect, useMemo } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { ChevronsLeft } from "react-feather";
-import { ArrowLeftOutlined } from "@ant-design/icons";
+import { ArrowLeftOutlined, UserOutlined, SettingOutlined } from "@ant-design/icons";
+import { useAuth } from "../../context/AuthContext";
 import logo from "../../assets/img/logo.png";
 import logo_small from "../../assets/img/fav_icon.png";
 import useCan, { useRoles } from "../../utils/useCan";
@@ -26,17 +27,26 @@ export default function AppSidebar({ isSidebarOpen, toggleSidebar }) {
   const location = useLocation();
   const can = useCan();
   const roles = useRoles();
+  const { auth } = useAuth();
+  const personal = location.pathname.startsWith("/u/");
+  const userId = auth?.user?.userId;
   const apps = useMemo(() => visibleApps(can, roles), [can, roles]);
-  const current = appForPath(location.pathname, apps, location.search, readLast());
+  const current = personal ? {
+    key: "personal", name: "My account",
+    items: userId ? [
+      { label: "My profile", to: `/u/${userId}`, icon: <UserOutlined /> },
+      { label: "Account settings", to: `/u/${userId}/settings`, icon: <SettingOutlined /> },
+    ] : [],
+  } : appForPath(location.pathname, apps, location.search, readLast());
 
   useEffect(() => {
-    if (!current) return;
+    if (!current || personal) return;
     try {
       sessionStorage.setItem(LAST_APP, current.key);
     } catch {
       /* private mode */
     }
-  }, [current]);
+  }, [current, personal]);
 
   const here = `${location.pathname}${location.search}`;
   const items = current?.items || [];

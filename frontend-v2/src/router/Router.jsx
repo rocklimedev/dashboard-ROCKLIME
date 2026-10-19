@@ -5,6 +5,7 @@ import { Helmet } from "react-helmet";
 
 import masterRoutes from "./routes"; // Assuming this combines all routes
 import PrivateRoute from "./PrivateRoute";
+import { appPermission, pagePermission } from "./pagePermissions";
 
 const RouteWithHelmet = ({ element, name }) => (
   <>
@@ -23,8 +24,10 @@ const generateRoutes = (routes) =>
       const routesArray = [];
 
       if (path && element) {
-        const routeElement = requiredPermission ? (
-          <PrivateRoute requiredPermission={requiredPermission}>
+        requiredPermission = requiredPermission || pagePermission(path);
+        const requiredAppPermission = appPermission(path);
+        const routeElement = requiredPermission || requiredAppPermission ? (
+          <PrivateRoute requiredPermission={requiredPermission} requiredAppPermission={requiredAppPermission}>
             <RouteWithHelmet element={element} name={name} />
           </PrivateRoute>
         ) : (
