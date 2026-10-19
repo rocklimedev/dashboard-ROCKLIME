@@ -333,7 +333,7 @@ function groupByArea(lines) {
 // Layout
 // ---------------------------------------------------------------------------
 // Item table columns; widths add up to CONTENT_W (515.28)
-function itemColumns(withImages) {
+function itemColumns(withImages, hidden = new Set()) {
   const cols = [
     { key: "no", label: "#", w: 22, align: "left" },
     ...(withImages ? [{ key: "img", label: "", w: 42 }] : []),
@@ -344,12 +344,18 @@ function itemColumns(withImages) {
     { key: "rate", label: "Rate", w: 61, align: "right" },
     { key: "amount", label: "Amount", w: 66, align: "right" },
   ];
+  const keys = { no: "sno", img: "image", qty: "qty", mrp: "mrp", disc: "discount", rate: "price", amount: "total" };
+  const visible = cols.filter(c => c.key === "product" ? !(hidden.has("name") && hidden.has("code")) : !hidden.has(keys[c.key]));
+  const flexible = visible.find(c => c.key === "product") || visible[0];
+  if (flexible) flexible.w += CONTENT_W - visible.reduce((sum, c) => sum + c.w, 0);
+  const product = visible.find(c => c.key === "product");
+  if (product) product.label = hidden.has("name") ? "Company code" : "Product";
   let x = M;
-  for (const c of cols) {
+  for (const c of visible) {
     c.x = x;
     x += c.w;
   }
-  return cols;
+  return visible;
 }
 
 function discLabel(r) {
@@ -381,9 +387,9 @@ function tableHead(doc, y, cols) {
 // ---------------------------------------------------------------------------
 // Build
 // ---------------------------------------------------------------------------
-async function buildQuotationPdf(quotationId, { style = "detailed", cover = null, version = null } = {}) {
+async function buildQuotationPdf(quotationId, { style = "detailed", cover = null, version = null, exportOptions = {} } = {}) {
   const [company, settings, data] = await Promise.all([getSetting("company"), getSetting("quotation"), loadQuotation(quotationId, { version })]);
-  return renderQuotationPdf(data, { company, settings, style, cover });
+  return renderQuotationPdf(data, { company, settings, style, cover, exportOptions });
 }
 
 /**
@@ -391,10 +397,11 @@ async function buildQuotationPdf(quotationId, { style = "detailed", cover = null
  *   style  detailed (photos) | compact (no photos, with product codes) | areawise (= detailed)
  *   cover  true / false; null uses the "cover page" setting (on by default)
  */
-async function renderQuotationPdf(data, { company, settings, style = "detailed", cover = null }) {
+async function renderQuotationPdf(data, { company, settings, style = "detailed", cover = null, exportOptions = {} }) {
   const { quotation, items, customer, shipTo, billing, creator, productInfo, versionNo } = data;
   style = ["detailed", "compact", "areawise"].includes(style) ? style : "detailed";
-  const withImages = style !== "compact";
+  const hidden = new Set(Array.isArray(exportOptions?.hidden) ? exportOptions.hidden : []);
+  const withImages = style !== "compact" && !hidden.has("image");
   const showCover = cover == null ? settings.showCoverPage !== false : Boolean(cover);
   const brand = company.brandName || company.name || "";
 
@@ -432,9 +439,12 @@ async function renderQuotationPdf(data, { company, settings, style = "detailed",
   const done = new Promise((resolve) => doc.on("end", () => resolve(Buffer.concat(chunks))));
   const bottom = A4.h - FOOTER_H - 20;
   let first = true;
+  let pageLabel = "Cover page";
+  const pageLabels = [];
   const newPage = () => {
     if (!first) doc.addPage();
     first = false;
+    pageLabels.push(pageLabel);
     return TOP;
   };
 
@@ -468,6 +478,7 @@ async function renderQuotationPdf(data, { company, settings, style = "detailed",
   }
 
   // ---------------- details page ----------------
+  pageLabel = "Product list";
   let y = newPage();
   try {
     doc.image(LOGO_RED, M, y, { height: 32 });
@@ -517,7 +528,7 @@ async function renderQuotationPdf(data, { company, settings, style = "detailed",
     company.address,
     [company.phone, String(company.website || "").replace(/^https?:\/\/(www\.)?/i, "")].filter(Boolean).join(" · "),
     company.gstin ? `GSTIN ${company.gstin}` : null,
-    creator ? `Your contact: ${[creator.name || creator.username, creator.mobileNumber].filter(Boolean).join(" · ")}` : null,
+
   ].filter(Boolean);
   for (const [i, l] of fromLines.entries()) {
     text(doc, l, A4.w - M - half, ry, { size: 8.5, width: half, align: "right", color: i === fromLines.length - 1 && creator ? MUTED : INK });
@@ -530,9 +541,9 @@ async function renderQuotationPdf(data, { company, settings, style = "detailed",
     const glance = [
       ["Products", String(totals.lines.length)],
       ...(hasAreas ? [["Areas", String(groups.length)]] : []),
-      ["You save", totals.mrpValue ? `${Math.round(((totals.lineDiscount + totals.extraDiscountAmount) / totals.mrpValue) * 100)}% on MRP` : "—"],
+      ...(!hidden.has("discount") && !hidden.has("mrp") ? [["You save", totals.mrpValue ? `${Math.round(((totals.lineDiscount + totals.extraDiscountAmount) / totals.mrpValue) * 100)}% on MRP` : "—"]] : []),
       ["Valid until", fmtDate(validTill)],
-      ["Grand total", whole(totals.grandTotal)],
+      ...(!hidden.has("total") ? [["Grand total", whole(totals.grandTotal)]] : []),
     ];
     const gw = CONTENT_W / glance.length;
     doc.roundedRect(M, y, CONTENT_W, 46, 6).fill("#f7f7f7");
@@ -545,8 +556,9 @@ async function renderQuotationPdf(data, { company, settings, style = "detailed",
     y += 66;
   }
 
-  const cols = itemColumns(withImages);
+  const cols = itemColumns(withImages, hidden);
   const rowsTable = (group, { no, startY }) => {
+    if (!cols.length) return startY;
     let ty = startY;
     const head = (contd) => {
       ty = pageTitle(doc, ty, { no, title: `${group.name}${contd ? " (contd.)" : ""}`, right: `${group.items} item${group.items === 1 ? "" : "s"}` });
@@ -556,8 +568,8 @@ async function renderQuotationPdf(data, { company, settings, style = "detailed",
     group.rows.forEach((r, i) => {
       const info = productInfo[r.productId] || {};
       const pc = cols.find((c) => c.key === "product");
-      const code = [r.companyCode || info.companyCode || r.productCode || "", withImages ? info.brand : null].filter(Boolean).join(" · ");
-      const nameH = heightOf(doc, r.name || "Item", pc.w - 8, { size: 8.5 });
+      const code = hidden.has("code") ? "" : [r.companyCode || info.companyCode || r.productCode || "", withImages ? info.brand : null].filter(Boolean).join(" · ");
+      const nameH = hidden.has("name") || !pc ? 0 : heightOf(doc, r.name || "Item", pc.w - 8, { size: 8.5 });
       const h = Math.max(withImages ? 45 : 26, nameH + (code ? 10 : 0) + 16);
       if (ty + h > bottom) {
         ty = newPage();
@@ -584,7 +596,7 @@ async function renderQuotationPdf(data, { company, settings, style = "detailed",
         }
         if (c.key === "product") {
           const block = nameH + (code ? 10 : 0);
-          text(doc, r.name || "Item", c.x + 4, mid - block / 2, { size: 8.5, width: c.w - 8 });
+          if (!hidden.has("name")) text(doc, r.name || "Item", c.x + 4, mid - block / 2, { size: 8.5, width: c.w - 8 });
           if (code) text(doc, code, c.x + 4, mid - block / 2 + nameH + 1, { size: 7, color: MUTED, width: c.w - 8, lineBreak: false });
           continue;
         }
@@ -602,18 +614,10 @@ async function renderQuotationPdf(data, { company, settings, style = "detailed",
       ty += h;
       rule(doc, ty, { color: "#ececec" });
     });
-    // subtotal
+    if (hidden.has("roomTotals")) return ty + 8;
     if (ty + 34 > bottom) ty = newPage();
-    const mc = cols.find((c) => c.key === "mrp");
-    const dc = cols.find((c) => c.key === "disc");
-    const rc = cols.find((c) => c.key === "rate");
-    const ac = cols.find((c) => c.key === "amount");
-    text(doc, whole(group.mrp), mc.x - 30, ty + 8, { size: 9, color: MUTED, width: mc.w + 27, align: "right", lineBreak: false });
-    text(doc, "MRP", mc.x, ty + 20, { size: 6, color: MUTED, width: mc.w - 3, align: "right", lineBreak: false });
-    text(doc, group.mrp ? pct((group.discount / group.mrp) * 100) : "—", dc.x, ty + 12, { size: 9, color: MUTED, width: dc.w - 3, align: "right", lineBreak: false });
-    text(doc, "Subtotal", rc.x, ty + 8, { size: 9, width: rc.w - 3, align: "right", lineBreak: false });
-    text(doc, "excl. GST", rc.x, ty + 20, { size: 6, color: MUTED, width: rc.w - 3, align: "right", lineBreak: false });
-    text(doc, whole(group.net), ac.x - 20, ty + 10, { size: 10.5, bold: true, color: RED, width: ac.w + 17, align: "right", lineBreak: false });
+    const subtotal = [!hidden.has("mrp") && `MRP ${whole(group.mrp)}`, !hidden.has("discount") && `Discount ${whole(group.discount)}`, !hidden.has("total") && `Subtotal (excl. GST) ${whole(group.net)}`].filter(Boolean).join("     ");
+    text(doc, subtotal, M, ty + 10, { size: 9, width: CONTENT_W, align: "right", lineBreak: false });
     return ty + 36;
   };
 
@@ -637,12 +641,13 @@ async function renderQuotationPdf(data, { company, settings, style = "detailed",
     }
     y += 12;
     text(doc, "Room-wise product details follow, with the complete quotation summary, inclusions and exclusions after the last room.", M, y, { size: 8, color: MUTED, width: CONTENT_W });
-    groups.forEach((g, i) => rowsTable(g, { no: two(i + 1), startY: newPage() }));
+    groups.forEach((g, i) => { pageLabel = g.name; rowsTable(g, { no: two(i + 1), startY: newPage() }); });
   } else {
     // no rooms: the items follow the customer details on the same page
     for (const g of groups) y = rowsTable(g, { no: null, startY: y + 4 }) + 12;
   }
 
+  pageLabel = "Quotation summary";
   // ---------------- summary ----------------
   y = pageTitle(doc, newPage(), { title: "Quotation summary", right: `${ref} · ${fmtDate(qDate)}` });
   if (groups.length > 1 || hasAreas) {
@@ -652,7 +657,10 @@ async function renderQuotationPdf(data, { company, settings, style = "detailed",
       { label: "MRP value", x: M + 260, w: 85, align: "right" },
       { label: "Discount", x: M + 345, w: 80, align: "right" },
       { label: "Net amount", sub: "(excl. GST)", x: M + 425, w: 90.28, align: "right" },
-    ];
+    ].map((c, index) => ({ ...c, index })).filter(c => !hidden.has([null, "qty", "mrp", "discount", "total"][c.index]));
+    let summaryX = M;
+    const available = sc.reduce((sum, c) => sum + c.w, 0);
+    for (const c of sc) { c.w *= CONTENT_W / available; c.x = summaryX; summaryX += c.w; }
     y += 6;
     for (const c of sc) {
       label(doc, c.label, c.x + (c.align === "left" ? 4 : 0), c.sub ? y + 3 : y + 8, { width: c.w - 4, align: c.align });
@@ -664,7 +672,7 @@ async function renderQuotationPdf(data, { company, settings, style = "detailed",
       if (y + 24 > bottom) y = newPage();
       const vals = [g.name, String(g.items), whole(g.mrp), `−${whole(g.discount)}`, whole(g.net)];
       sc.forEach((c, i) =>
-        text(doc, vals[i], c.x + (c.align === "left" ? 4 : 0), y + 8, {
+        text(doc, vals[c.index], c.x + (c.align === "left" ? 4 : 0), y + 8, {
           size: 9,
           width: c.w - 4,
           align: c.align,
@@ -682,59 +690,63 @@ async function renderQuotationPdf(data, { company, settings, style = "detailed",
     y += 16;
   }
 
-  const avg = totals.mrpValue ? Math.round((totals.lineDiscount / totals.mrpValue) * 100) : 0;
-  const lines = [
-    ["Total MRP value", whole(totals.mrpValue)],
-    ...(totals.lineDiscount ? [[`Discount (${avg}% average)`, `−${whole(totals.lineDiscount)}`, { color: RED }]] : []),
-    ...(totals.freight ? [["Freight / installation", whole(totals.freight)]] : []),
-    ...(totals.extraDiscountAmount ? [["Extra discount", `−${whole(totals.extraDiscountAmount)}`, { color: RED }]] : []),
-    ["Net amount (excl. GST)", whole(totals.taxableValue), { bold: true }],
-    ...(totals.gstRate
-      ? [[`${interState ? "IGST" : "GST"} @ ${totals.gstRate}%`, whole(totals.gstAmount), { sub: interState ? null : `CGST ${totals.gstRate / 2}% + SGST ${totals.gstRate / 2}%` }]]
-      : [["GST", "Not included"]]),
-    ...(Math.abs(totals.roundOff) >= 0.01 ? [["Round off", `${totals.roundOff < 0 ? "−" : "+"}${paise(Math.abs(totals.roundOff))}`, { color: MUTED }]] : []),
-  ];
-  const bx = A4.w - M - 240;
-  if (y + lines.length * 18 + 80 > bottom) y = newPage();
-  for (const [k, v, o = {}] of lines) {
-    text(doc, k, bx + 6, y, { size: 9, bold: o.bold, color: o.color || INK, width: 150, lineBreak: false });
-    text(doc, v, bx + 150, y, { size: 9, bold: o.bold, color: o.color && o.color !== RED ? o.color : o.color === RED ? RED : INK, width: 84, align: "right", lineBreak: false });
-    y += 13;
-    if (o.sub) {
-      text(doc, o.sub, bx + 6, y - 1, { size: 6.5, color: MUTED, width: 150, lineBreak: false });
-      y += 8;
+  if (!hidden.has("total")) {
+    const avg = totals.mrpValue ? Math.round((totals.lineDiscount / totals.mrpValue) * 100) : 0;
+    const lines = [
+      ...(!hidden.has("mrp") ? [["Total MRP value", whole(totals.mrpValue)]] : []),
+      ...(!hidden.has("discount") && totals.lineDiscount ? [[`Discount (${avg}% average)`, `−${whole(totals.lineDiscount)}`, { color: RED }]] : []),
+      ...(totals.freight ? [["Freight / installation", whole(totals.freight)]] : []),
+      ...(!hidden.has("discount") && totals.extraDiscountAmount ? [["Extra discount", `−${whole(totals.extraDiscountAmount)}`, { color: RED }]] : []),
+      ["Net amount (excl. GST)", whole(totals.taxableValue), { bold: true }],
+      ...(totals.gstRate
+        ? [[`${interState ? "IGST" : "GST"} @ ${totals.gstRate}%`, whole(totals.gstAmount), { sub: interState ? null : `CGST ${totals.gstRate / 2}% + SGST ${totals.gstRate / 2}%` }]]
+        : [["GST", "Not included"]]),
+      ...(Math.abs(totals.roundOff) >= 0.01 ? [["Round off", `${totals.roundOff < 0 ? "−" : "+"}${paise(Math.abs(totals.roundOff))}`, { color: MUTED }]] : []),
+    ];
+    const bx = A4.w - M - 240;
+    if (y + lines.length * 18 + 80 > bottom) y = newPage();
+    for (const [k, v, o = {}] of lines) {
+      text(doc, k, bx + 6, y, { size: 9, bold: o.bold, color: o.color || INK, width: 150, lineBreak: false });
+      text(doc, v, bx + 150, y, { size: 9, bold: o.bold, color: o.color && o.color !== RED ? o.color : o.color === RED ? RED : INK, width: 84, align: "right", lineBreak: false });
+      y += 13;
+      if (o.sub) {
+        text(doc, o.sub, bx + 6, y - 1, { size: 6.5, color: MUTED, width: 150, lineBreak: false });
+        y += 8;
+      }
+      y += 5;
     }
-    y += 5;
+    doc.roundedRect(bx, y + 2, 240, 36, 4).fill(RED);
+    label(doc, "Grand total", bx + 12, y + 17, { color: "#ffffff", size: 8 });
+    text(doc, whole(totals.grandTotal), bx + 90, y + 10, { size: 17, bold: true, color: "#ffffff", width: 140, align: "right", lineBreak: false });
+    y += 46;
+    const words = amountInWords(totals.grandTotal);
+    text(doc, words, bx - 60, y, { size: 7.5, color: MUTED, width: 296, align: "right" });
+    y += heightOf(doc, words, 296, { size: 7.5 }) + 6;
+    const saved = totals.lineDiscount + totals.extraDiscountAmount;
+    if (saved > 0 && !hidden.has("discount") && !hidden.has("mrp")) {
+      text(doc, `You save ${whole(saved)} on the MRP of ${whole(totals.mrpValue)}`, bx - 60, y, { size: 8, bold: true, color: RED, width: 296, align: "right" });
+      y += 14;
+    }
+    y += 12;
+
   }
-  doc.roundedRect(bx, y + 2, 240, 36, 4).fill(RED);
-  label(doc, "Grand total", bx + 12, y + 17, { color: "#ffffff", size: 8 });
-  text(doc, whole(totals.grandTotal), bx + 90, y + 10, { size: 17, bold: true, color: "#ffffff", width: 140, align: "right", lineBreak: false });
-  y += 46;
-  const words = amountInWords(totals.grandTotal);
-  text(doc, words, bx - 60, y, { size: 7.5, color: MUTED, width: 296, align: "right" });
-  y += heightOf(doc, words, 296, { size: 7.5 }) + 6;
-  const saved = totals.lineDiscount + totals.extraDiscountAmount;
-  if (saved > 0) {
-    text(doc, `You save ${whole(saved)} on the MRP of ${whole(totals.mrpValue)}`, bx - 60, y, { size: 8, bold: true, color: RED, width: 296, align: "right" });
-    y += 14;
-  }
-  y += 12;
 
   if (totals.optionalLines.length) {
     if (y + 40 > bottom) y = newPage();
     label(doc, "Optional items — not included in the total", M, y, { color: RED, size: 7 });
     y += 16;
     for (const o of totals.optionalLines) {
-      const lbl = `${o.name || "Item"} × ${o.qty}`;
+      const lbl = [!hidden.has("name") && (o.name || "Item"), !hidden.has("code") && o.companyCode, !hidden.has("qty") && `× ${o.qty}`].filter(Boolean).join(" ");
       const lh = heightOf(doc, lbl, CONTENT_W - 100, { size: 8.5 });
       if (y + lh + 10 > bottom) y = newPage();
       text(doc, lbl, M, y, { size: 8.5, width: CONTENT_W - 100 });
-      text(doc, paise(o.net), A4.w - M - 100, y, { size: 8.5, width: 100, align: "right" });
+      if (!hidden.has("total")) text(doc, paise(o.net), A4.w - M - 100, y, { size: 8.5, width: 100, align: "right" });
       y += lh + 6;
       rule(doc, y - 3, { color: "#ececec" });
     }
   }
 
+  pageLabel = "Terms";
   // ---------------- inclusions, terms & payment ----------------
   y = pageTitle(doc, newPage(), { title: "Inclusions, terms & payment", right: ref });
   y += 16;
@@ -839,9 +851,11 @@ async function renderQuotationPdf(data, { company, settings, style = "detailed",
     text(doc, `${i - firstNumbered + 1} / ${count}`, A4.w - M - 60, fy, { size: 6.5, color: INK, width: 60, align: "right", lineBreak: false });
   }
 
+  // Keep section names in the PDF itself, even when a proxy strips headers.
+  doc.info.Subject = JSON.stringify({ quotationPages: pageLabels });
   doc.end();
   const buffer = await done;
-  return { buffer, totals, filename: `${ref}${versionNo > 1 ? `-rev${versionNo - 1}` : ""}.pdf` };
+  return { buffer, totals, pageLabels, filename: `${ref}${versionNo > 1 ? `-rev${versionNo - 1}` : ""}.pdf` };
 }
 
 /** PDF of a quotation that has not been saved yet (the cart's Preview). */

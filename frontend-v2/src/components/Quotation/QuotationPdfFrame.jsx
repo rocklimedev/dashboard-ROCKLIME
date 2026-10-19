@@ -6,7 +6,7 @@ import { fetchPdf } from "./quotationPdf";
  * The quotation as the customer receives it: the server-made PDF shown on the
  * page. It reloads when the quotation, the version or the options change.
  */
-export default function QuotationPdfFrame({ quotationId, version = null, style = "detailed", cover = true, refreshKey, height = "calc(100vh - 230px)" }) {
+export default function QuotationPdfFrame({ quotationId, version = null, style = "detailed", cover = true, exportOptions, pageOrder, onPagesChange, refreshKey, height = "calc(100vh - 230px)" }) {
   const [state, setState] = useState({ loading: true, url: null, error: null });
 
   useEffect(() => {
@@ -16,7 +16,8 @@ export default function QuotationPdfFrame({ quotationId, version = null, style =
       await null; // state changes happen after the effect, not inside it
       setState((s) => ({ ...s, loading: true, error: null }));
       try {
-        const { blob } = await fetchPdf(quotationId, { style, cover, version });
+        const { blob, pages } = await fetchPdf(quotationId, { style, cover, version, exportOptions, pageOrder });
+        if (!cancelled) onPagesChange?.(pages);
         if (cancelled) return;
         url = URL.createObjectURL(blob);
         setState({ loading: false, url, error: null });
@@ -28,7 +29,7 @@ export default function QuotationPdfFrame({ quotationId, version = null, style =
       cancelled = true;
       if (url) URL.revokeObjectURL(url);
     };
-  }, [quotationId, version, style, cover, refreshKey]);
+  }, [quotationId, version, style, cover, exportOptions, pageOrder, onPagesChange, refreshKey]);
 
   if (state.error) return <Alert type="error" showIcon message="Could not show the quotation" description={state.error} />;
   return (

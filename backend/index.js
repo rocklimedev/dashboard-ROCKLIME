@@ -93,7 +93,7 @@ const corsOptions = {
     ...(process.env.APP_URL ? [process.env.APP_URL] : []),
   ],
   credentials: true,
-  exposedHeaders: ["Content-Disposition", "Accept-Ranges", "Content-Range", "Content-Length"],
+  exposedHeaders: ["X-Quotation-Pages", "Content-Disposition", "Accept-Ranges", "Content-Range", "Content-Length"],
 };
 
 app.use(cors(corsOptions));

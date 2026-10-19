@@ -1,8 +1,8 @@
 // Purchase order page: status, receiving, and the PO itself as the vendor receives it.
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button, Space, Spin, Tag, Typography, message } from "antd";
-import { ArrowLeftOutlined, DownloadOutlined, EditOutlined, WhatsAppOutlined } from "@ant-design/icons";
+import { ArrowLeftOutlined, DownloadOutlined, FileExcelOutlined, EditOutlined, WhatsAppOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { Helmet } from "react-helmet";
 import { useGetPurchaseOrderByIdQuery } from "../../api/poApi";
@@ -10,6 +10,9 @@ import PoReceivingPanel from "../../components/Stock/PoReceivingPanel";
 import ServerPdfFrame from "../../components/Common/ServerPdfFrame";
 import { API_URL } from "../../store/config";
 import { token } from "../../components/Quotation/quotationPdf";
+
+import PdfExportOptions from "../../components/Common/PdfExportOptions";
+import { buildPoExcel, fetchPoExport, PO_EXPORT_FIELDS, savePoExport } from "./poExport";
 
 const { Title, Text } = Typography;
 const inr = (n) => `₹${Math.round(Number(n) || 0).toLocaleString("en-IN")}`;
@@ -27,6 +30,10 @@ export default function PODetails() {
   const navigate = useNavigate();
   const { data: po, isLoading, error } = useGetPurchaseOrderByIdQuery(id);
   const [busy, setBusy] = useState(null);
+  const [exportOptions, setExportOptions] = useState({ hidden: [] });
+  const loadPdf = useCallback(() => fetchPoExport(id, exportOptions), [id, exportOptions]);
+  const setHidden = hidden => setExportOptions({ hidden });
+  const customExport = exportOptions.hidden.length > 0;
 
   if (isLoading) return <Spin style={{ display: "block", marginTop: 100 }} />;
   if (error || !po) return <div className="page-wrapper"><div className="content">{error?.data?.message || "Purchase order not found"}</div></div>;
@@ -35,19 +42,19 @@ export default function PODetails() {
   const download = async () => {
     setBusy("pdf");
     try {
-      const r = await fetch(`${API_URL}/purchase-orders/${id}/pdf?download=1`, { headers: { Authorization: `Bearer ${token()}` } });
-      if (!r.ok) throw new Error("Could not make the PDF");
-      const url = URL.createObjectURL(await r.blob());
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `PO-${po.poNumber}.pdf`;
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      const { blob } = await fetchPoExport(id, exportOptions);
+      savePoExport(blob, `PO-${po.poNumber}.pdf`);
     } catch (e) {
       message.error(e.message);
     } finally {
       setBusy(null);
     }
+  };
+  const downloadExcel = async () => {
+    setBusy("excel");
+    try { savePoExport(await buildPoExcel(po, exportOptions.hidden), `PO-${po.poNumber}.xlsx`); }
+    catch (e) { message.error(e.message || "Could not export Excel"); }
+    finally { setBusy(null); }
   };
   const send = async () => {
     setBusy("wa");
@@ -84,12 +91,14 @@ export default function PODetails() {
             </div>
           </div>
           <Space wrap>
-            <Button type="primary" icon={<WhatsAppOutlined />} loading={busy === "wa"} onClick={send} style={{ background: "#25D366", borderColor: "#25D366" }}>
+            <PdfExportOptions fields={PO_EXPORT_FIELDS} hidden={exportOptions.hidden} onHiddenChange={setHidden} onReset={() => setHidden([])} />
+            <Button disabled={customExport} title={customExport ? "Reset export options to share the standard PO link" : undefined} type="primary" icon={<WhatsAppOutlined />} loading={busy === "wa"} onClick={send} style={{ background: "#25D366", borderColor: "#25D366" }}>
               Send to vendor
             </Button>
             <Button icon={<DownloadOutlined />} loading={busy === "pdf"} onClick={download}>
               PDF
             </Button>
+            <Button icon={<FileExcelOutlined />} loading={busy === "excel"} onClick={downloadExcel}>Excel</Button>
             {!["delivered", "cancelled"].includes(po.status) && (
               <Button icon={<EditOutlined />} onClick={() => navigate(`/po/${id}/edit`)}>
                 Edit
@@ -102,7 +111,7 @@ export default function PODetails() {
         </div>
         <PoReceivingPanel po={po} />
         <div style={{ maxWidth: 1000, margin: "16px auto 0" }}>
-          <ServerPdfFrame path={`/purchase-orders/${id}/pdf`} refreshKey={`${po.updatedAt}-${po.status}`} />
+          <ServerPdfFrame loadPdf={loadPdf} path={`/purchase-orders/${id}/pdf`} refreshKey={`${po.updatedAt}-${po.status}`} />
         </div>
       </div>
     </div>
