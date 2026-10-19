@@ -48,6 +48,7 @@ const storage = {
         file.stream.pipe(counter);
         await client.uploadFrom(counter, filename);
         if (file.stream.truncated) throw Object.assign(new Error("The file is too large (300 MB at most)"), { code: "LIMIT_FILE_SIZE" });
+        await client.send(`SITE CHMOD 755 ${filename}`);
         callback(null, { filename: `cdn/${filename}`, size });
       } catch (error) {
         file.stream.unpipe(counter);

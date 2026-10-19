@@ -5,6 +5,7 @@ const express = require("express");
 const request = require("supertest");
 
 const remote = new Map();
+const permissions = new Map();
 let failUpload = false, failDatabase = false, lastRequest;
 const mock = (path, exports) => { const id = require.resolve(path); require.cache[id] = { id, filename: id, loaded: true, exports }; };
 mock("basic-ftp", { Client: class {
@@ -16,6 +17,11 @@ mock("basic-ftp", { Client: class {
     if (failUpload) throw new Error("CDN unavailable");
   }
   async remove(name) { remote.delete(name); }
+  async send(command) {
+    const match = /^SITE CHMOD 755 (.+)$/.exec(command);
+    assert.ok(match, "Catalogue uploads must set permission 755");
+    permissions.set(`${this.dir}/${match[1]}`, "755");
+  }
   close() {}
 } });
 mock("axios", { get: async (url, options) => {
@@ -60,6 +66,7 @@ test("catalogues stream to CDN even when general uploads use local mode", async 
   const row = result.body.catalogue;
   assert.equal(storage.isCdn(row.storedName), true); assert.equal(storage.isCdn(row.coverName), true);
   assert.equal(remote.size, 2); assert.equal(row.sizeBytes, 18);
+  for (const name of remote.keys()) assert.equal(permissions.get(name), "755");
   assert.match(storage.cdnUrl(row.storedName), /^https:\/\/cdn.test\/catalogues\/.+\.pdf$/);
 });
 

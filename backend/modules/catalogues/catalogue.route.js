@@ -178,36 +178,36 @@ router.post("/", upload.fields([{ name: "file", maxCount: 1 }, { name: "cover", 
     }
     const title = clean(req.body.title) || file.originalname.replace(/\.pdf$/i, "");
     const row = await db().transaction(async transaction => {
-    await db().query(
-      `INSERT INTO catalogues (id, title, brandId, brandName, category, year, fileName, storedName, coverName, sizeBytes, pages, uploadedBy, createdAt, updatedAt)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,NOW(),NOW())`,
-      {
-        transaction,
-        replacements: [
-          id,
-          title,
-          clean(req.body.brandId, 36),
-          brandName,
-          clean(req.body.category, 120),
-          clean(req.body.year, 20),
-          file.originalname.slice(0, 255),
-          file.filename,
-          cover?.filename || null,
-          file.size,
-          Number(req.body.pageCount) || 0,
-          req.user?.userId || null,
-        ],
-      },
-    );
-    let pages = [];
-    try {
-      pages = req.body.pages ? JSON.parse(req.body.pages) : [];
-    } catch {
-      pages = [];
-    }
-    if (pages.length) await savePages(id, pages, transaction);
-    const [saved] = await db().query("SELECT * FROM catalogues WHERE id = ?", { replacements: [id], type: QueryTypes.SELECT, transaction });
-    return saved;
+      await db().query(
+        `INSERT INTO catalogues (id, title, brandId, brandName, category, year, fileName, storedName, coverName, sizeBytes, pages, uploadedBy, createdAt, updatedAt)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,NOW(),NOW())`,
+        {
+          transaction,
+          replacements: [
+            id,
+            title,
+            clean(req.body.brandId, 36),
+            brandName,
+            clean(req.body.category, 120),
+            clean(req.body.year, 20),
+            file.originalname.slice(0, 255),
+            file.filename,
+            cover?.filename || null,
+            file.size,
+            Number(req.body.pageCount) || 0,
+            req.user?.userId || null,
+          ],
+        },
+      );
+      let pages = [];
+      try {
+        pages = req.body.pages ? JSON.parse(req.body.pages) : [];
+      } catch {
+        pages = [];
+      }
+      if (pages.length) await savePages(id, pages, transaction);
+      const [saved] = await db().query("SELECT * FROM catalogues WHERE id = ?", { replacements: [id], type: QueryTypes.SELECT, transaction });
+      return saved;
     });
     res.status(201).json({ message: "Catalogue uploaded", catalogue: shape(row) });
   } catch (err) {
