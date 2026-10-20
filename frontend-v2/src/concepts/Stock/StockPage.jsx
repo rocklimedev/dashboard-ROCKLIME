@@ -17,6 +17,7 @@ import {
   Statistic,
   Switch,
   Table,
+  Tabs,
   Tag,
   Typography,
   message,
@@ -226,13 +227,13 @@ function Backorders({ onOpen }) {
 // ---------------------------------------------------------------------------
 // Movements (stock ledger)
 // ---------------------------------------------------------------------------
-function Movements({ onOpen }) {
+function Movements({ onOpen, entriesOnly = false }) {
   const [search, setSearch] = useState("");
   const [movement, setMovement] = useState();
   const [page, setPage] = useState(1);
   const q = useDebounced(search);
   const { data, isFetching } = useGetStockLedgerQuery(
-    { search: q, movement, page, limit: 50 },
+    { search: q, movement, page, limit: 50, ...(entriesOnly ? { refType: "STOCK_ENTRY" } : {}) },
     { refetchOnMountOrArgChange: true },
   );
   return (
@@ -598,11 +599,11 @@ function Godowns({ warehouses, loading }) {
 // ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
-export default function StockPage() {
+export default function StockPage({ initialView = "live" }) {
   const { id: countId } = useParams();
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const tab = countId ? "counts" : params.get("tab") || "live";
+  const tab = countId ? "counts" : params.get("tab") || initialView;
   const [warehouseId, setWarehouseId] = useState();
   const [drawer, setDrawer] = useState(null);
   const { data: whData, isFetching: whLoading } = useGetWarehousesQuery();
@@ -612,11 +613,12 @@ export default function StockPage() {
     live: { title: "Live stock", help: "What is on the shelf, what is promised, what is coming", body: <LiveStock warehouseId={warehouseId} onOpen={setDrawer} initialFilter={params.get("filter") || ""} /> },
     backorders: { title: "Waiting for stock", help: "Order lines that could not be reserved yet; they fill as goods arrive", body: <Backorders onOpen={setDrawer} /> },
     movements: { title: "Stock movements", help: "Every change to stock, with who made it and why", body: <Movements onOpen={setDrawer} /> },
-    counts: { title: "Stock counts", help: "Count a godown and correct the system to match", body: <Counts warehouses={warehouses} /> },
+    entries: { title: "Stock entry & counts", help: "Review manual entries, add stock changes, and open physical count workspaces" },
+    counts: { title: "Stock entry & counts", help: "Review manual entries, add stock changes, and open physical count workspaces" },
     godowns: { title: "Godowns", help: "Where stock is kept", body: <Godowns warehouses={warehouses} loading={whLoading} /> },
   };
   const view = countId
-    ? { title: "Stock count", help: "Count a godown and correct the system to match", body: <CountSheet key={countId} id={countId} onBack={() => navigate("/inventory/list?tab=counts")} /> }
+    ? { title: "Stock count", help: "Count a godown and correct the system to match", body: <CountSheet key={countId} id={countId} onBack={() => navigate("/inventory/stock-workspace?tab=counts")} /> }
     : VIEWS[tab] || VIEWS.live;
 
   return (
@@ -641,14 +643,24 @@ export default function StockPage() {
               />
             )}
             {tab === "live" && can("inventory", "edit") && (
-              <Link to="/operations/stock-entry">
-                <Button icon={<EditOutlined />}>Stock entry</Button>
+              <Link to="/inventory/stock-workspace">
+                <Button icon={<EditOutlined />}>Stock entry & counts</Button>
               </Link>
             )}
           </Space>
         </Space>
         {/* the Operations sidebar is the menu for these views */}
-        <Card>{view.body}</Card>
+        <Card>{!countId && ["entries", "counts"].includes(tab) ? <Tabs
+          activeKey={tab}
+          onChange={key => navigate(`/inventory/stock-workspace?tab=${key}`)}
+          items={[
+            { key: "entries", label: "Stock entries", children: <>
+              {can("inventory", "edit") && <Link to="/operations/stock-entry"><Button type="primary" icon={<EditOutlined />} style={{ marginBottom: 16 }}>New stock entry</Button></Link>}
+              <Movements entriesOnly onOpen={setDrawer} />
+            </> },
+            { key: "counts", label: "Stock counts", children: <Counts warehouses={warehouses} /> },
+          ]}
+        /> : view.body}</Card>
       </div>
       <ProductStockDrawer productId={drawer} open={!!drawer} onClose={() => setDrawer(null)} />
     </div>

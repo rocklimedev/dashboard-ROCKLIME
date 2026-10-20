@@ -43,6 +43,7 @@ export default function QuotationPdfActions({
   resourcePath = null,
   documentLabel = "Quotation",
   allowShare = true,
+  showCoverOption = true,
   version = null,
   // optional: let the page own the options (the details page shows the PDF itself)
   style: styleProp,
@@ -129,9 +130,9 @@ export default function QuotationPdfActions({
         <Tooltip title={STYLE_HELP[style]}>
           <Segmented size="middle" value={style} onChange={setStyle} options={STYLES} />
         </Tooltip>
-        <Checkbox checked={cover} onChange={(e) => setCover(e.target.checked)}>
+        {showCoverOption && <Checkbox checked={cover} onChange={(e) => setCover(e.target.checked)}>
           Cover page
-        </Checkbox>
+        </Checkbox>}
         {showPreview && (
           <Button icon={<EyeOutlined />} loading={busy === "preview"} onClick={() => run("preview")}>
             Preview

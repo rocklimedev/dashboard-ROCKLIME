@@ -1,4 +1,5 @@
 import { lazy } from "react";
+import ZohoConnectionGate from "../../components/CRM/ZohoConnectionGate";
 import {
   FaHome,
   FaTags,
@@ -73,8 +74,8 @@ export const sidebarRoutes = [
     element: <AppsHome />,
   },
   { path: "/orders/from-quotation", name: "Order from quotation", isSidebarActive: false, element: <OrderFromQuotation /> },
-  { path: "/crm", name: "CRM", isSidebarActive: false, element: <CrmBoard /> },
-  { path: "/crm/follow-ups", name: "Follow-ups", isSidebarActive: false, element: <CrmFollowUps /> },
+  { path: "/crm", name: "CRM", isSidebarActive: false, element: <ZohoConnectionGate><CrmBoard /></ZohoConnectionGate> },
+  { path: "/crm/follow-ups", name: "Follow-ups", isSidebarActive: false, element: <ZohoConnectionGate><CrmFollowUps /></ZohoConnectionGate> },
   { path: "/crm/settings", name: "Bigin connection", isSidebarActive: false, element: <CrmSettings /> },
   { path: "/catalogues", name: "Brand catalogues", isSidebarActive: false, element: <Catalogues /> },
   { path: "/catalogues/:id", name: "Catalogue", isSidebarActive: false, element: <CatalogueViewer /> },
@@ -82,6 +83,7 @@ export const sidebarRoutes = [
   // Operations app
   { path: "/operations", name: "Operations", isSidebarActive: false, element: <OpsToday /> },
   { path: "/operations/stock-entry", name: "Stock entry", isSidebarActive: false, element: <StockEntry /> },
+  { path: "/inventory/stock-workspace", name: "Stock entry & counts", isSidebarActive: false, element: <StockPage initialView="entries" /> },
   { path: "/operations/receive", name: "Receive goods", isSidebarActive: false, element: <ReceiveGoods /> },
   { path: "/operations/gate-passes", name: "Gate passes", isSidebarActive: false, element: <GatePasses /> },
   {

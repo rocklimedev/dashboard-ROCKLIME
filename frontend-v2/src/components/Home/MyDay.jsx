@@ -204,15 +204,15 @@ export default function MyDay() {
             )}
             {(data.arriving || data.lowStockNoIncoming != null) && (
               <Col span={24}>
-                <Panel title="Stock" icon={<InboxOutlined />} to="/inventory/reorder">
+                <Panel title="Stock" icon={<InboxOutlined />} to="/inventory/list">
                   {(data.arriving || []).slice(0, 3).map((p) => (
                     <div key={p.id} style={{ padding: "4px 0", cursor: "pointer" }} onClick={() => navigate(`/po/${p.id}`)}>
                       PO {p.poNumber} · {p.vendorName} <Text type="secondary">· arriving {when(p.expectDeliveryDate)}</Text>
                     </div>
                   ))}
                   {data.lowStockNoIncoming > 0 && (
-                    <Button type="link" size="small" style={{ padding: 0 }} onClick={() => navigate("/inventory/reorder")}>
-                      {data.lowStockNoIncoming} low-stock product(s) with nothing on order → reorder
+                    <Button type="link" size="small" style={{ padding: 0 }} onClick={() => navigate("/inventory/list")}>
+                      {data.lowStockNoIncoming} low-stock product(s) with nothing on order → view stock
                     </Button>
                   )}
                   {!(data.arriving || []).length && !data.lowStockNoIncoming && <Text type="secondary">Nothing arriving this week; stock is fine.</Text>}

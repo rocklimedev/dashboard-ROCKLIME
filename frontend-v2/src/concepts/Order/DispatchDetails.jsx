@@ -18,7 +18,9 @@ export default function DispatchDetails() {
  const can = useCan();
  const [deliveryOpen, setDeliveryOpen] = useState(false);
  const { data, isLoading, error } = useGetDispatchDetailsQuery(dispatchId);
- const [style, setStyle] = useState("detailed"), [cover, setCover] = useState(true);
+ const [style, setStyle] = useState("detailed");
+ const cover = false;
+ const setCover = () => {};
  const [exportOptions, setExportOptions] = useState({ hidden: [] });
  const [pages, setPages] = useState([]), [pageOrder, setPageOrder] = useState(null);
  const [exporting, setExporting] = useState(false);
@@ -48,7 +50,7 @@ export default function DispatchDetails() {
     <Space wrap>
      {dispatch.status === "DISPATCHED" && can(dispatch.orderId ? "orders" : "quotations", "edit") && <Button onClick={() => setDeliveryOpen(true)}>Mark delivered</Button>}
      <DocumentExportOptions exportOptions={exportOptions} setExportOptions={value => { setExportOptions(value); resetPages(); }} pages={pages} pageOrder={pageOrder} setPageOrder={setPageOrder} setPdfCover={setCover} documentLabel="dispatch" />
-     <QuotationPdfActions quotationId={dispatchId} resourcePath={resourcePath} documentLabel="Dispatch" style={style} onStyleChange={value => { setStyle(value); resetPages(); }} cover={cover} onCoverChange={value => { setCover(value); resetPages(); }} exportOptions={exportOptions} pageOrder={pageOrder} showPreview={false} />
+     <QuotationPdfActions quotationId={dispatchId} resourcePath={resourcePath} documentLabel="Dispatch" style={style} onStyleChange={value => { setStyle(value); resetPages(); }} cover={cover} showCoverOption={false} exportOptions={exportOptions} pageOrder={pageOrder} showPreview={false} />
      <Button icon={<FileExcelFilled />} loading={exporting} onClick={excel}>Excel</Button>
      <Button icon={<ArrowLeftOutlined />} onClick={() => navigate("/orders/dispatch/all")}>Dispatch history</Button>
     </Space>

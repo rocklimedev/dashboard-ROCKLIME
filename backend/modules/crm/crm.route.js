@@ -71,6 +71,8 @@ router.use(
   ]),
 );
 
+router.use(require("./require-zoho")(() => bigin.status()));
+
 router.get("/meta", wrap(() => crm.meta()));
 router.get("/board", wrap((req) => crm.board({ ...req.query, userId: req.user.userId })));
 router.get("/deals", wrap((req) => crm.list({ ...req.query, userId: req.user.userId })));

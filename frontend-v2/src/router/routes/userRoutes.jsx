@@ -7,8 +7,15 @@ const UserPage = lazy(() => import("../../concepts/User/UserPage"));
 const Profile = lazy(() => import("../../concepts/User/Profile"));
 const Permissions = lazy(() => import("../../concepts/RBAC/Permissions"));
 const GeneralSettings = lazy(() => import("../../concepts/Settings/GeneralSettings"));
+const Connectors = lazy(() => import("../../concepts/Settings/Connectors"));
 
 export const userRoutes = [
+  {
+    path: "/u/:id/connectors",
+    name: "Connectors",
+    isSidebarActive: false,
+    element: <PersonalRoute><Connectors /></PersonalRoute>,
+  },
   {
     path: "/u/:id/settings",
     name: "My Account Settings",

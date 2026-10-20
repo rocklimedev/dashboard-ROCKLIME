@@ -1,7 +1,7 @@
 import { Button, Checkbox, Divider, Dropdown, Typography } from "antd";
 import { SettingOutlined, ArrowUpOutlined, ArrowDownOutlined } from "@ant-design/icons";
 const { Text } = Typography;
-export default function DocumentExportOptions({ exportOptions, setExportOptions, pages, pageOrder, setPageOrder, setPdfCover, documentLabel = "quotation" }) {
+export default function DocumentExportOptions({ exportOptions, setExportOptions, pages, pageOrder, setPageOrder, setPdfCover, documentLabel = "quotation", pdfOnly = false, hasRooms = true }) {
  const resetPages = () => setPageOrder(null);
  const selectedPages = pageOrder ?? pages.map(page => page.id);
  const movePage = (index, direction) => {
@@ -11,10 +11,10 @@ export default function DocumentExportOptions({ exportOptions, setExportOptions,
  };
  return (<Dropdown trigger={["click"]} placement="bottomRight" dropdownRender={() => (
                   <div style={{ background: "white", padding: 16, width: 340, maxHeight: "70vh", overflowY: "auto", borderRadius: 10, boxShadow: "0 8px 24px #0002" }}>
-                    <Text strong>Export fields (PDF & Excel)</Text>
+                    <Text strong>{pdfOnly ? "PDF export fields" : "Export fields (PDF & Excel)"}</Text>
                     <div style={{ marginTop: 8 }}>
                       {[["image", "Image"], ["name", "Product name"], ["code", "Company code"], ["sno", "S.No"], ["qty", "Quantity"], ["mrp", "MRP"], ["price", "Unit price"], ["discount", "Discount"], ["total", "Amount"], ["roomTotals", "Room totals"]].map(([key, label]) => (
-                        <div key={key}><Checkbox checked={!exportOptions.hidden.includes(key)} onChange={e => {
+                        key === "roomTotals" && !hasRooms ? null : <div key={key}><Checkbox checked={!exportOptions.hidden.includes(key)} onChange={e => {
                           const checked = e.target.checked;
                           resetPages();
                           setExportOptions(current => ({ hidden: checked ? current.hidden.filter(k => k !== key) : [...current.hidden, key] }));
@@ -23,7 +23,7 @@ export default function DocumentExportOptions({ exportOptions, setExportOptions,
                     </div>
                     <Divider style={{ margin: "12px 0" }} />
                     <Text strong>PDF pages — include & order</Text>
-                    <div><Text type="secondary">Room pages appear after the preview loads. Excluding pages does not change {documentLabel} totals.</Text></div>
+                    <div><Text type="secondary">{hasRooms ? "Room pages" : "Pages"} appear after the preview loads. Excluding pages does not change {documentLabel} totals.</Text></div>
                     {[...pages].sort((a, b) => {
                       const ai = selectedPages.indexOf(a.id), bi = selectedPages.indexOf(b.id);
                       return (ai < 0 ? pages.length + a.id : ai) - (bi < 0 ? pages.length + b.id : bi);

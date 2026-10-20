@@ -11,7 +11,6 @@ import {
   CalendarOutlined,
   WarningOutlined,
   PhoneOutlined,
-  ApiOutlined,
 } from "@ant-design/icons";
 import { DndContext, DragOverlay, PointerSensor, TouchSensor, useDraggable, useDroppable, useSensor, useSensors } from "@dnd-kit/core";
 import dayjs from "dayjs";
@@ -243,10 +242,6 @@ export default function CrmBoard() {
                 Sync Bigin
               </Button>
             </Tooltip>
-          ) : bigin && can("crm", "view") ? (
-            <Link to="/crm/settings">
-              <Button icon={<ApiOutlined />}>Connect Bigin</Button>
-            </Link>
           ) : null}
           {canEdit || can("crm", "write") ? (
             <Button
