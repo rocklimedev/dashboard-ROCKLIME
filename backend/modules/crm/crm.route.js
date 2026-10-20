@@ -99,13 +99,9 @@ router.get("/customer/:customerId", wrap((req) => crm.forCustomer(req.params.cus
 // ---------------- Bigin
 router.get("/bigin/status", wrap(() => bigin.status()));
 router.get("/bigin/authorize", adminOnly, wrap((req) => {
-  const state = signShare({ t: "bigin", u: req.user.userId }, 1 / 96); // 15 minutes
-  return { url: bigin.authorizeUrl(state, req.query.accountsUrl) };
+  return { url: require("../zoho/zoho.auth").authorize(req.user, req.query.accountsUrl) };
 }));
-router.post("/bigin/token", adminOnly, wrap(async (req) => {
-  await bigin.connectWithRefreshToken(req.body?.refreshToken, req.body?.accountsUrl, req.user.userId);
-  return { ...(await bigin.status()), message: "Zoho Bigin connected" };
-}));
+router.post("/bigin/token", adminOnly, (req, res) => res.status(410).json({ message: "Use Connect Zoho on the Connectors page to authorize all Zoho services together." }));
 router.get("/bigin/pipelines", wrap(() => bigin.pipelineStages()));
 router.post("/bigin/sync", wrap(async (req) => ({ result: await crm.syncWithBigin({ userId: req.user.userId, full: !!req.body?.full }), message: "Synced with Bigin" })));
 router.post("/bigin/push/:id", wrap((req) => crm.pushNow(req.params.id)));

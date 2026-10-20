@@ -80,19 +80,13 @@ export const crmApi = baseApi.injectEndpoints({
       invalidatesTags: ["Crm"],
     }),
     // Bigin
-    getBiginStatus: builder.query({ query: () => `/crm/bigin/status`, providesTags: ["Crm"] }),
-    getBiginPipelines: builder.query({ query: () => `/crm/bigin/pipelines` }),
-    biginAuthorize: builder.mutation({ query: (accountsUrl) => ({ url: `/crm/bigin/authorize${qs({ accountsUrl })}`, method: "GET" }) }),
-    biginToken: builder.mutation({
-      query: (body) => ({ url: `/crm/bigin/token`, method: "POST", body }),
-      invalidatesTags: ["Crm"],
-    }),
+    getBiginStatus: builder.query({ query: () => `/zoho/bigin/status`, providesTags: ["Crm", "Zoho"] }),
+    getBiginPipelines: builder.query({ query: () => `/zoho/bigin/pipelines`, providesTags: ["Zoho"] }),
     biginSync: builder.mutation({
-      query: (body = {}) => ({ url: `/crm/bigin/sync`, method: "POST", body }),
+      query: (body = {}) => ({ url: `/zoho/bigin/sync`, method: "POST", body }),
       invalidatesTags: ["Crm"],
     }),
-    biginPush: builder.mutation({ query: (id) => ({ url: `/crm/bigin/push/${id}`, method: "POST" }), invalidatesTags: ["Crm"] }),
-    biginDisconnect: builder.mutation({ query: () => ({ url: `/crm/bigin`, method: "DELETE" }), invalidatesTags: ["Crm"] }),
+    biginPush: builder.mutation({ query: (id) => ({ url: `/zoho/bigin/push/${id}`, method: "POST" }), invalidatesTags: ["Crm"] }),
   }),
 });
 
@@ -115,9 +109,6 @@ export const {
   useLinkDealQuotationMutation,
   useGetBiginStatusQuery,
   useGetBiginPipelinesQuery,
-  useBiginAuthorizeMutation,
-  useBiginTokenMutation,
   useBiginSyncMutation,
   useBiginPushMutation,
-  useBiginDisconnectMutation,
 } = crmApi;

@@ -40,6 +40,8 @@ export const baseApi = createApi({
   reducerPath: "baseApi",
   baseQuery: baseQueryWithAuthCheck,
   tagTypes: [
+    "Zoho",
+    "Cliq",
     "Crm",
     "Addresses",
     "Auth",

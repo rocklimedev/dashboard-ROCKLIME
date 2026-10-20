@@ -51,6 +51,8 @@ const routes = {
   reports: require("./modules/reports/reports.route"),
   catalogues: require("./modules/catalogues/catalogue.route"),
   crm: require("./modules/crm/crm.route"),
+  cliq: require("./modules/cliq/cliq.route"),
+  zoho: require("./modules/zoho/zoho.route"),
 };
 
 // ------------------- Express App -------------------

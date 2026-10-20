@@ -1,9 +1,8 @@
-// Zoho Bigin client for the CRM app — the same setup as INOS (OAuth with an
-// offline refresh token, Bigin v2 REST API), but one connection for the whole
-// company instead of one per user: an administrator connects once and every
-// salesperson's deals mirror through it.
+// Bigin service adapter. New connections and token refresh are owned by
+// ../zoho/zoho.auth. The administrator's shared Zoho grant is used for company
+// CRM sync, while Cliq uses the same grant only for that user's own chats.
 //
-// Two ways to connect:
+// Legacy connection support (kept for existing installations and old callbacks):
 //   1. "Connect Zoho Bigin" (OAuth): needs ZOHO_CLIENT_ID, ZOHO_CLIENT_SECRET
 //      and ZOHO_REDIRECT_URI (…/api/crm/bigin/callback) in backend/.env, and
 //      that redirect URI added to the client in api-console.zoho.in.
@@ -14,6 +13,7 @@
 // default (ZOHO_ACCOUNTS_URL changes it). The API host comes from Zoho's
 // api_domain in the token response.
 const axios = require("axios");
+const zohoAuth = require("../zoho/zoho.auth");
 const { QueryTypes } = require("sequelize");
 
 const SCOPES = (process.env.ZOHO_BIGIN_SCOPES ||
@@ -47,6 +47,10 @@ function safeAccountsUrl(url) {
 }
 
 async function connection() {
+  // Old installations keep their Bigin connection until the shared grant replaces it.
+  const shared = await zohoAuth.biginConnection().catch(() => null);
+  if (shared) return { ...shared, sharedZoho: true, connectedBy: shared.userId, apiDomain: zohoAuth.biginHost(shared.accountsUrl) };
+  if (await zohoAuth.hasBiginGrant().catch(() => false)) return null;
   try {
     const [row] = await q("SELECT * FROM crm_zoho_connection WHERE `key` = ?", [KEY]);
     if (row) return row;
@@ -161,6 +165,7 @@ async function afterConnect() {
 
 async function disconnect() {
   const c = await connection();
+  if (c?.sharedZoho) throw Object.assign(new Error("Manage the shared Zoho connection from Connectors."), { status: 409 });
   await run("DELETE FROM crm_zoho_connection WHERE `key` = ?", [KEY]);
   if (c?.refreshToken && configured()) {
     axios.post(`${c.accountsUrl}/oauth/v2/token/revoke`, null, { params: { token: c.refreshToken }, timeout: 10000 }).catch(() => {});
@@ -170,6 +175,10 @@ async function disconnect() {
 async function accessToken(force = false) {
   const c = await connection();
   if (!c) throw Object.assign(new Error("Zoho Bigin is not connected"), { status: 400, notConnected: true });
+  if (c.sharedZoho) {
+    const shared = await zohoAuth.access(c.userId, force);
+    return { token: shared.accessToken, apiDomain: zohoAuth.biginHost(shared.accountsUrl) };
+  }
   if (!force && c.accessToken && c.expiresAt && new Date(c.expiresAt).getTime() - 60000 > Date.now()) {
     return { token: c.accessToken, apiDomain: c.apiDomain };
   }
@@ -315,6 +324,11 @@ const safeJson = (s) => {
 };
 
 async function recordSync(result) {
+  const c = await connection();
+  if (c?.sharedZoho) {
+    await run("UPDATE zoho_connections SET lastSyncAt=NOW(), lastSyncResult=? WHERE userId=?", [JSON.stringify(result), c.userId]);
+    return;
+  }
   await run("UPDATE crm_zoho_connection SET lastSyncAt = NOW(), lastSyncResult = ? WHERE `key` = ?", [JSON.stringify(result), KEY]);
 }
 

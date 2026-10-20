@@ -19,6 +19,7 @@ import {
   UserOutlined,
   SettingOutlined,
   SearchOutlined,
+  CommentOutlined,
 } from "@ant-design/icons";
 import SearchOverlay from "./SearchOverlay";
 import Avatar from "react-avatar";
@@ -28,6 +29,7 @@ import PermissionsGate from "../../context/PermissionGate";
 import { useSearchAllQuery } from "../../api/searchApi";
 import NotificationsOverlay from "../Notifications/NotificationsWrapper";
 import AppSwitcher from "./AppSwitcher";
+import CliqDrawer from "../Chat/CliqDrawer";
 import logoImg from "../../assets/img/logo.png";
 import { debounce } from "lodash";
 
@@ -56,6 +58,7 @@ const Header = ({ toggleSidebar, isSidebarOpen, home = false }) => {
   const [showSearchOverlay, setShowSearchOverlay] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
 
   const searchRef = useRef(null);
   const mobileSearchInputRef = useRef(null);
@@ -317,6 +320,7 @@ const Header = ({ toggleSidebar, isSidebarOpen, home = false }) => {
 
           {/* Right: Actions + User */}
           <div className="d-flex align-items-center gap-2 gap-md-3">
+            <Button type="text" aria-label="Open Cliq chat" title="Cliq chat" icon={<CommentOutlined style={{ fontSize: 21 }} />} onClick={() => setChatOpen(true)} />
             {/* Desktop Icons */}
             <div className="d-none d-md-flex align-items-center gap-3">
               <AppSwitcher />
@@ -431,6 +435,7 @@ const Header = ({ toggleSidebar, isSidebarOpen, home = false }) => {
       </header>
 
       {/* Notifications Overlay */}
+      <CliqDrawer key={userId || "anonymous"} userId={userId} open={chatOpen} onClose={() => setChatOpen(false)} />
       <NotificationsOverlay
         isOpen={showNotifications}
         onClose={() => setShowNotifications(false)}
