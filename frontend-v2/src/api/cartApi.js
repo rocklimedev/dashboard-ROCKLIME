@@ -2,6 +2,8 @@ import { baseApi } from "../store/baseApi";
 
 export const cartApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
+    getQuotationWorkspace: builder.query({ query: (documentType = "quotation") => `/carts/workspace?${new URLSearchParams({ documentType })}`, keepUnusedDataFor: 0 }),
+    updateQuotationWorkspace: builder.mutation({ query: body => ({ url: "/carts/workspace", method: "POST", body }) }),
     addToCart: builder.mutation({
       query: (cartData) => ({
         url: "/carts/add",
@@ -160,6 +162,8 @@ export const cartApi = baseApi.injectEndpoints({
 });
 
 export const {
+  useGetQuotationWorkspaceQuery,
+  useUpdateQuotationWorkspaceMutation,
   useAddToCartMutation,
   useAddProductToCartMutation,
   useGetCartQuery,

@@ -168,7 +168,7 @@ const OrderForm = ({
   const [assignmentType, setAssignmentType] = useState(
     orderData?.assignedTeamId ? "team" : "users",
   );
-  const [sourceType, setSourceType] = useState("");
+  const [sourceType, setSourceType] = useState(orderData.sourceType || "");
   const [isCreatingAddress, setIsCreatingAddress] = useState(false);
   const [gst, setGst] = useState(orderData.gst ?? 18);
   const [extraDiscount, setExtraDiscount] = useState(
@@ -594,6 +594,7 @@ const OrderForm = ({
                     value={sourceType}
                     onChange={(v) => {
                       setSourceType(v);
+                      handleOrderChange("sourceType", v);
                       handleOrderChange("source", "");
                     }}
                     allowClear

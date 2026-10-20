@@ -1,12 +1,7 @@
 // src/pages/quotations/NewOrder.jsx
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { message, Button, Modal, Descriptions, Space } from "antd";
-import {
-  DeleteOutlined,
-  SaveOutlined,
-  InfoCircleOutlined,
-} from "@ant-design/icons";
+import { message } from "antd";
 import moment from "moment";
 
 import CartLayout from "./CartLayout";
@@ -23,10 +18,11 @@ import { useGetAllUsersQuery } from "../../api/userApi";
 import { useGetProfileQuery } from "../../api/userApi";
 
 import { useAuth } from "../../context/AuthContext";
-import useAutoSave from "../../utils/useAutoSave";
+import CartWorkspace from "./CartWorkspace";
 import AddCustomerModal from "../../components/Customers/AddCustomerModal";
 import CreditAlert from "../../components/Customers/CreditAlert";
-const NewOrder = () => {
+const NewOrder = ({ workspace, active, onAction, busy }) => {
+  const initial = active.snapshot?.parent || {};
   const navigate = useNavigate();
   const { auth } = useAuth();
 
@@ -49,18 +45,17 @@ const NewOrder = () => {
     shipTo: null,
     extraDiscount: 0,
     extraDiscountType: "fixed",
+    ...initial.orderData,
   });
 
-  const [selectedCustomer, setSelectedCustomer] = useState("");
-  const [useBillingAddress, setUseBillingAddress] = useState(false);
-  const [billingAddressId, setBillingAddressId] = useState(null);
+  const [selectedCustomer, setSelectedCustomer] = useState(initial.selectedCustomer || "");
+  const [useBillingAddress, setUseBillingAddress] = useState(initial.useBillingAddress || false);
+  const [billingAddressId, setBillingAddressId] = useState(initial.billingAddressId || null);
 
   // ==================== ADD CUSTOMER MODAL STATE ====================
   const [addCustomerModalVisible, setAddCustomerModalVisible] = useState(false);
 
   // ==================== DRAFT CHECKER STATE ====================
-  const [showDraftModal, setShowDraftModal] = useState(false);
-  const [currentDraft, setCurrentDraft] = useState(null);
 
   // ==================== QUERIES ====================
   const { data: profileData } = useGetProfileQuery();
@@ -87,60 +82,7 @@ const NewOrder = () => {
     }
   }, [userId]);
 
-  // ==================== AUTOSAVE SETUP ====================
-  const draftKey = `draft_order_${auth?.user?.userId || "guest"}`;
-
-  const draftData = useMemo(
-    () => ({
-      orderData,
-      selectedCustomer,
-      useBillingAddress,
-      billingAddressId,
-      lastSaved: new Date().toISOString(),
-    }),
-    [orderData, selectedCustomer, useBillingAddress, billingAddressId],
-  );
-
-  const { loadDraft, clearDraft } = useAutoSave(draftKey, draftData, 2500);
-
-  // Load draft on component mount
-  useEffect(() => {
-    const savedDraft = loadDraft();
-    if (savedDraft) {
-      if (savedDraft.orderData) {
-        setOrderData((prev) => ({ ...prev, ...savedDraft.orderData }));
-      }
-      if (savedDraft.selectedCustomer) {
-        setSelectedCustomer(savedDraft.selectedCustomer);
-      }
-      if (savedDraft.useBillingAddress !== undefined) {
-        setUseBillingAddress(savedDraft.useBillingAddress);
-      }
-      if (savedDraft.billingAddressId) {
-        setBillingAddressId(savedDraft.billingAddressId);
-      }
-
-      message.info("Previous Order draft has been restored", 2);
-    }
-  }, [loadDraft]);
-
-  // ==================== DRAFT CHECKER FUNCTIONS ====================
-  const checkCurrentDraft = () => {
-    const saved = loadDraft();
-    if (saved) {
-      setCurrentDraft(saved);
-      setShowDraftModal(true);
-    } else {
-      message.info("No saved draft found.");
-    }
-  };
-
-  const handleDeleteDraft = () => {
-    clearDraft();
-    setShowDraftModal(false);
-    setCurrentDraft(null);
-    message.success("Draft has been deleted successfully");
-  };
+  const draftData = useMemo(() => ({ orderData, selectedCustomer, useBillingAddress, billingAddressId }), [orderData, selectedCustomer, useBillingAddress, billingAddressId]);
 
   // ==================== CREATE ORDER ====================
   const handleCreateOrder = async (layoutProps = {}) => {
@@ -151,7 +93,6 @@ const NewOrder = () => {
       itemDiscounts = {},
       itemDiscountTypes = {},
       itemTaxes = {},
-      handleClearCart,
     } = layoutProps;
 
     if (!selectedCustomer) return message.error("Please select a customer.");
@@ -264,8 +205,8 @@ const NewOrder = () => {
       message.success(`Order #${result.orderNo || ""} created successfully!`);
 
       // Clear draft and cart on success
-      clearDraft();
-      if (typeof handleClearCart === "function") handleClearCart();
+      try { await onAction("complete", undefined, workspace.activeId); }
+      catch { message.warning("Order created, but its cart could not be removed. Refresh before reusing this draft."); }
 
       navigate("/orders/list");
     } catch (err) {
@@ -275,20 +216,10 @@ const NewOrder = () => {
 
   return (
     <>
-      <CartLayout>
+      <fieldset disabled={busy} style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}>
+      <CartLayout draftWorkspace={{ workspace, active, onAction, busy, parent: draftData, customers }}>
         {(layoutProps) => (
           <>
-            {/* Manage Draft Button */}
-            <div style={{ marginBottom: 16, textAlign: "right" }}>
-              <Button
-                icon={<InfoCircleOutlined />}
-                onClick={checkCurrentDraft}
-                type="default"
-              >
-                Manage Draft
-              </Button>
-            </div>
-
             <CreditAlert
               customerId={selectedCustomer}
               amount={layoutProps.totalAmount}
@@ -323,62 +254,7 @@ const NewOrder = () => {
           </>
         )}
       </CartLayout>
-
-      {/* Draft Info Modal */}
-      <Modal
-        title={
-          <Space>
-            <SaveOutlined />
-            Sales Order Draft Information
-          </Space>
-        }
-        open={showDraftModal}
-        onCancel={() => setShowDraftModal(false)}
-        footer={[
-          <Button key="close" onClick={() => setShowDraftModal(false)}>
-            Close
-          </Button>,
-          <Button
-            key="delete"
-            danger
-            icon={<DeleteOutlined />}
-            onClick={handleDeleteDraft}
-          >
-            Delete Draft
-          </Button>,
-        ]}
-      >
-        {currentDraft ? (
-          <Descriptions column={1} bordered>
-            <Descriptions.Item label="Customer">
-              {customers.find(
-                (c) => c.customerId === currentDraft.selectedCustomer,
-              )?.name || "Not selected"}
-            </Descriptions.Item>
-            <Descriptions.Item label="Due Date">
-              {currentDraft.orderData?.dueDate || "-"}
-            </Descriptions.Item>
-            <Descriptions.Item label="Priority">
-              {currentDraft.orderData?.priority || "medium"}
-            </Descriptions.Item>
-            <Descriptions.Item label="Status">
-              {currentDraft.orderData?.status || "PREPARING"}
-            </Descriptions.Item>
-            <Descriptions.Item label="Last Saved">
-              {currentDraft.lastSaved
-                ? moment(currentDraft.lastSaved).fromNow()
-                : "-"}
-            </Descriptions.Item>
-            <Descriptions.Item label="Status">
-              <span style={{ color: "#52c41a" }}>
-                ✓ Draft Saved Automatically
-              </span>
-            </Descriptions.Item>
-          </Descriptions>
-        ) : (
-          <p>No draft data available.</p>
-        )}
-      </Modal>
+      </fieldset>
 
       {/* Add Customer Modal */}
       <AddCustomerModal
@@ -389,4 +265,6 @@ const NewOrder = () => {
   );
 };
 
-export default NewOrder;
+export default function MultipleOrderCarts() {
+  return <CartWorkspace documentType="order">{props => <NewOrder key={props.workspace.activeId} {...props} />}</CartWorkspace>;
+}

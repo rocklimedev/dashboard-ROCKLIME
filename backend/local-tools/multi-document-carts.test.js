@@ -1,0 +1,44 @@
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const { initialWorkspace, transition } = require("../modules/cart/quotation-workspace");
+const snapshot = (parent, product) => ({ parent, layout: { localCartItems: [{ productId: product, quantity: 2 }], shipping: 75, gst: 18, itemDiscounts: { [product]: 10 } } });
+
+test("quotation, order and purchase order drafts retain independent products and form details", () => {
+  const quote = snapshot({ selectedCustomer: "customer-A", quotationData: { floors: [{ floorId: "first" }] } }, "tap");
+  const order = snapshot({ selectedCustomer: "customer-B", orderData: { dueDate: "2026-11-01", assignedUserId: "sales", extraDiscount: 15 } }, "sink");
+  const po = snapshot({ selectedVendor: "vendor-C", purchaseOrderData: { freight: 90, paymentTerms: "Net 30", items: [{ productId: "pipe", unitPrice: 120 }] } }, "pipe");
+  let state = initialWorkspace();
+  const quoteId = state.activeId;
+  let result = transition(state, { action: "document", documentType: "order", snapshot: quote });
+  state = result.workspace;
+  const orderId = state.activeId;
+  assert.deepEqual(result.items, []);
+  assert.equal(state.drafts.find(d => d.id === orderId).documentType, "order");
+  result = transition(state, { action: "document", documentType: "purchase-order", snapshot: order });
+  state = result.workspace;
+  const poId = state.activeId;
+  result = transition(state, { action: "document", documentType: "quotation", snapshot: po });
+  assert.equal(result.workspace.activeId, quoteId);
+  assert.deepEqual(result.items, quote.layout.localCartItems);
+  result = transition(result.workspace, { action: "document", documentType: "order", snapshot: quote });
+  assert.equal(result.workspace.activeId, orderId);
+  assert.deepEqual(result.workspace.drafts.find(d => d.id === orderId).snapshot, order);
+  result = transition(result.workspace, { action: "switch", targetId: poId, snapshot: order });
+  assert.deepEqual(result.workspace.drafts.find(d => d.id === poId).snapshot, po);
+  const complete = transition(result.workspace, { action: "complete" });
+  assert.equal(complete.workspace.drafts.find(d => d.id === complete.workspace.activeId).documentType, "purchase-order");
+  assert.deepEqual(complete.workspace.drafts.find(d => d.id === quoteId).snapshot, quote);
+  assert.deepEqual(complete.workspace.drafts.find(d => d.id === orderId).snapshot, order);
+});
+test("document tabs resume their last selected draft and older quotation carts are preserved", () => {
+  let state = initialWorkspace("order");
+  state = transition(state, { action: "new", snapshot: snapshot({ orderData: {} }, "tap") }).workspace;
+  const selectedOrder = state.activeId;
+  state = transition(state, { action: "document", documentType: "quotation" }).workspace;
+  assert.equal(transition(state, { action: "document", documentType: "order" }).workspace.activeId, selectedOrder);
+  const legacy = initialWorkspace();
+  delete legacy.drafts[0].documentType;
+  const migrated = transition(legacy, { action: "document", documentType: "purchase-order" });
+  assert.equal(migrated.workspace.drafts[0].documentType, "quotation");
+  assert.throws(() => transition(legacy, { action: "document", documentType: "invalid" }), /Invalid document/);
+});
