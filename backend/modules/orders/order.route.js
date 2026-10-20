@@ -184,6 +184,7 @@ router.get("/recent", orderController.recentOrders);
 router.get("/filter", orderController.getFilteredOrders);
 
 router.get("/count", orderController.countOrders);
+router.get("/:id/pdf", require("./order-document").pdf);
 
 // ============================================================
 // ORDER STATUS
@@ -245,7 +246,7 @@ router.get("/:id/download-invoice", orderController.downloadInvoice);
 router.get("/:orderId/download", orderController.getDownloadDocument);
 
 // Order summary/download
-router.get("/:id/download-order", orderController.downloadOrder);
+router.get("/:id/download-order", require("./order-document").pdf);
 
 // ============================================================
 // DISPATCH

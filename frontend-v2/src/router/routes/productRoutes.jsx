@@ -12,11 +12,9 @@ const ProductInventoryPage = lazy(() => import("../../concepts/Products/ProductI
 const ProductReferencesPage = lazy(() => import("../../concepts/Products/ProductReferencesPage"));
 const OnboardNewBrandWorkspace = lazy(() => import("../../concepts/Products/OnboardNewBrandWorkspace"));
 const InventoryWrapper = lazy(() => import("../../concepts/Products/InventoryWrapper"));
-const ReorderPage = lazy(() => import("../../concepts/Inventory/ReorderPage"));
 
 export const productRoutes = [
   { path: "/inventory/products", name: "Product Tools", isSidebarActive: false, element: <InventoryWrapper /> },
-  { path: "/inventory/reorder", name: "Reorder", isSidebarActive: false, element: <ReorderPage /> },
   { path: "/inventory/onboard-new-brand", name: "Onboard New Brand Workspace", isSidebarActive: false, element: <OnboardNewBrandWorkspace /> },
   {
     path: "/inventory/:productId/references",

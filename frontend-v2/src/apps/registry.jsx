@@ -13,17 +13,16 @@
 //   items     the app's menu; `section` starts a group, and an item may narrow
 //             access with its own module/action
 import {
-  FaFileInvoice,
-  FaClipboardList,
-  FaWarehouse,
-  FaShoppingCart,
-  FaUsers,
-  FaThLarge,
-  FaRupeeSign,
-  FaChartBar,
-  FaCog,
-  FaHandshake,
-} from "react-icons/fa";
+  PiFileTextDuotone,
+  PiClipboardTextDuotone,
+  PiWarehouseDuotone,
+  PiShoppingCartDuotone,
+  PiSquaresFourDuotone,
+  PiCurrencyInrDuotone,
+  PiChartBarDuotone,
+  PiShieldCheckDuotone,
+  PiUsersThreeDuotone,
+} from "react-icons/pi";
 import {
   AppstoreOutlined,
   UnorderedListOutlined,
@@ -38,8 +37,6 @@ import {
   EditOutlined,
   HourglassOutlined,
   SwapOutlined,
-  AuditOutlined,
-  ReloadOutlined,
   HomeOutlined,
   ShoppingOutlined,
   FileSearchOutlined,
@@ -60,7 +57,6 @@ import {
   SafetyOutlined,
   BookOutlined,
   ProjectOutlined,
-  ApiOutlined,
   CheckSquareOutlined,
 } from "@ant-design/icons";
 
@@ -72,7 +68,7 @@ export const APPS = [
     name: "CRM",
     description: "Enquiries, follow-ups and the sales pipeline, synced with Zoho Bigin",
     color: "#722ed1",
-    icon: <FaHandshake />,
+    icon: <PiUsersThreeDuotone />,
     module: "crm",
     home: "/crm",
     match: ["/crm"],
@@ -82,7 +78,6 @@ export const APPS = [
       { label: "All deals", to: "/crm?view=list", icon: <UnorderedListOutlined /> },
       { label: "Follow-ups", to: "/crm/follow-ups", icon: <CheckSquareOutlined /> },
       { label: "New deal", to: "/crm?new=1", action: "write", icon: <PlusCircleOutlined /> },
-      { section: "Setup", label: "Bigin connection", to: "/crm/settings", icon: <ApiOutlined /> },
     ],
   },
   {
@@ -90,7 +85,7 @@ export const APPS = [
     name: "Quotations",
     description: "Price, share and follow up quotations",
     color: "#d4380d",
-    icon: <FaFileInvoice />,
+    icon: <PiFileTextDuotone />,
     module: "quotations",
     home: "/quotations/list",
     match: ["/quotations", "/quotation/", "/cart/quotation"],
@@ -106,7 +101,7 @@ export const APPS = [
     name: "Orders",
     description: "Confirm orders, reserve stock, track every order",
     color: "#c41d7f",
-    icon: <FaClipboardList />,
+    icon: <PiClipboardTextDuotone />,
     module: "orders",
     home: "/orders/list",
     match: ["/orders/list", "/orders/from-quotation", "/order/", "/cart/order"],
@@ -114,6 +109,8 @@ export const APPS = [
     items: [
       { label: "All orders", to: "/orders/list", icon: <UnorderedListOutlined /> },
       { label: "Late orders", to: "/orders/list?tab=LATE", icon: <ClockCircleOutlined /> },
+      { label: "To dispatch", to: "/orders/list?tab=TODISPATCH", icon: <CarOutlined /> },
+      { label: "Out for delivery", to: "/orders/list?tab=TRANSIT", icon: <FieldTimeOutlined /> },
       { label: "Order from quotation", to: "/orders/from-quotation", action: "write", icon: <FileDoneOutlined /> },
       { label: "New order (blank)", to: "/cart/order", action: "write", icon: <PlusCircleOutlined /> },
     ],
@@ -121,27 +118,26 @@ export const APPS = [
   {
     key: "operations",
     name: "Operations",
-    description: "Godown: dispatch, receive goods, live stock",
+    description: "Dispatch, receiving, live stock, product tools and imports",
     color: "#08979c",
-    icon: <FaWarehouse />,
+    icon: <PiWarehouseDuotone />,
     module: "inventory",
     home: "/operations",
-    match: ["/operations", "/inventory/list", "/inventory/counts/", "/inventory/reorder", "/orders/dispatch", "/dispatch/", "/disptach"],
+    match: ["/operations", "/inventory/", "/bulk-import", "/jobs/", "/job/", "/orders/dispatch", "/dispatch/", "/disptach"],
     shared: ["/order/", "/orders/list", "/product/", "/po/", "/disptach"],
     items: [
       { label: "Today", to: "/operations", icon: <HomeOutlined /> },
-      { section: "Dispatch", label: "To dispatch", to: "/orders/list?tab=TODISPATCH", module: "orders", icon: <CarOutlined /> },
-      { label: "Out for delivery", to: "/orders/list?tab=TRANSIT", module: "orders", icon: <FieldTimeOutlined /> },
-      { label: "Gate passes", to: "/operations/gate-passes", module: "orders", icon: <IdcardOutlined /> },
+      { section: "Dispatch", label: "Gate passes", to: "/operations/gate-passes", module: "orders", icon: <IdcardOutlined /> },
       { label: "Dispatch history", to: "/orders/dispatch/all", module: "orders", icon: <HistoryOutlined /> },
       { section: "Stock", label: "Live stock", to: "/inventory/list", icon: <DatabaseOutlined /> },
       { label: "Receive goods", to: "/operations/receive", module: "purchase_orders", icon: <InboxOutlined /> },
-      { label: "Stock entry", to: "/operations/stock-entry", action: "edit", icon: <EditOutlined /> },
+      { label: "Stock entry & counts", to: "/inventory/stock-workspace", icon: <EditOutlined /> },
       { label: "Waiting for stock", to: "/inventory/list?tab=backorders", icon: <HourglassOutlined /> },
       { label: "Movements", to: "/inventory/list?tab=movements", icon: <SwapOutlined /> },
-      { section: "Planning", label: "Stock counts", to: "/inventory/list?tab=counts", icon: <AuditOutlined /> },
-      { label: "Reorder", to: "/inventory/reorder", icon: <ReloadOutlined /> },
       { label: "Godowns", to: "/inventory/list?tab=godowns", icon: <BankOutlined /> },
+      { section: "Product tools & imports", label: "Product tools", to: "/inventory/products", module: "products", action: "edit", icon: <ToolOutlined /> },
+      { label: "Bulk import", to: "/inventory/import", module: "products", action: "write", icon: <ImportOutlined /> },
+      { label: "Import jobs", to: "/jobs/list", module: "jobs", icon: <HistoryOutlined /> },
     ],
   },
   {
@@ -149,7 +145,7 @@ export const APPS = [
     name: "Purchase",
     description: "Vendor quotes and purchase orders",
     color: "#d48806",
-    icon: <FaShoppingCart />,
+    icon: <PiShoppingCartDuotone />,
     module: "purchase_orders",
     home: "/purchase-manager",
     match: ["/purchase-manager", "/po/", "/fgs/", "/cart/purchase-order"],
@@ -157,41 +153,23 @@ export const APPS = [
       { label: "Purchase orders", to: "/purchase-manager", icon: <ShoppingOutlined /> },
       { label: "New purchase order", to: "/cart/purchase-order", action: "write", icon: <PlusCircleOutlined /> },
       { label: "Vendor quote (FGS)", to: "/fgs/add", module: "field_guided_sheets", action: "write", icon: <FileSearchOutlined /> },
-      { label: "Reorder suggestions", to: "/inventory/reorder", module: "inventory", icon: <ReloadOutlined /> },
-    ],
-  },
-  {
-    key: "customers",
-    name: "Customers",
-    description: "Customers, credit, referrals and history",
-    color: "#389e0d",
-    icon: <FaUsers />,
-    module: "customers",
-    home: "/customers/list",
-    match: ["/customers", "/customer/"],
-    items: [
-      { label: "All customers", to: "/customers/list", icon: <TeamOutlined /> },
-      { label: "Add customer", to: "/customer/add", action: "write", icon: <UserAddOutlined /> },
     ],
   },
   {
     key: "catalogue",
     name: "Catalogue",
-    description: "Products, brands, categories and imports",
+    description: "Products, brands and categories",
     color: "#531dab",
-    icon: <FaThLarge />,
+    icon: <PiSquaresFourDuotone />,
     module: "products",
     home: "/category-selector",
-    match: ["/catalogues", "/category-selector", "/store/", "/meta/", "/categories-keywords", "/bulk-import", "/inventory/import", "/inventory/products", "/jobs/", "/job/", "/inventory/onboard", "/product/"],
+    match: ["/catalogues", "/category-selector", "/store/", "/meta/", "/categories-keywords", "/product/"],
     items: [
       { label: "Products", to: "/category-selector", icon: <AppstoreOutlined /> },
       { label: "Brand catalogues", to: "/catalogues", icon: <BookOutlined /> },
       { label: "Add product", to: "/product/add", action: "write", icon: <PlusCircleOutlined /> },
       { label: "Brands, groups & vendors", to: "/meta/list", module: "brands", icon: <TagsOutlined /> },
       { label: "Categories & keywords", to: "/categories-keywords/list", module: "categories", icon: <ApartmentOutlined /> },
-      { label: "Product tools", to: "/inventory/products", action: "edit", icon: <ToolOutlined /> },
-      { label: "Bulk import", to: "/inventory/import", action: "write", icon: <ImportOutlined /> },
-      { label: "Import jobs", to: "/jobs/list", module: "jobs", icon: <HistoryOutlined /> },
     ],
   },
   {
@@ -199,7 +177,7 @@ export const APPS = [
     name: "Accounts",
     description: "GST invoices, payments and money due",
     color: "#0958d9",
-    icon: <FaRupeeSign />,
+    icon: <PiCurrencyInrDuotone />,
     module: "orders",
     action: "edit",
     home: "/accounts",
@@ -214,31 +192,33 @@ export const APPS = [
   {
     key: "reports",
     name: "Reports",
-    description: "Sales dashboard, reports and activity",
+    description: "Sales dashboard and reports",
     color: "#7cb305",
-    icon: <FaChartBar />,
+    icon: <PiChartBarDuotone />,
     home: "/reports/list",
-    match: ["/reports", "/activity-logs", "/dashboard", "/my-day"],
+    match: ["/reports", "/dashboard", "/my-day"],
     items: [
       { label: "My day", to: "/my-day", icon: <FieldTimeOutlined /> },
       { label: "Sales dashboard", to: "/dashboard", module: "orders", icon: <DashboardOutlined /> },
       { label: "Reports", to: "/reports/list", icon: <BarChartOutlined /> },
       { label: "Printable reports", to: "/reports/pdf", icon: <FilePdfOutlined /> },
-      { label: "Activity log", to: "/activity-logs", module: "activity", icon: <HistoryOutlined /> },
     ],
   },
   {
     key: "settings",
-    name: "Settings",
-    description: "Users, roles, company and document formats",
+    name: "Admin Console",
+    description: "Customers, users, roles, activity logs, company and document formats",
     color: "#434343",
-    icon: <FaCog />,
+    icon: <PiShieldCheckDuotone />,
     home: "/settings/company",
-    match: ["/settings", "/users/", "/user/", "/roles-permission"],
+    match: ["/settings", "/users/", "/user/", "/roles-permission", "/customers", "/customer/", "/activity-logs"],
     items: [
       { label: "Company & documents", to: "/settings/company", adminOnly: true, icon: <BankOutlined /> },
-      { label: "Users", to: "/users/list", module: "users", icon: <TeamOutlined /> },
+      { section: "Customers", label: "All customers", to: "/customers/list", module: "customers", icon: <TeamOutlined /> },
+      { label: "Add customer", to: "/customer/add", module: "customers", action: "write", icon: <UserAddOutlined /> },
+      { section: "Administration", label: "Users", to: "/users/list", module: "users", icon: <TeamOutlined /> },
       { label: "Roles & permissions", to: "/roles-permission/list", module: "roles", icon: <SafetyOutlined /> },
+      { label: "Activity logs", to: "/activity-logs", module: "activity", icon: <HistoryOutlined /> },
       { label: "Maintenance tools", to: "/settings/maintenance", adminOnly: true, icon: <ToolOutlined /> },
     ],
   },
@@ -252,10 +232,15 @@ export function visibleApps(can, roles = []) {
   const admin = roles.some((r) => ADMIN_ROLES.includes(r));
   const allowed = (x) =>
     (!x.adminOnly || admin) && (!x.module || can(x.module, x.action || "view"));
-  return APPS.map((app) => ({
-    ...app,
-    items: app.items.filter((i) => allowed({ ...i, module: i.module || app.module, action: i.action })),
-  })).filter((app) => app.items.length && (!app.adminOnly || admin) && (!app.module || can(app.module, "view")));
+  return APPS.map((app) => {
+    const items = app.items.filter((i) => allowed({ ...i, module: i.module || app.module, action: i.action }));
+    return {
+      ...app,
+      // Customer-only users enter the console at an accessible customer page.
+      home: app.key === "settings" && !items.some(item => item.to === app.home) ? items[0]?.to : app.home,
+      items,
+    };
+  }).filter((app) => app.items.length && (!app.adminOnly || admin) && (!app.module || can(app.module, "view")));
 }
 
 const longest = (apps, pathname, key) => {

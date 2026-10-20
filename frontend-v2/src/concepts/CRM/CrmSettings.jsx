@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Navigate, useSearchParams } from "react-router-dom";
 import { Alert, message, Button, Card, Col, Descriptions, Input, Modal, Row, Select, Space, Switch, Tag, Typography } from "antd";
 import { ApiOutlined, CheckCircleFilled, CloudSyncOutlined, DisconnectOutlined, KeyOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
@@ -14,6 +14,8 @@ import {
 } from "../../api/crmApi";
 import { useGetSettingsQuery, useSaveSettingMutation } from "../../api/settingsApi";
 import { useRoles } from "../../utils/useCan";
+import { useGetProfileQuery } from "../../api/userApi";
+import ZohoIcon from "../../components/Common/ZohoIcon";
 import "./crm.css";
 
 const { Title, Text, Paragraph } = Typography;
@@ -25,8 +27,17 @@ const DCS = [
   { value: "https://accounts.zoho.com.au", label: "Australia" },
 ];
 
-/** CRM → Bigin connection: connect Zoho Bigin once for the company, map stages, sync. */
-export default function CrmSettings() {
+/** Personal Connectors page → Zoho; service configuration lives in Manage. */
+export default function CrmSettings({ embedded = false }) {
+  const { data: profile, isLoading, error } = useGetProfileQuery(undefined, { skip: embedded });
+  const [params] = useSearchParams();
+  if (embedded) return <ZohoConnector />;
+  if (isLoading) return <div className="page-wrapper">Loading account settings…</div>;
+  if (error || !profile?.user?.userId) return <Alert type="error" message="Could not load account settings" />;
+  return <Navigate replace to={`/u/${profile.user.userId}/connectors${params.size ? `?${params}` : ""}`} />;
+}
+
+function ZohoConnector() {
   const [params, setParams] = useSearchParams();
   const roles = useRoles();
   const isAdmin = roles.some((r) => ADMIN.includes(r));
@@ -41,6 +52,7 @@ export default function CrmSettings() {
   const [disconnect] = useBiginDisconnectMutation();
   const [dc, setDc] = useState("https://accounts.zoho.in");
   const [tokenOpen, setTokenOpen] = useState(false);
+  const [manageOpen, setManageOpen] = useState(false);
   const [refreshToken, setRefreshToken] = useState("");
   const crm = settings?.data?.crm;
   const [draft, setDraft] = useState(null);
@@ -52,7 +64,10 @@ export default function CrmSettings() {
     if (!r) return;
     if (r === "connected") message.success("Zoho Bigin connected");
     else message.error(params.get("message") || "Could not connect Zoho Bigin");
-    setParams({}, { replace: true });
+    const next = new URLSearchParams(params);
+    next.delete("bigin");
+    next.delete("message");
+    setParams(next, { replace: true });
     refetch();
   }, [params, setParams, message, refetch]);
 
@@ -84,20 +99,26 @@ export default function CrmSettings() {
   const r = st?.lastSyncResult;
 
   return (
-    <div className="page-wrapper crm-page" style={{ maxWidth: 980 }}>
-      <div className="crm-head">
-        <div>
-          <Title level={3} style={{ margin: 0 }}>
-            Zoho Bigin connection
-          </Title>
-          <Text type="secondary">The CRM runs in CM ERP; Bigin gets a copy of every deal and its changes come back here.</Text>
-        </div>
-      </div>
+    <div>
+      <Card>
+        <Space wrap style={{ width: "100%", justifyContent: "space-between" }}>
+          <Space size={16}>
+            <ZohoIcon />
+            <div>
+              <Title level={5} style={{ margin: 0 }}>ZOHO</Title>
+              <Text type="secondary">Manage Zoho services, connections and configuration.</Text>
+            </div>
+          </Space>
+          <Button onClick={() => setManageOpen(true)}>Manage</Button>
+        </Space>
+      </Card>
 
-      <Card className="crm-bigin-card">
+      <Modal title="Manage Zoho" open={manageOpen} width={850} footer={null} onCancel={() => setManageOpen(false)}>
+
+      <Card title="Bigin" className="crm-bigin-card">
         <div className="crm-bigin">
-          <div className={`crm-bigin__logo ${st?.connected ? "is-on" : ""}`}>
-            <ApiOutlined />
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <ZohoIcon />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             {st?.connected ? (
@@ -242,6 +263,8 @@ export default function CrmSettings() {
           </div>
         </Card>
       )}
+      {draft && isAdmin && <Button type="primary" loading={saving} onClick={save} style={{ marginTop: 16 }}>Save configuration</Button>}
+      </Modal>
 
       <Modal
         open={tokenOpen}

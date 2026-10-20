@@ -29,10 +29,6 @@ export const stockApi = baseApi.injectEndpoints({
       query: (body) => ({ url: `/stock/ops/entry`, method: "POST", body }),
       invalidatesTags: ["Stock", "ProductInventory", "Orders"],
     }),
-    getReorderSuggestions: builder.query({
-      query: () => `/stock/reorder`,
-      providesTags: ["ProductInventory", "PurchaseOrders"],
-    }),
     getStockOverview: builder.query({
       query: (params) => `/stock/overview${qs(params)}`,
       providesTags: ["Stock"],
@@ -118,7 +114,6 @@ export const {
   useGetReceivablePosQuery,
   useGetGatePassesQuery,
   useStockEntryMutation,
-  useGetReorderSuggestionsQuery,
   useGetStockOverviewQuery,
   useGetStockAvailabilityQuery,
   useGetProductStockQuery,

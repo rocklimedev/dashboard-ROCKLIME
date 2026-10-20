@@ -4,7 +4,6 @@ import {
   CarOutlined,
   InboxOutlined,
   EditOutlined,
-  AuditOutlined,
   ReloadOutlined,
   WarningOutlined,
   FieldTimeOutlined,
@@ -71,19 +70,14 @@ export default function OpsToday() {
             <Text type="secondary">{dayjs().format("dddd, D MMMM")}</Text>
           </div>
           <Space wrap>
-            {can("inventory", "edit") && (
-              <Button type="primary" icon={<EditOutlined />} onClick={() => navigate("/operations/stock-entry")}>
-                Stock entry
-              </Button>
-            )}
+            <Button type="primary" icon={<EditOutlined />} onClick={() => navigate("/inventory/stock-workspace")}>
+              Stock entry & counts
+            </Button>
             {can("purchase_orders", "view") && (
               <Button icon={<InboxOutlined />} onClick={() => navigate("/operations/receive")}>
                 Receive goods
               </Button>
             )}
-            <Button icon={<AuditOutlined />} onClick={() => navigate("/inventory/list?tab=counts")}>
-              Stock count
-            </Button>
           </Space>
         </div>
 
@@ -96,7 +90,7 @@ export default function OpsToday() {
               <Stat label="Late" value={c.late} tone={c.late ? "danger" : null} to="/orders/list?tab=LATE" />
               <Stat label="On the road" value={c.onRoad} to="/orders/list?tab=TRANSIT" />
               <Stat label="To receive" value={c.toReceive} to="/operations/receive" />
-              <Stat label="Low stock" value={c.lowStock} tone={c.lowStock ? "warn" : null} to="/inventory/reorder" />
+              <Stat label="Low stock" value={c.lowStock} tone={c.lowStock ? "warn" : null} to="/inventory/list" />
               <Stat label="Damaged" value={c.damagedPieces} hint={c.damagedProducts ? `${c.damagedProducts} products` : null} to="/inventory/list?filter=damaged" />
             </div>
 

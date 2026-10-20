@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { ChevronsLeft } from "react-feather";
-import { ArrowLeftOutlined, UserOutlined, SettingOutlined } from "@ant-design/icons";
+import { ArrowLeftOutlined, UserOutlined, SettingOutlined, ApiOutlined } from "@ant-design/icons";
 import { useAuth } from "../../context/AuthContext";
 import logo from "../../assets/img/logo.png";
 import logo_small from "../../assets/img/fav_icon.png";
@@ -36,6 +36,7 @@ export default function AppSidebar({ isSidebarOpen, toggleSidebar }) {
     items: userId ? [
       { label: "My profile", to: `/u/${userId}`, icon: <UserOutlined /> },
       { label: "Account settings", to: `/u/${userId}/settings`, icon: <SettingOutlined /> },
+      { label: "Connectors", to: `/u/${userId}/connectors`, icon: <ApiOutlined /> },
     ] : [],
   } : appForPath(location.pathname, apps, location.search, readLast());
 

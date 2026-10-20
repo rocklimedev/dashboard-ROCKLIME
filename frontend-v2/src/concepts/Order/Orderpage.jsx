@@ -16,6 +16,7 @@ import {
   useGetOrderActivityQuery,
   useUploadReceivingDocumentMutation,
   useGetOrderCreditNotesQuery,
+  useLazyDownloadOrderSummaryQuery,
 } from "../../api/orderApi";
 import {
   useGetCustomerByIdQuery,
@@ -113,6 +114,20 @@ const OrderPage = () => {
   const productPageSize = 8;
   const [activityPage, setActivityPage] = useState(1); // ← NEW
   const [triggerDispatchDocDownload] = useLazyDownloadDispatchDocumentQuery();
+  const [downloadOrderSummary, { isFetching: summaryDownloading }] = useLazyDownloadOrderSummaryQuery();
+  const downloadSummary = async () => {
+    try {
+      const blob = await downloadOrderSummary(id).unwrap();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Order-${order.orderNo}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    } catch { message.error("Failed to download the order summary"); }
+  };
 
   const commentLimit = 10;
   const activityLimit = 10;
@@ -606,6 +621,9 @@ const OrderPage = () => {
 
                 {/* ← NEW: Dispatch + Credit Note buttons */}
                 <Space wrap>
+                  <Button icon={<DownloadOutlined />} loading={summaryDownloading} onClick={downloadSummary}>
+                    Download summary
+                  </Button>
                   {canDispatchThisOrder && (
                     <Button icon={<PrinterOutlined />} loading={pickBusy} onClick={openPickList}>
                       Pick list

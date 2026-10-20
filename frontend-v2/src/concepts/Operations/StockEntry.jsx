@@ -87,6 +87,7 @@ export default function StockEntry() {
             </Title>
             <Text type="secondary">Every change needs a reason and shows in Movements with your name.</Text>
           </div>
+          <Link to="/inventory/stock-workspace?tab=entries"><Button>← Stock entry & counts</Button></Link>
         </div>
         <Row gutter={[16, 16]}>
           <Col xs={24} lg={14}>
