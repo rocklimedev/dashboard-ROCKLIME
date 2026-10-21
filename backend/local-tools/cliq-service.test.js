@@ -11,7 +11,7 @@ require.cache[authPath] = { id: authPath, filename: authPath, loaded: true, expo
 } };
 const axios = async options => { calls.push(options); return { data: { chats: [] } }; };
 require.cache[axiosPath] = { id: axiosPath, filename: axiosPath, loaded: true, exports: axios };
-const cliq = require("../modules/cliq/cliq.service");
+const cliq = require("../modules/zoho/cliq/cliq.service");
 test("Cliq consumes shared Zoho authentication without sharing users' chat tokens", async () => {
   await cliq.request("alice", "/chats");
   assert.equal(calls.at(-1).headers.Authorization, "Zoho-oauthtoken alice-access");

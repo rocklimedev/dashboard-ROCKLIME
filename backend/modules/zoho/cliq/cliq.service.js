@@ -1,6 +1,6 @@
 // Cliq uses the same OAuth grant and token refresh as Bigin.
 const axios = require("axios");
-const auth = require("../zoho/zoho.auth");
+const auth = require("../zoho.auth");
 async function status(userId) {
   const shared = await auth.status(userId);
   return { connected: shared.services.cliq, configured: shared.configured, redirectUri: shared.redirectUri, webUrl: auth.cliqHost(shared.accountsUrl) };

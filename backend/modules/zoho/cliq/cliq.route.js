@@ -1,5 +1,5 @@
 const router = require("express").Router();
-const { auth } = require("../../middleware/auth");
+const { auth } = require("../../../middleware/auth");
 const cliq = require("./cliq.service");
 const wrap = fn => async (req, res) => { try { res.json(await fn(req)); } catch (error) { res.status(error.status || 500).json({ message: error.message }); } };
 router.use(auth);

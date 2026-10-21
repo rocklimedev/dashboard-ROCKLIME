@@ -17,7 +17,7 @@ router.get("/status", wrap(req => zoho.status(req.user.userId)));
 router.get("/authorize", wrap(req => ({ url: zoho.authorize(req.user, req.query.accountsUrl) })));
 router.delete("/connection", wrap(async req => { await zoho.disconnect(req.user.userId); return { message: "Zoho disconnected" }; }));
 // Service modules share the authentication layer while keeping their own APIs.
-router.use("/cliq", require("../cliq/cliq.route"));
+router.use("/cliq", require("./cliq/cliq.route"));
 router.use("/bigin", guardModule("crm", [{ path: /^\//, action: "view" }]));
 router.get("/bigin/status", wrap(() => bigin.status()));
 router.get("/bigin/pipelines", wrap(() => bigin.pipelineStages()));

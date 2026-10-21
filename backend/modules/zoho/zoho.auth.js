@@ -5,7 +5,7 @@ const CLIQ_SCOPES = ["ZohoCliq.Chats.READ", "ZohoCliq.Messages.READ", "ZohoCliq.
 const BIGIN_SCOPES = ["ZohoBigin.modules.ALL", "ZohoBigin.settings.ALL", "ZohoBigin.users.READ", "ZohoBigin.org.READ"];
 const clientId = () => process.env.ZOHO_CLIENT_ID;
 const clientSecret = () => process.env.ZOHO_CLIENT_SECRET;
-const redirectUri = () => process.env.ZOHO_AUTH_REDIRECT_URI || `${(process.env.PUBLIC_BACKEND_URL || process.env.BACKEND_URL || "http://localhost:5050").replace(/\/$/, "")}/api/zoho/callback`;
+const redirectUri = () => process.env.ZOHO_AUTH_REDIRECT_URI || `${(process.env.PUBLIC_BACKEND_URL || process.env.BACKEND_URL || "http://localhost:4000").replace(/\/$/, "")}/api/zoho/callback`;
 const fail = (message, status = 400) => Object.assign(new Error(message), { status });
 function accountsUrl(value = process.env.ZOHO_ACCOUNTS_URL || "https://accounts.zoho.in") {
   let url;
