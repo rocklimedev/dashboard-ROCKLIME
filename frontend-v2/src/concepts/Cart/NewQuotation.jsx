@@ -11,6 +11,7 @@ import CreateProductModal from "../../components/modals/CreateProductModal";
 import CartLayout from "./CartLayout";
 import QuotationForm from "../../components/POS-NEW/QuotationForm";
 import DraftPdfPreview from "../../components/Quotation/DraftPdfPreview";
+import QuotationCartDetails from "../../components/Quotation/QuotationCartDetails";
 import AddAddress from "../../components/Address/AddAddressModal";
 import AddCustomerModal from "../../components/Customers/AddCustomerModal";
 
@@ -82,10 +83,7 @@ const buildFloorsFromProducts = (products) => {
 const NewQuotation = ({ workspace, active, onAction, busy, userId }) => {
   const navigate = useNavigate();
   const { auth } = useAuth();
-  const initial = active.snapshot?.parent || (() => {
-    if (workspace.revision || workspace.drafts.length !== 1) return {};
-    try { return JSON.parse(localStorage.getItem(`draft_quotation_${userId}`) || "{}"); } catch { return {}; }
-  })();
+  const initial = active.snapshot?.parent || {};
 
   const [createQuotation] = useCreateQuotationMutation();
   const [createAddress] = useCreateAddressMutation();
@@ -201,7 +199,7 @@ const NewQuotation = ({ workspace, active, onAction, busy, userId }) => {
 
     const quotationPayload = {
       quotationId: uuidv4(),
-      document_title: `${
+      document_title: quotationData.documentTitle || `${
         customers.find((c) => c.customerId === selectedCustomer)?.name ||
         "Customer"
       } - ${moment().format("DD-MM-YYYY")}`,
@@ -218,8 +216,11 @@ const NewQuotation = ({ workspace, active, onAction, busy, userId }) => {
 
       shippingAmount: Number(shipping) || 0,
       gst: Number(gst) || 0,
+      miscellaneousChargeItems: quotationData.miscellaneousChargeItems || [],
+      additionalDiscount: Number(quotationData.additionalDiscount) || 0,
+      flatPrice: quotationData.flatPrice ?? null,
 
-      signature_name: quotationData.signatureName || "CM TRADING CO",
+      signature_name: quotationData.signatureName ?? "CM TRADING CO",
       signature_image: quotationData.signatureImage || "",
 
       floors: finalFloors,
@@ -243,7 +244,7 @@ const NewQuotation = ({ workspace, active, onAction, busy, userId }) => {
         }`,
       );
 
-      try { await onAction("complete", undefined, workspace.activeId); }
+      try { await onAction("complete", undefined, workspace.activeId, { claimedProductIds: quotationPayload.products.map(item => item.productId || item.id) }); }
       catch { message.warning("Quotation created, but its cart could not be removed. Refresh before reusing this draft."); }
       if (dealId) {
         const quotationId = result.quotation?.quotationId || quotationPayload.quotationId;
@@ -306,6 +307,7 @@ const NewQuotation = ({ workspace, active, onAction, busy, userId }) => {
               </Space>
             </div>
 
+            <QuotationCartDetails data={quotationData} onChange={handleQuotationChange} items={layoutProps.localCartItems} setItems={layoutProps.setLocalCartItems} />
             <QuotationForm
               {...layoutProps}
               quotationData={quotationData}

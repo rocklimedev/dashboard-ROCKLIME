@@ -63,6 +63,7 @@ const CartLayout = ({
     getDocumentTypeFromPath(location.pathname),
   );
   const [activeTab, setActiveTab] = useState("cart");
+  const [draftsOpen, setDraftsOpen] = useState(false);
   const [pickQuotation, setPickQuotation] = useState(false);
 
   const activeWorkspace = draftWorkspace?.active || quotationWorkspace;
@@ -223,11 +224,12 @@ const CartLayout = ({
   const totalsCalc = useMemo(
     () =>
       quotationTotals({
-        items: [{ price: subTotal - totalDiscount, quantity: 1 }],
+        items: mainCartItems.map(item => ({ ...item, discount: Number(itemDiscounts[item.productId]) || 0, discountType: itemDiscountTypes[item.productId] || "percent" })),
         shipping,
         gstRate: gst,
+        ...(documentType === "quotation" ? { extraDiscount: Number(quotationData.discountAmount) || 0, extraDiscountType: quotationData.discountType || "fixed", miscellaneousChargeItems: quotationData.miscellaneousChargeItems, additionalDiscount: quotationData.additionalDiscount, flatPrice: quotationData.flatPrice } : {}),
       }),
-    [subTotal, totalDiscount, shipping, gst],
+    [mainCartItems, itemDiscounts, itemDiscountTypes, shipping, gst, documentType, quotationData],
   );
   const roundOff = totalsCalc.roundOff;
   const totalAmount = totalsCalc.grandTotal;
@@ -761,9 +763,9 @@ const CartLayout = ({
         )}
         <NewOrderModal open={pickQuotation} onClose={() => setPickQuotation(false)} />
         {renderToolbar?.(commonProps)}
-        {draftWorkspace && <QuotationCartSwitcher {...draftWorkspace} documentType={documentType} ready={cartSyncReady && !clearingCart && !removingCartItem && !Object.values(updatingItems).some(Boolean)} snapshot={{ parent: draftWorkspace.parent, layout: { ...draftData, localCartItems } }} />}
+        {draftWorkspace && <QuotationCartSwitcher {...draftWorkspace} open={draftsOpen} onClose={() => setDraftsOpen(false)} documentType={documentType} ready={cartSyncReady && !clearingCart && !removingCartItem && !Object.values(updatingItems).some(Boolean)} snapshot={{ parent: draftWorkspace.parent, layout: { ...draftData, localCartItems } }} />}
 
-        <Tabs activeKey={activeTab} onChange={setActiveTab} type="card">
+        <Tabs activeKey={activeTab} onChange={key => key === "drafts" ? setDraftsOpen(true) : setActiveTab(key)} type="card">
           <TabPane
             tab={
               <span>
@@ -785,6 +787,7 @@ const CartLayout = ({
           >
             {children(commonProps)}
           </TabPane>
+          {draftWorkspace && <TabPane tab={`Your Drafts (${draftWorkspace.workspace.drafts.length})`} key="drafts" />}
         </Tabs>
 
         <Modal

@@ -205,7 +205,7 @@ const NewOrder = ({ workspace, active, onAction, busy }) => {
       message.success(`Order #${result.orderNo || ""} created successfully!`);
 
       // Clear draft and cart on success
-      try { await onAction("complete", undefined, workspace.activeId); }
+      try { await onAction("complete", undefined, workspace.activeId, { claimedProductIds: orderPayload.products.map(item => item.productId || item.id) }); }
       catch { message.warning("Order created, but its cart could not be removed. Refresh before reusing this draft."); }
 
       navigate("/orders/list");

@@ -42,3 +42,50 @@ test("document tabs resume their last selected draft and older quotation carts a
   assert.equal(migrated.workspace.drafts[0].documentType, "quotation");
   assert.throws(() => transition(legacy, { action: "document", documentType: "invalid" }), /Invalid document/);
 });
+
+for (const documentType of ["quotation", "order", "purchase-order"]) {
+  test(`completing ${documentType} claims submitted products across all saved carts`, () => {
+    let state = initialWorkspace(documentType);
+    const completedId = state.activeId;
+    const otherIds = [];
+    for (const type of ["quotation", "order", "purchase-order"]) {
+      state = transition(state, { action: "new", documentType: type }).workspace;
+      otherIds.push(state.activeId);
+      const saved = snapshot({ selectedCustomer: "customer", purchaseOrderData: { freight: 90, items: [{ productId: "tap" }, { productId: "sink" }] } }, "tap");
+      saved.layout.localCartItems.push({ productId: "sink", quantity: 1 });
+      saved.layout.itemTaxes = { tap: 18, sink: 5 };
+      saved.layout.itemDiscountTypes = { tap: "percent", sink: "fixed" };
+      state = transition(state, { action: "save", snapshot: saved }).workspace;
+    }
+    state = transition(state, { action: "switch", targetId: completedId }).workspace;
+    const before = structuredClone(state);
+    // Explicit submitted IDs work even when the active draft has not autosaved yet.
+    const result = transition(state, { action: "complete", claimedProductIds: ["tap"] });
+    assert.deepEqual(state, before);
+    assert.deepEqual(result.items, []);
+    assert.ok(!result.workspace.drafts.some(d => d.id === completedId));
+    for (const id of otherIds) {
+      const saved = result.workspace.drafts.find(d => d.id === id).snapshot;
+      assert.deepEqual(saved.layout.localCartItems, [{ productId: "sink", quantity: 1 }]);
+      assert.deepEqual(saved.parent.purchaseOrderData.items, [{ productId: "sink" }]);
+      assert.equal(saved.parent.selectedCustomer, "customer");
+      assert.equal(saved.parent.purchaseOrderData.freight, 90);
+      assert.deepEqual(saved.layout.itemDiscounts, {});
+      assert.deepEqual(saved.layout.itemTaxes, { sink: 5 });
+      assert.deepEqual(saved.layout.itemDiscountTypes, { sink: "fixed" });
+      const resumed = transition(result.workspace, { action: "switch", targetId: id });
+      assert.deepEqual(resumed.items, saved.layout.localCartItems);
+    }
+  });
+}
+
+test("completion falls back to saved products, while deleting a draft does not claim them", () => {
+  const first = initialWorkspace();
+  let state = transition(first, { action: "new", snapshot: snapshot({}, "tap") }).workspace;
+  state = transition(state, { action: "save", snapshot: snapshot({}, "tap") }).workspace;
+  const deleted = transition(state, { action: "delete", targetId: state.activeId });
+  assert.equal(deleted.workspace.drafts[0].snapshot.layout.localCartItems.length, 1);
+  const completed = transition(state, { action: "complete" });
+  assert.deepEqual(completed.workspace.drafts[0].snapshot.layout.localCartItems, []);
+  assert.throws(() => transition(state, { action: "complete", claimedProductIds: "tap" }), /Invalid claimed/);
+});

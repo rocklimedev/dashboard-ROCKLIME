@@ -11,7 +11,7 @@ function validateSnapshot(snapshot) {
   if (typeof snapshot !== "object" || snapshot === null || Array.isArray(snapshot) || JSON.stringify(snapshot).length > 4000000) throw bad("Invalid quotation cart snapshot");
   if (snapshot.layout?.localCartItems && !Array.isArray(snapshot.layout.localCartItems)) throw bad("Invalid cart products");
 }
-function transition(workspace, { action, snapshot, targetId, name, documentType, initialSnapshot = {} }, serverItems = []) {
+function transition(workspace, { action, snapshot, targetId, name, documentType, initialSnapshot = {}, claimedProductIds }, serverItems = []) {
   const next = clone(workspace);
   next.drafts.forEach(draft => { draft.documentType ||= "quotation"; });
   const current = next.drafts.find(draft => draft.id === next.activeId);
@@ -38,6 +38,21 @@ function transition(workspace, { action, snapshot, targetId, name, documentType,
     const existing = next.drafts.find(d => d.id === next.lastActive[type]) || next.drafts.find(d => d.documentType === type);
     next.activeId = existing.id;
   } else if (["new", "complete", "delete", "document"].includes(action)) {
+    if (action === "complete") {
+      if (claimedProductIds != null && (!Array.isArray(claimedProductIds) || claimedProductIds.some(id => !["string", "number"].includes(typeof id)))) throw bad("Invalid claimed products");
+      const claimed = new Set((claimedProductIds || current.snapshot.layout.localCartItems.map(item => item.productId)).filter(id => id != null).map(String));
+      for (const draft of next.drafts) {
+        if (draft.id === current.id) continue;
+        const saved = draft.snapshot;
+        const keep = item => !claimed.has(String(item.productId ?? item.id));
+        if (saved.layout?.localCartItems) saved.layout.localCartItems = saved.layout.localCartItems.filter(keep);
+        for (const key of ["itemDiscounts", "itemDiscountTypes", "itemTaxes"]) {
+          if (saved.layout?.[key]) for (const id of claimed) delete saved.layout[key][id];
+        }
+        // PO checkout keeps its edited lines separately from the cart products.
+        if (saved.parent?.purchaseOrderData?.items) saved.parent.purchaseOrderData.items = saved.parent.purchaseOrderData.items.filter(keep);
+      }
+    }
     if (action === "delete" || action === "complete") {
       const id = action === "complete" ? next.activeId : targetId;
       if (!next.drafts.some(d => d.id === id)) throw bad("Quotation cart not found");

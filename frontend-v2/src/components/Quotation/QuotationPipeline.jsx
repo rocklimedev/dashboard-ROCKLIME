@@ -276,7 +276,7 @@ export function FollowUpsDueList({ rows = [], onOpen }) {
 }
 
 /** Status bar for the quotation page: where it stands, what to do next, and its follow-ups. */
-export function QuotationPipelineBar({ quotation, canEdit, canConvert, onConvert, onEdit, onDuplicate }) {
+export function QuotationPipelineBar({ quotation, canEdit, canConvert, onConvert, onEdit, onDuplicate, onRecreate }) {
   const [showLog, setShowLog] = useState(false);
   if (!quotation) return null;
   const status = quotation.status || "DRAFT";
@@ -334,6 +334,7 @@ export function QuotationPipelineBar({ quotation, canEdit, canConvert, onConvert
           <QuotationStatusActions quotation={quotation} canEdit={canEdit} canConvert={canConvert} onConvert={onConvert} />
           {canEdit && onEdit && <Button onClick={onEdit}>Edit</Button>}
           {onDuplicate && <Button onClick={onDuplicate}>Duplicate</Button>}
+          {onRecreate && <Button onClick={onRecreate}>Recreate quotation</Button>}
           <Button type="link" onClick={() => setShowLog((v) => !v)}>
             {showLog ? "Hide follow-ups" : "Follow-ups"}
           </Button>

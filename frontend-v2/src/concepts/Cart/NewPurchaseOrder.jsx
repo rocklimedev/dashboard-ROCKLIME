@@ -89,7 +89,7 @@ const NewPurchaseOrder = ({ workspace, active, onAction, busy }) => {
         `Purchase Order ${result.purchaseOrder?.poNumber || ""} created successfully!`,
       );
 
-      try { await onAction("complete", undefined, workspace.activeId); }
+      try { await onAction("complete", undefined, workspace.activeId, { claimedProductIds: formattedItems.map(item => item.productId || item.id) }); }
       catch { message.warning("Purchase order created, but its cart could not be removed. Refresh before reusing this draft."); }
       // open the new PO (its PDF is ready to send)
       navigate(result.purchaseOrder?.id ? `/po/${result.purchaseOrder.id}` : "/purchase-manager");
