@@ -291,6 +291,7 @@ const QuotationList = () => {
           { key: "view", icon: <EyeOutlined />, label: "Open" },
           can("quotations", "edit") && { key: "edit", icon: <EditOutlined />, label: "Edit" },
           can("quotations", "write") && { key: "clone", icon: <CopyOutlined />, label: "Duplicate" },
+          can("quotations", "write") && { key: "recreate", icon: <CopyOutlined />, label: "Recreate quotation" },
           can("quotations", "edit") && isOpen(rec) && { key: "lost", icon: <CloseCircleOutlined />, label: "Mark lost", danger: true },
           { key: "sitemap", icon: <HomeOutlined />, label: "Generate site map" },
           can("quotations", "delete") && { type: "divider" },
@@ -300,6 +301,7 @@ const QuotationList = () => {
           if (key === "view") navigate(`/quotation/${rec.quotationId}`);
           if (key === "edit") navigate(`/quotation/${rec.quotationId}/edit`, { state: { quotation: rec } });
           if (key === "clone") handleClone(rec);
+          if (key === "recreate") navigate(`/cart/quotation?recreate=${encodeURIComponent(rec.quotationId)}`);
           if (key === "lost") setLostFor(rec);
           if (key === "sitemap") handleGenerateSiteMap(rec);
           if (key === "delete") setQuotationToDelete(rec);

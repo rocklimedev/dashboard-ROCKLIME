@@ -45,6 +45,10 @@ const OrderTotal = React.memo(
     interState = false,
     itemCount = null,
     optionalTotal = 0,
+    items,
+    miscellaneousChargeItems = null,
+    additionalDiscount = 0,
+    flatPrice = null,
     onGstChange,
     onShippingChange,
   }) => {
@@ -52,14 +56,17 @@ const OrderTotal = React.memo(
     const t = useMemo(
       () =>
         quotationTotals({
-          items: [{ price: n(subTotal) - n(discount), quantity: 1 }],
+          items: items || [{ price: n(subTotal) - n(discount), quantity: 1 }],
+          miscellaneousChargeItems,
+          additionalDiscount,
+          flatPrice,
           shipping: n(shipping),
           extraDiscount: n(extraDiscount),
           extraDiscountType,
           gstRate: n(gst),
           interState,
         }),
-      [subTotal, discount, extraDiscount, extraDiscountType, shipping, gst, interState],
+      [subTotal, discount, extraDiscount, extraDiscountType, shipping, gst, interState, items, miscellaneousChargeItems, additionalDiscount, flatPrice],
     );
     const avg = n(subTotal) ? Math.round((n(discount) / n(subTotal)) * 100) : 0;
     const half = t.gstRate / 2;
@@ -69,6 +76,9 @@ const OrderTotal = React.memo(
         <Line label="MRP value" sub={itemCount != null ? `${itemCount} item${itemCount === 1 ? "" : "s"}` : null} value={n(subTotal)} />
         <Line label="Item discounts" sub={avg ? `${avg}% average` : null} value={n(discount)} negative />
         <Line label="Goods value" value={t.goodsValue} />
+        {flatPrice != null && <Line label="Flat goods price" value={n(flatPrice)} />}
+        {t.miscellaneousChargeItems.map((charge, index) => <Line key={index} label={charge.name} value={charge.amount} />)}
+        {n(additionalDiscount) !== 0 && <Line label="Additional discount" value={n(additionalDiscount)} negative />}
         <Line
           label="Freight / installation"
           value={t.freight}

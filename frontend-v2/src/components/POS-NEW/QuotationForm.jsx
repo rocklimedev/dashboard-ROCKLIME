@@ -386,6 +386,10 @@ const QuotationForm = ({
           style={{ position: "sticky", top: 16 }}
         >
           <OrderTotal
+            items={localCartItems.map(item => ({ ...item, discount: Number(itemDiscounts[item.productId]) || 0, discountType: itemDiscountTypes[item.productId] || "percent" }))}
+            miscellaneousChargeItems={quotationData.miscellaneousChargeItems}
+            additionalDiscount={quotationData.additionalDiscount}
+            flatPrice={quotationData.flatPrice}
             subTotal={subTotal}
             discount={discount}
             shipping={shipping}

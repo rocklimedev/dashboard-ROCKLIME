@@ -1,20 +1,17 @@
 // src/pages/quotations/NewQuotation.jsx
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { message, Button, Modal, Descriptions, Typography, Space } from "antd";
+import { message, Button, Space } from "antd";
 import {
-  DeleteOutlined,
-  SaveOutlined,
-  InfoCircleOutlined,
   PlusOutlined,
 } from "@ant-design/icons";
-import moment from "moment";
 import { v4 as uuidv4 } from "uuid";
 
 import CreateProductModal from "../../components/modals/CreateProductModal";
 import CartLayout from "./CartLayout";
 import QuotationForm from "../../components/POS-NEW/QuotationForm";
 import DraftPdfPreview from "../../components/Quotation/DraftPdfPreview";
+import QuotationCartDetails from "../../components/Quotation/QuotationCartDetails";
 import AddAddress from "../../components/Address/AddAddressModal";
 import AddCustomerModal from "../../components/Customers/AddCustomerModal";
 
@@ -26,9 +23,8 @@ import {
   useCreateAddressMutation,
 } from "../../api/addressApi";
 import { useAuth } from "../../context/AuthContext";
-import useAutoSave from "../../utils/useAutoSave";
+import QuotationWorkspace from "./QuotationWorkspace";
 
-const { Text } = Typography;
 
 const buildFloorsFromProducts = (products) => {
   const floorMap = new Map();
@@ -84,9 +80,10 @@ const buildFloorsFromProducts = (products) => {
     }));
 };
 
-const NewQuotation = () => {
+const NewQuotation = ({ workspace, active, onAction, busy, userId }) => {
   const navigate = useNavigate();
   const { auth } = useAuth();
+  const initial = active.snapshot?.parent || {};
 
   const [createQuotation] = useCreateQuotationMutation();
   const [createAddress] = useCreateAddressMutation();
@@ -96,8 +93,6 @@ const NewQuotation = () => {
   const [previewVisible, setPreviewVisible] = useState(false);
   const [showAddAddressModal, setShowAddAddressModal] = useState(false);
   const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
-  const [showDraftModal, setShowDraftModal] = useState(false);
-  const [currentDraft, setCurrentDraft] = useState(null);
 
   // ==================== MAIN STATE ====================
   const [quotationData, setQuotationData] = useState({
@@ -110,16 +105,17 @@ const NewQuotation = () => {
     discountType: "fixed",
     discountAmount: "",
     followupDates: [],
+    ...initial.quotationData,
   });
 
-  const [selectedCustomer, setSelectedCustomer] = useState("");
+  const [selectedCustomer, setSelectedCustomer] = useState(initial.selectedCustomer || "");
   // opened from a CRM deal: /cart/quotation?customer=…&deal=…
   const [searchParams] = useSearchParams();
-  const dealId = searchParams.get("deal");
+  const dealId = initial.dealId || searchParams.get("deal");
   const presetCustomer = searchParams.get("customer");
   const [linkDealQuotation] = useLinkDealQuotationMutation();
-  const [useBillingAddress, setUseBillingAddress] = useState(false);
-  const [billingAddressId, setBillingAddressId] = useState(null);
+  const [useBillingAddress, setUseBillingAddress] = useState(initial.useBillingAddress || false);
+  const [billingAddressId, setBillingAddressId] = useState(initial.billingAddressId || null);
 
   // ==================== DATA FETCHING ====================
   const { data: customersData } = useGetCustomersQuery({ limit: 10000 });
@@ -131,63 +127,8 @@ const NewQuotation = () => {
   const customers = customersData?.data || [];
   const addresses = addressesData || [];
 
-  // ==================== AUTOSAVE ====================
-  const draftKey = `draft_quotation_${auth?.user?.userId || "guest"}`;
-
-  const draftData = useMemo(
-    () => ({
-      quotationData,
-      selectedCustomer,
-      useBillingAddress,
-      billingAddressId,
-      lastSaved: new Date().toISOString(),
-    }),
-    [quotationData, selectedCustomer, useBillingAddress, billingAddressId],
-  );
-
-  const { loadDraft, clearDraft } = useAutoSave(draftKey, draftData, 2500);
-
-  // Load draft
-  useEffect(() => {
-    const savedDraft = loadDraft();
-    if (savedDraft) {
-      if (savedDraft.quotationData) {
-        setQuotationData((prev) => ({ ...prev, ...savedDraft.quotationData }));
-      }
-      if (savedDraft.selectedCustomer) {
-        setSelectedCustomer(savedDraft.selectedCustomer);
-      }
-      if (savedDraft.useBillingAddress !== undefined) {
-        setUseBillingAddress(savedDraft.useBillingAddress);
-      }
-      if (savedDraft.billingAddressId) {
-        setBillingAddressId(savedDraft.billingAddressId);
-      }
-
-      message.info("Previous draft has been restored", 2);
-    }
-    // the customer of the CRM deal wins over a restored draft
-    if (presetCustomer) setSelectedCustomer(presetCustomer);
-  }, [loadDraft, presetCustomer]);
-
-  // ==================== DRAFT HANDLERS ====================
-  const checkCurrentDraft = () => {
-    const saved = loadDraft();
-    if (saved) {
-      setCurrentDraft(saved);
-      setShowDraftModal(true);
-    } else {
-      message.info("No saved draft found.");
-    }
-  };
-
-  const handleDeleteDraft = () => {
-    clearDraft();
-    setShowDraftModal(false);
-    setCurrentDraft(null);
-    message.success("Draft deleted successfully");
-  };
-
+  const draftData = useMemo(() => ({ quotationData, selectedCustomer, useBillingAddress, billingAddressId, dealId }), [quotationData, selectedCustomer, useBillingAddress, billingAddressId, dealId]);
+  useEffect(() => { if (presetCustomer && !initial.selectedCustomer) setSelectedCustomer(presetCustomer); }, [presetCustomer]);
   // ==================== QUOTATION DATA CHANGE ====================
   // Shared by both the Checkout form (QuotationForm) and the Cart tab's
   // Site Layout section (CartTab), since floors now live/render there.
@@ -258,7 +199,7 @@ const NewQuotation = () => {
 
     const quotationPayload = {
       quotationId: uuidv4(),
-      document_title: `${
+      document_title: quotationData.documentTitle || `${
         customers.find((c) => c.customerId === selectedCustomer)?.name ||
         "Customer"
       } - ${moment().format("DD-MM-YYYY")}`,
@@ -275,8 +216,11 @@ const NewQuotation = () => {
 
       shippingAmount: Number(shipping) || 0,
       gst: Number(gst) || 0,
+      miscellaneousChargeItems: quotationData.miscellaneousChargeItems || [],
+      additionalDiscount: Number(quotationData.additionalDiscount) || 0,
+      flatPrice: quotationData.flatPrice ?? null,
 
-      signature_name: quotationData.signatureName || "CM TRADING CO",
+      signature_name: quotationData.signatureName ?? "CM TRADING CO",
       signature_image: quotationData.signatureImage || "",
 
       floors: finalFloors,
@@ -288,7 +232,6 @@ const NewQuotation = () => {
   };
 
   const handleCreateQuotation = async (layoutProps = {}) => {
-    const { handleClearCart } = layoutProps;
     const { payload: quotationPayload, error } = buildQuotationPayload(layoutProps);
     if (error) return message.error(error);
     try {
@@ -301,8 +244,8 @@ const NewQuotation = () => {
         }`,
       );
 
-      clearDraft();
-      if (typeof handleClearCart === "function") handleClearCart();
+      try { await onAction("complete", undefined, workspace.activeId, { claimedProductIds: quotationPayload.products.map(item => item.productId || item.id) }); }
+      catch { message.warning("Quotation created, but its cart could not be removed. Refresh before reusing this draft."); }
       if (dealId) {
         const quotationId = result.quotation?.quotationId || quotationPayload.quotationId;
         try {
@@ -342,9 +285,11 @@ const NewQuotation = () => {
 
   return (
     <>
+      <fieldset disabled={busy} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
       <CartLayout
         quotationData={quotationData}
         handleQuotationChange={handleQuotationChange}
+        draftWorkspace={{ workspace, active, onAction, busy, parent: draftData, customers }}
       >
         {(layoutProps) => (
           <>
@@ -359,16 +304,10 @@ const NewQuotation = () => {
                   Add Optional Product
                 </Button>
 
-                <Button
-                  icon={<InfoCircleOutlined />}
-                  onClick={checkCurrentDraft}
-                  type="default"
-                >
-                  Manage Draft
-                </Button>
               </Space>
             </div>
 
+            <QuotationCartDetails data={quotationData} onChange={handleQuotationChange} items={layoutProps.localCartItems} setItems={layoutProps.setLocalCartItems} />
             <QuotationForm
               {...layoutProps}
               quotationData={quotationData}
@@ -400,6 +339,7 @@ const NewQuotation = () => {
           </>
         )}
       </CartLayout>
+      </fieldset>
 
       {/* Modals */}
       <CreateProductModal
@@ -407,41 +347,6 @@ const NewQuotation = () => {
         onClose={() => setShowCreateProductModal(false)}
         onSuccess={handleProductCreated}
       />
-
-      <Modal
-        title="Draft Information"
-        open={showDraftModal}
-        onCancel={() => setShowDraftModal(false)}
-        footer={[
-          <Button key="close" onClick={() => setShowDraftModal(false)}>
-            Close
-          </Button>,
-          <Button
-            key="delete"
-            danger
-            icon={<DeleteOutlined />}
-            onClick={handleDeleteDraft}
-          >
-            Delete Draft
-          </Button>,
-        ]}
-      >
-        {currentDraft && (
-          <Descriptions column={1} bordered>
-            <Descriptions.Item label="Customer">
-              {customers.find(
-                (c) => c.customerId === currentDraft.selectedCustomer,
-              )?.name || "Not selected"}
-            </Descriptions.Item>
-            <Descriptions.Item label="Quotation Date">
-              {currentDraft.quotationData?.quotationDate || "-"}
-            </Descriptions.Item>
-            <Descriptions.Item label="Last Saved">
-              {moment(currentDraft.lastSaved).fromNow()}
-            </Descriptions.Item>
-          </Descriptions>
-        )}
-      </Modal>
 
       {showAddAddressModal && (
         <AddAddress
@@ -463,4 +368,6 @@ const NewQuotation = () => {
   );
 };
 
-export default NewQuotation;
+export default function MultipleQuotationCarts() {
+  return <QuotationWorkspace>{props => <NewQuotation key={props.workspace.activeId} {...props} />}</QuotationWorkspace>;
+}
