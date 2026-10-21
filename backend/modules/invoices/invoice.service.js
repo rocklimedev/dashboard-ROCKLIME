@@ -12,16 +12,19 @@
 //     adds up exactly.
 //   • Numbers run per financial year (April–March): CM/26-27/0001.
 //   • Invoices are frozen snapshots and can only be cancelled, never edited.
-const { QueryTypes } = require("sequelize");
-const { quotationTotals, lineAmounts, r2 } = require("../../lib/quotationMath");
-const { getSetting } = require("../settings/settings.service");
+const { QueryTypes } = require('sequelize');
+const { quotationTotals, lineAmounts, r2 } = require('../../lib/quotationMath');
+const { getSetting } = require('../settings/settings.service');
 
-const m = () => require("../../models");
+const m = () => require('../../models');
 const bad = (msg, status = 400) => Object.assign(new Error(msg), { status });
-const norm = (s) => String(s || "").trim().toLowerCase();
+const norm = (s) =>
+  String(s || '')
+    .trim()
+    .toLowerCase();
 const asList = (v) => {
   let x = v;
-  for (let i = 0; i < 3 && typeof x === "string"; i++) {
+  for (let i = 0; i < 3 && typeof x === 'string'; i++) {
     try {
       x = JSON.parse(x);
     } catch {
@@ -34,7 +37,7 @@ const pid = (line) => line.productId || line.id;
 
 /** "26-27" for 2026-04-01 … 2027-03-31 (Indian time). */
 function financialYear(date = new Date()) {
-  const d = new Date(new Date(date).toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+  const d = new Date(new Date(date).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
   const y = d.getFullYear();
   const start = d.getMonth() >= 3 ? y : y - 1;
   return `${String(start).slice(2)}-${String(start + 1).slice(2)}`;
@@ -43,25 +46,43 @@ const todayIST = () => new Date(Date.now() + 5.5 * 3600e3).toISOString().slice(0
 
 async function nextInvoiceNo(fy, t) {
   const { sequelize } = m();
-  await sequelize.query("INSERT IGNORE INTO invoice_counters (financialYear, last) VALUES (?, 0)", { replacements: [fy], transaction: t });
-  const [row] = await sequelize.query("SELECT last FROM invoice_counters WHERE financialYear = ? FOR UPDATE", {
+  await sequelize.query('INSERT IGNORE INTO invoice_counters (financialYear, last) VALUES (?, 0)', {
     replacements: [fy],
-    type: QueryTypes.SELECT,
     transaction: t,
   });
+  const [row] = await sequelize.query(
+    'SELECT last FROM invoice_counters WHERE financialYear = ? FOR UPDATE',
+    {
+      replacements: [fy],
+      type: QueryTypes.SELECT,
+      transaction: t,
+    },
+  );
   const next = Number(row?.last || 0) + 1;
-  await sequelize.query("UPDATE invoice_counters SET last = ? WHERE financialYear = ?", { replacements: [next, fy], transaction: t });
-  const { invoicePrefix } = await getSetting("accounts");
-  const prefix = String(invoicePrefix || "CM").replace(/[^A-Za-z0-9-]/g, "").slice(0, 5) || "CM";
-  return `${prefix}/${fy}/${String(next).padStart(4, "0")}`;
+  await sequelize.query('UPDATE invoice_counters SET last = ? WHERE financialYear = ?', {
+    replacements: [next, fy],
+    transaction: t,
+  });
+  const { invoicePrefix } = await getSetting('accounts');
+  const prefix =
+    String(invoicePrefix || 'CM')
+      .replace(/[^A-Za-z0-9-]/g, '')
+      .slice(0, 5) || 'CM';
+  return `${prefix}/${fy}/${String(next).padStart(4, '0')}`;
 }
 
 /** Pieces already billed on live invoices of this order: { productId: qty }. */
 async function invoicedQty(orderId, t) {
   const { TaxInvoice } = m();
-  const rows = await TaxInvoice.findAll({ where: { orderId, status: "ISSUED" }, attributes: ["lines"], transaction: t });
+  const rows = await TaxInvoice.findAll({
+    where: { orderId, status: 'ISSUED' },
+    attributes: ['lines'],
+    transaction: t,
+  });
   const out = {};
-  for (const r of rows) for (const l of asList(r.lines)) if (l.productId) out[l.productId] = (out[l.productId] || 0) + Number(l.qty || 0);
+  for (const r of rows)
+    for (const l of asList(r.lines))
+      if (l.productId) out[l.productId] = (out[l.productId] || 0) + Number(l.qty || 0);
   return out;
 }
 
@@ -74,7 +95,12 @@ async function remainingToInvoice(order, t) {
     if (id) ordered[id] = (ordered[id] || 0) + (Number(l.quantity) || 0);
   }
   return Object.entries(ordered)
-    .map(([productId, qty]) => ({ productId, ordered: qty, invoiced: done[productId] || 0, remaining: Math.max(qty - (done[productId] || 0), 0) }))
+    .map(([productId, qty]) => ({
+      productId,
+      ordered: qty,
+      invoiced: done[productId] || 0,
+      remaining: Math.max(qty - (done[productId] || 0), 0),
+    }))
     .filter((x) => x.ordered > 0);
 }
 
@@ -82,15 +108,20 @@ async function productInfo(ids) {
   const { Product, ProductMeta } = m();
   if (!ids.length) return {};
   const [products, defs] = await Promise.all([
-    Product.findAll({ where: { productId: ids }, attributes: ["productId", "name", "product_code", "meta", "tax"] }),
-    ProductMeta.findAll({ attributes: ["id", "slug", "title"] }),
+    Product.findAll({
+      where: { productId: ids },
+      attributes: ['productId', 'name', 'product_code', 'meta', 'tax'],
+    }),
+    ProductMeta.findAll({ attributes: ['id', 'slug', 'title'] }),
   ]);
-  const hsnDef = defs.find((d) => d.slug === "hsnCode" || norm(d.title) === "hsn code" || norm(d.title) === "hsn");
-  const unitDef = defs.find((d) => ["unit", "uom"].includes(d.slug) || norm(d.title) === "unit");
+  const hsnDef = defs.find(
+    (d) => d.slug === 'hsnCode' || norm(d.title) === 'hsn code' || norm(d.title) === 'hsn',
+  );
+  const unitDef = defs.find((d) => ['unit', 'uom'].includes(d.slug) || norm(d.title) === 'unit');
   const out = {};
   for (const p of products) {
     let meta = p.meta;
-    for (let i = 0; i < 3 && typeof meta === "string"; i++) {
+    for (let i = 0; i < 3 && typeof meta === 'string'; i++) {
       try {
         meta = JSON.parse(meta);
       } catch {
@@ -101,7 +132,7 @@ async function productInfo(ids) {
       name: p.name,
       code: p.product_code || null,
       hsn: (hsnDef && meta?.[hsnDef.id]) || null,
-      unit: (unitDef && meta?.[unitDef.id]) || "PCS",
+      unit: (unitDef && meta?.[unitDef.id]) || 'PCS',
     };
   }
   return out;
@@ -109,18 +140,41 @@ async function productInfo(ids) {
 
 async function parties(order, t) {
   const { Customer, Address } = m();
-  const company = await getSetting("company");
-  const customer = order.createdFor ? await Customer.findByPk(order.createdFor, { transaction: t }) : null;
-  const addrs = customer ? await Address.findAll({ where: { customerId: customer.customerId }, transaction: t }) : [];
-  const billing = addrs.find((a) => a.status === "BILLING") || addrs.find((a) => a.status === "PRIMARY") || addrs[0] || null;
+  const company = await getSetting('company');
+  const customer = order.createdFor
+    ? await Customer.findByPk(order.createdFor, { transaction: t })
+    : null;
+  const addrs = customer
+    ? await Address.findAll({ where: { customerId: customer.customerId }, transaction: t })
+    : [];
+  const billing =
+    addrs.find((a) => a.status === 'BILLING') ||
+    addrs.find((a) => a.status === 'PRIMARY') ||
+    addrs[0] ||
+    null;
   const ship = order.shipTo ? await Address.findByPk(order.shipTo, { transaction: t }) : billing;
   const pos = ship?.state || billing?.state || company.state;
   const interState = Boolean(pos && company.state && norm(pos) !== norm(company.state));
-  const addr = (a) => (a ? { street: a.street, city: a.city, state: a.state, postalCode: a.postalCode, country: a.country } : null);
+  const addr = (a) =>
+    a
+      ? {
+          street: a.street,
+          city: a.city,
+          state: a.state,
+          postalCode: a.postalCode,
+          country: a.country,
+        }
+      : null;
   return {
     company,
     customer,
-    billTo: { name: customer?.companyName || customer?.name || "Customer", phone: customer?.mobileNumber || null, email: customer?.email || null, gstin: customer?.gstNumber || null, address: addr(billing) },
+    billTo: {
+      name: customer?.companyName || customer?.name || 'Customer',
+      phone: customer?.mobileNumber || null,
+      email: customer?.email || null,
+      gstin: customer?.gstNumber || null,
+      address: addr(billing),
+    },
     shipTo: { name: customer?.name || null, address: addr(ship) },
     placeOfSupply: pos || null,
     interState,
@@ -132,21 +186,28 @@ async function parties(order, t) {
  * Without items, bills everything still un-invoiced.
  */
 async function draft(order, { items = null, t } = {}) {
-  if (["DRAFT", "CANCELED"].includes(order.status)) throw bad("Draft and cancelled orders can't be invoiced. Confirm the order first.");
+  if (['DRAFT', 'CANCELED'].includes(order.status))
+    throw bad("Draft and cancelled orders can't be invoiced. Confirm the order first.");
   const remaining = await remainingToInvoice(order, t);
   const left = Object.fromEntries(remaining.map((r) => [r.productId, r.remaining]));
   let want = items
-    ? items.map((i) => ({ productId: i.productId, quantity: Number(i.quantity) || 0 })).filter((i) => i.productId && i.quantity > 0)
-    : remaining.filter((r) => r.remaining > 0).map((r) => ({ productId: r.productId, quantity: r.remaining }));
+    ? items
+        .map((i) => ({ productId: i.productId, quantity: Number(i.quantity) || 0 }))
+        .filter((i) => i.productId && i.quantity > 0)
+    : remaining
+        .filter((r) => r.remaining > 0)
+        .map((r) => ({ productId: r.productId, quantity: r.remaining }));
   // merge duplicates
   const merged = {};
   for (const w of want) merged[w.productId] = (merged[w.productId] || 0) + w.quantity;
   want = Object.entries(merged).map(([productId, quantity]) => ({ productId, quantity }));
-  if (!want.length) throw bad("Everything on this order has already been invoiced.");
+  if (!want.length) throw bad('Everything on this order has already been invoiced.');
   for (const w of want) {
-    if (left[w.productId] == null) throw bad("A product on the invoice is not on this order.");
+    if (left[w.productId] == null) throw bad('A product on the invoice is not on this order.');
     if (w.quantity > left[w.productId]) {
-      throw bad(`Only ${left[w.productId]} piece(s) of a product are left to invoice on this order (asked for ${w.quantity}).`);
+      throw bad(
+        `Only ${left[w.productId]} piece(s) of a product are left to invoice on this order (asked for ${w.quantity}).`,
+      );
     }
   }
 
@@ -158,10 +219,10 @@ async function draft(order, { items = null, t } = {}) {
     const p = info[w.productId] || {};
     return {
       productId: w.productId,
-      name: p.name || src.name || "Product",
+      name: p.name || src.name || 'Product',
       code: p.code || src.productCode || src.companyCode || null,
       hsn: p.hsn || null,
-      unit: p.unit || "PCS",
+      unit: p.unit || 'PCS',
       qty: w.quantity,
       price: a.price,
       discount: a.discount,
@@ -172,11 +233,15 @@ async function draft(order, { items = null, t } = {}) {
 
   // Order-level money: freight on the first invoice, extra discount shared by value
   const { TaxInvoice } = m();
-  const previous = await TaxInvoice.findAll({ where: { orderId: order.id, status: "ISSUED" }, attributes: ["freight", "discount", "goodsValue"], transaction: t });
+  const previous = await TaxInvoice.findAll({
+    where: { orderId: order.id, status: 'ISSUED' },
+    attributes: ['freight', 'discount', 'goodsValue'],
+    transaction: t,
+  });
   const orderTotals = quotationTotals({
     items: orderLines,
     extraDiscount: order.extraDiscount || 0,
-    extraDiscountType: order.extraDiscountType || "fixed",
+    extraDiscountType: order.extraDiscountType || 'fixed',
     shipping: order.shipping || 0,
     gstRate: Number(order.gst) || 0,
   });
@@ -185,7 +250,7 @@ async function draft(order, { items = null, t } = {}) {
   const goodsValue = r2(lines.reduce((s, l) => s + l.net, 0));
   const isLast = remaining.every((r) => (merged[r.productId] || 0) >= r.remaining);
   let extraDiscount;
-  if ((order.extraDiscountType || "fixed").toLowerCase() === "percent") {
+  if ((order.extraDiscountType || 'fixed').toLowerCase() === 'percent') {
     extraDiscount = r2(((goodsValue + freight) * Number(order.extraDiscount || 0)) / 100);
   } else {
     const total = orderTotals.extraDiscountAmount;
@@ -202,7 +267,7 @@ async function draft(order, { items = null, t } = {}) {
   const totals = quotationTotals({
     items: lines.map((l) => ({ quantity: 1, price: l.net })), // each line's amount after its own discount
     extraDiscount,
-    extraDiscountType: "fixed",
+    extraDiscountType: 'fixed',
     shipping: freight,
     gstRate,
     interState: p.interState,
@@ -212,7 +277,10 @@ async function draft(order, { items = null, t } = {}) {
   const factor = base > 0 ? totals.taxableValue / base : 1;
   let spread = 0;
   lines.forEach((l, i) => {
-    l.taxable = i === lines.length - 1 && freight === 0 ? r2(totals.taxableValue - spread) : r2(l.net * factor);
+    l.taxable =
+      i === lines.length - 1 && freight === 0
+        ? r2(totals.taxableValue - spread)
+        : r2(l.net * factor);
     spread = r2(spread + l.taxable);
   });
   const freightTaxable = freight > 0 ? r2(totals.taxableValue - spread) : 0;
@@ -236,28 +304,49 @@ async function draft(order, { items = null, t } = {}) {
 }
 
 /** Saves an invoice for an order (optionally for one dispatch's pieces). */
-async function createInvoice({ orderId, dispatchId = null, items = null, invoiceDate = null, userId = null }) {
+async function createInvoice({
+  orderId,
+  dispatchId = null,
+  items = null,
+  invoiceDate = null,
+  userId = null,
+}) {
   const { sequelize, Order, OrderDispatch, TaxInvoice } = m();
   return sequelize.transaction(async (t) => {
     const order = await Order.findByPk(orderId, { transaction: t, lock: t.LOCK.UPDATE });
-    if (!order) throw bad("Order not found", 404);
+    if (!order) throw bad('Order not found', 404);
     let dispatch = null;
     if (dispatchId) {
-      dispatch = await OrderDispatch.findOne({ where: { id: dispatchId, orderId }, transaction: t });
-      if (!dispatch) throw bad("Dispatch not found", 404);
-      if (dispatch.status === "RETURNED") throw bad("This dispatch was returned.");
-      const existing = await TaxInvoice.findOne({ where: { dispatchId, status: "ISSUED" }, transaction: t });
-      if (existing) throw bad(`Dispatch #${dispatch.dispatchNumber} already has invoice ${existing.invoiceNo}.`, 409);
+      dispatch = await OrderDispatch.findOne({
+        where: { id: dispatchId, orderId },
+        transaction: t,
+      });
+      if (!dispatch) throw bad('Dispatch not found', 404);
+      if (dispatch.status === 'RETURNED') throw bad('This dispatch was returned.');
+      const existing = await TaxInvoice.findOne({
+        where: { dispatchId, status: 'ISSUED' },
+        transaction: t,
+      });
+      if (existing)
+        throw bad(
+          `Dispatch #${dispatch.dispatchNumber} already has invoice ${existing.invoiceNo}.`,
+          409,
+        );
       // Bill only the dispatched pieces that are not already on an invoice
-      const left = Object.fromEntries((await remainingToInvoice(order, t)).map((r) => [r.productId, r.remaining]));
+      const left = Object.fromEntries(
+        (await remainingToInvoice(order, t)).map((r) => [r.productId, r.remaining]),
+      );
       items = asList(dispatch.items)
-        .map((i) => ({ productId: i.productId, quantity: Math.min(Number(i.quantity) || 0, left[i.productId] || 0) }))
+        .map((i) => ({
+          productId: i.productId,
+          quantity: Math.min(Number(i.quantity) || 0, left[i.productId] || 0),
+        }))
         .filter((i) => i.quantity > 0);
-      if (!items.length) throw bad("Every piece in this dispatch is already on an invoice.");
+      if (!items.length) throw bad('Every piece in this dispatch is already on an invoice.');
     }
     const d = await draft(order, { items, t });
     const date = invoiceDate ? String(invoiceDate).slice(0, 10) : todayIST();
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw bad("Invoice date is not a valid date.");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw bad('Invoice date is not a valid date.');
     if (date > todayIST()) throw bad("Invoice date can't be in the future.");
     const fy = financialYear(date);
     const invoiceNo = await nextInvoiceNo(fy, t);
@@ -296,25 +385,33 @@ async function createInvoice({ orderId, dispatchId = null, items = null, invoice
     // The order (and the dispatch) point at the invoice, so the closing rules see it.
     const link = publicLink(inv);
     if (!order.invoiceLink) order.invoiceLink = link;
-    if (["PREPARING", "CHECKING"].includes(order.status)) order.status = "INVOICE";
+    if (['PREPARING', 'CHECKING'].includes(order.status)) order.status = 'INVOICE';
     await order.save({ transaction: t });
-    if (dispatch && !dispatch.invoiceLink) await dispatch.update({ invoiceLink: link }, { transaction: t });
+    if (dispatch && !dispatch.invoiceLink)
+      await dispatch.update({ invoiceLink: link }, { transaction: t });
     return inv;
   });
 }
 
 async function cancelInvoice(id, { reason, userId }) {
   const { TaxInvoice, Order, sequelize } = m();
-  if (!String(reason || "").trim()) throw bad("Write why the invoice is being cancelled.");
+  if (!String(reason || '').trim()) throw bad('Write why the invoice is being cancelled.');
   return sequelize.transaction(async (t) => {
     const inv = await TaxInvoice.findByPk(id, { transaction: t, lock: t.LOCK.UPDATE });
-    if (!inv) throw bad("Invoice not found", 404);
-    if (inv.status === "CANCELLED") throw bad("This invoice is already cancelled.");
-    await inv.update({ status: "CANCELLED", cancelReason: String(reason).trim(), cancelledAt: new Date() }, { transaction: t });
+    if (!inv) throw bad('Invoice not found', 404);
+    if (inv.status === 'CANCELLED') throw bad('This invoice is already cancelled.');
+    await inv.update(
+      { status: 'CANCELLED', cancelReason: String(reason).trim(), cancelledAt: new Date() },
+      { transaction: t },
+    );
     // If the order pointed at this invoice, point it at the latest live one (or nothing)
     const order = await Order.findByPk(inv.orderId, { transaction: t });
     if (order && order.invoiceLink === publicLink(inv)) {
-      const live = await TaxInvoice.findOne({ where: { orderId: inv.orderId, status: "ISSUED" }, order: [["createdAt", "DESC"]], transaction: t });
+      const live = await TaxInvoice.findOne({
+        where: { orderId: inv.orderId, status: 'ISSUED' },
+        order: [['createdAt', 'DESC']],
+        transaction: t,
+      });
       order.invoiceLink = live ? publicLink(live) : null;
       await order.save({ transaction: t });
     }
@@ -324,10 +421,12 @@ async function cancelInvoice(id, { reason, userId }) {
 
 /** A signed link that opens the invoice PDF without logging in (for WhatsApp / email / order documents). */
 function publicLink(inv) {
-  const { signShare } = require("../../lib/shareToken");
-  const base = (process.env.PUBLIC_BACKEND_URL || `http://localhost:${process.env.PORT || 5050}`).replace(/\/+$/, "");
+  const { signShare } = require('../../lib/shareToken');
+  const base = (
+    process.env.PUBLIC_BACKEND_URL || `http://localhost:${process.env.PORT || 5050}`
+  ).replace(/\/+$/, '');
   // Invoices must stay openable for years (GST records are kept for 6 years)
-  return `${base}/api/public/inv/${signShare({ t: "inv", id: inv.id }, 365 * 8)}.pdf`;
+  return `${base}/api/public/inv/${signShare({ t: 'inv', id: inv.id }, 365 * 8)}.pdf`;
 }
 
 module.exports = {

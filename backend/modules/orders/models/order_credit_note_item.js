@@ -2,7 +2,7 @@
 
 module.exports = (sequelize, DataTypes) => {
   const OrderCreditNoteItem = sequelize.define(
-    "OrderCreditNoteItem",
+    'OrderCreditNoteItem',
     {
       id: {
         type: DataTypes.UUID,
@@ -52,9 +52,9 @@ module.exports = (sequelize, DataTypes) => {
       },
 
       discountType: {
-        type: DataTypes.ENUM("percent", "fixed"),
+        type: DataTypes.ENUM('percent', 'fixed'),
         allowNull: false,
-        defaultValue: "percent",
+        defaultValue: 'percent',
       },
 
       tax: {
@@ -74,30 +74,26 @@ module.exports = (sequelize, DataTypes) => {
       },
     },
     {
-      tableName: "order_credit_note_items",
+      tableName: 'order_credit_note_items',
       timestamps: true,
-      indexes: [
-        { fields: ["creditNoteId"] },
-        { fields: ["orderId"] },
-        { fields: ["productId"] },
-      ],
+      indexes: [{ fields: ['creditNoteId'] }, { fields: ['orderId'] }, { fields: ['productId'] }],
     },
   );
 
   OrderCreditNoteItem.associate = (models) => {
     OrderCreditNoteItem.belongsTo(models.OrderCreditNote, {
-      foreignKey: "creditNoteId",
-      as: "creditNote",
+      foreignKey: 'creditNoteId',
+      as: 'creditNote',
     });
 
     OrderCreditNoteItem.belongsTo(models.Order, {
-      foreignKey: "orderId",
-      as: "order",
+      foreignKey: 'orderId',
+      as: 'order',
     });
 
     OrderCreditNoteItem.belongsTo(models.Product, {
-      foreignKey: "productId",
-      as: "product",
+      foreignKey: 'productId',
+      as: 'product',
     });
   };
 

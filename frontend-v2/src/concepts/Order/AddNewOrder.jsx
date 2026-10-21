@@ -1,11 +1,6 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { useNavigate, useParams, Link, useLocation } from "react-router-dom";
-import {
-  PlusOutlined,
-  DeleteOutlined,
-  UserAddOutlined,
-  WarningOutlined,
-} from "@ant-design/icons";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useNavigate, useParams, Link, useLocation } from 'react-router-dom';
+import { PlusOutlined, DeleteOutlined, UserAddOutlined, WarningOutlined } from '@ant-design/icons';
 import {
   Select,
   Button,
@@ -19,34 +14,28 @@ import {
   InputNumber,
   Collapse,
   Alert,
-} from "antd";
-import { message } from "antd";
-import { debounce } from "lodash";
-import Avatar from "react-avatar";
-import styled from "styled-components";
-import moment from "moment";
+} from 'antd';
+import { message } from 'antd';
+import { debounce } from 'lodash';
+import Avatar from 'react-avatar';
+import styled from 'styled-components';
+import moment from 'moment';
 import {
   useCreateOrderMutation,
   useUpdateOrderByIdMutation,
   useOrderByIdQuery,
   useGetAllOrdersQuery,
-} from "../../api/orderApi";
-import { useGetAllTeamsQuery } from "../../api/teamApi";
-import {
-  useGetCustomersQuery,
-  useCreateCustomerMutation,
-} from "../../api/customerApi";
-import { useGetAllUsersQuery, useGetProfileQuery } from "../../api/userApi";
-import {
-  useGetAllAddressesQuery,
-  useCreateAddressMutation,
-} from "../../api/addressApi";
-import AddNewTeam from "../../components/Orders/AddNewTeam";
-import AddCustomerModal from "../../components/Customers/AddCustomerModal";
-import AddAddress from "../../components/Address/AddAddressModal";
-import DatePicker from "react-datepicker";
-import LowStockProductsModal from "../../components/Orders/LowStockProductsModal";
-import CreditAlert from "../../components/Customers/CreditAlert";
+} from '../../api/orderApi';
+import { useGetAllTeamsQuery } from '../../api/teamApi';
+import { useGetCustomersQuery, useCreateCustomerMutation } from '../../api/customerApi';
+import { useGetAllUsersQuery, useGetProfileQuery } from '../../api/userApi';
+import { useGetAllAddressesQuery, useCreateAddressMutation } from '../../api/addressApi';
+import AddNewTeam from '../../components/Orders/AddNewTeam';
+import AddCustomerModal from '../../components/Customers/AddCustomerModal';
+import AddAddress from '../../components/Address/AddAddressModal';
+import DatePicker from 'react-datepicker';
+import LowStockProductsModal from '../../components/Orders/LowStockProductsModal';
+import CreditAlert from '../../components/Customers/CreditAlert';
 const { Option } = Select;
 const { Text } = Typography;
 const { Panel } = Collapse;
@@ -54,31 +43,20 @@ const { Panel } = Collapse;
 // ────────────────────── QUOTATION → ORDER TRANSFORMER ──────────────────────
 
 /* ────────────────────── Constants ────────────────────── */
-const SOURCE_TYPES = [
-  "Retail",
-  "Architect",
-  "Interior",
-  "Builder",
-  "Contractor",
-];
+const SOURCE_TYPES = ['Retail', 'Architect', 'Interior', 'Builder', 'Contractor'];
 const STATUS_VALUES = [
-  "PREPARING",
-  "CHECKING",
-  "INVOICE",
-  "DISPATCHED",
-  "DELIVERED",
-  "PARTIALLY_DELIVERED",
-  "CANCELED",
-  "DRAFT",
-  "ONHOLD",
-  "CLOSED",
+  'PREPARING',
+  'CHECKING',
+  'INVOICE',
+  'DISPATCHED',
+  'DELIVERED',
+  'PARTIALLY_DELIVERED',
+  'CANCELED',
+  'DRAFT',
+  'ONHOLD',
+  'CLOSED',
 ];
-const INVOICE_EDITABLE_STATUSES = [
-  "INVOICE",
-  "DISPATCHED",
-  "DELIVERED",
-  "PARTIALLY_DELIVERED",
-];
+const INVOICE_EDITABLE_STATUSES = ['INVOICE', 'DISPATCHED', 'DELIVERED', 'PARTIALLY_DELIVERED'];
 
 /* ────────────────────── Styled ────────────────────── */
 const FormContainer = styled.div`
@@ -132,31 +110,28 @@ const AddNewOrder = ({ adminName }) => {
     quotationData.products || [], // ← Pre-fill if from quotation
   );
   const [formData, setFormData] = useState({
-    createdFor: quotationData.createdFor || "",
-    createdBy: "",
-    assignedTeamId: "",
-    assignedUserId: "",
-    secondaryUserId: "",
-    status: "PREPARING",
-    dueDate:
-      quotationData.dueDate || moment().add(1, "days").format("YYYY-MM-DD"),
+    createdFor: quotationData.createdFor || '',
+    createdBy: '',
+    assignedTeamId: '',
+    assignedUserId: '',
+    secondaryUserId: '',
+    status: 'PREPARING',
+    dueDate: quotationData.dueDate || moment().add(1, 'days').format('YYYY-MM-DD'),
     followupDates: [],
-    source: quotationData.source || "",
-    sourceType: "",
-    priority: "medium",
-    description: quotationData.description || "",
-    invoiceLink: isEditMode ? "" : null,
+    source: quotationData.source || '',
+    sourceType: '',
+    priority: 'medium',
+    description: quotationData.description || '',
+    invoiceLink: isEditMode ? '' : null,
     // orderNo removed – backend assigns
-    quotationId: quotationData.quotationId || "",
+    quotationId: quotationData.quotationId || '',
     masterPipelineNo: null,
     previousOrderNo: null,
     shipTo: null,
-    extraDiscountType: "fixed",
+    extraDiscountType: 'fixed',
     gst: quotationData.gst ? parseFloat(quotationData.gst) : null,
-    extraDiscount: quotationData.extraDiscount
-      ? parseFloat(quotationData.extraDiscount)
-      : null,
-    extraDiscountType: quotationData.extraDiscountType || "fixed",
+    extraDiscount: quotationData.extraDiscount ? parseFloat(quotationData.extraDiscount) : null,
+    extraDiscountType: quotationData.extraDiscountType || 'fixed',
     shipping: quotationData.shipping ? parseFloat(quotationData.shipping) : 0.0,
   });
 
@@ -169,11 +144,10 @@ const AddNewOrder = ({ adminName }) => {
   const { data: usersData } = useGetAllUsersQuery();
   const { data: profileData } = useGetProfileQuery();
   const { data: allOrdersData } = useGetAllOrdersQuery({ skip: isEditMode });
-  const { data: addressesData, refetch: refetchAddresses } =
-    useGetAllAddressesQuery(
-      { customerId: formData.createdFor },
-      { skip: !formData.createdFor },
-    );
+  const { data: addressesData, refetch: refetchAddresses } = useGetAllAddressesQuery(
+    { customerId: formData.createdFor },
+    { skip: !formData.createdFor },
+  );
 
   const order = orderData?.order;
   const teams = useMemo(
@@ -199,11 +173,11 @@ const AddNewOrder = ({ adminName }) => {
   );
 
   /* ────────────────────── Local State ────────────────────── */
-  const [assignmentType, setAssignmentType] = useState("team");
+  const [assignmentType, setAssignmentType] = useState('team');
   const [showNewTeamModal, setShowNewTeamModal] = useState(false);
   const [showAddAddressModal, setShowAddAddressModal] = useState(false);
   const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
-  const [customerSearch, setCustomerSearch] = useState("");
+  const [customerSearch, setCustomerSearch] = useState('');
   const [filteredCustomers, setFilteredCustomers] = useState(customers);
   const [descriptionLength, setDescriptionLength] = useState(
     quotationData.description?.length || 0,
@@ -236,8 +210,7 @@ const AddNewOrder = ({ adminName }) => {
     const gstVal = (subtotal * gst) / 100;
 
     const disc = parseFloat(formData.extraDiscount) || 0;
-    const discVal =
-      formData.extraDiscountType === "percent" ? (subtotal * disc) / 100 : disc;
+    const discVal = formData.extraDiscountType === 'percent' ? (subtotal * disc) / 100 : disc;
 
     return {
       gstValue: parseFloat(gstVal.toFixed(2)),
@@ -250,31 +223,31 @@ const AddNewOrder = ({ adminName }) => {
   useEffect(() => {
     if (isEditMode && order && formData.orderNo !== order.orderNo) {
       setFormData({
-        createdFor: order.createdFor || "",
-        createdBy: order.createdBy || user.userId || "",
-        assignedTeamId: order.assignedTeamId || "",
-        assignedUserId: order.assignedUserId || "",
-        secondaryUserId: order.secondaryUserId || "",
-        status: order.status || "PREPARING",
-        dueDate: order.dueDate || moment().add(1, "days").format("YYYY-MM-DD"),
+        createdFor: order.createdFor || '',
+        createdBy: order.createdBy || user.userId || '',
+        assignedTeamId: order.assignedTeamId || '',
+        assignedUserId: order.assignedUserId || '',
+        secondaryUserId: order.secondaryUserId || '',
+        status: order.status || 'PREPARING',
+        dueDate: order.dueDate || moment().add(1, 'days').format('YYYY-MM-DD'),
         followupDates: order.followupDates || [],
-        source: order.source || "",
-        sourceType: order.sourceType || "",
-        priority: order.priority || "medium",
-        description: order.description || "",
-        invoiceLink: order.invoiceLink || "",
-        orderNo: order.orderNo || "", // ← keep for display in edit mode
-        quotationId: order.quotationId || "",
+        source: order.source || '',
+        sourceType: order.sourceType || '',
+        priority: order.priority || 'medium',
+        description: order.description || '',
+        invoiceLink: order.invoiceLink || '',
+        orderNo: order.orderNo || '', // ← keep for display in edit mode
+        quotationId: order.quotationId || '',
         masterPipelineNo: order.masterPipelineNo || null,
         previousOrderNo: order.previousOrderNo || null,
         shipTo: order.shipTo || null,
         shipping: order.shipping ?? 0.0,
         gst: order.gst ?? null,
         extraDiscount: order.extraDiscount ?? null,
-        extraDiscountType: order.extraDiscountType || "fixed",
+        extraDiscountType: order.extraDiscountType || 'fixed',
       });
-      setDescriptionLength((order.description || "").length);
-      setAssignmentType(order.assignedTeamId ? "team" : "users");
+      setDescriptionLength((order.description || '').length);
+      setAssignmentType(order.assignedTeamId ? 'team' : 'users');
     }
   }, [isEditMode, order, user.userId]);
 
@@ -296,33 +269,27 @@ const AddNewOrder = ({ adminName }) => {
     )
       return;
 
-    const norm = (s) => (s ? s.trim().toLowerCase() : "");
+    const norm = (s) => (s ? s.trim().toLowerCase() : '');
     const match = filteredAddresses.find((a) => {
       return (
         norm(a.street) === norm(defaultAddress.street) &&
         norm(a.city) === norm(defaultAddress.city) &&
         norm(a.state) === norm(defaultAddress.state) &&
-        (norm(a.postalCode || a.zip) ===
-          norm(defaultAddress.postalCode || defaultAddress.zip) ||
-          norm(a.postalCode || a.zip) ===
-            norm(defaultAddress.zip || defaultAddress.postalCode)) &&
-        norm(a.country || "India") === norm(defaultAddress.country || "India")
+        (norm(a.postalCode || a.zip) === norm(defaultAddress.postalCode || defaultAddress.zip) ||
+          norm(a.postalCode || a.zip) === norm(defaultAddress.zip || defaultAddress.postalCode)) &&
+        norm(a.country || 'India') === norm(defaultAddress.country || 'India')
       );
     });
 
     if (match) {
-      handleChange("shipTo", match.addressId);
+      handleChange('shipTo', match.addressId);
       return;
     }
 
     // Guard: don't hit the API with data we already know is invalid
-    if (
-      !defaultAddress.street ||
-      !defaultAddress.city ||
-      !defaultAddress.state
-    ) {
+    if (!defaultAddress.street || !defaultAddress.city || !defaultAddress.state) {
       message.error(
-        "This customer has no complete billing address. Please add a shipping address manually.",
+        'This customer has no complete billing address. Please add a shipping address manually.',
       );
       setUseBillingAddress(false); // stop the effect from re-firing
       return;
@@ -333,21 +300,19 @@ const AddNewOrder = ({ adminName }) => {
       try {
         const newAddr = {
           customerId: formData.createdFor,
-          street: defaultAddress.street || "",
-          city: defaultAddress.city || "",
-          state: defaultAddress.state || "",
-          postalCode: defaultAddress.postalCode || defaultAddress.zip || "",
-          country: defaultAddress.country || "India",
-          status: "BILLING",
+          street: defaultAddress.street || '',
+          city: defaultAddress.city || '',
+          state: defaultAddress.state || '',
+          postalCode: defaultAddress.postalCode || defaultAddress.zip || '',
+          country: defaultAddress.country || 'India',
+          status: 'BILLING',
         };
         const res = await createAddress(newAddr).unwrap();
-        handleChange("shipTo", res.data.addressId);
+        handleChange('shipTo', res.data.addressId);
       } catch (e) {
-        message.error(
-          `Failed to create billing address: ${e.data?.message || "Unknown error"}`,
-        );
+        message.error(`Failed to create billing address: ${e.data?.message || 'Unknown error'}`);
         setUseBillingAddress(false); // ← critical: prevents infinite retry
-        handleChange("shipTo", null);
+        handleChange('shipTo', null);
       } finally {
         setIsCreatingAddress(false);
       }
@@ -384,8 +349,8 @@ const AddNewOrder = ({ adminName }) => {
 
   /* ────────────────────── Handlers ────────────────────── */
   const handleChange = (name, value) => {
-    if (name === "createdBy") return;
-    if (name === "description") setDescriptionLength(value.length);
+    if (name === 'createdBy') return;
+    if (name === 'description') setDescriptionLength(value.length);
     setFormData((p) => ({ ...p, [name]: value }));
   };
   const handleNumericChange = (name, value) => {
@@ -397,39 +362,39 @@ const AddNewOrder = ({ adminName }) => {
     refetchTeams();
   };
   const handleAddressChange = (value) => {
-    if (value === "sameAsBilling") setUseBillingAddress(true);
+    if (value === 'sameAsBilling') setUseBillingAddress(true);
     else {
       setUseBillingAddress(false);
-      handleChange("shipTo", value);
+      handleChange('shipTo', value);
     }
   };
   const clearForm = () => {
     setFormData({
-      createdFor: "",
-      createdBy: user.userId || "",
-      assignedTeamId: "",
-      assignedUserId: "",
-      secondaryUserId: "",
-      status: "PREPARING",
-      dueDate: moment().add(1, "days").format("YYYY-MM-DD"),
+      createdFor: '',
+      createdBy: user.userId || '',
+      assignedTeamId: '',
+      assignedUserId: '',
+      secondaryUserId: '',
+      status: 'PREPARING',
+      dueDate: moment().add(1, 'days').format('YYYY-MM-DD'),
       followupDates: [],
-      source: "",
-      sourceType: "",
-      priority: "medium",
-      description: "",
-      invoiceLink: isEditMode ? "" : null,
+      source: '',
+      sourceType: '',
+      priority: 'medium',
+      description: '',
+      invoiceLink: isEditMode ? '' : null,
       // orderNo removed
-      quotationId: "",
+      quotationId: '',
       masterPipelineNo: null,
       previousOrderNo: null,
       shipTo: null,
       shipping: 0.0,
       gst: null,
       extraDiscount: null,
-      extraDiscountType: "fixed",
+      extraDiscountType: 'fixed',
     });
-    setAssignmentType("team");
-    setCustomerSearch("");
+    setAssignmentType('team');
+    setCustomerSearch('');
     setFilteredCustomers(customers);
     setDescriptionLength(0);
     setUseBillingAddress(false);
@@ -439,16 +404,14 @@ const AddNewOrder = ({ adminName }) => {
   const validateFollowupDates = () => {
     if (!formData.dueDate || !formData.followupDates.length) return true;
     const due = moment(formData.dueDate);
-    return formData.followupDates.every(
-      (d) => !d || moment(d).isSameOrBefore(due, "day"),
-    );
+    return formData.followupDates.every((d) => !d || moment(d).isSameOrBefore(due, 'day'));
   };
   const handleFollowupDateChange = (idx, m) => {
     const dates = [...formData.followupDates];
-    dates[idx] = m ? m.format("YYYY-MM-DD") : "";
-    if (m && formData.dueDate && m.isAfter(moment(formData.dueDate), "day"))
+    dates[idx] = m ? m.format('YYYY-MM-DD') : '';
+    if (m && formData.dueDate && m.isAfter(moment(formData.dueDate), 'day'))
       message.warning(`Timeline date ${idx + 1} cannot be after due date.`);
-    if (m && m.isBefore(moment().startOf("day")))
+    if (m && m.isBefore(moment().startOf('day')))
       message.warning(`Timeline date ${idx + 1} cannot be before today.`);
     setFormData((p) => ({ ...p, followupDates: dates }));
   };
@@ -461,73 +424,50 @@ const AddNewOrder = ({ adminName }) => {
     }));
 
   const momentToDate = (m) => (m && m.isValid() ? m.toDate() : null);
-  const dateToMomentStr = (d) => (d ? moment(d).format("YYYY-MM-DD") : "");
+  const dateToMomentStr = (d) => (d ? moment(d).format('YYYY-MM-DD') : '');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (submissionInFlight.current) return;
 
     // ---------- validation ----------
-    if (!formData.createdFor) return message.error("Please select a Customer.");
-    if (
-      formData.secondaryUserId &&
-      !users.some((u) => u.userId === formData.secondaryUserId)
-    )
-      return message.error("Selected Secondary User does not exist.");
+    if (!formData.createdFor) return message.error('Please select a Customer.');
+    if (formData.secondaryUserId && !users.some((u) => u.userId === formData.secondaryUserId))
+      return message.error('Selected Secondary User does not exist.');
     if (formData.sourceType && !formData.source)
-      return message.error(
-        "Please select a Source Customer for the selected Source Type.",
-      );
+      return message.error('Please select a Source Customer for the selected Source Type.');
 
-    if (assignmentType === "team" && !formData.assignedTeamId)
-      return message.error("Please select a Team for assignment.");
-    if (assignmentType === "users" && !formData.assignedUserId)
-      return message.error(
-        "Please select at least a Primary User for assignment.",
-      );
+    if (assignmentType === 'team' && !formData.assignedTeamId)
+      return message.error('Please select a Team for assignment.');
+    if (assignmentType === 'users' && !formData.assignedUserId)
+      return message.error('Please select at least a Primary User for assignment.');
     if (
-      assignmentType === "users" &&
+      assignmentType === 'users' &&
       formData.assignedUserId &&
       formData.secondaryUserId &&
       formData.assignedUserId === formData.secondaryUserId
     )
-      return message.error("Primary and Secondary Users cannot be the same.");
+      return message.error('Primary and Secondary Users cannot be the same.');
 
-    if (!formData.dueDate) return message.error("Please select a due date.");
+    if (!formData.dueDate) return message.error('Please select a due date.');
     if (!validateFollowupDates())
-      return message.error("Timeline dates cannot be after the due date.");
+      return message.error('Timeline dates cannot be after the due date.');
 
-    if (
-      formData.masterPipelineNo &&
-      !/^\d{1,2}\d{1,2}25\d{3,}$/.test(formData.masterPipelineNo)
-    )
-      return message.error("Master Pipeline Number must be DDMM25XXX.");
-    if (
-      formData.previousOrderNo &&
-      !/^\d{1,2}\d{1,2}25\d{3,}$/.test(formData.previousOrderNo)
-    )
-      return message.error("Previous Order Number must be DDMM25XXX.");
+    if (formData.masterPipelineNo && !/^\d{1,2}\d{1,2}25\d{3,}$/.test(formData.masterPipelineNo))
+      return message.error('Master Pipeline Number must be DDMM25XXX.');
+    if (formData.previousOrderNo && !/^\d{1,2}\d{1,2}25\d{3,}$/.test(formData.previousOrderNo))
+      return message.error('Previous Order Number must be DDMM25XXX.');
 
-    if (
-      formData.masterPipelineNo &&
-      orders.every((o) => o.orderNo !== formData.masterPipelineNo)
-    )
-      return message.error(
-        "Master Pipeline Number does not match any existing order.",
-      );
-    if (
-      formData.previousOrderNo &&
-      orders.every((o) => o.orderNo !== formData.previousOrderNo)
-    )
-      return message.error(
-        "Previous Order Number does not match any existing order.",
-      );
+    if (formData.masterPipelineNo && orders.every((o) => o.orderNo !== formData.masterPipelineNo))
+      return message.error('Master Pipeline Number does not match any existing order.');
+    if (formData.previousOrderNo && orders.every((o) => o.orderNo !== formData.previousOrderNo))
+      return message.error('Previous Order Number does not match any existing order.');
 
     if (!formData.shipTo && !useBillingAddress)
-      return message.error("Please select a shipping address.");
+      return message.error('Please select a shipping address.');
 
     // ---------- payload ----------
-    const sanitize = (v) => (v === "" || v == null ? null : v);
+    const sanitize = (v) => (v === '' || v == null ? null : v);
     const payload = {
       createdFor: formData.createdFor,
       createdBy: formData.createdBy,
@@ -538,22 +478,14 @@ const AddNewOrder = ({ adminName }) => {
             ? products
             : [],
       assignedTeamId:
-        assignmentType === "team" && formData.assignedTeamId
-          ? formData.assignedTeamId
-          : null,
+        assignmentType === 'team' && formData.assignedTeamId ? formData.assignedTeamId : null,
       assignedUserId:
-        assignmentType === "users" && formData.assignedUserId
-          ? formData.assignedUserId
-          : null,
+        assignmentType === 'users' && formData.assignedUserId ? formData.assignedUserId : null,
       secondaryUserId:
-        assignmentType === "users" && formData.secondaryUserId
-          ? formData.secondaryUserId
-          : null,
+        assignmentType === 'users' && formData.secondaryUserId ? formData.secondaryUserId : null,
       status: formData.status,
       dueDate: formData.dueDate || null,
-      followupDates: formData.followupDates.filter(
-        (d) => d && moment(d).isValid(),
-      ),
+      followupDates: formData.followupDates.filter((d) => d && moment(d).isValid()),
       source: sanitize(formData.source),
       sourceType: sanitize(formData.sourceType),
       priority: formData.priority || null,
@@ -566,22 +498,18 @@ const AddNewOrder = ({ adminName }) => {
       shipTo: sanitize(formData.shipTo),
       shipping: parseFloat(formData.shipping) || 0.0,
       gst: (() => {
-        if (
-          formData.gst === null ||
-          formData.gst === undefined ||
-          formData.gst === ""
-        ) {
+        if (formData.gst === null || formData.gst === undefined || formData.gst === '') {
           return null;
         }
         const parsed = parseFloat(formData.gst);
         return isNaN(parsed) || parsed < 0 || parsed > 100 ? null : parsed;
       })(),
       ...(formData.extraDiscount != null &&
-      formData.extraDiscount !== "" &&
+      formData.extraDiscount !== '' &&
       parseFloat(formData.extraDiscount) > 0
         ? {
             extraDiscount: parseFloat(formData.extraDiscount),
-            extraDiscountType: formData.extraDiscountType || "fixed",
+            extraDiscountType: formData.extraDiscountType || 'fixed',
           }
         : {
             extraDiscount: null,
@@ -595,23 +523,23 @@ const AddNewOrder = ({ adminName }) => {
     try {
       if (isEditMode) {
         await updateOrder({ id, ...payload }).unwrap();
-        message.success("Order updated successfully");
+        message.success('Order updated successfully');
       } else {
         const result = await createOrder(payload).unwrap();
         message.success(`Order ${result.orderNo} created successfully`);
       }
-      navigate("/orders/list");
+      navigate('/orders/list');
     } catch (err) {
       submissionInFlight.current = false;
       setIsSubmitting(false);
       const msg =
         err?.status === 400
-          ? `Bad Request: ${err.data?.message || "Invalid data."}`
+          ? `Bad Request: ${err.data?.message || 'Invalid data.'}`
           : err?.status === 404
-            ? `Not Found: ${err.data?.message || "Resource not found."}`
+            ? `Not Found: ${err.data?.message || 'Resource not found.'}`
             : err?.status === 500
-              ? "Server error."
-              : "Something went wrong.";
+              ? 'Server error.'
+              : 'Something went wrong.';
 
       message.error(msg);
     }
@@ -624,7 +552,7 @@ const AddNewOrder = ({ adminName }) => {
       setFormData((p) => ({ ...p, createdFor: res.data.customerId }));
       setShowAddCustomerModal(false);
     } catch (e) {
-      message.error(e?.data?.message || "Failed to create customer.");
+      message.error(e?.data?.message || 'Failed to create customer.');
     }
   };
   const handleAddressSave = async (newId) => {
@@ -642,18 +570,12 @@ const AddNewOrder = ({ adminName }) => {
           <HeaderContainer>
             <div>
               <Typography.Title level={4}>
-                {isEditMode ? "Edit Order" : "Add New Order"}
+                {isEditMode ? 'Edit Order' : 'Add New Order'}
               </Typography.Title>
-              <Typography.Text type="secondary">
-                Fill out the order details
-              </Typography.Text>
+              <Typography.Text type="secondary">Fill out the order details</Typography.Text>
             </div>
             <Space>
-              <Button
-                danger
-                icon={<WarningOutlined />}
-                onClick={() => setShowLowStockModal(true)}
-              >
+              <Button danger icon={<WarningOutlined />} onClick={() => setShowLowStockModal(true)}>
                 Low Stock Products
               </Button>
               <Link to="/orders/list">
@@ -672,15 +594,15 @@ const AddNewOrder = ({ adminName }) => {
               <Col xs={24} md={12}>
                 <FormSection>
                   <Text strong>
-                    Customer <span style={{ color: "red" }}>*</span>
+                    Customer <span style={{ color: 'red' }}>*</span>
                   </Text>
-                  <Space direction="horizontal" style={{ width: "100%" }}>
+                  <Space direction="horizontal" style={{ width: '100%' }}>
                     <CompactSelect
                       showSearch
                       value={formData.createdFor || undefined}
                       onChange={(v) => {
-                        handleChange("createdFor", v);
-                        handleChange("shipTo", null);
+                        handleChange('createdFor', v);
+                        handleChange('shipTo', null);
                         setUseBillingAddress(false);
                       }}
                       onSearch={debouncedCustomerSearch}
@@ -713,7 +635,9 @@ const AddNewOrder = ({ adminName }) => {
                     amount={
                       quotationData.finalAmount ||
                       products.reduce(
-                        (a, p) => a + (Number(p.total) || (Number(p.price) || 0) * (Number(p.quantity) || 0)),
+                        (a, p) =>
+                          a +
+                          (Number(p.total) || (Number(p.price) || 0) * (Number(p.quantity) || 0)),
                         0,
                       )
                     }
@@ -726,24 +650,18 @@ const AddNewOrder = ({ adminName }) => {
               <Col xs={24} md={12}>
                 <FormSection>
                   <Text strong>
-                    Shipping Address <span style={{ color: "red" }}>*</span>
+                    Shipping Address <span style={{ color: 'red' }}>*</span>
                   </Text>
-                  <Space direction="horizontal" style={{ width: "100%" }}>
+                  <Space direction="horizontal" style={{ width: '100%' }}>
                     <CompactSelect
-                      value={
-                        useBillingAddress
-                          ? "sameAsBilling"
-                          : formData.shipTo || undefined
-                      }
+                      value={useBillingAddress ? 'sameAsBilling' : formData.shipTo || undefined}
                       onChange={handleAddressChange}
                       placeholder="Select shipping address"
                       disabled={!formData.createdFor}
                       style={{ flex: 1 }}
                     >
                       {formData.createdFor && defaultAddress && (
-                        <Option value="sameAsBilling">
-                          Same as Billing Address
-                        </Option>
+                        <Option value="sameAsBilling">Same as Billing Address</Option>
                       )}
                       {!formData.createdFor ? (
                         <Option disabled>Please select a customer first</Option>
@@ -752,9 +670,9 @@ const AddNewOrder = ({ adminName }) => {
                       ) : (
                         filteredAddresses.map((a) => (
                           <Option key={a.addressId} value={a.addressId}>
-                            {`${a.street}, ${a.city}, ${a.state || ""}, ${
+                            {`${a.street}, ${a.city}, ${a.state || ''}, ${
                               a.postalCode
-                            }, ${a.country || "India"}`}
+                            }, ${a.country || 'India'}`}
                           </Option>
                         ))
                       )}
@@ -777,13 +695,11 @@ const AddNewOrder = ({ adminName }) => {
               <Col xs={24} md={12}>
                 <FormSection>
                   <Text strong>
-                    Due Date <span style={{ color: "red" }}>*</span>
+                    Due Date <span style={{ color: 'red' }}>*</span>
                   </Text>
                   <DatePicker
                     selected={momentToDate(moment(formData.dueDate))}
-                    onChange={(d) =>
-                      handleChange("dueDate", dateToMomentStr(d))
-                    }
+                    onChange={(d) => handleChange('dueDate', dateToMomentStr(d))}
                     dateFormat="yyyy-MM-dd"
                     minDate={new Date()}
                     placeholderText="yyyy-mm-dd"
@@ -800,13 +716,12 @@ const AddNewOrder = ({ adminName }) => {
                   <Text strong>Status</Text>
                   <CompactSelect
                     value={formData.status}
-                    onChange={(v) => handleChange("status", v)}
+                    onChange={(v) => handleChange('status', v)}
                     placeholder="Select status"
                   >
                     {STATUS_VALUES.map((s) => (
                       <Option key={s} value={s}>
-                        {s.charAt(0) +
-                          s.slice(1).toLowerCase().replace("_", " ")}
+                        {s.charAt(0) + s.slice(1).toLowerCase().replace('_', ' ')}
                       </Option>
                     ))}
                   </CompactSelect>
@@ -819,7 +734,7 @@ const AddNewOrder = ({ adminName }) => {
                   <Text strong>Priority</Text>
                   <CompactSelect
                     value={formData.priority || undefined}
-                    onChange={(v) => handleChange("priority", v)}
+                    onChange={(v) => handleChange('priority', v)}
                     placeholder="Select priority"
                   >
                     <Option value="high">High</Option>
@@ -841,9 +756,9 @@ const AddNewOrder = ({ adminName }) => {
 
                       setFormData((p) => ({
                         ...p,
-                        ...(value === "team"
-                          ? { assignedUserId: "", secondaryUserId: "" }
-                          : { assignedTeamId: "" }),
+                        ...(value === 'team'
+                          ? { assignedUserId: '', secondaryUserId: '' }
+                          : { assignedTeamId: '' }),
                       }));
                     }}
                   >
@@ -854,14 +769,14 @@ const AddNewOrder = ({ adminName }) => {
               </Col>
 
               {/* ---------- Team / Users ---------- */}
-              {assignmentType === "team" ? (
+              {assignmentType === 'team' ? (
                 <Col xs={24}>
                   <FormSection>
                     <Text strong>Team</Text>
-                    <Space size={4} style={{ width: "100%" }}>
+                    <Space size={4} style={{ width: '100%' }}>
                       <CompactSelect
                         value={formData.assignedTeamId || undefined}
-                        onChange={(v) => handleChange("assignedTeamId", v)}
+                        onChange={(v) => handleChange('assignedTeamId', v)}
                         placeholder="Select team"
                         style={{ flex: 1 }}
                       >
@@ -870,10 +785,8 @@ const AddNewOrder = ({ adminName }) => {
                             <Option key={t.id} value={t.id}>
                               {t.teamName} (
                               {t.teammembers?.length
-                                ? t.teammembers
-                                    .map((m) => m.userName)
-                                    .join(", ")
-                                : "No members"}
+                                ? t.teammembers.map((m) => m.userName).join(', ')
+                                : 'No members'}
                               )
                             </Option>
                           ))
@@ -881,10 +794,7 @@ const AddNewOrder = ({ adminName }) => {
                           <Option disabled>No teams available</Option>
                         )}
                       </CompactSelect>
-                      <Button
-                        type="primary"
-                        onClick={() => setShowNewTeamModal(true)}
-                      >
+                      <Button type="primary" onClick={() => setShowNewTeamModal(true)}>
                         <PlusOutlined />
                       </Button>
                     </Space>
@@ -895,23 +805,21 @@ const AddNewOrder = ({ adminName }) => {
                   <Col xs={24} md={12}>
                     <FormSection>
                       <Text strong>
-                        Primary User <span style={{ color: "red" }}>*</span>
+                        Primary User <span style={{ color: 'red' }}>*</span>
                       </Text>
                       <CompactSelect
                         value={formData.assignedUserId || undefined}
-                        onChange={(v) => handleChange("assignedUserId", v)}
+                        onChange={(v) => handleChange('assignedUserId', v)}
                         placeholder="Select primary user"
                       >
                         {users
                           .filter((u) => u.userId !== formData.secondaryUserId)
                           .map((u) => (
                             <Option key={u.userId} value={u.userId}>
-                              {u.name || "—"}
+                              {u.name || '—'}
                             </Option>
                           ))}
-                        {users.length === 0 && (
-                          <Option disabled>No users available</Option>
-                        )}
+                        {users.length === 0 && <Option disabled>No users available</Option>}
                       </CompactSelect>
                     </FormSection>
                   </Col>
@@ -920,7 +828,7 @@ const AddNewOrder = ({ adminName }) => {
                       <Text strong>Secondary User (Optional)</Text>
                       <CompactSelect
                         value={formData.secondaryUserId || undefined}
-                        onChange={(v) => handleChange("secondaryUserId", v)}
+                        onChange={(v) => handleChange('secondaryUserId', v)}
                         placeholder="Select secondary user"
                         allowClear
                         disabled={!formData.assignedUserId}
@@ -929,12 +837,10 @@ const AddNewOrder = ({ adminName }) => {
                           .filter((u) => u.userId !== formData.assignedUserId)
                           .map((u) => (
                             <Option key={u.userId} value={u.userId}>
-                              {u.name || "—"}
+                              {u.name || '—'}
                             </Option>
                           ))}
-                        {users.length === 0 && (
-                          <Option disabled>No users available</Option>
-                        )}
+                        {users.length === 0 && <Option disabled>No users available</Option>}
                       </CompactSelect>
                     </FormSection>
                   </Col>
@@ -948,7 +854,7 @@ const AddNewOrder = ({ adminName }) => {
                   <CompactTextArea
                     value={formData.description}
                     onChange={(e) => {
-                      handleChange("description", e.target.value);
+                      handleChange('description', e.target.value);
                       setDescriptionLength(e.target.value?.length || 0);
                     }}
                     rows={3}
@@ -957,7 +863,7 @@ const AddNewOrder = ({ adminName }) => {
                   />
                   <Text
                     style={{
-                      color: descriptionLength > 60 ? "red" : "inherit",
+                      color: descriptionLength > 60 ? 'red' : 'inherit',
                     }}
                   >
                     {descriptionLength}/60 Characters
@@ -968,14 +874,11 @@ const AddNewOrder = ({ adminName }) => {
               {/* ---------- Advanced Options ---------- */}
               <Col xs={24}>
                 <Divider orientation="left">
-                  <Button
-                    type="link"
-                    onClick={() => setAdvancedOpen(!advancedOpen)}
-                  >
-                    Advanced Options {advancedOpen ? "Hide" : "Show"}
+                  <Button type="link" onClick={() => setAdvancedOpen(!advancedOpen)}>
+                    Advanced Options {advancedOpen ? 'Hide' : 'Show'}
                   </Button>
                 </Divider>
-                <Collapse activeKey={advancedOpen ? ["1"] : []}>
+                <Collapse activeKey={advancedOpen ? ['1'] : []}>
                   <Panel header="" key="1">
                     <Row gutter={[16, 12]}>
                       {/* Source Type & Customer */}
@@ -985,8 +888,8 @@ const AddNewOrder = ({ adminName }) => {
                           <CompactSelect
                             value={formData.sourceType || undefined}
                             onChange={(v) => {
-                              handleChange("sourceType", v);
-                              handleChange("source", "");
+                              handleChange('sourceType', v);
+                              handleChange('source', '');
                             }}
                             placeholder="Select source type"
                             allowClear
@@ -1004,7 +907,7 @@ const AddNewOrder = ({ adminName }) => {
                           <Text strong>Source Customer</Text>
                           <CompactSelect
                             value={formData.source || undefined}
-                            onChange={(v) => handleChange("source", v)}
+                            onChange={(v) => handleChange('source', v)}
                             placeholder="Select source customer"
                             disabled={!formData.sourceType}
                             allowClear
@@ -1024,17 +927,12 @@ const AddNewOrder = ({ adminName }) => {
                           <Text strong>Master Pipeline Number</Text>
                           <CompactSelect
                             value={formData.masterPipelineNo || undefined}
-                            onChange={(v) =>
-                              handleChange("masterPipelineNo", v)
-                            }
+                            onChange={(v) => handleChange('masterPipelineNo', v)}
                             placeholder="Select master order"
                             allowClear
                           >
                             {orders
-                              .filter(
-                                (o) =>
-                                  o.orderNo && o.orderNo !== formData.orderNo,
-                              )
+                              .filter((o) => o.orderNo && o.orderNo !== formData.orderNo)
                               .map((o) => (
                                 <Option key={o.orderNo} value={o.orderNo}>
                                   {o.orderNo}
@@ -1048,15 +946,12 @@ const AddNewOrder = ({ adminName }) => {
                           <Text strong>Previous Order Number</Text>
                           <CompactSelect
                             value={formData.previousOrderNo || undefined}
-                            onChange={(v) => handleChange("previousOrderNo", v)}
+                            onChange={(v) => handleChange('previousOrderNo', v)}
                             placeholder="Select previous order"
                             allowClear
                           >
                             {orders
-                              .filter(
-                                (o) =>
-                                  o.orderNo && o.orderNo !== formData.orderNo,
-                              )
+                              .filter((o) => o.orderNo && o.orderNo !== formData.orderNo)
                               .map((o) => (
                                 <Option key={o.orderNo} value={o.orderNo}>
                                   {o.orderNo}
@@ -1074,9 +969,9 @@ const AddNewOrder = ({ adminName }) => {
                             min={0}
                             step={0.01}
                             precision={2}
-                            style={{ width: "100%" }}
+                            style={{ width: '100%' }}
                             value={formData.shipping}
-                            onChange={(v) => handleNumericChange("shipping", v)}
+                            onChange={(v) => handleNumericChange('shipping', v)}
                             placeholder="0.00"
                             addonBefore="₹"
                           />
@@ -1090,9 +985,9 @@ const AddNewOrder = ({ adminName }) => {
                             max={100}
                             step={0.01}
                             precision={2}
-                            style={{ width: "100%" }}
+                            style={{ width: '100%' }}
                             value={formData.gst}
-                            onChange={(v) => handleNumericChange("gst", v)}
+                            onChange={(v) => handleNumericChange('gst', v)}
                             placeholder="18.00"
                             addonAfter="%"
                           />
@@ -1104,7 +999,7 @@ const AddNewOrder = ({ adminName }) => {
                           <InputNumber
                             value={formData.extraDiscount}
                             onChange={(v) => {
-                              handleNumericChange("extraDiscount", v);
+                              handleNumericChange('extraDiscount', v);
                             }}
                             min={0}
                             precision={2}
@@ -1117,9 +1012,7 @@ const AddNewOrder = ({ adminName }) => {
                           <Text strong>Discount Type</Text>
                           <Radio.Group
                             value={formData.extraDiscountType}
-                            onChange={(e) =>
-                              handleChange("extraDiscountType", e.target.value)
-                            }
+                            onChange={(e) => handleChange('extraDiscountType', e.target.value)}
                           >
                             <Radio value="fixed">Fixed (₹)</Radio>
                             <Radio value="percent">Percent (%)</Radio>
@@ -1133,16 +1026,10 @@ const AddNewOrder = ({ adminName }) => {
                           <FormSection>
                             <Text strong>Invoice Link</Text>
                             <CompactInput
-                              value={formData.invoiceLink || ""}
-                              onChange={(e) =>
-                                handleChange("invoiceLink", e.target.value)
-                              }
+                              value={formData.invoiceLink || ''}
+                              onChange={(e) => handleChange('invoiceLink', e.target.value)}
                               placeholder="Enter invoice link"
-                              disabled={
-                                !INVOICE_EDITABLE_STATUSES.includes(
-                                  formData.status,
-                                )
-                              }
+                              disabled={!INVOICE_EDITABLE_STATUSES.includes(formData.status)}
                             />
                           </FormSection>
                         </Col>
@@ -1157,19 +1044,15 @@ const AddNewOrder = ({ adminName }) => {
                               key={i}
                               align="center"
                               size={4}
-                              style={{ marginBottom: 8, width: "100%" }}
+                              style={{ marginBottom: 8, width: '100%' }}
                             >
                               <DatePicker
                                 selected={momentToDate(moment(d))}
-                                onChange={(date) =>
-                                  handleFollowupDateChange(i, moment(date))
-                                }
+                                onChange={(date) => handleFollowupDateChange(i, moment(date))}
                                 dateFormat="yyyy-MM-dd"
                                 minDate={new Date()}
                                 maxDate={
-                                  formData.dueDate
-                                    ? moment(formData.dueDate).toDate()
-                                    : null
+                                  formData.dueDate ? moment(formData.dueDate).toDate() : null
                                 }
                                 placeholderText="yyyy-mm-dd"
                                 className="ant-input"
@@ -1184,11 +1067,7 @@ const AddNewOrder = ({ adminName }) => {
                               />
                             </Space>
                           ))}
-                          <Button
-                            type="primary"
-                            onClick={addFollowupDate}
-                            icon={<PlusOutlined />}
-                          >
+                          <Button type="primary" onClick={addFollowupDate} icon={<PlusOutlined />}>
                             Add Timeline Date
                           </Button>
                         </FormSection>
@@ -1200,11 +1079,8 @@ const AddNewOrder = ({ adminName }) => {
 
               {/* ---------- Submit ---------- */}
               <Col xs={24}>
-                <Space style={{ width: "100%", justifyContent: "flex-end" }}>
-                  <Button
-                    type="default"
-                    onClick={() => navigate("/orders/list")}
-                  >
+                <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
+                  <Button type="default" onClick={() => navigate('/orders/list')}>
                     Cancel
                   </Button>
                   <Button
@@ -1213,7 +1089,7 @@ const AddNewOrder = ({ adminName }) => {
                     loading={isSubmitting}
                     disabled={isSubmitting}
                   >
-                    {isEditMode ? "Update Order" : "Create Order"}
+                    {isEditMode ? 'Update Order' : 'Create Order'}
                   </Button>
                 </Space>
               </Col>
@@ -1222,11 +1098,7 @@ const AddNewOrder = ({ adminName }) => {
           <LowStockProductsModal
             visible={showLowStockModal}
             orderId={isEditMode ? id : null}
-            products={
-              quotationData.products?.length > 0
-                ? quotationData.products
-                : products
-            }
+            products={quotationData.products?.length > 0 ? quotationData.products : products}
             onClose={() => setShowLowStockModal(false)}
           />
           {/* ---------- Modals ---------- */}

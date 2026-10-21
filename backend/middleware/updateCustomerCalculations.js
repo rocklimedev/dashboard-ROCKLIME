@@ -1,9 +1,9 @@
-const Invoice = require("../models/invoice");
-const Address = require("../models/address");
-const { v4: uuidv4 } = require("uuid");
-const Customer = require("../models/customers");
-const { Op } = require("sequelize");
-const { INVOICE_STATUS } = require("../config/constant");
+const Invoice = require('../models/invoice');
+const Address = require('../models/address');
+const { v4: uuidv4 } = require('uuid');
+const Customer = require('../models/customers');
+const { Op } = require('sequelize');
+const { INVOICE_STATUS } = require('../config/constant');
 
 // Middleware to update customer calculations
 const updateCustomerCalculations = async (req, res, next) => {
@@ -20,7 +20,7 @@ const updateCustomerCalculations = async (req, res, next) => {
     if (!customerId) {
       return res.status(400).json({
         success: false,
-        message: "Customer ID is required for calculations",
+        message: 'Customer ID is required for calculations',
       });
     }
 
@@ -29,7 +29,7 @@ const updateCustomerCalculations = async (req, res, next) => {
     if (!customer) {
       return res.status(400).json({
         success: false,
-        message: "Customer not found",
+        message: 'Customer not found',
       });
     }
 
@@ -38,10 +38,10 @@ const updateCustomerCalculations = async (req, res, next) => {
       where: {
         customerId,
         status: {
-          [Op.notIn]: ["refund", "void"],
+          [Op.notIn]: ['refund', 'void'],
         },
       },
-      attributes: ["amount", "status", "dueDate"],
+      attributes: ['amount', 'status', 'dueDate'],
     });
 
     // Initialize calculations
@@ -54,7 +54,7 @@ const updateCustomerCalculations = async (req, res, next) => {
       const amount = parseFloat(invoice.amount);
       totalAmount += amount;
 
-      if (["paid", "partially paid"].includes(invoice.status)) {
+      if (['paid', 'partially paid'].includes(invoice.status)) {
         // If partial payments are stored in paymentMethod JSON, parse them here
         // Example: paidAmount += invoice.paymentMethod?.paidAmount || amount;
         paidAmount += amount; // Assuming full amount for simplicity
@@ -97,7 +97,7 @@ const updateCustomerCalculations = async (req, res, next) => {
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: "Error updating customer calculations",
+      message: 'Error updating customer calculations',
       error: error.message,
     });
   }

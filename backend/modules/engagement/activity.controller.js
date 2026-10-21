@@ -1,4 +1,4 @@
-const { ActivityLog, User } = require("../../models");
+const { ActivityLog, User } = require('../../models');
 
 exports.getAllActivities = async (req, res) => {
   try {
@@ -10,11 +10,11 @@ exports.getAllActivities = async (req, res) => {
       include: [
         {
           model: User,
-          as: "user",
-          attributes: ["userId", "name", "email"],
+          as: 'user',
+          attributes: ['userId', 'name', 'email'],
         },
       ],
-      order: [["createdAt", "DESC"]],
+      order: [['createdAt', 'DESC']],
       limit,
       offset,
     });
@@ -26,7 +26,7 @@ exports.getAllActivities = async (req, res) => {
     });
   } catch (error) {
     return res.status(500).json({
-      message: "Failed to fetch activity logs",
+      message: 'Failed to fetch activity logs',
       error: error.message,
     });
   }
@@ -38,22 +38,22 @@ exports.getActivityById = async (req, res) => {
       include: [
         {
           model: User,
-          as: "user",
-          attributes: ["userId", "name", "email"],
+          as: 'user',
+          attributes: ['userId', 'name', 'email'],
         },
       ],
     });
 
     if (!activity) {
       return res.status(404).json({
-        message: "Activity not found",
+        message: 'Activity not found',
       });
     }
 
     return res.status(200).json(activity);
   } catch (error) {
     return res.status(500).json({
-      message: "Failed to fetch activity",
+      message: 'Failed to fetch activity',
       error: error.message,
     });
   }
@@ -65,12 +65,12 @@ exports.getActivityByUser = async (req, res) => {
 
     const activities = await ActivityLog.findAll({
       where: { userId },
-      order: [["createdAt", "DESC"]],
+      order: [['createdAt', 'DESC']],
       include: [
         {
           model: User,
-          as: "user",
-          attributes: ["userId", "name", "email"],
+          as: 'user',
+          attributes: ['userId', 'name', 'email'],
         },
       ],
     });
@@ -78,7 +78,7 @@ exports.getActivityByUser = async (req, res) => {
     return res.status(200).json(activities);
   } catch (error) {
     return res.status(500).json({
-      message: "Failed to fetch user activities",
+      message: 'Failed to fetch user activities',
       error: error.message,
     });
   }
@@ -90,18 +90,18 @@ exports.deleteLog = async (req, res) => {
 
     if (!activity) {
       return res.status(404).json({
-        message: "Activity log not found",
+        message: 'Activity log not found',
       });
     }
 
     await activity.destroy();
 
     return res.status(200).json({
-      message: "Activity log deleted successfully",
+      message: 'Activity log deleted successfully',
     });
   } catch (error) {
     return res.status(500).json({
-      message: "Failed to delete activity log",
+      message: 'Failed to delete activity log',
       error: error.message,
     });
   }

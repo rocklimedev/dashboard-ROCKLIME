@@ -1,60 +1,72 @@
-import { lazy } from "react";
+import { lazy } from 'react';
 // src/routes/userRoutes.js
-import { FaUser, FaIdCard, FaUserCircle } from "react-icons/fa";
-import PersonalRoute from "../PersonalRoute";
-const NewAddUser = lazy(() => import("../../concepts/User/NewAddUser"));
-const UserPage = lazy(() => import("../../concepts/User/UserPage"));
-const Profile = lazy(() => import("../../concepts/User/Profile"));
-const Permissions = lazy(() => import("../../concepts/RBAC/Permissions"));
-const GeneralSettings = lazy(() => import("../../concepts/Settings/GeneralSettings"));
-const Connectors = lazy(() => import("../../concepts/Settings/Connectors"));
+import { FaUser, FaIdCard, FaUserCircle } from 'react-icons/fa';
+import PersonalRoute from '../PersonalRoute';
+const NewAddUser = lazy(() => import('../../concepts/User/NewAddUser'));
+const UserPage = lazy(() => import('../../concepts/User/UserPage'));
+const Profile = lazy(() => import('../../concepts/User/Profile'));
+const Permissions = lazy(() => import('../../concepts/RBAC/Permissions'));
+const GeneralSettings = lazy(() => import('../../concepts/Settings/GeneralSettings'));
+const Connectors = lazy(() => import('../../concepts/Settings/Connectors'));
 
 export const userRoutes = [
   {
-    path: "/u/:id/connectors",
-    name: "Connectors",
+    path: '/u/:id/connectors',
+    name: 'Connectors',
     isSidebarActive: false,
-    element: <PersonalRoute><Connectors /></PersonalRoute>,
+    element: (
+      <PersonalRoute>
+        <Connectors />
+      </PersonalRoute>
+    ),
   },
   {
-    path: "/u/:id/settings",
-    name: "My Account Settings",
+    path: '/u/:id/settings',
+    name: 'My Account Settings',
     isSidebarActive: false,
-    element: <PersonalRoute><GeneralSettings /></PersonalRoute>,
+    element: (
+      <PersonalRoute>
+        <GeneralSettings />
+      </PersonalRoute>
+    ),
   },
   {
-    path: "/user/add",
-    name: "Create User",
+    path: '/user/add',
+    name: 'Create User',
     icon: <FaUser />,
     isSidebarActive: false,
     element: <NewAddUser />,
   },
   {
-    path: "/user/:userId",
-    name: "User Details",
+    path: '/user/:userId',
+    name: 'User Details',
     icon: <FaUser />,
     isSidebarActive: false,
     element: <UserPage />,
   },
   {
-    path: "/user/:userId/edit",
-    name: "Edit User",
+    path: '/user/:userId/edit',
+    name: 'Edit User',
     icon: <FaUser />,
     isSidebarActive: false,
     element: <NewAddUser />,
   },
   {
-    path: "/roles-permission/permissions/:id",
-    name: "Grant Permissions",
+    path: '/roles-permission/permissions/:id',
+    name: 'Grant Permissions',
     icon: <FaUser />,
     isSidebarActive: false,
     element: <Permissions />,
   },
   {
-    path: "/u/:id",
-    name: "Profile",
+    path: '/u/:id',
+    name: 'Profile',
     icon: <FaUserCircle />,
     isSidebarActive: false,
-    element: <PersonalRoute><Profile /></PersonalRoute>,
+    element: (
+      <PersonalRoute>
+        <Profile />
+      </PersonalRoute>
+    ),
   },
 ];

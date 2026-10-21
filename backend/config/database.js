@@ -1,8 +1,8 @@
 // config/database.js
-const { Sequelize } = require("sequelize");
-require("dotenv").config();
+const { Sequelize } = require('sequelize');
+require('dotenv').config();
 
-console.log("Initializing MySQL connection...");
+console.log('Initializing MySQL connection...');
 
 let sequelize;
 let isConnected = false;
@@ -15,10 +15,10 @@ function createSequelize() {
   if (sequelize) return sequelize;
 
   if (process.env.DATABASE_URL) {
-    console.log("Using DATABASE_URL (Production)");
+    console.log('Using DATABASE_URL (Production)');
 
     sequelize = new Sequelize(process.env.DATABASE_URL, {
-      dialect: "mysql",
+      dialect: 'mysql',
       logging: false, // Set to console.log temporarily if debugging connection issues
 
       dialectOptions: {
@@ -40,39 +40,34 @@ function createSequelize() {
         validate: (connection) => {
           // Basic health check before handing out
           return connection
-            .query("SELECT 1")
+            .query('SELECT 1')
             .then(() => true)
             .catch(() => false);
         },
       },
     });
   } else {
-    console.log("Using individual DB credentials (Local)");
+    console.log('Using individual DB credentials (Local)');
 
-    sequelize = new Sequelize(
-      process.env.DB_NAME,
-      process.env.DB_USER,
-      process.env.DB_PASSWORD,
-      {
-        host: process.env.DB_HOST,
-        port: process.env.DB_PORT || 3306,
-        dialect: "mysql",
-        logging: false,
+    sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASSWORD, {
+      host: process.env.DB_HOST,
+      port: process.env.DB_PORT || 3306,
+      dialect: 'mysql',
+      logging: false,
 
-        dialectOptions: {
-          connectTimeout: 15000,
-        },
-
-        pool: {
-          max: Number(process.env.DB_POOL_MAX) || 10,
-          min: 1,
-          acquire: 20000,
-          idle: 30000,
-          evict: 10000,
-          // Optional: add maxUses here too if you want recycle in local
-        },
+      dialectOptions: {
+        connectTimeout: 15000,
       },
-    );
+
+      pool: {
+        max: Number(process.env.DB_POOL_MAX) || 10,
+        min: 1,
+        acquire: 20000,
+        idle: 30000,
+        evict: 10000,
+        // Optional: add maxUses here too if you want recycle in local
+      },
+    });
   }
 
   return sequelize;
@@ -90,17 +85,14 @@ async function connectWithRetry(attempt = 1) {
     await sequelize.authenticate();
     isConnected = true;
     isConnecting = false;
-    console.log("✅ MySQL connected successfully");
+    console.log('✅ MySQL connected successfully');
   } catch (err) {
     isConnecting = false;
 
-    console.error(
-      `❌ MySQL connection failed (attempt ${attempt}):`,
-      err.message,
-    );
+    console.error(`❌ MySQL connection failed (attempt ${attempt}):`, err.message);
 
     if (attempt >= 5) {
-      console.error("🛑 Max retries reached. Exiting.");
+      console.error('🛑 Max retries reached. Exiting.');
       process.exit(1);
     }
 
@@ -118,18 +110,18 @@ async function gracefulShutdown(signal) {
   console.log(`🛑 Received ${signal}. Closing DB connections...`);
   try {
     if (sequelize) await sequelize.close();
-    console.log("✅ DB connections closed");
+    console.log('✅ DB connections closed');
     process.exit(0);
   } catch (err) {
-    console.error("❌ Error during DB shutdown:", err.message);
+    console.error('❌ Error during DB shutdown:', err.message);
     process.exit(1);
   }
 }
 
 // After an uncaught exception the process state is unknown, so it exits and
 // the process manager (PM2, see ecosystem.config.js) starts it again.
-process.on("uncaughtException", async (err) => {
-  console.error("Uncaught Exception:", err);
+process.on('uncaughtException', async (err) => {
+  console.error('Uncaught Exception:', err);
   try {
     if (sequelize) await sequelize.close();
   } finally {
@@ -139,12 +131,12 @@ process.on("uncaughtException", async (err) => {
 
 // A rejected promise nobody awaited is a bug to log, not a reason to take the
 // whole server down for every user.
-process.on("unhandledRejection", (err) => {
-  console.error("Unhandled Rejection:", err);
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled Rejection:', err);
 });
 
-process.on("SIGTERM", gracefulShutdown);
-process.on("SIGINT", gracefulShutdown);
+process.on('SIGTERM', gracefulShutdown);
+process.on('SIGINT', gracefulShutdown);
 
 // Initialize
 sequelize = createSequelize();

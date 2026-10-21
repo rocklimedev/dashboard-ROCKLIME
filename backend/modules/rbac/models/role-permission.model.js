@@ -1,6 +1,6 @@
 module.exports = (sequelize, DataTypes) => {
   const RolePermission = sequelize.define(
-    "RolePermission",
+    'RolePermission',
     {
       id: {
         type: DataTypes.CHAR(36),
@@ -11,31 +11,28 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.CHAR(36),
         allowNull: true,
         references: {
-          model: "roles",
-          key: "roleId",
+          model: 'roles',
+          key: 'roleId',
         },
-        onUpdate: "CASCADE",
-        onDelete: "CASCADE",
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE',
       },
       permissionId: {
         type: DataTypes.CHAR(36),
         allowNull: true,
         references: {
-          model: "permissions",
-          key: "permissionId",
+          model: 'permissions',
+          key: 'permissionId',
         },
-        onUpdate: "CASCADE",
-        onDelete: "CASCADE",
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE',
       },
     },
     {
-      tableName: "rolepermissions",
+      tableName: 'rolepermissions',
       timestamps: true,
-      indexes: [
-        { unique: true, fields: ["roleId", "permissionId"] },
-        { fields: ["permissionId"] },
-      ],
-    }
+      indexes: [{ unique: true, fields: ['roleId', 'permissionId'] }, { fields: ['permissionId'] }],
+    },
   );
 
   // ---------------------------------------
@@ -44,14 +41,14 @@ module.exports = (sequelize, DataTypes) => {
   RolePermission.associate = (models) => {
     // RolePermission → Role (M:1)
     RolePermission.belongsTo(models.Role, {
-      foreignKey: "roleId",
-      as: "role",
+      foreignKey: 'roleId',
+      as: 'role',
     });
 
     // RolePermission → Permission (M:1)
     RolePermission.belongsTo(models.Permission, {
-      foreignKey: "permissionId",
-      as: "permission",
+      foreignKey: 'permissionId',
+      as: 'permission',
     });
   };
 

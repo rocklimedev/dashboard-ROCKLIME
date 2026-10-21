@@ -1,6 +1,6 @@
-const express = require("express");
-const { v4: uuidv4 } = require("uuid");
-const Permission = require("../modules/rbac/models/permission.model"); // Import your Permission model
+const express = require('express');
+const { v4: uuidv4 } = require('uuid');
+const Permission = require('../modules/rbac/models/permission.model'); // Import your Permission model
 
 const app = express(); // Your Express app instance
 
@@ -48,6 +48,4 @@ const syncRoutesToPermissions = async () => {
 };
 
 // Run it once during startup
-syncRoutesToPermissions().then(() =>
-  console.log("🔄 Routes synced to permissions!"),
-);
+syncRoutesToPermissions().then(() => console.log('🔄 Routes synced to permissions!'));

@@ -1,15 +1,15 @@
 // routes/fieldGuidedSheetRoutes.js
 
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const { auth } = require("../../middleware/auth");
-const { guardModule } = require("../../middleware/permission");
-const fieldGuidedSheetController = require("./fgs.controller");
+const { auth } = require('../../middleware/auth');
+const { guardModule } = require('../../middleware/permission');
+const fieldGuidedSheetController = require('./fgs.controller');
 
 router.use(auth);
 router.use(
-  guardModule("field_guided_sheets", [
-    { method: "POST", path: /^\/[^/]+\/convert$/, action: "write", module: "purchase_orders" },
+  guardModule('field_guided_sheets', [
+    { method: 'POST', path: /^\/[^/]+\/convert$/, action: 'write', module: 'purchase_orders' },
   ]),
 );
 // or per-route: router.post('/', authorize('admin'), controller.create...)
@@ -18,32 +18,32 @@ router.use(
 // CREATE - Create new Field Guided Sheet (FGS)
 // POST /api/field-guided-sheets
 // ─────────────────────────────────────────────────────────────
-router.post("/", fieldGuidedSheetController.createFieldGuidedSheet);
+router.post('/', fieldGuidedSheetController.createFieldGuidedSheet);
 
 // ─────────────────────────────────────────────────────────────
 // READ - Get single FGS by ID
 // GET /api/field-guided-sheets/:id
 // ─────────────────────────────────────────────────────────────
-router.get("/:id", fieldGuidedSheetController.getFieldGuidedSheetById);
+router.get('/:id', fieldGuidedSheetController.getFieldGuidedSheetById);
 
 // ─────────────────────────────────────────────────────────────
 // READ - Get all FGS with pagination & filtering
 // GET /api/field-guided-sheets
 // Query params: ?page=1&limit=20
 // ─────────────────────────────────────────────────────────────
-router.get("/", fieldGuidedSheetController.getAllFieldGuidedSheets);
+router.get('/', fieldGuidedSheetController.getAllFieldGuidedSheets);
 
 // ─────────────────────────────────────────────────────────────
 // UPDATE - Update FGS (items, vendor, status, dates, etc.)
 // PUT /api/field-guided-sheets/:id
 // ─────────────────────────────────────────────────────────────
-router.put("/:id", fieldGuidedSheetController.updateFieldGuidedSheet);
+router.put('/:id', fieldGuidedSheetController.updateFieldGuidedSheet);
 
 // ─────────────────────────────────────────────────────────────
 // DELETE - Delete FGS (only if not converted)
 // DELETE /api/field-guided-sheets/:id
 // ─────────────────────────────────────────────────────────────
-router.delete("/:id", fieldGuidedSheetController.deleteFieldGuidedSheet);
+router.delete('/:id', fieldGuidedSheetController.deleteFieldGuidedSheet);
 
 // ─────────────────────────────────────────────────────────────
 // SPECIAL ACTIONS
@@ -51,13 +51,10 @@ router.delete("/:id", fieldGuidedSheetController.deleteFieldGuidedSheet);
 
 // Convert approved FGS → Purchase Order
 // POST /api/field-guided-sheets/:id/convert
-router.post("/:id/convert", fieldGuidedSheetController.convertFgsToPo);
+router.post('/:id/convert', fieldGuidedSheetController.convertFgsToPo);
 
 // Update status only (draft → negotiating → approved → etc.)
 // PATCH /api/field-guided-sheets/:id/status
-router.patch(
-  "/:id/status",
-  fieldGuidedSheetController.updateFieldGuidedSheetStatus,
-);
+router.patch('/:id/status', fieldGuidedSheetController.updateFieldGuidedSheetStatus);
 
 module.exports = router;

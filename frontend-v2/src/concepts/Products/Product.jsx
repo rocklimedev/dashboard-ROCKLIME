@@ -1,15 +1,15 @@
-import React, { useMemo } from "react";
-import { Link } from "react-router-dom";
-import { Empty } from "antd";
-import { useGetBrandParentCategoriesQuery } from "../../api/brandParentCategoryApi";
-import Breadcrumb from "../../components/Common/Breadcrumb";
-import "../../components/Product/productwrapper.css";
-import plumbing from "../../assets/img/plumbing.png";
-import accessories from "../../assets/img/accessories_add_ons.png";
-import adhesive from "../../assets/img/chemicals_adhesive.png";
-import fittings from "../../assets/img/cp_fittings_sanitary.png";
-import tiles from "../../assets/img/tiles.png";
-const surfaces = "https://media.cmtradingco.com/brands/SIURFACE.png";
+import React, { useMemo } from 'react';
+import { Link } from 'react-router-dom';
+import { Empty } from 'antd';
+import { useGetBrandParentCategoriesQuery } from '../../api/brandParentCategoryApi';
+import Breadcrumb from '../../components/Common/Breadcrumb';
+import '../../components/Product/productwrapper.css';
+import plumbing from '../../assets/img/plumbing.png';
+import accessories from '../../assets/img/accessories_add_ons.png';
+import adhesive from '../../assets/img/chemicals_adhesive.png';
+import fittings from '../../assets/img/cp_fittings_sanitary.png';
+import tiles from '../../assets/img/tiles.png';
+const surfaces = 'https://media.cmtradingco.com/brands/SIURFACE.png';
 
 const Product = () => {
   const { data: bpcList, error } = useGetBrandParentCategoriesQuery();
@@ -24,28 +24,28 @@ const Product = () => {
   };
 
   const desiredOrder = [
-    "cp_fittings_and_sanitary",
-    "tiles",
-    "stone_and_granites",
-    "chemicals_and_adhesive",
-    "accessories_and_add_ons",
-    "plumbing",
+    'cp_fittings_and_sanitary',
+    'tiles',
+    'stone_and_granites',
+    'chemicals_and_adhesive',
+    'accessories_and_add_ons',
+    'plumbing',
   ];
 
   const cards = useMemo(() => {
     const list = Array.isArray(bpcList) ? bpcList : [];
 
     const sorted = [...list].sort((a, b) => {
-      const ai = desiredOrder.indexOf((a.slug || "").toLowerCase());
-      const bi = desiredOrder.indexOf((b.slug || "").toLowerCase());
+      const ai = desiredOrder.indexOf((a.slug || '').toLowerCase());
+      const bi = desiredOrder.indexOf((b.slug || '').toLowerCase());
       if (ai !== -1 && bi !== -1) return ai - bi;
       if (ai !== -1) return -1;
       if (bi !== -1) return 1;
-      return (a.name || "").localeCompare(b.name || "");
+      return (a.name || '').localeCompare(b.name || '');
     });
 
     return sorted.map((bpc) => {
-      const slug = (bpc.slug || "").toLowerCase();
+      const slug = (bpc.slug || '').toLowerCase();
       const image = imageBySlug[slug] || surfaces;
       return {
         id: bpc.id,
@@ -58,10 +58,7 @@ const Product = () => {
     });
   }, [bpcList]);
 
-  const breadcrumbItems = [
-    { label: "Home", url: "/" },
-    { label: "Categories" },
-  ];
+  const breadcrumbItems = [{ label: 'Home', url: '/' }, { label: 'Categories' }];
 
   /* ------------------------------------------------------------------ */
   /*  No loading UI – global loader is used instead                     */
@@ -71,9 +68,7 @@ const Product = () => {
   if (error) {
     return (
       <div className="error-container">
-        <Empty
-          description={`Error: ${error?.data?.message || "Unknown error"}`}
-        />
+        <Empty description={`Error: ${error?.data?.message || 'Unknown error'}`} />
       </div>
     );
   }
@@ -94,8 +89,7 @@ const Product = () => {
           <div className="banner-overlay">
             <h2 className="banner-title">Our Categories</h2>
             <p className="banner-subtitle">
-              Explore our wide range of tiles, sanitary ware, adhesives, and
-              more.
+              Explore our wide range of tiles, sanitary ware, adhesives, and more.
             </p>
           </div>
         </div>
@@ -105,11 +99,7 @@ const Product = () => {
             <div key={card.id} className="categories-card">
               <Link to={card.url}>
                 <div className="brand-logo-container">
-                  <img
-                    src={card.image}
-                    alt={card.alt}
-                    className="categories-img"
-                  />
+                  <img src={card.image} alt={card.alt} className="categories-img" />
                 </div>
                 <h2 className="categories-text">{card.name}</h2>
               </Link>

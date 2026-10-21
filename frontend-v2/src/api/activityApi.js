@@ -1,28 +1,27 @@
-import { baseApi } from "../store/baseApi";
+import { baseApi } from '../store/baseApi';
 export const activityApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getAllActivities: builder.query({
-      query: ({ page = 1, limit = 20 }) =>
-        `/activity?page=${page}&limit=${limit}`,
-      providesTags: ["Activity"],
+      query: ({ page = 1, limit = 20 }) => `/activity?page=${page}&limit=${limit}`,
+      providesTags: ['Activity'],
     }),
 
     getActivityById: builder.query({
       query: (id) => `/activity/${id}`,
-      providesTags: ["Activity"],
+      providesTags: ['Activity'],
     }),
 
     getActivityByUser: builder.query({
       query: (userId) => `/activity/user/${userId}`,
-      providesTags: ["Activity"],
+      providesTags: ['Activity'],
     }),
 
     deleteActivity: builder.mutation({
       query: (id) => ({
         url: `/activity/${id}`,
-        method: "DELETE",
+        method: 'DELETE',
       }),
-      invalidatesTags: ["Activity"],
+      invalidatesTags: ['Activity'],
     }),
   }),
 });

@@ -1,6 +1,6 @@
-import React from "react";
-import { useParams, Link } from "react-router-dom";
-import { useGetUserByIdQuery } from "../../api/userApi";
+import React from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { useGetUserByIdQuery } from '../../api/userApi';
 import {
   Avatar,
   Card,
@@ -13,7 +13,7 @@ import {
   Divider,
   Badge,
   Empty,
-} from "antd";
+} from 'antd';
 import {
   LeftOutlined,
   EditOutlined,
@@ -25,23 +25,20 @@ import {
   ClockCircleOutlined,
   HeartOutlined,
   UserOutlined,
-} from "@ant-design/icons";
-import moment from "moment";
+} from '@ant-design/icons';
+import moment from 'moment';
 
 const { Title, Text } = Typography;
 
 const UserPage = () => {
   const { userId } = useParams();
-  const { data, isLoading, isError, error, refetch } = useGetUserByIdQuery(
-    userId,
-    { skip: !userId },
-  );
+  const { data, isLoading, isError, error, refetch } = useGetUserByIdQuery(userId, {
+    skip: !userId,
+  });
   const user = data?.user;
 
-  const formatDate = (date) =>
-    date ? moment(date).format("DD MMM YYYY") : "—";
-  const formatTime = (time) =>
-    time ? moment(time, "HH:mm:ss").format("hh:mm A") : "—";
+  const formatDate = (date) => (date ? moment(date).format('DD MMM YYYY') : '—');
+  const formatTime = (time) => (time ? moment(time, 'HH:mm:ss').format('hh:mm A') : '—');
 
   const address = user?.address
     ? [
@@ -52,8 +49,8 @@ const UserPage = () => {
         user.address.postalCode,
       ]
         .filter(Boolean)
-        .join(", ") || "—"
-    : "No address added";
+        .join(', ') || '—'
+    : 'No address added';
 
   if (isLoading) {
     return (
@@ -68,11 +65,7 @@ const UserPage = () => {
       <div className="max-w-4xl mx-auto p-6">
         <Card>
           <Empty
-            description={
-              error?.status === 404
-                ? "User not found"
-                : "Failed to load user profile"
-            }
+            description={error?.status === 404 ? 'User not found' : 'Failed to load user profile'}
           >
             <Button type="primary" onClick={refetch}>
               Try Again
@@ -88,12 +81,12 @@ const UserPage = () => {
       <div className="content">
         <div
           style={{
-            background: "#f8fafc",
-            minHeight: "100vh",
-            padding: "32px 16px",
+            background: '#f8fafc',
+            minHeight: '100vh',
+            padding: '32px 16px',
           }}
         >
-          <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+          <div style={{ maxWidth: 1200, margin: '0 auto' }}>
             {/* Header */}
             <div className="mb-8">
               <Link
@@ -114,7 +107,7 @@ const UserPage = () => {
                       src={user.photo_thumbnail || user.avatarUrl}
                       icon={<UserOutlined />}
                       className="shadow-2xl border-8 border-white"
-                      style={{ backgroundColor: "#e0f2fe" }}
+                      style={{ backgroundColor: '#e0f2fe' }}
                     />
                   </div>
 
@@ -123,17 +116,13 @@ const UserPage = () => {
                       {user.name}
                     </Title>
                     <Text type="secondary" className="text-lg block">
-                      @{user.username || "user"}
+                      @{user.username || 'user'}
                     </Text>
 
                     <Space wrap className="mt-4">
                       {user.roles?.map((role) => (
-                        <Tag
-                          key={role}
-                          color="purple"
-                          className="text-sm font-medium py-1 px-3"
-                        >
-                          {role.replace(/_/g, " ")}
+                        <Tag key={role} color="purple" className="text-sm font-medium py-1 px-3">
+                          {role.replace(/_/g, ' ')}
                         </Tag>
                       ))}
                     </Space>
@@ -144,9 +133,7 @@ const UserPage = () => {
                         size="large"
                         icon={<EditOutlined />}
                         className="rounded-xl font-medium w-full"
-                        onClick={() =>
-                          (window.location.href = `/user/${userId}/edit`)
-                        }
+                        onClick={() => (window.location.href = `/user/${userId}/edit`)}
                       >
                         Edit Profile
                       </Button>
@@ -155,20 +142,13 @@ const UserPage = () => {
 
                   <Divider>Details</Divider>
 
-                  <Space
-                    direction="vertical"
-                    size="large"
-                    className="w-full text-left"
-                  >
+                  <Space direction="vertical" size="large" className="w-full text-left">
                     <div className="flex items-center justify-between">
                       <span className="text-gray-600 flex items-center gap-3">
                         <TeamOutlined className="text-blue-600" /> Team
                       </span>
                       <strong>
-                        {user.team ||
-                          (user.roles?.includes("SALES")
-                            ? "Sales Team"
-                            : "Individual")}
+                        {user.team || (user.roles?.includes('SALES') ? 'Sales Team' : 'Individual')}
                       </strong>
                     </div>
                     <div className="flex items-center justify-between">
@@ -180,30 +160,21 @@ const UserPage = () => {
                     {user.shiftFrom && user.shiftTo && (
                       <div className="flex items-center justify-between">
                         <span className="text-gray-600 flex items-center gap-3">
-                          <ClockCircleOutlined className="text-purple-600" />{" "}
-                          Shift
+                          <ClockCircleOutlined className="text-purple-600" /> Shift
                         </span>
                         <strong>
-                          {formatTime(user.shiftFrom)} –{" "}
-                          {formatTime(user.shiftTo)}
+                          {formatTime(user.shiftFrom)} – {formatTime(user.shiftTo)}
                         </strong>
                       </div>
                     )}
                     <div className="flex items-center justify-between">
                       <span className="text-gray-600 flex items-center gap-3">
-                        <Badge
-                          status={
-                            user.status === "ACTIVE" ? "success" : "default"
-                          }
-                        />{" "}
-                        Status
+                        <Badge status={user.status === 'ACTIVE' ? 'success' : 'default'} /> Status
                       </span>
                       <strong>
                         <Badge
-                          status={
-                            user.status === "ACTIVE" ? "success" : "error"
-                          }
-                          text={user.status || "Unknown"}
+                          status={user.status === 'ACTIVE' ? 'success' : 'error'}
+                          text={user.status || 'Unknown'}
                         />
                       </strong>
                     </div>
@@ -217,8 +188,7 @@ const UserPage = () => {
                 <Card
                   title={
                     <Title level={4} className="flex items-center gap-2">
-                      <UserOutlined className="text-blue-600" /> Personal
-                      Information
+                      <UserOutlined className="text-blue-600" /> Personal Information
                     </Title>
                   }
                   className="shadow-lg rounded-2xl mb-6"
@@ -238,7 +208,7 @@ const UserPage = () => {
                         <Text type="secondary">Phone</Text>
                         <Text strong className="flex items-center gap-2">
                           <PhoneOutlined className="text-green-500" />
-                          {user.mobileNumber || "—"}
+                          {user.mobileNumber || '—'}
                         </Text>
                       </Space>
                     </Col>
@@ -256,7 +226,7 @@ const UserPage = () => {
                         <Text type="secondary">Blood Group</Text>
                         <Text strong className="flex items-center gap-2">
                           <HeartOutlined className="text-red-500" />
-                          {user.bloodGroup || "—"}
+                          {user.bloodGroup || '—'}
                         </Text>
                       </Space>
                     </Col>
@@ -277,8 +247,7 @@ const UserPage = () => {
                   <Card
                     title={
                       <Title level={4} className="flex items-center gap-2">
-                        <PhoneOutlined className="text-red-600" /> Emergency
-                        Contact
+                        <PhoneOutlined className="text-red-600" /> Emergency Contact
                       </Title>
                     }
                     className="shadow-lg rounded-2xl"

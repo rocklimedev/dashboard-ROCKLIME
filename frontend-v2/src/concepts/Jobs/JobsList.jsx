@@ -1,29 +1,11 @@
-import React, { useState } from "react";
-import {
-  EyeOutlined,
-  DeleteOutlined,
-  StopOutlined,
-  MoreOutlined,
-} from "@ant-design/icons";
-import {
-  useGetAllJobsQuery,
-  useCancelJobMutation,
-  useDeleteJobMutation,
-} from "../../api/jobsApi";
+import React, { useState } from 'react';
+import { EyeOutlined, DeleteOutlined, StopOutlined, MoreOutlined } from '@ant-design/icons';
+import { useGetAllJobsQuery, useCancelJobMutation, useDeleteJobMutation } from '../../api/jobsApi';
 
-import {
-  Dropdown,
-  Menu,
-  Button,
-  Pagination,
-  Tooltip,
-  message,
-  Input,
-  Select,
-} from "antd";
+import { Dropdown, Menu, Button, Pagination, Tooltip, message, Input, Select } from 'antd';
 
-import PageHeader from "../../components/Common/PageHeader";
-import DeleteModal from "../../components/Common/DeleteModal";
+import PageHeader from '../../components/Common/PageHeader';
+import DeleteModal from '../../components/Common/DeleteModal';
 
 const { Search } = Input;
 const { Option } = Select;
@@ -32,7 +14,7 @@ const JobList = () => {
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState();
   const [typeFilter, setTypeFilter] = useState();
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
 
   const [deleteId, setDeleteId] = useState(null);
   const [deleteModal, setDeleteModal] = useState(false);
@@ -53,20 +35,20 @@ const JobList = () => {
   const handleCancel = async (id) => {
     try {
       await cancelJob(id).unwrap();
-      message.success("Job cancelled");
+      message.success('Job cancelled');
       refetch();
     } catch {
-      message.error("Failed to cancel job");
+      message.error('Failed to cancel job');
     }
   };
 
   const handleDelete = async () => {
     try {
       await deleteJob(deleteId).unwrap();
-      message.success("Job deleted");
+      message.success('Job deleted');
       refetch();
     } catch {
-      message.error("Delete failed");
+      message.error('Delete failed');
     } finally {
       setDeleteModal(false);
       setDeleteId(null);
@@ -75,21 +57,20 @@ const JobList = () => {
 
   const getStatusBadge = (status) => {
     const map = {
-      pending: "secondary",
-      processing: "info",
-      completed: "success",
-      failed: "danger",
-      cancelled: "warning",
+      pending: 'secondary',
+      processing: 'info',
+      completed: 'success',
+      failed: 'danger',
+      cancelled: 'warning',
     };
-    return `badge bg-${map[status] || "secondary"}`;
+    return `badge bg-${map[status] || 'secondary'}`;
   };
 
   const renderProgress = (progress) => {
-    if (!progress) return "—";
+    if (!progress) return '—';
 
     const { totalRows = 0, processedRows = 0 } = progress;
-    const percent =
-      totalRows > 0 ? Math.round((processedRows / totalRows) * 100) : 0;
+    const percent = totalRows > 0 ? Math.round((processedRows / totalRows) * 100) : 0;
 
     return (
       <div style={{ minWidth: 120 }}>
@@ -110,7 +91,7 @@ const JobList = () => {
           <PageHeader
             title="Jobs Management"
             subtitle="Monitor background jobs"
-            onAdd={() => (window.location.href = "/import-job")}
+            onAdd={() => (window.location.href = '/import-job')}
           />
 
           <div className="card-body">
@@ -142,7 +123,7 @@ const JobList = () => {
               </div>
 
               <div className="col-lg-6 text-end">
-                <div style={{ maxWidth: 280, marginLeft: "auto" }}>
+                <div style={{ maxWidth: 280, marginLeft: 'auto' }}>
                   <Search
                     placeholder="Search jobs..."
                     allowClear
@@ -170,23 +151,17 @@ const JobList = () => {
                   {jobs.map((job) => {
                     const menu = (
                       <Menu>
-                        <Menu.Item
-                          onClick={() =>
-                            window.open(`/job/${job.id}`, "_blank")
-                          }
-                        >
+                        <Menu.Item onClick={() => window.open(`/job/${job.id}`, '_blank')}>
                           <EyeOutlined /> View
                         </Menu.Item>
 
-                        {["pending", "processing"].includes(job.status) && (
+                        {['pending', 'processing'].includes(job.status) && (
                           <Menu.Item onClick={() => handleCancel(job.id)}>
                             <StopOutlined /> Cancel
                           </Menu.Item>
                         )}
 
-                        {["completed", "failed", "cancelled"].includes(
-                          job.status,
-                        ) && (
+                        {['completed', 'failed', 'cancelled'].includes(job.status) && (
                           <Menu.Item
                             danger
                             onClick={() => {
@@ -202,14 +177,10 @@ const JobList = () => {
 
                     return (
                       <tr key={job.id}>
-                        <td className="text-capitalize">
-                          {job.type?.replace(/-/g, " ")}
-                        </td>
+                        <td className="text-capitalize">{job.type?.replace(/-/g, ' ')}</td>
 
                         <td>
-                          <span className={getStatusBadge(job.status)}>
-                            {job.status}
-                          </span>
+                          <span className={getStatusBadge(job.status)}>{job.status}</span>
                         </td>
 
                         <td>{renderProgress(job.progress)}</td>
@@ -220,16 +191,14 @@ const JobList = () => {
                               +{job.results.newBrandsCount || 0} Brands
                             </span>
                           ) : (
-                            "—"
+                            '—'
                           )}
                         </td>
 
-                        <td className="text-muted">
-                          {new Date(job.createdAt).toLocaleString()}
-                        </td>
+                        <td className="text-muted">{new Date(job.createdAt).toLocaleString()}</td>
 
                         <td>
-                          <Dropdown overlay={menu} trigger={["click"]}>
+                          <Dropdown overlay={menu} trigger={['click']}>
                             <Button type="text" icon={<MoreOutlined />} />
                           </Dropdown>
                         </td>

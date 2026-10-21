@@ -1,42 +1,42 @@
-import { baseApi } from "../store/baseApi";
+import { baseApi } from '../store/baseApi';
 
 export const vendorApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getVendors: builder.query({
-      query: () => "/vendors/",
+      query: () => '/vendors/',
       providesTags: (result) =>
         result
-          ? [
-              ...result.map(({ id }) => ({ type: "Vendors", id })),
-              { type: "Vendors", id: "LIST" },
-            ]
-          : [{ type: "Vendors", id: "LIST" }],
+          ? [...result.map(({ id }) => ({ type: 'Vendors', id })), { type: 'Vendors', id: 'LIST' }]
+          : [{ type: 'Vendors', id: 'LIST' }],
     }),
     getVendorById: builder.query({
       query: (id) => `/vendors/${id}`,
-      providesTags: (result, error, id) => [{ type: "Vendors", id }],
+      providesTags: (result, error, id) => [{ type: 'Vendors', id }],
     }),
     createVendor: builder.mutation({
       query: (newVendor) => ({
-        url: "/vendors/",
-        method: "POST",
+        url: '/vendors/',
+        method: 'POST',
         body: newVendor,
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
       }),
-      invalidatesTags: [{ type: "Vendors", id: "LIST" }],
+      invalidatesTags: [{ type: 'Vendors', id: 'LIST' }],
     }),
     updateVendor: builder.mutation({
       query: ({ id, updatedVendor }) => ({
         url: `/vendors/${id}`,
-        method: "PUT",
+        method: 'PUT',
         body: updatedVendor,
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
       }),
-      invalidatesTags: (result, error, { id }) => [{ type: "Vendors", id }, { type: "Vendors", id: "LIST" }],
+      invalidatesTags: (result, error, { id }) => [
+        { type: 'Vendors', id },
+        { type: 'Vendors', id: 'LIST' },
+      ],
     }),
     checkVendorId: builder.query({
       query: (vendorId) => `/vendors/check-vendor-id/${vendorId}`,
@@ -45,11 +45,11 @@ export const vendorApi = baseApi.injectEndpoints({
     deleteVendor: builder.mutation({
       query: (id) => ({
         url: `/vendors/${id}`,
-        method: "DELETE",
+        method: 'DELETE',
       }),
       invalidatesTags: (result, error, id) => [
-        { type: "Vendors", id },
-        { type: "Vendors", id: "LIST" },
+        { type: 'Vendors', id },
+        { type: 'Vendors', id: 'LIST' },
       ],
     }),
   }),

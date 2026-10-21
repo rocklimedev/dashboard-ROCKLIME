@@ -1,9 +1,9 @@
 // models/Product.js
-const { v4: uuidv4 } = require("uuid");
+const { v4: uuidv4 } = require('uuid');
 
 module.exports = (sequelize, DataTypes) => {
   const Product = sequelize.define(
-    "Product",
+    'Product',
     {
       productId: {
         type: DataTypes.UUID,
@@ -27,12 +27,12 @@ module.exports = (sequelize, DataTypes) => {
       masterProductId: {
         type: DataTypes.UUID,
         allowNull: true,
-        comment: "If this is a variant, points to the master product",
+        comment: 'If this is a variant, points to the master product',
       },
       isMaster: {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
-        comment: "True only for the main product that owns variants",
+        comment: 'True only for the main product that owns variants',
       },
       variantOptions: {
         type: DataTypes.JSON,
@@ -49,7 +49,7 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
       },
       discountType: {
-        type: DataTypes.ENUM("percent", "fixed"),
+        type: DataTypes.ENUM('percent', 'fixed'),
         allowNull: true,
       },
       alert_quantity: {
@@ -74,15 +74,9 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: false,
       },
       status: {
-        type: DataTypes.ENUM(
-          "active",
-          "inactive",
-          "expired",
-          "out_of_stock",
-          "bulk_stocked",
-        ),
+        type: DataTypes.ENUM('active', 'inactive', 'expired', 'out_of_stock', 'bulk_stocked'),
         allowNull: false,
-        defaultValue: "active",
+        defaultValue: 'active',
       },
       brandId: { type: DataTypes.UUID, allowNull: true },
       categoryId: { type: DataTypes.UUID, allowNull: true },
@@ -94,13 +88,13 @@ module.exports = (sequelize, DataTypes) => {
       },
     },
     {
-      tableName: "products",
+      tableName: 'products',
       timestamps: true,
       indexes: [
-        { fields: ["masterProductId"] },
-        { fields: ["isMaster"] },
-        { fields: ["variantKey"] },
-        { fields: ["product_code"] },
+        { fields: ['masterProductId'] },
+        { fields: ['isMaster'] },
+        { fields: ['variantKey'] },
+        { fields: ['product_code'] },
       ],
     },
   );
@@ -110,59 +104,54 @@ module.exports = (sequelize, DataTypes) => {
   // -------------------------------
   Product.associate = (models) => {
     // Product → Brand / Category / Vendor / BrandParentCategory / ProductMeta
-    Product.belongsTo(models.Brand, { foreignKey: "brandId", as: "brand" });
+    Product.belongsTo(models.Brand, { foreignKey: 'brandId', as: 'brand' });
     Product.belongsTo(models.Category, {
-      foreignKey: "categoryId",
-      as: "categories",
+      foreignKey: 'categoryId',
+      as: 'categories',
     });
-    Product.belongsTo(models.Vendor, { foreignKey: "vendorId", as: "vendors" });
+    Product.belongsTo(models.Vendor, { foreignKey: 'vendorId', as: 'vendors' });
     Product.belongsTo(models.BrandParentCategory, {
-      foreignKey: "brand_parentcategoriesId",
-      as: "brand_parentcategories",
+      foreignKey: 'brand_parentcategoriesId',
+      as: 'brand_parentcategories',
     });
     Product.belongsTo(models.ProductMeta, {
-      foreignKey: "meta",
-      as: "product_metas",
+      foreignKey: 'meta',
+      as: 'product_metas',
       constraints: false,
     });
 
     // Product ↔ Keyword (M:N)
     Product.belongsToMany(models.Keyword, {
       through: models.ProductKeyword,
-      foreignKey: "productId",
-      otherKey: "keywordId",
-      as: "keywords",
+      foreignKey: 'productId',
+      otherKey: 'keywordId',
+      as: 'keywords',
     });
 
     // Product → ProductKeyword (1:M) for raw join table access
     Product.hasMany(models.ProductKeyword, {
-      foreignKey: "productId",
-      as: "product_keywords",
+      foreignKey: 'productId',
+      as: 'product_keywords',
     });
   };
 
   // Optional utility
   Product.determineProductGroup = async function (name) {
-    const Keyword = require("../../brands/models/keyword.model");
+    const Keyword = require('../../brands/models/keyword.model');
     const keywords = await Keyword.findAll();
 
     const ceramics = keywords.filter(
-      (k) =>
-        k.type === "Ceramics" &&
-        name.toLowerCase().includes(k.keyword.toLowerCase()),
+      (k) => k.type === 'Ceramics' && name.toLowerCase().includes(k.keyword.toLowerCase()),
     ).length;
 
     const sanitary = keywords.filter(
-      (k) =>
-        k.type === "Sanitary" &&
-        name.toLowerCase().includes(k.keyword.toLowerCase()),
+      (k) => k.type === 'Sanitary' && name.toLowerCase().includes(k.keyword.toLowerCase()),
     ).length;
 
-    if (ceramics > 0 && sanitary === 0) return "Ceramics";
-    if (sanitary > 0 && ceramics === 0) return "Sanitary";
-    if (ceramics > 0 && sanitary > 0)
-      return ceramics >= sanitary ? "Ceramics" : "Sanitary";
-    return "Uncategorized";
+    if (ceramics > 0 && sanitary === 0) return 'Ceramics';
+    if (sanitary > 0 && ceramics === 0) return 'Sanitary';
+    if (ceramics > 0 && sanitary > 0) return ceramics >= sanitary ? 'Ceramics' : 'Sanitary';
+    return 'Uncategorized';
   };
 
   return Product;

@@ -1,25 +1,20 @@
-import React, { useMemo } from "react";
-import { Modal, Table, Tag, Empty, Spin, Alert, Typography, Space } from "antd";
+import React, { useMemo } from 'react';
+import { Modal, Table, Tag, Empty, Spin, Alert, Typography, Space } from 'antd';
 import {
   WarningOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
   DatabaseOutlined,
-} from "@ant-design/icons";
+} from '@ant-design/icons';
 
 import {
   useGetLowStockProductsByOrderIdQuery,
   useGetLowStockProductsByProductIdsQuery,
-} from "../../api/orderApi";
+} from '../../api/orderApi';
 
 const { Text } = Typography;
 
-const LowStockProductsModal = ({
-  visible,
-  orderId,
-  products: orderProducts = [],
-  onClose,
-}) => {
+const LowStockProductsModal = ({ visible, orderId, products: orderProducts = [], onClose }) => {
   // ============================================================
   // NORMALIZE FRONTEND PRODUCTS
   // ============================================================
@@ -35,8 +30,7 @@ const LowStockProductsModal = ({
           return null;
         }
 
-        const product =
-          item.product || item.productData || item.productDetails || {};
+        const product = item.product || item.productData || item.productDetails || {};
 
         const productId =
           item.productId ||
@@ -60,10 +54,9 @@ const LowStockProductsModal = ({
         // Do NOT allow "—" to override the real product name.
         //
 
-        const itemName = item.name && item.name !== "—" ? item.name : null;
+        const itemName = item.name && item.name !== '—' ? item.name : null;
 
-        const productName =
-          product.name && product.name !== "—" ? product.name : null;
+        const productName = product.name && product.name !== '—' ? product.name : null;
 
         // --------------------------------------------------------
         // PRODUCT CODE
@@ -92,29 +85,22 @@ const LowStockProductsModal = ({
         // --------------------------------------------------------
 
         let imageUrl =
-          item.imageUrl ||
-          item.image_url ||
-          product.imageUrl ||
-          product.image_url ||
-          null;
+          item.imageUrl || item.image_url || product.imageUrl || product.image_url || null;
 
         if (!imageUrl && product.images) {
           if (Array.isArray(product.images)) {
             imageUrl = product.images[0] || null;
-          } else if (typeof product.images === "string") {
+          } else if (typeof product.images === 'string') {
             try {
               const parsed = JSON.parse(product.images);
 
               if (Array.isArray(parsed)) {
                 imageUrl = parsed[0] || null;
-              } else if (typeof parsed === "string") {
+              } else if (typeof parsed === 'string') {
                 imageUrl = parsed;
               }
             } catch {
-              if (
-                product.images.startsWith("http://") ||
-                product.images.startsWith("https://")
-              ) {
+              if (product.images.startsWith('http://') || product.images.startsWith('https://')) {
                 imageUrl = product.images;
               }
             }
@@ -124,7 +110,7 @@ const LowStockProductsModal = ({
         return {
           productId: String(productId),
 
-          name: itemName || productName || "—",
+          name: itemName || productName || '—',
 
           productCode,
 
@@ -132,15 +118,13 @@ const LowStockProductsModal = ({
 
           imageUrl,
 
-          quantity: Number(
-            item.quantity ?? item.orderedQuantity ?? item.orderQuantity ?? 0,
-          ),
+          quantity: Number(item.quantity ?? item.orderedQuantity ?? item.orderQuantity ?? 0),
 
           price: Number(item.price ?? 0),
 
           discount: Number(item.discount ?? 0),
 
-          discountType: item.discountType || "percent",
+          discountType: item.discountType || 'percent',
 
           tax: Number(item.tax ?? 0),
 
@@ -285,8 +269,7 @@ const LowStockProductsModal = ({
       return null;
     }
 
-    const product =
-      record.product || record.productData || record.productDetails || {};
+    const product = record.product || record.productData || record.productDetails || {};
 
     return (
       record.productId ||
@@ -351,7 +334,7 @@ const LowStockProductsModal = ({
 
             availableInInventory: false,
 
-            inventoryStatus: "UNKNOWN",
+            inventoryStatus: 'UNKNOWN',
 
             currentStock: null,
 
@@ -379,7 +362,7 @@ const LowStockProductsModal = ({
           productId,
 
           // Product details
-          name: inventoryRecord.name || item.name || "—",
+          name: inventoryRecord.name || item.name || '—',
 
           productCode: inventoryRecord.productCode || item.productCode || null,
 
@@ -401,31 +384,23 @@ const LowStockProductsModal = ({
               : null,
 
           alertQuantity:
-            inventoryRecord.alertQuantity !== null &&
-            inventoryRecord.alertQuantity !== undefined
+            inventoryRecord.alertQuantity !== null && inventoryRecord.alertQuantity !== undefined
               ? Number(inventoryRecord.alertQuantity)
               : null,
 
           availableInInventory: inventoryRecord.availableInInventory !== false,
 
-          inventoryStatus: inventoryRecord.inventoryStatus || "UNKNOWN",
+          inventoryStatus: inventoryRecord.inventoryStatus || 'UNKNOWN',
 
           // Recalculate shortage against CURRENT ORDER quantity.
           shortage:
-            inventoryRecord.currentStock !== undefined &&
-            inventoryRecord.currentStock !== null
-              ? Math.max(
-                  Number(item.quantity || 0) -
-                    Number(inventoryRecord.currentStock || 0),
-                  0,
-                )
+            inventoryRecord.currentStock !== undefined && inventoryRecord.currentStock !== null
+              ? Math.max(Number(item.quantity || 0) - Number(inventoryRecord.currentStock || 0), 0)
               : null,
 
           insufficientForOrder:
-            inventoryRecord.currentStock !== undefined &&
-            inventoryRecord.currentStock !== null
-              ? Number(item.quantity || 0) >
-                Number(inventoryRecord.currentStock || 0)
+            inventoryRecord.currentStock !== undefined && inventoryRecord.currentStock !== null
+              ? Number(item.quantity || 0) > Number(inventoryRecord.currentStock || 0)
               : false,
 
           isBelowAlertLevel:
@@ -433,8 +408,7 @@ const LowStockProductsModal = ({
             inventoryRecord.alertQuantity !== undefined &&
             inventoryRecord.currentStock !== undefined &&
             inventoryRecord.currentStock !== null
-              ? Number(inventoryRecord.currentStock) <=
-                Number(inventoryRecord.alertQuantity)
+              ? Number(inventoryRecord.currentStock) <= Number(inventoryRecord.alertQuantity)
               : false,
         };
       })
@@ -446,7 +420,7 @@ const LowStockProductsModal = ({
   // ============================================================
 
   const getProductName = (record) => {
-    return record?.name || record?.productName || record?.product?.name || "—";
+    return record?.name || record?.productName || record?.product?.name || '—';
   };
 
   // ============================================================
@@ -496,10 +470,7 @@ const LowStockProductsModal = ({
   // ============================================================
 
   const getAvailableStock = (record) => {
-    if (
-      record?.availableInInventory === false &&
-      record?.inventoryStatus === "NOT_FOUND"
-    ) {
+    if (record?.availableInInventory === false && record?.inventoryStatus === 'NOT_FOUND') {
       return null;
     }
 
@@ -507,10 +478,7 @@ const LowStockProductsModal = ({
       return Number(record.currentStock);
     }
 
-    if (
-      record?.availableStock !== undefined &&
-      record?.availableStock !== null
-    ) {
+    if (record?.availableStock !== undefined && record?.availableStock !== null) {
       return Number(record.availableStock);
     }
 
@@ -530,24 +498,15 @@ const LowStockProductsModal = ({
       return Number(record.alertQuantity);
     }
 
-    if (
-      record?.alert_quantity !== undefined &&
-      record?.alert_quantity !== null
-    ) {
+    if (record?.alert_quantity !== undefined && record?.alert_quantity !== null) {
       return Number(record.alert_quantity);
     }
 
-    if (
-      record?.product?.alertQuantity !== undefined &&
-      record?.product?.alertQuantity !== null
-    ) {
+    if (record?.product?.alertQuantity !== undefined && record?.product?.alertQuantity !== null) {
       return Number(record.product.alertQuantity);
     }
 
-    if (
-      record?.product?.alert_quantity !== undefined &&
-      record?.product?.alert_quantity !== null
-    ) {
+    if (record?.product?.alert_quantity !== undefined && record?.product?.alert_quantity !== null) {
       return Number(record.product.alert_quantity);
     }
 
@@ -562,13 +521,9 @@ const LowStockProductsModal = ({
     // Backend already calculated the status.
     if (
       record?.inventoryStatus &&
-      [
-        "AVAILABLE",
-        "LOW_STOCK",
-        "OUT_OF_STOCK",
-        "INSUFFICIENT",
-        "NOT_FOUND",
-      ].includes(record.inventoryStatus)
+      ['AVAILABLE', 'LOW_STOCK', 'OUT_OF_STOCK', 'INSUFFICIENT', 'NOT_FOUND'].includes(
+        record.inventoryStatus,
+      )
     ) {
       return record.inventoryStatus;
     }
@@ -578,26 +533,26 @@ const LowStockProductsModal = ({
     const orderedQuantity = getOrderedQuantity(record);
 
     if (record?.availableInInventory === false) {
-      return "NOT_FOUND";
+      return 'NOT_FOUND';
     }
 
     if (stock === null) {
-      return "UNKNOWN";
+      return 'UNKNOWN';
     }
 
     if (stock <= 0) {
-      return "OUT_OF_STOCK";
+      return 'OUT_OF_STOCK';
     }
 
     if (stock < orderedQuantity) {
-      return "INSUFFICIENT";
+      return 'INSUFFICIENT';
     }
 
     if (alertQuantity !== null && stock <= alertQuantity) {
-      return "LOW_STOCK";
+      return 'LOW_STOCK';
     }
 
-    return "AVAILABLE";
+    return 'AVAILABLE';
   };
 
   // ============================================================
@@ -608,13 +563,7 @@ const LowStockProductsModal = ({
     return products.filter((record) => {
       const status = getStockStatus(record);
 
-      return [
-        "OUT_OF_STOCK",
-        "LOW_STOCK",
-        "INSUFFICIENT",
-        "NOT_FOUND",
-        "UNKNOWN",
-      ].includes(status);
+      return ['OUT_OF_STOCK', 'LOW_STOCK', 'INSUFFICIENT', 'NOT_FOUND', 'UNKNOWN'].includes(status);
     });
   }, [products]);
 
@@ -655,9 +604,9 @@ const LowStockProductsModal = ({
 
   const columns = [
     {
-      title: "Product",
-      key: "product",
-      fixed: "left",
+      title: 'Product',
+      key: 'product',
+      fixed: 'left',
       width: 300,
 
       render: (_, record) => {
@@ -690,10 +639,10 @@ const LowStockProductsModal = ({
     },
 
     {
-      title: "Ordered",
-      key: "orderedQuantity",
+      title: 'Ordered',
+      key: 'orderedQuantity',
       width: 100,
-      align: "center",
+      align: 'center',
 
       render: (_, record) => {
         return getOrderedQuantity(record);
@@ -701,16 +650,16 @@ const LowStockProductsModal = ({
     },
 
     {
-      title: "Available Stock",
-      key: "currentStock",
+      title: 'Available Stock',
+      key: 'currentStock',
       width: 140,
-      align: "center",
+      align: 'center',
 
       render: (_, record) => {
         const status = getStockStatus(record);
         const stock = getAvailableStock(record);
 
-        if (status === "NOT_FOUND") {
+        if (status === 'NOT_FOUND') {
           return (
             <Tag color="red" icon={<DatabaseOutlined />}>
               NOT FOUND
@@ -730,7 +679,7 @@ const LowStockProductsModal = ({
           );
         }
 
-        if (status === "LOW_STOCK" || status === "INSUFFICIENT") {
+        if (status === 'LOW_STOCK' || status === 'INSUFFICIENT') {
           return (
             <Tag color="orange" icon={<WarningOutlined />}>
               {stock}
@@ -747,16 +696,16 @@ const LowStockProductsModal = ({
     },
 
     {
-      title: "Alert At",
-      key: "alertQuantity",
+      title: 'Alert At',
+      key: 'alertQuantity',
       width: 100,
-      align: "center",
+      align: 'center',
 
       render: (_, record) => {
         const alertQuantity = getAlertQuantity(record);
 
         if (alertQuantity === null) {
-          return "—";
+          return '—';
         }
 
         return alertQuantity;
@@ -764,10 +713,10 @@ const LowStockProductsModal = ({
     },
 
     {
-      title: "Shortage",
-      key: "shortage",
+      title: 'Shortage',
+      key: 'shortage',
       width: 110,
-      align: "center",
+      align: 'center',
 
       render: (_, record) => {
         const ordered = getOrderedQuantity(record);
@@ -775,7 +724,7 @@ const LowStockProductsModal = ({
         const stock = getAvailableStock(record);
 
         if (stock === null) {
-          return "—";
+          return '—';
         }
 
         const shortage = Math.max(ordered - stock, 0);
@@ -789,44 +738,44 @@ const LowStockProductsModal = ({
     },
 
     {
-      title: "Status",
-      key: "status",
+      title: 'Status',
+      key: 'status',
       width: 180,
-      align: "center",
+      align: 'center',
 
       render: (_, record) => {
         const status = getStockStatus(record);
 
         switch (status) {
-          case "OUT_OF_STOCK":
+          case 'OUT_OF_STOCK':
             return (
               <Tag color="red" icon={<CloseCircleOutlined />}>
                 OUT OF STOCK
               </Tag>
             );
 
-          case "INSUFFICIENT":
+          case 'INSUFFICIENT':
             return (
               <Tag color="volcano" icon={<WarningOutlined />}>
                 INSUFFICIENT STOCK
               </Tag>
             );
 
-          case "LOW_STOCK":
+          case 'LOW_STOCK':
             return (
               <Tag color="orange" icon={<WarningOutlined />}>
                 LOW STOCK
               </Tag>
             );
 
-          case "NOT_FOUND":
+          case 'NOT_FOUND':
             return (
               <Tag color="red" icon={<DatabaseOutlined />}>
                 NOT IN INVENTORY
               </Tag>
             );
 
-          case "UNKNOWN":
+          case 'UNKNOWN':
             return <Tag color="default">INVENTORY UNKNOWN</Tag>;
 
           default:
@@ -849,14 +798,14 @@ const LowStockProductsModal = ({
       title={
         <div
           style={{
-            display: "flex",
-            alignItems: "center",
+            display: 'flex',
+            alignItems: 'center',
             gap: 8,
           }}
         >
           <WarningOutlined
             style={{
-              color: "#fa8c16",
+              color: '#fa8c16',
             }}
           />
 
@@ -877,9 +826,9 @@ const LowStockProductsModal = ({
         <div
           style={{
             minHeight: 220,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
           <Spin size="large" />
@@ -896,7 +845,7 @@ const LowStockProductsModal = ({
           description={
             inventoryError?.data?.message ||
             inventoryError?.message ||
-            "Unable to retrieve inventory information."
+            'Unable to retrieve inventory information.'
           }
           action={
             <button
@@ -904,9 +853,9 @@ const LowStockProductsModal = ({
               onClick={handleRefresh}
               style={{
                 border: 0,
-                background: "transparent",
-                cursor: "pointer",
-                color: "#1677ff",
+                background: 'transparent',
+                cursor: 'pointer',
+                color: '#1677ff',
               }}
             >
               Retry
@@ -923,7 +872,7 @@ const LowStockProductsModal = ({
             <DatabaseOutlined
               style={{
                 fontSize: 52,
-                color: "#bfbfbf",
+                color: '#bfbfbf',
               }}
             />
           }
@@ -933,9 +882,7 @@ const LowStockProductsModal = ({
 
               <br />
 
-              <Text type="secondary">
-                Add products to the order before checking inventory.
-              </Text>
+              <Text type="secondary">Add products to the order before checking inventory.</Text>
             </div>
           }
         />
@@ -949,7 +896,7 @@ const LowStockProductsModal = ({
             <CheckCircleOutlined
               style={{
                 fontSize: 52,
-                color: "#52c41a",
+                color: '#52c41a',
               }}
             />
           }
@@ -959,9 +906,7 @@ const LowStockProductsModal = ({
 
               <br />
 
-              <Text type="secondary">
-                All products currently have sufficient inventory.
-              </Text>
+              <Text type="secondary">All products currently have sufficient inventory.</Text>
             </div>
           }
         />
@@ -979,14 +924,14 @@ const LowStockProductsModal = ({
               <Space>
                 <span>
                   {attentionProducts.length} product
-                  {attentionProducts.length === 1 ? "" : "s"} require attention
+                  {attentionProducts.length === 1 ? '' : 's'} require attention
                 </span>
               </Space>
             }
             description={
               orderId
-                ? "These products are currently low in stock, out of stock, or insufficient for the order quantity."
-                : "This order has not been created yet. Inventory is being checked against the products currently selected in the order."
+                ? 'These products are currently low in stock, out of stock, or insufficient for the order quantity.'
+                : 'This order has not been created yet. Inventory is being checked against the products currently selected in the order.'
             }
             style={{
               marginBottom: 16,

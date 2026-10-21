@@ -1,10 +1,10 @@
-import React, { useEffect } from "react";
-import { Modal, Form, Input, Button, Row, Col, message } from "antd";
+import React, { useEffect } from 'react';
+import { Modal, Form, Input, Button, Row, Col, message } from 'antd';
 import {
   useCreateBrandMutation,
   useUpdateBrandMutation,
   useGetAllBrandsQuery,
-} from "../../api/brandsApi";
+} from '../../api/brandsApi';
 
 const AddBrand = ({ onClose, existingBrand }) => {
   const [form] = Form.useForm();
@@ -20,8 +20,8 @@ const AddBrand = ({ onClose, existingBrand }) => {
     if (existingBrand) {
       form.setFieldsValue({
         id: existingBrand.id,
-        brandName: existingBrand.brandName || "",
-        brandSlug: existingBrand.brandSlug || "",
+        brandName: existingBrand.brandName || '',
+        brandSlug: existingBrand.brandSlug || '',
       });
     } else {
       form.resetFields();
@@ -33,34 +33,30 @@ const AddBrand = ({ onClose, existingBrand }) => {
 
     // Check for duplicate slug (case-insensitive)
     const isDuplicate = allBrands.some(
-      (brand) =>
-        brand.brandSlug?.toLowerCase() === brandSlug.toLowerCase() &&
-        brand.id !== id,
+      (brand) => brand.brandSlug?.toLowerCase() === brandSlug.toLowerCase() && brand.id !== id,
     );
 
     if (isDuplicate) {
-      message.error("This brand slug is already taken.");
+      message.error('This brand slug is already taken.');
       return;
     }
 
     try {
       if (id) {
         await updateBrand({ id, brandName, brandSlug }).unwrap();
-        message.success("Brand updated successfully!");
+        message.success('Brand updated successfully!');
       } else {
         await createBrand({ brandName, brandSlug }).unwrap();
-        message.success("Brand created successfully!");
+        message.success('Brand created successfully!');
       }
 
       onClose();
     } catch (err) {
-      message.error(
-        err?.data?.message || "Failed to save brand. Please try again.",
-      );
+      message.error(err?.data?.message || 'Failed to save brand. Please try again.');
     }
   };
 
-  const title = Form.useWatch("id", form) ? "Edit Brand" : "Add Brand";
+  const title = Form.useWatch('id', form) ? 'Edit Brand' : 'Add Brand';
 
   return (
     <Modal
@@ -76,8 +72,8 @@ const AddBrand = ({ onClose, existingBrand }) => {
         layout="vertical"
         onFinish={handleSubmit}
         initialValues={{
-          brandName: "",
-          brandSlug: "",
+          brandName: '',
+          brandSlug: '',
         }}
       >
         <Row gutter={16}>
@@ -86,12 +82,12 @@ const AddBrand = ({ onClose, existingBrand }) => {
               name="brandName"
               label={
                 <>
-                  Brand Name <span style={{ color: "#ff4d4f" }}>*</span>
+                  Brand Name <span style={{ color: '#ff4d4f' }}>*</span>
                 </>
               }
               rules={[
-                { required: true, message: "Please enter brand name" },
-                { max: 100, message: "Name cannot exceed 100 characters" },
+                { required: true, message: 'Please enter brand name' },
+                { max: 100, message: 'Name cannot exceed 100 characters' },
               ]}
             >
               <Input placeholder="e.g. Nike" />
@@ -103,15 +99,14 @@ const AddBrand = ({ onClose, existingBrand }) => {
               name="brandSlug"
               label={
                 <>
-                  Brand Slug <span style={{ color: "#ff4d4f" }}>*</span>
+                  Brand Slug <span style={{ color: '#ff4d4f' }}>*</span>
                 </>
               }
               rules={[
-                { required: true, message: "Please enter brand slug" },
+                { required: true, message: 'Please enter brand slug' },
                 {
                   pattern: /^[a-z0-9-]+$/,
-                  message:
-                    "Slug can only contain lowercase letters, numbers, and hyphens",
+                  message: 'Slug can only contain lowercase letters, numbers, and hyphens',
                 },
               ]}
               tooltip="Used in URLs — keep it short, unique and URL-friendly"
@@ -126,16 +121,12 @@ const AddBrand = ({ onClose, existingBrand }) => {
           <Input type="hidden" />
         </Form.Item>
 
-        <div style={{ textAlign: "right", marginTop: 24 }}>
-          <Button
-            style={{ marginRight: 12 }}
-            onClick={onClose}
-            disabled={isLoading}
-          >
+        <div style={{ textAlign: 'right', marginTop: 24 }}>
+          <Button style={{ marginRight: 12 }} onClick={onClose} disabled={isLoading}>
             Cancel
           </Button>
           <Button type="primary" htmlType="submit" loading={isLoading}>
-            {Form.useWatch("id", form) ? "Update Brand" : "Add Brand"}
+            {Form.useWatch('id', form) ? 'Update Brand' : 'Add Brand'}
           </Button>
         </div>
       </Form>

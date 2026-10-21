@@ -1,25 +1,25 @@
-const fs = require("fs");
-const path = require("path");
-const axios = require("axios");
-const { v4: uuidv4 } = require("uuid");
-const mime = require("mime-types");
+const fs = require('fs');
+const path = require('path');
+const axios = require('axios');
+const { v4: uuidv4 } = require('uuid');
+const mime = require('mime-types');
 
 // Project root (../ from scripts/)
-const ROOT = path.resolve(__dirname, "../scripts");
+const ROOT = path.resolve(__dirname, '../scripts');
 
 // Paths
-const INPUT_FILE = path.join(ROOT, "json-outputs", "all_sheets_data2.json");
-const OUTPUT_FILE = path.join(ROOT, "products_with_media.json");
-const IMAGE_FOLDER = path.join(ROOT, "images");
+const INPUT_FILE = path.join(ROOT, 'json-outputs', 'all_sheets_data2.json');
+const OUTPUT_FILE = path.join(ROOT, 'products_with_media.json');
+const IMAGE_FOLDER = path.join(ROOT, 'images');
 
-console.log("Project Root :", ROOT);
-console.log("Input File   :", INPUT_FILE);
-console.log("Output File  :", OUTPUT_FILE);
-console.log("Image Folder :", IMAGE_FOLDER);
+console.log('Project Root :', ROOT);
+console.log('Input File   :', INPUT_FILE);
+console.log('Output File  :', OUTPUT_FILE);
+console.log('Image Folder :', IMAGE_FOLDER);
 
 // Check input file
 if (!fs.existsSync(INPUT_FILE)) {
-  console.error("\n❌ Input file not found:");
+  console.error('\n❌ Input file not found:');
   console.error(INPUT_FILE);
   process.exit(1);
 }
@@ -32,8 +32,8 @@ if (!fs.existsSync(IMAGE_FOLDER)) {
 async function downloadImage(url, filePath) {
   const response = await axios({
     url,
-    method: "GET",
-    responseType: "stream",
+    method: 'GET',
+    responseType: 'stream',
     timeout: 30000,
   });
 
@@ -42,8 +42,8 @@ async function downloadImage(url, filePath) {
 
     response.data.pipe(writer);
 
-    writer.on("finish", () => resolve(response.headers));
-    writer.on("error", reject);
+    writer.on('finish', () => resolve(response.headers));
+    writer.on('error', reject);
   });
 }
 
@@ -56,21 +56,21 @@ async function getExtension(url) {
 
   try {
     const head = await axios.head(url);
-    const type = head.headers["content-type"];
+    const type = head.headers['content-type'];
 
     const guessed = mime.extension(type);
 
     if (guessed) {
-      return "." + guessed;
+      return '.' + guessed;
     }
   } catch {}
 
-  return ".jpg";
+  return '.jpg';
 }
 
 (async () => {
   try {
-    const products = JSON.parse(fs.readFileSync(INPUT_FILE, "utf8"));
+    const products = JSON.parse(fs.readFileSync(INPUT_FILE, 'utf8'));
 
     console.log(`\nFound ${products.length} products.\n`);
 
@@ -82,7 +82,7 @@ async function getExtension(url) {
       console.log(`[${i + 1}/${products.length}] ${product.name}`);
 
       if (!product.image_url) {
-        console.log("  -> No image URL");
+        console.log('  -> No image URL');
         updatedProducts.push(product);
         continue;
       }
@@ -107,17 +107,13 @@ async function getExtension(url) {
       }
     }
 
-    fs.writeFileSync(
-      OUTPUT_FILE,
-      JSON.stringify(updatedProducts, null, 2),
-      "utf8",
-    );
+    fs.writeFileSync(OUTPUT_FILE, JSON.stringify(updatedProducts, null, 2), 'utf8');
 
-    console.log("\n====================================");
-    console.log("✅ Finished");
+    console.log('\n====================================');
+    console.log('✅ Finished');
     console.log(`Images: ${IMAGE_FOLDER}`);
     console.log(`JSON:   ${OUTPUT_FILE}`);
-    console.log("====================================");
+    console.log('====================================');
   } catch (err) {
     console.error(err);
   }

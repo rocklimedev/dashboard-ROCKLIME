@@ -1,15 +1,15 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useRegisterMutation } from "../../api/authApi";
-import logo from "../../assets/img/logo.png";
-import { message } from "antd";
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useRegisterMutation } from '../../api/authApi';
+import logo from '../../assets/img/logo.png';
+import { message } from 'antd';
 const Signup = () => {
   const [formData, setFormData] = useState({
-    username: "",
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
+    username: '',
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
     agreeTerms: false,
   });
 
@@ -20,7 +20,7 @@ const Signup = () => {
     const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: type === 'checkbox' ? checked : value,
     });
   };
 
@@ -28,20 +28,20 @@ const Signup = () => {
     e.preventDefault();
 
     if (formData.password !== formData.confirmPassword) {
-      message.error("Passwords do not match!");
+      message.error('Passwords do not match!');
       return;
     }
 
     if (!formData.agreeTerms) {
-      message.error("You must agree to the terms and conditions!");
+      message.error('You must agree to the terms and conditions!');
       return;
     }
 
     try {
       await register(formData).unwrap();
-      navigate("/login");
+      navigate('/login');
     } catch (err) {
-      message.error(err?.data?.message || "Something went wrong. Try again.");
+      message.error(err?.data?.message || 'Something went wrong. Try again.');
     }
   };
 
@@ -52,11 +52,7 @@ const Signup = () => {
           <form onSubmit={handleSubmit}>
             <div className="login-userset">
               <div className="login-logo logo-normal">
-                <img
-                  src={logo}
-                  alt="Logo"
-                  style={{ width: "177px", height: "auto" }}
-                />
+                <img src={logo} alt="Logo" style={{ width: '177px', height: 'auto' }} />
               </div>
               <div className="login-userheading">
                 <h3>Register</h3>
@@ -141,18 +137,14 @@ const Signup = () => {
                     checked={formData.agreeTerms}
                     onChange={handleChange}
                   />
-                  <span className="checkmarks"></span>I agree to the{" "}
+                  <span className="checkmarks"></span>I agree to the{' '}
                   <a href="#" className="text-primary">
                     Terms & Privacy
                   </a>
                 </label>
               </div>
               <div className="form-login">
-                <button
-                  type="submit"
-                  className="btn btn-primary w-100"
-                  disabled={isLoading}
-                >
+                <button type="submit" className="btn btn-primary w-100" disabled={isLoading}>
                   {isLoading ? (
                     <>
                       <span
@@ -163,18 +155,16 @@ const Signup = () => {
                       Registering...
                     </>
                   ) : (
-                    "Sign Up"
+                    'Sign Up'
                   )}
                 </button>
               </div>
               {error && (
-                <p className="text-danger">
-                  {error.data?.message || "Registration failed!"}
-                </p>
+                <p className="text-danger">{error.data?.message || 'Registration failed!'}</p>
               )}
               <div className="signinform">
                 <h4>
-                  Already have an account?{" "}
+                  Already have an account?{' '}
                   <a href="/login" className="hover-a">
                     Log In Instead
                   </a>

@@ -1,9 +1,9 @@
-const fs = require("fs");
-const { v4: uuidv4 } = require("uuid");
-const slugify = require("slugify");
+const fs = require('fs');
+const { v4: uuidv4 } = require('uuid');
+const slugify = require('slugify');
 
-const brandId = "acbe7061-9b76-47d1-a509-e4b1f982a36f";
-const rawData = require("./colston.json");
+const brandId = 'acbe7061-9b76-47d1-a509-e4b1f982a36f';
+const rawData = require('./colston.json');
 
 const parentMap = new Map();
 const categoryMap = new Map();
@@ -35,7 +35,7 @@ for (const item of rawData) {
   }
 
   // ✅ New Category
-  if (row.length === 1 && typeof row[0] === "string") {
+  if (row.length === 1 && typeof row[0] === 'string') {
     const categoryName = row[0].trim().toLowerCase();
     const key = `${categoryName}::${currentParentId}`;
     if (!categoryMap.has(key)) {
@@ -65,16 +65,8 @@ for (const item of rawData) {
 }
 
 // ✅ Save files
-fs.writeFileSync(
-  "parentCategories.json",
-  JSON.stringify(parentCategories, null, 2)
-);
-fs.writeFileSync("categories.json", JSON.stringify(categories, null, 2));
-fs.writeFileSync(
-  "transformedData.json",
-  JSON.stringify(transformedData, null, 2)
-);
+fs.writeFileSync('parentCategories.json', JSON.stringify(parentCategories, null, 2));
+fs.writeFileSync('categories.json', JSON.stringify(categories, null, 2));
+fs.writeFileSync('transformedData.json', JSON.stringify(transformedData, null, 2));
 
-console.log(
-  "✅ Done: Extracted parent categories, categories, and transformed raw data."
-);
+console.log('✅ Done: Extracted parent categories, categories, and transformed raw data.');

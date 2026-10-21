@@ -25,7 +25,7 @@
 
 .stats-row .ant-card {
   border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .stat-card .ant-statistic-title {
@@ -35,7 +35,7 @@
 
 .info-card {
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .customer-meta > div {
@@ -56,7 +56,7 @@
 .tabs-card {
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .section-card {
@@ -67,9 +67,17 @@
   padding: 4px 0;
 }
 
-.text-secondary { color: #555; font-size: 14px; }
-.text-tiny     { font-size: 12px; color: #888; }
-.text-muted    { color: #aaa; }
+.text-secondary {
+  color: #555;
+  font-size: 14px;
+}
+.text-tiny {
+  font-size: 12px;
+  color: #888;
+}
+.text-muted {
+  color: #aaa;
+}
 
 .address-card {
   border-radius: 10px;
@@ -78,7 +86,7 @@
 
 .address-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
 }
 
 .address-text {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 import {
   Alert,
   Button,
@@ -15,20 +15,51 @@ import {
   Switch,
   Typography,
   message,
-} from "antd";
-import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
-import { useGetSettingsQuery, useSaveSettingMutation } from "../../api/settingsApi";
-import { useRoles } from "../../utils/useCan";
-import { useLazyGetDailySummaryQuery, useSendDailySummaryMutation } from "../../api/dashboardApi";
+} from 'antd';
+import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
+import { useGetSettingsQuery, useSaveSettingMutation } from '../../api/settingsApi';
+import { useRoles } from '../../utils/useCan';
+import { useLazyGetDailySummaryQuery, useSendDailySummaryMutation } from '../../api/dashboardApi';
 
 const { Title, Text } = Typography;
 
 const STATES = [
-  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana",
-  "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur",
-  "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana",
-  "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal", "Andaman and Nicobar Islands", "Chandigarh",
-  "Dadra and Nagar Haveli and Daman and Diu", "Delhi", "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry",
+  'Andhra Pradesh',
+  'Arunachal Pradesh',
+  'Assam',
+  'Bihar',
+  'Chhattisgarh',
+  'Goa',
+  'Gujarat',
+  'Haryana',
+  'Himachal Pradesh',
+  'Jharkhand',
+  'Karnataka',
+  'Kerala',
+  'Madhya Pradesh',
+  'Maharashtra',
+  'Manipur',
+  'Meghalaya',
+  'Mizoram',
+  'Nagaland',
+  'Odisha',
+  'Punjab',
+  'Rajasthan',
+  'Sikkim',
+  'Tamil Nadu',
+  'Telangana',
+  'Tripura',
+  'Uttar Pradesh',
+  'Uttarakhand',
+  'West Bengal',
+  'Andaman and Nicobar Islands',
+  'Chandigarh',
+  'Dadra and Nagar Haveli and Daman and Diu',
+  'Delhi',
+  'Jammu and Kashmir',
+  'Ladakh',
+  'Lakshadweep',
+  'Puducherry',
 ];
 
 /** Settings → Company & documents: what is printed on quotations and other documents. */
@@ -39,11 +70,11 @@ function ListField({ name, title, isAdmin, addLabel, numbered = false }) {
       <Text strong>{title}</Text>
       <Form.List name={name}>
         {(fields, { add, remove }) => (
-          <Space direction="vertical" style={{ width: "100%", marginTop: 8 }}>
+          <Space direction="vertical" style={{ width: '100%', marginTop: 8 }}>
             {fields.map((f, i) => (
-              <div key={f.key} style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
+              <div key={f.key} style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
                 <Text type="secondary" style={{ width: 18 }}>
-                  {numbered ? `${i + 1}.` : "•"}
+                  {numbered ? `${i + 1}.` : '•'}
                 </Text>
                 <Form.Item {...f} style={{ marginBottom: 0, flex: 1 }}>
                   <Input />
@@ -52,7 +83,7 @@ function ListField({ name, title, isAdmin, addLabel, numbered = false }) {
               </div>
             ))}
             {isAdmin && (
-              <Button type="dashed" onClick={() => add("")} icon={<PlusOutlined />}>
+              <Button type="dashed" onClick={() => add('')} icon={<PlusOutlined />}>
                 {addLabel}
               </Button>
             )}
@@ -65,7 +96,7 @@ function ListField({ name, title, isAdmin, addLabel, numbered = false }) {
 
 export default function CompanySettings() {
   const roles = useRoles();
-  const isAdmin = roles.some((r) => ["SUPER_ADMIN", "ADMIN", "DEVELOPER"].includes(r));
+  const isAdmin = roles.some((r) => ['SUPER_ADMIN', 'ADMIN', 'DEVELOPER'].includes(r));
   const { data, isLoading, error } = useGetSettingsQuery();
   const [save, { isLoading: saving }] = useSaveSettingMutation();
   const [companyForm] = Form.useForm();
@@ -87,16 +118,16 @@ export default function CompanySettings() {
     try {
       setSummary(await loadSummary().unwrap());
     } catch (e) {
-      message.error(e?.data?.message || "Could not build the summary");
+      message.error(e?.data?.message || 'Could not build the summary');
     }
   };
   const sendNow = async () => {
     try {
       const r = await sendSummary().unwrap();
-      if (r.sent) message.success(`Sent to ${r.to.join(", ")}`);
+      if (r.sent) message.success(`Sent to ${r.to.join(', ')}`);
       else message.warning(r.reason);
     } catch (e) {
-      message.error(e?.data?.message || "Could not send");
+      message.error(e?.data?.message || 'Could not send');
     }
   };
 
@@ -104,10 +135,10 @@ export default function CompanySettings() {
     try {
       const values = await form.validateFields();
       await save({ key, ...values }).unwrap();
-      message.success("Saved");
+      message.success('Saved');
     } catch (e) {
       if (e?.errorFields) return;
-      message.error(e?.data?.message || "Could not save");
+      message.error(e?.data?.message || 'Could not save');
     }
   };
 
@@ -119,9 +150,21 @@ export default function CompanySettings() {
         </Title>
         <Text type="secondary">Printed on quotations, purchase orders and invoices.</Text>
         {!isAdmin && (
-          <Alert style={{ marginTop: 12 }} type="info" showIcon message="Only administrators can change these settings." />
+          <Alert
+            style={{ marginTop: 12 }}
+            type="info"
+            showIcon
+            message="Only administrators can change these settings."
+          />
         )}
-        {error && <Alert style={{ marginTop: 12 }} type="error" showIcon message={error?.data?.message || "Could not load settings"} />}
+        {error && (
+          <Alert
+            style={{ marginTop: 12 }}
+            type="error"
+            showIcon
+            message={error?.data?.message || 'Could not load settings'}
+          />
+        )}
         {isLoading ? (
           <Skeleton active />
         ) : (
@@ -148,14 +191,23 @@ export default function CompanySettings() {
                     <Form.Item
                       name="gstin"
                       label="GSTIN"
-                      rules={[{ pattern: /^$|^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/, message: "15-character GSTIN, e.g. 07ABCDE1234F1Z5" }]}
-                      normalize={(v) => (v || "").toUpperCase().trim()}
+                      rules={[
+                        {
+                          pattern: /^$|^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/,
+                          message: '15-character GSTIN, e.g. 07ABCDE1234F1Z5',
+                        },
+                      ]}
+                      normalize={(v) => (v || '').toUpperCase().trim()}
                     >
                       <Input maxLength={15} />
                     </Form.Item>
                   </Col>
                   <Col xs={24} md={8}>
-                    <Form.Item name="state" label="State (decides CGST+SGST vs IGST)" rules={[{ required: true }]}>
+                    <Form.Item
+                      name="state"
+                      label="State (decides CGST+SGST vs IGST)"
+                      rules={[{ required: true }]}
+                    >
                       <Select showSearch options={STATES.map((s) => ({ value: s, label: s }))} />
                     </Form.Item>
                   </Col>
@@ -208,12 +260,22 @@ export default function CompanySettings() {
                     </Form.Item>
                   </Col>
                   <Col xs={24} md={8}>
-                    <Form.Item name="bankIfsc" label="IFSC" normalize={(v) => (v || "").toUpperCase().trim()}>
+                    <Form.Item
+                      name="bankIfsc"
+                      label="IFSC"
+                      normalize={(v) => (v || '').toUpperCase().trim()}
+                    >
                       <Input maxLength={11} />
                     </Form.Item>
                   </Col>
                   <Col xs={24} md={8}>
-                    <Form.Item name="upiId" label="UPI ID" rules={[{ pattern: /^$|^[\w.-]+@[\w.-]+$/, message: "e.g. cmtrading@hdfcbank" }]}>
+                    <Form.Item
+                      name="upiId"
+                      label="UPI ID"
+                      rules={[
+                        { pattern: /^$|^[\w.-]+@[\w.-]+$/, message: 'e.g. cmtrading@hdfcbank' },
+                      ]}
+                    >
                       <Input />
                     </Form.Item>
                   </Col>
@@ -222,7 +284,12 @@ export default function CompanySettings() {
                       name="summaryEmails"
                       label="Daily summary email (8 pm)"
                       extra="Sales, dispatches, money collected and tomorrow's follow-ups. Separate several addresses with commas."
-                      rules={[{ pattern: /^$|^[^@\s,]+@[^@\s,]+(\s*,\s*[^@\s,]+@[^@\s,]+)*$/, message: "e.g. owner@cmtradingco.com, manager@cmtradingco.com" }]}
+                      rules={[
+                        {
+                          pattern: /^$|^[^@\s,]+@[^@\s,]+(\s*,\s*[^@\s,]+@[^@\s,]+)*$/,
+                          message: 'e.g. owner@cmtradingco.com, manager@cmtradingco.com',
+                        },
+                      ]}
                     >
                       <Input placeholder="owner@cmtradingco.com" />
                     </Form.Item>
@@ -230,7 +297,11 @@ export default function CompanySettings() {
                 </Row>
                 <Space wrap>
                   {isAdmin && (
-                    <Button type="primary" onClick={submit("company", companyForm)} loading={saving}>
+                    <Button
+                      type="primary"
+                      onClick={submit('company', companyForm)}
+                      loading={saving}
+                    >
                       Save company details
                     </Button>
                   )}
@@ -246,44 +317,70 @@ export default function CompanySettings() {
                 <Row gutter={16}>
                   <Col xs={12} md={6}>
                     <Form.Item name="validityDays" label="Valid for (days)">
-                      <InputNumber min={1} max={180} style={{ width: "100%" }} />
+                      <InputNumber min={1} max={180} style={{ width: '100%' }} />
                     </Form.Item>
                   </Col>
                   <Col xs={12} md={6}>
                     <Form.Item name="defaultGstRate" label="Default GST %">
-                      <InputNumber min={0} max={28} style={{ width: "100%" }} />
+                      <InputNumber min={0} max={28} style={{ width: '100%' }} />
                     </Form.Item>
                   </Col>
                   <Col xs={12} md={6}>
                     <Form.Item name="defaultStyle" label="Default PDF style">
                       <Select
                         options={[
-                          { value: "detailed", label: "With photos" },
-                          { value: "compact", label: "Compact (codes, no photos)" },
+                          { value: 'detailed', label: 'With photos' },
+                          { value: 'compact', label: 'Compact (codes, no photos)' },
                         ]}
                       />
                     </Form.Item>
                   </Col>
                   <Col xs={12} md={6}>
-                    <Form.Item name="showCoverPage" label="Cover page by default" valuePropName="checked">
+                    <Form.Item
+                      name="showCoverPage"
+                      label="Cover page by default"
+                      valuePropName="checked"
+                    >
                       <Switch />
                     </Form.Item>
                   </Col>
                 </Row>
-                <Text type="secondary" style={{ display: "block", marginBottom: 12 }}>
-                  In any line you can write {"{validityDays}"}, {"{validTill}"} or {"{gst}"}; the quotation fills in the real value.
+                <Text type="secondary" style={{ display: 'block', marginBottom: 12 }}>
+                  In any line you can write {'{validityDays}'}, {'{validTill}'} or {'{gst}'}; the
+                  quotation fills in the real value.
                 </Text>
                 <Row gutter={24}>
                   <Col xs={24} lg={12}>
-                    <ListField name="includes" title="Price includes" isAdmin={isAdmin} addLabel="Add an inclusion" />
+                    <ListField
+                      name="includes"
+                      title="Price includes"
+                      isAdmin={isAdmin}
+                      addLabel="Add an inclusion"
+                    />
                   </Col>
                   <Col xs={24} lg={12}>
-                    <ListField name="excludes" title="Price excludes" isAdmin={isAdmin} addLabel="Add an exclusion" />
+                    <ListField
+                      name="excludes"
+                      title="Price excludes"
+                      isAdmin={isAdmin}
+                      addLabel="Add an exclusion"
+                    />
                   </Col>
                 </Row>
-                <ListField name="keyTerms" title="Terms" isAdmin={isAdmin} addLabel="Add a term" numbered />
+                <ListField
+                  name="keyTerms"
+                  title="Terms"
+                  isAdmin={isAdmin}
+                  addLabel="Add a term"
+                  numbered
+                />
                 {isAdmin && (
-                  <Button type="primary" onClick={submit("quotation", quoteForm)} loading={saving} style={{ marginTop: 16 }}>
+                  <Button
+                    type="primary"
+                    onClick={submit('quotation', quoteForm)}
+                    loading={saving}
+                    style={{ marginTop: 16 }}
+                  >
                     Save quotation settings
                   </Button>
                 )}
@@ -296,7 +393,14 @@ export default function CompanySettings() {
               onCancel={() => setSummary(null)}
               zIndex={2000}
               footer={[
-                <Button key="wa" href={summary ? `https://wa.me/?text=${encodeURIComponent(summary.text)}` : undefined} target="_blank" rel="noreferrer">
+                <Button
+                  key="wa"
+                  href={
+                    summary ? `https://wa.me/?text=${encodeURIComponent(summary.text)}` : undefined
+                  }
+                  target="_blank"
+                  rel="noreferrer"
+                >
                   Share on WhatsApp
                 </Button>,
                 isAdmin && (
@@ -306,7 +410,9 @@ export default function CompanySettings() {
                 ),
               ]}
             >
-              <pre style={{ whiteSpace: "pre-wrap", fontFamily: "inherit", margin: 0 }}>{summary?.text}</pre>
+              <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: 0 }}>
+                {summary?.text}
+              </pre>
             </Modal>
 
             <Card title="Invoices & Tally" style={{ marginTop: 16 }}>
@@ -317,8 +423,10 @@ export default function CompanySettings() {
                       name="invoicePrefix"
                       label="Invoice number prefix"
                       extra="Numbers look like CM/26-27/0001 and restart every April."
-                      rules={[{ pattern: /^[A-Za-z0-9-]{1,5}$/, message: "Up to 5 letters or digits" }]}
-                      normalize={(v) => (v || "").toUpperCase().trim()}
+                      rules={[
+                        { pattern: /^[A-Za-z0-9-]{1,5}$/, message: 'Up to 5 letters or digits' },
+                      ]}
+                      normalize={(v) => (v || '').toUpperCase().trim()}
                     >
                       <Input maxLength={5} />
                     </Form.Item>
@@ -327,18 +435,24 @@ export default function CompanySettings() {
                 <Text strong>Terms printed on every invoice</Text>
                 <Form.List name="invoiceTerms">
                   {(fields, { add, remove }) => (
-                    <Space direction="vertical" style={{ width: "100%", marginTop: 8, marginBottom: 16 }}>
+                    <Space
+                      direction="vertical"
+                      style={{ width: '100%', marginTop: 8, marginBottom: 16 }}
+                    >
                       {fields.map((f, i) => (
-                        <Space key={f.key} align="baseline" style={{ width: "100%" }}>
+                        <Space key={f.key} align="baseline" style={{ width: '100%' }}>
                           <Text type="secondary">{i + 1}.</Text>
-                          <Form.Item {...f} style={{ marginBottom: 0, width: 760, maxWidth: "70vw" }}>
+                          <Form.Item
+                            {...f}
+                            style={{ marginBottom: 0, width: 760, maxWidth: '70vw' }}
+                          >
                             <Input />
                           </Form.Item>
                           {isAdmin && <MinusCircleOutlined onClick={() => remove(f.name)} />}
                         </Space>
                       ))}
                       {isAdmin && (
-                        <Button type="dashed" onClick={() => add("")} icon={<PlusOutlined />}>
+                        <Button type="dashed" onClick={() => add('')} icon={<PlusOutlined />}>
                           Add a term
                         </Button>
                       )}
@@ -347,28 +461,39 @@ export default function CompanySettings() {
                 </Form.List>
                 <Text strong>Tally ledger names</Text>
                 <div>
-                  <Text type="secondary">Must match the ledgers in your Tally company exactly, or Tally will reject the import.</Text>
+                  <Text type="secondary">
+                    Must match the ledgers in your Tally company exactly, or Tally will reject the
+                    import.
+                  </Text>
                 </div>
                 <Row gutter={16} style={{ marginTop: 8 }}>
                   {[
-                    ["tallySalesLedger", "Sales"],
-                    ["tallyFreightLedger", "Freight"],
-                    ["tallyCgstLedger", "Output CGST"],
-                    ["tallySgstLedger", "Output SGST"],
-                    ["tallyIgstLedger", "Output IGST"],
-                    ["tallyRoundOffLedger", "Round off"],
-                    ["tallyCashLedger", "Cash"],
-                    ["tallyBankLedger", "Bank (UPI, cheque, transfer)"],
+                    ['tallySalesLedger', 'Sales'],
+                    ['tallyFreightLedger', 'Freight'],
+                    ['tallyCgstLedger', 'Output CGST'],
+                    ['tallySgstLedger', 'Output SGST'],
+                    ['tallyIgstLedger', 'Output IGST'],
+                    ['tallyRoundOffLedger', 'Round off'],
+                    ['tallyCashLedger', 'Cash'],
+                    ['tallyBankLedger', 'Bank (UPI, cheque, transfer)'],
                   ].map(([name, label]) => (
                     <Col xs={12} md={6} key={name}>
-                      <Form.Item name={name} label={label} rules={[{ required: true, message: "Required" }]}>
+                      <Form.Item
+                        name={name}
+                        label={label}
+                        rules={[{ required: true, message: 'Required' }]}
+                      >
                         <Input />
                       </Form.Item>
                     </Col>
                   ))}
                 </Row>
                 {isAdmin && (
-                  <Button type="primary" onClick={submit("accounts", accountsForm)} loading={saving}>
+                  <Button
+                    type="primary"
+                    onClick={submit('accounts', accountsForm)}
+                    loading={saving}
+                  >
                     Save invoice settings
                   </Button>
                 )}

@@ -1,6 +1,6 @@
 // middleware/logger.js
-const ApiLog = require("../models/apiLog");
-const { User } = require("../models"); // Sequelize MySQL
+const ApiLog = require('../models/apiLog');
+const { User } = require('../models'); // Sequelize MySQL
 
 const apiLogger = (req, res, next) => {
   const startTime = Date.now();
@@ -10,8 +10,8 @@ const apiLogger = (req, res, next) => {
   if (req.user) {
     userSnapshot = {
       id: req.user.userId,
-      name: req.user.name || req.user.username || "Unknown",
-      email: req.user.email || "unknown@example.com",
+      name: req.user.name || req.user.username || 'Unknown',
+      email: req.user.email || 'unknown@example.com',
     };
   }
 
@@ -30,11 +30,10 @@ const apiLogger = (req, res, next) => {
     startTime: new Date(startTime),
     endTime: null,
     duration: null,
-    body: req.method !== "GET" && req.method !== "HEAD" ? req.body : undefined,
+    body: req.method !== 'GET' && req.method !== 'HEAD' ? req.body : undefined,
     query: req.query && Object.keys(req.query).length ? req.query : undefined,
-    ipAddress:
-      req.ip || req.connection?.remoteAddress || req.socket?.remoteAddress,
-    userAgent: req.get("User-Agent"),
+    ipAddress: req.ip || req.connection?.remoteAddress || req.socket?.remoteAddress,
+    userAgent: req.get('User-Agent'),
     error: null,
   };
 
@@ -54,23 +53,21 @@ const apiLogger = (req, res, next) => {
 
         // Only log error if 4xx/5xx and no body was sent
         if (res.statusCode >= 400) {
-          updateData.error = res.statusMessage || "Unknown Error";
+          updateData.error = res.statusMessage || 'Unknown Error';
         }
 
         // Fire-and-forget update
-        ApiLog.updateOne({ _id: logId }, { $set: updateData }).catch(
-          console.error,
-        );
+        ApiLog.updateOne({ _id: logId }, { $set: updateData }).catch(console.error);
 
-        res.removeListener("finish", onFinished);
-        res.removeListener("close", onFinished);
+        res.removeListener('finish', onFinished);
+        res.removeListener('close', onFinished);
       };
 
-      res.on("finish", onFinished);
-      res.on("close", onFinished); // Handles aborted requests
+      res.on('finish', onFinished);
+      res.on('close', onFinished); // Handles aborted requests
     })
     .catch((err) => {
-      console.error("Failed to create log entry:", err);
+      console.error('Failed to create log entry:', err);
     });
 
   // Do NOT wait for anything — move on!

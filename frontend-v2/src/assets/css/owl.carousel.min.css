@@ -20,7 +20,7 @@
   -moz-backface-visibility: hidden;
 }
 .owl-carousel .owl-stage:after {
-  content: ".";
+  content: '.';
   display: block;
   clear: both;
   visibility: hidden;
@@ -135,7 +135,7 @@
   transition: opacity 0.4s ease;
 }
 .owl-carousel .owl-item .owl-lazy:not([src]),
-.owl-carousel .owl-item .owl-lazy[src^=""] {
+.owl-carousel .owl-item .owl-lazy[src^=''] {
   max-height: 0;
 }
 .owl-carousel .owl-item img.owl-lazy {

@@ -1,39 +1,39 @@
 // models/ActivityLog.js
 
-const { v4: uuidv4 } = require("uuid");
+const { v4: uuidv4 } = require('uuid');
 
 const CONTEXT_TAGS = {
-  AUTH: "AUTH",
-  CRM: "CRM",
-  CATALOG: "CATALOG",
-  SALES: "SALES",
-  PROCUREMENT: "PROCUREMENT",
-  INVENTORY: "INVENTORY",
-  SYSTEM: "SYSTEM",
+  AUTH: 'AUTH',
+  CRM: 'CRM',
+  CATALOG: 'CATALOG',
+  SALES: 'SALES',
+  PROCUREMENT: 'PROCUREMENT',
+  INVENTORY: 'INVENTORY',
+  SYSTEM: 'SYSTEM',
 };
 
 const SUB_CONTEXTS = {
-  USER: "USER",
-  CUSTOMER: "CUSTOMER",
-  VENDOR: "VENDOR",
+  USER: 'USER',
+  CUSTOMER: 'CUSTOMER',
+  VENDOR: 'VENDOR',
 
-  BRAND: "BRAND",
-  CATEGORY: "CATEGORY",
-  PRODUCT: "PRODUCT",
+  BRAND: 'BRAND',
+  CATEGORY: 'CATEGORY',
+  PRODUCT: 'PRODUCT',
 
-  QUOTATION: "QUOTATION",
-  ORDER: "ORDER",
+  QUOTATION: 'QUOTATION',
+  ORDER: 'ORDER',
 
-  FIELD_GUIDED_SHEET: "FIELD_GUIDED_SHEET",
-  PURCHASE_ORDER: "PURCHASE_ORDER",
+  FIELD_GUIDED_SHEET: 'FIELD_GUIDED_SHEET',
+  PURCHASE_ORDER: 'PURCHASE_ORDER',
 
-  TEAM: "TEAM",
-  ADDRESS: "ADDRESS",
+  TEAM: 'TEAM',
+  ADDRESS: 'ADDRESS',
 };
 
 module.exports = (sequelize, DataTypes) => {
   const ActivityLog = sequelize.define(
-    "ActivityLog",
+    'ActivityLog',
     {
       activityLogId: {
         type: DataTypes.UUID,
@@ -46,11 +46,11 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.UUID,
         allowNull: true,
         references: {
-          model: "users",
-          key: "userId",
+          model: 'users',
+          key: 'userId',
         },
-        onDelete: "SET NULL",
-        onUpdate: "CASCADE",
+        onDelete: 'SET NULL',
+        onUpdate: 'CASCADE',
       },
 
       contextTag: {
@@ -84,9 +84,9 @@ module.exports = (sequelize, DataTypes) => {
       },
 
       severity: {
-        type: DataTypes.ENUM("info", "warning", "error", "critical"),
+        type: DataTypes.ENUM('info', 'warning', 'error', 'critical'),
         allowNull: false,
-        defaultValue: "info",
+        defaultValue: 'info',
       },
 
       oldValues: {
@@ -115,41 +115,41 @@ module.exports = (sequelize, DataTypes) => {
       },
     },
     {
-      tableName: "activity_logs",
+      tableName: 'activity_logs',
       timestamps: true,
 
       indexes: [
         {
-          name: "idx_activity_logs_user_id",
-          fields: ["userId"],
+          name: 'idx_activity_logs_user_id',
+          fields: ['userId'],
         },
         {
-          name: "idx_activity_logs_context_tag",
-          fields: ["contextTag"],
+          name: 'idx_activity_logs_context_tag',
+          fields: ['contextTag'],
         },
         {
-          name: "idx_activity_logs_sub_context",
-          fields: ["subContext"],
+          name: 'idx_activity_logs_sub_context',
+          fields: ['subContext'],
         },
         {
-          name: "idx_activity_logs_entity_id",
-          fields: ["entityId"],
+          name: 'idx_activity_logs_entity_id',
+          fields: ['entityId'],
         },
         {
-          name: "idx_activity_logs_action",
-          fields: ["action"],
+          name: 'idx_activity_logs_action',
+          fields: ['action'],
         },
         {
-          name: "idx_activity_logs_severity",
-          fields: ["severity"],
+          name: 'idx_activity_logs_severity',
+          fields: ['severity'],
         },
         {
-          name: "idx_activity_logs_created_at",
-          fields: ["createdAt"],
+          name: 'idx_activity_logs_created_at',
+          fields: ['createdAt'],
         },
         {
-          name: "idx_activity_logs_context_subcontext",
-          fields: ["contextTag", "subContext"],
+          name: 'idx_activity_logs_context_subcontext',
+          fields: ['contextTag', 'subContext'],
         },
       ],
     },
@@ -160,10 +160,10 @@ module.exports = (sequelize, DataTypes) => {
 
   ActivityLog.associate = (models) => {
     ActivityLog.belongsTo(models.User, {
-      foreignKey: "userId",
-      as: "user",
-      onDelete: "SET NULL",
-      onUpdate: "CASCADE",
+      foreignKey: 'userId',
+      as: 'user',
+      onDelete: 'SET NULL',
+      onUpdate: 'CASCADE',
     });
   };
 

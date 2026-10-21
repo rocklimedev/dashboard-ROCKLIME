@@ -1,17 +1,16 @@
 // src/pages/auth/EmailVerification.jsx
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useResendVerificationEmailMutation } from "../../api/authApi";
-import logo from "../../assets/img/logo.png";
-import logoWhite from "../../assets/img/logo.png";
-import { MailOutlined } from "@ant-design/icons";
-import { message } from "antd";
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useResendVerificationEmailMutation } from '../../api/authApi';
+import logo from '../../assets/img/logo.png';
+import logoWhite from '../../assets/img/logo.png';
+import { MailOutlined } from '@ant-design/icons';
+import { message } from 'antd';
 const EmailVerification = () => {
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState('');
   const [emailSent, setEmailSent] = useState(false);
   const [timer, setTimer] = useState(60); // seconds until auto-close
-  const [resendVerificationEmail, { isLoading }] =
-    useResendVerificationEmailMutation();
+  const [resendVerificationEmail, { isLoading }] = useResendVerificationEmailMutation();
   const navigate = useNavigate();
 
   // Same regex as backend
@@ -22,15 +21,15 @@ const EmailVerification = () => {
     e.preventDefault();
     const trimmed = email.trim().toLowerCase();
 
-    if (!trimmed) return message.error("Please enter an email address");
-    if (!emailRegex.test(trimmed)) return message.error("Invalid email format");
+    if (!trimmed) return message.error('Please enter an email address');
+    if (!emailRegex.test(trimmed)) return message.error('Invalid email format');
 
     try {
       await resendVerificationEmail({ email: trimmed }).unwrap();
       setEmailSent(true);
       setTimer(60);
     } catch (err) {
-      message.error(err?.data?.message || "Failed to send verification email");
+      message.error(err?.data?.message || 'Failed to send verification email');
     }
   };
 
@@ -45,7 +44,7 @@ const EmailVerification = () => {
           try {
             window.close();
           } catch (_) {}
-          navigate("/login", { replace: true });
+          navigate('/login', { replace: true });
           return 0;
         }
         return prev - 1;
@@ -78,9 +77,9 @@ const EmailVerification = () => {
             {emailSent ? (
               <div className="text-center">
                 <p className="text-gray-9">
-                  We sent you the email – check your inbox (and spam). This
-                  window will close in <strong>{timer}</strong> second
-                  {timer !== 1 ? "s" : ""}.
+                  We sent you the email – check your inbox (and spam). This window will close in{' '}
+                  <strong>{timer}</strong> second
+                  {timer !== 1 ? 's' : ''}.
                 </p>
               </div>
             ) : (
@@ -111,7 +110,7 @@ const EmailVerification = () => {
                     type="submit"
                     className="btn btn-primary w-100"
                     disabled={isLoading}
-                    style={{ minHeight: "44px" }}
+                    style={{ minHeight: '44px' }}
                   >
                     Send Verification Email
                   </button>

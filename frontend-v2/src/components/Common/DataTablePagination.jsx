@@ -1,13 +1,8 @@
-import React from "react";
-import ReactPaginate from "react-paginate";
-import "./pagination.css";
+import React from 'react';
+import ReactPaginate from 'react-paginate';
+import './pagination.css';
 
-const DataTablePagination = ({
-  totalItems,
-  itemNo = 20,
-  onPageChange,
-  currentPage,
-}) => {
+const DataTablePagination = ({ totalItems, itemNo = 20, onPageChange, currentPage }) => {
   const pageCount = Math.ceil(totalItems / itemNo);
 
   // Calculate start and end indices for "Showing X to Y of Z"
@@ -26,25 +21,25 @@ const DataTablePagination = ({
         Showing {startIndex + 1} to {endIndex} of {totalItems} results
       </div>
       <ReactPaginate
-        previousLabel={"❮"}
-        nextLabel={"❯"}
-        breakLabel={"..."}
+        previousLabel={'❮'}
+        nextLabel={'❯'}
+        breakLabel={'...'}
         pageCount={pageCount}
         marginPagesDisplayed={2}
         pageRangeDisplayed={3}
         onPageChange={handlePageClick}
         forcePage={currentPage - 1} // Convert 1-based to 0-based for ReactPaginate
-        containerClassName={"pagination-buttons"}
-        pageClassName={"page-item"}
-        pageLinkClassName={"page-link"}
-        previousClassName={"page-item"}
-        previousLinkClassName={"page-link"}
-        nextClassName={"page-item"}
-        nextLinkClassName={"page-link"}
-        breakClassName={"page-item"}
-        breakLinkClassName={"page-link"}
-        activeClassName={"active"}
-        disabledClassName={"disabled"}
+        containerClassName={'pagination-buttons'}
+        pageClassName={'page-item'}
+        pageLinkClassName={'page-link'}
+        previousClassName={'page-item'}
+        previousLinkClassName={'page-link'}
+        nextClassName={'page-item'}
+        nextLinkClassName={'page-link'}
+        breakClassName={'page-item'}
+        breakLinkClassName={'page-link'}
+        activeClassName={'active'}
+        disabledClassName={'disabled'}
       />
     </div>
   );

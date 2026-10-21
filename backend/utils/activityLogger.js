@@ -1,6 +1,6 @@
 // utils/activityLogger.js
 
-const { ActivityLog } = require("../models");
+const { ActivityLog } = require('../models');
 
 const logActivity = async ({
   userId,
@@ -28,10 +28,10 @@ const logActivity = async ({
       newValues,
       metadata,
       ipAddress: req?.ip || null,
-      userAgent: req?.headers?.["user-agent"] || null,
+      userAgent: req?.headers?.['user-agent'] || null,
     });
   } catch (error) {
-    console.error("Activity Log Error:", error);
+    console.error('Activity Log Error:', error);
   }
 };
 

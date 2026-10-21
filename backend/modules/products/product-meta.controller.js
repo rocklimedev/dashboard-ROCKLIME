@@ -1,5 +1,5 @@
-const { Op } = require("sequelize");
-const { Product, ProductMeta, sequelize } = require("../../models");
+const { Op } = require('sequelize');
+const { Product, ProductMeta, sequelize } = require('../../models');
 
 // Create a new ProductMeta
 exports.createProductMeta = async (req, res) => {
@@ -8,24 +8,14 @@ exports.createProductMeta = async (req, res) => {
 
     // Validate required fields
     if (!title || !fieldType) {
-      return res
-        .status(400)
-        .json({ message: "Title and fieldType are required" });
+      return res.status(400).json({ message: 'Title and fieldType are required' });
     }
 
     // Validate fieldType
-    const validFieldTypes = [
-      "string",
-      "number",
-      "mm",
-      "inch",
-      "pcs",
-      "box",
-      "feet",
-    ];
+    const validFieldTypes = ['string', 'number', 'mm', 'inch', 'pcs', 'box', 'feet'];
     if (!validFieldTypes.includes(fieldType)) {
       return res.status(400).json({
-        message: `fieldType must be one of: ${validFieldTypes.join(", ")}`,
+        message: `fieldType must be one of: ${validFieldTypes.join(', ')}`,
       });
     }
 
@@ -33,7 +23,7 @@ exports.createProductMeta = async (req, res) => {
     if (slug) {
       const existingMeta = await ProductMeta.findOne({ where: { slug } });
       if (existingMeta) {
-        return res.status(400).json({ message: "Slug must be unique" });
+        return res.status(400).json({ message: 'Slug must be unique' });
       }
     }
 
@@ -43,13 +33,9 @@ exports.createProductMeta = async (req, res) => {
       unit,
       slug,
     });
-    return res
-      .status(201)
-      .json({ message: "ProductMeta created successfully", productMeta });
+    return res.status(201).json({ message: 'ProductMeta created successfully', productMeta });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ message: "Error creating ProductMeta", error: error.message });
+    return res.status(500).json({ message: 'Error creating ProductMeta', error: error.message });
   }
 };
 
@@ -57,12 +43,12 @@ exports.createProductMeta = async (req, res) => {
 exports.getAllProductMeta = async (req, res) => {
   try {
     const productMetas = await ProductMeta.findAll({
-      attributes: ["id", "title", "slug", "fieldType", "unit", "createdAt"],
+      attributes: ['id', 'title', 'slug', 'fieldType', 'unit', 'createdAt'],
     });
     return res.status(200).json(productMetas);
   } catch (error) {
     return res.status(500).json({
-      message: "Error fetching ProductMeta records",
+      message: 'Error fetching ProductMeta records',
       error: error.message,
     });
   }
@@ -72,16 +58,14 @@ exports.getAllProductMeta = async (req, res) => {
 exports.getProductMetaById = async (req, res) => {
   try {
     const productMeta = await ProductMeta.findByPk(req.params.id, {
-      attributes: ["id", "title", "slug", "fieldType", "unit", "createdAt"],
+      attributes: ['id', 'title', 'slug', 'fieldType', 'unit', 'createdAt'],
     });
     if (!productMeta) {
-      return res.status(404).json({ message: "ProductMeta not found" });
+      return res.status(404).json({ message: 'ProductMeta not found' });
     }
     return res.status(200).json(productMeta);
   } catch (error) {
-    return res
-      .status(500)
-      .json({ message: "Error fetching ProductMeta", error: error.message });
+    return res.status(500).json({ message: 'Error fetching ProductMeta', error: error.message });
   }
 };
 
@@ -91,23 +75,15 @@ exports.updateProductMeta = async (req, res) => {
     const { title, fieldType, unit, slug } = req.body;
     const productMeta = await ProductMeta.findByPk(req.params.id);
     if (!productMeta) {
-      return res.status(404).json({ message: "ProductMeta not found" });
+      return res.status(404).json({ message: 'ProductMeta not found' });
     }
 
     // Validate fieldType if provided
     if (fieldType) {
-      const validFieldTypes = [
-        "string",
-        "number",
-        "mm",
-        "inch",
-        "pcs",
-        "box",
-        "feet",
-      ];
+      const validFieldTypes = ['string', 'number', 'mm', 'inch', 'pcs', 'box', 'feet'];
       if (!validFieldTypes.includes(fieldType)) {
         return res.status(400).json({
-          message: `fieldType must be one of: ${validFieldTypes.join(", ")}`,
+          message: `fieldType must be one of: ${validFieldTypes.join(', ')}`,
         });
       }
     }
@@ -116,18 +92,14 @@ exports.updateProductMeta = async (req, res) => {
     if (slug && slug !== productMeta.slug) {
       const existingMeta = await ProductMeta.findOne({ where: { slug } });
       if (existingMeta) {
-        return res.status(400).json({ message: "Slug must be unique" });
+        return res.status(400).json({ message: 'Slug must be unique' });
       }
     }
 
     await productMeta.update({ title, fieldType, unit, slug });
-    return res
-      .status(200)
-      .json({ message: "ProductMeta updated successfully", productMeta });
+    return res.status(200).json({ message: 'ProductMeta updated successfully', productMeta });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ message: "Error updating ProductMeta", error: error.message });
+    return res.status(500).json({ message: 'Error updating ProductMeta', error: error.message });
   }
 };
 
@@ -136,7 +108,7 @@ exports.deleteProductMeta = async (req, res) => {
   try {
     const productMeta = await ProductMeta.findByPk(req.params.id);
     if (!productMeta) {
-      return res.status(404).json({ message: "ProductMeta not found" });
+      return res.status(404).json({ message: 'ProductMeta not found' });
     }
 
     // Check if any products reference this ProductMeta in their meta field
@@ -144,7 +116,11 @@ exports.deleteProductMeta = async (req, res) => {
       where: {
         // MySQL: JSON_EXTRACT instead of the Postgres-only Op.contains
         [Op.and]: sequelize.where(
-          sequelize.fn("JSON_EXTRACT", sequelize.col("meta"), sequelize.literal(sequelize.escape(`$."${productMeta.id}"`))),
+          sequelize.fn(
+            'JSON_EXTRACT',
+            sequelize.col('meta'),
+            sequelize.literal(sequelize.escape(`$."${productMeta.id}"`)),
+          ),
           { [Op.ne]: null },
         ),
       },
@@ -152,20 +128,15 @@ exports.deleteProductMeta = async (req, res) => {
 
     if (productsUsingMeta.length > 0) {
       return res.status(400).json({
-        message:
-          "Cannot delete ProductMeta; it is referenced by one or more products",
+        message: 'Cannot delete ProductMeta; it is referenced by one or more products',
         productIds: productsUsingMeta.map((p) => p.productId),
       });
     }
 
     await productMeta.destroy();
-    return res
-      .status(200)
-      .json({ message: "ProductMeta deleted successfully" });
+    return res.status(200).json({ message: 'ProductMeta deleted successfully' });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ message: "Error deleting ProductMeta", error: error.message });
+    return res.status(500).json({ message: 'Error deleting ProductMeta', error: error.message });
   }
 };
 
@@ -174,28 +145,24 @@ exports.getProductMetaByTitle = async (req, res) => {
   try {
     const { title } = req.query;
     if (!title) {
-      return res
-        .status(400)
-        .json({ message: "Title query parameter is required" });
+      return res.status(400).json({ message: 'Title query parameter is required' });
     }
 
     const productMetas = await ProductMeta.findAll({
       where: {
         title: { [Op.like]: `%${title}%` },
       },
-      attributes: ["id", "title", "slug", "fieldType", "unit", "createdAt"],
+      attributes: ['id', 'title', 'slug', 'fieldType', 'unit', 'createdAt'],
     });
 
     if (productMetas.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "No ProductMeta found with the given title" });
+      return res.status(404).json({ message: 'No ProductMeta found with the given title' });
     }
 
     return res.status(200).json(productMetas);
   } catch (error) {
     return res.status(500).json({
-      message: "Error searching ProductMeta by title",
+      message: 'Error searching ProductMeta by title',
       error: error.message,
     });
   }
@@ -206,28 +173,24 @@ exports.getProductMetaBySlug = async (req, res) => {
   try {
     const { slug } = req.query;
     if (!slug) {
-      return res
-        .status(400)
-        .json({ message: "Slug query parameter is required" });
+      return res.status(400).json({ message: 'Slug query parameter is required' });
     }
 
     const productMetas = await ProductMeta.findAll({
       where: {
         slug: { [Op.like]: `%${slug}%` },
       },
-      attributes: ["id", "title", "slug", "fieldType", "unit", "createdAt"],
+      attributes: ['id', 'title', 'slug', 'fieldType', 'unit', 'createdAt'],
     });
 
     if (productMetas.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "No ProductMeta found with the given slug" });
+      return res.status(404).json({ message: 'No ProductMeta found with the given slug' });
     }
 
     return res.status(200).json(productMetas);
   } catch (error) {
     return res.status(500).json({
-      message: "Error searching ProductMeta by slug",
+      message: 'Error searching ProductMeta by slug',
       error: error.message,
     });
   }

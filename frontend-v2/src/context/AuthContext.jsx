@@ -1,10 +1,7 @@
 // src/context/AuthContext.jsx
-import React, { createContext, useContext, useState, useEffect } from "react";
-import {
-  useGetMyPermissionsQuery,
-  useValidateTokenQuery,
-} from "../api/authApi";
-import { isTokenExpired, clearAuthStorage } from "./jwt";
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useGetMyPermissionsQuery, useValidateTokenQuery } from '../api/authApi';
+import { isTokenExpired, clearAuthStorage } from './jwt';
 
 const AuthContext = createContext();
 
@@ -15,8 +12,7 @@ export const AuthProvider = ({ children }) => {
 
   // ────── STEP 1: Load token from storage ──────
   useEffect(() => {
-    const token =
-      localStorage.getItem("token") || sessionStorage.getItem("token");
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
 
     if (!token) {
       setAuthChecked(true);
@@ -58,35 +54,30 @@ export const AuthProvider = ({ children }) => {
 
     // ← Always set authChecked = true once validation is done
     setAuthChecked(true);
-  }, [
-    storedToken,
-    isValidating,
-    isTokenValid,
-    isTokenInvalid,
-    validationError,
-  ]);
+  }, [storedToken, isValidating, isTokenValid, isTokenInvalid, validationError]);
 
   // ────── STEP 4: Sync across tabs ──────
   useEffect(() => {
     const handleStorage = () => {
-      const token =
-        localStorage.getItem("token") || sessionStorage.getItem("token");
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
       if (token && (!auth || auth.token !== token)) {
         setAuth({ token, user: null, permissions: null });
       } else if (!token && auth?.token) {
         setAuth(null);
       }
     };
-    window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
   }, [auth]);
 
   // ────── STEP 5: Fetch permissions ──────
-  const { data: permissionsData, isLoading: isLoadingPermissions } =
-    useGetMyPermissionsQuery(undefined, {
+  const { data: permissionsData, isLoading: isLoadingPermissions } = useGetMyPermissionsQuery(
+    undefined,
+    {
       skip: !auth?.token,
       refetchOnMountOrArgChange: true,
-    });
+    },
+  );
 
   useEffect(() => {
     if (permissionsData && auth?.token) {
@@ -103,8 +94,8 @@ export const AuthProvider = ({ children }) => {
     return new Promise((resolve) => {
       setAuth({ token, user, permissions: null });
       // Keep "remember me" logins in localStorage; others stay per-tab.
-      if (localStorage.getItem("token") !== token) {
-        sessionStorage.setItem("token", token);
+      if (localStorage.getItem('token') !== token) {
+        sessionStorage.setItem('token', token);
       }
       resolve();
     });

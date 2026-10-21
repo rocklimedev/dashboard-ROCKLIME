@@ -1,4 +1,4 @@
-import { baseApi } from "../store/baseApi";
+import { baseApi } from '../store/baseApi';
 
 export const poApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
@@ -7,95 +7,95 @@ export const poApi = baseApi.injectEndpoints({
       query: ({
         page = 1,
         limit = 10,
-        status = "",
-        search = "",
-        sort = "",
-        vendorId = "",
-        from = "",
-        to = "",
+        status = '',
+        search = '',
+        sort = '',
+        vendorId = '',
+        from = '',
+        to = '',
       }) => {
         const params = new URLSearchParams({
           page,
           limit,
         });
-        if (status) params.append("status", status);
-        if (search) params.append("search", search);
-        if (vendorId) params.append("vendorId", vendorId);
-        if (from) params.append("from", from);
-        if (to) params.append("to", to);
+        if (status) params.append('status', status);
+        if (search) params.append('search', search);
+        if (vendorId) params.append('vendorId', vendorId);
+        if (from) params.append('from', from);
+        if (to) params.append('to', to);
         if (sort) {
-          let sortField = "createdAt";
-          let sortOrder = "DESC";
+          let sortField = 'createdAt';
+          let sortOrder = 'DESC';
           switch (sort) {
-            case "Ascending":
-              sortField = "orderNumber";
-              sortOrder = "ASC";
+            case 'Ascending':
+              sortField = 'orderNumber';
+              sortOrder = 'ASC';
               break;
-            case "Descending":
-              sortField = "orderNumber";
-              sortOrder = "DESC";
+            case 'Descending':
+              sortField = 'orderNumber';
+              sortOrder = 'DESC';
               break;
-            case "Order Date Ascending":
-              sortField = "orderDate";
-              sortOrder = "ASC";
+            case 'Order Date Ascending':
+              sortField = 'orderDate';
+              sortOrder = 'ASC';
               break;
-            case "Order Date Descending":
-              sortField = "orderDate";
-              sortOrder = "DESC";
+            case 'Order Date Descending':
+              sortField = 'orderDate';
+              sortOrder = 'DESC';
               break;
             default:
-              sortField = "createdAt";
-              sortOrder = "DESC";
+              sortField = 'createdAt';
+              sortOrder = 'DESC';
           }
-          params.append("sortField", sortField);
-          params.append("sortOrder", sortOrder);
+          params.append('sortField', sortField);
+          params.append('sortOrder', sortOrder);
         }
         return {
           url: `/purchase-orders?${params.toString()}`,
-          method: "GET",
+          method: 'GET',
         };
       },
       transformResponse: (response) => ({
         purchaseOrders: response,
         totalCount: response.length, // Adjust if backend provides totalCount
       }),
-      providesTags: ["PurchaseOrders"],
+      providesTags: ['PurchaseOrders'],
     }),
 
     // Get a single purchase order by ID
     getPurchaseOrderById: builder.query({
       query: (id) => `/purchase-orders/${id}`,
-      providesTags: (result, error, id) => [{ type: "PurchaseOrders", id }],
+      providesTags: (result, error, id) => [{ type: 'PurchaseOrders', id }],
     }),
     updatePurchaseOrderStatus: builder.mutation({
       query: ({ id, status }) => ({
         url: `/purchase-orders/${id}/status`,
-        method: "PATCH",
+        method: 'PATCH',
         body: { status },
       }),
-      invalidatesTags: ["PurchaseOrders"],
+      invalidatesTags: ['PurchaseOrders'],
     }),
 
     // Create a purchase order
     createPurchaseOrder: builder.mutation({
       query: (data) => ({
-        url: "/purchase-orders",
-        method: "POST",
+        url: '/purchase-orders',
+        method: 'POST',
         body: data,
       }),
-      invalidatesTags: ["PurchaseOrders"],
+      invalidatesTags: ['PurchaseOrders'],
     }),
 
     // Update a purchase order
     updatePurchaseOrder: builder.mutation({
       query: ({ id, ...data }) => ({
         url: `/purchase-orders/${id}`,
-        method: "PUT",
+        method: 'PUT',
         body: data,
       }),
       invalidatesTags: (result, error, { id }) => [
-        { type: "PurchaseOrders", id },
-        "PurchaseOrders",
+        { type: 'PurchaseOrders', id },
+        'PurchaseOrders',
       ],
     }),
 
@@ -103,49 +103,49 @@ export const poApi = baseApi.injectEndpoints({
     deletePurchaseOrder: builder.mutation({
       query: (id) => ({
         url: `/purchase-orders/${id}`,
-        method: "DELETE",
+        method: 'DELETE',
       }),
-      invalidatesTags: ["PurchaseOrders"],
+      invalidatesTags: ['PurchaseOrders'],
     }),
 
     // Confirm a purchase order
     confirmPurchaseOrder: builder.mutation({
       query: (id) => ({
         url: `/purchase-orders/${id}/confirm`,
-        method: "PUT",
+        method: 'PUT',
       }),
-      invalidatesTags: ["PurchaseOrders"],
+      invalidatesTags: ['PurchaseOrders'],
     }),
 
     // Goods received against a PO (GRN) and what is still due
     getPurchaseOrderReceipts: builder.query({
       query: (id) => `/purchase-orders/${id}/receipts`,
-      providesTags: (r, e, id) => [{ type: "PurchaseOrders", id: `grn-${id}` }],
+      providesTags: (r, e, id) => [{ type: 'PurchaseOrders', id: `grn-${id}` }],
     }),
     receivePurchaseOrder: builder.mutation({
       query: ({ id, ...body }) => ({
         url: `/purchase-orders/${id}/receive`,
-        method: "POST",
+        method: 'POST',
         body,
       }),
       invalidatesTags: (r, e, { id }) => [
-        "PurchaseOrders",
-        { type: "PurchaseOrders", id: `grn-${id}` },
-        "Stock",
+        'PurchaseOrders',
+        { type: 'PurchaseOrders', id: `grn-${id}` },
+        'Stock',
       ],
     }),
 
     // Get purchase orders by vendor
     getPurchaseOrdersByVendor: builder.query({
       query: (vendorId) => `/purchase-orders/vendor/${vendorId}`,
-      providesTags: ["PurchaseOrders"],
+      providesTags: ['PurchaseOrders'],
     }),
 
     // Get all vendors (for vendor mapping)
     getVendors: builder.query({
-      query: () => "/vendors",
+      query: () => '/vendors',
       transformResponse: (response) => response,
-      providesTags: ["Vendors"],
+      providesTags: ['Vendors'],
     }),
   }),
 });

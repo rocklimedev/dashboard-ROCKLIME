@@ -1,14 +1,14 @@
-const Cart = require("./models/carts.model");
-const { Quotation, User, Product } = require("../../models");
+const Cart = require('./models/carts.model');
+const { Quotation, User, Product } = require('../../models');
 
 // ──────────────────────────────────────────────────────
 // META SLUGS – these UUIDs are the same for ALL products
 // ──────────────────────────────────────────────────────
 const META_SLUGS = {
-  sellingPrice: "9ba862ef-f993-4873-95ef-1fef10036aa5",
-  companyCode: "d11da9f9-3f2e-4536-8236-9671200cca4a",
-  barcode: "4ded1cb3-5d31-42e8-90ec-a381a6ab1e35",
-  productGroup: "81cd6d76-d7d2-4226-b48e-6704e6224c2b",
+  sellingPrice: '9ba862ef-f993-4873-95ef-1fef10036aa5',
+  companyCode: 'd11da9f9-3f2e-4536-8236-9671200cca4a',
+  barcode: '4ded1cb3-5d31-42e8-90ec-a381a6ab1e35',
+  productGroup: '81cd6d76-d7d2-4226-b48e-6704e6224c2b',
 };
 
 // ──────────────────────────────────────────────────────
@@ -18,7 +18,7 @@ const getSellingPrice = (meta) => {
   let parsedMeta = meta;
 
   // Step 1: If meta is a string → it’s double-encoded → fix it
-  if (typeof meta === "string") {
+  if (typeof meta === 'string') {
     try {
       parsedMeta = JSON.parse(meta);
     } catch (e) {
@@ -27,25 +27,22 @@ const getSellingPrice = (meta) => {
   }
 
   // Step 2: If still not an object → give up
-  if (!parsedMeta || typeof parsedMeta !== "object") {
+  if (!parsedMeta || typeof parsedMeta !== 'object') {
     return null;
   }
 
   // Step 3: Try known price UUID
-  const PRICE_UUID = "9ba862ef-f993-4873-95ef-1fef10036aa5";
+  const PRICE_UUID = '9ba862ef-f993-4873-95ef-1fef10036aa5';
   let raw = parsedMeta[PRICE_UUID];
 
   // Step 4: Fallback — scan all values for anything that looks like a price
   if (!raw) {
     for (const value of Object.values(parsedMeta)) {
-      if (
-        typeof value === "string" &&
-        /^\d{2,15}(\.\d{1,4})?$/.test(value.trim())
-      ) {
+      if (typeof value === 'string' && /^\d{2,15}(\.\d{1,4})?$/.test(value.trim())) {
         raw = value;
         break;
       }
-      if (typeof value === "number" && value >= 1) {
+      if (typeof value === 'number' && value >= 1) {
         return value;
       }
     }
@@ -55,8 +52,8 @@ const getSellingPrice = (meta) => {
 
   // Step 5: Clean and parse aggressively
   const cleaned = String(raw)
-    .replace(/[^\d.]/g, "") // Remove everything except digits and dot
-    .replace(/\.(?=.*\.)/g, ""); // Keep only last dot
+    .replace(/[^\d.]/g, '') // Remove everything except digits and dot
+    .replace(/\.(?=.*\.)/g, ''); // Keep only last dot
 
   const price = parseFloat(cleaned);
   return !isNaN(price) && price >= 1 ? price : null;
@@ -70,19 +67,14 @@ exports.addProductToCart = async (req, res) => {
     const { userId, productId, quantity = 1 } = req.body;
 
     if (!userId || !productId || !Number.isInteger(quantity) || quantity < 1) {
-      return res
-        .status(400)
-        .json({ message: "userId, productId and valid quantity required" });
+      return res.status(400).json({ message: 'userId, productId and valid quantity required' });
     }
 
     const user = await User.findByPk(userId);
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user) return res.status(404).json({ message: 'User not found' });
 
     const product = await Product.findOne({ where: { productId } });
-    if (!product)
-      return res
-        .status(404)
-        .json({ message: `Product not found: ${productId}` });
+    if (!product) return res.status(404).json({ message: `Product not found: ${productId}` });
 
     const sellingPrice = getSellingPrice(product.meta);
     if (!sellingPrice) {
@@ -96,9 +88,7 @@ exports.addProductToCart = async (req, res) => {
     let cart = await Cart.findOne({ userId });
     if (!cart) cart = new Cart({ userId, items: [] });
 
-    const existingItem = cart.items.find(
-      (i) => i.productId.toString() === productId.toString(),
-    );
+    const existingItem = cart.items.find((i) => i.productId.toString() === productId.toString());
 
     if (existingItem) {
       existingItem.quantity += quantity;
@@ -119,12 +109,12 @@ exports.addProductToCart = async (req, res) => {
 
     const message =
       product.quantity < quantity
-        ? "Product added to cart (even though stock is insufficient)"
-        : "Product added to cart";
+        ? 'Product added to cart (even though stock is insufficient)'
+        : 'Product added to cart';
 
     res.status(200).json({ message, cart });
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
@@ -136,44 +126,34 @@ exports.addToCart = async (req, res) => {
     const { userId, items, customerId } = req.body;
 
     if (!userId || !Array.isArray(items) || items.length === 0) {
-      return res
-        .status(400)
-        .json({ message: "userId and items array required" });
+      return res.status(400).json({ message: 'userId and items array required' });
     }
 
     const user = await User.findByPk(userId);
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user) return res.status(404).json({ message: 'User not found' });
 
     let cart = await Cart.findOne({ userId, customerId: customerId || null });
-    if (!cart)
-      cart = new Cart({ userId, customerId: customerId || null, items: [] });
+    if (!cart) cart = new Cart({ userId, customerId: customerId || null, items: [] });
 
     for (const item of items) {
       const { productId, quantity, discount = 0, tax = 0 } = item;
       const qty = Number(quantity);
 
       if (!productId || isNaN(qty) || qty < 1) {
-        return res.status(400).json({ message: "Invalid item data" });
+        return res.status(400).json({ message: 'Invalid item data' });
       }
 
       const product = await Product.findOne({ where: { productId } });
-      if (!product)
-        return res
-          .status(404)
-          .json({ message: `Product not found: ${productId}` });
+      if (!product) return res.status(404).json({ message: `Product not found: ${productId}` });
 
       const sellingPrice = getSellingPrice(product.meta);
       if (!sellingPrice) {
-        return res
-          .status(400)
-          .json({ message: `Invalid sellingPrice for product: ${productId}` });
+        return res.status(400).json({ message: `Invalid sellingPrice for product: ${productId}` });
       }
 
       // STOCK CHECK REMOVED - Allow adding even if out of stock
 
-      const existing = cart.items.find(
-        (i) => i.productId.toString() === productId.toString(),
-      );
+      const existing = cart.items.find((i) => i.productId.toString() === productId.toString());
 
       if (existing) {
         existing.quantity += qty;
@@ -193,11 +173,11 @@ exports.addToCart = async (req, res) => {
 
     await cart.save();
     res.status(200).json({
-      message: "Items added to cart successfully (stock check disabled)",
+      message: 'Items added to cart successfully (stock check disabled)',
       cart,
     });
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
@@ -207,7 +187,7 @@ exports.getCart = async (req, res) => {
     const { userId } = req.params;
 
     if (!userId) {
-      return res.status(400).json({ message: "User ID is required" });
+      return res.status(400).json({ message: 'User ID is required' });
     }
 
     const cart = await Cart.findOne({ userId });
@@ -218,7 +198,7 @@ exports.getCart = async (req, res) => {
 
     res.status(200).json({ cart });
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
@@ -228,31 +208,27 @@ exports.removeFromCart = async (req, res) => {
     const { userId, productId } = req.body;
 
     if (!userId || !productId) {
-      return res
-        .status(400)
-        .json({ message: "userId and productId are required" });
+      return res.status(400).json({ message: 'userId and productId are required' });
     }
 
     const cart = await Cart.findOne({ userId });
     if (!cart) {
-      return res.status(404).json({ message: "Cart not found" });
+      return res.status(404).json({ message: 'Cart not found' });
     }
 
     const initialLength = cart.items.length;
-    cart.items = cart.items.filter(
-      (item) => item.productId.toString() !== productId.toString(),
-    );
+    cart.items = cart.items.filter((item) => item.productId.toString() !== productId.toString());
 
     if (cart.items.length === initialLength) {
-      return res.status(404).json({ message: "Product not found in cart" });
+      return res.status(404).json({ message: 'Product not found in cart' });
     }
 
     cart.updatedAt = new Date();
     await cart.save();
 
-    res.status(200).json({ message: "Item removed from cart", cart });
+    res.status(200).json({ message: 'Item removed from cart', cart });
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
@@ -262,19 +238,19 @@ exports.updateCart = async (req, res) => {
     const { userId, productId, quantity, discount = 0, tax = 0 } = req.body;
 
     if (!userId || !productId || !Number.isInteger(quantity) || quantity < 1) {
-      return res.status(400).json({ message: "Invalid update data" });
+      return res.status(400).json({ message: 'Invalid update data' });
     }
 
     const cart = await Cart.findOne({ userId });
     if (!cart) {
-      return res.status(404).json({ message: "Cart not found" });
+      return res.status(404).json({ message: 'Cart not found' });
     }
 
     const existingItem = cart.items.find(
       (item) => item.productId.toString() === productId.toString(),
     );
     if (!existingItem) {
-      return res.status(404).json({ message: "Product not found in cart" });
+      return res.status(404).json({ message: 'Product not found in cart' });
     }
 
     // STOCK CHECK REMOVED
@@ -282,15 +258,14 @@ exports.updateCart = async (req, res) => {
     existingItem.quantity = quantity;
     existingItem.discount = Number(discount);
     existingItem.tax = Number(tax);
-    existingItem.total =
-      existingItem.price * quantity - Number(discount) + Number(tax);
+    existingItem.total = existingItem.price * quantity - Number(discount) + Number(tax);
 
     cart.updatedAt = new Date();
     await cart.save();
 
-    res.status(200).json({ message: "Cart updated successfully", cart });
+    res.status(200).json({ message: 'Cart updated successfully', cart });
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
@@ -300,22 +275,22 @@ exports.clearCart = async (req, res) => {
     const { userId } = req.body;
 
     if (!userId) {
-      return res.status(400).json({ message: "User ID is required" });
+      return res.status(400).json({ message: 'User ID is required' });
     }
 
     const cart = await Cart.findOne({ userId });
 
     if (!cart) {
-      return res.status(404).json({ message: "Cart not found" });
+      return res.status(404).json({ message: 'Cart not found' });
     }
 
     cart.items = [];
     cart.updatedAt = new Date();
     await cart.save();
 
-    res.status(200).json({ message: "Cart cleared successfully", cart });
+    res.status(200).json({ message: 'Cart cleared successfully', cart });
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
@@ -325,22 +300,20 @@ exports.convertQuotationToCart = async (req, res) => {
     const { userId, quotationId } = req.body;
 
     if (!userId || !quotationId) {
-      return res
-        .status(400)
-        .json({ message: "userId and quotationId are required" });
+      return res.status(400).json({ message: 'userId and quotationId are required' });
     }
 
     const user = await User.findByPk(userId);
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ message: 'User not found' });
     }
 
     const quotation = await Quotation.findByPk(quotationId, {
-      include: [{ model: Product, as: "items" }],
+      include: [{ model: Product, as: 'items' }],
     });
 
     if (!quotation) {
-      return res.status(404).json({ message: "Quotation not found" });
+      return res.status(404).json({ message: 'Quotation not found' });
     }
 
     let cart = await Cart.findOne({ userId });
@@ -383,11 +356,9 @@ exports.convertQuotationToCart = async (req, res) => {
     }
 
     await cart.save();
-    res
-      .status(200)
-      .json({ message: "Quotation converted to cart successfully", cart });
+    res.status(200).json({ message: 'Quotation converted to cart successfully', cart });
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
@@ -397,12 +368,12 @@ exports.getCartById = async (req, res) => {
     const { userId } = req.params;
 
     if (!userId) {
-      return res.status(400).json({ message: "User ID is required" });
+      return res.status(400).json({ message: 'User ID is required' });
     }
 
     const user = await User.findByPk(userId);
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ message: 'User not found' });
     }
 
     const cart = await Cart.findOne({ userId });
@@ -419,9 +390,7 @@ exports.getCartById = async (req, res) => {
 
         const sellingPrice = getSellingPrice(product.meta);
         if (sellingPrice === null) {
-          console.warn(
-            `Removing item ${item.productId} from cart due to invalid sellingPrice`,
-          );
+          console.warn(`Removing item ${item.productId} from cart due to invalid sellingPrice`);
           return null;
         }
 
@@ -442,7 +411,7 @@ exports.getCartById = async (req, res) => {
 
     res.status(200).json({ cart });
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
@@ -452,7 +421,7 @@ exports.getAllCarts = async (req, res) => {
     const carts = await Cart.find();
     res.status(200).json({ success: true, carts });
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
@@ -462,43 +431,36 @@ exports.reduceQuantity = async (req, res) => {
     const { userId, productId } = req.body;
 
     if (!userId || !productId) {
-      return res
-        .status(400)
-        .json({ message: "userId and productId are required" });
+      return res.status(400).json({ message: 'userId and productId are required' });
     }
 
     const cart = await Cart.findOne({ userId });
     if (!cart) {
-      return res.status(404).json({ message: "Cart not found" });
+      return res.status(404).json({ message: 'Cart not found' });
     }
 
     const existingItem = cart.items.find(
       (item) => item.productId.toString() === productId.toString(),
     );
     if (!existingItem) {
-      return res.status(404).json({ message: "Item not found in cart" });
+      return res.status(404).json({ message: 'Item not found in cart' });
     }
 
     if (existingItem.quantity > 1) {
       existingItem.quantity -= 1;
       existingItem.total = existingItem.price * existingItem.quantity;
     } else {
-      cart.items = cart.items.filter(
-        (item) => item.productId.toString() !== productId.toString(),
-      );
+      cart.items = cart.items.filter((item) => item.productId.toString() !== productId.toString());
     }
 
     cart.updatedAt = new Date();
     await cart.save();
 
     res.status(200).json({
-      message:
-        existingItem.quantity > 0
-          ? "Quantity reduced"
-          : "Item removed from cart",
+      message: existingItem.quantity > 0 ? 'Quantity reduced' : 'Item removed from cart',
       cart,
     });
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 };

@@ -1,174 +1,117 @@
-require("dotenv").config();
-const sequelize = require("../config/database");
-const { DataTypes } = require("sequelize");
+require('dotenv').config();
+const sequelize = require('../config/database');
+const { DataTypes } = require('sequelize');
 
 // -------------------------------
 // 1️⃣ Import all Sequelize models
 // -------------------------------
-const User = require("../modules/users/models/users.model")(
+const User = require('../modules/users/models/users.model')(sequelize, DataTypes);
+
+const Role = require('../modules/rbac/models/roles.model')(sequelize, DataTypes);
+
+const Permission = require('../modules/rbac/models/permission.model')(sequelize, DataTypes);
+
+const RolePermission = require('../modules/rbac/models/role-permission.model')(
   sequelize,
   DataTypes,
 );
 
-const Role = require("../modules/rbac/models/roles.model")(
+const Address = require('../modules/address/models/address.model')(sequelize, DataTypes);
+
+const Team = require('../modules/users/models/team.model')(sequelize, DataTypes);
+
+const TeamMember = require('../modules/users/models/team-member.model')(sequelize, DataTypes);
+
+const ProductKeyword = require('../modules/products/models/product-keywords.model')(
   sequelize,
   DataTypes,
 );
 
-const Permission = require("../modules/rbac/models/permission.model")(
+const Product = require('../modules/products/models/product.model')(sequelize, DataTypes);
+
+const ProductMeta = require('../modules/products/models/product-meta.model')(sequelize, DataTypes);
+
+const Category = require('../modules/brands/models/category.model')(sequelize, DataTypes);
+
+const ParentCategory = require('../modules/brands/models/parent-category.model')(
   sequelize,
   DataTypes,
 );
 
-const RolePermission = require("../modules/rbac/models/role-permission.model")(
+const Brand = require('../modules/brands/models/brand.model')(sequelize, DataTypes);
+
+const Vendor = require('../modules/vendors/models/vendor.model')(sequelize, DataTypes);
+
+const Keyword = require('../modules/brands/models/keyword.model')(sequelize, DataTypes);
+
+const BrandParentCategory = require('../modules/brands/models/brand-parentcategory.model')(
   sequelize,
   DataTypes,
 );
-
-const Address = require("../modules/address/models/address.model")(
-  sequelize,
-  DataTypes,
-);
-
-const Team = require("../modules/users/models/team.model")(
-  sequelize,
-  DataTypes,
-);
-
-const TeamMember = require("../modules/users/models/team-member.model")(
-  sequelize,
-  DataTypes,
-);
-
-const ProductKeyword =
-  require("../modules/products/models/product-keywords.model")(
-    sequelize,
-    DataTypes,
-  );
-
-const Product = require("../modules/products/models/product.model")(
-  sequelize,
-  DataTypes,
-);
-
-const ProductMeta = require("../modules/products/models/product-meta.model")(
-  sequelize,
-  DataTypes,
-);
-
-const Category = require("../modules/brands/models/category.model")(
-  sequelize,
-  DataTypes,
-);
-
-const ParentCategory =
-  require("../modules/brands/models/parent-category.model")(
-    sequelize,
-    DataTypes,
-  );
-
-const Brand = require("../modules/brands/models/brand.model")(
-  sequelize,
-  DataTypes,
-);
-
-const Vendor = require("../modules/vendors/models/vendor.model")(
-  sequelize,
-  DataTypes,
-);
-
-const Keyword = require("../modules/brands/models/keyword.model")(
-  sequelize,
-  DataTypes,
-);
-
-const BrandParentCategory =
-  require("../modules/brands/models/brand-parentcategory.model")(
-    sequelize,
-    DataTypes,
-  );
 
 const BrandParentCategoryBrand =
-  require("../modules/brands/models/brand-parentcategory-brand.model")(
-    sequelize,
-    DataTypes,
-  );
+  require('../modules/brands/models/brand-parentcategory-brand.model')(sequelize, DataTypes);
 
-const ActivityLog = require("../modules/engagement/models/activity-log.model")(
+const ActivityLog = require('../modules/engagement/models/activity-log.model')(
   sequelize,
   DataTypes,
 );
 
-const Job = require("../modules/jobs/models/job.model")(sequelize, DataTypes);
+const Job = require('../modules/jobs/models/job.model')(sequelize, DataTypes);
 
-const FieldGuidedSheet = require("../modules/purchase-order/models/fgs.model")(
+const FieldGuidedSheet = require('../modules/purchase-order/models/fgs.model')(
   sequelize,
   DataTypes,
 );
 
-const InventoryHistory =
-  require("../modules/products/models/inventory-history.model")(
-    sequelize,
-    DataTypes,
-  );
-
-const Customer = require("../modules/customers/models/customers.model")(
+const InventoryHistory = require('../modules/products/models/inventory-history.model')(
   sequelize,
   DataTypes,
 );
 
-const Quotation = require("../modules/quotations/models/quotation.model")(
+const Customer = require('../modules/customers/models/customers.model')(sequelize, DataTypes);
+
+const Quotation = require('../modules/quotations/models/quotation.model')(sequelize, DataTypes);
+
+const Order = require('../modules/orders/models/orders.model')(sequelize, DataTypes);
+
+const OrderDispatch = require('../modules/orders/models/order_dispatch.model')(
   sequelize,
   DataTypes,
 );
 
-const Order = require("../modules/orders/models/orders.model")(
-  sequelize,
-  DataTypes,
-);
-
-const OrderDispatch = require("../modules/orders/models/order_dispatch.model")(
-  sequelize,
-  DataTypes,
-);
-
-const OrderActivity = require("../modules/orders/models/order_activity.model")(
+const OrderActivity = require('../modules/orders/models/order_activity.model')(
   sequelize,
   DataTypes,
 );
 
 // ✅ NEW — Credit Note
-const OrderCreditNote = require("../modules/orders/models/order_credit_note")(
+const OrderCreditNote = require('../modules/orders/models/order_credit_note')(sequelize, DataTypes);
+
+const OrderCreditNoteItem = require('../modules/orders/models/order_credit_note_item')(
   sequelize,
   DataTypes,
 );
 
-const OrderCreditNoteItem =
-  require("../modules/orders/models/order_credit_note_item")(
-    sequelize,
-    DataTypes,
-  );
-
-const PurchaseOrder =
-  require("../modules/purchase-order/models/purchaseorder.model")(
-    sequelize,
-    DataTypes,
-  );
+const PurchaseOrder = require('../modules/purchase-order/models/purchaseorder.model')(
+  sequelize,
+  DataTypes,
+);
 
 // Payments received against orders (Accounts)
-const OrderPayment = require("../modules/payments/payment.model")(sequelize, DataTypes);
+const OrderPayment = require('../modules/payments/models/payment.model')(sequelize, DataTypes);
 
 // GST tax invoices
-const TaxInvoice = require("../modules/invoices/invoice.model")(sequelize, DataTypes);
+const TaxInvoice = require('../modules/invoices/models/invoice.model')(sequelize, DataTypes);
 
 // Quotation follow-up log (pipeline)
-const QuotationFollowUp = require("../modules/quotations/followup.model")(sequelize, DataTypes);
-
-// Stock engine
-const StockModels = require("../modules/stock/models/stock.models")(
+const QuotationFollowUp = require('../modules/quotations/models/followup.model')(
   sequelize,
   DataTypes,
 );
+
+// Stock engine
+const StockModels = require('../modules/stock/models/stock.models')(sequelize, DataTypes);
 
 // -------------------------------
 // 2️⃣ Run associations if defined
@@ -207,7 +150,7 @@ const StockModels = require("../modules/stock/models/stock.models")(
   PurchaseOrder,
   InventoryHistory,
 ].forEach((model) => {
-  if (typeof model.associate === "function") {
+  if (typeof model.associate === 'function') {
     model.associate({
       User,
       Role,
@@ -252,7 +195,7 @@ const StockModels = require("../modules/stock/models/stock.models")(
 // -------------------------------
 const parseJsonValue = (value) => {
   let v = value;
-  for (let i = 0; i < 3 && typeof v === "string"; i++) {
+  for (let i = 0; i < 3 && typeof v === 'string'; i++) {
     const t = v.trim();
     if (!t || !/^[\[{"]/.test(t)) break;
     try {
@@ -267,7 +210,7 @@ for (const model of Object.values(sequelize.models)) {
   let changed = false;
   for (const [name, attr] of Object.entries(model.rawAttributes)) {
     const key = attr.type?.key || attr.type?.constructor?.key;
-    if (key !== "JSON" || attr.get) continue;
+    if (key !== 'JSON' || attr.get) continue;
     attr.get = function getJson() {
       return parseJsonValue(this.getDataValue(name));
     };
@@ -282,26 +225,22 @@ for (const model of Object.values(sequelize.models)) {
 // -------------------------------
 {
   const syncQuotation = (order, options) => {
-    const ids = new Set(
-      [order.quotationId, order.previous?.("quotationId")].filter(Boolean),
-    );
+    const ids = new Set([order.quotationId, order.previous?.('quotationId')].filter(Boolean));
     if (!ids.size) return;
     const run = () => {
-      const { syncWon } = require("../modules/quotations/pipeline");
+      const { syncWon } = require('../modules/quotations/pipeline');
       for (const id of ids) {
-        syncWon(id).catch((err) =>
-          console.error("[quotation pipeline] sync failed:", err.message),
-        );
+        syncWon(id).catch((err) => console.error('[quotation pipeline] sync failed:', err.message));
       }
     };
     if (options?.transaction?.afterCommit) options.transaction.afterCommit(run);
     else setImmediate(run);
   };
-  Order.addHook("afterCreate", "quotationPipeline", syncQuotation);
-  Order.addHook("afterUpdate", "quotationPipeline", (order, options) => {
-    if (order.changed("status") || order.changed("quotationId")) syncQuotation(order, options);
+  Order.addHook('afterCreate', 'quotationPipeline', syncQuotation);
+  Order.addHook('afterUpdate', 'quotationPipeline', (order, options) => {
+    if (order.changed('status') || order.changed('quotationId')) syncQuotation(order, options);
   });
-  Order.addHook("afterDestroy", "quotationPipeline", syncQuotation);
+  Order.addHook('afterDestroy', 'quotationPipeline', syncQuotation);
 }
 
 // -------------------------------

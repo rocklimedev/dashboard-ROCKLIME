@@ -1,16 +1,12 @@
-import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { Button, Space, Typography, Result, ConfigProvider, Card } from "antd";
-import { message } from "antd";
-import { useResendVerificationEmailMutation } from "../../api/authApi";
-import { useGetProfileQuery } from "../../api/userApi";
-import { useAuth } from "../../context/AuthContext";
-import {
-  LogoutOutlined,
-  MailOutlined,
-  ReloadOutlined,
-} from "@ant-design/icons";
-import "./NoAccess.css";
+import { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Button, Space, Typography, Result, ConfigProvider, Card } from 'antd';
+import { message } from 'antd';
+import { useResendVerificationEmailMutation } from '../../api/authApi';
+import { useGetProfileQuery } from '../../api/userApi';
+import { useAuth } from '../../context/AuthContext';
+import { LogoutOutlined, MailOutlined, ReloadOutlined } from '@ant-design/icons';
+import './NoAccess.css';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -38,9 +34,7 @@ const NoAccess = () => {
   const isEmailVerified = user?.isEmailVerified === true;
 
   // Only show meaningful roles (skip "USERS" if it's just default)
-  let roles = Array.isArray(user?.roles)
-    ? user.roles.filter((r) => r !== "USERS" && r.trim())
-    : [];
+  let roles = Array.isArray(user?.roles) ? user.roles.filter((r) => r !== 'USERS' && r.trim()) : [];
 
   const hasNoAccessRole = roles.length === 0;
   const needsVerification = !isEmailVerified;
@@ -64,13 +58,13 @@ const NoAccess = () => {
 
   useEffect(() => {
     if (emailSent && timer === 0) {
-      navigate("/login", { replace: true });
+      navigate('/login', { replace: true });
     }
   }, [emailSent, timer, navigate]);
 
   const handleResend = async () => {
     if (!user?.email) {
-      message.error("No email address found.");
+      message.error('No email address found.');
       return;
     }
 
@@ -78,23 +72,20 @@ const NoAccess = () => {
       await resendVerificationEmail({ email: user.email }).unwrap();
       setEmailSent(true);
       setTimer(60);
-      message.success(
-        "Verification email sent! Check your inbox (and spam folder).",
-      );
+      message.success('Verification email sent! Check your inbox (and spam folder).');
     } catch (err) {
-      message.error(err?.data?.message || "Failed to send email. Try again.");
+      message.error(err?.data?.message || 'Failed to send email. Try again.');
     }
   };
 
-  const handleRetry = () =>
-    refetchProfile().catch(() => message.error("Retry failed"));
+  const handleRetry = () => refetchProfile().catch(() => message.error('Retry failed'));
 
   const handleLogout = async () => {
     try {
       await logout();
-      navigate("/login", { replace: true });
+      navigate('/login', { replace: true });
     } catch {
-      message.error("Logout failed");
+      message.error('Logout failed');
     }
   };
 
@@ -117,8 +108,8 @@ const NoAccess = () => {
     <ConfigProvider
       theme={{
         token: {
-          colorPrimary: "#f97316",
-          colorPrimaryHover: "#fb923c",
+          colorPrimary: '#f97316',
+          colorPrimaryHover: '#fb923c',
           fontSize: 16,
         },
       }}
@@ -132,16 +123,13 @@ const NoAccess = () => {
           </div>
 
           <Title level={2} style={{ marginBottom: 8 }}>
-            {needsVerification ? "Verify Your Email" : "Account Under Review"}
+            {needsVerification ? 'Verify Your Email' : 'Account Under Review'}
           </Title>
 
-          <Paragraph
-            type="secondary"
-            style={{ fontSize: 16, marginBottom: 32 }}
-          >
+          <Paragraph type="secondary" style={{ fontSize: 16, marginBottom: 32 }}>
             {needsVerification
-              ? "We sent a verification link to your email. Please confirm your address to activate your account."
-              : "Your account has been created successfully, but requires administrator approval before you can access the portal."}
+              ? 'We sent a verification link to your email. Please confirm your address to activate your account.'
+              : 'Your account has been created successfully, but requires administrator approval before you can access the portal.'}
           </Paragraph>
 
           {needsVerification && (
@@ -153,28 +141,17 @@ const NoAccess = () => {
 
           {hasNoAccessRole && !needsVerification && (
             <Paragraph type="secondary" style={{ marginBottom: 32 }}>
-              Please contact your organization administrator to get the
-              appropriate role assigned.
+              Please contact your organization administrator to get the appropriate role assigned.
             </Paragraph>
           )}
 
           {emailSent && (
-            <Paragraph
-              type="success"
-              strong
-              style={{ fontSize: 16, margin: "24px 0" }}
-            >
-              Email sent successfully! Redirecting to login in {timer}{" "}
-              seconds...
+            <Paragraph type="success" strong style={{ fontSize: 16, margin: '24px 0' }}>
+              Email sent successfully! Redirecting to login in {timer} seconds...
             </Paragraph>
           )}
 
-          <Space
-            direction="vertical"
-            size="middle"
-            style={{ width: "100%" }}
-            align="center"
-          >
+          <Space direction="vertical" size="middle" style={{ width: '100%' }} align="center">
             {showResendButton && (
               <Button
                 type="primary"
@@ -189,11 +166,7 @@ const NoAccess = () => {
             )}
 
             <Space size="middle" wrap>
-              <Button
-                icon={<ReloadOutlined />}
-                onClick={handleRetry}
-                loading={isFetchingProfile}
-              >
+              <Button icon={<ReloadOutlined />} onClick={handleRetry} loading={isFetchingProfile}>
                 Refresh Status
               </Button>
 

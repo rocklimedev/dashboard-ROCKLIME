@@ -1,85 +1,85 @@
 // models/InventoryHistory.js
-const { v7: uuidv7 } = require("uuid");
+const { v7: uuidv7 } = require('uuid');
 
 module.exports = (sequelize, DataTypes) => {
   const InventoryHistory = sequelize.define(
-    "InventoryHistory",
+    'InventoryHistory',
     {
       id: {
         type: DataTypes.CHAR(36),
         primaryKey: true,
         allowNull: false,
-        comment: "UUID v7 – time-ordered, distributed-safe, sortable by time",
+        comment: 'UUID v7 – time-ordered, distributed-safe, sortable by time',
       },
       productId: {
         type: DataTypes.CHAR(36),
         allowNull: false,
-        comment: "Reference to Product.id (UUID)",
+        comment: 'Reference to Product.id (UUID)',
       },
       change: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        comment: "Positive = stock added, Negative = stock removed",
+        comment: 'Positive = stock added, Negative = stock removed',
       },
       quantityAfter: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        comment: "Stock quantity AFTER this transaction",
+        comment: 'Stock quantity AFTER this transaction',
       },
       action: {
         type: DataTypes.ENUM(
-          "add-stock",
-          "remove-stock",
-          "sale",
-          "return",
-          "adjustment",
-          "correction",
+          'add-stock',
+          'remove-stock',
+          'sale',
+          'return',
+          'adjustment',
+          'correction',
         ),
         allowNull: false,
       },
       orderNo: {
         type: DataTypes.STRING(50),
         allowNull: true,
-        comment: "Optional reference to order number",
+        comment: 'Optional reference to order number',
       },
       userId: {
         type: DataTypes.CHAR(36),
         allowNull: true,
-        comment: "Optional reference to User.id (UUID)",
+        comment: 'Optional reference to User.id (UUID)',
       },
       message: {
         type: DataTypes.TEXT,
         allowNull: true,
-        comment: "Human-readable description of the stock change",
+        comment: 'Human-readable description of the stock change',
       },
     },
     {
-      tableName: "inventory_history",
+      tableName: 'inventory_history',
       timestamps: true,
-      createdAt: "createdAt",
-      updatedAt: "updatedAt",
+      createdAt: 'createdAt',
+      updatedAt: 'updatedAt',
       paranoid: false, // soft deletes not needed for history
 
       indexes: [
         {
-          name: "idx_product_created",
-          fields: ["productId", { attribute: "createdAt", order: "DESC" }],
+          name: 'idx_product_created',
+          fields: ['productId', { attribute: 'createdAt', order: 'DESC' }],
         },
         {
-          name: "idx_created_at",
-          fields: ["createdAt"],
+          name: 'idx_created_at',
+          fields: ['createdAt'],
         },
         {
-          name: "idx_action",
-          fields: ["action"],
+          name: 'idx_action',
+          fields: ['action'],
         },
         {
-          name: "idx_user",
-          fields: ["userId"],
+          name: 'idx_user',
+          fields: ['userId'],
         },
         {
-          name: "idx_order_no",
-          fields: ["orderNo"],
+          name: 'idx_order_no',
+          fields: ['orderNo'],
         },
       ],
 
@@ -109,13 +109,13 @@ module.exports = (sequelize, DataTypes) => {
   // Optional: associations (add if you use them elsewhere)
   InventoryHistory.associate = (models) => {
     InventoryHistory.belongsTo(models.Product, {
-      foreignKey: "productId",
-      as: "product",
+      foreignKey: 'productId',
+      as: 'product',
     });
 
     InventoryHistory.belongsTo(models.User, {
-      foreignKey: "userId",
-      as: "user",
+      foreignKey: 'userId',
+      as: 'user',
       constraints: false, // allow null userId
     });
   };

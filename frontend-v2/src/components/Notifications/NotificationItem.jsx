@@ -1,7 +1,7 @@
 // src/components/notifications/NotificationItem.jsx
-import React, { useState } from "react";
-import Avatar from "react-avatar";
-import { formatDistanceToNow, parseISO } from "date-fns";
+import React, { useState } from 'react';
+import Avatar from 'react-avatar';
+import { formatDistanceToNow, parseISO } from 'date-fns';
 
 const SWIPE_THRESHOLD = 80;
 
@@ -37,10 +37,10 @@ const NotificationItem = ({
       <div
         className="d-md-none position-absolute top-0 end-0 h-100 d-flex align-items-center"
         style={{
-          width: "160px",
-          background: "#dc3545",
+          width: '160px',
+          background: '#dc3545',
           transform: `translateX(${translateX + 160}px)`,
-          transition: "transform 0.3s ease",
+          transition: 'transform 0.3s ease',
           zIndex: 1,
         }}
       >
@@ -67,11 +67,11 @@ const NotificationItem = ({
       {/* Main Notification Content */}
       <div
         className={`bg-white border-bottom position-relative cursor-pointer ${
-          !notification.read ? "bg-light" : ""
+          !notification.read ? 'bg-light' : ''
         }`}
         style={{
           transform: `translateX(${translateX}px)`,
-          transition: translateX === 0 ? "transform 0.3s ease" : "none",
+          transition: translateX === 0 ? 'transform 0.3s ease' : 'none',
         }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -94,24 +94,22 @@ const NotificationItem = ({
                 style={{
                   width: 10,
                   height: 10,
-                  backgroundColor: "#1890ff",
-                  borderRadius: "50%",
+                  backgroundColor: '#1890ff',
+                  borderRadius: '50%',
                   flexShrink: 0,
                 }}
               />
             )}
-            {notification.read && (
-              <div className="me-3" style={{ width: 34 }} />
-            )}
+            {notification.read && <div className="me-3" style={{ width: 34 }} />}
 
             {/* Avatar */}
             <a
-              href={`/u/${notification.userId?._id || "#"}`}
+              href={`/u/${notification.userId?._id || '#'}`}
               onClick={(e) => e.stopPropagation()}
               className="me-3 flex-shrink-0"
             >
               <Avatar
-                name={notification.userId?.username || "User"}
+                name={notification.userId?.username || 'User'}
                 src={notification.userId?.profileImage}
                 size="40"
                 round={true}
@@ -124,17 +122,15 @@ const NotificationItem = ({
             <div className="flex-grow-1 min-width-0">
               <p className="mb-1 text-sm">
                 <a
-                  href={`/u/${notification.userId?._id || "#"}`}
+                  href={`/u/${notification.userId?._id || '#'}`}
                   onClick={(e) => e.stopPropagation()}
                   className="text-decoration-none fw-medium text-dark"
                 >
-                  {notification.userId?.username || "Someone"}
-                </a>{" "}
+                  {notification.userId?.username || 'Someone'}
+                </a>{' '}
                 <span className="text-dark">{notification.title}</span>
               </p>
-              <p className="text-muted small mb-1 text-truncate">
-                {notification.message}
-              </p>
+              <p className="text-muted small mb-1 text-truncate">{notification.message}</p>
               <small className="text-muted">
                 {formatDistanceToNow(parseISO(notification.createdAt), {
                   addSuffix: true,

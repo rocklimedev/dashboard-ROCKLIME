@@ -1,7 +1,7 @@
 // migrations/xxxx-create-site-maps.js
 module.exports = {
   up: async (queryInterface, DataTypes) => {
-    await queryInterface.createTable("site_maps", {
+    await queryInterface.createTable('site_maps', {
       id: {
         type: DataTypes.UUID,
         primaryKey: true,
@@ -27,18 +27,18 @@ module.exports = {
       },
       quotationId: { type: DataTypes.UUID, allowNull: true },
       status: {
-        type: DataTypes.ENUM("draft", "finalized", "converted"),
-        defaultValue: "draft",
+        type: DataTypes.ENUM('draft', 'finalized', 'converted'),
+        defaultValue: 'draft',
       },
       createdAt: { type: DataTypes.DATE, allowNull: false },
       updatedAt: { type: DataTypes.DATE, allowNull: false },
     });
 
-    await queryInterface.addIndex("site_maps", ["customerId"]);
-    await queryInterface.addIndex("site_maps", ["quotationId"]);
+    await queryInterface.addIndex('site_maps', ['customerId']);
+    await queryInterface.addIndex('site_maps', ['quotationId']);
   },
 
   down: async (queryInterface) => {
-    await queryInterface.dropTable("site_maps");
+    await queryInterface.dropTable('site_maps');
   },
 };

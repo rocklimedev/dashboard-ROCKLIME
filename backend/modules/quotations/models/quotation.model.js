@@ -1,8 +1,8 @@
-const { v4: uuidv4 } = require("uuid");
+const { v4: uuidv4 } = require('uuid');
 
 module.exports = (sequelize, DataTypes) => {
   const Quotation = sequelize.define(
-    "Quotation",
+    'Quotation',
     {
       quotationId: {
         type: DataTypes.UUID,
@@ -25,7 +25,7 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.JSON,
         allowNull: true,
         defaultValue: null,
-        comment: "Array of follow-up date objects or timestamps",
+        comment: 'Array of follow-up date objects or timestamps',
       },
       reference_number: {
         type: DataTypes.STRING(50),
@@ -38,14 +38,14 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
         allowNull: true,
         defaultValue: 0,
-        comment: "Number of floors (cached / denormalized)",
+        comment: 'Number of floors (cached / denormalized)',
       },
       floors: {
         type: DataTypes.JSON,
         allowNull: true,
         defaultValue: [],
         comment:
-          "Array of floors: [{floorId, floorName, sortOrder?, area?, rooms: [{roomId, roomName, sortOrder?, areas: [{id, name?, value, remark?, sortOrder?}], ...}], totalRooms?, totalProducts?}]",
+          'Array of floors: [{floorId, floorName, sortOrder?, area?, rooms: [{roomId, roomName, sortOrder?, areas: [{id, name?, value, remark?, sortOrder?}], ...}], totalRooms?, totalProducts?}]',
       },
       products: {
         type: DataTypes.JSON,
@@ -54,7 +54,7 @@ module.exports = (sequelize, DataTypes) => {
       discountAmount: {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: true,
-        comment: "Legacy field – now mostly replaced by extraDiscountAmount",
+        comment: 'Legacy field – now mostly replaced by extraDiscountAmount',
       },
       roundOff: {
         type: DataTypes.DECIMAL(10, 2),
@@ -86,7 +86,7 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
       },
       extraDiscountType: {
-        type: DataTypes.ENUM("percent", "fixed"),
+        type: DataTypes.ENUM('percent', 'fixed'),
         allowNull: true,
       },
       miscellaneousChargeItems: { type: DataTypes.JSON, allowNull: true, defaultValue: null },
@@ -100,13 +100,13 @@ module.exports = (sequelize, DataTypes) => {
       gst: {
         type: DataTypes.DECIMAL(5, 2),
         allowNull: true,
-        comment: "GST percentage applied on total amount",
+        comment: 'GST percentage applied on total amount',
       },
       // Pipeline (see modules/quotations/pipeline.js)
       status: {
         type: DataTypes.STRING(16),
         allowNull: false,
-        defaultValue: "DRAFT",
+        defaultValue: 'DRAFT',
       },
       statusChangedAt: { type: DataTypes.DATE, allowNull: true },
       sentAt: { type: DataTypes.DATE, allowNull: true },
@@ -115,27 +115,27 @@ module.exports = (sequelize, DataTypes) => {
       nextFollowUp: { type: DataTypes.DATEONLY, allowNull: true },
     },
     {
-      tableName: "quotations",
+      tableName: 'quotations',
       timestamps: true,
     },
   );
 
   Quotation.associate = (models) => {
     Quotation.belongsTo(models.User, {
-      foreignKey: "createdBy",
-      as: "creator",
+      foreignKey: 'createdBy',
+      as: 'creator',
     });
     Quotation.belongsTo(models.Customer, {
-      foreignKey: "customerId",
-      as: "customer",
+      foreignKey: 'customerId',
+      as: 'customer',
     });
     Quotation.belongsTo(models.Address, {
-      foreignKey: "shipTo",
-      as: "shippingAddress",
+      foreignKey: 'shipTo',
+      as: 'shippingAddress',
     });
     Quotation.hasMany(models.Order, {
-      foreignKey: "quotationId",
-      as: "orders",
+      foreignKey: 'quotationId',
+      as: 'orders',
     });
   };
 

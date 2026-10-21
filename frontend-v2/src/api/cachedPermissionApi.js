@@ -1,28 +1,26 @@
-import { baseApi } from "../store/baseApi";
+import { baseApi } from '../store/baseApi';
 
 export const cachedPermissionApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // Fetch all cached permissions
     getAllCachedPermissions: builder.query({
       query: () => ({
-        url: "/cached-permissions",
-        method: "GET",
+        url: '/cached-permissions',
+        method: 'GET',
       }),
-      providesTags: ["RolePermission"],
+      providesTags: ['RolePermission'],
     }),
 
     // Fetch cached permissions for a specific role
     getCachedPermissionByRole: builder.query({
       query: (roleId) => ({
         url: `/cached-permissions/${roleId}`,
-        method: "GET",
+        method: 'GET',
       }),
-      providesTags: ["RolePermission"],
+      providesTags: ['RolePermission'],
     }),
   }),
 });
 
-export const {
-  useGetAllCachedPermissionsQuery,
-  useGetCachedPermissionByRoleQuery,
-} = cachedPermissionApi;
+export const { useGetAllCachedPermissionsQuery, useGetCachedPermissionByRoleQuery } =
+  cachedPermissionApi;

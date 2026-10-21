@@ -1,13 +1,13 @@
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
-import { ConfigProvider, unstableSetRender } from "antd";
-import "./index.css";
-import App from "./App.jsx";
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { ConfigProvider, unstableSetRender } from 'antd';
+import './index.css';
+import App from './App.jsx';
 
-import { BrowserRouter } from "react-router-dom";
-import { Provider } from "react-redux";
-import store from "./store";
-import { AuthProvider } from "./context/AuthContext";
+import { BrowserRouter } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import store from './store';
+import { AuthProvider } from './context/AuthContext';
 
 // antd v5 static APIs (message, notification, Modal.confirm) render through the
 // legacy ReactDOM.render, which React 19 removed, so their toasts silently never
@@ -21,7 +21,7 @@ unstableSetRender((node, container) => {
     root.unmount();
   };
 });
-createRoot(document.getElementById("root")).render(
+createRoot(document.getElementById('root')).render(
   <StrictMode>
     <Provider store={store}>
       <BrowserRouter>

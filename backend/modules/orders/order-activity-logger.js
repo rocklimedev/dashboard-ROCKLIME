@@ -1,9 +1,9 @@
-const { OrderActivity } = require("../../models");
+const { OrderActivity } = require('../../models');
 
 function extractIp(req) {
   if (!req) return null;
-  const forwarded = req.headers?.["x-forwarded-for"];
-  if (forwarded) return String(forwarded).split(",")[0].trim();
+  const forwarded = req.headers?.['x-forwarded-for'];
+  if (forwarded) return String(forwarded).split(',')[0].trim();
   return req.ip || req.connection?.remoteAddress || null;
 }
 
@@ -19,9 +19,7 @@ async function logOrderActivity({
   req = null,
 }) {
   if (!orderId || !orderNo || !action) {
-    console.error(
-      "logOrderActivity: orderId, orderNo, and action are required",
-    );
+    console.error('logOrderActivity: orderId, orderNo, and action are required');
     return null;
   }
 
@@ -38,7 +36,7 @@ async function logOrderActivity({
       ipAddress: extractIp(req),
     });
   } catch (err) {
-    console.error("Failed to write order_activity entry:", err.message);
+    console.error('Failed to write order_activity entry:', err.message);
     return null;
   }
 }

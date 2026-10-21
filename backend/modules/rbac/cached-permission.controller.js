@@ -1,4 +1,4 @@
-const CachedPermission = require("./models/cached-permission.model");
+const CachedPermission = require('./models/cached-permission.model');
 
 // Fetch all cached permissions
 exports.getAllCachedPermissions = async (req, res) => {
@@ -6,7 +6,7 @@ exports.getAllCachedPermissions = async (req, res) => {
     const data = await CachedPermission.find().sort({ createdAt: -1 });
     res.status(200).json(data);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch cached permissions" });
+    res.status(500).json({ error: 'Failed to fetch cached permissions' });
   }
 };
 
@@ -15,11 +15,10 @@ exports.getCachedPermissionByRole = async (req, res) => {
   try {
     const { roleId } = req.params;
     const cached = await CachedPermission.findOne({ roleId });
-    if (!cached)
-      return res.status(404).json({ message: "No cached permission found" });
+    if (!cached) return res.status(404).json({ message: 'No cached permission found' });
 
     res.status(200).json(cached);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch cached permission" });
+    res.status(500).json({ error: 'Failed to fetch cached permission' });
   }
 };

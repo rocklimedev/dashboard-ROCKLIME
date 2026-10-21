@@ -1,8 +1,8 @@
-import React, { useState } from "react";
-import { Button, message } from "antd";
-import { FilePdfOutlined } from "@ant-design/icons";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import React, { useState } from 'react';
+import { Button, message } from 'antd';
+import { FilePdfOutlined } from '@ant-design/icons';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 /**
  * DownloadDispatchListButton
@@ -26,22 +26,22 @@ import autoTable from "jspdf-autotable";
  *                items under its summary row (default: false)
  */
 const money = (value) =>
-  Number(value || 0).toLocaleString("en-IN", {
-    style: "currency",
-    currency: "INR",
+  Number(value || 0).toLocaleString('en-IN', {
+    style: 'currency',
+    currency: 'INR',
     maximumFractionDigits: 2,
   });
 
 const formatDate = (value) =>
   value
-    ? new Date(value).toLocaleString("en-IN", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
+    ? new Date(value).toLocaleString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
       })
-    : "—";
+    : '—';
 
 const DownloadDispatchListButton = ({
   order = {},
@@ -49,7 +49,7 @@ const DownloadDispatchListButton = ({
   products = [],
   customer = {},
   detailed = false,
-  size = "middle",
+  size = 'middle',
   block = false,
 }) => {
   const [generating, setGenerating] = useState(false);
@@ -57,35 +57,35 @@ const DownloadDispatchListButton = ({
 
   const handleDownload = () => {
     if (!dispatches.length && !hasProducts) {
-      message.info("Nothing to export yet.");
+      message.info('Nothing to export yet.');
       return;
     }
 
     setGenerating(true);
     try {
-      const doc = new jsPDF({ orientation: "landscape", unit: "pt" });
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'pt' });
       const pageWidth = doc.internal.pageSize.getWidth();
 
       // ── Header ────────────────────────────────────────
       doc.setFontSize(16);
-      doc.setFont(undefined, "bold");
-      doc.text(`Dispatch List — Order #${order.orderNo || "—"}`, 40, 40);
+      doc.setFont(undefined, 'bold');
+      doc.text(`Dispatch List — Order #${order.orderNo || '—'}`, 40, 40);
 
       doc.setFontSize(10);
-      doc.setFont(undefined, "normal");
-      const generatedOn = new Date().toLocaleString("en-IN", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
+      doc.setFont(undefined, 'normal');
+      const generatedOn = new Date().toLocaleString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
       });
       doc.text(`Generated on: ${generatedOn}`, 40, 58);
 
       if (customer?.name) {
         doc.text(
           `Customer: ${customer.name}${
-            customer.mobileNumber ? "  |  " + customer.mobileNumber : ""
+            customer.mobileNumber ? '  |  ' + customer.mobileNumber : ''
           }`,
           40,
           74,
@@ -96,22 +96,22 @@ const DownloadDispatchListButton = ({
 
       // ── Order Products table ────────────────────────────
       if (hasProducts) {
-        doc.setFont(undefined, "bold");
+        doc.setFont(undefined, 'bold');
         doc.setFontSize(11);
-        doc.text("Order Products", 40, cursorY);
-        doc.setFont(undefined, "normal");
+        doc.text('Order Products', 40, cursorY);
+        doc.setFont(undefined, 'normal');
 
         const productRows = products.map((p) => {
           const discountVal = Number(p.discount || 0);
           const discountLabel = !discountVal
-            ? "—"
-            : p.discountType === "percent"
+            ? '—'
+            : p.discountType === 'percent'
               ? `${discountVal}%`
               : money(discountVal);
           return [
-            p.name || "—",
-            p.sku || "—",
-            p.brand || "—",
+            p.name || '—',
+            p.sku || '—',
+            p.brand || '—',
             p.quantity ?? 0,
             money(p.price),
             discountLabel,
@@ -119,24 +119,19 @@ const DownloadDispatchListButton = ({
           ];
         });
 
-        const productsTotal = products.reduce(
-          (sum, p) => sum + Number(p.total || 0),
-          0,
-        );
+        const productsTotal = products.reduce((sum, p) => sum + Number(p.total || 0), 0);
 
         autoTable(doc, {
           startY: cursorY + 10,
-          head: [
-            ["Product", "SKU", "Brand", "Qty", "Price", "Discount", "Total"],
-          ],
+          head: [['Product', 'SKU', 'Brand', 'Qty', 'Price', 'Discount', 'Total']],
           body: productRows,
-          foot: [["", "", "", "", "", "Order Total", money(productsTotal)]],
-          theme: "striped",
+          foot: [['', '', '', '', '', 'Order Total', money(productsTotal)]],
+          theme: 'striped',
           headStyles: { fillColor: [82, 196, 26] },
           footStyles: {
             fillColor: [245, 245, 245],
             textColor: 20,
-            fontStyle: "bold",
+            fontStyle: 'bold',
           },
           styles: { fontSize: 8, cellPadding: 5 },
           margin: { left: 40, right: 40 },
@@ -155,63 +150,57 @@ const DownloadDispatchListButton = ({
             doc.addPage();
             cursorY = 40;
           }
-          doc.setFont(undefined, "bold");
+          doc.setFont(undefined, 'bold');
           doc.setFontSize(11);
-          doc.text("Dispatch History", 40, cursorY);
-          doc.setFont(undefined, "normal");
+          doc.text('Dispatch History', 40, cursorY);
+          doc.setFont(undefined, 'normal');
           cursorY += 10;
         }
 
         const summaryRows = dispatches.map((d) => [
-          `#${d.dispatchNumber ?? "—"}`,
+          `#${d.dispatchNumber ?? '—'}`,
           formatDate(d.dispatchDate),
           Array.isArray(d.items) ? d.items.length : 0,
           d.totalQuantity ?? 0,
           money(d.subtotal),
-          Number(d.totalDiscount || 0) > 0 ? `-${money(d.totalDiscount)}` : "—",
+          Number(d.totalDiscount || 0) > 0 ? `-${money(d.totalDiscount)}` : '—',
           money(d.totalTax),
           money(d.totalAmount),
-          d.carrier || "—",
-          d.trackingNumber || "—",
-          d.status || "—",
+          d.carrier || '—',
+          d.trackingNumber || '—',
+          d.status || '—',
         ]);
 
         autoTable(doc, {
           startY: cursorY,
           head: [
             [
-              "Dispatch #",
-              "Date",
-              "Items",
-              "Qty",
-              "Subtotal",
-              "Discount",
-              "Tax",
-              "Amount",
-              "Carrier",
-              "Tracking",
-              "Status",
+              'Dispatch #',
+              'Date',
+              'Items',
+              'Qty',
+              'Subtotal',
+              'Discount',
+              'Tax',
+              'Amount',
+              'Carrier',
+              'Tracking',
+              'Status',
             ],
           ],
           body: summaryRows,
-          theme: "striped",
+          theme: 'striped',
           headStyles: { fillColor: [24, 103, 255] },
           styles: { fontSize: 8, cellPadding: 5 },
           margin: { left: 40, right: 40 },
         });
 
         // ── Grand totals ────────────────────────────────
-        const grandTotal = dispatches.reduce(
-          (sum, d) => sum + Number(d.totalAmount || 0),
-          0,
-        );
-        const grandQty = dispatches.reduce(
-          (sum, d) => sum + Number(d.totalQuantity || 0),
-          0,
-        );
+        const grandTotal = dispatches.reduce((sum, d) => sum + Number(d.totalAmount || 0), 0);
+        const grandQty = dispatches.reduce((sum, d) => sum + Number(d.totalQuantity || 0), 0);
 
         finalY = doc.lastAutoTable.finalY + 20;
-        doc.setFont(undefined, "bold");
+        doc.setFont(undefined, 'bold');
         doc.setFontSize(10);
         doc.text(
           `Total Dispatches: ${dispatches.length}   |   Total Qty: ${grandQty}   |   Total Amount: ${money(
@@ -220,7 +209,7 @@ const DownloadDispatchListButton = ({
           40,
           finalY,
         );
-        doc.setFont(undefined, "normal");
+        doc.setFont(undefined, 'normal');
       }
 
       // ── Optional per-dispatch line-item breakdown ──────
@@ -235,36 +224,23 @@ const DownloadDispatchListButton = ({
             finalY = 40;
           }
 
-          doc.setFont(undefined, "bold");
+          doc.setFont(undefined, 'bold');
           doc.setFontSize(10);
           doc.text(`Dispatch #${d.dispatchNumber} — Line Items`, 40, finalY);
-          doc.setFont(undefined, "normal");
+          doc.setFont(undefined, 'normal');
 
           autoTable(doc, {
             startY: finalY + 8,
-            head: [
-              [
-                "Product",
-                "Code",
-                "Qty",
-                "Unit Price",
-                "Discount",
-                "Line Total",
-              ],
-            ],
+            head: [['Product', 'Code', 'Qty', 'Unit Price', 'Discount', 'Line Total']],
             body: items.map((it) => [
-              it.name || "—",
-              it.companyCode || "—",
+              it.name || '—',
+              it.companyCode || '—',
               it.quantity ?? 0,
               money(it.price),
-              it.discountType === "percent"
-                ? `${it.discount || 0}%`
-                : money(it.discount),
-              money(
-                it.total ?? Number(it.price || 0) * Number(it.quantity || 0),
-              ),
+              it.discountType === 'percent' ? `${it.discount || 0}%` : money(it.discount),
+              money(it.total ?? Number(it.price || 0) * Number(it.quantity || 0)),
             ]),
-            theme: "grid",
+            theme: 'grid',
             styles: { fontSize: 8, cellPadding: 4 },
             margin: { left: 40, right: 40 },
           });
@@ -284,10 +260,10 @@ const DownloadDispatchListButton = ({
         );
       }
 
-      doc.save(`DispatchList-Order-${order.orderNo || "unknown"}.pdf`);
+      doc.save(`DispatchList-Order-${order.orderNo || 'unknown'}.pdf`);
     } catch (err) {
       console.error(err);
-      message.error("Failed to generate dispatch list PDF.");
+      message.error('Failed to generate dispatch list PDF.');
     } finally {
       setGenerating(false);
     }

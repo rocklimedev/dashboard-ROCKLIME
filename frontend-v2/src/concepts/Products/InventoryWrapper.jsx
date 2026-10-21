@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useEffect } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import React, { useState, useMemo, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   Table,
   Input,
@@ -22,7 +22,7 @@ import {
   Drawer,
   Checkbox,
   Empty,
-} from "antd";
+} from 'antd';
 import {
   SearchOutlined,
   PlusOutlined,
@@ -31,26 +31,26 @@ import {
   ReloadOutlined,
   FilterOutlined,
   MoreOutlined,
-} from "@ant-design/icons";
+} from '@ant-design/icons';
 
-import StockModal from "../../components/modals/StockModal";
+import StockModal from '../../components/modals/StockModal';
 import {
   useGetAllProductsQuery,
   useGetCompanyCodesQuery,
   useAddStockMutation,
   useRemoveStockMutation,
   useDeleteProductMutation,
-} from "../../api/productApi";
+} from '../../api/productApi';
 
-import PageHeader from "../../components/Common/PageHeader";
-import pos from "../../assets/img/default.png";
-import HistoryModalAntD from "../../components/modals/HistoryModal";
+import PageHeader from '../../components/Common/PageHeader';
+import pos from '../../assets/img/default.png';
+import HistoryModalAntD from '../../components/modals/HistoryModal';
 
-import DeleteModal from "../../components/Common/DeleteModal";
-import PermissionGate from "../../context/PermissionGate";
+import DeleteModal from '../../components/Common/DeleteModal';
+import PermissionGate from '../../context/PermissionGate';
 
-import InventoryBulkActions from "../../components/Inventory/InventoryBulkActions";
-import { useGetAllBrandsQuery } from "../../api/brandsApi";
+import InventoryBulkActions from '../../components/Inventory/InventoryBulkActions';
+import { useGetAllBrandsQuery } from '../../api/brandsApi';
 
 const { Text } = Typography;
 
@@ -62,56 +62,48 @@ const InventoryWrapper = () => {
 
   // Initial values from URL
   const queryParams = new URLSearchParams(location.search);
-  const validTabs = ["all", "in-stock", "low-stock", "out-of-stock"];
-  const initialTab = validTabs.includes(queryParams.get("tab"))
-    ? queryParams.get("tab")
-    : "all";
+  const validTabs = ['all', 'in-stock', 'low-stock', 'out-of-stock'];
+  const initialTab = validTabs.includes(queryParams.get('tab')) ? queryParams.get('tab') : 'all';
 
   const [activeTab, setActiveTab] = useState(initialTab);
   const [currentPage, setCurrentPage] = useState(
-    Math.max(1, parseInt(queryParams.get("page"), 10) || 1),
+    Math.max(1, parseInt(queryParams.get('page'), 10) || 1),
   );
   const [pageSize, setPageSize] = useState(() => {
-    const limit = Number(queryParams.get("limit"));
+    const limit = Number(queryParams.get('limit'));
     return [10, 25, 50, 100].includes(limit) ? limit : 50;
   });
 
-  const [search, setSearch] = useState(queryParams.get("search") || "");
+  const [search, setSearch] = useState(queryParams.get('search') || '');
   const [brandId, setBrandId] = useState(
-    queryParams.get("brandId") || queryParams.get("brand") || undefined,
+    queryParams.get('brandId') || queryParams.get('brand') || undefined,
   );
-  const { data: brands = [], isFetching: loadingBrands } =
-    useGetAllBrandsQuery();
+  const { data: brands = [], isFetching: loadingBrands } = useGetAllBrandsQuery();
   const brandNames = useMemo(
     () => new Map(brands.map((brand) => [brand.id, brand.brandName])),
     [brands],
   );
   const [advancedFilterOpen, setAdvancedFilterOpen] = useState(false);
-  const [companyCode, setCompanyCode] = useState(
-    queryParams.get("companyCode") || undefined,
-  );
+  const [companyCode, setCompanyCode] = useState(queryParams.get('companyCode') || undefined);
   const {
     data: companyCodes = [],
     isFetching: loadingCompanyCodes,
     isError: companyCodesError,
   } = useGetCompanyCodesQuery();
   const [duplicateCompanyCode, setDuplicateCompanyCode] = useState(
-    queryParams.get("duplicateCompanyCode") === "true",
+    queryParams.get('duplicateCompanyCode') === 'true',
   );
   const [lowStockThreshold, setLowStockThreshold] = useState(
-    Number(queryParams.get("lowStockThreshold")) || 10,
+    Number(queryParams.get('lowStockThreshold')) || 10,
   );
   const numberParam = (key) =>
     queryParams.has(key) &&
-    queryParams.get(key) !== "" &&
+    queryParams.get(key) !== '' &&
     Number.isFinite(Number(queryParams.get(key)))
       ? Number(queryParams.get(key))
       : null;
-  const [maxStockFilter, setMaxStockFilter] = useState(numberParam("maxStock"));
-  const [priceRange, setPriceRange] = useState([
-    numberParam("minPrice"),
-    numberParam("maxPrice"),
-  ]);
+  const [maxStockFilter, setMaxStockFilter] = useState(numberParam('maxStock'));
+  const [priceRange, setPriceRange] = useState([numberParam('minPrice'), numberParam('maxPrice')]);
 
   // Modals
   const [stockModalOpen, setStockModalOpen] = useState(false);
@@ -119,7 +111,7 @@ const InventoryWrapper = () => {
 
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [stockAction, setStockAction] = useState("add");
+  const [stockAction, setStockAction] = useState('add');
 
   const [selectedInventory, setSelectedInventory] = useState({});
   const selectedInventoryProducts = Object.values(selectedInventory);
@@ -171,10 +163,7 @@ const InventoryWrapper = () => {
       const refreshed = { ...previous };
       let changed = false;
       for (const product of products)
-        if (
-          previous[product.productId] &&
-          previous[product.productId] !== product
-        ) {
+        if (previous[product.productId] && previous[product.productId] !== product) {
           refreshed[product.productId] = product;
           changed = true;
         }
@@ -197,15 +186,14 @@ const InventoryWrapper = () => {
     // Primary: Exact match on slug or title (most reliable)
     const priceField = metaDetails.find(
       (d) =>
-        d.slug?.replace(/[_\s-]/g, "").toLowerCase() === "sellingprice" ||
-        d.id === "9ba862ef-f993-4873-95ef-1fef10036aa5" ||
-        d.id === "sellingPrice" ||
-        d.id === "selling_price",
+        d.slug?.replace(/[_\s-]/g, '').toLowerCase() === 'sellingprice' ||
+        d.id === '9ba862ef-f993-4873-95ef-1fef10036aa5' ||
+        d.id === 'sellingPrice' ||
+        d.id === 'selling_price',
     );
 
     if (priceField) {
-      if (priceField.value == null || String(priceField.value).trim() === "")
-        return null;
+      if (priceField.value == null || String(priceField.value).trim() === '') return null;
       const num = Number(priceField.value);
       return Number.isFinite(num) ? num : null;
     }
@@ -223,23 +211,23 @@ const InventoryWrapper = () => {
   useEffect(() => {
     const params = new URLSearchParams();
 
-    if (activeTab !== "all") params.set("tab", activeTab);
-    if (currentPage > 1) params.set("page", currentPage);
-    if (pageSize !== 50) params.set("limit", pageSize);
-    if (search.trim()) params.set("search", search.trim());
-    if (brandId) params.set("brandId", brandId);
-    if (duplicateCompanyCode) params.set("duplicateCompanyCode", "true");
-    if (companyCode) params.set("companyCode", companyCode);
-    if (maxStockFilter !== null) params.set("maxStock", maxStockFilter);
-    if (priceRange[0] !== null) params.set("minPrice", priceRange[0]);
-    if (priceRange[1] !== null) params.set("maxPrice", priceRange[1]);
+    if (activeTab !== 'all') params.set('tab', activeTab);
+    if (currentPage > 1) params.set('page', currentPage);
+    if (pageSize !== 50) params.set('limit', pageSize);
+    if (search.trim()) params.set('search', search.trim());
+    if (brandId) params.set('brandId', brandId);
+    if (duplicateCompanyCode) params.set('duplicateCompanyCode', 'true');
+    if (companyCode) params.set('companyCode', companyCode);
+    if (maxStockFilter !== null) params.set('maxStock', maxStockFilter);
+    if (priceRange[0] !== null) params.set('minPrice', priceRange[0]);
+    if (priceRange[1] !== null) params.set('maxPrice', priceRange[1]);
     if (lowStockThreshold !== 10) {
-      params.set("lowStockThreshold", lowStockThreshold);
+      params.set('lowStockThreshold', lowStockThreshold);
     }
 
     const newSearch = params.toString();
     if (newSearch !== location.search.slice(1)) {
-      navigate(`${location.pathname}${newSearch ? `?${newSearch}` : ""}`, {
+      navigate(`${location.pathname}${newSearch ? `?${newSearch}` : ''}`, {
         replace: true,
       });
     }
@@ -260,11 +248,11 @@ const InventoryWrapper = () => {
 
   // Auto-switch from dashboard
   useEffect(() => {
-    if (queryParams.has("low_stock") && activeTab === "all") {
-      setActiveTab("low-stock");
+    if (queryParams.has('low_stock') && activeTab === 'all') {
+      setActiveTab('low-stock');
       const newParams = new URLSearchParams(location.search);
-      newParams.delete("low_stock");
-      newParams.set("tab", "low-stock");
+      newParams.delete('low_stock');
+      newParams.set('tab', 'low-stock');
       navigate(`${location.pathname}?${newParams.toString()}`, {
         replace: true,
       });
@@ -284,7 +272,7 @@ const InventoryWrapper = () => {
   // ==================== HELPERS ====================
   const parseImages = (images) => {
     try {
-      if (typeof images === "string") {
+      if (typeof images === 'string') {
         const parsed = JSON.parse(images);
         return Array.isArray(parsed) && parsed.length ? parsed : [pos];
       }
@@ -295,17 +283,15 @@ const InventoryWrapper = () => {
   };
 
   const getCompanyCode = (metaDetails) => {
-    if (!Array.isArray(metaDetails) || !metaDetails.length) return "N/A";
+    if (!Array.isArray(metaDetails) || !metaDetails.length) return 'N/A';
     const field = metaDetails.find(
       (d) =>
-        d.slug?.replace(/[_\s-]/g, "").toLowerCase() === "companycode" ||
-        d.id === "d11da9f9-3f2e-4536-8236-9671200cca4a" ||
-        d.id === "companyCode" ||
-        d.id === "company_code",
+        d.slug?.replace(/[_\s-]/g, '').toLowerCase() === 'companycode' ||
+        d.id === 'd11da9f9-3f2e-4536-8236-9671200cca4a' ||
+        d.id === 'companyCode' ||
+        d.id === 'company_code',
     );
-    return field?.value != null && String(field.value).trim()
-      ? String(field.value).trim()
-      : "N/A";
+    return field?.value != null && String(field.value).trim() ? String(field.value).trim() : 'N/A';
   };
 
   // ==================== ACTIONS ====================
@@ -329,10 +315,10 @@ const InventoryWrapper = () => {
     if (!selectedProduct?.productId) return;
     try {
       await deleteProduct(selectedProduct.productId).unwrap();
-      message.success("Product deleted successfully");
+      message.success('Product deleted successfully');
       refetch();
     } catch (err) {
-      message.error(err?.data?.message || "Failed to delete product");
+      message.error(err?.data?.message || 'Failed to delete product');
     } finally {
       setDeleteModalVisible(false);
       setSelectedProduct(null);
@@ -341,7 +327,7 @@ const InventoryWrapper = () => {
 
   const handleStockSubmit = async (values) => {
     try {
-      if (stockAction === "add") {
+      if (stockAction === 'add') {
         await addStock({
           productId: selectedProduct.productId,
           quantity: values.quantity,
@@ -356,7 +342,7 @@ const InventoryWrapper = () => {
       }
       refetch();
     } catch (err) {
-      message.error(err?.data?.message || "Failed to update stock");
+      message.error(err?.data?.message || 'Failed to update stock');
     } finally {
       setStockModalOpen(false);
       setSelectedProduct(null);
@@ -366,26 +352,16 @@ const InventoryWrapper = () => {
   const moreMenu = (record) => (
     <Menu>
       <Menu.Item key="references">
-        <Link
-          to={`/inventory/${encodeURIComponent(record.productId)}/references`}
-        >
-          References
-        </Link>
+        <Link to={`/inventory/${encodeURIComponent(record.productId)}/references`}>References</Link>
       </Menu.Item>
       <Menu.Item key="inventory">
-        <Link to={`/product/${record.productId}/inventory`}>
-          Check Inventory
-        </Link>
+        <Link to={`/product/${record.productId}/inventory`}>Check Inventory</Link>
       </Menu.Item>
       <Menu.Item key="edit">
         <Link to={`/product/${record.productId}/edit`}>Edit Product</Link>
       </Menu.Item>
       <PermissionGate api="delete" module="products">
-        <Menu.Item
-          danger
-          key="delete"
-          onClick={() => handleDeleteClick(record)}
-        >
+        <Menu.Item danger key="delete" onClick={() => handleDeleteClick(record)}>
           Delete Product
         </Menu.Item>
       </PermissionGate>
@@ -395,8 +371,8 @@ const InventoryWrapper = () => {
   // ==================== TABLE COLUMNS ====================
   const columns = [
     {
-      title: "Image",
-      dataIndex: "images",
+      title: 'Image',
+      dataIndex: 'images',
       width: 80,
       render: (images) => (
         <img
@@ -405,73 +381,66 @@ const InventoryWrapper = () => {
           style={{
             width: 56,
             height: 56,
-            objectFit: "cover",
+            objectFit: 'cover',
             borderRadius: 8,
-            border: "1px solid #f0f0f0",
+            border: '1px solid #f0f0f0',
           }}
         />
       ),
     },
     {
-      title: "Product",
-      dataIndex: "name",
+      title: 'Product',
+      dataIndex: 'name',
       render: (_, record) => (
         <div>
           <Link to={`/product/${record.productId}`} className="product-link">
-            {record.name || "Unnamed Product"}
+            {record.name || 'Unnamed Product'}
           </Link>
           <div className="product-codes">
-            <Tag color="blue">
-              {brandNames.get(record.brandId) || "Not Branded"}
-            </Tag>
-            {record.product_code && (
-              <Tag className="code-tag">{record.product_code}</Tag>
-            )}
+            <Tag color="blue">{brandNames.get(record.brandId) || 'Not Branded'}</Tag>
+            {record.product_code && <Tag className="code-tag">{record.product_code}</Tag>}
             <Tag className="code-tag">{getCompanyCode(record.metaDetails)}</Tag>
           </div>
         </div>
       ),
     },
     {
-      title: "Price",
-      responsive: ["md"],
+      title: 'Price',
+      responsive: ['md'],
       render: (_, r) => {
         const price = getSellingPrice(r.metaDetails);
         return price !== null ? (
-          <strong className="price-text">
-            ₹{price.toLocaleString("en-IN")}
-          </strong>
+          <strong className="price-text">₹{price.toLocaleString('en-IN')}</strong>
         ) : (
           <Text type="secondary">—</Text>
         );
       },
-      align: "right",
+      align: 'right',
     },
     {
-      title: "Stock",
-      dataIndex: "quantity",
-      align: "center",
+      title: 'Stock',
+      dataIndex: 'quantity',
+      align: 'center',
       width: 120,
       render: (qty) => {
         if (qty === 0) return <Tag color="error">Out of Stock</Tag>;
-        if (qty <= lowStockThreshold)
-          return <Tag color="warning">{qty} Low</Tag>;
+        if (qty <= lowStockThreshold) return <Tag color="warning">{qty} Low</Tag>;
         return <Tag color="success">{qty} In Stock</Tag>;
       },
     },
     {
-      title: "Updated",
-      dataIndex: "updatedAt",
-      responsive: ["lg"],
+      title: 'Updated',
+      dataIndex: 'updatedAt',
+      responsive: ['lg'],
       width: 140,
       render: (date) =>
         date ? (
           <Tooltip title={new Date(date).toLocaleString()}>
             <Text type="secondary">
-              {new Date(date).toLocaleDateString("en-IN", {
-                day: "numeric",
-                month: "short",
-                year: "2-digit",
+              {new Date(date).toLocaleDateString('en-IN', {
+                day: 'numeric',
+                month: 'short',
+                year: '2-digit',
               })}
             </Text>
           </Tooltip>
@@ -480,33 +449,29 @@ const InventoryWrapper = () => {
         ),
     },
     {
-      title: "Actions",
-      key: "actions",
+      title: 'Actions',
+      key: 'actions',
       width: 200,
-      fixed: isMobile ? false : "right",
-      align: "center",
+      fixed: isMobile ? false : 'right',
+      align: 'center',
       render: (_, record) => (
         <Space size="small">
           <Button
             type="text"
             icon={<PlusOutlined />}
-            onClick={() => openStockModal(record, "add")}
+            onClick={() => openStockModal(record, 'add')}
           />
           <Button
             type="text"
             danger
             icon={<MinusOutlined />}
             disabled={record.quantity === 0}
-            onClick={() => openStockModal(record, "remove")}
+            onClick={() => openStockModal(record, 'remove')}
           />
-          <Button
-            type="text"
-            icon={<HistoryOutlined />}
-            onClick={() => openHistoryModal(record)}
-          />
+          <Button type="text" icon={<HistoryOutlined />} onClick={() => openHistoryModal(record)} />
 
           <PermissionGate api="edit|delete" module="products">
-            <Dropdown overlay={moreMenu(record)} trigger={["click"]}>
+            <Dropdown overlay={moreMenu(record)} trigger={['click']}>
               <Button type="text" icon={<MoreOutlined />} />
             </Dropdown>
           </PermissionGate>
@@ -520,12 +485,12 @@ const InventoryWrapper = () => {
     return (
       <div
         style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          height: "60vh",
-          background: "#f9fafb",
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '60vh',
+          background: '#f9fafb',
         }}
       >
         <Spin size="large" />
@@ -538,11 +503,8 @@ const InventoryWrapper = () => {
 
   if (error) {
     return (
-      <Card style={{ marginTop: 24, textAlign: "center" }}>
-        <Empty
-          description="Failed to load inventory data"
-          image={Empty.PRESENTED_IMAGE_SIMPLE}
-        />
+      <Card style={{ marginTop: 24, textAlign: 'center' }}>
+        <Empty description="Failed to load inventory data" image={Empty.PRESENTED_IMAGE_SIMPLE} />
       </Card>
     );
   }
@@ -562,10 +524,10 @@ const InventoryWrapper = () => {
           style={{
             marginTop: 24,
             borderRadius: 12,
-            boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
-            background: "white",
+            boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+            background: 'white',
           }}
-          bodyStyle={{ padding: isMobile ? "16px" : "24px" }}
+          bodyStyle={{ padding: isMobile ? '16px' : '24px' }}
         >
           <Row gutter={[12, 16]} align="middle">
             <Col xs={24} sm={12} md={8} lg={6}>
@@ -590,9 +552,9 @@ const InventoryWrapper = () => {
                 showSearch
                 allowClear
                 optionFilterProp="label"
-                style={{ width: "100%" }}
+                style={{ width: '100%' }}
                 loading={loadingCompanyCodes}
-                status={companyCodesError ? "error" : undefined}
+                status={companyCodesError ? 'error' : undefined}
                 value={companyCode}
                 options={companyCodes.map((code) => ({
                   value: code,
@@ -603,9 +565,7 @@ const InventoryWrapper = () => {
                   setCurrentPage(1);
                 }}
               />
-              {companyCodesError && (
-                <Text type="danger">Unable to load company codes.</Text>
-              )}
+              {companyCodesError && <Text type="danger">Unable to load company codes.</Text>}
             </Col>
 
             <Col xs={24} sm={12} md={8} lg={5}>
@@ -613,7 +573,7 @@ const InventoryWrapper = () => {
                 aria-label="Filter inventory by brand"
                 placeholder="All brands"
                 size="large"
-                style={{ width: "100%" }}
+                style={{ width: '100%' }}
                 showSearch
                 allowClear
                 optionFilterProp="label"
@@ -635,7 +595,7 @@ const InventoryWrapper = () => {
                 placeholder="Low Stock ≤"
                 min={1}
                 size="large"
-                style={{ width: "100%" }}
+                style={{ width: '100%' }}
                 value={lowStockThreshold}
                 onChange={(v) => {
                   setLowStockThreshold(v || 10);
@@ -649,7 +609,7 @@ const InventoryWrapper = () => {
                 placeholder="Max Stock"
                 min={0}
                 size="large"
-                style={{ width: "100%" }}
+                style={{ width: '100%' }}
                 value={maxStockFilter}
                 onChange={(v) => {
                   setMaxStockFilter(v);
@@ -659,7 +619,7 @@ const InventoryWrapper = () => {
             </Col>
 
             <Col xs={24} sm={12} md={6} lg={5}>
-              <Space.Compact style={{ width: "100%" }}>
+              <Space.Compact style={{ width: '100%' }}>
                 <InputNumber
                   placeholder="Min ₹"
                   min={0}
@@ -683,15 +643,11 @@ const InventoryWrapper = () => {
               </Space.Compact>
             </Col>
 
-            <Col
-              xs={24}
-              sm="auto"
-              style={{ textAlign: isMobile ? "center" : "right" }}
-            >
+            <Col xs={24} sm="auto" style={{ textAlign: isMobile ? 'center' : 'right' }}>
               <Button
                 icon={<ReloadOutlined />}
                 onClick={() => {
-                  setSearch("");
+                  setSearch('');
                   setBrandId(undefined);
                   setDuplicateCompanyCode(false);
                   setCompanyCode(undefined);
@@ -707,33 +663,29 @@ const InventoryWrapper = () => {
           </Row>
 
           {/* Action Bar */}
-          <div
-            style={{ marginTop: 16, textAlign: isMobile ? "center" : "right" }}
-          >
+          <div style={{ marginTop: 16, textAlign: isMobile ? 'center' : 'right' }}>
             <Space wrap size="middle">
               <Button
                 icon={<FilterOutlined />}
-                type={duplicateCompanyCode ? "primary" : "default"}
+                type={duplicateCompanyCode ? 'primary' : 'default'}
                 onClick={() => setAdvancedFilterOpen(true)}
               >
-                Advanced Filter{duplicateCompanyCode ? " (1)" : ""}
+                Advanced Filter{duplicateCompanyCode ? ' (1)' : ''}
               </Button>
               <Link to="/inventory/onboard-new-brand">
-                <Button icon={<PlusOutlined />}>
-                  Onboard New Brand Workspace
-                </Button>
+                <Button icon={<PlusOutlined />}>Onboard New Brand Workspace</Button>
               </Link>
               <Button
                 type="primary"
                 icon={<PlusOutlined />}
-                onClick={() => navigate("/inventory/import?tab=inventory")}
+                onClick={() => navigate('/inventory/import?tab=inventory')}
               >
                 Update Inventory
               </Button>
               <Button
                 type="primary"
                 icon={<PlusOutlined />}
-                onClick={() => navigate("/product/add")}
+                onClick={() => navigate('/product/add')}
               >
                 Add New Product
               </Button>
@@ -747,42 +699,42 @@ const InventoryWrapper = () => {
           getCompanyCode={getCompanyCode}
           getSellingPrice={getSellingPrice}
           onComplete={(action) => {
-            if (["delete", "merge"].includes(action)) setCurrentPage(1);
+            if (['delete', 'merge'].includes(action)) setCurrentPage(1);
             refetch();
           }}
         />
 
         {/* Status Chips */}
-        <div style={{ margin: "24px 0" }}>
+        <div style={{ margin: '24px 0' }}>
           <Space wrap size={[8, 12]}>
             {[
-              { key: "all", label: "All", count: counts.all, color: "default" },
+              { key: 'all', label: 'All', count: counts.all, color: 'default' },
               {
-                key: "in-stock",
-                label: "In Stock",
+                key: 'in-stock',
+                label: 'In Stock',
                 count: counts.inStock,
-                color: "green",
+                color: 'green',
               },
               {
-                key: "low-stock",
-                label: "Low Stock",
+                key: 'low-stock',
+                label: 'Low Stock',
                 count: counts.lowStock,
-                color: "orange",
+                color: 'orange',
               },
               {
-                key: "out-of-stock",
-                label: "Out of Stock",
+                key: 'out-of-stock',
+                label: 'Out of Stock',
                 count: counts.outStock,
-                color: "red",
+                color: 'red',
               },
             ].map((item) => (
               <Tag
                 key={item.key}
-                color={activeTab === item.key ? item.color : "default"}
+                color={activeTab === item.key ? item.color : 'default'}
                 style={{
-                  padding: "8px 16px",
+                  padding: '8px 16px',
                   fontSize: 14,
-                  cursor: "pointer",
+                  cursor: 'pointer',
                   borderRadius: 20,
                   fontWeight: activeTab === item.key ? 600 : 400,
                 }}
@@ -799,9 +751,9 @@ const InventoryWrapper = () => {
           style={{
             marginTop: 24,
             borderRadius: 12,
-            boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
-            background: "white",
-            overflow: "hidden",
+            boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+            background: 'white',
+            overflow: 'hidden',
           }}
         >
           <Table
@@ -813,40 +765,36 @@ const InventoryWrapper = () => {
               preserveSelectedRowKeys: true,
               onChange: (keys, rows) => {
                 if (keys.length > 500) {
-                  message.warning("Select at most 500 products at a time.");
+                  message.warning('Select at most 500 products at a time.');
                   return;
                 }
                 const known = {
                   ...selectedInventory,
                   ...Object.fromEntries(
-                    rows
-                      .filter(Boolean)
-                      .map((product) => [product.productId, product]),
+                    rows.filter(Boolean).map((product) => [product.productId, product]),
                   ),
                 };
                 setSelectedInventory(
                   Object.fromEntries(
-                    keys
-                      .filter((key) => known[key])
-                      .map((key) => [key, known[key]]),
+                    keys.filter((key) => known[key]).map((key) => [key, known[key]]),
                   ),
                 );
               },
             }}
             pagination={false}
             loading={isFetching}
-            scroll={{ x: isMobile ? "max-content" : undefined }}
+            scroll={{ x: isMobile ? 'max-content' : undefined }}
             rowClassName={(record) =>
               record.quantity === 0
-                ? "stock-critical"
+                ? 'stock-critical'
                 : record.quantity <= lowStockThreshold
-                  ? "stock-warning"
-                  : "stock-ok"
+                  ? 'stock-warning'
+                  : 'stock-ok'
             }
           />
         </Card>
 
-        <div style={{ marginTop: 24, padding: "16px 0", textAlign: "center" }}>
+        <div style={{ marginTop: 24, padding: '16px 0', textAlign: 'center' }}>
           <Pagination
             disabled={isFetching}
             current={currentPage}
@@ -854,10 +802,8 @@ const InventoryWrapper = () => {
             total={paginationInfo.total}
             onChange={handlePageChange}
             showSizeChanger
-            pageSizeOptions={["10", "25", "50", "100"]}
-            showTotal={(total, range) =>
-              `${range[0]}-${range[1]} of ${total} products`
-            }
+            pageSizeOptions={['10', '25', '50', '100']}
+            showTotal={(total, range) => `${range[0]}-${range[1]} of ${total} products`}
           />
         </div>
 
@@ -868,7 +814,7 @@ const InventoryWrapper = () => {
           onClose={() => setAdvancedFilterOpen(false)}
           width={380}
         >
-          <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+          <Space direction="vertical" size="middle" style={{ width: '100%' }}>
             <Checkbox
               checked={duplicateCompanyCode}
               onChange={(e) => {
@@ -879,8 +825,8 @@ const InventoryWrapper = () => {
               Only products with duplicate company codes
             </Checkbox>
             <Text type="secondary">
-              Shows every product whose non-empty company code is shared by
-              another product in the catalog.
+              Shows every product whose non-empty company code is shared by another product in the
+              catalog.
             </Text>
           </Space>
         </Drawer>

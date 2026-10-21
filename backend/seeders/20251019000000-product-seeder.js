@@ -1,16 +1,16 @@
-"use strict";
+'use strict';
 
-const { v4: uuidv4 } = require("uuid");
-const { BrandParentCategory } = require("../models");
-const { Product } = require("../models");
-const jsonData = require("./updated-stock.json"); // your JSON backup
+const { v4: uuidv4 } = require('uuid');
+const { BrandParentCategory } = require('../models');
+const { Product } = require('../models');
+const jsonData = require('./updated-stock.json'); // your JSON backup
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
     const transaction = await queryInterface.sequelize.transaction();
 
     try {
-      console.log("🚀 Starting Product Seeder...");
+      console.log('🚀 Starting Product Seeder...');
 
       for (const item of jsonData) {
         // --- VALIDATION ---
@@ -19,16 +19,14 @@ module.exports = {
           item.productId = uuidv4();
           console.warn(
             `⚠️ Missing productId detected. Generated new UUID for: ${
-              item.name || "Unnamed Product"
+              item.name || 'Unnamed Product'
             } -> ${item.productId}`,
           );
         }
 
         if (!item.product_code) {
           console.warn(
-            `⚠️ Skipping product with missing product_code: ${
-              item.name || "Unnamed Product"
-            }`,
+            `⚠️ Skipping product with missing product_code: ${item.name || 'Unnamed Product'}`,
           );
           continue;
         }
@@ -52,7 +50,7 @@ module.exports = {
         const parsedImages = (() => {
           try {
             if (Array.isArray(item.images)) return JSON.stringify(item.images);
-            if (typeof item.images === "string") return item.images;
+            if (typeof item.images === 'string') return item.images;
             return JSON.stringify([]);
           } catch {
             return JSON.stringify([]);
@@ -61,9 +59,7 @@ module.exports = {
 
         const parsedMeta = (() => {
           try {
-            return typeof item.meta === "object" && item.meta !== null
-              ? item.meta
-              : {};
+            return typeof item.meta === 'object' && item.meta !== null ? item.meta : {};
           } catch {
             return {};
           }
@@ -72,17 +68,17 @@ module.exports = {
         // --- PRODUCT DATA ---
         const productData = {
           productId: item.productId || uuidv4(),
-          name: item.name || "Unnamed Product",
+          name: item.name || 'Unnamed Product',
           product_code: String(item.product_code),
           quantity: item.quantity ?? 0,
           discountType: item.discountType || null,
           alert_quantity: item.alert_quantity ?? 0,
           tax: item.tax || null,
-          description: item.description || item.name || "No description",
+          description: item.description || item.name || 'No description',
           images: parsedImages,
           isFeatured: !!item.isFeatured,
           userId: item.userId || null,
-          productType: item.productType || "tiles",
+          productType: item.productType || 'tiles',
           brandId: item.brandId || null,
           categoryId: item.categoryId || null,
           vendorId: item.vendorId || null,
@@ -100,22 +96,18 @@ module.exports = {
 
         if (existingProduct) {
           await existingProduct.update(productData, { transaction });
-          console.log(
-            `🔄 Updated: ${productData.name} (${productData.product_code})`,
-          );
+          console.log(`🔄 Updated: ${productData.name} (${productData.product_code})`);
         } else {
           await Product.create(productData, { transaction });
-          console.log(
-            `✨ Created: ${productData.name} (${productData.product_code})`,
-          );
+          console.log(`✨ Created: ${productData.name} (${productData.product_code})`);
         }
       }
 
       await transaction.commit();
-      console.log("✅ Products seeded/updated successfully!");
+      console.log('✅ Products seeded/updated successfully!');
     } catch (error) {
       await transaction.rollback();
-      console.error("❌ Error seeding products:", error);
+      console.error('❌ Error seeding products:', error);
       throw error;
     }
   },
@@ -123,14 +115,10 @@ module.exports = {
   down: async (queryInterface, Sequelize) => {
     try {
       const productIds = jsonData.map((item) => item.productId).filter(Boolean);
-      await queryInterface.bulkDelete(
-        "products",
-        { productId: productIds },
-        {},
-      );
-      console.log("🧹 Seeded products removed successfully!");
+      await queryInterface.bulkDelete('products', { productId: productIds }, {});
+      console.log('🧹 Seeded products removed successfully!');
     } catch (error) {
-      console.error("❌ Error removing seeded products:", error);
+      console.error('❌ Error removing seeded products:', error);
       throw error;
     }
   },

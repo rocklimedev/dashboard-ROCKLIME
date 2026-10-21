@@ -1,13 +1,13 @@
-import React, { useState, useMemo, useEffect } from "react";
-import { SearchOutlined, UnorderedListOutlined } from "@ant-design/icons";
-import Avatar from "react-avatar";
+import React, { useState, useMemo, useEffect } from 'react';
+import { SearchOutlined, UnorderedListOutlined } from '@ant-design/icons';
+import Avatar from 'react-avatar';
 import {
   useGetAllUsersQuery,
   useReportUserMutation,
   useDeleteUserMutation,
   useUpdateStatusMutation,
   useGetUserByIdQuery,
-} from "../../api/userApi";
+} from '../../api/userApi';
 import {
   EyeOutlined,
   EditOutlined,
@@ -15,18 +15,18 @@ import {
   DeleteOutlined,
   MoreOutlined,
   MailOutlined,
-} from "@ant-design/icons";
-import { Dropdown, Menu, Button, Pagination, Tooltip } from "antd";
-import DeleteModal from "../../components/Common/DeleteModal";
-import { message } from "antd";
-import { useNavigate } from "react-router-dom";
-import PageHeader from "../../components/Common/PageHeader";
-import { useResendVerificationEmailMutation } from "../../api/authApi";
+} from '@ant-design/icons';
+import { Dropdown, Menu, Button, Pagination, Tooltip } from 'antd';
+import DeleteModal from '../../components/Common/DeleteModal';
+import { message } from 'antd';
+import { useNavigate } from 'react-router-dom';
+import PageHeader from '../../components/Common/PageHeader';
+import { useResendVerificationEmailMutation } from '../../api/authApi';
 
 const UserList = () => {
   const [currentPage, setCurrentPage] = useState(1);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState("All");
+  const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState('All');
   const itemsPerPage = 20;
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -52,14 +52,13 @@ const UserList = () => {
     skip: !resendUserId,
   });
 
-  const selectedUser =
-    selectedUserData?.data?.user || selectedUserData?.user || selectedUserData;
+  const selectedUser = selectedUserData?.data?.user || selectedUserData?.user || selectedUserData;
 
   // === Helpers ===
-  const safeRoles = (roles) => (Array.isArray(roles) ? roles.join(", ") : "—");
+  const safeRoles = (roles) => (Array.isArray(roles) ? roles.join(', ') : '—');
 
   const isUserActive = (status) =>
-    status === "active" || status === 1 || status === "1" || status === true;
+    status === 'active' || status === 1 || status === '1' || status === true;
 
   // === Grouping & Filtering ===
   const groupedUsers = useMemo(
@@ -98,22 +97,22 @@ const UserList = () => {
   const handleStatusChange = async (userId, newStatus) => {
     try {
       await updateStatus({ userId, status: newStatus }).unwrap();
-      message.success("Status updated");
+      message.success('Status updated');
     } catch {
-      message.error("Failed to update status");
+      message.error('Failed to update status');
     }
   };
 
   const handleConfirmDelete = async () => {
     try {
       await deleteUser(userToDelete).unwrap();
-      message.success("User deleted");
+      message.success('User deleted');
 
       if (filteredUsers.length === 1 && currentPage > 1) {
         setCurrentPage((p) => p - 1);
       }
     } catch {
-      message.error("Failed to delete user");
+      message.error('Failed to delete user');
     } finally {
       setShowDeleteModal(false);
       setUserToDelete(null);
@@ -125,8 +124,8 @@ const UserList = () => {
     if (resendUserId && selectedUser?.email) {
       resendVerificationEmail({ email: selectedUser.email })
         .unwrap()
-        .then(() => message.success("Verification email sent"))
-        .catch(() => message.error("Failed to send email"))
+        .then(() => message.success('Verification email sent'))
+        .catch(() => message.error('Failed to send email'))
         .finally(() => setResendUserId(null));
     }
   }, [resendUserId, selectedUser, resendVerificationEmail]);
@@ -137,7 +136,7 @@ const UserList = () => {
         <PageHeader
           title="Users"
           subtitle="Manage your users"
-          onAdd={() => navigate("/user/add")}
+          onAdd={() => navigate('/user/add')}
         />
 
         <div className="card-body">
@@ -150,9 +149,7 @@ const UserList = () => {
                     <button
                       key={tab}
                       className={`btn btn-sm ${
-                        activeTab === tab
-                          ? "btn-primary"
-                          : "btn-outline-secondary"
+                        activeTab === tab ? 'btn-primary' : 'btn-outline-secondary'
                       }`}
                       onClick={() => setActiveTab(tab)}
                     >
@@ -165,7 +162,7 @@ const UserList = () => {
 
             <div className="col-lg-6 text-lg-end">
               <div className="d-flex justify-content-end gap-2 flex-wrap">
-                <div className="input-group" style={{ maxWidth: "280px" }}>
+                <div className="input-group" style={{ maxWidth: '280px' }}>
                   <span className="input-group-text">
                     <SearchOutlined />
                   </span>
@@ -217,15 +214,13 @@ const UserList = () => {
                           }}
                           className="text-primary fw-medium"
                         >
-                          {user.name || "—"}
+                          {user.name || '—'}
                         </a>
                       </td>
-                      <td>{user.email || "—"}</td>
-                      <td>{user.username || "—"}</td>
+                      <td>{user.email || '—'}</td>
+                      <td>{user.username || '—'}</td>
                       <td>
-                        <span className="badge bg-light text-dark">
-                          {safeRoles(user.roles)}
-                        </span>
+                        <span className="badge bg-light text-dark">{safeRoles(user.roles)}</span>
                       </td>
                       <td>
                         <Dropdown
@@ -233,31 +228,26 @@ const UserList = () => {
                             <Menu>
                               <Menu.Item
                                 disabled={active}
-                                onClick={() =>
-                                  handleStatusChange(user.userId, "active")
-                                }
+                                onClick={() => handleStatusChange(user.userId, 'active')}
                               >
                                 Active
                               </Menu.Item>
                               <Menu.Item
                                 disabled={!active}
-                                onClick={() =>
-                                  handleStatusChange(user.userId, "inactive")
-                                }
+                                onClick={() => handleStatusChange(user.userId, 'inactive')}
                               >
                                 Inactive
                               </Menu.Item>
                             </Menu>
                           }
-                          trigger={["click"]}
+                          trigger={['click']}
                         >
                           <span
                             className={`badge ${
-                              active ? "bg-success" : "bg-danger"
+                              active ? 'bg-success' : 'bg-danger'
                             } text-white cursor-pointer`}
                           >
-                            {active ? "Active" : "Inactive"}{" "}
-                            <EditOutlined size={10} />
+                            {active ? 'Active' : 'Inactive'} <EditOutlined size={10} />
                           </span>
                         </Dropdown>
                       </td>
@@ -265,7 +255,7 @@ const UserList = () => {
                         <Tooltip title="Edit">
                           <EditOutlined
                             className="me-3 text-primary"
-                            style={{ cursor: "pointer", fontSize: 16 }}
+                            style={{ cursor: 'pointer', fontSize: 16 }}
                             onClick={() => handleEditUser(user)}
                           />
                         </Tooltip>
@@ -280,32 +270,24 @@ const UserList = () => {
                                 onClick={() =>
                                   reportUser(user.userId)
                                     .unwrap()
-                                    .then(() => message.success("Reported"))
+                                    .then(() => message.success('Reported'))
                                 }
                               >
                                 <ExclamationCircleOutlined /> Report
                               </Menu.Item>
                               {!user.isEmailVerified && (
-                                <Menu.Item
-                                  onClick={() => setResendUserId(user.userId)}
-                                >
+                                <Menu.Item onClick={() => setResendUserId(user.userId)}>
                                   <MailOutlined /> Resend Email
                                 </Menu.Item>
                               )}
-                              <Menu.Item
-                                danger
-                                onClick={() => handleDeleteUser(user.userId)}
-                              >
+                              <Menu.Item danger onClick={() => handleDeleteUser(user.userId)}>
                                 <DeleteOutlined /> Delete
                               </Menu.Item>
                             </Menu>
                           }
-                          trigger={["click"]}
+                          trigger={['click']}
                         >
-                          <Button
-                            type="text"
-                            icon={<MoreOutlined style={{ fontSize: 18 }} />}
-                          />
+                          <Button type="text" icon={<MoreOutlined style={{ fontSize: 18 }} />} />
                         </Dropdown>
                       </td>
                     </tr>

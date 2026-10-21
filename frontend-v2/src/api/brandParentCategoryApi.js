@@ -1,4 +1,4 @@
-import { baseApi } from "../store/baseApi";
+import { baseApi } from '../store/baseApi';
 
 export const brandParentCategoryApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
@@ -6,10 +6,10 @@ export const brandParentCategoryApi = baseApi.injectEndpoints({
     createBrandParentCategory: builder.mutation({
       query: ({ name, slug }) => ({
         url: `/brand-parent`,
-        method: "POST",
+        method: 'POST',
         body: { name, slug },
       }),
-      invalidatesTags: [{ type: "BPC", id: "LIST" }],
+      invalidatesTags: [{ type: 'BPC', id: 'LIST' }],
     }),
 
     // GET /brand-parent
@@ -17,29 +17,26 @@ export const brandParentCategoryApi = baseApi.injectEndpoints({
       query: () => `/brand-parent`,
       providesTags: (result) =>
         result
-          ? [
-              { type: "BPC", id: "LIST" },
-              ...result.map((bpc) => ({ type: "BPC", id: bpc.id })),
-            ]
-          : [{ type: "BPC", id: "LIST" }],
+          ? [{ type: 'BPC', id: 'LIST' }, ...result.map((bpc) => ({ type: 'BPC', id: bpc.id }))]
+          : [{ type: 'BPC', id: 'LIST' }],
     }),
 
     // GET /brand-parent/:id
     getBrandParentCategoryById: builder.query({
       query: (id) => `/brand-parent/${id}`,
-      providesTags: (result, error, id) => [{ type: "BPC", id }],
+      providesTags: (result, error, id) => [{ type: 'BPC', id }],
     }),
 
     // ✅ NEW: UPDATE Brand Parent Category
     updateBrandParentCategory: builder.mutation({
       query: ({ id, name, slug }) => ({
         url: `/brand-parent/${id}`,
-        method: "PUT",
+        method: 'PUT',
         body: { name, slug },
       }),
       invalidatesTags: (result, error, { id }) => [
-        { type: "BPC", id }, // Invalidate specific category
-        { type: "BPC", id: "LIST" }, // Invalidate the list
+        { type: 'BPC', id }, // Invalidate specific category
+        { type: 'BPC', id: 'LIST' }, // Invalidate the list
       ],
     }),
 
@@ -47,11 +44,11 @@ export const brandParentCategoryApi = baseApi.injectEndpoints({
     deleteBrandParentCategory: builder.mutation({
       query: (id) => ({
         url: `/brand-parent/${id}`,
-        method: "DELETE",
+        method: 'DELETE',
       }),
       invalidatesTags: (result, error, id) => [
-        { type: "BPC", id },
-        { type: "BPC", id: "LIST" },
+        { type: 'BPC', id },
+        { type: 'BPC', id: 'LIST' },
       ],
     }),
 
@@ -59,12 +56,12 @@ export const brandParentCategoryApi = baseApi.injectEndpoints({
     attachBrandsToBpc: builder.mutation({
       query: ({ id, brandIds }) => ({
         url: `/brand-parent/${id}/brands`,
-        method: "POST",
+        method: 'POST',
         body: { brandIds },
       }),
       invalidatesTags: (result, error, { id }) => [
-        { type: "BPC", id },
-        { type: "BPC_BRANDS", id },
+        { type: 'BPC', id },
+        { type: 'BPC_BRANDS', id },
       ],
     }),
 
@@ -72,11 +69,11 @@ export const brandParentCategoryApi = baseApi.injectEndpoints({
     detachBrandFromBpc: builder.mutation({
       query: ({ id, brandId }) => ({
         url: `/brand-parent/${id}/brands/${brandId}`,
-        method: "DELETE",
+        method: 'DELETE',
       }),
       invalidatesTags: (result, error, { id }) => [
-        { type: "BPC", id },
-        { type: "BPC_BRANDS", id },
+        { type: 'BPC', id },
+        { type: 'BPC_BRANDS', id },
       ],
     }),
 
@@ -84,8 +81,8 @@ export const brandParentCategoryApi = baseApi.injectEndpoints({
     getBpcTree: builder.query({
       query: (id) => `/brand-parent/${id}/tree`,
       providesTags: (result, error, id) => [
-        { type: "BPC_TREE", id },
-        { type: "BPC", id },
+        { type: 'BPC_TREE', id },
+        { type: 'BPC', id },
       ],
     }),
   }),

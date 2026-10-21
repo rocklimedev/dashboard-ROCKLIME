@@ -1,4 +1,4 @@
-const { Op } = require("sequelize");
+const { Op } = require('sequelize');
 
 module.exports = async function inventoryPagination({
   Product,
@@ -14,31 +14,31 @@ module.exports = async function inventoryPagination({
   const include = [
     {
       model: Keyword,
-      as: "keywords",
+      as: 'keywords',
       attributes: [],
       through: { attributes: [] },
-      include: [{ model: Category, as: "categories", attributes: [] }],
+      include: [{ model: Category, as: 'categories', attributes: [] }],
     },
   ];
   const forTab = (key) => {
     const quantity =
-      key === "in-stock"
+      key === 'in-stock'
         ? { [Op.gt]: 0 }
-        : key === "low-stock"
+        : key === 'low-stock'
           ? { [Op.gt]: 0, [Op.lte]: threshold }
-          : key === "out-of-stock"
+          : key === 'out-of-stock'
             ? 0
             : undefined;
     return quantity === undefined ? where : { [Op.and]: [where, { quantity }] };
   };
-  const keys = ["all", "in-stock", "low-stock", "out-of-stock"];
+  const keys = ['all', 'in-stock', 'low-stock', 'out-of-stock'];
   const totals = await Promise.all(
     keys.map((key) =>
       Product.count({
         where: forTab(key),
         include,
         distinct: true,
-        col: "productId",
+        col: 'productId',
       }),
     ),
   );
@@ -53,10 +53,10 @@ module.exports = async function inventoryPagination({
   if (!total) return { products: [], total, page: actualPage, counts };
   // Joining keywords creates several SQL rows per product. Group before LIMIT.
   const ids = await Product.findAll({
-    attributes: ["productId"],
+    attributes: ['productId'],
     where: forTab(tab),
     include,
-    group: ["Product.productId"],
+    group: ['Product.productId'],
     order,
     offset: (actualPage - 1) * limit,
     limit,
@@ -69,14 +69,14 @@ module.exports = async function inventoryPagination({
         include: [
           {
             model: Keyword,
-            as: "keywords",
-            attributes: ["id", "keyword"],
+            as: 'keywords',
+            attributes: ['id', 'keyword'],
             through: { attributes: [] },
             include: [
               {
                 model: Category,
-                as: "categories",
-                attributes: ["categoryId", "name", "slug"],
+                as: 'categories',
+                attributes: ['categoryId', 'name', 'slug'],
               },
             ],
           },

@@ -2,7 +2,7 @@
 
 module.exports = (sequelize, DataTypes) => {
   const OrderCreditNote = sequelize.define(
-    "OrderCreditNote",
+    'OrderCreditNote',
     {
       id: {
         type: DataTypes.UUID,
@@ -59,9 +59,9 @@ module.exports = (sequelize, DataTypes) => {
       },
 
       status: {
-        type: DataTypes.ENUM("DRAFT", "ISSUED", "RECEIVED", "CANCELED"),
+        type: DataTypes.ENUM('DRAFT', 'ISSUED', 'RECEIVED', 'CANCELED'),
         allowNull: false,
-        defaultValue: "ISSUED",
+        defaultValue: 'ISSUED',
       },
 
       createdBy: {
@@ -70,32 +70,32 @@ module.exports = (sequelize, DataTypes) => {
       },
     },
     {
-      tableName: "order_credit_notes",
+      tableName: 'order_credit_notes',
       timestamps: true,
       indexes: [
-        { fields: ["orderId"] },
-        { fields: ["orderNo"] },
-        { fields: ["creditNoteNumber"] },
-        { fields: ["status"] },
-        { fields: ["creditNoteDate"] },
+        { fields: ['orderId'] },
+        { fields: ['orderNo'] },
+        { fields: ['creditNoteNumber'] },
+        { fields: ['status'] },
+        { fields: ['creditNoteDate'] },
       ],
     },
   );
 
   OrderCreditNote.associate = (models) => {
     OrderCreditNote.belongsTo(models.Order, {
-      foreignKey: "orderId",
-      as: "order",
+      foreignKey: 'orderId',
+      as: 'order',
     });
 
     OrderCreditNote.belongsTo(models.User, {
-      foreignKey: "createdBy",
-      as: "creator",
+      foreignKey: 'createdBy',
+      as: 'creator',
     });
 
     OrderCreditNote.hasMany(models.OrderCreditNoteItem, {
-      foreignKey: "creditNoteId",
-      as: "items",
+      foreignKey: 'creditNoteId',
+      as: 'items',
     });
   };
 

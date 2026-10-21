@@ -1,14 +1,10 @@
 // src/components/purchase/PORow.jsx
-import React from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { Tag, Select, Button, Dropdown, Menu } from "antd";
-import {
-  EditOutlined,
-  DeleteOutlined,
-  MoreOutlined,
-} from "@ant-design/icons";
+import React from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Tag, Select, Button, Dropdown, Menu } from 'antd';
+import { EditOutlined, DeleteOutlined, MoreOutlined } from '@ant-design/icons';
 
-import PermissionGate from "../../context/PermissionGate";
+import PermissionGate from '../../context/PermissionGate';
 
 const PORow = ({
   po,
@@ -28,17 +24,14 @@ const PORow = ({
   const navigate = useNavigate();
 
   const createdByDisplay = po?.createdBy ? (
-    po.createdBy.name ||
-    po.createdBy.email ||
-    po.createdBy.username ||
-    "—"
+    po.createdBy.name || po.createdBy.email || po.createdBy.username || '—'
   ) : (
-    <span style={{ color: "#999", fontStyle: "italic" }}>-</span>
+    <span style={{ color: '#999', fontStyle: 'italic' }}>-</span>
   );
 
   const serial = (filters.page - 1) * filters.limit + idx + 1;
-  const vendorName = vendorMap[po.vendorId] || "—";
-  const status = po.status || "pending";
+  const vendorName = vendorMap[po.vendorId] || '—';
+  const status = po.status || 'pending';
 
   return (
     <tr key={po.id}>
@@ -50,7 +43,7 @@ const PORow = ({
           {po.fgsId && (
             <Tag
               color="#e31e24"
-              style={{ fontSize: "11px", cursor: "pointer" }}
+              style={{ fontSize: '11px', cursor: 'pointer' }}
               onClick={() => navigate(`/fgs/${po.fgsId}`)}
             >
               FGS
@@ -81,22 +74,22 @@ const PORow = ({
             <div
               className="d-flex align-items-center gap-2 pointer"
               onClick={() => setEditingPOStatusId(po.id)}
-              style={{ userSelect: "none" }}
+              style={{ userSelect: 'none' }}
             >
               <span
                 className={`priority-badge status-${status}`}
                 style={{
-                  padding: "4px 10px",
-                  borderRadius: "4px",
-                  fontSize: "13px",
+                  padding: '4px 10px',
+                  borderRadius: '4px',
+                  fontSize: '13px',
                   fontWeight: 500,
-                  backgroundColor: "#E6EAED",
-                  color: "#333333",
+                  backgroundColor: '#E6EAED',
+                  color: '#333333',
                 }}
               >
                 {status.charAt(0).toUpperCase() + status.slice(1)}
               </span>
-              <EditOutlined style={{ fontSize: "14px" }} />
+              <EditOutlined style={{ fontSize: '14px' }} />
             </div>
           )}
         </PermissionGate>
@@ -104,42 +97,33 @@ const PORow = ({
 
       <td>{vendorName}</td>
 
-      <td>
-        {po.totalAmount
-          ? `Rs. ${Number(po.totalAmount).toLocaleString("en-IN")}`
-          : "—"}
-      </td>
+      <td>{po.totalAmount ? `Rs. ${Number(po.totalAmount).toLocaleString('en-IN')}` : '—'}</td>
 
       <td>
         {po.orderDate
-          ? new Date(po.orderDate).toLocaleDateString("en-IN", {
-              day: "2-digit",
-              month: "short",
-              year: "numeric",
+          ? new Date(po.orderDate).toLocaleDateString('en-IN', {
+              day: '2-digit',
+              month: 'short',
+              year: 'numeric',
             })
-          : "—"}
+          : '—'}
       </td>
 
       <td>
         {po.expectDeliveryDate ? (
           <span
-            className={`due-date-link ${isDueDateClose(po.expectDeliveryDate) ? "due-date-close" : ""}`}
-            style={{ cursor: "pointer", textDecoration: "underline" }}
-            onClick={() =>
-              handleOpenDatesModal(
-                po.expectDeliveryDate,
-                po.followupDates || [],
-              )
-            }
+            className={`due-date-link ${isDueDateClose(po.expectDeliveryDate) ? 'due-date-close' : ''}`}
+            style={{ cursor: 'pointer', textDecoration: 'underline' }}
+            onClick={() => handleOpenDatesModal(po.expectDeliveryDate, po.followupDates || [])}
           >
-            {new Date(po.expectDeliveryDate).toLocaleDateString("en-IN", {
-              day: "2-digit",
-              month: "short",
-              year: "numeric",
+            {new Date(po.expectDeliveryDate).toLocaleDateString('en-IN', {
+              day: '2-digit',
+              month: 'short',
+              year: 'numeric',
             })}
           </span>
         ) : (
-          "—"
+          '—'
         )}
       </td>
 
@@ -149,7 +133,7 @@ const PORow = ({
         <div className="d-flex gap-2 align-items-center">
           <PermissionGate api="edit" module="purchase_orders">
             <EditOutlined
-              style={{ cursor: "pointer", fontSize: "16px" }}
+              style={{ cursor: 'pointer', fontSize: '16px' }}
               onClick={() => handleEditPO(po)}
             />
           </PermissionGate>
@@ -168,7 +152,7 @@ const PORow = ({
                   </Menu.Item>
                 </Menu>
               }
-              trigger={["click"]}
+              trigger={['click']}
               placement="bottomRight"
             >
               <Button type="text" icon={<MoreOutlined />} />

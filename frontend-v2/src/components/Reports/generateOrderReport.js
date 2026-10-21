@@ -1,5 +1,5 @@
-import { PDFDocument, StandardFonts } from "pdf-lib";
-import orderTemplate from "../../assets/pdf/order_report.pdf";
+import { PDFDocument, StandardFonts } from 'pdf-lib';
+import orderTemplate from '../../assets/pdf/order_report.pdf';
 const addTemplatePage = async (pdfDoc, templateBytes) => {
   const templateDoc = await PDFDocument.load(templateBytes);
   const [templatePage] = await pdfDoc.copyPages(templateDoc, [0]);
@@ -9,9 +9,7 @@ const addTemplatePage = async (pdfDoc, templateBytes) => {
 
 export const generateOrderReportPDF = async (orders, startDate, endDate) => {
   try {
-    const templateBytes = await fetch(orderTemplate).then((res) =>
-      res.arrayBuffer(),
-    );
+    const templateBytes = await fetch(orderTemplate).then((res) => res.arrayBuffer());
 
     const pdfDoc = await PDFDocument.create();
 
@@ -43,14 +41,12 @@ export const generateOrderReportPDF = async (orders, startDate, endDate) => {
       paginatedData[pageIndex].forEach((o, i) => {
         const serialNo = pageIndex * ROWS_PER_PAGE + i + 1;
 
-        const orderNo = o.orderNo || "-";
-        const date = o.createdAt
-          ? new Date(o.createdAt).toLocaleDateString("en-IN")
-          : "-";
+        const orderNo = o.orderNo || '-';
+        const date = o.createdAt ? new Date(o.createdAt).toLocaleDateString('en-IN') : '-';
 
-        const client = o.customer?.name || "Walk-in";
-        const amount = `Rs ${Number(o.finalAmount || 0).toLocaleString("en-IN")}`;
-        const status = (o.status || "-").toUpperCase();
+        const client = o.customer?.name || 'Walk-in';
+        const amount = `Rs ${Number(o.finalAmount || 0).toLocaleString('en-IN')}`;
+        const status = (o.status || '-').toUpperCase();
 
         page.drawText(String(serialNo), {
           x: COLS.sno,
@@ -77,16 +73,16 @@ export const generateOrderReportPDF = async (orders, startDate, endDate) => {
 
     const pdfBytes = await pdfDoc.save();
 
-    const blob = new Blob([pdfBytes], { type: "application/pdf" });
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
 
-    const link = document.createElement("a");
+    const link = document.createElement('a');
     link.href = url;
     link.download = `Order_Report_${Date.now()}.pdf`;
     link.click();
 
     URL.revokeObjectURL(url);
   } catch (err) {
-    console.error("Order Report Error:", err);
+    console.error('Order Report Error:', err);
   }
 };

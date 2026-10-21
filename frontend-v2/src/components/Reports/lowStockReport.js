@@ -1,5 +1,5 @@
-import { PDFDocument, StandardFonts } from "pdf-lib";
-import lowStockTemplate from "../../assets/pdf/low_stock_report.pdf";
+import { PDFDocument, StandardFonts } from 'pdf-lib';
+import lowStockTemplate from '../../assets/pdf/low_stock_report.pdf';
 
 const addTemplatePage = async (pdfDoc, templateBytes) => {
   const templateDoc = await PDFDocument.load(templateBytes);
@@ -10,20 +10,20 @@ const addTemplatePage = async (pdfDoc, templateBytes) => {
 
 // 🔥 SAFE TEXT CLEANER
 const sanitizePDFText = (text) => {
-  if (text === null || text === undefined) return "-";
+  if (text === null || text === undefined) return '-';
   return String(text)
-    .replace(/[\u0000-\u001F\u007F]/g, "")
-    .replace(/\s+/g, " ")
+    .replace(/[\u0000-\u001F\u007F]/g, '')
+    .replace(/\s+/g, ' ')
     .trim();
 };
 
 // 🔥 BASIC WRAP TEXT
 const wrapText = (text, maxWidth, font, fontSize) => {
-  if (!text || text === "-") return ["-"];
+  if (!text || text === '-') return ['-'];
 
-  const words = String(text).split(" ");
+  const words = String(text).split(' ');
   const lines = [];
-  let currentLine = "";
+  let currentLine = '';
 
   for (const word of words) {
     const testLine = currentLine ? `${currentLine} ${word}` : word;
@@ -43,11 +43,11 @@ const wrapText = (text, maxWidth, font, fontSize) => {
 
 // 🔥 WRAP TEXT WITH LINE LIMIT + ELLIPSIS (Best Version)
 const wrapTextWithLimit = (text, maxWidth, font, fontSize, maxLines = 2) => {
-  if (!text || text === "-") return ["-"];
+  if (!text || text === '-') return ['-'];
 
-  const words = String(text).split(" ");
+  const words = String(text).split(' ');
   const lines = [];
-  let currentLine = "";
+  let currentLine = '';
 
   for (const word of words) {
     const testLine = currentLine ? `${currentLine} ${word}` : word;
@@ -70,12 +70,9 @@ const wrapTextWithLimit = (text, maxWidth, font, fontSize, maxLines = 2) => {
   // Add ellipsis to last line if needed
   if (lines.length === maxLines) {
     let last = lines[maxLines - 1];
-    const ellipsis = "...";
+    const ellipsis = '...';
 
-    while (
-      font.widthOfTextAtSize(last + ellipsis, fontSize) > maxWidth &&
-      last.length > 3
-    ) {
+    while (font.widthOfTextAtSize(last + ellipsis, fontSize) > maxWidth && last.length > 3) {
       last = last.slice(0, -1);
     }
     lines[maxLines - 1] = last.trimEnd() + ellipsis;
@@ -85,14 +82,12 @@ const wrapTextWithLimit = (text, maxWidth, font, fontSize, maxLines = 2) => {
 };
 export const generateLowStockReportPDF = async (products) => {
   try {
-    const templateBytes = await fetch(lowStockTemplate).then((res) =>
-      res.arrayBuffer(),
-    );
+    const templateBytes = await fetch(lowStockTemplate).then((res) => res.arrayBuffer());
 
     const pdfDoc = await PDFDocument.create();
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-    const generatedOn = new Date().toLocaleString("en-IN");
+    const generatedOn = new Date().toLocaleString('en-IN');
 
     const LOW_STOCK_THRESHOLD = 20;
     const ROWS_PER_PAGE = 20;
@@ -100,9 +95,7 @@ export const generateLowStockReportPDF = async (products) => {
     const ROW_HEIGHT = 33;
     const LINE_SPACING = 11;
 
-    const lowStock = (products || []).filter(
-      (p) => (p.quantity ?? 0) <= LOW_STOCK_THRESHOLD,
-    );
+    const lowStock = (products || []).filter((p) => (p.quantity ?? 0) <= LOW_STOCK_THRESHOLD);
 
     const pages = [];
     for (let i = 0; i < lowStock.length; i += ROWS_PER_PAGE) {
@@ -140,21 +133,15 @@ export const generateLowStockReportPDF = async (products) => {
 
         const name = sanitizePDFText(item.name);
         const companyCode = sanitizePDFText(
-          item.metaDetails?.find((m) => m.slug === "companyCode")?.value,
+          item.metaDetails?.find((m) => m.slug === 'companyCode')?.value,
         );
         const sellingPrice = sanitizePDFText(
-          item.metaDetails?.find((m) => m.slug === "sellingPrice")?.value,
+          item.metaDetails?.find((m) => m.slug === 'sellingPrice')?.value,
         );
         const stock = item.quantity ?? 0;
 
         // Wrap both name and companyCode
-        const nameLines = wrapTextWithLimit(
-          name,
-          WRAP_WIDTH.name,
-          font,
-          FONT_SIZE,
-          2,
-        );
+        const nameLines = wrapTextWithLimit(name, WRAP_WIDTH.name, font, FONT_SIZE, 2);
 
         const companyCodeLines = wrapTextWithLimit(
           companyCode,
@@ -219,16 +206,16 @@ export const generateLowStockReportPDF = async (products) => {
     }
 
     const pdfBytes = await pdfDoc.save();
-    const blob = new Blob([pdfBytes], { type: "application/pdf" });
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
 
-    const link = document.createElement("a");
+    const link = document.createElement('a');
     link.href = url;
     link.download = `Low_Stock_Report_${Date.now()}.pdf`;
     link.click();
 
     URL.revokeObjectURL(url);
   } catch (err) {
-    console.error("Low Stock Report Error:", err);
+    console.error('Low Stock Report Error:', err);
   }
 };

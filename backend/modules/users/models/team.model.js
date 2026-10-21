@@ -1,8 +1,8 @@
-const { v4: uuidv4 } = require("uuid");
+const { v4: uuidv4 } = require('uuid');
 
 module.exports = (sequelize, DataTypes) => {
   const Team = sequelize.define(
-    "Team",
+    'Team',
     {
       id: {
         type: DataTypes.UUID,
@@ -26,9 +26,9 @@ module.exports = (sequelize, DataTypes) => {
       },
     },
     {
-      tableName: "teams",
+      tableName: 'teams',
       timestamps: true,
-    }
+    },
   );
 
   // ---------------------------------------
@@ -37,16 +37,16 @@ module.exports = (sequelize, DataTypes) => {
   Team.associate = (models) => {
     // Team ↔ Orders (1:M)
     Team.hasMany(models.Order, {
-      foreignKey: "assignedTeamId",
-      as: "teamOrders",
+      foreignKey: 'assignedTeamId',
+      as: 'teamOrders',
     });
 
     // Team ↔ Users (M:N through TeamMember)
     Team.belongsToMany(models.User, {
       through: models.TeamMember,
-      foreignKey: "teamId",
-      otherKey: "userId",
-      as: "members",
+      foreignKey: 'teamId',
+      otherKey: 'userId',
+      as: 'members',
     });
   };
 

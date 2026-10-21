@@ -1,5 +1,5 @@
-const jwt = require("jsonwebtoken");
-const { secret, tokenLife } = require("../config/keys").jwt;
+const jwt = require('jsonwebtoken');
+const { secret, tokenLife } = require('../config/keys').jwt;
 
 // ---------------------------------------------------------------------------
 // The token proves who the caller is; the database decides whether they may
@@ -12,9 +12,9 @@ const userCache = new Map();
 
 const toRoleArray = (roles) => {
   if (Array.isArray(roles)) return roles.filter(Boolean);
-  if (typeof roles === "string")
+  if (typeof roles === 'string')
     return roles
-      .split(",")
+      .split(',')
       .map((r) => r.trim())
       .filter(Boolean);
   return [];
@@ -25,9 +25,9 @@ async function loadUser(userId) {
   if (hit && Date.now() - hit.at < USER_CACHE_MS) return hit.user;
 
   // Required lazily so this file can be loaded before the models are ready.
-  const { User } = require("../models");
+  const { User } = require('../models');
   const row = await User.findByPk(userId, {
-    attributes: ["userId", "username", "name", "email", "roles", "roleId", "status"],
+    attributes: ['userId', 'username', 'name', 'email', 'roles', 'roleId', 'status'],
   });
   const user = row
     ? {
@@ -50,30 +50,30 @@ const invalidateUserCache = (userId) => {
 };
 
 const auth = async (req, res, next) => {
-  const authHeader = req.headers["authorization"];
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "Authorization header is missing." });
+  const authHeader = req.headers['authorization'];
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Authorization header is missing.' });
   }
 
   let decoded;
   try {
-    decoded = jwt.verify(authHeader.split(" ")[1], secret);
+    decoded = jwt.verify(authHeader.split(' ')[1], secret);
   } catch (error) {
-    return res.status(401).json({ error: "Invalid or expired token." });
+    return res.status(401).json({ error: 'Invalid or expired token.' });
   }
 
   try {
     const user = decoded.userId ? await loadUser(decoded.userId) : null;
     if (!user) {
-      return res.status(401).json({ error: "User no longer exists." });
+      return res.status(401).json({ error: 'User no longer exists.' });
     }
-    if (user.status !== "active") {
+    if (user.status !== 'active') {
       return res
         .status(403)
-        .json({ error: "Your account is not active. Contact an administrator." });
+        .json({ error: 'Your account is not active. Contact an administrator.' });
     }
     if (!user.roles.length) {
-      return res.status(403).json({ error: "Unauthorized: Missing roles." });
+      return res.status(403).json({ error: 'Unauthorized: Missing roles.' });
     }
     // Fresh values from the database win over whatever the token carried.
     req.user = { ...decoded, ...user };
@@ -84,14 +84,14 @@ const auth = async (req, res, next) => {
 };
 
 const isAdmin = (user) =>
-  toRoleArray(user?.roles).some((r) => ["SUPER_ADMIN", "ADMIN"].includes(r));
+  toRoleArray(user?.roles).some((r) => ['SUPER_ADMIN', 'ADMIN'].includes(r));
 
 const generateToken = (user) =>
   jwt.sign(
     {
       userId: user.userId,
       email: user.email,
-      roles: toRoleArray(user.roles).length ? toRoleArray(user.roles) : ["USERS"],
+      roles: toRoleArray(user.roles).length ? toRoleArray(user.roles) : ['USERS'],
       roleId: user.roleId,
     },
     secret,

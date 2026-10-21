@@ -1,9 +1,9 @@
 // models/BrandParentCategory.js
-const { v4: uuidv4 } = require("uuid");
+const { v4: uuidv4 } = require('uuid');
 
 module.exports = (sequelize, DataTypes) => {
   const BrandParentCategory = sequelize.define(
-    "BrandParentCategory",
+    'BrandParentCategory',
     {
       id: {
         type: DataTypes.UUID,
@@ -24,7 +24,7 @@ module.exports = (sequelize, DataTypes) => {
       },
     },
     {
-      tableName: "brand_parentcategories",
+      tableName: 'brand_parentcategories',
       timestamps: true,
     },
   );
@@ -36,15 +36,15 @@ module.exports = (sequelize, DataTypes) => {
     // BrandParentCategory ↔ Brand (M:N)
     BrandParentCategory.belongsToMany(models.Brand, {
       through: models.BrandParentCategoryBrand,
-      foreignKey: "brandParentCategoryId",
-      otherKey: "brandId",
-      as: "brands",
+      foreignKey: 'brandParentCategoryId',
+      otherKey: 'brandId',
+      as: 'brands',
     });
 
     // BrandParentCategory → ParentCategory (1:N)
     BrandParentCategory.hasMany(models.ParentCategory, {
-      foreignKey: "brandParentCategoryId",
-      as: "parentCategories",
+      foreignKey: 'brandParentCategoryId',
+      as: 'parentCategories',
     });
   };
 

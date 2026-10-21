@@ -1,19 +1,16 @@
-const fs = require("fs");
-const path = require("path");
-const excelToJson = require("convert-excel-to-json");
+const fs = require('fs');
+const path = require('path');
+const excelToJson = require('convert-excel-to-json');
 
 // === CONFIG ===
 
-const inputFilePath = path.join(
-  __dirname,
-  "./data/colston_price_list_oct2026_2.xlsx",
-);
-const outputFolder = path.join(__dirname, "json-outputs");
-const outputFile = path.join(outputFolder, "all_sheets_data2.json");
+const inputFilePath = path.join(__dirname, './data/colston_price_list_oct2026_2.xlsx');
+const outputFolder = path.join(__dirname, 'json-outputs');
+const outputFile = path.join(outputFolder, 'all_sheets_data2.json');
 
 // === VALIDATE INPUT ===
 if (!fs.existsSync(inputFilePath)) {
-  console.error("Excel file not found at:", inputFilePath);
+  console.error('Excel file not found at:', inputFilePath);
   process.exit(1);
 }
 
@@ -35,21 +32,18 @@ Object.keys(result).forEach((sheetName) => {
 
   // Remove empty rows (rows where all values are empty)
   const cleanedData = rows.filter((row) =>
-    Object.values(row).some((v) => v && String(v).trim() !== ""),
+    Object.values(row).some((v) => v && String(v).trim() !== ''),
   );
 
   finalOutput[sheetName] = cleanedData;
 
   console.log(`Processed ${cleanedData.length} rows from sheet: ${sheetName}`);
-  console.log(
-    `Columns found in ${sheetName}:`,
-    Object.keys(cleanedData[0] || {}),
-  );
+  console.log(`Columns found in ${sheetName}:`, Object.keys(cleanedData[0] || {}));
 });
 
 // === WRITE JSON ===
-fs.writeFileSync(outputFile, JSON.stringify(finalOutput, null, 2), "utf-8");
+fs.writeFileSync(outputFile, JSON.stringify(finalOutput, null, 2), 'utf-8');
 
-console.log("✅ All sheets processed successfully!");
-console.log("📁 Saved to:", outputFile);
-console.log("📊 Total sheets processed:", Object.keys(finalOutput).length);
+console.log('✅ All sheets processed successfully!');
+console.log('📁 Saved to:', outputFile);
+console.log('📊 Total sheets processed:', Object.keys(finalOutput).length);

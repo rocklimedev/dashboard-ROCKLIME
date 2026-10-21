@@ -1,6 +1,6 @@
 module.exports = (sequelize, DataTypes) => {
   const Role = sequelize.define(
-    "Role",
+    'Role',
     {
       roleId: {
         type: DataTypes.UUID,
@@ -14,9 +14,9 @@ module.exports = (sequelize, DataTypes) => {
       },
     },
     {
-      tableName: "roles",
+      tableName: 'roles',
       timestamps: true,
-    }
+    },
   );
 
   // ---------------------------------------
@@ -26,20 +26,20 @@ module.exports = (sequelize, DataTypes) => {
     // Role ↔ Permission (M:N through RolePermission)
     Role.belongsToMany(models.Permission, {
       through: models.RolePermission,
-      foreignKey: "roleId",
-      otherKey: "permissionId",
-      as: "permissions",
+      foreignKey: 'roleId',
+      otherKey: 'permissionId',
+      as: 'permissions',
     });
 
     Role.hasMany(models.RolePermission, {
-      foreignKey: "roleId",
-      as: "rolepermissions",
+      foreignKey: 'roleId',
+      as: 'rolepermissions',
     });
 
     // Role ↔ User (1:M)
     Role.hasMany(models.User, {
-      foreignKey: "roleId",
-      as: "users",
+      foreignKey: 'roleId',
+      as: 'users',
     });
   };
 

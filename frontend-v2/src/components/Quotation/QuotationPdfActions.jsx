@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 import {
   Button,
   Checkbox,
@@ -10,28 +10,28 @@ import {
   Tooltip,
   Typography,
   message,
-} from "antd";
+} from 'antd';
 import {
   DownloadOutlined,
   EyeOutlined,
   ShareAltOutlined,
   WhatsAppOutlined,
   CopyOutlined,
-} from "@ant-design/icons";
-import { useDispatch } from "react-redux";
-import { API_URL } from "../../store/config";
-import { fetchPdf, token } from "./quotationPdf";
-import { baseApi } from "../../store/baseApi";
+} from '@ant-design/icons';
+import { useDispatch } from 'react-redux';
+import { API_URL } from '../../store/config';
+import { fetchPdf, token } from './quotationPdf';
+import { baseApi } from '../../store/baseApi';
 
 const { Text } = Typography;
 
 const STYLES = [
-  { value: "detailed", label: "With photos" },
-  { value: "compact", label: "Compact" },
+  { value: 'detailed', label: 'With photos' },
+  { value: 'compact', label: 'Compact' },
 ];
 const STYLE_HELP = {
-  detailed: "Room by room with product photos, MRP, discount and rate.",
-  compact: "Room by room with product codes instead of photos — smaller file.",
+  detailed: 'Room by room with product photos, MRP, discount and rate.',
+  compact: 'Room by room with product codes instead of photos — smaller file.',
 };
 
 /**
@@ -41,7 +41,7 @@ const STYLE_HELP = {
 export default function QuotationPdfActions({
   quotationId,
   resourcePath = null,
-  documentLabel = "Quotation",
+  documentLabel = 'Quotation',
   allowShare = true,
   showCoverOption = true,
   version = null,
@@ -55,7 +55,7 @@ export default function QuotationPdfActions({
   pageOrder,
 }) {
   const dispatch = useDispatch();
-  const [styleState, setStyleState] = useState("detailed");
+  const [styleState, setStyleState] = useState('detailed');
   const [coverState, setCoverState] = useState(true);
   const style = styleProp ?? styleState;
   const cover = coverProp ?? coverState;
@@ -75,12 +75,20 @@ export default function QuotationPdfActions({
   const run = async (kind) => {
     setBusy(kind);
     try {
-      const { blob, name } = await fetchPdf(quotationId, { style, cover, version, exportOptions, pageOrder, resourcePath, documentLabel });
+      const { blob, name } = await fetchPdf(quotationId, {
+        style,
+        cover,
+        version,
+        exportOptions,
+        pageOrder,
+        resourcePath,
+        documentLabel,
+      });
       const url = URL.createObjectURL(blob);
-      if (kind === "preview") {
+      if (kind === 'preview') {
         setPreview({ url, name });
       } else {
-        const a = document.createElement("a");
+        const a = document.createElement('a');
         a.href = url;
         a.download = name;
         document.body.appendChild(a);
@@ -96,18 +104,21 @@ export default function QuotationPdfActions({
   };
 
   const makeLink = async () => {
-    setBusy("share");
+    setBusy('share');
     try {
       const r = await fetch(`${API_URL}${resourcePath || `/quotation/${quotationId}`}/share`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token()}`, "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token()}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ style, cover }),
       });
       const data = await r.json();
-      if (!r.ok) throw new Error(data.message || "Could not create a link");
+      if (!r.ok) throw new Error(data.message || 'Could not create a link');
       setShare(data);
       // Sharing moves a Draft quotation to Sent
-      if (!resourcePath) dispatch(baseApi.util.invalidateTags(["Quotations", { type: "Quotations", id: quotationId }]));
+      if (!resourcePath)
+        dispatch(
+          baseApi.util.invalidateTags(['Quotations', { type: 'Quotations', id: quotationId }]),
+        );
     } catch (e) {
       message.error(e.message);
     } finally {
@@ -118,9 +129,9 @@ export default function QuotationPdfActions({
   const copy = async (textToCopy) => {
     try {
       await navigator.clipboard.writeText(textToCopy);
-      message.success("Copied");
+      message.success('Copied');
     } catch {
-      message.info("Select the text and copy it");
+      message.info('Select the text and copy it');
     }
   };
 
@@ -130,20 +141,43 @@ export default function QuotationPdfActions({
         <Tooltip title={STYLE_HELP[style]}>
           <Segmented size="middle" value={style} onChange={setStyle} options={STYLES} />
         </Tooltip>
-        {showCoverOption && <Checkbox checked={cover} onChange={(e) => setCover(e.target.checked)}>
-          Cover page
-        </Checkbox>}
+        {showCoverOption && (
+          <Checkbox checked={cover} onChange={(e) => setCover(e.target.checked)}>
+            Cover page
+          </Checkbox>
+        )}
         {showPreview && (
-          <Button icon={<EyeOutlined />} loading={busy === "preview"} onClick={() => run("preview")}>
+          <Button
+            icon={<EyeOutlined />}
+            loading={busy === 'preview'}
+            onClick={() => run('preview')}
+          >
             Preview
           </Button>
         )}
-        <Button type="primary" icon={<DownloadOutlined />} loading={busy === "download"} onClick={() => run("download")}>
+        <Button
+          type="primary"
+          icon={<DownloadOutlined />}
+          loading={busy === 'download'}
+          onClick={() => run('download')}
+        >
           PDF
         </Button>
-        {allowShare && <Button disabled={!!pageOrder || !!exportOptions?.hidden?.length} title={pageOrder || exportOptions?.hidden?.length ? `Reset export options to share the standard ${documentLabel.toLowerCase()} link` : undefined} icon={<ShareAltOutlined />} loading={busy === "share"} onClick={makeLink}>
-          Share
-        </Button>}
+        {allowShare && (
+          <Button
+            disabled={!!pageOrder || !!exportOptions?.hidden?.length}
+            title={
+              pageOrder || exportOptions?.hidden?.length
+                ? `Reset export options to share the standard ${documentLabel.toLowerCase()} link`
+                : undefined
+            }
+            icon={<ShareAltOutlined />}
+            loading={busy === 'share'}
+            onClick={makeLink}
+          >
+            Share
+          </Button>
+        )}
       </Space>
 
       <Modal
@@ -156,14 +190,24 @@ export default function QuotationPdfActions({
           <Button key="close" onClick={() => setPreview(null)}>
             Close
           </Button>,
-          <Button key="dl" type="primary" icon={<DownloadOutlined />} href={preview?.url} download={preview?.name}>
+          <Button
+            key="dl"
+            type="primary"
+            icon={<DownloadOutlined />}
+            href={preview?.url}
+            download={preview?.name}
+          >
             Download
           </Button>,
         ]}
         styles={{ body: { padding: 0 } }}
       >
         {preview ? (
-          <iframe title={`${documentLabel} PDF`} src={preview.url} style={{ width: "100%", height: "78vh", border: 0 }} />
+          <iframe
+            title={`${documentLabel} PDF`}
+            src={preview.url}
+            style={{ width: '100%', height: '78vh', border: 0 }}
+          />
         ) : (
           <Spin />
         )}
@@ -177,12 +221,13 @@ export default function QuotationPdfActions({
         footer={null}
       >
         {share && (
-          <Space direction="vertical" style={{ width: "100%" }} size={12}>
+          <Space direction="vertical" style={{ width: '100%' }} size={12}>
             <Text type="secondary">
-              Anyone with this link can open the {STYLES.find((s) => s.value === style)?.label.toLowerCase()} PDF
-              for {share.expiresInDays} days — no login needed.
+              Anyone with this link can open the{' '}
+              {STYLES.find((s) => s.value === style)?.label.toLowerCase()} PDF for{' '}
+              {share.expiresInDays} days — no login needed.
             </Text>
-            <Space.Compact style={{ width: "100%" }}>
+            <Space.Compact style={{ width: '100%' }}>
               <Input value={share.url} readOnly />
               <Button icon={<CopyOutlined />} onClick={() => copy(share.url)} />
             </Space.Compact>
@@ -194,7 +239,7 @@ export default function QuotationPdfActions({
                 href={share.whatsapp}
                 target="_blank"
                 rel="noreferrer"
-                style={{ background: "#25D366", borderColor: "#25D366" }}
+                style={{ background: '#25D366', borderColor: '#25D366' }}
               >
                 Send on WhatsApp
               </Button>

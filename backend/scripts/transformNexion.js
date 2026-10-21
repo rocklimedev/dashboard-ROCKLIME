@@ -1,10 +1,9 @@
 // transform-products.js
 
-const fs = require("fs");
+const fs = require('fs');
 
 // UUID regex (strict enough)
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-9][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-9][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 /**
  * Transform a single product
@@ -40,12 +39,12 @@ function transformProducts(data) {
 // === USAGE ===
 
 // Load input JSON
-const input = require("./newProducts.json");
+const input = require('./newProducts.json');
 
 // Transform
 const output = transformProducts(input);
 
 // Save output
-fs.writeFileSync("./output.json", JSON.stringify(output, null, 2), "utf-8");
+fs.writeFileSync('./output.json', JSON.stringify(output, null, 2), 'utf-8');
 
-console.log("✅ Transformation complete");
+console.log('✅ Transformation complete');

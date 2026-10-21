@@ -1,9 +1,9 @@
 // models/permission.js
-const { v4: uuidv4 } = require("uuid");
+const { v4: uuidv4 } = require('uuid');
 
 module.exports = (sequelize, DataTypes) => {
   const Permission = sequelize.define(
-    "Permission",
+    'Permission',
     {
       permissionId: {
         type: DataTypes.UUID,
@@ -11,18 +11,18 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: DataTypes.UUIDV4, // Sequelize's built-in UUIDV4
       },
       api: {
-        type: DataTypes.ENUM("view", "delete", "write", "edit", "export"),
+        type: DataTypes.ENUM('view', 'delete', 'write', 'edit', 'export'),
         allowNull: false,
       },
       name: {
         type: DataTypes.STRING(255),
         allowNull: false,
-        comment: "Human-readable name for the permission",
+        comment: 'Human-readable name for the permission',
       },
       route: {
         type: DataTypes.STRING(500),
         allowNull: false,
-        comment: "Actual route path like /user/create or /orders/export",
+        comment: 'Actual route path like /user/create or /orders/export',
       },
       module: {
         type: DataTypes.STRING(255),
@@ -30,9 +30,9 @@ module.exports = (sequelize, DataTypes) => {
       },
     },
     {
-      tableName: "permissions",
+      tableName: 'permissions',
       timestamps: true,
-    }
+    },
   );
 
   // -------------------------------
@@ -41,15 +41,15 @@ module.exports = (sequelize, DataTypes) => {
   Permission.associate = (models) => {
     // Fixed: Use correct alias for the reverse relationship
     Permission.hasMany(models.RolePermission, {
-      foreignKey: "permissionId",
-      as: "rolepermission_links", // ← any unique name, NOT "rolepermissions"
+      foreignKey: 'permissionId',
+      as: 'rolepermission_links', // ← any unique name, NOT "rolepermissions"
     });
 
     Permission.belongsToMany(models.Role, {
       through: models.RolePermission,
-      foreignKey: "permissionId",
-      otherKey: "roleId",
-      as: "roles",
+      foreignKey: 'permissionId',
+      otherKey: 'roleId',
+      as: 'roles',
     });
   };
 

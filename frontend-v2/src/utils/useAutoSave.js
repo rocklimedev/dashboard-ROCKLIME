@@ -1,6 +1,6 @@
 // src/utils/useAutoSave.js
-import { useEffect, useRef, useCallback } from "react";
-import { message } from "antd";
+import { useEffect, useRef, useCallback } from 'react';
+import { message } from 'antd';
 
 const useAutoSave = (key, data, delay = 3000, enabled = true) => {
   const timeoutRef = useRef(null);
@@ -20,7 +20,7 @@ const useAutoSave = (key, data, delay = 3000, enabled = true) => {
       // Optional: show subtle message (can be turned off in production)
       // message.success('Draft saved', 1);
     } catch (err) {
-      console.warn("AutoSave failed:", err);
+      console.warn('AutoSave failed:', err);
     }
   }, [key, data, enabled]);
 

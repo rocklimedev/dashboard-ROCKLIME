@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from "react";
-import { Card, Empty, Select, Spin, Tag } from "antd";
+import React, { useMemo, useState } from 'react';
+import { Card, Empty, Select, Spin, Tag } from 'antd';
 import {
   Area,
   AreaChart,
@@ -16,70 +16,61 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-} from "recharts";
-import {
-  useGetProductCountQuery,
-  useGetLowStockProductsQuery,
-} from "../../api/productApi";
-import { useGetDashboardSummaryQuery } from "../../api/dashboardApi";
-import { useAuth } from "../../context/AuthContext";
-import { FaShoppingBag } from "react-icons/fa";
-import { HiDocumentText } from "react-icons/hi";
-import { MdWarningAmber } from "react-icons/md";
-import "./pagewrapper.css";
+} from 'recharts';
+import { useGetProductCountQuery, useGetLowStockProductsQuery } from '../../api/productApi';
+import { useGetDashboardSummaryQuery } from '../../api/dashboardApi';
+import { useAuth } from '../../context/AuthContext';
+import { FaShoppingBag } from 'react-icons/fa';
+import { HiDocumentText } from 'react-icons/hi';
+import { MdWarningAmber } from 'react-icons/md';
+import './pagewrapper.css';
 
-const BRAND_RED = "#e31e24";
-const TEXT_DARK = "#303030";
-const SOFT_GREY = "#f6f6f6";
+const BRAND_RED = '#e31e24';
+const TEXT_DARK = '#303030';
+const SOFT_GREY = '#f6f6f6';
 
 const CHART_COLORS = [
-  "#e31e24",
-  "#303030",
-  "#777777",
-  "#a8a8a8",
-  "#d8d8d8",
-  "#111111",
-  "#c2410c",
-  "#57534e",
-  "#9ca3af",
+  '#e31e24',
+  '#303030',
+  '#777777',
+  '#a8a8a8',
+  '#d8d8d8',
+  '#111111',
+  '#c2410c',
+  '#57534e',
+  '#9ca3af',
 ];
 
 const DATE_RANGE_OPTIONS = [
-  { value: 7, label: "Last 7 days" },
-  { value: 30, label: "Last 30 days" },
-  { value: 90, label: "Last 90 days" },
+  { value: 7, label: 'Last 7 days' },
+  { value: 30, label: 'Last 30 days' },
+  { value: 90, label: 'Last 90 days' },
 ];
 
 const formatDate = (date) =>
-  new Date(date).toLocaleDateString("en-IN", {
-    day: "2-digit",
-    month: "short",
+  new Date(date).toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
   });
 
 const formatFullDate = (date) =>
-  new Date(date).toLocaleDateString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
+  new Date(date).toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
   });
 
 const formatCurrency = (value) =>
-  `₹${Number(value || 0).toLocaleString("en-IN", {
+  `₹${Number(value || 0).toLocaleString('en-IN', {
     maximumFractionDigits: 0,
   })}`;
 
 const getDateKey = (date) => new Date(date).toISOString().slice(0, 10);
 
-const normaliseStatus = (status = "UNKNOWN") => status.split("_").join(" ");
+const normaliseStatus = (status = 'UNKNOWN') => status.split('_').join(' ');
 
 const getAmount = (record) =>
-  Number(
-    record?.finalAmount ||
-      record?.grandTotal ||
-      record?.totalAmount ||
-      record?.amount ||
-      0,
-  );
+  Number(record?.finalAmount || record?.grandTotal || record?.totalAmount || record?.amount || 0);
 
 const buildDateBuckets = (days) => {
   const buckets = [];
@@ -106,7 +97,7 @@ const NewDashboard = () => {
   const [range, setRange] = useState(30);
   const { auth } = useAuth();
 
-  const role = (auth?.user?.role || auth?.role || auth?.user?.userType || "")
+  const role = (auth?.user?.role || auth?.role || auth?.user?.userType || '')
     .toString()
     .toUpperCase();
 
@@ -124,7 +115,7 @@ const NewDashboard = () => {
     { pollingInterval: 60000 },
   );
 
-  const getCustomerName = () => "Unknown";
+  const getCustomerName = () => 'Unknown';
 
   const reportSummary = {
     totalOrders: summary?.orders?.count ?? 0,
@@ -143,7 +134,7 @@ const NewDashboard = () => {
   }));
 
   const statusData = (summary?.statusBreakdown || []).map((r) => ({
-    status: normaliseStatus(r.status || "UNKNOWN"),
+    status: normaliseStatus(r.status || 'UNKNOWN'),
     count: r.count,
   }));
 
@@ -201,16 +192,10 @@ const NewDashboard = () => {
                     latestOrders.map((order) => (
                       <div className="report-list-item" key={order.id}>
                         <div>
-                          <a
-                            href={`/order/${order.id}`}
-                            className="report-link"
-                          >
+                          <a href={`/order/${order.id}`} className="report-link">
                             #{order.orderNo || order.id}
                           </a>
-                          <p>
-                            {order.customer?.name ||
-                              getCustomerName(order.customerId)}
-                          </p>
+                          <p>{order.customer?.name || getCustomerName(order.customerId)}</p>
                         </div>
                         <div className="report-list-right">
                           <Tag color="red">{normaliseStatus(order.status)}</Tag>
@@ -226,26 +211,15 @@ const NewDashboard = () => {
                 <ReportListCard title="Latest Quotations">
                   {latestQuotations.length ? (
                     latestQuotations.map((quotation) => (
-                      <div
-                        className="report-list-item"
-                        key={quotation.quotationId}
-                      >
+                      <div className="report-list-item" key={quotation.quotationId}>
                         <div>
-                          <a
-                            href={`/quotation/${quotation.quotationId}`}
-                            className="report-link"
-                          >
-                            {quotation.reference_number || "Quotation"}
+                          <a href={`/quotation/${quotation.quotationId}`} className="report-link">
+                            {quotation.reference_number || 'Quotation'}
                           </a>
-                          <p>
-                            {quotation.customer?.name ||
-                              getCustomerName(quotation.customerId)}
-                          </p>
+                          <p>{quotation.customer?.name || getCustomerName(quotation.customerId)}</p>
                         </div>
                         <div className="report-list-right">
-                          <strong>
-                            {formatCurrency(getAmount(quotation))}
-                          </strong>
+                          <strong>{formatCurrency(getAmount(quotation))}</strong>
                           <span>{formatFullDate(quotation.createdAt)}</span>
                         </div>
                       </div>
@@ -318,7 +292,7 @@ function ReportMetricCard({ title, value, helper, icon }) {
 }
 function ReportChartCard({ title, description, extra, children, className }) {
   return (
-    <Card className={`report-chart-card ${className || ""}`} bordered={false}>
+    <Card className={`report-chart-card ${className || ''}`} bordered={false}>
       <div className="report-card-heading">
         <div>
           <h2>{title}</h2>

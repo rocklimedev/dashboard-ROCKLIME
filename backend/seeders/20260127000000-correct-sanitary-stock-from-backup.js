@@ -1,24 +1,22 @@
-"use strict";
+'use strict';
 
-const { v7: uuidv7 } = require("uuid");
+const { v7: uuidv7 } = require('uuid');
 
-const updateData = require("./db-ready-payload.json");
+const updateData = require('./db-ready-payload.json');
 module.exports = {
   up: async (queryInterface, Sequelize) => {
     const transaction = await queryInterface.sequelize.transaction();
 
     try {
-      console.log(
-        "Starting stock correction migration (2025-01-19 sanitary backup adjustment)",
-      );
+      console.log('Starting stock correction migration (2025-01-19 sanitary backup adjustment)');
 
       // 1. Update product quantities
       for (const p of updateData.products_to_update) {
         const updatedCount = await queryInterface.bulkUpdate(
-          "products",
+          'products',
           {
             quantity: p.quantity,
-            updatedAt: Sequelize.fn("NOW"),
+            updatedAt: Sequelize.fn('NOW'),
           },
           { productId: p.productId },
           { transaction },
@@ -32,35 +30,31 @@ module.exports = {
       }
 
       // 2. Insert inventory history records
-      const historyRecords = updateData.inventory_history_to_insert.map(
-        (h) => ({
-          id: uuidv7(),
-          productId: h.productId,
-          change: h.change,
-          quantityAfter: h.quantityAfter,
-          action: h.action,
-          message: h.message,
-          createdAt: Sequelize.fn("NOW"),
-          updatedAt: Sequelize.fn("NOW"),
-          // orderNo: null,     // ← add if you want to fill it
-          // userId: null,      // ← add if known
-        }),
-      );
+      const historyRecords = updateData.inventory_history_to_insert.map((h) => ({
+        id: uuidv7(),
+        productId: h.productId,
+        change: h.change,
+        quantityAfter: h.quantityAfter,
+        action: h.action,
+        message: h.message,
+        createdAt: Sequelize.fn('NOW'),
+        updatedAt: Sequelize.fn('NOW'),
+        // orderNo: null,     // ← add if you want to fill it
+        // userId: null,      // ← add if known
+      }));
 
       if (historyRecords.length > 0) {
-        await queryInterface.bulkInsert("inventory_history", historyRecords, {
+        await queryInterface.bulkInsert('inventory_history', historyRecords, {
           transaction,
         });
-        console.log(
-          `✓ Inserted ${historyRecords.length} inventory history records`,
-        );
+        console.log(`✓ Inserted ${historyRecords.length} inventory history records`);
       }
 
       await transaction.commit();
-      console.log("✅ Stock correction migration completed successfully");
+      console.log('✅ Stock correction migration completed successfully');
     } catch (err) {
       await transaction.rollback();
-      console.error("❌ Migration failed:", err);
+      console.error('❌ Migration failed:', err);
       throw err;
     }
   },
@@ -74,16 +68,12 @@ module.exports = {
     const transaction = await queryInterface.sequelize.transaction();
 
     try {
-      console.warn(
-        "⚠️ Rolling back stock quantities (inventory_history is NOT deleted)",
-      );
+      console.warn('⚠️ Rolling back stock quantities (inventory_history is NOT deleted)');
 
       for (const p of updateData.products_to_update) {
         // You would need to know the PREVIOUS quantity to restore it properly
         // Since we don't have it here → this is just a placeholder warning
-        console.warn(
-          `Cannot safely restore original quantity for ${p.productId}`,
-        );
+        console.warn(`Cannot safely restore original quantity for ${p.productId}`);
         // If you have a known previous value, you can do:
         // await queryInterface.bulkUpdate("products", { quantity: OLD_VALUE, ... }, { productId: p.productId }, { transaction });
       }
@@ -96,7 +86,7 @@ module.exports = {
       // }, { transaction });
 
       await transaction.commit();
-      console.log("Rollback finished (partial – history preserved)");
+      console.log('Rollback finished (partial – history preserved)');
     } catch (err) {
       await transaction.rollback();
       throw err;

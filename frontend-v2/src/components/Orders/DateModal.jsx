@@ -1,13 +1,13 @@
-import React from "react";
-import { Modal, Typography, Empty, List } from "antd";
+import React from 'react';
+import { Modal, Typography, Empty, List } from 'antd';
 
 const { Title, Text } = Typography;
 
 const DatesModal = ({ open, onClose, dueDate, followupDates = [] }) => {
   // Combine and sort dates
   const allDates = [
-    ...(dueDate ? [{ date: dueDate, type: "Due Date" }] : []),
-    ...followupDates.map((date) => ({ date, type: "Follow-up" })),
+    ...(dueDate ? [{ date: dueDate, type: 'Due Date' }] : []),
+    ...followupDates.map((date) => ({ date, type: 'Follow-up' })),
   ].sort((a, b) => new Date(a.date) - new Date(b.date));
 
   return (
@@ -37,10 +37,7 @@ const DatesModal = ({ open, onClose, dueDate, followupDates = [] }) => {
           )}
         />
       ) : (
-        <Empty
-          image={Empty.PRESENTED_IMAGE_SIMPLE}
-          description="No dates available."
-        />
+        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No dates available." />
       )}
     </Modal>
   );

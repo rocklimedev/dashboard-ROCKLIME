@@ -1,12 +1,12 @@
 // Dashboard numbers counted in SQL for a date range, instead of downloading
 // hundreds of orders and quotations to the browser and counting there.
-const { Op, fn, col, literal } = require("sequelize");
-const { Order, Quotation, Customer, Product } = require("../../models");
+const { Op, fn, col, literal } = require('sequelize');
+const { Order, Quotation, Customer, Product } = require('../../models');
 
 // Orders that count towards sales (not drafts, not cancelled)
-const COUNTED = { [Op.notIn]: ["DRAFT", "CANCELED"] };
+const COUNTED = { [Op.notIn]: ['DRAFT', 'CANCELED'] };
 // Confirmed but not yet fully dispatched
-const IN_PROGRESS = ["PREPARING", "CHECKING", "INVOICE", "PARTIALLY_DISPATCHED", "ONHOLD"];
+const IN_PROGRESS = ['PREPARING', 'CHECKING', 'INVOICE', 'PARTIALLY_DISPATCHED', 'ONHOLD'];
 
 const parseDate = (v, fallback) => {
   const d = v ? new Date(v) : null;
@@ -21,16 +21,16 @@ async function totals(from, to) {
   const [orderRow, quoteRow, converted] = await Promise.all([
     Order.findOne({
       attributes: [
-        [fn("COUNT", col("id")), "count"],
-        [fn("COALESCE", fn("SUM", col("finalAmount")), 0), "amount"],
+        [fn('COUNT', col('id')), 'count'],
+        [fn('COALESCE', fn('SUM', col('finalAmount')), 0), 'amount'],
       ],
       where: { createdAt: range, status: COUNTED },
       raw: true,
     }),
     Quotation.findOne({
       attributes: [
-        [fn("COUNT", col("quotationId")), "count"],
-        [fn("COALESCE", fn("SUM", col("finalAmount")), 0), "amount"],
+        [fn('COUNT', col('quotationId')), 'count'],
+        [fn('COALESCE', fn('SUM', col('finalAmount')), 0), 'amount'],
       ],
       where: { createdAt: range },
       raw: true,
@@ -77,90 +77,144 @@ exports.getSummary = async (req, res, next) => {
           const start = new Date(to);
           start.setHours(0, 0, 0, 0);
           start.setDate(start.getDate() - (days - 1));
-          const day = fn("DATE", col("createdAt"));
+          const day = fn('DATE', col('createdAt'));
           const [o, q] = await Promise.all([
             Order.findAll({
-              attributes: [[day, "day"], [fn("COUNT", col("id")), "n"]],
+              attributes: [
+                [day, 'day'],
+                [fn('COUNT', col('id')), 'n'],
+              ],
               where: { createdAt: { [Op.between]: [start, to] }, status: COUNTED },
               group: [day],
               raw: true,
             }),
             Quotation.findAll({
-              attributes: [[day, "day"], [fn("COUNT", col("quotationId")), "n"]],
+              attributes: [
+                [day, 'day'],
+                [fn('COUNT', col('quotationId')), 'n'],
+              ],
               where: { createdAt: { [Op.between]: [start, to] } },
               group: [day],
               raw: true,
             }),
           ]);
-          const key = (d) => (d instanceof Date ? d.toISOString().slice(0, 10) : String(d).slice(0, 10));
+          const key = (d) =>
+            d instanceof Date ? d.toISOString().slice(0, 10) : String(d).slice(0, 10);
           const om = Object.fromEntries(o.map((r) => [key(r.day), Number(r.n)]));
           const qm = Object.fromEntries(q.map((r) => [key(r.day), Number(r.n)]));
           return Array.from({ length: days }, (_, i) => {
             const d = new Date(start);
             d.setDate(start.getDate() + i);
-            const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+            const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
             return { date: k, orders: om[k] || 0, quotations: qm[k] || 0 };
           });
         })(),
         Order.findAll({
-          attributes: ["id", "orderNo", "status", "finalAmount", "createdAt"],
+          attributes: ['id', 'orderNo', 'status', 'finalAmount', 'createdAt'],
           where: { createdAt: { [Op.between]: [from, to] } },
-          include: [{ model: Customer, as: "customer", attributes: ["customerId", "name"] }],
-          order: [["createdAt", "DESC"]],
+          include: [{ model: Customer, as: 'customer', attributes: ['customerId', 'name'] }],
+          order: [['createdAt', 'DESC']],
           limit: latestLimit,
         }),
         Quotation.findAll({
-          attributes: ["quotationId", "reference_number", "document_title", "finalAmount", "createdAt", "customerId"],
+          attributes: [
+            'quotationId',
+            'reference_number',
+            'document_title',
+            'finalAmount',
+            'createdAt',
+            'customerId',
+          ],
           where: { createdAt: { [Op.between]: [from, to] } },
-          include: [{ model: Customer, as: "customer", attributes: ["customerId", "name"], required: false }],
-          order: [["createdAt", "DESC"]],
+          include: [
+            {
+              model: Customer,
+              as: 'customer',
+              attributes: ['customerId', 'name'],
+              required: false,
+            },
+          ],
+          order: [['createdAt', 'DESC']],
           limit: latestLimit,
         }),
         // Low stock = at or below the product's own alert quantity, or 10 if none is set
         Product.count({
-          where: literal("quantity <= COALESCE(NULLIF(alert_quantity, 0), 10)"),
+          where: literal('quantity <= COALESCE(NULLIF(alert_quantity, 0), 10)'),
         }),
       ]);
 
     const range = { [Op.between]: [from, to] };
     const [statusRows, lowStockItems, topOrderRows, topQuoteRows] = await Promise.all([
       Order.findAll({
-        attributes: ["status", [fn("COUNT", col("id")), "count"]],
+        attributes: ['status', [fn('COUNT', col('id')), 'count']],
         where: { createdAt: range },
-        group: ["status"],
+        group: ['status'],
         raw: true,
       }),
       Product.findAll({
-        attributes: ["productId", "name", "product_code", "quantity", "alert_quantity"],
-        where: literal("quantity <= COALESCE(NULLIF(alert_quantity, 0), 10)"),
-        order: [["quantity", "ASC"]],
+        attributes: ['productId', 'name', 'product_code', 'quantity', 'alert_quantity'],
+        where: literal('quantity <= COALESCE(NULLIF(alert_quantity, 0), 10)'),
+        order: [['quantity', 'ASC']],
         limit: 8,
       }),
       Order.findAll({
-        attributes: ["createdFor", [fn("COUNT", col("id")), "orders"], [fn("SUM", col("finalAmount")), "orderValue"]],
+        attributes: [
+          'createdFor',
+          [fn('COUNT', col('id')), 'orders'],
+          [fn('SUM', col('finalAmount')), 'orderValue'],
+        ],
         where: { createdAt: range, status: COUNTED },
-        group: ["createdFor"],
+        group: ['createdFor'],
         raw: true,
       }),
       Quotation.findAll({
-        attributes: ["customerId", [fn("COUNT", col("quotationId")), "quotations"], [fn("SUM", col("finalAmount")), "quoteValue"]],
+        attributes: [
+          'customerId',
+          [fn('COUNT', col('quotationId')), 'quotations'],
+          [fn('SUM', col('finalAmount')), 'quoteValue'],
+        ],
         where: { createdAt: range },
-        group: ["customerId"],
+        group: ['customerId'],
         raw: true,
       }),
     ]);
     const byCustomer = {};
-    const row = (id) => (byCustomer[id] ||= { customerId: id, orders: 0, orderValue: 0, quotations: 0, quoteValue: 0 });
-    topOrderRows.forEach((r) => { if (r.createdFor) Object.assign(row(r.createdFor), { orders: Number(r.orders), orderValue: Number(r.orderValue || 0) }); });
-    topQuoteRows.forEach((r) => { if (r.customerId) Object.assign(row(r.customerId), { quotations: Number(r.quotations), quoteValue: Number(r.quoteValue || 0) }); });
+    const row = (id) =>
+      (byCustomer[id] ||= {
+        customerId: id,
+        orders: 0,
+        orderValue: 0,
+        quotations: 0,
+        quoteValue: 0,
+      });
+    topOrderRows.forEach((r) => {
+      if (r.createdFor)
+        Object.assign(row(r.createdFor), {
+          orders: Number(r.orders),
+          orderValue: Number(r.orderValue || 0),
+        });
+    });
+    topQuoteRows.forEach((r) => {
+      if (r.customerId)
+        Object.assign(row(r.customerId), {
+          quotations: Number(r.quotations),
+          quoteValue: Number(r.quoteValue || 0),
+        });
+    });
     const top = Object.values(byCustomer)
       .sort((a, b) => b.orderValue + b.quoteValue - (a.orderValue + a.quoteValue))
       .slice(0, 7);
     const names = top.length
-      ? await Customer.findAll({ attributes: ["customerId", "name"], where: { customerId: top.map((t) => t.customerId) }, raw: true })
+      ? await Customer.findAll({
+          attributes: ['customerId', 'name'],
+          where: { customerId: top.map((t) => t.customerId) },
+          raw: true,
+        })
       : [];
     const nameOf = Object.fromEntries(names.map((n) => [n.customerId, n.name]));
-    top.forEach((t) => { t.name = nameOf[t.customerId] || "Unknown"; });
+    top.forEach((t) => {
+      t.name = nameOf[t.customerId] || 'Unknown';
+    });
 
     res.json({
       statusBreakdown: statusRows.map((r) => ({ status: r.status, count: Number(r.count) })),

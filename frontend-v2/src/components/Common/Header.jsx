@@ -1,16 +1,10 @@
 // src/components/Layout/Header.jsx
-import React, {
-  useState,
-  useEffect,
-  useCallback,
-  useMemo,
-  useRef,
-} from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useGetProfileQuery } from "../../api/userApi";
-import { useGetCartQuery } from "../../api/cartApi";
-import { useGetNotificationsQuery } from "../../api/notificationApi";
-import { Dropdown, Button, Menu, Badge, Input, Spin, message } from "antd";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useGetProfileQuery } from '../../api/userApi';
+import { useGetCartQuery } from '../../api/cartApi';
+import { useGetNotificationsQuery } from '../../api/notificationApi';
+import { Dropdown, Button, Menu, Badge, Input, Spin, message } from 'antd';
 import {
   BellOutlined,
   ShoppingCartOutlined,
@@ -20,29 +14,25 @@ import {
   SettingOutlined,
   SearchOutlined,
   CommentOutlined,
-} from "@ant-design/icons";
-import SearchOverlay from "./SearchOverlay";
-import Avatar from "react-avatar";
-import { useLogoutMutation } from "../../api/authApi";
-import { useAuth } from "../../context/AuthContext";
-import PermissionsGate from "../../context/PermissionGate";
-import { useSearchAllQuery } from "../../api/searchApi";
-import NotificationsOverlay from "../Notifications/NotificationsWrapper";
-import AppSwitcher from "./AppSwitcher";
-import CliqDrawer from "../Chat/CliqDrawer";
-import logoImg from "../../assets/img/logo.png";
-import { debounce } from "lodash";
+} from '@ant-design/icons';
+import SearchOverlay from './SearchOverlay';
+import Avatar from 'react-avatar';
+import { useLogoutMutation } from '../../api/authApi';
+import { useAuth } from '../../context/AuthContext';
+import PermissionsGate from '../../context/PermissionGate';
+import { useSearchAllQuery } from '../../api/searchApi';
+import NotificationsOverlay from '../Notifications/NotificationsWrapper';
+import AppSwitcher from './AppSwitcher';
+import CliqDrawer from '../Chat/CliqDrawer';
+import logoImg from '../../assets/img/logo.png';
+import { debounce } from 'lodash';
 
 const Header = ({ toggleSidebar, isSidebarOpen, home = false }) => {
   const navigate = useNavigate();
   const { logout } = useAuth();
 
   // === Queries ===
-  const {
-    data: user,
-    isLoading: isProfileLoading,
-    error: profileError,
-  } = useGetProfileQuery();
+  const { data: user, isLoading: isProfileLoading, error: profileError } = useGetProfileQuery();
   const userId = user?.user?.userId;
 
   const { data: cart } = useGetCartQuery(userId, { skip: !userId });
@@ -53,8 +43,8 @@ const Header = ({ toggleSidebar, isSidebarOpen, home = false }) => {
   const [logoutMutation, { isLoading: isLoggingOut }] = useLogoutMutation();
 
   // === States ===
-  const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [showSearchOverlay, setShowSearchOverlay] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -67,23 +57,23 @@ const Header = ({ toggleSidebar, isSidebarOpen, home = false }) => {
   // Cmd+K / Ctrl+K (or "/" when not typing) jumps to the search box from anywhere
   useEffect(() => {
     const onKey = (e) => {
-      const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName) || e.target?.isContentEditable;
-      if (((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") || (e.key === "/" && !typing)) {
+      const typing =
+        /^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName) || e.target?.isContentEditable;
+      if (((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') || (e.key === '/' && !typing)) {
         e.preventDefault();
         desktopSearchInputRef.current?.focus();
         desktopSearchInputRef.current?.select?.();
       }
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, []);
 
   // Search API
-  const { data: searchResponse, isFetching: searchFetching } =
-    useSearchAllQuery(
-      { query: debouncedQuery, limit: 8 },
-      { skip: !debouncedQuery.trim() },
-    );
+  const { data: searchResponse, isFetching: searchFetching } = useSearchAllQuery(
+    { query: debouncedQuery, limit: 8 },
+    { skip: !debouncedQuery.trim() },
+  );
 
   // Debounce search input
   const debouncedSetQuery = useCallback(
@@ -111,21 +101,21 @@ const Header = ({ toggleSidebar, isSidebarOpen, home = false }) => {
       if (searchRef.current && !searchRef.current.contains(e.target)) {
         setShowSearchOverlay(false);
         setMobileSearchOpen(false);
-        setSearchQuery("");
-        setDebouncedQuery("");
+        setSearchQuery('');
+        setDebouncedQuery('');
       }
     };
 
     if (mobileSearchOpen || showSearchOverlay) {
-      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener('mousedown', handleClickOutside);
     }
 
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [mobileSearchOpen, showSearchOverlay]);
 
   // === NEW: Handle Enter Key Press ===
   const handleSearchSubmit = (e) => {
-    if (e.key === "Enter" && searchQuery.trim()) {
+    if (e.key === 'Enter' && searchQuery.trim()) {
       const query = searchQuery.trim();
 
       // Close overlays
@@ -148,14 +138,13 @@ const Header = ({ toggleSidebar, isSidebarOpen, home = false }) => {
     debouncedSetQuery(value);
   };
 
-
   const handleLogout = useCallback(async () => {
     try {
       await logoutMutation().unwrap();
       logout();
-      navigate("/login", { replace: true });
+      navigate('/login', { replace: true });
     } catch {
-      message.error("Logout failed. Please try again.");
+      message.error('Logout failed. Please try again.');
     }
   }, [logoutMutation, logout, navigate]);
 
@@ -166,24 +155,18 @@ const Header = ({ toggleSidebar, isSidebarOpen, home = false }) => {
   );
 
   const cartItemCount = useMemo(() => cart?.cart?.items?.length || 0, [cart]);
-  const avatarSrc =
-    user?.user?.photo_thumbnail || user?.user?.profileImage || undefined;
+  const avatarSrc = user?.user?.photo_thumbnail || user?.user?.profileImage || undefined;
   // User Dropdown Menu
   const userMenu = useMemo(
     () => (
-      <Menu
-        className="shadow-sm rounded menu-drop-user"
-        style={{ zIndex: 1100 }}
-      >
+      <Menu className="shadow-sm rounded menu-drop-user" style={{ zIndex: 1100 }}>
         <Menu.Item
           key="profile-header"
           className="d-flex align-items-center p-3 profileset"
           disabled
         >
           <div>
-            <h6 className="fw-medium mb-0">
-              @{user?.user?.username || "User"}
-            </h6>
+            <h6 className="fw-medium mb-0">@{user?.user?.username || 'User'}</h6>
           </div>
         </Menu.Item>
         <Menu.Divider />
@@ -208,7 +191,7 @@ const Header = ({ toggleSidebar, isSidebarOpen, home = false }) => {
           disabled={isLoggingOut}
           icon={<LogoutOutlined className="me-2" />}
         >
-          {isLoggingOut ? "Logging out..." : "Logout"}
+          {isLoggingOut ? 'Logging out...' : 'Logout'}
         </Menu.Item>
       </Menu>
     ),
@@ -227,7 +210,7 @@ const Header = ({ toggleSidebar, isSidebarOpen, home = false }) => {
               </Link>
             )}
             <a
-              style={home ? { display: "none" } : undefined}
+              style={home ? { display: 'none' } : undefined}
               className="mobile_btn me-3 d-lg-none"
               onClick={() => toggleSidebar(!isSidebarOpen)}
             >
@@ -246,7 +229,7 @@ const Header = ({ toggleSidebar, isSidebarOpen, home = false }) => {
               <div className="d-md-none text-center">
                 <Button
                   type="link"
-                  className={mobileSearchOpen ? "d-none" : "d-inline-block"}
+                  className={mobileSearchOpen ? 'd-none' : 'd-inline-block'}
                   onClick={() => setMobileSearchOpen(true)}
                 >
                   <SearchOutlined style={{ fontSize: 24 }} />
@@ -255,16 +238,16 @@ const Header = ({ toggleSidebar, isSidebarOpen, home = false }) => {
 
               {/* Mobile Full-width Search */}
               <div
-                className={`mobile-search-container d-md-none ${mobileSearchOpen ? "open" : ""}`}
+                className={`mobile-search-container d-md-none ${mobileSearchOpen ? 'open' : ''}`}
                 style={{
-                  position: mobileSearchOpen ? "fixed" : "absolute",
+                  position: mobileSearchOpen ? 'fixed' : 'absolute',
                   top: 0,
                   left: 0,
                   right: 0,
                   zIndex: 1000,
-                  background: "var(--background-color, white)",
-                  padding: "12px 16px",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                  background: 'var(--background-color, white)',
+                  padding: '12px 16px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                 }}
               >
                 <Input
@@ -289,8 +272,16 @@ const Header = ({ toggleSidebar, isSidebarOpen, home = false }) => {
                     searchFetching ? (
                       <Spin size="small" />
                     ) : (
-                      <span style={{ color: "#bfbfbf", fontSize: 12, border: "1px solid #e8e8e8", borderRadius: 4, padding: "0 5px" }}>
-                        {/Mac/.test(navigator.platform) ? "⌘K" : "Ctrl K"}
+                      <span
+                        style={{
+                          color: '#bfbfbf',
+                          fontSize: 12,
+                          border: '1px solid #e8e8e8',
+                          borderRadius: 4,
+                          padding: '0 5px',
+                        }}
+                      >
+                        {/Mac/.test(navigator.platform) ? '⌘K' : 'Ctrl K'}
                       </span>
                     )
                   }
@@ -298,9 +289,7 @@ const Header = ({ toggleSidebar, isSidebarOpen, home = false }) => {
                   value={searchQuery}
                   onChange={handleSearchChange}
                   onKeyDown={handleSearchSubmit} // ← Enter key handler
-                  onFocus={() =>
-                    debouncedQuery.trim() && setShowSearchOverlay(true)
-                  }
+                  onFocus={() => debouncedQuery.trim() && setShowSearchOverlay(true)}
                   allowClear
                   size="large"
                   className="global-search-input"
@@ -320,7 +309,13 @@ const Header = ({ toggleSidebar, isSidebarOpen, home = false }) => {
 
           {/* Right: Actions + User */}
           <div className="d-flex align-items-center gap-2 gap-md-3">
-            <Button type="text" aria-label="Open Cliq chat" title="Cliq chat" icon={<CommentOutlined style={{ fontSize: 21 }} />} onClick={() => setChatOpen(true)} />
+            <Button
+              type="text"
+              aria-label="Open Cliq chat"
+              title="Cliq chat"
+              icon={<CommentOutlined style={{ fontSize: 21 }} />}
+              onClick={() => setChatOpen(true)}
+            />
             {/* Desktop Icons */}
             <div className="d-none d-md-flex align-items-center gap-3">
               <AppSwitcher />
@@ -353,33 +348,21 @@ const Header = ({ toggleSidebar, isSidebarOpen, home = false }) => {
                       onClick={() => setShowNotifications(true)}
                       icon={<BellOutlined />}
                     >
-                      Notifications{" "}
-                      {notificationCount > 0 && (
-                        <Badge count={notificationCount} />
-                      )}
+                      Notifications {notificationCount > 0 && <Badge count={notificationCount} />}
                     </Menu.Item>
                     <PermissionsGate api="write" module="cart">
                       <Menu.Item key="cart" icon={<ShoppingCartOutlined />}>
-                        <Link
-                          to="/cart/quotation"
-                          className="d-flex justify-content-between w-100"
-                        >
-                          Cart{" "}
-                          {cartItemCount > 0 && <Badge count={cartItemCount} />}
+                        <Link to="/cart/quotation" className="d-flex justify-content-between w-100">
+                          Cart {cartItemCount > 0 && <Badge count={cartItemCount} />}
                         </Link>
                       </Menu.Item>
                     </PermissionsGate>
                   </Menu>
                 }
-                trigger={["click"]}
+                trigger={['click']}
               >
                 <Button type="link" size="large">
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                  >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                     <circle cx="12" cy="5" r="2" />
                     <circle cx="12" cy="12" r="2" />
                     <circle cx="12" cy="19" r="2" />
@@ -395,7 +378,7 @@ const Header = ({ toggleSidebar, isSidebarOpen, home = false }) => {
               ) : profileError ? (
                 <span className="text-danger">Error</span>
               ) : (
-                <Dropdown overlay={userMenu} trigger={["click"]}>
+                <Dropdown overlay={userMenu} trigger={['click']}>
                   <a
                     href="#"
                     className="nav-link userset d-flex align-items-center justify-content-center"
@@ -404,9 +387,7 @@ const Header = ({ toggleSidebar, isSidebarOpen, home = false }) => {
                   >
                     {avatarSrc ? (
                       <Avatar
-                        name={
-                          user?.user?.name || user?.user?.username || "User"
-                        }
+                        name={user?.user?.name || user?.user?.username || 'User'}
                         src={avatarSrc || undefined}
                         size={36}
                         round
@@ -416,11 +397,11 @@ const Header = ({ toggleSidebar, isSidebarOpen, home = false }) => {
                         style={{
                           width: 36,
                           height: 36,
-                          borderRadius: "50%",
-                          background: "#f0f0f0",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
+                          borderRadius: '50%',
+                          background: '#f0f0f0',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
                         }}
                       >
                         <UserOutlined style={{ fontSize: 18 }} />
@@ -435,7 +416,12 @@ const Header = ({ toggleSidebar, isSidebarOpen, home = false }) => {
       </header>
 
       {/* Notifications Overlay */}
-      <CliqDrawer key={userId || "anonymous"} userId={userId} open={chatOpen} onClose={() => setChatOpen(false)} />
+      <CliqDrawer
+        key={userId || 'anonymous'}
+        userId={userId}
+        open={chatOpen}
+        onClose={() => setChatOpen(false)}
+      />
       <NotificationsOverlay
         isOpen={showNotifications}
         onClose={() => setShowNotifications(false)}

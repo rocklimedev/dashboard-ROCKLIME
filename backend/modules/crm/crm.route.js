@@ -26,89 +26,187 @@
 //   POST   /bigin/sync                    { full } pull + push now
 //   POST   /bigin/push/:id                send one deal now
 //   DELETE /bigin                         disconnect
-const express = require("express");
-const { auth } = require("../../middleware/auth");
-const { guardModule } = require("../../middleware/permission");
-const { signShare, verifyShare } = require("../../lib/shareToken");
-const crm = require("./crm.service");
-const bigin = require("./bigin");
+const express = require('express');
+const { auth } = require('../../middleware/auth');
+const { guardModule } = require('../../middleware/permission');
+const { signShare, verifyShare } = require('../../lib/shareToken');
+const crm = require('./crm.service');
+const bigin = require('./bigin');
 
 const router = express.Router();
-const ADMIN_ROLES = ["SUPER_ADMIN", "ADMIN", "DEVELOPER"];
+const ADMIN_ROLES = ['SUPER_ADMIN', 'ADMIN', 'DEVELOPER'];
 const isAdmin = (u) => (u?.roles || []).some((r) => ADMIN_ROLES.includes(r));
-const frontend = () => (process.env.CLIENT_URL || process.env.APP_URL || "http://localhost:5173").replace(/\/$/, "");
+const frontend = () =>
+  (process.env.CLIENT_URL || process.env.APP_URL || 'http://localhost:5173').replace(/\/$/, '');
 const wrap = (fn) => async (req, res) => {
   try {
     const out = await fn(req, res);
     if (!res.headersSent) res.json(out);
   } catch (err) {
-    res.status(err.status || 500).json({ message: err.message || "CRM request failed", ...(err.zohoCode ? { zohoCode: err.zohoCode } : {}) });
+    res
+      .status(err.status || 500)
+      .json({
+        message: err.message || 'CRM request failed',
+        ...(err.zohoCode ? { zohoCode: err.zohoCode } : {}),
+      });
   }
 };
 const adminOnly = (req, res, next) =>
-  isAdmin(req.user) ? next() : res.status(403).json({ message: "Only an administrator can connect or change Zoho Bigin." });
+  isAdmin(req.user)
+    ? next()
+    : res.status(403).json({ message: 'Only an administrator can connect or change Zoho Bigin.' });
 
 // Zoho comes back here in the browser, without our login token
-router.get("/bigin/callback", async (req, res) => {
+router.get('/bigin/callback', async (req, res) => {
   const back = (qs) => res.redirect(`${frontend()}/crm/settings?${qs}`);
   try {
-    if (req.query.error) return back(`bigin=error&message=${encodeURIComponent(String(req.query.error))}`);
+    if (req.query.error)
+      return back(`bigin=error&message=${encodeURIComponent(String(req.query.error))}`);
     const state = verifyShare(req.query.state);
-    if (!state || state.t !== "bigin") return back("bigin=error&message=The%20link%20expired%2C%20try%20again");
-    await bigin.exchangeCode(String(req.query.code || ""), req.query["accounts-server"], state.u);
-    back("bigin=connected");
+    if (!state || state.t !== 'bigin')
+      return back('bigin=error&message=The%20link%20expired%2C%20try%20again');
+    await bigin.exchangeCode(String(req.query.code || ''), req.query['accounts-server'], state.u);
+    back('bigin=connected');
   } catch (err) {
-    back(`bigin=error&message=${encodeURIComponent(err.message || "Could not connect")}`);
+    back(`bigin=error&message=${encodeURIComponent(err.message || 'Could not connect')}`);
   }
 });
 
 router.use(auth);
 router.use(
-  guardModule("crm", [
-    { path: /^\/bigin/, method: "GET", action: "view" },
-    { path: /^\/bigin/, action: "view" }, // admin check below
-    { method: "POST", path: /^\/deals\/[^/]+\/(notes|tasks|customer|quotation)$/, action: "edit" },
+  guardModule('crm', [
+    { path: /^\/bigin/, method: 'GET', action: 'view' },
+    { path: /^\/bigin/, action: 'view' }, // admin check below
+    { method: 'POST', path: /^\/deals\/[^/]+\/(notes|tasks|customer|quotation)$/, action: 'edit' },
   ]),
 );
 
-router.use(require("./require-zoho")(() => bigin.status()));
+router.use(require('./require-zoho')(() => bigin.status()));
 
-router.get("/meta", wrap(() => crm.meta()));
-router.get("/board", wrap((req) => crm.board({ ...req.query, userId: req.user.userId })));
-router.get("/deals", wrap((req) => crm.list({ ...req.query, userId: req.user.userId })));
-router.post("/deals", wrap(async (req, res) => {
-  const deal = await crm.createDeal(req.body || {}, req.user);
-  res.status(201).json({ deal, message: "Deal added" });
-}));
-router.get("/deals/:id", wrap((req) => crm.getDeal(req.params.id)));
-router.put("/deals/:id", wrap(async (req) => ({ deal: await crm.updateDeal(req.params.id, req.body || {}, req.user), message: "Saved" })));
-router.put("/deals/:id/stage", wrap(async (req) => {
-  await crm.setStage(req.params.id, req.body?.stage, { reason: req.body?.lostReason, userId: req.user.userId });
-  return { deal: (await crm.getDeal(req.params.id)).deal, message: "Stage changed" };
-}));
-router.delete("/deals/:id", wrap((req) => crm.deleteDeal(req.params.id, req.user)));
-router.post("/deals/:id/notes", wrap((req) => crm.addNote(req.params.id, req.body?.text, req.user, req.body?.kind)));
-router.post("/deals/:id/tasks", wrap((req) => crm.addTask(req.params.id, req.body || {}, req.user)));
-router.put("/tasks/:taskId", wrap((req) => crm.updateTask(req.params.taskId, req.body || {}, req.user)));
-router.delete("/tasks/:taskId", wrap((req) => crm.deleteTask(req.params.taskId)));
-router.get("/tasks", wrap((req) => crm.tasks({ userId: req.user.userId, scope: req.query.scope, when: req.query.when })));
-router.post("/deals/:id/customer", wrap((req) => crm.ensureCustomer(req.params.id, req.user)));
-router.post("/deals/:id/quotation", wrap(async (req) => ({ deal: await crm.linkQuotation(req.params.id, req.body?.quotationId, req.user), message: "Quotation linked" })));
-router.get("/customer/:customerId", wrap((req) => crm.forCustomer(req.params.customerId)));
+router.get(
+  '/meta',
+  wrap(() => crm.meta()),
+);
+router.get(
+  '/board',
+  wrap((req) => crm.board({ ...req.query, userId: req.user.userId })),
+);
+router.get(
+  '/deals',
+  wrap((req) => crm.list({ ...req.query, userId: req.user.userId })),
+);
+router.post(
+  '/deals',
+  wrap(async (req, res) => {
+    const deal = await crm.createDeal(req.body || {}, req.user);
+    res.status(201).json({ deal, message: 'Deal added' });
+  }),
+);
+router.get(
+  '/deals/:id',
+  wrap((req) => crm.getDeal(req.params.id)),
+);
+router.put(
+  '/deals/:id',
+  wrap(async (req) => ({
+    deal: await crm.updateDeal(req.params.id, req.body || {}, req.user),
+    message: 'Saved',
+  })),
+);
+router.put(
+  '/deals/:id/stage',
+  wrap(async (req) => {
+    await crm.setStage(req.params.id, req.body?.stage, {
+      reason: req.body?.lostReason,
+      userId: req.user.userId,
+    });
+    return { deal: (await crm.getDeal(req.params.id)).deal, message: 'Stage changed' };
+  }),
+);
+router.delete(
+  '/deals/:id',
+  wrap((req) => crm.deleteDeal(req.params.id, req.user)),
+);
+router.post(
+  '/deals/:id/notes',
+  wrap((req) => crm.addNote(req.params.id, req.body?.text, req.user, req.body?.kind)),
+);
+router.post(
+  '/deals/:id/tasks',
+  wrap((req) => crm.addTask(req.params.id, req.body || {}, req.user)),
+);
+router.put(
+  '/tasks/:taskId',
+  wrap((req) => crm.updateTask(req.params.taskId, req.body || {}, req.user)),
+);
+router.delete(
+  '/tasks/:taskId',
+  wrap((req) => crm.deleteTask(req.params.taskId)),
+);
+router.get(
+  '/tasks',
+  wrap((req) =>
+    crm.tasks({ userId: req.user.userId, scope: req.query.scope, when: req.query.when }),
+  ),
+);
+router.post(
+  '/deals/:id/customer',
+  wrap((req) => crm.ensureCustomer(req.params.id, req.user)),
+);
+router.post(
+  '/deals/:id/quotation',
+  wrap(async (req) => ({
+    deal: await crm.linkQuotation(req.params.id, req.body?.quotationId, req.user),
+    message: 'Quotation linked',
+  })),
+);
+router.get(
+  '/customer/:customerId',
+  wrap((req) => crm.forCustomer(req.params.customerId)),
+);
 
 // ---------------- Bigin
-router.get("/bigin/status", wrap(() => bigin.status()));
-router.get("/bigin/authorize", adminOnly, wrap((req) => {
-  return { url: require("../zoho/zoho.auth").authorize(req.user, req.query.accountsUrl) };
-}));
-router.post("/bigin/token", adminOnly, (req, res) => res.status(410).json({ message: "Use Connect Zoho on the Connectors page to authorize all Zoho services together." }));
-router.get("/bigin/pipelines", wrap(() => bigin.pipelineStages()));
-router.post("/bigin/sync", wrap(async (req) => ({ result: await crm.syncWithBigin({ userId: req.user.userId, full: !!req.body?.full }), message: "Synced with Bigin" })));
-router.post("/bigin/push/:id", wrap((req) => crm.pushNow(req.params.id)));
-router.delete("/bigin", adminOnly, wrap(async () => {
-  await bigin.disconnect();
-  return { message: "Zoho Bigin disconnected" };
-}));
+router.get(
+  '/bigin/status',
+  wrap(() => bigin.status()),
+);
+router.get(
+  '/bigin/authorize',
+  adminOnly,
+  wrap((req) => {
+    return { url: require('../zoho/zoho.auth').authorize(req.user, req.query.accountsUrl) };
+  }),
+);
+router.post('/bigin/token', adminOnly, (req, res) =>
+  res
+    .status(410)
+    .json({
+      message: 'Use Connect Zoho on the Connectors page to authorize all Zoho services together.',
+    }),
+);
+router.get(
+  '/bigin/pipelines',
+  wrap(() => bigin.pipelineStages()),
+);
+router.post(
+  '/bigin/sync',
+  wrap(async (req) => ({
+    result: await crm.syncWithBigin({ userId: req.user.userId, full: !!req.body?.full }),
+    message: 'Synced with Bigin',
+  })),
+);
+router.post(
+  '/bigin/push/:id',
+  wrap((req) => crm.pushNow(req.params.id)),
+);
+router.delete(
+  '/bigin',
+  adminOnly,
+  wrap(async () => {
+    await bigin.disconnect();
+    return { message: 'Zoho Bigin disconnected' };
+  }),
+);
 
 crm.startAutoSync();
 

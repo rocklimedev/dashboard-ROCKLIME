@@ -1,14 +1,14 @@
-import { useEffect, useMemo } from "react";
-import { Link, NavLink, useLocation } from "react-router-dom";
-import { ChevronsLeft } from "react-feather";
-import { ArrowLeftOutlined, UserOutlined, SettingOutlined, ApiOutlined } from "@ant-design/icons";
-import { useAuth } from "../../context/AuthContext";
-import logo from "../../assets/img/logo.png";
-import logo_small from "../../assets/img/fav_icon.png";
-import useCan, { useRoles } from "../../utils/useCan";
-import { appForPath, visibleApps } from "../../apps/registry";
+import { useEffect, useMemo } from 'react';
+import { Link, NavLink, useLocation } from 'react-router-dom';
+import { ChevronsLeft } from 'react-feather';
+import { ArrowLeftOutlined, UserOutlined, SettingOutlined, ApiOutlined } from '@ant-design/icons';
+import { useAuth } from '../../context/AuthContext';
+import logo from '../../assets/img/logo.png';
+import logo_small from '../../assets/img/fav_icon.png';
+import useCan, { useRoles } from '../../utils/useCan';
+import { appForPath, visibleApps } from '../../apps/registry';
 
-const LAST_APP = "cm.app";
+const LAST_APP = 'cm.app';
 const readLast = () => {
   try {
     return sessionStorage.getItem(LAST_APP);
@@ -28,17 +28,22 @@ export default function AppSidebar({ isSidebarOpen, toggleSidebar }) {
   const can = useCan();
   const roles = useRoles();
   const { auth } = useAuth();
-  const personal = location.pathname.startsWith("/u/");
+  const personal = location.pathname.startsWith('/u/');
   const userId = auth?.user?.userId;
   const apps = useMemo(() => visibleApps(can, roles), [can, roles]);
-  const current = personal ? {
-    key: "personal", name: "My account",
-    items: userId ? [
-      { label: "My profile", to: `/u/${userId}`, icon: <UserOutlined /> },
-      { label: "Account settings", to: `/u/${userId}/settings`, icon: <SettingOutlined /> },
-      { label: "Connectors", to: `/u/${userId}/connectors`, icon: <ApiOutlined /> },
-    ] : [],
-  } : appForPath(location.pathname, apps, location.search, readLast());
+  const current = personal
+    ? {
+        key: 'personal',
+        name: 'My account',
+        items: userId
+          ? [
+              { label: 'My profile', to: `/u/${userId}`, icon: <UserOutlined /> },
+              { label: 'Account settings', to: `/u/${userId}/settings`, icon: <SettingOutlined /> },
+              { label: 'Connectors', to: `/u/${userId}/connectors`, icon: <ApiOutlined /> },
+            ]
+          : [],
+      }
+    : appForPath(location.pathname, apps, location.search, readLast());
 
   useEffect(() => {
     if (!current || personal) return;
@@ -52,15 +57,18 @@ export default function AppSidebar({ isSidebarOpen, toggleSidebar }) {
   const here = `${location.pathname}${location.search}`;
   const items = current?.items || [];
   const itemActive = (to) => {
-    if (to.includes("?")) return here === to;
+    if (to.includes('?')) return here === to;
     // a plain link is active on its page unless a "?tab=" link of the same page matches better
     if (location.pathname !== to) return false;
-    return !items.some((i) => i.to.includes("?") && i.to === here);
+    return !items.some((i) => i.to.includes('?') && i.to === here);
   };
 
   return (
-    <div className={`sidebar cm-app-sidebar d-flex flex-column ${isSidebarOpen ? "active" : ""}`} id="sidebar">
-      <div className={`sidebar-logo ${isSidebarOpen ? "active" : ""}`}>
+    <div
+      className={`sidebar cm-app-sidebar d-flex flex-column ${isSidebarOpen ? 'active' : ''}`}
+      id="sidebar"
+    >
+      <div className={`sidebar-logo ${isSidebarOpen ? 'active' : ''}`}>
         <NavLink to="/" className="logo logo-normal">
           <img src={logo} alt="Chhabra Marble" />
         </NavLink>
@@ -83,7 +91,7 @@ export default function AppSidebar({ isSidebarOpen, toggleSidebar }) {
         </a>
       </div>
 
-      <div className="sidebar-inner slimscroll flex-grow-1" style={{ overflowY: "auto" }}>
+      <div className="sidebar-inner slimscroll flex-grow-1" style={{ overflowY: 'auto' }}>
         <Link to="/" className="cm-app-sidebar__back" title="All apps">
           <ArrowLeftOutlined /> <span>All apps</span>
         </Link>
@@ -100,7 +108,11 @@ export default function AppSidebar({ isSidebarOpen, toggleSidebar }) {
             {items.map((it) => (
               <li key={it.to}>
                 {it.section && <div className="cm-app-sidebar__section">{it.section}</div>}
-                <Link to={it.to} className={itemActive(it.to) ? "active" : ""} title={!isSidebarOpen ? it.label : undefined}>
+                <Link
+                  to={it.to}
+                  className={itemActive(it.to) ? 'active' : ''}
+                  title={!isSidebarOpen ? it.label : undefined}
+                >
                   {it.icon}
                   <span>{it.label}</span>
                 </Link>
@@ -110,7 +122,7 @@ export default function AppSidebar({ isSidebarOpen, toggleSidebar }) {
               apps.map((app) => (
                 <li key={app.key}>
                   <Link to={app.home}>
-                    <span style={{ color: app.color, display: "inline-flex" }}>{app.icon}</span>
+                    <span style={{ color: app.color, display: 'inline-flex' }}>{app.icon}</span>
                     <span>{app.name}</span>
                   </Link>
                 </li>

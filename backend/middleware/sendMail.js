@@ -1,32 +1,36 @@
 // emailer.js
-const nodemailer = require("nodemailer");
-require("dotenv").config();
+const nodemailer = require('nodemailer');
+require('dotenv').config();
 
 /* -----------------------------------------------------------
    1. Transporter Setup
 ------------------------------------------------------------ */
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "sh200.bigrock.com",
+  host: process.env.SMTP_HOST || 'sh200.bigrock.com',
   port: Number(process.env.SMTP_PORT) || 465,
-  secure: process.env.SMTP_SECURE !== "false",
+  secure: process.env.SMTP_SECURE !== 'false',
   auth: {
-    user: process.env.SMTP_USER || "no-reply@static.cmtradingco.com",
+    user: process.env.SMTP_USER || 'no-reply@static.cmtradingco.com',
     pass: process.env.SMTP_PASS,
   },
-  logger: process.env.NODE_ENV !== "production",
-  debug: process.env.NODE_ENV !== "production",
+  logger: process.env.NODE_ENV !== 'production',
+  debug: process.env.NODE_ENV !== 'production',
 });
 
 // Links in emails open the CM ERP front end (APP_URL), e.g. https://erp.cmtradingco.com
-const APP_URL = (process.env.APP_URL || process.env.CLIENT_URL || "https://erp.cmtradingco.com").replace(/\/+$/, "");
+const APP_URL = (
+  process.env.APP_URL ||
+  process.env.CLIENT_URL ||
+  'https://erp.cmtradingco.com'
+).replace(/\/+$/, '');
 
 // Verify connection
-const SMTP_DISABLED = process.env.SMTP_DISABLED === "true" || !process.env.SMTP_PASS;
-if (SMTP_DISABLED) console.log("ℹ️  SMTP disabled (SMTP_DISABLED=true or no SMTP_PASS) — emails are only logged");
-(SMTP_DISABLED ? Promise.resolve() : transporter
-  .verify())
-  .then(() => console.log("✅ SMTP connected successfully"))
-  .catch((err) => console.error("❌ SMTP connection failed:", err));
+const SMTP_DISABLED = process.env.SMTP_DISABLED === 'true' || !process.env.SMTP_PASS;
+if (SMTP_DISABLED)
+  console.log('ℹ️  SMTP disabled (SMTP_DISABLED=true or no SMTP_PASS) — emails are only logged');
+(SMTP_DISABLED ? Promise.resolve() : transporter.verify())
+  .then(() => console.log('✅ SMTP connected successfully'))
+  .catch((err) => console.error('❌ SMTP connection failed:', err));
 
 /* -----------------------------------------------------------
    2. Send Mail Helper
@@ -34,7 +38,7 @@ if (SMTP_DISABLED) console.log("ℹ️  SMTP disabled (SMTP_DISABLED=true or no 
 async function sendMail(to, subject, text, html) {
   if (SMTP_DISABLED) {
     console.log(`📭 [SMTP disabled] Would send "${subject}" to ${to}`);
-    return { messageId: "local-disabled" };
+    return { messageId: 'local-disabled' };
   }
   try {
     const info = await transporter.sendMail({
@@ -45,10 +49,10 @@ async function sendMail(to, subject, text, html) {
       html,
     });
 
-    console.log("✅ Email sent:", info.messageId);
+    console.log('✅ Email sent:', info.messageId);
     return info;
   } catch (err) {
-    console.error("❌ Error sending email:", err);
+    console.error('❌ Error sending email:', err);
     throw err;
   }
 }
@@ -59,7 +63,7 @@ async function sendMail(to, subject, text, html) {
 function emailer(templateFn) {
   return async (req, res, next) => {
     if (res.headersSent) {
-      console.warn("⚠️ Headers already sent, skipping emailer");
+      console.warn('⚠️ Headers already sent, skipping emailer');
       return next();
     }
 
@@ -67,7 +71,7 @@ function emailer(templateFn) {
       const { to, params } = req.email;
       console.log(`📩 Sending email to: ${to}`);
 
-      if (typeof templateFn !== "function") {
+      if (typeof templateFn !== 'function') {
         throw new Error(`templateFn is not a function: ${templateFn}`);
       }
 
@@ -108,9 +112,9 @@ function baseTemplate(title, body) {
 
 // Password Reset
 function resetEmail(host, resetToken) {
-  const appHost = process.env.APP_HOST || host || "cmtradingco.com";
+  const appHost = process.env.APP_HOST || host || 'cmtradingco.com';
   const url = `${APP_URL}/reset-password/${resetToken}`;
-  const subject = "Reset Your Password";
+  const subject = 'Reset Your Password';
 
   const text = `
 You requested a password reset.
@@ -121,7 +125,7 @@ ${url}
 If you did not request this, you can safely ignore this email.`;
 
   const html = baseTemplate(
-    "Reset Your Password",
+    'Reset Your Password',
     `<p style="margin-bottom: 20px; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">You requested a password reset.</p>
      <p style="margin-bottom: 20px; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">Please click the button below to reset your password:</p>
      <p style="text-align: center; margin: 20px 0;">
@@ -135,7 +139,7 @@ If you did not request this, you can safely ignore this email.`;
 
 // Confirm Password Reset
 function confirmResetPasswordEmail() {
-  const subject = "Your Password Has Been Changed";
+  const subject = 'Your Password Has Been Changed';
 
   const text = `
 Your password was successfully changed.
@@ -143,7 +147,7 @@ Your password was successfully changed.
 If you did not make this change, please contact our support team immediately.`;
 
   const html = baseTemplate(
-    "Password Changed",
+    'Password Changed',
     `<p style="margin-bottom: 20px; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">Your password was successfully changed.</p>
      <p style="margin-bottom: 0; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">If you did not make this change, please contact our support team immediately.</p>`,
   );
@@ -153,7 +157,7 @@ If you did not make this change, please contact our support team immediately.`;
 
 function confirmChangePasswordEmail(name) {
   return {
-    subject: "Password Changed Successfully",
+    subject: 'Password Changed Successfully',
     text: `Hello ${name},\n\nYour password has been changed successfully. If you did not initiate this change, please contact support immediately.\n\nBest regards,\nYour App Team`,
     html: `
       <p>Hello ${name},</p>
@@ -166,7 +170,7 @@ function confirmChangePasswordEmail(name) {
 // Account Verification
 function accountVerificationEmail(host, verificationToken) {
   const url = `${APP_URL}/verify-account/${verificationToken}`;
-  const subject = "Verify Your Account";
+  const subject = 'Verify Your Account';
 
   const text = `
 Thank you for registering.
@@ -177,7 +181,7 @@ ${url}
 If you did not register, please ignore this email.`;
 
   const html = baseTemplate(
-    "Verify Your Account",
+    'Verify Your Account',
     `<p style="margin-bottom: 20px; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">Thank you for registering with CM Trading Co.</p>
      <p style="margin-bottom: 20px; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">Click the button below to verify your account:</p>
      <p style="text-align: center; margin: 20px 0;">
@@ -191,12 +195,12 @@ If you did not register, please ignore this email.`;
 
 // Signup Welcome
 function signupEmail(name) {
-  const subject = "Welcome to CM Trading Co";
+  const subject = 'Welcome to CM Trading Co';
 
   const text = `Hi ${name}!\n\nThank you for creating an account with us.`;
 
   const html = baseTemplate(
-    "Welcome to CM Trading Co",
+    'Welcome to CM Trading Co',
     `<p style="margin-bottom: 20px; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">Hi ${name}!</p>
      <p style="margin-bottom: 0; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">Thank you for creating an account with us. We’re excited to have you onboard.</p>`,
   );
@@ -206,13 +210,13 @@ function signupEmail(name) {
 
 // Account Verification Confirmation
 function accountVerificationConfirmationEmail(name) {
-  const subject = "Account Verification Successful";
+  const subject = 'Account Verification Successful';
 
   const text = `
 Hi ${name}!\n\nYour account has been successfully verified. You can now log in to your account.\n\nIf you did not initiate this verification, please contact our support team immediately.`;
 
   const html = baseTemplate(
-    "Account Verification Successful",
+    'Account Verification Successful',
     `<p style="margin-bottom: 20px; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">Hi ${name}!</p>
      <p style="margin-bottom: 20px; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">Your account has been successfully verified. You can now log in to your account.</p>
      <p style="text-align: center; margin: 20px 0;">
@@ -226,13 +230,13 @@ Hi ${name}!\n\nYour account has been successfully verified. You can now log in t
 
 // Contact Form Confirmation
 function contactFormEmail(name, message) {
-  const subject = "Thank You for Contacting CM Trading Co";
+  const subject = 'Thank You for Contacting CM Trading Co';
 
   const text = `
 Hi ${name}!\n\nThank you for reaching out to us. We have received your message:\n\n"${message}"\n\nOur team will get back to you soon.\n\nBest regards,\nCM Trading Co`;
 
   const html = baseTemplate(
-    "Thank You for Your Message",
+    'Thank You for Your Message',
     `<p style="margin-bottom: 20px; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">Hi ${name}!</p>
      <p style="margin-bottom: 20px; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">Thank you for reaching out to us. We have received your message:</p>
      <blockquote style="border-left: 3px solid #e31e24; padding-left: 12px; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5; margin-bottom: 20px;">${message}</blockquote>
@@ -245,28 +249,28 @@ Hi ${name}!\n\nThank you for reaching out to us. We have received your message:\
 
 // Admin Notification for Contact Form
 function adminContactNotification(firstName, lastName, email, phone, message) {
-  const subject = "New Contact Form Submission";
+  const subject = 'New Contact Form Submission';
 
   const text = `
 New contact form submission received:\n\n
 First Name: ${firstName}\n
-Last Name: ${lastName || "Not provided"}\n
+Last Name: ${lastName || 'Not provided'}\n
 Email: ${email}\n
-Phone: ${phone || "Not provided"}\n
+Phone: ${phone || 'Not provided'}\n
 Message: ${message}\n\n
 Please follow up with the user.`;
 
   const html = baseTemplate(
-    "New Contact Form Submission",
+    'New Contact Form Submission',
     `<p style="margin-bottom: 20px; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px; line-height: 1.5;">A new contact form submission has been received:</p>
      <ul style="list-style: none; margin-bottom: 20px; padding: 0; line-height: 1.8; color: #646b72; font-family: 'Lato', Arial, sans-serif; font-size: 14px;">
        <li style="list-style: disc; padding-left: 15px;"><strong style="font-weight: 700;">First Name:</strong> ${firstName}</li>
        <li style="list-style: disc; padding-left: 15px;"><strong style="font-weight: 700;">Last Name:</strong> ${
-         lastName || "Not provided"
+         lastName || 'Not provided'
        }</li>
        <li style="list-style: disc; padding-left: 15px;"><strong style="font-weight: 700;">Email:</strong> ${email}</li>
        <li style="list-style: disc; padding-left: 15px;"><strong style="font-weight: 700;">Phone:</strong> ${
-         phone || "Not provided"
+         phone || 'Not provided'
        }</li>
        <li style="list-style: disc; padding-left: 15px;"><strong style="font-weight: 700;">Message:</strong> ${message}</li>
      </ul>

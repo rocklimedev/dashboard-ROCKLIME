@@ -1,11 +1,8 @@
-import React, { useState, useEffect } from "react";
-import { Modal, Form, Input, Select, Button } from "antd";
-import {
-  useCreateKeywordMutation,
-  useUpdateKeywordMutation,
-} from "../../api/keywordApi";
-import { useGetAllCategoriesQuery } from "../../api/categoryApi";
-import { message } from "antd";
+import React, { useState, useEffect } from 'react';
+import { Modal, Form, Input, Select, Button } from 'antd';
+import { useCreateKeywordMutation, useUpdateKeywordMutation } from '../../api/keywordApi';
+import { useGetAllCategoriesQuery } from '../../api/categoryApi';
+import { message } from 'antd';
 const AddKeywordModal = ({ open, onClose, editData, selectedCategoryId }) => {
   const [form] = Form.useForm();
   const isEditMode = !!editData;
@@ -17,8 +14,8 @@ const AddKeywordModal = ({ open, onClose, editData, selectedCategoryId }) => {
   useEffect(() => {
     if (isEditMode && editData) {
       form.setFieldsValue({
-        keyword: editData.keyword || "",
-        categoryId: editData.categoryId || "",
+        keyword: editData.keyword || '',
+        categoryId: editData.categoryId || '',
       });
     } else if (selectedCategoryId) {
       form.setFieldsValue({ categoryId: selectedCategoryId });
@@ -36,13 +33,13 @@ const AddKeywordModal = ({ open, onClose, editData, selectedCategoryId }) => {
       }
       onClose();
     } catch (err) {
-      message.error(err?.data?.message || "Failed to save keyword");
+      message.error(err?.data?.message || 'Failed to save keyword');
     }
   };
 
   return (
     <Modal
-      title={isEditMode ? "Edit Keyword" : "Add Keyword"}
+      title={isEditMode ? 'Edit Keyword' : 'Add Keyword'}
       open={open}
       onCancel={onClose}
       footer={null}
@@ -52,7 +49,7 @@ const AddKeywordModal = ({ open, onClose, editData, selectedCategoryId }) => {
         <Form.Item
           name="keyword"
           label="Keyword"
-          rules={[{ required: true, message: "Please enter keyword" }]}
+          rules={[{ required: true, message: 'Please enter keyword' }]}
         >
           <Input placeholder="Enter keyword" />
         </Form.Item>
@@ -60,13 +57,9 @@ const AddKeywordModal = ({ open, onClose, editData, selectedCategoryId }) => {
         <Form.Item
           name="categoryId"
           label="Category"
-          rules={[{ required: true, message: "Please select a category" }]}
+          rules={[{ required: true, message: 'Please select a category' }]}
         >
-          <Select
-            placeholder="Select category"
-            showSearch
-            optionFilterProp="children"
-          >
+          <Select placeholder="Select category" showSearch optionFilterProp="children">
             {categoryData?.categories?.map((cat) => (
               <Select.Option key={cat.categoryId} value={cat.categoryId}>
                 {cat.name}
@@ -76,10 +69,10 @@ const AddKeywordModal = ({ open, onClose, editData, selectedCategoryId }) => {
         </Form.Item>
 
         <Form.Item style={{ marginBottom: 0 }}>
-          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <Button onClick={onClose}>Cancel</Button>
             <Button type="primary" htmlType="submit">
-              {isEditMode ? "Update" : "Add"} Keyword
+              {isEditMode ? 'Update' : 'Add'} Keyword
             </Button>
           </div>
         </Form.Item>

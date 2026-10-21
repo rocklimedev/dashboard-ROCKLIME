@@ -1,5 +1,5 @@
-import { useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Alert,
   Button,
@@ -15,81 +15,75 @@ import {
   Typography,
   Upload,
   message,
-} from "antd";
-import {
-  ArrowLeftOutlined,
-  FileExcelOutlined,
-  UploadOutlined,
-} from "@ant-design/icons";
-import * as XLSX from "xlsx";
-import { useGetAllBrandsQuery } from "../../api/brandsApi";
-import { useGetAllProductMetaQuery } from "../../api/productMetaApi";
+} from 'antd';
+import { ArrowLeftOutlined, FileExcelOutlined, UploadOutlined } from '@ant-design/icons';
+import * as XLSX from 'xlsx';
+import { useGetAllBrandsQuery } from '../../api/brandsApi';
+import { useGetAllProductMetaQuery } from '../../api/productMetaApi';
 import {
   usePreviewBrandOnboardingMutation,
   useCommitBrandOnboardingMutation,
-} from "../../api/brandOnboardingApi";
-import PageHeader from "../../components/Common/PageHeader";
+} from '../../api/brandOnboardingApi';
+import PageHeader from '../../components/Common/PageHeader';
 
 const fields = {
-  name: "Product name",
-  product_code: "Product code",
-  companyCode: "Company code",
-  sellingPrice: "Selling price",
-  quantity: "Initial stock",
-  category: "Category",
-  parentCategory: "Parent category",
-  description: "Description",
-  images: "Image URLs",
-  keywords: "Keywords",
-  tax: "Tax (%)",
+  name: 'Product name',
+  product_code: 'Product code',
+  companyCode: 'Company code',
+  sellingPrice: 'Selling price',
+  quantity: 'Initial stock',
+  category: 'Category',
+  parentCategory: 'Parent category',
+  description: 'Description',
+  images: 'Image URLs',
+  keywords: 'Keywords',
+  tax: 'Tax (%)',
 };
 const normalize = (value) =>
   String(value)
     .toLowerCase()
-    .replace(/[^a-z0-9]/g, "");
+    .replace(/[^a-z0-9]/g, '');
 const aliases = {
-  productname: "name",
-  name: "name",
-  productcode: "product_code",
-  sku: "product_code",
-  code: "product_code",
-  companycode: "companyCode",
-  sellingprice: "sellingPrice",
-  price: "sellingPrice",
-  quantity: "quantity",
-  stock: "quantity",
-  initialstock: "quantity",
-  category: "category",
-  categoryname: "category",
-  parentcategory: "parentCategory",
-  description: "description",
-  images: "images",
-  image: "images",
-  imageurls: "images",
-  keywords: "keywords",
-  tax: "tax",
-  gst: "tax",
+  productname: 'name',
+  name: 'name',
+  productcode: 'product_code',
+  sku: 'product_code',
+  code: 'product_code',
+  companycode: 'companyCode',
+  sellingprice: 'sellingPrice',
+  price: 'sellingPrice',
+  quantity: 'quantity',
+  stock: 'quantity',
+  initialstock: 'quantity',
+  category: 'category',
+  categoryname: 'category',
+  parentcategory: 'parentCategory',
+  description: 'description',
+  images: 'images',
+  image: 'images',
+  imageurls: 'images',
+  keywords: 'keywords',
+  tax: 'tax',
+  gst: 'tax',
 };
 
 export default function OnboardNewBrandWorkspace() {
   const { data: brands = [] } = useGetAllBrandsQuery();
-  const { data: metas = [], isLoading: loadingMetadata } =
-    useGetAllProductMetaQuery();
+  const { data: metas = [], isLoading: loadingMetadata } = useGetAllProductMetaQuery();
   const [workbook, setWorkbook] = useState(null);
-  const [sheet, setSheet] = useState("");
+  const [sheet, setSheet] = useState('');
   const [headers, setHeaders] = useState([]);
   const [rows, setRows] = useState([]);
   const [selected, setSelected] = useState([]);
   const [mapping, setMapping] = useState({});
   const [extra, setExtra] = useState({});
-  const [brandId, setBrandId] = useState("");
-  const [brandName, setBrandName] = useState("");
+  const [brandId, setBrandId] = useState('');
+  const [brandName, setBrandName] = useState('');
   const [review, setReview] = useState(null);
   const [confirmed, setConfirmed] = useState(false);
   const [result, setResult] = useState(null);
   const revision = useRef(0);
-  const [preview, { isLoading: checking }] =
-    usePreviewBrandOnboardingMutation();
+  const [preview, { isLoading: checking }] = usePreviewBrandOnboardingMutation();
   const [commit, { isLoading: saving }] = useCommitBrandOnboardingMutation();
   const changed = () => {
     revision.current += 1;
@@ -99,24 +93,22 @@ export default function OnboardNewBrandWorkspace() {
     const cells = XLSX.utils.sheet_to_json(book.Sheets[sheetName], {
       header: 1,
       raw: false,
-      defval: "",
+      defval: '',
       blankrows: true,
     });
     const headerIndex = cells.findIndex((r) => r.some((v) => String(v).trim()));
-    if (headerIndex < 0) throw new Error("This sheet is empty.");
-    const names = cells[headerIndex].map(
-      (h, i) => String(h).trim() || `Column ${i + 1}`,
-    );
+    if (headerIndex < 0) throw new Error('This sheet is empty.');
+    const names = cells[headerIndex].map((h, i) => String(h).trim() || `Column ${i + 1}`);
     const data = cells
       .slice(headerIndex + 1)
       .map((r, i) => ({
         key: headerIndex + i + 2,
-        cells: names.map((_, c) => String(r[c] ?? "")),
+        cells: names.map((_, c) => String(r[c] ?? '')),
       }))
       .filter((r) => r.cells.some((v) => v.trim()));
     if (!data.length || data.length > 1000)
       throw new Error(
-        "Use a sheet with 1–1000 product rows. Split larger sheets before uploading.",
+        'Use a sheet with 1–1000 product rows. Split larger sheets before uploading.',
       );
     const used = new Set();
     const next = {};
@@ -125,11 +117,11 @@ export default function OnboardNewBrandWorkspace() {
       const known = aliases[normalize(header)];
       const meta = metas.find((m) => normalize(m.title) === normalize(header));
       const target = known || (meta ? `meta:${meta.id}` : `new:${i}`);
-      next[i] = used.has(target) ? "ignore" : target;
+      next[i] = used.has(target) ? 'ignore' : target;
       used.add(target);
       metadata[i] = {
         title: header,
-        fieldType: meta?.fieldType === "number" ? "number" : "string",
+        fieldType: meta?.fieldType === 'number' ? 'number' : 'string',
       };
     });
     setSheet(sheetName);
@@ -143,38 +135,33 @@ export default function OnboardNewBrandWorkspace() {
   };
   const upload = async (file) => {
     try {
-      if (file.size > 10 * 1024 * 1024)
-        throw new Error("Workbook must be under 10 MB.");
-      const book = XLSX.read(await file.arrayBuffer(), { type: "array" });
+      if (file.size > 10 * 1024 * 1024) throw new Error('Workbook must be under 10 MB.');
+      const book = XLSX.read(await file.arrayBuffer(), { type: 'array' });
       loadSheet(book, book.SheetNames[0]);
       setWorkbook(book);
     } catch (error) {
-      message.error(error.message || "Could not read this workbook.");
+      message.error(error.message || 'Could not read this workbook.');
     }
     return false;
   };
   const payload = () => {
-    const active = Object.entries(mapping).filter(
-      ([, value]) => value !== "ignore",
-    );
+    const active = Object.entries(mapping).filter(([, value]) => value !== 'ignore');
     const targets = active.map(([, value]) => value);
-    if (!targets.includes("name") || !targets.includes("product_code"))
-      throw new Error("Map product name and product code columns.");
+    if (!targets.includes('name') || !targets.includes('product_code'))
+      throw new Error('Map product name and product code columns.');
     if (new Set(targets).size !== targets.length)
-      throw new Error("Map each destination field only once.");
+      throw new Error('Map each destination field only once.');
     const extendedFields = active
-      .filter(
-        ([, value]) => value.startsWith("meta:") || value.startsWith("new:"),
-      )
+      .filter(([, value]) => value.startsWith('meta:') || value.startsWith('new:'))
       .map(([index, value]) => {
         const definition = metas.find((m) => `meta:${m.id}` === value);
         return {
           key: index,
           title: definition?.title || extra[index].title,
           fieldType: definition
-            ? definition.fieldType === "string"
-              ? "string"
-              : "number"
+            ? definition.fieldType === 'string'
+              ? 'string'
+              : 'number'
             : extra[index].fieldType,
           ...(definition ? { metaId: definition.id } : {}),
         };
@@ -184,7 +171,7 @@ export default function OnboardNewBrandWorkspace() {
       .map((r) => {
         const product = { sourceRow: r.key, extended: {} };
         active.forEach(([index, value]) => {
-          if (value.startsWith("meta:") || value.startsWith("new:"))
+          if (value.startsWith('meta:') || value.startsWith('new:'))
             product.extended[index] = r.cells[index];
           else product[value] = r.cells[index];
         });
@@ -203,11 +190,11 @@ export default function OnboardNewBrandWorkspace() {
       const response = await preview(body).unwrap();
       if (version !== revision.current)
         return message.info(
-          "Data changed during validation. Review again to use the latest edits.",
+          'Data changed during validation. Review again to use the latest edits.',
         );
       setReview({ ...response, body });
     } catch (error) {
-      message.error(error.data?.message || error.message || "Review failed.");
+      message.error(error.data?.message || error.message || 'Review failed.');
     }
   };
   const importData = async () => {
@@ -218,9 +205,7 @@ export default function OnboardNewBrandWorkspace() {
     } catch (error) {
       setConfirmed(false);
       setReview(null);
-      message.error(
-        error.data?.message || "Import failed. Review again before retrying.",
-      );
+      message.error(error.data?.message || 'Import failed. Review again before retrying.');
     }
   };
   const template = () => {
@@ -229,39 +214,39 @@ export default function OnboardNewBrandWorkspace() {
       book,
       XLSX.utils.aoa_to_sheet([
         [
-          "Product Name",
-          "Product Code",
-          "Company Code",
-          "Selling Price",
-          "Quantity",
-          "Category",
-          "Parent Category",
-          "Description",
-          "Image URLs",
-          "Keywords",
-          "Tax",
-          "Finish",
-          "Material",
+          'Product Name',
+          'Product Code',
+          'Company Code',
+          'Selling Price',
+          'Quantity',
+          'Category',
+          'Parent Category',
+          'Description',
+          'Image URLs',
+          'Keywords',
+          'Tax',
+          'Finish',
+          'Material',
         ],
         [
-          "Sample product",
-          "NEW-BRAND-001",
-          "00123",
+          'Sample product',
+          'NEW-BRAND-001',
+          '00123',
           1500,
           0,
-          "Taps",
-          "Bathroom",
-          "Example only — replace or exclude this row",
-          "",
-          "tap,bathroom",
+          'Taps',
+          'Bathroom',
+          'Example only — replace or exclude this row',
+          '',
+          'tap,bathroom',
           18,
-          "Chrome",
-          "Brass",
+          'Chrome',
+          'Brass',
         ],
       ]),
-      "Products",
+      'Products',
     );
-    XLSX.writeFile(book, "brand-onboarding-template.xlsx");
+    XLSX.writeFile(book, 'brand-onboarding-template.xlsx');
   };
   if (result)
     return (
@@ -314,9 +299,9 @@ export default function OnboardNewBrandWorkspace() {
         <Steps
           current={review ? 2 : workbook ? 1 : 0}
           items={[
-            { title: "Upload Excel" },
-            { title: "Map and edit" },
-            { title: "Review and create" },
+            { title: 'Upload Excel' },
+            { title: 'Map and edit' },
+            { title: 'Review and create' },
           ]}
           style={{ marginBottom: 24 }}
         />
@@ -330,7 +315,7 @@ export default function OnboardNewBrandWorkspace() {
                 changed();
               }}
               options={[
-                { value: "", label: "Create a new brand" },
+                { value: '', label: 'Create a new brand' },
                 ...brands.map((b) => ({ value: b.id, label: b.brandName })),
               ]}
               showSearch
@@ -388,7 +373,7 @@ export default function OnboardNewBrandWorkspace() {
             <Tabs
               items={[
                 {
-                  key: "data",
+                  key: 'data',
                   label: `Excel data (${rows.length} rows)`,
                   children: (
                     <Table
@@ -406,10 +391,10 @@ export default function OnboardNewBrandWorkspace() {
                       }}
                       columns={[
                         {
-                          title: "Excel row",
-                          dataIndex: "key",
+                          title: 'Excel row',
+                          dataIndex: 'key',
                           width: 90,
-                          fixed: "left",
+                          fixed: 'left',
                         },
                         ...headers.map((header, i) => ({
                           title: header,
@@ -424,9 +409,7 @@ export default function OnboardNewBrandWorkspace() {
                                     p.key === r.key
                                       ? {
                                           ...p,
-                                          cells: p.cells.map((v, c) =>
-                                            c === i ? value : v,
-                                          ),
+                                          cells: p.cells.map((v, c) => (c === i ? value : v)),
                                         }
                                       : p,
                                   ),
@@ -441,8 +424,8 @@ export default function OnboardNewBrandWorkspace() {
                   ),
                 },
                 {
-                  key: "mapping",
-                  label: "Column mapping & extended fields",
+                  key: 'mapping',
+                  label: 'Column mapping & extended fields',
                   children: (
                     <Table
                       pagination={false}
@@ -452,9 +435,9 @@ export default function OnboardNewBrandWorkspace() {
                         index,
                       }))}
                       columns={[
-                        { title: "Excel column", dataIndex: "header" },
+                        { title: 'Excel column', dataIndex: 'header' },
                         {
-                          title: "Import as",
+                          title: 'Import as',
                           render: (_, r) => (
                             <Select
                               style={{ width: 280 }}
@@ -469,26 +452,27 @@ export default function OnboardNewBrandWorkspace() {
                                 changed();
                               }}
                               options={[
-                                { value: "ignore", label: "Ignore column" },
-                                ...Object.entries(fields).map(
-                                  ([value, label]) => ({ value, label }),
-                                ),
+                                { value: 'ignore', label: 'Ignore column' },
+                                ...Object.entries(fields).map(([value, label]) => ({
+                                  value,
+                                  label,
+                                })),
                                 ...metas.map((m) => ({
                                   value: `meta:${m.id}`,
                                   label: `Metadata: ${m.title}`,
                                 })),
                                 {
                                   value: `new:${r.index}`,
-                                  label: "Create new metadata field",
+                                  label: 'Create new metadata field',
                                 },
                               ]}
                             />
                           ),
                         },
                         {
-                          title: "New field title / type",
+                          title: 'New field title / type',
                           render: (_, r) =>
-                            mapping[r.index]?.startsWith("new:") ? (
+                            mapping[r.index]?.startsWith('new:') ? (
                               <Space>
                                 <Input
                                   value={extra[r.index]?.title}
@@ -506,8 +490,8 @@ export default function OnboardNewBrandWorkspace() {
                                 <Select
                                   value={extra[r.index]?.fieldType}
                                   options={[
-                                    { value: "string", label: "Text" },
-                                    { value: "number", label: "Number" },
+                                    { value: 'string', label: 'Text' },
+                                    { value: 'number', label: 'Number' },
                                   ]}
                                   onChange={(v) => {
                                     setExtra((prev) => ({
@@ -522,7 +506,7 @@ export default function OnboardNewBrandWorkspace() {
                                 />
                               </Space>
                             ) : (
-                              "—"
+                              '—'
                             ),
                         },
                       ]}
@@ -531,7 +515,7 @@ export default function OnboardNewBrandWorkspace() {
                 },
               ]}
             />
-            <Space style={{ margin: "20px 0" }}>
+            <Space style={{ margin: '20px 0' }}>
               <Button
                 type="primary"
                 loading={checking}
@@ -544,19 +528,18 @@ export default function OnboardNewBrandWorkspace() {
             {review && (
               <Card title="Creation review">
                 <Alert
-                  type={review.errors.length ? "error" : "success"}
+                  type={review.errors.length ? 'error' : 'success'}
                   showIcon
                   message={
                     review.errors.length
-                      ? "Resolve the errors below, then review again"
-                      : "Validation passed. Ready to create."
+                      ? 'Resolve the errors below, then review again'
+                      : 'Validation passed. Ready to create.'
                   }
                 />
                 <Typography.Paragraph style={{ marginTop: 16 }}>
-                  {review.summary.products} products · Categories:{" "}
-                  {review.summary.categories.join(", ") || "None"} · Parent
-                  categories:{" "}
-                  {review.summary.parentCategories.join(", ") || "None"}
+                  {review.summary.products} products · Categories:{' '}
+                  {review.summary.categories.join(', ') || 'None'} · Parent categories:{' '}
+                  {review.summary.parentCategories.join(', ') || 'None'}
                 </Typography.Paragraph>
                 <Table
                   size="small"
@@ -564,8 +547,8 @@ export default function OnboardNewBrandWorkspace() {
                   pagination={false}
                   dataSource={review.summary.extendedFields}
                   columns={[
-                    { title: "Extended field", dataIndex: "title" },
-                    { title: "Action", dataIndex: "action" },
+                    { title: 'Extended field', dataIndex: 'title' },
+                    { title: 'Action', dataIndex: 'action' },
                   ]}
                 />
                 {!!review.errors.length && (
@@ -574,11 +557,11 @@ export default function OnboardNewBrandWorkspace() {
                     rowKey={(_, i) => i}
                     dataSource={review.errors}
                     columns={[
-                      { title: "Excel row", dataIndex: "row" },
+                      { title: 'Excel row', dataIndex: 'row' },
                       {
-                        title: "Errors",
-                        dataIndex: "messages",
-                        render: (values) => values.join("; "),
+                        title: 'Errors',
+                        dataIndex: 'messages',
+                        render: (values) => values.join('; '),
                       },
                     ]}
                   />
@@ -606,9 +589,9 @@ export default function OnboardNewBrandWorkspace() {
           maskClosable={!saving}
           cancelButtonProps={{ disabled: saving }}
         >
-          Create {review?.summary.products} new products for{" "}
-          {brands.find((b) => b.id === brandId)?.brandName || brandName}, along
-          with the reviewed categories and metadata fields?
+          Create {review?.summary.products} new products for{' '}
+          {brands.find((b) => b.id === brandId)?.brandName || brandName}, along with the reviewed
+          categories and metadata fields?
         </Modal>
       </div>
     </div>

@@ -4,7 +4,7 @@
 // PARTIALLY_DISPATCHED) based on what's been recorded here.
 module.exports = (sequelize, DataTypes) => {
   const OrderDispatch = sequelize.define(
-    "OrderDispatch",
+    'OrderDispatch',
     {
       id: {
         type: DataTypes.UUID,
@@ -90,9 +90,9 @@ module.exports = (sequelize, DataTypes) => {
       },
 
       status: {
-        type: DataTypes.ENUM("DISPATCHED", "DELIVERED", "RETURNED"),
+        type: DataTypes.ENUM('DISPATCHED', 'DELIVERED', 'RETURNED'),
         allowNull: false,
-        defaultValue: "DISPATCHED",
+        defaultValue: 'DISPATCHED',
       },
 
       // Transport (migration 20261016000500)
@@ -110,31 +110,31 @@ module.exports = (sequelize, DataTypes) => {
       deliveryNote: { type: DataTypes.TEXT, allowNull: true },
     },
     {
-      tableName: "order_dispatches",
+      tableName: 'order_dispatches',
       timestamps: true,
       indexes: [
-        { fields: ["orderId"] },
-        { fields: ["orderNo"] },
-        { fields: ["dispatchDate"] },
+        { fields: ['orderId'] },
+        { fields: ['orderNo'] },
+        { fields: ['dispatchDate'] },
         {
           unique: true,
-          fields: ["orderId", "dispatchNumber"],
-          name: "uniq_order_dispatch_number",
+          fields: ['orderId', 'dispatchNumber'],
+          name: 'uniq_order_dispatch_number',
         },
       ],
     },
   );
 
   OrderDispatch.associate = (models) => {
-    OrderDispatch.belongsTo(models.Quotation, { foreignKey: "quotationId", as: "quotation" });
+    OrderDispatch.belongsTo(models.Quotation, { foreignKey: 'quotationId', as: 'quotation' });
     OrderDispatch.belongsTo(models.Order, {
-      foreignKey: "orderId",
-      as: "order",
+      foreignKey: 'orderId',
+      as: 'order',
     });
 
     OrderDispatch.belongsTo(models.User, {
-      foreignKey: "dispatchedBy",
-      as: "dispatcher",
+      foreignKey: 'dispatchedBy',
+      as: 'dispatcher',
     });
   };
 

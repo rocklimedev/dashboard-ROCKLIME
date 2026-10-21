@@ -1,6 +1,6 @@
 // src/hooks/useProductsData.js
-import { useGetProductsByIdsQuery } from "../api/productApi";
-import { useMemo, useEffect } from "react";
+import { useGetProductsByIdsQuery } from '../api/productApi';
+import { useMemo, useEffect } from 'react';
 
 /**
  * Optimized hook to fetch product details for cart items in bulk.
@@ -13,9 +13,7 @@ import { useMemo, useEffect } from "react";
 export default function useProductsData(rawProducts = []) {
   const productIds = useMemo(() => {
     if (!Array.isArray(rawProducts) || rawProducts.length === 0) return [];
-    const ids = rawProducts
-      .map((item) => item?.productId || item?.id)
-      .filter(Boolean);
+    const ids = rawProducts.map((item) => item?.productId || item?.id).filter(Boolean);
     return [...new Set(ids)];
   }, [rawProducts]);
 
@@ -38,29 +36,14 @@ export default function useProductsData(rawProducts = []) {
 
   useEffect(() => {
     if (isError) {
-      console.error("useProductsData: Failed to fetch products", {
+      console.error('useProductsData: Failed to fetch products', {
         productIds,
         error: error?.data || error,
       });
-    } else if (
-      productIds.length > 0 &&
-      fetchedProducts.length === 0 &&
-      !isLoading &&
-      !isFetching
-    ) {
-      console.warn(
-        "useProductsData: No products returned for valid IDs",
-        productIds,
-      );
+    } else if (productIds.length > 0 && fetchedProducts.length === 0 && !isLoading && !isFetching) {
+      console.warn('useProductsData: No products returned for valid IDs', productIds);
     }
-  }, [
-    isError,
-    error,
-    productIds,
-    fetchedProducts.length,
-    isLoading,
-    isFetching,
-  ]);
+  }, [isError, error, productIds, fetchedProducts.length, isLoading, isFetching]);
 
   const productsData = useMemo(() => {
     if (!Array.isArray(fetchedProducts) || fetchedProducts.length === 0) {
@@ -84,7 +67,7 @@ export default function useProductsData(rawProducts = []) {
   }, [fetchedProducts, rawProducts]);
 
   const errors = isError
-    ? [{ message: error?.data?.message || "Failed to fetch product details" }]
+    ? [{ message: error?.data?.message || 'Failed to fetch product details' }]
     : [];
 
   return {

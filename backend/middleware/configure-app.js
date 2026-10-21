@@ -1,12 +1,12 @@
-const express = require("express");
-const cors = require("cors");
-const helmet = require("helmet");
-const { corsOptions } = require("../config/cors");
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const { corsOptions } = require('../config/cors');
 
 function configureApp(app, io) {
   app.use(cors(corsOptions));
-  app.use(express.json({ limit: "10mb" }));
-  app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+  app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
   // ------------------- Security -------------------
   app.use(
@@ -16,9 +16,9 @@ function configureApp(app, io) {
       hsts: { maxAge: 31536000, includeSubDomains: true },
     }),
   );
-  app.disable("x-powered-by");
+  app.disable('x-powered-by');
   app.use((req, res, next) => {
-    const blockedPaths = ["/wp-admin", "/wp-login.php", "/phpmyadmin", "/.env"];
+    const blockedPaths = ['/wp-admin', '/wp-login.php', '/phpmyadmin', '/.env'];
 
     if (blockedPaths.some((p) => req.url.includes(p))) {
       return res.status(444).end(); // nginx-style drop
@@ -28,7 +28,7 @@ function configureApp(app, io) {
   });
 
   // ------------------- Optional: Console Debug Logger -------------------
-  if (process.env.NODE_ENV !== "production") {
+  if (process.env.NODE_ENV !== 'production') {
     app.use((req, res, next) => {
       console.log(`${req.method} ${req.url}`);
       next();
@@ -43,17 +43,16 @@ function configureApp(app, io) {
 
   // ------------------- Local uploads (UPLOAD_MODE=local) -------------------
   {
-    const path = require("path");
-    const uploadDir = path.resolve(process.env.UPLOAD_DIR || path.join(__dirname, "..", "uploads"));
+    const path = require('path');
+    const uploadDir = path.resolve(process.env.UPLOAD_DIR || path.join(__dirname, '..', 'uploads'));
     app.use(
-      "/uploads",
+      '/uploads',
       (req, res, next) => {
-        res.set("Cross-Origin-Resource-Policy", "cross-origin");
+        res.set('Cross-Origin-Resource-Policy', 'cross-origin');
         next();
       },
       express.static(uploadDir),
     );
   }
-
 }
 module.exports = { configureApp };

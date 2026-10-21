@@ -1,48 +1,48 @@
 // src/pages/categories/CategoryManagement.jsx
-import React, { useState, useMemo } from "react";
-import { EditOutlined, DeleteOutlined, MoreOutlined } from "@ant-design/icons";
-import { Dropdown, Menu, Button, Tooltip, message, Tabs, Input } from "antd";
+import React, { useState, useMemo } from 'react';
+import { EditOutlined, DeleteOutlined, MoreOutlined } from '@ant-design/icons';
+import { Dropdown, Menu, Button, Tooltip, message, Tabs, Input } from 'antd';
 
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from 'react-router-dom';
 
 import {
   useGetAllParentCategoriesQuery,
   useDeleteParentCategoryMutation,
   useCreateParentCategoryMutation,
   useUpdateParentCategoryMutation,
-} from "../../api/parentCategoryApi";
+} from '../../api/parentCategoryApi';
 
 import {
   useGetAllCategoriesQuery,
   useDeleteCategoryMutation,
   useCreateCategoryMutation,
   useUpdateCategoryMutation,
-} from "../../api/categoryApi";
+} from '../../api/categoryApi';
 
 import {
   useGetAllKeywordsQuery,
   useDeleteKeywordMutation,
   useCreateKeywordMutation,
   useUpdateKeywordMutation,
-} from "../../api/keywordApi";
+} from '../../api/keywordApi';
 
-import PageHeader from "../../components/Common/PageHeader";
-import DeleteModal from "../../components/Common/DeleteModal";
+import PageHeader from '../../components/Common/PageHeader';
+import DeleteModal from '../../components/Common/DeleteModal';
 
-import AddParentCategoryModal from "../../components/Categories/AddParentCategoryModal";
-import AddCategoryModal from "../../components/Categories/AddCategoryModal";
-import AddKeywordModal from "../../components/Categories/AddKeywordModal";
+import AddParentCategoryModal from '../../components/Categories/AddParentCategoryModal';
+import AddCategoryModal from '../../components/Categories/AddCategoryModal';
+import AddKeywordModal from '../../components/Categories/AddKeywordModal';
 
-import "../../components/Categories/category.css";
+import '../../components/Categories/category.css';
 
 const { TabPane } = Tabs;
 const { Search } = Input;
 
 const CategoryManagement = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const currentTab = searchParams.get("tab") || "parent";
+  const currentTab = searchParams.get('tab') || 'parent';
 
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Modal States
   const [showParentModal, setShowParentModal] = useState(false);
@@ -55,11 +55,9 @@ const CategoryManagement = () => {
   const [deleteId, setDeleteId] = useState(null);
 
   // === Queries ===
-  const { data: parentData, refetch: refetchParents } =
-    useGetAllParentCategoriesQuery();
+  const { data: parentData, refetch: refetchParents } = useGetAllParentCategoriesQuery();
 
-  const { data: catData, refetch: refetchCategories } =
-    useGetAllCategoriesQuery();
+  const { data: catData, refetch: refetchCategories } = useGetAllCategoriesQuery();
 
   const { data: kwData, refetch: refetchKeywords } = useGetAllKeywordsQuery();
 
@@ -109,15 +107,15 @@ const CategoryManagement = () => {
   // === Handlers ===
   const handleTabChange = (key) => {
     setSearchParams({ tab: key });
-    setSearchTerm("");
+    setSearchTerm('');
   };
 
   const openModal = (type, item = null) => {
     setEditingItem(item ? { ...item, type } : null);
 
-    if (type === "parent") setShowParentModal(true);
-    else if (type === "category") setShowCategoryModal(true);
-    else if (type === "keyword") setShowKeywordModal(true);
+    if (type === 'parent') setShowParentModal(true);
+    else if (type === 'category') setShowCategoryModal(true);
+    else if (type === 'keyword') setShowKeywordModal(true);
   };
 
   const openDeleteModal = (type, id) => {
@@ -127,8 +125,8 @@ const CategoryManagement = () => {
   };
 
   const handleModalSuccess = () => {
-    if (currentTab === "parent") refetchParents();
-    else if (currentTab === "category") refetchCategories();
+    if (currentTab === 'parent') refetchParents();
+    else if (currentTab === 'category') refetchCategories();
     else refetchKeywords();
   };
 
@@ -136,17 +134,17 @@ const CategoryManagement = () => {
     if (!deleteId) return;
 
     try {
-      if (deleteType === "parent") {
+      if (deleteType === 'parent') {
         await deleteParent(deleteId).unwrap();
-        message.success("Parent Category deleted successfully");
+        message.success('Parent Category deleted successfully');
         refetchParents();
-      } else if (deleteType === "category") {
+      } else if (deleteType === 'category') {
         await deleteCategory(deleteId).unwrap();
-        message.success("Category deleted successfully");
+        message.success('Category deleted successfully');
         refetchCategories();
-      } else if (deleteType === "keyword") {
+      } else if (deleteType === 'keyword') {
         await deleteKeyword(deleteId).unwrap();
-        message.success("Keyword deleted successfully");
+        message.success('Keyword deleted successfully');
         refetchKeywords();
       }
     } catch (err) {
@@ -172,19 +170,15 @@ const CategoryManagement = () => {
           title="Category Management"
           subtitle="Manage Parent Categories, Categories & Keywords"
           onAdd={() => {
-            if (currentTab === "parent") openModal("parent");
-            else if (currentTab === "category") openModal("category");
-            else openModal("keyword");
+            if (currentTab === 'parent') openModal('parent');
+            else if (currentTab === 'category') openModal('category');
+            else openModal('keyword');
           }}
         />
 
         <div className="card-body">
           {/* Main Tabs */}
-          <Tabs
-            activeKey={currentTab}
-            onChange={handleTabChange}
-            className="mb-4"
-          >
+          <Tabs activeKey={currentTab} onChange={handleTabChange} className="mb-4">
             <TabPane
               tab={
                 <span>
@@ -215,14 +209,14 @@ const CategoryManagement = () => {
           <div className="row mb-4">
             <div className="col-lg-6" />
             <div className="col-lg-6 text-lg-end">
-              <div style={{ maxWidth: "340px", marginLeft: "auto" }}>
+              <div style={{ maxWidth: '340px', marginLeft: 'auto' }}>
                 <Search
                   placeholder={
-                    currentTab === "parent"
-                      ? "Search parent categories..."
-                      : currentTab === "category"
-                        ? "Search categories..."
-                        : "Search keywords..."
+                    currentTab === 'parent'
+                      ? 'Search parent categories...'
+                      : currentTab === 'category'
+                        ? 'Search categories...'
+                        : 'Search keywords...'
                   }
                   allowClear
                   value={searchTerm}
@@ -233,7 +227,7 @@ const CategoryManagement = () => {
           </div>
 
           {/* Tables */}
-          {currentTab === "parent" && (
+          {currentTab === 'parent' && (
             <div className="table-responsive">
               <table className="table table-hover align-middle">
                 <thead className="table-light">
@@ -252,29 +246,21 @@ const CategoryManagement = () => {
                         <Tooltip title="Edit">
                           <EditOutlined
                             className="me-3 text-primary"
-                            style={{ cursor: "pointer", fontSize: 18 }}
-                            onClick={() => openModal("parent", item)}
+                            style={{ cursor: 'pointer', fontSize: 18 }}
+                            onClick={() => openModal('parent', item)}
                           />
                         </Tooltip>
                         <Dropdown
                           overlay={
                             <Menu>
-                              <Menu.Item
-                                danger
-                                onClick={() =>
-                                  openDeleteModal("parent", item.id)
-                                }
-                              >
+                              <Menu.Item danger onClick={() => openDeleteModal('parent', item.id)}>
                                 <DeleteOutlined /> Delete
                               </Menu.Item>
                             </Menu>
                           }
-                          trigger={["click"]}
+                          trigger={['click']}
                         >
-                          <Button
-                            type="text"
-                            icon={<MoreOutlined style={{ fontSize: 18 }} />}
-                          />
+                          <Button type="text" icon={<MoreOutlined style={{ fontSize: 18 }} />} />
                         </Dropdown>
                       </td>
                     </tr>
@@ -284,7 +270,7 @@ const CategoryManagement = () => {
             </div>
           )}
 
-          {currentTab === "category" && (
+          {currentTab === 'category' && (
             <div className="table-responsive">
               <table className="table table-hover align-middle">
                 <thead className="table-light">
@@ -300,15 +286,13 @@ const CategoryManagement = () => {
                       <td>
                         <strong>{item.name}</strong>
                       </td>
-                      <td className="text-muted">
-                        {parentMap[item.parentCategoryId] || "—"}
-                      </td>
+                      <td className="text-muted">{parentMap[item.parentCategoryId] || '—'}</td>
                       <td>
                         <Tooltip title="Edit">
                           <EditOutlined
                             className="me-3 text-primary"
-                            style={{ cursor: "pointer", fontSize: 18 }}
-                            onClick={() => openModal("category", item)}
+                            style={{ cursor: 'pointer', fontSize: 18 }}
+                            onClick={() => openModal('category', item)}
                           />
                         </Tooltip>
                         <Dropdown
@@ -316,20 +300,15 @@ const CategoryManagement = () => {
                             <Menu>
                               <Menu.Item
                                 danger
-                                onClick={() =>
-                                  openDeleteModal("category", item.categoryId)
-                                }
+                                onClick={() => openDeleteModal('category', item.categoryId)}
                               >
                                 <DeleteOutlined /> Delete
                               </Menu.Item>
                             </Menu>
                           }
-                          trigger={["click"]}
+                          trigger={['click']}
                         >
-                          <Button
-                            type="text"
-                            icon={<MoreOutlined style={{ fontSize: 18 }} />}
-                          />
+                          <Button type="text" icon={<MoreOutlined style={{ fontSize: 18 }} />} />
                         </Dropdown>
                       </td>
                     </tr>
@@ -339,7 +318,7 @@ const CategoryManagement = () => {
             </div>
           )}
 
-          {currentTab === "keyword" && (
+          {currentTab === 'keyword' && (
             <div className="table-responsive">
               <table className="table table-hover align-middle">
                 <thead className="table-light">
@@ -356,37 +335,27 @@ const CategoryManagement = () => {
                         <strong>{item.keyword}</strong>
                       </td>
                       <td className="text-muted">
-                        {categories.find(
-                          (c) => c.categoryId === item.categoryId,
-                        )?.name || "—"}
+                        {categories.find((c) => c.categoryId === item.categoryId)?.name || '—'}
                       </td>
                       <td>
                         <Tooltip title="Edit">
                           <EditOutlined
                             className="me-3 text-primary"
-                            style={{ cursor: "pointer", fontSize: 18 }}
-                            onClick={() => openModal("keyword", item)}
+                            style={{ cursor: 'pointer', fontSize: 18 }}
+                            onClick={() => openModal('keyword', item)}
                           />
                         </Tooltip>
                         <Dropdown
                           overlay={
                             <Menu>
-                              <Menu.Item
-                                danger
-                                onClick={() =>
-                                  openDeleteModal("keyword", item.id)
-                                }
-                              >
+                              <Menu.Item danger onClick={() => openDeleteModal('keyword', item.id)}>
                                 <DeleteOutlined /> Delete
                               </Menu.Item>
                             </Menu>
                           }
-                          trigger={["click"]}
+                          trigger={['click']}
                         >
-                          <Button
-                            type="text"
-                            icon={<MoreOutlined style={{ fontSize: 18 }} />}
-                          />
+                          <Button type="text" icon={<MoreOutlined style={{ fontSize: 18 }} />} />
                         </Dropdown>
                       </td>
                     </tr>
@@ -401,25 +370,23 @@ const CategoryManagement = () => {
         <AddParentCategoryModal
           open={showParentModal}
           onClose={closeModals}
-          editMode={!!editingItem && editingItem.type === "parent"}
-          parentCategoryData={
-            editingItem?.type === "parent" ? editingItem : null
-          }
+          editMode={!!editingItem && editingItem.type === 'parent'}
+          parentCategoryData={editingItem?.type === 'parent' ? editingItem : null}
           onSuccess={handleModalSuccess}
         />
 
         <AddCategoryModal
           open={showCategoryModal}
           onClose={closeModals}
-          editMode={!!editingItem && editingItem.type === "category"}
-          categoryData={editingItem?.type === "category" ? editingItem : null}
+          editMode={!!editingItem && editingItem.type === 'category'}
+          categoryData={editingItem?.type === 'category' ? editingItem : null}
           onSuccess={handleModalSuccess}
         />
 
         <AddKeywordModal
           open={showKeywordModal}
           onClose={closeModals}
-          editData={editingItem?.type === "keyword" ? editingItem : null}
+          editData={editingItem?.type === 'keyword' ? editingItem : null}
           onSuccess={handleModalSuccess}
         />
 
@@ -432,11 +399,11 @@ const CategoryManagement = () => {
           }}
           onConfirm={handleConfirmDelete}
           itemType={
-            deleteType === "parent"
-              ? "Parent Category"
-              : deleteType === "category"
-                ? "Category"
-                : "Keyword"
+            deleteType === 'parent'
+              ? 'Parent Category'
+              : deleteType === 'category'
+                ? 'Category'
+                : 'Keyword'
           }
         />
       </div>

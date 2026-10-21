@@ -1,14 +1,18 @@
 // Sequelize models for the stock engine tables (see migrations/20261015000200-stock-engine.js)
-const { v4: uuidv4 } = require("uuid");
+const { v4: uuidv4 } = require('uuid');
 
 module.exports = (sequelize, DataTypes) => {
   // Fresh objects per attribute: Sequelize writes the column name into the
   // definition object, so sharing one object made every column "onHand".
-  const idCol = () => ({ type: DataTypes.CHAR(36), primaryKey: true, defaultValue: () => uuidv4() });
+  const idCol = () => ({
+    type: DataTypes.CHAR(36),
+    primaryKey: true,
+    defaultValue: () => uuidv4(),
+  });
   const qtyCol = () => ({ type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 });
 
   const Warehouse = sequelize.define(
-    "Warehouse",
+    'Warehouse',
     {
       id: idCol(),
       code: { type: DataTypes.STRING(30), allowNull: false, unique: true },
@@ -17,11 +21,11 @@ module.exports = (sequelize, DataTypes) => {
       isDefault: { type: DataTypes.BOOLEAN, defaultValue: false },
       active: { type: DataTypes.BOOLEAN, defaultValue: true },
     },
-    { tableName: "warehouses", timestamps: true },
+    { tableName: 'warehouses', timestamps: true },
   );
 
   const StockBalance = sequelize.define(
-    "StockBalance",
+    'StockBalance',
     {
       id: idCol(),
       productId: { type: DataTypes.CHAR(36), allowNull: false },
@@ -37,11 +41,11 @@ module.exports = (sequelize, DataTypes) => {
         },
       },
     },
-    { tableName: "stock_balances", timestamps: true },
+    { tableName: 'stock_balances', timestamps: true },
   );
 
   const StockLedger = sequelize.define(
-    "StockLedger",
+    'StockLedger',
     {
       id: idCol(),
       productId: { type: DataTypes.CHAR(36), allowNull: false },
@@ -62,11 +66,11 @@ module.exports = (sequelize, DataTypes) => {
       reason: { type: DataTypes.TEXT },
       idempotencyKey: { type: DataTypes.STRING(160), unique: true },
     },
-    { tableName: "stock_ledger", timestamps: true, updatedAt: false },
+    { tableName: 'stock_ledger', timestamps: true, updatedAt: false },
   );
 
   const StockReservation = sequelize.define(
-    "StockReservation",
+    'StockReservation',
     {
       id: idCol(),
       orderId: { type: DataTypes.CHAR(36), allowNull: false },
@@ -74,13 +78,13 @@ module.exports = (sequelize, DataTypes) => {
       productId: { type: DataTypes.CHAR(36), allowNull: false },
       warehouseId: { type: DataTypes.CHAR(36), allowNull: false },
       quantity: qtyCol(),
-      status: { type: DataTypes.STRING(20), allowNull: false, defaultValue: "ACTIVE" },
+      status: { type: DataTypes.STRING(20), allowNull: false, defaultValue: 'ACTIVE' },
     },
-    { tableName: "stock_reservations", timestamps: true },
+    { tableName: 'stock_reservations', timestamps: true },
   );
 
   const GoodsReceipt = sequelize.define(
-    "GoodsReceipt",
+    'GoodsReceipt',
     {
       id: idCol(),
       grnNo: { type: DataTypes.STRING(40), allowNull: false, unique: true },
@@ -92,11 +96,11 @@ module.exports = (sequelize, DataTypes) => {
       userId: { type: DataTypes.CHAR(36) },
       notes: { type: DataTypes.TEXT },
     },
-    { tableName: "goods_receipts", timestamps: true },
+    { tableName: 'goods_receipts', timestamps: true },
   );
 
   const GoodsReceiptItem = sequelize.define(
-    "GoodsReceiptItem",
+    'GoodsReceiptItem',
     {
       id: idCol(),
       grnId: { type: DataTypes.CHAR(36), allowNull: false },
@@ -105,26 +109,26 @@ module.exports = (sequelize, DataTypes) => {
       quantity: qtyCol(),
       damaged: qtyCol(),
     },
-    { tableName: "goods_receipt_items", timestamps: true },
+    { tableName: 'goods_receipt_items', timestamps: true },
   );
 
   const StockCount = sequelize.define(
-    "StockCount",
+    'StockCount',
     {
       id: idCol(),
       countNo: { type: DataTypes.STRING(40), allowNull: false, unique: true },
       warehouseId: { type: DataTypes.CHAR(36), allowNull: false },
-      status: { type: DataTypes.STRING(20), allowNull: false, defaultValue: "DRAFT" },
+      status: { type: DataTypes.STRING(20), allowNull: false, defaultValue: 'DRAFT' },
       notes: { type: DataTypes.TEXT },
       createdBy: { type: DataTypes.CHAR(36) },
       approvedBy: { type: DataTypes.CHAR(36) },
       approvedAt: { type: DataTypes.DATE },
     },
-    { tableName: "stock_counts", timestamps: true },
+    { tableName: 'stock_counts', timestamps: true },
   );
 
   const StockCountLine = sequelize.define(
-    "StockCountLine",
+    'StockCountLine',
     {
       id: idCol(),
       countId: { type: DataTypes.CHAR(36), allowNull: false },
@@ -132,16 +136,16 @@ module.exports = (sequelize, DataTypes) => {
       systemQty: qtyCol(),
       countedQty: { type: DataTypes.INTEGER, allowNull: true },
     },
-    { tableName: "stock_count_lines", timestamps: true },
+    { tableName: 'stock_count_lines', timestamps: true },
   );
 
-  GoodsReceipt.hasMany(GoodsReceiptItem, { foreignKey: "grnId", as: "items" });
-  GoodsReceiptItem.belongsTo(GoodsReceipt, { foreignKey: "grnId", as: "receipt" });
-  StockCount.hasMany(StockCountLine, { foreignKey: "countId", as: "lines" });
-  StockCountLine.belongsTo(StockCount, { foreignKey: "countId", as: "count" });
-  StockBalance.belongsTo(Warehouse, { foreignKey: "warehouseId", as: "warehouse" });
-  StockReservation.belongsTo(Warehouse, { foreignKey: "warehouseId", as: "warehouse" });
-  StockLedger.belongsTo(Warehouse, { foreignKey: "warehouseId", as: "warehouse" });
+  GoodsReceipt.hasMany(GoodsReceiptItem, { foreignKey: 'grnId', as: 'items' });
+  GoodsReceiptItem.belongsTo(GoodsReceipt, { foreignKey: 'grnId', as: 'receipt' });
+  StockCount.hasMany(StockCountLine, { foreignKey: 'countId', as: 'lines' });
+  StockCountLine.belongsTo(StockCount, { foreignKey: 'countId', as: 'count' });
+  StockBalance.belongsTo(Warehouse, { foreignKey: 'warehouseId', as: 'warehouse' });
+  StockReservation.belongsTo(Warehouse, { foreignKey: 'warehouseId', as: 'warehouse' });
+  StockLedger.belongsTo(Warehouse, { foreignKey: 'warehouseId', as: 'warehouse' });
 
   return {
     Warehouse,

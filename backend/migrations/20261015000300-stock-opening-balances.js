@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 /**
  * Fills the new stock tables from the old products.quantity (see
@@ -7,10 +7,10 @@
  */
 module.exports = {
   async up() {
-    const connectMongoDB = require("../config/dbMongo");
-    const mongoose = require("mongoose");
+    const connectMongoDB = require('../config/dbMongo');
+    const mongoose = require('mongoose');
     if (mongoose.connection.readyState !== 1) await connectMongoDB();
-    const { buildOpeningBalances } = require("../modules/stock/opening");
+    const { buildOpeningBalances } = require('../modules/stock/opening');
     await buildOpeningBalances();
   },
   async down() {},

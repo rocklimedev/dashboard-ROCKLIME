@@ -1,8 +1,8 @@
-const { sendNotification } = require("../engagement/notification.controller");
-const { Brand, Product } = require("../../models");
-const { ActivityLog } = require("../../models");
-const logActivity = require("../../utils/activityLogger");
-const ADMIN_USER_ID = "2ef0f07a-a275-4fe1-832d-fe9a5d145f60";
+const { sendNotification } = require('../engagement/notification.controller');
+const { Brand, Product } = require('../../models');
+const { ActivityLog } = require('../../models');
+const logActivity = require('../../utils/activityLogger');
+const ADMIN_USER_ID = '2ef0f07a-a275-4fe1-832d-fe9a5d145f60';
 
 // Get total products of a brand
 const getTotalProductOfBrand = async (req, res) => {
@@ -36,7 +36,7 @@ const createBrand = async (req, res) => {
       contextTag: ActivityLog.CONTEXT_TAGS.CATALOG,
       subContext: ActivityLog.SUB_CONTEXTS.BRAND,
 
-      action: "BRAND_CREATED",
+      action: 'BRAND_CREATED',
 
       entityId: brand.brandId,
       entityName: brand.brandName,
@@ -59,7 +59,7 @@ const createBrand = async (req, res) => {
 
     await sendNotification({
       userId: ADMIN_USER_ID,
-      title: "New Brand Created",
+      title: 'New Brand Created',
       message: `A new brand "${brandName}" with slug "${brandSlug}" has been created.`,
     });
 
@@ -73,7 +73,7 @@ const createBrand = async (req, res) => {
 const getBrands = async (req, res) => {
   try {
     const brands = await Brand.findAll({
-      order: [["brandName", "ASC"]],
+      order: [['brandName', 'ASC']],
     });
     res.status(200).json(brands);
   } catch (error) {
@@ -88,7 +88,7 @@ const getBrandById = async (req, res) => {
     if (brand) {
       res.status(200).json(brand);
     } else {
-      res.status(404).json({ message: "Brand not found" });
+      res.status(404).json({ message: 'Brand not found' });
     }
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -104,7 +104,7 @@ const updateBrand = async (req, res) => {
 
     if (!brand) {
       return res.status(404).json({
-        message: "Brand not found.",
+        message: 'Brand not found.',
       });
     }
 
@@ -129,7 +129,7 @@ const updateBrand = async (req, res) => {
       contextTag: ActivityLog.CONTEXT_TAGS.CATALOG,
       subContext: ActivityLog.SUB_CONTEXTS.BRAND,
 
-      action: "BRAND_UPDATED",
+      action: 'BRAND_UPDATED',
 
       entityId: brand.brandId,
       entityName: brand.brandName,
@@ -153,12 +153,12 @@ const updateBrand = async (req, res) => {
 
     await sendNotification({
       userId: ADMIN_USER_ID,
-      title: "Brand Updated",
+      title: 'Brand Updated',
       message: `The brand "${brand.brandName}" has been updated.`,
     });
 
     res.json({
-      message: "Brand updated successfully.",
+      message: 'Brand updated successfully.',
       brand,
     });
   } catch (error) {
@@ -174,13 +174,13 @@ const deleteBrand = async (req, res) => {
 
     if (!brand) {
       return res.status(404).json({
-        message: "Brand not found",
+        message: 'Brand not found',
       });
     }
 
     await sendNotification({
       userId: ADMIN_USER_ID,
-      title: "Brand Deleted",
+      title: 'Brand Deleted',
       message: `The brand "${brand.brandName}" with slug "${brand.brandSlug}" has been deleted.`,
     });
 
@@ -191,7 +191,7 @@ const deleteBrand = async (req, res) => {
       contextTag: ActivityLog.CONTEXT_TAGS.CATALOG,
       subContext: ActivityLog.SUB_CONTEXTS.BRAND,
 
-      action: "BRAND_DELETED",
+      action: 'BRAND_DELETED',
 
       entityId: brand.brandId,
       entityName: brand.brandName,

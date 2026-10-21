@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const poItemSchema = new mongoose.Schema(
   {
@@ -38,8 +38,8 @@ const poItemSchema = new mongoose.Schema(
         discount: { type: Number, default: 0, min: 0 },
         discountType: {
           type: String,
-          enum: ["percent", "fixed"],
-          default: "percent",
+          enum: ['percent', 'fixed'],
+          default: 'percent',
         },
         tax: { type: Number, default: 0, min: 0 },
         total: { type: Number, required: true, min: 0 },
@@ -53,11 +53,11 @@ const poItemSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-    collection: "po_items",
+    collection: 'po_items',
   },
 );
 
 poItemSchema.index({ poId: 1 });
 poItemSchema.index({ poNumber: 1 });
 
-module.exports = mongoose.model("PoItem", poItemSchema);
+module.exports = mongoose.model('PoItem', poItemSchema);

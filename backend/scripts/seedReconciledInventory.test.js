@@ -9,9 +9,13 @@ function database(initial) {
   let state = clone(initial);
   let working;
   const transactionToken = {};
-  function check(options) { assert.equal(options.transaction, transactionToken); }
+  function check(options) {
+    assert.equal(options.transaction, transactionToken);
+  }
   const qi = {
-    get rows() { return state; },
+    get rows() {
+      return state;
+    },
     sequelize: {
       async transaction(callback) {
         working = clone(state);
@@ -23,19 +27,40 @@ function database(initial) {
         check(options);
         assert.match(sql, /FOR UPDATE$/);
         const args = options.replacements;
-        if (args.id) return [working.filter((p) => p.productId === args.id || p.product_code.toUpperCase() === args.code.toUpperCase())];
-        return [working.filter((p) => {
-          const meta = typeof p.meta === 'string' ? JSON.parse(p.meta) : p.meta;
-          return p.brandId === args.brandId && String(meta[companyKey] ?? meta.companyCode).trim().toUpperCase() === args.companyCode;
-        }).slice(0, 1)];
+        if (args.id)
+          return [
+            working.filter(
+              (p) =>
+                p.productId === args.id || p.product_code.toUpperCase() === args.code.toUpperCase(),
+            ),
+          ];
+        return [
+          working
+            .filter((p) => {
+              const meta = typeof p.meta === 'string' ? JSON.parse(p.meta) : p.meta;
+              return (
+                p.brandId === args.brandId &&
+                String(meta[companyKey] ?? meta.companyCode)
+                  .trim()
+                  .toUpperCase() === args.companyCode
+              );
+            })
+            .slice(0, 1),
+        ];
       },
     },
     async bulkUpdate(table, values, where, options) {
-      check(options); assert.equal(table, 'products');
-      Object.assign(working.find((p) => p.productId === where.productId), values);
+      check(options);
+      assert.equal(table, 'products');
+      Object.assign(
+        working.find((p) => p.productId === where.productId),
+        values,
+      );
     },
     async bulkInsert(table, values, options) {
-      check(options); assert.equal(table, 'products'); working.push(...clone(values));
+      check(options);
+      assert.equal(table, 'products');
+      working.push(...clone(values));
     },
   };
   return qi;
@@ -47,7 +72,11 @@ test('updates imported fields, preserves live stock/metadata, and inserts schema
   live.meta.liveOnly = 'preserve';
   live.meta.inventorySource = { page: 1 };
   const qi = database([live]);
-  assert.deepEqual(await seedPayloads(qi, [existing[0]], [fresh[0]]), { updated: 1, inserted: 1, skipped: 0 });
+  assert.deepEqual(await seedPayloads(qi, [existing[0]], [fresh[0]]), {
+    updated: 1,
+    inserted: 1,
+    skipped: 0,
+  });
   assert.equal(qi.rows[0].quantity, 912);
   assert.deepEqual(qi.rows[0].images, ['latest.png']);
   const meta = JSON.parse(qi.rows[0].meta);
@@ -74,8 +103,15 @@ test('a new code collision rolls back earlier updates', async () => {
 });
 test('changed identities and late company-code duplicates are rejected', async () => {
   await assert.rejects(seedPayloads(database([]), [existing[0]], []), /missing/);
-  const late = { ...clone(fresh[0]), productId: '11111111-1111-4111-8111-111111111111', product_code: 'OTHER' };
-  await assert.rejects(seedPayloads(database([late]), [], [fresh[0]]), /Company code already exists/);
+  const late = {
+    ...clone(fresh[0]),
+    productId: '11111111-1111-4111-8111-111111111111',
+    product_code: 'OTHER',
+  };
+  await assert.rejects(
+    seedPayloads(database([late]), [], [fresh[0]]),
+    /Company code already exists/,
+  );
 });
 test('duplicate payloads fail before any database writes', async () => {
   const qi = database([]);
@@ -84,6 +120,10 @@ test('duplicate payloads fail before any database writes', async () => {
 });
 test('all generated rows can be imported using the transaction adapter', async () => {
   const qi = database(existing);
-  assert.deepEqual(await seedPayloads(qi, existing, fresh), { updated: existing.length, inserted: fresh.length, skipped: 0 });
+  assert.deepEqual(await seedPayloads(qi, existing, fresh), {
+    updated: existing.length,
+    inserted: fresh.length,
+    skipped: 0,
+  });
   assert.equal(qi.rows.length, existing.length + fresh.length);
 });

@@ -1,8 +1,8 @@
-import React, { useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { useVerifyAccountMutation } from "../../api/authApi";
-import logo from "../../assets/img/logo.png";
-import { message } from "antd";
+import React, { useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useVerifyAccountMutation } from '../../api/authApi';
+import logo from '../../assets/img/logo.png';
+import { message } from 'antd';
 const AccountVerify = () => {
   const navigate = useNavigate();
   const { token } = useParams();
@@ -10,19 +10,19 @@ const AccountVerify = () => {
 
   useEffect(() => {
     const verifyToken = async () => {
-      if (!token || typeof token !== "string" || token.trim() === "") {
-        message.error("Invalid verification link.");
-        setTimeout(() => navigate("/login"), 2000);
+      if (!token || typeof token !== 'string' || token.trim() === '') {
+        message.error('Invalid verification link.');
+        setTimeout(() => navigate('/login'), 2000);
         return;
       }
 
       try {
         await verifyAccount({ token }).unwrap();
-        message.success("Account verified successfully!");
-        setTimeout(() => navigate("/login"), 2000);
+        message.success('Account verified successfully!');
+        setTimeout(() => navigate('/login'), 2000);
       } catch (error) {
-        message.error(error?.data?.message || "Failed to verify account.");
-        setTimeout(() => navigate("/login"), 2000);
+        message.error(error?.data?.message || 'Failed to verify account.');
+        setTimeout(() => navigate('/login'), 2000);
       }
     };
 
@@ -48,15 +48,13 @@ const AccountVerify = () => {
                     <div className="form-login mt-4">
                       <button
                         className="btn btn-login"
-                        onClick={() => navigate("/login")}
-                        style={{ minWidth: "140px" }}
+                        onClick={() => navigate('/login')}
+                        style={{ minWidth: '140px' }}
                       >
                         Go to Login
                       </button>
                     </div>
-                    <p className="text-muted mt-3">
-                      You will be redirected shortly...
-                    </p>
+                    <p className="text-muted mt-3">You will be redirected shortly...</p>
                   </div>
                 </div>
               </div>

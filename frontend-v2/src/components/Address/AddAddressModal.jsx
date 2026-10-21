@@ -1,45 +1,39 @@
 // src/components/addresses/AddAddress.jsx   (or wherever this component lives)
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
 import {
   useCreateAddressMutation,
   useUpdateAddressMutation,
   useGetAllAddressesQuery,
-} from "../../api/addressApi";
-import { useGetCustomersQuery } from "../../api/customerApi";
-import { useGetAllUsersQuery } from "../../api/userApi";
-import { v4 as uuidv4 } from "uuid";
-import { Modal, Button, Input, Select, Form, Radio, message } from "antd";
+} from '../../api/addressApi';
+import { useGetCustomersQuery } from '../../api/customerApi';
+import { useGetAllUsersQuery } from '../../api/userApi';
+import { v4 as uuidv4 } from 'uuid';
+import { Modal, Button, Input, Select, Form, Radio, message } from 'antd';
 
 // Import the states list
-import { INDIAN_STATES } from "../../constants/statesConstants";  // adjust path as needed
+import { INDIAN_STATES } from '../../constants/statesConstants'; // adjust path as needed
 
 const { Option } = Select;
 
-const AddAddress = ({
-  visible,
-  onClose,
-  onSave,
-  existingAddress,
-  selectedCustomer,
-}) => {
+const AddAddress = ({ visible, onClose, onSave, existingAddress, selectedCustomer }) => {
   const isEdit = !!existingAddress;
   const [form] = Form.useForm();
 
-  const [addressType, setAddressType] = useState("customer");
+  const [addressType, setAddressType] = useState('customer');
 
   const [createAddress, { isLoading: isCreating }] = useCreateAddressMutation();
   const [updateAddress, { isLoading: isUpdating }] = useUpdateAddressMutation();
 
-  const { data: customersData, isLoading: isCustomersLoading } =
-    useGetCustomersQuery({ limit: 10000 });
+  const { data: customersData, isLoading: isCustomersLoading } = useGetCustomersQuery({
+    limit: 10000,
+  });
   const { data: usersData, isLoading: isUsersLoading } = useGetAllUsersQuery();
 
-  const { data: addressesData, isLoading: isAddressesLoading } =
-    useGetAllAddressesQuery(
-      { customerId: selectedCustomer },
-      { skip: !selectedCustomer || addressType !== "customer" }
-    );
+  const { data: addressesData, isLoading: isAddressesLoading } = useGetAllAddressesQuery(
+    { customerId: selectedCustomer },
+    { skip: !selectedCustomer || addressType !== 'customer' },
+  );
 
   const customers = customersData?.data || [];
   const users = usersData?.users || [];
@@ -47,20 +41,20 @@ const AddAddress = ({
 
   // Determine available status options
   const getAvailableStatuses = () => {
-    if (addressType !== "customer" || !selectedCustomer) {
-      return ["BILLING", "PRIMARY", "ADDITIONAL"];
+    if (addressType !== 'customer' || !selectedCustomer) {
+      return ['BILLING', 'PRIMARY', 'ADDITIONAL'];
     }
 
     const hasBilling = customerAddresses.some(
-      (a) => a.status === "BILLING" && a.addressId !== existingAddress?.addressId
+      (a) => a.status === 'BILLING' && a.addressId !== existingAddress?.addressId,
     );
     const hasPrimary = customerAddresses.some(
-      (a) => a.status === "PRIMARY" && a.addressId !== existingAddress?.addressId
+      (a) => a.status === 'PRIMARY' && a.addressId !== existingAddress?.addressId,
     );
 
-    const options = ["ADDITIONAL"];
-    if (!hasBilling) options.unshift("BILLING");
-    if (!hasPrimary) options.unshift("PRIMARY");
+    const options = ['ADDITIONAL'];
+    if (!hasBilling) options.unshift('BILLING');
+    if (!hasPrimary) options.unshift('PRIMARY');
 
     return options;
   };
@@ -70,24 +64,24 @@ const AddAddress = ({
 
     if (existingAddress) {
       form.setFieldsValue({
-        street: existingAddress.street || "",
-        city: existingAddress.city || "",
-        state: existingAddress.state || "",
-        postalCode: existingAddress.postalCode || "",
-        country: existingAddress.country || "India",
-        status: existingAddress.status || "ADDITIONAL",
+        street: existingAddress.street || '',
+        city: existingAddress.city || '',
+        state: existingAddress.state || '',
+        postalCode: existingAddress.postalCode || '',
+        country: existingAddress.country || 'India',
+        status: existingAddress.status || 'ADDITIONAL',
         customerId: existingAddress.customerId || undefined,
         userId: existingAddress.userId || undefined,
       });
-      setAddressType(existingAddress.customerId ? "customer" : "user");
+      setAddressType(existingAddress.customerId ? 'customer' : 'user');
     } else {
       form.resetFields();
-      setAddressType(selectedCustomer ? "customer" : "customer");
+      setAddressType(selectedCustomer ? 'customer' : 'customer');
 
       form.setFieldsValue({
-        country: "India",
+        country: 'India',
         customerId: selectedCustomer || undefined,
-        status: selectedCustomer ? getAvailableStatuses()[0] : "ADDITIONAL",
+        status: selectedCustomer ? getAvailableStatuses()[0] : 'ADDITIONAL',
       });
     }
   }, [visible, existingAddress, selectedCustomer, form, customerAddresses]);
@@ -96,16 +90,16 @@ const AddAddress = ({
     const type = e.target.value;
     setAddressType(type);
     form.setFieldsValue({
-      customerId: type === "customer" ? selectedCustomer : undefined,
-      userId: type === "user" ? undefined : undefined,
-      status: type === "customer" ? getAvailableStatuses()[0] : "ADDITIONAL",
+      customerId: type === 'customer' ? selectedCustomer : undefined,
+      userId: type === 'user' ? undefined : undefined,
+      status: type === 'customer' ? getAvailableStatuses()[0] : 'ADDITIONAL',
     });
   };
 
   const handleSubmit = async (values) => {
     const effectiveCustomerId = values.customerId || selectedCustomer;
     if (!effectiveCustomerId && !values.userId) {
-      message.error("Please select either a Customer or a User");
+      message.error('Please select either a Customer or a User');
       return;
     }
 
@@ -114,8 +108,8 @@ const AddAddress = ({
       city: values.city.trim(),
       state: values.state,
       postalCode: values.postalCode?.trim() || null,
-      country: values.country || "India",
-      status: values.status || "ADDITIONAL",
+      country: values.country || 'India',
+      status: values.status || 'ADDITIONAL',
       customerId: effectiveCustomerId || null,
       userId: values.userId || null,
     };
@@ -128,7 +122,7 @@ const AddAddress = ({
           updatedData: payload,
         }).unwrap();
         addressId = existingAddress.addressId;
-        message.success("Address updated successfully");
+        message.success('Address updated successfully');
       } else {
         const newAddress = {
           addressId: uuidv4(),
@@ -137,20 +131,20 @@ const AddAddress = ({
         };
         const result = await createAddress(newAddress).unwrap();
         addressId = result.data.addressId;
-        message.success("Address created successfully");
+        message.success('Address created successfully');
       }
 
       onSave(addressId);
       onClose();
       form.resetFields();
     } catch (err) {
-      message.error(err?.data?.message || "Failed to save address");
+      message.error(err?.data?.message || 'Failed to save address');
     }
   };
 
   return (
     <Modal
-      title={isEdit ? "Edit Address" : "Add New Address"}
+      title={isEdit ? 'Edit Address' : 'Add New Address'}
       open={visible}
       onCancel={() => {
         form.resetFields();
@@ -173,11 +167,11 @@ const AddAddress = ({
         </Form.Item>
 
         {/* Customer / User Selection */}
-        {addressType === "customer" && !selectedCustomer && (
+        {addressType === 'customer' && !selectedCustomer && (
           <Form.Item
             name="customerId"
             label="Customer"
-            rules={[{ required: true, message: "Please select a customer" }]}
+            rules={[{ required: true, message: 'Please select a customer' }]}
           >
             <Select
               showSearch
@@ -196,11 +190,11 @@ const AddAddress = ({
           </Form.Item>
         )}
 
-        {addressType === "user" && (
+        {addressType === 'user' && (
           <Form.Item
             name="userId"
             label="User"
-            rules={[{ required: true, message: "Please select a user" }]}
+            rules={[{ required: true, message: 'Please select a user' }]}
           >
             <Select
               showSearch
@@ -223,18 +217,15 @@ const AddAddress = ({
         <Form.Item
           name="street"
           label="Street Address"
-          rules={[{ required: true, message: "Street is required" }]}
+          rules={[{ required: true, message: 'Street is required' }]}
         >
-          <Input.TextArea
-            rows={2}
-            placeholder="House no., Building, Street, Area"
-          />
+          <Input.TextArea rows={2} placeholder="House no., Building, Street, Area" />
         </Form.Item>
 
         <Form.Item
           name="city"
           label="City"
-          rules={[{ required: true, message: "City is required" }]}
+          rules={[{ required: true, message: 'City is required' }]}
         >
           <Input />
         </Form.Item>
@@ -242,13 +233,9 @@ const AddAddress = ({
         <Form.Item
           name="state"
           label="State"
-          rules={[{ required: true, message: "State is required" }]}
+          rules={[{ required: true, message: 'State is required' }]}
         >
-          <Select
-            showSearch
-            placeholder="Select state"
-            optionFilterProp="children"
-          >
+          <Select showSearch placeholder="Select state" optionFilterProp="children">
             {INDIAN_STATES.map((state) => (
               <Option key={state} value={state}>
                 {state}
@@ -260,9 +247,7 @@ const AddAddress = ({
         <Form.Item
           name="postalCode"
           label="Postal Code"
-          rules={[
-            { pattern: /^[0-9]{6}$/, message: "Enter valid 6-digit PIN code" },
-          ]}
+          rules={[{ pattern: /^[0-9]{6}$/, message: 'Enter valid 6-digit PIN code' }]}
         >
           <Input maxLength={6} />
         </Form.Item>
@@ -275,18 +260,14 @@ const AddAddress = ({
         </Form.Item>
 
         {/* Status (only for customers) */}
-        {addressType === "customer" && (
-          <Form.Item
-            name="status"
-            label="Address Type"
-            rules={[{ required: true }]}
-          >
+        {addressType === 'customer' && (
+          <Form.Item name="status" label="Address Type" rules={[{ required: true }]}>
             <Select loading={isAddressesLoading}>
               {getAvailableStatuses().map((status) => (
                 <Option key={status} value={status}>
-                  {status === "BILLING" && "Billing Address"}
-                  {status === "PRIMARY" && "Primary Address"}
-                  {status === "ADDITIONAL" && "Additional Address"}
+                  {status === 'BILLING' && 'Billing Address'}
+                  {status === 'PRIMARY' && 'Primary Address'}
+                  {status === 'ADDITIONAL' && 'Additional Address'}
                 </Option>
               ))}
             </Select>
@@ -294,7 +275,7 @@ const AddAddress = ({
         )}
 
         {/* Submit Buttons */}
-        <Form.Item style={{ marginBottom: 0, textAlign: "right" }}>
+        <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
           <Button
             onClick={() => {
               form.resetFields();
@@ -304,12 +285,8 @@ const AddAddress = ({
           >
             Cancel
           </Button>
-          <Button
-            type="primary"
-            htmlType="submit"
-            loading={isCreating || isUpdating}
-          >
-            {isEdit ? "Update Address" : "Create Address"}
+          <Button type="primary" htmlType="submit" loading={isCreating || isUpdating}>
+            {isEdit ? 'Update Address' : 'Create Address'}
           </Button>
         </Form.Item>
       </Form>

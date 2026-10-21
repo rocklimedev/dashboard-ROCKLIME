@@ -1,10 +1,10 @@
 // middleware/upload.js
-const ftp = require("basic-ftp");
-const { Readable, Writable } = require("stream");
-const { v4: uuidv4 } = require("uuid");
-const path = require("path");
+const ftp = require('basic-ftp');
+const { Readable, Writable } = require('stream');
+const { v4: uuidv4 } = require('uuid');
+const path = require('path');
 
-require("dotenv").config();
+require('dotenv').config();
 
 /**
  * Buffer to Stream
@@ -33,68 +33,68 @@ function createBufferWritable() {
  */
 // Local setup: when UPLOAD_MODE=local (or no FTP_HOST), files are written to
 // UPLOAD_DIR and served by the backend at /uploads.
-const fsLocal = require("fs");
+const fsLocal = require('fs');
 function useLocalUploads() {
-  return process.env.UPLOAD_MODE === "local" || !process.env.FTP_HOST;
+  return process.env.UPLOAD_MODE === 'local' || !process.env.FTP_HOST;
 }
 function localDirFor(options) {
-  let remoteDir = "/product_images";
-  if (typeof options === "string") remoteDir = options;
+  let remoteDir = '/product_images';
+  if (typeof options === 'string') remoteDir = options;
   else if (options?.remoteDir) remoteDir = options.remoteDir;
-  return remoteDir.replace(/^\/+/, "").replace(/\.\./g, "");
+  return remoteDir.replace(/^\/+/, '').replace(/\.\./g, '');
 }
 async function uploadLocal(buffer, filename, options) {
-  const root = path.resolve(process.env.UPLOAD_DIR || path.join(__dirname, "../uploads"));
+  const root = path.resolve(process.env.UPLOAD_DIR || path.join(__dirname, '../uploads'));
   const sub = localDirFor(options);
   const dir = path.join(root, sub);
   await fsLocal.promises.mkdir(dir, { recursive: true });
-  const uniqueName = `${uuidv4()}${path.extname(filename) || ".jpg"}`;
+  const uniqueName = `${uuidv4()}${path.extname(filename) || '.jpg'}`;
   await fsLocal.promises.writeFile(path.join(dir, uniqueName), buffer);
-  const base = (process.env.PUBLIC_BACKEND_URL || `http://localhost:${process.env.PORT || 5050}`).replace(/\/+$/, "");
-  const url = `${base}/uploads/${sub ? sub + "/" : ""}${uniqueName}`;
-  console.log("✅ Saved locally:", url);
+  const base = (
+    process.env.PUBLIC_BACKEND_URL || `http://localhost:${process.env.PORT || 5050}`
+  ).replace(/\/+$/, '');
+  const url = `${base}/uploads/${sub ? sub + '/' : ''}${uniqueName}`;
+  console.log('✅ Saved locally:', url);
   return url;
 }
 
 async function uploadToFtp(buffer, filename, options = {}) {
   if (useLocalUploads()) return uploadLocal(buffer, filename, options);
   const client = new ftp.Client();
-  client.ftp.verbose = process.env.NODE_ENV === "development";
+  client.ftp.verbose = process.env.NODE_ENV === 'development';
 
   try {
     // ==================== STRONG BASE URL FIX ====================
-    let baseUrl = (
-      process.env.MEDIA_BASE_URL || "https://media.cmtradingco.com"
-    ).trim();
+    let baseUrl = (process.env.MEDIA_BASE_URL || 'https://media.cmtradingco.com').trim();
 
     // Ensure it always ends with https:// (most important fix)
-    if (!baseUrl.endsWith("//") && baseUrl.includes("://")) {
+    if (!baseUrl.endsWith('//') && baseUrl.includes('://')) {
       // Already has protocol, make sure double slash exists
-      baseUrl = baseUrl.replace(/:\/+/, "://");
-    } else if (baseUrl.endsWith(":")) {
-      baseUrl += "//";
-    } else if (!baseUrl.includes("://")) {
-      baseUrl = "https://" + baseUrl.replace(/^https?:\/\//, "");
+      baseUrl = baseUrl.replace(/:\/+/, '://');
+    } else if (baseUrl.endsWith(':')) {
+      baseUrl += '//';
+    } else if (!baseUrl.includes('://')) {
+      baseUrl = 'https://' + baseUrl.replace(/^https?:\/\//, '');
     }
 
-    baseUrl = baseUrl.replace(/\/+$/, ""); // remove trailing slash from base
+    baseUrl = baseUrl.replace(/\/+$/, ''); // remove trailing slash from base
 
-    console.log("DEBUG → Base URL used:", baseUrl);
+    console.log('DEBUG → Base URL used:', baseUrl);
 
     // Generate filename
-    const ext = path.extname(filename) || ".jpg";
+    const ext = path.extname(filename) || '.jpg';
     const uniqueName = `${uuidv4()}${ext}`;
 
     // Remote directory
-    let remoteDir = "/product_images";
-    if (typeof options === "string") {
+    let remoteDir = '/product_images';
+    if (typeof options === 'string') {
       remoteDir = options;
     } else if (options?.remoteDir) {
       remoteDir = options.remoteDir;
     }
-    if (!remoteDir.startsWith("/")) remoteDir = "/" + remoteDir;
+    if (!remoteDir.startsWith('/')) remoteDir = '/' + remoteDir;
 
-    console.log("DEBUG → Remote Dir:", remoteDir);
+    console.log('DEBUG → Remote Dir:', remoteDir);
 
     // FTP Upload
     await client.access({
@@ -102,7 +102,7 @@ async function uploadToFtp(buffer, filename, options = {}) {
       port: parseInt(process.env.FTP_PORT) || 21,
       user: process.env.FTP_USER,
       password: process.env.FTP_PASSWORD,
-      secure: process.env.FTP_SECURE === "true",
+      secure: process.env.FTP_SECURE === 'true',
       timeout: 0,
     });
 
@@ -116,15 +116,15 @@ async function uploadToFtp(buffer, filename, options = {}) {
     } catch (e) {}
 
     // ==================== FINAL URL CONSTRUCTION (STRONG FIX) ====================
-    let finalUrl = baseUrl + remoteDir + "/" + uniqueName;
-    finalUrl = finalUrl.replace(/\/+/g, "/"); // collapse multiple slashes
-    finalUrl = finalUrl.replace("https:/", "https://"); // Extra safety net
+    let finalUrl = baseUrl + remoteDir + '/' + uniqueName;
+    finalUrl = finalUrl.replace(/\/+/g, '/'); // collapse multiple slashes
+    finalUrl = finalUrl.replace('https:/', 'https://'); // Extra safety net
 
-    console.log("✅ SUCCESSFULLY UPLOADED:", finalUrl);
+    console.log('✅ SUCCESSFULLY UPLOADED:', finalUrl);
 
     return finalUrl;
   } catch (error) {
-    console.error("❌ FTP Upload Error:", error.message);
+    console.error('❌ FTP Upload Error:', error.message);
     throw new Error(`FTP upload failed: ${error.message}`);
   } finally {
     client.close();
@@ -135,16 +135,16 @@ async function uploadToFtp(buffer, filename, options = {}) {
  */
 async function downloadFromFtp(ftpPath) {
   if (useLocalUploads() && /\/uploads\//.test(ftpPath)) {
-    const root = path.resolve(process.env.UPLOAD_DIR || path.join(__dirname, "../uploads"));
-    const rel = decodeURIComponent(ftpPath.split("/uploads/")[1] || "").replace(/\.\./g, "");
+    const root = path.resolve(process.env.UPLOAD_DIR || path.join(__dirname, '../uploads'));
+    const rel = decodeURIComponent(ftpPath.split('/uploads/')[1] || '').replace(/\.\./g, '');
     return fsLocal.promises.readFile(path.join(root, rel));
   }
   const client = new ftp.Client();
-  client.ftp.verbose = process.env.NODE_ENV === "development";
+  client.ftp.verbose = process.env.NODE_ENV === 'development';
 
   try {
     let remotePath = ftpPath;
-    if (ftpPath.startsWith("http")) {
+    if (ftpPath.startsWith('http')) {
       const url = new URL(ftpPath);
       remotePath = url.pathname;
     }
@@ -154,7 +154,7 @@ async function downloadFromFtp(ftpPath) {
       port: parseInt(process.env.FTP_PORT) || 21,
       user: process.env.FTP_USER,
       password: process.env.FTP_PASSWORD,
-      secure: process.env.FTP_SECURE === "true",
+      secure: process.env.FTP_SECURE === 'true',
       timeout: 0,
     });
 
@@ -162,7 +162,7 @@ async function downloadFromFtp(ftpPath) {
     await client.downloadTo(bufferWritable, remotePath);
     return bufferWritable.getBuffer();
   } catch (err) {
-    console.error("FTP download error:", err);
+    console.error('FTP download error:', err);
     throw new Error(`Failed to download file from FTP: ${err.message}`);
   } finally {
     client.close();

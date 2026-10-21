@@ -1,5 +1,5 @@
 // models/orderItem.js
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const orderItemsSchema = new mongoose.Schema(
   {
@@ -21,8 +21,8 @@ const orderItemsSchema = new mongoose.Schema(
         discount: { type: Number, default: 0 }, // 10 = 10% or ₹10
         discountType: {
           type: String,
-          enum: ["percent", "fixed"],
-          default: "percent",
+          enum: ['percent', 'fixed'],
+          default: 'percent',
           required: true,
         },
         tax: { type: Number, default: 0 },
@@ -33,4 +33,4 @@ const orderItemsSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-module.exports = mongoose.model("OrderItem", orderItemsSchema);
+module.exports = mongoose.model('OrderItem', orderItemsSchema);

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState } from 'react';
 import {
   Alert,
   Button,
@@ -13,26 +13,26 @@ import {
   Tag,
   Typography,
   message,
-} from "antd";
-import { InboxOutlined } from "@ant-design/icons";
+} from 'antd';
+import { InboxOutlined } from '@ant-design/icons';
 import {
   useGetPurchaseOrderReceiptsQuery,
   useReceivePurchaseOrderMutation,
   useUpdatePurchaseOrderStatusMutation,
-} from "../../api/poApi";
-import { useGetWarehousesQuery } from "../../api/stockApi";
-import useCan from "../../utils/useCan";
-import { fmtDateTime, fmtQty } from "./stockLabels";
+} from '../../api/poApi';
+import { useGetWarehousesQuery } from '../../api/stockApi';
+import useCan from '../../utils/useCan';
+import { fmtDateTime, fmtQty } from './stockLabels';
 
 const { Text } = Typography;
 
 const STATUS_HELP = {
-  pending: "Not confirmed yet — nothing counts as incoming.",
-  in_negotiation: "In negotiation — nothing counts as incoming.",
-  confirmed: "Confirmed — quantities count as Incoming stock until received.",
-  partial_delivered: "Part received — the rest still counts as Incoming.",
-  delivered: "Fully received.",
-  cancelled: "Cancelled — nothing incoming.",
+  pending: 'Not confirmed yet — nothing counts as incoming.',
+  in_negotiation: 'In negotiation — nothing counts as incoming.',
+  confirmed: 'Confirmed — quantities count as Incoming stock until received.',
+  partial_delivered: 'Part received — the rest still counts as Incoming.',
+  delivered: 'Fully received.',
+  cancelled: 'Cancelled — nothing incoming.',
 };
 
 /** Receive goods against a purchase order (goods receipt / GRN), part quantities allowed. */
@@ -51,41 +51,50 @@ export default function PoReceivingPanel({ po }) {
   const [qty, setQty] = useState({});
   const [bad, setBad] = useState({});
   const [warehouseId, setWarehouseId] = useState();
-  const [notes, setNotes] = useState("");
+  const [notes, setNotes] = useState('');
 
   const remaining = data?.remaining || [];
   const due = remaining.filter((r) => r.quantity > 0);
-  const canReceive = ["confirmed", "partial_delivered"].includes(po?.status) && due.length > 0;
-  const canEdit = can("purchase_orders", "edit");
+  const canReceive = ['confirmed', 'partial_delivered'].includes(po?.status) && due.length > 0;
+  const canEdit = can('purchase_orders', 'edit');
 
   const openModal = () => {
     setQty(Object.fromEntries(due.map((r) => [r.productId, r.quantity])));
     setBad({});
-    setNotes("");
+    setNotes('');
     setOpen(true);
   };
   const submit = async () => {
     const items = due
-      .map((r) => ({ productId: r.productId, quantity: Number(qty[r.productId]) || 0, damaged: Number(bad[r.productId]) || 0 }))
+      .map((r) => ({
+        productId: r.productId,
+        quantity: Number(qty[r.productId]) || 0,
+        damaged: Number(bad[r.productId]) || 0,
+      }))
       .filter((i) => i.quantity + i.damaged > 0);
-    if (!items.length) return message.warning("Enter at least one quantity received");
+    if (!items.length) return message.warning('Enter at least one quantity received');
     try {
-      const r = await receive({ id, items, warehouseId: warehouseId || warehouses[0]?.id, notes }).unwrap();
+      const r = await receive({
+        id,
+        items,
+        warehouseId: warehouseId || warehouses[0]?.id,
+        notes,
+      }).unwrap();
       message.success(
-        `${r.message}${r.ordersFilled ? ` · ${r.ordersFilled} waiting order(s) got stock` : ""}`,
+        `${r.message}${r.ordersFilled ? ` · ${r.ordersFilled} waiting order(s) got stock` : ''}`,
       );
       setOpen(false);
       refetch();
     } catch (e) {
-      message.error(e?.data?.message || "Could not record the receipt");
+      message.error(e?.data?.message || 'Could not record the receipt');
     }
   };
   const confirm = async () => {
     try {
-      await setStatus({ id, status: "confirmed" }).unwrap();
-      message.success("PO confirmed — quantities now show as incoming stock");
+      await setStatus({ id, status: 'confirmed' }).unwrap();
+      message.success('PO confirmed — quantities now show as incoming stock');
     } catch (e) {
-      message.error(e?.data?.message || "Could not confirm");
+      message.error(e?.data?.message || 'Could not confirm');
     }
   };
 
@@ -96,13 +105,13 @@ export default function PoReceivingPanel({ po }) {
       title={
         <Space>
           <InboxOutlined /> Receiving
-          <Tag>{String(po.status || "").replace("_", " ")}</Tag>
+          <Tag>{String(po.status || '').replace('_', ' ')}</Tag>
         </Space>
       }
       extra={
         canEdit && (
           <Space>
-            {["pending", "in_negotiation"].includes(po.status) && (
+            {['pending', 'in_negotiation'].includes(po.status) && (
               <Button onClick={confirm} loading={statusLoading}>
                 Confirm PO
               </Button>
@@ -116,8 +125,8 @@ export default function PoReceivingPanel({ po }) {
         )
       }
     >
-      <Text type="secondary" style={{ display: "block", marginBottom: 12 }}>
-        {STATUS_HELP[po.status] || ""}
+      <Text type="secondary" style={{ display: 'block', marginBottom: 12 }}>
+        {STATUS_HELP[po.status] || ''}
       </Text>
       <Table
         size="small"
@@ -126,20 +135,21 @@ export default function PoReceivingPanel({ po }) {
         pagination={false}
         dataSource={remaining}
         columns={[
-          { title: "Product", dataIndex: "productName" },
-          { title: "Ordered", dataIndex: "ordered", align: "right", render: fmtQty },
-          { title: "Received", dataIndex: "received", align: "right", render: fmtQty },
+          { title: 'Product', dataIndex: 'productName' },
+          { title: 'Ordered', dataIndex: 'ordered', align: 'right', render: fmtQty },
+          { title: 'Received', dataIndex: 'received', align: 'right', render: fmtQty },
           {
-            title: "Still due",
-            dataIndex: "quantity",
-            align: "right",
-            render: (v) => (v ? <Text strong>{fmtQty(v)}</Text> : <Tag color="green">Complete</Tag>),
+            title: 'Still due',
+            dataIndex: 'quantity',
+            align: 'right',
+            render: (v) =>
+              v ? <Text strong>{fmtQty(v)}</Text> : <Tag color="green">Complete</Tag>,
           },
         ]}
       />
       {(data?.receipts || []).length > 0 && (
         <>
-          <Text strong style={{ display: "block", margin: "16px 0 8px" }}>
+          <Text strong style={{ display: 'block', margin: '16px 0 8px' }}>
             Goods receipts
           </Text>
           <Table
@@ -148,11 +158,11 @@ export default function PoReceivingPanel({ po }) {
             pagination={false}
             dataSource={data.receipts}
             columns={[
-              { title: "GRN", dataIndex: "grnNo" },
-              { title: "Received", dataIndex: "receivedAt", render: fmtDateTime },
+              { title: 'GRN', dataIndex: 'grnNo' },
+              { title: 'Received', dataIndex: 'receivedAt', render: fmtDateTime },
               {
-                title: "Items",
-                dataIndex: "items",
+                title: 'Items',
+                dataIndex: 'items',
                 render: (items = []) =>
                   items.map((i) => (
                     <div key={i.id}>
@@ -161,7 +171,7 @@ export default function PoReceivingPanel({ po }) {
                     </div>
                   )),
               },
-              { title: "Notes", dataIndex: "notes" },
+              { title: 'Notes', dataIndex: 'notes' },
             ]}
           />
         </>
@@ -188,10 +198,10 @@ export default function PoReceivingPanel({ po }) {
             pagination={false}
             dataSource={due}
             columns={[
-              { title: "Product", dataIndex: "productName" },
-              { title: "Due", dataIndex: "quantity", align: "right", render: fmtQty, width: 70 },
+              { title: 'Product', dataIndex: 'productName' },
+              { title: 'Due', dataIndex: 'quantity', align: 'right', render: fmtQty, width: 70 },
               {
-                title: "Received good",
+                title: 'Received good',
                 width: 130,
                 render: (_, r) => (
                   <InputNumber
@@ -204,7 +214,7 @@ export default function PoReceivingPanel({ po }) {
                 ),
               },
               {
-                title: "Damaged",
+                title: 'Damaged',
                 width: 110,
                 render: (_, r) => (
                   <InputNumber
@@ -221,7 +231,7 @@ export default function PoReceivingPanel({ po }) {
         ) : (
           <Empty description="Nothing left to receive" />
         )}
-        <Space style={{ marginTop: 12, width: "100%" }} direction="vertical">
+        <Space style={{ marginTop: 12, width: '100%' }} direction="vertical">
           {warehouses.length > 1 && (
             <Select
               value={warehouseId || warehouses[0]?.id}

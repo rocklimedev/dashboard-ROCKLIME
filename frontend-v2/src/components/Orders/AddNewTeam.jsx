@@ -1,19 +1,19 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import {
   useCreateTeamMutation,
   useUpdateTeamMutation,
   useGetTeamMembersQuery,
   useGetTeamByIdQuery,
-} from "../../api/teamApi";
-import { useGetAllUsersQuery, useGetUserByIdQuery } from "../../api/userApi";
-import { Modal, Form, Input, Select, Button, List, message } from "antd";
+} from '../../api/teamApi';
+import { useGetAllUsersQuery, useGetUserByIdQuery } from '../../api/userApi';
+import { Modal, Form, Input, Select, Button, List, message } from 'antd';
 
 const { Option } = Select;
 
 const AddNewTeam = ({ onClose, onTeamAdded, team, visible }) => {
   const [form] = Form.useForm();
   const [members, setMembers] = useState([]);
-  const [selectedUserId, setSelectedUserId] = useState("");
+  const [selectedUserId, setSelectedUserId] = useState('');
 
   // === Data ===
   const { data: usersData } = useGetAllUsersQuery();
@@ -35,8 +35,8 @@ const AddNewTeam = ({ onClose, onTeamAdded, team, visible }) => {
   useEffect(() => {
     if (team && teamData?.team) {
       form.setFieldsValue({
-        teamName: teamData.team.teamName || team.teamName || "",
-        adminId: teamData.team.adminId || team.adminId || "",
+        teamName: teamData.team.teamName || team.teamName || '',
+        adminId: teamData.team.adminId || team.adminId || '',
       });
 
       const currentMembers =
@@ -44,13 +44,13 @@ const AddNewTeam = ({ onClose, onTeamAdded, team, visible }) => {
           userId: m.userId,
           userName: m.userName,
           roleId: m.roleId,
-          roleName: m.roleName || "No Role",
+          roleName: m.roleName || 'No Role',
         })) ||
         team.teammembers?.map((m) => ({
           userId: m.userId,
           userName: m.userName,
           roleId: m.roleId,
-          roleName: m.roleName || "No Role",
+          roleName: m.roleName || 'No Role',
         })) ||
         [];
 
@@ -67,7 +67,7 @@ const AddNewTeam = ({ onClose, onTeamAdded, team, visible }) => {
 
     const alreadyAdded = members.some((m) => m.userId === selectedUserId);
     if (alreadyAdded) {
-      message.warning("User is already in the team");
+      message.warning('User is already in the team');
       return;
     }
 
@@ -77,10 +77,10 @@ const AddNewTeam = ({ onClose, onTeamAdded, team, visible }) => {
         userId: selectedUserId,
         userName: userDetails.user.username || userDetails.user.name,
         roleId: userDetails.user.roleId,
-        roleName: userDetails.user.roles?.[0] || "No Role",
+        roleName: userDetails.user.roles?.[0] || 'No Role',
       },
     ]);
-    setSelectedUserId("");
+    setSelectedUserId('');
   };
 
   const removeMember = (userId) => {
@@ -89,13 +89,13 @@ const AddNewTeam = ({ onClose, onTeamAdded, team, visible }) => {
 
   const handleSubmit = async (values) => {
     if (!members.length && !team) {
-      message.error("At least one team member is required");
+      message.error('At least one team member is required');
       return;
     }
 
     const adminUser = users.find((u) => u.userId === values.adminId);
     if (!adminUser) {
-      message.error("Selected admin not found");
+      message.error('Selected admin not found');
       return;
     }
 
@@ -111,11 +111,11 @@ const AddNewTeam = ({ onClose, onTeamAdded, team, visible }) => {
       if (team) {
         await updateTeam({ teamId: team.id, ...payload }).unwrap();
         teamId = team.id;
-        message.success("Team updated successfully");
+        message.success('Team updated successfully');
       } else {
         const result = await createTeam(payload).unwrap();
         teamId = result.teamId || result.id;
-        message.success("Team created successfully");
+        message.success('Team created successfully');
       }
 
       form.resetFields();
@@ -123,14 +123,14 @@ const AddNewTeam = ({ onClose, onTeamAdded, team, visible }) => {
       onTeamAdded?.(teamId);
       onClose();
     } catch (err) {
-      message.error(err?.data?.message || "Failed to save team");
+      message.error(err?.data?.message || 'Failed to save team');
     }
   };
 
   // === Render (No loading states — handled globally) ===
   return (
     <Modal
-      title={team ? "Edit Team" : "Add New Team"}
+      title={team ? 'Edit Team' : 'Add New Team'}
       open={visible}
       onCancel={onClose}
       footer={null}
@@ -142,7 +142,7 @@ const AddNewTeam = ({ onClose, onTeamAdded, team, visible }) => {
         <Form.Item
           label="Team Name"
           name="teamName"
-          rules={[{ required: true, message: "Team name is required" }]}
+          rules={[{ required: true, message: 'Team name is required' }]}
         >
           <Input placeholder="Enter team name" />
         </Form.Item>
@@ -150,13 +150,9 @@ const AddNewTeam = ({ onClose, onTeamAdded, team, visible }) => {
         <Form.Item
           label="Team Admin"
           name="adminId"
-          rules={[{ required: true, message: "Please select a team admin" }]}
+          rules={[{ required: true, message: 'Please select a team admin' }]}
         >
-          <Select
-            placeholder="Select admin"
-            showSearch
-            optionFilterProp="children"
-          >
+          <Select placeholder="Select admin" showSearch optionFilterProp="children">
             {users.map((user) => (
               <Option key={user.userId} value={user.userId}>
                 {user.name} ({user.username})
@@ -183,11 +179,7 @@ const AddNewTeam = ({ onClose, onTeamAdded, team, visible }) => {
                   </Option>
                 ))}
             </Select>
-            <Button
-              type="primary"
-              onClick={addMember}
-              disabled={!selectedUserId}
-            >
+            <Button type="primary" onClick={addMember} disabled={!selectedUserId}>
               Add
             </Button>
           </div>
@@ -197,43 +189,32 @@ const AddNewTeam = ({ onClose, onTeamAdded, team, visible }) => {
         <List
           bordered
           dataSource={members}
-          locale={{ emptyText: "No members added yet" }}
+          locale={{ emptyText: 'No members added yet' }}
           renderItem={(member) => (
             <List.Item
               actions={[
-                <Button
-                  type="link"
-                  danger
-                  onClick={() => removeMember(member.userId)}
-                >
+                <Button type="link" danger onClick={() => removeMember(member.userId)}>
                   Remove
                 </Button>,
               ]}
             >
-              <List.Item.Meta
-                title={member.userName}
-                description={member.roleName}
-              />
+              <List.Item.Meta title={member.userName} description={member.roleName} />
             </List.Item>
           )}
-          style={{ marginBottom: 16, maxHeight: 300, overflowY: "auto" }}
+          style={{ marginBottom: 16, maxHeight: 300, overflowY: 'auto' }}
         />
 
         <Form.Item className="mb-0">
           <div className="d-flex justify-content-end gap-2">
             <Button onClick={onClose}>Cancel</Button>
-            <Button
-              type="primary"
-              htmlType="submit"
-              loading={creating || updating}
-            >
+            <Button type="primary" htmlType="submit" loading={creating || updating}>
               {team
                 ? updating
-                  ? "Updating..."
-                  : "Update Team"
+                  ? 'Updating...'
+                  : 'Update Team'
                 : creating
-                ? "Creating..."
-                : "Create Team"}
+                  ? 'Creating...'
+                  : 'Create Team'}
             </Button>
           </div>
         </Form.Item>

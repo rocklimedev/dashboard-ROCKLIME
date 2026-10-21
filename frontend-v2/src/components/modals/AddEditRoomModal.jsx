@@ -1,5 +1,5 @@
-import React from "react";
-import { Modal, Form, Input, Select } from "antd";
+import React from 'react';
+import { Modal, Form, Input, Select } from 'antd';
 
 const { Option } = Select;
 
@@ -21,17 +21,17 @@ export default function AddEditRoomModal({
 
   return (
     <Modal
-      title={isEdit ? "Edit Room" : "Add Room"}
+      title={isEdit ? 'Edit Room' : 'Add Room'}
       open={visible}
       onOk={() => form.submit()}
       onCancel={onCancel}
-      okText={isEdit ? "Save" : "Add Room"}
+      okText={isEdit ? 'Save' : 'Add Room'}
     >
       <Form form={form} onFinish={onFinish} layout="vertical">
         <Form.Item
           name="name"
           label="Room Name"
-          rules={[{ required: true, message: "Please enter room name" }]}
+          rules={[{ required: true, message: 'Please enter room name' }]}
         >
           <Input placeholder="e.g. Master Bathroom, Guest Bedroom" />
         </Form.Item>

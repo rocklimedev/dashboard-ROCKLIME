@@ -1,15 +1,15 @@
 const normalize = (value) =>
-  String(value ?? "")
-    .normalize("NFKC")
+  String(value ?? '')
+    .normalize('NFKC')
     .trim()
     .toLowerCase()
-    .replace(/\s+/g, " ");
+    .replace(/\s+/g, ' ');
 function parse(value) {
-  return typeof value === "string" ? JSON.parse(value) : value;
+  return typeof value === 'string' ? JSON.parse(value) : value;
 }
 function stable(value) {
   if (Array.isArray(value)) return value.map(stable);
-  if (value && typeof value === "object")
+  if (value && typeof value === 'object')
     return Object.fromEntries(
       Object.keys(value)
         .sort()
@@ -35,13 +35,11 @@ function similarity(a, b) {
 }
 function buildDuplicateReport(products, productMetas, threshold = 0.9) {
   if (!Array.isArray(products) || !Array.isArray(productMetas))
-    throw new Error("Products and productMetas must be arrays");
+    throw new Error('Products and productMetas must be arrays');
   if (!Number.isFinite(threshold) || threshold < 0.9 || threshold > 1)
-    throw new Error("Threshold must be between 0.9 and 1");
+    throw new Error('Threshold must be between 0.9 and 1');
   const codeIds = productMetas
-    .filter(
-      (field) => normalize(field.slug).replace(/[_\s-]/g, "") === "companycode",
-    )
+    .filter((field) => normalize(field.slug).replace(/[_\s-]/g, '') === 'companycode')
     .map((field) => field.id);
   const buckets = new Map();
   const skipped = [];
@@ -49,10 +47,10 @@ function buildDuplicateReport(products, productMetas, threshold = 0.9) {
     let product;
     try {
       product = { ...original, meta: parse(original.meta) || {} };
-      for (const field of ["images", "variantOptions"])
+      for (const field of ['images', 'variantOptions'])
         if (product[field] != null) product[field] = parse(product[field]);
     } catch {
-      skipped.push({ product: original, reason: "invalid_json" });
+      skipped.push({ product: original, reason: 'invalid_json' });
       continue;
     }
     const codes = [
@@ -73,10 +71,10 @@ function buildDuplicateReport(products, productMetas, threshold = 0.9) {
         product: original,
         reason:
           codes.length > 1
-            ? "conflicting_company_codes"
+            ? 'conflicting_company_codes'
             : !codes.length
-              ? "missing_company_code"
-              : "missing_name",
+              ? 'missing_company_code'
+              : 'missing_name',
       });
       continue;
     }
@@ -85,12 +83,7 @@ function buildDuplicateReport(products, productMetas, threshold = 0.9) {
   }
   const exact = [],
     review = [];
-  const ignored = new Set([
-    "productId",
-    "product_code",
-    "createdAt",
-    "updatedAt",
-  ]);
+  const ignored = new Set(['productId', 'product_code', 'createdAt', 'updatedAt']);
   for (const [companyCode, group] of buckets) {
     for (let i = 0; i < group.length; i++)
       for (let j = i + 1; j < group.length; j++) {
@@ -98,19 +91,14 @@ function buildDuplicateReport(products, productMetas, threshold = 0.9) {
           right = group[j];
         const a = normalize(left.name),
           b = normalize(right.name);
-        if (
-          Math.min(a.length, b.length) / Math.max(a.length, b.length) <
-          threshold
-        )
-          continue;
+        if (Math.min(a.length, b.length) / Math.max(a.length, b.length) < threshold) continue;
         const score = similarity(a, b);
         if (score + Number.EPSILON < threshold) continue;
         const differences = Object.keys({ ...left, ...right })
           .filter(
             (key) =>
               !ignored.has(key) &&
-              JSON.stringify(stable(left[key])) !==
-                JSON.stringify(stable(right[key])),
+              JSON.stringify(stable(left[key])) !== JSON.stringify(stable(right[key])),
           )
           .map((field) => ({
             field,
@@ -120,7 +108,7 @@ function buildDuplicateReport(products, productMetas, threshold = 0.9) {
         const pair = {
           companyCode,
           nameSimilarity: Number(score.toFixed(6)),
-          matchType: a === b ? "same_normalized_name" : "similar_name",
+          matchType: a === b ? 'same_normalized_name' : 'similar_name',
           differences,
           products: [left, right],
         };
@@ -141,7 +129,7 @@ function buildDuplicateReport(products, productMetas, threshold = 0.9) {
       threshold,
       generatedAt: new Date().toISOString(),
       policy:
-        "Read-only candidates; no product is safe to delete automatically. IDs, internal product codes and timestamps are excluded from business-field comparison.",
+        'Read-only candidates; no product is safe to delete automatically. IDs, internal product codes and timestamps are excluded from business-field comparison.',
     },
   };
 }

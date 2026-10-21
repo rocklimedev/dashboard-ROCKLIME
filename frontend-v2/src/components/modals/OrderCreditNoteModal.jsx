@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Modal,
   Upload,
@@ -11,18 +11,14 @@ import {
   Alert,
   Tag,
   Spin,
-} from "antd";
-import {
-  UploadOutlined,
-  FileTextOutlined,
-  RollbackOutlined,
-} from "@ant-design/icons";
+} from 'antd';
+import { UploadOutlined, FileTextOutlined, RollbackOutlined } from '@ant-design/icons';
 
 import {
   useCreateCreditNoteMutation,
   useGetOrderDispatchesQuery,
   useGetOrderCreditNotesQuery,
-} from "../../api/orderApi";
+} from '../../api/orderApi';
 
 const { Text } = Typography;
 
@@ -119,10 +115,7 @@ const OrderCreditNoteModal = ({ visible, order, onClose, onSuccess }) => {
    */
 
   const dataLoading =
-    dispatchesLoading ||
-    dispatchesFetching ||
-    creditNotesLoading ||
-    creditNotesFetching;
+    dispatchesLoading || dispatchesFetching || creditNotesLoading || creditNotesFetching;
 
   /*
    * ------------------------------------------------------------
@@ -146,7 +139,7 @@ const OrderCreditNoteModal = ({ visible, order, onClose, onSuccess }) => {
        * Returned dispatch batches should not contribute to the
        * available quantity.
        */
-      if (String(dispatch.status || "").toUpperCase() === "RETURNED") {
+      if (String(dispatch.status || '').toUpperCase() === 'RETURNED') {
         return;
       }
 
@@ -185,18 +178,18 @@ const OrderCreditNoteModal = ({ visible, order, onClose, onSuccess }) => {
     const quantities = {};
 
     creditNotes.forEach((creditNote) => {
-      const status = String(creditNote.status || "").toUpperCase();
+      const status = String(creditNote.status || '').toUpperCase();
 
       /*
        * Cancelled / rejected credit notes should not consume
        * the available quantity.
        */
       if (
-        status === "CANCELLED" ||
-        status === "CANCELED" ||
-        status === "REJECTED" ||
-        status === "VOID" ||
-        status === "VOIDED"
+        status === 'CANCELLED' ||
+        status === 'CANCELED' ||
+        status === 'REJECTED' ||
+        status === 'VOID' ||
+        status === 'VOIDED'
       ) {
         return;
       }
@@ -242,9 +235,7 @@ const OrderCreditNoteModal = ({ visible, order, onClose, onSuccess }) => {
 
         const dispatchedQuantity = Number(dispatchedQuantities[productId] || 0);
 
-        const alreadyCreditedQuantity = Number(
-          creditedQuantities[productId] || 0,
-        );
+        const alreadyCreditedQuantity = Number(creditedQuantities[productId] || 0);
 
         /*
          * Never allow the available quantity to become negative.
@@ -252,14 +243,11 @@ const OrderCreditNoteModal = ({ visible, order, onClose, onSuccess }) => {
          * available =
          * dispatched - already credited
          */
-        const availableQuantity = Math.max(
-          0,
-          dispatchedQuantity - alreadyCreditedQuantity,
-        );
+        const availableQuantity = Math.max(0, dispatchedQuantity - alreadyCreditedQuantity);
 
         return {
           productId,
-          name: product.name || "Unknown Product",
+          name: product.name || 'Unknown Product',
 
           price: Number(product.price || 0),
 
@@ -275,7 +263,7 @@ const OrderCreditNoteModal = ({ visible, order, onClose, onSuccess }) => {
 
           discount: Number(product.discount || 0),
 
-          discountType: product.discountType || "percent",
+          discountType: product.discountType || 'percent',
 
           total: Number(product.total || 0),
         };
@@ -303,11 +291,7 @@ const OrderCreditNoteModal = ({ visible, order, onClose, onSuccess }) => {
    */
 
   const totalReturnedQuantity = useMemo(
-    () =>
-      selectedItems.reduce(
-        (sum, item) => sum + Number(item.returnedQuantity || 0),
-        0,
-      ),
+    () => selectedItems.reduce((sum, item) => sum + Number(item.returnedQuantity || 0), 0),
     [selectedItems],
   );
 
@@ -325,7 +309,7 @@ const OrderCreditNoteModal = ({ visible, order, onClose, onSuccess }) => {
         return sum;
       }
 
-      if (item.discountType === "fixed") {
+      if (item.discountType === 'fixed') {
         return sum + Math.max(0, item.price - item.discount) * quantity;
       }
 
@@ -384,7 +368,7 @@ const OrderCreditNoteModal = ({ visible, order, onClose, onSuccess }) => {
     const maxSize = 5 * 1024 * 1024;
 
     if (selected.size > maxSize) {
-      message.error("Credit note document must be smaller than 5MB");
+      message.error('Credit note document must be smaller than 5MB');
       return;
     }
 
@@ -399,24 +383,22 @@ const OrderCreditNoteModal = ({ visible, order, onClose, onSuccess }) => {
 
   const handleSubmit = async () => {
     if (!order?.id) {
-      message.error("Order not found");
+      message.error('Order not found');
       return;
     }
 
     if (dataLoading) {
-      message.warning(
-        "Please wait while dispatch and credit note information is loaded",
-      );
+      message.warning('Please wait while dispatch and credit note information is loaded');
       return;
     }
 
     if (!selectedItems.length) {
-      message.error("Select at least one item to return");
+      message.error('Select at least one item to return');
       return;
     }
 
     if (!file) {
-      message.error("Credit note document is required");
+      message.error('Credit note document is required');
       return;
     }
 
@@ -447,21 +429,17 @@ const OrderCreditNoteModal = ({ visible, order, onClose, onSuccess }) => {
      * Make sure no item with zero available quantity
      * somehow gets submitted.
      */
-    const unavailableItem = selectedItems.find(
-      (item) => Number(item.availableQuantity || 0) <= 0,
-    );
+    const unavailableItem = selectedItems.find((item) => Number(item.availableQuantity || 0) <= 0);
 
     if (unavailableItem) {
-      message.error(
-        `${unavailableItem.name} has no available dispatched quantity for credit note`,
-      );
+      message.error(`${unavailableItem.name} has no available dispatched quantity for credit note`);
       return;
     }
 
     const formData = new FormData();
 
     formData.append(
-      "items",
+      'items',
       JSON.stringify(
         selectedItems.map((item) => ({
           productId: item.productId,
@@ -471,7 +449,7 @@ const OrderCreditNoteModal = ({ visible, order, onClose, onSuccess }) => {
       ),
     );
 
-    formData.append("file", file);
+    formData.append('file', file);
 
     try {
       await createCreditNote({
@@ -479,12 +457,12 @@ const OrderCreditNoteModal = ({ visible, order, onClose, onSuccess }) => {
         formData,
       }).unwrap();
 
-      message.success("Credit note created successfully");
+      message.success('Credit note created successfully');
 
       onSuccess?.();
       onClose?.();
     } catch (err) {
-      message.error(err?.data?.message || "Failed to create credit note");
+      message.error(err?.data?.message || 'Failed to create credit note');
     }
   };
 
@@ -496,8 +474,8 @@ const OrderCreditNoteModal = ({ visible, order, onClose, onSuccess }) => {
 
   const columns = [
     {
-      title: "Product",
-      key: "name",
+      title: 'Product',
+      key: 'name',
 
       render: (_, record) => (
         <div>
@@ -507,19 +485,19 @@ const OrderCreditNoteModal = ({ visible, order, onClose, onSuccess }) => {
     },
 
     {
-      title: "Ordered",
-      dataIndex: "orderedQuantity",
-      key: "orderedQuantity",
+      title: 'Ordered',
+      dataIndex: 'orderedQuantity',
+      key: 'orderedQuantity',
       width: 90,
-      align: "center",
+      align: 'center',
     },
 
     {
-      title: "Dispatched",
-      dataIndex: "dispatchedQuantity",
-      key: "dispatchedQuantity",
+      title: 'Dispatched',
+      dataIndex: 'dispatchedQuantity',
+      key: 'dispatchedQuantity',
       width: 100,
-      align: "center",
+      align: 'center',
 
       render: (value) => {
         const quantity = Number(value || 0);
@@ -533,11 +511,11 @@ const OrderCreditNoteModal = ({ visible, order, onClose, onSuccess }) => {
     },
 
     {
-      title: "Already Credited",
-      dataIndex: "alreadyCreditedQuantity",
-      key: "alreadyCreditedQuantity",
+      title: 'Already Credited',
+      dataIndex: 'alreadyCreditedQuantity',
+      key: 'alreadyCreditedQuantity',
       width: 125,
-      align: "center",
+      align: 'center',
 
       render: (value) => {
         const quantity = Number(value || 0);
@@ -551,11 +529,11 @@ const OrderCreditNoteModal = ({ visible, order, onClose, onSuccess }) => {
     },
 
     {
-      title: "Available",
-      dataIndex: "availableQuantity",
-      key: "availableQuantity",
+      title: 'Available',
+      dataIndex: 'availableQuantity',
+      key: 'availableQuantity',
       width: 100,
-      align: "center",
+      align: 'center',
 
       render: (value) => {
         const quantity = Number(value || 0);
@@ -569,8 +547,8 @@ const OrderCreditNoteModal = ({ visible, order, onClose, onSuccess }) => {
     },
 
     {
-      title: "Credit Note Qty",
-      key: "returnedQuantity",
+      title: 'Credit Note Qty',
+      key: 'returnedQuantity',
       width: 160,
 
       render: (_, record) => {
@@ -590,7 +568,7 @@ const OrderCreditNoteModal = ({ visible, order, onClose, onSuccess }) => {
             value={record.returnedQuantity}
             onChange={(value) => handleQuantityChange(value, record.productId)}
             style={{
-              width: "100%",
+              width: '100%',
             }}
           />
         );
@@ -598,20 +576,20 @@ const OrderCreditNoteModal = ({ visible, order, onClose, onSuccess }) => {
     },
 
     {
-      title: "Return Amount",
-      key: "returnAmount",
+      title: 'Return Amount',
+      key: 'returnAmount',
       width: 140,
-      align: "right",
+      align: 'right',
 
       render: (_, record) => {
         const quantity = Number(record.returnedQuantity || 0);
 
         if (!quantity) {
-          return "₹0.00";
+          return '₹0.00';
         }
 
         const unitPrice =
-          record.discountType === "fixed"
+          record.discountType === 'fixed'
             ? Math.max(0, record.price - record.discount)
             : record.price * (1 - record.discount / 100);
 
@@ -660,7 +638,7 @@ const OrderCreditNoteModal = ({ visible, order, onClose, onSuccess }) => {
           <div className="mb-3">
             <div className="fw-semibold">Order #{order.orderNo}</div>
 
-            <Text type="secondary">{order.customer?.name || "Customer"}</Text>
+            <Text type="secondary">{order.customer?.name || 'Customer'}</Text>
           </div>
 
           <Alert
@@ -674,16 +652,14 @@ const OrderCreditNoteModal = ({ visible, order, onClose, onSuccess }) => {
           {dataLoading ? (
             <div
               style={{
-                textAlign: "center",
-                padding: "40px 0",
+                textAlign: 'center',
+                padding: '40px 0',
               }}
             >
               <Spin size="large" />
 
               <div className="mt-3">
-                <Text type="secondary">
-                  Loading dispatch and credit note history...
-                </Text>
+                <Text type="secondary">Loading dispatch and credit note history...</Text>
               </div>
             </div>
           ) : (
@@ -698,7 +674,7 @@ const OrderCreditNoteModal = ({ visible, order, onClose, onSuccess }) => {
                   x: 950,
                 }}
                 locale={{
-                  emptyText: "No products found in this order",
+                  emptyText: 'No products found in this order',
                 }}
               />
 
@@ -716,9 +692,7 @@ const OrderCreditNoteModal = ({ visible, order, onClose, onSuccess }) => {
                     <Text type="secondary">Credit Amount</Text>
                   </div>
 
-                  <div className="fw-bold fs-5">
-                    ₹{returnedAmount.toFixed(2)}
-                  </div>
+                  <div className="fw-bold fs-5">₹{returnedAmount.toFixed(2)}</div>
                 </div>
               </div>
 
@@ -735,9 +709,9 @@ const OrderCreditNoteModal = ({ visible, order, onClose, onSuccess }) => {
                     file
                       ? [
                           {
-                            uid: "-1",
+                            uid: '-1',
                             name: file.name,
-                            status: "done",
+                            status: 'done',
                             originFileObj: file,
                           },
                         ]
@@ -748,9 +722,7 @@ const OrderCreditNoteModal = ({ visible, order, onClose, onSuccess }) => {
                 </Upload>
 
                 <div className="mt-2">
-                  <Text type="secondary">
-                    PDF, PNG, JPG or JPEG. Maximum size: 5MB.
-                  </Text>
+                  <Text type="secondary">PDF, PNG, JPG or JPEG. Maximum size: 5MB.</Text>
                 </div>
               </div>
 

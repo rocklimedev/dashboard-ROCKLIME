@@ -1,17 +1,16 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { useResetPasswordMutation } from "../../api/authApi";
-import logo from "../../assets/img/logo.png";
-import { Spin, message } from "antd"; // Added Spin
-import { useValidateResetTokenQuery } from "../../api/authApi";
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useResetPasswordMutation } from '../../api/authApi';
+import logo from '../../assets/img/logo.png';
+import { Spin, message } from 'antd'; // Added Spin
+import { useValidateResetTokenQuery } from '../../api/authApi';
 
 const ResetPassword = () => {
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const navigate = useNavigate();
   const { token } = useParams(); // Extract token from URL
-  const [resetPassword, { isLoading: isResetLoading }] =
-    useResetPasswordMutation();
+  const [resetPassword, { isLoading: isResetLoading }] = useResetPasswordMutation();
   const {
     data: validationData,
     isLoading: isValidationLoading,
@@ -20,22 +19,20 @@ const ResetPassword = () => {
 
   useEffect(() => {
     if (validationError) {
-      message.error(
-        validationError?.data?.message || "Invalid or expired reset link."
-      );
-      setTimeout(() => navigate("/login"), 2000);
+      message.error(validationError?.data?.message || 'Invalid or expired reset link.');
+      setTimeout(() => navigate('/login'), 2000);
     }
   }, [validationError, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validationData?.email) {
-      message.error("Invalid or missing verification data.");
-      setTimeout(() => navigate("/login"), 2000);
+      message.error('Invalid or missing verification data.');
+      setTimeout(() => navigate('/login'), 2000);
       return;
     }
     if (newPassword !== confirmPassword) {
-      message.error("Passwords do not match");
+      message.error('Passwords do not match');
       return;
     }
 
@@ -45,10 +42,10 @@ const ResetPassword = () => {
         newPassword,
         email: validationData.email,
       }).unwrap();
-      message.success("Password reset successfully!");
-      setTimeout(() => navigate("/login"), 2000);
+      message.success('Password reset successfully!');
+      setTimeout(() => navigate('/login'), 2000);
     } catch (error) {
-      message.error(error?.data?.message || "Failed to reset password");
+      message.error(error?.data?.message || 'Failed to reset password');
     }
   };
 
@@ -67,63 +64,60 @@ const ResetPassword = () => {
                   <div
                     className="card"
                     style={{
-                      border: "1px solid #eee",
-                      borderRadius: "8px",
-                      backgroundColor: "#ffffff",
+                      border: '1px solid #eee',
+                      borderRadius: '8px',
+                      backgroundColor: '#ffffff',
                     }}
                   >
                     <div
                       className="card-body p-5 text-center"
                       style={{
                         fontFamily: "'Lato', Arial, sans-serif",
-                        color: "#646b72",
-                        fontSize: "15px",
-                        lineHeight: "1.6",
+                        color: '#646b72',
+                        fontSize: '15px',
+                        lineHeight: '1.6',
                       }}
                     >
-                      <Spin size="small" />{" "}
-                      <span style={{ marginLeft: 8 }}>
-                        Validating reset link...
-                      </span>
+                      <Spin size="small" />{' '}
+                      <span style={{ marginLeft: 8 }}>Validating reset link...</span>
                     </div>
                   </div>
                 ) : validationError ? (
                   <div
                     className="card"
                     style={{
-                      border: "1px solid #eee",
-                      borderRadius: "8px",
-                      backgroundColor: "#ffffff",
+                      border: '1px solid #eee',
+                      borderRadius: '8px',
+                      backgroundColor: '#ffffff',
                     }}
                   >
                     <div
                       className="card-body p-5"
                       style={{
                         fontFamily: "'Lato', Arial, sans-serif",
-                        color: "#646b72",
-                        fontSize: "15px",
-                        lineHeight: "1.6",
+                        color: '#646b72',
+                        fontSize: '15px',
+                        lineHeight: '1.6',
                       }}
                     >
                       <h3
                         style={{
-                          color: "#212b36",
+                          color: '#212b36',
                           fontWeight: 700,
-                          marginBottom: "20px",
+                          marginBottom: '20px',
                         }}
                       >
                         Invalid Reset Link
                       </h3>
-                      <p style={{ marginBottom: "20px" }}>
-                        The reset link is invalid or has expired. Please request
-                        a new one.
+                      <p style={{ marginBottom: '20px' }}>
+                        The reset link is invalid or has expired. Please request a new one.
                       </p>
                       <a
                         href="/forgot-password"
                         style={{
-                          color: "#e31e24",
-                          textDecoration: "none",
-                          fontWeight: "bold",
+                          color: '#e31e24',
+                          textDecoration: 'none',
+                          fontWeight: 'bold',
                         }}
                       >
                         Request New Link
@@ -149,9 +143,7 @@ const ResetPassword = () => {
                           />
                         </div>
                         <div className="mb-3">
-                          <label className="form-label">
-                            Confirm Password *
-                          </label>
+                          <label className="form-label">Confirm Password *</label>
                           <input
                             type="password"
                             className="form-control"
@@ -166,39 +158,37 @@ const ResetPassword = () => {
                             className="btn btn-login"
                             disabled={isResetLoading || isValidationLoading}
                             style={{
-                              backgroundColor: "#e31e24",
-                              color: "#ffffff",
-                              padding: "12px 20px",
-                              borderRadius: "5px",
-                              fontWeight: "bold",
-                              width: "100%",
-                              border: "none",
-                              display: "flex",
-                              justifyContent: "center",
-                              alignItems: "center",
+                              backgroundColor: '#e31e24',
+                              color: '#ffffff',
+                              padding: '12px 20px',
+                              borderRadius: '5px',
+                              fontWeight: 'bold',
+                              width: '100%',
+                              border: 'none',
+                              display: 'flex',
+                              justifyContent: 'center',
+                              alignItems: 'center',
                             }}
                           >
                             {isResetLoading ? (
                               <>
-                                <Spin size="small" style={{ color: "#fff" }} />{" "}
-                                <span style={{ marginLeft: 8 }}>
-                                  Changing...
-                                </span>
+                                <Spin size="small" style={{ color: '#fff' }} />{' '}
+                                <span style={{ marginLeft: 8 }}>Changing...</span>
                               </>
                             ) : (
-                              "Change Password"
+                              'Change Password'
                             )}
                           </button>
                         </div>
                         <div className="signinform text-center mb-0">
                           <h4>
-                            Return to{" "}
+                            Return to{' '}
                             <a
                               href="/login"
                               className="hover-a"
                               style={{
-                                color: "#e31e24",
-                                textDecoration: "none",
+                                color: '#e31e24',
+                                textDecoration: 'none',
                               }}
                             >
                               login

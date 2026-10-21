@@ -1,57 +1,57 @@
-import { baseApi } from "../store/baseApi";
+import { baseApi } from '../store/baseApi';
 
 export const permissionsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getAllPermissions: builder.query({
-      query: () => "/permission/",
-      providesTags: ["Permissions"], // Tag to allow invalidation
+      query: () => '/permission/',
+      providesTags: ['Permissions'], // Tag to allow invalidation
     }),
     getPermission: builder.query({
       query: (permissionId) => `/${permissionId}`,
-      providesTags: ["Permissions"], // Tag for specific permission data
+      providesTags: ['Permissions'], // Tag for specific permission data
     }),
     createPermission: builder.mutation({
       query: (newPermission) => ({
-        url: "/permission/",
-        method: "POST",
+        url: '/permission/',
+        method: 'POST',
         body: newPermission,
       }),
-      invalidatesTags: ["Permissions"], // Invalidate to refetch permissions
+      invalidatesTags: ['Permissions'], // Invalidate to refetch permissions
     }),
     updatePermission: builder.mutation({
       query: ({ permissionId, ...updatedData }) => ({
         url: `/permission/${permissionId}`,
-        method: "PUT",
+        method: 'PUT',
         body: updatedData,
       }),
-      invalidatesTags: ["Permissions"], // Invalidate to refetch permissions
+      invalidatesTags: ['Permissions'], // Invalidate to refetch permissions
     }),
     deletePermission: builder.mutation({
       query: (permissionId) => ({
         url: `/permission/${permissionId}`,
-        method: "DELETE",
+        method: 'DELETE',
       }),
-      invalidatesTags: ["Permissions"], // Invalidate to refetch permissions
+      invalidatesTags: ['Permissions'], // Invalidate to refetch permissions
     }),
     assignPermissionsToRole: builder.mutation({
       query: ({ roleId, permissionId }) => ({
-        url: "/permission/assign-permission",
-        method: "POST",
+        url: '/permission/assign-permission',
+        method: 'POST',
         body: { roleId, permissionId },
       }),
-      invalidatesTags: ["Permissions"], // Invalidate to refetch permissions
+      invalidatesTags: ['Permissions'], // Invalidate to refetch permissions
     }),
     removePermissionFromRole: builder.mutation({
       query: ({ roleId, permissionId }) => ({
-        url: "/permission/remove-permission",
-        method: "POST",
+        url: '/permission/remove-permission',
+        method: 'POST',
         body: { roleId, permissionId },
       }),
-      invalidatesTags: ["Permissions"], // Invalidate to refetch permissions
+      invalidatesTags: ['Permissions'], // Invalidate to refetch permissions
     }),
     getMyPermissions: builder.query({
-      query: () => "/permission/my", // no arg needed anymore
-      providesTags: ["Permissions"],
+      query: () => '/permission/my', // no arg needed anymore
+      providesTags: ['Permissions'],
     }),
   }),
 });

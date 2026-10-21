@@ -8,20 +8,20 @@ const {
   Customer,
   User,
   InventoryHistory,
-} = require("../../models");
+} = require('../../models');
 
-const { Op } = require("sequelize");
-const { v7: uuidv7 } = require("uuid");
+const { Op } = require('sequelize');
+const { v7: uuidv7 } = require('uuid');
 
-const logActivity = require("../../utils/activityLogger");
-const logOrderActivity = require("./order-activity-logger");
-const { sendNotification } = require("../engagement/notification.controller");
-const { uploadToFtp } = require("../../middleware/upload");
+const logActivity = require('../../utils/activityLogger');
+const logOrderActivity = require('./order-activity-logger');
+const { sendNotification } = require('../engagement/notification.controller');
+const { uploadToFtp } = require('../../middleware/upload');
 
 // Assume an admin user ID or system channel for notifications
 // Who receives order notifications meant for "the admin". Set ADMIN_USER_ID in .env.
 const ADMIN_USER_ID = process.env.ADMIN_USER_ID || null;
-const stock = require("../stock/stock.service");
+const stock = require('../stock/stock.service');
 
 const sendErrorResponse = (res, status, message, details = null) => {
   const response = { message };
@@ -41,7 +41,7 @@ const uploadCreditNoteFile = async (file) => {
   if (!file || !file.buffer) return null;
 
   return uploadToFtp(file.buffer, file.originalname, {
-    remoteDir: "/invoice_pdfs",
+    remoteDir: '/invoice_pdfs',
   });
 };
 
@@ -52,13 +52,13 @@ const getReturnedQuantityMap = async (orderId, transaction) => {
     where: {
       orderId,
       status: {
-        [Op.ne]: "CANCELED",
+        [Op.ne]: 'CANCELED',
       },
     },
     include: [
       {
         model: OrderCreditNoteItem,
-        as: "items",
+        as: 'items',
       },
     ],
     transaction,
@@ -72,8 +72,7 @@ const getReturnedQuantityMap = async (orderId, transaction) => {
 
       if (!productId) continue;
 
-      returnedMap[productId] =
-        (returnedMap[productId] || 0) + Number(item.quantity || 0);
+      returnedMap[productId] = (returnedMap[productId] || 0) + Number(item.quantity || 0);
     }
   }
 
@@ -120,7 +119,7 @@ const isOrderFullyReturned = ({ orderedQuantityMap, returnedQuantityMap }) => {
  */
 const parseItems = (rawItems) => {
   if (Array.isArray(rawItems)) return rawItems;
-  if (typeof rawItems === "string") {
+  if (typeof rawItems === 'string') {
     try {
       const parsed = JSON.parse(rawItems);
       return Array.isArray(parsed) ? parsed : null;
@@ -170,21 +169,17 @@ exports.createOrderCreditNote = async (req, res) => {
 
     if (!orderId) {
       await transaction.rollback();
-      return sendErrorResponse(res, 400, "orderId is required");
+      return sendErrorResponse(res, 400, 'orderId is required');
     }
 
     if (!items || items.length === 0) {
       await transaction.rollback();
-      return sendErrorResponse(
-        res,
-        400,
-        "At least one return item is required",
-      );
+      return sendErrorResponse(res, 400, 'At least one return item is required');
     }
 
     if (!req.file) {
       await transaction.rollback();
-      return sendErrorResponse(res, 400, "Credit note document is required");
+      return sendErrorResponse(res, 400, 'Credit note document is required');
     }
 
     let creditNoteLink;
@@ -193,18 +188,18 @@ exports.createOrderCreditNote = async (req, res) => {
       creditNoteLink = await uploadCreditNoteFile(req.file);
     } catch (uploadErr) {
       await transaction.rollback();
-      console.error("Credit note file upload failed:", uploadErr);
+      console.error('Credit note file upload failed:', uploadErr);
       return sendErrorResponse(
         res,
         500,
-        "Failed to upload credit note document",
+        'Failed to upload credit note document',
         uploadErr.message,
       );
     }
 
     if (!creditNoteLink) {
       await transaction.rollback();
-      return sendErrorResponse(res, 500, "File upload did not return a URL");
+      return sendErrorResponse(res, 500, 'File upload did not return a URL');
     }
 
     try {
@@ -224,7 +219,7 @@ exports.createOrderCreditNote = async (req, res) => {
       include: [
         {
           model: Customer,
-          as: "customer",
+          as: 'customer',
         },
       ],
       transaction,
@@ -233,7 +228,7 @@ exports.createOrderCreditNote = async (req, res) => {
 
     if (!order) {
       await transaction.rollback();
-      return sendErrorResponse(res, 404, "Order not found");
+      return sendErrorResponse(res, 404, 'Order not found');
     }
 
     // --------------------------------------------------------
@@ -241,11 +236,11 @@ exports.createOrderCreditNote = async (req, res) => {
     // --------------------------------------------------------
 
     const allowedStatuses = [
-      "DELIVERED",
-      "PARTIALLY_DISPATCHED",
-      "PARTIALLY_DELIVERED",
-      "RETURNED",
-      "DISPATCHED",
+      'DELIVERED',
+      'PARTIALLY_DISPATCHED',
+      'PARTIALLY_DELIVERED',
+      'RETURNED',
+      'DISPATCHED',
     ];
 
     if (!allowedStatuses.includes(order.status)) {
@@ -259,7 +254,7 @@ exports.createOrderCreditNote = async (req, res) => {
 
     if (!order.products || !Array.isArray(order.products)) {
       await transaction.rollback();
-      return sendErrorResponse(res, 400, "Order has no products to return");
+      return sendErrorResponse(res, 400, 'Order has no products to return');
     }
 
     // --------------------------------------------------------
@@ -276,7 +271,7 @@ exports.createOrderCreditNote = async (req, res) => {
 
       if (existing) {
         await transaction.rollback();
-        return sendErrorResponse(res, 400, "Credit note number already exists");
+        return sendErrorResponse(res, 400, 'Credit note number already exists');
       }
     } else {
       finalCreditNoteNumber = `CN-${order.orderNo}-${Date.now()}`;
@@ -286,10 +281,7 @@ exports.createOrderCreditNote = async (req, res) => {
     // EXISTING RETURNED QUANTITIES
     // --------------------------------------------------------
 
-    const returnedQuantityMap = await getReturnedQuantityMap(
-      order.id,
-      transaction,
-    );
+    const returnedQuantityMap = await getReturnedQuantityMap(order.id, transaction);
 
     // --------------------------------------------------------
     // ORDERED QUANTITIES
@@ -315,40 +307,24 @@ exports.createOrderCreditNote = async (req, res) => {
 
       if (!productId) {
         await transaction.rollback();
-        return sendErrorResponse(
-          res,
-          400,
-          "Each return item requires productId",
-        );
+        return sendErrorResponse(res, 400, 'Each return item requires productId');
       }
 
       if (requestedProductIds.has(String(productId))) {
         await transaction.rollback();
-        return sendErrorResponse(
-          res,
-          400,
-          `Duplicate product in credit note: ${productId}`,
-        );
+        return sendErrorResponse(res, 400, `Duplicate product in credit note: ${productId}`);
       }
 
       requestedProductIds.add(String(productId));
 
       if (!Number.isFinite(quantity) || quantity <= 0) {
         await transaction.rollback();
-        return sendErrorResponse(
-          res,
-          400,
-          `Invalid return quantity for product ${productId}`,
-        );
+        return sendErrorResponse(res, 400, `Invalid return quantity for product ${productId}`);
       }
 
       if (!orderedQuantityMap[productId]) {
         await transaction.rollback();
-        return sendErrorResponse(
-          res,
-          400,
-          `Product ${productId} does not belong to this order`,
-        );
+        return sendErrorResponse(res, 400, `Product ${productId} does not belong to this order`);
       }
 
       const alreadyReturned = Number(returnedQuantityMap[productId] || 0);
@@ -386,22 +362,17 @@ exports.createOrderCreditNote = async (req, res) => {
 
       if (!orderProduct) {
         await transaction.rollback();
-        return sendErrorResponse(
-          res,
-          400,
-          `Product ${productId} is not present in the order`,
-        );
+        return sendErrorResponse(res, 400, `Product ${productId} is not present in the order`);
       }
 
       const price = Number(item.price ?? orderProduct.price ?? 0);
       const discount = Number(item.discount ?? orderProduct.discount ?? 0);
-      const discountType =
-        item.discountType || orderProduct.discountType || "percent";
+      const discountType = item.discountType || orderProduct.discountType || 'percent';
       const tax = Number(item.tax ?? orderProduct.tax ?? 0);
 
       let unitNetPrice = price;
 
-      if (discountType === "percent") {
+      if (discountType === 'percent') {
         unitNetPrice = price * (1 - discount / 100);
       } else {
         unitNetPrice = price - discount;
@@ -416,7 +387,7 @@ exports.createOrderCreditNote = async (req, res) => {
       validatedItems.push({
         productId,
         productCode: orderProduct.productCode || product.productCode || null,
-        name: orderProduct.name || product.name || "Unknown Product",
+        name: orderProduct.name || product.name || 'Unknown Product',
         quantity,
         price,
         discount,
@@ -436,18 +407,11 @@ exports.createOrderCreditNote = async (req, res) => {
       validatedItems.reduce((sum, item) => sum + Number(item.total || 0), 0),
     );
 
-    const totalQuantity = validatedItems.reduce(
-      (sum, item) => sum + Number(item.quantity || 0),
-      0,
-    );
+    const totalQuantity = validatedItems.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
 
     if (creditAmount <= 0) {
       await transaction.rollback();
-      return sendErrorResponse(
-        res,
-        400,
-        "Credit note amount must be greater than zero",
-      );
+      return sendErrorResponse(res, 400, 'Credit note amount must be greater than zero');
     }
 
     // --------------------------------------------------------
@@ -464,7 +428,7 @@ exports.createOrderCreditNote = async (req, res) => {
         remarks,
         totalQuantity,
         totalAmount: creditAmount,
-        status: "ISSUED",
+        status: 'ISSUED',
         createdBy: req.user?.userId || order.createdBy,
       },
       {
@@ -506,7 +470,7 @@ exports.createOrderCreditNote = async (req, res) => {
     const damagedById = Object.fromEntries(
       (items || []).map((i) => [
         String(i.productId || i.id),
-        Math.max(Number(i.damagedQuantity ?? (i.condition === "damaged" ? i.quantity : 0)) || 0, 0),
+        Math.max(Number(i.damagedQuantity ?? (i.condition === 'damaged' ? i.quantity : 0)) || 0, 0),
       ]),
     );
     for (const item of validatedItems) {
@@ -516,7 +480,11 @@ exports.createOrderCreditNote = async (req, res) => {
           productId: item.productId,
           quantity: item.quantity - bad,
           damaged: bad,
-          ref: { type: "CREDIT_NOTE", id: creditNote.id, no: creditNote.creditNoteNumber || order.orderNo },
+          ref: {
+            type: 'CREDIT_NOTE',
+            id: creditNote.id,
+            no: creditNote.creditNoteNumber || order.orderNo,
+          },
           userId: req.user?.userId || null,
           reason: `Customer return on order ${order.orderNo}`,
           key: `RETURN:${creditNote.id}:${item.productId}`,
@@ -535,8 +503,7 @@ exports.createOrderCreditNote = async (req, res) => {
 
     for (const item of validatedItems) {
       newReturnedQuantityMap[item.productId] =
-        Number(newReturnedQuantityMap[item.productId] || 0) +
-        Number(item.quantity);
+        Number(newReturnedQuantityMap[item.productId] || 0) + Number(item.quantity);
     }
 
     // --------------------------------------------------------
@@ -551,10 +518,10 @@ exports.createOrderCreditNote = async (req, res) => {
     const oldStatus = order.status;
 
     if (fullyReturned) {
-      order.status = "RETURNED";
-    } else if (oldStatus === "DELIVERED" || oldStatus === "RETURNED") {
+      order.status = 'RETURNED';
+    } else if (oldStatus === 'DELIVERED' || oldStatus === 'RETURNED') {
       // Keep the delivery state when only part of the order has been returned.
-      order.status = "PARTIALLY_DELIVERED";
+      order.status = 'PARTIALLY_DELIVERED';
     }
 
     await order.save({
@@ -567,9 +534,9 @@ exports.createOrderCreditNote = async (req, res) => {
 
     await logActivity({
       userId: req.user?.userId || order.createdBy,
-      contextTag: "SALES",
-      subContext: "ORDER",
-      action: "CREATE_CREDIT_NOTE",
+      contextTag: 'SALES',
+      subContext: 'ORDER',
+      action: 'CREATE_CREDIT_NOTE',
       entityId: order.id,
       entityName: order.orderNo,
       description: `Credit note ${finalCreditNoteNumber} created for order ${order.orderNo}`,
@@ -604,13 +571,13 @@ exports.createOrderCreditNote = async (req, res) => {
       include: [
         {
           model: OrderCreditNoteItem,
-          as: "items",
+          as: 'items',
         },
       ],
     });
 
     res.status(201).json({
-      message: "Credit note created successfully",
+      message: 'Credit note created successfully',
       creditNote: createdCreditNote,
       order: {
         id: order.id,
@@ -631,15 +598,11 @@ exports.createOrderCreditNote = async (req, res) => {
     const withTimeout = (promise, ms = 5000) =>
       Promise.race([
         promise,
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("notification timeout")), ms),
-        ),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('notification timeout')), ms)),
       ]);
 
     const recipients = new Set(
-      [order.createdBy, order.assignedUserId, order.secondaryUserId].filter(
-        Boolean,
-      ),
+      [order.createdBy, order.assignedUserId, order.secondaryUserId].filter(Boolean),
     );
 
     for (const userId of recipients) {
@@ -649,9 +612,7 @@ exports.createOrderCreditNote = async (req, res) => {
           title: `Credit Note #${finalCreditNoteNumber}`,
           message: `Credit note ${finalCreditNoteNumber} created for order #${order.orderNo}. Returned amount: ${creditAmount}.`,
         }),
-      ).catch((notifyErr) =>
-        console.error("Credit note notification failed:", notifyErr),
-      );
+      ).catch((notifyErr) => console.error('Credit note notification failed:', notifyErr));
     }
 
     if (ADMIN_USER_ID) {
@@ -661,9 +622,7 @@ exports.createOrderCreditNote = async (req, res) => {
           title: `Credit Note #${finalCreditNoteNumber}`,
           message: `Credit note ${finalCreditNoteNumber} created for order #${order.orderNo}.`,
         }),
-      ).catch((notifyErr) =>
-        console.error("Credit note admin notification failed:", notifyErr),
-      );
+      ).catch((notifyErr) => console.error('Credit note admin notification failed:', notifyErr));
     }
 
     return;
@@ -672,14 +631,9 @@ exports.createOrderCreditNote = async (req, res) => {
       await transaction.rollback();
     } catch (_) {}
 
-    console.error("Create Order Credit Note Error:", err);
+    console.error('Create Order Credit Note Error:', err);
 
-    return sendErrorResponse(
-      res,
-      500,
-      "Failed to create credit note",
-      err.message,
-    );
+    return sendErrorResponse(res, 500, 'Failed to create credit note', err.message);
   }
 };
 
@@ -696,15 +650,15 @@ exports.getOrderCreditNoteById = async (req, res) => {
       include: [
         {
           model: OrderCreditNoteItem,
-          as: "items",
+          as: 'items',
         },
         {
           model: Order,
-          as: "order",
+          as: 'order',
           include: [
             {
               model: Customer,
-              as: "customer",
+              as: 'customer',
             },
           ],
         },
@@ -712,22 +666,17 @@ exports.getOrderCreditNoteById = async (req, res) => {
     });
 
     if (!creditNote) {
-      return sendErrorResponse(res, 404, "Credit note not found");
+      return sendErrorResponse(res, 404, 'Credit note not found');
     }
 
     return res.status(200).json({
-      message: "Credit note fetched successfully",
+      message: 'Credit note fetched successfully',
       creditNote,
     });
   } catch (err) {
-    console.error("Get Order Credit Note Error:", err);
+    console.error('Get Order Credit Note Error:', err);
 
-    return sendErrorResponse(
-      res,
-      500,
-      "Failed to fetch credit note",
-      err.message,
-    );
+    return sendErrorResponse(res, 500, 'Failed to fetch credit note', err.message);
   }
 };
 
@@ -742,7 +691,7 @@ exports.getOrderCreditNotes = async (req, res) => {
     const order = await Order.findByPk(orderId);
 
     if (!order) {
-      return sendErrorResponse(res, 404, "Order not found");
+      return sendErrorResponse(res, 404, 'Order not found');
     }
 
     const creditNotes = await OrderCreditNote.findAll({
@@ -752,14 +701,14 @@ exports.getOrderCreditNotes = async (req, res) => {
       include: [
         {
           model: OrderCreditNoteItem,
-          as: "items",
+          as: 'items',
         },
       ],
-      order: [["createdAt", "DESC"]],
+      order: [['createdAt', 'DESC']],
     });
 
     return res.status(200).json({
-      message: "Order credit notes fetched successfully",
+      message: 'Order credit notes fetched successfully',
       order: {
         id: order.id,
         orderNo: order.orderNo,
@@ -769,14 +718,9 @@ exports.getOrderCreditNotes = async (req, res) => {
       creditNotes,
     });
   } catch (err) {
-    console.error("Get Order Credit Notes Error:", err);
+    console.error('Get Order Credit Notes Error:', err);
 
-    return sendErrorResponse(
-      res,
-      500,
-      "Failed to fetch order credit notes",
-      err.message,
-    );
+    return sendErrorResponse(res, 500, 'Failed to fetch order credit notes', err.message);
   }
 };
 
@@ -793,7 +737,7 @@ exports.getOrderReturnableItems = async (req, res) => {
       include: [
         {
           model: Customer,
-          as: "customer",
+          as: 'customer',
         },
       ],
       transaction,
@@ -801,10 +745,10 @@ exports.getOrderReturnableItems = async (req, res) => {
 
     if (!order) {
       await transaction.rollback();
-      return sendErrorResponse(res, 404, "Order not found");
+      return sendErrorResponse(res, 404, 'Order not found');
     }
 
-    const allowedStatuses = ["DELIVERED", "PARTIALLY_DELIVERED", "RETURNED"];
+    const allowedStatuses = ['DELIVERED', 'PARTIALLY_DELIVERED', 'RETURNED'];
 
     if (!allowedStatuses.includes(order.status)) {
       await transaction.rollback();
@@ -815,10 +759,7 @@ exports.getOrderReturnableItems = async (req, res) => {
       );
     }
 
-    const returnedQuantityMap = await getReturnedQuantityMap(
-      order.id,
-      transaction,
-    );
+    const returnedQuantityMap = await getReturnedQuantityMap(order.id, transaction);
 
     const returnableItems = [];
 
@@ -833,14 +774,14 @@ exports.getOrderReturnableItems = async (req, res) => {
 
       returnableItems.push({
         productId,
-        name: product.name || "Unknown Product",
+        name: product.name || 'Unknown Product',
         imageUrl: product.imageUrl || product.image || null,
         orderedQuantity,
         returnedQuantity,
         remainingQuantity,
         price: Number(product.price || 0),
         discount: Number(product.discount || 0),
-        discountType: product.discountType || "percent",
+        discountType: product.discountType || 'percent',
         returnable: remainingQuantity > 0,
       });
     }
@@ -848,7 +789,7 @@ exports.getOrderReturnableItems = async (req, res) => {
     await transaction.commit();
 
     return res.status(200).json({
-      message: "Returnable items fetched successfully",
+      message: 'Returnable items fetched successfully',
       order: {
         id: order.id,
         orderNo: order.orderNo,
@@ -863,14 +804,9 @@ exports.getOrderReturnableItems = async (req, res) => {
       await transaction.rollback();
     } catch (_) {}
 
-    console.error("Get Returnable Order Items Error:", err);
+    console.error('Get Returnable Order Items Error:', err);
 
-    return sendErrorResponse(
-      res,
-      500,
-      "Failed to fetch returnable items",
-      err.message,
-    );
+    return sendErrorResponse(res, 500, 'Failed to fetch returnable items', err.message);
   }
 };
 
@@ -889,11 +825,11 @@ exports.cancelOrderCreditNote = async (req, res) => {
       include: [
         {
           model: OrderCreditNoteItem,
-          as: "items",
+          as: 'items',
         },
         {
           model: Order,
-          as: "order",
+          as: 'order',
         },
       ],
       transaction,
@@ -902,19 +838,19 @@ exports.cancelOrderCreditNote = async (req, res) => {
 
     if (!creditNote) {
       await transaction.rollback();
-      return sendErrorResponse(res, 404, "Credit note not found");
+      return sendErrorResponse(res, 404, 'Credit note not found');
     }
 
-    if (creditNote.status === "CANCELED") {
+    if (creditNote.status === 'CANCELED') {
       await transaction.rollback();
-      return sendErrorResponse(res, 400, "Credit note is already canceled");
+      return sendErrorResponse(res, 400, 'Credit note is already canceled');
     }
 
     const order = creditNote.order;
 
     if (!order) {
       await transaction.rollback();
-      return sendErrorResponse(res, 404, "Original order not found");
+      return sendErrorResponse(res, 404, 'Original order not found');
     }
 
     // --------------------------------------------------------
@@ -936,11 +872,7 @@ exports.cancelOrderCreditNote = async (req, res) => {
 
       if (!product) {
         await transaction.rollback();
-        return sendErrorResponse(
-          res,
-          404,
-          `Product not found: ${item.productId}`,
-        );
+        return sendErrorResponse(res, 404, `Product not found: ${item.productId}`);
       }
 
       productsForReduction.push({
@@ -951,10 +883,15 @@ exports.cancelOrderCreditNote = async (req, res) => {
     }
 
     // Undo the return in stock (the ledger shows what came back as good/damaged)
-    const { StockLedger } = require("../../models");
+    const { StockLedger } = require('../../models');
     for (const item of productsForReduction) {
       const earlier = await StockLedger.findAll({
-        where: { refType: "CREDIT_NOTE", refId: String(creditNote.id), productId: item.productId, movement: "RETURN" },
+        where: {
+          refType: 'CREDIT_NOTE',
+          refId: String(creditNote.id),
+          productId: item.productId,
+          movement: 'RETURN',
+        },
         transaction,
       });
       const good = earlier.reduce((s, l) => s + l.onHandChange, 0) || item.quantityToReduce;
@@ -965,7 +902,11 @@ exports.cancelOrderCreditNote = async (req, res) => {
             productId: item.productId,
             quantity: good,
             damaged: bad,
-            ref: { type: "CREDIT_NOTE", id: creditNote.id, no: creditNote.creditNoteNumber || order.orderNo },
+            ref: {
+              type: 'CREDIT_NOTE',
+              id: creditNote.id,
+              no: creditNote.creditNoteNumber || order.orderNo,
+            },
             userId: req.user?.userId || null,
             reason: `Credit note cancelled on order ${order.orderNo}`,
             key: `RETURN-CANCEL:${creditNote.id}:${item.productId}`,
@@ -982,7 +923,7 @@ exports.cancelOrderCreditNote = async (req, res) => {
     // CANCEL CREDIT NOTE
     // --------------------------------------------------------
 
-    creditNote.status = "CANCELED";
+    creditNote.status = 'CANCELED';
 
     await creditNote.save({
       transaction,
@@ -992,10 +933,7 @@ exports.cancelOrderCreditNote = async (req, res) => {
     // RECALCULATE ORDER RETURN STATUS
     // --------------------------------------------------------
 
-    const returnedQuantityMap = await getReturnedQuantityMap(
-      order.id,
-      transaction,
-    );
+    const returnedQuantityMap = await getReturnedQuantityMap(order.id, transaction);
 
     const orderedQuantityMap = getOrderedQuantityMap(order);
 
@@ -1007,9 +945,9 @@ exports.cancelOrderCreditNote = async (req, res) => {
     const oldStatus = order.status;
 
     if (fullyReturned) {
-      order.status = "RETURNED";
+      order.status = 'RETURNED';
     } else {
-      order.status = "DELIVERED";
+      order.status = 'DELIVERED';
     }
 
     await order.save({
@@ -1023,15 +961,15 @@ exports.cancelOrderCreditNote = async (req, res) => {
     await logOrderActivity({
       orderId: order.id,
       orderNo: order.orderNo,
-      action: "ORDER_CREDIT_NOTE_CANCELED",
+      action: 'ORDER_CREDIT_NOTE_CANCELED',
       description: `Credit note ${creditNote.creditNoteNumber} canceled for order ${order.orderNo}`,
       oldValue: {
         status: oldStatus,
-        creditNoteStatus: "ISSUED",
+        creditNoteStatus: 'ISSUED',
       },
       newValue: {
         status: order.status,
-        creditNoteStatus: "CANCELED",
+        creditNoteStatus: 'CANCELED',
       },
       performedBy: req.user?.userId || order.createdBy,
       metadata: {
@@ -1047,7 +985,7 @@ exports.cancelOrderCreditNote = async (req, res) => {
     await transaction.commit();
 
     return res.status(200).json({
-      message: "Credit note canceled successfully",
+      message: 'Credit note canceled successfully',
       creditNote,
       order: {
         id: order.id,
@@ -1060,14 +998,9 @@ exports.cancelOrderCreditNote = async (req, res) => {
       await transaction.rollback();
     } catch (_) {}
 
-    console.error("Cancel Order Credit Note Error:", err);
+    console.error('Cancel Order Credit Note Error:', err);
 
-    return sendErrorResponse(
-      res,
-      500,
-      "Failed to cancel credit note",
-      err.message,
-    );
+    return sendErrorResponse(res, 500, 'Failed to cancel credit note', err.message);
   }
 };
 
@@ -1089,11 +1022,11 @@ exports.updateCreditNote = async (req, res) => {
       include: [
         {
           model: OrderCreditNoteItem,
-          as: "items",
+          as: 'items',
         },
         {
           model: Order,
-          as: "order",
+          as: 'order',
         },
       ],
       transaction,
@@ -1102,20 +1035,12 @@ exports.updateCreditNote = async (req, res) => {
 
     if (!creditNote) {
       await transaction.rollback();
-      return sendErrorResponse(
-        res,
-        404,
-        "Credit note not found for this order",
-      );
+      return sendErrorResponse(res, 404, 'Credit note not found for this order');
     }
 
-    if (creditNote.status === "CANCELED") {
+    if (creditNote.status === 'CANCELED') {
       await transaction.rollback();
-      return sendErrorResponse(
-        res,
-        400,
-        "Canceled credit notes cannot be updated",
-      );
+      return sendErrorResponse(res, 400, 'Canceled credit notes cannot be updated');
     }
 
     // --------------------------------------------------------
@@ -1135,7 +1060,7 @@ exports.updateCreditNote = async (req, res) => {
 
       if (existing) {
         await transaction.rollback();
-        return sendErrorResponse(res, 400, "Credit note number already exists");
+        return sendErrorResponse(res, 400, 'Credit note number already exists');
       }
 
       creditNote.creditNoteNumber = creditNoteNumber;
@@ -1164,15 +1089,11 @@ exports.updateCreditNote = async (req, res) => {
     // --------------------------------------------------------
 
     if (status !== undefined) {
-      const allowedStatuses = ["DRAFT", "ISSUED", "RECEIVED"];
+      const allowedStatuses = ['DRAFT', 'ISSUED', 'RECEIVED'];
 
       if (!allowedStatuses.includes(status)) {
         await transaction.rollback();
-        return sendErrorResponse(
-          res,
-          400,
-          `Invalid credit note status: ${status}`,
-        );
+        return sendErrorResponse(res, 400, `Invalid credit note status: ${status}`);
       }
 
       creditNote.status = status;
@@ -1186,13 +1107,12 @@ exports.updateCreditNote = async (req, res) => {
     // ACTIVITY
     // --------------------------------------------------------
 
-    const userId =
-      req.user?.userId || creditNote.createdBy || creditNote.order?.createdBy;
+    const userId = req.user?.userId || creditNote.createdBy || creditNote.order?.createdBy;
 
     await logOrderActivity({
       orderId: creditNote.orderId,
       orderNo: creditNote.orderNo,
-      action: "ORDER_CREDIT_NOTE_UPDATED",
+      action: 'ORDER_CREDIT_NOTE_UPDATED',
       description: `Credit note ${creditNote.creditNoteNumber} updated for order ${creditNote.orderNo}`,
       oldValue: null,
       newValue: {
@@ -1217,13 +1137,13 @@ exports.updateCreditNote = async (req, res) => {
       include: [
         {
           model: OrderCreditNoteItem,
-          as: "items",
+          as: 'items',
         },
       ],
     });
 
     return res.status(200).json({
-      message: "Credit note updated successfully",
+      message: 'Credit note updated successfully',
       creditNote: updatedCreditNote,
     });
   } catch (err) {
@@ -1231,14 +1151,9 @@ exports.updateCreditNote = async (req, res) => {
       await transaction.rollback();
     } catch (_) {}
 
-    console.error("Update Credit Note Error:", err);
+    console.error('Update Credit Note Error:', err);
 
-    return sendErrorResponse(
-      res,
-      500,
-      "Failed to update credit note",
-      err.message,
-    );
+    return sendErrorResponse(res, 500, 'Failed to update credit note', err.message);
   }
 };
 
@@ -1250,7 +1165,7 @@ exports.uploadCreditNoteDocument = async (req, res) => {
     const { orderId, creditNoteId } = req.params;
 
     if (!req.file) {
-      return sendErrorResponse(res, 400, "Credit note document is required");
+      return sendErrorResponse(res, 400, 'Credit note document is required');
     }
 
     const creditNote = await OrderCreditNote.findOne({
@@ -1261,19 +1176,11 @@ exports.uploadCreditNoteDocument = async (req, res) => {
     });
 
     if (!creditNote) {
-      return sendErrorResponse(
-        res,
-        404,
-        "Credit note not found for this order",
-      );
+      return sendErrorResponse(res, 404, 'Credit note not found for this order');
     }
 
-    if (creditNote.status === "CANCELED") {
-      return sendErrorResponse(
-        res,
-        400,
-        "Cannot upload document to a canceled credit note",
-      );
+    if (creditNote.status === 'CANCELED') {
+      return sendErrorResponse(res, 400, 'Cannot upload document to a canceled credit note');
     }
 
     // --------------------------------------------------------
@@ -1289,17 +1196,17 @@ exports.uploadCreditNoteDocument = async (req, res) => {
     try {
       documentUrl = await uploadCreditNoteFile(req.file);
     } catch (uploadErr) {
-      console.error("Credit note file upload failed:", uploadErr);
+      console.error('Credit note file upload failed:', uploadErr);
       return sendErrorResponse(
         res,
         500,
-        "Failed to upload credit note document",
+        'Failed to upload credit note document',
         uploadErr.message,
       );
     }
 
     if (!documentUrl) {
-      return sendErrorResponse(res, 500, "File upload did not return a URL");
+      return sendErrorResponse(res, 500, 'File upload did not return a URL');
     }
 
     creditNote.creditNoteLink = documentUrl;
@@ -1309,7 +1216,7 @@ exports.uploadCreditNoteDocument = async (req, res) => {
     await logOrderActivity({
       orderId: creditNote.orderId,
       orderNo: creditNote.orderNo,
-      action: "ORDER_CREDIT_NOTE_DOCUMENT_UPLOADED",
+      action: 'ORDER_CREDIT_NOTE_DOCUMENT_UPLOADED',
       description: `Credit note document uploaded for ${creditNote.creditNoteNumber}`,
       oldValue: null,
       newValue: {
@@ -1327,7 +1234,7 @@ exports.uploadCreditNoteDocument = async (req, res) => {
     });
 
     return res.status(200).json({
-      message: "Credit note document uploaded successfully",
+      message: 'Credit note document uploaded successfully',
       creditNote: {
         id: creditNote.id,
         orderId: creditNote.orderId,
@@ -1337,13 +1244,8 @@ exports.uploadCreditNoteDocument = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("Upload Credit Note Document Error:", err);
+    console.error('Upload Credit Note Document Error:', err);
 
-    return sendErrorResponse(
-      res,
-      500,
-      "Failed to upload credit note document",
-      err.message,
-    );
+    return sendErrorResponse(res, 500, 'Failed to upload credit note document', err.message);
   }
 };

@@ -1,5 +1,5 @@
-const { v4: uuidv4 } = require("uuid");
-const { Permission, Role, RolePermission } = require("../../models");
+const { v4: uuidv4 } = require('uuid');
+const { Permission, Role, RolePermission } = require('../../models');
 /**
  * Create a new permission
  */
@@ -9,7 +9,7 @@ exports.createPermission = async (req, res) => {
 
     if (!api || !name || !module || !route) {
       return res.status(400).json({
-        message: "All fields (api, name, module, route) are required.",
+        message: 'All fields (api, name, module, route) are required.',
       });
     }
 
@@ -18,18 +18,18 @@ exports.createPermission = async (req, res) => {
     });
     if (existingPermission) {
       return res.status(400).json({
-        message: "Permission already exists for this module and route.",
+        message: 'Permission already exists for this module and route.',
       });
     }
 
     const permission = await Permission.create({ api, name, module, route });
     res.status(201).json({
-      message: "Permission created successfully.",
+      message: 'Permission created successfully.',
       permission,
     });
   } catch (error) {
     res.status(500).json({
-      message: "Error creating permission.",
+      message: 'Error creating permission.',
       error: error.message,
     });
   }
@@ -45,14 +45,14 @@ exports.editPermission = async (req, res) => {
 
     const permission = await Permission.findByPk(permissionId);
     if (!permission) {
-      return res.status(404).json({ message: "Permission not found." });
+      return res.status(404).json({ message: 'Permission not found.' });
     }
 
     await permission.update({ api, name, module, route });
-    res.json({ message: "Permission updated successfully.", permission });
+    res.json({ message: 'Permission updated successfully.', permission });
   } catch (error) {
     res.status(500).json({
-      message: "Error updating permission.",
+      message: 'Error updating permission.',
       error: error.message,
     });
   }
@@ -67,14 +67,14 @@ exports.deletePermission = async (req, res) => {
 
     const permission = await Permission.findByPk(permissionId);
     if (!permission) {
-      return res.status(404).json({ message: "Permission not found." });
+      return res.status(404).json({ message: 'Permission not found.' });
     }
 
     await permission.destroy();
-    res.json({ message: "Permission deleted successfully." });
+    res.json({ message: 'Permission deleted successfully.' });
   } catch (error) {
     res.status(500).json({
-      message: "Error deleting permission.",
+      message: 'Error deleting permission.',
       error: error.message,
     });
   }
@@ -89,13 +89,13 @@ exports.getPermission = async (req, res) => {
 
     const permission = await Permission.findByPk(permissionId);
     if (!permission) {
-      return res.status(404).json({ message: "Permission not found." });
+      return res.status(404).json({ message: 'Permission not found.' });
     }
 
     res.json({ permission });
   } catch (error) {
     res.status(500).json({
-      message: "Error fetching permission.",
+      message: 'Error fetching permission.',
       error: error.message,
     });
   }
@@ -110,7 +110,7 @@ exports.getAllPermissions = async (req, res) => {
     res.json({ permissions });
   } catch (error) {
     res.status(500).json({
-      message: "Error fetching permissions.",
+      message: 'Error fetching permissions.',
       error: error.message,
     });
   }
@@ -127,10 +127,10 @@ exports.assignPermissionToRole = async (req, res) => {
     const permission = await Permission.findByPk(permissionId);
 
     if (!role) {
-      return res.status(404).json({ message: "Role not found." });
+      return res.status(404).json({ message: 'Role not found.' });
     }
     if (!permission) {
-      return res.status(404).json({ message: "Permission not found." });
+      return res.status(404).json({ message: 'Permission not found.' });
     }
 
     let rolePermission = await RolePermission.findOne({
@@ -149,7 +149,7 @@ exports.assignPermissionToRole = async (req, res) => {
     }
 
     res.json({
-      message: `Permission ${isGranted ? "granted" : "revoked"} successfully.`,
+      message: `Permission ${isGranted ? 'granted' : 'revoked'} successfully.`,
       rolePermission: {
         roleId,
         permissionId,
@@ -158,7 +158,7 @@ exports.assignPermissionToRole = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({
-      message: "Error assigning permission.",
+      message: 'Error assigning permission.',
       error: error.message,
     });
   }
@@ -175,10 +175,10 @@ exports.removePermissionFromRole = async (req, res) => {
     const permission = await Permission.findByPk(permissionId);
 
     if (!role) {
-      return res.status(404).json({ message: "Role not found." });
+      return res.status(404).json({ message: 'Role not found.' });
     }
     if (!permission) {
-      return res.status(404).json({ message: "Permission not found." });
+      return res.status(404).json({ message: 'Permission not found.' });
     }
 
     const rolePermission = await RolePermission.findOne({
@@ -186,20 +186,18 @@ exports.removePermissionFromRole = async (req, res) => {
     });
 
     if (!rolePermission) {
-      return res
-        .status(404)
-        .json({ message: "Permission not assigned to role." });
+      return res.status(404).json({ message: 'Permission not assigned to role.' });
     }
 
     await rolePermission.destroy();
 
     res.json({
-      message: "Permission removed successfully.",
+      message: 'Permission removed successfully.',
       rolePermission: { roleId, permissionId },
     });
   } catch (error) {
     res.status(500).json({
-      message: "Error removing permission.",
+      message: 'Error removing permission.',
       error: error.message,
     });
   }

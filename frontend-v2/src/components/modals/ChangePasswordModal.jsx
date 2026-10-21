@@ -1,7 +1,7 @@
 // src/components/settings/ChangePasswordModal.jsx
-import React from "react";
-import { Modal, Form, Input, Button, message } from "antd";
-import { useChangePasswordMutation } from "../../api/authApi";
+import React from 'react';
+import { Modal, Form, Input, Button, message } from 'antd';
+import { useChangePasswordMutation } from '../../api/authApi';
 
 const ChangePasswordModal = ({ visible, onClose }) => {
   const [form] = Form.useForm();
@@ -14,11 +14,11 @@ const ChangePasswordModal = ({ visible, onClose }) => {
         newPassword: values.newPassword,
       }).unwrap();
 
-      message.success("Password changed successfully!");
+      message.success('Password changed successfully!');
       form.resetFields();
       onClose();
     } catch (error) {
-      message.error(error?.data?.message || "Failed to change password");
+      message.error(error?.data?.message || 'Failed to change password');
     }
   };
 
@@ -38,9 +38,7 @@ const ChangePasswordModal = ({ visible, onClose }) => {
         <Form.Item
           name="currentPassword"
           label="Current Password"
-          rules={[
-            { required: true, message: "Please enter your current password" },
-          ]}
+          rules={[{ required: true, message: 'Please enter your current password' }]}
         >
           <Input.Password placeholder="Enter current password" />
         </Form.Item>
@@ -49,14 +47,14 @@ const ChangePasswordModal = ({ visible, onClose }) => {
           name="newPassword"
           label="New Password"
           rules={[
-            { required: true, message: "Please enter a new password" },
-            { min: 6, message: "Password must be at least 6 characters" },
+            { required: true, message: 'Please enter a new password' },
+            { min: 6, message: 'Password must be at least 6 characters' },
           ]}
         >
           <Input.Password placeholder="Enter new password" />
         </Form.Item>
 
-        <Form.Item style={{ marginBottom: 0, textAlign: "right" }}>
+        <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
           <Button
             onClick={() => {
               form.resetFields();
@@ -66,12 +64,7 @@ const ChangePasswordModal = ({ visible, onClose }) => {
           >
             Cancel
           </Button>
-          <Button
-            type="primary"
-            htmlType="submit"
-            loading={isLoading}
-            disabled={isLoading}
-          >
+          <Button type="primary" htmlType="submit" loading={isLoading} disabled={isLoading}>
             Save Changes
           </Button>
         </Form.Item>

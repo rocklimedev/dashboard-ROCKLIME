@@ -1,21 +1,19 @@
-const fs = require("fs");
+const fs = require('fs');
 
 // Load files
-const rawStockData = require("./json-outputs/all_sheets_data2.json");
-const products = require("./json-outputs/product_backup.json");
+const rawStockData = require('./json-outputs/all_sheets_data2.json');
+const products = require('./json-outputs/product_backup.json');
 
-const META_KEY = "d11da9f9-3f2e-4536-8236-9671200cca4a";
+const META_KEY = 'd11da9f9-3f2e-4536-8236-9671200cca4a';
 
 // Normalize helper
-const normalize = (str) => str?.toLowerCase().replace(/\s+/g, " ").trim();
+const normalize = (str) => str?.toLowerCase().replace(/\s+/g, ' ').trim();
 
 // -----------------------------------------------------
 // 1. Normalize stock data (IMPORTANT FIX)
 // -----------------------------------------------------
 const stockData = rawStockData.map((item) => {
-  const codeKey = Object.keys(item).find(
-    (k) => k !== "name" && k !== "quantity",
-  );
+  const codeKey = Object.keys(item).find((k) => k !== 'name' && k !== 'quantity');
 
   return {
     productCode: item[codeKey],
@@ -83,7 +81,7 @@ products.forEach((product) => {
         productId: product.productId,
         change,
         quantityAfter: newQty,
-        action: change > 0 ? "add-stock" : "adjustment",
+        action: change > 0 ? 'add-stock' : 'adjustment',
         orderNo: null,
         userId: null,
         message: `Stock updated via script: ${oldQty} → ${newQty}`,
@@ -107,22 +105,13 @@ const productnotfound = stockData.filter((stock) => {
 // -----------------------------------------------------
 // 4. Save files
 // -----------------------------------------------------
-fs.writeFileSync(
-  "./updated-stock.json",
-  JSON.stringify(updatedProducts, null, 2),
-);
+fs.writeFileSync('./updated-stock.json', JSON.stringify(updatedProducts, null, 2));
 
-fs.writeFileSync(
-  "./productnotfound.json",
-  JSON.stringify(productnotfound, null, 2),
-);
+fs.writeFileSync('./productnotfound.json', JSON.stringify(productnotfound, null, 2));
 
-fs.writeFileSync(
-  "./inventory-history.json",
-  JSON.stringify(inventoryHistory, null, 2),
-);
+fs.writeFileSync('./inventory-history.json', JSON.stringify(inventoryHistory, null, 2));
 
 // -----------------------------------------------------
-console.log("✅ Only changed products saved");
-console.log("📦 Unmatched stock saved");
-console.log("🧾 Inventory history generated");
+console.log('✅ Only changed products saved');
+console.log('📦 Unmatched stock saved');
+console.log('🧾 Inventory history generated');

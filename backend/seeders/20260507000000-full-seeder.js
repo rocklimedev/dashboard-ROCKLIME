@@ -1,9 +1,9 @@
-"use strict";
+'use strict';
 
-const { v4: uuidv4 } = require("uuid");
-const slugify = require("slugify");
+const { v4: uuidv4 } = require('uuid');
+const slugify = require('slugify');
 
-const seedData = require("./seedable-data.json");
+const seedData = require('./seedable-data.json');
 
 const rawProducts = seedData.products || [];
 module.exports = {
@@ -11,12 +11,12 @@ module.exports = {
     const transaction = await queryInterface.sequelize.transaction();
 
     try {
-      console.log("🚀 Starting Full Seeder...");
+      console.log('🚀 Starting Full Seeder...');
 
       // ---------------------------------------------------
       // CONFIG
       // ---------------------------------------------------
-      const BRAND_ID = "acbe7061-9b76-47d1-a509-e4b1f982a36f";
+      const BRAND_ID = 'acbe7061-9b76-47d1-a509-e4b1f982a36f';
 
       // ---------------------------------------------------
       // STORAGE
@@ -35,12 +35,12 @@ module.exports = {
       // META FIELD IDS
       // ---------------------------------------------------
       const META_KEYS = [
-        "1cf23921-49cd-11f1-93ac-52540021303b",
-        "d11da9f9-3f2e-4536-8236-9671200cca4a",
-        "81cd6d76-d7d2-4226-b48e-6704e6224c2b",
-        "1cf288ba-49cd-11f1-93ac-52540021303b",
-        "9ba862ef-f993-4873-95ef-1fef10036aa5",
-        "1cf286a9-49cd-11f1-93ac-52540021303b",
+        '1cf23921-49cd-11f1-93ac-52540021303b',
+        'd11da9f9-3f2e-4536-8236-9671200cca4a',
+        '81cd6d76-d7d2-4226-b48e-6704e6224c2b',
+        '1cf288ba-49cd-11f1-93ac-52540021303b',
+        '9ba862ef-f993-4873-95ef-1fef10036aa5',
+        '1cf286a9-49cd-11f1-93ac-52540021303b',
       ];
 
       // ---------------------------------------------------
@@ -103,7 +103,7 @@ module.exports = {
         const product = {
           productId,
 
-          name: item.name || "Unnamed Product",
+          name: item.name || 'Unnamed Product',
 
           product_code: String(item.product_code || uuidv4()),
 
@@ -123,17 +123,15 @@ module.exports = {
 
           alert_quantity: item.alert_quantity ?? 0,
 
-          tax: item.tax || "0.00",
+          tax: item.tax || '0.00',
 
           description: item.description || item.name || null,
 
-          images: Array.isArray(item.images)
-            ? JSON.stringify(item.images)
-            : JSON.stringify([]),
+          images: Array.isArray(item.images) ? JSON.stringify(item.images) : JSON.stringify([]),
 
           isFeatured: item.isFeatured || false,
 
-          status: item.status || "active",
+          status: item.status || 'active',
 
           brandId: item.brandId || BRAND_ID,
 
@@ -157,7 +155,7 @@ module.exports = {
         // ---------------------------------------------------
         if (item.keywords && category) {
           const parsedKeywords = item.keywords
-            .split(",")
+            .split(',')
             .map((k) => k.trim().toLowerCase())
             .filter(Boolean);
 
@@ -215,7 +213,7 @@ module.exports = {
       // ---------------------------------------------------
       console.log(`📦 Seeding Categories: ${categories.length}`);
 
-      await queryInterface.bulkInsert("categories", categories, {
+      await queryInterface.bulkInsert('categories', categories, {
         transaction,
       });
 
@@ -224,21 +222,21 @@ module.exports = {
       // ---------------------------------------------------
       console.log(`🏷️ Seeding Keywords: ${keywords.length}`);
 
-      await queryInterface.bulkInsert("keywords", keywords, { transaction });
+      await queryInterface.bulkInsert('keywords', keywords, { transaction });
 
       // ---------------------------------------------------
       // INSERT PRODUCTS
       // ---------------------------------------------------
       console.log(`🛒 Seeding Products: ${products.length}`);
 
-      await queryInterface.bulkInsert("products", products, { transaction });
+      await queryInterface.bulkInsert('products', products, { transaction });
 
       // ---------------------------------------------------
       // INSERT PRODUCT KEYWORDS
       // ---------------------------------------------------
       console.log(`🔗 Seeding Product Keywords: ${productKeywords.length}`);
 
-      await queryInterface.bulkInsert("products_keywords", productKeywords, {
+      await queryInterface.bulkInsert('products_keywords', productKeywords, {
         transaction,
       });
 
@@ -247,11 +245,11 @@ module.exports = {
       // ---------------------------------------------------
       await transaction.commit();
 
-      console.log("✅ Full Seeder Completed Successfully!");
+      console.log('✅ Full Seeder Completed Successfully!');
     } catch (error) {
       await transaction.rollback();
 
-      console.error("❌ Seeder Failed:", error);
+      console.error('❌ Seeder Failed:', error);
 
       throw error;
     }
@@ -261,28 +259,28 @@ module.exports = {
     const transaction = await queryInterface.sequelize.transaction();
 
     try {
-      console.log("🧹 Rolling Back Seeder...");
+      console.log('🧹 Rolling Back Seeder...');
 
       // ---------------------------------------------------
       // DELETE ORDER MATTERS
       // ---------------------------------------------------
-      await queryInterface.bulkDelete("products_keywords", null, {
+      await queryInterface.bulkDelete('products_keywords', null, {
         transaction,
       });
 
-      await queryInterface.bulkDelete("products", null, { transaction });
+      await queryInterface.bulkDelete('products', null, { transaction });
 
-      await queryInterface.bulkDelete("keywords", null, { transaction });
+      await queryInterface.bulkDelete('keywords', null, { transaction });
 
-      await queryInterface.bulkDelete("categories", null, { transaction });
+      await queryInterface.bulkDelete('categories', null, { transaction });
 
       await transaction.commit();
 
-      console.log("✅ Seeder Rollback Successful!");
+      console.log('✅ Seeder Rollback Successful!');
     } catch (error) {
       await transaction.rollback();
 
-      console.error("❌ Seeder Rollback Failed:", error);
+      console.error('❌ Seeder Rollback Failed:', error);
 
       throw error;
     }

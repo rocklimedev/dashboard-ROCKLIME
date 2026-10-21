@@ -1,23 +1,17 @@
-const { can } = require("../../middleware/permission");
-const axios = require("axios");
-const path = require("path");
-const { v4: uuidv4 } = require("uuid");
-const sequelize = require("../../config/database");
-const { Op } = require("sequelize");
-const { uploadToFtp } = require("../../middleware/upload");
-const { sendNotification } = require("../engagement/notification.controller");
-const logOrderActivity = require("./order-activity-logger");
-const {
-  Quotation,
-  Order,
-  Customer,
-  OrderDispatch,
-  OrderActivity,
-} = require("../../models");
+const { can } = require('../../middleware/permission');
+const axios = require('axios');
+const path = require('path');
+const { v4: uuidv4 } = require('uuid');
+const sequelize = require('../../config/database');
+const { Op } = require('sequelize');
+const { uploadToFtp } = require('../../middleware/upload');
+const { sendNotification } = require('../engagement/notification.controller');
+const logOrderActivity = require('./order-activity-logger');
+const { Quotation, Order, Customer, OrderDispatch, OrderActivity } = require('../../models');
 
 // Who receives order notifications meant for "the admin". Set ADMIN_USER_ID in .env.
 const ADMIN_USER_ID = process.env.ADMIN_USER_ID || null;
-const stock = require("../stock/stock.service");
+const stock = require('../stock/stock.service');
 
 const sendErrorResponse = (res, status, message, details = null) => {
   const response = { message };
@@ -33,22 +27,22 @@ const sendErrorResponse = (res, status, message, details = null) => {
 // Vehicle numbers are stored upper-case without spaces (DL1LAB1234).
 function transportFields(body = {}) {
   const clean = (v, max) => {
-    const s = String(v ?? "").trim();
+    const s = String(v ?? '').trim();
     return s ? s.slice(0, max) : null;
   };
   const values = {
-    vehicleNo: clean(body.vehicleNo, 20)?.toUpperCase().replace(/[\s-]/g, "") || null,
+    vehicleNo: clean(body.vehicleNo, 20)?.toUpperCase().replace(/[\s-]/g, '') || null,
     driverName: clean(body.driverName, 80),
-    driverPhone: clean(body.driverPhone, 20)?.replace(/[^\d+]/g, "") || null,
+    driverPhone: clean(body.driverPhone, 20)?.replace(/[^\d+]/g, '') || null,
     transporter: clean(body.transporter, 120),
     lrNumber: clean(body.lrNumber, 60),
-    ewayBillNo: clean(body.ewayBillNo, 20)?.replace(/\s/g, "") || null,
+    ewayBillNo: clean(body.ewayBillNo, 20)?.replace(/\s/g, '') || null,
   };
   if (values.ewayBillNo && !/^\d{12}$/.test(values.ewayBillNo)) {
-    return { error: "E-way bill number must be 12 digits." };
+    return { error: 'E-way bill number must be 12 digits.' };
   }
-  if (values.driverPhone && values.driverPhone.replace(/\D/g, "").length < 10) {
-    return { error: "Driver phone number looks too short." };
+  if (values.driverPhone && values.driverPhone.replace(/\D/g, '').length < 10) {
+    return { error: 'Driver phone number looks too short.' };
   }
   return { values };
 }
@@ -58,9 +52,8 @@ exports.createDispatch = async (req, res) => {
 
   try {
     const { id } = req.params;
-    const { carrier, trackingNumber, remarks, invoiceLink, gatePassLink } =
-      req.body;
-    const flag = (v) => ["1", "true", "yes", "on"].includes(String(v ?? "").toLowerCase());
+    const { carrier, trackingNumber, remarks, invoiceLink, gatePassLink } = req.body;
+    const flag = (v) => ['1', 'true', 'yes', 'on'].includes(String(v ?? '').toLowerCase());
     // Instead of uploading files, the ERP can make this dispatch's GST invoice and gate pass.
     const makeInvoice = flag(req.body.makeInvoice);
     const makeGatePass = flag(req.body.makeGatePass);
@@ -73,45 +66,39 @@ exports.createDispatch = async (req, res) => {
     let items;
 
     try {
-      items =
-        typeof req.body.items === "string"
-          ? JSON.parse(req.body.items)
-          : req.body.items;
+      items = typeof req.body.items === 'string' ? JSON.parse(req.body.items) : req.body.items;
     } catch (parseError) {
       await t.rollback();
-      return sendErrorResponse(res, 400, "Invalid items JSON");
+      return sendErrorResponse(res, 400, 'Invalid items JSON');
     }
 
     if (!Array.isArray(items) || items.length === 0) {
       await t.rollback();
-      return sendErrorResponse(res, 400, "items array is required");
+      return sendErrorResponse(res, 400, 'items array is required');
     }
 
     // Serialize quotation and order shipments against the same quantity budget.
-    const sourceOrder = await Order.findByPk(id, { attributes: ["quotationId"], transaction: t });
-    if (sourceOrder?.quotationId) await Quotation.findByPk(sourceOrder.quotationId, { transaction: t, lock: t.LOCK.UPDATE });
+    const sourceOrder = await Order.findByPk(id, { attributes: ['quotationId'], transaction: t });
+    if (sourceOrder?.quotationId)
+      await Quotation.findByPk(sourceOrder.quotationId, { transaction: t, lock: t.LOCK.UPDATE });
     const order = await Order.findByPk(id, { transaction: t, lock: t.LOCK.UPDATE });
 
     if (!order) {
       await t.rollback();
-      return sendErrorResponse(res, 404, "Order not found");
+      return sendErrorResponse(res, 404, 'Order not found');
     }
 
     const orderProducts = order.products || [];
 
     if (!orderProducts.length) {
       await t.rollback();
-      return sendErrorResponse(res, 400, "Order has no products to dispatch");
+      return sendErrorResponse(res, 400, 'Order has no products to dispatch');
     }
 
-    if (["CANCELED", "CLOSED", "DRAFT"].includes(order.status)) {
+    if (['CANCELED', 'CLOSED', 'DRAFT'].includes(order.status)) {
       await t.rollback();
 
-      return sendErrorResponse(
-        res,
-        400,
-        `Cannot dispatch an order with status ${order.status}`,
-      );
+      return sendErrorResponse(res, 400, `Cannot dispatch an order with status ${order.status}`);
     }
 
     // -------------------------------------------------------
@@ -129,26 +116,16 @@ exports.createDispatch = async (req, res) => {
 
     if (invoiceFile) {
       try {
-        const ext =
-          path.extname(invoiceFile.originalname).toLowerCase() || ".pdf";
+        const ext = path.extname(invoiceFile.originalname).toLowerCase() || '.pdf';
 
-        finalInvoiceLink = await uploadToFtp(
-          invoiceFile.buffer,
-          `${uuidv4()}${ext}`,
-          {
-            remoteDir: "/invoice_pdfs",
-            chmod: "644",
-          },
-        );
+        finalInvoiceLink = await uploadToFtp(invoiceFile.buffer, `${uuidv4()}${ext}`, {
+          remoteDir: '/invoice_pdfs',
+          chmod: '644',
+        });
       } catch (ftpErr) {
         await t.rollback();
 
-        return sendErrorResponse(
-          res,
-          500,
-          "Invoice upload failed",
-          ftpErr.message,
-        );
+        return sendErrorResponse(res, 500, 'Invoice upload failed', ftpErr.message);
       }
     } else if (invoiceLink && String(invoiceLink).trim()) {
       finalInvoiceLink = String(invoiceLink).trim();
@@ -160,7 +137,7 @@ exports.createDispatch = async (req, res) => {
       return sendErrorResponse(
         res,
         400,
-        "This dispatch needs its own invoice. Upload an invoice file or provide invoiceLink.",
+        'This dispatch needs its own invoice. Upload an invoice file or provide invoiceLink.',
       );
     }
 
@@ -175,26 +152,16 @@ exports.createDispatch = async (req, res) => {
 
     if (gatePassFile) {
       try {
-        const ext =
-          path.extname(gatePassFile.originalname).toLowerCase() || ".pdf";
+        const ext = path.extname(gatePassFile.originalname).toLowerCase() || '.pdf';
 
-        finalGatePassLink = await uploadToFtp(
-          gatePassFile.buffer,
-          `${uuidv4()}${ext}`,
-          {
-            remoteDir: "/invoice_pdfs",
-            chmod: "644",
-          },
-        );
+        finalGatePassLink = await uploadToFtp(gatePassFile.buffer, `${uuidv4()}${ext}`, {
+          remoteDir: '/invoice_pdfs',
+          chmod: '644',
+        });
       } catch (ftpErr) {
         await t.rollback();
 
-        return sendErrorResponse(
-          res,
-          500,
-          "Gate-pass upload failed",
-          ftpErr.message,
-        );
+        return sendErrorResponse(res, 500, 'Gate-pass upload failed', ftpErr.message);
       }
     } else if (gatePassLink && String(gatePassLink).trim()) {
       finalGatePassLink = String(gatePassLink).trim();
@@ -206,7 +173,7 @@ exports.createDispatch = async (req, res) => {
       return sendErrorResponse(
         res,
         400,
-        "This dispatch needs its own gate-pass. Upload a gate-pass file or provide gatePassLink.",
+        'This dispatch needs its own gate-pass. Upload a gate-pass file or provide gatePassLink.',
       );
     }
 
@@ -216,11 +183,13 @@ exports.createDispatch = async (req, res) => {
 
     const priorDispatches = await OrderDispatch.findAll({
       where: { orderId: order.id },
-      attributes: ["items"],
+      attributes: ['items'],
       transaction: t,
     });
 
-    priorDispatches.push(...await require("./quotation-dispatch.controller").creditedDispatches(order, t));
+    priorDispatches.push(
+      ...(await require('./quotation-dispatch.controller').creditedDispatches(order, t)),
+    );
     const alreadyDispatchedMap = {};
 
     for (const d of priorDispatches) {
@@ -244,24 +213,22 @@ exports.createDispatch = async (req, res) => {
       const quantity = Number(item.quantity);
       if (!productId || !Number.isSafeInteger(quantity) || quantity <= 0) {
         await t.rollback();
-        return sendErrorResponse(res, 400, "Each dispatch item needs a productId and a positive whole quantity");
+        return sendErrorResponse(
+          res,
+          400,
+          'Each dispatch item needs a productId and a positive whole quantity',
+        );
       }
       mergedItems.set(productId, (mergedItems.get(productId) || 0) + quantity);
     }
     for (const [productId, quantity] of mergedItems) {
       const qty = quantity;
-      const orderedLine = orderProducts.find(
-        (p) => (p.productId || p.id) === productId,
-      );
+      const orderedLine = orderProducts.find((p) => (p.productId || p.id) === productId);
 
       if (!orderedLine) {
         await t.rollback();
 
-        return sendErrorResponse(
-          res,
-          400,
-          `Product ${productId} is not part of this order`,
-        );
+        return sendErrorResponse(res, 400, `Product ${productId} is not part of this order`);
       }
 
       const orderedQty = Number(orderedLine.quantity) || 0;
@@ -284,7 +251,7 @@ exports.createDispatch = async (req, res) => {
       dispatchItems.push({
         productId,
         name: orderedLine.name,
-        productCode: orderedLine.productCode || "",
+        productCode: orderedLine.productCode || '',
         quantity: qty,
         price: unitPrice,
         total: Number((unitPrice * qty).toFixed(2)),
@@ -305,13 +272,17 @@ exports.createDispatch = async (req, res) => {
 
     if (order.quotationId) {
       const source = await Quotation.findByPk(order.quotationId, { transaction: t });
-      const { quotationHistory } = require("./quotation-dispatch.controller");
-      const { asList, remainingLines, selectDispatchItems } = require("./dispatch-document");
-      const quotedIds = new Set(asList(source?.products).map(p => p.productId));
-      const quotedItems = dispatchItems.filter(p => quotedIds.has(p.productId));
-      if (source && quotedItems.length) selectDispatchItems(remainingLines(source.products, await quotationHistory(source.quotationId, t)), quotedItems);
+      const { quotationHistory } = require('./quotation-dispatch.controller');
+      const { asList, remainingLines, selectDispatchItems } = require('./dispatch-document');
+      const quotedIds = new Set(asList(source?.products).map((p) => p.productId));
+      const quotedItems = dispatchItems.filter((p) => quotedIds.has(p.productId));
+      if (source && quotedItems.length)
+        selectDispatchItems(
+          remainingLines(source.products, await quotationHistory(source.quotationId, t)),
+          quotedItems,
+        );
     }
-    const { snapshotForOrder } = require("./quotation-dispatch.controller");
+    const { snapshotForOrder } = require('./quotation-dispatch.controller');
     const documentSnapshot = await snapshotForOrder(order, dispatchItems, dispatchCount + 1);
     const dispatch = await OrderDispatch.create(
       {
@@ -366,22 +337,14 @@ exports.createDispatch = async (req, res) => {
         (combinedDispatchedMap[it.productId] || 0) + it.quantity;
     }
 
-    const totalOrderedQty = orderProducts.reduce(
-      (s, p) => s + (Number(p.quantity) || 0),
-      0,
-    );
+    const totalOrderedQty = orderProducts.reduce((s, p) => s + (Number(p.quantity) || 0), 0);
 
-    const totalDispatchedQtyAfter = Object.values(combinedDispatchedMap).reduce(
-      (s, v) => s + v,
-      0,
-    );
+    const totalDispatchedQtyAfter = Object.values(combinedDispatchedMap).reduce((s, v) => s + v, 0);
 
     const oldStatus = order.status;
 
     const newStatus =
-      totalDispatchedQtyAfter >= totalOrderedQty
-        ? "DISPATCHED"
-        : "PARTIALLY_DISPATCHED";
+      totalDispatchedQtyAfter >= totalOrderedQty ? 'DISPATCHED' : 'PARTIALLY_DISPATCHED';
 
     // -------------------------------------------------------
     // MIRROR LATEST DOCS ONTO THE ORDER
@@ -413,23 +376,27 @@ exports.createDispatch = async (req, res) => {
     let madeInvoice = null;
     let docNote = null;
     if (makeGatePass) {
-      const { gatePassLink: gpLink } = require("./gate-pass");
+      const { gatePassLink: gpLink } = require('./gate-pass');
       finalGatePassLink = gpLink(dispatch);
       await dispatch.update({ gatePassLink: finalGatePassLink });
       await Order.update({ gatePassLink: finalGatePassLink }, { where: { id: order.id } });
     }
     if (makeInvoice) {
-      const invoices = require("../invoices/invoice.service");
+      const invoices = require('../invoices/invoice.service');
       try {
-        madeInvoice = await invoices.createInvoice({ orderId: order.id, dispatchId: dispatch.id, userId: req.user?.userId || null });
+        madeInvoice = await invoices.createInvoice({
+          orderId: order.id,
+          dispatchId: dispatch.id,
+          userId: req.user?.userId || null,
+        });
         finalInvoiceLink = invoices.publicLink(madeInvoice);
       } catch (invErr) {
         // Pieces already billed on an earlier ERP invoice (e.g. the whole order was invoiced first)
-        const fresh = await Order.findByPk(order.id, { attributes: ["invoiceLink"] });
+        const fresh = await Order.findByPk(order.id, { attributes: ['invoiceLink'] });
         if (fresh?.invoiceLink) {
           finalInvoiceLink = fresh.invoiceLink;
           await dispatch.update({ invoiceLink: finalInvoiceLink });
-          docNote = "These pieces were already on an invoice; the dispatch points to it.";
+          docNote = 'These pieces were already on an invoice; the dispatch points to it.';
         } else {
           docNote = `The dispatch is saved, but the invoice could not be made: ${invErr.message}`;
         }
@@ -443,7 +410,7 @@ exports.createDispatch = async (req, res) => {
     await logOrderActivity({
       orderId: order.id,
       orderNo: order.orderNo,
-      action: "DISPATCH_CREATED",
+      action: 'DISPATCH_CREATED',
       description: `Dispatch #${dispatch.dispatchNumber} created for order ${order.orderNo} (${totalQuantity} unit(s))`,
       oldValue: {
         status: oldStatus,
@@ -471,9 +438,7 @@ exports.createDispatch = async (req, res) => {
     // -------------------------------------------------------
 
     const recipients = new Set(
-      [order.createdBy, order.assignedUserId, order.secondaryUserId].filter(
-        Boolean,
-      ),
+      [order.createdBy, order.assignedUserId, order.secondaryUserId].filter(Boolean),
     );
 
     for (const uid of recipients) {
@@ -488,17 +453,19 @@ exports.createDispatch = async (req, res) => {
       userId: ADMIN_USER_ID,
       title: `Dispatch #${dispatch.dispatchNumber} – Order #${order.orderNo}`,
       message: `Order #${order.orderNo} ${
-        newStatus === "DISPATCHED" ? "fully" : "partially"
+        newStatus === 'DISPATCHED' ? 'fully' : 'partially'
       } dispatched.`,
     });
 
     return res.status(201).json({
-      message: "Dispatch recorded successfully",
+      message: 'Dispatch recorded successfully',
       dispatch,
       orderStatus: newStatus,
       invoiceLink: finalInvoiceLink,
       gatePassLink: finalGatePassLink,
-      invoice: madeInvoice ? { id: madeInvoice.id, invoiceNo: madeInvoice.invoiceNo, total: Number(madeInvoice.total) } : null,
+      invoice: madeInvoice
+        ? { id: madeInvoice.id, invoiceNo: madeInvoice.invoiceNo, total: Number(madeInvoice.total) }
+        : null,
       note: docNote,
     });
   } catch (err) {
@@ -506,12 +473,7 @@ exports.createDispatch = async (req, res) => {
       await t.rollback();
     } catch (_) {}
 
-    return sendErrorResponse(
-      res,
-      err.status || 500,
-      "Failed to create dispatch",
-      err.message,
-    );
+    return sendErrorResponse(res, err.status || 500, 'Failed to create dispatch', err.message);
   }
 };
 // ─────────────────────────────────────────────────────────────
@@ -520,20 +482,21 @@ exports.createDispatch = async (req, res) => {
 
 exports.getAllDispatchHistory = async (req, res) => {
   try {
-    const orderAccess = await can(req.user, "orders", "view");
-    if (!orderAccess && !await can(req.user, "quotations", "view")) return sendErrorResponse(res, 403, "You do not have permission to view dispatch history");
+    const orderAccess = await can(req.user, 'orders', 'view');
+    if (!orderAccess && !(await can(req.user, 'quotations', 'view')))
+      return sendErrorResponse(res, 403, 'You do not have permission to view dispatch history');
     const {
-      search = "",
-      product = "",
-      productId = "",
-      status = "",
-      carrier = "",
-      trackingNumber = "",
-      orderNo = "",
-      dispatchNumber = "",
-      quotationId = "",
-      dateFrom = "",
-      dateTo = "",
+      search = '',
+      product = '',
+      productId = '',
+      status = '',
+      carrier = '',
+      trackingNumber = '',
+      orderNo = '',
+      dispatchNumber = '',
+      quotationId = '',
+      dateFrom = '',
+      dateTo = '',
       page = 1,
       limit = 20,
     } = req.query;
@@ -727,33 +690,38 @@ exports.getAllDispatchHistory = async (req, res) => {
     // ---------------------------------------------------------
 
     if (quotationId) {
-      const linked = await Order.findAll({ where: { quotationId }, attributes: ["id"] });
-      where[Op.and].push({ [Op.or]: [{ quotationId }, ...(linked.length ? [{ orderId: { [Op.in]: linked.map(order => order.id) } }] : [])] });
+      const linked = await Order.findAll({ where: { quotationId }, attributes: ['id'] });
+      where[Op.and].push({
+        [Op.or]: [
+          { quotationId },
+          ...(linked.length ? [{ orderId: { [Op.in]: linked.map((order) => order.id) } }] : []),
+        ],
+      });
     }
     const offset = (pageNum - 1) * limitNum;
 
     const { count, rows } = await OrderDispatch.findAndCountAll({
-      attributes: { exclude: ["documentSnapshot"] },
+      attributes: { exclude: ['documentSnapshot'] },
       where,
 
       include: [
         {
           model: Order,
-          as: "order",
-          attributes: ["id", "orderNo", "status", "createdFor"],
+          as: 'order',
+          attributes: ['id', 'orderNo', 'status', 'createdFor'],
           required: false,
         },
         {
-          model: require("../../models").User,
-          as: "dispatcher",
-          attributes: ["userId", "username", "name"],
+          model: require('../../models').User,
+          as: 'dispatcher',
+          attributes: ['userId', 'username', 'name'],
           required: false,
         },
       ],
 
       order: [
-        ["dispatchDate", "DESC"],
-        ["createdAt", "DESC"],
+        ['dispatchDate', 'DESC'],
+        ['createdAt', 'DESC'],
       ],
 
       offset,
@@ -773,14 +741,9 @@ exports.getAllDispatchHistory = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("getAllDispatchHistory error:", err);
+    console.error('getAllDispatchHistory error:', err);
 
-    return sendErrorResponse(
-      res,
-      500,
-      "Failed to fetch dispatch history",
-      err.message,
-    );
+    return sendErrorResponse(res, 500, 'Failed to fetch dispatch history', err.message);
   }
 };
 // ──────── LIST DISPATCH HISTORY FOR AN ORDER ────────
@@ -796,20 +759,20 @@ exports.getOrderDispatches = async (req, res) => {
 
     const order = await Order.findByPk(id, {
       attributes: [
-        "id",
-        "orderNo",
-        "status",
-        "products",
-        "finalAmount",
-        "amountPaid",
-        "quotationId",
-        "invoiceLink",
-        "gatePassLink",
+        'id',
+        'orderNo',
+        'status',
+        'products',
+        'finalAmount',
+        'amountPaid',
+        'quotationId',
+        'invoiceLink',
+        'gatePassLink',
       ],
     });
 
     if (!order) {
-      return sendErrorResponse(res, 404, "Order not found");
+      return sendErrorResponse(res, 404, 'Order not found');
     }
 
     // =========================================================
@@ -823,17 +786,17 @@ exports.getOrderDispatches = async (req, res) => {
 
       include: [
         {
-          model: require("../../models").User,
-          as: "dispatcher",
-          attributes: ["userId", "username", "name"],
+          model: require('../../models').User,
+          as: 'dispatcher',
+          attributes: ['userId', 'username', 'name'],
           required: false,
         },
       ],
 
       order: [
-        ["dispatchNumber", "ASC"],
-        ["dispatchDate", "ASC"],
-        ["createdAt", "ASC"],
+        ['dispatchNumber', 'ASC'],
+        ['dispatchDate', 'ASC'],
+        ['createdAt', 'ASC'],
       ],
     });
 
@@ -849,7 +812,9 @@ exports.getOrderDispatches = async (req, res) => {
     // It is NOT used to recalculate the financial value of a
     // dispatch when the dispatch already contains its own snapshot.
 
-    dispatches.push(...await require("./quotation-dispatch.controller").creditedDispatches(order));
+    dispatches.push(
+      ...(await require('./quotation-dispatch.controller').creditedDispatches(order)),
+    );
     const orderProducts = Array.isArray(order.products) ? order.products : [];
 
     const orderedMap = {};
@@ -862,11 +827,11 @@ exports.getOrderDispatches = async (req, res) => {
       orderedMap[productId] = {
         productId,
 
-        name: product.name || "",
+        name: product.name || '',
         imageUrl: product.imageUrl || null,
 
-        productCode: product.productCode || "",
-        companyCode: product.companyCode || "",
+        productCode: product.productCode || '',
+        companyCode: product.companyCode || '',
 
         quantity: Number(product.quantity) || 0,
 
@@ -878,11 +843,10 @@ exports.getOrderDispatches = async (req, res) => {
 
         discount: Number(product.discount) || 0,
 
-        discountType: product.discountType || "percent",
+        discountType: product.discountType || 'percent',
 
         discountAmount:
-          product.discountAmount !== undefined &&
-          product.discountAmount !== null
+          product.discountAmount !== undefined && product.discountAmount !== null
             ? Number(product.discountAmount)
             : 0,
 
@@ -899,8 +863,7 @@ exports.getOrderDispatches = async (req, res) => {
             : 0,
 
         unitFinalPrice:
-          product.unitFinalPrice !== undefined &&
-          product.unitFinalPrice !== null
+          product.unitFinalPrice !== undefined && product.unitFinalPrice !== null
             ? Number(product.unitFinalPrice)
             : 0,
 
@@ -954,13 +917,13 @@ exports.getOrderDispatches = async (req, res) => {
         // PRODUCT INFORMATION
         // =====================================================
 
-        const name = item.name || orderProduct?.name || "";
+        const name = item.name || orderProduct?.name || '';
 
         const imageUrl = item.imageUrl || orderProduct?.imageUrl || null;
 
-        const productCode = item.productCode || orderProduct?.productCode || "";
+        const productCode = item.productCode || orderProduct?.productCode || '';
 
-        const companyCode = item.companyCode || orderProduct?.companyCode || "";
+        const companyCode = item.companyCode || orderProduct?.companyCode || '';
 
         // =====================================================
         // PRICE SNAPSHOT
@@ -990,8 +953,7 @@ exports.getOrderDispatches = async (req, res) => {
             ? Number(item.discount)
             : Number(orderProduct?.discount) || 0;
 
-        const discountType =
-          item.discountType || orderProduct?.discountType || "percent";
+        const discountType = item.discountType || orderProduct?.discountType || 'percent';
 
         // =====================================================
         // DISCOUNT AMOUNT PER UNIT
@@ -1015,7 +977,7 @@ exports.getOrderDispatches = async (req, res) => {
         // -----------------------------------------------------
 
         if (discountAmount === 0 && discount !== 0) {
-          if (discountType === "percent") {
+          if (discountType === 'percent') {
             discountAmount = price * (discount / 100);
           } else {
             discountAmount = discount;
@@ -1106,16 +1068,9 @@ exports.getOrderDispatches = async (req, res) => {
         // =====================================================
 
         const storedTotal =
-          item.total !== undefined && item.total !== null
-            ? Number(item.total)
-            : null;
+          item.total !== undefined && item.total !== null ? Number(item.total) : null;
 
-        const total =
-          quantity > 0
-            ? calculatedTotal
-            : storedTotal !== null
-              ? storedTotal
-              : 0;
+        const total = quantity > 0 ? calculatedTotal : storedTotal !== null ? storedTotal : 0;
 
         // =====================================================
         // QUANTITY TRACKING
@@ -1193,12 +1148,10 @@ exports.getOrderDispatches = async (req, res) => {
           // Optional diagnostic field.
           // Useful for identifying old dispatch records
           // where stored `item.total` was not quantity-aware.
-          storedTotal:
-            storedTotal !== null ? Number(storedTotal.toFixed(2)) : null,
+          storedTotal: storedTotal !== null ? Number(storedTotal.toFixed(2)) : null,
 
           totalWasRecalculated:
-            storedTotal !== null &&
-            Math.abs(storedTotal - calculatedTotal) > 0.01,
+            storedTotal !== null && Math.abs(storedTotal - calculatedTotal) > 0.01,
         };
       });
 
@@ -1342,17 +1295,13 @@ exports.getOrderDispatches = async (req, res) => {
           };
         }
 
-        productFinancialMap[productId].dispatchedAmount +=
-          Number(item.total) || 0;
+        productFinancialMap[productId].dispatchedAmount += Number(item.total) || 0;
 
-        productFinancialMap[productId].dispatchedSubtotal +=
-          Number(item.subtotal) || 0;
+        productFinancialMap[productId].dispatchedSubtotal += Number(item.subtotal) || 0;
 
-        productFinancialMap[productId].dispatchedDiscount +=
-          Number(item.totalDiscount) || 0;
+        productFinancialMap[productId].dispatchedDiscount += Number(item.totalDiscount) || 0;
 
-        productFinancialMap[productId].dispatchedTax +=
-          Number(item.totalTax) || 0;
+        productFinancialMap[productId].dispatchedTax += Number(item.totalTax) || 0;
       }
     }
 
@@ -1361,10 +1310,7 @@ exports.getOrderDispatches = async (req, res) => {
 
       const dispatchedQuantity = Number(dispatchedMap[product.productId]) || 0;
 
-      const remainingQuantity = Math.max(
-        orderedQuantity - dispatchedQuantity,
-        0,
-      );
+      const remainingQuantity = Math.max(orderedQuantity - dispatchedQuantity, 0);
 
       const financial = productFinancialMap[product.productId] || {
         dispatchedAmount: 0,
@@ -1492,10 +1438,7 @@ exports.getOrderDispatches = async (req, res) => {
 
     const orderAmountPaid = Number(order.amountPaid) || 0;
 
-    const remainingOrderAmount = Math.max(
-      orderFinalAmount - totalDispatchedAmount,
-      0,
-    );
+    const remainingOrderAmount = Math.max(orderFinalAmount - totalDispatchedAmount, 0);
 
     // =========================================================
     // RESPONSE
@@ -1533,9 +1476,7 @@ exports.getOrderDispatches = async (req, res) => {
 
         amountPaid: orderAmountPaid,
 
-        remainingAmount: Number(
-          Math.max(orderFinalAmount - orderAmountPaid, 0).toFixed(2),
-        ),
+        remainingAmount: Number(Math.max(orderFinalAmount - orderAmountPaid, 0).toFixed(2)),
       },
 
       // =======================================================
@@ -1553,10 +1494,7 @@ exports.getOrderDispatches = async (req, res) => {
 
         totalDispatchedQuantity,
 
-        totalRemainingQuantity: Math.max(
-          totalOrderedQuantity - totalDispatchedQuantity,
-          0,
-        ),
+        totalRemainingQuantity: Math.max(totalOrderedQuantity - totalDispatchedQuantity, 0),
 
         // -----------------------------------------------------
         // STATUS
@@ -1614,9 +1552,7 @@ exports.getOrderDispatches = async (req, res) => {
         // snapshot value.
         // -----------------------------------------------------
 
-        orderVsDispatchedVariance: Number(
-          (orderFinalAmount - totalDispatchedAmount).toFixed(2),
-        ),
+        orderVsDispatchedVariance: Number((orderFinalAmount - totalDispatchedAmount).toFixed(2)),
       },
 
       // =======================================================
@@ -1632,14 +1568,9 @@ exports.getOrderDispatches = async (req, res) => {
       dispatches: formattedDispatches,
     });
   } catch (err) {
-    console.error("getOrderDispatches error:", err);
+    console.error('getOrderDispatches error:', err);
 
-    return sendErrorResponse(
-      res,
-      500,
-      "Failed to fetch dispatches",
-      err.message,
-    );
+    return sendErrorResponse(res, 500, 'Failed to fetch dispatches', err.message);
   }
 };
 
@@ -1651,12 +1582,8 @@ exports.getDispatchDocument = async (req, res) => {
     const { orderId, dispatchId } = req.params;
     const { type } = req.query;
 
-    if (!["invoice", "gatepass"].includes(type)) {
-      return sendErrorResponse(
-        res,
-        400,
-        "Invalid type. Use type=invoice or type=gatepass",
-      );
+    if (!['invoice', 'gatepass'].includes(type)) {
+      return sendErrorResponse(res, 400, 'Invalid type. Use type=invoice or type=gatepass');
     }
 
     const dispatch = await OrderDispatch.findOne({
@@ -1664,18 +1591,17 @@ exports.getDispatchDocument = async (req, res) => {
     });
 
     if (!dispatch) {
-      return sendErrorResponse(res, 404, "Dispatch not found for this order");
+      return sendErrorResponse(res, 404, 'Dispatch not found for this order');
     }
 
-    const fileUrl =
-      type === "invoice" ? dispatch.invoiceLink : dispatch.gatePassLink;
+    const fileUrl = type === 'invoice' ? dispatch.invoiceLink : dispatch.gatePassLink;
 
     if (!fileUrl) {
       return sendErrorResponse(
         res,
         404,
         `Dispatch #${dispatch.dispatchNumber} has no ${
-          type === "invoice" ? "invoice" : "gate-pass"
+          type === 'invoice' ? 'invoice' : 'gate-pass'
         } attached`,
       );
     }
@@ -1683,26 +1609,18 @@ exports.getDispatchDocument = async (req, res) => {
     const filename = path.basename(fileUrl);
 
     const response = await axios.get(fileUrl, {
-      responseType: "stream",
+      responseType: 'stream',
     });
 
-    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
-    res.setHeader(
-      "Content-Type",
-      response.headers["content-type"] || "application/octet-stream",
-    );
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Type', response.headers['content-type'] || 'application/octet-stream');
 
     response.data.pipe(res);
 
-    response.data.on("end", () => res.end());
-    response.data.on("error", () => res.status(500).end());
+    response.data.on('end', () => res.end());
+    response.data.on('error', () => res.status(500).end());
   } catch (err) {
-    return sendErrorResponse(
-      res,
-      500,
-      "Failed to download dispatch document",
-      err.message,
-    );
+    return sendErrorResponse(res, 500, 'Failed to download dispatch document', err.message);
   }
 };
 
@@ -1716,18 +1634,18 @@ exports.getOrderActivity = async (req, res) => {
     const pageNum = parseInt(page);
     const limitNum = parseInt(limit);
     if (isNaN(pageNum) || pageNum < 1) {
-      return sendErrorResponse(res, 400, "Invalid page number");
+      return sendErrorResponse(res, 400, 'Invalid page number');
     }
     if (isNaN(limitNum) || limitNum < 1 || limitNum > 100) {
-      return sendErrorResponse(res, 400, "Invalid limit (must be 1-100)");
+      return sendErrorResponse(res, 400, 'Invalid limit (must be 1-100)');
     }
 
-    const order = await Order.findByPk(id, { attributes: ["id", "orderNo"] });
-    if (!order) return sendErrorResponse(res, 404, "Order not found");
+    const order = await Order.findByPk(id, { attributes: ['id', 'orderNo'] });
+    if (!order) return sendErrorResponse(res, 404, 'Order not found');
 
     const { count, rows } = await OrderActivity.findAndCountAll({
       where: { orderId: id },
-      order: [["createdAt", "DESC"]],
+      order: [['createdAt', 'DESC']],
       offset: (pageNum - 1) * limitNum,
       limit: limitNum,
     });
@@ -1740,12 +1658,7 @@ exports.getOrderActivity = async (req, res) => {
       limit: limitNum,
     });
   } catch (err) {
-    return sendErrorResponse(
-      res,
-      500,
-      "Failed to fetch order activity",
-      err.message,
-    );
+    return sendErrorResponse(res, 500, 'Failed to fetch order activity', err.message);
   }
 };
 
@@ -1754,28 +1667,23 @@ exports.getOrderActivity = async (req, res) => {
 
 exports.uploadCreditNote = async (req, res) => {
   try {
-    if (!req.file) return sendErrorResponse(res, 400, "No file uploaded");
+    if (!req.file) return sendErrorResponse(res, 400, 'No file uploaded');
 
     const { orderId } = req.params;
     const order = await Order.findByPk(orderId);
-    if (!order) return sendErrorResponse(res, 404, "Order not found");
+    if (!order) return sendErrorResponse(res, 404, 'Order not found');
 
-    const ext = path.extname(req.file.originalname) || ".pdf";
+    const ext = path.extname(req.file.originalname) || '.pdf';
     const uniqueName = `${uuidv4()}${ext}`;
 
     let fileUrl;
     try {
       fileUrl = await uploadToFtp(req.file.buffer, uniqueName, {
-        remoteDir: "/invoice_pdfs",
-        chmod: "644",
+        remoteDir: '/invoice_pdfs',
+        chmod: '644',
       });
     } catch (ftpErr) {
-      return sendErrorResponse(
-        res,
-        500,
-        "Credit note upload failed",
-        ftpErr.message,
-      );
+      return sendErrorResponse(res, 500, 'Credit note upload failed', ftpErr.message);
     }
 
     const oldLink = order.creditNoteLink || null;
@@ -1787,7 +1695,7 @@ exports.uploadCreditNote = async (req, res) => {
     await logOrderActivity({
       orderId: order.id,
       orderNo: order.orderNo,
-      action: "CREDIT_NOTE_UPLOADED",
+      action: 'CREDIT_NOTE_UPLOADED',
       description: `Credit note uploaded for order ${order.orderNo}`,
       oldValue: { creditNoteLink: oldLink },
       newValue: { creditNoteLink: fileUrl },
@@ -1802,15 +1710,13 @@ exports.uploadCreditNote = async (req, res) => {
     });
 
     const recipients = new Set(
-      [order.createdBy, order.assignedUserId, order.secondaryUserId].filter(
-        Boolean,
-      ),
+      [order.createdBy, order.assignedUserId, order.secondaryUserId].filter(Boolean),
     );
     for (const uid of recipients) {
       await sendNotification({
         userId: uid,
         title: `Credit Note Uploaded – Order #${order.orderNo}`,
-        message: `A credit note has been uploaded for order #${order.orderNo} for ${customer?.name || "Customer"}.`,
+        message: `A credit note has been uploaded for order #${order.orderNo} for ${customer?.name || 'Customer'}.`,
       });
     }
     if (ADMIN_USER_ID) {
@@ -1822,16 +1728,11 @@ exports.uploadCreditNote = async (req, res) => {
     }
 
     return res.status(200).json({
-      message: "Credit note uploaded successfully",
+      message: 'Credit note uploaded successfully',
       creditNoteLink: fileUrl,
     });
   } catch (err) {
-    return sendErrorResponse(
-      res,
-      500,
-      "Failed to upload credit note",
-      err.message,
-    );
+    return sendErrorResponse(res, 500, 'Failed to upload credit note', err.message);
   }
 };
 
@@ -1840,28 +1741,23 @@ exports.uploadCreditNote = async (req, res) => {
 // Same pattern as gate-pass / invoice upload.
 exports.uploadReceivingDocument = async (req, res) => {
   try {
-    if (!req.file) return sendErrorResponse(res, 400, "No file uploaded");
+    if (!req.file) return sendErrorResponse(res, 400, 'No file uploaded');
 
     const { orderId } = req.params;
     const order = await Order.findByPk(orderId);
-    if (!order) return sendErrorResponse(res, 404, "Order not found");
+    if (!order) return sendErrorResponse(res, 404, 'Order not found');
 
-    const ext = path.extname(req.file.originalname) || ".pdf";
+    const ext = path.extname(req.file.originalname) || '.pdf';
     const uniqueName = `${uuidv4()}${ext}`;
 
     let fileUrl;
     try {
       fileUrl = await uploadToFtp(req.file.buffer, uniqueName, {
-        remoteDir: "/invoice_pdfs",
-        chmod: "644",
+        remoteDir: '/invoice_pdfs',
+        chmod: '644',
       });
     } catch (ftpErr) {
-      return sendErrorResponse(
-        res,
-        500,
-        "Receiving document upload failed",
-        ftpErr.message,
-      );
+      return sendErrorResponse(res, 500, 'Receiving document upload failed', ftpErr.message);
     }
 
     const oldLink = order.receivingDocumentLink || null;
@@ -1873,7 +1769,7 @@ exports.uploadReceivingDocument = async (req, res) => {
     await logOrderActivity({
       orderId: order.id,
       orderNo: order.orderNo,
-      action: "RECEIVING_DOCUMENT_UPLOADED",
+      action: 'RECEIVING_DOCUMENT_UPLOADED',
       description: `Receiving document uploaded for order ${order.orderNo}`,
       oldValue: { receivingDocumentLink: oldLink },
       newValue: { receivingDocumentLink: fileUrl },
@@ -1888,15 +1784,13 @@ exports.uploadReceivingDocument = async (req, res) => {
     });
 
     const recipients = new Set(
-      [order.createdBy, order.assignedUserId, order.secondaryUserId].filter(
-        Boolean,
-      ),
+      [order.createdBy, order.assignedUserId, order.secondaryUserId].filter(Boolean),
     );
     for (const uid of recipients) {
       await sendNotification({
         userId: uid,
         title: `Receiving Document Uploaded – Order #${order.orderNo}`,
-        message: `A receiving document has been uploaded for order #${order.orderNo} for ${customer?.name || "Customer"}.`,
+        message: `A receiving document has been uploaded for order #${order.orderNo} for ${customer?.name || 'Customer'}.`,
       });
     }
     if (ADMIN_USER_ID) {
@@ -1908,19 +1802,13 @@ exports.uploadReceivingDocument = async (req, res) => {
     }
 
     return res.status(200).json({
-      message: "Receiving document uploaded successfully",
+      message: 'Receiving document uploaded successfully',
       receivingDocumentLink: fileUrl,
     });
   } catch (err) {
-    return sendErrorResponse(
-      res,
-      500,
-      "Failed to upload receiving document",
-      err.message,
-    );
+    return sendErrorResponse(res, 500, 'Failed to upload receiving document', err.message);
   }
 };
-
 
 // POST /api/order/:orderId/dispatches/:dispatchId/delivered  (multipart, optional "file" = proof)
 // body: { receivedBy, deliveredAt, deliveryNote }
@@ -1929,16 +1817,25 @@ exports.uploadReceivingDocument = async (req, res) => {
 exports.markDispatchDelivered = async (req, res) => {
   try {
     let { orderId, dispatchId } = req.params;
-    const dispatch = await OrderDispatch.findOne({ where: { id: dispatchId, ...(orderId ? { orderId } : {}) } });
-    if (!dispatch) return sendErrorResponse(res, 404, "Dispatch not found");
-    if (dispatch.status === "RETURNED") return sendErrorResponse(res, 400, "This dispatch was returned.");
+    const dispatch = await OrderDispatch.findOne({
+      where: { id: dispatchId, ...(orderId ? { orderId } : {}) },
+    });
+    if (!dispatch) return sendErrorResponse(res, 404, 'Dispatch not found');
+    if (dispatch.status === 'RETURNED')
+      return sendErrorResponse(res, 400, 'This dispatch was returned.');
     orderId = orderId || dispatch.orderId;
     const order = orderId ? await Order.findByPk(orderId) : null;
-    if (orderId && !order) return sendErrorResponse(res, 404, "Order not found");
+    if (orderId && !order) return sendErrorResponse(res, 404, 'Order not found');
 
-    const receivedBy = String(req.body?.receivedBy || "").trim().slice(0, 120);
+    const receivedBy = String(req.body?.receivedBy || '')
+      .trim()
+      .slice(0, 120);
     if (!receivedBy && !req.file) {
-      return sendErrorResponse(res, 400, "Enter who received the goods, or attach the signed delivery note / photo.");
+      return sendErrorResponse(
+        res,
+        400,
+        'Enter who received the goods, or attach the signed delivery note / photo.',
+      );
     }
     let deliveredAt = req.body?.deliveredAt ? new Date(req.body.deliveredAt) : new Date();
     if (Number.isNaN(deliveredAt.getTime())) deliveredAt = new Date();
@@ -1948,48 +1845,63 @@ exports.markDispatchDelivered = async (req, res) => {
 
     let proofLink = dispatch.deliveryProofLink || null;
     if (req.file) {
-      const ext = path.extname(req.file.originalname) || ".jpg";
+      const ext = path.extname(req.file.originalname) || '.jpg';
       try {
-        proofLink = await uploadToFtp(req.file.buffer, `${uuidv4()}${ext}`, { remoteDir: "/invoice_pdfs", chmod: "644" });
+        proofLink = await uploadToFtp(req.file.buffer, `${uuidv4()}${ext}`, {
+          remoteDir: '/invoice_pdfs',
+          chmod: '644',
+        });
       } catch (ftpErr) {
-        return sendErrorResponse(res, 500, "Proof upload failed", ftpErr.message);
+        return sendErrorResponse(res, 500, 'Proof upload failed', ftpErr.message);
       }
     }
 
     await dispatch.update({
-      status: "DELIVERED",
+      status: 'DELIVERED',
       deliveredAt,
       receivedBy: receivedBy || null,
       deliveryProofLink: proofLink,
-      deliveryNote: String(req.body?.deliveryNote || "").trim() || null,
+      deliveryNote: String(req.body?.deliveryNote || '').trim() || null,
     });
 
     if (!order) {
-      const { asList } = require("./dispatch-document");
-      const ids = [...new Set(asList(dispatch.items).flatMap(item => asList(item.orderAllocations).map(a => a.orderId)))];
+      const { asList } = require('./dispatch-document');
+      const ids = [
+        ...new Set(
+          asList(dispatch.items).flatMap((item) =>
+            asList(item.orderAllocations).map((a) => a.orderId),
+          ),
+        ),
+      ];
       for (const id of ids) {
         const linked = await Order.findByPk(id);
-        if (!linked || ["CANCELED", "CLOSED"].includes(linked.status)) continue;
-        const own = await OrderDispatch.findAll({ where: { orderId: id }, attributes: ["status"] });
-        const credited = await require("./quotation-dispatch.controller").creditedDispatches(linked);
-        const live = own.concat(credited).filter(d => d.status !== "RETURNED");
+        if (!linked || ['CANCELED', 'CLOSED'].includes(linked.status)) continue;
+        const own = await OrderDispatch.findAll({ where: { orderId: id }, attributes: ['status'] });
+        const credited = await require('./quotation-dispatch.controller').creditedDispatches(
+          linked,
+        );
+        const live = own.concat(credited).filter((d) => d.status !== 'RETURNED');
         const needs = await stock.orderNeeds(linked);
-        const complete = needs.length && needs.every(n => n.needed === 0) && live.every(d => d.status === "DELIVERED");
-        await linked.update({ status: complete ? "DELIVERED" : "PARTIALLY_DELIVERED" });
+        const complete =
+          needs.length &&
+          needs.every((n) => n.needed === 0) &&
+          live.every((d) => d.status === 'DELIVERED');
+        await linked.update({ status: complete ? 'DELIVERED' : 'PARTIALLY_DELIVERED' });
       }
-      return res.json({ message: "Marked delivered", dispatch });
+      return res.json({ message: 'Marked delivered', dispatch });
     }
     // Order status follows its dispatches
-    const all = await OrderDispatch.findAll({ where: { orderId }, attributes: ["status"] });
-    all.push(...await require("./quotation-dispatch.controller").creditedDispatches(order));
-    const live = all.filter((d) => d.status !== "RETURNED");
+    const all = await OrderDispatch.findAll({ where: { orderId }, attributes: ['status'] });
+    all.push(...(await require('./quotation-dispatch.controller').creditedDispatches(order)));
+    const live = all.filter((d) => d.status !== 'RETURNED');
     const needs = await stock.orderNeeds(order);
     const fullyDispatched = needs.length > 0 && needs.every((n) => n.needed === 0);
-    const allDelivered = live.length > 0 && live.every((d) => d.status === "DELIVERED");
+    const allDelivered = live.length > 0 && live.every((d) => d.status === 'DELIVERED');
     const oldStatus = order.status;
     let next = oldStatus;
-    if (allDelivered && fullyDispatched) next = "DELIVERED";
-    else if (["DISPATCHED", "PARTIALLY_DISPATCHED", "PARTIALLY_DELIVERED"].includes(oldStatus)) next = "PARTIALLY_DELIVERED";
+    if (allDelivered && fullyDispatched) next = 'DELIVERED';
+    else if (['DISPATCHED', 'PARTIALLY_DISPATCHED', 'PARTIALLY_DELIVERED'].includes(oldStatus))
+      next = 'PARTIALLY_DELIVERED';
     if (next !== oldStatus) {
       order.status = next;
       await order.save();
@@ -1998,18 +1910,18 @@ exports.markDispatchDelivered = async (req, res) => {
     await logOrderActivity({
       orderId: order.id,
       orderNo: order.orderNo,
-      action: "DISPATCH_DELIVERED",
-      description: `Dispatch #${dispatch.dispatchNumber} of order ${order.orderNo} delivered${receivedBy ? ` — received by ${receivedBy}` : ""}`,
+      action: 'DISPATCH_DELIVERED',
+      description: `Dispatch #${dispatch.dispatchNumber} of order ${order.orderNo} delivered${receivedBy ? ` — received by ${receivedBy}` : ''}`,
       oldValue: { status: oldStatus },
-      newValue: { status: next, dispatchStatus: "DELIVERED" },
+      newValue: { status: next, dispatchStatus: 'DELIVERED' },
       performedBy: req.user?.userId || null,
       metadata: { dispatchId, proof: !!proofLink },
       req,
     });
 
-    return res.json({ message: "Marked delivered", dispatch, orderStatus: next });
+    return res.json({ message: 'Marked delivered', dispatch, orderStatus: next });
   } catch (err) {
-    return sendErrorResponse(res, 500, "Could not mark the dispatch delivered", err.message);
+    return sendErrorResponse(res, 500, 'Could not mark the dispatch delivered', err.message);
   }
 };
 
@@ -2017,17 +1929,17 @@ exports.markDispatchDelivered = async (req, res) => {
 exports.pickList = async (req, res) => {
   try {
     const order = await Order.findByPk(req.params.id, {
-      include: [{ model: Customer, as: "customer", attributes: ["name", "mobileNumber"] }],
+      include: [{ model: Customer, as: 'customer', attributes: ['name', 'mobileNumber'] }],
     });
-    if (!order) return sendErrorResponse(res, 404, "Order not found");
-    const { buildPickList } = require("./pick-list");
+    if (!order) return sendErrorResponse(res, 404, 'Order not found');
+    const { buildPickList } = require('./pick-list');
     const buffer = await buildPickList(order);
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `inline; filename="PickList-${order.orderNo}.pdf"`);
-    res.setHeader("Cache-Control", "no-store");
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="PickList-${order.orderNo}.pdf"`);
+    res.setHeader('Cache-Control', 'no-store');
     return res.send(buffer);
   } catch (err) {
-    return sendErrorResponse(res, err.status || 500, err.message || "Could not make the pick list");
+    return sendErrorResponse(res, err.status || 500, err.message || 'Could not make the pick list');
   }
 };
 

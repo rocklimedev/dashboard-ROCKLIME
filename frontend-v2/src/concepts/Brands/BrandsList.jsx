@@ -1,48 +1,25 @@
-import React, { useState, useMemo } from "react";
-import {
-  EyeOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  MoreOutlined,
-} from "@ant-design/icons";
-import Avatar from "react-avatar";
-import {
-  useGetAllBrandsQuery,
-  useDeleteBrandMutation,
-} from "../../api/brandsApi";
+import React, { useState, useMemo } from 'react';
+import { EyeOutlined, EditOutlined, DeleteOutlined, MoreOutlined } from '@ant-design/icons';
+import Avatar from 'react-avatar';
+import { useGetAllBrandsQuery, useDeleteBrandMutation } from '../../api/brandsApi';
 import {
   useGetBrandParentCategoriesQuery,
   useDeleteBrandParentCategoryMutation,
-} from "../../api/brandParentCategoryApi";
-import {
-  useGetAllProductMetaQuery,
-  useDeleteProductMetaMutation,
-} from "../../api/productMetaApi";
-import {
-  useGetVendorsQuery,
-  useDeleteVendorMutation,
-} from "../../api/vendorApi";
+} from '../../api/brandParentCategoryApi';
+import { useGetAllProductMetaQuery, useDeleteProductMetaMutation } from '../../api/productMetaApi';
+import { useGetVendorsQuery, useDeleteVendorMutation } from '../../api/vendorApi';
 
-import {
-  Dropdown,
-  Menu,
-  Button,
-  Pagination,
-  Tooltip,
-  message,
-  Tabs,
-  Input,
-} from "antd";
+import { Dropdown, Menu, Button, Pagination, Tooltip, message, Tabs, Input } from 'antd';
 
-import DeleteModal from "../../components/Common/DeleteModal";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import PageHeader from "../../components/Common/PageHeader";
+import DeleteModal from '../../components/Common/DeleteModal';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import PageHeader from '../../components/Common/PageHeader';
 
 // Modals
-import BrandFormModal from "../../components/Brands/BrandFormModal";
-import BrandParentCategoryFormModal from "../../components/Brands/BrandParentCategoryFormModal";
-import ProductMetaFormModal from "../../components/modals/ProductMetaModal";
-import AddVendorModal from "../../components/POS-NEW/AddVendorModal";
+import BrandFormModal from '../../components/Brands/BrandFormModal';
+import BrandParentCategoryFormModal from '../../components/Brands/BrandParentCategoryFormModal';
+import ProductMetaFormModal from '../../components/modals/ProductMetaModal';
+import AddVendorModal from '../../components/POS-NEW/AddVendorModal';
 
 const { TabPane } = Tabs;
 const { Search } = Input;
@@ -51,10 +28,10 @@ const BrandList = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const currentTab = searchParams.get("tab") || "brands";
+  const currentTab = searchParams.get('tab') || 'brands';
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [activeBrandTab, setActiveBrandTab] = useState("All");
+  const [searchTerm, setSearchTerm] = useState('');
+  const [activeBrandTab, setActiveBrandTab] = useState('All');
   const itemsPerPage = 20;
 
   // Modal States
@@ -75,8 +52,7 @@ const BrandList = () => {
 
   // Queries
   const { data: brandsData, refetch: refetchBrands } = useGetAllBrandsQuery();
-  const { data: categoriesData, refetch: refetchCategories } =
-    useGetBrandParentCategoriesQuery();
+  const { data: categoriesData, refetch: refetchCategories } = useGetBrandParentCategoriesQuery();
   const { data: metaData, refetch: refetchMeta } = useGetAllProductMetaQuery();
   const { data: vendorsData, refetch: refetchVendors } = useGetVendorsQuery();
 
@@ -86,14 +62,11 @@ const BrandList = () => {
   const allVendors = vendorsData || [];
 
   // Mutations
-  const [deleteBrand, { isLoading: isDeletingBrand }] =
-    useDeleteBrandMutation();
+  const [deleteBrand, { isLoading: isDeletingBrand }] = useDeleteBrandMutation();
   const [deleteBrandParentCategory, { isLoading: isDeletingCategory }] =
     useDeleteBrandParentCategoryMutation();
-  const [deleteProductMeta, { isLoading: isDeletingMeta }] =
-    useDeleteProductMetaMutation();
-  const [deleteVendor, { isLoading: isDeletingVendor }] =
-    useDeleteVendorMutation();
+  const [deleteProductMeta, { isLoading: isDeletingMeta }] = useDeleteProductMetaMutation();
+  const [deleteVendor, { isLoading: isDeletingVendor }] = useDeleteVendorMutation();
 
   // ==================== GROUPED BRANDS (Using your API structure) ====================
   const groupedBrands = useMemo(() => {
@@ -102,9 +75,7 @@ const BrandList = () => {
     brandParentCategories.forEach((category) => {
       if (category.brands && Array.isArray(category.brands)) {
         // Extract brand object from the relation
-        groups[category.name] = category.brands
-          .map((item) => item.brand || item)
-          .filter(Boolean);
+        groups[category.name] = category.brands.map((item) => item.brand || item).filter(Boolean);
       } else {
         groups[category.name] = [];
       }
@@ -132,9 +103,7 @@ const BrandList = () => {
     if (!searchTerm.trim()) return brandParentCategories;
     const term = searchTerm.toLowerCase();
     return brandParentCategories.filter((cat) =>
-      [cat.name, cat.slug].some((field) =>
-        field?.toString().toLowerCase().includes(term),
-      ),
+      [cat.name, cat.slug].some((field) => field?.toString().toLowerCase().includes(term)),
     );
   }, [brandParentCategories, searchTerm]);
 
@@ -159,18 +128,18 @@ const BrandList = () => {
   }, [allVendors, searchTerm]);
 
   const activeMainTab =
-    currentTab === "categories"
-      ? "categories"
-      : currentTab === "meta"
-        ? "meta"
-        : currentTab === "vendors"
-          ? "vendors"
-          : "brands";
+    currentTab === 'categories'
+      ? 'categories'
+      : currentTab === 'meta'
+        ? 'meta'
+        : currentTab === 'vendors'
+          ? 'vendors'
+          : 'brands';
 
   // Handlers
   const handleTabChange = (key) => {
     setSearchParams({ tab: key });
-    if (key !== activeMainTab) setSearchTerm("");
+    if (key !== activeMainTab) setSearchTerm('');
   };
 
   const openBrandModal = (brand = null) => {
@@ -200,21 +169,21 @@ const BrandList = () => {
     if (!deleteId) return;
 
     try {
-      if (deleteType === "brand") {
+      if (deleteType === 'brand') {
         await deleteBrand(deleteId).unwrap();
-        message.success("Brand deleted successfully");
+        message.success('Brand deleted successfully');
         refetchBrands();
-      } else if (deleteType === "category") {
+      } else if (deleteType === 'category') {
         await deleteBrandParentCategory(deleteId).unwrap();
-        message.success("Brand Category deleted successfully");
+        message.success('Brand Category deleted successfully');
         refetchCategories();
-      } else if (deleteType === "meta") {
+      } else if (deleteType === 'meta') {
         await deleteProductMeta(deleteId).unwrap();
-        message.success("Meta field deleted successfully");
+        message.success('Meta field deleted successfully');
         refetchMeta();
-      } else if (deleteType === "vendor") {
+      } else if (deleteType === 'vendor') {
         await deleteVendor(deleteId).unwrap();
-        message.success("Vendor deleted successfully");
+        message.success('Vendor deleted successfully');
         refetchVendors();
       }
     } catch (err) {
@@ -227,17 +196,16 @@ const BrandList = () => {
   };
 
   const handleModalSuccess = () => {
-    if (activeMainTab === "brands") refetchBrands();
-    else if (activeMainTab === "categories") refetchCategories();
-    else if (activeMainTab === "meta") refetchMeta();
-    else if (activeMainTab === "vendors") refetchVendors();
+    if (activeMainTab === 'brands') refetchBrands();
+    else if (activeMainTab === 'categories') refetchCategories();
+    else if (activeMainTab === 'meta') refetchMeta();
+    else if (activeMainTab === 'vendors') refetchVendors();
   };
 
   const handleViewBrand = (brand) => navigate(`/store/${brand.id}`);
   const handleEditBrand = (brand) => openBrandModal(brand);
 
-  const handleViewCategory = (category) =>
-    navigate(`/category-selector/${category.id}`);
+  const handleViewCategory = (category) => navigate(`/category-selector/${category.id}`);
 
   const handleEditCategory = (category) => openCategoryModal(category);
 
@@ -248,11 +216,11 @@ const BrandList = () => {
           title="Brands & Meta Management"
           subtitle="Manage Brands, Categories, Meta Fields and Vendors"
           onAdd={() =>
-            activeMainTab === "brands"
+            activeMainTab === 'brands'
               ? openBrandModal()
-              : activeMainTab === "categories"
+              : activeMainTab === 'categories'
                 ? openCategoryModal()
-                : activeMainTab === "meta"
+                : activeMainTab === 'meta'
                   ? openMetaModal()
                   : openVendorModal()
           }
@@ -260,11 +228,7 @@ const BrandList = () => {
 
         <div className="card-body">
           {/* Main Tabs */}
-          <Tabs
-            activeKey={activeMainTab}
-            onChange={handleTabChange}
-            className="mb-4"
-          >
+          <Tabs activeKey={activeMainTab} onChange={handleTabChange} className="mb-4">
             <TabPane tab="Brands" key="brands" />
             <TabPane tab="Brand Categories" key="categories" />
             <TabPane tab="Meta Fields" key="meta" />
@@ -274,40 +238,36 @@ const BrandList = () => {
           {/* Search & Brand Sub-tabs */}
           <div className="row mb-4 align-items-center">
             <div className="col-lg-6">
-              {activeMainTab === "brands" && (
+              {activeMainTab === 'brands' && (
                 <div className="d-flex align-items-center gap-3 flex-wrap">
                   <div className="btn-group flex-wrap">
-                    {["All", ...brandParentCategories.map((c) => c.name)].map(
-                      (tab) => (
-                        <button
-                          key={tab}
-                          className={`btn btn-sm ${
-                            activeBrandTab === tab
-                              ? "btn-primary"
-                              : "btn-outline-secondary"
-                          }`}
-                          onClick={() => setActiveBrandTab(tab)}
-                        >
-                          {tab} ({groupedBrands[tab]?.length || 0})
-                        </button>
-                      ),
-                    )}
+                    {['All', ...brandParentCategories.map((c) => c.name)].map((tab) => (
+                      <button
+                        key={tab}
+                        className={`btn btn-sm ${
+                          activeBrandTab === tab ? 'btn-primary' : 'btn-outline-secondary'
+                        }`}
+                        onClick={() => setActiveBrandTab(tab)}
+                      >
+                        {tab} ({groupedBrands[tab]?.length || 0})
+                      </button>
+                    ))}
                   </div>
                 </div>
               )}
             </div>
 
             <div className="col-lg-6 text-lg-end">
-              <div style={{ maxWidth: "340px", marginLeft: "auto" }}>
+              <div style={{ maxWidth: '340px', marginLeft: 'auto' }}>
                 <Search
                   placeholder={
-                    activeMainTab === "brands"
-                      ? "Search by brand name or slug..."
-                      : activeMainTab === "categories"
-                        ? "Search categories..."
-                        : activeMainTab === "meta"
-                          ? "Search meta fields by title, slug or type..."
-                          : "Search vendors by name or ID..."
+                    activeMainTab === 'brands'
+                      ? 'Search by brand name or slug...'
+                      : activeMainTab === 'categories'
+                        ? 'Search categories...'
+                        : activeMainTab === 'meta'
+                          ? 'Search meta fields by title, slug or type...'
+                          : 'Search vendors by name or ID...'
                   }
                   allowClear
                   value={searchTerm}
@@ -318,7 +278,7 @@ const BrandList = () => {
           </div>
 
           {/* ==================== BRANDS TABLE ==================== */}
-          {activeMainTab === "brands" && (
+          {activeMainTab === 'brands' && (
             <div className="table-responsive">
               <table className="table table-hover align-middle">
                 <thead className="table-light">
@@ -334,12 +294,7 @@ const BrandList = () => {
                   {filteredBrands.map((brand) => (
                     <tr key={brand.id}>
                       <td>
-                        <Avatar
-                          src={brand.logo}
-                          name={brand.brandName || ""}
-                          size="40"
-                          round
-                        />
+                        <Avatar src={brand.logo} name={brand.brandName || ''} size="40" round />
                       </td>
                       <td>
                         <a
@@ -358,19 +313,17 @@ const BrandList = () => {
                         <span className="badge bg-light text-dark">
                           {brandParentCategories
                             .filter((cat) =>
-                              cat.brands?.some(
-                                (b) => (b.brand || b).id === brand.id,
-                              ),
+                              cat.brands?.some((b) => (b.brand || b).id === brand.id),
                             )
                             .map((cat) => cat.name)
-                            .join(", ") || "—"}
+                            .join(', ') || '—'}
                         </span>
                       </td>
                       <td>
                         <Tooltip title="Edit">
                           <EditOutlined
                             className="me-3 text-primary"
-                            style={{ cursor: "pointer", fontSize: 18 }}
+                            style={{ cursor: 'pointer', fontSize: 18 }}
                             onClick={() => handleEditBrand(brand)}
                           />
                         </Tooltip>
@@ -380,22 +333,14 @@ const BrandList = () => {
                               <Menu.Item onClick={() => handleViewBrand(brand)}>
                                 <EyeOutlined /> View
                               </Menu.Item>
-                              <Menu.Item
-                                danger
-                                onClick={() =>
-                                  openDeleteModal("brand", brand.id)
-                                }
-                              >
+                              <Menu.Item danger onClick={() => openDeleteModal('brand', brand.id)}>
                                 <DeleteOutlined /> Delete
                               </Menu.Item>
                             </Menu>
                           }
-                          trigger={["click"]}
+                          trigger={['click']}
                         >
-                          <Button
-                            type="text"
-                            icon={<MoreOutlined style={{ fontSize: 18 }} />}
-                          />
+                          <Button type="text" icon={<MoreOutlined style={{ fontSize: 18 }} />} />
                         </Dropdown>
                       </td>
                     </tr>
@@ -406,7 +351,7 @@ const BrandList = () => {
           )}
 
           {/* ==================== CATEGORIES TABLE ==================== */}
-          {activeMainTab === "categories" && (
+          {activeMainTab === 'categories' && (
             <div className="table-responsive">
               <table className="table table-hover align-middle">
                 <thead className="table-light">
@@ -433,34 +378,27 @@ const BrandList = () => {
                         <Tooltip title="Edit">
                           <EditOutlined
                             className="me-3 text-primary"
-                            style={{ cursor: "pointer", fontSize: 18 }}
+                            style={{ cursor: 'pointer', fontSize: 18 }}
                             onClick={() => handleEditCategory(category)}
                           />
                         </Tooltip>
                         <Dropdown
                           overlay={
                             <Menu>
-                              <Menu.Item
-                                onClick={() => handleViewCategory(category)}
-                              >
+                              <Menu.Item onClick={() => handleViewCategory(category)}>
                                 <EyeOutlined /> View Details
                               </Menu.Item>
                               <Menu.Item
                                 danger
-                                onClick={() =>
-                                  openDeleteModal("category", category.id)
-                                }
+                                onClick={() => openDeleteModal('category', category.id)}
                               >
                                 <DeleteOutlined /> Delete
                               </Menu.Item>
                             </Menu>
                           }
-                          trigger={["click"]}
+                          trigger={['click']}
                         >
-                          <Button
-                            type="text"
-                            icon={<MoreOutlined style={{ fontSize: 18 }} />}
-                          />
+                          <Button type="text" icon={<MoreOutlined style={{ fontSize: 18 }} />} />
                         </Dropdown>
                       </td>
                     </tr>
@@ -471,7 +409,7 @@ const BrandList = () => {
           )}
 
           {/* ==================== META FIELDS TABLE ==================== */}
-          {activeMainTab === "meta" && (
+          {activeMainTab === 'meta' && (
             <div className="table-responsive">
               <table className="table table-hover align-middle">
                 <thead className="table-light">
@@ -489,36 +427,30 @@ const BrandList = () => {
                       <td>
                         <strong>{meta.title}</strong>
                       </td>
-                      <td className="text-muted">{meta.slug || "—"}</td>
+                      <td className="text-muted">{meta.slug || '—'}</td>
                       <td>
                         <span className="badge bg-info">{meta.fieldType}</span>
                       </td>
-                      <td>{meta.unit || "—"}</td>
+                      <td>{meta.unit || '—'}</td>
                       <td>
                         <Tooltip title="Edit">
                           <EditOutlined
                             className="me-3 text-primary"
-                            style={{ cursor: "pointer", fontSize: 18 }}
+                            style={{ cursor: 'pointer', fontSize: 18 }}
                             onClick={() => openMetaModal(meta)}
                           />
                         </Tooltip>
                         <Dropdown
                           overlay={
                             <Menu>
-                              <Menu.Item
-                                danger
-                                onClick={() => openDeleteModal("meta", meta.id)}
-                              >
+                              <Menu.Item danger onClick={() => openDeleteModal('meta', meta.id)}>
                                 <DeleteOutlined /> Delete
                               </Menu.Item>
                             </Menu>
                           }
-                          trigger={["click"]}
+                          trigger={['click']}
                         >
-                          <Button
-                            type="text"
-                            icon={<MoreOutlined style={{ fontSize: 18 }} />}
-                          />
+                          <Button type="text" icon={<MoreOutlined style={{ fontSize: 18 }} />} />
                         </Dropdown>
                       </td>
                     </tr>
@@ -529,7 +461,7 @@ const BrandList = () => {
           )}
 
           {/* ==================== VENDORS TABLE ==================== */}
-          {activeMainTab === "vendors" && (
+          {activeMainTab === 'vendors' && (
             <div className="table-responsive">
               <table className="table table-hover align-middle">
                 <thead className="table-light">
@@ -543,7 +475,7 @@ const BrandList = () => {
                 <tbody>
                   {filteredVendors.map((vendor) => (
                     <tr key={vendor.id}>
-                      <td className="text-muted">{vendor.vendorId || "—"}</td>
+                      <td className="text-muted">{vendor.vendorId || '—'}</td>
                       <td>
                         <strong>{vendor.vendorName}</strong>
                       </td>
@@ -553,7 +485,7 @@ const BrandList = () => {
                             {vendor.brandName} ({vendor.brandSlug})
                           </span>
                         ) : (
-                          "—"
+                          '—'
                         )}
                       </td>
                       <td>
@@ -562,20 +494,15 @@ const BrandList = () => {
                             <Menu>
                               <Menu.Item
                                 danger
-                                onClick={() =>
-                                  openDeleteModal("vendor", vendor.id)
-                                }
+                                onClick={() => openDeleteModal('vendor', vendor.id)}
                               >
                                 <DeleteOutlined /> Delete
                               </Menu.Item>
                             </Menu>
                           }
-                          trigger={["click"]}
+                          trigger={['click']}
                         >
-                          <Button
-                            type="text"
-                            icon={<MoreOutlined style={{ fontSize: 18 }} />}
-                          />
+                          <Button type="text" icon={<MoreOutlined style={{ fontSize: 18 }} />} />
                         </Dropdown>
                       </td>
                     </tr>
@@ -586,7 +513,7 @@ const BrandList = () => {
           )}
 
           {/* Pagination for Brands */}
-          {activeMainTab === "brands" && allBrands.length > itemsPerPage && (
+          {activeMainTab === 'brands' && allBrands.length > itemsPerPage && (
             <div className="d-flex justify-content-end mt-4">
               <Pagination
                 current={1}
@@ -646,20 +573,20 @@ const BrandList = () => {
           }}
           onConfirm={handleConfirmDelete}
           itemType={
-            deleteType === "brand"
-              ? "Brand"
-              : deleteType === "category"
-                ? "Brand Category"
-                : deleteType === "meta"
-                  ? "Meta Field"
-                  : "Vendor"
+            deleteType === 'brand'
+              ? 'Brand'
+              : deleteType === 'category'
+                ? 'Brand Category'
+                : deleteType === 'meta'
+                  ? 'Meta Field'
+                  : 'Vendor'
           }
           isLoading={
-            deleteType === "brand"
+            deleteType === 'brand'
               ? isDeletingBrand
-              : deleteType === "category"
+              : deleteType === 'category'
                 ? isDeletingCategory
-                : deleteType === "meta"
+                : deleteType === 'meta'
                   ? isDeletingMeta
                   : isDeletingVendor
           }

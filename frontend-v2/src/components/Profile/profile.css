@@ -11,7 +11,7 @@
 
 .profile-hero {
   border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   padding: 32px;
   background: white;
   margin-bottom: 32px;
@@ -27,7 +27,7 @@
 
 .hero-avatar {
   border: 6px solid white;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 .hero-name {
@@ -73,7 +73,7 @@
 .address-card,
 .tabs-card {
   border-radius: 16px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
   background: white;
 }
 
@@ -135,7 +135,7 @@
 
 .quotation-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
 }
 
 .quotation-title {

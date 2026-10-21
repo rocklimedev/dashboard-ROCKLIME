@@ -1,45 +1,45 @@
-import { baseApi } from "../store/baseApi";
+import { baseApi } from '../store/baseApi';
 
 export const notificationApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     /*** Existing ***/
     getNotifications: builder.query({
-      query: () => "/notifications/",
+      query: () => '/notifications/',
       transformResponse: (response) => response.notifications,
-      providesTags: ["Notifications"],
+      providesTags: ['Notifications'],
     }),
 
     markNotificationAsRead: builder.mutation({
       query: (notificationId) => ({
         url: `/notifications/${notificationId}/read`,
-        method: "PUT",
+        method: 'PUT',
       }),
-      invalidatesTags: ["Notifications"],
+      invalidatesTags: ['Notifications'],
     }),
 
     sendNotification: builder.mutation({
       query: ({ userId, title, message }) => ({
-        url: "/notifications/",
-        method: "POST",
+        url: '/notifications/',
+        method: 'POST',
         body: { userId, title, message },
       }),
-      invalidatesTags: ["Notifications"],
+      invalidatesTags: ['Notifications'],
     }),
 
     /*** NEW ***/
     clearAllNotifications: builder.mutation({
       query: () => ({
-        url: "/notifications/clear",
-        method: "DELETE",
+        url: '/notifications/clear',
+        method: 'DELETE',
       }),
-      invalidatesTags: ["Notifications"], // triggers refetch
+      invalidatesTags: ['Notifications'], // triggers refetch
     }),
     deleteNotification: builder.mutation({
       query: (notificationId) => ({
         url: `/notifications/${notificationId}`,
-        method: "DELETE",
+        method: 'DELETE',
       }),
-      invalidatesTags: ["Notifications"],
+      invalidatesTags: ['Notifications'],
     }),
   }),
 });

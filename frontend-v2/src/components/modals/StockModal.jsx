@@ -1,29 +1,17 @@
 // src/components/Common/StockModal.jsx
-import React, { useEffect } from "react";
-import {
-  Modal,
-  Form,
-  InputNumber,
-  Button,
-  Space,
-  Typography,
-  message,
-  Spin,
-} from "antd";
-import { PlusOutlined, MinusOutlined } from "@ant-design/icons";
-import {
-  useAddStockMutation,
-  useRemoveStockMutation,
-} from "../../api/productApi";
+import React, { useEffect } from 'react';
+import { Modal, Form, InputNumber, Button, Space, Typography, message, Spin } from 'antd';
+import { PlusOutlined, MinusOutlined } from '@ant-design/icons';
+import { useAddStockMutation, useRemoveStockMutation } from '../../api/productApi';
 
 const { Text } = Typography;
 
-const StockModal = ({ open, onCancel, product, action = "add" }) => {
+const StockModal = ({ open, onCancel, product, action = 'add' }) => {
   const [form] = Form.useForm();
   const [addStock, { isLoading: adding }] = useAddStockMutation();
   const [removeStock, { isLoading: removing }] = useRemoveStockMutation();
 
-  const isAdd = action === "add";
+  const isAdd = action === 'add';
   const isLoading = adding || removing;
 
   // Reset form when modal opens or product/action changes
@@ -35,7 +23,7 @@ const StockModal = ({ open, onCancel, product, action = "add" }) => {
 
   const handleSubmit = async (values) => {
     if (!product?.productId) {
-      message.error("Invalid product");
+      message.error('Invalid product');
       return;
     }
 
@@ -55,7 +43,7 @@ const StockModal = ({ open, onCancel, product, action = "add" }) => {
       }
       onCancel(); // Close modal on success
     } catch (err) {
-      message.error(err?.data?.message || "Failed to update stock");
+      message.error(err?.data?.message || 'Failed to update stock');
     }
   };
 
@@ -67,7 +55,7 @@ const StockModal = ({ open, onCancel, product, action = "add" }) => {
         <Space>
           <span>
             <strong>
-              {isAdd ? "Add" : "Remove"} Stock — {product.name || "Product"}
+              {isAdd ? 'Add' : 'Remove'} Stock — {product.name || 'Product'}
             </strong>
             {product.product_code && (
               <Text type="secondary" style={{ marginLeft: 8 }}>
@@ -92,17 +80,15 @@ const StockModal = ({ open, onCancel, product, action = "add" }) => {
 
         <Form.Item
           name="quantity"
-          label={<strong>Quantity to {isAdd ? "Add" : "Remove"}</strong>}
+          label={<strong>Quantity to {isAdd ? 'Add' : 'Remove'}</strong>}
           rules={[
-            { required: true, message: "Please enter a quantity" },
-            { type: "number", min: 1, message: "Must be at least 1" },
+            { required: true, message: 'Please enter a quantity' },
+            { type: 'number', min: 1, message: 'Must be at least 1' },
             () => ({
               validator(_, value) {
                 if (!isAdd && value > (product.quantity || 0)) {
                   return Promise.reject(
-                    new Error(
-                      `Only ${product.quantity} unit(s) available to remove`
-                    )
+                    new Error(`Only ${product.quantity} unit(s) available to remove`),
                   );
                 }
                 return Promise.resolve();
@@ -113,29 +99,20 @@ const StockModal = ({ open, onCancel, product, action = "add" }) => {
           <InputNumber
             min={1}
             max={isAdd ? undefined : product.quantity || 0}
-            style={{ width: "100%" }}
+            style={{ width: '100%' }}
             size="large"
             placeholder="Enter quantity"
             disabled={isLoading}
           />
         </Form.Item>
 
-        <Form.Item style={{ marginBottom: 0, textAlign: "right" }}>
+        <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
           <Space>
             <Button onClick={onCancel} disabled={isLoading}>
               Cancel
             </Button>
-            <Button
-              type="primary"
-              htmlType="submit"
-              loading={isLoading}
-              danger={!isAdd}
-            >
-              {isLoading
-                ? "Processing..."
-                : isAdd
-                ? "Add to Stock"
-                : "Remove from Stock"}
+            <Button type="primary" htmlType="submit" loading={isLoading} danger={!isAdd}>
+              {isLoading ? 'Processing...' : isAdd ? 'Add to Stock' : 'Remove from Stock'}
             </Button>
           </Space>
         </Form.Item>
@@ -144,20 +121,17 @@ const StockModal = ({ open, onCancel, product, action = "add" }) => {
       {isLoading && (
         <div
           style={{
-            position: "absolute",
+            position: 'absolute',
             inset: 0,
-            background: "rgba(255,255,255,0.9)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+            background: 'rgba(255,255,255,0.9)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
             borderRadius: 8,
             zIndex: 10,
           }}
         >
-          <Spin
-            size="large"
-            tip={isAdd ? "Adding stock..." : "Removing stock..."}
-          />
+          <Spin size="large" tip={isAdd ? 'Adding stock...' : 'Removing stock...'} />
         </div>
       )}
     </Modal>

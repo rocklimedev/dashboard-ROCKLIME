@@ -1,57 +1,57 @@
 // src/components/Customers/AddCustomer.jsx   (or wherever your page is)
 
-import React, { useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import React, { useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   useCreateCustomerMutation,
   useUpdateCustomerMutation,
   useGetCustomersQuery,
-} from "../../api/customerApi";
-import { useGetVendorsQuery } from "../../api/vendorApi";
-import { message } from "antd";
-import { Form, Input, InputNumber, Select, Button, Tabs, Row, Col, Spin, Alert } from "antd";
-import { LeftOutlined } from "@ant-design/icons";
+} from '../../api/customerApi';
+import { useGetVendorsQuery } from '../../api/vendorApi';
+import { message } from 'antd';
+import { Form, Input, InputNumber, Select, Button, Tabs, Row, Col, Spin, Alert } from 'antd';
+import { LeftOutlined } from '@ant-design/icons';
 
 const { TabPane } = Tabs;
 const { Option } = Select;
 
 const sortedStates = [
-  "Andaman and Nicobar Islands",
-  "Andhra Pradesh",
-  "Arunachal Pradesh",
-  "Assam",
-  "Bihar",
-  "Chandigarh",
-  "Chhattisgarh",
-  "Dadra and Nagar Haveli and Daman and Diu",
-  "Delhi",
-  "Goa",
-  "Gujarat",
-  "Haryana",
-  "Himachal Pradesh",
-  "Jammu and Kashmir",
-  "Jharkhand",
-  "Karnataka",
-  "Kerala",
-  "Ladakh",
-  "Lakshadweep",
-  "Madhya Pradesh",
-  "Maharashtra",
-  "Manipur",
-  "Meghalaya",
-  "Mizoram",
-  "Nagaland",
-  "Odisha",
-  "Puducherry",
-  "Punjab",
-  "Rajasthan",
-  "Sikkim",
-  "Tamil Nadu",
-  "Telangana",
-  "Tripura",
-  "Uttar Pradesh",
-  "Uttarakhand",
-  "West Bengal",
+  'Andaman and Nicobar Islands',
+  'Andhra Pradesh',
+  'Arunachal Pradesh',
+  'Assam',
+  'Bihar',
+  'Chandigarh',
+  'Chhattisgarh',
+  'Dadra and Nagar Haveli and Daman and Diu',
+  'Delhi',
+  'Goa',
+  'Gujarat',
+  'Haryana',
+  'Himachal Pradesh',
+  'Jammu and Kashmir',
+  'Jharkhand',
+  'Karnataka',
+  'Kerala',
+  'Ladakh',
+  'Lakshadweep',
+  'Madhya Pradesh',
+  'Maharashtra',
+  'Manipur',
+  'Meghalaya',
+  'Mizoram',
+  'Nagaland',
+  'Odisha',
+  'Puducherry',
+  'Punjab',
+  'Rajasthan',
+  'Sikkim',
+  'Tamil Nadu',
+  'Telangana',
+  'Tripura',
+  'Uttar Pradesh',
+  'Uttarakhand',
+  'West Bengal',
 ].sort((a, b) => a.localeCompare(b));
 
 const AddCustomer = () => {
@@ -64,11 +64,11 @@ const AddCustomer = () => {
   const [createCustomer, { isLoading: isCreating, error: createError }] =
     useCreateCustomerMutation();
 
-  const [updateCustomer, { isLoading: isEditing, error: editError }] =
-    useUpdateCustomerMutation();
+  const [updateCustomer, { isLoading: isEditing, error: editError }] = useUpdateCustomerMutation();
 
-  const { data: allCustomersData, isLoading: isCustomersLoading } =
-    useGetCustomersQuery({ limit: 10000 });
+  const { data: allCustomersData, isLoading: isCustomersLoading } = useGetCustomersQuery({
+    limit: 10000,
+  });
 
   const { data: vendorsData, isLoading: isVendorsLoading } = useGetVendorsQuery(
     undefined,
@@ -79,37 +79,37 @@ const AddCustomer = () => {
   const referrers = (allCustomersData?.data || [])
     .filter(
       (c) =>
-        ["Architect", "Interior", "Contractor", "Builder"].includes(c.customerType) &&
+        ['Architect', 'Interior', 'Contractor', 'Builder'].includes(c.customerType) &&
         c.customerId !== existingCustomer?.customerId,
     )
     .map((c) => ({
       value: c.customerId,
-      label: `${c.name}${c.companyName ? ` (${c.companyName})` : ""} · ${c.customerType}`,
+      label: `${c.name}${c.companyName ? ` (${c.companyName})` : ''} · ${c.customerType}`,
     }));
 
   // Populate form when editing
   useEffect(() => {
     if (existingCustomer) {
       const initialValues = {
-        name: existingCustomer.name || "",
-        companyName: existingCustomer.companyName || "",
-        customerType: existingCustomer.customerType || "Retail",
+        name: existingCustomer.name || '',
+        companyName: existingCustomer.companyName || '',
+        customerType: existingCustomer.customerType || 'Retail',
         gender: existingCustomer.gender || undefined,
-        email: existingCustomer.email || "",
-        mobileNumber: existingCustomer.mobileNumber || "",
-        phone2: existingCustomer.phone2 || "",
-        gstNumber: existingCustomer.gstNumber || "",
-        isVendor: existingCustomer.isVendor ? "true" : "false",
-        vendorId: existingCustomer.vendorId || "",
+        email: existingCustomer.email || '',
+        mobileNumber: existingCustomer.mobileNumber || '',
+        phone2: existingCustomer.phone2 || '',
+        gstNumber: existingCustomer.gstNumber || '',
+        isVendor: existingCustomer.isVendor ? 'true' : 'false',
+        vendorId: existingCustomer.vendorId || '',
         creditLimit: existingCustomer.creditLimit ?? null,
         creditDays: existingCustomer.creditDays ?? null,
         referredBy: existingCustomer.referredBy || undefined,
-        notes: existingCustomer.notes || "",
+        notes: existingCustomer.notes || '',
         address: existingCustomer.address || {
-          street: "",
-          city: "",
-          state: "",
-          zip: "",
+          street: '',
+          city: '',
+          state: '',
+          zip: '',
         },
       };
 
@@ -120,9 +120,9 @@ const AddCustomer = () => {
   }, [existingCustomer, form]);
 
   const handleValuesChange = (changedValues) => {
-    if ("isVendor" in changedValues) {
-      if (changedValues.isVendor === "false") {
-        form.setFieldsValue({ vendorId: "" });
+    if ('isVendor' in changedValues) {
+      if (changedValues.isVendor === 'false') {
+        form.setFieldsValue({ vendorId: '' });
       }
     }
   };
@@ -130,10 +130,10 @@ const AddCustomer = () => {
   const hasAddressContent = (addr) => {
     if (!addr) return false;
     return (
-      (addr.street || "").trim() ||
-      (addr.city || "").trim() ||
-      (addr.state || "").trim() ||
-      (addr.zip || "").trim()
+      (addr.street || '').trim() ||
+      (addr.city || '').trim() ||
+      (addr.state || '').trim() ||
+      (addr.zip || '').trim()
     );
   };
 
@@ -141,19 +141,17 @@ const AddCustomer = () => {
     try {
       // Duplicate check for new customer only
       if (!existingCustomer && allCustomersData?.data?.length > 0) {
-        const email = (values.email || "").trim();
-        const mobile = (values.mobileNumber || "").trim();
+        const email = (values.email || '').trim();
+        const mobile = (values.mobileNumber || '').trim();
 
         const isDuplicate = allCustomersData.data.some((cust) => {
-          const cEmail = (cust.email || "").trim();
-          const cMobile = (cust.mobileNumber || "").trim();
+          const cEmail = (cust.email || '').trim();
+          const cMobile = (cust.mobileNumber || '').trim();
           return (email && email === cEmail) || (mobile && mobile === cMobile);
         });
 
         if (isDuplicate) {
-          message.error(
-            "Customer with same email or mobile number already exists.",
-          );
+          message.error('Customer with same email or mobile number already exists.');
           return;
         }
       }
@@ -172,11 +170,8 @@ const AddCustomer = () => {
         creditDays: values.creditDays ?? null,
         referredBy: values.referredBy || null,
         notes: values.notes?.trim() || null,
-        isVendor: values.isVendor === "true",
-        vendorId:
-          values.isVendor === "true" && values.vendorId?.trim()
-            ? values.vendorId
-            : null,
+        isVendor: values.isVendor === 'true',
+        vendorId: values.isVendor === 'true' && values.vendorId?.trim() ? values.vendorId : null,
       };
 
       if (existingCustomer) {
@@ -184,15 +179,15 @@ const AddCustomer = () => {
           id: existingCustomer.customerId,
           ...payload,
         }).unwrap();
-        message.success("Customer updated successfully");
+        message.success('Customer updated successfully');
       } else {
         await createCustomer(payload).unwrap();
-        message.success("Customer created successfully");
+        message.success('Customer created successfully');
       }
 
-      navigate("/customers/list");
+      navigate('/customers/list');
     } catch (err) {
-      message.error(err?.data?.message || "Failed to save customer");
+      message.error(err?.data?.message || 'Failed to save customer');
     }
   };
 
@@ -203,20 +198,13 @@ const AddCustomer = () => {
           <div className="page-header">
             <div className="add-item d-flex">
               <div className="page-title">
-                <h4>{existingCustomer ? "Edit Customer" : "Add Customer"}</h4>
-                <h6>
-                  {existingCustomer
-                    ? "Update customer details"
-                    : "Create a new customer"}
-                </h6>
+                <h4>{existingCustomer ? 'Edit Customer' : 'Add Customer'}</h4>
+                <h6>{existingCustomer ? 'Update customer details' : 'Create a new customer'}</h6>
               </div>
             </div>
 
             <div className="page-btn">
-              <Button
-                onClick={() => navigate("/customers/list")}
-                className="btn btn-secondary"
-              >
+              <Button onClick={() => navigate('/customers/list')} className="btn btn-secondary">
                 <LeftOutlined /> Back to Customers
               </Button>
             </div>
@@ -233,8 +221,8 @@ const AddCustomer = () => {
               onFinish={handleSubmit}
               onValuesChange={handleValuesChange}
               initialValues={{
-                customerType: "Retail",
-                isVendor: "false",
+                customerType: 'Retail',
+                isVendor: 'false',
               }}
             >
               <Tabs defaultActiveKey="general">
@@ -247,18 +235,15 @@ const AddCustomer = () => {
                         rules={[
                           {
                             required: true,
-                            message: "Customer name is required",
+                            message: 'Customer name is required',
                           },
                           {
                             max: 100,
-                            message: "Name cannot exceed 100 characters",
+                            message: 'Name cannot exceed 100 characters',
                           },
                         ]}
                       >
-                        <Input
-                          placeholder="Full name or business name"
-                          allowClear
-                        />
+                        <Input placeholder="Full name or business name" allowClear />
                       </Form.Item>
                     </Col>
 
@@ -288,12 +273,9 @@ const AddCustomer = () => {
                       <Form.Item
                         label="Company Name"
                         name="companyName"
-                        rules={[{ max: 150, message: "Company name too long" }]}
+                        rules={[{ max: 150, message: 'Company name too long' }]}
                       >
-                        <Input
-                          placeholder="Company / Firm name (optional)"
-                          allowClear
-                        />
+                        <Input placeholder="Company / Firm name (optional)" allowClear />
                       </Form.Item>
                     </Col>
 
@@ -303,15 +285,12 @@ const AddCustomer = () => {
                         name="email"
                         rules={[
                           {
-                            type: "email",
-                            message: "Please enter a valid email",
+                            type: 'email',
+                            message: 'Please enter a valid email',
                           },
                         ]}
                       >
-                        <Input
-                          placeholder="example@domain.com (optional)"
-                          allowClear
-                        />
+                        <Input placeholder="example@domain.com (optional)" allowClear />
                       </Form.Item>
                     </Col>
 
@@ -322,7 +301,7 @@ const AddCustomer = () => {
                         rules={[
                           {
                             pattern: /^\d{10}$/,
-                            message: "Mobile number must be exactly 10 digits",
+                            message: 'Mobile number must be exactly 10 digits',
                           },
                         ]}
                       >
@@ -330,13 +309,9 @@ const AddCustomer = () => {
                           maxLength={10}
                           placeholder="9876543210 (optional)"
                           allowClear
-                          onKeyPress={(e) =>
-                            !/[0-9]/.test(e.key) && e.preventDefault()
-                          }
+                          onKeyPress={(e) => !/[0-9]/.test(e.key) && e.preventDefault()}
                           onBlur={(e) => {
-                            const cleaned = e.target.value
-                              .replace(/\D/g, "")
-                              .slice(0, 10);
+                            const cleaned = e.target.value.replace(/\D/g, '').slice(0, 10);
                             form.setFieldsValue({
                               mobileNumber: cleaned || undefined,
                             });
@@ -352,7 +327,7 @@ const AddCustomer = () => {
                         rules={[
                           {
                             pattern: /^\d{10}$/,
-                            message: "Phone 2 must be exactly 10 digits",
+                            message: 'Phone 2 must be exactly 10 digits',
                           },
                         ]}
                       >
@@ -360,13 +335,9 @@ const AddCustomer = () => {
                           maxLength={10}
                           placeholder="9123456789 (optional)"
                           allowClear
-                          onKeyPress={(e) =>
-                            !/[0-9]/.test(e.key) && e.preventDefault()
-                          }
+                          onKeyPress={(e) => !/[0-9]/.test(e.key) && e.preventDefault()}
                           onBlur={(e) => {
-                            const cleaned = e.target.value
-                              .replace(/\D/g, "")
-                              .slice(0, 10);
+                            const cleaned = e.target.value.replace(/\D/g, '').slice(0, 10);
                             form.setFieldsValue({
                               phone2: cleaned || undefined,
                             });
@@ -377,10 +348,7 @@ const AddCustomer = () => {
 
                     <Col lg={12} xs={24}>
                       <Form.Item label="GST Number" name="gstNumber">
-                        <Input
-                          placeholder="22AAAAA0000A1Z5 (optional)"
-                          allowClear
-                        />
+                        <Input placeholder="22AAAAA0000A1Z5 (optional)" allowClear />
                       </Form.Item>
                     </Col>
 
@@ -391,7 +359,12 @@ const AddCustomer = () => {
                         name="creditLimit"
                         tooltip="Order forms warn when what this customer owes would go over this. Leave blank for no limit."
                       >
-                        <InputNumber min={0} step={10000} style={{ width: "100%" }} placeholder="No limit" />
+                        <InputNumber
+                          min={0}
+                          step={10000}
+                          style={{ width: '100%' }}
+                          placeholder="No limit"
+                        />
                       </Form.Item>
                     </Col>
                     <Col lg={6} xs={12}>
@@ -400,7 +373,7 @@ const AddCustomer = () => {
                         name="creditDays"
                         tooltip="Unpaid amounts older than this count as overdue. Default 30."
                       >
-                        <InputNumber min={0} max={365} style={{ width: "100%" }} placeholder="30" />
+                        <InputNumber min={0} max={365} style={{ width: '100%' }} placeholder="30" />
                       </Form.Item>
                     </Col>
                     <Col lg={12} xs={24}>
@@ -421,7 +394,11 @@ const AddCustomer = () => {
                     </Col>
                     <Col lg={24} xs={24}>
                       <Form.Item label="Notes" name="notes">
-                        <Input.TextArea rows={2} maxLength={2000} placeholder="Site details, preferences, anything the team should know" />
+                        <Input.TextArea
+                          rows={2}
+                          maxLength={2000}
+                          placeholder="Site details, preferences, anything the team should know"
+                        />
                       </Form.Item>
                     </Col>
 
@@ -435,14 +412,10 @@ const AddCustomer = () => {
                       </Form.Item>
                     </Col>
 
-                    {form.getFieldValue("isVendor") === "true" && (
+                    {form.getFieldValue('isVendor') === 'true' && (
                       <Col lg={12} xs={24}>
                         <Form.Item label="Select Vendor" name="vendorId">
-                          <Select
-                            placeholder="Select vendor"
-                            loading={isVendorsLoading}
-                            allowClear
-                          >
+                          <Select placeholder="Select vendor" loading={isVendorsLoading} allowClear>
                             {vendors.map((v) => (
                               <Option key={v.id} value={v.id}>
                                 {v.name}
@@ -458,25 +431,23 @@ const AddCustomer = () => {
                       <Form.Item label="Address">
                         <Row gutter={16}>
                           <Col lg={12} xs={24}>
-                            <Form.Item name={["address", "street"]} noStyle>
+                            <Form.Item name={['address', 'street']} noStyle>
                               <Input placeholder="Street / Area" allowClear />
                             </Form.Item>
                           </Col>
                           <Col lg={12} xs={24}>
-                            <Form.Item name={["address", "city"]} noStyle>
+                            <Form.Item name={['address', 'city']} noStyle>
                               <Input placeholder="City" allowClear />
                             </Form.Item>
                           </Col>
                           <Col lg={12} xs={24}>
-                            <Form.Item name={["address", "state"]} noStyle>
+                            <Form.Item name={['address', 'state']} noStyle>
                               <Select
                                 showSearch
                                 placeholder="State"
                                 optionFilterProp="children"
                                 filterOption={(input, option) =>
-                                  option.children
-                                    .toLowerCase()
-                                    .includes(input.toLowerCase())
+                                  option.children.toLowerCase().includes(input.toLowerCase())
                                 }
                                 allowClear
                               >
@@ -489,7 +460,7 @@ const AddCustomer = () => {
                             </Form.Item>
                           </Col>
                           <Col lg={12} xs={24}>
-                            <Form.Item name={["address", "zip"]} noStyle>
+                            <Form.Item name={['address', 'zip']} noStyle>
                               <Input placeholder="PIN / ZIP Code" allowClear />
                             </Form.Item>
                           </Col>
@@ -500,9 +471,9 @@ const AddCustomer = () => {
                 </TabPane>
               </Tabs>
 
-              <div style={{ textAlign: "right", marginTop: 32 }}>
+              <div style={{ textAlign: 'right', marginTop: 32 }}>
                 <Button
-                  onClick={() => navigate("/customers/list")}
+                  onClick={() => navigate('/customers/list')}
                   style={{ marginRight: 12 }}
                   disabled={isCreating || isEditing}
                 >
@@ -515,10 +486,10 @@ const AddCustomer = () => {
                   disabled={isCreating || isEditing || isCustomersLoading}
                 >
                   {isCreating || isEditing
-                    ? "Saving..."
+                    ? 'Saving...'
                     : existingCustomer
-                      ? "Update Customer"
-                      : "Create Customer"}
+                      ? 'Update Customer'
+                      : 'Create Customer'}
                 </Button>
               </div>
 
@@ -526,9 +497,7 @@ const AddCustomer = () => {
                 <Alert
                   message="Error"
                   description={
-                    createError?.data?.message ||
-                    editError?.data?.message ||
-                    "Something went wrong"
+                    createError?.data?.message || editError?.data?.message || 'Something went wrong'
                   }
                   type="error"
                   showIcon

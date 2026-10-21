@@ -5,7 +5,7 @@
 // Add more enum statuses: "partial_delivered", "in_negotiation" (assuming based on context; can adjust)
 module.exports = (sequelize, DataTypes) => {
   const PurchaseOrder = sequelize.define(
-    "PurchaseOrder",
+    'PurchaseOrder',
     {
       id: {
         type: DataTypes.UUID,
@@ -32,14 +32,14 @@ module.exports = (sequelize, DataTypes) => {
       },
       status: {
         type: DataTypes.ENUM(
-          "pending",
-          "in_negotiation",
-          "confirmed",
-          "partial_delivered",
-          "delivered",
-          "cancelled",
+          'pending',
+          'in_negotiation',
+          'confirmed',
+          'partial_delivered',
+          'delivered',
+          'cancelled',
         ),
-        defaultValue: "pending",
+        defaultValue: 'pending',
       },
       orderDate: {
         type: DataTypes.DATE,
@@ -70,26 +70,26 @@ module.exports = (sequelize, DataTypes) => {
       },
     },
     {
-      tableName: "purchase_orders",
+      tableName: 'purchase_orders',
       timestamps: true,
     },
   );
 
   PurchaseOrder.associate = (models) => {
     PurchaseOrder.belongsTo(models.Vendor, {
-      foreignKey: "vendorId",
-      as: "vendor",
+      foreignKey: 'vendorId',
+      as: 'vendor',
     });
 
     PurchaseOrder.belongsTo(models.FieldGuidedSheet, {
-      foreignKey: "fgsId",
-      as: "fgs",
+      foreignKey: 'fgsId',
+      as: 'fgs',
     });
 
     PurchaseOrder.belongsTo(models.User, {
-      foreignKey: "userId", // source key (in PurchaseOrder)
-      targetKey: "userId", // ← ADD THIS: target key in User model
-      as: "createdBy",
+      foreignKey: 'userId', // source key (in PurchaseOrder)
+      targetKey: 'userId', // ← ADD THIS: target key in User model
+      as: 'createdBy',
     });
   };
 

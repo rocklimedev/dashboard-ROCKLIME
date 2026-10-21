@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const verificationTokenSchema = new mongoose.Schema(
   {
@@ -26,10 +26,10 @@ const verificationTokenSchema = new mongoose.Schema(
       index: true, // normal index for queries
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // TTL index added separately (only ONE)
 verificationTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
-module.exports = mongoose.model("VerificationToken", verificationTokenSchema);
+module.exports = mongoose.model('VerificationToken', verificationTokenSchema);

@@ -1,12 +1,12 @@
 // Shows what a customer already owes, and warns when this order would take
 // them over their credit limit or when part of what they owe is overdue.
 // It is a warning, not a block: the person placing the order decides.
-import React from "react";
-import { Alert } from "antd";
-import { Link } from "react-router-dom";
-import { useGetCustomerCreditQuery } from "../../api/customerApi";
+import React from 'react';
+import { Alert } from 'antd';
+import { Link } from 'react-router-dom';
+import { useGetCustomerCreditQuery } from '../../api/customerApi';
 
-const inr = (v) => `₹${Math.round(Number(v) || 0).toLocaleString("en-IN")}`;
+const inr = (v) => `₹${Math.round(Number(v) || 0).toLocaleString('en-IN')}`;
 
 export default function CreditAlert({ customerId, amount = 0, style }) {
   const { data } = useGetCustomerCreditQuery(
@@ -44,7 +44,7 @@ export default function CreditAlert({ customerId, amount = 0, style }) {
         type="info"
         showIcon
         style={style}
-        message={`${data.name} owes ${inr(data.due)}${data.creditLimit ? ` (limit ${inr(data.creditLimit)})` : ""}.`}
+        message={`${data.name} owes ${inr(data.due)}${data.creditLimit ? ` (limit ${inr(data.creditLimit)})` : ''}.`}
       />
     );
   }

@@ -1,24 +1,14 @@
 // src/components/POS-NEW/CartItemRow.jsx
-import React, { useMemo } from "react";
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import {
-  Row,
-  Col,
-  Typography,
-  Button,
-  InputNumber,
-  Select,
-  Divider,
-  Space,
-  Tag,
-} from "antd";
-import { LazyLoadImage } from "react-lazy-load-image-component";
-import { DeleteFilled, SplitCellsOutlined } from "@ant-design/icons";
-import styled from "styled-components";
-import { useGetProductByIdQuery } from "../../api/productApi";
-import StockBadge from "../Stock/StockBadge";
-import TileCalculator from "./TileCalculator";
+import React, { useMemo } from 'react';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { Row, Col, Typography, Button, InputNumber, Select, Divider, Space, Tag } from 'antd';
+import { LazyLoadImage } from 'react-lazy-load-image-component';
+import { DeleteFilled, SplitCellsOutlined } from '@ant-design/icons';
+import styled from 'styled-components';
+import { useGetProductByIdQuery } from '../../api/productApi';
+import StockBadge from '../Stock/StockBadge';
+import TileCalculator from './TileCalculator';
 
 const { Text } = Typography;
 const { Option } = Select;
@@ -246,17 +236,15 @@ const CartItemRow = ({
   const imageUrl =
     item?.imageUrl ||
     (Array.isArray(product?.images) ? product?.images[0] : null) ||
-    "https://via.placeholder.com/80";
+    'https://via.placeholder.com/80';
 
   const isOption =
     Boolean(item?.isOption) ||
     Boolean(item?.isOptionFor) ||
-    Boolean(item?.optionType && item?.optionType !== "main");
+    Boolean(item?.optionType && item?.optionType !== 'main');
 
-  const isQuotationMode = (documentType || "").toLowerCase() === "quotation";
-  const showDiscountAndTax = ["quotation", "order"].includes(
-    (documentType || "").toLowerCase(),
-  );
+  const isQuotationMode = (documentType || '').toLowerCase() === 'quotation';
+  const showDiscountAndTax = ['quotation', 'order'].includes((documentType || '').toLowerCase());
 
   const currentParentName = item?.parentProductId
     ? mainCartItems.find((m) => m.productId === item.parentProductId)?.name
@@ -267,49 +255,39 @@ const CartItemRow = ({
   const primaryLoc = useMemo(() => getPrimaryLocation(item), [item]);
 
   const totalQty = Number(item?.quantity) || 0;
-  const totalAssigned = locations.reduce(
-    (s, l) => s + (Number(l.assignedQuantity) || 0),
-    0,
-  );
+  const totalAssigned = locations.reduce((s, l) => s + (Number(l.assignedQuantity) || 0), 0);
   const remainingQty = Math.max(0, totalQty - totalAssigned);
   const isSplit = locations.length > 1;
   const hasPartialUnassigned = remainingQty > 0 && locations.length > 0;
 
-  const viewAssignedQty =
-    item?._viewAssignedQty != null ? Number(item._viewAssignedQty) : null;
+  const viewAssignedQty = item?._viewAssignedQty != null ? Number(item._viewAssignedQty) : null;
   const isPartialUnassignedView = Boolean(item?._partialUnassigned);
 
   const isLocationView = viewAssignedQty != null;
-  const displayQty = isLocationView
-    ? viewAssignedQty
-    : Number(item?.quantity) || 1;
+  const displayQty = isLocationView ? viewAssignedQty : Number(item?.quantity) || 1;
 
   const locationLabel = useMemo(() => {
     if (!primaryLoc?.floorId) return null;
     const floorName =
       primaryLoc.floorName ||
       floors.find((f) => f.floorId === primaryLoc.floorId)?.floorName ||
-      "Floor";
+      'Floor';
     if (!primaryLoc.roomId) return floorName;
     const floor = floors.find((f) => f.floorId === primaryLoc.floorId);
     const roomName =
       primaryLoc.roomName ||
       floor?.rooms?.find((r) => r.roomId === primaryLoc.roomId)?.roomName ||
-      "Room";
+      'Room';
     return floor?.implicit || !floor?.floorName ? roomName : `${floorName} › ${roomName}`;
   }, [primaryLoc, floors]);
 
   const resolveLocLabel = (loc) => {
     const floorName =
-      loc.floorName ||
-      floors.find((f) => f.floorId === loc.floorId)?.floorName ||
-      "Floor";
+      loc.floorName || floors.find((f) => f.floorId === loc.floorId)?.floorName || 'Floor';
     if (!loc.roomId) return floorName;
     const floor = floors.find((f) => f.floorId === loc.floorId);
     const roomName =
-      loc.roomName ||
-      floor?.rooms?.find((r) => r.roomId === loc.roomId)?.roomName ||
-      "Room";
+      loc.roomName || floor?.rooms?.find((r) => r.roomId === loc.roomId)?.roomName || 'Room';
     if (floor?.implicit || !floor?.floorName) return roomName;
     return `${floorName} › ${roomName}`;
   };
@@ -322,7 +300,7 @@ const CartItemRow = ({
   const handleQtyChange = (raw) => {
     const newVal = Math.max(1, Number(raw) || 1);
 
-    if (isLocationView && typeof onUpdateAssignedQuantity === "function") {
+    if (isLocationView && typeof onUpdateAssignedQuantity === 'function') {
       onUpdateAssignedQuantity(
         itemId,
         newVal,
@@ -340,18 +318,25 @@ const CartItemRow = ({
   const roomOptions = useMemo(() => {
     const rows = floors.filter((f) => (f.rooms || []).length);
     const opt = (f, r) => ({ value: `${f.floorId}|${r.roomId}`, label: r.roomName });
-    if (rows.every((f) => f.implicit || !f.floorName)) return rows.flatMap((f) => f.rooms.map((r) => opt(f, r)));
-    return rows.map((f) => ({ label: f.implicit ? "Rooms" : f.floorName, options: f.rooms.map((r) => opt(f, r)) }));
+    if (rows.every((f) => f.implicit || !f.floorName))
+      return rows.flatMap((f) => f.rooms.map((r) => opt(f, r)));
+    return rows.map((f) => ({
+      label: f.implicit ? 'Rooms' : f.floorName,
+      options: f.rooms.map((r) => opt(f, r)),
+    }));
   }, [floors]);
   const hasRooms = floors.some((f) => (f.rooms || []).length);
-  const assignedValue = primaryLoc?.floorId && primaryLoc?.roomId ? `${primaryLoc.floorId}|${primaryLoc.roomId}` : undefined;
+  const assignedValue =
+    primaryLoc?.floorId && primaryLoc?.roomId
+      ? `${primaryLoc.floorId}|${primaryLoc.roomId}`
+      : undefined;
   const handleRoomPick = (v) => {
     if (!v) return onLocationChange?.(itemId, null, null);
-    const [floorId, roomId] = String(v).split("|");
+    const [floorId, roomId] = String(v).split('|');
     onLocationChange?.(itemId, floorId, roomId);
   };
 
-  if (isLoading) return <div style={{ padding: "20px" }}>Loading...</div>;
+  if (isLoading) return <div style={{ padding: '20px' }}>Loading...</div>;
 
   return (
     <ItemContainer ref={setSortableRef} style={style} isDragging={isDragging}>
@@ -359,12 +344,8 @@ const CartItemRow = ({
         {/* S.No. — drag this to reorder (priority) */}
         {dragEnabled && (
           <Col flex="0 0 36px">
-            <SnoHandle
-              {...sortableAttributes}
-              {...sortableListeners}
-              title="Drag to reorder"
-            >
-              {serialNumber ?? "–"}
+            <SnoHandle {...sortableAttributes} {...sortableListeners} title="Drag to reorder">
+              {serialNumber ?? '–'}
             </SnoHandle>
           </Col>
         )}
@@ -376,14 +357,12 @@ const CartItemRow = ({
 
         {/* CONTENT */}
         <Col flex="1 1 160px" style={{ minWidth: 0 }}>
-          <Text strong ellipsis style={{ display: "block" }}>
+          <Text strong ellipsis style={{ display: 'block' }}>
             {product?.name || item?.name}
           </Text>
 
           <div style={{ marginTop: 4 }}>
-            <Text type="success">
-              ₹{Number(item?.price || 0).toLocaleString()}
-            </Text>
+            <Text type="success">₹{Number(item?.price || 0).toLocaleString()}</Text>
             {isOption && (
               <Tag color="orange" style={{ marginLeft: 8 }}>
                 Optional
@@ -425,27 +404,19 @@ const CartItemRow = ({
           {isQuotationMode && isSplit && (
             <SplitTags>
               {locations.map((l, idx) => (
-                <Tag
-                  key={`${l.floorId}-${l.roomId || "none"}-${idx}`}
-                  color="purple"
-                >
+                <Tag key={`${l.floorId}-${l.roomId || 'none'}-${idx}`} color="purple">
                   {resolveLocLabel(l)} ×{l.assignedQuantity || 1}
                 </Tag>
               ))}
-              {hasPartialUnassigned && (
-                <Tag color="orange">Unassigned ×{remainingQty}</Tag>
-              )}
+              {hasPartialUnassigned && <Tag color="orange">Unassigned ×{remainingQty}</Tag>}
             </SplitTags>
           )}
 
-          {isQuotationMode &&
-            !isSplit &&
-            hasPartialUnassigned &&
-            locations.length === 1 && (
-              <div style={{ marginTop: 4 }}>
-                <Tag color="orange">Unassigned ×{remainingQty}</Tag>
-              </div>
-            )}
+          {isQuotationMode && !isSplit && hasPartialUnassigned && locations.length === 1 && (
+            <div style={{ marginTop: 4 }}>
+              <Tag color="orange">Unassigned ×{remainingQty}</Tag>
+            </div>
+          )}
 
           {/* ── Room: pick it and the item is assigned ── */}
           {isQuotationMode && onLocationChange && hasRooms && !isSplit && (
@@ -470,10 +441,10 @@ const CartItemRow = ({
                 type="link"
                 size="small"
                 icon={<SplitCellsOutlined />}
-                style={{ padding: 0, height: "auto" }}
+                style={{ padding: 0, height: 'auto' }}
                 onClick={handleSplitClick}
               >
-                {isSplit ? "Edit split" : "Split across floors/rooms"}
+                {isSplit ? 'Edit split' : 'Split across floors/rooms'}
               </Button>
             </div>
           )}
@@ -482,13 +453,9 @@ const CartItemRow = ({
             <Space style={{ marginTop: 8 }} wrap>
               <Select
                 size="small"
-                value={item.optionType || "main"}
+                value={item.optionType || 'main'}
                 onChange={(v) =>
-                  handleMakeOption(
-                    item.productId,
-                    v === "main" ? null : v,
-                    item.parentProductId,
-                  )
+                  handleMakeOption(item.productId, v === 'main' ? null : v, item.parentProductId)
                 }
                 style={{ width: 120 }}
               >
@@ -501,17 +468,15 @@ const CartItemRow = ({
 
           {isOption && isQuotationMode && mainCartItems.length > 0 && (
             <div style={{ marginTop: 8 }}>
-              <Text type="secondary" style={{ fontSize: "12px" }}>
+              <Text type="secondary" style={{ fontSize: '12px' }}>
                 Attach to Main Product:
               </Text>
               <Select
                 size="small"
                 placeholder="Select main product..."
                 value={item.parentProductId || item.isOptionFor || undefined}
-                onChange={(parentId) =>
-                  handleAssignOptionToParent?.(item.productId, parentId)
-                }
-                style={{ width: "100%", marginTop: 4 }}
+                onChange={(parentId) => handleAssignOptionToParent?.(item.productId, parentId)}
+                style={{ width: '100%', marginTop: 4 }}
                 allowClear
               >
                 {mainCartItems.map((main) => (
@@ -533,7 +498,7 @@ const CartItemRow = ({
             <Space style={{ marginTop: 8 }} wrap>
               <Select
                 size="small"
-                value={itemDiscountTypes[item?.productId] || "percent"}
+                value={itemDiscountTypes[item?.productId] || 'percent'}
                 onChange={(v) => handleDiscountTypeChange?.(item.productId, v)}
                 style={{ width: 70 }}
               >
@@ -585,9 +550,9 @@ const CartItemRow = ({
             />
           </Space>
 
-          <div style={{ textAlign: "right" }}>
-            <Text strong style={{ color: "#52c41a", fontSize: 15 }}>
-              ₹{lineTotal?.(item) || "0.00"}
+          <div style={{ textAlign: 'right' }}>
+            <Text strong style={{ color: '#52c41a', fontSize: 15 }}>
+              ₹{lineTotal?.(item) || '0.00'}
             </Text>
           </div>
 

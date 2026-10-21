@@ -1,5 +1,5 @@
 // models/refreshToken.js
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const refreshTokenSchema = new mongoose.Schema({
   userId: {
@@ -15,7 +15,7 @@ const refreshTokenSchema = new mongoose.Schema({
   expiresAt: {
     type: Date,
     required: true,
-    index: { expires: "0" },
+    index: { expires: '0' },
   },
   createdAt: {
     type: Date,
@@ -23,4 +23,4 @@ const refreshTokenSchema = new mongoose.Schema({
   },
 });
 
-module.exports = mongoose.model("RefreshToken", refreshTokenSchema);
+module.exports = mongoose.model('RefreshToken', refreshTokenSchema);

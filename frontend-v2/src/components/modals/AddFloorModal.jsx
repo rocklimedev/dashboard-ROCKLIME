@@ -1,5 +1,5 @@
-import React from "react";
-import { Modal, Form, Input } from "antd";
+import React from 'react';
+import { Modal, Form, Input } from 'antd';
 
 export default function AddFloorModal({ visible, onCancel, onFinish, form }) {
   return (
@@ -14,7 +14,7 @@ export default function AddFloorModal({ visible, onCancel, onFinish, form }) {
         <Form.Item
           name="name"
           label="Floor Name"
-          rules={[{ required: true, message: "Please enter floor name" }]}
+          rules={[{ required: true, message: 'Please enter floor name' }]}
         >
           <Input placeholder="e.g. First Floor, Terrace, Basement" />
         </Form.Item>

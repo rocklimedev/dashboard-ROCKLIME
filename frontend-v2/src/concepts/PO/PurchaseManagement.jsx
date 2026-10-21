@@ -1,64 +1,64 @@
 // src/pages/PurchaseManagement.jsx  (or wherever you keep it)
 
-import React, { useState, useMemo, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { message, Tabs, Select, Pagination, Button, Modal, Spin, DatePicker } from "antd";
-import dayjs from "dayjs";
-import { SearchOutlined } from "@ant-design/icons";
+import React, { useState, useMemo, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { message, Tabs, Select, Pagination, Button, Modal, Spin, DatePicker } from 'antd';
+import dayjs from 'dayjs';
+import { SearchOutlined } from '@ant-design/icons';
 
-import DeleteModal from "../../components/Common/DeleteModal";
-import PageHeader from "../../components/Common/PageHeader";
-import DatesModal from "../../components/Orders/DateModal";
-import PermissionGate from "../../context/PermissionGate";
+import DeleteModal from '../../components/Common/DeleteModal';
+import PageHeader from '../../components/Common/PageHeader';
+import DatesModal from '../../components/Orders/DateModal';
+import PermissionGate from '../../context/PermissionGate';
 
 import {
   useGetPurchaseOrdersQuery,
   useDeletePurchaseOrderMutation,
   useUpdatePurchaseOrderStatusMutation,
   useGetVendorsQuery,
-} from "../../api/poApi";
+} from '../../api/poApi';
 
 import {
   useGetAllFGSQuery,
   useDeleteFGSMutation,
   useUpdateFGSStatusMutation,
   useConvertFgsToPoMutation,
-} from "../../api/fgsApi";
+} from '../../api/fgsApi';
 
 // ← New imports
-import FGSRow from "../../components/Orders/FgsRow";
-import PORow from "../../components/Orders/PoRow";
+import FGSRow from '../../components/Orders/FgsRow';
+import PORow from '../../components/Orders/PoRow';
 const { TabPane } = Tabs;
 const { Option } = Select;
 
 // Shared Colors (you can move these to a constants file later)
-const PRIMARY_RED = "#e31e24";
-const DARK_GRAY = "#333333";
-const LIGHT_GRAY = "#f5f5f5";
-const RED_LIGHT = "#ffebee";
-const RED_SOFT = "#ef9a9a";
+const PRIMARY_RED = '#e31e24';
+const DARK_GRAY = '#333333';
+const LIGHT_GRAY = '#f5f5f5';
+const RED_LIGHT = '#ffebee';
+const RED_SOFT = '#ef9a9a';
 
 const PurchaseManagement = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const initialTab = searchParams.has("fgs") ? "fgs" : "po";
+  const initialTab = searchParams.has('fgs') ? 'fgs' : 'po';
   const [activeTab, setActiveTab] = useState(initialTab);
 
   useEffect(() => {
-    if (activeTab === "fgs") {
-      setSearchParams({ fgs: "1" });
+    if (activeTab === 'fgs') {
+      setSearchParams({ fgs: '1' });
     } else {
       setSearchParams({});
     }
   }, [activeTab, setSearchParams]);
 
   // ─── Filters ────────────────────────────────────────────────
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState("Recently Added");
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('Recently Added');
   const [filters, setFilters] = useState({
-    status: "",
-    vendorId: "",
+    status: '',
+    vendorId: '',
     range: null,
     page: 1,
     limit: 10,
@@ -73,7 +73,7 @@ const PurchaseManagement = () => {
   const vendorMap = useMemo(() => {
     if (!vendorsData) return {};
     return vendorsData.reduce((acc, v) => {
-      acc[v.id] = v.vendorName || "—";
+      acc[v.id] = v.vendorName || '—';
       return acc;
     }, {});
   }, [vendorsData]);
@@ -87,10 +87,10 @@ const PurchaseManagement = () => {
       search: searchTerm,
       sort: sortBy,
       vendorId: filters.vendorId,
-      from: filters.range?.[0]?.format("YYYY-MM-DD") || "",
-      to: filters.range?.[1]?.format("YYYY-MM-DD") || "",
+      from: filters.range?.[0]?.format('YYYY-MM-DD') || '',
+      to: filters.range?.[1]?.format('YYYY-MM-DD') || '',
     },
-    { skip: activeTab !== "po" },
+    { skip: activeTab !== 'po' },
   );
 
   const [deletePurchaseOrder] = useDeletePurchaseOrderMutation();
@@ -110,14 +110,12 @@ const PurchaseManagement = () => {
       page: filters.page,
       limit: filters.limit,
     },
-    { skip: activeTab !== "fgs" },
+    { skip: activeTab !== 'fgs' },
   );
 
   const [deleteFGS] = useDeleteFGSMutation();
-  const [updateFGSStatus, { isLoading: isUpdatingFGSStatus }] =
-    useUpdateFGSStatusMutation();
-  const [convertFgsToPo, { isLoading: isConverting }] =
-    useConvertFgsToPoMutation();
+  const [updateFGSStatus, { isLoading: isUpdatingFGSStatus }] = useUpdateFGSStatusMutation();
+  const [convertFgsToPo, { isLoading: isConverting }] = useConvertFgsToPoMutation();
 
   const fieldGuidedSheets = fgsData?.data || [];
   const fgsTotal = fgsData?.pagination?.total || 0;
@@ -137,29 +135,30 @@ const PurchaseManagement = () => {
   const [editingFGSStatusId, setEditingFGSStatusId] = useState(null);
 
   // ─── Constants ──────────────────────────────────────────────
-  const poStatuses = ["pending", "in_negotiation", "confirmed", "partial_delivered", "delivered", "cancelled"];
-  const fgsStatuses = [
-    "draft",
-    "negotiating",
-    "approved",
-    "converted",
-    "cancelled",
+  const poStatuses = [
+    'pending',
+    'in_negotiation',
+    'confirmed',
+    'partial_delivered',
+    'delivered',
+    'cancelled',
   ];
+  const fgsStatuses = ['draft', 'negotiating', 'approved', 'converted', 'cancelled'];
 
   const sortOptions = [
-    "Recently Added",
-    "Ascending",
-    "Descending",
-    "Order Date Ascending",
-    "Order Date Descending",
+    'Recently Added',
+    'Ascending',
+    'Descending',
+    'Order Date Ascending',
+    'Order Date Descending',
   ];
 
   const getFGSStatusBg = (status) => {
     const map = {
       draft: LIGHT_GRAY,
       negotiating: RED_LIGHT,
-      approved: "#ffcdd2",
-      converted: "#ef9a9a",
+      approved: '#ffcdd2',
+      converted: '#ef9a9a',
       cancelled: RED_LIGHT,
     };
     return map[status] || LIGHT_GRAY;
@@ -170,7 +169,7 @@ const PurchaseManagement = () => {
       draft: DARK_GRAY,
       negotiating: PRIMARY_RED,
       approved: PRIMARY_RED,
-      converted: "#ffffff",
+      converted: '#ffffff',
       cancelled: PRIMARY_RED,
     };
     return map[status] || DARK_GRAY;
@@ -186,8 +185,8 @@ const PurchaseManagement = () => {
   const handleTabChange = (key) => {
     setActiveTab(key);
     resetPageOnFilterChange();
-    setSearchTerm("");
-    setFilters((prev) => ({ ...prev, status: "" }));
+    setSearchTerm('');
+    setFilters((prev) => ({ ...prev, status: '' }));
   };
 
   const handlePageChange = (page, pageSize) => {
@@ -199,12 +198,12 @@ const PurchaseManagement = () => {
   };
 
   const handleClearFilters = () => {
-    setSearchTerm("");
-    setSortBy("Recently Added");
-    setFilters({ status: "", vendorId: "", range: null, page: 1, limit: 10 });
+    setSearchTerm('');
+    setSortBy('Recently Added');
+    setFilters({ status: '', vendorId: '', range: null, page: 1, limit: 10 });
   };
 
-  const handleOpenAddPO = () => navigate("/cart/purchase-order");
+  const handleOpenAddPO = () => navigate('/cart/purchase-order');
   const handleEditPO = (po) => navigate(`/po/${po.id}/edit`, { state: { po } });
   const handleDeletePOClick = (poId) => {
     setPOToDelete(poId);
@@ -214,9 +213,9 @@ const PurchaseManagement = () => {
   const handleDeletePO = async (poId) => {
     try {
       await deletePurchaseOrder(poId).unwrap();
-      message.success("Purchase order deleted successfully");
+      message.success('Purchase order deleted successfully');
     } catch (err) {
-      message.error(err.data?.message || "Failed to delete PO");
+      message.error(err.data?.message || 'Failed to delete PO');
     } finally {
       setShowDeleteModal(false);
       setPOToDelete(null);
@@ -226,9 +225,9 @@ const PurchaseManagement = () => {
   const handlePOStatusChange = async (poId, newStatus) => {
     try {
       await updatePurchaseOrderStatus({ id: poId, status: newStatus }).unwrap();
-      message.success("Status updated");
+      message.success('Status updated');
     } catch (err) {
-      message.error(err.data?.message || "Failed to update status");
+      message.error(err.data?.message || 'Failed to update status');
     } finally {
       setEditingPOStatusId(null);
     }
@@ -239,9 +238,8 @@ const PurchaseManagement = () => {
     setShowDatesModal(true);
   };
 
-  const handleOpenAddFGS = () => navigate("/fgs/add");
-  const handleEditFGS = (fgs) =>
-    navigate(`/fgs/${fgs.id}/edit`, { state: { fgs } });
+  const handleOpenAddFGS = () => navigate('/fgs/add');
+  const handleEditFGS = (fgs) => navigate(`/fgs/${fgs.id}/edit`, { state: { fgs } });
   const handleDeleteFGSClick = (fgsId) => {
     setFGSToDelete(fgsId);
     setShowDeleteModal(true);
@@ -250,9 +248,9 @@ const PurchaseManagement = () => {
   const handleDeleteFGSConfirm = async (fgsId) => {
     try {
       await deleteFGS(fgsId).unwrap();
-      message.success("Field Generated Sheet deleted successfully");
+      message.success('Field Generated Sheet deleted successfully');
     } catch (err) {
-      message.error(err.data?.message || "Failed to delete FGS");
+      message.error(err.data?.message || 'Failed to delete FGS');
     } finally {
       setShowDeleteModal(false);
       setFGSToDelete(null);
@@ -262,9 +260,9 @@ const PurchaseManagement = () => {
   const handleFGSStatusChange = async (fgsId, newStatus) => {
     try {
       await updateFGSStatus({ id: fgsId, status: newStatus }).unwrap();
-      message.success("Status updated");
+      message.success('Status updated');
     } catch (err) {
-      message.error(err.data?.message || "Failed to update status");
+      message.error(err.data?.message || 'Failed to update status');
     } finally {
       setEditingFGSStatusId(null);
     }
@@ -272,21 +270,19 @@ const PurchaseManagement = () => {
 
   const handleConvertToPO = (fgsId, fgsNumber) => {
     Modal.confirm({
-      title: "Convert to Purchase Order?",
+      title: 'Convert to Purchase Order?',
       content: `Are you sure you want to convert FGS #${fgsNumber} to a Purchase Order?`,
-      okText: "Convert",
-      okType: "danger",
+      okText: 'Convert',
+      okType: 'danger',
       okButtonProps: {
         style: { backgroundColor: PRIMARY_RED, borderColor: PRIMARY_RED },
       },
       onOk: async () => {
         try {
           const result = await convertFgsToPo(fgsId).unwrap();
-          message.success(
-            `Converted! New PO: ${result.purchaseOrder?.poNumber || "Generated"}`,
-          );
+          message.success(`Converted! New PO: ${result.purchaseOrder?.poNumber || 'Generated'}`);
         } catch (err) {
-          message.error(err.data?.message || "Conversion failed");
+          message.error(err.data?.message || 'Conversion failed');
         }
       },
     });
@@ -295,46 +291,30 @@ const PurchaseManagement = () => {
   const getSortedData = (data) => {
     let result = [...data];
     switch (sortBy?.trim()) {
-      case "Recently Added":
-        return result.sort(
-          (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
-        );
-      case "Ascending":
+      case 'Recently Added':
+        return result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      case 'Ascending':
         return result.sort((a, b) =>
-          (a.poNumber || a.fgsNumber || "").localeCompare(
-            b.poNumber || b.fgsNumber || "",
-          ),
+          (a.poNumber || a.fgsNumber || '').localeCompare(b.poNumber || b.fgsNumber || ''),
         );
-      case "Descending":
+      case 'Descending':
         return result.sort((a, b) =>
-          (b.poNumber || b.fgsNumber || "").localeCompare(
-            a.poNumber || a.fgsNumber || "",
-          ),
+          (b.poNumber || b.fgsNumber || '').localeCompare(a.poNumber || a.fgsNumber || ''),
         );
-      case "Order Date Ascending":
-        return result.sort(
-          (a, b) => new Date(a.orderDate) - new Date(b.orderDate),
-        );
-      case "Order Date Descending":
-        return result.sort(
-          (a, b) => new Date(b.orderDate) - new Date(a.orderDate),
-        );
+      case 'Order Date Ascending':
+        return result.sort((a, b) => new Date(a.orderDate) - new Date(b.orderDate));
+      case 'Order Date Descending':
+        return result.sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate));
       default:
         return result;
     }
   };
 
-  const sortedPOs = useMemo(
-    () => getSortedData(purchaseOrders),
-    [purchaseOrders, sortBy],
-  );
-  const sortedFGS = useMemo(
-    () => getSortedData(fieldGuidedSheets),
-    [fieldGuidedSheets, sortBy],
-  );
+  const sortedPOs = useMemo(() => getSortedData(purchaseOrders), [purchaseOrders, sortBy]);
+  const sortedFGS = useMemo(() => getSortedData(fieldGuidedSheets), [fieldGuidedSheets, sortBy]);
 
   const renderTable = () => {
-    const isPO = activeTab === "po";
+    const isPO = activeTab === 'po';
     const data = isPO ? sortedPOs : sortedFGS;
     const error = isPO ? poError : fgsError;
     const loading = !isPO && fgsLoading;
@@ -361,7 +341,7 @@ const PurchaseManagement = () => {
             <thead>
               <tr>
                 <th>S.No.</th>
-                <th>{isPO ? "PO No." : "FGS No."}</th>
+                <th>{isPO ? 'PO No.' : 'FGS No.'}</th>
                 <th>STATUS</th>
                 <th>VENDOR</th>
                 <th>TOTAL AMOUNT</th>
@@ -422,7 +402,7 @@ const PurchaseManagement = () => {
               total={total}
               onChange={handlePageChange}
               showSizeChanger
-              pageSizeOptions={["10", "20", "50", "100"]}
+              pageSizeOptions={['10', '20', '50', '100']}
               showQuickJumper
             />
           </div>
@@ -437,9 +417,7 @@ const PurchaseManagement = () => {
         <PageHeader
           title="Purchase Order"
           subtitle="Manage Purchase Orders & Field Generated Sheets"
-          onAdd={() =>
-            activeTab === "po" ? handleOpenAddPO() : handleOpenAddFGS()
-          }
+          onAdd={() => (activeTab === 'po' ? handleOpenAddPO() : handleOpenAddFGS())}
         />
 
         <div className="card-body">
@@ -457,18 +435,16 @@ const PurchaseManagement = () => {
                   allowClear
                   style={{ width: 160 }}
                   value={filters.status || undefined}
-                  onChange={(val) =>
-                    setFilters((p) => ({ ...p, status: val || "", page: 1 }))
-                  }
+                  onChange={(val) => setFilters((p) => ({ ...p, status: val || '', page: 1 }))}
                 >
-                  {(activeTab === "po" ? poStatuses : fgsStatuses).map((s) => (
+                  {(activeTab === 'po' ? poStatuses : fgsStatuses).map((s) => (
                     <Option key={s} value={s}>
-                      {(s.charAt(0).toUpperCase() + s.slice(1)).replace(/_/g, " ")}
+                      {(s.charAt(0).toUpperCase() + s.slice(1)).replace(/_/g, ' ')}
                     </Option>
                   ))}
                 </Select>
 
-                {activeTab === "po" && (
+                {activeTab === 'po' && (
                   <>
                     <Select
                       placeholder="All vendors"
@@ -477,17 +453,20 @@ const PurchaseManagement = () => {
                       optionFilterProp="label"
                       style={{ width: 200 }}
                       value={filters.vendorId || undefined}
-                      onChange={(v) => setFilters((p) => ({ ...p, vendorId: v || "", page: 1 }))}
-                      options={(vendorsData || []).map((v) => ({ value: v.id, label: v.vendorName }))}
+                      onChange={(v) => setFilters((p) => ({ ...p, vendorId: v || '', page: 1 }))}
+                      options={(vendorsData || []).map((v) => ({
+                        value: v.id,
+                        label: v.vendorName,
+                      }))}
                     />
                     <DatePicker.RangePicker
                       format="D MMM YY"
                       value={filters.range}
                       onChange={(v) => setFilters((p) => ({ ...p, range: v, page: 1 }))}
                       presets={[
-                        { label: "This month", value: [dayjs().startOf("month"), dayjs()] },
-                        { label: "Last 30 days", value: [dayjs().subtract(30, "day"), dayjs()] },
-                        { label: "This year", value: [dayjs().startOf("year"), dayjs()] },
+                        { label: 'This month', value: [dayjs().startOf('month'), dayjs()] },
+                        { label: 'Last 30 days', value: [dayjs().subtract(30, 'day'), dayjs()] },
+                        { label: 'This year', value: [dayjs().startOf('year'), dayjs()] },
                       ]}
                     />
                   </>
@@ -517,7 +496,7 @@ const PurchaseManagement = () => {
                   </span>
                   <input
                     className="form-control"
-                    placeholder={`Search ${activeTab === "po" ? "POs" : "FGS"}...`}
+                    placeholder={`Search ${activeTab === 'po' ? 'POs' : 'FGS'}...`}
                     value={searchTerm}
                     onChange={(e) => {
                       setSearchTerm(e.target.value);
@@ -525,10 +504,7 @@ const PurchaseManagement = () => {
                     }}
                   />
                 </div>
-                <button
-                  className="btn btn-outline-secondary"
-                  onClick={handleClearFilters}
-                >
+                <button className="btn btn-outline-secondary" onClick={handleClearFilters}>
                   Clear
                 </button>
               </div>
@@ -541,13 +517,9 @@ const PurchaseManagement = () => {
 
       <DeleteModal
         isVisible={showDeleteModal}
-        item={activeTab === "po" ? poToDelete : fgsToDelete}
-        itemType={
-          activeTab === "po" ? "Purchase Order" : "Field Generated Sheet"
-        }
-        onConfirm={(id) =>
-          activeTab === "po" ? handleDeletePO(id) : handleDeleteFGSConfirm(id)
-        }
+        item={activeTab === 'po' ? poToDelete : fgsToDelete}
+        itemType={activeTab === 'po' ? 'Purchase Order' : 'Field Generated Sheet'}
+        onConfirm={(id) => (activeTab === 'po' ? handleDeletePO(id) : handleDeleteFGSConfirm(id))}
         onCancel={() => {
           setShowDeleteModal(false);
           setPOToDelete(null);

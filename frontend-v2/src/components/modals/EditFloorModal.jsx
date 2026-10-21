@@ -1,13 +1,7 @@
-import React from "react";
-import { Modal, Form, Input } from "antd";
+import React from 'react';
+import { Modal, Form, Input } from 'antd';
 
-export default function EditFloorModal({
-  visible,
-  floorName,
-  onCancel,
-  onFinish,
-  form,
-}) {
+export default function EditFloorModal({ visible, floorName, onCancel, onFinish, form }) {
   React.useEffect(() => {
     if (visible) {
       form.setFieldsValue({ name: floorName });
@@ -26,7 +20,7 @@ export default function EditFloorModal({
         <Form.Item
           name="name"
           label="Floor Name"
-          rules={[{ required: true, message: "Please enter floor name" }]}
+          rules={[{ required: true, message: 'Please enter floor name' }]}
         >
           <Input placeholder="e.g. First Floor" />
         </Form.Item>

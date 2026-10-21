@@ -1,8 +1,8 @@
-const { v4: uuidv4 } = require("uuid");
+const { v4: uuidv4 } = require('uuid');
 
 module.exports = (sequelize, DataTypes) => {
   const TeamMember = sequelize.define(
-    "TeamMember",
+    'TeamMember',
     {
       id: {
         type: DataTypes.UUID,
@@ -14,11 +14,11 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.UUID,
         allowNull: false,
         references: {
-          model: "teams", // table name, not model import
-          key: "id",
+          model: 'teams', // table name, not model import
+          key: 'id',
         },
-        onDelete: "CASCADE",
-        onUpdate: "CASCADE",
+        onDelete: 'CASCADE',
+        onUpdate: 'CASCADE',
       },
 
       userId: {
@@ -42,25 +42,25 @@ module.exports = (sequelize, DataTypes) => {
       },
     },
     {
-      tableName: "teammembers",
+      tableName: 'teammembers',
       timestamps: true,
-    }
+    },
   );
 
   // Associations
   TeamMember.associate = (models) => {
     TeamMember.belongsTo(models.Team, {
-      foreignKey: "teamId",
-      as: "team",
-      onDelete: "CASCADE",
-      onUpdate: "CASCADE",
+      foreignKey: 'teamId',
+      as: 'team',
+      onDelete: 'CASCADE',
+      onUpdate: 'CASCADE',
     });
 
     models.Team.hasMany(TeamMember, {
-      foreignKey: "teamId",
-      as: "teammembers",
-      onDelete: "CASCADE",
-      onUpdate: "CASCADE",
+      foreignKey: 'teamId',
+      as: 'teammembers',
+      onDelete: 'CASCADE',
+      onUpdate: 'CASCADE',
     });
   };
 
