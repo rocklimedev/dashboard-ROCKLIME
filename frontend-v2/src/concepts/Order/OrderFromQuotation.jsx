@@ -1,5 +1,5 @@
-import { Card, Typography } from "antd";
-import { QuotationPickList } from "../../components/Orders/QuotationPicker";
+import { Card, Typography } from 'antd';
+import { QuotationPickList } from '../../components/Orders/QuotationPicker';
 
 const { Title, Text } = Typography;
 
@@ -11,7 +11,9 @@ export default function OrderFromQuotation() {
         <Title level={4} style={{ marginBottom: 0 }}>
           Order from a quotation
         </Title>
-        <Text type="secondary">Pick the quotation; the order form opens with its products, prices, discounts and GST.</Text>
+        <Text type="secondary">
+          Pick the quotation; the order form opens with its products, prices, discounts and GST.
+        </Text>
         <Card style={{ marginTop: 16, borderRadius: 12 }}>
           <QuotationPickList />
         </Card>

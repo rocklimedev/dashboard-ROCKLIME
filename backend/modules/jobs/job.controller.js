@@ -1,12 +1,12 @@
 // controllers/jobController.js
-const { jobsQueue } = require("../../lib/queue"); // Assuming renamed from bulkImportQueue to jobsQueue
-const { Job } = require("../../models");
-const { uploadToFtp } = require("../../middleware/upload");
-const { downloadFromFtp } = require("../../middleware/upload"); // Assuming you have a download function
-const { Op } = require("sequelize");
-const { Product, Category, Brand, Vendor, Keyword } = require("../../models");
-const Papa = require("papaparse");
-const XLSX = require("xlsx");
+const { jobsQueue } = require('../../lib/queue'); // Assuming renamed from bulkImportQueue to jobsQueue
+const { Job } = require('../../models');
+const { uploadToFtp } = require('../../middleware/upload');
+const { downloadFromFtp } = require('../../middleware/upload'); // Assuming you have a download function
+const { Op } = require('sequelize');
+const { Product, Category, Brand, Vendor, Keyword } = require('../../models');
+const Papa = require('papaparse');
+const XLSX = require('xlsx');
 
 // POST /api/jobs/bulk-import/start
 exports.startBulkImport = async (req, res) => {
@@ -32,31 +32,31 @@ exports.startBulkImport = async (req, res) => {
     if (rawMapping) {
       try {
         mapping = JSON.parse(rawMapping);
-        if (typeof mapping !== "object" || mapping === null) {
-          throw new Error("Mapping must be a valid JSON object");
+        if (typeof mapping !== 'object' || mapping === null) {
+          throw new Error('Mapping must be a valid JSON object');
         }
       } catch (parseErr) {
         return res.status(400).json({
           success: false,
-          message: "Invalid mapping format – must be valid JSON object",
+          message: 'Invalid mapping format – must be valid JSON object',
           error: parseErr.message,
           receivedMapping: rawMapping,
         });
       }
     } else {
-      console.warn("No mapping provided in request body");
+      console.warn('No mapping provided in request body');
     }
 
     // 3. Validate required field mappings
     const mappedFields = Object.values(mapping);
-    const hasName = mappedFields.includes("name");
-    const hasCode = mappedFields.includes("product_code");
+    const hasName = mappedFields.includes('name');
+    const hasCode = mappedFields.includes('product_code');
 
     if (!hasName || !hasCode) {
       return res.status(400).json({
         success: false,
         message: 'You must map at least "name" and "product_code" fields',
-        required: ["name", "product_code"],
+        required: ['name', 'product_code'],
         receivedMappings: mappedFields,
       });
     }
@@ -67,7 +67,7 @@ exports.startBulkImport = async (req, res) => {
     if (!selectedBrandId) {
       return res.status(400).json({
         success: false,
-        message: "selectedBrandId is required for all bulk imports",
+        message: 'selectedBrandId is required for all bulk imports',
         note: "It should be sent as form field 'selectedBrandId' (UUID string expected)",
         receivedBodyKeys: Object.keys(req.body || {}),
         receivedValue: req.body.selectedBrandId,
@@ -75,14 +75,13 @@ exports.startBulkImport = async (req, res) => {
     }
 
     // Optional: basic UUID format validation (recommended)
-    const uuidRegex =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(selectedBrandId)) {
       return res.status(400).json({
         success: false,
-        message: "selectedBrandId appears to be an invalid UUID format",
+        message: 'selectedBrandId appears to be an invalid UUID format',
         received: selectedBrandId,
-        expectedFormat: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+        expectedFormat: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
       });
     }
 
@@ -93,21 +92,21 @@ exports.startBulkImport = async (req, res) => {
     } catch (uploadErr) {
       return res.status(500).json({
         success: false,
-        message: "Failed to store uploaded file",
+        message: 'Failed to store uploaded file',
         error: uploadErr.message,
       });
     }
 
     // 6. Create job record
     const jobRecord = await Job.create({
-      type: "bulk-import",
+      type: 'bulk-import',
       params: {
         filePath: ftpPath,
         originalFileName: file.originalname,
         mapping, // column index → field name
         selectedBrandId, // stored as string (UUID)
       },
-      status: "pending",
+      status: 'pending',
       progress: {
         totalRows: 0,
         processedRows: 0,
@@ -124,11 +123,11 @@ exports.startBulkImport = async (req, res) => {
 
     // 7. Queue the job
     await jobsQueue.add(
-      "process-job",
+      'process-job',
       { jobId: jobRecord.id },
       {
         attempts: 3,
-        backoff: { type: "exponential", delay: 10000 },
+        backoff: { type: 'exponential', delay: 10000 },
         removeOnComplete: false,
         removeOnFail: false,
       },
@@ -137,17 +136,17 @@ exports.startBulkImport = async (req, res) => {
     // 8. Success response
     return res.status(202).json({
       success: true,
-      message: "Bulk import job queued successfully – processing in background",
+      message: 'Bulk import job queued successfully – processing in background',
       jobId: jobRecord.id,
-      status: "pending",
+      status: 'pending',
       fileName: file.originalname,
       brandId: selectedBrandId,
     });
   } catch (err) {
     return res.status(500).json({
       success: false,
-      message: "Failed to start bulk import job",
-      error: process.env.NODE_ENV === "development" ? err.message : undefined,
+      message: 'Failed to start bulk import job',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined,
     });
   }
 };
@@ -157,7 +156,7 @@ exports.getJobStatus = async (req, res) => {
   try {
     const job = await Job.findByPk(req.params.jobId);
     if (!job) {
-      return res.status(404).json({ message: "Job not found" });
+      return res.status(404).json({ message: 'Job not found' });
     }
 
     res.json({
@@ -171,7 +170,7 @@ exports.getJobStatus = async (req, res) => {
       createdAt: job.createdAt,
     });
   } catch (err) {
-    res.status(500).json({ message: "Error fetching job status" });
+    res.status(500).json({ message: 'Error fetching job status' });
   }
 };
 
@@ -184,8 +183,8 @@ exports.getAllJobs = async (req, res) => {
       status,
       type,
       userId: queryUserId, // rename to avoid confusion
-      sortBy = "createdAt",
-      sortOrder = "DESC",
+      sortBy = 'createdAt',
+      sortOrder = 'DESC',
     } = req.query;
 
     const where = {};
@@ -202,16 +201,16 @@ exports.getAllJobs = async (req, res) => {
       offset,
       order: [[sortBy, sortOrder.toUpperCase()]],
       attributes: [
-        "id",
-        "type",
-        "userId",
-        "params",
-        "status",
-        "progress",
-        "results",
-        "createdAt",
-        "updatedAt",
-        "completedAt",
+        'id',
+        'type',
+        'userId',
+        'params',
+        'status',
+        'progress',
+        'results',
+        'createdAt',
+        'updatedAt',
+        'completedAt',
       ],
     });
 
@@ -228,7 +227,7 @@ exports.getAllJobs = async (req, res) => {
   } catch (err) {
     res.status(500).json({
       success: false,
-      message: "Failed to fetch jobs",
+      message: 'Failed to fetch jobs',
       error: err.message,
     });
   }
@@ -240,12 +239,11 @@ exports.getJobById = async (req, res) => {
     const { jobId } = req.params;
 
     // Validate UUID format (very helpful in development)
-    const uuidRegex =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(jobId)) {
       return res.status(400).json({
         success: false,
-        message: "Invalid job ID format. Expected UUID.",
+        message: 'Invalid job ID format. Expected UUID.',
         received: jobId,
       });
     }
@@ -253,17 +251,17 @@ exports.getJobById = async (req, res) => {
     // Fetch the job with selected fields
     const job = await Job.findByPk(jobId, {
       attributes: [
-        "id",
-        "type",
-        "userId",
-        "params",
-        "status",
-        "progress",
-        "results",
-        "errorLog",
-        "createdAt",
-        "updatedAt",
-        "completedAt",
+        'id',
+        'type',
+        'userId',
+        'params',
+        'status',
+        'progress',
+        'results',
+        'errorLog',
+        'createdAt',
+        'updatedAt',
+        'completedAt',
       ],
       // Optional: include the user who created the job (uncomment if needed)
       // include: [
@@ -281,7 +279,7 @@ exports.getJobById = async (req, res) => {
 
       return res.status(404).json({
         success: false,
-        message: "Job not found",
+        message: 'Job not found',
         jobId, // helpful for frontend debugging
       });
     }
@@ -308,8 +306,8 @@ exports.getJobById = async (req, res) => {
   } catch (err) {
     return res.status(500).json({
       success: false,
-      message: "Failed to fetch job details",
-      error: process.env.NODE_ENV === "development" ? err.message : undefined,
+      message: 'Failed to fetch job details',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined,
     });
   }
 };
@@ -324,12 +322,12 @@ exports.deleteJob = async (req, res) => {
     if (!job) {
       return res.status(404).json({
         success: false,
-        message: "Job not found",
+        message: 'Job not found',
       });
     }
 
     // Optional: prevent deletion of running/completed jobs
-    if (["processing", "completed"].includes(job.status)) {
+    if (['processing', 'completed'].includes(job.status)) {
       return res.status(400).json({
         success: false,
         message: `Cannot delete job in ${job.status} status`,
@@ -341,13 +339,13 @@ exports.deleteJob = async (req, res) => {
 
     res.json({
       success: true,
-      message: "Job deleted successfully",
+      message: 'Job deleted successfully',
       jobId,
     });
   } catch (err) {
     res.status(500).json({
       success: false,
-      message: "Failed to delete job",
+      message: 'Failed to delete job',
       error: err.message,
     });
   }
@@ -362,21 +360,15 @@ exports.updateJobStatus = async (req, res) => {
     if (!status) {
       return res.status(400).json({
         success: false,
-        message: "Status is required",
+        message: 'Status is required',
       });
     }
 
-    const validStatuses = [
-      "pending",
-      "processing",
-      "completed",
-      "failed",
-      "cancelled",
-    ];
+    const validStatuses = ['pending', 'processing', 'completed', 'failed', 'cancelled'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({
         success: false,
-        message: `Invalid status. Allowed: ${validStatuses.join(", ")}`,
+        message: `Invalid status. Allowed: ${validStatuses.join(', ')}`,
       });
     }
 
@@ -385,13 +377,13 @@ exports.updateJobStatus = async (req, res) => {
     if (!job) {
       return res.status(404).json({
         success: false,
-        message: "Job not found",
+        message: 'Job not found',
       });
     }
 
     const updateData = { status };
 
-    if (status === "completed") {
+    if (status === 'completed') {
       updateData.completedAt = new Date();
     }
 
@@ -422,7 +414,7 @@ exports.updateJobStatus = async (req, res) => {
   } catch (err) {
     res.status(500).json({
       success: false,
-      message: "Failed to update job status",
+      message: 'Failed to update job status',
       error: err.message,
     });
   }
@@ -432,7 +424,7 @@ exports.updateJobStatus = async (req, res) => {
 exports.previewImportFile = async (req, res) => {
   try {
     if (!req.files?.file?.[0]) {
-      return res.status(400).json({ message: "No file uploaded" });
+      return res.status(400).json({ message: 'No file uploaded' });
     }
 
     const file = req.files.file[0];
@@ -440,22 +432,22 @@ exports.previewImportFile = async (req, res) => {
     let previewRows = []; // first 5 data rows
 
     try {
-      if (file.originalname.toLowerCase().endsWith(".csv")) {
-        const text = file.buffer.toString("utf-8");
+      if (file.originalname.toLowerCase().endsWith('.csv')) {
+        const text = file.buffer.toString('utf-8');
         const parsed = Papa.parse(text, {
           skipEmptyLines: true,
           header: false,
         });
 
-        if (parsed.data.length === 0) throw new Error("Empty file");
+        if (parsed.data.length === 0) throw new Error('Empty file');
 
-        headers = parsed.data[0].map((h) => (h || "").toString().trim());
+        headers = parsed.data[0].map((h) => (h || '').toString().trim());
         previewRows = parsed.data
           .slice(1, 6)
-          .map((row) => row.map((cell) => (cell || "").toString().trim()));
+          .map((row) => row.map((cell) => (cell || '').toString().trim()));
       } else {
         // Excel
-        const workbook = XLSX.read(file.buffer, { type: "buffer" });
+        const workbook = XLSX.read(file.buffer, { type: 'buffer' });
         const sheetName = workbook.SheetNames[0];
         const sheet = workbook.Sheets[sheetName];
         const json = XLSX.utils.sheet_to_json(sheet, {
@@ -463,23 +455,21 @@ exports.previewImportFile = async (req, res) => {
           blankrows: false,
         });
 
-        if (json.length === 0) throw new Error("Empty sheet");
+        if (json.length === 0) throw new Error('Empty sheet');
 
-        headers = (json[0] || []).map((h) => (h || "").toString().trim());
+        headers = (json[0] || []).map((h) => (h || '').toString().trim());
         previewRows = json.slice(1, 6).map((row) =>
           row.map((cell) => {
-            if (cell == null) return "";
-            if (typeof cell === "number") return cell.toString();
-            if (cell instanceof Date) return cell.toISOString().split("T")[0];
+            if (cell == null) return '';
+            if (typeof cell === 'number') return cell.toString();
+            if (cell instanceof Date) return cell.toISOString().split('T')[0];
             return cell.toString().trim();
           }),
         );
       }
 
       // Remove completely empty header columns
-      const validHeaderIndices = headers
-        .map((h, i) => (h ? i : null))
-        .filter((i) => i !== null);
+      const validHeaderIndices = headers.map((h, i) => (h ? i : null)).filter((i) => i !== null);
 
       headers = validHeaderIndices.map((i) => headers[i]);
 
@@ -487,18 +477,18 @@ exports.previewImportFile = async (req, res) => {
         success: true,
         headers,
         previewRows, // optional but very useful for user
-        rowCountEstimate: previewRows.length > 0 ? "many" : 0, // or try to count
+        rowCountEstimate: previewRows.length > 0 ? 'many' : 0, // or try to count
         originalFileName: file.originalname,
       });
     } catch (parseErr) {
       return res.status(400).json({
         success: false,
-        message: "Could not parse file",
+        message: 'Could not parse file',
         error: parseErr.message,
       });
     }
   } catch (err) {
-    res.status(500).json({ message: "Server error during preview" });
+    res.status(500).json({ message: 'Server error during preview' });
   }
 };
 
@@ -511,15 +501,11 @@ exports.cancelJob = async (req, res) => {
     if (!job) {
       return res.status(404).json({
         success: false,
-        message: "Job not found",
+        message: 'Job not found',
       });
     }
 
-    if (
-      job.status === "completed" ||
-      job.status === "failed" ||
-      job.status === "cancelled"
-    ) {
+    if (job.status === 'completed' || job.status === 'failed' || job.status === 'cancelled') {
       return res.status(400).json({
         success: false,
         message: `Cannot cancel job in ${job.status} status`,
@@ -528,12 +514,12 @@ exports.cancelJob = async (req, res) => {
 
     // Mark as cancelled
     await job.update({
-      status: "cancelled",
+      status: 'cancelled',
       errorLog: [
         ...(job.errorLog || []),
         {
           timestamp: new Date().toISOString(),
-          message: "Job cancellation requested by user",
+          message: 'Job cancellation requested by user',
         },
       ],
       completedAt: new Date(), // optional: mark as "done" in a cancelled way
@@ -546,23 +532,20 @@ exports.cancelJob = async (req, res) => {
         await bullJob.remove();
       }
     } catch (queueErr) {
-      console.warn(
-        `[Cancel] Could not remove job ${jobId} from BullMQ queue:`,
-        queueErr.message,
-      );
+      console.warn(`[Cancel] Could not remove job ${jobId} from BullMQ queue:`, queueErr.message);
       // still proceed — worker will see cancelled status and stop
     }
 
     res.json({
       success: true,
-      message: "Cancellation requested. Job will stop as soon as possible.",
+      message: 'Cancellation requested. Job will stop as soon as possible.',
       jobId,
-      status: "cancelled",
+      status: 'cancelled',
     });
   } catch (err) {
     res.status(500).json({
       success: false,
-      message: "Failed to cancel job",
+      message: 'Failed to cancel job',
       error: err.message,
     });
   }
@@ -575,36 +558,36 @@ exports.startReportGeneration = async (req, res) => {
     const { reportType, filters } = req.body; // Example params
 
     if (!reportType) {
-      return res.status(400).json({ message: "Report type required" });
+      return res.status(400).json({ message: 'Report type required' });
     }
 
     const jobRecord = await Job.create({
-      type: "report-generation",
+      type: 'report-generation',
       params: { reportType, filters },
-      status: "pending",
+      status: 'pending',
       progress: { totalSteps: 0, completedSteps: 0 },
       results: {},
       userId: req.user?.id || null,
     });
 
     await jobsQueue.add(
-      "process-job",
+      'process-job',
       { jobId: jobRecord.id },
       {
         attempts: 3,
-        backoff: { type: "exponential", delay: 10000 },
+        backoff: { type: 'exponential', delay: 10000 },
         removeOnComplete: false,
         removeOnFail: false,
       },
     );
 
     return res.status(202).json({
-      message: "Report generation job queued",
+      message: 'Report generation job queued',
       jobId: jobRecord.id,
-      status: "pending",
+      status: 'pending',
     });
   } catch (err) {
-    return res.status(500).json({ message: "Failed to queue job" });
+    return res.status(500).json({ message: 'Failed to queue job' });
   }
 };
 
@@ -613,16 +596,16 @@ exports.downloadSuccessfulEntries = async (req, res) => {
 
   try {
     const job = await Job.findByPk(jobId, {
-      attributes: ["results"],
+      attributes: ['results'],
     });
 
-    if (!job) return res.status(404).json({ message: "Job not found" });
+    if (!job) return res.status(404).json({ message: 'Job not found' });
 
     const jsonPath = job.results?.successfulEntriesJsonPath;
 
     if (!jsonPath) {
       return res.status(404).json({
-        message: "No successful entries JSON available for this job",
+        message: 'No successful entries JSON available for this job',
       });
     }
 
@@ -633,14 +616,14 @@ exports.downloadSuccessfulEntries = async (req, res) => {
     // Variant 2: Stream directly (more server load)
     const fileBuffer = await downloadFromFtp(jsonPath);
 
-    res.setHeader("Content-Type", "application/json");
+    res.setHeader('Content-Type', 'application/json');
     res.setHeader(
-      "Content-Disposition",
+      'Content-Disposition',
       `attachment; filename="successful-entries-job-${jobId}.json"`,
     );
 
     return res.send(fileBuffer);
   } catch (err) {
-    res.status(500).json({ message: "Failed to download file" });
+    res.status(500).json({ message: 'Failed to download file' });
   }
 };

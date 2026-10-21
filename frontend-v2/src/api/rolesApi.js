@@ -1,52 +1,52 @@
-import { baseApi } from "../store/baseApi";
+import { baseApi } from '../store/baseApi';
 export const rolesApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getRoles: builder.query({
-      query: () => "/roles/",
-      providesTags: ["Roles"],
+      query: () => '/roles/',
+      providesTags: ['Roles'],
     }),
     getRole: builder.query({
       query: (roleId) => `/roles/${roleId}`,
-      providesTags: ["Roles"],
+      providesTags: ['Roles'],
     }),
     createRole: builder.mutation({
       query: (newRole) => ({
-        url: "/roles/",
-        method: "POST",
+        url: '/roles/',
+        method: 'POST',
         body: newRole,
       }),
-      invalidatesTags: ["Roles"],
+      invalidatesTags: ['Roles'],
     }),
     updateRolePermissions: builder.mutation({
       query: ({ roleId, permissions }) => ({
         url: `/roles/${roleId}`,
-        method: "PUT",
+        method: 'PUT',
         body: permissions,
       }),
-      invalidatesTags: ["Roles"],
+      invalidatesTags: ['Roles'],
     }),
     deleteRole: builder.mutation({
       query: (roleId) => ({
         url: `/roles/${roleId}`,
-        method: "DELETE",
+        method: 'DELETE',
       }),
-      invalidatesTags: ["Roles"],
+      invalidatesTags: ['Roles'],
     }),
     assignPermissionsToRole: builder.mutation({
       query: ({ roleId, permissions }) => ({
         url: `/roles/${roleId}/permissions`,
-        method: "POST",
+        method: 'POST',
         body: permissions,
       }),
-      invalidatesTags: ["Roles"],
+      invalidatesTags: ['Roles'],
     }),
     getRolePermissions: builder.query({
       query: (roleId) => `/roles/${roleId}`,
-      invalidatesTags: ["Roles"],
+      invalidatesTags: ['Roles'],
     }),
     getRecentRoleToGive: builder.query({
-      query: "/roles/recent",
-      invalidatesTags: ["Roles"],
+      query: '/roles/recent',
+      invalidatesTags: ['Roles'],
     }),
   }),
 });

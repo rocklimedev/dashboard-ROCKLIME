@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const CartItem = new mongoose.Schema({
   productId: { type: String, required: true },

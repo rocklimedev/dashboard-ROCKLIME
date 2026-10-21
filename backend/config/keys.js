@@ -1,20 +1,20 @@
-require("dotenv").config();
+require('dotenv').config();
 
 if (!process.env.JWT_SECRET) {
-  throw new Error("JWT_SECRET is not set. Add it to backend/.env (see .env.example).");
+  throw new Error('JWT_SECRET is not set. Add it to backend/.env (see .env.example).');
 }
 
 module.exports = {
   app: {
-    name: "CM ERP Backend",
+    name: 'CM ERP Backend',
     apiURL: `${process.env.BASE_API_URL}`,
-    clientURL: process.env.CLIENT_URL || "http://localhost:3000",
+    clientURL: process.env.CLIENT_URL || 'http://localhost:3000',
   },
   port: process.env.PORT || 4000,
   jwt: {
     secret: process.env.JWT_SECRET,
     // Access tokens are short-lived; the auth middleware also re-checks the user's status on every request.
-    tokenLife: process.env.JWT_TOKEN_LIFE || "12h",
+    tokenLife: process.env.JWT_TOKEN_LIFE || '12h',
   },
   mailchimp: {
     key: process.env.MAILCHIMP_KEY,

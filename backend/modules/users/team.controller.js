@@ -1,5 +1,5 @@
-const { Op } = require("sequelize");
-const { User, TeamMember, Team } = require("../../models");
+const { Op } = require('sequelize');
+const { User, TeamMember, Team } = require('../../models');
 
 // Create a new team with members
 exports.createTeam = async (req, res) => {
@@ -9,15 +9,13 @@ exports.createTeam = async (req, res) => {
     if (!teamName || !adminId) {
       return res.status(400).json({
         success: false,
-        message: "Team name and admin ID are required.",
+        message: 'Team name and admin ID are required.',
       });
     }
 
     const admin = await User.findByPk(adminId);
     if (!admin) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Admin not found." });
+      return res.status(404).json({ success: false, message: 'Admin not found.' });
     }
 
     const team = await Team.create({
@@ -32,18 +30,16 @@ exports.createTeam = async (req, res) => {
       userId: member.userId,
       userName: member.userName,
       roleId: member.roleId,
-      roleName: member.roleName || "Member",
+      roleName: member.roleName || 'Member',
     }));
 
     await TeamMember.bulkCreate(teamMembers);
 
-    return res
-      .status(201)
-      .json({ success: true, message: "Team created", team });
+    return res.status(201).json({ success: true, message: 'Team created', team });
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: "Internal Server Error",
+      message: 'Internal Server Error',
       error: error.message,
     });
   }
@@ -53,8 +49,8 @@ exports.createTeam = async (req, res) => {
 exports.getAllTeams = async (req, res) => {
   try {
     const teams = await Team.findAll({
-      include: [{ model: TeamMember, as: "teammembers" }],
-      order: [["createdAt", "DESC"]],
+      include: [{ model: TeamMember, as: 'teammembers' }],
+      order: [['createdAt', 'DESC']],
     });
     res.status(200).json({ success: true, teams });
   } catch (error) {
@@ -69,9 +65,7 @@ exports.updateTeam = async (req, res) => {
 
     const team = await Team.findByPk(teamId);
     if (!team) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Team not found" });
+      return res.status(404).json({ success: false, message: 'Team not found' });
     }
 
     let changesMade = false;
@@ -86,9 +80,7 @@ exports.updateTeam = async (req, res) => {
     if (adminId && adminId !== team.adminId) {
       const admin = await User.findByPk(adminId);
       if (!admin) {
-        return res
-          .status(400)
-          .json({ success: false, message: "Invalid admin ID" });
+        return res.status(400).json({ success: false, message: 'Invalid admin ID' });
       }
       await team.update({
         adminId,
@@ -105,9 +97,7 @@ exports.updateTeam = async (req, res) => {
       });
 
       if (members.length === 0) {
-        return res
-          .status(400)
-          .json({ success: false, message: "No valid members found" });
+        return res.status(400).json({ success: false, message: 'No valid members found' });
       }
 
       // Delete existing members
@@ -119,7 +109,7 @@ exports.updateTeam = async (req, res) => {
         userId: member.userId,
         userName: member.username,
         roleId: member.roleId,
-        roleName: member.roleName || "Member",
+        roleName: member.roleName || 'Member',
       }));
 
       await TeamMember.bulkCreate(teamMembers, { validate: true });
@@ -130,24 +120,24 @@ exports.updateTeam = async (req, res) => {
     if (!changesMade) {
       return res.status(200).json({
         success: true,
-        message: "No changes made to the team",
+        message: 'No changes made to the team',
       });
     }
 
     // Fetch updated team for response
     const updatedTeam = await Team.findByPk(teamId, {
-      include: [{ model: TeamMember, as: "teammembers" }],
+      include: [{ model: TeamMember, as: 'teammembers' }],
     });
 
     return res.status(200).json({
       success: true,
-      message: "Team updated successfully",
+      message: 'Team updated successfully',
       team: updatedTeam,
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: "Internal Server Error",
+      message: 'Internal Server Error',
       error: error.message,
     });
   }
@@ -159,15 +149,11 @@ exports.deleteTeam = async (req, res) => {
     const { teamId } = req.params;
     const team = await Team.findByPk(teamId);
     if (!team) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Team not found" });
+      return res.status(404).json({ success: false, message: 'Team not found' });
     }
     await TeamMember.destroy({ where: { teamId } });
     await team.destroy();
-    res
-      .status(200)
-      .json({ success: true, message: "Team deleted successfully" });
+    res.status(200).json({ success: true, message: 'Team deleted successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -196,14 +182,10 @@ exports.removeTeamMember = async (req, res) => {
     const { memberId } = req.params;
     const member = await TeamMember.findByPk(memberId);
     if (!member) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Member not found" });
+      return res.status(404).json({ success: false, message: 'Member not found' });
     }
     await member.destroy();
-    res
-      .status(200)
-      .json({ success: true, message: "Member removed successfully" });
+    res.status(200).json({ success: true, message: 'Member removed successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -225,12 +207,10 @@ exports.getTeamById = async (req, res) => {
   try {
     const { teamId } = req.params;
     const team = await Team.findByPk(teamId, {
-      include: [{ model: TeamMember, as: "teammembers" }],
+      include: [{ model: TeamMember, as: 'teammembers' }],
     });
     if (!team) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Team not found" });
+      return res.status(404).json({ success: false, message: 'Team not found' });
     }
     res.status(200).json({ success: true, team });
   } catch (error) {
@@ -246,15 +226,11 @@ exports.updateTeamMember = async (req, res) => {
 
     const member = await TeamMember.findByPk(memberId);
     if (!member) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Member not found" });
+      return res.status(404).json({ success: false, message: 'Member not found' });
     }
 
     await member.update({ roleId, roleName });
-    res
-      .status(200)
-      .json({ success: true, message: "Member updated successfully", member });
+    res.status(200).json({ success: true, message: 'Member updated successfully', member });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

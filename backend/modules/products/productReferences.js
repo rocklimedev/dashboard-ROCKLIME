@@ -1,7 +1,7 @@
-const { Op } = require("sequelize");
+const { Op } = require('sequelize');
 
 function parseItems(value) {
-  for (let i = 0; i < 2 && typeof value === "string"; i++) {
+  for (let i = 0; i < 2 && typeof value === 'string'; i++) {
     try {
       value = JSON.parse(value);
     } catch {
@@ -12,35 +12,25 @@ function parseItems(value) {
 }
 
 function makeReference(type, doc, items, productId) {
-  const lines = parseItems(items).filter(
-    (p) => String(p.productId) === productId,
-  );
+  const lines = parseItems(items).filter((p) => String(p.productId) === productId);
   if (!lines.length) return null;
-  const id = type === "quotation" ? doc.quotationId : doc.id;
+  const id = type === 'quotation' ? doc.quotationId : doc.id;
   const paths = {
-    quotation: "quotation",
-    order: "order",
-    po: "po",
-    fgs: "fgs",
+    quotation: 'quotation',
+    order: 'order',
+    po: 'po',
+    fgs: 'fgs',
   };
   return {
     key: `${type}:${id}`,
     type,
     id,
-    number:
-      doc.reference_number ||
-      doc.orderNo ||
-      doc.poNumber ||
-      doc.fgsNumber ||
-      id,
+    number: doc.reference_number || doc.orderNo || doc.poNumber || doc.fgsNumber || id,
     date: doc.quotation_date || doc.orderDate || doc.createdAt,
-    status: doc.status || "—",
-    party: doc.customer?.name || doc.vendor?.vendorName || "—",
+    status: doc.status || '—',
+    party: doc.customer?.name || doc.vendor?.vendorName || '—',
     href: `/${paths[type]}/${encodeURIComponent(id)}`,
-    quantity: lines.reduce(
-      (sum, p) => sum + (Number(p.quantity ?? p.qty) || 0),
-      0,
-    ),
+    quantity: lines.reduce((sum, p) => sum + (Number(p.quantity ?? p.qty) || 0), 0),
     lines: lines.map((p) => ({
       name: p.name || p.productName,
       quantity: Number(p.quantity ?? p.qty) || 0,
@@ -81,44 +71,40 @@ async function loadReferences(deps, productId) {
   } = deps;
   const sources = [
     {
-      type: "quotation",
+      type: 'quotation',
       model: Quotation,
       items: QuotationItem,
-      itemId: "quotationId",
-      id: "quotationId",
+      itemId: 'quotationId',
+      id: 'quotationId',
       snapshot: true,
     },
     {
-      type: "order",
+      type: 'order',
       model: Order,
       items: OrderItem,
-      itemId: "orderId",
-      id: "id",
+      itemId: 'orderId',
+      id: 'id',
       snapshot: true,
     },
     {
-      type: "po",
+      type: 'po',
       model: PurchaseOrder,
       items: PoItem,
-      itemId: "poId",
-      id: "id",
+      itemId: 'poId',
+      id: 'id',
     },
     {
-      type: "fgs",
+      type: 'fgs',
       model: FieldGuidedSheet,
       items: FgsItem,
-      itemId: "fgsId",
-      id: "id",
+      itemId: 'fgsId',
+      id: 'id',
     },
   ];
   const results = await Promise.all(
     sources.map(async (source) => {
-      const itemDocs = await source.items
-        .find({ "items.productId": productId })
-        .lean();
-      const byId = new Map(
-        itemDocs.map((d) => [String(d[source.itemId]), d.items]),
-      );
+      const itemDocs = await source.items.find({ 'items.productId': productId }).lean();
+      const byId = new Map(itemDocs.map((d) => [String(d[source.itemId]), d.items]));
       const where = { [source.id]: { [Op.in]: [...byId.keys()] } };
       const condition = source.snapshot
         ? {
@@ -126,8 +112,8 @@ async function loadReferences(deps, productId) {
               where,
               sequelize.where(
                 sequelize.fn(
-                  "JSON_CONTAINS",
-                  sequelize.fn("JSON_UNQUOTE", sequelize.col("products")),
+                  'JSON_CONTAINS',
+                  sequelize.fn('JSON_UNQUOTE', sequelize.col('products')),
                   JSON.stringify([{ productId }]),
                 ),
                 1,
@@ -139,8 +125,8 @@ async function loadReferences(deps, productId) {
       const documents = await source.model.findAll({
         where: condition,
         include: source.snapshot
-          ? [{ model: Customer, as: "customer", attributes: ["name"] }]
-          : [{ model: Vendor, as: "vendor", attributes: ["vendorName"] }],
+          ? [{ model: Customer, as: 'customer', attributes: ['name'] }]
+          : [{ model: Vendor, as: 'vendor', attributes: ['vendorName'] }],
       });
       return documents
         .map((record) => {
@@ -149,9 +135,7 @@ async function loadReferences(deps, productId) {
           return makeReference(
             source.type,
             doc,
-            source.snapshot && snapshot.length
-              ? snapshot
-              : byId.get(String(doc[source.id])),
+            source.snapshot && snapshot.length ? snapshot : byId.get(String(doc[source.id])),
             productId,
           );
         })
@@ -160,10 +144,7 @@ async function loadReferences(deps, productId) {
   );
   return results
     .flat()
-    .sort(
-      (a, b) =>
-        (new Date(b.date).getTime() || 0) - (new Date(a.date).getTime() || 0),
-    );
+    .sort((a, b) => (new Date(b.date).getTime() || 0) - (new Date(a.date).getTime() || 0));
 }
 
 module.exports = { parseItems, makeReference, loadReferences };

@@ -1,4 +1,4 @@
-const rateLimit = require("express-rate-limit");
+const rateLimit = require('express-rate-limit');
 
 // 🔹 Global API limiter
 const apiLimiter = rateLimit({
@@ -9,7 +9,7 @@ const apiLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: {
-    error: "Too many requests, please try again later",
+    error: 'Too many requests, please try again later',
   },
 });
 
@@ -20,7 +20,7 @@ const burstLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: {
-    error: "Too many requests in a short time, slow down.",
+    error: 'Too many requests in a short time, slow down.',
   },
 });
 
@@ -32,9 +32,11 @@ const loginLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req) =>
-    `${String(req.body?.email || "").trim().toLowerCase()}|${rateLimit.ipKeyGenerator ? rateLimit.ipKeyGenerator(req.ip) : req.ip}`,
+    `${String(req.body?.email || '')
+      .trim()
+      .toLowerCase()}|${rateLimit.ipKeyGenerator ? rateLimit.ipKeyGenerator(req.ip) : req.ip}`,
   message: {
-    message: "Too many attempts. Wait 15 minutes and try again.",
+    message: 'Too many attempts. Wait 15 minutes and try again.',
   },
 });
 

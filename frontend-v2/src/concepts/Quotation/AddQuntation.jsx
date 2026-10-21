@@ -1,7 +1,7 @@
 // src/components/Quotation/AddQuotation.jsx
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { normalizeCharges, lineAmounts, quotationTotals } from "../../utils/quotationMath";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { normalizeCharges, lineAmounts, quotationTotals } from '../../utils/quotationMath';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   message,
   Input,
@@ -17,41 +17,41 @@ import {
   Col,
   Spin,
   Statistic,
-} from "antd";
+} from 'antd';
 import {
   ArrowLeftOutlined,
   PlusOutlined,
   DeleteOutlined,
   SaveOutlined,
   SearchOutlined,
-} from "@ant-design/icons";
-import { debounce } from "lodash";
-import { format } from "date-fns";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
-import { v4 as uuidv4 } from "uuid";
-import AddCustomerModal from "../../components/Customers/AddCustomerModal";
-import PageHeader from "../../components/Common/PageHeader";
+} from '@ant-design/icons';
+import { debounce } from 'lodash';
+import { format } from 'date-fns';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import { v4 as uuidv4 } from 'uuid';
+import AddCustomerModal from '../../components/Customers/AddCustomerModal';
+import PageHeader from '../../components/Common/PageHeader';
 import {
   useCreateQuotationMutation,
   useGetQuotationByIdQuery,
   useUpdateQuotationMutation,
   useGetQuotationVersionsQuery,
-} from "../../api/quotationApi";
-import { useSearchProductsQuery } from "../../api/productApi";
-import { useGetCustomersQuery } from "../../api/customerApi";
-import { useGetAllAddressesQuery } from "../../api/addressApi";
-import { useGetProfileQuery } from "../../api/userApi";
-import QuotationProductSheet from "../../components/Quotation/QuotationProductSheet";
-import QuotationResyncModal from "../../components/Quotation/QuotationResyncModal";
-import { productImage, productCompanyCode } from "../../components/Quotation/productSyncHelpers";
-import AddAddress from "../../components/Address/AddAddressModal";
+} from '../../api/quotationApi';
+import { useSearchProductsQuery } from '../../api/productApi';
+import { useGetCustomersQuery } from '../../api/customerApi';
+import { useGetAllAddressesQuery } from '../../api/addressApi';
+import { useGetProfileQuery } from '../../api/userApi';
+import QuotationProductSheet from '../../components/Quotation/QuotationProductSheet';
+import QuotationResyncModal from '../../components/Quotation/QuotationResyncModal';
+import { productImage, productCompanyCode } from '../../components/Quotation/productSyncHelpers';
+import AddAddress from '../../components/Address/AddAddressModal';
 
 // Import Modals
-import AddFloorModal from "../../components/modals/AddFloorModal";
-import AddEditRoomModal from "../../components/modals/AddEditRoomModal";
-import AssignItemModal from "../../components/modals/AssignItemModal";
-import EditFloorModal from "../../components/modals/EditFloorModal";
+import AddFloorModal from '../../components/modals/AddFloorModal';
+import AddEditRoomModal from '../../components/modals/AddEditRoomModal';
+import AssignItemModal from '../../components/modals/AssignItemModal';
+import EditFloorModal from '../../components/modals/EditFloorModal';
 
 const { Text } = Typography;
 const { Option } = Select;
@@ -72,8 +72,7 @@ const CLEARED = {
 // section 0..n (ties broken by original array order). Idempotent.
 const normalizeLoadedProducts = (products) => {
   const num = (v, d = 0) => (Number.isFinite(Number(v)) ? Number(v) : d);
-  const secKey = (l) =>
-    l.floorId && l.roomId ? `${l.floorId}::${l.roomId}` : "::";
+  const secKey = (l) => (l.floorId && l.roomId ? `${l.floorId}::${l.roomId}` : '::');
 
   const prods = products.map((p, order) => {
     const base =
@@ -121,9 +120,7 @@ const normalizeLoadedProducts = (products) => {
 
   // Re-rank within each section
   const buckets = {};
-  prods.forEach((p) =>
-    p.locations.forEach((l) => (buckets[secKey(l)] ||= []).push(l)),
-  );
+  prods.forEach((p) => p.locations.forEach((l) => (buckets[secKey(l)] ||= []).push(l)));
   Object.values(buckets).forEach((arr) => {
     arr.sort((a, b) => a.priority - b.priority || a._order - b._order);
     arr.forEach((l, i) => (l.priority = i));
@@ -132,9 +129,7 @@ const normalizeLoadedProducts = (products) => {
   return prods.map((p) => {
     const locations = p.locations.map(({ _order, ...l }) => l);
     const single =
-      locations.length === 1 && locations[0].floorId && locations[0].roomId
-        ? locations[0]
-        : null;
+      locations.length === 1 && locations[0].floorId && locations[0].roomId ? locations[0] : null;
     return {
       ...p,
       locations,
@@ -155,28 +150,28 @@ const AddQuotation = () => {
   const [showCustomerModal, setShowCustomerModal] = useState(false);
 
   // ── API Hooks ─────────────────────────────────────────────────────
-  const { data: existingQuotation, isLoading: loadingQuotation } =
-    useGetQuotationByIdQuery(id, { skip: !isEditMode });
+  const { data: existingQuotation, isLoading: loadingQuotation } = useGetQuotationByIdQuery(id, {
+    skip: !isEditMode,
+  });
   const { data: versionsData = [] } = useGetQuotationVersionsQuery(id, {
     skip: !isEditMode,
   });
 
   const { data: userData } = useGetProfileQuery();
   const { data: customersData } = useGetCustomersQuery({ limit: 10000 });
-  const { data: addressesData, refetch: refetchAddresses } =
-    useGetAllAddressesQuery();
+  const { data: addressesData, refetch: refetchAddresses } = useGetAllAddressesQuery();
 
-  const [createQuotation, { isLoading: isCreating }] =
-    useCreateQuotationMutation();
-  const [updateQuotation, { isLoading: isUpdating }] =
-    useUpdateQuotationMutation();
+  const [createQuotation, { isLoading: isCreating }] = useCreateQuotationMutation();
+  const [updateQuotation, { isLoading: isUpdating }] = useUpdateQuotationMutation();
 
   // ── Product Search ────────────────────────────────────────────────
-  const [searchTerm, setSearchTerm] = useState("");
-  const { data: searchResult = [], isFetching: isSearching } =
-    useSearchProductsQuery(searchTerm.trim(), {
+  const [searchTerm, setSearchTerm] = useState('');
+  const { data: searchResult = [], isFetching: isSearching } = useSearchProductsQuery(
+    searchTerm.trim(),
+    {
       skip: searchTerm.trim().length < 2,
-    });
+    },
+  );
 
   const debouncedSearch = useCallback(
     debounce((value) => setSearchTerm(value.trim()), 400),
@@ -186,10 +181,10 @@ const AddQuotation = () => {
   // ── State ─────────────────────────────────────────────────────────
   // "New quotation" from a customer's page opens with that customer chosen.
   const presetCustomerId = useLocation().state?.customerId;
-  const userId = userData?.user?.userId || "system";
+  const userId = userData?.user?.userId || 'system';
 
   const initialFormData = {
-    document_title: "",
+    document_title: '',
     quotation_date: null,
     due_date: null,
     gst: 0,
@@ -198,11 +193,11 @@ const AddQuotation = () => {
     additionalDiscount: 0,
     flatPrice: null,
     extraDiscount: 0,
-    extraDiscountType: "fixed",
-    signature_name: "",
-    signature_image: "",
-    customerId: presetCustomerId || "",
-    shipTo: "",
+    extraDiscountType: 'fixed',
+    signature_name: '',
+    signature_image: '',
+    customerId: presetCustomerId || '',
+    shipTo: '',
     createdBy: userId,
     products: [],
     followupDates: [],
@@ -211,24 +206,32 @@ const AddQuotation = () => {
 
   const [formData, setFormData] = useState(initialFormData);
 
-  const draftKey = userData?.user?.userId ? `quotation-draft:${userData.user.userId}:${id || "new"}` : null;
+  const draftKey = userData?.user?.userId
+    ? `quotation-draft:${userData.user.userId}:${id || 'new'}`
+    : null;
   const initializedDraft = useRef(null);
   const latestDraft = useRef(null);
   const submitted = useRef(false);
-  const [draftStatus, setDraftStatus] = useState("");
+  const [draftStatus, setDraftStatus] = useState('');
   const restoreDraft = (base) => {
     try {
       const saved = JSON.parse(localStorage.getItem(draftKey));
       if (!saved?.formData) return base;
       const data = saved.formData;
-      data.miscellaneousChargeItems = normalizeCharges(data.miscellaneousChargeItems ?? data.miscellaneousCharges);
-      setDraftStatus("Draft restored from this browser");
-      return { ...base, ...data,
+      data.miscellaneousChargeItems = normalizeCharges(
+        data.miscellaneousChargeItems ?? data.miscellaneousCharges,
+      );
+      setDraftStatus('Draft restored from this browser');
+      return {
+        ...base,
+        ...data,
         quotation_date: data.quotation_date ? new Date(data.quotation_date) : null,
         due_date: data.due_date ? new Date(data.due_date) : null,
-        followupDates: (data.followupDates || []).map(d => new Date(d)),
+        followupDates: (data.followupDates || []).map((d) => new Date(d)),
       };
-    } catch { return base; }
+    } catch {
+      return base;
+    }
   };
   useEffect(() => {
     if (isEditMode || !draftKey || initializedDraft.current === draftKey) return;
@@ -239,12 +242,17 @@ const AddQuotation = () => {
   useEffect(() => {
     if (!draftKey || initializedDraft.current !== draftKey || submitted.current) return;
     latestDraft.current = { key: draftKey, formData };
-    setDraftStatus("Saving draft…");
+    setDraftStatus('Saving draft…');
     const timer = setTimeout(() => {
       try {
-        localStorage.setItem(draftKey, JSON.stringify({ formData, savedAt: new Date().toISOString() }));
-        setDraftStatus("Draft saved in this browser");
-      } catch { setDraftStatus("Draft could not be saved: browser storage unavailable or full"); }
+        localStorage.setItem(
+          draftKey,
+          JSON.stringify({ formData, savedAt: new Date().toISOString() }),
+        );
+        setDraftStatus('Draft saved in this browser');
+      } catch {
+        setDraftStatus('Draft could not be saved: browser storage unavailable or full');
+      }
     }, 1000);
     return () => clearTimeout(timer);
   }, [draftKey, formData]);
@@ -254,10 +262,15 @@ const AddQuotation = () => {
       try {
         const { key, formData } = latestDraft.current;
         localStorage.setItem(key, JSON.stringify({ formData, savedAt: new Date().toISOString() }));
-      } catch { /* Keep manual save available when browser storage is unavailable. */ }
+      } catch {
+        /* Keep manual save available when browser storage is unavailable. */
+      }
     };
-    window.addEventListener("pagehide", flush);
-    return () => { window.removeEventListener("pagehide", flush); flush(); };
+    window.addEventListener('pagehide', flush);
+    return () => {
+      window.removeEventListener('pagehide', flush);
+      flush();
+    };
   }, []);
 
   // Modal Forms — each modal gets its own instance so one modal's
@@ -284,7 +297,7 @@ const AddQuotation = () => {
   // Option Modal States
   const [showAddOptionModal, setShowAddOptionModal] = useState(false);
   const [selectedParentId, setSelectedParentId] = useState(null);
-  const [optionType, setOptionType] = useState("addon");
+  const [optionType, setOptionType] = useState('addon');
 
   const [selectedFloorId, setSelectedFloorId] = useState(null);
   const [editingFloor, setEditingFloor] = useState(null);
@@ -297,8 +310,7 @@ const AddQuotation = () => {
   );
 
   // ── Helpers ───────────────────────────────────────────────────────
-  const safeNum = (val, fallback = 0) =>
-    Number.isFinite(Number(val)) ? Number(val) : fallback;
+  const safeNum = (val, fallback = 0) => (Number.isFinite(Number(val)) ? Number(val) : fallback);
 
   const safeJsonParse = (value, fallback = []) => {
     if (Array.isArray(value)) return value;
@@ -315,7 +327,8 @@ const AddQuotation = () => {
 
   // ── Load Existing Quotation ───────────────────────────────────────
   useEffect(() => {
-    if (!isEditMode || !existingQuotation || !draftKey || initializedDraft.current === draftKey) return;
+    if (!isEditMode || !existingQuotation || !draftKey || initializedDraft.current === draftKey)
+      return;
     initializedDraft.current = draftKey;
     submitted.current = false;
 
@@ -328,7 +341,7 @@ const AddQuotation = () => {
       sellingPrice: safeNum(p.price ?? p.sellingPrice, 0),
       companyCode: productCompanyCode(p),
       discount: safeNum(p.discount, 0),
-      discountType: p.discountType || "fixed",
+      discountType: p.discountType || 'fixed',
 
       // Preserve the multi-location split from the saved payload
       locations: Array.isArray(p.locations) ? p.locations : [],
@@ -341,34 +354,37 @@ const AddQuotation = () => {
       areaName: p.areaName || null,
     }));
 
-    setFormData(restoreDraft({
-      ...initialFormData,
-      quotationId: id,
-      document_title: existingQuotation.document_title || "",
-      quotation_date: existingQuotation.quotation_date
-        ? new Date(existingQuotation.quotation_date)
-        : null,
-      due_date: existingQuotation.due_date
-        ? new Date(existingQuotation.due_date)
-        : null,
-      miscellaneousChargeItems: normalizeCharges(existingQuotation.miscellaneousChargeItems ?? existingQuotation.miscellaneousCharges),
-      additionalDiscount: safeNum(existingQuotation.additionalDiscount),
-      flatPrice: existingQuotation.flatPrice == null ? null : safeNum(existingQuotation.flatPrice),
-      shippingAmount: safeNum(existingQuotation.shippingAmount, 0),
-      gst: safeNum(existingQuotation.gst, 0),
-      extraDiscount: safeNum(existingQuotation.extraDiscount, 0),
-      extraDiscountType: existingQuotation.extraDiscountType || "fixed",
-      signature_name: existingQuotation.signature_name || "",
-      signature_image: existingQuotation.signature_image || "",
-      customerId: existingQuotation.customerId || "",
-      shipTo: existingQuotation.shipTo || "",
-      createdBy: userId,
-      products: normalizeLoadedProducts(mappedProducts),
-      floors: parsedFloors,
-      followupDates: safeJsonParse(existingQuotation.followupDates, [])
-        .map((d) => (d ? new Date(d) : null))
-        .filter(Boolean),
-    }));
+    setFormData(
+      restoreDraft({
+        ...initialFormData,
+        quotationId: id,
+        document_title: existingQuotation.document_title || '',
+        quotation_date: existingQuotation.quotation_date
+          ? new Date(existingQuotation.quotation_date)
+          : null,
+        due_date: existingQuotation.due_date ? new Date(existingQuotation.due_date) : null,
+        miscellaneousChargeItems: normalizeCharges(
+          existingQuotation.miscellaneousChargeItems ?? existingQuotation.miscellaneousCharges,
+        ),
+        additionalDiscount: safeNum(existingQuotation.additionalDiscount),
+        flatPrice:
+          existingQuotation.flatPrice == null ? null : safeNum(existingQuotation.flatPrice),
+        shippingAmount: safeNum(existingQuotation.shippingAmount, 0),
+        gst: safeNum(existingQuotation.gst, 0),
+        extraDiscount: safeNum(existingQuotation.extraDiscount, 0),
+        extraDiscountType: existingQuotation.extraDiscountType || 'fixed',
+        signature_name: existingQuotation.signature_name || '',
+        signature_image: existingQuotation.signature_image || '',
+        customerId: existingQuotation.customerId || '',
+        shipTo: existingQuotation.shipTo || '',
+        createdBy: userId,
+        products: normalizeLoadedProducts(mappedProducts),
+        floors: parsedFloors,
+        followupDates: safeJsonParse(existingQuotation.followupDates, [])
+          .map((d) => (d ? new Date(d) : null))
+          .filter(Boolean),
+      }),
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditMode, existingQuotation, userId, draftKey]);
 
@@ -396,9 +412,9 @@ const AddQuotation = () => {
 
     const merged = [];
     locs.map(mapLoc).forEach((l) => {
-      const k = l.shareId || `${l.floorId || ""}::${l.roomId || ""}`;
+      const k = l.shareId || `${l.floorId || ''}::${l.roomId || ''}`;
       const existing = merged.find(
-        (m) => (m.shareId || `${m.floorId || ""}::${m.roomId || ""}`) === k,
+        (m) => (m.shareId || `${m.floorId || ''}::${m.roomId || ''}`) === k,
       );
       if (existing) {
         existing.assignedQuantity =
@@ -408,10 +424,7 @@ const AddQuotation = () => {
       }
     });
 
-    const single =
-      merged.length === 1 && merged[0].floorId && merged[0].roomId
-        ? merged[0]
-        : null;
+    const single = merged.length === 1 && merged[0].floorId && merged[0].roomId ? merged[0] : null;
 
     return {
       ...p,
@@ -428,12 +441,8 @@ const AddQuotation = () => {
   // How many products have at least one share in this floor (or room).
   const countItemsIn = (floorId, roomId = null) =>
     formData.products.filter((p) => {
-      const locs = p.locations?.length
-        ? p.locations
-        : [{ floorId: p.floorId, roomId: p.roomId }];
-      return locs.some(
-        (l) => l.floorId === floorId && (!roomId || l.roomId === roomId),
-      );
+      const locs = p.locations?.length ? p.locations : [{ floorId: p.floorId, roomId: p.roomId }];
+      return locs.some((l) => l.floorId === floorId && (!roomId || l.roomId === roomId));
     }).length;
 
   // ── Floor Handlers ────────────────────────────────────────────────
@@ -444,7 +453,7 @@ const AddQuotation = () => {
       rooms: [],
     };
     setFormData((prev) => ({ ...prev, floors: [...prev.floors, newFloor] }));
-    message.success("Floor added");
+    message.success('Floor added');
     setShowAddFloorModal(false);
     floorForm.resetFields();
   };
@@ -461,16 +470,12 @@ const AddQuotation = () => {
     const { floorId } = editingFloor;
     setFormData((prev) => ({
       ...prev,
-      floors: prev.floors.map((f) =>
-        f.floorId === floorId ? { ...f, floorName: name } : f,
-      ),
+      floors: prev.floors.map((f) => (f.floorId === floorId ? { ...f, floorName: name } : f)),
       products: prev.products.map((p) =>
-        remapProductLocations(p, (l) =>
-          l.floorId === floorId ? { ...l, floorName: name } : l,
-        ),
+        remapProductLocations(p, (l) => (l.floorId === floorId ? { ...l, floorName: name } : l)),
       ),
     }));
-    message.success("Floor updated");
+    message.success('Floor updated');
     setShowEditFloorModal(false);
     setEditingFloor(null);
     floorEditForm.resetFields();
@@ -489,12 +494,10 @@ const AddQuotation = () => {
     setFormData((prev) => ({
       ...prev,
       floors: prev.floors.map((f) =>
-        f.floorId === selectedFloorId
-          ? { ...f, rooms: [...(f.rooms || []), newRoom] }
-          : f,
+        f.floorId === selectedFloorId ? { ...f, rooms: [...(f.rooms || []), newRoom] } : f,
       ),
     }));
-    message.success("Room added");
+    message.success('Room added');
     setShowAddRoomModal(false);
     roomForm.resetFields();
   };
@@ -521,46 +524,39 @@ const AddQuotation = () => {
           : {
               ...f,
               rooms: (f.rooms || []).map((r) =>
-                r.roomId === roomId
-                  ? { ...r, roomName: name, type: values.type || null }
-                  : r,
+                r.roomId === roomId ? { ...r, roomName: name, type: values.type || null } : r,
               ),
             },
       ),
       products: prev.products.map((p) =>
         remapProductLocations(p, (l) =>
-          l.floorId === floorId && l.roomId === roomId
-            ? { ...l, roomName: name }
-            : l,
+          l.floorId === floorId && l.roomId === roomId ? { ...l, roomName: name } : l,
         ),
       ),
     }));
-    message.success("Room updated");
+    message.success('Room updated');
     setShowEditRoomModal(false);
     setEditingRoom(null);
   };
 
   // ── Delete Floor / Room (controlled confirm modal) ────────────────
-  const deleteFloor = (floor) => setDeleteTarget({ type: "floor", floor });
+  const deleteFloor = (floor) => setDeleteTarget({ type: 'floor', floor });
 
-  const deleteRoom = (floorId, room) =>
-    setDeleteTarget({ type: "room", floorId, room });
+  const deleteRoom = (floorId, room) => setDeleteTarget({ type: 'room', floorId, room });
 
   const confirmDelete = () => {
     if (!deleteTarget) return;
 
-    if (deleteTarget.type === "floor") {
+    if (deleteTarget.type === 'floor') {
       const { floor } = deleteTarget;
       setFormData((prev) => ({
         ...prev,
         floors: prev.floors.filter((f) => f.floorId !== floor.floorId),
         products: prev.products.map((p) =>
-          remapProductLocations(p, (l) =>
-            l.floorId === floor.floorId ? { ...l, ...CLEARED } : l,
-          ),
+          remapProductLocations(p, (l) => (l.floorId === floor.floorId ? { ...l, ...CLEARED } : l)),
         ),
       }));
-      message.success("Floor deleted");
+      message.success('Floor deleted');
     } else {
       const { floorId, room } = deleteTarget;
       setFormData((prev) => ({
@@ -575,13 +571,11 @@ const AddQuotation = () => {
         ),
         products: prev.products.map((p) =>
           remapProductLocations(p, (l) =>
-            l.floorId === floorId && l.roomId === room.roomId
-              ? { ...l, ...CLEARED }
-              : l,
+            l.floorId === floorId && l.roomId === room.roomId ? { ...l, ...CLEARED } : l,
           ),
         ),
       }));
-      message.success("Room deleted");
+      message.success('Room deleted');
     }
 
     setDeleteTarget(null);
@@ -591,7 +585,7 @@ const AddQuotation = () => {
   const deleteInfo = (() => {
     if (!deleteTarget) return null;
 
-    if (deleteTarget.type === "floor") {
+    if (deleteTarget.type === 'floor') {
       const { floor } = deleteTarget;
       const n = countItemsIn(floor.floorId);
       return {
@@ -599,7 +593,7 @@ const AddQuotation = () => {
         body:
           n > 0
             ? `This floor and its rooms will be removed. ${n} item(s) placed here will move back to Unassigned.`
-            : "This floor and its rooms will be removed.",
+            : 'This floor and its rooms will be removed.',
       };
     }
 
@@ -610,21 +604,21 @@ const AddQuotation = () => {
       body:
         n > 0
           ? `${n} item(s) placed in this room will move back to Unassigned.`
-          : "This room will be removed.",
+          : 'This room will be removed.',
     };
   })();
 
   // ── Assign Location ───────────────────────────────────────────────
   const handleAssignLocation = (productId, assignments) => {
     if (!productId) {
-      message.error("Could not match this item — try again");
+      message.error('Could not match this item — try again');
       setShowAssignModal(false);
       return;
     }
 
     const validAssignments = (assignments || []).filter((a) => a.floorId);
     if (validAssignments.length === 0) {
-      message.warning("No location selected");
+      message.warning('No location selected');
       setShowAssignModal(false);
       return;
     }
@@ -651,9 +645,7 @@ const AddQuotation = () => {
     const label =
       validAssignments.length > 1
         ? `${validAssignments.length} locations`
-        : [primary.floorName, primary.roomName, primary.areaName]
-            .filter(Boolean)
-            .join(" → ");
+        : [primary.floorName, primary.roomName, primary.areaName].filter(Boolean).join(' → ');
 
     message.success(`Assigned to ${label}`);
     setShowAssignModal(false);
@@ -662,21 +654,17 @@ const AddQuotation = () => {
 
   // ── Product Handlers ──────────────────────────────────────────────
   const addOption = (productId) => {
-    if (!selectedParentId)
-      return message.error("Please select a parent product");
+    if (!selectedParentId) return message.error('Please select a parent product');
 
     const prod = searchResult.find((p) => (p.id || p.productId) === productId);
-    if (!prod) return message.warning("Product not found");
+    if (!prod) return message.warning('Product not found');
 
     const parent = formData.products.find(
       (p) => p.productId === selectedParentId && !p.isOptionFor,
     );
-    if (!parent) return message.error("Parent product not found");
+    if (!parent) return message.error('Parent product not found');
 
-    const price = safeNum(
-      prod.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"],
-      0,
-    );
+    const price = safeNum(prod.meta?.['9ba862ef-f993-4873-95ef-1fef10036aa5'], 0);
 
     setFormData((prev) => ({
       ...prev,
@@ -684,13 +672,13 @@ const AddQuotation = () => {
         ...prev.products,
         {
           productId: prod.id || prod.productId,
-          name: prod.name || "Unknown",
+          name: prod.name || 'Unknown',
           companyCode: productCompanyCode(prod),
           imageUrl: productImage(prod),
           qty: 1,
           sellingPrice: price,
           discount: 0,
-          discountType: "fixed",
+          discountType: 'fixed',
           priority: prev.products.length,
           isOptionFor: selectedParentId,
           optionType,
@@ -700,7 +688,7 @@ const AddQuotation = () => {
     }));
 
     setShowAddOptionModal(false);
-    setSearchTerm("");
+    setSearchTerm('');
     message.success(`Added ${optionType}`);
   };
 
@@ -721,11 +709,7 @@ const AddQuotation = () => {
           return acc;
         }
 
-        if (
-          !Array.isArray(p.locations) ||
-          p.locations.length <= 1 ||
-          !location
-        ) {
+        if (!Array.isArray(p.locations) || p.locations.length <= 1 || !location) {
           return acc; // drop it
         }
 
@@ -806,11 +790,11 @@ const AddQuotation = () => {
         price: safeNum(p.sellingPrice, 0),
         quantity: safeNum(p.qty, 1),
         discount: safeNum(p.discount, 0),
-        discountType: p.discountType || "fixed",
+        discountType: p.discountType || 'fixed',
       })),
       shipping: safeNum(formData.shippingAmount),
       extraDiscount: safeNum(formData.extraDiscount),
-      extraDiscountType: formData.extraDiscountType || "percent",
+      extraDiscountType: formData.extraDiscountType || 'percent',
       gstRate: safeNum(formData.gst),
     });
     return {
@@ -836,30 +820,27 @@ const AddQuotation = () => {
 
   // ── Submit ────────────────────────────────────────────────────────
   const handleSubmit = async () => {
-    if ((formData.miscellaneousChargeItems || []).some(charge => !charge.name?.trim()))
-      return message.error("Please enter a name for each miscellaneous charge");
-    if (!formData.customerId) return message.error("Please select a customer");
-    if (formData.products.length === 0)
-      return message.error("Please add at least one product");
+    if ((formData.miscellaneousChargeItems || []).some((charge) => !charge.name?.trim()))
+      return message.error('Please enter a name for each miscellaneous charge');
+    if (!formData.customerId) return message.error('Please select a customer');
+    if (formData.products.length === 0) return message.error('Please add at least one product');
 
     const formatDateSafe = (date) => {
-      if (!date || !(date instanceof Date) || isNaN(date.getTime()))
-        return null;
+      if (!date || !(date instanceof Date) || isNaN(date.getTime())) return null;
       try {
-        return format(date, "yyyy-MM-dd");
+        return format(date, 'yyyy-MM-dd');
       } catch {
         return null;
       }
     };
 
-    const finalShipTo =
-      formData.shipTo && formData.shipTo.trim() !== "" ? formData.shipTo : null;
+    const finalShipTo = formData.shipTo && formData.shipTo.trim() !== '' ? formData.shipTo : null;
 
     const cleanProducts = formData.products.map((p) => {
       const qty = safeNum(p.qty, 1);
       const sellingPrice = safeNum(p.sellingPrice, 0);
       const discount = safeNum(p.discount, 0);
-      const discountType = p.discountType || "fixed";
+      const discountType = p.discountType || 'fixed';
 
       const lineTotal = lineAmounts({ ...p, price: sellingPrice, quantity: qty }).net;
 
@@ -931,9 +912,9 @@ const AddQuotation = () => {
       shippingAmount: safeNum(formData.shippingAmount),
       gst: safeNum(formData.gst),
       extraDiscount: safeNum(formData.extraDiscount),
-      extraDiscountType: formData.extraDiscountType || "fixed",
-      signature_name: formData.signature_name || "",
-      signature_image: formData.signature_image || "",
+      extraDiscountType: formData.extraDiscountType || 'fixed',
+      signature_name: formData.signature_name || '',
+      signature_image: formData.signature_image || '',
       createdBy: formData.createdBy,
 
       products: cleanProducts,
@@ -947,17 +928,21 @@ const AddQuotation = () => {
     try {
       if (isEditMode) {
         await updateQuotation({ id, updatedQuotation: payload }).unwrap();
-        message.success("Quotation updated successfully");
+        message.success('Quotation updated successfully');
       } else {
         await createQuotation(payload).unwrap();
-        message.success("Quotation created successfully");
+        message.success('Quotation created successfully');
       }
       submitted.current = true;
       latestDraft.current = null;
-      try { localStorage.removeItem(draftKey); } catch { /* Saved quotation is authoritative. */ }
-      navigate("/quotations/list");
+      try {
+        localStorage.removeItem(draftKey);
+      } catch {
+        /* Saved quotation is authoritative. */
+      }
+      navigate('/quotations/list');
     } catch (err) {
-      message.error(err?.data?.message || "Failed to save quotation");
+      message.error(err?.data?.message || 'Failed to save quotation');
     }
   };
 
@@ -966,7 +951,7 @@ const AddQuotation = () => {
       <Spin
         tip="Loading quotation..."
         size="large"
-        style={{ margin: "120px auto", display: "block" }}
+        style={{ margin: '120px auto', display: 'block' }}
       />
     );
   }
@@ -975,15 +960,12 @@ const AddQuotation = () => {
     <div className="page-wrapper">
       <div className="content">
         <PageHeader
-          title={isEditMode ? "Edit Quotation" : "Create Quotation"}
+          title={isEditMode ? 'Edit Quotation' : 'Create Quotation'}
           subtitle="Fill in all quotation details"
         />
 
         <Space style={{ marginBottom: 24 }}>
-          <Button
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/quotations/list")}
-          >
+          <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/quotations/list')}>
             Back
           </Button>
           <Button disabled={!formData.products.length} onClick={() => setShowResyncModal(true)}>
@@ -1002,7 +984,7 @@ const AddQuotation = () => {
             <Row gutter={16}>
               <Col xs={24} md={12}>
                 <Form.Item label="Customer *" required>
-                  <Space.Compact style={{ width: "100%" }}>
+                  <Space.Compact style={{ width: '100%' }}>
                     <Select
                       showSearch
                       value={formData.customerId}
@@ -1015,22 +997,16 @@ const AddQuotation = () => {
                       }
                       placeholder="Select customer"
                       filterOption={(input, option) =>
-                        (option?.label ?? "")
-                          .toLowerCase()
-                          .includes(input.toLowerCase())
+                        (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
                       }
                       style={{ flex: 1 }}
                     >
                       {(customersData?.data || []).map((c) => {
                         const displayName =
-                          `${c.name} ${c.companyName ? `(${c.companyName})` : ""}`.trim();
+                          `${c.name} ${c.companyName ? `(${c.companyName})` : ''}`.trim();
 
                         return (
-                          <Option
-                            key={c.customerId}
-                            value={c.customerId}
-                            label={displayName}
-                          >
+                          <Option key={c.customerId} value={c.customerId} label={displayName}>
                             {displayName}
                           </Option>
                         );
@@ -1047,7 +1023,7 @@ const AddQuotation = () => {
 
               <Col xs={24} md={12}>
                 <Form.Item label="Shipping Address (Optional)">
-                  <Space.Compact style={{ width: "100%" }}>
+                  <Space.Compact style={{ width: '100%' }}>
                     <Select
                       placeholder="Select shipping address (optional)"
                       value={formData.shipTo || undefined}
@@ -1089,11 +1065,7 @@ const AddQuotation = () => {
           >
             <Row gutter={[24, 16]}>
               <Col xs={24} md={12}>
-                <Form.Item
-                  label="Quotation Title"
-                  required
-                  style={{ marginBottom: 8 }}
-                >
+                <Form.Item label="Quotation Title" required style={{ marginBottom: 8 }}>
                   <Input
                     value={formData.document_title}
                     placeholder="e.g. Bathroom Fittings Quotation"
@@ -1117,22 +1089,16 @@ const AddQuotation = () => {
                 <Card
                   size="small"
                   style={{
-                    background: "#fafafa",
+                    background: '#fafafa',
                     borderRadius: 10,
                   }}
                 >
                   <Row gutter={[16, 16]}>
                     <Col xs={24} md={12}>
-                      <Form.Item
-                        label="Quotation Date"
-                        required
-                        style={{ marginBottom: 0 }}
-                      >
+                      <Form.Item label="Quotation Date" required style={{ marginBottom: 0 }}>
                         <DatePicker
                           selected={formData.quotation_date}
-                          onChange={(d) =>
-                            setFormData({ ...formData, quotation_date: d })
-                          }
+                          onChange={(d) => setFormData({ ...formData, quotation_date: d })}
                           dateFormat="dd/MM/yyyy"
                           className="ant-input"
                           isClearable
@@ -1146,9 +1112,7 @@ const AddQuotation = () => {
                       <Form.Item label="Due Date" style={{ marginBottom: 0 }}>
                         <DatePicker
                           selected={formData.due_date}
-                          onChange={(d) =>
-                            setFormData({ ...formData, due_date: d })
-                          }
+                          onChange={(d) => setFormData({ ...formData, due_date: d })}
                           dateFormat="dd/MM/yyyy"
                           className="ant-input"
                           isClearable
@@ -1163,22 +1127,19 @@ const AddQuotation = () => {
               </Col>
 
               <Col xs={24}>
-                <Form.Item
-                  label="Follow-up Schedule"
-                  style={{ marginBottom: 8 }}
-                >
+                <Form.Item label="Follow-up Schedule" style={{ marginBottom: 8 }}>
                   <Space wrap>
                     {formData.followupDates.map((date, i) => (
                       <div
                         key={i}
                         style={{
-                          display: "flex",
-                          alignItems: "center",
+                          display: 'flex',
+                          alignItems: 'center',
                           gap: 6,
-                          padding: "4px 8px",
-                          border: "1px solid #e5e5e5",
+                          padding: '4px 8px',
+                          border: '1px solid #e5e5e5',
                           borderRadius: 20,
-                          background: "#fff",
+                          background: '#fff',
                         }}
                       >
                         <DatePicker
@@ -1200,11 +1161,7 @@ const AddQuotation = () => {
                       </div>
                     ))}
 
-                    <Button
-                      type="dashed"
-                      icon={<PlusOutlined />}
-                      onClick={addFollowup}
-                    >
+                    <Button type="dashed" icon={<PlusOutlined />} onClick={addFollowup}>
                       Add Follow-up
                     </Button>
                   </Space>
@@ -1217,11 +1174,7 @@ const AddQuotation = () => {
             Products & Options — floors and rooms are created, renamed and
             deleted directly from the sheet's tabs.
           */}
-          <Card
-            title="Products & Options"
-            style={{ borderRadius: 12 }}
-            bodyStyle={{ padding: 12 }}
-          >
+          <Card title="Products & Options" style={{ borderRadius: 12 }} bodyStyle={{ padding: 12 }}>
             <QuotationProductSheet
               formData={formData}
               setFormData={setFormData}
@@ -1257,34 +1210,100 @@ const AddQuotation = () => {
             }}
             bodyStyle={{ padding: 16 }}
           >
-            <Text type="secondary" role="status">{draftStatus}</Text>
-            <p><Text type="secondary">Item additional discounts apply per unit. Flat price replaces the discounted goods price. Quotation adjustments, shipping and GST apply afterward.</Text></p>
+            <Text type="secondary" role="status">
+              {draftStatus}
+            </Text>
+            <p>
+              <Text type="secondary">
+                Item additional discounts apply per unit. Flat price replaces the discounted goods
+                price. Quotation adjustments, shipping and GST apply afterward.
+              </Text>
+            </p>
             <Form.Item label="Miscellaneous charges">
               {(formData.miscellaneousChargeItems || []).map((charge, index) => (
-                <Space key={index} style={{ display: "flex", marginBottom: 8 }}>
-                  <Input placeholder="Charge name (e.g. Packing)" aria-label="Charge name" value={charge.name}
-                    onChange={event => setFormData(prev => ({ ...prev, miscellaneousChargeItems: prev.miscellaneousChargeItems.map((row, i) => i === index ? { ...row, name: event.target.value } : row) }))} />
-                  <InputNumber min={0} precision={2} addonBefore="₹" aria-label="Charge amount" value={charge.amount}
-                    onChange={amount => setFormData(prev => ({ ...prev, miscellaneousChargeItems: prev.miscellaneousChargeItems.map((row, i) => i === index ? { ...row, amount: amount ?? 0 } : row) }))} />
-                  <Button danger icon={<DeleteOutlined />} aria-label="Remove charge" onClick={() => setFormData(prev => ({ ...prev, miscellaneousChargeItems: prev.miscellaneousChargeItems.filter((_, i) => i !== index) }))} />
+                <Space key={index} style={{ display: 'flex', marginBottom: 8 }}>
+                  <Input
+                    placeholder="Charge name (e.g. Packing)"
+                    aria-label="Charge name"
+                    value={charge.name}
+                    onChange={(event) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        miscellaneousChargeItems: prev.miscellaneousChargeItems.map((row, i) =>
+                          i === index ? { ...row, name: event.target.value } : row,
+                        ),
+                      }))
+                    }
+                  />
+                  <InputNumber
+                    min={0}
+                    precision={2}
+                    addonBefore="₹"
+                    aria-label="Charge amount"
+                    value={charge.amount}
+                    onChange={(amount) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        miscellaneousChargeItems: prev.miscellaneousChargeItems.map((row, i) =>
+                          i === index ? { ...row, amount: amount ?? 0 } : row,
+                        ),
+                      }))
+                    }
+                  />
+                  <Button
+                    danger
+                    icon={<DeleteOutlined />}
+                    aria-label="Remove charge"
+                    onClick={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        miscellaneousChargeItems: prev.miscellaneousChargeItems.filter(
+                          (_, i) => i !== index,
+                        ),
+                      }))
+                    }
+                  />
                 </Space>
               ))}
-              <Button icon={<PlusOutlined />} onClick={() => setFormData(prev => ({ ...prev, miscellaneousChargeItems: [...(prev.miscellaneousChargeItems || []), { name: "", amount: 0 }] }))}>Add charge</Button>
+              <Button
+                icon={<PlusOutlined />}
+                onClick={() =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    miscellaneousChargeItems: [
+                      ...(prev.miscellaneousChargeItems || []),
+                      { name: '', amount: 0 },
+                    ],
+                  }))
+                }
+              >
+                Add charge
+              </Button>
             </Form.Item>
             <Row gutter={[16, 16]}>
-              {[["additionalDiscount", "Additional discount (₹)"], ["flatPrice", "Flat goods price before GST (₹, optional)"]].map(([field, label]) => (
+              {[
+                ['additionalDiscount', 'Additional discount (₹)'],
+                ['flatPrice', 'Flat goods price before GST (₹, optional)'],
+              ].map(([field, label]) => (
                 <Col xs={24} sm={8} key={field}>
                   <Form.Item label={label}>
-                    <InputNumber min={0} precision={2} value={formData[field]} style={{ width: "100%" }}
-                      onChange={value => setFormData(prev => ({ ...prev, [field]: field === "flatPrice" ? value : value ?? 0 }))} />
+                    <InputNumber
+                      min={0}
+                      precision={2}
+                      value={formData[field]}
+                      style={{ width: '100%' }}
+                      onChange={(value) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          [field]: field === 'flatPrice' ? value : (value ?? 0),
+                        }))
+                      }
+                    />
                   </Form.Item>
                 </Col>
               ))}
               <Col xs={24} sm={8}>
-                <Card
-                  size="small"
-                  style={{ borderRadius: 10, background: "#fafafa" }}
-                >
+                <Card size="small" style={{ borderRadius: 10, background: '#fafafa' }}>
                   <Statistic
                     title="Goods value (after line discounts)"
                     value={calculations.mainSubtotal}
@@ -1295,31 +1314,25 @@ const AddQuotation = () => {
               </Col>
 
               <Col xs={24} sm={8}>
-                <Card
-                  size="small"
-                  style={{ borderRadius: 10, background: "#fff1f0" }}
-                >
+                <Card size="small" style={{ borderRadius: 10, background: '#fff1f0' }}>
                   <Statistic
                     title="Line Discounts"
                     value={-calculations.mainLineDiscount}
                     precision={2}
                     prefix="₹"
-                    valueStyle={{ color: "#cf1322" }}
+                    valueStyle={{ color: '#cf1322' }}
                   />
                 </Card>
               </Col>
 
               <Col xs={24} sm={8}>
-                <Card
-                  size="small"
-                  style={{ borderRadius: 10, background: "#fff7e6" }}
-                >
+                <Card size="small" style={{ borderRadius: 10, background: '#fff7e6' }}>
                   <Statistic
                     title="Extra Discount"
                     value={-calculations.extraDiscAmt}
                     precision={2}
                     prefix="₹"
-                    valueStyle={{ color: "#d48806" }}
+                    valueStyle={{ color: '#d48806' }}
                   />
                 </Card>
               </Col>
@@ -1330,10 +1343,8 @@ const AddQuotation = () => {
                     <InputNumber
                       min={0}
                       value={formData.shippingAmount}
-                      onChange={(v) =>
-                        setFormData({ ...formData, shippingAmount: v })
-                      }
-                      style={{ width: "100%", borderRadius: 8 }}
+                      onChange={(v) => setFormData({ ...formData, shippingAmount: v })}
+                      style={{ width: '100%', borderRadius: 8 }}
                       addonBefore="₹"
                     />
                   </Form.Item>
@@ -1346,7 +1357,7 @@ const AddQuotation = () => {
                     <InputNumber
                       disabled
                       value={calculations.roundOff}
-                      style={{ width: "100%", borderRadius: 8 }}
+                      style={{ width: '100%', borderRadius: 8 }}
                     />
                   </Form.Item>
                 </Card>
@@ -1355,16 +1366,26 @@ const AddQuotation = () => {
               <Col xs={24} sm={12}>
                 <Card size="small" style={{ borderRadius: 10 }}>
                   <Form.Item label="Global GST (%)">
-                    <InputNumber min={0} max={100} precision={2}
-                      value={formData.gst} addonAfter="%"
+                    <InputNumber
+                      min={0}
+                      max={100}
+                      precision={2}
+                      value={formData.gst}
+                      addonAfter="%"
                       onChange={(v) => setFormData((prev) => ({ ...prev, gst: v ?? 0 }))}
-                      style={{ width: "100%", borderRadius: 8 }} />
+                      style={{ width: '100%', borderRadius: 8 }}
+                    />
                   </Form.Item>
                 </Card>
               </Col>
               <Col xs={24} sm={12}>
                 <Card size="small" style={{ borderRadius: 10 }}>
-                  <Statistic title="GST Amount" value={calculations.gstAmount} precision={2} prefix="₹" />
+                  <Statistic
+                    title="GST Amount"
+                    value={calculations.gstAmount}
+                    precision={2}
+                    prefix="₹"
+                  />
                 </Card>
               </Col>
 
@@ -1372,16 +1393,15 @@ const AddQuotation = () => {
                 <Card
                   style={{
                     borderRadius: 14,
-                    background:
-                      "linear-gradient(135deg, #e6f4ff 0%, #f0f5ff 100%)",
-                    border: "1px solid #d6e4ff",
+                    background: 'linear-gradient(135deg, #e6f4ff 0%, #f0f5ff 100%)',
+                    border: '1px solid #d6e4ff',
                   }}
                 >
                   <div
                     style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
                     }}
                   >
                     <div>
@@ -1390,18 +1410,16 @@ const AddQuotation = () => {
                         style={{
                           fontSize: 32,
                           fontWeight: 700,
-                          color: "#1677ff",
+                          color: '#1677ff',
                         }}
                       >
                         ₹{calculations.finalAmount.toFixed(2)}
                       </div>
                     </div>
 
-                    <div style={{ textAlign: "right" }}>
+                    <div style={{ textAlign: 'right' }}>
                       <Text type="secondary">Taxable value (before GST)</Text>
-                      <div style={{ fontSize: 16 }}>
-                        ₹{calculations.taxableValue.toFixed(2)}
-                      </div>
+                      <div style={{ fontSize: 16 }}>₹{calculations.taxableValue.toFixed(2)}</div>
                     </div>
                   </div>
                 </Card>
@@ -1413,12 +1431,12 @@ const AddQuotation = () => {
                     size="small"
                     style={{
                       borderRadius: 10,
-                      border: "1px dashed #722ed1",
-                      background: "#faf5ff",
+                      border: '1px dashed #722ed1',
+                      background: '#faf5ff',
                     }}
                   >
                     <div>
-                      <Text strong style={{ color: "#722ed1" }}>
+                      <Text strong style={{ color: '#722ed1' }}>
                         Optional Items Potential
                       </Text>
 
@@ -1426,9 +1444,7 @@ const AddQuotation = () => {
                         ₹{calculations.optionalPotential}
                       </div>
 
-                      <Text type="secondary">
-                        (not included in final quotation total)
-                      </Text>
+                      <Text type="secondary">(not included in final quotation total)</Text>
                     </div>
                   </Card>
                 </Col>
@@ -1437,9 +1453,9 @@ const AddQuotation = () => {
           </Card>
 
           {/* Actions */}
-          <div style={{ textAlign: "right", marginTop: 40 }}>
+          <div style={{ textAlign: 'right', marginTop: 40 }}>
             <Space size="large">
-              <Button size="large" onClick={() => navigate("/quotations/list")}>
+              <Button size="large" onClick={() => navigate('/quotations/list')}>
                 Cancel
               </Button>
               <Button
@@ -1448,11 +1464,9 @@ const AddQuotation = () => {
                 size="large"
                 loading={isCreating || isUpdating}
                 onClick={handleSubmit}
-                disabled={
-                  !formData.customerId || formData.products.length === 0
-                }
+                disabled={!formData.customerId || formData.products.length === 0}
               >
-                {isEditMode ? "Update Quotation" : "Create Quotation"}
+                {isEditMode ? 'Update Quotation' : 'Create Quotation'}
               </Button>
             </Space>
           </div>
@@ -1468,7 +1482,7 @@ const AddQuotation = () => {
 
           <EditFloorModal
             visible={showEditFloorModal}
-            floorName={editingFloor?.floorName || ""}
+            floorName={editingFloor?.floorName || ''}
             onCancel={() => {
               setShowEditFloorModal(false);
               setEditingFloor(null);
@@ -1518,19 +1532,22 @@ const AddQuotation = () => {
           </Modal>
 
           {/* Add Option Modal */}
-          {showResyncModal && <QuotationResyncModal
-            open={showResyncModal}
-            products={formData.products}
-            onCancel={() => setShowResyncModal(false)}
-            onApply={(updates) => {
-              setFormData((prev) => ({
-                ...prev,
-                products: prev.products.map((p) => updates[p.productId]
-                  ? { ...p, ...updates[p.productId] } : p),
-              }));
-              setShowResyncModal(false);
-            }}
-          />}
+          {showResyncModal && (
+            <QuotationResyncModal
+              open={showResyncModal}
+              products={formData.products}
+              onCancel={() => setShowResyncModal(false)}
+              onApply={(updates) => {
+                setFormData((prev) => ({
+                  ...prev,
+                  products: prev.products.map((p) =>
+                    updates[p.productId] ? { ...p, ...updates[p.productId] } : p,
+                  ),
+                }));
+                setShowResyncModal(false);
+              }}
+            />
+          )}
           <Modal
             title="Add Option / Variant / Upgrade"
             open={showAddOptionModal}
@@ -1541,15 +1558,13 @@ const AddQuotation = () => {
             footer={null}
             width={600}
           >
-            <Space direction="vertical" style={{ width: "100%" }} size="large">
+            <Space direction="vertical" style={{ width: '100%' }} size="large">
               <div>
-                <label style={{ display: "block", marginBottom: 8 }}>
-                  Select parent product:
-                </label>
+                <label style={{ display: 'block', marginBottom: 8 }}>Select parent product:</label>
                 <Select
                   value={selectedParentId}
                   onChange={setSelectedParentId}
-                  style={{ width: "100%" }}
+                  style={{ width: '100%' }}
                   placeholder="Choose main product"
                 >
                   {mainProducts.map((p) => (
@@ -1561,14 +1576,8 @@ const AddQuotation = () => {
               </div>
 
               <div>
-                <label style={{ display: "block", marginBottom: 8 }}>
-                  Option type:
-                </label>
-                <Select
-                  value={optionType}
-                  onChange={setOptionType}
-                  style={{ width: "100%" }}
-                >
+                <label style={{ display: 'block', marginBottom: 8 }}>Option type:</label>
+                <Select value={optionType} onChange={setOptionType} style={{ width: '100%' }}>
                   <Option value="addon">Add-on</Option>
                   <Option value="upgrade">Upgrade</Option>
                   <Option value="variant">Variant</Option>
@@ -1576,9 +1585,7 @@ const AddQuotation = () => {
               </div>
 
               <div>
-                <label style={{ display: "block", marginBottom: 8 }}>
-                  Search product:
-                </label>
+                <label style={{ display: 'block', marginBottom: 8 }}>Search product:</label>
                 <Select
                   showSearch
                   prefix={<SearchOutlined />}
@@ -1590,23 +1597,17 @@ const AddQuotation = () => {
                     isSearching ? (
                       <Spin size="small" />
                     ) : searchTerm ? (
-                      "No results"
+                      'No results'
                     ) : (
-                      "Type to search"
+                      'Type to search'
                     )
                   }
-                  style={{ width: "100%" }}
+                  style={{ width: '100%' }}
                 >
                   {searchResult.map((p) => {
-                    const price = safeNum(
-                      p.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"],
-                      0,
-                    );
+                    const price = safeNum(p.meta?.['9ba862ef-f993-4873-95ef-1fef10036aa5'], 0);
                     return (
-                      <Option
-                        key={p.id || p.productId}
-                        value={p.id || p.productId}
-                      >
+                      <Option key={p.id || p.productId} value={p.id || p.productId}>
                         {p.name} — ₹{price.toFixed(2)}
                       </Option>
                     );

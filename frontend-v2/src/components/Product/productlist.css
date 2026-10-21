@@ -40,7 +40,7 @@
 }
 
 /* Remove bootstrap column spacing influence if present */
-.products-grid > [class*="col-"] {
+.products-grid > [class*='col-'] {
   all: unset;
 }
 
@@ -55,7 +55,9 @@
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   background: #fff;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
 }
 
 .product-info.card:hover {
@@ -71,7 +73,6 @@
 }
 
 .image-wrapper {
-
   inset: 0;
   display: flex;
   align-items: center;
@@ -107,7 +108,7 @@
   position: absolute;
   top: 10px;
   left: 10px;
-  background-color: #E31E24;
+  background-color: #e31e24;
   color: #fff;
   font-size: 12px;
   padding: 2px 8px;
@@ -235,7 +236,10 @@
 
 @media (max-width: 480px) {
   .products-grid {
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); /* Even smaller min width for mobile */
+    grid-template-columns: repeat(
+      auto-fit,
+      minmax(160px, 1fr)
+    ); /* Even smaller min width for mobile */
   }
 
   .product-name {
@@ -276,7 +280,7 @@
   border-radius: 12px;
   color: #fff;
   z-index: 2;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .status-bar.in-stock {
@@ -284,5 +288,5 @@
 }
 
 .status-bar.out-of-stock {
-  background-color: #E31E24; /* Red */
+  background-color: #e31e24; /* Red */
 }

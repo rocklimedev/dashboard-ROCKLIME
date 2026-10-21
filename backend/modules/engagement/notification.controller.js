@@ -1,7 +1,7 @@
-const Notification = require("./models/notification.model"); // Mongoose model
-const cron = require("node-cron"); // Add node-cron for scheduling
+const Notification = require('./models/notification.model'); // Mongoose model
+const cron = require('node-cron'); // Add node-cron for scheduling
 let ioInstance;
-const { User } = require("../../models");
+const { User } = require('../../models');
 // Initialize Socket.IO instance
 const initSocket = (io) => {
   ioInstance = io;
@@ -13,10 +13,10 @@ const sendNotification = async ({ userId, title, message }) => {
   try {
     user = await User.findOne({
       where: { userId },
-      attributes: ["userId", "username"],
+      attributes: ['userId', 'username'],
     });
   } catch (err) {
-    console.error("Failed to lookup user for notification", { userId, err });
+    console.error('Failed to lookup user for notification', { userId, err });
   }
 
   // If user not found → log and skip (do NOT throw)
@@ -29,7 +29,7 @@ const sendNotification = async ({ userId, title, message }) => {
   const notification = await Notification.create({ userId, title, message });
 
   if (ioInstance) {
-    ioInstance.to(userId).emit("newNotification", {
+    ioInstance.to(userId).emit('newNotification', {
       ...notification.toObject(),
       userId: {
         _id: user.userId,
@@ -59,13 +59,13 @@ const getNotifications = async (userId) => {
     notifications.map(async (notification) => {
       const user = await User.findOne({
         where: { userId: notification.userId },
-        attributes: ["userId", "username"],
+        attributes: ['userId', 'username'],
       });
       return {
         ...notification.toObject(),
         userId: {
           _id: user?.userId || notification.userId,
-          username: user?.username || "Unknown User",
+          username: user?.username || 'Unknown User',
         },
       };
     }),
@@ -88,14 +88,14 @@ const markAsRead = async (notificationId) => {
   // Fetch user details for the updated notification
   const user = await User.findOne({
     where: { userId: notification.userId },
-    attributes: ["userId", "username"],
+    attributes: ['userId', 'username'],
   });
 
   return {
     ...notification.toObject(),
     userId: {
       _id: user?.userId || notification.userId,
-      username: user?.username || "Unknown User",
+      username: user?.username || 'Unknown User',
     },
   };
 };
@@ -110,19 +110,19 @@ const deleteOldNotifications = async () => {
 
     // Optionally emit an event to all users to refresh their notifications
     if (ioInstance) {
-      ioInstance.emit("notificationsDeleted", {
+      ioInstance.emit('notificationsDeleted', {
         message: `${result.deletedCount} notifications deleted`,
       });
     }
 
     return result;
   } catch (error) {
-    throw new Error("Failed to delete old notifications");
+    throw new Error('Failed to delete old notifications');
   }
 };
 
 // Schedule deletion of old notifications (runs daily at midnight)
-cron.schedule("0 0 * * *", async () => {
+cron.schedule('0 0 * * *', async () => {
   try {
     await deleteOldNotifications();
   } catch (error) {}
@@ -136,19 +136,19 @@ const clearAllNotifications = async (userId) => {
     // Verify user exists (optional, for consistency)
     const user = await User.findOne({
       where: { userId },
-      attributes: ["userId", "username"],
+      attributes: ['userId', 'username'],
     });
 
     if (!user) {
-      throw new Error("User not found");
+      throw new Error('User not found');
     }
 
     // Emit real-time event to the specific user
     if (ioInstance) {
-      ioInstance.to(userId).emit("notificationsCleared", {
+      ioInstance.to(userId).emit('notificationsCleared', {
         userId,
         deletedCount: result.deletedCount,
-        message: "All notifications cleared",
+        message: 'All notifications cleared',
       });
     }
 
@@ -158,7 +158,7 @@ const clearAllNotifications = async (userId) => {
         username: user.username,
       },
       deletedCount: result.deletedCount,
-      message: "All notifications cleared successfully",
+      message: 'All notifications cleared successfully',
     };
   } catch (error) {
     throw new Error(`Failed to clear notifications: ${error.message}`);

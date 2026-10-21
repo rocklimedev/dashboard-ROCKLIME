@@ -1,19 +1,19 @@
-const { Op } = require("sequelize");
-const { User, Role, Address } = require("../../models");
-const sequelize = require("../../config/database");
-const bcrypt = require("bcrypt");
-const ROLES = require("../../config/constant").ROLES;
-const path = require("path");
-const ftp = require("basic-ftp");
-const sharp = require("sharp"); // npm i sharp
-const { v4: uuidv4 } = require("uuid");
-const { Readable } = require("stream");
-const logActivity = require("../../utils/activityLogger");
-const { ActivityLog } = require("../../models");
+const { Op } = require('sequelize');
+const { User, Role, Address } = require('../../models');
+const sequelize = require('../../config/database');
+const bcrypt = require('bcrypt');
+const ROLES = require('../../config/constant').ROLES;
+const path = require('path');
+const ftp = require('basic-ftp');
+const sharp = require('sharp'); // npm i sharp
+const { v4: uuidv4 } = require('uuid');
+const { Readable } = require('stream');
+const logActivity = require('../../utils/activityLogger');
+const { ActivityLog } = require('../../models');
 // Helper function to exclude sensitive fields
 const excludeSensitiveFields = {
   attributes: {
-    exclude: ["password", "createdAt", "updatedAt"],
+    exclude: ['password', 'createdAt', 'updatedAt'],
   },
 };
 
@@ -23,10 +23,8 @@ function bufferToStream(buffer) {
 // Middleware to check if user is authorized (e.g., Admin or SuperAdmin)
 const isAdminOrSuperAdmin = async (req, res, next) => {
   const user = await User.findByPk(req.user.userId, excludeSensitiveFields);
-  if (!user || !user.roles.some((r) => ["ADMIN", "SUPER_ADMIN"].includes(r))) {
-    return res
-      .status(403)
-      .json({ message: "Unauthorized: Admin access required" });
+  if (!user || !user.roles.some((r) => ['ADMIN', 'SUPER_ADMIN'].includes(r))) {
+    return res.status(403).json({ message: 'Unauthorized: Admin access required' });
   }
   next();
 };
@@ -53,7 +51,7 @@ exports.createUser = async (req, res) => {
     // Validate required fields
     if (!username || !email || !password || !roleId) {
       return res.status(400).json({
-        message: "Missing required fields",
+        message: 'Missing required fields',
         fields: { username, email, password, roleId },
       });
     }
@@ -63,22 +61,20 @@ exports.createUser = async (req, res) => {
       where: { [Op.or]: [{ username }, { email }] },
     });
     if (existingUser) {
-      return res
-        .status(400)
-        .json({ message: "Username or Email already exists" });
+      return res.status(400).json({ message: 'Username or Email already exists' });
     }
 
     // Validate roleId
     const roleData = await Role.findOne({ where: { roleId } });
     if (!roleData) {
-      return res.status(400).json({ message: "Invalid role specified" });
+      return res.status(400).json({ message: 'Invalid role specified' });
     }
 
     // Validate addressId if provided
     if (addressId) {
       const address = await Address.findByPk(addressId);
       if (!address) {
-        return res.status(400).json({ message: "Invalid address ID" });
+        return res.status(400).json({ message: 'Invalid address ID' });
       }
     }
 
@@ -100,7 +96,7 @@ exports.createUser = async (req, res) => {
       addressId,
       roleId,
       roles: roleData.roleName,
-      status: roleData.roleName === "Users" ? "inactive" : "active",
+      status: roleData.roleName === 'Users' ? 'inactive' : 'active',
       isEmailVerified: Boolean(isEmailVerified), // ← ADD THIS
     });
     // Activity Log
@@ -108,7 +104,7 @@ exports.createUser = async (req, res) => {
       userId: req.user?.userId || null,
       contextTag: ActivityLog.CONTEXT_TAGS.AUTH,
       subContext: ActivityLog.SUB_CONTEXTS.USER,
-      action: "USER_CREATED",
+      action: 'USER_CREATED',
       entityId: newUser.userId,
       entityName: newUser.name || newUser.username,
       description: `User "${newUser.username}" was created`,
@@ -126,14 +122,12 @@ exports.createUser = async (req, res) => {
       req,
     }).catch(console.error);
     res.status(201).json({
-      message: "User created successfully",
+      message: 'User created successfully',
       data: await User.findByPk(newUser.userId, excludeSensitiveFields),
     });
   } catch (err) {
     res.status(500).json({
-      message: `Failed to create user: ${
-        err.message || "Unknown server error"
-      }`,
+      message: `Failed to create user: ${err.message || 'Unknown server error'}`,
     });
   }
 };
@@ -146,19 +140,19 @@ exports.getProfile = async (req, res) => {
       include: [
         {
           model: Address,
-          as: "address", // ← Must match your association alias in setupDB.js
-          attributes: ["street", "city", "state", "postalCode", "country"], // optional: only return needed fields
+          as: 'address', // ← Must match your association alias in setupDB.js
+          attributes: ['street', 'city', 'state', 'postalCode', 'country'], // optional: only return needed fields
         },
       ],
     });
 
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ message: 'User not found' });
     }
 
     res.status(200).json({ user });
   } catch (err) {
-    res.status(500).json({ message: "Server Error", error: err.message });
+    res.status(500).json({ message: 'Server Error', error: err.message });
   }
 };
 
@@ -189,7 +183,7 @@ exports.searchUser = async (req, res) => {
       totalPages: Math.ceil(users.count / limit),
     });
   } catch (err) {
-    res.status(500).json({ message: "Server Error", error: err.message });
+    res.status(500).json({ message: 'Server Error', error: err.message });
   }
 };
 
@@ -214,21 +208,18 @@ exports.updateProfile = async (req, res) => {
 
     const updatedUser = await sequelize.transaction(async (t) => {
       const user = await User.findByPk(req.user.userId, { transaction: t });
-      if (!user) throw new Error("User not found");
+      if (!user) throw new Error('User not found');
 
       // Check duplicate username/email
       if (username || email) {
         const exists = await User.findOne({
           where: {
-            [Op.or]: [
-              username ? { username } : null,
-              email ? { email } : null,
-            ].filter(Boolean),
+            [Op.or]: [username ? { username } : null, email ? { email } : null].filter(Boolean),
             userId: { [Op.ne]: user.userId },
           },
           transaction: t,
         });
-        if (exists) throw new Error("Username or Email already exists");
+        if (exists) throw new Error('Username or Email already exists');
       }
 
       // Update fields
@@ -270,23 +261,19 @@ exports.updateProfile = async (req, res) => {
 
       return await User.findByPk(user.userId, {
         ...excludeSensitiveFields,
-        include: [{ model: Address, as: "address" }],
+        include: [{ model: Address, as: 'address' }],
         transaction: t,
       });
     });
 
     res.json({
-      message: "Profile updated successfully",
+      message: 'Profile updated successfully',
       user: updatedUser,
     });
   } catch (err) {
     const status =
-      err.message === "User not found"
-        ? 404
-        : err.message.includes("already exists")
-          ? 400
-          : 500;
-    res.status(status).json({ message: err.message || "Server Error" });
+      err.message === 'User not found' ? 404 : err.message.includes('already exists') ? 400 : 500;
+    res.status(status).json({ message: err.message || 'Server Error' });
   }
 };
 
@@ -296,13 +283,13 @@ exports.reportUser = async (req, res) => {
     const { userId } = req.params;
     const user = await User.findByPk(userId);
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ message: 'User not found' });
     }
 
     // TODO: Implement reporting logic (e.g., save to a reports table)
-    res.status(200).json({ message: "User reported successfully" });
+    res.status(200).json({ message: 'User reported successfully' });
   } catch (err) {
-    res.status(500).json({ message: "Server Error", error: err.message });
+    res.status(500).json({ message: 'Server Error', error: err.message });
   }
 };
 
@@ -315,7 +302,7 @@ exports.deleteUser = async (req, res) => {
 
     if (!user) {
       return res.status(404).json({
-        message: "User not found",
+        message: 'User not found',
       });
     }
 
@@ -326,7 +313,7 @@ exports.deleteUser = async (req, res) => {
       contextTag: ActivityLog.CONTEXT_TAGS.AUTH,
       subContext: ActivityLog.SUB_CONTEXTS.USER,
 
-      action: "USER_DELETED",
+      action: 'USER_DELETED',
 
       entityId: user.userId,
       entityName: user.name || user.username,
@@ -348,11 +335,11 @@ exports.deleteUser = async (req, res) => {
     await user.destroy();
 
     res.status(200).json({
-      message: "User deleted successfully",
+      message: 'User deleted successfully',
     });
   } catch (err) {
     res.status(500).json({
-      message: "Server Error",
+      message: 'Server Error',
       error: err.message,
     });
   }
@@ -364,9 +351,9 @@ exports.getAllUsers = async (req, res) => {
     const {
       page = 1,
       limit = 20,
-      searchTerm = "",
-      sortBy = "Recently Added",
-      status = "All",
+      searchTerm = '',
+      sortBy = 'Recently Added',
+      status = 'All',
     } = req.query;
     const offset = (page - 1) * limit;
 
@@ -380,24 +367,24 @@ exports.getAllUsers = async (req, res) => {
         { mobileNumber: { [Op.like]: `%${searchTerm}%` } },
       ];
     }
-    if (status !== "All") {
-      where.status = status === "Active" ? "active" : "inactive";
+    if (status !== 'All') {
+      where.status = status === 'Active' ? 'active' : 'inactive';
     }
 
     // Build order clause for sorting
     let order = [];
     switch (sortBy) {
-      case "Ascending":
-        order = [["name", "ASC"]];
+      case 'Ascending':
+        order = [['name', 'ASC']];
         break;
-      case "Descending":
-        order = [["name", "DESC"]];
+      case 'Descending':
+        order = [['name', 'DESC']];
         break;
-      case "Recently Added":
-        order = [["createdAt", "DESC"]];
+      case 'Recently Added':
+        order = [['createdAt', 'DESC']];
         break;
       default:
-        order = [["createdAt", "DESC"]];
+        order = [['createdAt', 'DESC']];
     }
 
     const users = await User.findAndCountAll({
@@ -411,8 +398,8 @@ exports.getAllUsers = async (req, res) => {
     // Calculate stats for counts
     const stats = {
       total: users.count,
-      active: await User.count({ where: { status: "active" } }),
-      inactive: await User.count({ where: { status: "inactive" } }),
+      active: await User.count({ where: { status: 'active' } }),
+      inactive: await User.count({ where: { status: 'inactive' } }),
       newJoiners: await User.count({
         where: {
           createdAt: {
@@ -430,7 +417,7 @@ exports.getAllUsers = async (req, res) => {
       stats,
     });
   } catch (err) {
-    res.status(500).json({ message: "Server Error", error: err.message });
+    res.status(500).json({ message: 'Server Error', error: err.message });
   }
 };
 
@@ -439,11 +426,11 @@ exports.getUserById = async (req, res) => {
   try {
     const user = await User.findByPk(req.params.userId, excludeSensitiveFields);
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ message: 'User not found' });
     }
     res.status(200).json({ user });
   } catch (err) {
-    res.status(500).json({ message: "Server Error", error: err.message });
+    res.status(500).json({ message: 'Server Error', error: err.message });
   }
 };
 
@@ -471,14 +458,14 @@ exports.updateUser = async (req, res) => {
     // Find the user
     const user = await User.findByPk(userId);
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ message: 'User not found' });
     }
 
     // Prevent self-modification of critical fields via admin endpoint
     if (req.user.userId === parseInt(userId)) {
       return res.status(403).json({
         message:
-          "You cannot modify your own account via the admin update endpoint. Use /profile for self-updates.",
+          'You cannot modify your own account via the admin update endpoint. Use /profile for self-updates.',
       });
     }
 
@@ -486,17 +473,12 @@ exports.updateUser = async (req, res) => {
     if (username || email) {
       const existingUser = await User.findOne({
         where: {
-          [Op.or]: [
-            username ? { username } : null,
-            email ? { email } : null,
-          ].filter(Boolean),
+          [Op.or]: [username ? { username } : null, email ? { email } : null].filter(Boolean),
           userId: { [Op.ne]: userId },
         },
       });
       if (existingUser) {
-        return res
-          .status(400)
-          .json({ message: "Username or Email already exists" });
+        return res.status(400).json({ message: 'Username or Email already exists' });
       }
     }
 
@@ -504,7 +486,7 @@ exports.updateUser = async (req, res) => {
     if (addressId) {
       const address = await Address.findByPk(addressId);
       if (!address) {
-        return res.status(400).json({ message: "Invalid address ID" });
+        return res.status(400).json({ message: 'Invalid address ID' });
       }
     }
 
@@ -512,14 +494,14 @@ exports.updateUser = async (req, res) => {
     if (roleId) {
       const roleData = await Role.findOne({ where: { roleId } });
       if (!roleData) {
-        return res.status(400).json({ message: "Invalid role specified" });
+        return res.status(400).json({ message: 'Invalid role specified' });
       }
 
       user.roleId = roleData.roleId;
       user.roles = roleData.roleName;
 
       // Auto-set status based on role
-      user.status = roleData.roleName === "Users" ? "inactive" : "active";
+      user.status = roleData.roleName === 'Users' ? 'inactive' : 'active';
     }
 
     // === 4. Update basic fields (only if explicitly provided) ===
@@ -529,8 +511,7 @@ exports.updateUser = async (req, res) => {
     if (mobileNumber !== undefined) user.mobileNumber = mobileNumber || null;
     if (dateOfBirth !== undefined) user.dateOfBirth = dateOfBirth || null;
     if (bloodGroup !== undefined) user.bloodGroup = bloodGroup || null;
-    if (emergencyNumber !== undefined)
-      user.emergencyNumber = emergencyNumber || null;
+    if (emergencyNumber !== undefined) user.emergencyNumber = emergencyNumber || null;
     if (shiftFrom !== undefined) user.shiftFrom = shiftFrom || null;
     if (shiftTo !== undefined) user.shiftTo = shiftTo || null;
     if (addressId !== undefined) user.addressId = addressId || null;
@@ -538,23 +519,23 @@ exports.updateUser = async (req, res) => {
 
     // === 5. Update Status ===
     if (status !== undefined) {
-      const validStatuses = ["active", "inactive", "restricted"];
+      const validStatuses = ['active', 'inactive', 'restricted'];
       if (!validStatuses.includes(status)) {
         return res.status(400).json({
-          message: "Invalid status. Must be: active, inactive, or restricted",
+          message: 'Invalid status. Must be: active, inactive, or restricted',
         });
       }
 
       // Only prevent deactivating the *last* SuperAdmin if trying to change it
       if (
-        user.roles.includes("SUPER_ADMIN") &&
-        status !== "active" &&
+        user.roles.includes('SUPER_ADMIN') &&
+        status !== 'active' &&
         (await User.count({
-          where: { roles: { [Op.like]: "%SUPER_ADMIN%" } },
+          where: { roles: { [Op.like]: '%SUPER_ADMIN%' } },
         })) <= 1
       ) {
         return res.status(400).json({
-          message: "Cannot deactivate the only remaining SuperAdmin",
+          message: 'Cannot deactivate the only remaining SuperAdmin',
         });
       }
 
@@ -566,11 +547,10 @@ exports.updateUser = async (req, res) => {
       const requester = await User.findByPk(req.user.userId);
       if (
         !requester ||
-        !requester.roles.some((r) => ["ADMIN", "SUPER_ADMIN", "DEVELOPER"].includes(r))
+        !requester.roles.some((r) => ['ADMIN', 'SUPER_ADMIN', 'DEVELOPER'].includes(r))
       ) {
         return res.status(403).json({
-          message:
-            "Only Admin or SuperAdmin or Developer can change email verification status",
+          message: 'Only Admin or SuperAdmin or Developer can change email verification status',
         });
       }
       user.isEmailVerified = Boolean(isEmailVerified);
@@ -585,19 +565,19 @@ exports.updateUser = async (req, res) => {
       include: [
         {
           model: Address,
-          as: "address",
-          attributes: ["street", "city", "state", "country", "postalCode"],
+          as: 'address',
+          attributes: ['street', 'city', 'state', 'country', 'postalCode'],
         },
       ],
     });
 
     return res.status(200).json({
-      message: "User updated successfully",
+      message: 'User updated successfully',
       data: updatedUser,
     });
   } catch (err) {
     return res.status(500).json({
-      message: `Failed to update user: ${err.message || "Unknown server error"}`,
+      message: `Failed to update user: ${err.message || 'Unknown server error'}`,
     });
   }
 };
@@ -612,13 +592,13 @@ exports.changeStatusToInactive = async (req, res) => {
 
     if (!user) {
       return res.status(404).json({
-        message: "User not found",
+        message: 'User not found',
       });
     }
 
     const oldStatus = user.status;
 
-    user.status = status === false ? "inactive" : user.status;
+    user.status = status === false ? 'inactive' : user.status;
 
     await user.save();
 
@@ -628,7 +608,7 @@ exports.changeStatusToInactive = async (req, res) => {
       contextTag: ActivityLog.CONTEXT_TAGS.AUTH,
       subContext: ActivityLog.SUB_CONTEXTS.USER,
 
-      action: "USER_STATUS_CHANGED",
+      action: 'USER_STATUS_CHANGED',
 
       entityId: user.userId,
       entityName: user.name || user.username,
@@ -651,12 +631,12 @@ exports.changeStatusToInactive = async (req, res) => {
     }).catch(console.error);
 
     res.status(200).json({
-      message: "User status updated to inactive",
+      message: 'User status updated to inactive',
       user: await User.findByPk(user.userId, excludeSensitiveFields),
     });
   } catch (err) {
     res.status(500).json({
-      message: "Server Error",
+      message: 'Server Error',
       error: err.message,
     });
   }
@@ -672,7 +652,7 @@ exports.assignRole = async (req, res) => {
 
     if (!user) {
       return res.status(404).json({
-        message: "User not found",
+        message: 'User not found',
       });
     }
 
@@ -682,7 +662,7 @@ exports.assignRole = async (req, res) => {
 
     if (!roleData) {
       return res.status(400).json({
-        message: "Invalid role specified",
+        message: 'Invalid role specified',
       });
     }
 
@@ -692,7 +672,7 @@ exports.assignRole = async (req, res) => {
 
     user.roles = roleData.roleName;
     user.roleId = roleData.roleId;
-    user.status = roleData.roleName === "Users" ? "inactive" : "active";
+    user.status = roleData.roleName === 'Users' ? 'inactive' : 'active';
 
     await user.save();
 
@@ -702,7 +682,7 @@ exports.assignRole = async (req, res) => {
       contextTag: ActivityLog.CONTEXT_TAGS.AUTH,
       subContext: ActivityLog.SUB_CONTEXTS.USER,
 
-      action: "USER_ROLE_ASSIGNED",
+      action: 'USER_ROLE_ASSIGNED',
 
       entityId: user.userId,
       entityName: user.name || user.username,
@@ -734,7 +714,7 @@ exports.assignRole = async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({
-      message: "Server Error",
+      message: 'Server Error',
       error: err.message,
     });
   }
@@ -746,11 +726,11 @@ exports.updateStatus = async (req, res) => {
     const { userId } = req.params;
     const { status } = req.body;
 
-    const validStatuses = ["active", "inactive", "restricted"];
+    const validStatuses = ['active', 'inactive', 'restricted'];
 
     if (!status || !validStatuses.includes(status)) {
       return res.status(400).json({
-        message: "Invalid status. Must be one of: active, inactive, restricted",
+        message: 'Invalid status. Must be one of: active, inactive, restricted',
       });
     }
 
@@ -758,17 +738,17 @@ exports.updateStatus = async (req, res) => {
 
     if (!user) {
       return res.status(404).json({
-        message: "User not found",
+        message: 'User not found',
       });
     }
 
     if (req.user.userId === userId) {
       return res.status(403).json({
-        message: "You cannot change your own status",
+        message: 'You cannot change your own status',
       });
     }
 
-    if (user.roles.includes(ROLES.SuperAdmin) && status !== "active") {
+    if (user.roles.includes(ROLES.SuperAdmin) && status !== 'active') {
       const superAdminCount = await User.count({
         where: {
           roles: {
@@ -779,7 +759,7 @@ exports.updateStatus = async (req, res) => {
 
       if (superAdminCount <= 1) {
         return res.status(400).json({
-          message: "Cannot deactivate or restrict the only SuperAdmin",
+          message: 'Cannot deactivate or restrict the only SuperAdmin',
         });
       }
     }
@@ -797,7 +777,7 @@ exports.updateStatus = async (req, res) => {
       contextTag: ActivityLog.CONTEXT_TAGS.AUTH,
       subContext: ActivityLog.SUB_CONTEXTS.USER,
 
-      action: "USER_STATUS_UPDATED",
+      action: 'USER_STATUS_UPDATED',
 
       entityId: user.userId,
       entityName: user.name || user.username,
@@ -819,20 +799,15 @@ exports.updateStatus = async (req, res) => {
       req,
     }).catch(console.error);
 
-    const updatedUser = await User.findByPk(
-      user.userId,
-      excludeSensitiveFields,
-    );
+    const updatedUser = await User.findByPk(user.userId, excludeSensitiveFields);
 
     res.status(200).json({
-      message: "User status updated successfully",
+      message: 'User status updated successfully',
       user: updatedUser,
     });
   } catch (err) {
     res.status(500).json({
-      message: `Failed to update status: ${
-        err.message || "Unknown server error"
-      }`,
+      message: `Failed to update status: ${err.message || 'Unknown server error'}`,
     });
   }
 };
@@ -845,14 +820,11 @@ exports.updateStatus = async (req, res) => {
 exports.uploadUserPhoto = async (req, res) => {
   try {
     // 1. Validate file
-    if (!req.file)
-      return res.status(400).json({ message: "No photo uploaded" });
+    if (!req.file) return res.status(400).json({ message: 'No photo uploaded' });
 
-    const allowedMime = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    const allowedMime = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     if (!allowedMime.includes(req.file.mimetype)) {
-      return res
-        .status(400)
-        .json({ message: "Only JPEG, PNG, or WEBP images are allowed" });
+      return res.status(400).json({ message: 'Only JPEG, PNG, or WEBP images are allowed' });
     }
 
     // 2. Generate unique filenames
@@ -863,7 +835,7 @@ exports.uploadUserPhoto = async (req, res) => {
 
     // 3. Prepare FTP client
     const client = new ftp.Client();
-    client.ftp.verbose = process.env.NODE_ENV === "development";
+    client.ftp.verbose = process.env.NODE_ENV === 'development';
 
     let originalUrl, thumbUrl;
     try {
@@ -872,10 +844,10 @@ exports.uploadUserPhoto = async (req, res) => {
         port: process.env.FTP_PORT || 21,
         user: process.env.FTP_USER,
         password: process.env.FTP_PASSWORD,
-        secure: process.env.FTP_SECURE === "true",
+        secure: process.env.FTP_SECURE === 'true',
       });
 
-      const uploadDir = "/user_photos";
+      const uploadDir = '/user_photos';
       await client.ensureDir(uploadDir);
       await client.cd(uploadDir);
 
@@ -887,23 +859,21 @@ exports.uploadUserPhoto = async (req, res) => {
 
       // ---- Create & upload thumbnail ----
       const thumbBuffer = await sharp(req.file.buffer)
-        .resize(200, 200, { fit: "cover", withoutEnlargement: true })
+        .resize(200, 200, { fit: 'cover', withoutEnlargement: true })
         .toBuffer();
 
       await client.uploadFrom(bufferToStream(thumbBuffer), thumbName);
       await client.send(`SITE CHMOD 644 ${thumbName}`);
       thumbUrl = `https://media.cmtradingco.com${uploadDir}/${thumbName}`;
     } catch (ftpErr) {
-      return res
-        .status(500)
-        .json({ message: "FTP upload failed", error: ftpErr.message });
+      return res.status(500).json({ message: 'FTP upload failed', error: ftpErr.message });
     } finally {
       client.close();
     }
 
     // 4. Update user record
     const user = await User.findByPk(req.user.userId);
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user) return res.status(404).json({ message: 'User not found' });
 
     user.photo_original = originalUrl;
     user.photo_thumbnail = thumbUrl;
@@ -911,18 +881,16 @@ exports.uploadUserPhoto = async (req, res) => {
 
     // 5. Return updated user (exclude sensitive fields)
     const safeUser = await User.findByPk(user.userId, {
-      attributes: { exclude: ["password", "createdAt", "updatedAt"] },
+      attributes: { exclude: ['password', 'createdAt', 'updatedAt'] },
     });
 
     return res.status(200).json({
-      message: "Photo uploaded successfully",
+      message: 'Photo uploaded successfully',
       photo_original: originalUrl,
       photo_thumbnail: thumbUrl,
       user: safeUser,
     });
   } catch (err) {
-    return res
-      .status(500)
-      .json({ message: "Server error", error: err.message });
+    return res.status(500).json({ message: 'Server error', error: err.message });
   }
 };

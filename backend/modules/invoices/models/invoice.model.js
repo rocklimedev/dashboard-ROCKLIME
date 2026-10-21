@@ -1,10 +1,10 @@
-const { v4: uuidv4 } = require("uuid");
+const { v4: uuidv4 } = require('uuid');
 
 // A GST tax invoice made in the ERP. Lines and amounts are a frozen snapshot:
 // later changes to the order or prices never change an issued invoice.
 module.exports = (sequelize, DataTypes) =>
   sequelize.define(
-    "TaxInvoice",
+    'TaxInvoice',
     {
       id: { type: DataTypes.CHAR(36), primaryKey: true, defaultValue: () => uuidv4() },
       invoiceNo: { type: DataTypes.STRING(16), allowNull: false, unique: true },
@@ -34,10 +34,10 @@ module.exports = (sequelize, DataTypes) =>
       ewayBillNo: { type: DataTypes.STRING(20) },
       vehicleNo: { type: DataTypes.STRING(20) },
       irn: { type: DataTypes.STRING(64) },
-      status: { type: DataTypes.STRING(12), allowNull: false, defaultValue: "ISSUED" },
+      status: { type: DataTypes.STRING(12), allowNull: false, defaultValue: 'ISSUED' },
       cancelReason: { type: DataTypes.TEXT },
       cancelledAt: { type: DataTypes.DATE },
       createdBy: { type: DataTypes.CHAR(36) },
     },
-    { tableName: "tax_invoices", timestamps: true },
+    { tableName: 'tax_invoices', timestamps: true },
   );

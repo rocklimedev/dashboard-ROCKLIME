@@ -1,17 +1,15 @@
-const ftp = require("basic-ftp");
-const { Readable } = require("stream");
-const path = require("path");
-const { v4: uuidv4 } = require("uuid");
-const sanitizeHtml = require("sanitize-html");
-const { User, Team, Task, TeamMember, TaskBoard } = require("../models");
+const ftp = require('basic-ftp');
+const { Readable } = require('stream');
+const path = require('path');
+const { v4: uuidv4 } = require('uuid');
+const sanitizeHtml = require('sanitize-html');
+const { User, Team, Task, TeamMember, TaskBoard } = require('../models');
 
-const {
-  sendNotification,
-} = require("../modules/engagement/notification.controller");
+const { sendNotification } = require('../modules/engagement/notification.controller');
 
-const { Op } = require("sequelize");
+const { Op } = require('sequelize');
 
-require("dotenv").config();
+require('dotenv').config();
 
 // Convert buffer to stream for FTP upload
 const bufferToStream = (buffer) => {
@@ -22,9 +20,9 @@ const bufferToStream = (buffer) => {
 };
 
 // Upload file to CDN
-const uploadToCDN = async (file, folder = "task_attachments") => {
+const uploadToCDN = async (file, folder = 'task_attachments') => {
   const client = new ftp.Client();
-  client.ftp.verbose = process.env.NODE_ENV === "development";
+  client.ftp.verbose = process.env.NODE_ENV === 'development';
 
   try {
     await client.access({
@@ -32,7 +30,7 @@ const uploadToCDN = async (file, folder = "task_attachments") => {
       port: process.env.FTP_PORT || 21,
       user: process.env.FTP_USER,
       password: process.env.FTP_PASSWORD,
-      secure: process.env.FTP_SECURE === "true",
+      secure: process.env.FTP_SECURE === 'true',
     });
 
     const uploadDir = `/${folder}`;
@@ -55,19 +53,18 @@ const uploadToCDN = async (file, folder = "task_attachments") => {
 // Validate resource link (MySQL models)
 const validateResourceLink = async (resourceType, resourceId) => {
   const resourceModels = {
-    Order: require("../models/orders"),
-    Customer: require("../models/customers"),
-    Product: require("../models/product"),
-    Quotation: require("../models/quotation"),
-    Invoice: require("../models/invoice"),
+    Order: require('../models/orders'),
+    Customer: require('../models/customers'),
+    Product: require('../models/product'),
+    Quotation: require('../models/quotation'),
+    Invoice: require('../models/invoice'),
   };
 
   if (!resourceType || !resourceId) return { valid: true }; // Optional linking
   const Model = resourceModels[resourceType];
-  if (!Model)
-    return { valid: false, error: `Invalid resourceType: ${resourceType}` };
+  if (!Model) return { valid: false, error: `Invalid resourceType: ${resourceType}` };
 
-  const resource = await Model.findByPk(resourceId, { attributes: ["id"] }); // Minimal fields
+  const resource = await Model.findByPk(resourceId, { attributes: ['id'] }); // Minimal fields
   if (!resource)
     return {
       valid: false,
@@ -85,18 +82,18 @@ const sendErrorResponse = (res, status, message, details = null) => {
 };
 
 // Send success response
-const sendSuccessResponse = (res, data, message = "Success") => {
+const sendSuccessResponse = (res, data, message = 'Success') => {
   return res.status(200).json({ message, data });
 };
 
 const validateTaskBoard = async (taskBoardId) => {
   if (!taskBoardId) return { valid: true }; // TaskBoard is optional
   if (!mongoose.isValidObjectId(taskBoardId)) {
-    return { valid: false, error: "Invalid TaskBoard ID" };
+    return { valid: false, error: 'Invalid TaskBoard ID' };
   }
   const taskBoard = await TaskBoard.findById(taskBoardId);
   if (!taskBoard) {
-    return { valid: false, error: "TaskBoard not found" };
+    return { valid: false, error: 'TaskBoard not found' };
   }
   return { valid: true, taskBoard };
 };
@@ -120,43 +117,43 @@ async function validateTaskData({
 
   // Validate title
   if (!title?.trim()) {
-    errors.push("Title is required");
+    errors.push('Title is required');
   }
 
   // Validate assignedTo (userId from MySQL)
   let assignedToUser = null;
   if (assignedTo) {
     assignedToUser = await User.findByPk(assignedTo, {
-      attributes: ["userId", "username", "name", "email"],
+      attributes: ['userId', 'username', 'name', 'email'],
     });
     if (!assignedToUser) {
-      errors.push("Assigned user not found");
+      errors.push('Assigned user not found');
     }
   } else {
-    errors.push("assignedTo is required");
+    errors.push('assignedTo is required');
   }
 
   // Validate assignedBy (userId from MySQL)
   let assignedByUser = null;
   if (assignedBy) {
     assignedByUser = await User.findByPk(assignedBy, {
-      attributes: ["userId", "username", "name", "email"],
+      attributes: ['userId', 'username', 'name', 'email'],
     });
     if (!assignedByUser) {
-      errors.push("Assigned by user not found");
+      errors.push('Assigned by user not found');
     }
   } else {
-    errors.push("assignedBy is required");
+    errors.push('assignedBy is required');
   }
 
   // Validate secondaryAssignedTo (if provided)
   let secondaryAssignedToUser = null;
   if (secondaryAssignedTo) {
     secondaryAssignedToUser = await User.findByPk(secondaryAssignedTo, {
-      attributes: ["userId", "username", "name", "email"],
+      attributes: ['userId', 'username', 'name', 'email'],
     });
     if (!secondaryAssignedToUser) {
-      errors.push("Secondary assigned user not found");
+      errors.push('Secondary assigned user not found');
     }
   }
 
@@ -165,15 +162,13 @@ async function validateTaskData({
     // Fetch team members in a single query for efficiency
     const teamMembers = await TeamMember.findAll({
       where: { teamId: assignedTeamId },
-      attributes: ["userId"],
+      attributes: ['userId'],
     });
     const teamMemberIds = teamMembers.map((tm) => tm.userId);
 
     // Check assignedTo
     if (!teamMemberIds.includes(assignedTo)) {
-      errors.push(
-        `User ${assignedTo} is not a member of team ${assignedTeamId}`,
-      );
+      errors.push(`User ${assignedTo} is not a member of team ${assignedTeamId}`);
     }
 
     // Check secondaryAssignedTo (if provided)
@@ -185,14 +180,10 @@ async function validateTaskData({
 
     // Optional: Restrict watchers to team members
     if (watchers.length) {
-      const invalidWatchers = watchers.filter(
-        (w) => !teamMemberIds.includes(w),
-      );
+      const invalidWatchers = watchers.filter((w) => !teamMemberIds.includes(w));
       if (invalidWatchers.length) {
         errors.push(
-          `Watchers ${invalidWatchers.join(
-            ", ",
-          )} are not members of team ${assignedTeamId}`,
+          `Watchers ${invalidWatchers.join(', ')} are not members of team ${assignedTeamId}`,
         );
       }
     }
@@ -200,47 +191,38 @@ async function validateTaskData({
     // No team: Ensure only two assignees (assignedTo and secondaryAssignedTo)
     const assignees = [assignedTo, secondaryAssignedTo].filter(Boolean);
     if (assignees.length > 2) {
-      errors.push(
-        "Cannot assign more than two users when no team is specified",
-      );
+      errors.push('Cannot assign more than two users when no team is specified');
     }
   }
 
   // Validate priority
-  const validPriorities = ["critical", "high", "medium", "low"];
+  const validPriorities = ['critical', 'high', 'medium', 'low'];
   if (priority && !validPriorities.includes(priority.toLowerCase())) {
     errors.push(`Invalid priority: ${priority}`);
   }
 
   // Validate status
-  const validStatuses = [
-    "PENDING",
-    "IN_PROGRESS",
-    "REVIEW",
-    "COMPLETED",
-    "CANCELLED",
-    "ON_HOLD",
-  ];
+  const validStatuses = ['PENDING', 'IN_PROGRESS', 'REVIEW', 'COMPLETED', 'CANCELLED', 'ON_HOLD'];
   if (status && !validStatuses.includes(status.toUpperCase())) {
     errors.push(`Invalid status: ${status}`);
   }
 
   // Validate dueDate and startDate
   if (dueDate && isNaN(new Date(dueDate).getTime())) {
-    errors.push("Invalid dueDate");
+    errors.push('Invalid dueDate');
   }
   if (startDate && isNaN(new Date(startDate).getTime())) {
-    errors.push("Invalid startDate");
+    errors.push('Invalid startDate');
   }
 
   // Validate watchers (userIds from MySQL)
   if (watchers.length) {
     const validWatchers = await User.findAll({
       where: { userId: { [Op.in]: watchers } },
-      attributes: ["userId"],
+      attributes: ['userId'],
     });
     if (validWatchers.length !== watchers.length) {
-      errors.push("One or more watchers not found");
+      errors.push('One or more watchers not found');
     }
   }
 
@@ -251,7 +233,7 @@ async function validateTaskData({
       isArchived: false,
     });
     if (validDependsOn.length !== dependsOn.length) {
-      errors.push("One or more dependent tasks not found or archived");
+      errors.push('One or more dependent tasks not found or archived');
     }
   }
 
@@ -259,21 +241,21 @@ async function validateTaskData({
   let taskBoardDoc = null;
   if (taskBoard) {
     if (!mongoose.isValidObjectId(taskBoard)) {
-      errors.push("Invalid TaskBoard ID");
+      errors.push('Invalid TaskBoard ID');
     } else {
       taskBoardDoc = await TaskBoard.findById(taskBoard);
       if (!taskBoardDoc) {
-        errors.push("TaskBoard not found");
+        errors.push('TaskBoard not found');
       } else if (taskBoardDoc.isArchived) {
-        errors.push("Cannot assign task to an archived TaskBoard");
+        errors.push('Cannot assign task to an archived TaskBoard');
       }
     }
   } else {
-    errors.push("taskBoard is required");
+    errors.push('taskBoard is required');
   }
 
   if (errors.length) {
-    throw new Error(errors.join("; "));
+    throw new Error(errors.join('; '));
   }
 
   return {
@@ -306,10 +288,10 @@ async function notifyTaskStakeholders(
         title: `Task ${action}: ${task.taskId}`,
         message: `Task "${task.title}" has been ${action.toLowerCase()}${
           userId === assignedTo
-            ? " (primary assignee)"
+            ? ' (primary assignee)'
             : userId === task.secondaryAssignedTo
-              ? " (secondary assignee)"
-              : " (watcher)"
+              ? ' (secondary assignee)'
+              : ' (watcher)'
         }`,
       }),
     );

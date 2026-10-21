@@ -23,7 +23,9 @@
   border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
-  transition: box-shadow 0.15s ease, transform 0.15s ease;
+  transition:
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
 }
 .cat-card:hover {
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);

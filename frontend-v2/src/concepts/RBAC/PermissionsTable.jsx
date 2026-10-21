@@ -1,37 +1,31 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState } from 'react';
 
 const PermissionsTable = ({ permissions, searchTerm, sortBy }) => {
   // State to track the selected module filter
-  const [selectedModule, setSelectedModule] = useState("All");
+  const [selectedModule, setSelectedModule] = useState('All');
 
   // Group permissions by status (optional, as status is not present in provided data)
   const groupedPermissions = useMemo(() => {
     return {
       All: permissions,
-      Active: permissions.filter(
-        (perm) => perm.status?.toLowerCase() === "active"
-      ),
-      Inactive: permissions.filter(
-        (perm) => perm.status?.toLowerCase() === "inactive"
-      ),
+      Active: permissions.filter((perm) => perm.status?.toLowerCase() === 'active'),
+      Inactive: permissions.filter((perm) => perm.status?.toLowerCase() === 'inactive'),
     };
   }, [permissions]);
 
   // Get unique module names for filter buttons
   const moduleNames = useMemo(() => {
     const modules = [...new Set(permissions.map((perm) => perm.module))];
-    return ["All", ...modules.sort()];
+    return ['All', ...modules.sort()];
   }, [permissions]);
 
   // Filtered and sorted permissions
   const filteredPermissions = useMemo(() => {
-    let allPermissions = groupedPermissions["All"];
+    let allPermissions = groupedPermissions['All'];
 
     // Apply module filter
-    if (selectedModule !== "All") {
-      allPermissions = allPermissions.filter(
-        (perm) => perm.module === selectedModule
-      );
+    if (selectedModule !== 'All') {
+      allPermissions = allPermissions.filter((perm) => perm.module === selectedModule);
     }
 
     // Apply search filter
@@ -40,25 +34,21 @@ const PermissionsTable = ({ permissions, searchTerm, sortBy }) => {
         (perm) =>
           perm.module.toLowerCase().includes(searchTerm.toLowerCase()) ||
           perm.route.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          perm.name.toLowerCase().includes(searchTerm.toLowerCase())
+          perm.name.toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
 
     // Apply global sorting
     switch (sortBy) {
-      case "Ascending":
-        allPermissions = [...allPermissions].sort((a, b) =>
-          a.name.localeCompare(b.name)
-        );
+      case 'Ascending':
+        allPermissions = [...allPermissions].sort((a, b) => a.name.localeCompare(b.name));
         break;
-      case "Descending":
-        allPermissions = [...allPermissions].sort((a, b) =>
-          b.name.localeCompare(b.name)
-        );
+      case 'Descending':
+        allPermissions = [...allPermissions].sort((a, b) => b.name.localeCompare(b.name));
         break;
-      case "Recently Added":
+      case 'Recently Added':
         allPermissions = [...allPermissions].sort(
-          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
         );
         break;
       default:
@@ -88,7 +78,7 @@ const PermissionsTable = ({ permissions, searchTerm, sortBy }) => {
           <button
             key={module}
             className={`btn btn-sm ${
-              selectedModule === module ? "btn-primary" : "btn-outline-primary"
+              selectedModule === module ? 'btn-primary' : 'btn-outline-primary'
             } me-2 mb-2 rounded-3`}
             onClick={() => setSelectedModule(module)}
             aria-pressed={selectedModule === module}

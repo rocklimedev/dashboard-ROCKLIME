@@ -1,0 +1,11 @@
+const router = require('express').Router();
+const { auth } = require('../../../middleware/auth');
+const cliq = require('./cliq.controller');
+router.use(auth);
+router.get('/status', cliq.getStatus);
+router.get('/chats', cliq.getChats);
+router.get('/channels', cliq.getChannels);
+router.get('/people', cliq.getPeople);
+router.get('/chats/:id/messages', cliq.getMessages);
+router.post('/chats/:id/messages', cliq.sendMessage);
+module.exports = router;

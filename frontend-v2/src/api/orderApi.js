@@ -1,4 +1,4 @@
-import { baseApi } from "../store/baseApi";
+import { baseApi } from '../store/baseApi';
 
 export const orderApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
@@ -12,62 +12,62 @@ export const orderApi = baseApi.injectEndpoints({
         });
         return `/order/comments?${params.toString()}`;
       },
-      providesTags: ["Comment"],
+      providesTags: ['Comment'],
     }),
     addComment: builder.mutation({
       query: (comment) => ({
-        url: "/order/comments",
-        method: "POST",
+        url: '/order/comments',
+        method: 'POST',
         body: comment,
       }),
-      invalidatesTags: ["Comment"],
+      invalidatesTags: ['Comment'],
     }),
     deleteComment: builder.mutation({
       query: ({ commentId, userId }) => ({
         url: `/order/comments/${commentId}`,
-        method: "DELETE",
+        method: 'DELETE',
         body: { userId },
       }),
-      invalidatesTags: ["Comment"],
+      invalidatesTags: ['Comment'],
     }),
     deleteCommentsByResource: builder.mutation({
       query: ({ resourceId, resourceType }) => ({
-        url: "/order/delete-comment",
-        method: "POST",
+        url: '/order/delete-comment',
+        method: 'POST',
         body: { resourceId, resourceType },
       }),
-      invalidatesTags: ["Comment"],
+      invalidatesTags: ['Comment'],
     }),
     downloadInvoice: builder.query({
       query: (orderId) => ({
         url: `/order/${orderId}/download-invoice`,
         // Important: responseType tells RTK Query this is a blob/stream
-        responseHandler: "content-type", // keeps raw response
-        cache: "no-cache",
+        responseHandler: 'content-type', // keeps raw response
+        cache: 'no-cache',
       }),
       // No provides/invalidates tags needed — this is a download only
     }),
     uploadInvoice: builder.mutation({
       query: ({ orderId, formData }) => ({
         url: `/order/invoice-upload/${orderId}`,
-        method: "PUT",
+        method: 'PUT',
         body: formData,
       }),
       invalidatesTags: (result, error, { orderId }) => [
-        { type: "Orders", id: orderId },
-        { type: "Orders", id: "LIST" },
+        { type: 'Orders', id: orderId },
+        { type: 'Orders', id: 'LIST' },
       ],
     }),
     /* ──────────────────────── GATE-PASS ──────────────────────── */
     issueGatePass: builder.mutation({
       query: ({ orderId, formData }) => ({
         url: `/order/${orderId}/gatepass`,
-        method: "POST",
+        method: 'POST',
         body: formData,
       }),
       invalidatesTags: (result, error, { orderId }) => [
-        { type: "Orders", id: orderId },
-        { type: "Orders", id: "LIST" },
+        { type: 'Orders', id: orderId },
+        { type: 'Orders', id: 'LIST' },
       ],
     }),
     getAllDispatchHistory: builder.query({
@@ -75,38 +75,34 @@ export const orderApi = baseApi.injectEndpoints({
         const params = new URLSearchParams();
 
         const fields = [
-          "quotationId",
-          "search",
-          "product",
-          "productId",
-          "status",
-          "carrier",
-          "trackingNumber",
-          "orderNo",
-          "dispatchNumber",
-          "dateFrom",
-          "dateTo",
+          'quotationId',
+          'search',
+          'product',
+          'productId',
+          'status',
+          'carrier',
+          'trackingNumber',
+          'orderNo',
+          'dispatchNumber',
+          'dateFrom',
+          'dateTo',
         ];
 
         fields.forEach((field) => {
           const value = filters[field];
 
-          if (
-            value !== undefined &&
-            value !== null &&
-            String(value).trim() !== ""
-          ) {
+          if (value !== undefined && value !== null && String(value).trim() !== '') {
             params.append(field, String(value).trim());
           }
         });
 
-        params.append("page", filters.page ?? 1);
-        params.append("limit", filters.limit ?? 20);
+        params.append('page', filters.page ?? 1);
+        params.append('limit', filters.limit ?? 20);
 
         return `/order/dispatch-history?${params.toString()}`;
       },
 
-      providesTags: ["OrderDispatches"],
+      providesTags: ['OrderDispatches'],
     }),
     /* ──────────────────────── PARTIAL DISPATCH ──────────────────────── */
     // Each dispatch now REQUIRES its own invoice + gate-pass (no
@@ -117,43 +113,43 @@ export const orderApi = baseApi.injectEndpoints({
     createDispatch: builder.mutation({
       query: ({ orderId, formData }) => ({
         url: `/order/${orderId}/dispatch`,
-        method: "POST",
+        method: 'POST',
         body: formData,
       }),
       invalidatesTags: (result, error, { orderId }) => [
-        { type: "Orders", id: orderId },
-        { type: "Orders", id: "LIST" },
-        "Orders",
-        "Invoices",
-        "Payments",
-        "OrderDispatches",
-        { type: "OrderDispatches", id: orderId },
-        { type: "OrderActivity", id: orderId },
+        { type: 'Orders', id: orderId },
+        { type: 'Orders', id: 'LIST' },
+        'Orders',
+        'Invoices',
+        'Payments',
+        'OrderDispatches',
+        { type: 'OrderDispatches', id: orderId },
+        { type: 'OrderActivity', id: orderId },
       ],
     }),
     markDispatchDelivered: builder.mutation({
       query: ({ orderId, dispatchId, formData }) => ({
-        url: orderId ? `/order/${orderId}/dispatches/${dispatchId}/delivered` : `/order/dispatch/${dispatchId}/delivered`,
-        method: "POST",
+        url: orderId
+          ? `/order/${orderId}/dispatches/${dispatchId}/delivered`
+          : `/order/dispatch/${dispatchId}/delivered`,
+        method: 'POST',
         body: formData,
       }),
       invalidatesTags: (result, error, { orderId }) => [
-        { type: "Orders", id: orderId },
-        "Orders",
-        "OrderDispatches",
-        { type: "OrderDispatches", id: orderId },
-        { type: "OrderActivity", id: orderId },
+        { type: 'Orders', id: orderId },
+        'Orders',
+        'OrderDispatches',
+        { type: 'OrderDispatches', id: orderId },
+        { type: 'OrderActivity', id: orderId },
       ],
     }),
     getOrderStatusCounts: builder.query({
-      query: () => "/order/status-counts",
-      providesTags: ["Orders"],
+      query: () => '/order/status-counts',
+      providesTags: ['Orders'],
     }),
     getOrderDispatches: builder.query({
       query: (orderId) => `/order/${orderId}/dispatches`,
-      providesTags: (result, error, orderId) => [
-        { type: "OrderDispatches", id: orderId },
-      ],
+      providesTags: (result, error, orderId) => [{ type: 'OrderDispatches', id: orderId }],
     }),
     /* ──────────────────────── DISPATCH DOCUMENT DOWNLOAD ──────────────────────── */
     // Downloads the invoice OR gate-pass belonging to ONE specific
@@ -162,8 +158,8 @@ export const orderApi = baseApi.injectEndpoints({
     downloadDispatchDocument: builder.query({
       query: ({ orderId, dispatchId, type }) => ({
         url: `/order/${orderId}/dispatches/${dispatchId}/download?type=${type}`,
-        responseHandler: "content-type",
-        cache: "no-cache",
+        responseHandler: 'content-type',
+        cache: 'no-cache',
       }),
     }),
     /* ──────────────────────── ORDER ACTIVITY ──────────────────────── */
@@ -172,43 +168,39 @@ export const orderApi = baseApi.injectEndpoints({
         const params = new URLSearchParams({ page, limit });
         return `/order/${orderId}/activity?${params.toString()}`;
       },
-      providesTags: (result, error, { orderId }) => [
-        { type: "OrderActivity", id: orderId },
-      ],
+      providesTags: (result, error, { orderId }) => [{ type: 'OrderActivity', id: orderId }],
     }),
     /* ──────────────────────── CREDIT NOTE ──────────────────────── */
     uploadCreditNote: builder.mutation({
       query: ({ orderId, formData }) => ({
         url: `/order/${orderId}/credit-note`,
-        method: "POST",
+        method: 'POST',
         body: formData,
       }),
       invalidatesTags: (result, error, { orderId }) => [
-        { type: "Orders", id: orderId },
-        { type: "Orders", id: "LIST" },
-        { type: "OrderActivity", id: orderId },
+        { type: 'Orders', id: orderId },
+        { type: 'Orders', id: 'LIST' },
+        { type: 'OrderActivity', id: orderId },
       ],
     }),
     /* ──────────────────────── RECEIVING DOCUMENT ──────────────────────── */
     uploadReceivingDocument: builder.mutation({
       query: ({ orderId, formData }) => ({
         url: `/order/${orderId}/receiving-document`,
-        method: "POST",
+        method: 'POST',
         body: formData,
       }),
       invalidatesTags: (result, error, { orderId }) => [
-        { type: "Orders", id: orderId },
-        { type: "Orders", id: "LIST" },
-        { type: "OrderActivity", id: orderId },
+        { type: 'Orders', id: orderId },
+        { type: 'Orders', id: 'LIST' },
+        { type: 'OrderActivity', id: orderId },
       ],
     }),
 
     getLowStockProductsByOrderId: builder.query({
       query: (orderId) => `/order/${orderId}/low-stock-products`,
 
-      providesTags: (result, error, orderId) => [
-        { type: "Orders", id: orderId },
-      ],
+      providesTags: (result, error, orderId) => [{ type: 'Orders', id: orderId }],
     }),
 
     // ============================================================
@@ -217,43 +209,40 @@ export const orderApi = baseApi.injectEndpoints({
 
     getLowStockProductsByProductIds: builder.query({
       query: (products = []) => ({
-        url: "/order/low-stock-products",
-        method: "POST",
+        url: '/order/low-stock-products',
+        method: 'POST',
         body: {
           products,
         },
       }),
 
-      providesTags: ["ProductInventory"],
+      providesTags: ['ProductInventory'],
     }),
     /* ──────────────────────── CREDIT NOTE ──────────────────────── */
 
     createCreditNote: builder.mutation({
       query: ({ orderId, formData }) => ({
         url: `/order/${orderId}/credit-note`,
-        method: "POST",
+        method: 'POST',
         body: formData,
       }),
       invalidatesTags: (result, error, { orderId }) => [
-        { type: "Orders", id: orderId },
-        { type: "Orders", id: "LIST" },
-        { type: "OrderActivity", id: orderId },
+        { type: 'Orders', id: orderId },
+        { type: 'Orders', id: 'LIST' },
+        { type: 'OrderActivity', id: orderId },
       ],
     }),
 
     getOrderCreditNotes: builder.query({
       query: (orderId) => `/order/${orderId}/credit-notes`,
-      providesTags: (result, error, orderId) => [
-        { type: "OrderCreditNotes", id: orderId },
-      ],
+      providesTags: (result, error, orderId) => [{ type: 'OrderCreditNotes', id: orderId }],
     }),
 
     getOrderCreditNote: builder.query({
-      query: ({ orderId, creditNoteId }) =>
-        `/order/${orderId}/credit-note/${creditNoteId}`,
+      query: ({ orderId, creditNoteId }) => `/order/${orderId}/credit-note/${creditNoteId}`,
       providesTags: (result, error, { orderId, creditNoteId }) => [
-        { type: "OrderCreditNotes", id: creditNoteId },
-        { type: "OrderCreditNotes", id: orderId },
+        { type: 'OrderCreditNotes', id: creditNoteId },
+        { type: 'OrderCreditNotes', id: orderId },
       ],
     }),
     /* ──────────────────────── CREDIT NOTE ACTIONS ──────────────────────── */
@@ -261,67 +250,65 @@ export const orderApi = baseApi.injectEndpoints({
     cancelOrderCreditNote: builder.mutation({
       query: ({ orderId, creditNoteId }) => ({
         url: `/order/${orderId}/credit-note/${creditNoteId}`,
-        method: "DELETE",
+        method: 'DELETE',
       }),
       invalidatesTags: (result, error, { orderId, creditNoteId }) => [
-        { type: "Orders", id: orderId },
-        { type: "Orders", id: "LIST" },
-        { type: "OrderCreditNotes", id: creditNoteId },
-        { type: "OrderCreditNotes", id: orderId },
-        { type: "OrderActivity", id: orderId },
+        { type: 'Orders', id: orderId },
+        { type: 'Orders', id: 'LIST' },
+        { type: 'OrderCreditNotes', id: creditNoteId },
+        { type: 'OrderCreditNotes', id: orderId },
+        { type: 'OrderActivity', id: orderId },
       ],
     }),
 
     uploadCreditNoteDocument: builder.mutation({
       query: ({ orderId, creditNoteId, formData }) => ({
         url: `/order/${orderId}/credit-note/${creditNoteId}/document`,
-        method: "POST",
+        method: 'POST',
         body: formData,
       }),
       invalidatesTags: (result, error, { orderId, creditNoteId }) => [
-        { type: "Orders", id: orderId },
-        { type: "Orders", id: "LIST" },
-        { type: "OrderCreditNotes", id: creditNoteId },
-        { type: "OrderCreditNotes", id: orderId },
-        { type: "OrderActivity", id: orderId },
+        { type: 'Orders', id: orderId },
+        { type: 'Orders', id: 'LIST' },
+        { type: 'OrderCreditNotes', id: creditNoteId },
+        { type: 'OrderCreditNotes', id: orderId },
+        { type: 'OrderActivity', id: orderId },
       ],
     }),
     createOrder: builder.mutation({
       query: (orderData) => ({
-        url: "/order/create",
-        method: "POST",
+        url: '/order/create',
+        method: 'POST',
         body: {
           ...orderData,
           masterPipelineNo: orderData.masterPipelineNo || null,
           previousOrderNo: orderData.previousOrderNo || null,
         },
       }),
-      invalidatesTags: ["Orders", "Quotations"],
+      invalidatesTags: ['Orders', 'Quotations'],
     }),
     getOrderDetails: builder.query({
       query: (orderId) => `/order/${orderId}`,
-      providesTags: (result, error, orderId) => [
-        { type: "Orders", id: orderId },
-      ],
+      providesTags: (result, error, orderId) => [{ type: 'Orders', id: orderId }],
     }),
     updateOrderStatus: builder.mutation({
       query: ({ orderId, status }) => ({
-        url: "/order/update-status",
-        method: "PUT",
+        url: '/order/update-status',
+        method: 'PUT',
         body: { id: orderId, status }, // <-- id, not orderId
       }),
-      invalidatesTags: ["Orders", "Quotations"],
+      invalidatesTags: ['Orders', 'Quotations'],
     }),
     deleteOrder: builder.mutation({
       query: (orderId) => ({
         url: `/order/delete/${orderId}`,
-        method: "DELETE",
+        method: 'DELETE',
       }),
-      invalidatesTags: ["Orders", "Quotations"],
+      invalidatesTags: ['Orders', 'Quotations'],
     }),
     recentOrders: builder.query({
-      query: () => "/order/recent",
-      providesTags: ["Orders"],
+      query: () => '/order/recent',
+      providesTags: ['Orders'],
     }),
     getAllOrders: builder.query({
       query: (filters = {}) => {
@@ -329,90 +316,86 @@ export const orderApi = baseApi.injectEndpoints({
 
         // Add only non-empty values
         if (filters.search?.trim()) {
-          params.append("search", filters.search.trim());
+          params.append('search', filters.search.trim());
         }
         if (filters.status?.trim()) {
-          params.append("status", filters.status.trim());
+          params.append('status', filters.status.trim());
         }
         if (filters.priority?.trim()) {
-          params.append("priority", filters.priority.trim());
+          params.append('priority', filters.priority.trim());
         }
-        if (filters.sort) params.append("sort", filters.sort);
-        if (filters.late) params.append("late", "1");
-        if (filters.customerId) params.append("customerId", filters.customerId);
+        if (filters.sort) params.append('sort', filters.sort);
+        if (filters.late) params.append('late', '1');
+        if (filters.customerId) params.append('customerId', filters.customerId);
 
         // Always include pagination
-        params.append("page", filters.page ?? 1);
-        params.append("limit", filters.limit ?? 20);
+        params.append('page', filters.page ?? 1);
+        params.append('limit', filters.limit ?? 20);
 
         return `/order/all?${params.toString()}`;
       },
-      providesTags: ["Orders"],
+      providesTags: ['Orders'],
     }),
     orderById: builder.query({
       query: (orderId) => `/order/${orderId}`,
-      providesTags: ["Orders"],
+      providesTags: ['Orders'],
     }),
     updateOrderById: builder.mutation({
       query: ({ id, ...orderData }) => ({
         url: `/order/${id}`,
-        method: "PUT",
+        method: 'PUT',
         body: {
           ...orderData,
           masterPipelineNo: orderData.masterPipelineNo || null,
           previousOrderNo: orderData.previousOrderNo || null,
         },
       }),
-      invalidatesTags: ["Orders", "Quotations"],
+      invalidatesTags: ['Orders', 'Quotations'],
     }),
     draftOrder: builder.mutation({
       query: (orderData) => ({
-        url: "/order/draft",
-        method: "POST",
+        url: '/order/draft',
+        method: 'POST',
         body: {
           ...orderData,
           masterPipelineNo: orderData.masterPipelineNo || null,
           previousOrderNo: orderData.previousOrderNo || null,
         },
       }),
-      invalidatesTags: ["Orders", "Quotations"],
+      invalidatesTags: ['Orders', 'Quotations'],
     }),
     updateOrderTeam: builder.mutation({
       query: (teamData) => ({
-        url: "/order/update-team",
-        method: "PUT",
+        url: '/order/update-team',
+        method: 'PUT',
         body: teamData,
       }),
-      invalidatesTags: ["Orders"],
+      invalidatesTags: ['Orders'],
     }),
     getFilteredOrders: builder.query({
       query: (filters) => {
         const validFilters = {};
         // Only include defined and non-empty filters
         Object.keys(filters).forEach((key) => {
-          if (
-            filters[key] !== undefined &&
-            filters[key] !== "" &&
-            filters[key] !== null
-          ) {
+          if (filters[key] !== undefined && filters[key] !== '' && filters[key] !== null) {
             validFilters[key] = filters[key];
           }
         });
         const params = new URLSearchParams(validFilters);
         return `/order/filter?${params.toString()}`;
       },
-      providesTags: ["Orders"],
+      providesTags: ['Orders'],
     }),
     downloadOrderSummary: builder.query({
       query: (orderId) => ({
         url: `/order/${orderId}/download-order`,
         responseHandler: async (response) => response.blob(),
-        cache: "no-cache",
+        cache: 'no-cache',
       }),
     }),
     getOrderCountByDate: builder.query({
       query: (date) => `/order/count?date=${date}`,
-      providesTags: ["Orders"],
+      providesTags: ['Orders'],
     }),
   }),
 });

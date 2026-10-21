@@ -1,6 +1,6 @@
 module.exports = (sequelize, DataTypes) => {
   const ProductMeta = sequelize.define(
-    "ProductMeta",
+    'ProductMeta',
     {
       id: {
         type: DataTypes.UUID,
@@ -11,7 +11,7 @@ module.exports = (sequelize, DataTypes) => {
       title: {
         type: DataTypes.STRING,
         allowNull: false,
-        comment: "Label for the metadata field (e.g., Selling Price, MRP)",
+        comment: 'Label for the metadata field (e.g., Selling Price, MRP)',
       },
 
       slug: {
@@ -23,14 +23,13 @@ module.exports = (sequelize, DataTypes) => {
       fieldType: {
         type: DataTypes.STRING,
         allowNull: false,
-        comment:
-          "Type of data (e.g., string, number, mm, inch, pcs, box, feet)",
+        comment: 'Type of data (e.g., string, number, mm, inch, pcs, box, feet)',
       },
 
       unit: {
         type: DataTypes.STRING,
         allowNull: true,
-        comment: "Optional unit of measurement (e.g., inch, mm, pcs)",
+        comment: 'Optional unit of measurement (e.g., inch, mm, pcs)',
       },
 
       createdAt: {
@@ -39,9 +38,9 @@ module.exports = (sequelize, DataTypes) => {
       },
     },
     {
-      tableName: "product_metas",
+      tableName: 'product_metas',
       timestamps: false,
-    }
+    },
   );
 
   return ProductMeta;

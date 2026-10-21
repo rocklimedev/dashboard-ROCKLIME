@@ -1,12 +1,12 @@
-import React from "react";
-import { Modal, Form, Select } from "antd";
+import React from 'react';
+import { Modal, Form, Select } from 'antd';
 
 const { Option } = Select;
 
 export const AREA_OPTIONS = [
-  { value: "shower", label: "Shower Area" },
-  { value: "basin", label: "Basin Area" },
-  { value: "wc", label: "WC Area" },
+  { value: 'shower', label: 'Shower Area' },
+  { value: 'basin', label: 'Basin Area' },
+  { value: 'wc', label: 'WC Area' },
 ];
 
 export default function AddAreaModal({ visible, onCancel, onFinish, form }) {
@@ -22,7 +22,7 @@ export default function AddAreaModal({ visible, onCancel, onFinish, form }) {
         <Form.Item
           name="areaType"
           label="Area Type"
-          rules={[{ required: true, message: "Please select an area type" }]}
+          rules={[{ required: true, message: 'Please select an area type' }]}
         >
           <Select placeholder="Select one of the 3 standard areas">
             {AREA_OPTIONS.map((opt) => (

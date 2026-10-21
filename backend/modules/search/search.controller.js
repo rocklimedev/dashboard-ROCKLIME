@@ -1,4 +1,4 @@
-const { Op } = require("sequelize");
+const { Op } = require('sequelize');
 
 const {
   sequelize,
@@ -13,7 +13,7 @@ const {
   User,
   Vendor,
   PurchaseOrder,
-} = require("../../models");
+} = require('../../models');
 
 const searchAll = async (req, res) => {
   try {
@@ -22,7 +22,7 @@ const searchAll = async (req, res) => {
     if (!query || query.trim().length < 2) {
       return res.status(400).json({
         success: false,
-        message: "Search query must be at least 2 characters long",
+        message: 'Search query must be at least 2 characters long',
       });
     }
 
@@ -42,31 +42,28 @@ const searchAll = async (req, res) => {
 
     const searchConfigs = [
       {
-        key: "Product",
+        key: 'Product',
         model: Product,
         attributes: [
-          "productId",
-          "name",
-          "product_code",
-          "quantity",
-          "images",
-          "meta",
-          "updatedAt",
+          'productId',
+          'name',
+          'product_code',
+          'quantity',
+          'images',
+          'meta',
+          'updatedAt',
         ],
         limit: pageSize,
         order: [
-          ["updatedAt", "DESC"],
-          ["name", "ASC"],
+          ['updatedAt', 'DESC'],
+          ['name', 'ASC'],
         ],
         customWhere: () => ({
           [Op.or]: [
             { name: { [Op.like]: searchTerm } },
             { product_code: { [Op.like]: searchTerm } },
             sequelize.where(
-              sequelize.fn(
-                "LOWER",
-                sequelize.cast(sequelize.col("meta"), "CHAR"),
-              ),
+              sequelize.fn('LOWER', sequelize.cast(sequelize.col('meta'), 'CHAR')),
               Op.like,
               `%${rawQuery}%`,
             ),
@@ -74,26 +71,20 @@ const searchAll = async (req, res) => {
         }),
       },
       {
-        key: "Customer",
+        key: 'Customer',
         model: Customer,
-        attributes: [
-          "customerId",
-          "name",
-          "email",
-          "mobileNumber",
-          "customerType",
-        ],
-        fields: ["name", "email", "mobileNumber", "companyName", "gstNumber"],
+        attributes: ['customerId', 'name', 'email', 'mobileNumber', 'customerType'],
+        fields: ['name', 'email', 'mobileNumber', 'companyName', 'gstNumber'],
       },
       {
-        key: "Quotation",
+        key: 'Quotation',
         model: Quotation,
         attributes: [
-          "quotationId",
-          "document_title",
-          "reference_number",
-          "finalAmount",
-          "quotation_date",
+          'quotationId',
+          'document_title',
+          'reference_number',
+          'finalAmount',
+          'quotation_date',
         ],
         customWhere: () => ({
           [Op.or]: [
@@ -104,9 +95,9 @@ const searchAll = async (req, res) => {
         }),
       },
       {
-        key: "Order",
+        key: 'Order',
         model: Order,
-        attributes: ["id", "orderNo", "status", "finalAmount", "createdAt"],
+        attributes: ['id', 'orderNo', 'status', 'finalAmount', 'createdAt'],
         customWhere: () => ({
           [Op.or]: [
             { orderNo: { [Op.like]: searchTerm } },
@@ -115,28 +106,28 @@ const searchAll = async (req, res) => {
         }),
       },
       {
-        key: "Brand",
+        key: 'Brand',
         model: Brand,
-        attributes: ["id", "brandName", "brandSlug"],
-        fields: ["brandName", "brandSlug"],
+        attributes: ['id', 'brandName', 'brandSlug'],
+        fields: ['brandName', 'brandSlug'],
       },
       {
-        key: "Category",
+        key: 'Category',
         model: Category,
-        attributes: ["categoryId", "name"],
-        fields: ["name"],
+        attributes: ['categoryId', 'name'],
+        fields: ['name'],
       },
       {
-        key: "Vendor",
+        key: 'Vendor',
         model: Vendor,
-        attributes: ["id", "vendorName"],
-        fields: ["vendorName", "vendorId"],
+        attributes: ['id', 'vendorName'],
+        fields: ['vendorName', 'vendorId'],
       },
       {
-        key: "PurchaseOrder",
+        key: 'PurchaseOrder',
         model: PurchaseOrder,
-        attributes: ["id", "poNumber", "status", "totalAmount", "orderDate"],
-        fields: ["poNumber"],
+        attributes: ['id', 'poNumber', 'status', 'totalAmount', 'orderDate'],
+        fields: ['poNumber'],
       },
     ];
 
@@ -155,7 +146,7 @@ const searchAll = async (req, res) => {
 
           const limitToUse = config.limit || pageSize;
           const offsetToUse =
-            config.key === "Product"
+            config.key === 'Product'
               ? globalOffset // Use real pagination for Product
               : globalOffset;
 
@@ -164,7 +155,7 @@ const searchAll = async (req, res) => {
             attributes: config.attributes,
             limit: limitToUse,
             offset: offsetToUse,
-            order: config.order || [["createdAt", "DESC"]],
+            order: config.order || [['createdAt', 'DESC']],
           });
 
           results[config.key] = {
@@ -187,10 +178,7 @@ const searchAll = async (req, res) => {
       }),
     );
 
-    const totalResults = Object.values(results).reduce(
-      (sum, cat) => sum + (cat.total || 0),
-      0,
-    );
+    const totalResults = Object.values(results).reduce((sum, cat) => sum + (cat.total || 0), 0);
 
     return res.json({
       success: true,
@@ -207,7 +195,7 @@ const searchAll = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "An error occurred while searching",
+      message: 'An error occurred while searching',
     });
   }
 };

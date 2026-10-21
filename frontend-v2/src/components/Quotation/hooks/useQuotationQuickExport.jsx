@@ -1,10 +1,10 @@
 // src/components/Quotation/hooks/useQuotationQuickExport.js
-import { useState, useRef } from "react";
-import { message } from "antd";
-import { createRoot } from "react-dom/client";
+import { useState, useRef } from 'react';
+import { message } from 'antd';
+import { createRoot } from 'react-dom/client';
 
-import { exportToPDF, exportToExcel, getSafeTitle } from "./exportHelpers";
-import { QuotationPagesRenderer } from "../QuotationPagesRenderer";
+import { exportToPDF, exportToExcel, getSafeTitle } from './exportHelpers';
+import { QuotationPagesRenderer } from '../QuotationPagesRenderer';
 
 export const useQuotationQuickExport = () => {
   const [exportingId, setExportingId] = useState(null);
@@ -15,7 +15,7 @@ export const useQuotationQuickExport = () => {
   // ────────────────────────────────────────────────
   const waitForImagesToLoad = (container) => {
     return new Promise((resolve) => {
-      const images = [...container.querySelectorAll("img")];
+      const images = [...container.querySelectorAll('img')];
       if (images.length === 0) return resolve();
 
       let settledCount = 0;
@@ -35,7 +35,7 @@ export const useQuotationQuickExport = () => {
 
           // Force reload attempt (helps with some caching/CORS weirdness)
           const originalSrc = img.src;
-          img.src = "";
+          img.src = '';
           setTimeout(() => {
             img.src = originalSrc;
           }, 50);
@@ -59,10 +59,10 @@ export const useQuotationQuickExport = () => {
   // ────────────────────────────────────────────────
   const exportQuotation = async ({
     quotation,
-    customerName = "Dear Client",
-    customerPhone = "—",
-    customerAddress = "—",
-    brandNames = "GROHE / AMERICAN STANDARD",
+    customerName = 'Dear Client',
+    customerPhone = '—',
+    customerAddress = '—',
+    brandNames = 'GROHE / AMERICAN STANDARD',
     mainProducts = [],
     optionalProducts = [],
     displaySubtotal = 0,
@@ -70,11 +70,11 @@ export const useQuotationQuickExport = () => {
     backendExtraDiscount = 0,
     backendFinalAmount = 0,
     backendRoundOff = 0,
-    finalAmountInWords = "",
-    format = "pdf", // "pdf" | "excel"
+    finalAmountInWords = '',
+    format = 'pdf', // "pdf" | "excel"
   }) => {
     if (!quotation?.quotationId) {
-      message.error("Invalid quotation data");
+      message.error('Invalid quotation data');
       return;
     }
 
@@ -90,27 +90,27 @@ export const useQuotationQuickExport = () => {
     try {
       // Safety timeout: force stop after 45 seconds
       timeoutId = setTimeout(() => {
-        message.warning("Export is taking too long — cancelled");
+        message.warning('Export is taking too long — cancelled');
         cleanup();
       }, 45000);
 
       // 1. Clear previous content
       if (hiddenContainerRef.current) {
-        hiddenContainerRef.current.innerHTML = "";
+        hiddenContainerRef.current.innerHTML = '';
       }
 
       // 2. Create real DOM container for rendering
-      printArea = document.createElement("div");
-      printArea.style.width = "210mm";
-      printArea.style.position = "absolute";
-      printArea.style.left = "-9999px";
-      printArea.style.top = "-9999px";
-      printArea.style.background = "white";
+      printArea = document.createElement('div');
+      printArea.style.width = '210mm';
+      printArea.style.position = 'absolute';
+      printArea.style.left = '-9999px';
+      printArea.style.top = '-9999px';
+      printArea.style.background = 'white';
 
       // 3. Mount React renderer
       root = createRoot(printArea);
       root.render(
-        <div style={{ width: "210mm", background: "white" }}>
+        <div style={{ width: '210mm', background: 'white' }}>
           {QuotationPagesRenderer({
             quotation,
             mainProducts,
@@ -144,19 +144,13 @@ export const useQuotationQuickExport = () => {
       // 7. Prepare filename
       const safeTitle = getSafeTitle(quotation);
       const ref = quotation.reference_number || id;
-      const filename = `${safeTitle}_${ref}_v1.${format === "pdf" ? "pdf" : "xlsx"}`;
+      const filename = `${safeTitle}_${ref}_v1.${format === 'pdf' ? 'pdf' : 'xlsx'}`;
 
       // 8. Export logic...
-      const pages = printArea.querySelectorAll(".page");
+      const pages = printArea.querySelectorAll('.page');
 
-      if (format === "pdf") {
-        await exportToPDF(
-          { current: printArea },
-          id,
-          "current",
-          quotation,
-          filename,
-        );
+      if (format === 'pdf') {
+        await exportToPDF({ current: printArea }, id, 'current', quotation, filename);
 
         // If you want page-by-page later, uncomment and adjust here
       } else {
@@ -169,13 +163,13 @@ export const useQuotationQuickExport = () => {
           customerAddress,
           null, // logo
           {
-            bankName: "IDFC FIRST BANK",
-            accountNumber: "10179373657",
-            ifscCode: "IDFB0020149",
-            branch: "BHERA ENCLAVE PASCHIM VIHAR",
+            bankName: 'IDFC FIRST BANK',
+            accountNumber: '10179373657',
+            ifscCode: 'IDFB0020149',
+            branch: 'BHERA ENCLAVE PASCHIM VIHAR',
           },
           id,
-          "current",
+          'current',
           optionalProducts,
           filename,
         );
@@ -183,7 +177,7 @@ export const useQuotationQuickExport = () => {
 
       message.success(`${format.toUpperCase()} exported successfully`);
     } catch (err) {
-      message.error(`Export failed: ${err.message || "Unknown error"}`);
+      message.error(`Export failed: ${err.message || 'Unknown error'}`);
     } finally {
       clearTimeout(timeoutId);
       cleanup();
@@ -195,7 +189,7 @@ export const useQuotationQuickExport = () => {
         try {
           root.unmount();
         } catch (e) {
-          console.warn("Unmount failed", e);
+          console.warn('Unmount failed', e);
         }
       }
       if (printArea && printArea.parentNode) {

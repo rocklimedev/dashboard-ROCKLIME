@@ -1,38 +1,36 @@
-import { baseApi } from "../store/baseApi";
+import { baseApi } from '../store/baseApi';
 export const parentCategoryApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getAllParentCategories: builder.query({
-      query: () => "/parent-categories/",
-      providesTags: ["ParentCategory"],
+      query: () => '/parent-categories/',
+      providesTags: ['ParentCategory'],
     }),
     getParentCategoryById: builder.query({
       query: (id) => `/parent-categories/${id}`,
-      providesTags: (result, error, id) => [{ type: "ParentCategory", id }],
+      providesTags: (result, error, id) => [{ type: 'ParentCategory', id }],
     }),
     createParentCategory: builder.mutation({
       query: (newCategory) => ({
-        url: "/parent-categories/",
-        method: "POST",
+        url: '/parent-categories/',
+        method: 'POST',
         body: newCategory,
       }),
-      invalidatesTags: ["ParentCategory"],
+      invalidatesTags: ['ParentCategory'],
     }),
     updateParentCategory: builder.mutation({
       query: ({ id, updatedData }) => ({
         url: `/parent-categories/${id}`,
-        method: "PUT",
+        method: 'PUT',
         body: updatedData,
       }),
-      invalidatesTags: (result, error, { id }) => [
-        { type: "ParentCategory", id },
-      ],
+      invalidatesTags: (result, error, { id }) => [{ type: 'ParentCategory', id }],
     }),
     deleteParentCategory: builder.mutation({
       query: (id) => ({
         url: `/parent-categories/${id}`,
-        method: "DELETE",
+        method: 'DELETE',
       }),
-      invalidatesTags: ["ParentCategory"],
+      invalidatesTags: ['ParentCategory'],
     }),
   }),
 });

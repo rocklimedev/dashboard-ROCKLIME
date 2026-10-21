@@ -4,7 +4,7 @@
 // Immutable: no updatedAt, entries are never edited after creation.
 module.exports = (sequelize, DataTypes) => {
   const OrderActivity = sequelize.define(
-    "OrderActivity",
+    'OrderActivity',
     {
       id: {
         type: DataTypes.UUID,
@@ -62,27 +62,27 @@ module.exports = (sequelize, DataTypes) => {
       },
     },
     {
-      tableName: "order_activity",
+      tableName: 'order_activity',
       timestamps: true,
       updatedAt: false,
       indexes: [
-        { fields: ["orderId"] },
-        { fields: ["orderNo"] },
-        { fields: ["action"] },
-        { fields: ["createdAt"] },
+        { fields: ['orderId'] },
+        { fields: ['orderNo'] },
+        { fields: ['action'] },
+        { fields: ['createdAt'] },
       ],
     },
   );
 
   OrderActivity.associate = (models) => {
     OrderActivity.belongsTo(models.Order, {
-      foreignKey: "orderId",
-      as: "order",
+      foreignKey: 'orderId',
+      as: 'order',
     });
 
     OrderActivity.belongsTo(models.User, {
-      foreignKey: "performedBy",
-      as: "performedByUser",
+      foreignKey: 'performedBy',
+      as: 'performedByUser',
     });
   };
 

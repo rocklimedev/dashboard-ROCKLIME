@@ -1,7 +1,7 @@
 // models/Keyword.js
 module.exports = (sequelize, DataTypes) => {
   const Keyword = sequelize.define(
-    "Keyword",
+    'Keyword',
     {
       id: {
         type: DataTypes.UUID,
@@ -23,11 +23,11 @@ module.exports = (sequelize, DataTypes) => {
       },
     },
     {
-      tableName: "keywords",
+      tableName: 'keywords',
       timestamps: true,
       indexes: [
-        { unique: true, fields: ["keyword"] },
-        { fields: ["categoryId"] },
+        { unique: true, fields: ['keyword'] },
+        { fields: ['categoryId'] },
 
         // Remove or comment these 7 lines when using MySQL/MariaDB
         // {
@@ -44,7 +44,7 @@ module.exports = (sequelize, DataTypes) => {
           }
         },
       },
-    }
+    },
   );
 
   // ----------------------------------------
@@ -53,22 +53,22 @@ module.exports = (sequelize, DataTypes) => {
   Keyword.associate = (models) => {
     // Keyword → Category (M:1)
     Keyword.belongsTo(models.Category, {
-      foreignKey: "categoryId",
-      as: "category",
+      foreignKey: 'categoryId',
+      as: 'category',
     });
 
     // Keyword ↔ Product (M:N)
     Keyword.belongsToMany(models.Product, {
       through: models.ProductKeyword,
-      foreignKey: "keywordId",
-      otherKey: "productId",
-      as: "products",
+      foreignKey: 'keywordId',
+      otherKey: 'productId',
+      as: 'products',
     });
 
     // Keyword → ProductKeyword (1:M)
     Keyword.hasMany(models.ProductKeyword, {
-      foreignKey: "keywordId",
-      as: "productKeywordMappings",
+      foreignKey: 'keywordId',
+      as: 'productKeywordMappings',
     });
   };
 

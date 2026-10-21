@@ -2,7 +2,7 @@
 
 module.exports = (sequelize, DataTypes) => {
   const Order = sequelize.define(
-    "Order",
+    'Order',
     {
       // -----------------------------------------------------------
       // BASIC
@@ -33,30 +33,30 @@ module.exports = (sequelize, DataTypes) => {
       // -----------------------------------------------------------
       status: {
         type: DataTypes.ENUM(
-          "DRAFT",
-          "PREPARING",
-          "CHECKING",
-          "INVOICE",
-          "PARTIALLY_DISPATCHED",
-          "DISPATCHED",
-          "PARTIALLY_DELIVERED",
-          "DELIVERED",
-          "RETURNED",
-          "ONHOLD",
-          "CANCELED",
-          "CLOSED",
+          'DRAFT',
+          'PREPARING',
+          'CHECKING',
+          'INVOICE',
+          'PARTIALLY_DISPATCHED',
+          'DISPATCHED',
+          'PARTIALLY_DELIVERED',
+          'DELIVERED',
+          'RETURNED',
+          'ONHOLD',
+          'CANCELED',
+          'CLOSED',
         ),
         allowNull: false,
-        defaultValue: "DRAFT",
+        defaultValue: 'DRAFT',
       },
 
       // -----------------------------------------------------------
       // PRIORITY
       // -----------------------------------------------------------
       priority: {
-        type: DataTypes.ENUM("high", "medium", "low"),
+        type: DataTypes.ENUM('high', 'medium', 'low'),
         allowNull: false,
-        defaultValue: "medium",
+        defaultValue: 'medium',
       },
 
       // -----------------------------------------------------------
@@ -199,7 +199,7 @@ module.exports = (sequelize, DataTypes) => {
       },
 
       extraDiscountType: {
-        type: DataTypes.ENUM("percent", "fixed"),
+        type: DataTypes.ENUM('percent', 'fixed'),
         allowNull: true,
       },
 
@@ -226,51 +226,51 @@ module.exports = (sequelize, DataTypes) => {
     // MODEL OPTIONS
     // -----------------------------------------------------------
     {
-      tableName: "orders",
+      tableName: 'orders',
 
       timestamps: true,
 
       indexes: [
         {
           unique: true,
-          fields: ["orderNo"],
+          fields: ['orderNo'],
         },
 
         {
-          fields: ["status"],
+          fields: ['status'],
         },
 
         {
-          fields: ["createdFor"],
+          fields: ['createdFor'],
         },
 
         {
-          fields: ["createdBy"],
+          fields: ['createdBy'],
         },
 
         {
-          fields: ["assignedUserId"],
+          fields: ['assignedUserId'],
         },
 
         {
-          fields: ["dueDate"],
+          fields: ['dueDate'],
         },
 
         {
-          fields: ["quotationId"],
+          fields: ['quotationId'],
         },
 
         {
-          fields: ["finalAmount"],
+          fields: ['finalAmount'],
         },
 
         {
-          fields: ["createdAt"],
+          fields: ['createdAt'],
         },
 
         {
-          name: "idx_order_status_date",
-          fields: ["status", "createdAt"],
+          name: 'idx_order_status_date',
+          fields: ['status', 'createdAt'],
         },
       ],
     },
@@ -286,18 +286,18 @@ module.exports = (sequelize, DataTypes) => {
     // ---------------------------------------------------------
 
     Order.belongsTo(models.User, {
-      foreignKey: "secondaryUserId",
-      as: "secondaryUser",
+      foreignKey: 'secondaryUserId',
+      as: 'secondaryUser',
     });
 
     Order.belongsTo(models.User, {
-      foreignKey: "createdBy",
-      as: "creator",
+      foreignKey: 'createdBy',
+      as: 'creator',
     });
 
     Order.belongsTo(models.User, {
-      foreignKey: "assignedUserId",
-      as: "assignedUser",
+      foreignKey: 'assignedUserId',
+      as: 'assignedUser',
     });
 
     // ---------------------------------------------------------
@@ -305,8 +305,8 @@ module.exports = (sequelize, DataTypes) => {
     // ---------------------------------------------------------
 
     Order.belongsTo(models.Team, {
-      foreignKey: "assignedTeamId",
-      as: "assignedTeam",
+      foreignKey: 'assignedTeamId',
+      as: 'assignedTeam',
     });
 
     // ---------------------------------------------------------
@@ -314,8 +314,8 @@ module.exports = (sequelize, DataTypes) => {
     // ---------------------------------------------------------
 
     Order.belongsTo(models.Customer, {
-      foreignKey: "createdFor",
-      as: "customer",
+      foreignKey: 'createdFor',
+      as: 'customer',
     });
 
     // ---------------------------------------------------------
@@ -323,8 +323,8 @@ module.exports = (sequelize, DataTypes) => {
     // ---------------------------------------------------------
 
     Order.belongsTo(models.Address, {
-      foreignKey: "shipTo",
-      as: "shippingAddress",
+      foreignKey: 'shipTo',
+      as: 'shippingAddress',
     });
 
     // ---------------------------------------------------------
@@ -332,8 +332,8 @@ module.exports = (sequelize, DataTypes) => {
     // ---------------------------------------------------------
 
     Order.belongsTo(models.Quotation, {
-      foreignKey: "quotationId",
-      as: "quotation",
+      foreignKey: 'quotationId',
+      as: 'quotation',
     });
 
     // ---------------------------------------------------------
@@ -341,15 +341,15 @@ module.exports = (sequelize, DataTypes) => {
     // ---------------------------------------------------------
 
     Order.hasMany(models.Order, {
-      foreignKey: "previousOrderNo",
-      sourceKey: "orderNo",
-      as: "nextOrders",
+      foreignKey: 'previousOrderNo',
+      sourceKey: 'orderNo',
+      as: 'nextOrders',
     });
 
     Order.belongsTo(models.Order, {
-      foreignKey: "previousOrderNo",
-      targetKey: "orderNo",
-      as: "previousOrder",
+      foreignKey: 'previousOrderNo',
+      targetKey: 'orderNo',
+      as: 'previousOrder',
     });
 
     // ---------------------------------------------------------
@@ -357,15 +357,15 @@ module.exports = (sequelize, DataTypes) => {
     // ---------------------------------------------------------
 
     Order.hasMany(models.Order, {
-      foreignKey: "masterPipelineNo",
-      sourceKey: "orderNo",
-      as: "pipelineOrders",
+      foreignKey: 'masterPipelineNo',
+      sourceKey: 'orderNo',
+      as: 'pipelineOrders',
     });
 
     Order.belongsTo(models.Order, {
-      foreignKey: "masterPipelineNo",
-      targetKey: "orderNo",
-      as: "masterOrder",
+      foreignKey: 'masterPipelineNo',
+      targetKey: 'orderNo',
+      as: 'masterOrder',
     });
 
     // =========================================================
@@ -382,8 +382,8 @@ module.exports = (sequelize, DataTypes) => {
     // Each dispatch contains its own items/quantities.
     //
     Order.hasMany(models.OrderDispatch, {
-      foreignKey: "orderId",
-      as: "dispatches",
+      foreignKey: 'orderId',
+      as: 'dispatches',
     });
 
     // =========================================================
@@ -404,8 +404,8 @@ module.exports = (sequelize, DataTypes) => {
     // This supports partial returns by product and quantity.
     //
     Order.hasMany(models.OrderCreditNote, {
-      foreignKey: "orderId",
-      as: "creditNotes",
+      foreignKey: 'orderId',
+      as: 'creditNotes',
     });
 
     // =========================================================
@@ -423,8 +423,8 @@ module.exports = (sequelize, DataTypes) => {
     // etc.
     //
     Order.hasMany(models.OrderActivity, {
-      foreignKey: "orderId",
-      as: "activityLog",
+      foreignKey: 'orderId',
+      as: 'activityLog',
     });
   };
 

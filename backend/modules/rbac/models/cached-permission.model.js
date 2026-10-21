@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const cachedPermissionSchema = new mongoose.Schema(
   {
@@ -39,9 +39,6 @@ cachedPermissionSchema.index({ fetchedAt: 1 }, { expireAfterSeconds: 86400 });
 // Ensure no duplicates per user-role combo
 cachedPermissionSchema.index({ userId: 1, roleId: 1 }, { unique: true });
 
-const CachedPermission = mongoose.model(
-  "CachedPermission",
-  cachedPermissionSchema,
-);
+const CachedPermission = mongoose.model('CachedPermission', cachedPermissionSchema);
 
 module.exports = CachedPermission;

@@ -1,28 +1,13 @@
-import React, { useState, useEffect, useMemo } from "react";
-import {
-  Modal,
-  Table,
-  Spin,
-  Empty,
-  Alert,
-  Tag,
-  Typography,
-  Button,
-  Space,
-  message,
-} from "antd";
-import {
-  FileExcelOutlined,
-  FilePdfOutlined,
-  EyeOutlined,
-} from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
-import { useGetHistoryByProductIdQuery } from "../../api/productApi";
-import { useGetAllUsersQuery } from "../../api/userApi";
-import dayjs from "dayjs";
-import * as XLSX from "xlsx";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import React, { useState, useEffect, useMemo } from 'react';
+import { Modal, Table, Spin, Empty, Alert, Tag, Typography, Button, Space, message } from 'antd';
+import { FileExcelOutlined, FilePdfOutlined, EyeOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
+import { useGetHistoryByProductIdQuery } from '../../api/productApi';
+import { useGetAllUsersQuery } from '../../api/userApi';
+import dayjs from 'dayjs';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const { Text } = Typography;
 
@@ -45,7 +30,7 @@ const HistoryModalAntD = ({ open, onCancel, product }) => {
       const map = {};
 
       usersData.users.forEach((user) => {
-        map[user.userId] = user.name || user.username || "Unknown User";
+        map[user.userId] = user.name || user.username || 'Unknown User';
       });
 
       setUserMap(map);
@@ -61,26 +46,26 @@ const HistoryModalAntD = ({ open, onCancel, product }) => {
   }, [dataSource]);
   const exportToExcel = () => {
     if (!dataSource.length) {
-      return message.warning("No data to export");
+      return message.warning('No data to export');
     }
 
     const worksheetData = dataSource.map((item) => ({
-      Date: dayjs(item.createdAt).format("DD MMM YYYY HH:mm"),
-      Action: item.action === "add-stock" ? "Stock In" : "Stock Out",
+      Date: dayjs(item.createdAt).format('DD MMM YYYY HH:mm'),
+      Action: item.action === 'add-stock' ? 'Stock In' : 'Stock Out',
       Change: item.change > 0 ? `+${item.change}` : item.change,
-      "Qty After": item.quantityAfter,
-      "Order No": item.orderNo || "-",
-      User: item.userId ? userMap[item.userId] || "Unknown" : "System",
-      Note: item.message || "-",
+      'Qty After': item.quantityAfter,
+      'Order No': item.orderNo || '-',
+      User: item.userId ? userMap[item.userId] || 'Unknown' : 'System',
+      Note: item.message || '-',
     }));
 
     const ws = XLSX.utils.json_to_sheet(worksheetData);
 
     const wb = XLSX.utils.book_new();
 
-    XLSX.utils.book_append_sheet(wb, ws, "Stock History");
+    XLSX.utils.book_append_sheet(wb, ws, 'Stock History');
 
-    ws["!cols"] = [
+    ws['!cols'] = [
       { wch: 18 },
       { wch: 12 },
       { wch: 10 },
@@ -92,108 +77,100 @@ const HistoryModalAntD = ({ open, onCancel, product }) => {
 
     XLSX.writeFile(
       wb,
-      `${product?.name || "Product"}_Stock_History_${dayjs().format(
-        "YYYY-MM-DD",
-      )}.xlsx`,
+      `${product?.name || 'Product'}_Stock_History_${dayjs().format('YYYY-MM-DD')}.xlsx`,
     );
 
-    message.success("Excel report downloaded");
+    message.success('Excel report downloaded');
   };
 
   const exportToPDF = () => {
     if (!dataSource.length) {
-      return message.warning("No data to export");
+      return message.warning('No data to export');
     }
 
-    const doc = new jsPDF("landscape", "mm", "a4");
+    const doc = new jsPDF('landscape', 'mm', 'a4');
 
-    const head = [
-      ["Date", "Action", "Change", "Qty After", "Order No", "User", "Note"],
-    ];
+    const head = [['Date', 'Action', 'Change', 'Qty After', 'Order No', 'User', 'Note']];
 
     const body = dataSource.map((item) => [
-      dayjs(item.createdAt).format("DD MMM YYYY HH:mm"),
-      item.action === "add-stock" ? "Stock In" : "Stock Out",
+      dayjs(item.createdAt).format('DD MMM YYYY HH:mm'),
+      item.action === 'add-stock' ? 'Stock In' : 'Stock Out',
       item.change > 0 ? `+${item.change}` : item.change,
       item.quantityAfter,
-      item.orderNo || "-",
-      item.userId ? userMap[item.userId] || "Unknown" : "System",
-      item.message || "-",
+      item.orderNo || '-',
+      item.userId ? userMap[item.userId] || 'Unknown' : 'System',
+      item.message || '-',
     ]);
 
     doc.setFontSize(16);
 
-    doc.text(`Stock History Report - ${product?.name || "Product"}`, 14, 15);
+    doc.text(`Stock History Report - ${product?.name || 'Product'}`, 14, 15);
 
     doc.setFontSize(10);
 
-    doc.text(`Generated On: ${dayjs().format("DD MMM YYYY HH:mm")}`, 14, 22);
+    doc.text(`Generated On: ${dayjs().format('DD MMM YYYY HH:mm')}`, 14, 22);
 
     autoTable(doc, {
       head,
       body,
       startY: 30,
-      theme: "grid",
+      theme: 'grid',
       styles: {
         fontSize: 8,
       },
     });
 
-    doc.save(`${product?.name || "Product"}_Stock_History.pdf`);
+    doc.save(`${product?.name || 'Product'}_Stock_History.pdf`);
 
-    message.success("PDF report downloaded");
+    message.success('PDF report downloaded');
   };
 
   const columns = useMemo(
     () => [
       {
-        title: "Date & Time",
-        dataIndex: "timestamp", // ← Changed
-        key: "date",
+        title: 'Date & Time',
+        dataIndex: 'timestamp', // ← Changed
+        key: 'date',
         width: 180,
-        render: (timestamp) => dayjs(timestamp).format("DD MMM YYYY, HH:mm"),
+        render: (timestamp) => dayjs(timestamp).format('DD MMM YYYY, HH:mm'),
       },
       {
-        title: "Action",
-        dataIndex: "action",
-        key: "action",
+        title: 'Action',
+        dataIndex: 'action',
+        key: 'action',
         width: 130,
         render: (action) => {
           const colorMap = {
-            "add-stock": "green",
-            "remove-stock": "red",
-            sale: "volcano",
-            return: "blue",
-            adjustment: "orange",
-            correction: "purple",
+            'add-stock': 'green',
+            'remove-stock': 'red',
+            sale: 'volcano',
+            return: 'blue',
+            adjustment: 'orange',
+            correction: 'purple',
           };
 
           const labelMap = {
-            "add-stock": "Stock In",
-            "remove-stock": "Stock Out",
-            sale: "Sale",
-            return: "Return",
-            adjustment: "Adjustment",
-            correction: "Correction",
+            'add-stock': 'Stock In',
+            'remove-stock': 'Stock Out',
+            sale: 'Sale',
+            return: 'Return',
+            adjustment: 'Adjustment',
+            correction: 'Correction',
           };
 
-          return (
-            <Tag color={colorMap[action] || "default"}>
-              {labelMap[action] || action}
-            </Tag>
-          );
+          return <Tag color={colorMap[action] || 'default'}>{labelMap[action] || action}</Tag>;
         },
       },
       {
-        title: "Change",
-        dataIndex: "change",
+        title: 'Change',
+        dataIndex: 'change',
         width: 100,
-        align: "center",
+        align: 'center',
         render: (change) => (
           <Text
             strong
             style={{
-              color: change > 0 ? "#52c41a" : "#f5222d",
+              color: change > 0 ? '#52c41a' : '#f5222d',
             }}
           >
             {change > 0 ? `+${change}` : change}
@@ -201,31 +178,26 @@ const HistoryModalAntD = ({ open, onCancel, product }) => {
         ),
       },
       {
-        title: "Qty After",
-        dataIndex: "quantityAfter",
+        title: 'Qty After',
+        dataIndex: 'quantityAfter',
         width: 100,
-        align: "center",
+        align: 'center',
       },
       {
-        title: "Order No",
-        dataIndex: "orderNo",
+        title: 'Order No',
+        dataIndex: 'orderNo',
         width: 130,
         render: (orderNo) =>
-          orderNo ? (
-            <Text code>{orderNo}</Text>
-          ) : (
-            <Text type="secondary">-</Text>
-          ),
+          orderNo ? <Text code>{orderNo}</Text> : <Text type="secondary">-</Text>,
       },
       {
-        title: "User",
-        dataIndex: "userId",
-        render: (userId) =>
-          userId ? userMap[userId] || "Unknown User" : "System",
+        title: 'User',
+        dataIndex: 'userId',
+        render: (userId) => (userId ? userMap[userId] || 'Unknown User' : 'System'),
       },
       {
-        title: "Note",
-        dataIndex: "message",
+        title: 'Note',
+        dataIndex: 'message',
         render: (msg) => msg || <Text type="secondary">—</Text>,
       },
     ],
@@ -241,15 +213,15 @@ const HistoryModalAntD = ({ open, onCancel, product }) => {
       title={
         <div
           style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
           }}
         >
-          {" "}
+          {' '}
           <div>
-            {" "}
-            <strong>Stock History </strong> — {product?.name}{" "}
+            {' '}
+            <strong>Stock History </strong> — {product?.name}{' '}
           </div>
           {dataSource.length > 0 && (
             <Space>
@@ -268,7 +240,7 @@ const HistoryModalAntD = ({ open, onCancel, product }) => {
       {isLoading && (
         <div
           style={{
-            textAlign: "center",
+            textAlign: 'center',
             padding: 40,
           }}
         >
@@ -276,9 +248,7 @@ const HistoryModalAntD = ({ open, onCancel, product }) => {
         </div>
       )}
 
-      {error && (
-        <Alert type="error" showIcon message="Failed to load history" />
-      )}
+      {error && <Alert type="error" showIcon message="Failed to load history" />}
 
       {!isLoading && !error && dataSource.length === 0 && (
         <Empty description="No stock movements recorded yet" />
@@ -299,7 +269,7 @@ const HistoryModalAntD = ({ open, onCancel, product }) => {
             <div
               style={{
                 marginTop: 16,
-                textAlign: "center",
+                textAlign: 'center',
               }}
             >
               <Button

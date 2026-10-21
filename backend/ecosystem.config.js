@@ -1,23 +1,23 @@
 module.exports = {
   apps: [
     {
-      name: "api",
-      script: "./index.js", // your Express server
+      name: 'api',
+      script: './index.js', // your Express server
       instances: 1, // or 'max' / -1 for cluster mode
-      exec_mode: "fork", // or 'cluster' if stateless
-      env: { NODE_ENV: "production" },
+      exec_mode: 'fork', // or 'cluster' if stateless
+      env: { NODE_ENV: 'production' },
       autorestart: true,
       restart_delay: 2000,
-      max_memory_restart: "1G",
+      max_memory_restart: '1G',
     },
     {
-      name: "bulk-import-worker",
-      script: "./workers/bulkImportWorker.js",
+      name: 'bulk-import-worker',
+      script: './workers/bulkImportWorker.js',
       instances: 1, // start with 1; increase to 2–4 later
-      exec_mode: "fork",
-      env: { NODE_ENV: "production" },
+      exec_mode: 'fork',
+      env: { NODE_ENV: 'production' },
       autorestart: true,
-      max_memory_restart: "800M",
+      max_memory_restart: '800M',
     },
   ],
 };

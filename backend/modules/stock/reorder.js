@@ -5,14 +5,14 @@
 //   reorder point = product alert quantity (or 10)
 //   target        = 2 × reorder point
 //   suggest       = target − (available + incoming − waiting), rounded up
-const { QueryTypes } = require("sequelize");
-const stock = require("./stock.service");
+const { QueryTypes } = require('sequelize');
+const stock = require('./stock.service');
 
-const m = () => require("../../models");
-const SELLING_PRICE = "9ba862ef-f993-4873-95ef-1fef10036aa5";
+const m = () => require('../../models');
+const SELLING_PRICE = '9ba862ef-f993-4873-95ef-1fef10036aa5';
 const asList = (v) => {
   let x = v;
-  for (let i = 0; i < 3 && typeof x === "string"; i++) {
+  for (let i = 0; i < 3 && typeof x === 'string'; i++) {
     try {
       x = JSON.parse(x);
     } catch {
@@ -23,14 +23,14 @@ const asList = (v) => {
 };
 const asObj = (v) => {
   let x = v;
-  for (let i = 0; i < 3 && typeof x === "string"; i++) {
+  for (let i = 0; i < 3 && typeof x === 'string'; i++) {
     try {
       x = JSON.parse(x);
     } catch {
       return {};
     }
   }
-  return x && typeof x === "object" ? x : {};
+  return x && typeof x === 'object' ? x : {};
 };
 
 /** Pieces still needed by confirmed orders beyond what is reserved for them, per product. */
@@ -43,11 +43,17 @@ async function waitingByProduct() {
   if (!orders.length) return {};
   const ids = orders.map((o) => o.id);
   const [dispatches, reservations] = await Promise.all([
-    sequelize.query("SELECT orderId, items, status FROM order_dispatches WHERE orderId IN (:ids)", { replacements: { ids }, type: QueryTypes.SELECT }),
-    sequelize.query("SELECT orderId, productId, SUM(quantity) AS q FROM stock_reservations WHERE status = 'ACTIVE' AND orderId IN (:ids) GROUP BY orderId, productId", {
+    sequelize.query('SELECT orderId, items, status FROM order_dispatches WHERE orderId IN (:ids)', {
       replacements: { ids },
       type: QueryTypes.SELECT,
     }),
+    sequelize.query(
+      "SELECT orderId, productId, SUM(quantity) AS q FROM stock_reservations WHERE status = 'ACTIVE' AND orderId IN (:ids) GROUP BY orderId, productId",
+      {
+        replacements: { ids },
+        type: QueryTypes.SELECT,
+      },
+    ),
   ]);
   const out = {};
   for (const o of orders) {
@@ -56,9 +62,11 @@ async function waitingByProduct() {
       const pid = l.productId || l.id;
       if (pid) need[pid] = (need[pid] || 0) + (Number(l.quantity) || 0);
     }
-    for (const d of dispatches.filter((x) => x.orderId === o.id && x.status !== "RETURNED"))
-      for (const it of asList(d.items)) if (need[it.productId] != null) need[it.productId] -= Number(it.quantity) || 0;
-    for (const r of reservations.filter((x) => x.orderId === o.id)) if (need[r.productId] != null) need[r.productId] -= Number(r.q) || 0;
+    for (const d of dispatches.filter((x) => x.orderId === o.id && x.status !== 'RETURNED'))
+      for (const it of asList(d.items))
+        if (need[it.productId] != null) need[it.productId] -= Number(it.quantity) || 0;
+    for (const r of reservations.filter((x) => x.orderId === o.id))
+      if (need[r.productId] != null) need[r.productId] -= Number(r.q) || 0;
     for (const [pid, n] of Object.entries(need)) if (n > 0) out[pid] = (out[pid] || 0) + n;
   }
   return out;
@@ -67,10 +75,18 @@ async function waitingByProduct() {
 /** Last unit price paid per product (from purchase orders). */
 async function lastPrices(productIds) {
   if (!productIds.length) return {};
-  const PoItem = require("../purchase-order/models/po-item.model");
-  const docs = await PoItem.find({ "items.productId": { $in: productIds } }).sort({ createdAt: -1 }).limit(500).lean().exec().catch(() => []);
+  const PoItem = require('../purchase-order/models/po-item.model');
+  const docs = await PoItem.find({ 'items.productId': { $in: productIds } })
+    .sort({ createdAt: -1 })
+    .limit(500)
+    .lean()
+    .exec()
+    .catch(() => []);
   const out = {};
-  for (const d of docs) for (const it of d.items || []) if (productIds.includes(it.productId) && out[it.productId] == null && it.unitPrice > 0) out[it.productId] = it.unitPrice;
+  for (const d of docs)
+    for (const it of d.items || [])
+      if (productIds.includes(it.productId) && out[it.productId] == null && it.unitPrice > 0)
+        out[it.productId] = it.unitPrice;
   return out;
 }
 
@@ -117,23 +133,39 @@ async function suggestions() {
   for (const p of picks) {
     p.lastPrice = prices[p.productId] || null;
     p.unitPrice = p.lastPrice || p.sellingPrice || null;
-    p.priceFrom = p.lastPrice ? "last purchase" : p.sellingPrice ? "selling price — confirm with vendor" : "unknown";
+    p.priceFrom = p.lastPrice
+      ? 'last purchase'
+      : p.sellingPrice
+        ? 'selling price — confirm with vendor'
+        : 'unknown';
     p.urgent = p.waiting > 0 && p.available <= 0;
   }
   const groups = {};
   for (const p of picks) {
-    const k = p.vendorId || "none";
-    groups[k] ||= { vendorId: p.vendorId || null, vendorName: p.vendorName || "No vendor set on product", items: [] };
+    const k = p.vendorId || 'none';
+    groups[k] ||= {
+      vendorId: p.vendorId || null,
+      vendorName: p.vendorName || 'No vendor set on product',
+      items: [],
+    };
     groups[k].items.push(p);
   }
   return Object.values(groups)
     .map((g) => ({
       ...g,
-      items: g.items.sort((a, b) => Number(b.urgent) - Number(a.urgent) || b.waiting - a.waiting || a.available - b.available),
+      items: g.items.sort(
+        (a, b) =>
+          Number(b.urgent) - Number(a.urgent) || b.waiting - a.waiting || a.available - b.available,
+      ),
       urgent: g.items.filter((i) => i.urgent).length,
       value: Math.round(g.items.reduce((s, i) => s + (i.unitPrice || 0) * i.suggest, 0)),
     }))
-    .sort((a, b) => (a.vendorId ? 0 : 1) - (b.vendorId ? 0 : 1) || b.urgent - a.urgent || b.items.length - a.items.length);
+    .sort(
+      (a, b) =>
+        (a.vendorId ? 0 : 1) - (b.vendorId ? 0 : 1) ||
+        b.urgent - a.urgent ||
+        b.items.length - a.items.length,
+    );
 }
 
 module.exports = { suggestions, waitingByProduct };

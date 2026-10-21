@@ -8,7 +8,7 @@ const listRoutes = (app) => {
         method: Object.keys(middleware.route.methods)[0].toUpperCase(),
         path: middleware.route.path,
       });
-    } else if (middleware.name === "router") {
+    } else if (middleware.name === 'router') {
       // Nested router (mounted router)
       middleware.handle.stack.forEach((handler) => {
         if (handler.route) {

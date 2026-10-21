@@ -25,7 +25,9 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Slightly stronger shadow */
   border-radius: 12px;
   padding: 1rem;
-  transition: transform 0.3s ease, box-shadow 0.3s ease; /* Smooth hover effect */
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease; /* Smooth hover effect */
   min-height: calc(100px + 5vw); /* Scale height relative to viewport width */
   width: 100%; /* Ensure cards take full available width */
 }

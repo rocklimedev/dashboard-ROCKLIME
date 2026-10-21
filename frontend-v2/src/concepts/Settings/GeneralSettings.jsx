@@ -1,25 +1,21 @@
 // src/pages/settings/GeneralSettings.jsx   (adjust path as needed)
 
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
-import { message, Modal, Button, Typography, Space, Tag } from "antd";
-import {
-  MailOutlined,
-  UserDeleteOutlined,
-  EditOutlined,
-} from "@ant-design/icons";
-import { useDeleteUserMutation, useGetProfileQuery } from "../../api/userApi";
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { message, Modal, Button, Typography, Space, Tag } from 'antd';
+import { MailOutlined, UserDeleteOutlined, EditOutlined } from '@ant-design/icons';
+import { useDeleteUserMutation, useGetProfileQuery } from '../../api/userApi';
 import {
   useResendVerificationEmailMutation,
   useDeactivateAccountMutation,
-} from "../../api/authApi";
-import { logout } from "../../api/userSlice";
-import { Link } from "react-router-dom";
-import PageHeader from "../../components/Common/PageHeader";
-import ChangePasswordModal from "../../components/modals/ChangePasswordModal";
-import "./settingsWrapper.css";
-import { EyeOutlined } from "@ant-design/icons";
+} from '../../api/authApi';
+import { logout } from '../../api/userSlice';
+import { Link } from 'react-router-dom';
+import PageHeader from '../../components/Common/PageHeader';
+import ChangePasswordModal from '../../components/modals/ChangePasswordModal';
+import './settingsWrapper.css';
+import { EyeOutlined } from '@ant-design/icons';
 const { Title, Text } = Typography;
 
 const GeneralSettings = () => {
@@ -28,17 +24,12 @@ const GeneralSettings = () => {
 
   const [deleteUser] = useDeleteUserMutation();
   const [resendVerificationEmail] = useResendVerificationEmailMutation();
-  const [deactivateAccount, { isLoading: isDeactivating }] =
-    useDeactivateAccountMutation();
+  const [deactivateAccount, { isLoading: isDeactivating }] = useDeactivateAccountMutation();
 
-  const {
-    data: profile,
-    isLoading: isProfileLoading,
-    error: profileError,
-  } = useGetProfileQuery();
+  const { data: profile, isLoading: isProfileLoading, error: profileError } = useGetProfileQuery();
 
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [confirmMessage, setConfirmMessage] = useState("");
+  const [confirmMessage, setConfirmMessage] = useState('');
   const [confirmAction, setConfirmAction] = useState(null);
 
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -47,32 +38,25 @@ const GeneralSettings = () => {
   const handleResendVerification = async () => {
     try {
       await resendVerificationEmail({ email: profile?.user?.email }).unwrap();
-      message.success("Verification email sent successfully!");
+      message.success('Verification email sent successfully!');
     } catch (error) {
-      message.error(
-        error?.data?.message || "Failed to send verification email",
-      );
+      message.error(error?.data?.message || 'Failed to send verification email');
     }
   };
 
   const handleDeactivateAccount = async () => {
     try {
       await deactivateAccount().unwrap();
-      message.success(
-        "Account deactivated successfully. You can reactivate by logging in again.",
-      );
+      message.success('Account deactivated successfully. You can reactivate by logging in again.');
       dispatch(logout());
-      navigate("/login");
+      navigate('/login');
     } catch (error) {
-      message.error(
-        error?.data?.message ||
-          "Failed to deactivate account. Please try again.",
-      );
+      message.error(error?.data?.message || 'Failed to deactivate account. Please try again.');
     }
   };
 
   const handleInitiateDeactivate = () => {
-    setConfirmMessage("Are you sure you want to deactivate your account?");
+    setConfirmMessage('Are you sure you want to deactivate your account?');
     setConfirmAction(() => handleDeactivateAccount);
     setShowConfirmModal(true);
   };
@@ -80,17 +64,17 @@ const GeneralSettings = () => {
   const handleDeleteAccount = async () => {
     try {
       await deleteUser().unwrap();
-      message.success("Account permanently deleted.");
+      message.success('Account permanently deleted.');
       dispatch(logout());
-      navigate("/login");
+      navigate('/login');
     } catch (error) {
-      message.error(error?.data?.message || "Failed to delete account");
+      message.error(error?.data?.message || 'Failed to delete account');
     }
   };
 
   const handleInitiateDelete = () => {
     setConfirmMessage(
-      "Are you sure you want to permanently delete your account? This action cannot be undone.",
+      'Are you sure you want to permanently delete your account? This action cannot be undone.',
     );
     setConfirmAction(() => handleDeleteAccount);
     setShowConfirmModal(true);
@@ -101,13 +85,9 @@ const GeneralSettings = () => {
     setShowConfirmModal(false);
   };
 
-  if (isProfileLoading)
-    return <div style={{ padding: 20, textAlign: "center" }}>Loading...</div>;
+  if (isProfileLoading) return <div style={{ padding: 20, textAlign: 'center' }}>Loading...</div>;
 
-  if (profileError)
-    return (
-      <div style={{ padding: 20, color: "red" }}>Error loading profile.</div>
-    );
+  if (profileError) return <div style={{ padding: 20, color: 'red' }}>Error loading profile.</div>;
 
   const user = profile?.user || {};
 
@@ -128,16 +108,16 @@ const GeneralSettings = () => {
             <div className="d-flex align-items-center justify-content-between flex-wrap border-bottom pb-4 mb-4">
               <Space size={16}>
                 <div className="avatar avatar-lg border bg-light d-flex align-items-center justify-content-center">
-                  <MailOutlined style={{ fontSize: 24, color: "#e31e24" }} />
+                  <MailOutlined style={{ fontSize: 24, color: '#e31e24' }} />
                 </div>
                 <div>
                   <Title level={5} style={{ margin: 0 }}>
                     Email Verification
                   </Title>
                   <Text>
-                    Email: <strong>{user.email || "Not available"}</strong>
+                    Email: <strong>{user.email || 'Not available'}</strong>
                     <br />
-                    Status:{" "}
+                    Status:{' '}
                     {user.isEmailVerified ? (
                       <Tag color="success">Verified</Tag>
                     ) : (
@@ -157,7 +137,7 @@ const GeneralSettings = () => {
             <div className="d-flex align-items-center justify-content-between flex-wrap border-bottom pb-4 mb-4">
               <Space size={16}>
                 <div className="avatar avatar-lg border bg-light d-flex align-items-center justify-content-center">
-                  <EyeOutlined style={{ fontSize: 24, color: "#e31e24" }} />
+                  <EyeOutlined style={{ fontSize: 24, color: '#e31e24' }} />
                 </div>
                 <div>
                   <Title level={5} style={{ margin: 0 }}>
@@ -166,8 +146,8 @@ const GeneralSettings = () => {
                   <Text type="secondary">
                     Update your password securely.
                     <br />
-                    Forgot your password?{" "}
-                    <Link to="/forgot-password" style={{ color: "#1890ff" }}>
+                    Forgot your password?{' '}
+                    <Link to="/forgot-password" style={{ color: '#1890ff' }}>
                       Click here to reset it
                     </Link>
                     .
@@ -176,7 +156,7 @@ const GeneralSettings = () => {
               </Space>
               <Button
                 type="primary"
-                style={{ background: "#E31E24", color: "#fff" }}
+                style={{ background: '#E31E24', color: '#fff' }}
                 onClick={() => setShowPasswordModal(true)}
               >
                 Change Password
@@ -187,17 +167,15 @@ const GeneralSettings = () => {
             <div className="d-flex align-items-center justify-content-between flex-wrap border-bottom pb-4 mb-4">
               <Space size={16}>
                 <div className="avatar avatar-lg border bg-light d-flex align-items-center justify-content-center">
-                  <UserDeleteOutlined
-                    style={{ fontSize: 24, color: "#e31e24" }}
-                  />
+                  <UserDeleteOutlined style={{ fontSize: 24, color: '#e31e24' }} />
                 </div>
                 <div>
                   <Title level={5} style={{ margin: 0 }}>
                     Deactivate Account
                   </Title>
                   <Text type="secondary">
-                    This will temporarily disable your account. You can
-                    reactivate it anytime by logging in again.
+                    This will temporarily disable your account. You can reactivate it anytime by
+                    logging in again.
                   </Text>
                 </div>
               </Space>
@@ -210,23 +188,21 @@ const GeneralSettings = () => {
             <div className="d-flex align-items-center justify-content-between flex-wrap">
               <Space size={16}>
                 <div className="avatar avatar-lg border bg-light d-flex align-items-center justify-content-center">
-                  <UserDeleteOutlined
-                    style={{ fontSize: 24, color: "#e31e24" }}
-                  />
+                  <UserDeleteOutlined style={{ fontSize: 24, color: '#e31e24' }} />
                 </div>
                 <div>
                   <Title level={5} style={{ margin: 0 }}>
                     Delete Account
                   </Title>
                   <Text type="secondary">
-                    Permanently delete your account and all associated data.
-                    This action cannot be undone.
+                    Permanently delete your account and all associated data. This action cannot be
+                    undone.
                   </Text>
                 </div>
               </Space>
               <Button
                 type="primary"
-                style={{ background: "#E31E24", color: "#fff" }}
+                style={{ background: '#E31E24', color: '#fff' }}
                 danger
                 onClick={handleInitiateDelete}
               >

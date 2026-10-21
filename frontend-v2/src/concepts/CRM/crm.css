@@ -83,7 +83,9 @@ button.crm-stat:hover {
   flex-direction: column;
   min-width: 0;
   border: 1px solid transparent;
-  transition: background 0.12s ease, border-color 0.12s ease;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease;
 }
 .crm-col.is-loading {
   min-height: 300px;

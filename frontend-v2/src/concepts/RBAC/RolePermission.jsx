@@ -1,19 +1,15 @@
-import React, { useState, useMemo } from "react";
-import { useGetRolesQuery, useDeleteRoleMutation } from "../../api/rolesApi";
-import { useGetAllPermissionsQuery } from "../../api/permissionApi";
-import { useGetAllUsersQuery } from "../../api/userApi";
-import {
-  SearchOutlined,
-  DeleteOutlined,
-  SafetyOutlined,
-} from "@ant-design/icons";
-import Avatar from "react-avatar";
-import { Link } from "react-router-dom";
-import AddRoleModal from "../../components/RolesPermission/AddRoleModal";
-import DeleteModal from "../../components/Common/DeleteModal";
-import DataTablePagination from "../../components/Common/DataTablePagination";
-import { message } from "antd";
-import PageHeader from "../../components/Common/PageHeader";
+import React, { useState, useMemo } from 'react';
+import { useGetRolesQuery, useDeleteRoleMutation } from '../../api/rolesApi';
+import { useGetAllPermissionsQuery } from '../../api/permissionApi';
+import { useGetAllUsersQuery } from '../../api/userApi';
+import { SearchOutlined, DeleteOutlined, SafetyOutlined } from '@ant-design/icons';
+import Avatar from 'react-avatar';
+import { Link } from 'react-router-dom';
+import AddRoleModal from '../../components/RolesPermission/AddRoleModal';
+import DeleteModal from '../../components/Common/DeleteModal';
+import DataTablePagination from '../../components/Common/DataTablePagination';
+import { message } from 'antd';
+import PageHeader from '../../components/Common/PageHeader';
 
 const RolePermission = () => {
   /* ==================== QUERIES ==================== */
@@ -27,9 +23,9 @@ const RolePermission = () => {
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedRole, setSelectedRole] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState("Recently Added");
-  const [roleStatus, setRoleStatus] = useState("All");
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('Recently Added');
+  const [roleStatus, setRoleStatus] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -40,9 +36,7 @@ const RolePermission = () => {
   const roleUserCounts = useMemo(() => {
     const counts = {};
     rolesList.forEach((role) => {
-      counts[role.roleId] = usersList.filter(
-        (user) => user.roleId === role.roleId,
-      ).length;
+      counts[role.roleId] = usersList.filter((user) => user.roleId === role.roleId).length;
     });
     return counts;
   }, [rolesList, usersList]);
@@ -50,12 +44,8 @@ const RolePermission = () => {
   const groupedRoles = useMemo(
     () => ({
       All: rolesList,
-      Active: rolesList.filter(
-        (role) => role.status?.toLowerCase() === "active",
-      ),
-      Inactive: rolesList.filter(
-        (role) => role.status?.toLowerCase() === "inactive",
-      ),
+      Active: rolesList.filter((role) => role.status?.toLowerCase() === 'active'),
+      Inactive: rolesList.filter((role) => role.status?.toLowerCase() === 'inactive'),
     }),
     [rolesList],
   );
@@ -70,20 +60,14 @@ const RolePermission = () => {
     }
 
     switch (sortBy) {
-      case "Ascending":
-        result = [...result].sort((a, b) =>
-          a.roleName.localeCompare(b.roleName),
-        );
+      case 'Ascending':
+        result = [...result].sort((a, b) => a.roleName.localeCompare(b.roleName));
         break;
-      case "Descending":
-        result = [...result].sort((a, b) =>
-          b.roleName.localeCompare(a.roleName),
-        );
+      case 'Descending':
+        result = [...result].sort((a, b) => b.roleName.localeCompare(a.roleName));
         break;
-      case "Recently Added":
-        result = [...result].sort(
-          (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
-        );
+      case 'Recently Added':
+        result = [...result].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
         break;
       default:
         break;
@@ -112,7 +96,7 @@ const RolePermission = () => {
 
   const handleConfirmDelete = async () => {
     if (!selectedRole) {
-      message.error("No role selected for deletion");
+      message.error('No role selected for deletion');
       setShowDeleteModal(false);
       return;
     }
@@ -122,9 +106,7 @@ const RolePermission = () => {
         setCurrentPage((p) => p - 1);
       }
     } catch (error) {
-      message.error(
-        `Failed to delete role: ${error.data?.message || "Unknown error"}`,
-      );
+      message.error(`Failed to delete role: ${error.data?.message || 'Unknown error'}`);
     } finally {
       setShowDeleteModal(false);
       setSelectedRole(null);
@@ -134,9 +116,9 @@ const RolePermission = () => {
   const handlePageChange = (page) => setCurrentPage(page);
 
   const clearFilters = () => {
-    setSearchTerm("");
-    setSortBy("Recently Added");
-    setRoleStatus("All");
+    setSearchTerm('');
+    setSortBy('Recently Added');
+    setRoleStatus('All');
     setCurrentPage(1);
   };
 
@@ -146,7 +128,7 @@ const RolePermission = () => {
       <div className="content">
         <div className="card">
           <div className="card-body">
-            <div style={{ color: "#e31e24", fontWeight: 500 }}>
+            <div style={{ color: '#e31e24', fontWeight: 500 }}>
               Error loading roles! Please try again later.
             </div>
           </div>
@@ -174,7 +156,7 @@ const RolePermission = () => {
               <div className="d-flex align-items-center justify-content-between flex-wrap gap-3">
                 <div className="input-icon-start position-relative">
                   <span className="input-icon-addon">
-                    <SearchOutlined style={{ color: "#595959" }} />
+                    <SearchOutlined style={{ color: '#595959' }} />
                   </span>
                   <input
                     type="text"
@@ -187,7 +169,7 @@ const RolePermission = () => {
 
                 <button
                   className="btn btn-outline-secondary"
-                  style={{ color: "#595959", borderColor: "#595959" }}
+                  style={{ color: '#595959', borderColor: '#595959' }}
                   onClick={clearFilters}
                 >
                   Clear Filters
@@ -197,7 +179,7 @@ const RolePermission = () => {
           </div>
 
           {paginatedRoles.length === 0 ? (
-            <p style={{ color: "#595959" }} className="text-center py-4">
+            <p style={{ color: '#595959' }} className="text-center py-4">
               No roles match the applied filters.
             </p>
           ) : (
@@ -205,26 +187,20 @@ const RolePermission = () => {
               <table className="table table-hover">
                 <thead>
                   <tr>
-                    <th style={{ color: "#595959" }}>Role</th>
-                    <th style={{ color: "#595959" }}>Associated Users</th>
-                    <th style={{ color: "#595959" }}>Actions</th>
+                    <th style={{ color: '#595959' }}>Role</th>
+                    <th style={{ color: '#595959' }}>Associated Users</th>
+                    <th style={{ color: '#595959' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {paginatedRoles.map((role) => {
-                    const roleUsers = usersList.filter(
-                      (u) => u.roleId === role.roleId,
-                    );
+                    const roleUsers = usersList.filter((u) => u.roleId === role.roleId);
                     return (
                       <tr key={role.roleId}>
-                        <td style={{ color: "#595959" }}>
-                          {role.roleName || "N/A"}
-                        </td>
+                        <td style={{ color: '#595959' }}>{role.roleName || 'N/A'}</td>
                         <td>
                           {roleUsers.length === 0 ? (
-                            <span style={{ color: "#595959" }}>
-                              No users assigned
-                            </span>
+                            <span style={{ color: '#595959' }}>No users assigned</span>
                           ) : (
                             <div className="d-flex flex-wrap gap-2">
                               {roleUsers.map((user) => (
@@ -232,20 +208,10 @@ const RolePermission = () => {
                                   key={user.userId}
                                   to={`/user/${user.userId}`}
                                   className="d-flex align-items-center text-decoration-none"
-                                  title={
-                                    user.name ||
-                                    user.username ||
-                                    user.email ||
-                                    "Unknown"
-                                  }
+                                  title={user.name || user.username || user.email || 'Unknown'}
                                 >
                                   <Avatar
-                                    name={
-                                      user.name ||
-                                      user.username ||
-                                      user.email ||
-                                      "U"
-                                    }
+                                    name={user.name || user.username || user.email || 'U'}
                                     src={user.photo_thumbnail}
                                     size="30"
                                     round={true}
@@ -253,15 +219,12 @@ const RolePermission = () => {
                                   />
                                   <span
                                     style={{
-                                      color: "#595959",
-                                      maxWidth: "100px",
+                                      color: '#595959',
+                                      maxWidth: '100px',
                                     }}
                                     className="text-truncate"
                                   >
-                                    {user.name ||
-                                      user.username ||
-                                      user.email ||
-                                      "Unknown"}
+                                    {user.name || user.username || user.email || 'Unknown'}
                                   </span>
                                 </Link>
                               ))}
@@ -273,14 +236,14 @@ const RolePermission = () => {
                             <a
                               href={`/roles-permission/permissions/${role.roleId}`}
                               className="btn btn-icon btn-sm"
-                              style={{ color: "#e31e24" }}
+                              style={{ color: '#e31e24' }}
                               aria-label={`View permissions for ${role.roleName}`}
                             >
                               <SafetyOutlined />
                             </a>
                             <button
                               className="btn btn-icon btn-sm"
-                              style={{ color: "#e31e24" }}
+                              style={{ color: '#e31e24' }}
                               onClick={() => handleOpenDeleteModal(role)}
                               disabled={isDeleting}
                               aria-label={`Delete ${role.roleName}`}

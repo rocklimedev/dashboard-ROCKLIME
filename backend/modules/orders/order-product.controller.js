@@ -1,7 +1,7 @@
 // controllers/order-product.controller.js
 
-const OrderItem = require("./models/order-item.model");
-const { Product, Order } = require("../../models");
+const OrderItem = require('./models/order-item.model');
+const { Product, Order } = require('../../models');
 
 // ============================================================
 // HELPERS
@@ -51,7 +51,7 @@ const getImageUrl = (images) => {
   }
 
   // JSON string
-  if (typeof images === "string") {
+  if (typeof images === 'string') {
     try {
       const parsed = JSON.parse(images);
 
@@ -59,12 +59,12 @@ const getImageUrl = (images) => {
         return parsed[0] || null;
       }
 
-      if (typeof parsed === "string") {
+      if (typeof parsed === 'string') {
         return parsed;
       }
     } catch (error) {
       // Sometimes images may already be a normal URL
-      if (images.startsWith("http://") || images.startsWith("https://")) {
+      if (images.startsWith('http://') || images.startsWith('https://')) {
         return images;
       }
     }
@@ -82,8 +82,7 @@ const normalizeInventoryProduct = (product) => {
     return null;
   }
 
-  const data =
-    typeof product.toJSON === "function" ? product.toJSON() : product;
+  const data = typeof product.toJSON === 'function' ? product.toJSON() : product;
 
   return {
     productId: data.productId || data.id || null,
@@ -96,10 +95,7 @@ const normalizeInventoryProduct = (product) => {
 
     imageUrl: data.imageUrl || getImageUrl(data.images),
 
-    quantity:
-      data.quantity !== null && data.quantity !== undefined
-        ? Number(data.quantity)
-        : 0,
+    quantity: data.quantity !== null && data.quantity !== undefined ? Number(data.quantity) : 0,
 
     alertQuantity:
       data.alertQuantity !== null && data.alertQuantity !== undefined
@@ -158,7 +154,7 @@ const normalizeOrderItem = (item) => {
 
     discount: Number(item.discount || 0),
 
-    discountType: item.discountType || "percent",
+    discountType: item.discountType || 'percent',
 
     tax: Number(item.tax || 0),
 
@@ -187,35 +183,33 @@ const getInventoryProducts = async (productIds, orderItemMap = new Map()) => {
     },
 
     attributes: [
-      "productId",
-      "name",
-      "product_code",
-      "quantity",
-      "alert_quantity",
-      "status",
-      "images",
-      "tax",
-      "discountType",
-      "masterProductId",
-      "isMaster",
-      "variantOptions",
-      "variantKey",
-      "skuSuffix",
-      "brandId",
-      "categoryId",
-      "vendorId",
+      'productId',
+      'name',
+      'product_code',
+      'quantity',
+      'alert_quantity',
+      'status',
+      'images',
+      'tax',
+      'discountType',
+      'masterProductId',
+      'isMaster',
+      'variantOptions',
+      'variantKey',
+      'skuSuffix',
+      'brandId',
+      'categoryId',
+      'vendorId',
     ],
 
-    order: [["name", "ASC"]],
+    order: [['name', 'ASC']],
   });
 
   // ==========================================================
   // PRODUCT MAP
   // ==========================================================
 
-  const productMap = new Map(
-    products.map((product) => [String(product.productId), product]),
-  );
+  const productMap = new Map(products.map((product) => [String(product.productId), product]));
 
   // ==========================================================
   // BUILD RESULT
@@ -238,7 +232,7 @@ const getInventoryProducts = async (productIds, orderItemMap = new Map()) => {
       return {
         productId,
 
-        name: orderItem?.name || "Product not found",
+        name: orderItem?.name || 'Product not found',
 
         productCode: orderItem?.productCode || null,
 
@@ -248,7 +242,7 @@ const getInventoryProducts = async (productIds, orderItemMap = new Map()) => {
 
         availableInInventory: false,
 
-        inventoryStatus: "NOT_FOUND",
+        inventoryStatus: 'NOT_FOUND',
 
         currentStock: 0,
 
@@ -288,8 +282,7 @@ const getInventoryProducts = async (productIds, orderItemMap = new Map()) => {
 
     const insufficientForOrder = orderedQuantity > currentStock;
 
-    const isBelowAlertLevel =
-      alertQuantity !== null && currentStock <= alertQuantity;
+    const isBelowAlertLevel = alertQuantity !== null && currentStock <= alertQuantity;
 
     const isLowStock = insufficientForOrder || isBelowAlertLevel;
 
@@ -299,14 +292,14 @@ const getInventoryProducts = async (productIds, orderItemMap = new Map()) => {
     // STATUS
     // ========================================================
 
-    let inventoryStatus = "AVAILABLE";
+    let inventoryStatus = 'AVAILABLE';
 
     if (currentStock <= 0) {
-      inventoryStatus = "OUT_OF_STOCK";
+      inventoryStatus = 'OUT_OF_STOCK';
     } else if (insufficientForOrder) {
-      inventoryStatus = "INSUFFICIENT";
+      inventoryStatus = 'INSUFFICIENT';
     } else if (isBelowAlertLevel) {
-      inventoryStatus = "LOW_STOCK";
+      inventoryStatus = 'LOW_STOCK';
     }
 
     // ========================================================
@@ -320,7 +313,7 @@ const getInventoryProducts = async (productIds, orderItemMap = new Map()) => {
 
       productId: productData.productId,
 
-      name: productData.name || orderItem?.name || "—",
+      name: productData.name || orderItem?.name || '—',
 
       productCode: productData.productCode || orderItem?.productCode || null,
 
@@ -381,7 +374,7 @@ exports.getLowStockProductByOrderId = async (req, res) => {
     const orderId = req.params.id;
 
     if (!orderId) {
-      return sendErrorResponse(res, 400, "orderId is required");
+      return sendErrorResponse(res, 400, 'orderId is required');
     }
 
     // ========================================================
@@ -390,18 +383,18 @@ exports.getLowStockProductByOrderId = async (req, res) => {
 
     const order = await Order.findByPk(orderId, {
       attributes: [
-        "id",
-        "orderNo",
-        "status",
-        "createdFor",
-        "createdBy",
-        "assignedUserId",
-        "createdAt",
+        'id',
+        'orderNo',
+        'status',
+        'createdFor',
+        'createdBy',
+        'assignedUserId',
+        'createdAt',
       ],
     });
 
     if (!order) {
-      return sendErrorResponse(res, 404, "Order not found");
+      return sendErrorResponse(res, 404, 'Order not found');
     }
 
     // ========================================================
@@ -412,13 +405,11 @@ exports.getLowStockProductByOrderId = async (req, res) => {
       orderId: String(orderId),
     }).lean();
 
-    const orderItems = Array.isArray(orderItemsDocument?.items)
-      ? orderItemsDocument.items
-      : [];
+    const orderItems = Array.isArray(orderItemsDocument?.items) ? orderItemsDocument.items : [];
 
     if (orderItems.length === 0) {
       return res.status(200).json({
-        message: "No products found in this order",
+        message: 'No products found in this order',
 
         order: {
           id: order.id,
@@ -451,7 +442,7 @@ exports.getLowStockProductByOrderId = async (req, res) => {
 
     if (productIds.length === 0) {
       return res.status(200).json({
-        message: "No valid products found in this order",
+        message: 'No valid products found in this order',
 
         order: {
           id: order.id,
@@ -470,25 +461,20 @@ exports.getLowStockProductByOrderId = async (req, res) => {
     // INVENTORY
     // ========================================================
 
-    const inventoryResults = await getInventoryProducts(
-      productIds,
-      orderItemMap,
-    );
+    const inventoryResults = await getInventoryProducts(productIds, orderItemMap);
 
     // ========================================================
     // ONLY ATTENTION PRODUCTS
     // ========================================================
 
-    const lowStockProducts = inventoryResults.filter(
-      (product) => product.isLowStock,
-    );
+    const lowStockProducts = inventoryResults.filter((product) => product.isLowStock);
 
     // ========================================================
     // RESPONSE
     // ========================================================
 
     return res.status(200).json({
-      message: "Low stock products fetched successfully",
+      message: 'Low stock products fetched successfully',
 
       order: {
         id: order.id,
@@ -502,14 +488,9 @@ exports.getLowStockProductByOrderId = async (req, res) => {
       products: lowStockProducts,
     });
   } catch (err) {
-    console.error("Get Low Stock Products By Order ID Error:", err);
+    console.error('Get Low Stock Products By Order ID Error:', err);
 
-    return sendErrorResponse(
-      res,
-      500,
-      "Failed to fetch low stock products",
-      err.message,
-    );
+    return sendErrorResponse(res, 500, 'Failed to fetch low stock products', err.message);
   }
 };
 
@@ -519,9 +500,7 @@ exports.getLowStockProductsForIncomingOrder = async (req, res) => {
     // PRODUCTS OBJECT
     // ======================================================
 
-    const incomingProducts = Array.isArray(req.body?.products)
-      ? req.body.products
-      : [];
+    const incomingProducts = Array.isArray(req.body?.products) ? req.body.products : [];
 
     // ======================================================
     // PRODUCT IDS FALLBACK
@@ -550,7 +529,7 @@ exports.getLowStockProductsForIncomingOrder = async (req, res) => {
 
       if (productIds.length === 0) {
         return res.status(200).json({
-          message: "No valid products supplied",
+          message: 'No valid products supplied',
 
           count: 0,
 
@@ -562,17 +541,14 @@ exports.getLowStockProductsForIncomingOrder = async (req, res) => {
       // INVENTORY
       // ====================================================
 
-      const inventoryResults = await getInventoryProducts(
-        productIds,
-        orderItemMap,
-      );
+      const inventoryResults = await getInventoryProducts(productIds, orderItemMap);
 
       // ====================================================
       // RETURN ALL PRODUCTS
       // ====================================================
 
       return res.status(200).json({
-        message: "Incoming products inventory checked successfully",
+        message: 'Incoming products inventory checked successfully',
 
         count: inventoryResults.length,
 
@@ -585,13 +561,10 @@ exports.getLowStockProductsForIncomingOrder = async (req, res) => {
     // ======================================================
 
     if (incomingProductIds.length > 0) {
-      const inventoryResults = await getInventoryProducts(
-        incomingProductIds,
-        new Map(),
-      );
+      const inventoryResults = await getInventoryProducts(incomingProductIds, new Map());
 
       return res.status(200).json({
-        message: "Products inventory checked successfully",
+        message: 'Products inventory checked successfully',
 
         count: inventoryResults.length,
 
@@ -604,20 +577,15 @@ exports.getLowStockProductsForIncomingOrder = async (req, res) => {
     // ======================================================
 
     return res.status(200).json({
-      message: "No products supplied for inventory check",
+      message: 'No products supplied for inventory check',
 
       count: 0,
 
       products: [],
     });
   } catch (err) {
-    console.error("Get Low Stock Products For Incoming Order Error:", err);
+    console.error('Get Low Stock Products For Incoming Order Error:', err);
 
-    return sendErrorResponse(
-      res,
-      500,
-      "Failed to check incoming products inventory",
-      err.message,
-    );
+    return sendErrorResponse(res, 500, 'Failed to check incoming products inventory', err.message);
   }
 };

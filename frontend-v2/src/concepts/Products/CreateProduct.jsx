@@ -1,32 +1,29 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 
 import {
   useCreateProductMutation,
   useUpdateProductMutation,
   useGetProductByIdQuery,
   useReplaceAllKeywordsForProductMutation,
-} from "../../api/productApi";
+} from '../../api/productApi';
 
 import {
   ArrowLeftOutlined,
   PictureOutlined,
   PlusCircleOutlined,
   InboxOutlined,
-} from "@ant-design/icons";
+} from '@ant-design/icons';
 
-import { useGetAllCategoriesQuery } from "../../api/categoryApi";
-import { useGetAllBrandsQuery } from "../../api/brandsApi";
-import { useGetVendorsQuery } from "../../api/vendorApi";
-import { useGetAllProductMetaQuery } from "../../api/productMetaApi";
-import { useGetBrandParentCategoriesQuery } from "../../api/brandParentCategoryApi";
-import {
-  useGetAllKeywordsQuery,
-  useCreateKeywordMutation,
-} from "../../api/keywordApi";
+import { useGetAllCategoriesQuery } from '../../api/categoryApi';
+import { useGetAllBrandsQuery } from '../../api/brandsApi';
+import { useGetVendorsQuery } from '../../api/vendorApi';
+import { useGetAllProductMetaQuery } from '../../api/productMetaApi';
+import { useGetBrandParentCategoriesQuery } from '../../api/brandParentCategoryApi';
+import { useGetAllKeywordsQuery, useCreateKeywordMutation } from '../../api/keywordApi';
 
-import { message } from "antd";
-import { useDropzone } from "react-dropzone";
+import { message } from 'antd';
+import { useDropzone } from 'react-dropzone';
 
 import {
   Form,
@@ -41,9 +38,9 @@ import {
   Tag,
   Space,
   Typography,
-} from "antd";
+} from 'antd';
 
-import { useGetAllProductsQuery } from "../../api/productApi";
+import { useGetAllProductsQuery } from '../../api/productApi';
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -51,8 +48,8 @@ const { Panel } = Collapse;
 const { Text } = Typography;
 
 // Meta Field IDs
-const COMPANY_CODE_META_ID = "d11da9f9-3f2e-4536-8236-9671200cca4a";
-const SELLING_PRICE_META_ID = "9ba862ef-f993-4873-95ef-1fef10036aa5";
+const COMPANY_CODE_META_ID = 'd11da9f9-3f2e-4536-8236-9671200cca4a';
+const SELLING_PRICE_META_ID = '9ba862ef-f993-4873-95ef-1fef10036aa5';
 
 const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
   const { productId } = useParams();
@@ -61,7 +58,7 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
   const isEditMode = Boolean(productId) && !isBulkMode;
 
   const [form] = Form.useForm();
-  const categoryId = Form.useWatch("categoryId", form);
+  const categoryId = Form.useWatch('categoryId', form);
 
   const [newImages, setNewImages] = useState([]);
   const [existingImages, setExistingImages] = useState([]);
@@ -69,22 +66,19 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
   const [metaData, setMetaData] = useState({});
   const [selectedImage, setSelectedImage] = useState(null);
   const [selectedKeywords, setSelectedKeywords] = useState([]);
-  const [searchKeyword, setSearchKeyword] = useState("");
+  const [searchKeyword, setSearchKeyword] = useState('');
 
   // RTK Queries
   const { data: existingProduct } = useGetProductByIdQuery(productId, {
     skip: !isEditMode,
   });
 
-  const [replaceAllKeywordsForProduct] =
-    useReplaceAllKeywordsForProductMutation();
+  const [replaceAllKeywordsForProduct] = useReplaceAllKeywordsForProductMutation();
 
-  const { data: categoryData = { categories: [] } } =
-    useGetAllCategoriesQuery();
+  const { data: categoryData = { categories: [] } } = useGetAllCategoriesQuery();
   const { data: brands = [] } = useGetAllBrandsQuery();
   const { data: vendors = [] } = useGetVendorsQuery();
-  const { data: brandParentCategories = [] } =
-    useGetBrandParentCategoriesQuery();
+  const { data: brandParentCategories = [] } = useGetBrandParentCategoriesQuery();
   const { data: productMetas = [] } = useGetAllProductMetaQuery();
 
   const { data: allProductsResponse } = useGetAllProductsQuery(
@@ -93,8 +87,7 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
   );
 
   const allProducts = useMemo(
-    () =>
-      Array.isArray(allProductsResponse?.data) ? allProductsResponse.data : [],
+    () => (Array.isArray(allProductsResponse?.data) ? allProductsResponse.data : []),
     [allProductsResponse?.data],
   );
 
@@ -107,9 +100,7 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
   const brandData = Array.isArray(brands) ? brands : [];
   const vendorData = Array.isArray(vendors) ? vendors : [];
   const productMetaData = Array.isArray(productMetas) ? productMetas : [];
-  const brandParentCategoryData = Array.isArray(brandParentCategories)
-    ? brandParentCategories
-    : [];
+  const brandParentCategoryData = Array.isArray(brandParentCategories) ? brandParentCategories : [];
 
   const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
   const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
@@ -119,9 +110,9 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
     if (isEditMode || isBulkMode) return;
 
     form.setFieldsValue({
-      isMaster: "true",
-      isFeatured: "false",
-      status: "active",
+      isMaster: 'true',
+      isFeatured: 'false',
+      status: 'active',
     });
   }, [form, isEditMode, isBulkMode]);
 
@@ -130,16 +121,16 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
     if (!initialData || isEditMode) return;
 
     form.setFieldsValue({
-      name: initialData.name || "",
-      product_code: initialData.product_code || "",
-      description: initialData.description || "",
+      name: initialData.name || '',
+      product_code: initialData.product_code || '',
+      description: initialData.description || '',
       quantity: initialData.quantity || 0,
       tax: initialData.tax ?? null,
       alert_quantity: initialData.alert_quantity ?? null,
-      status: initialData.status || "active",
+      status: initialData.status || 'active',
       discountType: initialData.discountType,
-      isFeatured: initialData.isFeatured ? "true" : "false",
-      isMaster: initialData.isMaster ? "true" : "false",
+      isFeatured: initialData.isFeatured ? 'true' : 'false',
+      isMaster: initialData.isMaster ? 'true' : 'false',
       categoryId: initialData.categoryId,
       brandId: initialData.brandId,
       vendorId: initialData.vendorId,
@@ -150,13 +141,11 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
       setExistingImages(initialData.images.slice(0, 5));
     }
 
-    if (initialData.meta && typeof initialData.meta === "object") {
+    if (initialData.meta && typeof initialData.meta === 'object') {
       const resolved = {};
       Object.entries(initialData.meta).forEach(([key, value]) => {
         const metaDef = productMetaData.find(
-          (m) =>
-            m.slug === key ||
-            m.title.toLowerCase().replace(/\s+/g, "") === key.toLowerCase(),
+          (m) => m.slug === key || m.title.toLowerCase().replace(/\s+/g, '') === key.toLowerCase(),
         );
         if (metaDef) resolved[metaDef.id] = value;
       });
@@ -167,15 +156,12 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
       const fakeKeywords = initialData.keywords.map((kw, i) => ({
         id: `bulk-${i}`,
         keyword: kw,
-        categories: { name: "Imported" },
+        categories: { name: 'Imported' },
       }));
       setSelectedKeywords(fakeKeywords);
     }
 
-    if (
-      initialData.variantOptions &&
-      typeof initialData.variantOptions === "object"
-    ) {
+    if (initialData.variantOptions && typeof initialData.variantOptions === 'object') {
       const list = Object.entries(initialData.variantOptions).map(([k, v]) => ({
         key: k,
         value: v,
@@ -192,24 +178,23 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
     if (!existingProduct || !isEditMode) return;
 
     const formValues = {
-      name: existingProduct.name || "",
-      product_code: existingProduct.product_code || "",
+      name: existingProduct.name || '',
+      product_code: existingProduct.product_code || '',
       quantity: existingProduct.quantity || 0,
-      isFeatured: existingProduct.isFeatured ? "true" : "false",
-      description: existingProduct.description || "",
+      isFeatured: existingProduct.isFeatured ? 'true' : 'false',
+      description: existingProduct.description || '',
       tax: existingProduct.tax || null,
       alert_quantity: existingProduct.alert_quantity || null,
-      status: existingProduct.status || "active",
+      status: existingProduct.status || 'active',
       discountType: existingProduct.discountType || undefined,
-      isMaster: existingProduct.isMaster ? "true" : "false",
+      isMaster: existingProduct.isMaster ? 'true' : 'false',
       masterProductId: existingProduct.masterProductId || undefined,
-      variantKey: existingProduct.variantKey || "",
-      skuSuffix: existingProduct.skuSuffix || "",
+      variantKey: existingProduct.variantKey || '',
+      skuSuffix: existingProduct.skuSuffix || '',
       categoryId: existingProduct.categoryId || undefined,
       brandId: existingProduct.brandId || undefined,
       vendorId: existingProduct.vendorId || undefined,
-      brand_parentcategoriesId:
-        existingProduct.brand_parentcategoriesId || undefined,
+      brand_parentcategoriesId: existingProduct.brand_parentcategoriesId || undefined,
     };
 
     form.setFieldsValue(formValues);
@@ -218,7 +203,7 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
     let imagesArray = [];
     try {
       imagesArray =
-        typeof existingProduct.images === "string"
+        typeof existingProduct.images === 'string'
           ? JSON.parse(existingProduct.images)
           : Array.isArray(existingProduct.images)
             ? existingProduct.images
@@ -229,34 +214,29 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
     // Load Meta Data (including Selling Price)
     let metaObj = {};
     try {
-      if (typeof existingProduct.meta === "string") {
+      if (typeof existingProduct.meta === 'string') {
         metaObj = JSON.parse(existingProduct.meta);
-      } else if (
-        existingProduct.meta &&
-        typeof existingProduct.meta === "object"
-      ) {
+      } else if (existingProduct.meta && typeof existingProduct.meta === 'object') {
         metaObj = existingProduct.meta;
       }
       setMetaData(metaObj);
     } catch (e) {
-      message.error("Failed to load specifications");
+      message.error('Failed to load specifications');
     }
 
     // Load Keywords
     if (existingProduct.keywords) {
       try {
         const keywords =
-          typeof existingProduct.keywords === "string"
+          typeof existingProduct.keywords === 'string'
             ? JSON.parse(existingProduct.keywords)
             : existingProduct.keywords;
 
-        const normalized = (Array.isArray(keywords) ? keywords : []).map(
-          (kw) => ({
-            id: kw.id,
-            keyword: kw.keyword,
-            categories: kw.categories || kw.category || null,
-          }),
-        );
+        const normalized = (Array.isArray(keywords) ? keywords : []).map((kw) => ({
+          id: kw.id,
+          keyword: kw.keyword,
+          categories: kw.categories || kw.category || null,
+        }));
         setSelectedKeywords(normalized);
       } catch (e) {}
     }
@@ -265,7 +245,7 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
     if (existingProduct.variantOptions) {
       try {
         const opts =
-          typeof existingProduct.variantOptions === "string"
+          typeof existingProduct.variantOptions === 'string'
             ? JSON.parse(existingProduct.variantOptions)
             : existingProduct.variantOptions;
 
@@ -297,7 +277,7 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
   const handleCreateKeyword = async (keywordName) => {
     const trimmed = keywordName.trim();
     if (!trimmed || !categoryId) {
-      message.warning("Please select a category first");
+      message.warning('Please select a category first');
       return;
     }
 
@@ -312,14 +292,12 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
         keyword: result.keyword || trimmed,
         categories: result.categories || {
           categoryId,
-          name:
-            categories.find((c) => c.categoryId === categoryId)?.name ||
-            "Unknown",
+          name: categories.find((c) => c.categoryId === categoryId)?.name || 'Unknown',
         },
       };
 
       setSelectedKeywords((prev) => [...prev, newKeyword]);
-      setSearchKeyword("");
+      setSearchKeyword('');
       message.success(`"${trimmed}" created and added!`);
 
       if (isEditMode && productId) {
@@ -331,30 +309,29 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
         } catch (err) {}
       }
     } catch (err) {
-      message.error("Failed to create keyword");
+      message.error('Failed to create keyword');
     }
   };
 
   const updateVariantOptionsFromList = useCallback(() => {
-    const attributes = form.getFieldValue("variantAttributes") || [];
+    const attributes = form.getFieldValue('variantAttributes') || [];
     const jsonObj = {};
 
     attributes.forEach((attr) => {
-      const cleanKey = String(attr?.key ?? "").trim();
-      const cleanValue = String(attr?.value ?? "").trim();
+      const cleanKey = String(attr?.key ?? '').trim();
+      const cleanValue = String(attr?.value ?? '').trim();
       if (cleanKey && cleanValue) jsonObj[cleanKey] = cleanValue;
     });
 
     form.setFieldsValue({
-      variantOptions:
-        Object.keys(jsonObj).length > 0 ? JSON.stringify(jsonObj, null, 2) : "",
+      variantOptions: Object.keys(jsonObj).length > 0 ? JSON.stringify(jsonObj, null, 2) : '',
     });
   }, [form]);
 
   useEffect(() => {
     const timer = setTimeout(updateVariantOptionsFromList, 300);
     return () => clearTimeout(timer);
-  }, [form.getFieldValue("variantAttributes"), updateVariantOptionsFromList]);
+  }, [form.getFieldValue('variantAttributes'), updateVariantOptionsFromList]);
 
   const handleMetaChange = (id, value) => {
     setMetaData((prev) => ({ ...prev, [id]: value }));
@@ -364,16 +341,14 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
     (accepted, rejected) => {
       if (rejected.length > 0) {
         rejected.forEach(({ file, errors }) => {
-          if (errors[0]?.code === "file-too-large")
-            message.warning(`${file.name} > 5MB`);
-          if (errors[0]?.code === "file-invalid-type")
-            message.warning(`${file.name} not image`);
+          if (errors[0]?.code === 'file-too-large') message.warning(`${file.name} > 5MB`);
+          if (errors[0]?.code === 'file-invalid-type') message.warning(`${file.name} not image`);
         });
         return;
       }
 
       if (existingImages.length + newImages.length + accepted.length > 5) {
-        message.warning("Maximum 5 images allowed");
+        message.warning('Maximum 5 images allowed');
         return;
       }
 
@@ -387,7 +362,7 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    accept: { "image/*": [] },
+    accept: { 'image/*': [] },
     maxSize: 5 * 1024 * 1024,
     onDrop,
   });
@@ -401,7 +376,7 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
       const pastedFiles = [];
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
-        if (item.type.indexOf("image") !== -1) {
+        if (item.type.indexOf('image') !== -1) {
           const file = item.getAsFile();
           if (file && file.size <= 5 * 1024 * 1024) {
             pastedFiles.push(file);
@@ -411,7 +386,7 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
 
       if (pastedFiles.length > 0) {
         if (existingImages.length + newImages.length + pastedFiles.length > 5) {
-          message.warning("Maximum 5 images allowed");
+          message.warning('Maximum 5 images allowed');
           return;
         }
 
@@ -425,8 +400,8 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
       }
     };
 
-    document.addEventListener("paste", handlePaste);
-    return () => document.removeEventListener("paste", handlePaste);
+    document.addEventListener('paste', handlePaste);
+    return () => document.removeEventListener('paste', handlePaste);
   }, [existingImages.length, newImages.length]);
 
   const removeExistingImage = (url) => {
@@ -437,24 +412,22 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
   const removeNewImage = (preview) => {
     setNewImages((p) => {
       const filtered = p.filter((i) => i.preview !== preview);
-      p.filter((i) => i.preview === preview).forEach((i) =>
-        URL.revokeObjectURL(i.preview),
-      );
+      p.filter((i) => i.preview === preview).forEach((i) => URL.revokeObjectURL(i.preview));
       return filtered;
     });
   };
 
   const onFinish = async (values) => {
-    const required = ["name", "quantity"];
+    const required = ['name', 'quantity'];
     if (required.some((f) => !values[f])) {
-      message.warning("Please fill all required fields");
+      message.warning('Please fill all required fields');
       return;
     }
 
     // Validate number meta fields
     for (const [id, val] of Object.entries(metaData)) {
       const m = productMetaData.find((x) => x.id === id);
-      if (m?.fieldType === "number" && val !== "" && isNaN(val)) {
+      if (m?.fieldType === 'number' && val !== '' && isNaN(val)) {
         message.error(`${m.title} must be a number`);
         return;
       }
@@ -463,58 +436,55 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
     const formData = new FormData();
 
     const fields = [
-      "name",
-      "product_code",
-      "description",
-      "status",
-      "discountType",
-      "isMaster",
-      "masterProductId",
-      "variantKey",
-      "skuSuffix",
+      'name',
+      'product_code',
+      'description',
+      'status',
+      'discountType',
+      'isMaster',
+      'masterProductId',
+      'variantKey',
+      'skuSuffix',
     ];
 
     fields.forEach((k) => {
-      if (values[k] !== undefined && values[k] !== null && values[k] !== "") {
+      if (values[k] !== undefined && values[k] !== null && values[k] !== '') {
         formData.append(k, values[k]);
       }
     });
 
-    formData.append("quantity", Number(values.quantity) || 0);
-    formData.append("isFeatured", values.isFeatured === "true");
+    formData.append('quantity', Number(values.quantity) || 0);
+    formData.append('isFeatured', values.isFeatured === 'true');
 
-    if (values.tax !== undefined)
-      formData.append("tax", Number(values.tax) || 0);
+    if (values.tax !== undefined) formData.append('tax', Number(values.tax) || 0);
     if (values.alert_quantity !== undefined)
-      formData.append("alert_quantity", Number(values.alert_quantity) || 0);
+      formData.append('alert_quantity', Number(values.alert_quantity) || 0);
 
-    ["categoryId", "brandId", "vendorId", "brand_parentcategoriesId"].forEach(
-      (k) => {
-        if (values[k]) formData.append(k, values[k]);
-      },
-    );
+    ['categoryId', 'brandId', 'vendorId', 'brand_parentcategoriesId'].forEach((k) => {
+      if (values[k]) formData.append(k, values[k]);
+    });
 
     // Handle Variant Options
     if (values.variantOptions) {
       try {
         const json = JSON.parse(values.variantOptions);
-        formData.append("variantOptions", JSON.stringify(json));
+        formData.append('variantOptions', JSON.stringify(json));
       } catch (e) {
-        message.error("Invalid JSON in Variant Options");
+        message.error('Invalid JSON in Variant Options');
         return;
       }
     }
 
     // Attach all meta data (including Selling Price)
     if (Object.keys(metaData).length > 0) {
-      formData.append("meta", JSON.stringify(metaData));
+      formData.append('meta', JSON.stringify(metaData));
     }
 
     // Images
-    newImages.forEach((img) => formData.append("images", img.file));
+    newImages.forEach((img) => formData.append('images', img.file));
 
     if (isEditMode && imagesToDelete.length > 0) {
-      formData.append("imagesToDelete", JSON.stringify(imagesToDelete));
+      formData.append('imagesToDelete', JSON.stringify(imagesToDelete));
     }
 
     try {
@@ -525,9 +495,8 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
         finalProductId = productId;
       } else {
         const result = await createProduct(formData).unwrap();
-        finalProductId =
-          result.product?.productId || result.productId || result.id;
-        if (!finalProductId) throw new Error("No product ID returned");
+        finalProductId = result.product?.productId || result.productId || result.id;
+        if (!finalProductId) throw new Error('No product ID returned');
       }
 
       // Update Keywords
@@ -540,16 +509,14 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
       }
 
       message.success(
-        isEditMode
-          ? "Product updated successfully!"
-          : "Product created successfully!",
+        isEditMode ? 'Product updated successfully!' : 'Product created successfully!',
       );
 
       if (!isEditMode && !isBulkMode) {
         navigate(-1);
       }
     } catch (err) {
-      message.error(err?.data?.message || "Failed to save product");
+      message.error(err?.data?.message || 'Failed to save product');
     }
   };
 
@@ -559,13 +526,9 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
     <div className="page-wrapper">
       <div className="content">
         {!isBulkMode && (
-          <Row
-            justify="space-between"
-            align="middle"
-            style={{ marginBottom: 16 }}
-          >
-            <h4 style={{ margin: 0, fontWeight: "bold" }}>
-              {isEditMode ? "Edit Product" : "Create New Product"}
+          <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
+            <h4 style={{ margin: 0, fontWeight: 'bold' }}>
+              {isEditMode ? 'Edit Product' : 'Create New Product'}
             </h4>
             <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)}>
               Back
@@ -573,24 +536,15 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
           </Row>
         )}
 
-        <Form
-          form={form}
-          onFinish={onFinish}
-          layout="vertical"
-          onValuesChange={handleValuesChange}
-        >
+        <Form form={form} onFinish={onFinish} layout="vertical" onValuesChange={handleValuesChange}>
           <Collapse
-            defaultActiveKey={["1", "2", "3", "4", "5", "6", "7"]}
+            defaultActiveKey={['1', '2', '3', '4', '5', '6', '7']}
             className="compact-accordion"
           >
             <Panel header={<strong>Basic Information</strong>} key="1">
               <Row gutter={16}>
                 <Col xs={24} md={12}>
-                  <Form.Item
-                    name="name"
-                    label="Product Name"
-                    rules={[{ required: true }]}
-                  >
+                  <Form.Item name="name" label="Product Name" rules={[{ required: true }]}>
                     <Input />
                   </Form.Item>
                 </Col>
@@ -601,11 +555,9 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
                     <InputNumber
                       min={0}
                       step={0.01}
-                      style={{ width: "100%" }}
-                      value={metaData[SELLING_PRICE_META_ID] ?? ""}
-                      onChange={(val) =>
-                        handleMetaChange(SELLING_PRICE_META_ID, val)
-                      }
+                      style={{ width: '100%' }}
+                      value={metaData[SELLING_PRICE_META_ID] ?? ''}
+                      onChange={(val) => handleMetaChange(SELLING_PRICE_META_ID, val)}
                       addonAfter="₹"
                       placeholder="Enter selling price"
                     />
@@ -618,14 +570,10 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
                     <Form.Item label="Company / Batch Code">
                       <Input
                         placeholder="e.g. 2024, ABC123, Q1-26"
-                        value={metaData[COMPANY_CODE_META_ID] ?? ""}
-                        onChange={(e) =>
-                          handleMetaChange(COMPANY_CODE_META_ID, e.target.value)
-                        }
+                        value={metaData[COMPANY_CODE_META_ID] ?? ''}
+                        onChange={(e) => handleMetaChange(COMPANY_CODE_META_ID, e.target.value)}
                       />
-                      <div
-                        style={{ fontSize: 12, color: "#888", marginTop: 4 }}
-                      >
+                      <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>
                         Internal reference / batch identifier
                       </div>
                     </Form.Item>
@@ -669,10 +617,7 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
                 </Col>
 
                 <Col xs={24} md={8}>
-                  <Form.Item
-                    name="brand_parentcategoriesId"
-                    label="Parent Category"
-                  >
+                  <Form.Item name="brand_parentcategoriesId" label="Parent Category">
                     <Select allowClear>
                       {brandParentCategoryData.map((b) => (
                         <Option key={b.id} value={b.id}>
@@ -684,11 +629,7 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
                 </Col>
 
                 <Col xs={24} md={8}>
-                  <Form.Item
-                    name="status"
-                    label="Status"
-                    rules={[{ required: true }]}
-                  >
+                  <Form.Item name="status" label="Status" rules={[{ required: true }]}>
                     <Select>
                       <Option value="active">Active</Option>
                       <Option value="inactive">Inactive</Option>
@@ -721,26 +662,17 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
             >
               <Row gutter={16}>
                 <Col xs={24} sm={8}>
-                  <Form.Item
-                    name="isMaster"
-                    label="Product Type"
-                    initialValue="false"
-                  >
+                  <Form.Item name="isMaster" label="Product Type" initialValue="false">
                     <Select>
-                      <Option value="true">
-                        Master Product (has variants)
-                      </Option>
+                      <Option value="true">Master Product (has variants)</Option>
                       <Option value="false">Variant (belongs to master)</Option>
                     </Select>
                   </Form.Item>
                 </Col>
 
-                <Form.Item
-                  noStyle
-                  shouldUpdate={(prev, curr) => prev.isMaster !== curr.isMaster}
-                >
+                <Form.Item noStyle shouldUpdate={(prev, curr) => prev.isMaster !== curr.isMaster}>
                   {({ getFieldValue }) => {
-                    const isMaster = getFieldValue("isMaster") === "true";
+                    const isMaster = getFieldValue('isMaster') === 'true';
                     if (isMaster) return null;
 
                     return (
@@ -751,7 +683,7 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
                           rules={[
                             {
                               required: true,
-                              message: "Please select master product",
+                              message: 'Please select master product',
                             },
                           ]}
                         >
@@ -761,10 +693,7 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
                             optionFilterProp="children"
                           >
                             {allProducts
-                              .filter(
-                                (p) =>
-                                  p.isVariant === false || p.isVariant === null,
-                              )
+                              .filter((p) => p.isVariant === false || p.isVariant === null)
                               .map((p) => (
                                 <Option key={p.productId} value={p.productId}>
                                   {p.name} ({p.product_code})
@@ -777,12 +706,9 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
                   }}
                 </Form.Item>
 
-                <Form.Item
-                  noStyle
-                  shouldUpdate={(prev, curr) => prev.isMaster !== curr.isMaster}
-                >
+                <Form.Item noStyle shouldUpdate={(prev, curr) => prev.isMaster !== curr.isMaster}>
                   {({ getFieldValue }) => {
-                    const isMaster = getFieldValue("isMaster") === "true";
+                    const isMaster = getFieldValue('isMaster') === 'true';
                     if (isMaster) return null;
 
                     return (
@@ -794,16 +720,16 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
                                 {fields.map(({ key, name, ...restField }) => (
                                   <Space
                                     key={key}
-                                    style={{ display: "flex", marginBottom: 8 }}
+                                    style={{ display: 'flex', marginBottom: 8 }}
                                     align="baseline"
                                   >
                                     <Form.Item
                                       {...restField}
-                                      name={[name, "key"]}
+                                      name={[name, 'key']}
                                       rules={[
                                         {
                                           required: true,
-                                          message: "Attribute name required",
+                                          message: 'Attribute name required',
                                         },
                                       ]}
                                       style={{ marginBottom: 0 }}
@@ -813,11 +739,11 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
 
                                     <Form.Item
                                       {...restField}
-                                      name={[name, "value"]}
+                                      name={[name, 'value']}
                                       rules={[
                                         {
                                           required: true,
-                                          message: "Value required",
+                                          message: 'Value required',
                                         },
                                       ]}
                                       style={{ marginBottom: 0 }}
@@ -862,27 +788,18 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
             <Panel header="Stock & Tax" key="3">
               <Row gutter={16}>
                 <Col xs={8}>
-                  <Form.Item
-                    name="quantity"
-                    label="Quantity"
-                    rules={[{ required: true }]}
-                  >
-                    <InputNumber min={0} style={{ width: "100%" }} />
+                  <Form.Item name="quantity" label="Quantity" rules={[{ required: true }]}>
+                    <InputNumber min={0} style={{ width: '100%' }} />
                   </Form.Item>
                 </Col>
                 <Col xs={8}>
                   <Form.Item name="alert_quantity" label="Low Stock Alert">
-                    <InputNumber min={0} style={{ width: "100%" }} />
+                    <InputNumber min={0} style={{ width: '100%' }} />
                   </Form.Item>
                 </Col>
                 <Col xs={8}>
                   <Form.Item name="tax" label="Tax (%)">
-                    <InputNumber
-                      min={0}
-                      max={100}
-                      step={0.01}
-                      style={{ width: "100%" }}
-                    />
+                    <InputNumber min={0} max={100} step={0.01} style={{ width: '100%' }} />
                   </Form.Item>
                 </Col>
                 <Col xs={24} sm={12}>
@@ -908,29 +825,24 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
               <div
                 {...getRootProps()}
                 style={{
-                  border: "2px dashed #d9d9d9",
+                  border: '2px dashed #d9d9d9',
                   padding: 32,
-                  textAlign: "center",
+                  textAlign: 'center',
                   borderRadius: 8,
-                  background: isDragActive ? "#e6f7ff" : "#fafafa",
-                  cursor: "pointer",
-                  transition: "all 0.2s",
+                  background: isDragActive ? '#e6f7ff' : '#fafafa',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
                 }}
               >
                 <input {...getInputProps()} />
-                <PictureOutlined
-                  size={48}
-                  color="#999"
-                  style={{ marginBottom: 16 }}
-                />
-                <p style={{ margin: 0, color: "#666", fontSize: 16 }}>
+                <PictureOutlined size={48} color="#999" style={{ marginBottom: 16 }} />
+                <p style={{ margin: 0, color: '#666', fontSize: 16 }}>
                   <strong>Click to upload</strong> or drag & drop
                 </p>
-                <p style={{ margin: "8px 0 0", color: "#999", fontSize: 14 }}>
-                  You can also <strong>paste images</strong> from clipboard
-                  (Ctrl+V)
+                <p style={{ margin: '8px 0 0', color: '#999', fontSize: 14 }}>
+                  You can also <strong>paste images</strong> from clipboard (Ctrl+V)
                 </p>
-                <p style={{ marginTop: 8, color: "#aaa", fontSize: 12 }}>
+                <p style={{ marginTop: 8, color: '#aaa', fontSize: 12 }}>
                   Max 5 images • Up to 5MB each • JPG, PNG, WEBP
                 </p>
               </div>
@@ -938,14 +850,14 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
               <Row gutter={[12, 12]} style={{ marginTop: 16 }}>
                 {existingImages.map((url) => (
                   <Col key={url}>
-                    <div style={{ position: "relative" }}>
+                    <div style={{ position: 'relative' }}>
                       <img
                         src={url}
                         alt=""
                         style={{
                           width: 100,
                           height: 100,
-                          objectFit: "cover",
+                          objectFit: 'cover',
                           borderRadius: 8,
                         }}
                         onClick={() => setSelectedImage(url)}
@@ -953,7 +865,7 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
                       <Button
                         danger
                         size="small"
-                        style={{ position: "absolute", top: 4, right: 4 }}
+                        style={{ position: 'absolute', top: 4, right: 4 }}
                         onClick={() => removeExistingImage(url)}
                       >
                         ×
@@ -964,14 +876,14 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
 
                 {newImages.map((img) => (
                   <Col key={img.preview}>
-                    <div style={{ position: "relative" }}>
+                    <div style={{ position: 'relative' }}>
                       <img
                         src={img.preview}
                         alt=""
                         style={{
                           width: 100,
                           height: 100,
-                          objectFit: "cover",
+                          objectFit: 'cover',
                           borderRadius: 8,
                         }}
                         onClick={() => setSelectedImage(img.preview)}
@@ -979,7 +891,7 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
                       <Button
                         danger
                         size="small"
-                        style={{ position: "absolute", top: 4, right: 4 }}
+                        style={{ position: 'absolute', top: 4, right: 4 }}
                         onClick={() => removeNewImage(img.preview)}
                       >
                         ×
@@ -991,17 +903,14 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
             </Panel>
 
             {/* Keywords */}
-            <Panel
-              header={<>Keywords & Tags ({selectedKeywords.length})</>}
-              key="7"
-            >
-              <Space direction="vertical" style={{ width: "100%" }}>
+            <Panel header={<>Keywords & Tags ({selectedKeywords.length})</>} key="7">
+              <Space direction="vertical" style={{ width: '100%' }}>
                 <Select
                   mode="multiple"
                   allowClear
                   showSearch
                   filterOption={false} // ← THIS IS THE KEY FIX
-                  style={{ width: "100%" }}
+                  style={{ width: '100%' }}
                   placeholder="Search or add new keywords..."
                   value={selectedKeywords.map((k) => k.id)}
                   onSearch={setSearchKeyword}
@@ -1013,9 +922,7 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
                     );
 
                     const updated = [
-                      ...selectedKeywords.filter((k) =>
-                        selectedIds.includes(k.id),
-                      ),
+                      ...selectedKeywords.filter((k) => selectedIds.includes(k.id)),
                       ...newlySelected,
                     ];
                     setSelectedKeywords(updated);
@@ -1026,15 +933,13 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
                       {menu}
                       {searchKeyword?.trim() &&
                         !allKeywords.some(
-                          (kw) =>
-                            kw.keyword.toLowerCase() ===
-                            searchKeyword.trim().toLowerCase(),
+                          (kw) => kw.keyword.toLowerCase() === searchKeyword.trim().toLowerCase(),
                         ) && (
                           <div
                             style={{
-                              padding: "10px 12px",
-                              borderTop: "1px solid #f0f0f0",
-                              background: "#fafafa",
+                              padding: '10px 12px',
+                              borderTop: '1px solid #f0f0f0',
+                              background: '#fafafa',
                             }}
                           >
                             <Button
@@ -1042,28 +947,24 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
                               size="small"
                               icon={<PlusCircleOutlined />}
                               onMouseDown={(e) => e.preventDefault()} // Important!
-                              onClick={() =>
-                                handleCreateKeyword(searchKeyword.trim())
-                              }
-                              style={{ width: "100%", textAlign: "left" }}
+                              onClick={() => handleCreateKeyword(searchKeyword.trim())}
+                              style={{ width: '100%', textAlign: 'left' }}
                             >
                               <div>
-                                <strong>Add new:</strong> "
-                                {searchKeyword.trim()}"
+                                <strong>Add new:</strong> "{searchKeyword.trim()}"
                                 <div
                                   style={{
                                     fontSize: 12,
-                                    color: "#888",
+                                    color: '#888',
                                     marginTop: 2,
                                   }}
                                 >
-                                  Category:{" "}
+                                  Category:{' '}
                                   <strong>
                                     {categoryId
-                                      ? categories.find(
-                                          (c) => c.categoryId === categoryId,
-                                        )?.name || "Selected Category"
-                                      : "Select a category first"}
+                                      ? categories.find((c) => c.categoryId === categoryId)?.name ||
+                                        'Selected Category'
+                                      : 'Select a category first'}
                                   </strong>
                                 </div>
                               </div>
@@ -1074,11 +975,7 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
                   )}
                 >
                   {allKeywords
-                    .filter((kw) =>
-                      kw.keyword
-                        .toLowerCase()
-                        .includes(searchKeyword.toLowerCase()),
-                    )
+                    .filter((kw) => kw.keyword.toLowerCase().includes(searchKeyword.toLowerCase()))
                     .map((kw) => (
                       <Option key={kw.id} value={kw.id} label={kw.keyword}>
                         <Space>
@@ -1098,9 +995,7 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
                       key={kw.id}
                       closable
                       onClose={() =>
-                        setSelectedKeywords((prev) =>
-                          prev.filter((k) => k.id !== kw.id),
-                        )
+                        setSelectedKeywords((prev) => prev.filter((k) => k.id !== kw.id))
                       }
                       color="geekblue"
                     >
@@ -1113,41 +1008,30 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
             </Panel>
 
             {/* Specifications */}
-            <Panel
-              header={
-                <>Product Specifications ({Object.keys(metaData).length})</>
-              }
-              key="6"
-            >
-              <Space
-                direction="vertical"
-                style={{ width: "100%" }}
-                size="middle"
-              >
+            <Panel header={<>Product Specifications ({Object.keys(metaData).length})</>} key="6">
+              <Space direction="vertical" style={{ width: '100%' }} size="middle">
                 {Object.entries(metaData)
                   .filter(([id]) => id !== COMPANY_CODE_META_ID)
                   .map(([id, value]) => {
                     const meta = productMetaData.find((m) => m.id === id);
                     if (!meta) return null;
 
-                    const isNumber = meta.fieldType === "number";
+                    const isNumber = meta.fieldType === 'number';
 
                     return (
                       <Row key={id} gutter={16} align="middle">
                         <Col flex="200px">
                           <Text strong>
-                            {meta.title}{" "}
+                            {meta.title}{' '}
                             {meta.unit && (
-                              <span style={{ fontWeight: "normal" }}>
-                                ({meta.unit})
-                              </span>
+                              <span style={{ fontWeight: 'normal' }}>({meta.unit})</span>
                             )}
                           </Text>
                         </Col>
                         <Col flex="1">
                           {isNumber ? (
                             <InputNumber
-                              style={{ width: "100%" }}
+                              style={{ width: '100%' }}
                               value={value || null}
                               onChange={(val) => handleMetaChange(id, val)}
                               placeholder={`Enter ${meta.title.toLowerCase()}`}
@@ -1157,10 +1041,8 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
                             />
                           ) : (
                             <Input
-                              value={value || ""}
-                              onChange={(e) =>
-                                handleMetaChange(id, e.target.value)
-                              }
+                              value={value || ''}
+                              onChange={(e) => handleMetaChange(id, e.target.value)}
                               placeholder={`Enter ${meta.title.toLowerCase()}`}
                             />
                           )}
@@ -1184,23 +1066,17 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
                     );
                   })}
 
-                {productMetaData.filter(
-                  (m) => m.id !== COMPANY_CODE_META_ID && !(m.id in metaData),
-                ).length > 0 && (
+                {productMetaData.filter((m) => m.id !== COMPANY_CODE_META_ID && !(m.id in metaData))
+                  .length > 0 && (
                   <Select
                     placeholder="Add another specification..."
-                    style={{ width: "100%", marginTop: 16 }}
-                    onChange={(id) =>
-                      setMetaData((prev) => ({ ...prev, [id]: "" }))
-                    }
+                    style={{ width: '100%', marginTop: 16 }}
+                    onChange={(id) => setMetaData((prev) => ({ ...prev, [id]: '' }))}
                     allowClear
                     dropdownMatchSelectWidth={false}
                   >
                     {productMetaData
-                      .filter(
-                        (m) =>
-                          m.id !== COMPANY_CODE_META_ID && !(m.id in metaData),
-                      )
+                      .filter((m) => m.id !== COMPANY_CODE_META_ID && !(m.id in metaData))
                       .map((m) => (
                         <Option key={m.id} value={m.id}>
                           {m.title} {m.unit && `(${m.unit})`}
@@ -1209,12 +1085,9 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
                   </Select>
                 )}
 
-                {Object.keys(metaData).length === 1 &&
-                  metaData[COMPANY_CODE_META_ID] && (
-                    <Text type="secondary">
-                      No additional specifications available to add.
-                    </Text>
-                  )}
+                {Object.keys(metaData).length === 1 && metaData[COMPANY_CODE_META_ID] && (
+                  <Text type="secondary">No additional specifications available to add.</Text>
+                )}
               </Space>
             </Panel>
           </Collapse>
@@ -1228,7 +1101,7 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
               loading={isCreating || isUpdating}
               style={{ marginTop: 24 }}
             >
-              {isEditMode ? "Update Product" : "Create Product"}
+              {isEditMode ? 'Update Product' : 'Create Product'}
             </Button>
           )}
         </Form>
@@ -1242,7 +1115,7 @@ const CreateProduct = ({ initialData, isBulkMode = false, onUpdate }) => {
           <img
             src={selectedImage}
             alt="Zoom"
-            style={{ width: "100%", marginTop: 16, borderRadius: 8 }}
+            style={{ width: '100%', marginTop: 16, borderRadius: 8 }}
           />
         </Modal>
       </div>

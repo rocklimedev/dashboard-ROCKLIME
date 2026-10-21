@@ -1,4 +1,4 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
 const {
   createTeam,
@@ -10,56 +10,29 @@ const {
   getTeamMembers,
   updateTeamMember,
   removeTeamMember,
-} = require("./team.controller");
-const { auth } = require("../../middleware/auth");
-const { guardModule } = require("../../middleware/permission");
+} = require('./team.controller');
+const { auth } = require('../../middleware/auth');
+const { guardModule } = require('../../middleware/permission');
 router.use(auth);
-router.use(guardModule("teams"));
+router.use(guardModule('teams'));
 // Teams
-router.post(
-  "/create",
-  createTeam,
-);
+router.post('/create', createTeam);
 
-router.get(
-  "/all",
-  getAllTeams,
-);
+router.get('/all', getAllTeams);
 
-router.get(
-  "/:teamId",
-  getTeamById,
-);
+router.get('/:teamId', getTeamById);
 
-router.put(
-  "/update/:teamId",
-  updateTeam,
-);
+router.put('/update/:teamId', updateTeam);
 
-router.delete(
-  "/delete/:teamId",
-  deleteTeam,
-);
+router.delete('/delete/:teamId', deleteTeam);
 
 // Members
-router.post(
-  "/members/add",
-  addTeamMember,
-);
+router.post('/members/add', addTeamMember);
 
-router.get(
-  "/members/:teamId",
-  getTeamMembers,
-);
+router.get('/members/:teamId', getTeamMembers);
 
-router.put(
-  "/members/update/:memberId",
-  updateTeamMember,
-);
+router.put('/members/update/:memberId', updateTeamMember);
 
-router.delete(
-  "/members/remove/:memberId",
-  removeTeamMember,
-);
+router.delete('/members/remove/:memberId', removeTeamMember);
 
 module.exports = router;

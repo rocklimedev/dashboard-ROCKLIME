@@ -1,6 +1,6 @@
 // src/context/PermissionGate.jsx OR .tsx
-import React from "react";
-import { useAuth } from "./AuthContext";
+import React from 'react';
+import { useAuth } from './AuthContext';
 
 const PermissionGate = ({
   api, // e.g. "edit", "edit|delete", "write"
@@ -15,7 +15,7 @@ const PermissionGate = ({
   if (!api || !module) return children; // no restriction → show
 
   const requiredActions = api
-    .split("|")
+    .split('|')
     .map((a) => a.trim())
     .filter(Boolean);
 
@@ -28,7 +28,7 @@ const PermissionGate = ({
   // If 'any={false}' → require ALL actions (rarely used)
   if (!any) {
     const hasAll = requiredActions.every((action) =>
-      permissions.some((p) => p.module === module && p.action === action)
+      permissions.some((p) => p.module === module && p.action === action),
     );
     return hasAll ? children : fallback;
   }

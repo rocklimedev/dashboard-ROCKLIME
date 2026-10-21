@@ -34,7 +34,6 @@
   border: none !important;
 }
 
-
 /* Title cell */
 .title-cell {
   width: 40%;
@@ -49,7 +48,6 @@
   text-align: center;
   font-weight: bold;
 }
-
 
 /* Product image */
 .product-img {
@@ -247,14 +245,15 @@
 
 @media print {
   /* Force the entire quotation to behave like a printable document */
-  body, html {
+  body,
+  html {
     margin: 0 !important;
     padding: 0 !important;
     background: white !important;
   }
 
   .quotation-container {
-    width: 210mm !important;     /* A4 width */
+    width: 210mm !important; /* A4 width */
     min-height: 297mm !important; /* A4 height */
     padding: 10mm !important;
     box-sizing: border-box !important;
@@ -302,4 +301,3 @@
     overflow: visible !important;
   }
 }
-

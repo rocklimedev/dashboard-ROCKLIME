@@ -9,13 +9,13 @@
 //
 // This is a best guess from the records. At go-live, a physical count
 // (Inventory -> Stock count) sets the real figures.
-const { Op } = require("sequelize");
-const stock = require("./stock.service");
+const { Op } = require('sequelize');
+const stock = require('./stock.service');
 
-const STILL_IN_GODOWN = ["DRAFT", ...stock.HOLDING_STATUSES];
+const STILL_IN_GODOWN = ['DRAFT', ...stock.HOLDING_STATUSES];
 
 async function buildOpeningBalances({ userId = null, force = false, log = console.log } = {}) {
-  const m = require("../../models");
+  const m = require('../../models');
   const { sequelize, Product, Order, StockBalance, PurchaseOrder } = m;
 
   const existing = await StockBalance.count();
@@ -28,7 +28,10 @@ async function buildOpeningBalances({ userId = null, force = false, log = consol
     const wh = await stock.getDefaultWarehouse(t);
 
     // 1. Undispatched quantities on orders whose stock was taken at creation
-    const orders = await Order.findAll({ where: { status: { [Op.in]: STILL_IN_GODOWN } }, transaction: t });
+    const orders = await Order.findAll({
+      where: { status: { [Op.in]: STILL_IN_GODOWN } },
+      transaction: t,
+    });
     const held = {};
     for (const o of orders) {
       for (const n of await stock.orderNeeds(o, t)) {
@@ -37,7 +40,10 @@ async function buildOpeningBalances({ userId = null, force = false, log = consol
     }
 
     // 2. On hand = old quantity + held
-    const products = await Product.findAll({ attributes: ["productId", "quantity"], transaction: t });
+    const products = await Product.findAll({
+      attributes: ['productId', 'quantity'],
+      transaction: t,
+    });
     let opened = 0;
     for (const p of products) {
       const onHand = Math.max(Number(p.quantity) || 0, 0) + (held[p.productId] || 0);
@@ -45,11 +51,11 @@ async function buildOpeningBalances({ userId = null, force = false, log = consol
       await stock.post(t, {
         productId: p.productId,
         warehouseId: wh.id,
-        movement: "OPENING",
+        movement: 'OPENING',
         onHand,
-        ref: { type: "MIGRATION", no: "opening" },
+        ref: { type: 'MIGRATION', no: 'opening' },
         userId,
-        reason: "Opening balance from the old stock figure plus undispatched order quantities",
+        reason: 'Opening balance from the old stock figure plus undispatched order quantities',
         key: `OPENING:${p.productId}`,
       });
       opened++;
@@ -66,14 +72,19 @@ async function buildOpeningBalances({ userId = null, force = false, log = consol
     }
 
     // 4. Open purchase orders count as incoming
-    const pos = await PurchaseOrder.findAll({ where: { status: { [Op.in]: ["confirmed", "partial_delivered"] } }, transaction: t });
-    const PoItem = require("../purchase-order/models/po-item.model");
+    const pos = await PurchaseOrder.findAll({
+      where: { status: { [Op.in]: ['confirmed', 'partial_delivered'] } },
+      transaction: t,
+    });
+    const PoItem = require('../purchase-order/models/po-item.model');
     for (const po of pos) {
       const doc = await PoItem.findOne({ poId: po.id }).lean().exec();
       await stock.poIncoming(po, doc?.items || [], 1, { t, userId });
     }
 
-    log(`Opening balances: ${opened} products, ${holding.length} confirmed orders re-reserved (${backordered} pieces backordered), ${pos.length} open POs as incoming.`);
+    log(
+      `Opening balances: ${opened} products, ${holding.length} confirmed orders re-reserved (${backordered} pieces backordered), ${pos.length} open POs as incoming.`,
+    );
     return { opened, orders: holding.length, backordered, purchaseOrders: pos.length };
   });
 }

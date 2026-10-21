@@ -1,27 +1,27 @@
-import { baseApi } from "../store/baseApi";
+import { baseApi } from '../store/baseApi';
 
 export const teamApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // Create Team
     createTeam: builder.mutation({
       query: (teamData) => ({
-        url: "/teams/create",
-        method: "POST",
+        url: '/teams/create',
+        method: 'POST',
         body: teamData,
       }),
-      invalidatesTags: ["Teams"],
+      invalidatesTags: ['Teams'],
     }),
 
     // Get All Teams
     getAllTeams: builder.query({
-      query: () => "/teams/all",
-      providesTags: ["Teams"],
+      query: () => '/teams/all',
+      providesTags: ['Teams'],
     }),
 
     // Get Single Team
     getTeamById: builder.query({
       query: (teamId) => `/teams/${teamId}`,
-      providesTags: ["Teams"],
+      providesTags: ['Teams'],
     }),
 
     // Update Team
@@ -35,7 +35,7 @@ export const teamApi = baseApi.injectEndpoints({
         };
         return {
           url: `/teams/update/${teamId}`, // Correct endpoint
-          method: "PUT",
+          method: 'PUT',
           body,
         };
       },
@@ -45,44 +45,44 @@ export const teamApi = baseApi.injectEndpoints({
     deleteTeam: builder.mutation({
       query: (teamId) => ({
         url: `/teams/delete/${teamId}`,
-        method: "DELETE",
+        method: 'DELETE',
       }),
-      invalidatesTags: ["Teams"],
+      invalidatesTags: ['Teams'],
     }),
 
     // Add Team Member
     addTeamMember: builder.mutation({
       query: (memberData) => ({
         url: `/teams/members/add`,
-        method: "POST",
+        method: 'POST',
         body: memberData,
       }),
-      invalidatesTags: ["Members", "Teams"], // optional if adding member changes team view too
+      invalidatesTags: ['Members', 'Teams'], // optional if adding member changes team view too
     }),
 
     // Get Team Members
     getTeamMembers: builder.query({
       query: (teamId) => `/teams/members/${teamId}`,
-      providesTags: ["Members"],
+      providesTags: ['Members'],
     }),
 
     // Update Team Member
     updateTeamMember: builder.mutation({
       query: ({ memberId, memberData }) => ({
         url: `/teams/members/update/${memberId}`,
-        method: "PUT",
+        method: 'PUT',
         body: memberData,
       }),
-      invalidatesTags: ["Members", "Teams"],
+      invalidatesTags: ['Members', 'Teams'],
     }),
 
     // Remove Team Member
     removeTeamMember: builder.mutation({
       query: (memberId) => ({
         url: `/teams/members/remove/${memberId}`,
-        method: "DELETE",
+        method: 'DELETE',
       }),
-      invalidatesTags: ["Members", "Teams"],
+      invalidatesTags: ['Members', 'Teams'],
     }),
   }),
 });

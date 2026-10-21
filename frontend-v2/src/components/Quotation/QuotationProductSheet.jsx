@@ -1,4 +1,4 @@
-import { lineAmounts } from "../../utils/quotationMath";
+import { lineAmounts } from '../../utils/quotationMath';
 // src/components/Quotation/QuotationProductSheet.jsx
 //
 // Fully self-contained multi-location quantity split support.
@@ -16,7 +16,7 @@ import { lineAmounts } from "../../utils/quotationMath";
 //     Deleting moves that tab's items back to Unassigned (handled by the
 //     parent via onDeleteFloor / onDeleteRoom).
 
-import React, { useMemo, useState, useEffect, useCallback } from "react";
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import {
   Tabs,
   Input,
@@ -30,14 +30,14 @@ import {
   Alert,
   message,
   Image,
-} from "antd";
+} from 'antd';
 import {
   DeleteOutlined,
   EditOutlined,
   PlusOutlined,
   SearchOutlined,
   ScissorOutlined,
-} from "@ant-design/icons";
+} from '@ant-design/icons';
 import {
   DndContext,
   closestCenter,
@@ -45,41 +45,39 @@ import {
   KeyboardSensor,
   useSensor,
   useSensors,
-} from "@dnd-kit/core";
+} from '@dnd-kit/core';
 import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
   useSortable,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import "./quotationproductsheet.css";
-import { productImage, productCompanyCode } from "./productSyncHelpers";
-import { v4 as uuidv4 } from "uuid";
-import { shareKey, nextSectionPriority, reorderShares, addCatalogShare } from "./shareHelpers";
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import './quotationproductsheet.css';
+import { productImage, productCompanyCode } from './productSyncHelpers';
+import { v4 as uuidv4 } from 'uuid';
+import { shareKey, nextSectionPriority, reorderShares, addCatalogShare } from './shareHelpers';
 
 const { Option } = Select;
 const { Text } = Typography;
 
-const UNASSIGNED = "__unassigned__";
+const UNASSIGNED = '__unassigned__';
 
 // A section only ever exists for the single global Unassigned bucket, or
 // for a concrete floor+room pair. A floor without a room is not a valid
 // section, so it collapses to Unassigned.
-const sectionKey = (floorId, roomId) =>
-  floorId && roomId ? `${floorId}::${roomId}` : UNASSIGNED;
+const sectionKey = (floorId, roomId) => (floorId && roomId ? `${floorId}::${roomId}` : UNASSIGNED);
 
 const locationKey = shareKey;
 
 // Stable row id used both as React key and as the dnd-kit sortable id.
-const rowId = (p) => `${p.productId}::${p._locationKey || "root"}`;
+const rowId = (p) => `${p.productId}::${p._locationKey || 'root'}`;
 // Company code lives in product.meta under this key.
 // Copy into quotation items so the code is shown immediately and survives saving.
 const codeOf = productCompanyCode;
 const lineTotal = (p, qtyOverride) => {
-  const qty =
-    qtyOverride !== undefined ? Number(qtyOverride) : Number(p.qty) || 0;
+  const qty = qtyOverride !== undefined ? Number(qtyOverride) : Number(p.qty) || 0;
   const price = Number(p.sellingPrice) || 0;
   return lineAmounts({ ...p, price, quantity: qty }).net;
 };
@@ -94,17 +92,14 @@ function TabLabel({ text, onEdit, onDelete }) {
   };
 
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
       {text}
       <Tooltip title="Rename">
-        <EditOutlined
-          style={{ fontSize: 12, cursor: "pointer" }}
-          onClick={handle(onEdit)}
-        />
+        <EditOutlined style={{ fontSize: 12, cursor: 'pointer' }} onClick={handle(onEdit)} />
       </Tooltip>
       <Tooltip title="Delete">
         <DeleteOutlined
-          style={{ fontSize: 12, color: "#ff4d4f", cursor: "pointer" }}
+          style={{ fontSize: 12, color: '#ff4d4f', cursor: 'pointer' }}
           onClick={handle(onDelete)}
         />
       </Tooltip>
@@ -120,7 +115,7 @@ function CatalogItem({ product, price, onAdd, alreadyAdded }) {
       <span className="qs-catalog-name">
         {product.name}
         {code && (
-          <Text type="secondary" style={{ fontSize: 11, display: "block" }}>
+          <Text type="secondary" style={{ fontSize: 11, display: 'block' }}>
             {code}
           </Text>
         )}
@@ -131,7 +126,9 @@ function CatalogItem({ product, price, onAdd, alreadyAdded }) {
         size="small"
         icon={<PlusOutlined />}
         title={
-          alreadyAdded ? "Add one more quantity to the section you're viewing" : "Add to the section you're viewing"
+          alreadyAdded
+            ? "Add one more quantity to the section you're viewing"
+            : "Add to the section you're viewing"
         }
         onClick={() => onAdd(product)}
       />
@@ -141,18 +138,18 @@ function CatalogItem({ product, price, onAdd, alreadyAdded }) {
 
 /* ───────────────────────── S.No. drag handle (reorder) ───────────────────────── */
 const SNO_HANDLE_STYLE = {
-  cursor: "grab",
+  cursor: 'grab',
   minWidth: 28,
   height: 28,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
   fontSize: 12,
   fontWeight: 600,
-  color: "#595959",
+  color: '#595959',
   borderRadius: 6,
-  userSelect: "none",
-  background: "#f5f5f5",
+  userSelect: 'none',
+  background: '#f5f5f5',
 };
 
 /* ───────────────────────── Product row ───────────────────────── */
@@ -168,17 +165,14 @@ function ProductRow({
   dragEnabled = true,
 }) {
   const sectionQty = product._sectionQty ?? product.qty;
-  const hasMultipleLocations =
-    Array.isArray(product.locations) && product.locations.length > 1;
+  const hasMultipleLocations = Array.isArray(product.locations) && product.locations.length > 1;
 
   /**
    * Floor selection is staged locally and does NOT move the item by
    * itself — a floor with no room is not a valid assignment. The move
    * only commits (via onMoveShare) once a room is also chosen.
    */
-  const [pendingFloorId, setPendingFloorId] = useState(
-    product.floorId || undefined,
-  );
+  const [pendingFloorId, setPendingFloorId] = useState(product.floorId || undefined);
 
   useEffect(() => {
     setPendingFloorId(product.floorId || undefined);
@@ -186,14 +180,7 @@ function ProductRow({
 
   const pendingFloor = floors.find((f) => f.floorId === pendingFloorId);
 
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: rowId(product),
     disabled: !dragEnabled,
   });
@@ -202,10 +189,10 @@ function ProductRow({
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.75 : 1,
-    background: isDragging ? "#fafafa" : undefined,
-    boxShadow: isDragging ? "0 10px 25px rgba(0,0,0,0.15)" : undefined,
-    position: "relative",
-    zIndex: isDragging ? 100 : "auto",
+    background: isDragging ? '#fafafa' : undefined,
+    boxShadow: isDragging ? '0 10px 25px rgba(0,0,0,0.15)' : undefined,
+    position: 'relative',
+    zIndex: isDragging ? 100 : 'auto',
   };
 
   const handleFloorChange = (floorId) => {
@@ -240,26 +227,28 @@ function ProductRow({
     <tr
       ref={setNodeRef}
       style={style}
-      className={`qs-row${product.isOptionFor ? " qs-option-row" : ""}`}
+      className={`qs-row${product.isOptionFor ? ' qs-option-row' : ''}`}
     >
       {dragEnabled && (
         <td className="qs-cell qs-sno-cell" style={{ width: 40 }}>
-          <div
-            {...attributes}
-            {...listeners}
-            style={SNO_HANDLE_STYLE}
-            title="Drag to reorder"
-          >
-            {serialNumber ?? "–"}
+          <div {...attributes} {...listeners} style={SNO_HANDLE_STYLE} title="Drag to reorder">
+            {serialNumber ?? '–'}
           </div>
         </td>
       )}
 
       <td className="qs-cell">
         {productImage(product) ? (
-          <Image src={productImage(product)} alt={product.name} width={48} height={48}
-            style={{ objectFit: "contain" }} />
-        ) : <Text type="secondary">—</Text>}
+          <Image
+            src={productImage(product)}
+            alt={product.name}
+            width={48}
+            height={48}
+            style={{ objectFit: 'contain' }}
+          />
+        ) : (
+          <Text type="secondary">—</Text>
+        )}
       </td>
       <td className="qs-cell qs-name-cell">
         {product.isOptionFor && <span className="qs-option-arrow">↳ </span>}
@@ -270,22 +259,18 @@ function ProductRow({
           </Text>
         )}
       </td>
-      <td className="qs-cell qs-readonly">{codeOf(product) || "–"}</td>
+      <td className="qs-cell qs-readonly">{codeOf(product) || '–'}</td>
       <td className="qs-cell">
         <InputNumber
           size="small"
           min={1}
           value={sectionQty}
-          onChange={(v) =>
-            onChangeSectionQty(product.productId, product._locationKey, v)
-          }
+          onChange={(v) => onChangeSectionQty(product.productId, product._locationKey, v)}
           className="qs-cell-input"
         />
       </td>
 
-      <td className="qs-cell qs-readonly">
-        ₹{Number(product.sellingPrice || 0).toFixed(2)}
-      </td>
+      <td className="qs-cell qs-readonly">₹{Number(product.sellingPrice || 0).toFixed(2)}</td>
 
       <td className="qs-cell">
         <Space.Compact>
@@ -314,12 +299,24 @@ function ProductRow({
             <Option value="percent">%</Option>
           </Select>
         </Space.Compact>
-        {[["additionalDiscount", "Additional discount / unit ₹"], ["flatPrice", "Flat price / unit ₹"]].map(([field, label]) => (
+        {[
+          ['additionalDiscount', 'Additional discount / unit ₹'],
+          ['flatPrice', 'Flat price / unit ₹'],
+        ].map(([field, label]) => (
           <div key={field} style={{ marginTop: 6 }}>
             <label style={{ fontSize: 11 }}>{label}</label>
-            <InputNumber size="small" min={0} precision={2} value={product[field]} placeholder={field === "flatPrice" ? "Optional" : "0"}
-              style={{ width: "100%" }} aria-label={label}
-              onChange={value => onChangeSectionQty(product.productId, null, null, { [field]: value })} />
+            <InputNumber
+              size="small"
+              min={0}
+              precision={2}
+              value={product[field]}
+              placeholder={field === 'flatPrice' ? 'Optional' : '0'}
+              style={{ width: '100%' }}
+              aria-label={label}
+              onChange={(value) =>
+                onChangeSectionQty(product.productId, null, null, { [field]: value })
+              }
+            />
           </div>
         ))}
       </td>
@@ -358,10 +355,7 @@ function ProductRow({
         </Space.Compact>
 
         {!isFullyAssigned && (
-          <Text
-            type="secondary"
-            style={{ fontSize: 11, display: "block", marginTop: 2 }}
-          >
+          <Text type="secondary" style={{ fontSize: 11, display: 'block', marginTop: 2 }}>
             Pick both a floor and a room to assign
           </Text>
         )}
@@ -389,9 +383,7 @@ function ProductRow({
               type="text"
               size="small"
               icon={<ScissorOutlined />}
-              onClick={() =>
-                onSplitShare(product.productId, product._locationKey)
-              }
+              onClick={() => onSplitShare(product.productId, product._locationKey)}
             />
           </Tooltip>
         )}
@@ -428,10 +420,7 @@ function SheetSection({
   onAddOption,
   onReorder,
 }) {
-  const subtotal = products.reduce(
-    (sum, p) => sum + lineTotal(p, p._sectionQty ?? p.qty),
-    0,
-  );
+  const subtotal = products.reduce((sum, p) => sum + lineTotal(p, p._sectionQty ?? p.qty), 0);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -464,8 +453,7 @@ function SheetSection({
           </Text>
         )}
         <Text type="secondary" className="qs-section-summary">
-          {products.length} item{products.length !== 1 ? "s" : ""} · ₹
-          {subtotal.toFixed(2)}
+          {products.length} item{products.length !== 1 ? 's' : ''} · ₹{subtotal.toFixed(2)}
         </Text>
       </div>
 
@@ -474,11 +462,7 @@ function SheetSection({
           No products here yet — search the catalog above and hit "+" to add
         </div>
       ) : (
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={ids} strategy={verticalListSortingStrategy}>
             <table className="qs-table">
               <thead>
@@ -542,8 +526,7 @@ export default function QuotationProductSheet({
   // Unassigned. Derived rather than stored, so cancelling a delete
   // confirmation never jumps the user off their current tab.
   const safeActiveTab =
-    activeTab === UNASSIGNED ||
-    formData.floors.some((f) => f.floorId === activeTab)
+    activeTab === UNASSIGNED || formData.floors.some((f) => f.floorId === activeTab)
       ? activeTab
       : UNASSIGNED;
 
@@ -555,8 +538,7 @@ export default function QuotationProductSheet({
     return rooms.some((r) => r.roomId === stored) ? stored : rooms[0].roomId;
   };
 
-  const priceOf = (p) =>
-    safeNum(p.meta?.["9ba862ef-f993-4873-95ef-1fef10036aa5"], 0);
+  const priceOf = (p) => safeNum(p.meta?.['9ba862ef-f993-4873-95ef-1fef10036aa5'], 0);
 
   // ─── Group by exploding locations[] ──────────────────────────────
   // Anything that isn't a concrete floor+room pair (including legacy
@@ -606,14 +588,7 @@ export default function QuotationProductSheet({
   }, [formData.products]);
 
   // ─── Helpers ─────────────────────────────────────────────────────
-  const buildSingleLocation = (
-    floorId,
-    roomId,
-    floorName,
-    roomName,
-    qty,
-    priority = 0,
-  ) =>
+  const buildSingleLocation = (floorId, roomId, floorName, roomName, qty, priority = 0) =>
     floorId && roomId
       ? [
           {
@@ -651,62 +626,54 @@ export default function QuotationProductSheet({
 
   // ─── Change qty of one share ─────────────────────────────────────
   // ✅ OPTIMIZED: useCallback prevents re-renders of child components
-  const updateSectionQty = useCallback(
-    (productId, locKey, newQty, extraFields = null) => {
-      setFormData((prev) => {
-        const productIndex = prev.products.findIndex(
-          (p) => p.productId === productId,
-        );
-        if (productIndex === -1) return prev;
+  const updateSectionQty = useCallback((productId, locKey, newQty, extraFields = null) => {
+    setFormData((prev) => {
+      const productIndex = prev.products.findIndex((p) => p.productId === productId);
+      if (productIndex === -1) return prev;
 
-        const p = prev.products[productIndex];
+      const p = prev.products[productIndex];
 
-        if (extraFields) {
-          const updated = [...prev.products];
-          updated[productIndex] = { ...p, ...extraFields };
-          return { ...prev, products: updated };
-        }
-
-        let locs = Array.isArray(p.locations) ? [...p.locations] : [];
-
-        if (locs.length === 0) {
-          locs = [
-            {
-              floorId: p.floorId || null,
-              roomId: p.roomId || null,
-              floorName: p.floorName || null,
-              roomName: p.roomName || null,
-              areaId: null,
-              areaName: null,
-              assignedQuantity: Number(p.qty) || 0,
-              priority: p.priority ?? 0,
-            },
-          ];
-        }
-
-        const idx = locs.findIndex((l) => locationKey(l) === locKey);
-        if (idx === -1) return prev;
-
-        const safeQty = Math.max(1, Number(newQty) || 1);
-        locs[idx] = { ...locs[idx], assignedQuantity: safeQty };
-
-        const total = locs.reduce(
-          (s, l) => s + (Number(l.assignedQuantity) || 0),
-          0,
-        );
-
+      if (extraFields) {
         const updated = [...prev.products];
-        updated[productIndex] = syncSingularFields({
-          ...p,
-          locations: locs,
-          qty: total,
-        });
-
+        updated[productIndex] = { ...p, ...extraFields };
         return { ...prev, products: updated };
+      }
+
+      let locs = Array.isArray(p.locations) ? [...p.locations] : [];
+
+      if (locs.length === 0) {
+        locs = [
+          {
+            floorId: p.floorId || null,
+            roomId: p.roomId || null,
+            floorName: p.floorName || null,
+            roomName: p.roomName || null,
+            areaId: null,
+            areaName: null,
+            assignedQuantity: Number(p.qty) || 0,
+            priority: p.priority ?? 0,
+          },
+        ];
+      }
+
+      const idx = locs.findIndex((l) => locationKey(l) === locKey);
+      if (idx === -1) return prev;
+
+      const safeQty = Math.max(1, Number(newQty) || 1);
+      locs[idx] = { ...locs[idx], assignedQuantity: safeQty };
+
+      const total = locs.reduce((s, l) => s + (Number(l.assignedQuantity) || 0), 0);
+
+      const updated = [...prev.products];
+      updated[productIndex] = syncSingularFields({
+        ...p,
+        locations: locs,
+        qty: total,
       });
-    },
-    [],
-  );
+
+      return { ...prev, products: updated };
+    });
+  }, []);
 
   // ─── Move one share to another floor/room ────────────────────────
   // A share is only ever "Unassigned" (null/null) or "Floor + Room"
@@ -723,9 +690,7 @@ export default function QuotationProductSheet({
       const room = floor?.rooms?.find((r) => r.roomId === targetRoomId);
       const floorName = floor?.floorName || null;
       const roomName = room?.roomName || null;
-      const productIndex = prev.products.findIndex(
-        (p) => p.productId === productId,
-      );
+      const productIndex = prev.products.findIndex((p) => p.productId === productId);
       if (productIndex === -1) return prev;
 
       const p = prev.products[productIndex];
@@ -773,10 +738,7 @@ export default function QuotationProductSheet({
         locs.splice(idx, 1);
       }
 
-      const total = locs.reduce(
-        (s, l) => s + (Number(l.assignedQuantity) || 0),
-        0,
-      );
+      const total = locs.reduce((s, l) => s + (Number(l.assignedQuantity) || 0), 0);
 
       const updated = [...prev.products];
       updated[productIndex] = syncSingularFields({
@@ -793,9 +755,7 @@ export default function QuotationProductSheet({
   // ✅ OPTIMIZED: useCallback prevents re-renders of child components
   const splitShare = useCallback((productId, locKey) => {
     setFormData((prev) => {
-      const productIndex = prev.products.findIndex(
-        (p) => p.productId === productId,
-      );
+      const productIndex = prev.products.findIndex((p) => p.productId === productId);
       if (productIndex === -1) return prev;
 
       const p = prev.products[productIndex];
@@ -821,7 +781,7 @@ export default function QuotationProductSheet({
 
       const currentQty = Number(locs[idx].assignedQuantity) || 0;
       if (currentQty < 2) {
-        message.warning("Need at least 2 quantity to split");
+        message.warning('Need at least 2 quantity to split');
         return prev;
       }
 
@@ -845,10 +805,7 @@ export default function QuotationProductSheet({
         priority,
       });
 
-      const total = locs.reduce(
-        (s, l) => s + (Number(l.assignedQuantity) || 0),
-        0,
-      );
+      const total = locs.reduce((s, l) => s + (Number(l.assignedQuantity) || 0), 0);
 
       const updated = [...prev.products];
       updated[productIndex] = syncSingularFields({
@@ -857,7 +814,7 @@ export default function QuotationProductSheet({
         qty: total,
       });
 
-      message.success("Split 1 qty → Unassigned. Assign it to a floor + room.");
+      message.success('Split 1 qty → Unassigned. Assign it to a floor + room.');
       return { ...prev, products: updated };
     });
   }, []);
@@ -875,17 +832,12 @@ export default function QuotationProductSheet({
           return acc;
         }
 
-        if (
-          !Array.isArray(p.locations) ||
-          p.locations.length <= 1 ||
-          !location
-        ) {
+        if (!Array.isArray(p.locations) || p.locations.length <= 1 || !location) {
           return acc; // drop it
         }
 
         const remainingLocations = p.locations.filter(
-          (loc) =>
-            locationKey(loc) !== location._locationKey,
+          (loc) => locationKey(loc) !== location._locationKey,
         );
 
         if (remainingLocations.length === p.locations.length) {
@@ -973,13 +925,13 @@ export default function QuotationProductSheet({
 
     const newProduct = {
       productId,
-      name: product.name || "Unknown",
+      name: product.name || 'Unknown',
       companyCode: productCompanyCode(product),
       imageUrl: productImage(product),
       qty: 1,
       sellingPrice: price,
       discount: 0,
-      discountType: "fixed",
+      discountType: 'fixed',
       priority: formData.products.length,
       isOptionFor: null,
       groupId: `grp-${String(productId).slice(0, 8)}`,
@@ -1018,9 +970,7 @@ export default function QuotationProductSheet({
       key: UNASSIGNED,
       closable: false,
       label: `Unassigned${
-        productsBySection[UNASSIGNED]?.length
-          ? ` (${productsBySection[UNASSIGNED].length})`
-          : ""
+        productsBySection[UNASSIGNED]?.length ? ` (${productsBySection[UNASSIGNED].length})` : ''
       }`,
       children: (
         <SheetSection
@@ -1040,9 +990,7 @@ export default function QuotationProductSheet({
     ...formData.floors.map((floor) => {
       const rooms = floor.rooms || [];
       const total = rooms.reduce(
-        (sum, r) =>
-          sum +
-          (productsBySection[sectionKey(floor.floorId, r.roomId)]?.length || 0),
+        (sum, r) => sum + (productsBySection[sectionKey(floor.floorId, r.roomId)]?.length || 0),
         0,
       );
 
@@ -1065,10 +1013,7 @@ export default function QuotationProductSheet({
                 type="info"
                 showIcon
                 action={
-                  <Button
-                    size="small"
-                    onClick={() => onAddRoom?.(floor.floorId)}
-                  >
+                  <Button size="small" onClick={() => onAddRoom?.(floor.floorId)}>
                     Add Room
                   </Button>
                 }
@@ -1086,9 +1031,7 @@ export default function QuotationProductSheet({
           closable: false,
           label: (
             <TabLabel
-              text={`🛏️ ${room.roomName}${
-                roomProducts.length ? ` (${roomProducts.length})` : ""
-              }`}
+              text={`🛏️ ${room.roomName}${roomProducts.length ? ` (${roomProducts.length})` : ''}`}
               onEdit={() => onEditRoom?.(floor.floorId, room)}
               onDelete={() => onDeleteRoom?.(floor.floorId, room)}
             />
@@ -1114,7 +1057,7 @@ export default function QuotationProductSheet({
         closable: false,
         label: (
           <TabLabel
-            text={`🏢 ${floor.floorName}${total ? ` (${total})` : ""}`}
+            text={`🏢 ${floor.floorName}${total ? ` (${total})` : ''}`}
             onEdit={() => onEditFloor?.(floor)}
             onDelete={() => onDeleteFloor?.(floor)}
           />
@@ -1130,7 +1073,7 @@ export default function QuotationProductSheet({
                 }))
               }
               onEdit={(targetKey, action) => {
-                if (action === "add") onAddRoom?.(floor.floorId);
+                if (action === 'add') onAddRoom?.(floor.floorId);
               }}
               items={roomTabItems}
               type="editable-card"
@@ -1157,16 +1100,16 @@ export default function QuotationProductSheet({
         />
         {(searchTerm || searchResult.length > 0) && (
           <Text className="qs-catalog-list-label">
-            Click "+" to add a result into the floor/room tab you're viewing.
-            If it is already there, one more quantity is added.
+            Click "+" to add a result into the floor/room tab you're viewing. If it is already
+            there, one more quantity is added.
           </Text>
         )}
         <div className="qs-catalog-list-horizontal">
           {isSearching ? (
-            <Spin size="small" style={{ margin: "0 16px" }} />
+            <Spin size="small" style={{ margin: '0 16px' }} />
           ) : searchResult.length === 0 ? (
             <Text type="secondary" className="qs-catalog-empty-hint">
-              {searchTerm ? "No products found" : "Type to search the catalog"}
+              {searchTerm ? 'No products found' : 'Type to search the catalog'}
             </Text>
           ) : (
             searchResult.map((p) => {
@@ -1190,7 +1133,7 @@ export default function QuotationProductSheet({
           activeKey={safeActiveTab}
           onChange={setActiveTab}
           onEdit={(targetKey, action) => {
-            if (action === "add") onAddFloor?.();
+            if (action === 'add') onAddFloor?.();
           }}
           items={tabItems}
           type="editable-card"

@@ -1,11 +1,11 @@
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
-import ExcelJS from "exceljs";
-import { PDFDocument } from "pdf-lib";
-import termsAndConditionsPdf from "../../../assets/Terms.pdf";
-import { fetchImg, placeholder } from "./imageHelpers";
-import { calcTotals, amountInWords } from "./calcHelpers";
-import { message } from "antd";
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import ExcelJS from 'exceljs';
+import { PDFDocument } from 'pdf-lib';
+import termsAndConditionsPdf from '../../../assets/Terms.pdf';
+import { fetchImg, placeholder } from './imageHelpers';
+import { calcTotals, amountInWords } from './calcHelpers';
+import { message } from 'antd';
 /* ------------------------------------------------------------------ */
 /*                          UTILITY: Safe Filename Title              */
 /* ------------------------------------------------------------------ */
@@ -15,17 +15,17 @@ export const getSafeTitle = (quotation = {}) => {
     quotation.title ||
     quotation.document_title ||
     quotation.reference_number ||
-    "Quotation";
+    'Quotation';
 
-  if (!rawTitle || typeof rawTitle !== "string") return "Quotation";
+  if (!rawTitle || typeof rawTitle !== 'string') return 'Quotation';
 
   return rawTitle
     .trim()
-    .replace(/[\\/:*?"<>|]/g, "_")
-    .replace(/\s+/g, "_")
-    .replace(/_+/g, "_")
+    .replace(/[\\/:*?"<>|]/g, '_')
+    .replace(/\s+/g, '_')
+    .replace(/_+/g, '_')
     .substring(0, 50)
-    .replace(/^_+|_+$/g, "");
+    .replace(/^_+|_+$/g, '');
 };
 
 // ------------------------------------------------------------
@@ -41,39 +41,38 @@ export const exportToPDF = async (
   id,
   activeVersion,
   quotation = {},
-  filename = "quotation.pdf",
+  filename = 'quotation.pdf',
 ) => {
   if (!ref?.current) return;
 
   // -------- Resolve print root --------
   let printArea =
-    ref.current.querySelector(".print-area") ||
-    ref.current.querySelector("[data-print-root]") ||
-    (ref.current.classList.contains("print-area") ? ref.current : null) ||
+    ref.current.querySelector('.print-area') ||
+    ref.current.querySelector('[data-print-root]') ||
+    (ref.current.classList.contains('print-area') ? ref.current : null) ||
     ref.current;
 
   if (!printArea) {
-    message.error("Print area not found");
+    message.error('Print area not found');
     return;
   }
 
   const nodeToPrint = printArea.cloneNode(true);
 
   // -------- HARD FIX: preload images via CORS-safe proxy --------
-  const images = nodeToPrint.querySelectorAll("img");
+  const images = nodeToPrint.querySelectorAll('img');
 
   await Promise.all(
     Array.from(images).map((img) => {
       return new Promise((resolve) => {
-        const src = img.getAttribute("src");
+        const src = img.getAttribute('src');
         if (!src) return resolve();
 
         const cleanImg = new Image();
-        cleanImg.crossOrigin = "anonymous";
+        cleanImg.crossOrigin = 'anonymous';
 
         // critical: avoid cached tainted version
-        cleanImg.src =
-          src + (src.includes("?") ? "&" : "?") + "corsfix=" + Date.now();
+        cleanImg.src = src + (src.includes('?') ? '&' : '?') + 'corsfix=' + Date.now();
 
         cleanImg.onload = () => {
           img.src = cleanImg.src;
@@ -86,27 +85,27 @@ export const exportToPDF = async (
   );
 
   // -------- Inject into DOM (hidden) --------
-  const container = document.createElement("div");
-  container.style.position = "fixed";
-  container.style.left = "-99999px";
-  container.style.top = "0";
-  container.style.width = "210mm";
-  container.style.background = "#fff";
+  const container = document.createElement('div');
+  container.style.position = 'fixed';
+  container.style.left = '-99999px';
+  container.style.top = '0';
+  container.style.width = '210mm';
+  container.style.background = '#fff';
 
   Object.assign(nodeToPrint.style, {
-    width: "210mm",
-    minHeight: "297mm",
-    background: "#fff",
+    width: '210mm',
+    minHeight: '297mm',
+    background: '#fff',
   });
 
   container.appendChild(nodeToPrint);
   document.body.appendChild(container);
 
   try {
-    const pages = nodeToPrint.querySelectorAll(".page");
-    if (!pages.length) throw new Error("No .page elements");
+    const pages = nodeToPrint.querySelectorAll('.page');
+    if (!pages.length) throw new Error('No .page elements');
 
-    const pdf = new jsPDF("p", "mm", "a4");
+    const pdf = new jsPDF('p', 'mm', 'a4');
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = pdf.internal.pageSize.getHeight();
 
@@ -114,9 +113,9 @@ export const exportToPDF = async (
       const page = pages[i];
 
       Object.assign(page.style, {
-        width: "210mm",
-        minHeight: "297mm",
-        background: "#fff",
+        width: '210mm',
+        minHeight: '297mm',
+        background: '#fff',
       });
 
       // wait a frame to ensure layout + images painted
@@ -127,27 +126,18 @@ export const exportToPDF = async (
         useCORS: true,
         allowTaint: false,
         imageTimeout: 20000,
-        backgroundColor: "#ffffff",
+        backgroundColor: '#ffffff',
         logging: false,
       });
 
-      const imgData = canvas.toDataURL("image/jpeg", 0.95);
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
 
       if (i > 0) pdf.addPage();
-      pdf.addImage(
-        imgData,
-        "JPEG",
-        0,
-        0,
-        pdfWidth,
-        pdfHeight,
-        undefined,
-        "FAST",
-      );
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
     }
 
     // -------- Attach T&C --------
-    let finalPdfBytes = pdf.output("arraybuffer");
+    let finalPdfBytes = pdf.output('arraybuffer');
 
     try {
       const tncRes = await fetch(termsAndConditionsPdf);
@@ -164,27 +154,27 @@ export const exportToPDF = async (
     } catch {}
 
     // -------- Download --------
-    const blob = new Blob([finalPdfBytes], { type: "application/pdf" });
+    const blob = new Blob([finalPdfBytes], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
 
-    const a = document.createElement("a");
+    const a = document.createElement('a');
     a.href = url;
     a.download = filename;
     a.click();
 
     URL.revokeObjectURL(url);
 
-    message.success("PDF exported successfully!");
+    message.success('PDF exported successfully!');
   } catch (err) {
-    message.error("PDF export failed: " + err.message);
+    message.error('PDF export failed: ' + err.message);
   } finally {
     document.body.removeChild(container);
   }
 };
 const downloadBlob = (data, name) => {
-  const blob = new Blob([data], { type: "application/pdf" });
+  const blob = new Blob([data], { type: 'application/pdf' });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
+  const a = document.createElement('a');
   a.href = url;
   a.download = name;
   document.body.appendChild(a);
@@ -200,14 +190,13 @@ const computeRowPricing = (item) => {
   const mrp = Number(item.price ?? 0);
   const qty = Number(item.quantity ?? 1);
   const discValue = Number(item.discount ?? 0);
-  const discType = (item.discountType ?? "percent").toLowerCase();
+  const discType = (item.discountType ?? 'percent').toLowerCase();
 
   let unitPrice = mrp;
   if (discValue > 0) {
-    unitPrice =
-      discType === "percent" ? mrp * (1 - discValue / 100) : mrp - discValue;
+    unitPrice = discType === 'percent' ? mrp * (1 - discValue / 100) : mrp - discValue;
   }
-  if (item.flatPrice != null && item.flatPrice !== "") unitPrice = Number(item.flatPrice);
+  if (item.flatPrice != null && item.flatPrice !== '') unitPrice = Number(item.flatPrice);
   unitPrice -= Number(item.additionalDiscount) || 0;
   unitPrice = Math.round(unitPrice * 100) / 100;
 
@@ -217,11 +206,7 @@ const computeRowPricing = (item) => {
       : Math.round(unitPrice * qty * 100) / 100;
 
   const displayDiscount =
-    discValue > 0
-      ? discType === "percent"
-        ? `${discValue}%`
-        : `₹${discValue.toFixed(0)}`
-      : "0";
+    discValue > 0 ? (discType === 'percent' ? `${discValue}%` : `₹${discValue.toFixed(0)}`) : '0';
 
   return {
     mrp,
@@ -239,45 +224,44 @@ const computeRowPricing = (item) => {
 /* ------------------------------------------------------------------ */
 export const exportToExcel = async ({
   products = [], // flat array of product objects (mainProducts / allProducts)
-  brandNames = "",
-  customerName = "Dear Client",
+  brandNames = '',
+  customerName = 'Dear Client',
   quotation = {},
-  address = "",
+  address = '',
   logo,
   accountDetails,
   id,
-  activeVersion = "current",
+  activeVersion = 'current',
   exportOptions = {},
-  documentLabel = "Quotation",
+  documentLabel = 'Quotation',
   documentTotals = null,
 } = {}) => {
   if (!products || products.length === 0) {
-    message.warning("No products found to export.");
+    message.warning('No products found to export.');
   }
 
   const hidden = new Set(exportOptions.hidden || []);
   const columns = [
-    { key: "sno", label: "S.No", value: "idx", width: 6 },
-    { key: "image", label: "Image", value: "img", width: 12 },
-    { key: "name", label: "Product Name", value: "name", width: 35 },
-    { key: "code", label: "Code", value: "code", width: 14 },
-    { key: "mrp", label: "MRP", value: "mrpDisplay", width: 12 },
-    { key: "discount", label: "Discount", value: "discount", width: 12 },
-    { key: "price", label: "Rate", value: "rateDisplay", width: 12 },
-    { key: "qty", label: "Unit", value: "qty", width: 8 },
-    { key: "total", label: "Total", value: "totalDisplay", width: 14 },
-  ].filter(column => !hidden.has(column.key));
-  const imageColumn = columns.findIndex(column => column.key === "image");
+    { key: 'sno', label: 'S.No', value: 'idx', width: 6 },
+    { key: 'image', label: 'Image', value: 'img', width: 12 },
+    { key: 'name', label: 'Product Name', value: 'name', width: 35 },
+    { key: 'code', label: 'Code', value: 'code', width: 14 },
+    { key: 'mrp', label: 'MRP', value: 'mrpDisplay', width: 12 },
+    { key: 'discount', label: 'Discount', value: 'discount', width: 12 },
+    { key: 'price', label: 'Rate', value: 'rateDisplay', width: 12 },
+    { key: 'qty', label: 'Unit', value: 'qty', width: 8 },
+    { key: 'total', label: 'Total', value: 'totalDisplay', width: 14 },
+  ].filter((column) => !hidden.has(column.key));
+  const imageColumn = columns.findIndex((column) => column.key === 'image');
   /* ---------- 1. Build rows directly from product objects ---------- */
   const rows = products.map((p, i) => {
-    const { mrp, qty, unitPrice, lineTotal, displayDiscount } =
-      computeRowPricing(p);
+    const { mrp, qty, unitPrice, lineTotal, displayDiscount } = computeRowPricing(p);
 
     return {
       idx: i + 1,
       img: p.imageUrl || null,
-      name: p.name || "‑",
-      code: p.companyCode || p.productCode || "N/A",
+      name: p.name || '‑',
+      code: p.companyCode || p.productCode || 'N/A',
       mrp,
       mrpDisplay: `₹${mrp.toFixed(2)}`,
       discount: displayDiscount,
@@ -292,25 +276,25 @@ export const exportToExcel = async ({
   /* ---------- 2. Load images ---------- */
   const logoImg = logo ? await fetchImg(logo) : placeholder;
   const prodImgPromises = rows.map((r) =>
-    !hidden.has("image") && r.img ? fetchImg(r.img) : Promise.resolve(null),
+    !hidden.has('image') && r.img ? fetchImg(r.img) : Promise.resolve(null),
   );
   const prodImgs = await Promise.all(prodImgPromises);
 
   /* ---------- 3. Workbook ---------- */
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet(documentLabel, {
-    pageSetup: { paperSize: 9, orientation: "portrait", fitToPage: true },
+    pageSetup: { paperSize: 9, orientation: 'portrait', fitToPage: true },
     properties: { defaultRowHeight: 20 },
   });
 
   /* ---------- 4. Column widths ---------- */
-  ws.columns = columns.map(column => ({ width: column.width }));
+  ws.columns = columns.map((column) => ({ width: column.width }));
 
   /* ---------- 5. LOGO ---------- */
   if (logoImg?.buffer) {
     const logoId = wb.addImage({
       buffer: logoImg.buffer,
-      extension: logoImg.extension || "png",
+      extension: logoImg.extension || 'png',
     });
     ws.addImage(logoId, {
       tl: { col: 3, row: 0 },
@@ -320,58 +304,58 @@ export const exportToExcel = async ({
   }
 
   /* ---------- 6. Title + Brand ---------- */
-  ws.mergeCells("B2:E2");
-  ws.getCell("B2").value = documentLabel === "Quotation" ? "Estimate / Quotation" : documentLabel;
-  ws.getCell("B2").font = { bold: true, size: 16 };
-  ws.getCell("B2").alignment = { horizontal: "center", vertical: "middle" };
+  ws.mergeCells('B2:E2');
+  ws.getCell('B2').value = documentLabel === 'Quotation' ? 'Estimate / Quotation' : documentLabel;
+  ws.getCell('B2').font = { bold: true, size: 16 };
+  ws.getCell('B2').alignment = { horizontal: 'center', vertical: 'middle' };
 
-  ws.mergeCells("F2:I2");
-  ws.getCell("F2").value = brandNames || "";
-  ws.getCell("F2").font = { bold: true };
-  ws.getCell("F2").alignment = { horizontal: "right" };
+  ws.mergeCells('F2:I2');
+  ws.getCell('F2').value = brandNames || '';
+  ws.getCell('F2').font = { bold: true };
+  ws.getCell('F2').alignment = { horizontal: 'right' };
 
   /* ---------- 7. Customer block ---------- */
-  ws.mergeCells("B4:E5");
-  ws.getCell("B4").value = customerName || "Dear Client";
+  ws.mergeCells('B4:E5');
+  ws.getCell('B4').value = customerName || 'Dear Client';
 
-  ws.mergeCells("G4:I5");
+  ws.mergeCells('G4:I5');
   const dateStr = quotation?.quotation_date
-    ? new Date(quotation.quotation_date).toLocaleDateString("en-IN")
-    : "‑";
-  ws.getCell("G4").value = dateStr;
+    ? new Date(quotation.quotation_date).toLocaleDateString('en-IN')
+    : '‑';
+  ws.getCell('G4').value = dateStr;
 
-  ws.mergeCells("B6:I7");
-  ws.getCell("B6").value = address || "N/A";
+  ws.mergeCells('B6:I7');
+  ws.getCell('B6').value = address || 'N/A';
 
   /* ---------- 8. Product table header ---------- */
-  const header = ws.addRow(columns.map(column => column.label));
+  const header = ws.addRow(columns.map((column) => column.label));
   header.font = { bold: true };
   header.eachCell((c) => {
     c.fill = {
-      type: "pattern",
-      pattern: "solid",
-      fgColor: { argb: "FFD9D9D9" },
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFD9D9D9' },
     };
     c.border = {
-      top: { style: "thin" },
-      left: { style: "thin" },
-      bottom: { style: "thin" },
-      right: { style: "thin" },
+      top: { style: 'thin' },
+      left: { style: 'thin' },
+      bottom: { style: 'thin' },
+      right: { style: 'thin' },
     };
-    c.alignment = { vertical: "middle", horizontal: "center" };
+    c.alignment = { vertical: 'middle', horizontal: 'center' };
   });
   ws.getRow(ws.rowCount).height = 30;
 
   /* ---------- 9. Product rows ---------- */
   rows.forEach((r, i) => {
-    const row = ws.addRow(columns.map(column => column.key === "image" ? "" : r[column.value]));
+    const row = ws.addRow(columns.map((column) => (column.key === 'image' ? '' : r[column.value])));
     row.height = imageColumn >= 0 ? 60 : 24;
 
     const img = prodImgs[i];
     if (imageColumn >= 0 && img?.buffer) {
       const imgId = wb.addImage({
         buffer: img.buffer,
-        extension: img.extension || "png",
+        extension: img.extension || 'png',
       });
       ws.addImage(imgId, {
         tl: { col: imageColumn, row: ws.rowCount - 1 },
@@ -382,12 +366,12 @@ export const exportToExcel = async ({
     row.eachCell((c, n) => {
       if (n === imageColumn + 1) return; // skip image column
       c.border = {
-        top: { style: "thin" },
-        left: { style: "thin" },
-        bottom: { style: "thin" },
-        right: { style: "thin" },
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' },
       };
-      c.alignment = { vertical: "middle" };
+      c.alignment = { vertical: 'middle' };
     });
   });
 
@@ -396,19 +380,30 @@ export const exportToExcel = async ({
     subtotal,
     gst: gstAmount,
     total: finalTotal,
-  } = documentTotals ? { subtotal: documentTotals.taxableValue, gst: documentTotals.gstAmount, total: documentTotals.grandTotal } : calcTotals(
-    rows.map((r) => ({ total: r.total })),
-    quotation?.gst_value ?? 0,
-    quotation?.include_gst ?? false,
-  );
+  } = documentTotals
+    ? {
+        subtotal: documentTotals.taxableValue,
+        gst: documentTotals.gstAmount,
+        total: documentTotals.grandTotal,
+      }
+    : calcTotals(
+        rows.map((r) => ({ total: r.total })),
+        quotation?.gst_value ?? 0,
+        quotation?.include_gst ?? false,
+      );
 
-  if (!hidden.has("total")) {
+  if (!hidden.has('total')) {
     if (documentTotals) {
       const summaries = [
-        ["Goods value", documentTotals.goodsValue], ["Freight / installation", documentTotals.freight],
-        ...(documentTotals.miscellaneousChargeItems || []).map(row => [row.name, row.amount]),
-        ["Extra discount", -documentTotals.extraDiscountAmount], ["Additional discount", -Number(quotation.additionalDiscount || 0)],
-        ["Taxable value", documentTotals.taxableValue], ["GST", documentTotals.gstAmount], ["Round off", documentTotals.roundOff], ["Grand total", documentTotals.grandTotal],
+        ['Goods value', documentTotals.goodsValue],
+        ['Freight / installation', documentTotals.freight],
+        ...(documentTotals.miscellaneousChargeItems || []).map((row) => [row.name, row.amount]),
+        ['Extra discount', -documentTotals.extraDiscountAmount],
+        ['Additional discount', -Number(quotation.additionalDiscount || 0)],
+        ['Taxable value', documentTotals.taxableValue],
+        ['GST', documentTotals.gstAmount],
+        ['Round off', documentTotals.roundOff],
+        ['Grand total', documentTotals.grandTotal],
       ];
       for (const [label, value] of summaries) ws.addRow([label, Number(value || 0).toFixed(2)]);
     }
@@ -420,26 +415,26 @@ export const exportToExcel = async ({
 
     /* ---------- 11. Tax summary ---------- */
     const taxHeader = ws.addRow([
-      "HSN/SAC",
-      "Taxable Value",
-      documentTotals?.interState ? "IGST" : "CGST",
-      documentTotals?.interState ? "IGST Amt" : "CGST Amt",
-      documentTotals?.interState ? "" : "SGST",
-      documentTotals?.interState ? "" : "SGST Amt",
-      "Total",
+      'HSN/SAC',
+      'Taxable Value',
+      documentTotals?.interState ? 'IGST' : 'CGST',
+      documentTotals?.interState ? 'IGST Amt' : 'CGST Amt',
+      documentTotals?.interState ? '' : 'SGST',
+      documentTotals?.interState ? '' : 'SGST Amt',
+      'Total',
     ]);
     taxHeader.font = { bold: true };
     taxHeader.eachCell((c) => {
       c.fill = {
-        type: "pattern",
-        pattern: "solid",
-        fgColor: { argb: "FFD9D9D9" },
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFD9D9D9' },
       };
       c.border = {
-        top: { style: "thin" },
-        left: { style: "thin" },
-        bottom: { style: "thin" },
-        right: { style: "thin" },
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' },
       };
     });
 
@@ -447,11 +442,12 @@ export const exportToExcel = async ({
     // off each product if present, otherwise grouped under "N/A".
     const taxMap = new Map();
     products.forEach((p) => {
-      const hsn = p.hsnSac || p.hsn || "N/A";
+      const hsn = p.hsnSac || p.hsn || 'N/A';
       const { lineTotal } = computeRowPricing(p);
       const rate = Number(quotation?.gst ?? quotation?.gst_value) || 0;
       const goods = rows.reduce((sum, row) => sum + row.total, 0);
-      const taxableLine = documentTotals && goods ? lineTotal * documentTotals.taxableValue / goods : lineTotal;
+      const taxableLine =
+        documentTotals && goods ? (lineTotal * documentTotals.taxableValue) / goods : lineTotal;
       const cgst = (taxableLine * rate) / (documentTotals?.interState ? 100 : 200);
 
       if (!taxMap.has(hsn)) taxMap.set(hsn, { taxable: 0, cgst: 0 });
@@ -466,29 +462,29 @@ export const exportToExcel = async ({
         `₹${taxable.toFixed(2)}`,
         `${(Number(quotation?.gst ?? quotation?.gst_value ?? 0) / (documentTotals?.interState ? 1 : 2)).toFixed(1)}%`,
         `₹${cgst.toFixed(2)}`,
-        documentTotals?.interState ? "" : `${(Number(quotation?.gst ?? quotation?.gst_value ?? 0) / 2).toFixed(1)}%`,
-        documentTotals?.interState ? "" : `₹${cgst.toFixed(2)}`,
+        documentTotals?.interState
+          ? ''
+          : `${(Number(quotation?.gst ?? quotation?.gst_value ?? 0) / 2).toFixed(1)}%`,
+        documentTotals?.interState ? '' : `₹${cgst.toFixed(2)}`,
         `₹${(taxable + cgst * (documentTotals?.interState ? 1 : 2)).toFixed(2)}`,
       ]);
     });
 
     const totalTaxRow = ws.addRow([
-      "Total",
+      'Total',
       `₹${subtotal.toFixed(2)}`,
-      "",
+      '',
       `₹${(gstAmount / (documentTotals?.interState ? 1 : 2)).toFixed(2)}`,
-      "",
-      documentTotals?.interState ? "" : `₹${(gstAmount / 2).toFixed(2)}`,
+      '',
+      documentTotals?.interState ? '' : `₹${(gstAmount / 2).toFixed(2)}`,
       `₹${finalTotal.toFixed(2)}`,
     ]);
     totalTaxRow.eachCell((c) => (c.font = { bold: true }));
 
     ws.addRow([]);
     ws.mergeCells(`A${ws.rowCount}:G${ws.rowCount}`);
-    ws.getCell(`A${ws.rowCount}`).value =
-      `Tax Amount (in words): ${amountInWords(gstAmount)}`;
+    ws.getCell(`A${ws.rowCount}`).value = `Tax Amount (in words): ${amountInWords(gstAmount)}`;
     ws.getCell(`A${ws.rowCount}`).font = { bold: true };
-
   }
 
   /* ---------- 12. Bank details ---------- */
@@ -497,43 +493,41 @@ export const exportToExcel = async ({
   ws.mergeCells(`A${ws.rowCount}:D${ws.rowCount}`);
   ws.getCell(`A${ws.rowCount}`).value =
     `Company's Bank Details\nA/c Holder: EMBARK ENTERPRISES\nBank: IDFC FIRST BANK\nA/c No: 10179373657\nBranch & IFS: BHERA ENCLAVE PASCHIM VIHAR & IDFB0020149`;
-  ws.getCell(`A${ws.rowCount}`).alignment = { vertical: "top" };
+  ws.getCell(`A${ws.rowCount}`).alignment = { vertical: 'top' };
 
   ws.mergeCells(`E${ws.rowCount}:I${ws.rowCount}`);
   ws.getCell(`E${ws.rowCount}`).value =
     `PAN: AALFE0496K\nDeclaration: We declare that this ${documentLabel.toLowerCase()} shows the actual price...`;
   ws.getCell(`E${ws.rowCount}`).alignment = {
-    horizontal: "right",
-    vertical: "top",
+    horizontal: 'right',
+    vertical: 'top',
   };
 
   ws.addRow([]);
   ws.mergeCells(`A${ws.rowCount}:I${ws.rowCount}`);
-  ws.getCell(`A${ws.rowCount}`).value =
-    "for EMBARK ENTERPRISES\n\n\nAuthorised Signatory";
+  ws.getCell(`A${ws.rowCount}`).value = 'for EMBARK ENTERPRISES\n\n\nAuthorised Signatory';
   ws.getCell(`A${ws.rowCount}`).alignment = {
-    horizontal: "right",
-    vertical: "bottom",
+    horizontal: 'right',
+    vertical: 'bottom',
   };
 
   ws.addRow([]);
   ws.mergeCells(`A${ws.rowCount}:I${ws.rowCount}`);
-  ws.getCell(`A${ws.rowCount}`).value =
-    "Terms & Conditions: Refer attached document.";
+  ws.getCell(`A${ws.rowCount}`).value = 'Terms & Conditions: Refer attached document.';
   ws.getCell(`A${ws.rowCount}`).font = { bold: true };
 
   /* ---------- 13. Save with custom filename ---------- */
-  const safeVersion = activeVersion === "current" ? "Latest" : activeVersion;
+  const safeVersion = activeVersion === 'current' ? 'Latest' : activeVersion;
   const safeTitle = getSafeTitle(quotation);
-  const titlePart = safeTitle ? `${safeTitle}_` : "";
-  const excelFilename = `${documentLabel === "Dispatch" ? "Dispatch_" : ""}${titlePart}V${safeVersion}.xlsx`;
+  const titlePart = safeTitle ? `${safeTitle}_` : '';
+  const excelFilename = `${documentLabel === 'Dispatch' ? 'Dispatch_' : ''}${titlePart}V${safeVersion}.xlsx`;
 
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], {
-    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
+  const a = document.createElement('a');
   a.href = url;
   a.download = excelFilename;
   document.body.appendChild(a);
@@ -541,5 +535,5 @@ export const exportToExcel = async ({
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 
-  message.success("Excel exported successfully!");
+  message.success('Excel exported successfully!');
 };

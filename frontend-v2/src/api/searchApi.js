@@ -1,18 +1,18 @@
-import { toast } from "sonner";
-import { baseApi } from "../store/baseApi";
+import { toast } from 'sonner';
+import { baseApi } from '../store/baseApi';
 
 // Define the search API slice
 export const searchApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     searchAll: builder.query({
       query: ({ query, page = 1, limit = 20 }) => ({
-        url: "/search/",
+        url: '/search/',
         params: { query, page, limit },
       }),
 
       transformResponse: (response) => {
         if (!response.success) {
-          throw new Error(response.message || "Search failed");
+          throw new Error(response.message || 'Search failed');
         }
 
         return {
@@ -28,13 +28,12 @@ export const searchApi = baseApi.injectEndpoints({
       },
 
       transformErrorResponse: (error) => {
-        const message =
-          error.data?.message || "An error occurred during search";
+        const message = error.data?.message || 'An error occurred during search';
         toast.error(message);
         return { message };
       },
 
-      providesTags: ["Search"],
+      providesTags: ['Search'],
     }),
   }),
 });

@@ -10,12 +10,14 @@ Without --input, reads the configured database in a consistent read transaction.
 Company codes use live metadata IDs plus legacy companyCode/company_code keys. Codes and names are trimmed, case-insensitive and whitespace-normalized. Names use normalized Levenshtein similarity (minimum 90%). Each pair is checked independently, so chained matches cannot introduce false pairs. Products from different brands are included when the code matches, but brand differences require review. Missing/conflicting codes, names and malformed JSON are reported separately.
 
 Outputs:
+
 - exact-duplicates.json: same business fields; IDs, internal product codes and timestamps excluded from comparison.
 - differences-review.json: matching company code and >=90% name similarity, with every differing business field and both complete records. Includes stock, variants, brand, metadata and raw name differences.
 - skipped-products.json: records that cannot be safely compared.
 - summary.json: counts and comparison policy.
 
 Date focus defaults to 24 July 2026 in Asia/Kolkata (India time). It compares the entire catalog first: duplicate counterparts are never filtered by date. Additional reports:
+
 - updated-on-date-duplicates.json: candidate pairs where either product's latest updatedAt falls on the target day.
 - created-on-date-duplicates.json: candidate pairs where either product was created on the target day, including products updated again later.
 - date-matched-products.json: unique target-day products with their full records, current selling prices and all matching counterparts. Flags distinguish older products updated that day from products created that day. Each counterpart records whether it was created before, on, or after the target day.

@@ -1,16 +1,9 @@
-import React from "react";
-import { Table, Spin, Alert, Badge, Typography } from "antd";
+import React from 'react';
+import { Table, Spin, Alert, Badge, Typography } from 'antd';
 
 const { Title } = Typography;
 
-const DataTable = ({
-  title,
-  columns,
-  dataSource,
-  isLoading,
-  error,
-  rowKey,
-}) => {
+const DataTable = ({ title, columns, dataSource, isLoading, error, rowKey }) => {
   return (
     <div>
       <Title level={4}>{title}</Title>

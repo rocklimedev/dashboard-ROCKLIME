@@ -1,13 +1,13 @@
 // models/Category.js
 module.exports = (sequelize, DataTypes) => {
   const Category = sequelize.define(
-    "Category",
+    'Category',
     {
       categoryId: {
         type: DataTypes.UUID,
         primaryKey: true,
         defaultValue: DataTypes.UUIDV4,
-        field: "categoryId",
+        field: 'categoryId',
       },
       name: {
         type: DataTypes.STRING(100),
@@ -21,24 +21,24 @@ module.exports = (sequelize, DataTypes) => {
       brandId: {
         type: DataTypes.UUID,
         allowNull: false,
-        field: "brandId",
+        field: 'brandId',
       },
       parentCategoryId: {
         type: DataTypes.UUID,
         allowNull: true,
-        field: "parentCategoryId",
+        field: 'parentCategoryId',
       },
     },
     {
-      tableName: "categories",
+      tableName: 'categories',
       timestamps: true,
       indexes: [
-        { fields: ["brandId"] },
-        { fields: ["parentCategoryId"] },
-        { unique: true, fields: ["slug"] },
-        { unique: true, fields: ["name", "brandId"] }, // prevent duplicates within same brand
+        { fields: ['brandId'] },
+        { fields: ['parentCategoryId'] },
+        { unique: true, fields: ['slug'] },
+        { unique: true, fields: ['name', 'brandId'] }, // prevent duplicates within same brand
       ],
-    }
+    },
   );
 
   // -------------------------------------------------
@@ -47,20 +47,20 @@ module.exports = (sequelize, DataTypes) => {
   Category.associate = (models) => {
     // Category → Brand (N:1)
     Category.belongsTo(models.Brand, {
-      foreignKey: "brandId",
-      as: "brand",
+      foreignKey: 'brandId',
+      as: 'brand',
     });
 
     // Category → ParentCategory (N:1)
     Category.belongsTo(models.ParentCategory, {
-      foreignKey: "parentCategoryId",
-      as: "parentCategory",
+      foreignKey: 'parentCategoryId',
+      as: 'parentCategory',
     });
 
     // Category → Keyword (1:N)
     Category.hasMany(models.Keyword, {
-      foreignKey: "categoryId",
-      as: "keywords",
+      foreignKey: 'categoryId',
+      as: 'keywords',
     });
   };
 

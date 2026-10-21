@@ -1,8 +1,8 @@
-const { v4: uuidv4 } = require("uuid");
+const { v4: uuidv4 } = require('uuid');
 
 module.exports = (sequelize, DataTypes) => {
   const Vendor = sequelize.define(
-    "Vendor",
+    'Vendor',
     {
       id: {
         type: DataTypes.UUID,
@@ -25,11 +25,11 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.UUID,
         allowNull: true,
         references: {
-          model: "brands", // table name
-          key: "id",
+          model: 'brands', // table name
+          key: 'id',
         },
-        onUpdate: "CASCADE",
-        onDelete: "SET NULL",
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL',
       },
 
       contactPerson: { type: DataTypes.STRING(120), allowNull: true },
@@ -45,19 +45,19 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: true,
         references: {
-          model: "brands", // table name
-          key: "brandSlug",
+          model: 'brands', // table name
+          key: 'brandSlug',
         },
-        onUpdate: "CASCADE",
-        onDelete: "SET NULL",
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL',
       },
     },
     {
-      tableName: "vendors",
+      tableName: 'vendors',
       timestamps: true,
-      charset: "utf8mb4",
-      collate: "utf8mb4_unicode_ci",
-      engine: "InnoDB",
+      charset: 'utf8mb4',
+      collate: 'utf8mb4_unicode_ci',
+      engine: 'InnoDB',
     },
   );
 
@@ -66,10 +66,10 @@ module.exports = (sequelize, DataTypes) => {
   // -------------------------------
   Vendor.associate = (models) => {
     // Vendor ↔ Brand
-    Vendor.belongsTo(models.Brand, { foreignKey: "brandId", as: "brand" });
+    Vendor.belongsTo(models.Brand, { foreignKey: 'brandId', as: 'brand' });
 
     // Vendor ↔ Products
-    Vendor.hasMany(models.Product, { foreignKey: "vendorId", as: "products" });
+    Vendor.hasMany(models.Product, { foreignKey: 'vendorId', as: 'products' });
   };
 
   return Vendor;

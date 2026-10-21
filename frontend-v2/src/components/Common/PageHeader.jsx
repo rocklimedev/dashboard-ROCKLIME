@@ -1,10 +1,10 @@
-import React from "react";
-import { jsPDF } from "jspdf";
-import "jspdf-autotable";
-import * as XLSX from "xlsx";
-import { FilePdfFilled, FileExcelFilled } from "@ant-design/icons";
-import { Tooltip, Switch, message } from "antd";
-import { AppstoreOutlined, UnorderedListOutlined } from "@ant-design/icons";
+import React from 'react';
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
+import * as XLSX from 'xlsx';
+import { FilePdfFilled, FileExcelFilled } from '@ant-design/icons';
+import { Tooltip, Switch, message } from 'antd';
+import { AppstoreOutlined, UnorderedListOutlined } from '@ant-design/icons';
 const PageHeader = ({
   title,
   subtitle,
@@ -17,7 +17,7 @@ const PageHeader = ({
 }) => {
   const handleDownloadPDF = () => {
     if (!tableData?.length) {
-      message.info("Nothing to export yet");
+      message.info('Nothing to export yet');
       return;
     }
 
@@ -26,9 +26,7 @@ const PageHeader = ({
     doc.text(`${title} Report`, 14, 20);
 
     const headers = Object.keys(tableData[0] || {});
-    const rows = tableData.map((row) =>
-      headers.map((h) => String(row[h] ?? "—")),
-    );
+    const rows = tableData.map((row) => headers.map((h) => String(row[h] ?? '—')));
 
     doc.autoTable({
       head: [headers],
@@ -38,21 +36,18 @@ const PageHeader = ({
       headStyles: { fillColor: [60, 141, 188] },
     });
 
-    doc.save(`${title.toLowerCase().replace(/\s+/g, "_")}.pdf`);
+    doc.save(`${title.toLowerCase().replace(/\s+/g, '_')}.pdf`);
   };
 
   const handleDownloadExcel = () => {
     if (!tableData?.length) {
-      message.info("Nothing to export yet");
+      message.info('Nothing to export yet');
       return;
     }
     const worksheet = XLSX.utils.json_to_sheet(tableData);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
-    XLSX.writeFile(
-      workbook,
-      `${title.toLowerCase().replace(/\s+/g, "_")}.xlsx`,
-    );
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
+    XLSX.writeFile(workbook, `${title.toLowerCase().replace(/\s+/g, '_')}.xlsx`);
   };
 
   return (
@@ -69,52 +64,50 @@ const PageHeader = ({
       <div className="d-flex align-items-center gap-3">
         {/* Export Buttons */}
         {Array.isArray(tableData) && (
-        <ul className="table-top-head d-flex align-items-center gap-2 mb-0">
-          {exportOptions.pdf && (
-            <li>
-              <Tooltip title="Download PDF">
-                <a
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleDownloadPDF();
-                  }}
-                  style={{ fontSize: 24, color: "#e74c3c", cursor: "pointer" }}
-                >
-                  <FilePdfFilled />
-                </a>
-              </Tooltip>
-            </li>
-          )}
+          <ul className="table-top-head d-flex align-items-center gap-2 mb-0">
+            {exportOptions.pdf && (
+              <li>
+                <Tooltip title="Download PDF">
+                  <a
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleDownloadPDF();
+                    }}
+                    style={{ fontSize: 24, color: '#e74c3c', cursor: 'pointer' }}
+                  >
+                    <FilePdfFilled />
+                  </a>
+                </Tooltip>
+              </li>
+            )}
 
-          {exportOptions.excel && (
-            <li>
-              <Tooltip title="Download Excel">
-                <a
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleDownloadExcel();
-                  }}
-                  style={{ fontSize: 24, color: "#27ae60", cursor: "pointer" }}
-                >
-                  <FileExcelFilled />
-                </a>
-              </Tooltip>
-            </li>
-          )}
-        </ul>
+            {exportOptions.excel && (
+              <li>
+                <Tooltip title="Download Excel">
+                  <a
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleDownloadExcel();
+                    }}
+                    style={{ fontSize: 24, color: '#27ae60', cursor: 'pointer' }}
+                  >
+                    <FileExcelFilled />
+                  </a>
+                </Tooltip>
+              </li>
+            )}
+          </ul>
         )}
 
         {/* View Toggle (Card/List) - Optional */}
         {viewToggle && (
-          <Tooltip
-            title={viewToggle.viewMode === "card" ? "List View" : "Card View"}
-          >
+          <Tooltip title={viewToggle.viewMode === 'card' ? 'List View' : 'Card View'}>
             <Switch
               checkedChildren={<AppstoreOutlined />}
               unCheckedChildren={<UnorderedListOutlined />}
-              checked={viewToggle.viewMode === "card"}
+              checked={viewToggle.viewMode === 'card'}
               onChange={viewToggle.onChange}
             />
           </Tooltip>

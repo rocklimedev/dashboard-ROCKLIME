@@ -1,7 +1,7 @@
 // src/components/modals/CreateProductModal.jsx
-import React from "react";
-import { Modal, Form, Input, InputNumber, Select, Button, message } from "antd";
-import { useCreateProductMutation } from "../../api/productApi";
+import React from 'react';
+import { Modal, Form, Input, InputNumber, Select, Button, message } from 'antd';
+import { useCreateProductMutation } from '../../api/productApi';
 
 const { Option } = Select;
 
@@ -12,14 +12,14 @@ const CreateProductModal = ({ open, onClose, onSuccess }) => {
   const handleSubmit = async (values) => {
     const formData = new FormData();
 
-    formData.append("name", values.name.trim());
-    formData.append("product_code", values.product_code.trim());
-    formData.append("quantity", Number(values.quantity) || 0);
-    formData.append("status", values.status);
+    formData.append('name', values.name.trim());
+    formData.append('product_code', values.product_code.trim());
+    formData.append('quantity', Number(values.quantity) || 0);
+    formData.append('status', values.status);
 
     // Required defaults
-    formData.append("isMaster", false);
-    formData.append("isFeatured", false);
+    formData.append('isMaster', false);
+    formData.append('isFeatured', false);
 
     try {
       const result = await createProduct(formData).unwrap();
@@ -31,7 +31,7 @@ const CreateProductModal = ({ open, onClose, onSuccess }) => {
       onClose();
     } catch (err) {
       console.error(err);
-      message.error(err?.data?.message || "Failed to create product");
+      message.error(err?.data?.message || 'Failed to create product');
     }
   };
 
@@ -49,14 +49,14 @@ const CreateProductModal = ({ open, onClose, onSuccess }) => {
         layout="vertical"
         onFinish={handleSubmit}
         initialValues={{
-          status: "active",
+          status: 'active',
           quantity: 1,
         }}
       >
         <Form.Item
           name="name"
           label="Product Name"
-          rules={[{ required: true, message: "Product name is required" }]}
+          rules={[{ required: true, message: 'Product name is required' }]}
         >
           <Input placeholder="Enter product name" />
         </Form.Item>
@@ -65,8 +65,8 @@ const CreateProductModal = ({ open, onClose, onSuccess }) => {
           name="product_code"
           label="Product Code"
           rules={[
-            { required: true, message: "Product code is required" },
-            { whitespace: true, message: "Product code cannot be empty" },
+            { required: true, message: 'Product code is required' },
+            { whitespace: true, message: 'Product code cannot be empty' },
           ]}
         >
           <Input placeholder="e.g. OPT-2026-001" />
@@ -75,9 +75,9 @@ const CreateProductModal = ({ open, onClose, onSuccess }) => {
         <Form.Item
           name="quantity"
           label="Quantity"
-          rules={[{ required: true, message: "Quantity is required" }]}
+          rules={[{ required: true, message: 'Quantity is required' }]}
         >
-          <InputNumber min={0} style={{ width: "100%" }} />
+          <InputNumber min={0} style={{ width: '100%' }} />
         </Form.Item>
 
         <Form.Item name="status" label="Status" rules={[{ required: true }]}>
@@ -90,8 +90,8 @@ const CreateProductModal = ({ open, onClose, onSuccess }) => {
 
         <div
           style={{
-            display: "flex",
-            justifyContent: "end",
+            display: 'flex',
+            justifyContent: 'end',
             gap: 12,
             marginTop: 24,
           }}

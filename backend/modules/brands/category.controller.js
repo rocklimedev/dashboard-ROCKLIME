@@ -1,15 +1,9 @@
 // controllers/category.controller.js
-const { Op } = require("sequelize");
-const sequelize = require("../../config/database");
+const { Op } = require('sequelize');
+const sequelize = require('../../config/database');
 
-const slugify = require("slugify");
-const {
-  BrandParentCategory,
-  Keyword,
-  Brand,
-  ParentCategory,
-  Category,
-} = require("../../models");
+const slugify = require('slugify');
+const { BrandParentCategory, Keyword, Brand, ParentCategory, Category } = require('../../models');
 
 // Create Category (with optional keywords)
 exports.createCategory = async (req, res) => {
@@ -20,7 +14,7 @@ exports.createCategory = async (req, res) => {
       await t.rollback();
       return res.status(400).json({
         success: false,
-        message: "name, brandId and parentCategoryId are required",
+        message: 'name, brandId and parentCategoryId are required',
       });
     }
 
@@ -31,15 +25,11 @@ exports.createCategory = async (req, res) => {
     ]);
     if (!brand) {
       await t.rollback();
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid brandId" });
+      return res.status(400).json({ success: false, message: 'Invalid brandId' });
     }
     if (!parent) {
       await t.rollback();
-      return res
-        .status(400)
-        .json({ success: false, message: "Invalid parentCategoryId" });
+      return res.status(400).json({ success: false, message: 'Invalid parentCategoryId' });
     }
 
     // Ensure Brand-ParentCategory link exists (create if missing)
@@ -67,10 +57,7 @@ exports.createCategory = async (req, res) => {
       ];
       // If your Keyword model is globally unique on `keyword`, replace with findOrCreate or switch to composite unique (see note at bottom).
       for (const k of clean) {
-        await Keyword.create(
-          { keyword: k, categoryId: category.categoryId },
-          { transaction: t },
-        );
+        await Keyword.create({ keyword: k, categoryId: category.categoryId }, { transaction: t });
       }
     }
 
@@ -80,15 +67,15 @@ exports.createCategory = async (req, res) => {
       include: [
         {
           model: ParentCategory,
-          as: "parentCategory",
-          attributes: ["id", "name", "slug"],
+          as: 'parentCategory',
+          attributes: ['id', 'name', 'slug'],
         },
         {
           model: Brand,
-          as: "brand",
-          attributes: ["id", "brandName", "brandSlug"],
+          as: 'brand',
+          attributes: ['id', 'brandName', 'brandSlug'],
         },
-        { model: Keyword, as: "keywords" },
+        { model: Keyword, as: 'keywords' },
       ],
     });
 
@@ -106,19 +93,19 @@ exports.getAllCategories = async (req, res) => {
       include: [
         {
           model: ParentCategory,
-          as: "parentCategory",
-          attributes: ["id", "name", "slug"],
+          as: 'parentCategory',
+          attributes: ['id', 'name', 'slug'],
         },
         {
           model: Brand,
-          as: "brand",
-          attributes: ["id", "brandName", "brandSlug"],
+          as: 'brand',
+          attributes: ['id', 'brandName', 'brandSlug'],
         },
-        { model: Keyword, as: "keywords" },
+        { model: Keyword, as: 'keywords' },
       ],
       order: [
-        ["name", "ASC"],
-        [{ model: Keyword, as: "keywords" }, "keyword", "ASC"],
+        ['name', 'ASC'],
+        [{ model: Keyword, as: 'keywords' }, 'keyword', 'ASC'],
       ],
     });
     res.status(200).json({ success: true, categories });
@@ -135,21 +122,18 @@ exports.getCategoryById = async (req, res) => {
       include: [
         {
           model: ParentCategory,
-          as: "parentCategory",
-          attributes: ["id", "name", "slug"],
+          as: 'parentCategory',
+          attributes: ['id', 'name', 'slug'],
         },
         {
           model: Brand,
-          as: "brand",
-          attributes: ["id", "brandName", "brandSlug"],
+          as: 'brand',
+          attributes: ['id', 'brandName', 'brandSlug'],
         },
-        { model: Keyword, as: "keywords" },
+        { model: Keyword, as: 'keywords' },
       ],
     });
-    if (!category)
-      return res
-        .status(404)
-        .json({ success: false, message: "Category not found" });
+    if (!category) return res.status(404).json({ success: false, message: 'Category not found' });
     res.status(200).json({ success: true, category });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -166,9 +150,7 @@ exports.updateCategory = async (req, res) => {
     const category = await Category.findByPk(id, { transaction: t });
     if (!category) {
       await t.rollback();
-      return res
-        .status(404)
-        .json({ success: false, message: "Category not found" });
+      return res.status(404).json({ success: false, message: 'Category not found' });
     }
 
     // validate brand/parent if provided
@@ -176,9 +158,7 @@ exports.updateCategory = async (req, res) => {
       const brand = await Brand.findByPk(brandId, { transaction: t });
       if (!brand) {
         await t.rollback();
-        return res
-          .status(400)
-          .json({ success: false, message: "Invalid brandId" });
+        return res.status(400).json({ success: false, message: 'Invalid brandId' });
       }
       category.brandId = brandId;
     }
@@ -188,9 +168,7 @@ exports.updateCategory = async (req, res) => {
       });
       if (!parent) {
         await t.rollback();
-        return res
-          .status(400)
-          .json({ success: false, message: "Invalid parentCategoryId" });
+        return res.status(400).json({ success: false, message: 'Invalid parentCategoryId' });
       }
       // ensure link exists
       await BrandParentCategory.findOrCreate({
@@ -224,9 +202,7 @@ exports.updateCategory = async (req, res) => {
       });
       const existingSet = new Set(existing.map((k) => k.keyword));
       const toAdd = incoming.filter((k) => !existingSet.has(k));
-      const toRemove = existing
-        .filter((k) => !incoming.includes(k.keyword))
-        .map((k) => k.keyword);
+      const toRemove = existing.filter((k) => !incoming.includes(k.keyword)).map((k) => k.keyword);
 
       if (toRemove.length) {
         await Keyword.destroy({
@@ -235,10 +211,7 @@ exports.updateCategory = async (req, res) => {
         });
       }
       for (const k of toAdd) {
-        await Keyword.create(
-          { keyword: k, categoryId: id },
-          { transaction: t },
-        );
+        await Keyword.create({ keyword: k, categoryId: id }, { transaction: t });
       }
     }
 
@@ -248,21 +221,21 @@ exports.updateCategory = async (req, res) => {
       include: [
         {
           model: ParentCategory,
-          as: "parentCategory",
-          attributes: ["id", "name", "slug"],
+          as: 'parentCategory',
+          attributes: ['id', 'name', 'slug'],
         },
         {
           model: Brand,
-          as: "brand",
-          attributes: ["id", "brandName", "brandSlug"],
+          as: 'brand',
+          attributes: ['id', 'brandName', 'brandSlug'],
         },
-        { model: Keyword, as: "keywords" },
+        { model: Keyword, as: 'keywords' },
       ],
     });
 
     res.status(200).json({
       success: true,
-      message: "Category updated successfully",
+      message: 'Category updated successfully',
       category: fresh,
     });
   } catch (error) {
@@ -276,14 +249,9 @@ exports.deleteCategory = async (req, res) => {
   try {
     const { id } = req.params; // categoryId
     const category = await Category.findByPk(id);
-    if (!category)
-      return res
-        .status(404)
-        .json({ success: false, message: "Category not found" });
+    if (!category) return res.status(404).json({ success: false, message: 'Category not found' });
     await category.destroy(); // keywords cascade if FK is CASCADE + hooks: true
-    res
-      .status(200)
-      .json({ success: true, message: "Category deleted successfully" });
+    res.status(200).json({ success: true, message: 'Category deleted successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -299,9 +267,7 @@ exports.replaceCategoryKeywords = async (req, res) => {
     const category = await Category.findByPk(id, { transaction: t });
     if (!category) {
       await t.rollback();
-      return res
-        .status(404)
-        .json({ success: false, message: "Category not found" });
+      return res.status(404).json({ success: false, message: 'Category not found' });
     }
 
     const incoming = [
@@ -319,9 +285,7 @@ exports.replaceCategoryKeywords = async (req, res) => {
     });
     const existingSet = new Set(existing.map((k) => k.keyword));
     const toAdd = incoming.filter((k) => !existingSet.has(k));
-    const toRemove = existing
-      .filter((k) => !incoming.includes(k.keyword))
-      .map((k) => k.keyword);
+    const toRemove = existing.filter((k) => !incoming.includes(k.keyword)).map((k) => k.keyword);
 
     if (toRemove.length) {
       await Keyword.destroy({
@@ -335,11 +299,9 @@ exports.replaceCategoryKeywords = async (req, res) => {
 
     await t.commit();
     const fresh = await Category.findByPk(id, {
-      include: [{ model: Keyword, as: "keywords" }],
+      include: [{ model: Keyword, as: 'keywords' }],
     });
-    return res
-      .status(200)
-      .json({ success: true, message: "Keywords updated", category: fresh });
+    return res.status(200).json({ success: true, message: 'Keywords updated', category: fresh });
   } catch (error) {
     await t.rollback();
     return res.status(500).json({ success: false, message: error.message });
@@ -354,7 +316,7 @@ exports.getAllCategoriesByBrand = async (req, res) => {
     if (!brandId) {
       return res.status(400).json({
         success: false,
-        message: "brandId is required",
+        message: 'brandId is required',
       });
     }
 
@@ -363,19 +325,19 @@ exports.getAllCategoriesByBrand = async (req, res) => {
       include: [
         {
           model: ParentCategory,
-          as: "parentCategory",
-          attributes: ["id", "name", "slug"],
+          as: 'parentCategory',
+          attributes: ['id', 'name', 'slug'],
         },
         {
           model: Brand,
-          as: "brand",
-          attributes: ["id", "brandName", "brandSlug"],
+          as: 'brand',
+          attributes: ['id', 'brandName', 'brandSlug'],
         },
-        { model: Keyword, as: "keywords" },
+        { model: Keyword, as: 'keywords' },
       ],
       order: [
-        ["name", "ASC"],
-        [{ model: Keyword, as: "keywords" }, "keyword", "ASC"],
+        ['name', 'ASC'],
+        [{ model: Keyword, as: 'keywords' }, 'keyword', 'ASC'],
       ],
     });
 

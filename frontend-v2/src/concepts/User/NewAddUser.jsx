@@ -1,33 +1,22 @@
-import React, { useState, useEffect } from "react";
-import {
-  Form,
-  Button,
-  Input,
-  Select,
-  Checkbox,
-  DatePicker,
-  TimePicker,
-} from "antd";
-import { message } from "antd";
-import moment from "moment";
+import React, { useState, useEffect } from 'react';
+import { Form, Button, Input, Select, Checkbox, DatePicker, TimePicker } from 'antd';
+import { message } from 'antd';
+import moment from 'moment';
 import {
   useCreateUserMutation,
   useUpdateUserMutation,
   useGetUserByIdQuery,
-} from "../../api/userApi";
-import { useGetRolesQuery } from "../../api/rolesApi";
-import {
-  useCreateAddressMutation,
-  useUpdateAddressMutation,
-} from "../../api/addressApi";
-import { useNavigate, useParams } from "react-router-dom";
+} from '../../api/userApi';
+import { useGetRolesQuery } from '../../api/rolesApi';
+import { useCreateAddressMutation, useUpdateAddressMutation } from '../../api/addressApi';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   LeftOutlined,
   ReloadOutlined,
   ClearOutlined,
   InfoCircleOutlined,
   HomeOutlined,
-} from "@ant-design/icons";
+} from '@ant-design/icons';
 
 const { Option } = Select;
 
@@ -53,24 +42,24 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
   const [manageAddress, setManageAddress] = useState(false);
 
   const [formData, setFormData] = useState({
-    username: "",
-    name: "",
-    email: "",
-    mobileNumber: "",
-    dateOfBirth: "",
-    shiftFrom: "",
-    shiftTo: "",
-    bloodGroup: "",
-    emergencyNumber: "",
-    roleId: "",
-    status: "inactive",
-    password: "",
-    about: "",
-    street: "",
-    country: "",
-    state: "",
-    city: "",
-    postalCode: "",
+    username: '',
+    name: '',
+    email: '',
+    mobileNumber: '',
+    dateOfBirth: '',
+    shiftFrom: '',
+    shiftTo: '',
+    bloodGroup: '',
+    emergencyNumber: '',
+    roleId: '',
+    status: 'inactive',
+    password: '',
+    about: '',
+    street: '',
+    country: '',
+    state: '',
+    city: '',
+    postalCode: '',
     addressId: null,
     isEmailVerified: false,
   });
@@ -79,33 +68,31 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
   useEffect(() => {
     if (userToEdit) {
       setFormData({
-        username: userToEdit.username || "",
-        name: userToEdit.name || "",
-        email: userToEdit.email || "",
-        mobileNumber: userToEdit.mobileNumber || "",
+        username: userToEdit.username || '',
+        name: userToEdit.name || '',
+        email: userToEdit.email || '',
+        mobileNumber: userToEdit.mobileNumber || '',
         isEmailVerified: userToEdit.isEmailVerified ?? false,
         dateOfBirth: userToEdit.dateOfBirth
-          ? new Date(userToEdit.dateOfBirth).toISOString().split("T")[0]
-          : "",
+          ? new Date(userToEdit.dateOfBirth).toISOString().split('T')[0]
+          : '',
         shiftFrom: userToEdit.shiftFrom
-          ? moment(userToEdit.shiftFrom, "HH:mm:ss").format("HH:mm")
-          : "",
-        shiftTo: userToEdit.shiftTo
-          ? moment(userToEdit.shiftTo, "HH:mm:ss").format("HH:mm")
-          : "",
-        bloodGroup: userToEdit.bloodGroup || "",
-        street: userToEdit.address?.street || "",
-        country: userToEdit.address?.country || "",
-        state: userToEdit.address?.state || "",
-        city: userToEdit.address?.city || "",
-        postalCode: userToEdit.address?.postalCode || "",
-        emergencyNumber: userToEdit.emergencyNumber || "",
-        roleId: userToEdit.roleId || "",
-        status: ["active", "inactive", "restricted"].includes(userToEdit.status)
+          ? moment(userToEdit.shiftFrom, 'HH:mm:ss').format('HH:mm')
+          : '',
+        shiftTo: userToEdit.shiftTo ? moment(userToEdit.shiftTo, 'HH:mm:ss').format('HH:mm') : '',
+        bloodGroup: userToEdit.bloodGroup || '',
+        street: userToEdit.address?.street || '',
+        country: userToEdit.address?.country || '',
+        state: userToEdit.address?.state || '',
+        city: userToEdit.address?.city || '',
+        postalCode: userToEdit.address?.postalCode || '',
+        emergencyNumber: userToEdit.emergencyNumber || '',
+        roleId: userToEdit.roleId || '',
+        status: ['active', 'inactive', 'restricted'].includes(userToEdit.status)
           ? userToEdit.status
-          : "inactive",
-        password: "",
-        about: userToEdit.about || "",
+          : 'inactive',
+        password: '',
+        about: userToEdit.about || '',
         addressId: userToEdit.addressId || null,
       });
       setIsEditMode(true);
@@ -122,11 +109,11 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
   };
 
   const handleDateChange = (name, date) => {
-    handleChange(name, date ? date.format("YYYY-MM-DD") : "");
+    handleChange(name, date ? date.format('YYYY-MM-DD') : '');
   };
 
   const handleTimeChange = (name, time) => {
-    handleChange(name, time ? time.format("HH:mm") : "");
+    handleChange(name, time ? time.format('HH:mm') : '');
   };
 
   // === Reset & Clear Functions ===
@@ -141,7 +128,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
           const user = data?.data || data?.user;
           if (user) populateForm(user);
         } catch {
-          message.error("Failed to reload user data");
+          message.error('Failed to reload user data');
         }
       }
     } else {
@@ -151,33 +138,25 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
 
   const populateForm = (user) => {
     setFormData({
-      username: user.username || "",
-      name: user.name || "",
-      email: user.email || "",
-      mobileNumber: user.mobileNumber || "",
+      username: user.username || '',
+      name: user.name || '',
+      email: user.email || '',
+      mobileNumber: user.mobileNumber || '',
       isEmailVerified: user.isEmailVerified ?? false,
-      dateOfBirth: user.dateOfBirth
-        ? new Date(user.dateOfBirth).toISOString().split("T")[0]
-        : "",
-      shiftFrom: user.shiftFrom
-        ? moment(user.shiftFrom, "HH:mm:ss").format("HH:mm")
-        : "",
-      shiftTo: user.shiftTo
-        ? moment(user.shiftTo, "HH:mm:ss").format("HH:mm")
-        : "",
-      bloodGroup: user.bloodGroup || "",
-      street: user.address?.street || "",
-      country: user.address?.country || "",
-      state: user.address?.state || "",
-      city: user.address?.city || "",
-      postalCode: user.address?.postalCode || "",
-      emergencyNumber: user.emergencyNumber || "",
-      roleId: user.roleId || "",
-      status: ["active", "inactive", "restricted"].includes(user.status)
-        ? user.status
-        : "inactive",
-      password: "",
-      about: user.about || "",
+      dateOfBirth: user.dateOfBirth ? new Date(user.dateOfBirth).toISOString().split('T')[0] : '',
+      shiftFrom: user.shiftFrom ? moment(user.shiftFrom, 'HH:mm:ss').format('HH:mm') : '',
+      shiftTo: user.shiftTo ? moment(user.shiftTo, 'HH:mm:ss').format('HH:mm') : '',
+      bloodGroup: user.bloodGroup || '',
+      street: user.address?.street || '',
+      country: user.address?.country || '',
+      state: user.address?.state || '',
+      city: user.address?.city || '',
+      postalCode: user.address?.postalCode || '',
+      emergencyNumber: user.emergencyNumber || '',
+      roleId: user.roleId || '',
+      status: ['active', 'inactive', 'restricted'].includes(user.status) ? user.status : 'inactive',
+      password: '',
+      about: user.about || '',
       addressId: user.addressId || null,
     });
     setManageAddress(!!user.addressId);
@@ -185,24 +164,24 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
 
   const clearForm = () => {
     setFormData({
-      username: "",
-      name: "",
-      email: "",
-      mobileNumber: "",
-      dateOfBirth: "",
-      shiftFrom: "",
-      shiftTo: "",
-      bloodGroup: "",
-      emergencyNumber: "",
-      roleId: "",
-      status: "inactive",
-      password: "",
-      about: "",
-      street: "",
-      country: "",
-      state: "",
-      city: "",
-      postalCode: "",
+      username: '',
+      name: '',
+      email: '',
+      mobileNumber: '',
+      dateOfBirth: '',
+      shiftFrom: '',
+      shiftTo: '',
+      bloodGroup: '',
+      emergencyNumber: '',
+      roleId: '',
+      status: 'inactive',
+      password: '',
+      about: '',
+      street: '',
+      country: '',
+      state: '',
+      city: '',
+      postalCode: '',
       addressId: null,
       isEmailVerified: false,
     });
@@ -211,19 +190,17 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
 
   const handleRefresh = () => resetToOriginal();
   const handleClear = () => clearForm();
-  const handleClose = () => navigate("/users/list");
+  const handleClose = () => navigate('/users/list');
 
   // === Form Submission ===
   const handleSubmit = async () => {
     try {
-      const required = ["username", "email", "name", "roleId"];
-      if (!isEditMode) required.push("password");
+      const required = ['username', 'email', 'name', 'roleId'];
+      if (!isEditMode) required.push('password');
 
       for (const field of required) {
         if (!formData[field]?.trim()) {
-          message.error(
-            `${field.charAt(0).toUpperCase() + field.slice(1)} is required`
-          );
+          message.error(`${field.charAt(0).toUpperCase() + field.slice(1)} is required`);
           return;
         }
       }
@@ -232,14 +209,14 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
         const from = moment(`1970-01-01 ${formData.shiftFrom}`);
         const to = moment(`1970-01-01 ${formData.shiftTo}`);
         if (to.isSameOrBefore(from)) {
-          message.error("Shift To must be after Shift From");
+          message.error('Shift To must be after Shift From');
           return;
         }
       }
 
       const selectedRole = roles?.find((r) => r.roleId === formData.roleId);
       if (!selectedRole) {
-        message.error("Invalid role selected");
+        message.error('Invalid role selected');
         return;
       }
 
@@ -313,12 +290,10 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
         }
       }
 
-      message.success(
-        isEditMode ? "User updated successfully" : "User created successfully"
-      );
-      navigate("/users/list");
+      message.success(isEditMode ? 'User updated successfully' : 'User created successfully');
+      navigate('/users/list');
     } catch (err) {
-      message.error(err?.data?.message || "Operation failed");
+      message.error(err?.data?.message || 'Operation failed');
     }
   };
 
@@ -330,8 +305,8 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
         <div className="page-header">
           <div className="add-item d-flex">
             <div className="page-title">
-              <h4>{isEditMode ? "Edit User" : "Add User"}</h4>
-              <h6>{isEditMode ? "Update user details" : "Create new user"}</h6>
+              <h4>{isEditMode ? 'Edit User' : 'Add User'}</h4>
+              <h6>{isEditMode ? 'Update user details' : 'Create new user'}</h6>
             </div>
           </div>
 
@@ -384,7 +359,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                   <Form.Item label="Username" required>
                     <Input
                       value={formData.username}
-                      onChange={(e) => handleChange("username", e.target.value)}
+                      onChange={(e) => handleChange('username', e.target.value)}
                     />
                   </Form.Item>
                 </div>
@@ -392,7 +367,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                   <Form.Item label="Full Name" required>
                     <Input
                       value={formData.name}
-                      onChange={(e) => handleChange("name", e.target.value)}
+                      onChange={(e) => handleChange('name', e.target.value)}
                     />
                   </Form.Item>
                 </div>
@@ -401,7 +376,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                     <Input
                       type="email"
                       value={formData.email}
-                      onChange={(e) => handleChange("email", e.target.value)}
+                      onChange={(e) => handleChange('email', e.target.value)}
                     />
                   </Form.Item>
                 </div>
@@ -410,25 +385,20 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                   <Form.Item
                     label="Mobile Number"
                     validateStatus={
-                      formData.mobileNumber &&
-                      !/^\d{10}$/.test(formData.mobileNumber)
-                        ? "error"
-                        : ""
+                      formData.mobileNumber && !/^\d{10}$/.test(formData.mobileNumber)
+                        ? 'error'
+                        : ''
                     }
                     help={
-                      formData.mobileNumber &&
-                      !/^\d{10}$/.test(formData.mobileNumber)
-                        ? "Must be 10 digits"
-                        : ""
+                      formData.mobileNumber && !/^\d{10}$/.test(formData.mobileNumber)
+                        ? 'Must be 10 digits'
+                        : ''
                     }
                   >
                     <Input
                       value={formData.mobileNumber}
                       onChange={(e) =>
-                        handleChange(
-                          "mobileNumber",
-                          e.target.value.replace(/\D/g, "").slice(0, 10)
-                        )
+                        handleChange('mobileNumber', e.target.value.replace(/\D/g, '').slice(0, 10))
                       }
                       maxLength={10}
                     />
@@ -438,14 +408,10 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                 <div className="col-lg-4 col-md-6">
                   <Form.Item label="Date of Birth">
                     <DatePicker
-                      value={
-                        formData.dateOfBirth
-                          ? moment(formData.dateOfBirth)
-                          : null
-                      }
-                      onChange={(d) => handleDateChange("dateOfBirth", d)}
+                      value={formData.dateOfBirth ? moment(formData.dateOfBirth) : null}
+                      onChange={(d) => handleDateChange('dateOfBirth', d)}
                       format="YYYY-MM-DD"
-                      style={{ width: "100%" }}
+                      style={{ width: '100%' }}
                     />
                   </Form.Item>
                 </div>
@@ -453,14 +419,10 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                 <div className="col-lg-4 col-md-6">
                   <Form.Item label="Shift From">
                     <TimePicker
-                      value={
-                        formData.shiftFrom
-                          ? moment(formData.shiftFrom, "HH:mm")
-                          : null
-                      }
-                      onChange={(t) => handleTimeChange("shiftFrom", t)}
+                      value={formData.shiftFrom ? moment(formData.shiftFrom, 'HH:mm') : null}
+                      onChange={(t) => handleTimeChange('shiftFrom', t)}
                       format="HH:mm"
-                      style={{ width: "100%" }}
+                      style={{ width: '100%' }}
                     />
                   </Form.Item>
                 </div>
@@ -468,14 +430,10 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                 <div className="col-lg-4 col-md-6">
                   <Form.Item label="Shift To">
                     <TimePicker
-                      value={
-                        formData.shiftTo
-                          ? moment(formData.shiftTo, "HH:mm")
-                          : null
-                      }
-                      onChange={(t) => handleTimeChange("shiftTo", t)}
+                      value={formData.shiftTo ? moment(formData.shiftTo, 'HH:mm') : null}
+                      onChange={(t) => handleTimeChange('shiftTo', t)}
                       format="HH:mm"
-                      style={{ width: "100%" }}
+                      style={{ width: '100%' }}
                     />
                   </Form.Item>
                 </div>
@@ -484,15 +442,13 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                   <Form.Item label="Blood Group">
                     <Select
                       value={formData.bloodGroup}
-                      onChange={(v) => handleChange("bloodGroup", v)}
+                      onChange={(v) => handleChange('bloodGroup', v)}
                     >
-                      {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map(
-                        (bg) => (
-                          <Option key={bg} value={bg}>
-                            {bg}
-                          </Option>
-                        )
-                      )}
+                      {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map((bg) => (
+                        <Option key={bg} value={bg}>
+                          {bg}
+                        </Option>
+                      ))}
                     </Select>
                   </Form.Item>
                 </div>
@@ -501,7 +457,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                   <Form.Item label="Role" required>
                     <Select
                       value={formData.roleId}
-                      onChange={(v) => handleChange("roleId", v)}
+                      onChange={(v) => handleChange('roleId', v)}
                       placeholder="Select role"
                     >
                       {roles?.map((r) => (
@@ -515,10 +471,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
 
                 <div className="col-lg-4 col-md-6">
                   <Form.Item label="Status">
-                    <Select
-                      value={formData.status}
-                      onChange={(v) => handleChange("status", v)}
-                    >
+                    <Select value={formData.status} onChange={(v) => handleChange('status', v)}>
                       <Option value="active">Active</Option>
                       <Option value="inactive">Inactive</Option>
                       <Option value="restricted">Restricted</Option>
@@ -530,7 +483,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                   <Form.Item label="Email Verified">
                     <Select
                       value={formData.isEmailVerified}
-                      onChange={(v) => handleChange("isEmailVerified", v)}
+                      onChange={(v) => handleChange('isEmailVerified', v)}
                     >
                       <Option value={true}>Yes</Option>
                       <Option value={false}>No</Option>
@@ -542,9 +495,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                   <Form.Item label="Emergency Contact">
                     <Input
                       value={formData.emergencyNumber}
-                      onChange={(e) =>
-                        handleChange("emergencyNumber", e.target.value)
-                      }
+                      onChange={(e) => handleChange('emergencyNumber', e.target.value)}
                     />
                   </Form.Item>
                 </div>
@@ -553,12 +504,8 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                   <Form.Item label="Password" required={!isEditMode}>
                     <Input.Password
                       value={formData.password}
-                      onChange={(e) => handleChange("password", e.target.value)}
-                      placeholder={
-                        isEditMode
-                          ? "Leave blank to keep current"
-                          : "Enter password"
-                      }
+                      onChange={(e) => handleChange('password', e.target.value)}
+                      placeholder={isEditMode ? 'Leave blank to keep current' : 'Enter password'}
                     />
                   </Form.Item>
                 </div>
@@ -577,9 +524,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                 onChange={(e) => setManageAddress(e.target.checked)}
                 className="ms-3"
               >
-                {isEditMode && formData.addressId
-                  ? "Edit Address"
-                  : "Add Address"}
+                {isEditMode && formData.addressId ? 'Edit Address' : 'Add Address'}
               </Checkbox>
             </div>
             {manageAddress && (
@@ -589,7 +534,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                     <Form.Item label="Street">
                       <Input
                         value={formData.street}
-                        onChange={(e) => handleChange("street", e.target.value)}
+                        onChange={(e) => handleChange('street', e.target.value)}
                       />
                     </Form.Item>
                   </div>
@@ -597,9 +542,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                     <Form.Item label="Country">
                       <Input
                         value={formData.country}
-                        onChange={(e) =>
-                          handleChange("country", e.target.value)
-                        }
+                        onChange={(e) => handleChange('country', e.target.value)}
                       />
                     </Form.Item>
                   </div>
@@ -607,7 +550,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                     <Form.Item label="State">
                       <Input
                         value={formData.state}
-                        onChange={(e) => handleChange("state", e.target.value)}
+                        onChange={(e) => handleChange('state', e.target.value)}
                       />
                     </Form.Item>
                   </div>
@@ -615,7 +558,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                     <Form.Item label="City">
                       <Input
                         value={formData.city}
-                        onChange={(e) => handleChange("city", e.target.value)}
+                        onChange={(e) => handleChange('city', e.target.value)}
                       />
                     </Form.Item>
                   </div>
@@ -623,9 +566,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
                     <Form.Item label="Postal Code">
                       <Input
                         value={formData.postalCode}
-                        onChange={(e) =>
-                          handleChange("postalCode", e.target.value)
-                        }
+                        onChange={(e) => handleChange('postalCode', e.target.value)}
                       />
                     </Form.Item>
                   </div>
@@ -640,7 +581,7 @@ const NewAddUser = ({ userToEdit: propUserToEdit }) => {
               Cancel
             </Button>
             <Button type="primary" htmlType="submit" loading={false}>
-              {isEditMode ? "Update User" : "Add User"}
+              {isEditMode ? 'Update User' : 'Add User'}
             </Button>
           </div>
         </Form>

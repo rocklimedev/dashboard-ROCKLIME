@@ -1,1 +1,1 @@
-export { default } from "./QuotationWorkspace";
+export { default } from './QuotationWorkspace';

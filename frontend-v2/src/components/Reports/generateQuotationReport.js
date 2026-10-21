@@ -1,18 +1,12 @@
-import { PDFDocument, StandardFonts } from "pdf-lib";
-import quotationTemplate from "../../assets/pdf/quotation_report.pdf";
+import { PDFDocument, StandardFonts } from 'pdf-lib';
+import quotationTemplate from '../../assets/pdf/quotation_report.pdf';
 
-export const generateQuotationReportPDF = async (
-  quotations,
-  startDate,
-  endDate,
-) => {
+export const generateQuotationReportPDF = async (quotations, startDate, endDate) => {
   try {
     // =====================================
     // LOAD TEMPLATE
     // =====================================
-    const templateBytes = await fetch(quotationTemplate).then((res) =>
-      res.arrayBuffer(),
-    );
+    const templateBytes = await fetch(quotationTemplate).then((res) => res.arrayBuffer());
 
     const pdfDoc = await PDFDocument.create();
 
@@ -31,11 +25,11 @@ export const generateQuotationReportPDF = async (
     // TEMPLATE PAGE CREATOR
     // =====================================
     const wrapText = (text, maxWidth, font, fontSize) => {
-      if (!text) return ["-"];
+      if (!text) return ['-'];
 
-      const words = String(text).split(" ");
+      const words = String(text).split(' ');
       const lines = [];
-      let currentLine = "";
+      let currentLine = '';
 
       for (const word of words) {
         const testLine = currentLine ? `${currentLine} ${word}` : word;
@@ -102,7 +96,7 @@ export const generateQuotationReportPDF = async (
       const dateText =
         startDate && endDate
           ? `${startDate} to ${endDate}`
-          : new Date().toLocaleDateString("en-IN");
+          : new Date().toLocaleDateString('en-IN');
 
       page.drawText(dateText, {
         x: 120,
@@ -144,18 +138,18 @@ export const generateQuotationReportPDF = async (
       paginatedData[pageIndex].forEach((q, rowIndex) => {
         const serialNo = pageIndex * ROWS_PER_PAGE + rowIndex + 1;
 
-        const quotationNo = q.reference_number || q.referenceNumber || "-";
+        const quotationNo = q.reference_number || q.referenceNumber || '-';
 
         const quotationDate = q.quotation_date
-          ? new Date(q.quotation_date).toLocaleDateString("en-IN")
-          : "-";
+          ? new Date(q.quotation_date).toLocaleDateString('en-IN')
+          : '-';
 
-        const clientName = q.customerName || "-";
-        const createdBy = q.createdByName || "-";
+        const clientName = q.customerName || '-';
+        const createdBy = q.createdByName || '-';
 
-        const amount = Number(
-          q.finalAmount || q.totalAmount || q.amount || 0,
-        ).toLocaleString("en-IN");
+        const amount = Number(q.finalAmount || q.totalAmount || q.amount || 0).toLocaleString(
+          'en-IN',
+        );
 
         // =========================
         // COLUMN WIDTHS
@@ -171,26 +165,11 @@ export const generateQuotationReportPDF = async (
         // WRAP TEXT
         // =========================
 
-        const quotationNoLines = wrapText(
-          quotationNo,
-          COL_WIDTHS.quotationNo,
-          font,
-          FONT_SIZE,
-        );
+        const quotationNoLines = wrapText(quotationNo, COL_WIDTHS.quotationNo, font, FONT_SIZE);
 
-        const clientLines = wrapText(
-          clientName,
-          COL_WIDTHS.client,
-          font,
-          FONT_SIZE,
-        );
+        const clientLines = wrapText(clientName, COL_WIDTHS.client, font, FONT_SIZE);
 
-        const createdByLines = wrapText(
-          createdBy,
-          COL_WIDTHS.createdBy,
-          font,
-          FONT_SIZE,
-        );
+        const createdByLines = wrapText(createdBy, COL_WIDTHS.createdBy, font, FONT_SIZE);
 
         const maxLines = Math.max(
           quotationNoLines.length,
@@ -300,12 +279,12 @@ export const generateQuotationReportPDF = async (
     const pdfBytes = await pdfDoc.save();
 
     const blob = new Blob([pdfBytes], {
-      type: "application/pdf",
+      type: 'application/pdf',
     });
 
     const url = URL.createObjectURL(blob);
 
-    const link = document.createElement("a");
+    const link = document.createElement('a');
 
     link.href = url;
     link.download = `Quotation_Report_${Date.now()}.pdf`;
@@ -318,6 +297,6 @@ export const generateQuotationReportPDF = async (
 
     URL.revokeObjectURL(url);
   } catch (error) {
-    console.error("Quotation Report Generation Error:", error);
+    console.error('Quotation Report Generation Error:', error);
   }
 };

@@ -1,29 +1,19 @@
 // ProductDetails.jsx
-import React, { useEffect, useState, useRef, useCallback } from "react";
-import { useParams, Link } from "react-router-dom";
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import {
   useGetProductByIdQuery,
   useGetAllProductsByCategoryQuery,
   useGetAllProductsQuery,
-} from "../../api/productApi";
-import { useGetCategoryByIdQuery } from "../../api/categoryApi";
-import { useGetParentCategoryByIdQuery } from "../../api/parentCategoryApi";
-import { useGetBrandByIdQuery } from "../../api/brandsApi";
-import { useAddProductToCartMutation } from "../../api/cartApi";
-import { useGetProfileQuery } from "../../api/userApi";
-import JsBarcode from "jsbarcode";
-import {
-  message,
-  Breadcrumb,
-  Button,
-  InputNumber,
-  Spin,
-  Tabs,
-  Menu,
-  Tooltip,
-  Modal,
-} from "antd";
-import { LazyLoadImage } from "react-lazy-load-image-component";
+} from '../../api/productApi';
+import { useGetCategoryByIdQuery } from '../../api/categoryApi';
+import { useGetParentCategoryByIdQuery } from '../../api/parentCategoryApi';
+import { useGetBrandByIdQuery } from '../../api/brandsApi';
+import { useAddProductToCartMutation } from '../../api/cartApi';
+import { useGetProfileQuery } from '../../api/userApi';
+import JsBarcode from 'jsbarcode';
+import { message, Breadcrumb, Button, InputNumber, Spin, Tabs, Menu, Tooltip, Modal } from 'antd';
+import { LazyLoadImage } from 'react-lazy-load-image-component';
 import {
   ShoppingCartOutlined,
   EditOutlined,
@@ -31,15 +21,15 @@ import {
   RightOutlined,
   CloseOutlined,
   ZoomInOutlined,
-} from "@ant-design/icons";
-import ProductCard from "../../components/Product/ProductCard";
-import styles from "../../components/Product/productdetails.module.css";
-import noimage from "../../assets/img/default.png";
-import { Helmet } from "react-helmet";
-import PermissionGate from "../../context/PermissionGate"; // ← Added for permission control
-import ProductStockDrawer from "../../components/Stock/ProductStockDrawer";
-import StockBadge from "../../components/Stock/StockBadge";
-import useStockAvailability from "../../components/Stock/useStockAvailability";
+} from '@ant-design/icons';
+import ProductCard from '../../components/Product/ProductCard';
+import styles from '../../components/Product/productdetails.module.css';
+import noimage from '../../assets/img/default.png';
+import { Helmet } from 'react-helmet';
+import PermissionGate from '../../context/PermissionGate'; // ← Added for permission control
+import ProductStockDrawer from '../../components/Stock/ProductStockDrawer';
+import StockBadge from '../../components/Stock/StockBadge';
+import useStockAvailability from '../../components/Stock/useStockAvailability';
 
 const ProductDetails = () => {
   const { id } = useParams();
@@ -66,12 +56,9 @@ const ProductDetails = () => {
     skip: !product?.brandId,
   });
 
-  const { data: recommendedProducts } = useGetAllProductsByCategoryQuery(
-    product?.categoryId,
-    {
-      skip: !product?.categoryId,
-    },
-  );
+  const { data: recommendedProducts } = useGetAllProductsByCategoryQuery(product?.categoryId, {
+    skip: !product?.categoryId,
+  });
 
   const { data: allProductsResponse } = useGetAllProductsQuery(undefined, {
     skip: !!recommendedProducts?.length,
@@ -82,8 +69,7 @@ const ProductDetails = () => {
   const { data: user } = useGetProfileQuery();
   const userId = user?.user?.userId;
 
-  const [addToCart, { isLoading: isCartLoading }] =
-    useAddProductToCartMutation();
+  const [addToCart, { isLoading: isCartLoading }] = useAddProductToCartMutation();
 
   const [quantity, setQuantity] = useState(1);
   const [stockOpen, setStockOpen] = useState(false);
@@ -98,7 +84,7 @@ const ProductDetails = () => {
   // ── Helpers ────────────────────────────────────────────────
   const safeParseImages = (images) => {
     if (Array.isArray(images)) return images.filter(Boolean);
-    if (typeof images === "string") {
+    if (typeof images === 'string') {
       try {
         const parsed = JSON.parse(images);
         return Array.isArray(parsed) ? parsed.filter(Boolean) : [images];
@@ -112,43 +98,38 @@ const ProductDetails = () => {
   const images = safeParseImages(product?.images || []);
 
   const sellingPrice = Array.isArray(product?.metaDetails)
-    ? Number(
-        product.metaDetails.find((m) => m.slug === "sellingPrice")?.value || 0,
-      )
+    ? Number(product.metaDetails.find((m) => m.slug === 'sellingPrice')?.value || 0)
     : 0;
 
   const mrp = product?.mrp ? Number(product.mrp) : null;
   const getCompanyCode = (metaDetails) =>
     Array.isArray(metaDetails)
-      ? metaDetails.find((m) => m.slug?.toLowerCase() === "companycode")
-          ?.value || "N/A"
-      : "N/A";
+      ? metaDetails.find((m) => m.slug?.toLowerCase() === 'companycode')?.value || 'N/A'
+      : 'N/A';
 
-  const getBrandsName = () => brandData?.brandName || "Not Branded";
+  const getBrandsName = () => brandData?.brandName || 'Not Branded';
   const getCategoryName = () =>
-    parentCategoryData?.data?.name ||
-    categoryData?.category?.name ||
-    "Uncategorized";
+    parentCategoryData?.data?.name || categoryData?.category?.name || 'Uncategorized';
 
   // ── Barcode ────────────────────────────────────────────────
   useEffect(() => {
     if (product?.product_code && barcodeRef.current) {
       try {
         JsBarcode(barcodeRef.current, product.product_code, {
-          format: "CODE128",
+          format: 'CODE128',
           width: 2,
           height: 60,
           displayValue: true,
           fontSize: 14,
         });
       } catch (err) {
-        message.error("Barcode generation failed");
+        message.error('Barcode generation failed');
       }
     }
   }, [product?.product_code]);
 
   const handlePrintBarcode = () => {
-    if (!barcodeRef.current) return message.error("No barcode to print");
+    if (!barcodeRef.current) return message.error('No barcode to print');
     const svg = barcodeRef.current.outerHTML;
     const win = window.open();
     win.document.write(`
@@ -169,15 +150,15 @@ const ProductDetails = () => {
   // ── Cart Handler - NO STOCK CHECK ─────────────────────────────
   const handleAddToCart = async () => {
     if (!userId) {
-      return message.error("Please login first");
+      return message.error('Please login first');
     }
 
     if (quantity < 1) {
-      return message.error("Quantity must be at least 1");
+      return message.error('Quantity must be at least 1');
     }
 
     if (!sellingPrice || isNaN(sellingPrice) || sellingPrice <= 0) {
-      return message.error("Invalid price");
+      return message.error('Invalid price');
     }
 
     try {
@@ -187,12 +168,10 @@ const ProductDetails = () => {
         quantity,
       }).unwrap();
 
-      message.success(
-        `Added ${quantity} unit${quantity > 1 ? "s" : ""} to cart successfully!`,
-      );
+      message.success(`Added ${quantity} unit${quantity > 1 ? 's' : ''} to cart successfully!`);
       setQuantity(1);
     } catch (err) {
-      message.error(err?.data?.message || "Failed to add to cart");
+      message.error(err?.data?.message || 'Failed to add to cart');
     }
   };
 
@@ -217,13 +196,13 @@ const ProductDetails = () => {
     if (!isGalleryOpen) return;
 
     const handleKeyDown = (e) => {
-      if (e.key === "ArrowLeft") showPrevImage();
-      else if (e.key === "ArrowRight") showNextImage();
-      else if (e.key === "Escape") closeGallery();
+      if (e.key === 'ArrowLeft') showPrevImage();
+      else if (e.key === 'ArrowRight') showNextImage();
+      else if (e.key === 'Escape') closeGallery();
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isGalleryOpen, showPrevImage, showNextImage]);
 
   // ── Related products ───────────────────────────────────────
@@ -270,8 +249,7 @@ const ProductDetails = () => {
         <div className={styles.container}>
           <Helmet>
             <title>
-              {product.name}{" "}
-              {brandData?.brandName ? `- ${brandData.brandName}` : ""}
+              {product.name} {brandData?.brandName ? `- ${brandData.brandName}` : ''}
             </title>
           </Helmet>
 
@@ -291,7 +269,7 @@ const ProductDetails = () => {
               <div
                 className={styles.heroImageWrapper}
                 onClick={() => openGallery(activeImage)}
-                style={{ cursor: "zoom-in", position: "relative" }}
+                style={{ cursor: 'zoom-in', position: 'relative' }}
               >
                 <LazyLoadImage
                   src={images[activeImage] || noimage}
@@ -303,17 +281,17 @@ const ProductDetails = () => {
                 />
                 <div
                   style={{
-                    position: "absolute",
+                    position: 'absolute',
                     bottom: 10,
                     right: 10,
-                    background: "rgba(0,0,0,0.55)",
-                    color: "#fff",
-                    borderRadius: "50%",
+                    background: 'rgba(0,0,0,0.55)',
+                    color: '#fff',
+                    borderRadius: '50%',
                     width: 32,
                     height: 32,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                   }}
                 >
                   <ZoomInOutlined />
@@ -326,7 +304,7 @@ const ProductDetails = () => {
                     <button
                       key={idx}
                       type="button"
-                      className={`${styles.thumbnailBtn} ${activeImage === idx ? styles.active : ""}`}
+                      className={`${styles.thumbnailBtn} ${activeImage === idx ? styles.active : ''}`}
                       onClick={() => setActiveImage(idx)}
                       onDoubleClick={() => openGallery(idx)}
                       aria-label={`View image ${idx + 1}`}
@@ -347,9 +325,9 @@ const ProductDetails = () => {
             <div className={styles.summary}>
               <div
                 style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "flex-start",
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
                 }}
               >
                 <h1 className={styles.title}>{product.name}</h1>
@@ -362,7 +340,7 @@ const ProductDetails = () => {
                         type="default"
                         icon={<EditOutlined />}
                         size="large"
-                        style={{ borderColor: "#1890ff", color: "#1890ff" }}
+                        style={{ borderColor: '#1890ff', color: '#1890ff' }}
                       >
                         Edit
                       </Button>
@@ -375,13 +353,13 @@ const ProductDetails = () => {
                 {mrp && mrp !== sellingPrice && (
                   <span className={styles.mrp}>₹{mrp.toFixed(2)}</span>
                 )}
-                <span className={styles.currentPrice}>
-                  ₹{sellingPrice.toFixed(2)}
-                </span>
+                <span className={styles.currentPrice}>₹{sellingPrice.toFixed(2)}</span>
               </div>
 
               {stockInfo && (
-                <div style={{ display: "flex", gap: 8, alignItems: "center", margin: "8px 0 12px" }}>
+                <div
+                  style={{ display: 'flex', gap: 8, alignItems: 'center', margin: '8px 0 12px' }}
+                >
                   <StockBadge
                     available={stockInfo.available}
                     reserved={stockInfo.reserved}
@@ -397,7 +375,7 @@ const ProductDetails = () => {
               )}
 
               <p className={styles.description}>
-                {product.description || "No description provided."}
+                {product.description || 'No description provided.'}
               </p>
 
               <div className={styles.actionRow}>
@@ -410,14 +388,12 @@ const ProductDetails = () => {
                 />
                 <Button
                   type="primary"
-                  style={{ backgroundColor: "#e31e24" }}
+                  style={{ backgroundColor: '#e31e24' }}
                   icon={<ShoppingCartOutlined />}
                   size="large"
                   onClick={handleAddToCart}
                   loading={isCartLoading}
-                  disabled={
-                    !sellingPrice || isNaN(sellingPrice) || sellingPrice <= 0
-                  }
+                  disabled={!sellingPrice || isNaN(sellingPrice) || sellingPrice <= 0}
                   className={styles.addToCartBtn}
                 >
                   Add to Cart
@@ -426,12 +402,9 @@ const ProductDetails = () => {
 
               {/* Barcode */}
               <div className={styles.barcodeSection}>
-                <svg ref={barcodeRef} style={{ width: "100%", height: 80 }} />
+                <svg ref={barcodeRef} style={{ width: '100%', height: 80 }} />
                 <div className={styles.barcodeActions}>
-                  <Button
-                    onClick={handlePrintBarcode}
-                    disabled={!product.product_code}
-                  >
+                  <Button onClick={handlePrintBarcode} disabled={!product.product_code}>
                     Print Barcode
                   </Button>
                 </div>
@@ -440,17 +413,13 @@ const ProductDetails = () => {
               {/* Meta */}
               <div className={styles.metaGrid}>
                 <div className={styles.metaLabel}>Product Code</div>
-                <div>{product.product_code || "—"}</div>
+                <div>{product.product_code || '—'}</div>
 
                 <div className={styles.metaLabel}>Brand</div>
-                <div>{brandData?.brandName || "—"}</div>
+                <div>{brandData?.brandName || '—'}</div>
 
                 <div className={styles.metaLabel}>Category</div>
-                <div>
-                  {parentCategoryData?.data?.name ||
-                    categoryData?.category?.name ||
-                    "—"}
-                </div>
+                <div>{parentCategoryData?.data?.name || categoryData?.category?.name || '—'}</div>
               </div>
             </div>
           </div>
@@ -460,22 +429,19 @@ const ProductDetails = () => {
             defaultActiveKey="1"
             items={[
               {
-                key: "1",
-                label: "Description",
-                children: (
-                  <p>{product.description || "No additional details."}</p>
-                ),
+                key: '1',
+                label: 'Description',
+                children: <p>{product.description || 'No additional details.'}</p>,
               },
               {
-                key: "2",
-                label: "Additional Information",
+                key: '2',
+                label: 'Additional Information',
                 children: (
-                  <ul style={{ listStyle: "none", padding: 0 }}>
+                  <ul style={{ listStyle: 'none', padding: 0 }}>
                     {Array.isArray(product.metaDetails) &&
                       product.metaDetails.map((m) => (
-                        <li key={m.id} style={{ marginBottom: "0.5rem" }}>
-                          <strong>{m.title || m.slug}:</strong> {m.value}{" "}
-                          {m.unit || ""}
+                        <li key={m.id} style={{ marginBottom: '0.5rem' }}>
+                          <strong>{m.title || m.slug}:</strong> {m.value} {m.unit || ''}
                         </li>
                       ))}
                   </ul>
@@ -497,14 +463,10 @@ const ProductDetails = () => {
                     getBrandsName={getBrandsName}
                     getCategoryName={getCategoryName}
                     formatPrice={(fallback, metaDetails) => {
-                      if (!Array.isArray(metaDetails)) return "N/A";
-                      const sp = metaDetails.find(
-                        (m) => m.slug === "sellingPrice",
-                      );
+                      if (!Array.isArray(metaDetails)) return 'N/A';
+                      const sp = metaDetails.find((m) => m.slug === 'sellingPrice');
                       const price = sp ? parseFloat(sp.value) : null;
-                      return price != null && !isNaN(price)
-                        ? `₹${price.toFixed(2)}`
-                        : "N/A";
+                      return price != null && !isNaN(price) ? `₹${price.toFixed(2)}` : 'N/A';
                     }}
                     getCompanyCode={getCompanyCode}
                     handleAddToCart={handleAddToCart}
@@ -520,9 +482,7 @@ const ProductDetails = () => {
                 ))}
               </div>
             ) : (
-              <p style={{ textAlign: "center", color: "#6b7280" }}>
-                No related products found.
-              </p>
+              <p style={{ textAlign: 'center', color: '#6b7280' }}>No related products found.</p>
             )}
           </section>
         </div>
@@ -537,18 +497,18 @@ const ProductDetails = () => {
         centered
         width="80vw"
         styles={{
-          body: { padding: 0, background: "#000" },
+          body: { padding: 0, background: '#000' },
         }}
       >
         <div
           style={{
-            position: "relative",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            minHeight: "70vh",
-            background: "#000",
+            position: 'relative',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '70vh',
+            background: '#000',
           }}
         >
           {/* Close button */}
@@ -557,7 +517,7 @@ const ProductDetails = () => {
             icon={<CloseOutlined />}
             onClick={closeGallery}
             style={{
-              position: "absolute",
+              position: 'absolute',
               top: 12,
               right: 12,
               zIndex: 10,
@@ -571,10 +531,10 @@ const ProductDetails = () => {
               icon={<LeftOutlined />}
               onClick={showPrevImage}
               style={{
-                position: "absolute",
+                position: 'absolute',
                 left: 12,
-                top: "50%",
-                transform: "translateY(-50%)",
+                top: '50%',
+                transform: 'translateY(-50%)',
                 zIndex: 10,
               }}
             />
@@ -585,9 +545,9 @@ const ProductDetails = () => {
             src={images[galleryIndex] || noimage}
             alt={`${product.name} ${galleryIndex + 1}`}
             style={{
-              maxWidth: "100%",
-              maxHeight: "70vh",
-              objectFit: "contain",
+              maxWidth: '100%',
+              maxHeight: '70vh',
+              objectFit: 'contain',
             }}
             onError={(e) => (e.target.src = noimage)}
           />
@@ -599,10 +559,10 @@ const ProductDetails = () => {
               icon={<RightOutlined />}
               onClick={showNextImage}
               style={{
-                position: "absolute",
+                position: 'absolute',
                 right: 12,
-                top: "50%",
-                transform: "translateY(-50%)",
+                top: '50%',
+                transform: 'translateY(-50%)',
                 zIndex: 10,
               }}
             />
@@ -611,12 +571,12 @@ const ProductDetails = () => {
           {/* Counter */}
           <div
             style={{
-              position: "absolute",
+              position: 'absolute',
               bottom: 12,
-              color: "#fff",
+              color: '#fff',
               fontSize: 14,
-              background: "rgba(0,0,0,0.5)",
-              padding: "2px 10px",
+              background: 'rgba(0,0,0,0.5)',
+              padding: '2px 10px',
               borderRadius: 12,
             }}
           >
@@ -628,11 +588,11 @@ const ProductDetails = () => {
         {images.length > 1 && (
           <div
             style={{
-              display: "flex",
+              display: 'flex',
               gap: 8,
               padding: 12,
-              overflowX: "auto",
-              background: "#111",
+              overflowX: 'auto',
+              background: '#111',
             }}
           >
             {images.map((img, idx) => (
@@ -645,14 +605,11 @@ const ProductDetails = () => {
                 style={{
                   width: 56,
                   height: 56,
-                  objectFit: "cover",
+                  objectFit: 'cover',
                   borderRadius: 4,
-                  cursor: "pointer",
+                  cursor: 'pointer',
                   flexShrink: 0,
-                  border:
-                    galleryIndex === idx
-                      ? "2px solid #e31e24"
-                      : "2px solid transparent",
+                  border: galleryIndex === idx ? '2px solid #e31e24' : '2px solid transparent',
                   opacity: galleryIndex === idx ? 1 : 0.6,
                 }}
               />

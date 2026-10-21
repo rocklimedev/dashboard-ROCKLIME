@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 /**
  * Stock engine tables.
@@ -15,16 +15,24 @@
  */
 module.exports = {
   async up(queryInterface) {
-    const Sequelize = require("sequelize");
+    const Sequelize = require('sequelize');
     const { DataTypes } = Sequelize;
     const id = { type: DataTypes.CHAR(36), primaryKey: true, allowNull: false };
     const ts = {
-      createdAt: { type: DataTypes.DATE, allowNull: false, defaultValue: Sequelize.literal("CURRENT_TIMESTAMP") },
-      updatedAt: { type: DataTypes.DATE, allowNull: false, defaultValue: Sequelize.literal("CURRENT_TIMESTAMP") },
+      createdAt: {
+        type: DataTypes.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
+      },
+      updatedAt: {
+        type: DataTypes.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
+      },
     };
     const qty = { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 };
 
-    await queryInterface.createTable("warehouses", {
+    await queryInterface.createTable('warehouses', {
       id,
       code: { type: DataTypes.STRING(30), allowNull: false, unique: true },
       name: { type: DataTypes.STRING(120), allowNull: false },
@@ -34,7 +42,7 @@ module.exports = {
       ...ts,
     });
 
-    await queryInterface.createTable("stock_balances", {
+    await queryInterface.createTable('stock_balances', {
       id,
       productId: { type: DataTypes.CHAR(36), allowNull: false },
       warehouseId: { type: DataTypes.CHAR(36), allowNull: false },
@@ -44,12 +52,12 @@ module.exports = {
       damaged: qty,
       ...ts,
     });
-    await queryInterface.addIndex("stock_balances", ["productId", "warehouseId"], {
+    await queryInterface.addIndex('stock_balances', ['productId', 'warehouseId'], {
       unique: true,
-      name: "uq_stock_balance_product_wh",
+      name: 'uq_stock_balance_product_wh',
     });
 
-    await queryInterface.createTable("stock_ledger", {
+    await queryInterface.createTable('stock_ledger', {
       id,
       productId: { type: DataTypes.CHAR(36), allowNull: false },
       warehouseId: { type: DataTypes.CHAR(36), allowNull: false },
@@ -70,38 +78,48 @@ module.exports = {
       idempotencyKey: { type: DataTypes.STRING(160), allowNull: true, unique: true },
       createdAt: ts.createdAt,
     });
-    await queryInterface.addIndex("stock_ledger", ["productId", "createdAt"], { name: "ix_stock_ledger_product" });
-    await queryInterface.addIndex("stock_ledger", ["refType", "refId"], { name: "ix_stock_ledger_ref" });
+    await queryInterface.addIndex('stock_ledger', ['productId', 'createdAt'], {
+      name: 'ix_stock_ledger_product',
+    });
+    await queryInterface.addIndex('stock_ledger', ['refType', 'refId'], {
+      name: 'ix_stock_ledger_ref',
+    });
 
-    await queryInterface.createTable("stock_reservations", {
+    await queryInterface.createTable('stock_reservations', {
       id,
       orderId: { type: DataTypes.CHAR(36), allowNull: false },
       orderNo: { type: DataTypes.STRING(64), allowNull: true },
       productId: { type: DataTypes.CHAR(36), allowNull: false },
       warehouseId: { type: DataTypes.CHAR(36), allowNull: false },
       quantity: qty,
-      status: { type: DataTypes.STRING(20), allowNull: false, defaultValue: "ACTIVE" },
+      status: { type: DataTypes.STRING(20), allowNull: false, defaultValue: 'ACTIVE' },
       ...ts,
     });
-    await queryInterface.addIndex("stock_reservations", ["orderId", "productId", "warehouseId"], {
+    await queryInterface.addIndex('stock_reservations', ['orderId', 'productId', 'warehouseId'], {
       unique: true,
-      name: "uq_reservation_order_product_wh",
+      name: 'uq_reservation_order_product_wh',
     });
-    await queryInterface.addIndex("stock_reservations", ["productId", "status"], { name: "ix_reservation_product" });
+    await queryInterface.addIndex('stock_reservations', ['productId', 'status'], {
+      name: 'ix_reservation_product',
+    });
 
-    await queryInterface.createTable("goods_receipts", {
+    await queryInterface.createTable('goods_receipts', {
       id,
       grnNo: { type: DataTypes.STRING(40), allowNull: false, unique: true },
       poId: { type: DataTypes.CHAR(36), allowNull: true },
       poNumber: { type: DataTypes.STRING(64), allowNull: true },
       vendorId: { type: DataTypes.CHAR(36), allowNull: true },
       warehouseId: { type: DataTypes.CHAR(36), allowNull: false },
-      receivedAt: { type: DataTypes.DATE, allowNull: false, defaultValue: Sequelize.literal("CURRENT_TIMESTAMP") },
+      receivedAt: {
+        type: DataTypes.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
+      },
       userId: { type: DataTypes.CHAR(36), allowNull: true },
       notes: { type: DataTypes.TEXT, allowNull: true },
       ...ts,
     });
-    await queryInterface.createTable("goods_receipt_items", {
+    await queryInterface.createTable('goods_receipt_items', {
       id,
       grnId: { type: DataTypes.CHAR(36), allowNull: false },
       productId: { type: DataTypes.CHAR(36), allowNull: false },
@@ -110,20 +128,20 @@ module.exports = {
       damaged: qty,
       ...ts,
     });
-    await queryInterface.addIndex("goods_receipt_items", ["grnId"], { name: "ix_grn_items_grn" });
+    await queryInterface.addIndex('goods_receipt_items', ['grnId'], { name: 'ix_grn_items_grn' });
 
-    await queryInterface.createTable("stock_counts", {
+    await queryInterface.createTable('stock_counts', {
       id,
       countNo: { type: DataTypes.STRING(40), allowNull: false, unique: true },
       warehouseId: { type: DataTypes.CHAR(36), allowNull: false },
-      status: { type: DataTypes.STRING(20), allowNull: false, defaultValue: "DRAFT" },
+      status: { type: DataTypes.STRING(20), allowNull: false, defaultValue: 'DRAFT' },
       notes: { type: DataTypes.TEXT, allowNull: true },
       createdBy: { type: DataTypes.CHAR(36), allowNull: true },
       approvedBy: { type: DataTypes.CHAR(36), allowNull: true },
       approvedAt: { type: DataTypes.DATE, allowNull: true },
       ...ts,
     });
-    await queryInterface.createTable("stock_count_lines", {
+    await queryInterface.createTable('stock_count_lines', {
       id,
       countId: { type: DataTypes.CHAR(36), allowNull: false },
       productId: { type: DataTypes.CHAR(36), allowNull: false },
@@ -131,9 +149,9 @@ module.exports = {
       countedQty: { type: DataTypes.INTEGER, allowNull: true },
       ...ts,
     });
-    await queryInterface.addIndex("stock_count_lines", ["countId", "productId"], {
+    await queryInterface.addIndex('stock_count_lines', ['countId', 'productId'], {
       unique: true,
-      name: "uq_count_line",
+      name: 'uq_count_line',
     });
 
     // One default godown so everything works on day one
@@ -144,8 +162,14 @@ module.exports = {
 
   async down(queryInterface) {
     for (const t of [
-      "stock_count_lines", "stock_counts", "goods_receipt_items", "goods_receipts",
-      "stock_reservations", "stock_ledger", "stock_balances", "warehouses",
+      'stock_count_lines',
+      'stock_counts',
+      'goods_receipt_items',
+      'goods_receipts',
+      'stock_reservations',
+      'stock_ledger',
+      'stock_balances',
+      'warehouses',
     ]) {
       await queryInterface.dropTable(t);
     }

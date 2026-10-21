@@ -1,20 +1,20 @@
-const slugify = require("slugify");
-const { sendNotification } = require("../engagement/notification.controller");
+const slugify = require('slugify');
+const { sendNotification } = require('../engagement/notification.controller');
 
 const {
   BrandParentCategory,
   BrandParentCategoryBrand,
   Brand,
   ParentCategory,
-} = require("../../models");
+} = require('../../models');
 
-const ADMIN_USER_ID = "2ef0f07a-a275-4fe1-832d-fe9a5d145f60";
+const ADMIN_USER_ID = '2ef0f07a-a275-4fe1-832d-fe9a5d145f60';
 
 // Create a new BrandParentCategory
 exports.create = async (req, res) => {
   try {
     const { name } = req.body;
-    if (!name) return res.status(400).json({ message: "Name is required" });
+    if (!name) return res.status(400).json({ message: 'Name is required' });
 
     const slug = slugify(name, { lower: true, strict: true });
 
@@ -22,13 +22,13 @@ exports.create = async (req, res) => {
 
     await sendNotification({
       userId: ADMIN_USER_ID,
-      title: "New BrandParentCategory Created",
+      title: 'New BrandParentCategory Created',
       message: `A new BrandParentCategory "${name}" with slug "${slug}" has been created.`,
     });
 
     return res.status(201).json({
       success: true,
-      message: "BrandParentCategory created successfully",
+      message: 'BrandParentCategory created successfully',
       brandParentCategory: bpc,
     });
   } catch (error) {
@@ -44,7 +44,7 @@ exports.update = async (req, res) => {
 
     const bpc = await BrandParentCategory.findByPk(id);
     if (!bpc) {
-      return res.status(404).json({ message: "BrandParentCategory not found" });
+      return res.status(404).json({ message: 'BrandParentCategory not found' });
     }
 
     // Auto-generate slug from name if name is provided and slug is not
@@ -61,13 +61,13 @@ exports.update = async (req, res) => {
 
     await sendNotification({
       userId: ADMIN_USER_ID,
-      title: "BrandParentCategory Updated",
+      title: 'BrandParentCategory Updated',
       message: `BrandParentCategory "${bpc.name}" has been updated successfully.`,
     });
 
     return res.json({
       success: true,
-      message: "BrandParentCategory updated successfully",
+      message: 'BrandParentCategory updated successfully',
       brandParentCategory: bpc,
     });
   } catch (error) {
@@ -82,8 +82,7 @@ exports.attachBrands = async (req, res) => {
     const { brandIds = [] } = req.body;
 
     const bpc = await BrandParentCategory.findByPk(id);
-    if (!bpc)
-      return res.status(404).json({ message: "BrandParentCategory not found" });
+    if (!bpc) return res.status(404).json({ message: 'BrandParentCategory not found' });
 
     const results = [];
     const attachedBrandNames = [];
@@ -91,7 +90,7 @@ exports.attachBrands = async (req, res) => {
     for (const brandId of brandIds) {
       const brand = await Brand.findByPk(brandId);
       if (!brand) {
-        results.push({ brandId, status: "skipped", reason: "Brand not found" });
+        results.push({ brandId, status: 'skipped', reason: 'Brand not found' });
         continue;
       }
 
@@ -99,21 +98,21 @@ exports.attachBrands = async (req, res) => {
         where: { brandParentCategoryId: id, brandId },
       });
 
-      results.push({ brandId, status: "attached" });
+      results.push({ brandId, status: 'attached' });
       attachedBrandNames.push(brand.brandName);
     }
 
     if (attachedBrandNames.length > 0) {
       await sendNotification({
         userId: ADMIN_USER_ID,
-        title: "Brands Attached to BrandParentCategory",
-        message: `Brands [${attachedBrandNames.join(", ")}] have been attached to BrandParentCategory "${bpc.name}".`,
+        title: 'Brands Attached to BrandParentCategory',
+        message: `Brands [${attachedBrandNames.join(', ')}] have been attached to BrandParentCategory "${bpc.name}".`,
       });
     }
 
     return res.json({
       success: true,
-      message: "Brands attached successfully",
+      message: 'Brands attached successfully',
       results,
     });
   } catch (error) {
@@ -128,11 +127,11 @@ exports.list = async (req, res) => {
       include: [
         {
           model: Brand,
-          as: "brands",
-          attributes: ["id", "brandName", "brandSlug"],
+          as: 'brands',
+          attributes: ['id', 'brandName', 'brandSlug'],
         },
       ],
-      order: [["name", "ASC"]],
+      order: [['name', 'ASC']],
     });
 
     return res.json(list);
@@ -147,12 +146,11 @@ exports.delete = async (req, res) => {
     const { id } = req.params;
     const bpc = await BrandParentCategory.findByPk(id);
 
-    if (!bpc)
-      return res.status(404).json({ message: "BrandParentCategory not found" });
+    if (!bpc) return res.status(404).json({ message: 'BrandParentCategory not found' });
 
     await sendNotification({
       userId: ADMIN_USER_ID,
-      title: "BrandParentCategory Deleted",
+      title: 'BrandParentCategory Deleted',
       message: `BrandParentCategory "${bpc.name}" with slug "${bpc.slug}" has been deleted.`,
     });
 
@@ -160,7 +158,7 @@ exports.delete = async (req, res) => {
 
     return res.json({
       success: true,
-      message: "BrandParentCategory deleted successfully",
+      message: 'BrandParentCategory deleted successfully',
     });
   } catch (error) {
     return res.status(500).json({ message: error.message });
@@ -175,14 +173,13 @@ exports.getById = async (req, res) => {
       include: [
         {
           model: Brand,
-          as: "brands",
-          attributes: ["id", "brandName", "brandSlug"],
+          as: 'brands',
+          attributes: ['id', 'brandName', 'brandSlug'],
         },
       ],
     });
 
-    if (!bpc)
-      return res.status(404).json({ message: "BrandParentCategory not found" });
+    if (!bpc) return res.status(404).json({ message: 'BrandParentCategory not found' });
 
     return res.json(bpc);
   } catch (error) {
@@ -198,25 +195,24 @@ exports.detachBrand = async (req, res) => {
     const bpc = await BrandParentCategory.findByPk(id);
     const brand = await Brand.findByPk(brandId);
 
-    if (!bpc)
-      return res.status(404).json({ message: "BrandParentCategory not found" });
-    if (!brand) return res.status(404).json({ message: "Brand not found" });
+    if (!bpc) return res.status(404).json({ message: 'BrandParentCategory not found' });
+    if (!brand) return res.status(404).json({ message: 'Brand not found' });
 
     const deleted = await BrandParentCategoryBrand.destroy({
       where: { brandParentCategoryId: id, brandId },
     });
 
-    if (!deleted) return res.status(404).json({ message: "Link not found" });
+    if (!deleted) return res.status(404).json({ message: 'Link not found' });
 
     await sendNotification({
       userId: ADMIN_USER_ID,
-      title: "Brand Detached from BrandParentCategory",
+      title: 'Brand Detached from BrandParentCategory',
       message: `Brand "${brand.brandName}" has been detached from BrandParentCategory "${bpc.name}".`,
     });
 
     return res.json({
       success: true,
-      message: "Brand detached successfully",
+      message: 'Brand detached successfully',
       id,
       brandId,
     });
@@ -234,24 +230,24 @@ exports.getBpcTree = async (req, res) => {
       include: [
         {
           model: Brand,
-          as: "brands",
-          attributes: ["id", "brandName", "brandSlug"],
+          as: 'brands',
+          attributes: ['id', 'brandName', 'brandSlug'],
           through: { attributes: [] },
         },
         {
           model: ParentCategory,
-          as: "parentCategories",
-          attributes: ["id", "name", "slug"],
+          as: 'parentCategories',
+          attributes: ['id', 'name', 'slug'],
         },
       ],
       order: [
-        [{ model: Brand, as: "brands" }, "brandName", "ASC"],
-        [{ model: ParentCategory, as: "parentCategories" }, "name", "ASC"],
+        [{ model: Brand, as: 'brands' }, 'brandName', 'ASC'],
+        [{ model: ParentCategory, as: 'parentCategories' }, 'name', 'ASC'],
       ],
     });
 
     if (!bpc) {
-      return res.status(404).json({ message: "BrandParentCategory not found" });
+      return res.status(404).json({ message: 'BrandParentCategory not found' });
     }
 
     const tree = {

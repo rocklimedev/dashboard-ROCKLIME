@@ -1,10 +1,21 @@
-import { useState } from "react";
-import { Alert, Button, Card, Progress, Space, Table, Tag, Tooltip, Typography, message } from "antd";
-import { InboxOutlined, ReloadOutlined } from "@ant-design/icons";
-import { useGetOrderStockQuery, useResyncOrderStockMutation } from "../../api/stockApi";
-import ProductStockDrawer from "./ProductStockDrawer";
-import { fmtQty } from "./stockLabels";
-import useCan from "../../utils/useCan";
+import { useState } from 'react';
+import {
+  Alert,
+  Button,
+  Card,
+  Progress,
+  Space,
+  Table,
+  Tag,
+  Tooltip,
+  Typography,
+  message,
+} from 'antd';
+import { InboxOutlined, ReloadOutlined } from '@ant-design/icons';
+import { useGetOrderStockQuery, useResyncOrderStockMutation } from '../../api/stockApi';
+import ProductStockDrawer from './ProductStockDrawer';
+import { fmtQty } from './stockLabels';
+import useCan from '../../utils/useCan';
 
 const { Text } = Typography;
 
@@ -19,15 +30,15 @@ export default function OrderStockPanel({ orderId, status }) {
   const [resync, { isLoading }] = useResyncOrderStockMutation();
   const lines = data?.lines || [];
   const waiting = lines.reduce((a, l) => a + (l.backordered || 0), 0);
-  const isDraft = status === "DRAFT";
+  const isDraft = status === 'DRAFT';
 
   const doResync = async () => {
     try {
       await resync(orderId).unwrap();
       await refetch();
-      message.success("Reservations re-checked");
+      message.success('Reservations re-checked');
     } catch (e) {
-      message.error(e?.data?.message || "Could not re-check stock");
+      message.error(e?.data?.message || 'Could not re-check stock');
     }
   };
 
@@ -43,16 +54,25 @@ export default function OrderStockPanel({ orderId, status }) {
       extra={
         <Space>
           {waiting > 0 && <Tag color="red">{fmtQty(waiting)} waiting for stock</Tag>}
-          {can("inventory", "edit") && !isDraft && (
+          {can('inventory', 'edit') && !isDraft && (
             <Tooltip title="Re-run reservations for this order (use after a stock correction)">
-              <Button size="small" icon={<ReloadOutlined />} loading={isLoading} onClick={doResync} />
+              <Button
+                size="small"
+                icon={<ReloadOutlined />}
+                loading={isLoading}
+                onClick={doResync}
+              />
             </Tooltip>
           )}
         </Space>
       }
     >
       {error ? (
-        <Alert type="warning" showIcon message={error?.data?.message || "Stock details are not available"} />
+        <Alert
+          type="warning"
+          showIcon
+          message={error?.data?.message || 'Stock details are not available'}
+        />
       ) : (
         <>
           {isDraft && (
@@ -72,21 +92,28 @@ export default function OrderStockPanel({ orderId, status }) {
             scroll={{ x: 640 }}
             columns={[
               {
-                title: "Product",
-                dataIndex: "name",
+                title: 'Product',
+                dataIndex: 'name',
                 render: (v, r) => <a onClick={() => setDrawer(r.productId)}>{v || r.productId}</a>,
               },
-              { title: "Ordered", dataIndex: "ordered", align: "right", render: fmtQty },
-              { title: "Dispatched", dataIndex: "dispatched", align: "right", render: fmtQty },
-              { title: "Reserved", dataIndex: "reserved", align: "right", render: fmtQty },
+              { title: 'Ordered', dataIndex: 'ordered', align: 'right', render: fmtQty },
+              { title: 'Dispatched', dataIndex: 'dispatched', align: 'right', render: fmtQty },
+              { title: 'Reserved', dataIndex: 'reserved', align: 'right', render: fmtQty },
               {
-                title: "Waiting",
-                dataIndex: "backordered",
-                align: "right",
-                render: (v) => (v ? <Text type="danger" strong>{fmtQty(v)}</Text> : <Text type="secondary">0</Text>),
+                title: 'Waiting',
+                dataIndex: 'backordered',
+                align: 'right',
+                render: (v) =>
+                  v ? (
+                    <Text type="danger" strong>
+                      {fmtQty(v)}
+                    </Text>
+                  ) : (
+                    <Text type="secondary">0</Text>
+                  ),
               },
               {
-                title: "Progress",
+                title: 'Progress',
                 width: 150,
                 render: (_, r) => {
                   const ordered = Number(r.ordered) || 0;
@@ -94,7 +121,9 @@ export default function OrderStockPanel({ orderId, status }) {
                   const held = Number(r.reserved) || 0;
                   if (!ordered) return null;
                   return (
-                    <Tooltip title={`${fmtQty(done)} dispatched, ${fmtQty(held)} reserved of ${fmtQty(ordered)}`}>
+                    <Tooltip
+                      title={`${fmtQty(done)} dispatched, ${fmtQty(held)} reserved of ${fmtQty(ordered)}`}
+                    >
                       <Progress
                         size="small"
                         percent={Math.round(((done + held) / ordered) * 100)}
@@ -107,8 +136,9 @@ export default function OrderStockPanel({ orderId, status }) {
               },
             ]}
           />
-          <Text type="secondary" style={{ fontSize: 12, display: "block", marginTop: 8 }}>
-            Green = dispatched · blue = reserved in the godown · gap = waiting for stock (fills automatically when goods arrive).
+          <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 8 }}>
+            Green = dispatched · blue = reserved in the godown · gap = waiting for stock (fills
+            automatically when goods arrive).
           </Text>
         </>
       )}

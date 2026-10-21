@@ -1,4 +1,4 @@
-const uuidv4 = require("uuid").v4;
+const uuidv4 = require('uuid').v4;
 
 const users = [];
 const messages = [];
@@ -10,29 +10,28 @@ exports.getUserById = async (req, res) => {
 
     // Fetch user details by ID, excluding sensitive fields like password
     const user = await User.findByPk(userId, {
-      attributes: { exclude: ["password"] },
+      attributes: { exclude: ['password'] },
     });
 
     if (!user) {
       return res.status(404).json({
-        error: "User not found.",
+        error: 'User not found.',
       });
     }
 
     res.status(200).json({
       success: true,
-      message: "User details retrieved successfully.",
+      message: 'User details retrieved successfully.',
       user,
     });
   } catch (error) {
     res.status(500).json({
-      error: "An internal server error occurred. Please try again later.",
+      error: 'An internal server error occurred. Please try again later.',
     });
   }
 };
 
-const findUserBySocketId = (socketId) =>
-  users.find((x) => x.socketId === socketId);
+const findUserBySocketId = (socketId) => users.find((x) => x.socketId === socketId);
 
 const updatedUserStatus = (user, status) => {
   const existingUser = findUserById(user.id);
@@ -42,7 +41,7 @@ const updatedUserStatus = (user, status) => {
 };
 
 exports.supportHandler = (io, socket) => {
-  socket.on("connectUser", async () => {
+  socket.on('connectUser', async () => {
     const user = findUserBySocketId(socket.id);
 
     /* 
@@ -52,34 +51,30 @@ exports.supportHandler = (io, socket) => {
     if (user) {
       user.online = true;
       if (user.isAdmin) {
-        socket.broadcast.emit("connectUser", user);
+        socket.broadcast.emit('connectUser', user);
       } else {
-        const admins = users.filter(
-          (x) => x.isAdmin === true && x.online === true
-        );
-        admins.map((admin) =>
-          socket.to(admin.socketId).emit("connectUser", user)
-        );
+        const admins = users.filter((x) => x.isAdmin === true && x.online === true);
+        admins.map((admin) => socket.to(admin.socketId).emit('connectUser', user));
       }
     }
   });
 
-  socket.on("getUsers", async () => {
+  socket.on('getUsers', async () => {
     const user = findUserBySocketId(socket.id);
     const notMe = users.filter((x) => x.socketId !== socket.id);
     const adminUsers = users.filter((x) => x.isAdmin === true);
     const userDocs = user?.isAdmin ? notMe : adminUsers;
-    io.to(socket.id).emit("getUsers", userDocs);
+    io.to(socket.id).emit('getUsers', userDocs);
   });
 
-  socket.on("getMessages", () => {
+  socket.on('getMessages', () => {
     const user = findUserBySocketId(socket.id);
     const sentMsgs = messages.filter((m) => m.from === user?.id);
     const receivedMsgs = messages.filter((m) => m.to === user?.id);
-    io.to(socket.id).emit("getMessages", [...sentMsgs, ...receivedMsgs]);
+    io.to(socket.id).emit('getMessages', [...sentMsgs, ...receivedMsgs]);
   });
 
-  socket.on("message", (body) => {
+  socket.on('message', (body) => {
     const { text, to } = body;
     const user = findUserBySocketId(socket.id);
     const userTo = findUserById(to);
@@ -94,19 +89,19 @@ exports.supportHandler = (io, socket) => {
     };
 
     messages.push(message);
-    io.to(userTo.socketId).to(user.socketId).emit("message", message);
+    io.to(userTo.socketId).to(user.socketId).emit('message', message);
   });
 
-  socket.on("disconnect", async () => {
+  socket.on('disconnect', async () => {
     const user = findUserBySocketId(socket.id);
     if (user) {
       updatedUserStatus(user, false);
       user.online = false;
-      socket.broadcast.emit("disconnectUser", user);
+      socket.broadcast.emit('disconnectUser', user);
     }
   });
 
-  socket.on("connect_error", (err) => {
+  socket.on('connect_error', (err) => {
     console.log(`connect_error due to ${err.message}`);
   });
 };

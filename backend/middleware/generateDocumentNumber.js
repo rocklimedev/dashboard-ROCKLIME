@@ -1,11 +1,11 @@
 // utils/generateDocumentNumber.js
-const moment = require("moment");
-const { Op } = require("sequelize");
+const moment = require('moment');
+const { Op } = require('sequelize');
 
 async function generateDailyNumber(prefixStyle, transaction) {
-  const todayStart = moment().startOf("day").toDate();
-  const todayEnd = moment().endOf("day").toDate();
-  const prefix = moment().format("DDMMYY"); // 150126
+  const todayStart = moment().startOf('day').toDate();
+  const todayEnd = moment().endOf('day').toDate();
+  const prefix = moment().format('DDMMYY'); // 150126
 
   let attempt = 0;
   const MAX_ATTEMPTS = 10;
@@ -24,7 +24,7 @@ async function generateDailyNumber(prefixStyle, transaction) {
         },
       },
       attributes: [prefixStyle.field],
-      order: [[prefixStyle.field, "DESC"]],
+      order: [[prefixStyle.field, 'DESC']],
       limit: 1,
       transaction,
       lock: transaction.LOCK.UPDATE, // helps a bit (row + gap lock)
@@ -42,11 +42,11 @@ async function generateDailyNumber(prefixStyle, transaction) {
     }
 
     let candidate;
-    if (prefixStyle.type === "QUOTATION") {
+    if (prefixStyle.type === 'QUOTATION') {
       candidate = `QUO${prefix}${nextSeq}`;
-    } else if (prefixStyle.type === "ORDER") {
+    } else if (prefixStyle.type === 'ORDER') {
       candidate = `${prefix}${nextSeq}`;
-    } else if (prefixStyle.type === "PURCHASE_ORDER") {
+    } else if (prefixStyle.type === 'PURCHASE_ORDER') {
       candidate = `PO${prefix}${nextSeq}`;
     }
 
@@ -61,31 +61,27 @@ async function generateDailyNumber(prefixStyle, transaction) {
     }
 
     // Collision → retry with next number
-    console.warn(
-      `Number collision on ${candidate} — retrying (${attempt}/${MAX_ATTEMPTS})`
-    );
+    console.warn(`Number collision on ${candidate} — retrying (${attempt}/${MAX_ATTEMPTS})`);
   }
 
-  throw new Error(
-    `Failed to generate unique number after ${MAX_ATTEMPTS} attempts`
-  );
+  throw new Error(`Failed to generate unique number after ${MAX_ATTEMPTS} attempts`);
 }
 
 // Usage helpers
 const quotationStyle = {
-  type: "QUOTATION",
-  field: "reference_number",
-  prefixLike: "QUO%",
+  type: 'QUOTATION',
+  field: 'reference_number',
+  prefixLike: 'QUO%',
 };
 
 const orderStyle = {
-  type: "ORDER",
-  field: "orderNo",
-  prefixLike: "%",
+  type: 'ORDER',
+  field: 'orderNo',
+  prefixLike: '%',
 };
 
 const poStyle = {
-  type: "PURCHASE_ORDER",
-  field: "poNumber",
-  prefixLike: "PO%",
+  type: 'PURCHASE_ORDER',
+  field: 'poNumber',
+  prefixLike: 'PO%',
 };

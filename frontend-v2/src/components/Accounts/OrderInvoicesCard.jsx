@@ -1,13 +1,32 @@
-import { useState } from "react";
-import { Alert, Button, Card, DatePicker, Descriptions, Empty, Modal, Space, Table, Tag, Tooltip, Typography, message } from "antd";
-import { FileDoneOutlined, FilePdfOutlined, PlusOutlined } from "@ant-design/icons";
-import dayjs from "dayjs";
-import { useCreateInvoiceMutation, useGetOrderInvoicesQuery, usePreviewInvoiceMutation } from "../../api/invoicesApi";
-import useCan from "../../utils/useCan";
-import { fetchFile } from "./invoiceFiles";
+import { useState } from 'react';
+import {
+  Alert,
+  Button,
+  Card,
+  DatePicker,
+  Descriptions,
+  Empty,
+  Modal,
+  Space,
+  Table,
+  Tag,
+  Tooltip,
+  Typography,
+  message,
+} from 'antd';
+import { FileDoneOutlined, FilePdfOutlined, PlusOutlined } from '@ant-design/icons';
+import dayjs from 'dayjs';
+import {
+  useCreateInvoiceMutation,
+  useGetOrderInvoicesQuery,
+  usePreviewInvoiceMutation,
+} from '../../api/invoicesApi';
+import useCan from '../../utils/useCan';
+import { fetchFile } from './invoiceFiles';
 
 const { Text } = Typography;
-const inr = (n) => `₹${Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const inr = (n) =>
+  `₹${Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 /** Order page → GST invoices made for this order, what is still to bill, and "Make invoice". */
 export default function OrderInvoicesCard({ orderId }) {
@@ -25,16 +44,16 @@ export default function OrderInvoicesCard({ orderId }) {
       setDate(dayjs());
       setDraft(await preview({ orderId }).unwrap());
     } catch (e) {
-      message.error(e?.data?.message || "Could not prepare the invoice");
+      message.error(e?.data?.message || 'Could not prepare the invoice');
     }
   };
   const confirm = async () => {
     try {
-      const r = await create({ orderId, invoiceDate: date.format("YYYY-MM-DD") }).unwrap();
+      const r = await create({ orderId, invoiceDate: date.format('YYYY-MM-DD') }).unwrap();
       message.success(r.message);
       setDraft(null);
     } catch (e) {
-      message.error(e?.data?.message || "Could not make the invoice");
+      message.error(e?.data?.message || 'Could not make the invoice');
     }
   };
   const open = async (inv) => {
@@ -59,7 +78,7 @@ export default function OrderInvoicesCard({ orderId }) {
       style={{ marginTop: 24 }}
       extra={
         data?.canInvoice &&
-        can("orders", "edit") && (
+        can('orders', 'edit') && (
           <Button type="primary" icon={<PlusOutlined />} loading={previewing} onClick={openPreview}>
             Make invoice
           </Button>
@@ -76,10 +95,10 @@ export default function OrderInvoicesCard({ orderId }) {
           image={Empty.PRESENTED_IMAGE_SIMPLE}
           description={
             isFetching
-              ? "Loading…"
+              ? 'Loading…'
               : data?.canInvoice
-                ? "No invoice yet. Make one now, or let the dispatch make it."
-                : "No invoice yet. Confirm the order to invoice it."
+                ? 'No invoice yet. Make one now, or let the dispatch make it.'
+                : 'No invoice yet. Confirm the order to invoice it.'
           }
         />
       ) : (
@@ -90,14 +109,14 @@ export default function OrderInvoicesCard({ orderId }) {
           dataSource={data.invoices}
           columns={[
             {
-              title: "Invoice",
-              dataIndex: "invoiceNo",
+              title: 'Invoice',
+              dataIndex: 'invoiceNo',
               render: (v, r) => (
                 <Space size={4}>
-                  <Text delete={r.status === "CANCELLED"} strong={r.status === "ISSUED"}>
+                  <Text delete={r.status === 'CANCELLED'} strong={r.status === 'ISSUED'}>
                     {v}
                   </Text>
-                  {r.status === "CANCELLED" && (
+                  {r.status === 'CANCELLED' && (
                     <Tooltip title={r.cancelReason}>
                       <Tag color="red">Cancelled</Tag>
                     </Tooltip>
@@ -106,15 +125,29 @@ export default function OrderInvoicesCard({ orderId }) {
                 </Space>
               ),
             },
-            { title: "Date", dataIndex: "invoiceDate", render: (d) => dayjs(d).format("D MMM YYYY") },
-            { title: "Pieces", key: "qty", align: "right", render: (_, r) => r.lines.reduce((a, l) => a + Number(l.qty || 0), 0) },
-            { title: "Total", dataIndex: "total", align: "right", render: inr },
             {
-              title: "",
-              key: "pdf",
+              title: 'Date',
+              dataIndex: 'invoiceDate',
+              render: (d) => dayjs(d).format('D MMM YYYY'),
+            },
+            {
+              title: 'Pieces',
+              key: 'qty',
+              align: 'right',
+              render: (_, r) => r.lines.reduce((a, l) => a + Number(l.qty || 0), 0),
+            },
+            { title: 'Total', dataIndex: 'total', align: 'right', render: inr },
+            {
+              title: '',
+              key: 'pdf',
               width: 50,
               render: (_, r) => (
-                <Button type="text" icon={<FilePdfOutlined style={{ color: "#d32f2f" }} />} loading={busy === r.id} onClick={() => open(r)} />
+                <Button
+                  type="text"
+                  icon={<FilePdfOutlined style={{ color: '#d32f2f' }} />}
+                  loading={busy === r.id}
+                  onClick={() => open(r)}
+                />
               ),
             },
           ]}
@@ -143,12 +176,17 @@ export default function OrderInvoicesCard({ orderId }) {
               />
             )}
             {draft.lines.some((l) => !l.hsn) && (
-              <Alert type="warning" showIcon className="mb-3" message="Some products have no HSN code. Add it on the product (HSN Code field) so the invoice is complete." />
+              <Alert
+                type="warning"
+                showIcon
+                className="mb-3"
+                message="Some products have no HSN code. Add it on the product (HSN Code field) so the invoice is complete."
+              />
             )}
             <Descriptions size="small" column={2} className="mb-3">
               <Descriptions.Item label="Bill to">{draft.billTo?.name}</Descriptions.Item>
               <Descriptions.Item label="Place of supply">
-                {draft.placeOfSupply || "—"} · {draft.interState ? "IGST" : "CGST + SGST"}
+                {draft.placeOfSupply || '—'} · {draft.interState ? 'IGST' : 'CGST + SGST'}
               </Descriptions.Item>
               <Descriptions.Item label="Invoice date">
                 <DatePicker
@@ -156,7 +194,7 @@ export default function OrderInvoicesCard({ orderId }) {
                   onChange={(d) => d && setDate(d)}
                   format="D MMM YYYY"
                   allowClear={false}
-                  disabledDate={(d) => d && d.isAfter(dayjs().endOf("day"))}
+                  disabledDate={(d) => d && d.isAfter(dayjs().endOf('day'))}
                 />
               </Descriptions.Item>
               <Descriptions.Item label="Number">Given when you confirm</Descriptions.Item>
@@ -167,11 +205,15 @@ export default function OrderInvoicesCard({ orderId }) {
               pagination={false}
               dataSource={draft.lines}
               columns={[
-                { title: "Product", dataIndex: "name" },
-                { title: "HSN", dataIndex: "hsn", render: (v) => v || <Text type="warning">missing</Text> },
-                { title: "Qty", dataIndex: "qty", align: "right" },
-                { title: "Rate", dataIndex: "rate", align: "right", render: inr },
-                { title: "Taxable", dataIndex: "taxable", align: "right", render: inr },
+                { title: 'Product', dataIndex: 'name' },
+                {
+                  title: 'HSN',
+                  dataIndex: 'hsn',
+                  render: (v) => v || <Text type="warning">missing</Text>,
+                },
+                { title: 'Qty', dataIndex: 'qty', align: 'right' },
+                { title: 'Rate', dataIndex: 'rate', align: 'right', render: inr },
+                { title: 'Taxable', dataIndex: 'taxable', align: 'right', render: inr },
               ]}
             />
             <div className="text-end mt-3" style={{ lineHeight: 1.8 }}>
@@ -179,10 +221,13 @@ export default function OrderInvoicesCard({ orderId }) {
               {draft.discount > 0 && <div>Less discount − {inr(draft.discount)}</div>}
               <div>Taxable value {inr(draft.taxableValue)}</div>
               {draft.interState ? (
-                <div>IGST {draft.gstRate}% {inr(draft.igst)}</div>
+                <div>
+                  IGST {draft.gstRate}% {inr(draft.igst)}
+                </div>
               ) : (
                 <div>
-                  CGST {draft.gstRate / 2}% {inr(draft.cgst)} · SGST {draft.gstRate / 2}% {inr(draft.sgst)}
+                  CGST {draft.gstRate / 2}% {inr(draft.cgst)} · SGST {draft.gstRate / 2}%{' '}
+                  {inr(draft.sgst)}
                 </div>
               )}
               {draft.roundOff !== 0 && <div>Round off {inr(draft.roundOff)}</div>}

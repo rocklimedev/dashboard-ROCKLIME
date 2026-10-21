@@ -1,25 +1,11 @@
-import React, { useEffect, useState } from "react";
-import {
-  Button,
-  DatePicker,
-  Empty,
-  Input,
-  Select,
-  Space,
-  Tag,
-  Tooltip,
-} from "antd";
-import {
-  ClearOutlined,
-  EyeOutlined,
-  SearchOutlined,
-  TruckOutlined,
-} from "@ant-design/icons";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import moment from "moment";
+import React, { useEffect, useState } from 'react';
+import { Button, DatePicker, Empty, Input, Select, Space, Tag, Tooltip } from 'antd';
+import { ClearOutlined, EyeOutlined, SearchOutlined, TruckOutlined } from '@ant-design/icons';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import moment from 'moment';
 
-import PageHeader from "../../components/Common/PageHeader";
-import { useGetAllDispatchHistoryQuery } from "../../api/orderApi";
+import PageHeader from '../../components/Common/PageHeader';
+import { useGetAllDispatchHistoryQuery } from '../../api/orderApi';
 
 const { Option } = Select;
 const { RangePicker } = DatePicker;
@@ -27,19 +13,19 @@ const { RangePicker } = DatePicker;
 const DispatchHistory = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const quotationId = searchParams.get("quotationId") || "";
+  const quotationId = searchParams.get('quotationId') || '';
 
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
 
   const [filters, setFilters] = useState({
-    search: "",
-    product: "",
-    status: "",
-    carrier: "",
-    trackingNumber: "",
-    orderNo: "",
-    dateFrom: "",
-    dateTo: "",
+    search: '',
+    product: '',
+    status: '',
+    carrier: '',
+    trackingNumber: '',
+    orderNo: '',
+    dateFrom: '',
+    dateTo: '',
     page: 1,
     limit: 20,
   });
@@ -83,7 +69,7 @@ const DispatchHistory = () => {
   const handleStatusChange = (value) => {
     setFilters((prev) => ({
       ...prev,
-      status: value || "",
+      status: value || '',
       page: 1,
     }));
   };
@@ -115,24 +101,24 @@ const DispatchHistory = () => {
   const handleDateChange = (dates) => {
     setFilters((prev) => ({
       ...prev,
-      dateFrom: dates?.[0] ? dates[0].format("YYYY-MM-DD") : "",
-      dateTo: dates?.[1] ? dates[1].format("YYYY-MM-DD") : "",
+      dateFrom: dates?.[0] ? dates[0].format('YYYY-MM-DD') : '',
+      dateTo: dates?.[1] ? dates[1].format('YYYY-MM-DD') : '',
       page: 1,
     }));
   };
 
   const clearFilters = () => {
-    setSearch("");
+    setSearch('');
 
     setFilters({
-      search: "",
-      product: "",
-      status: "",
-      carrier: "",
-      trackingNumber: "",
-      orderNo: "",
-      dateFrom: "",
-      dateTo: "",
+      search: '',
+      product: '',
+      status: '',
+      carrier: '',
+      trackingNumber: '',
+      orderNo: '',
+      dateFrom: '',
+      dateTo: '',
       page: 1,
       limit: 20,
     });
@@ -154,10 +140,10 @@ const DispatchHistory = () => {
       <div>
         {items.slice(0, 2).map((item, index) => (
           <div key={`${item.productId}-${index}`} className="mb-1">
-            <div className="fw-semibold">{item.name || "Unnamed Product"}</div>
+            <div className="fw-semibold">{item.name || 'Unnamed Product'}</div>
 
             <div className="small text-muted">
-              {item.productCode || "No Code"} · Qty {item.quantity}
+              {item.productCode || 'No Code'} · Qty {item.quantity}
             </div>
           </div>
         ))}
@@ -188,8 +174,12 @@ const DispatchHistory = () => {
           title="Dispatch History"
           subtitle="Quotation and order dispatch register"
           addLabel="Dispatch from quotation"
-          onAdd={() => navigate("/quotations/list")}
-          extra={quotationId ? <Button onClick={() => navigate("/orders/dispatch/all")}>Show all dispatches</Button> : null}
+          onAdd={() => navigate('/quotations/list')}
+          extra={
+            quotationId ? (
+              <Button onClick={() => navigate('/orders/dispatch/all')}>Show all dispatches</Button>
+            ) : null
+          }
         />
 
         <div className="card">
@@ -236,11 +226,7 @@ const DispatchHistory = () => {
               </div>
 
               <div className="col-12 col-lg-2">
-                <RangePicker
-                  size="large"
-                  className="w-100"
-                  onChange={handleDateChange}
-                />
+                <RangePicker size="large" className="w-100" onChange={handleDateChange} />
               </div>
 
               <div className="col-12 col-md-4">
@@ -289,9 +275,7 @@ const DispatchHistory = () => {
                 <strong>{pagination.total}</strong> dispatch records
               </div>
 
-              {isFetching && (
-                <span className="text-muted small">Updating...</span>
-              )}
+              {isFetching && <span className="text-muted small">Updating...</span>}
             </div>
 
             {/* TABLE */}
@@ -302,7 +286,7 @@ const DispatchHistory = () => {
               </div>
             ) : error ? (
               <div className="alert alert-danger">
-                {error?.data?.message || "Failed to load dispatch history"}
+                {error?.data?.message || 'Failed to load dispatch history'}
               </div>
             ) : dispatches.length === 0 ? (
               <Empty description="No dispatch history found" />
@@ -329,8 +313,7 @@ const DispatchHistory = () => {
 
                     <tbody>
                       {dispatches.map((dispatch, index) => {
-                        const serial =
-                          (pagination.page - 1) * pagination.limit + index + 1;
+                        const serial = (pagination.page - 1) * pagination.limit + index + 1;
 
                         return (
                           <tr key={dispatch.id}>
@@ -338,24 +321,30 @@ const DispatchHistory = () => {
 
                             <td>
                               <div className="fw-semibold">
-                                <Link to={`/dispatch/${dispatch.id}`}>#{dispatch.dispatchNumber}</Link>
+                                <Link to={`/dispatch/${dispatch.id}`}>
+                                  #{dispatch.dispatchNumber}
+                                </Link>
                               </div>
 
-                              <div className="small text-muted">
-                                {dispatch.id?.slice(0, 8)}
-                              </div>
+                              <div className="small text-muted">{dispatch.id?.slice(0, 8)}</div>
                             </td>
 
                             <td>
                               {dispatch.orderId || dispatch.quotationId ? (
                                 <Link
-                                  to={dispatch.orderId ? `/order/${dispatch.orderId}` : `/quotation/${dispatch.quotationId}`}
+                                  to={
+                                    dispatch.orderId
+                                      ? `/order/${dispatch.orderId}`
+                                      : `/quotation/${dispatch.quotationId}`
+                                  }
                                   className="fw-semibold"
                                 >
-                                  {dispatch.orderId ? "Order " + dispatch.orderNo : "Quotation " + (dispatch.quotationRef || dispatch.orderNo)}
+                                  {dispatch.orderId
+                                    ? 'Order ' + dispatch.orderNo
+                                    : 'Quotation ' + (dispatch.quotationRef || dispatch.orderNo)}
                                 </Link>
                               ) : (
-                                dispatch.orderNo || "—"
+                                dispatch.orderNo || '—'
                               )}
                             </td>
 
@@ -373,56 +362,45 @@ const DispatchHistory = () => {
 
                             <td>
                               ₹
-                              {Number(dispatch.totalAmount || 0).toLocaleString(
-                                "en-IN",
-                                {
-                                  minimumFractionDigits: 2,
-                                },
-                              )}
+                              {Number(dispatch.totalAmount || 0).toLocaleString('en-IN', {
+                                minimumFractionDigits: 2,
+                              })}
                             </td>
 
                             <td>
                               {dispatch.dispatchDate
-                                ? moment(dispatch.dispatchDate).format(
-                                    "DD MMM YYYY",
-                                  )
-                                : "—"}
+                                ? moment(dispatch.dispatchDate).format('DD MMM YYYY')
+                                : '—'}
 
                               <div className="small text-muted">
                                 {dispatch.dispatchDate
-                                  ? moment(dispatch.dispatchDate).format(
-                                      "hh:mm A",
-                                    )
-                                  : ""}
+                                  ? moment(dispatch.dispatchDate).format('hh:mm A')
+                                  : ''}
                               </div>
                             </td>
 
-                            <td>{dispatch.carrier || "—"}</td>
+                            <td>{dispatch.carrier || '—'}</td>
 
                             <td>
                               {dispatch.trackingNumber ? (
-                                <span className="text-break">
-                                  {dispatch.trackingNumber}
-                                </span>
+                                <span className="text-break">{dispatch.trackingNumber}</span>
                               ) : (
-                                "—"
+                                '—'
                               )}
                             </td>
 
                             <td>
-                              {dispatch.dispatcher?.name ||
-                                dispatch.dispatcher?.username ||
-                                "—"}
+                              {dispatch.dispatcher?.name || dispatch.dispatcher?.username || '—'}
                             </td>
 
                             <td>
                               <Tag
                                 color={
-                                  dispatch.status === "DELIVERED"
-                                    ? "green"
-                                    : dispatch.status === "RETURNED"
-                                      ? "red"
-                                      : "blue"
+                                  dispatch.status === 'DELIVERED'
+                                    ? 'green'
+                                    : dispatch.status === 'RETURNED'
+                                      ? 'red'
+                                      : 'blue'
                                 }
                               >
                                 {dispatch.status}

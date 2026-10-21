@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo } from 'react';
 import {
   Alert,
   Avatar,
@@ -15,7 +15,7 @@ import {
   Table,
   Tag,
   Typography,
-} from "antd";
+} from 'antd';
 import {
   ArrowDownOutlined,
   ArrowLeftOutlined,
@@ -29,16 +29,13 @@ import {
   ShoppingOutlined,
   UserOutlined,
   WarningOutlined,
-} from "@ant-design/icons";
-import { useNavigate, useParams } from "react-router-dom";
-import dayjs from "dayjs";
+} from '@ant-design/icons';
+import { useNavigate, useParams } from 'react-router-dom';
+import dayjs from 'dayjs';
 
-import {
-  useGetHistoryByProductIdQuery,
-  useGetProductByIdQuery,
-} from "../../api/productApi";
+import { useGetHistoryByProductIdQuery, useGetProductByIdQuery } from '../../api/productApi';
 
-import { useGetAllUsersQuery } from "../../api/userApi";
+import { useGetAllUsersQuery } from '../../api/userApi';
 
 const { Title, Text } = Typography;
 
@@ -599,53 +596,53 @@ const PAGE_CSS = `
 `;
 
 const actionMap = {
-  "add-stock": {
-    label: "Stock In",
-    type: "in",
+  'add-stock': {
+    label: 'Stock In',
+    type: 'in',
   },
-  "remove-stock": {
-    label: "Stock Out",
-    type: "out",
+  'remove-stock': {
+    label: 'Stock Out',
+    type: 'out',
   },
   sale: {
-    label: "Sale",
-    type: "out",
+    label: 'Sale',
+    type: 'out',
   },
   return: {
-    label: "Return",
-    type: "in",
+    label: 'Return',
+    type: 'in',
   },
   adjustment: {
-    label: "Adjustment",
-    type: "neutral",
+    label: 'Adjustment',
+    type: 'neutral',
   },
   correction: {
-    label: "Correction",
-    type: "neutral",
+    label: 'Correction',
+    type: 'neutral',
   },
 };
 
 const formatDateTime = (date) => {
-  if (!date || !dayjs(date).isValid()) return "—";
-  return dayjs(date).format("DD MMM YYYY, hh:mm A");
+  if (!date || !dayjs(date).isValid()) return '—';
+  return dayjs(date).format('DD MMM YYYY, hh:mm A');
 };
 
 const formatDate = (date) => {
-  if (!date || !dayjs(date).isValid()) return "—";
-  return dayjs(date).format("DD MMM YYYY");
+  if (!date || !dayjs(date).isValid()) return '—';
+  return dayjs(date).format('DD MMM YYYY');
 };
 
-const formatCurrency = (value) => Number(value || 0).toLocaleString("en-IN");
+const formatCurrency = (value) => Number(value || 0).toLocaleString('en-IN');
 
 const getInitials = (name) => {
-  if (!name || name === "System") return "SY";
+  if (!name || name === 'System') return 'SY';
 
   return name
-    .split(" ")
+    .split(' ')
     .filter(Boolean)
     .slice(0, 2)
     .map((part) => part[0])
-    .join("")
+    .join('')
     .toUpperCase();
 };
 
@@ -671,8 +668,7 @@ const ProductInventoryPage = () => {
     const map = {};
 
     usersData?.users?.forEach((user) => {
-      map[user.userId] =
-        user.name || user.username || user.email || "Unknown User";
+      map[user.userId] = user.name || user.username || user.email || 'Unknown User';
     });
 
     return map;
@@ -681,8 +677,7 @@ const ProductInventoryPage = () => {
   const dataSource = historyResponse?.history || [];
 
   const sellingPrice = Number(
-    product?.metaDetails?.find((item) => item.slug === "sellingPrice")?.value ||
-      0,
+    product?.metaDetails?.find((item) => item.slug === 'sellingPrice')?.value || 0,
   );
 
   const currentStock = Number(product?.quantity || 0);
@@ -695,14 +690,14 @@ const ProductInventoryPage = () => {
 
   const columns = [
     {
-      title: "Date & Time",
-      dataIndex: "timestamp",
-      key: "timestamp",
+      title: 'Date & Time',
+      dataIndex: 'timestamp',
+      key: 'timestamp',
       width: 190,
       sorter: (a, b) => new Date(a.timestamp) - new Date(b.timestamp),
       render: (date) => (
         <Space direction="vertical" size={1}>
-          <Text strong style={{ color: "#334155" }}>
+          <Text strong style={{ color: '#334155' }}>
             {formatDate(date)}
           </Text>
 
@@ -710,35 +705,33 @@ const ProductInventoryPage = () => {
             type="secondary"
             style={{
               fontSize: 11,
-              display: "inline-flex",
-              alignItems: "center",
+              display: 'inline-flex',
+              alignItems: 'center',
               gap: 4,
             }}
           >
             <ClockCircleOutlined />
-            {date && dayjs(date).isValid()
-              ? dayjs(date).format("hh:mm A")
-              : "—"}
+            {date && dayjs(date).isValid() ? dayjs(date).format('hh:mm A') : '—'}
           </Text>
         </Space>
       ),
     },
 
     {
-      title: "Movement",
-      dataIndex: "action",
-      key: "action",
+      title: 'Movement',
+      dataIndex: 'action',
+      key: 'action',
       width: 145,
       render: (action) => {
         const config = actionMap[action] || {
-          label: action || "Unknown",
-          type: "neutral",
+          label: action || 'Unknown',
+          type: 'neutral',
         };
 
         const icon =
-          config.type === "in" ? (
+          config.type === 'in' ? (
             <ArrowDownOutlined />
-          ) : config.type === "out" ? (
+          ) : config.type === 'out' ? (
             <ArrowUpOutlined />
           ) : null;
 
@@ -752,20 +745,18 @@ const ProductInventoryPage = () => {
     },
 
     {
-      title: "Stock Change",
-      dataIndex: "change",
-      key: "change",
+      title: 'Stock Change',
+      dataIndex: 'change',
+      key: 'change',
       width: 135,
-      align: "center",
+      align: 'center',
       sorter: (a, b) => Number(a.change || 0) - Number(b.change || 0),
       render: (change) => {
         const value = Number(change || 0);
 
         return (
-          <span
-            className={`change-value ${value >= 0 ? "positive" : "negative"}`}
-          >
-            {value >= 0 ? "+" : ""}
+          <span className={`change-value ${value >= 0 ? 'positive' : 'negative'}`}>
+            {value >= 0 ? '+' : ''}
             {value}
           </span>
         );
@@ -773,38 +764,31 @@ const ProductInventoryPage = () => {
     },
 
     {
-      title: "Balance",
-      dataIndex: "quantityAfter",
-      key: "quantityAfter",
+      title: 'Balance',
+      dataIndex: 'quantityAfter',
+      key: 'quantityAfter',
       width: 120,
-      align: "center",
-      sorter: (a, b) =>
-        Number(a.quantityAfter || 0) - Number(b.quantityAfter || 0),
-      render: (qty) => (
-        <span className="quantity-value">{Number(qty || 0)}</span>
-      ),
+      align: 'center',
+      sorter: (a, b) => Number(a.quantityAfter || 0) - Number(b.quantityAfter || 0),
+      render: (qty) => <span className="quantity-value">{Number(qty || 0)}</span>,
     },
 
     {
-      title: "Order",
-      dataIndex: "orderNo",
-      key: "orderNo",
+      title: 'Order',
+      dataIndex: 'orderNo',
+      key: 'orderNo',
       width: 165,
       render: (orderNo) =>
-        orderNo ? (
-          <span className="order-code">{orderNo}</span>
-        ) : (
-          <Text type="secondary">—</Text>
-        ),
+        orderNo ? <span className="order-code">{orderNo}</span> : <Text type="secondary">—</Text>,
     },
 
     {
-      title: "Updated By",
-      dataIndex: "userId",
-      key: "userId",
+      title: 'Updated By',
+      dataIndex: 'userId',
+      key: 'userId',
       width: 190,
       render: (userId) => {
-        const name = userId ? userMap[userId] || "Unknown User" : "System";
+        const name = userId ? userMap[userId] || 'Unknown User' : 'System';
 
         return (
           <div className="user-cell">
@@ -821,9 +805,9 @@ const ProductInventoryPage = () => {
     },
 
     {
-      title: "Note",
-      dataIndex: "message",
-      key: "message",
+      title: 'Note',
+      dataIndex: 'message',
+      key: 'message',
       ellipsis: true,
       render: (message) =>
         message ? (
@@ -891,7 +875,7 @@ const ProductInventoryPage = () => {
               </Button>
 
               <Title level={1} className="inventory-title">
-                {product?.name || "Product Inventory"}
+                {product?.name || 'Product Inventory'}
               </Title>
             </div>
 
@@ -901,15 +885,13 @@ const ProductInventoryPage = () => {
               </Button>
               <span className="product-code-tag">
                 <BarcodeOutlined />
-                {product?.product_code || "No Code"}
+                {product?.product_code || 'No Code'}
               </span>
 
               <span className="status-pill">
                 <Badge
-                  status={product?.status === "active" ? "success" : "error"}
-                  text={
-                    product?.status ? product.status.toUpperCase() : "UNKNOWN"
-                  }
+                  status={product?.status === 'active' ? 'success' : 'error'}
+                  text={product?.status ? product.status.toUpperCase() : 'UNKNOWN'}
                 />
               </span>
 
@@ -918,8 +900,8 @@ const ProductInventoryPage = () => {
                   color="gold"
                   style={{
                     height: 32,
-                    display: "inline-flex",
-                    alignItems: "center",
+                    display: 'inline-flex',
+                    alignItems: 'center',
                     borderRadius: 8,
                     margin: 0,
                   }}
@@ -942,16 +924,13 @@ const ProductInventoryPage = () => {
                 {product?.images?.[0] ? (
                   <Image
                     src={product.images[0]}
-                    alt={product?.name || "Product"}
+                    alt={product?.name || 'Product'}
                     preview
                     className="product-image"
                   />
                 ) : (
                   <div className="product-image-empty">
-                    <Empty
-                      image={Empty.PRESENTED_IMAGE_SIMPLE}
-                      description="No product image"
-                    />
+                    <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No product image" />
                   </div>
                 )}
               </div>
@@ -960,29 +939,24 @@ const ProductInventoryPage = () => {
 
               <div className="product-details">
                 <Title level={3} className="product-details-title">
-                  {product?.name || "—"}
+                  {product?.name || '—'}
                 </Title>
 
                 <Text className="product-description">
-                  {product?.description ||
-                    "No product description has been added for this item."}
+                  {product?.description || 'No product description has been added for this item.'}
                 </Text>
 
                 <div className="detail-grid">
                   <div className="detail-item">
                     <span className="detail-label">Product Code</span>
 
-                    <span className="detail-value">
-                      {product?.product_code || "—"}
-                    </span>
+                    <span className="detail-value">{product?.product_code || '—'}</span>
                   </div>
 
                   <div className="detail-item">
                     <span className="detail-label">Selling Price</span>
 
-                    <span className="detail-value">
-                      ₹{formatCurrency(sellingPrice)}
-                    </span>
+                    <span className="detail-value">₹{formatCurrency(sellingPrice)}</span>
                   </div>
 
                   <div className="detail-item">
@@ -1007,15 +981,13 @@ const ProductInventoryPage = () => {
 
               {/* STOCK */}
 
-              <div
-                className={`stock-overview ${isLowStock ? "low-stock" : ""}`}
-              >
+              <div className={`stock-overview ${isLowStock ? 'low-stock' : ''}`}>
                 <div>
                   <div className="stock-label">
                     {isLowStock ? (
-                      <WarningOutlined style={{ color: "#cf1322" }} />
+                      <WarningOutlined style={{ color: '#cf1322' }} />
                     ) : (
-                      <InboxOutlined style={{ color: "#1677ff" }} />
+                      <InboxOutlined style={{ color: '#1677ff' }} />
                     )}
                     Current Stock
                   </div>
@@ -1030,7 +1002,7 @@ const ProductInventoryPage = () => {
                     Reorder alert at <Text strong>{alertQuantity}</Text> units
                   </Text>
 
-                  <div className={`stock-status ${isLowStock ? "low" : ""}`}>
+                  <div className={`stock-status ${isLowStock ? 'low' : ''}`}>
                     {isLowStock ? (
                       <>
                         <WarningOutlined />
@@ -1128,21 +1100,16 @@ const ProductInventoryPage = () => {
                 </span>
 
                 <div>
-                  <div className="history-title">
-                    Inventory Movement History
-                  </div>
+                  <div className="history-title">Inventory Movement History</div>
 
-                  <span className="history-subtitle">
-                    Complete audit trail of stock changes
-                  </span>
+                  <span className="history-subtitle">Complete audit trail of stock changes</span>
                 </div>
               </div>
             }
             extra={
               latestMovement ? (
                 <span className="latest-movement">
-                  Latest movement:{" "}
-                  <strong>{formatDateTime(latestMovement)}</strong>
+                  Latest movement: <strong>{formatDateTime(latestMovement)}</strong>
                 </span>
               ) : null
             }
@@ -1162,16 +1129,15 @@ const ProductInventoryPage = () => {
                   <Empty
                     image={Empty.PRESENTED_IMAGE_SIMPLE}
                     description="No inventory movements recorded"
-                    style={{ padding: "36px 0" }}
+                    style={{ padding: '36px 0' }}
                   />
                 ),
               }}
               pagination={{
                 pageSize: 25,
                 showSizeChanger: true,
-                pageSizeOptions: ["25", "50", "100"],
-                showTotal: (total) =>
-                  `${total} movement${total === 1 ? "" : "s"}`,
+                pageSizeOptions: ['25', '50', '100'],
+                showTotal: (total) => `${total} movement${total === 1 ? '' : 's'}`,
               }}
             />
           </Card>

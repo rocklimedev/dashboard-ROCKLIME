@@ -1,16 +1,8 @@
-import React, { useState, useEffect } from "react";
-import {
-  useGetCustomersQuery,
-  useDeleteCustomerMutation,
-} from "../../api/customerApi";
-import Avatar from "react-avatar";
-import { BiTrash } from "react-icons/bi";
-import {
-  EyeOutlined,
-  SearchOutlined,
-  EditOutlined,
-  MoreOutlined,
-} from "@ant-design/icons";
+import React, { useState, useEffect } from 'react';
+import { useGetCustomersQuery, useDeleteCustomerMutation } from '../../api/customerApi';
+import Avatar from 'react-avatar';
+import { BiTrash } from 'react-icons/bi';
+import { EyeOutlined, SearchOutlined, EditOutlined, MoreOutlined } from '@ant-design/icons';
 import {
   message,
   Button,
@@ -22,13 +14,13 @@ import {
   Segmented,
   Space,
   Tag,
-} from "antd";
-import DeleteModal from "../../components/Common/DeleteModal";
-import PageHeader from "../../components/Common/PageHeader";
+} from 'antd';
+import DeleteModal from '../../components/Common/DeleteModal';
+import PageHeader from '../../components/Common/PageHeader';
 
 const Checkable = Tag.CheckableTag;
-import { useNavigate } from "react-router-dom";
-import PermissionGate from "../../context/PermissionGate";
+import { useNavigate } from 'react-router-dom';
+import PermissionGate from '../../context/PermissionGate';
 
 const { Option } = Select;
 
@@ -40,12 +32,12 @@ const CustomerList = () => {
   const [customerToDelete, setCustomerToDelete] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [customerTypeFilter, setCustomerTypeFilter] = useState("All");
-  const [sortBy, setSortBy] = useState("Recently Added");
-  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [searchTerm, setSearchTerm] = useState('');
+  const [customerTypeFilter, setCustomerTypeFilter] = useState('All');
+  const [sortBy, setSortBy] = useState('Recently Added');
+  const [statusFilter, setStatusFilter] = useState('ALL');
   // Debounced search
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -66,9 +58,14 @@ const CustomerList = () => {
     page: currentPage,
     limit: pageSize,
     search: debouncedSearch || undefined,
-    type: customerTypeFilter !== "All" ? customerTypeFilter : undefined,
-    owes: statusFilter === "OWES" ? "1" : undefined,
-    sort: { "Recently Added": "recent", Ascending: "name_asc", Descending: "name_desc", Oldest: "oldest" }[sortBy],
+    type: customerTypeFilter !== 'All' ? customerTypeFilter : undefined,
+    owes: statusFilter === 'OWES' ? '1' : undefined,
+    sort: {
+      'Recently Added': 'recent',
+      Ascending: 'name_asc',
+      Descending: 'name_desc',
+      Oldest: 'oldest',
+    }[sortBy],
   });
 
   const customers = response?.data || [];
@@ -82,12 +79,12 @@ const CustomerList = () => {
   const [deleteCustomer] = useDeleteCustomerMutation();
 
   const customerTypes = [
-    { value: "All", label: "All Customers" },
-    { value: "Retail", label: "Retail" },
-    { value: "Architect", label: "Architect" },
-    { value: "Interior", label: "Interior" },
-    { value: "Builder", label: "Builder" },
-    { value: "Contractor", label: "Contractor" },
+    { value: 'All', label: 'All Customers' },
+    { value: 'Retail', label: 'Retail' },
+    { value: 'Architect', label: 'Architect' },
+    { value: 'Interior', label: 'Interior' },
+    { value: 'Builder', label: 'Builder' },
+    { value: 'Contractor', label: 'Contractor' },
   ];
 
   // filtering and sorting happen on the server (all customers, not just this page)
@@ -102,7 +99,7 @@ const CustomerList = () => {
     }
   };
 
-  const handleAddCustomer = () => navigate("/customer/add");
+  const handleAddCustomer = () => navigate('/customer/add');
 
   const handleEditCustomer = (customer) => {
     navigate(`/customer/edit/${customer.customerId}`, { state: { customer } });
@@ -118,15 +115,15 @@ const CustomerList = () => {
 
     try {
       await deleteCustomer(customerToDelete).unwrap();
-      message.success("Customer deleted successfully");
+      message.success('Customer deleted successfully');
 
       if (filteredCustomers.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
       }
     } catch (err) {
-      const msg = err?.data?.message || "Failed to delete customer";
-      if (msg.toLowerCase().includes("quotation")) {
-        message.error("Cannot delete — customer has linked quotations.");
+      const msg = err?.data?.message || 'Failed to delete customer';
+      if (msg.toLowerCase().includes('quotation')) {
+        message.error('Cannot delete — customer has linked quotations.');
       } else {
         message.error(msg);
       }
@@ -137,10 +134,10 @@ const CustomerList = () => {
   };
 
   const clearFilters = () => {
-    setSearchTerm("");
-    setCustomerTypeFilter("All");
-    setStatusFilter("ALL");
-    setSortBy("Recently Added");
+    setSearchTerm('');
+    setCustomerTypeFilter('All');
+    setStatusFilter('ALL');
+    setSortBy('Recently Added');
     setCurrentPage(1);
   };
 
@@ -159,7 +156,7 @@ const CustomerList = () => {
     return (
       <div className="content p-4">
         <div className="alert alert-danger">
-          Error: {error?.data?.message || "Failed to load customers"}
+          Error: {error?.data?.message || 'Failed to load customers'}
         </div>
       </div>
     );
@@ -185,12 +182,15 @@ const CustomerList = () => {
                     setCustomerTypeFilter(val);
                     setCurrentPage(1);
                   }}
-                  options={customerTypes.map((t) => ({ value: t.value, label: t.value === "All" ? "All" : t.label }))}
+                  options={customerTypes.map((t) => ({
+                    value: t.value,
+                    label: t.value === 'All' ? 'All' : t.label,
+                  }))}
                 />
                 <Checkable
-                  checked={statusFilter === "OWES"}
+                  checked={statusFilter === 'OWES'}
                   onChange={(on) => {
-                    setStatusFilter(on ? "OWES" : "ALL");
+                    setStatusFilter(on ? 'OWES' : 'ALL');
                     setCurrentPage(1);
                   }}
                 >
@@ -211,12 +211,7 @@ const CustomerList = () => {
             </div>
 
             <div className="col-lg-5 d-flex justify-content-end gap-2 flex-wrap">
-              <Select
-                value={sortBy}
-                onChange={setSortBy}
-                style={{ width: 180 }}
-                size="large"
-              >
+              <Select value={sortBy} onChange={setSortBy} style={{ width: 180 }} size="large">
                 <Option value="Recently Added">Newest first</Option>
                 <Option value="Oldest">Oldest first</Option>
                 <Option value="Ascending">Name: A to Z</Option>
@@ -250,7 +245,9 @@ const CustomerList = () => {
                     <th>Contact</th>
                     <th>Quotations</th>
                     <th>Orders</th>
-                    <th title="Orders won (not cancelled) plus quotations not yet converted">Business Value</th>
+                    <th title="Orders won (not cancelled) plus quotations not yet converted">
+                      Business Value
+                    </th>
                     <th>Owes</th>
                     <th>Last order</th>
                     <th className="text-end">Actions</th>
@@ -276,16 +273,12 @@ const CustomerList = () => {
                               rel="noopener noreferrer"
                               className="fw-semibold text-primary d-block"
                             >
-                              {c.name || "Unnamed Customer"}
+                              {c.name || 'Unnamed Customer'}
                             </a>
 
-                            {c.companyName && (
-                              <small className="text-muted">
-                                {c.companyName}
-                              </small>
-                            )}
+                            {c.companyName && <small className="text-muted">{c.companyName}</small>}
                             <span className="badge bg-light text-dark">
-                              {c.customerType || "Retail"}
+                              {c.customerType || 'Retail'}
                             </span>
                           </div>
                         </div>
@@ -293,54 +286,47 @@ const CustomerList = () => {
 
                       <td>
                         <div>
-                          <div>{c.mobileNumber || ""}</div>
-                          <small className="text-muted">{c.email || ""}</small>
+                          <div>{c.mobileNumber || ''}</div>
+                          <small className="text-muted">{c.email || ''}</small>
                         </div>
                       </td>
 
                       <td>
-                        {Number(c.quotationValue || 0) > 0 ||
-                        Number(c.quotations || 0) > 0 ? (
+                        {Number(c.quotationValue || 0) > 0 || Number(c.quotations || 0) > 0 ? (
                           <small className="text-muted">
-                            ₹
-                            {Number(c.quotationValue || 0).toLocaleString(
-                              "en-IN",
-                            )}{" "}
-                            ({c.quotations || 0})
+                            ₹{Number(c.quotationValue || 0).toLocaleString('en-IN')} (
+                            {c.quotations || 0})
                           </small>
                         ) : (
-                          ""
+                          ''
                         )}
                       </td>
 
                       <td>
-                        {Number(c.orderValue || 0) > 0 ||
-                        Number(c.orders || 0) > 0 ? (
+                        {Number(c.orderValue || 0) > 0 || Number(c.orders || 0) > 0 ? (
                           <small className="text-success">
-                            ₹{Number(c.orderValue || 0).toLocaleString("en-IN")}{" "}
-                            ({c.orders || 0})
+                            ₹{Number(c.orderValue || 0).toLocaleString('en-IN')} ({c.orders || 0})
                           </small>
                         ) : (
-                          ""
+                          ''
                         )}
                       </td>
                       <td>
                         {Number(c.businessValue || 0) > 0 ? (
                           <div className="small">
                             ₹
-                            {Number(c.businessValue || 0).toLocaleString(
-                              "en-IN",
-                              { maximumFractionDigits: 2 },
-                            )}
+                            {Number(c.businessValue || 0).toLocaleString('en-IN', {
+                              maximumFractionDigits: 2,
+                            })}
                           </div>
                         ) : (
-                          ""
+                          ''
                         )}
                       </td>
                       <td>
                         {Number(c.due || 0) > 0.5 ? (
                           <small className="text-danger fw-semibold">
-                            ₹{Math.round(Number(c.due)).toLocaleString("en-IN")}
+                            ₹{Math.round(Number(c.due)).toLocaleString('en-IN')}
                           </small>
                         ) : (
                           <small className="text-muted">—</small>
@@ -349,8 +335,12 @@ const CustomerList = () => {
                       <td>
                         <small className="text-muted">
                           {c.lastOrder
-                            ? new Date(c.lastOrder).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
-                            : "—"}
+                            ? new Date(c.lastOrder).toLocaleDateString('en-IN', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric',
+                              })
+                            : '—'}
                         </small>
                       </td>
 
@@ -366,7 +356,7 @@ const CustomerList = () => {
 
                           <PermissionGate api="view|delete" module="customers">
                             <Dropdown
-                              trigger={["click"]}
+                              trigger={['click']}
                               overlay={
                                 <Menu>
                                   <PermissionGate api="view" module="customers">
@@ -382,10 +372,7 @@ const CustomerList = () => {
                                     </Menu.Item>
                                   </PermissionGate>
 
-                                  <PermissionGate
-                                    api="delete"
-                                    module="customers"
-                                  >
+                                  <PermissionGate api="delete" module="customers">
                                     <Menu.Item
                                       key="delete"
                                       danger
@@ -398,11 +385,7 @@ const CustomerList = () => {
                                 </Menu>
                               }
                             >
-                              <Button
-                                size="small"
-                                type="text"
-                                icon={<MoreOutlined />}
-                              />
+                              <Button size="small" type="text" icon={<MoreOutlined />} />
                             </Dropdown>
                           </PermissionGate>
                         </div>
@@ -419,8 +402,7 @@ const CustomerList = () => {
             <div className="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
               <div className="text-muted small">
                 Showing {(currentPage - 1) * pageSize + 1}–
-                {Math.min(currentPage * pageSize, pagination.total)} of{" "}
-                {pagination.total} customers
+                {Math.min(currentPage * pageSize, pagination.total)} of {pagination.total} customers
               </div>
               <Pagination
                 current={currentPage}
@@ -428,7 +410,7 @@ const CustomerList = () => {
                 total={pagination.total}
                 onChange={handlePageChange}
                 showSizeChanger
-                pageSizeOptions={["10", "20", "50", "100"]}
+                pageSizeOptions={['10', '20', '50', '100']}
                 disabled={isFetching}
               />
             </div>

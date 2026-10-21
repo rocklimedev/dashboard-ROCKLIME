@@ -1,11 +1,11 @@
-const moment = require("moment");
-const { Op } = require("sequelize");
-const { Order } = require("../../models");
+const moment = require('moment');
+const { Op } = require('sequelize');
+const { Order } = require('../../models');
 
 async function generateDailyOrderNumber(t) {
-  const todayStart = moment().startOf("day").toDate();
-  const todayEnd = moment().endOf("day").toDate();
-  const prefix = moment().format("DDMMYY"); // e.g. 150126
+  const todayStart = moment().startOf('day').toDate();
+  const todayEnd = moment().endOf('day').toDate();
+  const prefix = moment().format('DDMMYY'); // e.g. 150126
 
   let attempt = 0;
   const MAX_ATTEMPTS = 15;
@@ -23,8 +23,8 @@ async function generateDailyOrderNumber(t) {
           [Op.between]: [todayStart, todayEnd],
         },
       },
-      attributes: ["orderNo"],
-      order: [["orderNo", "DESC"]],
+      attributes: ['orderNo'],
+      order: [['orderNo', 'DESC']],
       limit: 1,
       transaction: t,
       lock: t.LOCK.UPDATE, // reduces race window
@@ -53,9 +53,7 @@ async function generateDailyOrderNumber(t) {
     }
   }
 
-  throw new Error(
-    `Failed to generate unique order number after ${MAX_ATTEMPTS} attempts`,
-  );
+  throw new Error(`Failed to generate unique order number after ${MAX_ATTEMPTS} attempts`);
 }
 
 module.exports = generateDailyOrderNumber;

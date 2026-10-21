@@ -1,13 +1,13 @@
-import { useEffect, useState } from "react";
-import { Alert, Button, Checkbox, Modal, Segmented, Space, Spin } from "antd";
-import { fetchDraftPdf } from "./quotationPdf";
+import { useEffect, useState } from 'react';
+import { Alert, Button, Checkbox, Modal, Segmented, Space, Spin } from 'antd';
+import { fetchDraftPdf } from './quotationPdf';
 
 /**
  * Preview of the quotation being built in the cart, made by the server in the
  * same format the customer will receive. Nothing is saved.
  */
 export default function DraftPdfPreview({ open, onClose, getDraft }) {
-  const [style, setStyle] = useState("detailed");
+  const [style, setStyle] = useState('detailed');
   const [cover, setCover] = useState(true);
   const [state, setState] = useState({ loading: false, url: null, error: null });
 
@@ -45,14 +45,14 @@ export default function DraftPdfPreview({ open, onClose, getDraft }) {
       width="min(1000px, 96vw)"
       zIndex={2000}
       footer={
-        <Space style={{ width: "100%", justifyContent: "space-between" }} wrap>
+        <Space style={{ width: '100%', justifyContent: 'space-between' }} wrap>
           <Space>
             <Segmented
               value={style}
               onChange={setStyle}
               options={[
-                { value: "detailed", label: "With photos" },
-                { value: "compact", label: "Compact" },
+                { value: 'detailed', label: 'With photos' },
+                { value: 'compact', label: 'Compact' },
               ]}
             />
             <Checkbox checked={cover} onChange={(e) => setCover(e.target.checked)}>
@@ -66,11 +66,22 @@ export default function DraftPdfPreview({ open, onClose, getDraft }) {
       {state.error ? (
         <Alert type="warning" showIcon message={state.error} />
       ) : state.loading || !state.url ? (
-        <div style={{ height: "70vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div
+          style={{
+            height: '70vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
           <Spin tip="Making the preview…" />
         </div>
       ) : (
-        <iframe title="Quotation preview" src={state.url} style={{ width: "100%", height: "75vh", border: 0 }} />
+        <iframe
+          title="Quotation preview"
+          src={state.url}
+          style={{ width: '100%', height: '75vh', border: 0 }}
+        />
       )}
     </Modal>
   );

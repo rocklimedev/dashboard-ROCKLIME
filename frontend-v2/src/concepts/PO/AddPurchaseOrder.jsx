@@ -1,10 +1,6 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
-import {
-  ArrowLeftOutlined,
-  DeleteOutlined,
-  SearchOutlined,
-} from "@ant-design/icons";
+import React, { useState, useEffect, useMemo } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { ArrowLeftOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
 import {
   Form,
   Input,
@@ -17,33 +13,27 @@ import {
   Typography,
   InputNumber,
   message,
-} from "antd";
-import { debounce } from "lodash";
-import moment from "moment";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
+} from 'antd';
+import { debounce } from 'lodash';
+import moment from 'moment';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
-import PageHeader from "../../components/Common/PageHeader";
-import AddVendorModal from "../../components/POS-NEW/AddVendorModal";
+import PageHeader from '../../components/Common/PageHeader';
+import AddVendorModal from '../../components/POS-NEW/AddVendorModal';
 
 import {
   useCreatePurchaseOrderMutation,
   useGetPurchaseOrderByIdQuery,
   useUpdatePurchaseOrderMutation,
-} from "../../api/poApi";
-import {
-  useGetAllProductsQuery,
-  useSearchProductsQuery,
-} from "../../api/productApi";
-import {
-  useGetVendorsQuery,
-  useCreateVendorMutation,
-} from "../../api/vendorApi";
+} from '../../api/poApi';
+import { useGetAllProductsQuery, useSearchProductsQuery } from '../../api/productApi';
+import { useGetVendorsQuery, useCreateVendorMutation } from '../../api/vendorApi';
 
 const { Option } = Select;
 const { Text } = Typography;
 
-const SELLING_PRICE_META_KEY = "9ba862ef-f993-4873-95ef-1fef10036aa5";
+const SELLING_PRICE_META_KEY = '9ba862ef-f993-4873-95ef-1fef10036aa5';
 
 const getUnitPrice = (product) => {
   if (!product) return 0;
@@ -76,30 +66,29 @@ const AddPurchaseOrder = () => {
     error: poError,
   } = useGetPurchaseOrderByIdQuery(id, { skip: !isEditMode });
 
-  const { data: productsRes, isLoading: isLoadingProducts } =
-    useGetAllProductsQuery();
+  const { data: productsRes, isLoading: isLoadingProducts } = useGetAllProductsQuery();
   const products = productsRes?.data || [];
 
-  const { data: vendorsRes, isLoading: isLoadingVendors } =
-    useGetVendorsQuery();
+  const { data: vendorsRes, isLoading: isLoadingVendors } = useGetVendorsQuery();
   const vendors = vendorsRes || [];
 
   const [createPO, { isLoading: creating }] = useCreatePurchaseOrderMutation();
   const [updatePO, { isLoading: updating }] = useUpdatePurchaseOrderMutation();
-  const [createVendor, { isLoading: creatingVendor }] =
-    useCreateVendorMutation();
+  const [createVendor, { isLoading: creatingVendor }] = useCreateVendorMutation();
 
   // Search
-  const [searchTerm, setSearchTerm] = useState("");
-  const { data: searchRes = [], isFetching: isSearching } =
-    useSearchProductsQuery(searchTerm.trim(), { skip: !searchTerm.trim() });
+  const [searchTerm, setSearchTerm] = useState('');
+  const { data: searchRes = [], isFetching: isSearching } = useSearchProductsQuery(
+    searchTerm.trim(),
+    { skip: !searchTerm.trim() },
+  );
 
   // Form State
   const [formValues, setFormValues] = useState({
-    vendorId: "",
+    vendorId: '',
     orderDate: moment(),
     expectDeliveryDate: null,
-    status: "pending",
+    status: 'pending',
     items: [],
   });
 
@@ -133,12 +122,10 @@ const AddPurchaseOrder = () => {
     });
 
     const newFormValues = {
-      vendorId: po.vendorId || "",
+      vendorId: po.vendorId || '',
       orderDate: po.orderDate ? moment(po.orderDate) : moment(),
-      expectDeliveryDate: po.expectDeliveryDate
-        ? moment(po.expectDeliveryDate)
-        : null,
-      status: po.status || "pending",
+      expectDeliveryDate: po.expectDeliveryDate ? moment(po.expectDeliveryDate) : null,
+      status: po.status || 'pending',
       items: mappedItems,
     };
 
@@ -153,15 +140,13 @@ const AddPurchaseOrder = () => {
     });
 
     if (po.vendorId && !vendors.some((v) => v.id === po.vendorId)) {
-      message.warning("Vendor for this PO no longer exists in the system.");
+      message.warning('Vendor for this PO no longer exists in the system.');
     }
   }, [poData, isEditMode, products, vendors, form]);
 
   // Computed Total
   const totalAmount = useMemo(() => {
-    return formValues.items
-      .reduce((sum, item) => sum + (Number(item.total) || 0), 0)
-      .toFixed(2);
+    return formValues.items.reduce((sum, item) => sum + (Number(item.total) || 0), 0).toFixed(2);
   }, [formValues.items]);
 
   // Search Options
@@ -175,21 +160,21 @@ const AddPurchaseOrder = () => {
         label: (
           <div
             style={{
-              display: "flex",
-              justifyContent: "space-between",
-              width: "100%",
+              display: 'flex',
+              justifyContent: 'space-between',
+              width: '100%',
             }}
           >
             <div>
               <div style={{ fontWeight: 500 }}>
-                {p.name || p.productName || p.product_code || "Unnamed"}
+                {p.name || p.productName || p.product_code || 'Unnamed'}
               </div>
               <Text type="secondary" style={{ fontSize: 12 }}>
-                {p.productCode || p.product_code || "—"}
+                {p.productCode || p.product_code || '—'}
               </Text>
             </div>
-            <Text strong style={{ color: "#52c41a" }}>
-              ₹{price.toLocaleString("en-IN")}
+            <Text strong style={{ color: '#52c41a' }}>
+              ₹{price.toLocaleString('en-IN')}
             </Text>
           </div>
         ),
@@ -204,12 +189,12 @@ const AddPurchaseOrder = () => {
       products.find((p) => (p.id || p.productId) === productId);
 
     if (!product) {
-      message.error("Product not found");
+      message.error('Product not found');
       return;
     }
 
     if (formValues.items.some((i) => i.productId === productId)) {
-      message.warning("Product already added");
+      message.warning('Product already added');
       return;
     }
 
@@ -222,7 +207,7 @@ const AddPurchaseOrder = () => {
     const newItem = {
       key: productId,
       productId,
-      name: product.name || product.productName || "Unnamed Product",
+      name: product.name || product.productName || 'Unnamed Product',
       quantity: 1,
       unitPrice,
       total: unitPrice,
@@ -233,7 +218,7 @@ const AddPurchaseOrder = () => {
       items: [...prev.items, newItem],
     }));
 
-    setSearchTerm("");
+    setSearchTerm('');
   };
 
   // Update Item
@@ -241,7 +226,7 @@ const AddPurchaseOrder = () => {
     const updated = [...formValues.items];
     updated[index][field] = value;
 
-    if (field === "quantity" || field === "unitPrice") {
+    if (field === 'quantity' || field === 'unitPrice') {
       const qty = Number(updated[index].quantity) || 1;
       const price = Number(updated[index].unitPrice) || 0.01;
       updated[index].total = qty * price;
@@ -264,7 +249,7 @@ const AddPurchaseOrder = () => {
       await form.validateFields();
 
       if (formValues.items.length === 0) {
-        message.error("Please add at least one product");
+        message.error('Please add at least one product');
         return;
       }
 
@@ -276,7 +261,7 @@ const AddPurchaseOrder = () => {
           unitPrice: Number(i.unitPrice),
         })),
         expectDeliveryDate: formValues.expectDeliveryDate
-          ? formValues.expectDeliveryDate.format("YYYY-MM-DD")
+          ? formValues.expectDeliveryDate.format('YYYY-MM-DD')
           : null,
         // orderDate is usually set by backend on creation
         // status is handled by backend or only in edit
@@ -284,25 +269,25 @@ const AddPurchaseOrder = () => {
 
       if (isEditMode) {
         await updatePO({ id, ...payload }).unwrap();
-        message.success("Purchase order updated successfully");
+        message.success('Purchase order updated successfully');
       } else {
         await createPO(payload).unwrap();
-        message.success("Purchase order created successfully");
+        message.success('Purchase order created successfully');
 
         // Reset form
         setFormValues({
-          vendorId: "",
+          vendorId: '',
           orderDate: moment(),
           expectDeliveryDate: null,
-          status: "pending",
+          status: 'pending',
           items: [],
         });
         form.resetFields();
       }
 
-      navigate("/purchase-manager");
+      navigate('/purchase-manager');
     } catch (err) {
-      message.error(err?.data?.message || "Failed to save purchase order");
+      message.error(err?.data?.message || 'Failed to save purchase order');
     }
   };
 
@@ -315,9 +300,7 @@ const AddPurchaseOrder = () => {
     return (
       <Alert
         message="Error Loading Purchase Order"
-        description={
-          poError?.data?.message || "Could not load the purchase order"
-        }
+        description={poError?.data?.message || 'Could not load the purchase order'}
         type="error"
         showIcon
       />
@@ -325,49 +308,44 @@ const AddPurchaseOrder = () => {
   }
 
   const tableColumns = [
-    { title: "Product", dataIndex: "name", key: "name" },
+    { title: 'Product', dataIndex: 'name', key: 'name' },
     {
-      title: "Quantity",
-      key: "quantity",
+      title: 'Quantity',
+      key: 'quantity',
       width: 120,
       render: (_, record, index) => (
         <InputNumber
           min={1}
           value={record.quantity}
-          onChange={(v) => updateItem(index, "quantity", v)}
+          onChange={(v) => updateItem(index, 'quantity', v)}
         />
       ),
     },
     {
-      title: "Unit Price (₹)",
-      key: "unitPrice",
+      title: 'Unit Price (₹)',
+      key: 'unitPrice',
       width: 140,
       render: (_, record, index) => (
         <InputNumber
           min={0.01}
           step={0.01}
           value={record.unitPrice}
-          onChange={(v) => updateItem(index, "unitPrice", v)}
+          onChange={(v) => updateItem(index, 'unitPrice', v)}
         />
       ),
     },
     {
-      title: "Total (₹)",
-      key: "total",
+      title: 'Total (₹)',
+      key: 'total',
       width: 120,
       render: (_, record) => Number(record.total || 0).toFixed(2),
     },
     {
-      title: "",
-      key: "action",
+      title: '',
+      key: 'action',
       width: 60,
       render: (_, __, index) => (
-        <Button
-          type="text"
-          danger
-          icon={<DeleteOutlined />}
-          onClick={() => removeItem(index)}
-        />
+        <Button type="text" danger icon={<DeleteOutlined />} onClick={() => removeItem(index)} />
       ),
     },
   ];
@@ -378,30 +356,28 @@ const AddPurchaseOrder = () => {
         <div className="card">
           <PageHeader
             exportOptions={{ pdf: false, excel: false }}
-            title={isEditMode ? "Edit Purchase Order" : "Create Purchase Order"}
+            title={isEditMode ? 'Edit Purchase Order' : 'Create Purchase Order'}
             subtitle="Manage purchase order details"
           />
 
           <div className="card-body">
-            <div style={{ marginBottom: 24, display: "flex", gap: 12 }}>
+            <div style={{ marginBottom: 24, display: 'flex', gap: 12 }}>
               <Link to="/purchase-manager">
                 <Button icon={<ArrowLeftOutlined />}>Back</Button>
               </Link>
-              <Button onClick={() => setShowClearConfirm(true)}>
-                Clear Form
-              </Button>
+              <Button onClick={() => setShowClearConfirm(true)}>Clear Form</Button>
             </div>
 
             <Form form={form} layout="vertical" onFinish={handleSubmit}>
-              <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
                 {/* Vendor */}
                 <Form.Item
                   label="Vendor *"
                   name="vendorId"
-                  rules={[{ required: true, message: "Vendor is required" }]}
+                  rules={[{ required: true, message: 'Vendor is required' }]}
                   style={{ flex: 1, minWidth: 300 }}
                 >
-                  <div style={{ display: "flex", gap: 8 }}>
+                  <div style={{ display: 'flex', gap: 8 }}>
                     <Select
                       style={{ flex: 1 }}
                       placeholder="Select vendor"
@@ -420,10 +396,7 @@ const AddPurchaseOrder = () => {
                         </Option>
                       ))}
                     </Select>
-                    <Button
-                      type="primary"
-                      onClick={() => setShowVendorModal(true)}
-                    >
+                    <Button type="primary" onClick={() => setShowVendorModal(true)}>
                       +
                     </Button>
                   </div>
@@ -433,9 +406,7 @@ const AddPurchaseOrder = () => {
                 <Form.Item
                   label="Order Date *"
                   name="orderDate"
-                  rules={[
-                    { required: true, message: "Order date is required" },
-                  ]}
+                  rules={[{ required: true, message: 'Order date is required' }]}
                   style={{ flex: 1, minWidth: 220 }}
                 >
                   <DatePicker
@@ -457,12 +428,9 @@ const AddPurchaseOrder = () => {
                 </Form.Item>
               </div>
 
-              <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
                 {/* Expected Delivery */}
-                <Form.Item
-                  label="Expected Delivery"
-                  style={{ flex: 1, minWidth: 220 }}
-                >
+                <Form.Item label="Expected Delivery" style={{ flex: 1, minWidth: 220 }}>
                   <DatePicker
                     selected={formValues.expectDeliveryDate?.toDate()}
                     onChange={(date) =>
@@ -479,35 +447,27 @@ const AddPurchaseOrder = () => {
                 </Form.Item>
 
                 {/* Status */}
-                <Form.Item
-                  label="Status"
-                  name="status"
-                  style={{ flex: 1, minWidth: 180 }}
-                >
+                <Form.Item label="Status" name="status" style={{ flex: 1, minWidth: 180 }}>
                   <Select
                     disabled={!isEditMode}
                     value={formValues.status}
-                    onChange={(v) =>
-                      setFormValues((prev) => ({ ...prev, status: v }))
-                    }
+                    onChange={(v) => setFormValues((prev) => ({ ...prev, status: v }))}
                   >
-                    {["pending", "confirmed", "delivered", "cancelled"].map(
-                      (s) => (
-                        <Option key={s} value={s}>
-                          {s.charAt(0).toUpperCase() + s.slice(1)}
-                        </Option>
-                      ),
-                    )}
+                    {['pending', 'confirmed', 'delivered', 'cancelled'].map((s) => (
+                      <Option key={s} value={s}>
+                        {s.charAt(0).toUpperCase() + s.slice(1)}
+                      </Option>
+                    ))}
                   </Select>
                 </Form.Item>
               </div>
 
               {/* Product Search */}
-              <div style={{ margin: "32px 0 16px" }}>
+              <div style={{ margin: '32px 0 16px' }}>
                 <Select
                   showSearch
                   size="large"
-                  style={{ width: "100%" }}
+                  style={{ width: '100%' }}
                   placeholder="Search product by name or code..."
                   prefix={<SearchOutlined />}
                   value={null}
@@ -516,13 +476,7 @@ const AddPurchaseOrder = () => {
                   filterOption={false}
                   options={searchOptions}
                   notFoundContent={
-                    isSearching ? (
-                      <Spin />
-                    ) : searchTerm ? (
-                      "No products found"
-                    ) : (
-                      "Type to search..."
-                    )
+                    isSearching ? <Spin /> : searchTerm ? 'No products found' : 'Type to search...'
                   }
                   dropdownStyle={{ maxHeight: 420 }}
                   disabled={isLoadingProducts}
@@ -536,13 +490,12 @@ const AddPurchaseOrder = () => {
                 rowKey="key"
                 pagination={false}
                 locale={{
-                  emptyText:
-                    "No products added yet. Search and add products above.",
+                  emptyText: 'No products added yet. Search and add products above.',
                 }}
               />
 
               {/* Total */}
-              <div style={{ marginTop: 16, textAlign: "right" }}>
+              <div style={{ marginTop: 16, textAlign: 'right' }}>
                 <Text strong>Total Amount: </Text>
                 <Text strong style={{ fontSize: 18 }}>
                   ₹{totalAmount}
@@ -550,24 +503,20 @@ const AddPurchaseOrder = () => {
               </div>
 
               {/* Actions */}
-              <div style={{ marginTop: 32, textAlign: "right" }}>
+              <div style={{ marginTop: 32, textAlign: 'right' }}>
                 <Button
                   style={{ marginRight: 12 }}
-                  onClick={() => navigate("/purchase-manager")}
+                  onClick={() => navigate('/purchase-manager')}
                   disabled={creating || updating}
                 >
                   Cancel
                 </Button>
-                <Button
-                  type="primary"
-                  htmlType="submit"
-                  loading={creating || updating}
-                >
+                <Button type="primary" htmlType="submit" loading={creating || updating}>
                   {creating || updating
-                    ? "Saving..."
+                    ? 'Saving...'
                     : isEditMode
-                      ? "Update Order"
-                      : "Create Order"}
+                      ? 'Update Order'
+                      : 'Create Order'}
                 </Button>
               </div>
             </Form>
@@ -588,10 +537,10 @@ const AddPurchaseOrder = () => {
         open={showClearConfirm}
         onOk={() => {
           setFormValues({
-            vendorId: "",
+            vendorId: '',
             orderDate: moment(),
             expectDeliveryDate: null,
-            status: "pending",
+            status: 'pending',
             items: [],
           });
           form.resetFields();

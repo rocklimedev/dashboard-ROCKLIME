@@ -1,13 +1,13 @@
 // models/Customer.js
 module.exports = (sequelize, DataTypes) => {
   const Customer = sequelize.define(
-    "Customer",
+    'Customer',
     {
       customerId: {
         type: DataTypes.UUID,
         primaryKey: true,
         defaultValue: DataTypes.UUIDV4,
-        field: "customerId",
+        field: 'customerId',
       },
       name: {
         type: DataTypes.STRING(100),
@@ -41,18 +41,12 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
       },
       customerType: {
-        type: DataTypes.ENUM(
-          "Retail",
-          "Architect",
-          "Interior",
-          "Builder",
-          "Contractor",
-        ),
+        type: DataTypes.ENUM('Retail', 'Architect', 'Interior', 'Builder', 'Contractor'),
         allowNull: true,
-        defaultValue: "Retail",
+        defaultValue: 'Retail',
       },
       gender: {
-        type: DataTypes.ENUM("Male", "Female", "Other"),
+        type: DataTypes.ENUM('Male', 'Female', 'Other'),
         allowNull: true,
       },
       address: {
@@ -83,14 +77,14 @@ module.exports = (sequelize, DataTypes) => {
       notes: { type: DataTypes.TEXT, allowNull: true },
     },
     {
-      tableName: "customers",
+      tableName: 'customers',
       timestamps: true,
       indexes: [
-        { fields: ["mobileNumber"] },
-        { fields: ["email"] },
-        { fields: ["isVendor"] },
-        { fields: ["customerType"] },
-        { fields: ["gstNumber"] },
+        { fields: ['mobileNumber'] },
+        { fields: ['email'] },
+        { fields: ['isVendor'] },
+        { fields: ['customerType'] },
+        { fields: ['gstNumber'] },
       ],
     },
   );
@@ -100,23 +94,23 @@ module.exports = (sequelize, DataTypes) => {
   // -----------------------
   Customer.associate = (models) => {
     Customer.hasMany(models.Order, {
-      foreignKey: "createdFor",
-      as: "customerOrders",
+      foreignKey: 'createdFor',
+      as: 'customerOrders',
     });
 
     Customer.hasMany(models.Address, {
-      foreignKey: "customerId",
-      as: "addresses",
+      foreignKey: 'customerId',
+      as: 'addresses',
     });
 
     Customer.belongsTo(models.Vendor, {
-      foreignKey: "vendorId",
-      as: "vendor",
+      foreignKey: 'vendorId',
+      as: 'vendor',
     });
 
     Customer.hasMany(models.Quotation, {
-      foreignKey: "customerId",
-      as: "customerQuotations",
+      foreignKey: 'customerId',
+      as: 'customerQuotations',
     });
   };
 

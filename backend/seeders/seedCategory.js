@@ -1,7 +1,7 @@
-const { v4: uuidv4 } = require("uuid");
-const Category = require("../models/category");
-const sequelize = require("../config/database");
-const categories = require("../categories.json");
+const { v4: uuidv4 } = require('uuid');
+const Category = require('../models/category');
+const sequelize = require('../config/database');
+const categories = require('../categories.json');
 
 module.exports = {
   async up(queryInterface, Sequelize) {
@@ -21,9 +21,9 @@ module.exports = {
         });
       }
 
-      console.log("✅ Categories seeded allowing duplicate names per brandId");
+      console.log('✅ Categories seeded allowing duplicate names per brandId');
     } catch (err) {
-      console.error("❌ Failed to seed categories:", err);
+      console.error('❌ Failed to seed categories:', err);
     }
   },
 
@@ -40,9 +40,9 @@ module.exports = {
         });
       }
 
-      console.log("✅ Categories removed");
+      console.log('✅ Categories removed');
     } catch (err) {
-      console.error("❌ Failed to remove categories:", err);
+      console.error('❌ Failed to remove categories:', err);
     }
   },
 };

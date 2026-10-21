@@ -1,17 +1,7 @@
 // src/components/modals/AssignItemLocation.jsx
-import React, { useState, useEffect } from "react";
-import {
-  Modal,
-  Select,
-  Space,
-  Typography,
-  InputNumber,
-  Button,
-  Tag,
-  Divider,
-  message,
-} from "antd";
-import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
+import React, { useState, useEffect } from 'react';
+import { Modal, Select, Space, Typography, InputNumber, Button, Tag, Divider, message } from 'antd';
+import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 
 const { Text } = Typography;
 const { Option } = Select;
@@ -40,10 +30,7 @@ export default function AssignItemModal({
   // Resolve id regardless of which caller shape is passed in
   const itemId = item?.productId ?? item?.id;
 
-  const totalAssigned = assignments.reduce(
-    (sum, a) => sum + (Number(a.assignedQuantity) || 0),
-    0,
-  );
+  const totalAssigned = assignments.reduce((sum, a) => sum + (Number(a.assignedQuantity) || 0), 0);
 
   const remaining = itemQty - totalAssigned;
 
@@ -110,7 +97,7 @@ export default function AssignItemModal({
     newAssignments[index][field] = value;
 
     // === Capture real names when selection changes ===
-    if (field === "floorId") {
+    if (field === 'floorId') {
       const selectedFloor = floors?.find((f) => f.floorId === value);
       newAssignments[index].floorName = selectedFloor?.floorName || null;
       // Clear child field
@@ -118,10 +105,8 @@ export default function AssignItemModal({
       newAssignments[index].roomName = null;
     }
 
-    if (field === "roomId") {
-      const floor = floors?.find(
-        (f) => f.floorId === newAssignments[index].floorId,
-      );
+    if (field === 'roomId') {
+      const floor = floors?.find((f) => f.floorId === newAssignments[index].floorId);
       const selectedRoom = floor?.rooms?.find((r) => r.roomId === value);
       newAssignments[index].roomName = selectedRoom?.roomName || null;
     }
@@ -136,18 +121,16 @@ export default function AssignItemModal({
 
   const handleSubmit = () => {
     if (!itemId) {
-      return message.error("Could not identify this item — please retry");
+      return message.error('Could not identify this item — please retry');
     }
     if (totalAssigned === 0) {
-      return message.error("Please assign at least some quantity");
+      return message.error('Please assign at least some quantity');
     }
     if (assignments.some((a) => !a.floorId)) {
-      return message.error("Please select a floor for every assignment row");
+      return message.error('Please select a floor for every assignment row');
     }
     if (totalAssigned > itemQty) {
-      return message.error(
-        "Assigned quantity cannot exceed available quantity",
-      );
+      return message.error('Assigned quantity cannot exceed available quantity');
     }
 
     // Pass assignments with names to parent
@@ -159,19 +142,18 @@ export default function AssignItemModal({
 
   return (
     <Modal
-      title={`${item?.name || "Item"} - Assign Location`}
+      title={`${item?.name || 'Item'} - Assign Location`}
       open={visible}
       onOk={handleSubmit}
       onCancel={onCancel}
       okText="Save Assignments"
       width={650}
     >
-      <Space direction="vertical" style={{ width: "100%" }} size="large">
+      <Space direction="vertical" style={{ width: '100%' }} size="large">
         <div>
-          <Text strong>Available Quantity:</Text>{" "}
-          <Tag color="blue">{itemQty}</Tag>
+          <Text strong>Available Quantity:</Text> <Tag color="blue">{itemQty}</Tag>
           <Text type="secondary">
-            {" "}
+            {' '}
             | Assigned: {totalAssigned} | Remaining: {remaining}
           </Text>
         </div>
@@ -185,21 +167,14 @@ export default function AssignItemModal({
             <div
               key={index}
               style={{
-                border: "1px solid #f0f0f0",
+                border: '1px solid #f0f0f0',
                 padding: 12,
                 borderRadius: 8,
-                backgroundColor: "#fafafa",
+                backgroundColor: '#fafafa',
               }}
             >
-              <Space
-                direction="vertical"
-                style={{ width: "100%" }}
-                size="small"
-              >
-                <Space
-                  align="center"
-                  style={{ width: "100%", justifyContent: "space-between" }}
-                >
+              <Space direction="vertical" style={{ width: '100%' }} size="small">
+                <Space align="center" style={{ width: '100%', justifyContent: 'space-between' }}>
                   <Text strong>Assignment {index + 1}</Text>
                   {assignments.length > 1 && (
                     <Button
@@ -215,18 +190,16 @@ export default function AssignItemModal({
                   min={1}
                   max={remaining + (Number(assignment.assignedQuantity) || 0)}
                   value={assignment.assignedQuantity}
-                  onChange={(v) =>
-                    updateAssignment(index, "assignedQuantity", v)
-                  }
+                  onChange={(v) => updateAssignment(index, 'assignedQuantity', v)}
                   addonAfter="qty"
-                  style={{ width: "100%" }}
+                  style={{ width: '100%' }}
                 />
 
                 <Select
-                  style={{ width: "100%" }}
+                  style={{ width: '100%' }}
                   placeholder="Select Floor *"
                   value={assignment.floorId}
-                  onChange={(v) => updateAssignment(index, "floorId", v)}
+                  onChange={(v) => updateAssignment(index, 'floorId', v)}
                 >
                   {(floors || []).map((f) => (
                     <Option key={f.floorId} value={f.floorId}>
@@ -237,10 +210,10 @@ export default function AssignItemModal({
 
                 {assignment.floorId && (
                   <Select
-                    style={{ width: "100%" }}
+                    style={{ width: '100%' }}
                     placeholder="Room (optional)"
                     value={assignment.roomId}
-                    onChange={(v) => updateAssignment(index, "roomId", v)}
+                    onChange={(v) => updateAssignment(index, 'roomId', v)}
                     allowClear
                   >
                     {floor?.rooms?.map((r) => (
@@ -256,12 +229,7 @@ export default function AssignItemModal({
         })}
 
         {remaining > 0 && (
-          <Button
-            type="dashed"
-            icon={<PlusOutlined />}
-            onClick={addNewAssignment}
-            block
-          >
+          <Button type="dashed" icon={<PlusOutlined />} onClick={addNewAssignment} block>
             Add Another Location
           </Button>
         )}

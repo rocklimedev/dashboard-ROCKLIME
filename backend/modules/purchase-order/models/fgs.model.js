@@ -1,6 +1,6 @@
 module.exports = (sequelize, DataTypes) => {
   const FieldGuidedSheet = sequelize.define(
-    "FieldGuidedSheet",
+    'FieldGuidedSheet',
     {
       id: {
         type: DataTypes.UUID,
@@ -22,14 +22,8 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
       },
       status: {
-        type: DataTypes.ENUM(
-          "draft",
-          "negotiating",
-          "approved",
-          "converted",
-          "cancelled",
-        ),
-        defaultValue: "draft",
+        type: DataTypes.ENUM('draft', 'negotiating', 'approved', 'converted', 'cancelled'),
+        defaultValue: 'draft',
       },
       orderDate: {
         type: DataTypes.DATE,
@@ -47,26 +41,26 @@ module.exports = (sequelize, DataTypes) => {
       },
     },
     {
-      tableName: "field_guided_sheets",
+      tableName: 'field_guided_sheets',
       timestamps: true,
     },
   );
 
   FieldGuidedSheet.associate = (models) => {
     FieldGuidedSheet.belongsTo(models.Vendor, {
-      foreignKey: "vendorId",
-      as: "vendor",
+      foreignKey: 'vendorId',
+      as: 'vendor',
     });
 
     FieldGuidedSheet.belongsTo(models.User, {
       // ← NEW
-      foreignKey: "userId",
-      as: "createdBy",
+      foreignKey: 'userId',
+      as: 'createdBy',
     });
 
     FieldGuidedSheet.hasOne(models.PurchaseOrder, {
-      foreignKey: "fgsId",
-      as: "purchaseOrder",
+      foreignKey: 'fgsId',
+      as: 'purchaseOrder',
     });
   };
 

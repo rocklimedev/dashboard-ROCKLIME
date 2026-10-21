@@ -1,34 +1,33 @@
-import { baseApi } from "../store/baseApi";
+import { baseApi } from '../store/baseApi';
 export const rolePermissionsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     assignPermissionToRole: builder.mutation({
       query: (data) => ({
-        url: "/role-permissions/assign-permission",
-        method: "POST",
+        url: '/role-permissions/assign-permission',
+        method: 'POST',
         body: data,
       }),
-      invalidatesTags: ["RolePermission"],
+      invalidatesTags: ['RolePermission'],
     }),
     removePermissionFromRole: builder.mutation({
       query: (data) => ({
-        url: "/role-permissions/remove-permission",
-        method: "POST",
+        url: '/role-permissions/remove-permission',
+        method: 'POST',
         body: data,
       }),
-      invalidatesTags: ["RolePermission"],
+      invalidatesTags: ['RolePermission'],
     }),
     getAllRolePermissions: builder.query({
-      query: () => "/role-permissions/",
-      providesTags: ["RolePermission"],
+      query: () => '/role-permissions/',
+      providesTags: ['RolePermission'],
     }),
     getAllRolePermissionsByRoleId: builder.query({
       query: (roleId) => `/role-permissions/${roleId}/permissions`,
-      providesTags: ["RolePermission"],
+      providesTags: ['RolePermission'],
     }),
     getRolePermissionByRoleIdAndPermissionId: builder.query({
-      query: ({ roleId, permissionId }) =>
-        `/role-permissions/${roleId}/permission/${permissionId}`,
-      providesTags: ["RolePermission"],
+      query: ({ roleId, permissionId }) => `/role-permissions/${roleId}/permission/${permissionId}`,
+      providesTags: ['RolePermission'],
     }),
   }),
 });

@@ -1,5 +1,5 @@
 // src/services/api/jobApi.js
-import { baseApi } from "../store/baseApi";
+import { baseApi } from '../store/baseApi';
 
 export const jobApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
@@ -10,11 +10,11 @@ export const jobApi = baseApi.injectEndpoints({
     previewImportFile: builder.mutation({
       query: (file) => {
         const formData = new FormData();
-        formData.append("file", file);
+        formData.append('file', file);
 
         return {
-          url: "/jobs/bulk-import/preview",
-          method: "POST",
+          url: '/jobs/bulk-import/preview',
+          method: 'POST',
           body: formData,
           // Important: do NOT set Content-Type header manually
           // browser will set multipart/form-data + boundary automatically
@@ -30,23 +30,23 @@ export const jobApi = baseApi.injectEndpoints({
         const formData = new FormData();
 
         // File
-        formData.append("file", file);
+        formData.append('file', file);
 
         // Mapping — must be stringified if backend expects JSON
-        formData.append("mapping", JSON.stringify(mapping));
+        formData.append('mapping', JSON.stringify(mapping));
 
         // Critical: send selectedBrandId as string (or number)
-        formData.append("selectedBrandId", selectedBrandId);
+        formData.append('selectedBrandId', selectedBrandId);
 
         return {
-          url: "/jobs/bulk-import/start", // ← your actual endpoint path
-          method: "POST",
+          url: '/jobs/bulk-import/start', // ← your actual endpoint path
+          method: 'POST',
           body: formData,
           // IMPORTANT: do NOT set Content-Type header manually
           // browser will set multipart/form-data + boundary
         };
       },
-      invalidatesTags: ["Jobs"], // optional
+      invalidatesTags: ['Jobs'], // optional
     }),
 
     // ───────────────────────────────────────────────
@@ -57,17 +57,17 @@ export const jobApi = baseApi.injectEndpoints({
       query: (params = {}) => {
         // params can include: page, limit, status, type, userId, sortBy, sortOrder
         return {
-          url: "/jobs", // note: your route is mounted as /jobs (see router.get("/"))
-          method: "GET",
+          url: '/jobs', // note: your route is mounted as /jobs (see router.get("/"))
+          method: 'GET',
           params, // automatically serialized as ?page=1&limit=20&status=pending...
         };
       },
-      providesTags: ["Jobs"],
+      providesTags: ['Jobs'],
     }),
     downloadSuccessfulEntries: builder.query({
       query: (jobId) => ({
         url: `/jobs/${jobId}/successful-entries`,
-        method: "GET",
+        method: 'GET',
         // Important: tell RTK Query we want the raw response (blob)
         responseHandler: (response) => response.blob(),
       }),
@@ -75,43 +75,37 @@ export const jobApi = baseApi.injectEndpoints({
     }),
     getJobById: builder.query({
       query: (jobId) => `/jobs/${jobId}`,
-      providesTags: (result, error, jobId) => [{ type: "Jobs", id: jobId }],
+      providesTags: (result, error, jobId) => [{ type: 'Jobs', id: jobId }],
     }),
 
     getJobStatus: builder.query({
       query: (jobId) => `/jobs/${jobId}/status`,
-      providesTags: (result, error, jobId) => [{ type: "Jobs", id: jobId }],
+      providesTags: (result, error, jobId) => [{ type: 'Jobs', id: jobId }],
     }),
 
     cancelJob: builder.mutation({
       query: (jobId) => ({
         url: `/jobs/${jobId}/cancel`,
-        method: "POST",
+        method: 'POST',
       }),
-      invalidatesTags: (result, error, jobId) => [
-        "Jobs",
-        { type: "Jobs", id: jobId },
-      ],
+      invalidatesTags: (result, error, jobId) => ['Jobs', { type: 'Jobs', id: jobId }],
     }),
 
     deleteJob: builder.mutation({
       query: (jobId) => ({
         url: `/jobs/${jobId}`,
-        method: "DELETE",
+        method: 'DELETE',
       }),
-      invalidatesTags: ["Jobs"],
+      invalidatesTags: ['Jobs'],
     }),
 
     updateJobStatus: builder.mutation({
       query: ({ jobId, status, note }) => ({
         url: `/jobs/${jobId}/status`,
-        method: "PATCH",
+        method: 'PATCH',
         body: { status, note },
       }),
-      invalidatesTags: (result, error, { jobId }) => [
-        "Jobs",
-        { type: "Jobs", id: jobId },
-      ],
+      invalidatesTags: (result, error, { jobId }) => ['Jobs', { type: 'Jobs', id: jobId }],
     }),
 
     // ───────────────────────────────────────────────
@@ -120,11 +114,11 @@ export const jobApi = baseApi.injectEndpoints({
 
     startReportGeneration: builder.mutation({
       query: (payload) => ({
-        url: "/jobs/reports/generate",
-        method: "POST",
+        url: '/jobs/reports/generate',
+        method: 'POST',
         body: payload, // e.g. { reportType, filters, ... }
       }),
-      invalidatesTags: ["Jobs"],
+      invalidatesTags: ['Jobs'],
     }),
   }),
 });

@@ -1,14 +1,10 @@
 // src/components/purchase/FGSRow.jsx
-import React from "react";
-import { Link } from "react-router-dom";
-import { Tag, Select, Button, Dropdown, Menu } from "antd";
-import {
-  EditOutlined,
-  DeleteOutlined,
-  MoreOutlined,
-} from "@ant-design/icons";
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { Tag, Select, Button, Dropdown, Menu } from 'antd';
+import { EditOutlined, DeleteOutlined, MoreOutlined } from '@ant-design/icons';
 
-import PermissionGate from "../../context/PermissionGate";
+import PermissionGate from '../../context/PermissionGate';
 
 const FGSRow = ({
   fgs,
@@ -27,17 +23,14 @@ const FGSRow = ({
   getFGSStatusColor,
 }) => {
   const createdByDisplay = fgs?.createdBy ? (
-    fgs.createdBy.name ||
-    fgs.createdBy.email ||
-    fgs.createdBy.username ||
-    "—"
+    fgs.createdBy.name || fgs.createdBy.email || fgs.createdBy.username || '—'
   ) : (
-    <span style={{ color: "#999", fontStyle: "italic" }}>—</span>
+    <span style={{ color: '#999', fontStyle: 'italic' }}>—</span>
   );
 
   const serial = (filters.page - 1) * filters.limit + idx + 1;
-  const vendorName = vendorMap[fgs.vendorId] || "—";
-  const status = fgs.status || "draft";
+  const vendorName = vendorMap[fgs.vendorId] || '—';
+  const status = fgs.status || 'draft';
 
   return (
     <tr key={fgs.id}>
@@ -71,9 +64,9 @@ const FGSRow = ({
               <span
                 className={`priority-badge status-${status}`}
                 style={{
-                  padding: "4px 10px",
-                  borderRadius: "4px",
-                  fontSize: "13px",
+                  padding: '4px 10px',
+                  borderRadius: '4px',
+                  fontSize: '13px',
                   fontWeight: 500,
                   backgroundColor: getFGSStatusBg(status),
                   color: getFGSStatusColor(status),
@@ -82,31 +75,24 @@ const FGSRow = ({
               >
                 {status.charAt(0).toUpperCase() + status.slice(1)}
               </span>
-              <EditOutlined style={{ fontSize: "14px" }} />
+              <EditOutlined style={{ fontSize: '14px' }} />
             </div>
           )}
         </PermissionGate>
       </td>
       <td>{vendorName}</td>
-      <td>{fgs.totalAmount ? `Rs. ${fgs.totalAmount}` : "—"}</td>
-      <td>
-        {fgs.orderDate
-          ? new Date(fgs.orderDate).toLocaleDateString("en-IN")
-          : "—"}
-      </td>
+      <td>{fgs.totalAmount ? `Rs. ${fgs.totalAmount}` : '—'}</td>
+      <td>{fgs.orderDate ? new Date(fgs.orderDate).toLocaleDateString('en-IN') : '—'}</td>
       <td>
         {fgs.expectDeliveryDate
-          ? new Date(fgs.expectDeliveryDate).toLocaleDateString("en-IN")
-          : "—"}
+          ? new Date(fgs.expectDeliveryDate).toLocaleDateString('en-IN')
+          : '—'}
       </td>
       <td>{createdByDisplay}</td>
       <td>
         <div className="d-flex gap-2">
           <PermissionGate api="edit" module="field_guided_sheets">
-            <EditOutlined
-              style={{ cursor: "pointer" }}
-              onClick={() => handleEditFGS(fgs)}
-            />
+            <EditOutlined style={{ cursor: 'pointer' }} onClick={() => handleEditFGS(fgs)} />
           </PermissionGate>
 
           <PermissionGate api="delete" module="field_guided_sheets">
@@ -121,10 +107,10 @@ const FGSRow = ({
                   >
                     Delete
                   </Menu.Item>
-                  {status === "approved" && (
+                  {status === 'approved' && (
                     <Menu.Item
                       key="convert"
-                      icon={<span style={{ color: "#e31e24" }}>→</span>}
+                      icon={<span style={{ color: '#e31e24' }}>→</span>}
                       onClick={() => handleConvertToPO(fgs.id, fgs.fgsNumber)}
                     >
                       Convert to PO
@@ -132,7 +118,7 @@ const FGSRow = ({
                   )}
                 </Menu>
               }
-              trigger={["click"]}
+              trigger={['click']}
             >
               <Button type="text" icon={<MoreOutlined />} />
             </Dropdown>

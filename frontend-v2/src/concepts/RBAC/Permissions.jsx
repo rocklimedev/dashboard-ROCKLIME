@@ -1,19 +1,19 @@
-import React, { useState, useMemo } from "react";
-import { useParams, Link } from "react-router-dom";
-import { useDispatch } from "react-redux";
-import { SearchOutlined, LeftOutlined } from "@ant-design/icons";
-import { MoreOutlined } from "@ant-design/icons";
-import { Dropdown, Menu, Button } from "antd";
-import { message } from "antd";
-import PageHeader from "../../components/Common/PageHeader";
-import { rolePermissionsApi as api } from "../../api/rolePermissionApi";
-import "./permission.css";
+import React, { useState, useMemo } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { SearchOutlined, LeftOutlined } from '@ant-design/icons';
+import { MoreOutlined } from '@ant-design/icons';
+import { Dropdown, Menu, Button } from 'antd';
+import { message } from 'antd';
+import PageHeader from '../../components/Common/PageHeader';
+import { rolePermissionsApi as api } from '../../api/rolePermissionApi';
+import './permission.css';
 
-import { useGetRoleQuery } from "../../api/rolesApi";
-import { useGetAllRolePermissionsByRoleIdQuery } from "../../api/rolePermissionApi";
-import { useAssignPermissionToRoleMutation } from "../../api/rolePermissionApi";
-import { useRemovePermissionFromRoleMutation } from "../../api/permissionApi";
-import { useGetAllPermissionsQuery } from "../../api/permissionApi";
+import { useGetRoleQuery } from '../../api/rolesApi';
+import { useGetAllRolePermissionsByRoleIdQuery } from '../../api/rolePermissionApi';
+import { useAssignPermissionToRoleMutation } from '../../api/rolePermissionApi';
+import { useRemovePermissionFromRoleMutation } from '../../api/permissionApi';
+import { useGetAllPermissionsQuery } from '../../api/permissionApi';
 
 const Permissions = () => {
   const { id: roleId } = useParams();
@@ -27,26 +27,23 @@ const Permissions = () => {
       skip: !roleId,
     });
 
-  const { data: permissionsData, error: permissionsError } =
-    useGetAllPermissionsQuery(undefined, {
-      refetchOnMountOrArgChange: false,
-    });
+  const { data: permissionsData, error: permissionsError } = useGetAllPermissionsQuery(undefined, {
+    refetchOnMountOrArgChange: false,
+  });
 
   // Mutations
-  const [assignPermission, { isLoading: isAssigning }] =
-    useAssignPermissionToRoleMutation();
-  const [removePermission, { isLoading: isRemoving }] =
-    useRemovePermissionFromRoleMutation();
+  const [assignPermission, { isLoading: isAssigning }] = useAssignPermissionToRoleMutation();
+  const [removePermission, { isLoading: isRemoving }] = useRemovePermissionFromRoleMutation();
 
   // State
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
 
   // Data
   const permissions = Array.isArray(permissionsData?.permissions)
     ? permissionsData.permissions
     : [];
-  const roleName = roleData?.roleName || "Unknown Role";
+  const roleName = roleData?.roleName || 'Unknown Role';
   const assignedPermissions = rolePermissionsData?.rolePermissions || [];
 
   /* ==================== VALID MODULES WITH API ONLY ==================== */
@@ -56,9 +53,8 @@ const Permissions = () => {
     const lookup = {};
 
     permissions.forEach((perm) => {
-      const module = perm.module || "Uncategorized";
-      const hasApi =
-        perm.api && typeof perm.api === "string" && perm.api.trim() !== "";
+      const module = perm.module || 'Uncategorized';
+      const hasApi = perm.api && typeof perm.api === 'string' && perm.api.trim() !== '';
 
       if (!hasApi) return;
 
@@ -70,7 +66,7 @@ const Permissions = () => {
       if (!lookup[module]) lookup[module] = {};
       lookup[module][perm.api] = {
         permissionId: perm.permissionId,
-        route: perm.route || "No route",
+        route: perm.route || 'No route',
       };
     });
 
@@ -86,9 +82,7 @@ const Permissions = () => {
   /* ==================== FILTERED MODULES (SEARCH) ==================== */
   const filteredModules = useMemo(() => {
     if (!searchTerm.trim()) return validModules;
-    return validModules.filter((module) =>
-      module.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    return validModules.filter((module) => module.toLowerCase().includes(searchTerm.toLowerCase()));
   }, [validModules, searchTerm]);
 
   /* ==================== HANDLE PERMISSION CHANGE ==================== */
@@ -115,9 +109,7 @@ const Permissions = () => {
         }).unwrap();
       }
 
-      dispatch(
-        api.util.invalidateTags([{ type: "RolePermissions", id: roleId }])
-      );
+      dispatch(api.util.invalidateTags([{ type: 'RolePermissions', id: roleId }]));
     } catch (error) {
       message.error(`Failed to update ${type} permission for ${module}.`);
     } finally {
@@ -126,7 +118,7 @@ const Permissions = () => {
   };
 
   const getBadgeClass = (isGranted) => {
-    return isGranted ? "badge bg-success" : "badge bg-warning";
+    return isGranted ? 'badge bg-success' : 'badge bg-warning';
   };
 
   /* ==================== ERROR STATE (optional – remove if handled globally) ==================== */
@@ -186,8 +178,8 @@ const Permissions = () => {
               <div className="text-center py-5">
                 <p className="text-muted">
                   {searchTerm
-                    ? "No modules match your search."
-                    : "No modules with API permissions available."}
+                    ? 'No modules match your search.'
+                    : 'No modules with API permissions available.'}
                 </p>
               </div>
             ) : (
@@ -195,7 +187,7 @@ const Permissions = () => {
                 <table className="table table-hover align-middle">
                   <thead className="table-light">
                     <tr>
-                      <th style={{ width: "25%" }}>Module</th>
+                      <th style={{ width: '25%' }}>Module</th>
                       {permissionTypes.map((type) => (
                         <th key={type} className="text-center">
                           {type.charAt(0).toUpperCase() + type.slice(1)}
@@ -207,43 +199,28 @@ const Permissions = () => {
                   <tbody>
                     {filteredModules.map((module) => (
                       <tr key={module}>
-                        <td className="fw-medium text-capitalize">
-                          {module.replace(/_/g, " ")}
-                        </td>
+                        <td className="fw-medium text-capitalize">{module.replace(/_/g, ' ')}</td>
                         {permissionTypes.map((type) => {
                           const isGranted = assignedPermissions.some(
-                            (rp) =>
-                              rp.permissionId ===
-                              routeLookup[module]?.[type]?.permissionId
+                            (rp) => rp.permissionId === routeLookup[module]?.[type]?.permissionId,
                           );
-                          const isUpdatingThis =
-                            isUpdating || isAssigning || isRemoving;
+                          const isUpdatingThis = isUpdating || isAssigning || isRemoving;
 
                           return (
                             <td key={type} className="text-center">
                               <span
-                                className={`${getBadgeClass(
-                                  isGranted
-                                )} px-3 py-1 small`}
+                                className={`${getBadgeClass(isGranted)} px-3 py-1 small`}
                                 onClick={() =>
                                   !isUpdatingThis &&
-                                  handlePermissionChange(
-                                    module,
-                                    type,
-                                    !isGranted
-                                  )
+                                  handlePermissionChange(module, type, !isGranted)
                                 }
                                 style={{
-                                  cursor: isUpdatingThis
-                                    ? "not-allowed"
-                                    : "pointer",
+                                  cursor: isUpdatingThis ? 'not-allowed' : 'pointer',
                                   opacity: isUpdatingThis ? 0.7 : 1,
                                 }}
-                                aria-label={`${
-                                  isGranted ? "Remove" : "Assign"
-                                } ${type} permission`}
+                                aria-label={`${isGranted ? 'Remove' : 'Assign'} ${type} permission`}
                               >
-                                {isGranted ? "Assigned" : "Unassigned"}
+                                {isGranted ? 'Assigned' : 'Unassigned'}
                               </span>
                             </td>
                           );
@@ -255,32 +232,24 @@ const Permissions = () => {
                                 {permissionTypes.map((type) => {
                                   const isGranted = assignedPermissions.some(
                                     (rp) =>
-                                      rp.permissionId ===
-                                      routeLookup[module]?.[type]?.permissionId
+                                      rp.permissionId === routeLookup[module]?.[type]?.permissionId,
                                   );
                                   return (
                                     <Menu.Item
                                       key={type}
                                       onClick={() =>
-                                        handlePermissionChange(
-                                          module,
-                                          type,
-                                          !isGranted
-                                        )
+                                        handlePermissionChange(module, type, !isGranted)
                                       }
-                                      disabled={
-                                        isUpdating || isAssigning || isRemoving
-                                      }
+                                      disabled={isUpdating || isAssigning || isRemoving}
                                     >
-                                      {isGranted ? "Remove" : "Assign"}{" "}
-                                      {type.charAt(0).toUpperCase() +
-                                        type.slice(1)}
+                                      {isGranted ? 'Remove' : 'Assign'}{' '}
+                                      {type.charAt(0).toUpperCase() + type.slice(1)}
                                     </Menu.Item>
                                   );
                                 })}
                               </Menu>
                             }
-                            trigger={["click"]}
+                            trigger={['click']}
                             placement="bottomRight"
                           >
                             <Button

@@ -1,33 +1,26 @@
-import React, { useEffect, useState } from "react";
-import { Modal, Form, Input, Select, Button, message, Row, Col } from "antd";
+import React, { useEffect, useState } from 'react';
+import { Modal, Form, Input, Select, Button, message, Row, Col } from 'antd';
 import {
   useCreateProductMetaMutation,
   useUpdateProductMetaMutation,
-} from "../../api/productMetaApi";
+} from '../../api/productMetaApi';
 
 const { Option } = Select;
 
 const fieldTypeOptions = [
-  { label: "String", value: "string" },
-  { label: "Number", value: "number" },
-  { label: "Text Area", value: "textarea" },
-  { label: "Date", value: "date" },
-  { label: "Boolean", value: "boolean" },
-  { label: "Select", value: "select" },
-  { label: "Measurement", value: "measurement" },
+  { label: 'String', value: 'string' },
+  { label: 'Number', value: 'number' },
+  { label: 'Text Area', value: 'textarea' },
+  { label: 'Date', value: 'date' },
+  { label: 'Boolean', value: 'boolean' },
+  { label: 'Select', value: 'select' },
+  { label: 'Measurement', value: 'measurement' },
 ];
 
-const ProductMetaFormModal = ({
-  visible,
-  onCancel,
-  editingMeta,
-  onSuccess,
-}) => {
+const ProductMetaFormModal = ({ visible, onCancel, editingMeta, onSuccess }) => {
   const [form] = Form.useForm();
-  const [createProductMeta, { isLoading: isCreating }] =
-    useCreateProductMetaMutation();
-  const [updateProductMeta, { isLoading: isUpdating }] =
-    useUpdateProductMetaMutation();
+  const [createProductMeta, { isLoading: isCreating }] = useCreateProductMetaMutation();
+  const [updateProductMeta, { isLoading: isUpdating }] = useUpdateProductMetaMutation();
 
   const isEditing = !!editingMeta;
   const isLoading = isCreating || isUpdating;
@@ -39,9 +32,9 @@ const ProductMetaFormModal = ({
       const generatedSlug = title
         .toLowerCase()
         .trim()
-        .replace(/[^a-z0-9\s-]/g, "")
-        .replace(/\s+/g, "-")
-        .replace(/-+/g, "-");
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-');
       form.setFieldsValue({ slug: generatedSlug });
     }
   };
@@ -53,7 +46,7 @@ const ProductMetaFormModal = ({
           title: editingMeta.title,
           slug: editingMeta.slug,
           fieldType: editingMeta.fieldType,
-          unit: editingMeta.unit || "",
+          unit: editingMeta.unit || '',
         });
       } else {
         form.resetFields();
@@ -68,25 +61,23 @@ const ProductMetaFormModal = ({
           id: editingMeta.id,
           ...values,
         }).unwrap();
-        message.success("Meta field updated successfully");
+        message.success('Meta field updated successfully');
       } else {
         await createProductMeta(values).unwrap();
-        message.success("Meta field created successfully");
+        message.success('Meta field created successfully');
       }
 
       form.resetFields();
       onSuccess?.();
       onCancel();
     } catch (error) {
-      message.error(
-        error?.data?.message || "Failed to save meta field. Please try again.",
-      );
+      message.error(error?.data?.message || 'Failed to save meta field. Please try again.');
     }
   };
 
   return (
     <Modal
-      title={isEditing ? "Edit Meta Field" : "Create New Meta Field"}
+      title={isEditing ? 'Edit Meta Field' : 'Create New Meta Field'}
       open={visible}
       onCancel={onCancel}
       footer={null}
@@ -100,8 +91,8 @@ const ProductMetaFormModal = ({
               label="Title"
               name="title"
               rules={[
-                { required: true, message: "Please enter title" },
-                { max: 255, message: "Title is too long" },
+                { required: true, message: 'Please enter title' },
+                { max: 255, message: 'Title is too long' },
               ]}
             >
               <Input
@@ -117,15 +108,11 @@ const ProductMetaFormModal = ({
               label="Slug (Unique Identifier)"
               name="slug"
               rules={[
-                { required: true, message: "Slug is required" },
-                { max: 255, message: "Slug is too long" },
+                { required: true, message: 'Slug is required' },
+                { max: 255, message: 'Slug is too long' },
               ]}
             >
-              <Input
-                placeholder="selling-price, mrp, length"
-                disabled={isEditing}
-                size="large"
-              />
+              <Input placeholder="selling-price, mrp, length" disabled={isEditing} size="large" />
             </Form.Item>
           </Col>
 
@@ -133,7 +120,7 @@ const ProductMetaFormModal = ({
             <Form.Item
               label="Field Type"
               name="fieldType"
-              rules={[{ required: true, message: "Please select field type" }]}
+              rules={[{ required: true, message: 'Please select field type' }]}
             >
               <Select placeholder="Select field type" size="large" allowClear>
                 {fieldTypeOptions.map((option) => (
@@ -149,7 +136,7 @@ const ProductMetaFormModal = ({
             <Form.Item
               label="Unit (Optional)"
               name="unit"
-              rules={[{ max: 100, message: "Unit is too long" }]}
+              rules={[{ max: 100, message: 'Unit is too long' }]}
             >
               <Input placeholder="e.g., inch, mm, pcs, kg, box" size="large" />
             </Form.Item>
@@ -161,7 +148,7 @@ const ProductMetaFormModal = ({
             Cancel
           </Button>
           <Button type="primary" htmlType="submit" loading={isLoading}>
-            {isEditing ? "Update Meta Field" : "Create Meta Field"}
+            {isEditing ? 'Update Meta Field' : 'Create Meta Field'}
           </Button>
         </div>
       </Form>

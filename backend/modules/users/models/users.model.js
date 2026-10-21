@@ -1,18 +1,18 @@
-const { Op } = require("sequelize");
-const { v4: uuidv4 } = require("uuid");
+const { Op } = require('sequelize');
+const { v4: uuidv4 } = require('uuid');
 
 const ROLES = {
-  Admin: "ADMIN",
-  SuperAdmin: "SUPER_ADMIN",
-  Accounts: "ACCOUNTS",
-  Developer: "DEVELOPER",
-  Users: "USERS",
-  Sales: "SALES",
+  Admin: 'ADMIN',
+  SuperAdmin: 'SUPER_ADMIN',
+  Accounts: 'ACCOUNTS',
+  Developer: 'DEVELOPER',
+  Users: 'USERS',
+  Sales: 'SALES',
 };
 
 module.exports = (sequelize, DataTypes) => {
   const User = sequelize.define(
-    "User",
+    'User',
     {
       userId: {
         type: DataTypes.UUID,
@@ -59,16 +59,16 @@ module.exports = (sequelize, DataTypes) => {
       },
 
       bloodGroup: {
-        type: DataTypes.ENUM("A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"),
+        type: DataTypes.ENUM('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'),
         allowNull: true,
       },
 
       addressId: {
         type: DataTypes.UUID,
         allowNull: true,
-        references: { model: "addresses", key: "addressId" },
-        onDelete: "SET NULL",
-        onUpdate: "CASCADE",
+        references: { model: 'addresses', key: 'addressId' },
+        onDelete: 'SET NULL',
+        onUpdate: 'CASCADE',
       },
 
       emergencyNumber: {
@@ -80,9 +80,9 @@ module.exports = (sequelize, DataTypes) => {
       roleId: {
         type: DataTypes.UUID,
         allowNull: false,
-        references: { model: "roles", key: "roleId" },
-        onDelete: "RESTRICT",
-        onUpdate: "CASCADE",
+        references: { model: 'roles', key: 'roleId' },
+        onDelete: 'RESTRICT',
+        onUpdate: 'CASCADE',
       },
 
       roles: {
@@ -90,13 +90,10 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
         defaultValue: ROLES.Users,
         get() {
-          return this.getDataValue("roles")?.split(",") || [];
+          return this.getDataValue('roles')?.split(',') || [];
         },
         set(value) {
-          this.setDataValue(
-            "roles",
-            Array.isArray(value) ? value.join(",") : value,
-          );
+          this.setDataValue('roles', Array.isArray(value) ? value.join(',') : value);
         },
       },
 
@@ -117,9 +114,9 @@ module.exports = (sequelize, DataTypes) => {
       },
 
       status: {
-        type: DataTypes.ENUM("active", "inactive", "restricted"),
+        type: DataTypes.ENUM('active', 'inactive', 'restricted'),
         allowNull: false,
-        defaultValue: "inactive",
+        defaultValue: 'inactive',
       },
 
       password: {
@@ -128,7 +125,7 @@ module.exports = (sequelize, DataTypes) => {
       },
     },
     {
-      tableName: "users",
+      tableName: 'users',
       timestamps: true,
     },
   );
@@ -141,7 +138,7 @@ module.exports = (sequelize, DataTypes) => {
         transaction: options.transaction,
       });
       if (existingSuperAdmin) {
-        throw new Error("A SuperAdmin already exists");
+        throw new Error('A SuperAdmin already exists');
       }
     }
   });
@@ -153,50 +150,50 @@ module.exports = (sequelize, DataTypes) => {
   // -------------------------------
   User.associate = (models) => {
     // Role
-    User.belongsTo(models.Role, { foreignKey: "roleId", as: "role" });
+    User.belongsTo(models.Role, { foreignKey: 'roleId', as: 'role' });
     User.hasMany(models.PurchaseOrder, {
-      foreignKey: "userId",
-      as: "purchaseOrders",
+      foreignKey: 'userId',
+      as: 'purchaseOrders',
     });
 
     User.hasMany(models.FieldGuidedSheet, {
-      foreignKey: "userId",
-      as: "fieldGuidedSheets",
+      foreignKey: 'userId',
+      as: 'fieldGuidedSheets',
     });
     // Address
     User.hasOne(models.Address, {
-      foreignKey: "userId",
-      as: "address",
-      onDelete: "SET NULL",
+      foreignKey: 'userId',
+      as: 'address',
+      onDelete: 'SET NULL',
       constraints: false,
     });
 
     // Teams (M:N)
     User.belongsToMany(models.Team, {
       through: models.TeamMember,
-      foreignKey: "userId",
-      otherKey: "teamId",
-      as: "teams",
+      foreignKey: 'userId',
+      otherKey: 'teamId',
+      as: 'teams',
     });
 
     // Orders created / assigned / secondary
     User.hasMany(models.Order, {
-      foreignKey: "createdBy",
-      as: "createdOrders",
+      foreignKey: 'createdBy',
+      as: 'createdOrders',
     });
     User.hasMany(models.Order, {
-      foreignKey: "assignedUserId",
-      as: "assignedOrders",
+      foreignKey: 'assignedUserId',
+      as: 'assignedOrders',
     });
     User.hasMany(models.Order, {
-      foreignKey: "secondaryUserId",
-      as: "secondaryOrders",
+      foreignKey: 'secondaryUserId',
+      as: 'secondaryOrders',
     });
 
     // Quotation
     User.hasMany(models.Quotation, {
-      foreignKey: "createdBy",
-      as: "quotations",
+      foreignKey: 'createdBy',
+      as: 'quotations',
     });
   };
 

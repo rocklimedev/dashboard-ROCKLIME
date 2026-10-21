@@ -1,24 +1,24 @@
 // workers/jobProcessor.js
 // Run this as a separate process (e.g. node workers/jobProcessor.js or via pm2)
 
-const { Worker } = require("bullmq");
-const path = require("path");
-const fs = require("fs").promises;
-const Papa = require("papaparse");
-const XLSX = require("xlsx");
+const { Worker } = require('bullmq');
+const path = require('path');
+const fs = require('fs').promises;
+const Papa = require('papaparse');
+const XLSX = require('xlsx');
 
 // Sequelize & all models used in bulk import
-const sequelize = require("../config/database");
-const { Job, Product, Category, Brand, Vendor, Keyword } = require("../models");
+const sequelize = require('../config/database');
+const { Job, Product, Category, Brand, Vendor, Keyword } = require('../models');
 
 // FTP helper
-const { downloadFromFtp } = require("../middleware/upload");
+const { downloadFromFtp } = require('../middleware/upload');
 
 // Redis connection
-const IORedis = require("ioredis");
+const IORedis = require('ioredis');
 
 const connection = new IORedis({
-  host: "127.0.0.1",
+  host: '127.0.0.1',
   port: 6379,
   family: 4,
   connectTimeout: 10000,
@@ -26,30 +26,26 @@ const connection = new IORedis({
   retryStrategy: (times) => Math.min(times * 100, 5000),
 });
 
-connection.on("connect", () => console.log("[Redis Worker] Socket connected"));
-connection.on("ready", () => console.log("[Redis Worker] Ready"));
-connection.on("error", (err) =>
-  console.error("[Redis Worker] Error:", err.message),
-);
-connection.on("reconnecting", (delay) =>
-  console.log(`[Redis Worker] Reconnecting in ${delay}ms`),
-);
+connection.on('connect', () => console.log('[Redis Worker] Socket connected'));
+connection.on('ready', () => console.log('[Redis Worker] Ready'));
+connection.on('error', (err) => console.error('[Redis Worker] Error:', err.message));
+connection.on('reconnecting', (delay) => console.log(`[Redis Worker] Reconnecting in ${delay}ms`));
 
 // Simple slugify
 function generateSlug(name) {
-  if (!name) return "unnamed";
+  if (!name) return 'unnamed';
   return name
     .toLowerCase()
     .trim()
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "")
-    .replace(/-+/g, "-")
-    .replace(/^-+|-+$/g, "");
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
 // Worker
 const worker = new Worker(
-  "jobs",
+  'jobs',
   async (bullJob) => {
     const { jobId } = bullJob.data;
 
@@ -60,41 +56,39 @@ const worker = new Worker(
     const job = await Job.findByPk(jobId);
     if (!job) throw new Error(`Job ${jobId} not found`);
 
-    if (job.status === "cancelled") {
+    if (job.status === 'cancelled') {
       console.log(`[Worker ${bullJob.id}] Job ${jobId} cancelled → skipping`);
-      return { status: "cancelled" };
+      return { status: 'cancelled' };
     }
 
-    await job.update({ status: "processing", updatedAt: new Date() });
+    await job.update({ status: 'processing', updatedAt: new Date() });
 
     try {
-      if (job.type === "bulk-import") {
+      if (job.type === 'bulk-import') {
         await processBulkImport(job, bullJob);
       } else {
         throw new Error(`Unsupported job type: ${job.type}`);
       }
 
       await job.update({
-        status: "completed",
+        status: 'completed',
         completedAt: new Date(),
         updatedAt: new Date(),
       });
 
       console.log(`[Worker ${bullJob.id}] Job ${jobId} → COMPLETED`);
-      return { status: "completed" };
+      return { status: 'completed' };
     } catch (err) {
-      console.error(
-        `[Worker ${bullJob.id}] Job ${jobId} failed: ${err.message}`,
-      );
+      console.error(`[Worker ${bullJob.id}] Job ${jobId} failed: ${err.message}`);
 
       const logEntry = {
         timestamp: new Date().toISOString(),
         message: err.message,
-        ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
+        ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
       };
 
       await job.update({
-        status: "failed",
+        status: 'failed',
         errorLog: [...(job.errorLog || []), logEntry],
         updatedAt: new Date(),
       });
@@ -116,21 +110,17 @@ const worker = new Worker(
 // ───────────────────────────────────────────────
 
 async function processBulkImport(job, bullJob) {
-  const { filePath, originalFileName, mapping, selectedBrandId } =
-    job.params || {};
+  const { filePath, originalFileName, mapping, selectedBrandId } = job.params || {};
 
   if (!filePath || !originalFileName) {
-    throw new Error("Missing filePath or originalFileName in job params");
+    throw new Error('Missing filePath or originalFileName in job params');
   }
   if (!selectedBrandId) {
-    throw new Error("Bulk import requires selectedBrandId");
+    throw new Error('Bulk import requires selectedBrandId');
   }
 
-  const tempDir = path.join(__dirname, "..", "temp");
-  const tempFile = path.join(
-    tempDir,
-    `${job.id}-${Date.now()}-${originalFileName}`,
-  );
+  const tempDir = path.join(__dirname, '..', 'temp');
+  const tempFile = path.join(tempDir, `${job.id}-${Date.now()}-${originalFileName}`);
 
   let t = null;
 
@@ -146,8 +136,8 @@ async function processBulkImport(job, bullJob) {
       headers = [];
     const lowerName = originalFileName.toLowerCase();
 
-    if (lowerName.endsWith(".csv")) {
-      const text = await fs.readFile(tempFile, "utf-8");
+    if (lowerName.endsWith('.csv')) {
+      const text = await fs.readFile(tempFile, 'utf-8');
       const parsed = Papa.parse(text, { skipEmptyLines: true, header: false });
       if (parsed.errors.length) {
         throw new Error(`CSV parse error: ${parsed.errors[0].message}`);
@@ -165,17 +155,12 @@ async function processBulkImport(job, bullJob) {
       rows = json.slice(1);
     }
 
-    console.log(
-      `[Worker] File parsed → ${rows.length} rows, ${headers.length} columns`,
-    );
+    console.log(`[Worker] File parsed → ${rows.length} rows, ${headers.length} columns`);
 
     // ── Debug: log headers and first row ────────────────────────────────
     console.log(`[DEBUG] Headers:`, headers);
     if (rows.length > 0) {
-      console.log(
-        `[DEBUG] First data row (first 8 cells):`,
-        rows[0].slice(0, 8),
-      );
+      console.log(`[DEBUG] First data row (first 8 cells):`, rows[0].slice(0, 8));
     }
 
     await job.update({
@@ -199,20 +184,17 @@ async function processBulkImport(job, bullJob) {
     });
 
     // ── Debug mapping ───────────────────────────────────────────────────
-    console.log(
-      `[DEBUG] Raw mapping from frontend:`,
-      JSON.stringify(mapping, null, 2),
-    );
+    console.log(`[DEBUG] Raw mapping from frontend:`, JSON.stringify(mapping, null, 2));
     console.log(`[DEBUG] Parsed fieldToCol:`, fieldToCol);
 
     // Required fields — warn instead of throw during debug phase
     const missingRequired = [];
-    if (!fieldToCol.name) missingRequired.push("name");
-    if (!fieldToCol.product_code) missingRequired.push("product_code");
+    if (!fieldToCol.name) missingRequired.push('name');
+    if (!fieldToCol.product_code) missingRequired.push('product_code');
 
     if (missingRequired.length > 0) {
       console.warn(
-        `[WARNING] Missing required mappings: ${missingRequired.join(", ")} — using fallback to columns 0 & 1`,
+        `[WARNING] Missing required mappings: ${missingRequired.join(', ')} — using fallback to columns 0 & 1`,
       );
     }
 
@@ -228,8 +210,7 @@ async function processBulkImport(job, bullJob) {
 
     for (let start = 0; start < rows.length; start += BATCH_SIZE) {
       await job.reload({ plain: true });
-      if (job.status === "cancelled")
-        throw new Error("Processing cancelled by user");
+      if (job.status === 'cancelled') throw new Error('Processing cancelled by user');
 
       const end = Math.min(start + BATCH_SIZE, rows.length);
       const batchRows = rows.slice(start, end);
@@ -244,16 +225,15 @@ async function processBulkImport(job, bullJob) {
           // ── Apply mapping ──
           Object.entries(mapping || {}).forEach(([colIdxStr, fieldName]) => {
             const col = Number(colIdxStr);
-            if (isNaN(col) || !fieldName || typeof fieldName !== "string")
-              return;
+            if (isNaN(col) || !fieldName || typeof fieldName !== 'string') return;
 
             const rawValue = row[col];
             if (rawValue == null) return;
             const value = String(rawValue).trim();
             if (!value) return;
 
-            if (fieldName.startsWith("meta_")) {
-              const uuid = fieldName.replace(/^meta_/, "");
+            if (fieldName.startsWith('meta_')) {
+              const uuid = fieldName.replace(/^meta_/, '');
               if (
                 /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
                   uuid,
@@ -281,15 +261,12 @@ async function processBulkImport(job, bullJob) {
             quantity: data.quantity,
             alert_quantity: data.alert_quantity,
             tax: data.tax,
-            isFeatured:
-              data.isFeatured === "true" ||
-              data.isFeatured === true ||
-              !!data.isFeatured,
-            keywords: (data.keywords || "")
+            isFeatured: data.isFeatured === 'true' || data.isFeatured === true || !!data.isFeatured,
+            keywords: (data.keywords || '')
               .split(/[,;]\s*/)
               .map((k) => k.trim())
               .filter(Boolean),
-            images: (data.images || "")
+            images: (data.images || '')
               .split(/[,;]\s*/)
               .map((url) => url.trim())
               .filter(Boolean),
@@ -336,11 +313,7 @@ async function processBulkImport(job, bullJob) {
         );
       } catch (batchErr) {
         if (t && !t.finished) await t.rollback();
-        console.error(
-          `[Worker ${bullJob.id}] Batch failed:`,
-          batchErr.message,
-          batchErr.stack,
-        );
+        console.error(`[Worker ${bullJob.id}] Batch failed:`, batchErr.message, batchErr.stack);
 
         await job.update({
           errorLog: [
@@ -381,8 +354,7 @@ async function processBulkImport(job, bullJob) {
       await fs.unlink(tempFile);
       console.log(`[Worker] Removed temp file: ${tempFile}`);
     } catch (e) {
-      if (e.code !== "ENOENT")
-        console.warn("[Worker] Temp file cleanup failed", e);
+      if (e.code !== 'ENOENT') console.warn('[Worker] Temp file cleanup failed', e);
     }
   }
 }
@@ -393,7 +365,7 @@ async function processBulkImport(job, bullJob) {
 async function processProductBatch(productsBatch, t, options = {}) {
   const { importJobId, selectedBrandId } = options;
 
-  if (!selectedBrandId) throw new Error("selectedBrandId is required");
+  if (!selectedBrandId) throw new Error('selectedBrandId is required');
 
   const created = [];
   const failed = [];
@@ -402,51 +374,40 @@ async function processProductBatch(productsBatch, t, options = {}) {
 
   // 1. Pre-fetch existing entities
   const categoryNames = [
-    ...new Set(
-      productsBatch.map((p) => p.categoryName?.trim()).filter(Boolean),
-    ),
+    ...new Set(productsBatch.map((p) => p.categoryName?.trim()).filter(Boolean)),
   ];
 
   const vendorNames = [
-    ...new Set(
-      productsBatch
-        .map((p) => p.vendorName?.trim() || "Unknown")
-        .filter(Boolean),
-    ),
+    ...new Set(productsBatch.map((p) => p.vendorName?.trim() || 'Unknown').filter(Boolean)),
   ];
 
-  const [existingCategories, existingVendors, selectedBrand] =
-    await Promise.all([
-      Category.findAll({
-        where: { name: categoryNames },
-        attributes: ["categoryId", "name", "slug"],
-        transaction: t,
-      }),
-      Vendor.findAll({
-        where: { vendorName: vendorNames },
-        attributes: ["id", "vendorName"],
-        transaction: t,
-      }),
-      Brand.findByPk(selectedBrandId, {
-        attributes: ["id", "brandName"], // or "brandName" if that's the column
-        transaction: t,
-      }),
-    ]);
+  const [existingCategories, existingVendors, selectedBrand] = await Promise.all([
+    Category.findAll({
+      where: { name: categoryNames },
+      attributes: ['categoryId', 'name', 'slug'],
+      transaction: t,
+    }),
+    Vendor.findAll({
+      where: { vendorName: vendorNames },
+      attributes: ['id', 'vendorName'],
+      transaction: t,
+    }),
+    Brand.findByPk(selectedBrandId, {
+      attributes: ['id', 'brandName'], // or "brandName" if that's the column
+      transaction: t,
+    }),
+  ]);
 
   if (!selectedBrand) throw new Error(`Brand ${selectedBrandId} not found`);
 
-  const categoryMap = new Map(
-    existingCategories.map((c) => [c.name.trim().toLowerCase(), c]),
-  );
+  const categoryMap = new Map(existingCategories.map((c) => [c.name.trim().toLowerCase(), c]));
 
-  const vendorMap = new Map(
-    existingVendors.map((v) => [v.vendorName.trim().toLowerCase(), v]),
-  );
+  const vendorMap = new Map(existingVendors.map((v) => [v.vendorName.trim().toLowerCase(), v]));
 
   // 2. Create missing categories & vendors
   for (const p of productsBatch) {
     // Category (unchanged)
-    const catName = p.categoryName?.trim() || "Uncategorized";
+    const catName = p.categoryName?.trim() || 'Uncategorized';
     const catKey = catName.toLowerCase();
 
     if (!categoryMap.has(catKey)) {
@@ -465,7 +426,7 @@ async function processProductBatch(productsBatch, t, options = {}) {
     }
 
     // Vendor — generate vendorId
-    const venName = p.vendorName?.trim() || "Unknown";
+    const venName = p.vendorName?.trim() || 'Unknown';
     const venKey = venName.toLowerCase();
 
     if (!vendorMap.has(venKey)) {
@@ -492,22 +453,17 @@ async function processProductBatch(productsBatch, t, options = {}) {
 
     try {
       if (!p.name?.trim() || !p.product_code?.trim()) {
-        throw new Error("Product name and code required");
+        throw new Error('Product name and code required');
       }
 
       const existing = await Product.findOne({
         where: { product_code: p.product_code.trim() },
         transaction: t,
       });
-      if (existing)
-        throw new Error(`Product code "${p.product_code}" already exists`);
+      if (existing) throw new Error(`Product code "${p.product_code}" already exists`);
 
-      const category = categoryMap.get(
-        (p.categoryName?.trim() || "Uncategorized").toLowerCase(),
-      );
-      const vendor = vendorMap.get(
-        (p.vendorName?.trim() || "Unknown").toLowerCase(),
-      );
+      const category = categoryMap.get((p.categoryName?.trim() || 'Uncategorized').toLowerCase());
+      const vendor = vendorMap.get((p.vendorName?.trim() || 'Unknown').toLowerCase());
 
       const productData = {
         name: p.name.trim(),
@@ -517,7 +473,7 @@ async function processProductBatch(productsBatch, t, options = {}) {
         alert_quantity: p.alert_quantity ? Number(p.alert_quantity) : null,
         tax: p.tax ? Number(p.tax) : null,
         isFeatured: !!p.isFeatured,
-        status: Number(p.quantity) > 0 ? "active" : "out_of_stock",
+        status: Number(p.quantity) > 0 ? 'active' : 'out_of_stock',
         images: Array.isArray(p.images) ? p.images : [],
         meta: p.meta || null,
         categoryId: category?.categoryId || null,
@@ -530,15 +486,20 @@ async function processProductBatch(productsBatch, t, options = {}) {
       // Opening stock goes through the stock engine
 
       if (Number(productData.quantity) > 0) {
-
-        const stockEngine = require("../modules/stock/stock.service");
+        const stockEngine = require('../modules/stock/stock.service');
 
         const wh = await stockEngine.getDefaultWarehouse(t);
 
         await newProduct.update({ quantity: 0 }, { transaction: t });
 
-        await stockEngine.post(t, { productId: newProduct.productId, warehouseId: wh.id, movement: "OPENING", onHand: Math.trunc(Number(productData.quantity)), ref: { type: "IMPORT" }, reason: "Opening stock from product import" });
-
+        await stockEngine.post(t, {
+          productId: newProduct.productId,
+          warehouseId: wh.id,
+          movement: 'OPENING',
+          onHand: Math.trunc(Number(productData.quantity)),
+          ref: { type: 'IMPORT' },
+          reason: 'Opening stock from product import',
+        });
       }
 
       // Keywords
@@ -550,11 +511,7 @@ async function processProductBatch(productsBatch, t, options = {}) {
               where: { keyword: kw },
               transaction: t,
             });
-            if (!record)
-              record = await Keyword.create(
-                { keyword: kw },
-                { transaction: t },
-              );
+            if (!record) record = await Keyword.create({ keyword: kw }, { transaction: t });
             return record;
           }),
         );
@@ -574,9 +531,9 @@ async function processProductBatch(productsBatch, t, options = {}) {
     } catch (err) {
       failed.push({
         rowIndex,
-        product_code: p.product_code || "[missing]",
-        name: p.name || "[missing]",
-        error: err.message || "Unknown error",
+        product_code: p.product_code || '[missing]',
+        name: p.name || '[missing]',
+        error: err.message || 'Unknown error',
       });
     }
   }
@@ -589,17 +546,14 @@ async function processProductBatch(productsBatch, t, options = {}) {
         {
           progress: {
             ...job.progress,
-            processedRows:
-              (job.progress?.processedRows || 0) + productsBatch.length,
+            processedRows: (job.progress?.processedRows || 0) + productsBatch.length,
             successCount: (job.progress?.successCount || 0) + created.length,
             failedCount: (job.progress?.failedCount || 0) + failed.length,
           },
           results: {
             ...job.results,
-            newCategoriesCount:
-              (job.results?.newCategoriesCount || 0) + newCategories.size,
-            newVendorsCount:
-              (job.results?.newVendorsCount || 0) + newVendors.size,
+            newCategoriesCount: (job.results?.newCategoriesCount || 0) + newCategories.size,
+            newVendorsCount: (job.results?.newVendorsCount || 0) + newVendors.size,
           },
           errorLog: [
             ...(job.errorLog || []),
@@ -626,19 +580,17 @@ async function processProductBatch(productsBatch, t, options = {}) {
 }
 
 // Worker events & shutdown (unchanged from your last version)
-worker.on("completed", (job) => {
-  console.log(
-    `[Worker] Completed → Job ID ${job.data.jobId} (BullMQ ID ${job.id})`,
-  );
+worker.on('completed', (job) => {
+  console.log(`[Worker] Completed → Job ID ${job.data.jobId} (BullMQ ID ${job.id})`);
 });
 
-worker.on("failed", (job, err) => {
+worker.on('failed', (job, err) => {
   console.error(
     `[Worker] FAILED → Job ID ${job?.data?.jobId} (BullMQ ID ${job.id}): ${err.message}`,
   );
 });
 
-worker.on("stalled", (jobId) => {
+worker.on('stalled', (jobId) => {
   console.warn(`[Worker] STALLED job detected: ${jobId}`);
 });
 
@@ -649,7 +601,7 @@ const shutdown = async (sig) => {
   process.exit(0);
 };
 
-process.on("SIGTERM", () => shutdown("SIGTERM"));
-process.on("SIGINT", () => shutdown("SIGINT"));
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
 
 console.log('[Worker] Started – listening on queue "jobs"');

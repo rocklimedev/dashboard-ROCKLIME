@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 /**
  * Complete purchase orders: vendor contact/GST details, and on the PO the
@@ -7,13 +7,14 @@
  */
 module.exports = {
   async up(queryInterface) {
-    const Sequelize = require("sequelize");
+    const Sequelize = require('sequelize');
     const { DataTypes } = Sequelize;
     const add = async (table, cols) => {
       const have = await queryInterface.describeTable(table);
-      for (const [name, def] of Object.entries(cols)) if (!have[name]) await queryInterface.addColumn(table, name, def);
+      for (const [name, def] of Object.entries(cols))
+        if (!have[name]) await queryInterface.addColumn(table, name, def);
     };
-    await add("vendors", {
+    await add('vendors', {
       contactPerson: { type: DataTypes.STRING(120), allowNull: true },
       phone: { type: DataTypes.STRING(30), allowNull: true },
       email: { type: DataTypes.STRING(160), allowNull: true },
@@ -24,7 +25,7 @@ module.exports = {
       pincode: { type: DataTypes.STRING(10), allowNull: true },
       paymentTerms: { type: DataTypes.STRING(255), allowNull: true },
     });
-    await add("purchase_orders", {
+    await add('purchase_orders', {
       warehouseId: { type: DataTypes.CHAR(36), allowNull: true },
       vendorRef: { type: DataTypes.STRING(80), allowNull: true },
       paymentTerms: { type: DataTypes.STRING(255), allowNull: true },

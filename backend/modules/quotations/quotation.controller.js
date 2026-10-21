@@ -1,29 +1,28 @@
-const { v4: uuidv4 } = require("uuid");
-const moment = require("moment");
-const { Op } = require("sequelize");
-const sequelize = require("../../config/database");
-const { Product, Quotation, Customer, User } = require("../../models");
-const QuotationItem = require("./models/quotation-item.model"); // MongoDB model
-const QuotationVersion = require("./models/quotation-version.model");
-const { ActivityLog } = require("../../models");
-const logActivity = require("../../utils/activityLogger");
-const { normalizeCharges, lineAmounts, quotationTotals } = require("../../lib/quotationMath");
-const { sendNotification } = require("../engagement/notification.controller");
-const pipeline = require("./pipeline");
+const { v4: uuidv4 } = require('uuid');
+const moment = require('moment');
+const { Op } = require('sequelize');
+const sequelize = require('../../config/database');
+const { Product, Quotation, Customer, User } = require('../../models');
+const QuotationItem = require('./models/quotation-item.model'); // MongoDB model
+const QuotationVersion = require('./models/quotation-version.model');
+const { ActivityLog } = require('../../models');
+const logActivity = require('../../utils/activityLogger');
+const { normalizeCharges, lineAmounts, quotationTotals } = require('../../lib/quotationMath');
+const { sendNotification } = require('../engagement/notification.controller');
+const pipeline = require('./pipeline');
 
 // META_SLUGS (same as you have in your Cart controller)
 const META_SLUGS = {
-  sellingPrice: "9ba862ef-f993-4873-95ef-1fef10036aa5",
-  companyCode: "d11da9f9-3f2e-4536-8236-9671200cca4a",
-  barcode: "4ded1cb3-5d31-42e8-90ec-a381a6ab1e35",
-  productGroup: "81cd6d76-d7d2-4226-b48e-6704e6224c2b",
+  sellingPrice: '9ba862ef-f993-4873-95ef-1fef10036aa5',
+  companyCode: 'd11da9f9-3f2e-4536-8236-9671200cca4a',
+  barcode: '4ded1cb3-5d31-42e8-90ec-a381a6ab1e35',
+  productGroup: '81cd6d76-d7d2-4226-b48e-6704e6224c2b',
 };
 
 const num = (v, d = 0) => (Number.isFinite(Number(v)) ? Number(v) : d);
 
 // A share is either Unassigned ("::") or a concrete floor+room pair.
-const locKey = (l) =>
-  l.floorId && l.roomId ? `${l.floorId}::${l.roomId}` : "::";
+const locKey = (l) => (l.floorId && l.roomId ? `${l.floorId}::${l.roomId}` : '::');
 
 /**
  * Cleans a product's locations[].
@@ -98,7 +97,7 @@ function normalizeLocations(p, totalQuantity, floors = []) {
 
   if (assigned < totalQuantity) {
     const remainder = totalQuantity - assigned;
-    const un = locations.find((l) => locKey(l) === "::");
+    const un = locations.find((l) => locKey(l) === '::');
     if (un) {
       un.assignedQuantity += remainder;
     } else {
@@ -134,9 +133,7 @@ function flatFromLocations(locations) {
 function rankPerSection(products) {
   const buckets = {};
   products.forEach((p, order) =>
-    (p.locations || []).forEach((l) =>
-      (buckets[locKey(l)] ||= []).push({ l, order }),
-    ),
+    (p.locations || []).forEach((l) => (buckets[locKey(l)] ||= []).push({ l, order })),
   );
   Object.values(buckets).forEach((arr) => {
     arr.sort((a, b) => a.l.priority - b.l.priority || a.order - b.order);
@@ -154,14 +151,14 @@ const getMetaValue = (meta, uuid) => {
   if (!meta || !uuid) return null;
 
   let parsed = meta;
-  if (typeof meta === "string") {
+  if (typeof meta === 'string') {
     try {
       parsed = JSON.parse(meta);
     } catch {
       return null;
     }
   }
-  if (!parsed || typeof parsed !== "object") return null;
+  if (!parsed || typeof parsed !== 'object') return null;
 
   return parsed[uuid] ?? null;
 };
@@ -170,15 +167,15 @@ const getMetaValue = (meta, uuid) => {
 // ─────────────────────────────────────────────
 
 function generateGroupId() {
-  return "grp-" + uuidv4().slice(0, 8);
+  return 'grp-' + uuidv4().slice(0, 8);
 }
 
 function generateFloorId() {
-  return "fl_" + uuidv4().slice(0, 8);
+  return 'fl_' + uuidv4().slice(0, 8);
 }
 
-function generateRoomId(floorId = "") {
-  return (floorId ? floorId + "_" : "rm_") + uuidv4().slice(0, 8);
+function generateRoomId(floorId = '') {
+  return (floorId ? floorId + '_' : 'rm_') + uuidv4().slice(0, 8);
 }
 
 function buildFloorsFromProducts(products) {
@@ -207,7 +204,7 @@ function buildFloorsFromProducts(products) {
       if (loc.roomId && !floor.rooms.some((r) => r.roomId === loc.roomId)) {
         floor.rooms.push({
           roomId: loc.roomId,
-          roomName: loc.roomName || "Unnamed Room",
+          roomName: loc.roomName || 'Unnamed Room',
           areas: [],
           sortOrder: floor.rooms.length,
         });
@@ -228,11 +225,11 @@ const extractFirstImageUrl = (imagesField) => {
     }
 
     // Case 2: String that might be JSON
-    if (typeof imagesField === "string") {
+    if (typeof imagesField === 'string') {
       const trimmed = imagesField.trim();
 
       // If it looks like a direct URL (not starting with [ or {)
-      if (trimmed.startsWith("http")) {
+      if (trimmed.startsWith('http')) {
         return trimmed;
       }
 
@@ -243,7 +240,7 @@ const extractFirstImageUrl = (imagesField) => {
         return parsed[0] || null;
       }
 
-      if (typeof parsed === "string" && parsed.startsWith("http")) {
+      if (typeof parsed === 'string' && parsed.startsWith('http')) {
         return parsed;
       }
     }
@@ -252,8 +249,8 @@ const extractFirstImageUrl = (imagesField) => {
   } catch (err) {
     // Last resort: if it's a plain URL string with quotes or garbage
     const str = String(imagesField).trim();
-    if (str.startsWith("http")) {
-      return str.replace(/^["']|["']$/g, ""); // remove wrapping quotes
+    if (str.startsWith('http')) {
+      return str.replace(/^["']|["']$/g, ''); // remove wrapping quotes
     }
 
     return null;
@@ -262,7 +259,7 @@ const extractFirstImageUrl = (imagesField) => {
 function calculateTotals(
   items = [],
   extraDiscount = 0,
-  extraDiscountType = "percent",
+  extraDiscountType = 'percent',
   shippingAmount = 0,
   gst = 0,
   adjustments = {},
@@ -300,10 +297,10 @@ function calculateTotals(
 }
 async function generateQuotationNumber(t) {
   const today = moment();
-  const prefixDate = today.format("DDMMYY");
+  const prefixDate = today.format('DDMMYY');
   const fullPrefix = `QUO${prefixDate}`;
-  const todayStart = today.startOf("day").toDate();
-  const todayEnd = today.endOf("day").toDate();
+  const todayStart = today.startOf('day').toDate();
+  const todayEnd = today.endOf('day').toDate();
 
   let attempt = 0;
   const MAX_ATTEMPTS = 15;
@@ -316,8 +313,8 @@ async function generateQuotationNumber(t) {
         reference_number: { [Op.like]: `${fullPrefix}%` },
         createdAt: { [Op.between]: [todayStart, todayEnd] },
       },
-      attributes: ["reference_number"],
-      order: [["reference_number", "DESC"]],
+      attributes: ['reference_number'],
+      order: [['reference_number', 'DESC']],
       limit: 1,
       transaction: t,
       lock: t.LOCK.UPDATE,
@@ -341,9 +338,7 @@ async function generateQuotationNumber(t) {
     if (!exists) return candidate;
   }
 
-  throw new Error(
-    `Could not generate unique quotation number after ${MAX_ATTEMPTS} attempts`,
-  );
+  throw new Error(`Could not generate unique quotation number after ${MAX_ATTEMPTS} attempts`);
 }
 
 // ─────────────────────────────────────────────
@@ -357,63 +352,53 @@ exports.createQuotation = async (req, res) => {
       products: incomingProducts,
       floors: incomingFloors = [],
       extraDiscount = 0,
-      extraDiscountType = "percent",
+      extraDiscountType = 'percent',
       miscellaneousChargeItems = null,
-      miscellaneousCharges = 0, additionalDiscount = 0, flatPrice = null,
+      miscellaneousCharges = 0,
+      additionalDiscount = 0,
+      flatPrice = null,
       shippingAmount = 0,
       gst = 0,
       customerId,
       quotation_date,
       due_date,
-      document_title = "Quotation",
+      document_title = 'Quotation',
       shipTo,
-      signature_name = "",
-      signature_image = "",
+      signature_name = '',
+      signature_image = '',
       ...rest
     } = req.body;
 
     // Parse products if sent as string (common with FormData)
-    if (typeof incomingProducts === "string") {
+    if (typeof incomingProducts === 'string') {
       try {
         incomingProducts = JSON.parse(incomingProducts);
       } catch {
-        return res.status(400).json({ error: "Invalid products JSON format" });
+        return res.status(400).json({ error: 'Invalid products JSON format' });
       }
     }
 
     if (!Array.isArray(incomingProducts) || incomingProducts.length === 0) {
-      return res
-        .status(400)
-        .json({ error: "At least one product is required" });
+      return res.status(400).json({ error: 'At least one product is required' });
     }
     // Normalize due_date
-    if (!due_date || due_date === "" || due_date === "null") {
+    if (!due_date || due_date === '' || due_date === 'null') {
       due_date = null;
     }
     if (!customerId) {
-      return res.status(400).json({ error: "Customer ID is required" });
+      return res.status(400).json({ error: 'Customer ID is required' });
     }
 
     // ─── Fetch product master data ───
     const productIds = [
-      ...new Set(
-        incomingProducts.map((p) => p.productId || p.id).filter(Boolean),
-      ),
+      ...new Set(incomingProducts.map((p) => p.productId || p.id).filter(Boolean)),
     ];
 
     const productMap = {};
     if (productIds.length > 0) {
       const dbProducts = await Product.findAll({
         where: { productId: productIds },
-        attributes: [
-          "productId",
-          "name",
-          "images",
-          "product_code",
-          "meta",
-          "tax",
-          "discountType",
-        ],
+        attributes: ['productId', 'name', 'images', 'product_code', 'meta', 'tax', 'discountType'],
         transaction: t,
       });
 
@@ -421,12 +406,12 @@ exports.createQuotation = async (req, res) => {
         const imageUrl = extractFirstImageUrl(p.images);
 
         productMap[p.productId] = {
-          name: p.name?.trim() || "Unnamed Product",
+          name: p.name?.trim() || 'Unnamed Product',
           imageUrl, // Much more reliable now
           productCode: p.product_code || null,
           companyCode: getMetaValue(p.meta, META_SLUGS.companyCode), // optional improvement
           tax: p.tax || 0,
-          discountType: p.discountType || "percent",
+          discountType: p.discountType || 'percent',
         };
       });
     }
@@ -440,12 +425,12 @@ exports.createQuotation = async (req, res) => {
       const price = Number(p.price || 0);
       const quantity = Number(p.quantity) || 1;
       const discount = Number(p.discount || 0);
-      const discountType = p.discountType || db.discountType || "percent";
+      const discountType = p.discountType || db.discountType || 'percent';
 
       const isOption =
         Boolean(p.isOption) ||
         Boolean(p.isOptionFor) ||
-        Boolean(p.optionType && p.optionType !== "main");
+        Boolean(p.optionType && p.optionType !== 'main');
 
       const optionType = p.optionType || null;
       const parentProductId = p.parentProductId || p.isOptionFor || null;
@@ -454,7 +439,7 @@ exports.createQuotation = async (req, res) => {
 
       return {
         productId: id,
-        name: p.name || db.name || "Unknown Product",
+        name: p.name || db.name || 'Unknown Product',
         imageUrl: p.imageUrl || db.imageUrl || null,
         companyCode: p.companyCode || db.companyCode || null,
         productCode: p.productCode || db.productCode || null,
@@ -463,7 +448,7 @@ exports.createQuotation = async (req, res) => {
         price: Number(price.toFixed(2)),
         discount: Number(discount.toFixed(2)),
         additionalDiscount: Number(p.additionalDiscount) || 0,
-        flatPrice: p.flatPrice == null || p.flatPrice === "" ? null : Number(p.flatPrice),
+        flatPrice: p.flatPrice == null || p.flatPrice === '' ? null : Number(p.flatPrice),
         discountType,
         total: lineAmounts({ ...p, price, quantity }).net,
         tax: Number(p.tax || 0),
@@ -506,8 +491,7 @@ exports.createQuotation = async (req, res) => {
         customerId,
         reference_number,
         document_title,
-        quotation_date:
-          quotation_date || new Date().toISOString().split("T")[0],
+        quotation_date: quotation_date || new Date().toISOString().split('T')[0],
         due_date,
         products: enrichedProducts,
         floors,
@@ -516,12 +500,16 @@ exports.createQuotation = async (req, res) => {
         optionalItemsCount: totals.optionalItemsCount,
         totalFloors: floors.length,
         extraDiscount: Number(extraDiscount) || 0,
-        extraDiscountType: extraDiscountType || "percent",
+        extraDiscountType: extraDiscountType || 'percent',
         discountAmount: totals.extraDiscountAmount,
-        miscellaneousChargeItems: normalizeCharges(miscellaneousChargeItems ?? miscellaneousCharges),
-        miscellaneousCharges: normalizeCharges(miscellaneousChargeItems ?? miscellaneousCharges).reduce((sum, row) => sum + row.amount, 0),
+        miscellaneousChargeItems: normalizeCharges(
+          miscellaneousChargeItems ?? miscellaneousCharges,
+        ),
+        miscellaneousCharges: normalizeCharges(
+          miscellaneousChargeItems ?? miscellaneousCharges,
+        ).reduce((sum, row) => sum + row.amount, 0),
         additionalDiscount: Number(additionalDiscount) || 0,
-        flatPrice: flatPrice == null || flatPrice === "" ? null : Number(flatPrice),
+        flatPrice: flatPrice == null || flatPrice === '' ? null : Number(flatPrice),
         shippingAmount: Number(shippingAmount) || 0,
         gst: Number(gst) || 0,
         gstAmount: totals.gstAmount,
@@ -546,9 +534,9 @@ exports.createQuotation = async (req, res) => {
     await t.commit();
     await logActivity({
       userId: req.user?.userId,
-      contextTag: "SALES",
-      subContext: "QUOTATION",
-      action: "CREATE_QUOTATION",
+      contextTag: 'SALES',
+      subContext: 'QUOTATION',
+      action: 'CREATE_QUOTATION',
       entityId: quotation.quotationId,
       entityName: quotation.reference_number,
       description: `Quotation ${quotation.reference_number} created for customer ${customerId}`,
@@ -578,7 +566,7 @@ exports.createQuotation = async (req, res) => {
       },
     });
     return res.status(201).json({
-      message: "Quotation created successfully",
+      message: 'Quotation created successfully',
       quotation: {
         ...quotation.toJSON(),
         finalAmount: totals.finalAmount,
@@ -589,7 +577,7 @@ exports.createQuotation = async (req, res) => {
     await t.rollback().catch(() => {});
 
     return res.status(500).json({
-      error: "Failed to create quotation",
+      error: 'Failed to create quotation',
       message: error.message,
       // stack: error.stack // uncomment only in development
     });
@@ -609,9 +597,11 @@ exports.updateQuotation = async (req, res) => {
       floors: incomingFloors = [],
       followupDates = [],
       extraDiscount = 0,
-      extraDiscountType = "percent",
+      extraDiscountType = 'percent',
       miscellaneousChargeItems = null,
-      miscellaneousCharges = 0, additionalDiscount = 0, flatPrice = null,
+      miscellaneousCharges = 0,
+      additionalDiscount = 0,
+      flatPrice = null,
       shippingAmount = 0,
       gst = 0,
       ...quotationData
@@ -619,7 +609,7 @@ exports.updateQuotation = async (req, res) => {
 
     if (!id) {
       await t.rollback();
-      return res.status(400).json({ message: "Quotation ID is required" });
+      return res.status(400).json({ message: 'Quotation ID is required' });
     }
 
     const currentQuotation = await Quotation.findOne({
@@ -629,7 +619,7 @@ exports.updateQuotation = async (req, res) => {
 
     if (!currentQuotation) {
       await t.rollback();
-      return res.status(404).json({ message: "Quotation not found" });
+      return res.status(404).json({ message: 'Quotation not found' });
     }
 
     // ─── Versioning (outside transaction) ───
@@ -648,27 +638,27 @@ exports.updateQuotation = async (req, res) => {
       const rawQuotation = await Quotation.findOne({
         where: { quotationId: id },
         attributes: [
-          "quotationId",
-          "reference_number",
-          "customerId",
-          "products",
-          "floors",
-          "totalFloors",
-          "extraDiscount",
-          "extraDiscountType",
-          "discountAmount",
-          "miscellaneousChargeItems",
-          "miscellaneousCharges",
-          "additionalDiscount",
-          "flatPrice",
-          "shippingAmount",
-          "gst",
-          "gstAmount",
-          "roundOff",
-          "finalAmount",
-          "followupDates",
-          "createdAt",
-          "updatedAt",
+          'quotationId',
+          'reference_number',
+          'customerId',
+          'products',
+          'floors',
+          'totalFloors',
+          'extraDiscount',
+          'extraDiscountType',
+          'discountAmount',
+          'miscellaneousChargeItems',
+          'miscellaneousCharges',
+          'additionalDiscount',
+          'flatPrice',
+          'shippingAmount',
+          'gst',
+          'gstAmount',
+          'roundOff',
+          'finalAmount',
+          'followupDates',
+          'createdAt',
+          'updatedAt',
         ],
         raw: true,
         transaction: t,
@@ -691,37 +681,25 @@ exports.updateQuotation = async (req, res) => {
         updatedAt: new Date(),
       });
     } catch (err) {
-      console.error("Versioning failed:", err);
+      console.error('Versioning failed:', err);
       // non-fatal
     }
 
     if (!Array.isArray(incomingProducts) || incomingProducts.length === 0) {
       await t.rollback();
-      return res
-        .status(400)
-        .json({ error: "At least one product is required" });
+      return res.status(400).json({ error: 'At least one product is required' });
     }
 
     // Fetch product master data (same as create)
     const productIds = [
-      ...new Set(
-        incomingProducts.map((p) => p.productId || p.id).filter(Boolean),
-      ),
+      ...new Set(incomingProducts.map((p) => p.productId || p.id).filter(Boolean)),
     ];
 
     const productMap = {};
     if (productIds.length > 0) {
       const dbProducts = await Product.findAll({
         where: { productId: productIds },
-        attributes: [
-          "productId",
-          "name",
-          "images",
-          "product_code",
-          "meta",
-          "tax",
-          "discountType",
-        ],
+        attributes: ['productId', 'name', 'images', 'product_code', 'meta', 'tax', 'discountType'],
         transaction: t,
       });
 
@@ -734,12 +712,12 @@ exports.updateQuotation = async (req, res) => {
           } catch {}
         }
         productMap[p.productId] = {
-          name: p.name?.trim() || "Unnamed Product",
+          name: p.name?.trim() || 'Unnamed Product',
           imageUrl,
           productCode: p.product_code || null,
           companyCode: getMetaValue(p.meta, META_SLUGS.companyCode),
           tax: p.tax || 0,
-          discountType: p.discountType || "percent",
+          discountType: p.discountType || 'percent',
         };
       });
     }
@@ -754,7 +732,7 @@ exports.updateQuotation = async (req, res) => {
       const price = Number(p.price || 0);
       const totalQuantity = Number(p.quantity) || 1;
       const discount = Number(p.discount || 0);
-      const discountType = p.discountType || db.discountType || "percent";
+      const discountType = p.discountType || db.discountType || 'percent';
 
       const locations = normalizeLocations(p, totalQuantity, incomingFloors);
 
@@ -762,7 +740,7 @@ exports.updateQuotation = async (req, res) => {
 
       return {
         productId: id,
-        name: p.name || db.name || "Unknown Product",
+        name: p.name || db.name || 'Unknown Product',
 
         imageUrl: p.imageUrl || db.imageUrl || null,
         companyCode: p.companyCode || db.companyCode || null,
@@ -772,7 +750,7 @@ exports.updateQuotation = async (req, res) => {
         price: Number(price.toFixed(2)),
         discount: Number(discount.toFixed(2)),
         additionalDiscount: Number(p.additionalDiscount) || 0,
-        flatPrice: p.flatPrice == null || p.flatPrice === "" ? null : Number(p.flatPrice),
+        flatPrice: p.flatPrice == null || p.flatPrice === '' ? null : Number(p.flatPrice),
         discountType,
         tax: 0,
         priority: Number(p.priority ?? db.priority ?? 0),
@@ -810,12 +788,16 @@ exports.updateQuotation = async (req, res) => {
         floors,
         totalFloors: floors.length,
         extraDiscount: Number(extraDiscount) || 0,
-        extraDiscountType: extraDiscountType || "percent",
+        extraDiscountType: extraDiscountType || 'percent',
         discountAmount: totals.extraDiscountAmount,
-        miscellaneousChargeItems: normalizeCharges(miscellaneousChargeItems ?? miscellaneousCharges),
-        miscellaneousCharges: normalizeCharges(miscellaneousChargeItems ?? miscellaneousCharges).reduce((sum, row) => sum + row.amount, 0),
+        miscellaneousChargeItems: normalizeCharges(
+          miscellaneousChargeItems ?? miscellaneousCharges,
+        ),
+        miscellaneousCharges: normalizeCharges(
+          miscellaneousChargeItems ?? miscellaneousCharges,
+        ).reduce((sum, row) => sum + row.amount, 0),
         additionalDiscount: Number(additionalDiscount) || 0,
-        flatPrice: flatPrice == null || flatPrice === "" ? null : Number(flatPrice),
+        flatPrice: flatPrice == null || flatPrice === '' ? null : Number(flatPrice),
         shippingAmount: Number(shippingAmount) || 0,
         gst: Number(gst) || 0,
         gstAmount: totals.gstAmount,
@@ -838,15 +820,15 @@ exports.updateQuotation = async (req, res) => {
         await QuotationItem.deleteOne({ quotationId: id });
       }
     } catch (mongoErr) {
-      console.error("MongoDB sync failed:", mongoErr);
+      console.error('MongoDB sync failed:', mongoErr);
     }
 
     await t.commit();
     await logActivity({
       userId: req.user?.userId,
-      contextTag: "SALES",
-      subContext: "QUOTATION",
-      action: "UPDATE_QUOTATION",
+      contextTag: 'SALES',
+      subContext: 'QUOTATION',
+      action: 'UPDATE_QUOTATION',
       entityId: currentQuotation.quotationId,
       entityName: currentQuotation.reference_number || id,
       description: `Quotation ${id} updated (version ${newVersionNumber})`,
@@ -891,7 +873,7 @@ exports.updateQuotation = async (req, res) => {
     });
     await pipeline.reopenIfExtended(id).catch(() => {});
     return res.status(200).json({
-      message: "Quotation updated successfully",
+      message: 'Quotation updated successfully',
       version: newVersionNumber,
       finalAmount: totals.finalAmount,
       calculated: totals,
@@ -899,7 +881,7 @@ exports.updateQuotation = async (req, res) => {
   } catch (error) {
     await t.rollback().catch(() => {});
     return res.status(500).json({
-      error: "Failed to update quotation",
+      error: 'Failed to update quotation',
       details: error.message,
     });
   }
@@ -919,15 +901,13 @@ exports.exportQuotation = async (req, res) => {
         quotationId: id,
         version: Number(version),
       });
-      if (!versionData)
-        return res.status(404).json({ message: "Version not found" });
+      if (!versionData) return res.status(404).json({ message: 'Version not found' });
       quotation = versionData.quotationData;
       quotationItems = versionData.quotationItems || [];
       floors = versionData.floors || quotation.floors || [];
     } else {
       quotation = await Quotation.findByPk(id);
-      if (!quotation)
-        return res.status(404).json({ message: "Quotation not found" });
+      if (!quotation) return res.status(404).json({ message: 'Quotation not found' });
       const itemsDoc = await QuotationItem.findOne({ quotationId: id });
       quotationItems = itemsDoc ? itemsDoc.items : [];
       floors = quotation.floors || [];
@@ -943,7 +923,7 @@ exports.exportQuotation = async (req, res) => {
     } = calculateTotals(
       quotationItems,
       quotation.extraDiscount || 0,
-      quotation.extraDiscountType || "percent",
+      quotation.extraDiscountType || 'percent',
       quotation.shippingAmount || 0,
       quotation.gst || 0,
       quotation,
@@ -954,106 +934,97 @@ exports.exportQuotation = async (req, res) => {
     // Build grouped sheet data
     // ─────────────────────────────────────────────
     const sheetData = [
-      ["Estimate / Quotation", "", "", "", "GROHE / AMERICAN STANDARD"],
-      [""],
+      ['Estimate / Quotation', '', '', '', 'GROHE / AMERICAN STANDARD'],
+      [''],
       [
-        "M/s",
+        'M/s',
         quotation.companyName ||
           quotation.customer?.name ||
           quotation.customerId ||
-          "CUSTOMER NAME",
-        "",
-        "Date",
+          'CUSTOMER NAME',
+        '',
+        'Date',
         quotation.quotation_date
-          ? new Date(quotation.quotation_date).toLocaleDateString("en-IN")
-          : new Date().toLocaleDateString("en-IN"),
+          ? new Date(quotation.quotation_date).toLocaleDateString('en-IN')
+          : new Date().toLocaleDateString('en-IN'),
       ],
-      [
-        "Address",
-        quotation.shipTo || "—",
-        "",
-        "Quotation No",
-        quotation.reference_number || "—",
-      ],
-      [""],
+      ['Address', quotation.shipTo || '—', '', 'Quotation No', quotation.reference_number || '—'],
+      [''],
     ];
 
     // Group items by floor → room
     const groupedItems = {};
 
     quotationItems.forEach((item) => {
-      const floorId = item.floorId || "no-floor";
+      const floorId = item.floorId || 'no-floor';
       const floorName =
         item.floorName ||
         floors.find((f) => f.floorId === floorId)?.floorName ||
-        "Unassigned Floor";
-      const roomId = item.roomId || "no-room";
-      const roomName = item.roomName || "Unassigned Room";
+        'Unassigned Floor';
+      const roomId = item.roomId || 'no-room';
+      const roomName = item.roomName || 'Unassigned Room';
 
       const floorKey = `${floorId}|${floorName}`;
       if (!groupedItems[floorKey]) groupedItems[floorKey] = {};
 
       const roomKey = `${roomId}|${roomName}`;
-      if (!groupedItems[floorKey][roomKey])
-        groupedItems[floorKey][roomKey] = [];
+      if (!groupedItems[floorKey][roomKey]) groupedItems[floorKey][roomKey] = [];
 
       groupedItems[floorKey][roomKey].push(item);
     });
 
     // Sort floors by sortOrder (if available) or by appearance
     const sortedFloorKeys = Object.keys(groupedItems).sort((a, b) => {
-      const fa = floors.find((f) => f.floorId === a.split("|")[0]);
-      const fb = floors.find((f) => f.floorId === b.split("|")[0]);
+      const fa = floors.find((f) => f.floorId === a.split('|')[0]);
+      const fb = floors.find((f) => f.floorId === b.split('|')[0]);
       return (fa?.sortOrder ?? 999) - (fb?.sortOrder ?? 999);
     });
 
     let rowIndex = 1;
 
     for (const floorKey of sortedFloorKeys) {
-      const [floorId, floorName] = floorKey.split("|");
+      const [floorId, floorName] = floorKey.split('|');
 
       // Floor header
-      sheetData.push([`Floor: ${floorName}`, "", "", "", "", "", "", "", ""]);
+      sheetData.push([`Floor: ${floorName}`, '', '', '', '', '', '', '', '']);
       rowIndex++;
 
       const rooms = groupedItems[floorKey];
       const sortedRoomKeys = Object.keys(rooms); // can sort by name or id if needed
 
       for (const roomKey of sortedRoomKeys) {
-        const [roomId, roomName] = roomKey.split("|");
+        const [roomId, roomName] = roomKey.split('|');
 
         // Room header
-        sheetData.push([`  Room: ${roomName}`, "", "", "", "", "", "", "", ""]);
+        sheetData.push([`  Room: ${roomName}`, '', '', '', '', '', '', '', '']);
         rowIndex++;
 
         // Items header
         sheetData.push([
-          "S.No",
-          "Product Image",
-          "Product Name",
-          "Product Code",
-          "MRP",
-          "Discount",
-          "Rate",
-          "Qty",
-          "Total",
+          'S.No',
+          'Product Image',
+          'Product Name',
+          'Product Code',
+          'MRP',
+          'Discount',
+          'Rate',
+          'Qty',
+          'Total',
         ]);
 
-        const roomItems = rooms[roomKey].sort(
-          (a, b) => (b.priority ?? 0) - (a.priority ?? 0),
-        );
+        const roomItems = rooms[roomKey].sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
         roomItems.forEach((p, idx) => {
           const discountDisplay = p.discount
-            ? p.discountType === "percent"
+            ? p.discountType === 'percent'
               ? `${Number(p.discount).toFixed(1)}%`
               : `₹${Number(p.discount).toFixed(2)}`
-            : "—";
+            : '—';
 
           sheetData.push([
             rowIndex++,
-            p.imageUrl || "N/A",
-            p.name || "—",
-            p.productCode || p.product_code || "—",
+            p.imageUrl || 'N/A',
+            p.name || '—',
+            p.productCode || p.product_code || '—',
             Number(p.price || 0).toFixed(2),
             discountDisplay,
             lineAmounts(p).rate.toFixed(2),
@@ -1062,110 +1033,66 @@ exports.exportQuotation = async (req, res) => {
           ]);
         });
 
-        sheetData.push([""]); // empty line between rooms
+        sheetData.push(['']); // empty line between rooms
       }
 
-      sheetData.push([""]); // empty line between floors
+      sheetData.push(['']); // empty line between floors
     }
 
     // Summary section
-    sheetData.push(["", "", "", "", "", "", "Summary", "", ""]);
-    sheetData.push([
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "Subtotal",
-      "",
-      subTotal.toFixed(2),
-    ]);
-    sheetData.push([
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "Item Discount",
-      "",
-      totalItemDiscount.toFixed(2),
-    ]);
+    sheetData.push(['', '', '', '', '', '', 'Summary', '', '']);
+    sheetData.push(['', '', '', '', '', '', 'Subtotal', '', subTotal.toFixed(2)]);
+    sheetData.push(['', '', '', '', '', '', 'Item Discount', '', totalItemDiscount.toFixed(2)]);
 
     if (extraDiscountAmount > 0) {
       sheetData.push([
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        `Extra Discount ${quotation.extraDiscountType === "percent" ? `(${quotation.extraDiscount}%)` : ""}`,
-        "",
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        `Extra Discount ${quotation.extraDiscountType === 'percent' ? `(${quotation.extraDiscount}%)` : ''}`,
+        '',
         extraDiscountAmount.toFixed(2),
       ]);
     }
 
+    sheetData.push(['', '', '', '', '', '', 'Tax (if any)', '', totalTax.toFixed(2)]);
     sheetData.push([
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "Tax (if any)",
-      "",
-      totalTax.toFixed(2),
-    ]);
-    sheetData.push([
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "Shipping Charges",
-      "",
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      'Shipping Charges',
+      '',
       (quotation.shippingAmount || 0).toFixed(2),
     ]);
-    for (const row of normalizeCharges(quotation.miscellaneousChargeItems ?? quotation.miscellaneousCharges)) {
-      sheetData.push(["", "", "", "", "", "", row.name, "", row.amount.toFixed(2)]);
+    for (const row of normalizeCharges(
+      quotation.miscellaneousChargeItems ?? quotation.miscellaneousCharges,
+    )) {
+      sheetData.push(['', '', '', '', '', '', row.name, '', row.amount.toFixed(2)]);
     }
-    for (const [key, label] of [["additionalDiscount", "Additional discount"], ["flatPrice", "Flat goods price (override)"]]) {
-      if (quotation[key] != null && (key === "flatPrice" || Number(quotation[key]))) sheetData.push(["", "", "", "", "", "", label, "", Number(quotation[key]).toFixed(2)]);
+    for (const [key, label] of [
+      ['additionalDiscount', 'Additional discount'],
+      ['flatPrice', 'Flat goods price (override)'],
+    ]) {
+      if (quotation[key] != null && (key === 'flatPrice' || Number(quotation[key])))
+        sheetData.push(['', '', '', '', '', '', label, '', Number(quotation[key]).toFixed(2)]);
     }
-    sheetData.push(["", "", "", "", "", "", "GST", "", gstAmount.toFixed(2)]);
-    sheetData.push([
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "Round Off",
-      "",
-      (quotation.roundOff || 0).toFixed(2),
-    ]);
-    sheetData.push([
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "GRAND TOTAL",
-      "",
-      finalTotal.toFixed(2),
-    ]);
+    sheetData.push(['', '', '', '', '', '', 'GST', '', gstAmount.toFixed(2)]);
+    sheetData.push(['', '', '', '', '', '', 'Round Off', '', (quotation.roundOff || 0).toFixed(2)]);
+    sheetData.push(['', '', '', '', '', '', 'GRAND TOTAL', '', finalTotal.toFixed(2)]);
 
     // Create workbook
-    const XLSX = require("xlsx"); // make sure it's imported at top if not already
+    const XLSX = require('xlsx'); // make sure it's imported at top if not already
     const workbook = XLSX.utils.book_new();
     const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
 
     // Column widths
-    worksheet["!cols"] = [
+    worksheet['!cols'] = [
       { wch: 6 }, // S.No
       { wch: 25 }, // Image
       { wch: 35 }, // Name
@@ -1177,23 +1104,21 @@ exports.exportQuotation = async (req, res) => {
       { wch: 14 }, // Total
     ];
 
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Quotation");
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Quotation');
 
-    const buffer = XLSX.write(workbook, { bookType: "xlsx", type: "buffer" });
+    const buffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer' });
 
     res.setHeader(
-      "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     );
     res.setHeader(
-      "Content-Disposition",
-      `attachment; filename=Quotation_${quotation.reference_number || id}${version ? `_v${version}` : ""}.xlsx`,
+      'Content-Disposition',
+      `attachment; filename=Quotation_${quotation.reference_number || id}${version ? `_v${version}` : ''}.xlsx`,
     );
     res.send(buffer);
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Failed to export quotation", error: error.message });
+    res.status(500).json({ message: 'Failed to export quotation', error: error.message });
   }
 };
 
@@ -1211,7 +1136,7 @@ exports.cloneQuotation = async (req, res) => {
 
     if (!original) {
       await t.rollback();
-      return res.status(404).json({ message: "Quotation not found" });
+      return res.status(404).json({ message: 'Quotation not found' });
     }
 
     const originalItemsDoc = await QuotationItem.findOne({ quotationId: id });
@@ -1221,43 +1146,29 @@ exports.cloneQuotation = async (req, res) => {
         : originalItemsDoc?.items || [];
     if (!Array.isArray(originalProducts) || originalProducts.length === 0) {
       await t.rollback();
-      return res
-        .status(400)
-        .json({ message: "No products found in original quotation" });
+      return res.status(400).json({ message: 'No products found in original quotation' });
     }
 
     // Parse if stored as string (safety for MySQL)
-    if (typeof originalProducts === "string") {
+    if (typeof originalProducts === 'string') {
       try {
         originalProducts = JSON.parse(originalProducts);
       } catch (e) {
         await t.rollback();
-        return res
-          .status(400)
-          .json({ error: "Invalid products data in original quotation" });
+        return res.status(400).json({ error: 'Invalid products data in original quotation' });
       }
     }
 
     // ─── Fetch latest product master data ───
     const productIds = [
-      ...new Set(
-        originalProducts.map((p) => p.productId || p.id).filter(Boolean),
-      ),
+      ...new Set(originalProducts.map((p) => p.productId || p.id).filter(Boolean)),
     ];
 
     const productMap = {};
     if (productIds.length > 0) {
       const dbProducts = await Product.findAll({
         where: { productId: productIds },
-        attributes: [
-          "productId",
-          "name",
-          "images",
-          "product_code",
-          "meta",
-          "tax",
-          "discountType",
-        ],
+        attributes: ['productId', 'name', 'images', 'product_code', 'meta', 'tax', 'discountType'],
         transaction: t,
       });
 
@@ -1265,20 +1176,18 @@ exports.cloneQuotation = async (req, res) => {
         const imageUrl = extractFirstImageUrl(p.images);
 
         productMap[p.productId] = {
-          name: p.name?.trim() || "Unnamed Product",
+          name: p.name?.trim() || 'Unnamed Product',
           imageUrl,
           productCode: p.product_code || null,
           companyCode: getMetaValue(p.meta, META_SLUGS.companyCode),
           tax: p.tax || 0,
-          discountType: p.discountType || "percent",
+          discountType: p.discountType || 'percent',
         };
       });
     }
 
     // ─── Enrich products (same logic as createQuotation) ───
-    const originalFloors = Array.isArray(original.floors)
-      ? original.floors
-      : [];
+    const originalFloors = Array.isArray(original.floors) ? original.floors : [];
 
     const enrichedProducts = originalProducts.map((p) => {
       const id = p.productId || p.id;
@@ -1287,7 +1196,7 @@ exports.cloneQuotation = async (req, res) => {
       const price = Number(p.price || 0);
       const totalQuantity = Number(p.quantity) || 1;
       const discount = Number(p.discount || 0);
-      const discountType = p.discountType || db.discountType || "percent";
+      const discountType = p.discountType || db.discountType || 'percent';
 
       const locations = normalizeLocations(p, totalQuantity, originalFloors);
 
@@ -1295,7 +1204,7 @@ exports.cloneQuotation = async (req, res) => {
 
       return {
         productId: id,
-        name: p.name || db.name || "Unknown Product",
+        name: p.name || db.name || 'Unknown Product',
         imageUrl: p.imageUrl || db.imageUrl || null,
         companyCode: p.companyCode || db.companyCode || null,
         productCode: p.productCode || db.productCode || null,
@@ -1304,7 +1213,7 @@ exports.cloneQuotation = async (req, res) => {
         price: Number(price.toFixed(2)),
         discount: Number(discount.toFixed(2)),
         additionalDiscount: Number(p.additionalDiscount) || 0,
-        flatPrice: p.flatPrice == null || p.flatPrice === "" ? null : Number(p.flatPrice),
+        flatPrice: p.flatPrice == null || p.flatPrice === '' ? null : Number(p.flatPrice),
         discountType,
         tax: 0,
         priority: Number(p.priority ?? 0),
@@ -1330,7 +1239,7 @@ exports.cloneQuotation = async (req, res) => {
     const totals = calculateTotals(
       enrichedProducts,
       Number(original.extraDiscount || 0),
-      original.extraDiscountType || "percent",
+      original.extraDiscountType || 'percent',
       Number(original.shippingAmount || 0),
       Number(original.gst || 0),
       original,
@@ -1346,7 +1255,7 @@ exports.cloneQuotation = async (req, res) => {
       {
         quotationId: newId,
         document_title: `${original.document_title} (Duplicate)`,
-        quotation_date: new Date().toISOString().split("T")[0],
+        quotation_date: new Date().toISOString().split('T')[0],
         due_date: original.due_date,
         reference_number,
         customerId: original.customerId,
@@ -1358,18 +1267,20 @@ exports.cloneQuotation = async (req, res) => {
         totalFloors: floors.length,
 
         extraDiscount: Number(original.extraDiscount) || 0,
-        extraDiscountType: original.extraDiscountType || "percent",
+        extraDiscountType: original.extraDiscountType || 'percent',
         discountAmount: totals.extraDiscountAmount,
         miscellaneousChargeItems: original.miscellaneousChargeItems,
-        miscellaneousCharges: original.miscellaneousCharges, additionalDiscount: original.additionalDiscount, flatPrice: original.flatPrice,
+        miscellaneousCharges: original.miscellaneousCharges,
+        additionalDiscount: original.additionalDiscount,
+        flatPrice: original.flatPrice,
         shippingAmount: Number(original.shippingAmount) || 0,
         gst: Number(original.gst) || 0,
         gstAmount: totals.gstAmount,
         roundOff: totals.roundOff,
         finalAmount: totals.finalAmount,
 
-        signature_name: original.signature_name || "",
-        signature_image: original.signature_image || "",
+        signature_name: original.signature_name || '',
+        signature_image: original.signature_image || '',
         followupDates: original.followupDates || null,
       },
       { transaction: t },
@@ -1384,9 +1295,9 @@ exports.cloneQuotation = async (req, res) => {
     await t.commit();
     await logActivity({
       userId: req.user?.userId,
-      contextTag: "SALES",
-      subContext: "QUOTATION",
-      action: "CLONE_QUOTATION",
+      contextTag: 'SALES',
+      subContext: 'QUOTATION',
+      action: 'CLONE_QUOTATION',
       entityId: cloned.quotationId,
       entityName: reference_number,
       description: `Quotation cloned from ${original.reference_number}`,
@@ -1406,14 +1317,14 @@ exports.cloneQuotation = async (req, res) => {
         productCount: enrichedProducts.length,
         floorCount: floors.length,
 
-        cloneType: "FULL_DUPLICATE",
+        cloneType: 'FULL_DUPLICATE',
         includesPricingRecalculation: true,
       },
 
       req,
     });
     return res.status(201).json({
-      message: "Quotation cloned successfully",
+      message: 'Quotation cloned successfully',
       clonedQuotation: {
         ...cloned.toJSON(),
         finalAmount: totals.finalAmount,
@@ -1424,7 +1335,7 @@ exports.cloneQuotation = async (req, res) => {
     await t.rollback().catch(() => {});
 
     return res.status(500).json({
-      error: "Failed to clone quotation",
+      error: 'Failed to clone quotation',
       message: error.message,
     });
   }
@@ -1442,7 +1353,7 @@ exports.restoreQuotationVersion = async (req, res) => {
     });
     if (!versionData) {
       await t.rollback();
-      return res.status(404).json({ message: "Version not found" });
+      return res.status(404).json({ message: 'Version not found' });
     }
 
     await Quotation.update(
@@ -1468,18 +1379,14 @@ exports.restoreQuotationVersion = async (req, res) => {
 
     await sendNotification({
       userId: req.user.userId,
-      title: "Quotation Restored",
+      title: 'Quotation Restored',
       message: `Quotation "${id}" restored to version ${version}.`,
     });
 
-    res
-      .status(200)
-      .json({ message: `Quotation restored to version ${version}` });
+    res.status(200).json({ message: `Quotation restored to version ${version}` });
   } catch (error) {
     await t.rollback();
-    res
-      .status(500)
-      .json({ error: "Failed to restore quotation", details: error.message });
+    res.status(500).json({ error: 'Failed to restore quotation', details: error.message });
   }
 };
 
@@ -1488,7 +1395,7 @@ exports.getQuotationById = async (req, res) => {
   try {
     const quotation = await Quotation.findByPk(req.params.id);
     if (!quotation) {
-      return res.status(404).json({ message: "Quotation not found" });
+      return res.status(404).json({ message: 'Quotation not found' });
     }
 
     const mongoDoc = await QuotationItem.findOne({
@@ -1499,7 +1406,7 @@ exports.getQuotationById = async (req, res) => {
     // Group for frontend convenience
     const grouped = {};
     items.forEach((item) => {
-      const gid = item.groupId || "ungrouped";
+      const gid = item.groupId || 'ungrouped';
       if (!grouped[gid]) grouped[gid] = { main: null, options: [] };
       if (!item.isOptionFor) {
         grouped[gid].main = item;
@@ -1521,7 +1428,7 @@ exports.getQuotationById = async (req, res) => {
 
     const days = await pipeline.validityDays();
     const orders = await sequelize.query(
-      "SELECT id, orderNo, status FROM orders WHERE quotationId = ? ORDER BY createdAt",
+      'SELECT id, orderNo, status FROM orders WHERE quotationId = ? ORDER BY createdAt',
       { replacements: [quotation.quotationId], type: sequelize.QueryTypes.SELECT },
     );
     res.status(200).json({
@@ -1558,8 +1465,8 @@ exports.getAllQuotations = async (req, res) => {
       where[Op.or] = [
         { document_title: { [Op.like]: searchTerm } },
         { reference_number: { [Op.like]: searchTerm } },
-        { "$customer.name$": { [Op.like]: searchTerm } },
-        { "$customer.mobileNumber$": { [Op.like]: searchTerm } },
+        { '$customer.name$': { [Op.like]: searchTerm } },
+        { '$customer.mobileNumber$': { [Op.like]: searchTerm } },
       ];
     }
 
@@ -1569,7 +1476,10 @@ exports.getAllQuotations = async (req, res) => {
 
     await pipeline.expireOverdue().catch(() => {});
     if (req.query.status) {
-      const list = String(req.query.status).toUpperCase().split(",").filter((s) => pipeline.STATUSES.includes(s));
+      const list = String(req.query.status)
+        .toUpperCase()
+        .split(',')
+        .filter((s) => pipeline.STATUSES.includes(s));
       if (list.length) where.status = list.length === 1 ? list[0] : { [Op.in]: list };
     }
     if (req.query.followUpDue) {
@@ -1594,29 +1504,28 @@ exports.getAllQuotations = async (req, res) => {
     // =====================================
     // Main Query with Associations
     // =====================================
-    const { count: totalQuotations, rows: quotations } =
-      await Quotation.findAndCountAll({
-        where,
-        offset,
-        limit,
-        order: [["quotation_date", "DESC"]],
-        subQuery: false,
+    const { count: totalQuotations, rows: quotations } = await Quotation.findAndCountAll({
+      where,
+      offset,
+      limit,
+      order: [['quotation_date', 'DESC']],
+      subQuery: false,
 
-        include: [
-          {
-            model: Customer,
-            as: "customer",
-            attributes: ["customerId", "name", "companyName", "mobileNumber"],
-            required: false,
-          },
-          {
-            model: User,
-            as: "creator", // Must match Quotation model
-            attributes: ["userId", "name", "username"],
-            required: false,
-          },
-        ],
-      });
+      include: [
+        {
+          model: Customer,
+          as: 'customer',
+          attributes: ['customerId', 'name', 'companyName', 'mobileNumber'],
+          required: false,
+        },
+        {
+          model: User,
+          as: 'creator', // Must match Quotation model
+          attributes: ['userId', 'name', 'username'],
+          required: false,
+        },
+      ],
+    });
 
     if (quotations.length === 0) {
       return res.status(200).json({
@@ -1657,12 +1566,9 @@ exports.getAllQuotations = async (req, res) => {
         items: itemsMap[plain.quotationId] || [],
 
         // Flattened fields (Best for Reports / PDF)
-        customerName:
-          plain.customer?.name ||
-          plain.customer?.companyName ||
-          "Walk-in Customer",
+        customerName: plain.customer?.name || plain.customer?.companyName || 'Walk-in Customer',
 
-        createdByName: plain.creator?.name || "Unknown",
+        createdByName: plain.creator?.name || 'Unknown',
 
         // Keep original nested objects for flexibility
         customer: plain.customer,
@@ -1680,10 +1586,10 @@ exports.getAllQuotations = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Get All Quotations Error:", error);
+    console.error('Get All Quotations Error:', error);
     return res.status(500).json({
-      message: "Error fetching quotations",
-      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+      message: 'Error fetching quotations',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
   }
 };
@@ -1693,17 +1599,17 @@ exports.deleteQuotation = async (req, res) => {
   try {
     const quotation = await Quotation.findByPk(req.params.id);
     if (!quotation) {
-      return res.status(404).json({ message: "Quotation not found" });
+      return res.status(404).json({ message: 'Quotation not found' });
     }
     // Check if user is admin, super admin, or the creator
     if (
-      !req.user.roles.includes("ADMIN") &&
-      !req.user.roles.includes("SUPER_ADMIN") &&
+      !req.user.roles.includes('ADMIN') &&
+      !req.user.roles.includes('SUPER_ADMIN') &&
       req.user.userId !== quotation.createdBy
     ) {
       return res.status(403).json({
         message:
-          "Unauthorized: Only admins, super admins, or the creator can delete this quotation",
+          'Unauthorized: Only admins, super admins, or the creator can delete this quotation',
       });
     }
     await Quotation.destroy({
@@ -1712,9 +1618,9 @@ exports.deleteQuotation = async (req, res) => {
     await QuotationItem.deleteOne({ quotationId: req.params.id });
     await logActivity({
       userId: req.user?.userId,
-      contextTag: "SALES",
-      subContext: "QUOTATION",
-      action: "DELETE_QUOTATION",
+      contextTag: 'SALES',
+      subContext: 'QUOTATION',
+      action: 'DELETE_QUOTATION',
       entityId: quotation.quotationId,
       entityName: quotation.reference_number || quotation.quotationId,
       description: `Quotation ${quotation.reference_number || quotation.quotationId} deleted`,
@@ -1727,19 +1633,19 @@ exports.deleteQuotation = async (req, res) => {
       },
 
       metadata: {
-        deletionType: "HARD_DELETE",
+        deletionType: 'HARD_DELETE',
 
-        isAdminAction: req.user.roles.includes("ADMIN"),
+        isAdminAction: req.user.roles.includes('ADMIN'),
         isOwnerAction: req.user.userId === quotation.createdBy,
 
-        warning: "Quotation permanently deleted",
+        warning: 'Quotation permanently deleted',
 
         hasMongoCleanup: true,
       },
 
       req,
     });
-    res.status(200).json({ message: "Quotation deleted successfully" });
+    res.status(200).json({ message: 'Quotation deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -1754,17 +1660,17 @@ exports.getQuotationVersions = async (req, res) => {
       .lean(); // ← Important: removes Mongoose wrappers
 
     if (!versions || versions.length === 0) {
-      return res.status(404).json({ message: "No versions found" });
+      return res.status(404).json({ message: 'No versions found' });
     }
 
     // Transform to clean, predictable shape
     const cleanedVersions = versions.map((v) => ({
       version: v.version,
-      updatedBy: v.updatedBy || "Unknown",
+      updatedBy: v.updatedBy || 'Unknown',
       updatedAt: v.updatedAt,
       // Use saved PostgreSQL data if available, fallback to stored
       finalAmount: v.quotationData?.finalAmount || 0,
-      document_title: v.quotationData?.document_title || "Untitled Quotation",
+      document_title: v.quotationData?.document_title || 'Untitled Quotation',
       customerId: v.quotationData?.customerId,
       quotation_date: v.quotationData?.quotation_date,
       // Items count
@@ -1777,18 +1683,17 @@ exports.getQuotationVersions = async (req, res) => {
     res.status(200).json(cleanedVersions);
   } catch (error) {
     res.status(500).json({
-      error: "Failed to retrieve versions",
+      error: 'Failed to retrieve versions',
       details: error.message,
     });
   }
 };
 
-
 // ─────────────────────────────────────────────────────────────
 // New quotation format: server-made PDF and customer share links
 // ─────────────────────────────────────────────────────────────
-const { buildQuotationPdf, buildDraftQuotationPdf } = require("./quotation-pdf");
-const { signShare } = require("../../lib/shareToken");
+const { buildQuotationPdf, buildDraftQuotationPdf } = require('./quotation-pdf');
+const { signShare } = require('../../lib/shareToken');
 
 // GET /api/quotation/:id/pdf?style=detailed|compact|areawise&cover=1&version=N&download=1
 exports.getQuotationPdf = async (req, res) => {
@@ -1797,21 +1702,24 @@ exports.getQuotationPdf = async (req, res) => {
       style: req.query.style,
       exportOptions: req.query.exportOptions ? JSON.parse(req.query.exportOptions) : {},
       // no "cover" in the link → the cover-page setting decides
-      cover: req.query.cover == null || req.query.cover === "" ? null : ["1", "true", "yes"].includes(String(req.query.cover)),
+      cover:
+        req.query.cover == null || req.query.cover === ''
+          ? null
+          : ['1', 'true', 'yes'].includes(String(req.query.cover)),
       version: req.query.version || null,
     });
-    res.setHeader("X-Quotation-Pages", encodeURIComponent(JSON.stringify(pageLabels)));
-    res.setHeader("Access-Control-Expose-Headers", "Content-Disposition, X-Quotation-Pages");
-    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader('X-Quotation-Pages', encodeURIComponent(JSON.stringify(pageLabels)));
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition, X-Quotation-Pages');
+    res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
-      "Content-Disposition",
-      `${req.query.download ? "attachment" : "inline"}; filename="${filename}"`,
+      'Content-Disposition',
+      `${req.query.download ? 'attachment' : 'inline'}; filename="${filename}"`,
     );
-    res.setHeader("Cache-Control", "no-store");
+    res.setHeader('Cache-Control', 'no-store');
     return res.send(buffer);
   } catch (err) {
-    console.error("Quotation PDF:", err);
-    return res.status(err.status || 500).json({ message: err.message || "Could not make the PDF" });
+    console.error('Quotation PDF:', err);
+    return res.status(err.status || 500).json({ message: err.message || 'Could not make the PDF' });
   }
 };
 
@@ -1819,18 +1727,19 @@ exports.getQuotationPdf = async (req, res) => {
 exports.previewDraftPdf = async (req, res) => {
   try {
     const draft = req.body?.draft || {};
-    if (!Array.isArray(draft.products) || !draft.products.length) return res.status(400).json({ message: "Add products to preview" });
+    if (!Array.isArray(draft.products) || !draft.products.length)
+      return res.status(400).json({ message: 'Add products to preview' });
     const { buffer } = await buildDraftQuotationPdf(draft, {
       style: req.body?.style,
       cover: req.body?.cover == null ? null : Boolean(req.body.cover),
     });
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", 'inline; filename="Quotation-draft.pdf"');
-    res.setHeader("Cache-Control", "no-store");
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'inline; filename="Quotation-draft.pdf"');
+    res.setHeader('Cache-Control', 'no-store');
     return res.send(buffer);
   } catch (err) {
-    console.error("Draft quotation PDF:", err);
-    return res.status(err.status || 500).json({ message: err.message || "Could not make the PDF" });
+    console.error('Draft quotation PDF:', err);
+    return res.status(err.status || 500).json({ message: err.message || 'Could not make the PDF' });
   }
 };
 
@@ -1838,35 +1747,52 @@ exports.previewDraftPdf = async (req, res) => {
 exports.createShareLink = async (req, res) => {
   try {
     const quotation = await Quotation.findByPk(req.params.id, {
-      attributes: ["quotationId", "reference_number", "customerId", "finalAmount"],
+      attributes: ['quotationId', 'reference_number', 'customerId', 'finalAmount'],
     });
-    if (!quotation) return res.status(404).json({ message: "Quotation not found" });
-    const style = ["detailed", "compact", "areawise"].includes(req.body?.style) ? req.body.style : "detailed";
+    if (!quotation) return res.status(404).json({ message: 'Quotation not found' });
+    const style = ['detailed', 'compact', 'areawise'].includes(req.body?.style)
+      ? req.body.style
+      : 'detailed';
     const days = Math.min(Math.max(Number(req.body?.days) || 30, 1), 90);
-    const token = signShare({ t: "q", id: quotation.quotationId, s: style, c: req.body?.cover == null ? null : req.body.cover ? 1 : 0 }, days);
-    const base = (process.env.PUBLIC_BACKEND_URL || `${req.protocol}://${req.get("host")}`).replace(/\/+$/, "");
+    const token = signShare(
+      {
+        t: 'q',
+        id: quotation.quotationId,
+        s: style,
+        c: req.body?.cover == null ? null : req.body.cover ? 1 : 0,
+      },
+      days,
+    );
+    const base = (process.env.PUBLIC_BACKEND_URL || `${req.protocol}://${req.get('host')}`).replace(
+      /\/+$/,
+      '',
+    );
     const url = `${base}/api/public/q/${token}.pdf`;
-    const customer = quotation.customerId ? await Customer.findByPk(quotation.customerId, { attributes: ["name", "mobileNumber"] }) : null;
+    const customer = quotation.customerId
+      ? await Customer.findByPk(quotation.customerId, { attributes: ['name', 'mobileNumber'] })
+      : null;
     const itemsDoc = await QuotationItem.findOne({ quotationId: quotation.quotationId }).lean();
     const full = await Quotation.findByPk(quotation.quotationId);
     const total = calculateTotals(
       itemsDoc?.items || [],
       full.extraDiscount || 0,
-      full.extraDiscountType || "percent",
+      full.extraDiscountType || 'percent',
       full.shippingAmount || 0,
       full.gst || 0,
       full,
     ).finalAmount;
-    const amount = Number(total || quotation.finalAmount || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 });
-    const message = `Dear ${customer?.name || "Sir/Madam"}, please find our quotation ${quotation.reference_number} for ₹${amount}: ${url}\n— CM Trading Co.`;
-    const phone = String(customer?.mobileNumber || "").replace(/\D/g, "");
+    const amount = Number(total || quotation.finalAmount || 0).toLocaleString('en-IN', {
+      maximumFractionDigits: 0,
+    });
+    const message = `Dear ${customer?.name || 'Sir/Madam'}, please find our quotation ${quotation.reference_number} for ₹${amount}: ${url}\n— CM Trading Co.`;
+    const phone = String(customer?.mobileNumber || '').replace(/\D/g, '');
     const waPhone = phone.length === 10 ? `91${phone}` : phone;
     await pipeline.markSent(quotation.quotationId, { userId: req.user?.userId }).catch(() => {});
     logActivity({
       userId: req.user?.userId,
-      contextTag: ActivityLog.CONTEXT_TAGS?.SALES || "SALES",
-      subContext: "QUOTATION",
-      action: "SHARE_LINK_CREATED",
+      contextTag: ActivityLog.CONTEXT_TAGS?.SALES || 'SALES',
+      subContext: 'QUOTATION',
+      action: 'SHARE_LINK_CREATED',
       entityId: quotation.quotationId,
       entityName: quotation.reference_number,
       description: `Share link created for quotation ${quotation.reference_number} (${days} days)`,
@@ -1882,16 +1808,20 @@ exports.createShareLink = async (req, res) => {
   }
 };
 
-
 // ───────────────────────── Pipeline ─────────────────────────
 const pipelineFail = (res, err) =>
-  res.status(err.status || 500).json({ message: err.message || "Request failed" });
+  res.status(err.status || 500).json({ message: err.message || 'Request failed' });
 
 // GET /api/quotation/pipeline/summary?mine=1
 exports.pipelineSummary = async (req, res) => {
   try {
     const data = await pipeline.summary({ createdBy: req.query.mine ? req.user?.userId : null });
-    res.json({ ...data, statuses: pipeline.STATUSES, lostReasons: pipeline.LOST_REASONS, channels: pipeline.CHANNELS });
+    res.json({
+      ...data,
+      statuses: pipeline.STATUSES,
+      lostReasons: pipeline.LOST_REASONS,
+      channels: pipeline.CHANNELS,
+    });
   } catch (err) {
     pipelineFail(res, err);
   }
@@ -1925,7 +1855,7 @@ exports.listFollowUps = async (req, res) => {
 exports.addFollowUp = async (req, res) => {
   try {
     const f = await pipeline.addFollowUp(req.params.id, { ...req.body, userId: req.user?.userId });
-    res.status(201).json({ message: "Follow-up saved", followUp: f });
+    res.status(201).json({ message: 'Follow-up saved', followUp: f });
   } catch (err) {
     pipelineFail(res, err);
   }

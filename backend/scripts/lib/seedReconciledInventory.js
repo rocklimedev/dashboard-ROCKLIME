@@ -1,64 +1,58 @@
-const fs = require("node:fs/promises");
-const path = require("node:path");
+const fs = require('node:fs/promises');
+const path = require('node:path');
 
-const BRAND_ID = "acbe7061-9b76-47d1-a509-e4b1f982a36f";
+const BRAND_ID = 'acbe7061-9b76-47d1-a509-e4b1f982a36f';
 const META_KEYS = [
-  "d11da9f9-3f2e-4536-8236-9671200cca4a",
-  "9ba862ef-f993-4873-95ef-1fef10036aa5",
-  "b9e1df45-113d-11f1-b773-52540021303b",
+  'd11da9f9-3f2e-4536-8236-9671200cca4a',
+  '9ba862ef-f993-4873-95ef-1fef10036aa5',
+  'b9e1df45-113d-11f1-b773-52540021303b',
 ];
 const COLUMNS = [
-  "productId",
-  "name",
-  "product_code",
-  "quantity",
-  "discountType",
-  "alert_quantity",
-  "tax",
-  "description",
-  "images",
-  "brandId",
-  "categoryId",
-  "createdAt",
-  "updatedAt",
-  "isFeatured",
-  "status",
-  "vendorId",
-  "brand_parentcategoriesId",
-  "meta",
-  "masterProductId",
-  "isMaster",
-  "variantOptions",
-  "variantKey",
-  "skuSuffix",
+  'productId',
+  'name',
+  'product_code',
+  'quantity',
+  'discountType',
+  'alert_quantity',
+  'tax',
+  'description',
+  'images',
+  'brandId',
+  'categoryId',
+  'createdAt',
+  'updatedAt',
+  'isFeatured',
+  'status',
+  'vendorId',
+  'brand_parentcategoriesId',
+  'meta',
+  'masterProductId',
+  'isMaster',
+  'variantOptions',
+  'variantKey',
+  'skuSuffix',
 ];
 const normalize = (value) =>
-  String(value ?? "")
+  String(value ?? '')
     .trim()
     .toUpperCase();
 function objectMeta(value) {
-  const parsed =
-    typeof value === "string" ? (value.trim() ? JSON.parse(value) : {}) : value;
+  const parsed = typeof value === 'string' ? (value.trim() ? JSON.parse(value) : {}) : value;
   if (parsed == null) return {};
-  if (typeof parsed !== "object" || Array.isArray(parsed))
-    throw new Error("Product meta must be an object");
+  if (typeof parsed !== 'object' || Array.isArray(parsed))
+    throw new Error('Product meta must be an object');
   return parsed;
 }
 function validatePayloads(existing, fresh) {
   if (!Array.isArray(existing) || !Array.isArray(fresh))
-    throw new Error("Product files must contain arrays");
+    throw new Error('Product files must contain arrays');
   const ids = new Set(),
     codes = new Set(),
     companyCodes = new Set();
   for (const product of [...existing, ...fresh]) {
-    if (
-      !/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(
-        product.productId || "",
-      )
-    )
-      throw new Error("Invalid productId");
-    if (product.brandId !== BRAND_ID)
-      throw new Error(`Unexpected brand for ${product.productId}`);
+    if (!/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(product.productId || ''))
+      throw new Error('Invalid productId');
+    if (product.brandId !== BRAND_ID) throw new Error(`Unexpected brand for ${product.productId}`);
     if (
       !product.name?.trim() ||
       product.name.length > 255 ||
@@ -68,8 +62,7 @@ function validatePayloads(existing, fresh) {
       throw new Error(`Invalid name/code for ${product.productId}`);
     const meta = objectMeta(product.meta);
     const companyCode = normalize(meta[META_KEYS[0]]);
-    if (!companyCode)
-      throw new Error(`Missing company code for ${product.productId}`);
+    if (!companyCode) throw new Error(`Missing company code for ${product.productId}`);
     if (
       ids.has(product.productId) ||
       codes.has(normalize(product.product_code)) ||
@@ -90,14 +83,13 @@ function insertRow(product) {
   }
   row.meta = { ...objectMeta(row.meta) };
   delete row.meta.inventorySource;
-  for (const column of ["meta", "images", "variantOptions"]) {
+  for (const column of ['meta', 'images', 'variantOptions']) {
     if (row[column] != null) {
-      const value =
-        typeof row[column] === "string" ? JSON.parse(row[column]) : row[column];
+      const value = typeof row[column] === 'string' ? JSON.parse(row[column]) : row[column];
       row[column] = JSON.stringify(value);
     }
   }
-  for (const column of ["createdAt", "updatedAt"]) {
+  for (const column of ['createdAt', 'updatedAt']) {
     row[column] = new Date(row[column]);
     if (Number.isNaN(row[column].getTime()))
       throw new Error(`Invalid ${column} for ${row.productId}`);
@@ -117,7 +109,7 @@ async function seedPayloads(queryInterface, existing, fresh) {
       skipped = 0;
     async function findIdentity(product) {
       const [rows] = await sequelize.query(
-        "SELECT productId, product_code, brandId, meta FROM products WHERE productId = :id OR product_code = :code FOR UPDATE",
+        'SELECT productId, product_code, brandId, meta FROM products WHERE productId = :id OR product_code = :code FOR UPDATE',
         {
           ...options,
           replacements: { id: product.productId, code: product.product_code },
@@ -148,7 +140,7 @@ async function seedPayloads(queryInterface, existing, fresh) {
         if (Object.hasOwn(importedMeta, key)) meta[key] = importedMeta[key];
       delete meta.inventorySource;
       await queryInterface.bulkUpdate(
-        "products",
+        'products',
         {
           name: product.name,
           description: product.description,
@@ -165,9 +157,7 @@ async function seedPayloads(queryInterface, existing, fresh) {
       const rows = await findIdentity(product);
       if (rows.length) {
         if (rows.length !== 1 || !sameIdentity(rows[0], product))
-          throw new Error(
-            `New product ID/code conflict: ${product.productId}. Reconcile again.`,
-          );
+          throw new Error(`New product ID/code conflict: ${product.productId}. Reconcile again.`);
         skipped++;
         continue;
       }
@@ -185,10 +175,8 @@ async function seedPayloads(queryInterface, existing, fresh) {
         },
       );
       if (companyMatches.length)
-        throw new Error(
-          `Company code already exists: ${companyCode}. Reconcile again.`,
-        );
-      await queryInterface.bulkInsert("products", [inserts[index]], options);
+        throw new Error(`Company code already exists: ${companyCode}. Reconcile again.`);
+      await queryInterface.bulkInsert('products', [inserts[index]], options);
       inserted++;
     }
     return { updated, inserted, skipped };
@@ -198,13 +186,13 @@ async function seedPayloads(queryInterface, existing, fresh) {
 async function seedFiles(queryInterface) {
   const directory = path.resolve(
     process.env.INVENTORY_RECONCILIATION_DIR ||
-      path.join(__dirname, "..", "json-outputs", "inventory-reconciliation"),
+      path.join(__dirname, '..', 'json-outputs', 'inventory-reconciliation'),
   );
   const [existing, fresh] = await Promise.all(
-    ["existing-products.json", "new-products.json"].map(async (filename) => {
+    ['existing-products.json', 'new-products.json'].map(async (filename) => {
       const file = path.join(directory, filename);
       try {
-        return JSON.parse(await fs.readFile(file, "utf8"));
+        return JSON.parse(await fs.readFile(file, 'utf8'));
       } catch (error) {
         throw new Error(`Cannot read ${file}: ${error.message}`);
       }

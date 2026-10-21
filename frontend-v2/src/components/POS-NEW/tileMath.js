@@ -1,7 +1,7 @@
 // Tile area → boxes maths, shared by the cart calculator and its check.
 export function coverageFromProduct(product) {
   const m = (product?.metaDetails || []).find(
-    (x) => x.slug === "coveragePerBox" || /^coverage/i.test(x.title || ""),
+    (x) => x.slug === 'coveragePerBox' || /^coverage/i.test(x.title || ''),
   );
   const v = Number(m?.value);
   return Number.isFinite(v) && v > 0 ? v : null;

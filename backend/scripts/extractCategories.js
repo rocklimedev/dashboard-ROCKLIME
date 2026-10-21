@@ -1,14 +1,14 @@
-const fs = require("fs");
-const path = require("path");
-const { v4: uuidv4 } = require("uuid");
-const slugify = require("slugify");
+const fs = require('fs');
+const path = require('path');
+const { v4: uuidv4 } = require('uuid');
+const slugify = require('slugify');
 
-const products = require("./json-outputs/all_sheets_data.json");
+const products = require('./json-outputs/all_sheets_data.json');
 
 // ---------------------------------------------------
 // CONFIG
 // ---------------------------------------------------
-const BRAND_ID = "acbe7061-9b76-47d1-a509-e4b1f982a36f";
+const BRAND_ID = 'acbe7061-9b76-47d1-a509-e4b1f982a36f';
 
 // ---------------------------------------------------
 // STORAGE
@@ -83,7 +83,7 @@ for (const item of products) {
   // ---------------------------------------------------
   if (item.keywords && category) {
     item.keywords
-      .split(",")
+      .split(',')
       .map((k) => k.trim().toLowerCase())
       .filter(Boolean)
       .forEach((keywordName) => {
@@ -134,12 +134,9 @@ const result = {
 // ---------------------------------------------------
 // SAVE
 // ---------------------------------------------------
-fs.writeFileSync(
-  path.join(__dirname, "seedable-data.json"),
-  JSON.stringify(result, null, 2),
-);
+fs.writeFileSync(path.join(__dirname, 'seedable-data.json'), JSON.stringify(result, null, 2));
 
-console.log("✅ Seedable data generated");
+console.log('✅ Seedable data generated');
 
 console.log(`
 Categories: ${result.categories.length}

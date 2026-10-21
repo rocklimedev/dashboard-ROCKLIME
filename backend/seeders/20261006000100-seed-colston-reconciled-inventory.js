@@ -7,6 +7,8 @@ module.exports = {
     await seedFiles(queryInterface);
   },
   async down() {
-    throw new Error('Automatic undo is unavailable: this seeder updates existing products. Restore from a verified backup if reversal is required.');
+    throw new Error(
+      'Automatic undo is unavailable: this seeder updates existing products. Restore from a verified backup if reversal is required.',
+    );
   },
 };

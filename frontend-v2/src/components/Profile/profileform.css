@@ -28,7 +28,7 @@
 .avatar-card {
   text-align: center;
   border-radius: 16px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
   padding: 24px 16px;
 }
 
@@ -38,7 +38,7 @@
 
 .avatar-main {
   border: 6px solid white;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
   background: #e6f7ff;
 }
 

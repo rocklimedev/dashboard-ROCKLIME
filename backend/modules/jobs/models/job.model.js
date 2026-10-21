@@ -1,7 +1,7 @@
 // models/Job.js
 module.exports = (sequelize, DataTypes) => {
   const Job = sequelize.define(
-    "Job",
+    'Job',
     {
       id: {
         type: DataTypes.UUID,
@@ -22,14 +22,8 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: {},
       },
       status: {
-        type: DataTypes.ENUM(
-          "pending",
-          "processing",
-          "completed",
-          "failed",
-          "cancelled",
-        ),
-        defaultValue: "pending",
+        type: DataTypes.ENUM('pending', 'processing', 'completed', 'failed', 'cancelled'),
+        defaultValue: 'pending',
       },
       progress: {
         type: DataTypes.JSON,
@@ -43,7 +37,7 @@ module.exports = (sequelize, DataTypes) => {
       completedAt: { type: DataTypes.DATE },
     },
     {
-      tableName: "jobs",
+      tableName: 'jobs',
       timestamps: true,
     },
   );
@@ -52,9 +46,9 @@ module.exports = (sequelize, DataTypes) => {
   Job.associate = (models) => {
     // Job belongs to User (one-to-many: one user can have many jobs)
     Job.belongsTo(models.User, {
-      foreignKey: "userId",
-      as: "user", // alias for querying (e.g., job.user)
-      onDelete: "SET NULL", // if user is deleted, keep the job but null the userId
+      foreignKey: 'userId',
+      as: 'user', // alias for querying (e.g., job.user)
+      onDelete: 'SET NULL', // if user is deleted, keep the job but null the userId
     });
   };
 

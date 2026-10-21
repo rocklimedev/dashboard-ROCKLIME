@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const fgsItemSchema = new mongoose.Schema(
   {
@@ -36,8 +36,8 @@ const fgsItemSchema = new mongoose.Schema(
         discount: { type: Number, default: 0, min: 0 },
         discountType: {
           type: String,
-          enum: ["percent", "fixed"],
-          default: "percent",
+          enum: ['percent', 'fixed'],
+          default: 'percent',
         },
         tax: { type: Number, default: 0, min: 0 },
         total: { type: Number, required: true, min: 0 },
@@ -51,11 +51,11 @@ const fgsItemSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-    collection: "fgs_items",
+    collection: 'fgs_items',
   },
 );
 
 fgsItemSchema.index({ fgsId: 1 });
 fgsItemSchema.index({ fgsNumber: 1 });
 
-module.exports = mongoose.model("FgsItem", fgsItemSchema);
+module.exports = mongoose.model('FgsItem', fgsItemSchema);

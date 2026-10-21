@@ -1,6 +1,6 @@
-import React, { useState, useMemo, useEffect } from "react";
-import { API_URL } from "../../store/config";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useState, useMemo, useEffect } from 'react';
+import { API_URL } from '../../store/config';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
   useGetOrderDetailsQuery,
   useAddCommentMutation,
@@ -17,15 +17,12 @@ import {
   useUploadReceivingDocumentMutation,
   useGetOrderCreditNotesQuery,
   useLazyDownloadOrderSummaryQuery,
-} from "../../api/orderApi";
-import {
-  useGetCustomerByIdQuery,
-  useGetCustomersQuery,
-} from "../../api/customerApi";
-import { useGetQuotationByIdQuery } from "../../api/quotationApi";
-import { useGetAllAddressesQuery } from "../../api/addressApi";
-import { useGetAllTeamsQuery } from "../../api/teamApi";
-import { useGetProfileQuery } from "../../api/userApi";
+} from '../../api/orderApi';
+import { useGetCustomerByIdQuery, useGetCustomersQuery } from '../../api/customerApi';
+import { useGetQuotationByIdQuery } from '../../api/quotationApi';
+import { useGetAllAddressesQuery } from '../../api/addressApi';
+import { useGetAllTeamsQuery } from '../../api/teamApi';
+import { useGetProfileQuery } from '../../api/userApi';
 import {
   Button,
   Card,
@@ -47,7 +44,7 @@ import {
   Tag,
   Empty,
   Pagination,
-} from "antd";
+} from 'antd';
 import {
   EllipsisOutlined,
   UserOutlined,
@@ -61,39 +58,39 @@ import {
   HistoryOutlined,
   RollbackOutlined, // ← NEW
   PrinterOutlined,
-} from "@ant-design/icons";
-import { Document, Page } from "react-pdf";
-import noimg from "../../assets/img/noimg.jpg";
-import useProductsData from "../../utils/useProductdata";
-import AddAddress from "../../components/Address/AddAddressModal";
-import CommentRow from "../../components/Orders/CommentRow";
-import DispatchModal from "../../components/modals/DispatchModal";
-import OrderStockPanel from "../../components/Stock/OrderStockPanel";
-import OrderPaymentsCard from "../../components/Accounts/OrderPaymentsCard";
-import OrderCreditNoteModal from "../../components/modals/OrderCreditNoteModal"; // ← NEW
-import { Helmet } from "react-helmet";
-import "../../components/Orders/orderpage.css"; // ← new / updated stylesheet
-import DownloadDispatchListButton from "../../components/Orders/DownloadDispatchListButton";
-import OrderProgress from "../../components/Orders/OrderProgress";
-import OrderInvoicesCard from "../../components/Accounts/OrderInvoicesCard";
-import MarkDeliveredModal from "../../components/Orders/MarkDeliveredModal";
-import { useGetOrderPaymentsQuery } from "../../api/paymentsApi";
-import "../../utils/pdfjs"; // local worker matching the installed pdf.js
+} from '@ant-design/icons';
+import { Document, Page } from 'react-pdf';
+import noimg from '../../assets/img/noimg.jpg';
+import useProductsData from '../../utils/useProductdata';
+import AddAddress from '../../components/Address/AddAddressModal';
+import CommentRow from '../../components/Orders/CommentRow';
+import DispatchModal from '../../components/modals/DispatchModal';
+import OrderStockPanel from '../../components/Stock/OrderStockPanel';
+import OrderPaymentsCard from '../../components/Accounts/OrderPaymentsCard';
+import OrderCreditNoteModal from '../../components/modals/OrderCreditNoteModal'; // ← NEW
+import { Helmet } from 'react-helmet';
+import '../../components/Orders/orderpage.css'; // ← new / updated stylesheet
+import DownloadDispatchListButton from '../../components/Orders/DownloadDispatchListButton';
+import OrderProgress from '../../components/Orders/OrderProgress';
+import OrderInvoicesCard from '../../components/Accounts/OrderInvoicesCard';
+import MarkDeliveredModal from '../../components/Orders/MarkDeliveredModal';
+import { useGetOrderPaymentsQuery } from '../../api/paymentsApi';
+import '../../utils/pdfjs'; // local worker matching the installed pdf.js
 
 const { Title, Text } = Typography;
 
 // Maps order_activity "action" values to a Tag color so the timeline is
 // scannable at a glance.
 const ACTIVITY_TAG_COLOR = {
-  DISPATCH_CREATED: "blue",
-  CREDIT_NOTE_UPLOADED: "purple",
-  RECEIVING_DOCUMENT_UPLOADED: "cyan",
-  GATE_PASS_ISSUED: "geekblue",
-  INVOICE_UPLOADED: "gold",
-  ORDER_CREATED: "green",
-  ORDER_UPDATED: "orange",
-  ORDER_STATUS_UPDATE: "orange",
-  ORDER_DELETED: "red",
+  DISPATCH_CREATED: 'blue',
+  CREDIT_NOTE_UPLOADED: 'purple',
+  RECEIVING_DOCUMENT_UPLOADED: 'cyan',
+  GATE_PASS_ISSUED: 'geekblue',
+  INVOICE_UPLOADED: 'gold',
+  ORDER_CREATED: 'green',
+  ORDER_UPDATED: 'orange',
+  ORDER_STATUS_UPDATE: 'orange',
+  ORDER_DELETED: 'red',
 };
 
 const OrderPage = () => {
@@ -101,7 +98,7 @@ const OrderPage = () => {
   const navigate = useNavigate();
 
   // ── STATE ────────────────────────────────────────
-  const [newComment, setNewComment] = useState("");
+  const [newComment, setNewComment] = useState('');
   const [commentPage, setCommentPage] = useState(1);
   const [invoiceFile, setInvoiceFile] = useState(null);
   const [gatePassFile, setGatePassFile] = useState(null);
@@ -114,19 +111,22 @@ const OrderPage = () => {
   const productPageSize = 8;
   const [activityPage, setActivityPage] = useState(1); // ← NEW
   const [triggerDispatchDocDownload] = useLazyDownloadDispatchDocumentQuery();
-  const [downloadOrderSummary, { isFetching: summaryDownloading }] = useLazyDownloadOrderSummaryQuery();
+  const [downloadOrderSummary, { isFetching: summaryDownloading }] =
+    useLazyDownloadOrderSummaryQuery();
   const downloadSummary = async () => {
     try {
       const blob = await downloadOrderSummary(id).unwrap();
       const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
+      const link = document.createElement('a');
       link.href = url;
       link.download = `Order-${order.orderNo}.pdf`;
       document.body.appendChild(link);
       link.click();
       link.remove();
       setTimeout(() => URL.revokeObjectURL(url), 2000);
-    } catch { message.error("Failed to download the order summary"); }
+    } catch {
+      message.error('Failed to download the order summary');
+    }
   };
 
   const commentLimit = 10;
@@ -147,7 +147,7 @@ const OrderPage = () => {
   const { data: commentData, isLoading: commentLoading } = useGetCommentsQuery(
     {
       resourceId: id,
-      resourceType: "Order",
+      resourceType: 'Order',
       page: commentPage,
       limit: commentLimit,
     },
@@ -167,14 +167,19 @@ const OrderPage = () => {
   // Pick list PDF for the godown (opens in a new tab)
   const openPickList = async () => {
     setPickBusy(true);
-    const win = window.open("", "_blank");
+    const win = window.open('', '_blank');
     try {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-      const res = await fetch(`${API_URL}/order/${id}/pick-list`, { headers: { Authorization: `Bearer ${token}` } });
-      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || "Could not make the pick list");
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      const res = await fetch(`${API_URL}/order/${id}/pick-list`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok)
+        throw new Error(
+          (await res.json().catch(() => ({}))).message || 'Could not make the pick list',
+        );
       const url = URL.createObjectURL(await res.blob());
       if (win) win.location.href = url;
-      else window.open(url, "_blank");
+      else window.open(url, '_blank');
       setTimeout(() => URL.revokeObjectURL(url), 60000);
     } catch (e) {
       if (win) win.close();
@@ -193,11 +198,10 @@ const OrderPage = () => {
   const creditNotes = creditNotesData?.creditNotes || [];
 
   // ← NEW: order activity feed
-  const { data: activityData, isLoading: activityLoading } =
-    useGetOrderActivityQuery(
-      { orderId: id, page: activityPage, limit: activityLimit },
-      { skip: !id },
-    );
+  const { data: activityData, isLoading: activityLoading } = useGetOrderActivityQuery(
+    { orderId: id, page: activityPage, limit: activityLimit },
+    { skip: !id },
+  );
   const activities = activityData?.activities || [];
   const activityTotal = activityData?.totalCount || 0;
 
@@ -206,11 +210,10 @@ const OrderPage = () => {
   });
   const customer = customerData?.data || {};
 
-  const { data: addressesData, refetch: refetchAddresses } =
-    useGetAllAddressesQuery(
-      { customerId: order.createdFor },
-      { skip: !order.createdFor },
-    );
+  const { data: addressesData, refetch: refetchAddresses } = useGetAllAddressesQuery(
+    { customerId: order.createdFor },
+    { skip: !order.createdFor },
+  );
 
   const quotationId = order.quotationId || order.quotation?.quotationId;
   const { data: fullQuotation } = useGetQuotationByIdQuery(quotationId, {
@@ -222,10 +225,8 @@ const OrderPage = () => {
   const [deleteOrder] = useDeleteOrderMutation();
   const [addComment] = useAddCommentMutation();
   const [deleteComment] = useDeleteCommentMutation();
-  const [uploadInvoice, { isLoading: isUploading }] =
-    useUploadInvoiceMutation();
-  const [issueGatePass, { isLoading: isGatePassUploading }] =
-    useIssueGatePassMutation();
+  const [uploadInvoice, { isLoading: isUploading }] = useUploadInvoiceMutation();
+  const [issueGatePass, { isLoading: isGatePassUploading }] = useIssueGatePassMutation();
   const [uploadReceivingDocument, { isLoading: isReceivingDocUploading }] =
     useUploadReceivingDocumentMutation(); // ← NEW
   const [triggerInvoiceDownload] = useLazyDownloadInvoiceQuery();
@@ -233,21 +234,16 @@ const OrderPage = () => {
   // ── PRODUCTS & MERGING LOGIC (unchanged) ─────────
   const products = useMemo(() => {
     // The order's own lines are what was sold; the quotation is only a fallback.
-    if (Array.isArray(order?.products) && order.products.length)
-      return order.products;
+    if (Array.isArray(order?.products) && order.products.length) return order.products;
     if (fullQuotation?.products && Array.isArray(fullQuotation.products))
       return fullQuotation.products;
-    if (
-      order?.quotationData?.products &&
-      Array.isArray(order.quotationData.products)
-    )
+    if (order?.quotationData?.products && Array.isArray(order.quotationData.products))
       return order.quotationData.products;
-    if (order?.quotationItems && Array.isArray(order.quotationItems))
-      return order.quotationItems;
+    if (order?.quotationItems && Array.isArray(order.quotationItems)) return order.quotationItems;
     if (order.quotation?.products) {
       try {
         const qp =
-          typeof order.quotation.products === "string"
+          typeof order.quotation.products === 'string'
             ? JSON.parse(order.quotation.products)
             : order.quotation.products;
         if (Array.isArray(qp)) return qp;
@@ -269,38 +265,32 @@ const OrderPage = () => {
   const mergedProducts = useMemo(() => {
     return products.map((original, index) => {
       const pd =
-        productsData.find(
-          (p) => p.productId === (original.productId || original.id),
-        ) || {};
+        productsData.find((p) => p.productId === (original.productId || original.id)) || {};
       let imageUrl = original.imageUrl || pd.images?.[0] || noimg;
-      let code = String(
-        original.companyCode || pd.product_code || original.sku || "N/A",
-      ).trim();
-      let brand = pd.brandName || "N/A";
+      let code = String(original.companyCode || pd.product_code || original.sku || 'N/A').trim();
+      let brand = pd.brandName || 'N/A';
       if (pd.metaDetails) {
         const brandMeta = pd.metaDetails.find(
-          (m) => m.title === "brandName" || m.title === "brand",
+          (m) => m.title === 'brandName' || m.title === 'brand',
         );
         brand = brandMeta?.value || brand;
       }
-      if (/^[0-9a-fA-F-]{36}$/.test(brand)) brand = "N/A";
+      if (/^[0-9a-fA-F-]{36}$/.test(brand)) brand = 'N/A';
 
       return {
         productId: original.productId || original.id,
-        name: pd.name || original.name || "Unnamed Product",
+        name: pd.name || original.name || 'Unnamed Product',
         sku: code,
         brand,
         image: imageUrl,
         // The order's own price (what the customer was quoted); the catalogue
         // price only when an old line has none.
         price: parseFloat(
-          original.price ||
-            pd.metaDetails?.find((m) => m.title === "Selling Price")?.value ||
-            0,
+          original.price || pd.metaDetails?.find((m) => m.title === 'Selling Price')?.value || 0,
         ),
         quantity: original.quantity || 1,
         discount: parseFloat(original.discount || 0),
-        discountType: original.discountType || "percent",
+        discountType: original.discountType || 'percent',
         total: (() => {
           const saved = parseFloat(original.total || 0);
           if (saved > 0) return saved;
@@ -308,9 +298,7 @@ const OrderPage = () => {
           const price = Number(original.price) || 0;
           const d = Number(original.discount) || 0;
           const unit =
-            (original.discountType || "percent") === "percent"
-              ? price * (1 - d / 100)
-              : price - d;
+            (original.discountType || 'percent') === 'percent' ? price * (1 - d / 100) : price - d;
           return Math.round(Math.max(unit, 0) * qty * 100) / 100;
         })(),
       };
@@ -322,12 +310,12 @@ const OrderPage = () => {
   const quotationDetails = useMemo(
     () => ({
       quotationId: quotationId,
-      document_title: order.quotation?.document_title || "N/A",
-      reference_number: order.quotation?.reference_number || "N/A",
+      document_title: order.quotation?.document_title || 'N/A',
+      reference_number: order.quotation?.reference_number || 'N/A',
       quotation_date: order.quotation?.quotation_date,
       due_date: order.quotation?.due_date,
       followupDates: order.quotation?.followupDates
-        ? typeof order.quotation.followupDates === "string"
+        ? typeof order.quotation.followupDates === 'string'
           ? JSON.parse(order.quotation.followupDates)
           : order.quotation.followupDates
         : [],
@@ -336,12 +324,9 @@ const OrderPage = () => {
     [order, quotationId],
   );
 
-  const billingAddress =
-    addressesData?.find((a) => a.status === "BILLING") || null;
+  const billingAddress = addressesData?.find((a) => a.status === 'BILLING') || null;
   const shippingAddress =
-    addressesData?.find((a) => a.status === "ADDITIONAL") ||
-    order.shippingAddress ||
-    null;
+    addressesData?.find((a) => a.status === 'ADDITIONAL') || order.shippingAddress || null;
 
   const invoiceUrl = order.invoiceLink ? `${order.invoiceLink}` : null;
   const gatePassUrl = order.gatePassLink ? `${order.gatePassLink}` : null;
@@ -349,130 +334,126 @@ const OrderPage = () => {
     ? `${order.receivingDocumentLink}`
     : null;
 
-  const isDispatched = order.status === "DISPATCHED";
+  const isDispatched = order.status === 'DISPATCHED';
 
   // Dispatch is only meaningful once the order is past drafting/prep and
   // hasn't already been closed out or returned.
   // Nothing to dispatch once everything has gone out.
   const canDispatchThisOrder = [
-    "PREPARING",
-    "CHECKING",
-    "INVOICE",
-    "PARTIALLY_DISPATCHED",
+    'PREPARING',
+    'CHECKING',
+    'INVOICE',
+    'PARTIALLY_DISPATCHED',
   ].includes(order.status);
 
   // Credit notes only make sense once the order has actually moved past
   // drafting and hasn't been canceled outright.
-  const canCreateCreditNote = !["DRAFT", "CANCELED"].includes(order.status); // ← NEW
+  const canCreateCreditNote = !['DRAFT', 'CANCELED'].includes(order.status); // ← NEW
 
   // ── HANDLERS (mostly unchanged) ─────────────────
   const handleInvoiceChange = ({ file }) => {
-    if (file.type === "application/pdf") setInvoiceFile(file);
-    else message.error("Only PDF files allowed for invoice.");
+    if (file.type === 'application/pdf') setInvoiceFile(file);
+    else message.error('Only PDF files allowed for invoice.');
   };
 
   const handleGatePassChange = ({ file }) => {
-    const allowed = ["application/pdf", "image/png", "image/jpeg", "image/jpg"];
+    const allowed = ['application/pdf', 'image/png', 'image/jpeg', 'image/jpg'];
     if (allowed.includes(file.type)) setGatePassFile(file);
-    else message.error("Only PDF, PNG, JPG allowed for gate pass.");
+    else message.error('Only PDF, PNG, JPG allowed for gate pass.');
   };
 
   // ← NEW
   const handleReceivingDocChange = ({ file }) => {
-    const allowed = ["application/pdf", "image/png", "image/jpeg", "image/jpg"];
+    const allowed = ['application/pdf', 'image/png', 'image/jpeg', 'image/jpg'];
     if (allowed.includes(file.type)) setReceivingDocFile(file);
-    else message.error("Only PDF, PNG, JPG allowed for receiving document.");
+    else message.error('Only PDF, PNG, JPG allowed for receiving document.');
   };
 
   const handleInvoiceSubmit = async () => {
-    if (!invoiceFile) return message.error("Select a PDF file.");
+    if (!invoiceFile) return message.error('Select a PDF file.');
     const formData = new FormData();
-    formData.append("invoice", invoiceFile);
+    formData.append('invoice', invoiceFile);
     try {
       await uploadInvoice({ orderId: id, formData }).unwrap();
       setInvoiceFile(null);
       refetchOrder();
-      message.success("Invoice uploaded");
+      message.success('Invoice uploaded');
     } catch (err) {
-      message.error(err.data?.message || "Upload failed");
+      message.error(err.data?.message || 'Upload failed');
     }
   };
 
   const handleGatePassSubmit = async () => {
-    if (!gatePassFile) return message.error("Select a file.");
+    if (!gatePassFile) return message.error('Select a file.');
     const formData = new FormData();
-    formData.append("gatepass", gatePassFile);
+    formData.append('gatepass', gatePassFile);
     try {
       await issueGatePass({ orderId: id, formData }).unwrap();
       setGatePassFile(null);
       refetchOrder();
-      message.success("Gate pass issued");
+      message.success('Gate pass issued');
     } catch (err) {
-      message.error(err.data?.message || "Upload failed");
+      message.error(err.data?.message || 'Upload failed');
     }
   };
 
   // ← NEW
   const handleReceivingDocSubmit = async () => {
-    if (!receivingDocFile) return message.error("Select a file.");
+    if (!receivingDocFile) return message.error('Select a file.');
     const formData = new FormData();
-    formData.append("file", receivingDocFile);
+    formData.append('file', receivingDocFile);
     try {
       await uploadReceivingDocument({ orderId: id, formData }).unwrap();
       setReceivingDocFile(null);
       refetchOrder();
-      message.success("Receiving document uploaded");
+      message.success('Receiving document uploaded');
     } catch (err) {
-      message.error(err.data?.message || "Upload failed");
+      message.error(err.data?.message || 'Upload failed');
     }
   };
 
   const handleAddComment = async () => {
-    if (!newComment.trim()) return message.error("Comment cannot be empty");
+    if (!newComment.trim()) return message.error('Comment cannot be empty');
     try {
       await addComment({
         resourceId: id,
-        resourceType: "Order",
-        userId: String(user.userId || "").trim(),
+        resourceType: 'Order',
+        userId: String(user.userId || '').trim(),
         comment: newComment,
       }).unwrap();
-      setNewComment("");
-      message.success("Comment added");
+      setNewComment('');
+      message.success('Comment added');
     } catch (err) {
-      message.error(err.data?.message || "Failed to add comment");
+      message.error(err.data?.message || 'Failed to add comment');
     }
   };
 
   const handleDeleteComment = async (commentId) => {
-    if (!window.confirm("Delete this comment?")) return;
+    if (!window.confirm('Delete this comment?')) return;
     try {
       await deleteComment({
         commentId,
-        userId: String(user.userId || "").trim(),
+        userId: String(user.userId || '').trim(),
       }).unwrap();
     } catch (err) {
-      message.error(err.data?.message || "Delete failed");
+      message.error(err.data?.message || 'Delete failed');
     }
   };
 
   const handleDeleteOrder = async () => {
-    if (!window.confirm("Delete this order?")) return;
+    if (!window.confirm('Delete this order?')) return;
     try {
       await deleteOrder(id).unwrap();
-      navigate("/orders/list");
+      navigate('/orders/list');
     } catch (err) {
-      message.error(err.data?.message || "Delete failed");
+      message.error(err.data?.message || 'Delete failed');
     }
   };
 
   // Downloads the invoice or gate-pass belonging to ONE specific dispatch
   // batch, using the auth-aware lazy query (RTK Query attaches headers via
   // baseApi's prepareHeaders).
-  const handleDownloadDispatchDocument = async (
-    dispatchId,
-    dispatchNumber,
-    type,
-  ) => {
+  const handleDownloadDispatchDocument = async (dispatchId, dispatchNumber, type) => {
     try {
       const result = await triggerDispatchDocDownload({
         orderId: id,
@@ -483,46 +464,42 @@ const OrderPage = () => {
       const blob = result instanceof Blob ? result : new Blob([result]);
       const blobUrl = window.URL.createObjectURL(blob);
 
-      const a = document.createElement("a");
+      const a = document.createElement('a');
       a.href = blobUrl;
-      a.download = `${type === "invoice" ? "Invoice" : "GatePass"}-${order.orderNo}-Dispatch${dispatchNumber}.pdf`;
+      a.download = `${type === 'invoice' ? 'Invoice' : 'GatePass'}-${order.orderNo}-Dispatch${dispatchNumber}.pdf`;
 
       document.body.appendChild(a);
       a.click();
       a.remove();
       window.URL.revokeObjectURL(blobUrl);
     } catch (err) {
-      message.error(err?.data?.message || "Download failed");
+      message.error(err?.data?.message || 'Download failed');
     }
   };
   const handleDownloadFile = async (type) => {
     if (!id) return;
     try {
       // Retrieve token from localStorage/sessionStorage
-      const token =
-        localStorage.getItem("token") || sessionStorage.getItem("token");
-      if (!token) throw new Error("Not authenticated");
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      if (!token) throw new Error('Not authenticated');
 
-      const res = await fetch(
-        `${API_URL}/order/${id}/download?type=${type}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+      const res = await fetch(`${API_URL}/order/${id}/download?type=${type}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-      );
+      });
 
       if (!res.ok) throw new Error(`Download failed: ${res.status}`);
 
       const blob = await res.blob();
       const blobUrl = window.URL.createObjectURL(blob);
 
-      const a = document.createElement("a");
+      const a = document.createElement('a');
       a.href = blobUrl;
       const filename =
-        type === "invoice"
+        type === 'invoice'
           ? `Invoice-${order.orderNo}.pdf`
-          : `GatePass-${order.orderNo}${order.gatePassLink?.endsWith(".pdf") ? ".pdf" : ".jpg"}`;
+          : `GatePass-${order.orderNo}${order.gatePassLink?.endsWith('.pdf') ? '.pdf' : '.jpg'}`;
       a.download = filename;
 
       document.body.appendChild(a);
@@ -530,7 +507,7 @@ const OrderPage = () => {
       a.remove();
       window.URL.revokeObjectURL(blobUrl);
     } catch (err) {
-      message.error(err.message || "Download failed");
+      message.error(err.message || 'Download failed');
     }
   };
 
@@ -558,10 +535,7 @@ const OrderPage = () => {
   );
 
   // ── CALCULATIONS (unchanged) ─────────────────────
-  const lineItemsTotal = mergedProducts.reduce(
-    (sum, p) => sum + (parseFloat(p.total) || 0),
-    0,
-  );
+  const lineItemsTotal = mergedProducts.reduce((sum, p) => sum + (parseFloat(p.total) || 0), 0);
   const finalAmount = parseFloat(order.finalAmount || 0);
 
   if (orderLoading || productsLoading) {
@@ -577,7 +551,7 @@ const OrderPage = () => {
     return (
       <Alert
         message="Error"
-        description={orderError?.data?.message || "Order not found"}
+        description={orderError?.data?.message || 'Order not found'}
         type="error"
         showIcon
       />
@@ -598,30 +572,34 @@ const OrderPage = () => {
             <Card className="section-card products-card">
               <div
                 style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  flexWrap: "wrap",
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
                   gap: 12,
                 }}
               >
                 <Title level={3} style={{ margin: 0 }}>
-                  Order #{order.orderNo}{" "}
+                  Order #{order.orderNo}{' '}
                   <Badge
                     status={
-                      order.status === "DRAFT"
-                        ? "warning"
-                        : order.status === "ONHOLD"
-                          ? "error"
-                          : "success"
+                      order.status === 'DRAFT'
+                        ? 'warning'
+                        : order.status === 'ONHOLD'
+                          ? 'error'
+                          : 'success'
                     }
-                    text={order.status?.replace(/_/g, " ")}
+                    text={order.status?.replace(/_/g, ' ')}
                   />
                 </Title>
 
                 {/* ← NEW: Dispatch + Credit Note buttons */}
                 <Space wrap>
-                  <Button icon={<DownloadOutlined />} loading={summaryDownloading} onClick={downloadSummary}>
+                  <Button
+                    icon={<DownloadOutlined />}
+                    loading={summaryDownloading}
+                    onClick={downloadSummary}
+                  >
                     Download summary
                   </Button>
                   {canDispatchThisOrder && (
@@ -654,7 +632,7 @@ const OrderPage = () => {
               <Table
                 dataSource={mergedProducts}
                 rowKey="productId"
-                scroll={{ x: "max-content" }}
+                scroll={{ x: 'max-content' }}
                 pagination={{
                   current: productPage,
                   pageSize: productPageSize,
@@ -664,8 +642,8 @@ const OrderPage = () => {
                 }}
                 columns={[
                   {
-                    title: "Product",
-                    key: "product",
+                    title: 'Product',
+                    key: 'product',
                     render: (_, record) => (
                       <div className="product-cell">
                         <img
@@ -682,44 +660,39 @@ const OrderPage = () => {
                     ),
                   },
                   {
-                    title: "Qty",
-                    dataIndex: "quantity",
+                    title: 'Qty',
+                    dataIndex: 'quantity',
                     width: 80,
-                    align: "center",
+                    align: 'center',
                   },
                   {
-                    title: "Price",
-                    dataIndex: "price",
+                    title: 'Price',
+                    dataIndex: 'price',
                     width: 100,
                     render: (v) => `₹${parseFloat(v).toFixed(2)}`,
                   },
                   {
-                    title: "Discount",
-                    key: "discount",
+                    title: 'Discount',
+                    key: 'discount',
                     width: 110,
-                    align: "center",
+                    align: 'center',
                     render: (_, record) => {
                       const discountVal = parseFloat(record.discount || 0);
-                      if (!discountVal)
-                        return <span className="no-discount">—</span>;
-                      const isPercent = record.discountType === "percent";
+                      if (!discountVal) return <span className="no-discount">—</span>;
+                      const isPercent = record.discountType === 'percent';
                       return (
                         <span className="discount-tag">
-                          {isPercent
-                            ? `${discountVal}%`
-                            : `₹${discountVal.toFixed(2)}`}
+                          {isPercent ? `${discountVal}%` : `₹${discountVal.toFixed(2)}`}
                         </span>
                       );
                     },
                   },
                   {
-                    title: "Total",
-                    key: "total",
+                    title: 'Total',
+                    key: 'total',
                     width: 120,
-                    align: "right",
-                    render: (_, r) => (
-                      <strong>₹{parseFloat(r.total).toFixed(2)}</strong>
-                    ),
+                    align: 'right',
+                    render: (_, r) => <strong>₹{parseFloat(r.total).toFixed(2)}</strong>,
                   },
                 ]}
                 footer={() => {
@@ -727,27 +700,20 @@ const OrderPage = () => {
                     if (!p.discount) return sum;
                     return (
                       sum +
-                      (p.discountType === "percent"
+                      (p.discountType === 'percent'
                         ? (p.price * p.quantity * p.discount) / 100
                         : p.discount)
                     );
                   }, 0);
 
-                  const globalDiscountValue = parseFloat(
-                    order.extraDiscountValue || 0,
-                  );
+                  const globalDiscountValue = parseFloat(order.extraDiscountValue || 0);
                   const globalDiscountFromQuotation = parseFloat(
-                    order.quotation?.discountAmount ||
-                      order.quotationDetails?.discountAmount ||
-                      0,
+                    order.quotation?.discountAmount || order.quotationDetails?.discountAmount || 0,
                   );
                   const effectiveGlobalDiscount =
-                    globalDiscountValue > 0
-                      ? globalDiscountValue
-                      : globalDiscountFromQuotation;
+                    globalDiscountValue > 0 ? globalDiscountValue : globalDiscountFromQuotation;
                   const globalDiscountLabel =
-                    order.extraDiscountType === "percent" &&
-                    globalDiscountValue > 0
+                    order.extraDiscountType === 'percent' && globalDiscountValue > 0
                       ? `${order.extraDiscount || order.extraDiscountValue}%`
                       : `₹${effectiveGlobalDiscount.toFixed(2)}`;
 
@@ -761,9 +727,7 @@ const OrderPage = () => {
                       {itemDiscountTotal > 0 && (
                         <div className="summary-row discount">
                           <span>Item Discounts</span>
-                          <span className="negative">
-                            -₹{itemDiscountTotal.toFixed(2)}
-                          </span>
+                          <span className="negative">-₹{itemDiscountTotal.toFixed(2)}</span>
                         </div>
                       )}
 
@@ -777,17 +741,13 @@ const OrderPage = () => {
                       {effectiveGlobalDiscount > 0 && (
                         <div className="summary-row discount">
                           <span>Global Discount</span>
-                          <span className="negative">
-                            -{globalDiscountLabel}
-                          </span>
+                          <span className="negative">-{globalDiscountLabel}</span>
                         </div>
                       )}
 
                       <div className="summary-row final">
                         <span>Final Amount</span>
-                        <strong className="final-amount">
-                          ₹{finalAmount.toFixed(2)}
-                        </strong>
+                        <strong className="final-amount">₹{finalAmount.toFixed(2)}</strong>
                       </div>
                     </div>
                   );
@@ -821,7 +781,7 @@ const OrderPage = () => {
               style={{ marginTop: 24 }}
             >
               {dispatchesLoading ? (
-                <div style={{ textAlign: "center", padding: "20px 0" }}>
+                <div style={{ textAlign: 'center', padding: '20px 0' }}>
                   <Spin />
                 </div>
               ) : dispatches.length === 0 ? (
@@ -835,53 +795,46 @@ const OrderPage = () => {
                   rowKey="id"
                   pagination={false}
                   size="small"
-                  scroll={{ x: "max-content" }}
+                  scroll={{ x: 'max-content' }}
                   expandable={{
                     defaultExpandAllRows: false,
 
                     expandedRowRender: (record) => {
                       const money = (value) =>
-                        Number(value || 0).toLocaleString("en-IN", {
-                          style: "currency",
-                          currency: "INR",
+                        Number(value || 0).toLocaleString('en-IN', {
+                          style: 'currency',
+                          currency: 'INR',
                           maximumFractionDigits: 2,
                         });
 
                       return (
                         <div
                           style={{
-                            padding: "16px",
-                            background: "#fafafa",
+                            padding: '16px',
+                            background: '#fafafa',
                             borderRadius: 6,
                           }}
                         >
                           <Table
                             dataSource={record.items || []}
-                            rowKey={(item, index) =>
-                              `${item.productId}-${index}`
-                            }
+                            rowKey={(item, index) => `${item.productId}-${index}`}
                             pagination={false}
                             size="small"
                             bordered
-                            scroll={{ x: "max-content" }}
+                            scroll={{ x: 'max-content' }}
                             columns={[
                               {
-                                title: "Product",
-                                dataIndex: "name",
-                                key: "name",
+                                title: 'Product',
+                                dataIndex: 'name',
+                                key: 'name',
                                 width: 280,
-                                fixed: "left",
+                                fixed: 'left',
                                 render: (value, item) => (
                                   <div>
-                                    <div style={{ fontWeight: 600 }}>
-                                      {value || "—"}
-                                    </div>
+                                    <div style={{ fontWeight: 600 }}>{value || '—'}</div>
 
                                     {item.companyCode && (
-                                      <div
-                                        className="text-muted small"
-                                        style={{ marginTop: 2 }}
-                                      >
+                                      <div className="text-muted small" style={{ marginTop: 2 }}>
                                         {item.companyCode}
                                       </div>
                                     )}
@@ -890,53 +843,46 @@ const OrderPage = () => {
                               },
 
                               {
-                                title: "Qty",
-                                dataIndex: "quantity",
-                                key: "quantity",
+                                title: 'Qty',
+                                dataIndex: 'quantity',
+                                key: 'quantity',
                                 width: 80,
-                                align: "center",
-                                render: (value) => (
-                                  <strong>{Number(value || 0)}</strong>
-                                ),
+                                align: 'center',
+                                render: (value) => <strong>{Number(value || 0)}</strong>,
                               },
 
                               {
-                                title: "Unit Price",
-                                dataIndex: "price",
-                                key: "price",
+                                title: 'Unit Price',
+                                dataIndex: 'price',
+                                key: 'price',
                                 width: 130,
-                                align: "right",
+                                align: 'right',
                                 render: (value) => money(value),
                               },
 
                               {
-                                title: "Discount",
-                                key: "discount",
+                                title: 'Discount',
+                                key: 'discount',
                                 width: 150,
-                                align: "right",
+                                align: 'right',
                                 render: (_, item) => {
                                   const discount = Number(item.discount || 0);
 
-                                  const discountAmount = Number(
-                                    item.discountAmount || 0,
-                                  );
+                                  const discountAmount = Number(item.discountAmount || 0);
 
                                   if (!discount && !discountAmount) {
-                                    return "—";
+                                    return '—';
                                   }
 
                                   return (
                                     <div>
                                       <div>
-                                        {item.discountType === "percent"
+                                        {item.discountType === 'percent'
                                           ? `${discount}%`
                                           : money(discount)}
                                       </div>
 
-                                      <div
-                                        className="text-muted small"
-                                        style={{ marginTop: 2 }}
-                                      >
+                                      <div className="text-muted small" style={{ marginTop: 2 }}>
                                         −{money(discountAmount)} / unit
                                       </div>
                                     </div>
@@ -945,63 +891,56 @@ const OrderPage = () => {
                               },
 
                               {
-                                title: "Net Unit",
-                                dataIndex: "unitNetPrice",
-                                key: "unitNetPrice",
+                                title: 'Net Unit',
+                                dataIndex: 'unitNetPrice',
+                                key: 'unitNetPrice',
                                 width: 130,
-                                align: "right",
+                                align: 'right',
                                 render: (value) => money(value),
                               },
 
                               {
-                                title: "Final Unit",
-                                dataIndex: "unitFinalPrice",
-                                key: "unitFinalPrice",
+                                title: 'Final Unit',
+                                dataIndex: 'unitFinalPrice',
+                                key: 'unitFinalPrice',
                                 width: 140,
-                                align: "right",
-                                render: (value) => (
-                                  <strong>{money(value)}</strong>
-                                ),
+                                align: 'right',
+                                render: (value) => <strong>{money(value)}</strong>,
                               },
 
                               {
-                                title: "Subtotal",
-                                dataIndex: "subtotal",
-                                key: "subtotal",
+                                title: 'Subtotal',
+                                dataIndex: 'subtotal',
+                                key: 'subtotal',
                                 width: 140,
-                                align: "right",
+                                align: 'right',
                                 render: (value, item) => {
                                   const subtotal =
                                     value !== undefined
                                       ? value
-                                      : Number(item.price || 0) *
-                                        Number(item.quantity || 0);
+                                      : Number(item.price || 0) * Number(item.quantity || 0);
 
                                   return money(subtotal);
                                 },
                               },
 
                               {
-                                title: "Discount Total",
-                                dataIndex: "totalDiscount",
-                                key: "totalDiscount",
+                                title: 'Discount Total',
+                                dataIndex: 'totalDiscount',
+                                key: 'totalDiscount',
                                 width: 150,
-                                align: "right",
+                                align: 'right',
                                 render: (value) =>
-                                  Number(value || 0) > 0
-                                    ? `-${money(value)}`
-                                    : "—",
+                                  Number(value || 0) > 0 ? `-${money(value)}` : '—',
                               },
 
                               {
-                                title: "Line Total",
-                                dataIndex: "total",
-                                key: "total",
+                                title: 'Line Total',
+                                dataIndex: 'total',
+                                key: 'total',
                                 width: 150,
-                                align: "right",
-                                render: (value) => (
-                                  <strong>{money(value)}</strong>
-                                ),
+                                align: 'right',
+                                render: (value) => <strong>{money(value)}</strong>,
                               },
                             ]}
                           />
@@ -1010,47 +949,43 @@ const OrderPage = () => {
                           <div
                             style={{
                               marginTop: 16,
-                              padding: "14px 16px",
-                              background: "#fff",
-                              border: "1px solid #f0f0f0",
+                              padding: '14px 16px',
+                              background: '#fff',
+                              border: '1px solid #f0f0f0',
                               borderRadius: 6,
                             }}
                           >
                             <div
                               style={{
-                                display: "flex",
-                                justifyContent: "flex-end",
+                                display: 'flex',
+                                justifyContent: 'flex-end',
                               }}
                             >
                               <div
                                 style={{
                                   minWidth: 320,
-                                  width: "100%",
+                                  width: '100%',
                                   maxWidth: 420,
                                 }}
                               >
                                 <div
                                   style={{
-                                    display: "flex",
-                                    justifyContent: "space-between",
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
                                     marginBottom: 6,
                                   }}
                                 >
                                   <span>Subtotal</span>
 
                                   <strong>
-                                    {money(
-                                      record.subtotal ??
-                                        record.totalDispatchSubtotal ??
-                                        0,
-                                    )}
+                                    {money(record.subtotal ?? record.totalDispatchSubtotal ?? 0)}
                                   </strong>
                                 </div>
 
                                 <div
                                   style={{
-                                    display: "flex",
-                                    justifyContent: "space-between",
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
                                     marginBottom: 6,
                                   }}
                                 >
@@ -1065,11 +1000,11 @@ const OrderPage = () => {
 
                                 <div
                                   style={{
-                                    borderTop: "1px solid #e8e8e8",
+                                    borderTop: '1px solid #e8e8e8',
                                     marginTop: 8,
                                     paddingTop: 10,
-                                    display: "flex",
-                                    justifyContent: "space-between",
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
                                     fontSize: 15,
                                   }}
                                 >
@@ -1085,55 +1020,44 @@ const OrderPage = () => {
                           <div
                             style={{
                               marginTop: 16,
-                              display: "grid",
-                              gridTemplateColumns:
-                                "repeat(auto-fit, minmax(180px, 1fr))",
+                              display: 'grid',
+                              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
                               gap: 14,
                             }}
                           >
                             <div>
                               <div className="text-muted small">Carrier</div>
 
-                              <div>{record.carrier || "—"}</div>
+                              <div>{record.carrier || '—'}</div>
                             </div>
 
                             <div>
-                              <div className="text-muted small">
-                                Tracking Number
-                              </div>
+                              <div className="text-muted small">Tracking Number</div>
 
-                              <div>{record.trackingNumber || "—"}</div>
+                              <div>{record.trackingNumber || '—'}</div>
                             </div>
 
                             <div>
-                              <div className="text-muted small">
-                                Dispatched On
-                              </div>
+                              <div className="text-muted small">Dispatched On</div>
 
                               <div>
                                 {record.dispatchDate
-                                  ? new Date(
-                                      record.dispatchDate,
-                                    ).toLocaleString("en-IN", {
-                                      day: "2-digit",
-                                      month: "short",
-                                      year: "numeric",
-                                      hour: "2-digit",
-                                      minute: "2-digit",
+                                  ? new Date(record.dispatchDate).toLocaleString('en-IN', {
+                                      day: '2-digit',
+                                      month: 'short',
+                                      year: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit',
                                     })
-                                  : "—"}
+                                  : '—'}
                               </div>
                             </div>
 
                             <div>
-                              <div className="text-muted small">
-                                Dispatched By
-                              </div>
+                              <div className="text-muted small">Dispatched By</div>
 
                               <div>
-                                {record.dispatcher?.name ||
-                                  record.dispatcher?.username ||
-                                  "—"}
+                                {record.dispatcher?.name || record.dispatcher?.username || '—'}
                               </div>
                             </div>
 
@@ -1143,28 +1067,25 @@ const OrderPage = () => {
                               <div>
                                 <Tag
                                   color={
-                                    record.status === "DISPATCHED"
-                                      ? "green"
-                                      : record.status === "DELIVERED"
-                                        ? "blue"
-                                        : record.status === "RETURNED"
-                                          ? "red"
-                                          : "orange"
+                                    record.status === 'DISPATCHED'
+                                      ? 'green'
+                                      : record.status === 'DELIVERED'
+                                        ? 'blue'
+                                        : record.status === 'RETURNED'
+                                          ? 'red'
+                                          : 'orange'
                                   }
                                 >
-                                  {record.status || "—"}
+                                  {record.status || '—'}
                                 </Tag>
                               </div>
                             </div>
 
                             <div>
-                              <div className="text-muted small">
-                                Total Quantity
-                              </div>
+                              <div className="text-muted small">Total Quantity</div>
 
                               <div>
-                                <strong>{record.totalQuantity || 0}</strong>{" "}
-                                unit(s)
+                                <strong>{record.totalQuantity || 0}</strong> unit(s)
                               </div>
                             </div>
 
@@ -1181,7 +1102,7 @@ const OrderPage = () => {
                                     View / Download Invoice
                                   </a>
                                 ) : (
-                                  "—"
+                                  '—'
                                 )}
                               </div>
                             </div>
@@ -1199,7 +1120,7 @@ const OrderPage = () => {
                                     View / Download Gate-Pass
                                   </a>
                                 ) : (
-                                  "—"
+                                  '—'
                                 )}
                               </div>
                             </div>
@@ -1207,7 +1128,7 @@ const OrderPage = () => {
                             {record.remarks && (
                               <div
                                 style={{
-                                  gridColumn: "span 2",
+                                  gridColumn: 'span 2',
                                 }}
                               >
                                 <div className="text-muted small">Remarks</div>
@@ -1225,64 +1146,66 @@ const OrderPage = () => {
                   }}
                   columns={[
                     {
-                      title: "Dispatch #",
-                      dataIndex: "dispatchNumber",
-                      key: "dispatchNumber",
+                      title: 'Dispatch #',
+                      dataIndex: 'dispatchNumber',
+                      key: 'dispatchNumber',
                       width: 100,
-                      fixed: "left",
-                      render: (value, record) => <Button type="link" onClick={() => navigate(`/dispatch/${record.id}`)}>#{value}</Button>,
+                      fixed: 'left',
+                      render: (value, record) => (
+                        <Button type="link" onClick={() => navigate(`/dispatch/${record.id}`)}>
+                          #{value}
+                        </Button>
+                      ),
                     },
 
                     {
-                      title: "Date",
-                      dataIndex: "dispatchDate",
-                      key: "dispatchDate",
+                      title: 'Date',
+                      dataIndex: 'dispatchDate',
+                      key: 'dispatchDate',
                       width: 170,
                       render: (value) =>
                         value
-                          ? new Date(value).toLocaleString("en-IN", {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
+                          ? new Date(value).toLocaleString('en-IN', {
+                              day: '2-digit',
+                              month: 'short',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
                             })
-                          : "—",
+                          : '—',
                     },
 
                     {
-                      title: "Products",
-                      key: "productCount",
+                      title: 'Products',
+                      key: 'productCount',
                       width: 110,
-                      align: "center",
+                      align: 'center',
                       render: (_, record) => {
-                        const count = Array.isArray(record.items)
-                          ? record.items.length
-                          : 0;
+                        const count = Array.isArray(record.items) ? record.items.length : 0;
 
                         return (
                           <Tag>
-                            {count} {count === 1 ? "Product" : "Products"}
+                            {count} {count === 1 ? 'Product' : 'Products'}
                           </Tag>
                         );
                       },
                     },
 
                     {
-                      title: "Qty",
-                      dataIndex: "totalQuantity",
-                      key: "totalQuantity",
+                      title: 'Qty',
+                      dataIndex: 'totalQuantity',
+                      key: 'totalQuantity',
                       width: 80,
-                      align: "center",
+                      align: 'center',
                       render: (value) => <strong>{value || 0}</strong>,
                     },
 
                     {
-                      title: "Subtotal",
-                      dataIndex: "subtotal",
-                      key: "subtotal",
+                      title: 'Subtotal',
+                      dataIndex: 'subtotal',
+                      key: 'subtotal',
                       width: 140,
-                      align: "right",
+                      align: 'right',
                       render: (value, record) => {
                         const calculated = Array.isArray(record.items)
                           ? record.items.reduce(
@@ -1290,68 +1213,64 @@ const OrderPage = () => {
                                 sum +
                                 Number(
                                   item.subtotal ??
-                                    Number(item.price || 0) *
-                                      Number(item.quantity || 0),
+                                    Number(item.price || 0) * Number(item.quantity || 0),
                                 ),
                               0,
                             )
                           : 0;
 
-                        return Number(value ?? calculated).toLocaleString(
-                          "en-IN",
-                          {
-                            style: "currency",
-                            currency: "INR",
-                            maximumFractionDigits: 2,
-                          },
-                        );
+                        return Number(value ?? calculated).toLocaleString('en-IN', {
+                          style: 'currency',
+                          currency: 'INR',
+                          maximumFractionDigits: 2,
+                        });
                       },
                     },
 
                     {
-                      title: "Discount",
-                      dataIndex: "totalDiscount",
-                      key: "totalDiscount",
+                      title: 'Discount',
+                      dataIndex: 'totalDiscount',
+                      key: 'totalDiscount',
                       width: 130,
-                      align: "right",
+                      align: 'right',
                       render: (value) => {
                         const amount = Number(value || 0);
 
                         return amount > 0
-                          ? `-${amount.toLocaleString("en-IN", {
-                              style: "currency",
-                              currency: "INR",
+                          ? `-${amount.toLocaleString('en-IN', {
+                              style: 'currency',
+                              currency: 'INR',
                               maximumFractionDigits: 2,
                             })}`
-                          : "—";
+                          : '—';
                       },
                     },
 
                     {
-                      title: "Tax",
-                      dataIndex: "totalTax",
-                      key: "totalTax",
+                      title: 'Tax',
+                      dataIndex: 'totalTax',
+                      key: 'totalTax',
                       width: 130,
-                      align: "right",
+                      align: 'right',
                       render: (value) =>
-                        Number(value || 0).toLocaleString("en-IN", {
-                          style: "currency",
-                          currency: "INR",
+                        Number(value || 0).toLocaleString('en-IN', {
+                          style: 'currency',
+                          currency: 'INR',
                           maximumFractionDigits: 2,
                         }),
                     },
 
                     {
-                      title: "Amount",
-                      dataIndex: "totalAmount",
-                      key: "totalAmount",
+                      title: 'Amount',
+                      dataIndex: 'totalAmount',
+                      key: 'totalAmount',
                       width: 150,
-                      align: "right",
+                      align: 'right',
                       render: (value) => (
                         <strong>
-                          {Number(value || 0).toLocaleString("en-IN", {
-                            style: "currency",
-                            currency: "INR",
+                          {Number(value || 0).toLocaleString('en-IN', {
+                            style: 'currency',
+                            currency: 'INR',
                             maximumFractionDigits: 2,
                           })}
                         </strong>
@@ -1359,15 +1278,15 @@ const OrderPage = () => {
                     },
 
                     {
-                      title: "Transport",
-                      key: "transport",
+                      title: 'Transport',
+                      key: 'transport',
                       width: 170,
                       render: (_, r) => (
                         <div style={{ lineHeight: 1.3 }}>
-                          <div>{r.vehicleNo || r.transporter || r.carrier || "—"}</div>
+                          <div>{r.vehicleNo || r.transporter || r.carrier || '—'}</div>
                           {(r.driverName || r.driverPhone) && (
                             <div className="text-muted small">
-                              {[r.driverName, r.driverPhone].filter(Boolean).join(" · ")}
+                              {[r.driverName, r.driverPhone].filter(Boolean).join(' · ')}
                             </div>
                           )}
                         </div>
@@ -1375,72 +1294,84 @@ const OrderPage = () => {
                     },
 
                     {
-                      title: "LR / e-way bill",
-                      key: "lr",
+                      title: 'LR / e-way bill',
+                      key: 'lr',
                       width: 150,
                       render: (_, r) => (
                         <div style={{ lineHeight: 1.3 }}>
-                          <div>{r.lrNumber || r.trackingNumber || "—"}</div>
-                          {r.ewayBillNo && <div className="text-muted small">EWB {r.ewayBillNo}</div>}
+                          <div>{r.lrNumber || r.trackingNumber || '—'}</div>
+                          {r.ewayBillNo && (
+                            <div className="text-muted small">EWB {r.ewayBillNo}</div>
+                          )}
                         </div>
                       ),
                     },
 
                     {
-                      title: "Status",
-                      dataIndex: "status",
-                      key: "status",
+                      title: 'Status',
+                      dataIndex: 'status',
+                      key: 'status',
                       width: 130,
                       render: (value) => (
                         <Tag
                           color={
-                            value === "DISPATCHED"
-                              ? "green"
-                              : value === "DELIVERED"
-                                ? "blue"
-                                : value === "RETURNED"
-                                  ? "red"
-                                  : "orange"
+                            value === 'DISPATCHED'
+                              ? 'green'
+                              : value === 'DELIVERED'
+                                ? 'blue'
+                                : value === 'RETURNED'
+                                  ? 'red'
+                                  : 'orange'
                           }
                         >
-                          {value || "—"}
+                          {value || '—'}
                         </Tag>
                       ),
                     },
 
                     {
-                      title: "Delivery",
-                      key: "delivery",
+                      title: 'Delivery',
+                      key: 'delivery',
                       width: 170,
                       render: (_, r) =>
                         r.sourceQuotationDispatch ? (
-                          <Button type="link" onClick={() => navigate(`/dispatch/${r.id}`)}>Open dispatch</Button>
-                        ) : r.status === "DELIVERED" ? (
+                          <Button type="link" onClick={() => navigate(`/dispatch/${r.id}`)}>
+                            Open dispatch
+                          </Button>
+                        ) : r.status === 'DELIVERED' ? (
                           <div style={{ lineHeight: 1.3 }}>
                             <div>
                               {r.deliveredAt
-                                ? new Date(r.deliveredAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })
-                                : "Delivered"}
-                              {r.receivedBy ? ` · ${r.receivedBy}` : ""}
+                                ? new Date(r.deliveredAt).toLocaleDateString('en-IN', {
+                                    day: 'numeric',
+                                    month: 'short',
+                                  })
+                                : 'Delivered'}
+                              {r.receivedBy ? ` · ${r.receivedBy}` : ''}
                             </div>
                             {r.deliveryProofLink && (
-                              <a href={r.deliveryProofLink} target="_blank" rel="noopener noreferrer" className="small">
+                              <a
+                                href={r.deliveryProofLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="small"
+                              >
                                 Proof
                               </a>
                             )}
                           </div>
-                        ) : r.status === "DISPATCHED" ? (
+                        ) : r.status === 'DISPATCHED' ? (
                           <Button size="small" onClick={() => setDeliveredFor(r)}>
                             Mark delivered
                           </Button>
                         ) : (
-                          "—"
+                          '—'
                         ),
                     },
 
                     {
-                      title: "Invoice",
-                      key: "invoice",
+                      title: 'Invoice',
+                      key: 'invoice',
                       width: 100,
                       render: (_, record) =>
                         record.invoiceLink ? (
@@ -1448,18 +1379,18 @@ const OrderPage = () => {
                             href={record.invoiceLink}
                             target="_blank"
                             rel="noopener noreferrer"
-                            style={{ color: "#1677ff" }}
+                            style={{ color: '#1677ff' }}
                           >
                             View
                           </a>
                         ) : (
-                          "—"
+                          '—'
                         ),
                     },
 
                     {
-                      title: "Gate-Pass",
-                      key: "gatePass",
+                      title: 'Gate-Pass',
+                      key: 'gatePass',
                       width: 110,
                       render: (_, record) =>
                         record.gatePassLink ? (
@@ -1467,12 +1398,12 @@ const OrderPage = () => {
                             href={record.gatePassLink}
                             target="_blank"
                             rel="noopener noreferrer"
-                            style={{ color: "#1677ff" }}
+                            style={{ color: '#1677ff' }}
                           >
                             View
                           </a>
                         ) : (
-                          "—"
+                          '—'
                         ),
                     },
                   ]}
@@ -1490,7 +1421,7 @@ const OrderPage = () => {
               style={{ marginTop: 24 }}
             >
               {creditNotesLoading ? (
-                <div style={{ textAlign: "center", padding: "20px 0" }}>
+                <div style={{ textAlign: 'center', padding: '20px 0' }}>
                   <Spin />
                 </div>
               ) : creditNotes.length === 0 ? (
@@ -1504,15 +1435,15 @@ const OrderPage = () => {
                   rowKey="id"
                   pagination={false}
                   size="small"
-                  scroll={{ x: "max-content" }}
+                  scroll={{ x: 'max-content' }}
                   expandable={{
                     defaultExpandAllRows: false,
 
                     expandedRowRender: (record) => (
                       <div
                         style={{
-                          padding: "12px 16px",
-                          background: "#fafafa",
+                          padding: '12px 16px',
+                          background: '#fafafa',
                           borderRadius: 6,
                         }}
                       >
@@ -1524,20 +1455,18 @@ const OrderPage = () => {
                           bordered
                           columns={[
                             {
-                              title: "Product",
-                              dataIndex: "name",
-                              key: "name",
+                              title: 'Product',
+                              dataIndex: 'name',
+                              key: 'name',
                               render: (value, item) => (
                                 <div>
-                                  <div style={{ fontWeight: 500 }}>
-                                    {value || "—"}
-                                  </div>
+                                  <div style={{ fontWeight: 500 }}>{value || '—'}</div>
 
                                   {item.productCode && (
                                     <div
                                       style={{
                                         fontSize: 12,
-                                        color: "#8c8c8c",
+                                        color: '#8c8c8c',
                                         marginTop: 2,
                                       }}
                                     >
@@ -1549,57 +1478,57 @@ const OrderPage = () => {
                             },
 
                             {
-                              title: "Qty Returned",
-                              dataIndex: "quantity",
-                              key: "quantity",
+                              title: 'Qty Returned',
+                              dataIndex: 'quantity',
+                              key: 'quantity',
                               width: 130,
-                              align: "center",
+                              align: 'center',
                               render: (value) => Number(value || 0).toFixed(2),
                             },
 
                             {
-                              title: "Price",
-                              dataIndex: "price",
-                              key: "price",
+                              title: 'Price',
+                              dataIndex: 'price',
+                              key: 'price',
                               width: 140,
-                              align: "right",
+                              align: 'right',
                               render: (value) =>
-                                Number(value || 0).toLocaleString("en-IN", {
-                                  style: "currency",
-                                  currency: "INR",
+                                Number(value || 0).toLocaleString('en-IN', {
+                                  style: 'currency',
+                                  currency: 'INR',
                                   maximumFractionDigits: 2,
                                 }),
                             },
 
                             {
-                              title: "Discount",
-                              dataIndex: "discount",
-                              key: "discount",
+                              title: 'Discount',
+                              dataIndex: 'discount',
+                              key: 'discount',
                               width: 110,
-                              align: "right",
+                              align: 'right',
                               render: (value, item) => {
                                 const discount = Number(value || 0);
 
-                                return item.discountType === "percent"
+                                return item.discountType === 'percent'
                                   ? `${discount.toFixed(2)}%`
-                                  : discount.toLocaleString("en-IN", {
-                                      style: "currency",
-                                      currency: "INR",
+                                  : discount.toLocaleString('en-IN', {
+                                      style: 'currency',
+                                      currency: 'INR',
                                       maximumFractionDigits: 2,
                                     });
                               },
                             },
 
                             {
-                              title: "Amount",
-                              dataIndex: "total",
-                              key: "total",
+                              title: 'Amount',
+                              dataIndex: 'total',
+                              key: 'total',
                               width: 140,
-                              align: "right",
+                              align: 'right',
                               render: (value) =>
-                                Number(value || 0).toLocaleString("en-IN", {
-                                  style: "currency",
-                                  currency: "INR",
+                                Number(value || 0).toLocaleString('en-IN', {
+                                  style: 'currency',
+                                  currency: 'INR',
                                   maximumFractionDigits: 2,
                                 }),
                             },
@@ -1610,28 +1539,23 @@ const OrderPage = () => {
                         <div
                           style={{
                             marginTop: 16,
-                            display: "grid",
-                            gridTemplateColumns:
-                              "repeat(auto-fit, minmax(180px, 1fr))",
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
                             gap: 12,
                           }}
                         >
                           <div>
-                            <div className="text-muted small">
-                              Credit Note Date
-                            </div>
+                            <div className="text-muted small">Credit Note Date</div>
                             <div>
                               {record.creditNoteDate
-                                ? new Date(
-                                    record.creditNoteDate,
-                                  ).toLocaleString("en-IN", {
-                                    day: "2-digit",
-                                    month: "short",
-                                    year: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
+                                ? new Date(record.creditNoteDate).toLocaleString('en-IN', {
+                                    day: '2-digit',
+                                    month: 'short',
+                                    year: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
                                   })
-                                : "—"}
+                                : '—'}
                             </div>
                           </div>
 
@@ -1639,17 +1563,14 @@ const OrderPage = () => {
                             <div className="text-muted small">Issued On</div>
                             <div>
                               {record.createdAt
-                                ? new Date(record.createdAt).toLocaleString(
-                                    "en-IN",
-                                    {
-                                      day: "2-digit",
-                                      month: "short",
-                                      year: "numeric",
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    },
-                                  )
-                                : "—"}
+                                ? new Date(record.createdAt).toLocaleString('en-IN', {
+                                    day: '2-digit',
+                                    month: 'short',
+                                    year: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  })
+                                : '—'}
                             </div>
                           </div>
 
@@ -1658,38 +1579,31 @@ const OrderPage = () => {
                             <div>
                               <Tag
                                 color={
-                                  record.status === "CANCELED"
-                                    ? "red"
-                                    : record.status === "ISSUED"
-                                      ? "purple"
-                                      : "default"
+                                  record.status === 'CANCELED'
+                                    ? 'red'
+                                    : record.status === 'ISSUED'
+                                      ? 'purple'
+                                      : 'default'
                                 }
                               >
-                                {record.status || "ISSUED"}
+                                {record.status || 'ISSUED'}
                               </Tag>
                             </div>
                           </div>
 
                           <div>
-                            <div className="text-muted small">
-                              Total Quantity
-                            </div>
-                            <div>
-                              {Number(record.totalQuantity || 0).toFixed(2)}
-                            </div>
+                            <div className="text-muted small">Total Quantity</div>
+                            <div>{Number(record.totalQuantity || 0).toFixed(2)}</div>
                           </div>
 
                           <div>
                             <div className="text-muted small">Total Amount</div>
                             <div style={{ fontWeight: 600 }}>
-                              {Number(record.totalAmount || 0).toLocaleString(
-                                "en-IN",
-                                {
-                                  style: "currency",
-                                  currency: "INR",
-                                  maximumFractionDigits: 2,
-                                },
-                              )}
+                              {Number(record.totalAmount || 0).toLocaleString('en-IN', {
+                                style: 'currency',
+                                currency: 'INR',
+                                maximumFractionDigits: 2,
+                              })}
                             </div>
                           </div>
 
@@ -1705,7 +1619,7 @@ const OrderPage = () => {
                                   View Credit Note
                                 </a>
                               ) : (
-                                "—"
+                                '—'
                               )}
                             </div>
                           </div>
@@ -1732,98 +1646,88 @@ const OrderPage = () => {
                   }}
                   columns={[
                     {
-                      title: "Credit Note #",
-                      dataIndex: "creditNoteNumber",
-                      key: "creditNoteNumber",
+                      title: 'Credit Note #',
+                      dataIndex: 'creditNoteNumber',
+                      key: 'creditNoteNumber',
                       width: 180,
-                      render: (value) => <strong>#{value || "—"}</strong>,
+                      render: (value) => <strong>#{value || '—'}</strong>,
                     },
 
                     {
-                      title: "Date",
-                      dataIndex: "creditNoteDate",
-                      key: "creditNoteDate",
+                      title: 'Date',
+                      dataIndex: 'creditNoteDate',
+                      key: 'creditNoteDate',
                       width: 170,
                       render: (value) =>
                         value
-                          ? new Date(value).toLocaleString("en-IN", {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
+                          ? new Date(value).toLocaleString('en-IN', {
+                              day: '2-digit',
+                              month: 'short',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
                             })
-                          : "—",
+                          : '—',
                     },
 
                     {
-                      title: "Items",
-                      key: "itemCount",
+                      title: 'Items',
+                      key: 'itemCount',
                       width: 90,
-                      align: "center",
-                      render: (_, record) => (
-                        <Tag>{(record.items || []).length}</Tag>
-                      ),
+                      align: 'center',
+                      render: (_, record) => <Tag>{(record.items || []).length}</Tag>,
                     },
 
                     {
-                      title: "Qty Returned",
-                      dataIndex: "totalQuantity",
-                      key: "totalQuantity",
+                      title: 'Qty Returned',
+                      dataIndex: 'totalQuantity',
+                      key: 'totalQuantity',
                       width: 120,
-                      align: "center",
+                      align: 'center',
                       render: (value) => Number(value || 0).toFixed(2),
                     },
 
                     {
-                      title: "Amount",
-                      dataIndex: "totalAmount",
-                      key: "totalAmount",
+                      title: 'Amount',
+                      dataIndex: 'totalAmount',
+                      key: 'totalAmount',
                       width: 140,
-                      align: "right",
+                      align: 'right',
                       render: (value) =>
-                        Number(value || 0).toLocaleString("en-IN", {
-                          style: "currency",
-                          currency: "INR",
+                        Number(value || 0).toLocaleString('en-IN', {
+                          style: 'currency',
+                          currency: 'INR',
                           maximumFractionDigits: 2,
                         }),
                     },
 
                     {
-                      title: "Status",
-                      dataIndex: "status",
-                      key: "status",
+                      title: 'Status',
+                      dataIndex: 'status',
+                      key: 'status',
                       width: 120,
                       render: (value) => (
                         <Tag
                           color={
-                            value === "CANCELED"
-                              ? "red"
-                              : value === "ISSUED"
-                                ? "purple"
-                                : "default"
+                            value === 'CANCELED' ? 'red' : value === 'ISSUED' ? 'purple' : 'default'
                           }
                         >
-                          {value || "ISSUED"}
+                          {value || 'ISSUED'}
                         </Tag>
                       ),
                     },
 
                     {
-                      title: "Document",
-                      key: "document",
+                      title: 'Document',
+                      key: 'document',
                       width: 140,
                       render: (_, record) =>
                         record.creditNoteLink ? (
-                          <a
-                            href={record.creditNoteLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
+                          <a href={record.creditNoteLink} target="_blank" rel="noopener noreferrer">
                             View
                           </a>
                         ) : (
-                          "—"
+                          '—'
                         ),
                     },
                   ]}
@@ -1842,20 +1746,19 @@ const OrderPage = () => {
                       icon={<EditOutlined />}
                       onClick={() => setIsBillingModalVisible(true)}
                     >
-                      {billingAddress ? "Edit" : "Add"}
+                      {billingAddress ? 'Edit' : 'Add'}
                     </Button>
                   }
                   className="address-card"
                 >
                   {billingAddress ? (
                     <div className="address-content">
-                      <div className="address-name">{customer.name || "—"}</div>
-                      <div>{billingAddress.street || "—"}</div>
+                      <div className="address-name">{customer.name || '—'}</div>
+                      <div>{billingAddress.street || '—'}</div>
                       <div>
-                        {billingAddress.city}, {billingAddress.state}{" "}
-                        {billingAddress.postalCode}
+                        {billingAddress.city}, {billingAddress.state} {billingAddress.postalCode}
                       </div>
-                      <div>{billingAddress.country || "India"}</div>
+                      <div>{billingAddress.country || 'India'}</div>
                     </div>
                   ) : (
                     <Text type="secondary">No billing address set</Text>
@@ -1872,24 +1775,19 @@ const OrderPage = () => {
                       icon={<EditOutlined />}
                       onClick={() => setIsShippingModalVisible(true)}
                     >
-                      {shippingAddress ? "Edit" : "Add"}
+                      {shippingAddress ? 'Edit' : 'Add'}
                     </Button>
                   }
                   className="address-card"
                 >
                   {shippingAddress ? (
                     <div className="address-content">
-                      <div className="address-name">{customer.name || "—"}</div>
+                      <div className="address-name">{customer.name || '—'}</div>
+                      <div>{shippingAddress.street || shippingAddress.address || '—'}</div>
                       <div>
-                        {shippingAddress.street ||
-                          shippingAddress.address ||
-                          "—"}
+                        {shippingAddress.city}, {shippingAddress.state} {shippingAddress.postalCode}
                       </div>
-                      <div>
-                        {shippingAddress.city}, {shippingAddress.state}{" "}
-                        {shippingAddress.postalCode}
-                      </div>
-                      <div>{shippingAddress.country || "India"}</div>
+                      <div>{shippingAddress.country || 'India'}</div>
                     </div>
                   ) : (
                     <Text type="secondary">No shipping address set</Text>
@@ -1901,21 +1799,15 @@ const OrderPage = () => {
 
           {/* ── SIDEBAR ───────────────────────────────────────────────────── */}
           <Col xs={24} lg={8} xl={6}>
-            <Space direction="vertical" size={20} style={{ width: "100%" }}>
+            <Space direction="vertical" size={20} style={{ width: '100%' }}>
               {/* Customer */}
               <Card className="info-card">
                 <div className="customer-info">
-                  <div className="avatar-circle">
-                    {customer.name?.[0]?.toUpperCase() || "?"}
-                  </div>
+                  <div className="avatar-circle">{customer.name?.[0]?.toUpperCase() || '?'}</div>
                   <div>
-                    <div className="customer-name">{customer.name || "—"}</div>
-                    <div className="customer-contact">
-                      {customer.email || "—"}
-                    </div>
-                    <div className="customer-contact">
-                      {customer.mobileNumber || "—"}
-                    </div>
+                    <div className="customer-name">{customer.name || '—'}</div>
+                    <div className="customer-contact">{customer.email || '—'}</div>
+                    <div className="customer-contact">{customer.mobileNumber || '—'}</div>
                   </div>
                 </div>
               </Card>
@@ -1940,17 +1832,13 @@ const OrderPage = () => {
                   </div>
                   {invoiceUrl ? (
                     <Space>
-                      <a
-                        href={invoiceUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
+                      <a href={invoiceUrl} target="_blank" rel="noopener noreferrer">
                         View
                       </a>
                       <Button
                         icon={<DownloadOutlined />}
                         size="small"
-                        onClick={() => handleDownloadFile("invoice")}
+                        onClick={() => handleDownloadFile('invoice')}
                       >
                         Download
                       </Button>
@@ -1960,11 +1848,7 @@ const OrderPage = () => {
                       accept="application/pdf"
                       beforeUpload={() => false}
                       onChange={handleInvoiceChange}
-                      fileList={
-                        invoiceFile
-                          ? [{ name: invoiceFile.name, status: "done" }]
-                          : []
-                      }
+                      fileList={invoiceFile ? [{ name: invoiceFile.name, status: 'done' }] : []}
                     >
                       <Button size="small">Upload Invoice</Button>
                     </Upload>
@@ -1988,17 +1872,13 @@ const OrderPage = () => {
                   </div>
                   {gatePassUrl ? (
                     <Space>
-                      <a
-                        href={gatePassUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
+                      <a href={gatePassUrl} target="_blank" rel="noopener noreferrer">
                         View
                       </a>
                       <Button
                         icon={<DownloadOutlined />}
                         size="small"
-                        onClick={() => handleDownloadFile("gatepass")}
+                        onClick={() => handleDownloadFile('gatepass')}
                       >
                         Download
                       </Button>
@@ -2010,11 +1890,7 @@ const OrderPage = () => {
                       accept="application/pdf,image/*"
                       beforeUpload={() => false}
                       onChange={handleGatePassChange}
-                      fileList={
-                        gatePassFile
-                          ? [{ name: gatePassFile.name, status: "done" }]
-                          : []
-                      }
+                      fileList={gatePassFile ? [{ name: gatePassFile.name, status: 'done' }] : []}
                     >
                       <Button size="small">Upload Gate Pass</Button>
                     </Upload>
@@ -2039,11 +1915,7 @@ const OrderPage = () => {
                   </div>
                   {receivingDocUrl ? (
                     <Space>
-                      <a
-                        href={receivingDocUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
+                      <a href={receivingDocUrl} target="_blank" rel="noopener noreferrer">
                         View
                       </a>
                     </Space>
@@ -2053,9 +1925,7 @@ const OrderPage = () => {
                       beforeUpload={() => false}
                       onChange={handleReceivingDocChange}
                       fileList={
-                        receivingDocFile
-                          ? [{ name: receivingDocFile.name, status: "done" }]
-                          : []
+                        receivingDocFile ? [{ name: receivingDocFile.name, status: 'done' }] : []
                       }
                     >
                       <Button size="small">Upload Receiving Doc</Button>
@@ -2085,25 +1955,20 @@ const OrderPage = () => {
                 className="info-card"
               >
                 {activityLoading ? (
-                  <div style={{ textAlign: "center", padding: "12px 0" }}>
+                  <div style={{ textAlign: 'center', padding: '12px 0' }}>
                     <Spin size="small" />
                   </div>
                 ) : activities.length === 0 ? (
-                  <Empty
-                    description="No activity yet"
-                    image={Empty.PRESENTED_IMAGE_SIMPLE}
-                  />
+                  <Empty description="No activity yet" image={Empty.PRESENTED_IMAGE_SIMPLE} />
                 ) : (
                   <>
                     <Timeline
                       items={activities.map((a) => ({
-                        color: ACTIVITY_TAG_COLOR[a.action] || "gray",
+                        color: ACTIVITY_TAG_COLOR[a.action] || 'gray',
                         children: (
                           <div key={a.id}>
-                            <Tag
-                              color={ACTIVITY_TAG_COLOR[a.action] || "default"}
-                            >
-                              {a.action?.replace(/_/g, " ")}
+                            <Tag color={ACTIVITY_TAG_COLOR[a.action] || 'default'}>
+                              {a.action?.replace(/_/g, ' ')}
                             </Tag>
                             <div style={{ marginTop: 4 }}>{a.description}</div>
                             <Text type="secondary" style={{ fontSize: 12 }}>
@@ -2114,7 +1979,7 @@ const OrderPage = () => {
                       }))}
                     />
                     {activityTotal > activityLimit && (
-                      <div style={{ textAlign: "center", marginTop: 12 }}>
+                      <div style={{ textAlign: 'center', marginTop: 12 }}>
                         <Pagination
                           size="small"
                           current={activityPage}
@@ -2134,24 +1999,22 @@ const OrderPage = () => {
 
         {/* ── COMMENTS ──────────────────────────────────────────────────── */}
         <Card
-          title={
-            <span style={{ fontSize: 16, fontWeight: 600 }}>Comments</span>
-          }
+          title={<span style={{ fontSize: 16, fontWeight: 600 }}>Comments</span>}
           className="comments-section"
           style={{
             marginTop: 32,
             borderRadius: 12,
-            boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
+            boxShadow: '0 2px 10px rgba(0,0,0,0.06)',
           }}
           bodyStyle={{ padding: 16 }}
         >
           {/* Input Section */}
           <div
             style={{
-              display: "flex",
+              display: 'flex',
               gap: 12,
               marginBottom: 20,
-              alignItems: "flex-start",
+              alignItems: 'flex-start',
             }}
           >
             <Input.TextArea
@@ -2160,7 +2023,7 @@ const OrderPage = () => {
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               style={{
-                resize: "none",
+                resize: 'none',
                 borderRadius: 10,
               }}
             />
@@ -2171,7 +2034,7 @@ const OrderPage = () => {
               onClick={handleAddComment}
               disabled={!newComment.trim()}
               style={{
-                height: "100%",
+                height: '100%',
                 borderRadius: 10,
                 paddingInline: 20,
               }}
@@ -2182,16 +2045,16 @@ const OrderPage = () => {
 
           {/* Content Section */}
           {commentLoading ? (
-            <div style={{ textAlign: "center", padding: "20px 0" }}>
+            <div style={{ textAlign: 'center', padding: '20px 0' }}>
               <Spin />
             </div>
           ) : comments.length === 0 ? (
             <Text
               type="secondary"
               style={{
-                display: "block",
-                textAlign: "center",
-                padding: "32px 0",
+                display: 'block',
+                textAlign: 'center',
+                padding: '32px 0',
                 fontSize: 14,
               }}
             >
@@ -2201,8 +2064,8 @@ const OrderPage = () => {
             <div
               className="comments-list"
               style={{
-                display: "flex",
-                flexDirection: "column",
+                display: 'flex',
+                flexDirection: 'column',
                 gap: 12,
                 marginTop: 8,
               }}
@@ -2213,14 +2076,14 @@ const OrderPage = () => {
                   style={{
                     padding: 12,
                     borderRadius: 10,
-                    background: "#fafafa",
-                    border: "1px solid #f0f0f0",
+                    background: '#fafafa',
+                    border: '1px solid #f0f0f0',
                   }}
                 >
                   <CommentRow
                     comment={c}
                     onDelete={handleDeleteComment}
-                    currentUserId={String(user.userId || "").trim()}
+                    currentUserId={String(user.userId || '').trim()}
                   />
                 </div>
               ))}

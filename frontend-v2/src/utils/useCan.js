@@ -1,13 +1,13 @@
-import { useCallback, useMemo } from "react";
-import { useAuth } from "../context/AuthContext";
+import { useCallback, useMemo } from 'react';
+import { useAuth } from '../context/AuthContext';
 
-const FULL_ACCESS = ["SUPER_ADMIN", "DEVELOPER"];
+const FULL_ACCESS = ['SUPER_ADMIN', 'DEVELOPER'];
 
 /** Role names of the logged-in user (from the profile and the permissions call). */
 export const useRoles = () => {
   const { auth } = useAuth();
   let roles = auth?.user?.roles || [];
-  if (typeof roles === "string") {
+  if (typeof roles === 'string') {
     try {
       roles = JSON.parse(roles);
     } catch {
@@ -28,11 +28,9 @@ export default function useCan() {
   const permissions = useMemo(() => auth?.permissions || [], [auth?.permissions]);
   const full = roles.some((r) => FULL_ACCESS.includes(r));
   return useCallback(
-    (module, action = "view") =>
+    (module, action = 'view') =>
       full ||
-      permissions.some(
-        (p) => p.module === module && (p.action === action || p.api === action),
-      ),
+      permissions.some((p) => p.module === module && (p.action === action || p.api === action)),
     [full, permissions],
   );
 }

@@ -1,11 +1,11 @@
 // src/api/keywordApi.js
-import { baseApi } from "../store/baseApi";
+import { baseApi } from '../store/baseApi';
 
 export const keywordApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getAllKeywords: builder.query({
-      query: () => "/keyword/",
-      providesTags: ["Keyword"],
+      query: () => '/keyword/',
+      providesTags: ['Keyword'],
       // This is the key fix!
       transformResponse: (response) => {
         // Backend returns { keywords: [...] } → extract the array
@@ -21,33 +21,33 @@ export const keywordApi = baseApi.injectEndpoints({
 
     getKeywordById: builder.query({
       query: (id) => `/keyword/${id}`,
-      providesTags: (result, error, id) => [{ type: "Keyword", id }],
+      providesTags: (result, error, id) => [{ type: 'Keyword', id }],
     }),
 
     createKeyword: builder.mutation({
       query: (newKeyword) => ({
-        url: "/keyword/",
-        method: "POST",
+        url: '/keyword/',
+        method: 'POST',
         body: newKeyword,
       }),
-      invalidatesTags: ["Keyword"],
+      invalidatesTags: ['Keyword'],
     }),
 
     updateKeyword: builder.mutation({
       query: ({ id, updatedData }) => ({
         url: `/keyword/${id}`,
-        method: "PUT",
+        method: 'PUT',
         body: updatedData,
       }),
-      invalidatesTags: (result, error, { id }) => [{ type: "Keyword", id }],
+      invalidatesTags: (result, error, { id }) => [{ type: 'Keyword', id }],
     }),
 
     deleteKeyword: builder.mutation({
       query: (id) => ({
         url: `/keyword/${id}`,
-        method: "DELETE",
+        method: 'DELETE',
       }),
-      invalidatesTags: ["Keyword"],
+      invalidatesTags: ['Keyword'],
     }),
   }),
 });

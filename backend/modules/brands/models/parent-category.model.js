@@ -1,7 +1,7 @@
 // models/ParentCategory.js
 module.exports = (sequelize, DataTypes) => {
   const ParentCategory = sequelize.define(
-    "ParentCategory",
+    'ParentCategory',
     {
       id: {
         type: DataTypes.UUID,
@@ -28,11 +28,11 @@ module.exports = (sequelize, DataTypes) => {
       },
     },
     {
-      tableName: "parentcategories",
+      tableName: 'parentcategories',
       timestamps: true,
       indexes: [
-        { unique: true, fields: ["name"] },
-        { unique: true, fields: ["slug"] },
+        { unique: true, fields: ['name'] },
+        { unique: true, fields: ['slug'] },
       ],
       hooks: {
         beforeValidate: (category) => {
@@ -40,12 +40,12 @@ module.exports = (sequelize, DataTypes) => {
             category.slug = category.name
               .toLowerCase()
               .trim()
-              .replace(/[^a-z0-9]+/gi, "-")
-              .replace(/^-|-$/g, "");
+              .replace(/[^a-z0-9]+/gi, '-')
+              .replace(/^-|-$/g, '');
           }
         },
       },
-    }
+    },
   );
 
   // -------------------------------
@@ -55,21 +55,21 @@ module.exports = (sequelize, DataTypes) => {
     // ParentCategory ↔ Brand (M:N) through BrandParentCategory
     ParentCategory.belongsToMany(models.Brand, {
       through: models.BrandParentCategory,
-      foreignKey: "parentCategoryId",
-      otherKey: "brandId",
-      as: "brands",
+      foreignKey: 'parentCategoryId',
+      otherKey: 'brandId',
+      as: 'brands',
     });
 
     // Optional: access raw join table
     ParentCategory.hasMany(models.BrandParentCategory, {
-      foreignKey: "parentCategoryId",
-      as: "brandParentCategories",
+      foreignKey: 'parentCategoryId',
+      as: 'brandParentCategories',
     });
 
     // ParentCategory → Category (1:M)
     ParentCategory.hasMany(models.Category, {
-      foreignKey: "parentCategoryId",
-      as: "categories",
+      foreignKey: 'parentCategoryId',
+      as: 'categories',
     });
   };
 

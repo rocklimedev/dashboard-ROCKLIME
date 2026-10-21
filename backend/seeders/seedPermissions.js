@@ -1,13 +1,13 @@
-const fs = require("fs");
-const path = require("path");
-const { v4: uuidv4 } = require("uuid");
-const sequelize = require("../config/database");
-const Permission = require("../models/permisson");
+const fs = require('fs');
+const path = require('path');
+const { v4: uuidv4 } = require('uuid');
+const sequelize = require('../config/database');
+const Permission = require('../models/permisson');
 
 (async () => {
   try {
-    const dataPath = path.join(__dirname, "permissions.json");
-    const permissionsData = JSON.parse(fs.readFileSync(dataPath, "utf8"));
+    const dataPath = path.join(__dirname, 'permissions.json');
+    const permissionsData = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
 
     let totalParsed = 0;
     let totalUpdatedOrCreated = 0;
@@ -25,7 +25,7 @@ const Permission = require("../models/permisson");
           createdAt: permission.createdAt || new Date(),
           updatedAt: new Date(),
         },
-        { returning: true }
+        { returning: true },
       );
 
       if (created || record) {
@@ -37,7 +37,7 @@ const Permission = require("../models/permisson");
     console.log(`✅ Total records updated/inserted: ${totalUpdatedOrCreated}`);
     process.exit(0);
   } catch (error) {
-    console.error("❌ Error seeding permissions:", error);
+    console.error('❌ Error seeding permissions:', error);
     process.exit(1);
   }
 })();

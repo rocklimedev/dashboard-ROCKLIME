@@ -1,23 +1,23 @@
 // src/components/Quotation/PreviewQuotation.jsx
-import React, { useRef, useMemo } from "react";
-import { Modal, Button, Typography, Tag } from "antd";
-import { FilePdfFilled, CloseOutlined } from "@ant-design/icons";
+import React, { useRef, useMemo } from 'react';
+import { Modal, Button, Typography, Tag } from 'antd';
+import { FilePdfFilled, CloseOutlined } from '@ant-design/icons';
 
-import logo from "../../assets/img/logo-quotation.png";
-import coverImage from "../../assets/img/quotation_first_page.jpeg";
-import quotationBgImage from "../../assets/img/quotation_letterhead.jpeg";
+import logo from '../../assets/img/logo-quotation.png';
+import coverImage from '../../assets/img/quotation_first_page.jpeg';
+import quotationBgImage from '../../assets/img/quotation_letterhead.jpeg';
 
-import { exportToPDF } from "./hooks/exportHelpers";
-import { calcTotals, amountInWords } from "./hooks/calcHelpers";
-import styles from "./quotationnew.module.css";
+import { exportToPDF } from './hooks/exportHelpers';
+import { calcTotals, amountInWords } from './hooks/calcHelpers';
+import styles from './quotationnew.module.css';
 
 const { Title, Text } = Typography;
 
 const formatINR = (value) => {
   const num = Number(value);
   return isNaN(num)
-    ? "—"
-    : `₹${num.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    ? '—'
+    : `₹${num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
 const PreviewQuotation = ({
@@ -39,12 +39,11 @@ const PreviewQuotation = ({
   const normalizedQuotation = useMemo(
     () => ({
       ...quotationData,
-      extraDiscount:
-        quotationData.extraDiscount ?? quotationData.discountAmount ?? 0,
+      extraDiscount: quotationData.extraDiscount ?? quotationData.discountAmount ?? 0,
       extraDiscountType: (
         quotationData.extraDiscountType ??
         quotationData.discountType ??
-        "percent"
+        'percent'
       )
         .toLowerCase()
         .trim(),
@@ -52,14 +51,14 @@ const PreviewQuotation = ({
     [quotationData],
   );
 
-  const customerName = customer?.name || "Dear Client";
-  const customerPhone = customer?.mobileNumber || customer?.phone || "—";
+  const customerName = customer?.name || 'Dear Client';
+  const customerPhone = customer?.mobileNumber || customer?.phone || '—';
   const customerAddress =
     address?.street || address?.city
-      ? `${address.street || ""}, ${address.city || ""}, ${address.state || ""} - ${address.pincode || address.postalCode || address.zip || ""}`
-          .replace(/^,\s*|,*\s*$/g, "")
+      ? `${address.street || ''}, ${address.city || ''}, ${address.state || ''} - ${address.pincode || address.postalCode || address.zip || ''}`
+          .replace(/^,\s*|,*\s*$/g, '')
           .trim()
-      : "—";
+      : '—';
 
   const brandNames = useMemo(() => {
     const set = new Set();
@@ -67,11 +66,10 @@ const PreviewQuotation = ({
       const pd = productsData.find((p) => p.productId === item.productId);
       const brand =
         pd?.brandName ||
-        pd?.metaDetails?.find((m) => m.title?.toLowerCase().includes("brand"))
-          ?.value;
-      if (brand && brand !== "N/A") set.add(brand.trim());
+        pd?.metaDetails?.find((m) => m.title?.toLowerCase().includes('brand'))?.value;
+      if (brand && brand !== 'N/A') set.add(brand.trim());
     });
-    return set.size ? [...set].join(" / ") : "GROHE / AMERICAN STANDARD";
+    return set.size ? [...set].join(' / ') : 'GROHE / AMERICAN STANDARD';
   }, [cartItems, productsData]);
 
   // ────────────────────────────────────────────────────────────────
@@ -97,10 +95,10 @@ const PreviewQuotation = ({
     let extraDiscType = normalizedQuotation.extraDiscountType;
 
     // Normalize type
-    if (["fixed", "amount", "rs", "rupees", "₹"].includes(extraDiscType)) {
-      extraDiscType = "amount";
+    if (['fixed', 'amount', 'rs', 'rupees', '₹'].includes(extraDiscType)) {
+      extraDiscType = 'amount';
     } else {
-      extraDiscType = "percent";
+      extraDiscType = 'percent';
     }
 
     return calcTotals(
@@ -112,29 +110,17 @@ const PreviewQuotation = ({
       itemDiscounts,
       itemDiscountTypes,
     );
-  }, [
-    cartItems,
-    normalizedQuotation,
-    itemDiscounts,
-    itemDiscountTypes,
-    quotationData?.roundOff,
-  ]);
+  }, [cartItems, normalizedQuotation, itemDiscounts, itemDiscountTypes, quotationData?.roundOff]);
 
   const finalAmountInWords = amountInWords(Math.round(finalTotal));
 
   const handleExportPDF = async () => {
     if (!previewRef.current) return;
-    const safeTitle = (quotationData?.document_title || "Quotation")
-      .replace(/[\\/:*?"<>|]/g, "_")
-      .replace(/\s+/g, "_")
+    const safeTitle = (quotationData?.document_title || 'Quotation')
+      .replace(/[\\/:*?"<>|]/g, '_')
+      .replace(/\s+/g, '_')
       .substring(0, 50);
-    await exportToPDF(
-      previewRef,
-      "preview",
-      "current",
-      quotationData,
-      `${safeTitle}_Preview.pdf`,
-    );
+    await exportToPDF(previewRef, 'preview', 'current', quotationData, `${safeTitle}_Preview.pdf`);
   };
 
   const renderPages = () => {
@@ -146,9 +132,7 @@ const PreviewQuotation = ({
       <div key="cover" className={`${styles.coverPage} page`}>
         <img src={coverImage} alt="Cover" className={styles.coverBg} />
         <div className={styles.coverContent}>
-          <div className={styles.dynamicCustomerName}>
-            {customerName.toUpperCase()}
-          </div>
+          <div className={styles.dynamicCustomerName}>{customerName.toUpperCase()}</div>
         </div>
       </div>,
     );
@@ -156,24 +140,14 @@ const PreviewQuotation = ({
     // Page 2: Letterhead
     pages.push(
       <div key="letterhead" className={`${styles.letterheadPage} page`}>
-        <img
-          src={quotationBgImage}
-          alt="Letterhead Background"
-          className={styles.letterheadBg}
-        />
+        <img src={quotationBgImage} alt="Letterhead Background" className={styles.letterheadBg} />
 
         <div className={styles.letterheadContent}>
-          <div className={`${styles.clientField} ${styles.clientNameField}`}>
-            {customerName}
-          </div>
-          <div className={`${styles.clientField} ${styles.contactField}`}>
-            {customerPhone}
-          </div>
-          <div className={`${styles.clientField} ${styles.addressField}`}>
-            {customerAddress}
-          </div>
+          <div className={`${styles.clientField} ${styles.clientNameField}`}>{customerName}</div>
+          <div className={`${styles.clientField} ${styles.contactField}`}>{customerPhone}</div>
+          <div className={`${styles.clientField} ${styles.addressField}`}>{customerAddress}</div>
           <div className={`${styles.clientField} ${styles.quotationNoField}`}>
-            {quotationData.reference_number || "PREVIEW"}
+            {quotationData.reference_number || 'PREVIEW'}
           </div>
         </div>
 
@@ -203,10 +177,10 @@ const PreviewQuotation = ({
               <div className={styles.clientAddress}>{customerAddress}</div>
             </div>
             <div className={styles.pageDate}>
-              {new Date().toLocaleDateString("en-IN", {
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
+              {new Date().toLocaleDateString('en-IN', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
               })}
             </div>
           </div>
@@ -236,40 +210,32 @@ const PreviewQuotation = ({
             </thead>
             <tbody>
               {items.map((p, idx) => {
-                const pd =
-                  productsData.find((x) => x.productId === p.productId) || {};
+                const pd = productsData.find((x) => x.productId === p.productId) || {};
 
-                const img = p.imageUrl || pd.images?.[0] || "";
+                const img = p.imageUrl || pd.images?.[0] || '';
 
                 const code =
                   p.companyCode ||
-                  pd.metaDetails?.find((m) => m.slug === "companyCode")
-                    ?.value ||
-                  "—";
+                  pd.metaDetails?.find((m) => m.slug === 'companyCode')?.value ||
+                  '—';
 
                 const mrp = Number(p.price || p.sellingPrice || 0);
                 const qty = Number(p.quantity || 1);
                 const discount = Number(itemDiscounts[p.productId] || 0);
-                const discountType =
-                  itemDiscountTypes[p.productId] || "percent";
+                const discountType = itemDiscountTypes[p.productId] || 'percent';
 
                 const unitPrice =
-                  discountType === "percent"
-                    ? mrp * (1 - discount / 100)
-                    : mrp - discount;
+                  discountType === 'percent' ? mrp * (1 - discount / 100) : mrp - discount;
                 const total = Math.round(unitPrice * qty);
 
                 return (
                   <tr key={p.productId || idx}>
                     <td className={styles.snoCell}>{i + idx + 1}.</td>
                     <td className={styles.prodNameCell}>
-                      {p.name || pd.name || "—"}
+                      {p.name || pd.name || '—'}
                       {p.isOption && (
-                        <Tag
-                          color="orange"
-                          style={{ marginLeft: 8, fontSize: "0.8em" }}
-                        >
-                          {p.optionType || "Optional"}
+                        <Tag color="orange" style={{ marginLeft: 8, fontSize: '0.8em' }}>
+                          {p.optionType || 'Optional'}
                         </Tag>
                       )}
                     </td>
@@ -282,8 +248,7 @@ const PreviewQuotation = ({
                           className={styles.prodImg}
                           onError={(e) => {
                             e.target.onerror = null;
-                            e.target.src =
-                              "https://via.placeholder.com/135x60?text=No+Image";
+                            e.target.src = 'https://via.placeholder.com/135x60?text=No+Image';
                           }}
                         />
                       ) : (
@@ -297,9 +262,7 @@ const PreviewQuotation = ({
                     <td>{qty}</td>
                     <td>{formatINR(mrp)}</td>
                     <td className={styles.discountCell}>
-                      {discountType === "percent"
-                        ? `${discount}%`
-                        : `₹${discount}`}
+                      {discountType === 'percent' ? `${discount}%` : `₹${discount}`}
                     </td>
                     <td className={styles.totalCell}>{formatINR(total)}</td>
                   </tr>
@@ -320,9 +283,7 @@ const PreviewQuotation = ({
                   {totalProductDiscount > 0 && (
                     <div className={styles.summaryRow}>
                       <span>Product Discount</span>
-                      <span style={{ color: "#cf1322" }}>
-                        -{formatINR(totalProductDiscount)}
-                      </span>
+                      <span style={{ color: '#cf1322' }}>-{formatINR(totalProductDiscount)}</span>
                     </div>
                   )}
 
@@ -330,14 +291,12 @@ const PreviewQuotation = ({
                     <div className={styles.summaryRow}>
                       <span>
                         Extra Discount
-                        {normalizedQuotation.extraDiscountType === "percent" &&
+                        {normalizedQuotation.extraDiscountType === 'percent' &&
                         normalizedQuotation.extraDiscount
                           ? ` (${normalizedQuotation.extraDiscount}%)`
-                          : ""}
+                          : ''}
                       </span>
-                      <span style={{ color: "#cf1322" }}>
-                        -{formatINR(extraDiscountAmt)}
-                      </span>
+                      <span style={{ color: '#cf1322' }}>-{formatINR(extraDiscountAmt)}</span>
                     </div>
                   )}
 
@@ -349,7 +308,7 @@ const PreviewQuotation = ({
                   <div className={styles.summaryRow}>
                     <span>Round Off</span>
                     <span>
-                      {roundOffApplied >= 0 ? "+" : ""}
+                      {roundOffApplied >= 0 ? '+' : ''}
                       {formatINR(Math.abs(roundOffApplied))}
                     </span>
                   </div>
@@ -358,13 +317,9 @@ const PreviewQuotation = ({
                 <div className={styles.summaryRight}>
                   <div className={styles.totalAmount}>
                     <span>Total Amount</span>
-                    <span>
-                      ₹{Number(Math.round(finalTotal)).toLocaleString("en-IN")}
-                    </span>
+                    <span>₹{Number(Math.round(finalTotal)).toLocaleString('en-IN')}</span>
                   </div>
-                  <div className={styles.amountInWords}>
-                    {finalAmountInWords}
-                  </div>
+                  <div className={styles.amountInWords}>{finalAmountInWords}</div>
                 </div>
               </div>
 
@@ -374,13 +329,12 @@ const PreviewQuotation = ({
                   style={{
                     marginTop: 16,
                     fontSize: 13,
-                    color: "#555",
-                    textAlign: "center",
+                    color: '#555',
+                    textAlign: 'center',
                   }}
                 >
                   <em>
-                    Note: Optional / add-on items are listed but excluded from
-                    the final total.
+                    Note: Optional / add-on items are listed but excluded from the final total.
                   </em>
                 </div>
               )}
@@ -396,7 +350,7 @@ const PreviewQuotation = ({
   return (
     <Modal
       title={
-        <Title level={3} style={{ margin: 0, color: "#aa0f1f" }}>
+        <Title level={3} style={{ margin: 0, color: '#aa0f1f' }}>
           Quotation Preview
         </Title>
       }
@@ -404,35 +358,27 @@ const PreviewQuotation = ({
       onCancel={onClose}
       width={1000}
       style={{ top: 20 }}
-      bodyStyle={{ padding: 0, background: "#f5f5f5" }}
+      bodyStyle={{ padding: 0, background: '#f5f5f5' }}
       destroyOnClose
       footer={[
         <Button key="close" onClick={onClose} icon={<CloseOutlined />}>
           Close
         </Button>,
-        <Button
-          key="pdf"
-          type="primary"
-          icon={<FilePdfFilled />}
-          onClick={handleExportPDF}
-        >
+        <Button key="pdf" type="primary" icon={<FilePdfFilled />} onClick={handleExportPDF}>
           Export PDF
         </Button>,
       ]}
     >
-      <div
-        ref={previewRef}
-        style={{ position: "absolute", left: "-9999px", top: 0 }}
-      >
+      <div ref={previewRef} style={{ position: 'absolute', left: '-9999px', top: 0 }}>
         <div className={styles.printArea}>{renderPages()}</div>
       </div>
 
       <div
         style={{
-          padding: "40px 20px",
-          background: "#f5f5f5",
-          minHeight: "80vh",
-          overflowY: "auto",
+          padding: '40px 20px',
+          background: '#f5f5f5',
+          minHeight: '80vh',
+          overflowY: 'auto',
         }}
       >
         <div className={styles.printArea}>{renderPages()}</div>

@@ -1,5 +1,5 @@
-import { PDFDocument, StandardFonts } from "pdf-lib";
-import poTemplate from "../../assets/pdf/order_report.pdf";
+import { PDFDocument, StandardFonts } from 'pdf-lib';
+import poTemplate from '../../assets/pdf/order_report.pdf';
 const addTemplatePage = async (pdfDoc, templateBytes) => {
   const templateDoc = await PDFDocument.load(templateBytes);
   const [templatePage] = await pdfDoc.copyPages(templateDoc, [0]);
@@ -8,9 +8,7 @@ const addTemplatePage = async (pdfDoc, templateBytes) => {
 };
 export const generatePOReportPDF = async (pos, startDate, endDate) => {
   try {
-    const templateBytes = await fetch(poTemplate).then((res) =>
-      res.arrayBuffer(),
-    );
+    const templateBytes = await fetch(poTemplate).then((res) => res.arrayBuffer());
 
     const pdfDoc = await PDFDocument.create();
 
@@ -40,14 +38,12 @@ export const generatePOReportPDF = async (pos, startDate, endDate) => {
       paginated[p].forEach((po, i) => {
         const sno = p * ROWS_PER_PAGE + i + 1;
 
-        const poNo = po.poNumber || po.id || "-";
-        const vendor = po.vendor?.vendorName || po.vendorName || "Unknown";
-        const date = po.orderDate
-          ? new Date(po.orderDate).toLocaleDateString("en-IN")
-          : "-";
+        const poNo = po.poNumber || po.id || '-';
+        const vendor = po.vendor?.vendorName || po.vendorName || 'Unknown';
+        const date = po.orderDate ? new Date(po.orderDate).toLocaleDateString('en-IN') : '-';
 
-        const amount = `Rs. ${Number(po.totalAmount || 0).toLocaleString("en-IN")}`;
-        const status = (po.status || "pending").toUpperCase();
+        const amount = `Rs. ${Number(po.totalAmount || 0).toLocaleString('en-IN')}`;
+        const status = (po.status || 'pending').toUpperCase();
 
         page.drawText(String(sno), { x: COLS.sno, y, font, size: 10 });
         page.drawText(poNo, { x: COLS.poNo, y, font, size: 10 });
@@ -69,16 +65,16 @@ export const generatePOReportPDF = async (pos, startDate, endDate) => {
 
     const pdfBytes = await pdfDoc.save();
 
-    const blob = new Blob([pdfBytes], { type: "application/pdf" });
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
 
-    const link = document.createElement("a");
+    const link = document.createElement('a');
     link.href = url;
     link.download = `PO_Report_${Date.now()}.pdf`;
     link.click();
 
     URL.revokeObjectURL(url);
   } catch (err) {
-    console.error("PO Report Error:", err);
+    console.error('PO Report Error:', err);
   }
 };

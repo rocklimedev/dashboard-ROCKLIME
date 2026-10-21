@@ -17,13 +17,23 @@ function poLine(item) {
   const qty = num(item.quantity, 1);
   const rate = num(item.unitPrice ?? item.rate ?? item.price, 0);
   const disc = num(item.discount, 0);
-  const type = String(item.discountType || "percent").toLowerCase();
+  const type = String(item.discountType || 'percent').toLowerCase();
   const gstRate = num(item.tax ?? item.gstRate, 0);
   const gross = r2(qty * rate);
-  const discount = r2(type === "percent" ? (gross * disc) / 100 : disc * qty);
+  const discount = r2(type === 'percent' ? (gross * disc) / 100 : disc * qty);
   const net = r2(gross - discount);
   const gst = r2((net * gstRate) / 100);
-  return { qty, rate, gross, discount, net, gstRate, gst, netRate: qty ? r2(net / qty) : 0, total: r2(net + gst) };
+  return {
+    qty,
+    rate,
+    gross,
+    discount,
+    net,
+    gstRate,
+    gst,
+    netRate: qty ? r2(net / qty) : 0,
+    total: r2(net + gst),
+  };
 }
 
 function poTotals({ items = [], freight = 0, freightGst = 18, interState = false } = {}) {

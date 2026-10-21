@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const quotationItemSchema = new mongoose.Schema({
   productId: String,
@@ -14,8 +14,8 @@ const quotationItemSchema = new mongoose.Schema({
   discount: Number,
   discountType: {
     type: String,
-    enum: ["percent", "fixed"],
-    default: "percent",
+    enum: ['percent', 'fixed'],
+    default: 'percent',
   },
   tax: Number,
   total: Number,
@@ -24,7 +24,7 @@ const quotationItemSchema = new mongoose.Schema({
   isOptionFor: { type: String, default: null },
   optionType: {
     type: String,
-    enum: ["variant", "upgrade", "addon", null],
+    enum: ['variant', 'upgrade', 'addon', null],
     default: null,
   },
   groupId: { type: String, default: null },
@@ -65,4 +65,4 @@ const quotationItemsSchema = new mongoose.Schema({
   items: [quotationItemSchema],
 });
 
-module.exports = mongoose.model("QuotationItem", quotationItemsSchema);
+module.exports = mongoose.model('QuotationItem', quotationItemsSchema);

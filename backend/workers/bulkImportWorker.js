@@ -1,19 +1,19 @@
 // workers/bulkImportWorker.js
-const { Worker } = require("bullmq");
-const { connection } = require("../lib/queue");
-const { ImportJob } = require("../models");
-const Papa = require("papaparse");
-const XLSX = require("xlsx");
-const { downloadFromFtp } = require("../middleware/upload");
-const { sequelize } = require("../config/database");
-const productController = require("../modules/products/product.controller");
-const { Op } = require("sequelize");
-const { Keyword } = require("../models");
+const { Worker } = require('bullmq');
+const { connection } = require('../lib/queue');
+const { ImportJob } = require('../models');
+const Papa = require('papaparse');
+const XLSX = require('xlsx');
+const { downloadFromFtp } = require('../middleware/upload');
+const { sequelize } = require('../config/database');
+const productController = require('../modules/products/product.controller');
+const { Op } = require('sequelize');
+const { Keyword } = require('../models');
 
-console.log("[Worker] Starting bulk-product-import worker...");
+console.log('[Worker] Starting bulk-product-import worker...');
 
 const worker = new Worker(
-  "bulk-product-import",
+  'bulk-product-import',
   async (job) => {
     const { importJobId } = job.data;
 
@@ -24,18 +24,16 @@ const worker = new Worker(
       throw new Error(`ImportJob not found: ${importJobId}`);
     }
 
-    await importJob.update({ status: "processing" });
+    await importJob.update({ status: 'processing' });
 
     let fileBuffer;
     try {
-      console.log(
-        `[Job ${job.id}] Downloading file from FTP: ${importJob.filePath}`,
-      );
+      console.log(`[Job ${job.id}] Downloading file from FTP: ${importJob.filePath}`);
       fileBuffer = await downloadFromFtp(importJob.filePath);
     } catch (err) {
       console.error(`[Job ${job.id}] FTP download failed:`, err);
       await importJob.update({
-        status: "failed",
+        status: 'failed',
         errorLog: [{ error: `Failed to download file: ${err.message}` }],
       });
       throw err;
@@ -48,8 +46,8 @@ const worker = new Worker(
     let rows = [];
 
     try {
-      if (importJob.originalFileName?.toLowerCase().endsWith(".csv")) {
-        const text = fileBuffer.toString("utf-8");
+      if (importJob.originalFileName?.toLowerCase().endsWith('.csv')) {
+        const text = fileBuffer.toString('utf-8');
         const parsed = Papa.parse(text, {
           skipEmptyLines: true,
           header: false,
@@ -61,17 +59,13 @@ const worker = new Worker(
         }
 
         if (parsed.data.length < 1) {
-          throw new Error("File has no headers");
+          throw new Error('File has no headers');
         }
 
-        headers = parsed.data[0].map((h) =>
-          (h || "").toString().trim().replace(/\s+/g, " "),
-        );
-        rows = parsed.data
-          .slice(1)
-          .filter((r) => r.some((cell) => cell?.toString().trim() !== ""));
+        headers = parsed.data[0].map((h) => (h || '').toString().trim().replace(/\s+/g, ' '));
+        rows = parsed.data.slice(1).filter((r) => r.some((cell) => cell?.toString().trim() !== ''));
       } else {
-        const workbook = XLSX.read(fileBuffer, { type: "buffer" });
+        const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
         const sheetName = workbook.SheetNames[0];
         const sheet = workbook.Sheets[sheetName];
         const json = XLSX.utils.sheet_to_json(sheet, {
@@ -85,22 +79,22 @@ const worker = new Worker(
       console.log(`[Job ${job.id}] Parsed ${rows.length} rows`);
 
       if (rows.length === 0) {
-        throw new Error("No data rows found in file");
+        throw new Error('No data rows found in file');
       }
 
       await importJob.update({ totalRows: rows.length });
     } catch (parseErr) {
       console.error(`[Job ${job.id}] File parse failed:`, parseErr);
       await importJob.update({
-        status: "failed",
+        status: 'failed',
         errorLog: [{ error: `File parsing failed: ${parseErr.message}` }],
       });
       throw parseErr;
     }
-    console.log("[DEBUG] Headers:", headers);
-    console.log("[DEBUG] First 2 rows:", rows.slice(0, 2));
-    console.log("[DEBUG] Mapping:", importJob.mapping);
-    console.log("[DEBUG] Total rows after filter:", rows.length);
+    console.log('[DEBUG] Headers:', headers);
+    console.log('[DEBUG] First 2 rows:', rows.slice(0, 2));
+    console.log('[DEBUG] Mapping:', importJob.mapping);
+    console.log('[DEBUG] Total rows after filter:', rows.length);
     // ────────────────────────────────────────────────
     // Process in batches
     // ────────────────────────────────────────────────
@@ -122,50 +116,39 @@ const worker = new Worker(
         Object.entries(importJob.mapping).forEach(([colIndexStr, field]) => {
           const colIndex = parseInt(colIndexStr, 10);
 
-          if (
-            isNaN(colIndex) ||
-            colIndex < 0 ||
-            colIndex >= row.length ||
-            !field
-          ) {
+          if (isNaN(colIndex) || colIndex < 0 || colIndex >= row.length || !field) {
             return;
           }
 
-          let value = row[colIndex]?.toString().trim() || "";
+          let value = row[colIndex]?.toString().trim() || '';
           if (!value) return;
 
           // Assign to product object
-          if (field === "name") product.name = value;
-          else if (field === "product_code") product.product_code = value;
-          else if (field === "description") product.description = value;
-          else if (field === "quantity")
-            product.quantity = parseFloat(value) || 0;
-          else if (field === "alert_quantity")
-            product.alert_quantity = parseFloat(value) || null;
-          else if (field === "tax") product.tax = parseFloat(value) || null;
-          else if (field === "isFeatured")
-            product.isFeatured = ["true", "1", "yes"].includes(
-              value.toLowerCase(),
-            );
-          else if (field === "category") product.categoryName = value;
-          else if (field === "brand") product.brandName = value;
-          else if (field === "vendor") product.vendorName = value;
-          else if (field === "images") {
+          if (field === 'name') product.name = value;
+          else if (field === 'product_code') product.product_code = value;
+          else if (field === 'description') product.description = value;
+          else if (field === 'quantity') product.quantity = parseFloat(value) || 0;
+          else if (field === 'alert_quantity') product.alert_quantity = parseFloat(value) || null;
+          else if (field === 'tax') product.tax = parseFloat(value) || null;
+          else if (field === 'isFeatured')
+            product.isFeatured = ['true', '1', 'yes'].includes(value.toLowerCase());
+          else if (field === 'category') product.categoryName = value;
+          else if (field === 'brand') product.brandName = value;
+          else if (field === 'vendor') product.vendorName = value;
+          else if (field === 'images') {
             product.images = value
-              .split(",")
+              .split(',')
               .map((u) => u.trim())
               .filter((u) => u && /^https?:\/\//i.test(u));
-          } else if (field === "keywords") {
+          } else if (field === 'keywords') {
             product.keywords = value
-              .split(",")
+              .split(',')
               .map((k) => k.trim())
               .filter(Boolean);
-          } else if (field.startsWith("meta_")) {
+          } else if (field.startsWith('meta_')) {
             product.meta = product.meta || {};
-            const metaKey = field.replace("meta_", "");
-            product.meta[metaKey] = isNaN(parseFloat(value))
-              ? value
-              : parseFloat(value);
+            const metaKey = field.replace('meta_', '');
+            product.meta[metaKey] = isNaN(parseFloat(value)) ? value : parseFloat(value);
           }
         });
 
@@ -192,15 +175,12 @@ const worker = new Worker(
             successCount,
             failedCount: failedRows.length,
             errorLog: failedRows,
-            newCategoriesCount: (
-              await ImportJob.findByPk(importJobId, { transaction: t })
-            ).newCategoriesCount,
-            newBrandsCount: (
-              await ImportJob.findByPk(importJobId, { transaction: t })
-            ).newBrandsCount,
-            newVendorsCount: (
-              await ImportJob.findByPk(importJobId, { transaction: t })
-            ).newVendorsCount,
+            newCategoriesCount: (await ImportJob.findByPk(importJobId, { transaction: t }))
+              .newCategoriesCount,
+            newBrandsCount: (await ImportJob.findByPk(importJobId, { transaction: t }))
+              .newBrandsCount,
+            newVendorsCount: (await ImportJob.findByPk(importJobId, { transaction: t }))
+              .newVendorsCount,
           },
           { transaction: t },
         );
@@ -212,14 +192,11 @@ const worker = new Worker(
         );
       } catch (batchErr) {
         await t.rollback();
-        console.error(
-          `[Job ${job.id}] Batch failed at row ~${i + 2}:`,
-          batchErr,
-        );
+        console.error(`[Job ${job.id}] Batch failed at row ~${i + 2}:`, batchErr);
 
         failedRows.push({
           batchStartRow: i + 2,
-          error: batchErr.message || "Batch processing failed",
+          error: batchErr.message || 'Batch processing failed',
         });
 
         await importJob.update({
@@ -231,7 +208,7 @@ const worker = new Worker(
 
     // Final update
     await importJob.update({
-      status: "completed",
+      status: 'completed',
       completedAt: new Date(),
       successCount,
       failedCount: failedRows.length,
@@ -250,26 +227,26 @@ const worker = new Worker(
     maxStalledCount: 3, // Retry stalled job up to 3 times
   },
 );
-console.log("[DEBUG] Worker script loaded");
+console.log('[DEBUG] Worker script loaded');
 
-process.on("uncaughtException", (err) => {
-  console.error("[FATAL CRASH]", err.stack);
+process.on('uncaughtException', (err) => {
+  console.error('[FATAL CRASH]', err.stack);
   process.exit(1);
 });
 
-process.on("unhandledRejection", (reason, promise) => {
-  console.error("[UNHANDLED PROMISE REJECTION]", reason);
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[UNHANDLED PROMISE REJECTION]', reason);
 });
-worker.on("completed", (job) => {
+worker.on('completed', (job) => {
   console.log(`[Worker] Job ${job.id} completed successfully`);
 });
 
-worker.on("failed", (job, err) => {
+worker.on('failed', (job, err) => {
   console.error(`[Worker] Job ${job.id} failed:`, err);
 });
 
-worker.on("stalled", (jobId) => {
+worker.on('stalled', (jobId) => {
   console.warn(`[Worker] Job ${jobId} stalled — will retry`);
 });
 
-console.log("[Worker] Bulk import worker is running and listening for jobs...");
+console.log('[Worker] Bulk import worker is running and listening for jobs...');

@@ -1,15 +1,29 @@
-const { Vendor } = require("../../models");
-const logActivity = require("../../utils/activityLogger");
-const { ActivityLog } = require("../../models");
+const { Vendor } = require('../../models');
+const logActivity = require('../../utils/activityLogger');
+const { ActivityLog } = require('../../models');
 
 // Contact and GST details of a vendor (printed on purchase orders)
-const VENDOR_DETAILS = ["contactPerson", "phone", "email", "gstin", "address", "city", "state", "pincode", "paymentTerms"];
+const VENDOR_DETAILS = [
+  'contactPerson',
+  'phone',
+  'email',
+  'gstin',
+  'address',
+  'city',
+  'state',
+  'pincode',
+  'paymentTerms',
+];
 const vendorDetails = (body = {}) => {
   const out = {};
-  for (const k of VENDOR_DETAILS) if (k in body) out[k] = body[k] === "" || body[k] == null ? null : String(body[k]).trim();
+  for (const k of VENDOR_DETAILS)
+    if (k in body) out[k] = body[k] === '' || body[k] == null ? null : String(body[k]).trim();
   if (out.gstin) {
     out.gstin = out.gstin.toUpperCase();
-    if (!/^[0-9]{2}[A-Z0-9]{13}$/.test(out.gstin)) throw Object.assign(new Error("GSTIN should be 15 characters, e.g. 07AABCC1234D1Z5"), { status: 400 });
+    if (!/^[0-9]{2}[A-Z0-9]{13}$/.test(out.gstin))
+      throw Object.assign(new Error('GSTIN should be 15 characters, e.g. 07AABCC1234D1Z5'), {
+        status: 400,
+      });
   }
   return out;
 };
@@ -36,9 +50,9 @@ const createVendor = async (req, res) => {
     });
     await logActivity({
       userId: req.user?.userId,
-      contextTag: "PROCUREMENT",
-      subContext: "VENDOR",
-      action: "CREATE_VENDOR",
+      contextTag: 'PROCUREMENT',
+      subContext: 'VENDOR',
+      action: 'CREATE_VENDOR',
       entityId: vendor.vendorId,
       entityName: vendor.vendorName,
       description: `Vendor "${vendor.vendorName}" created`,
@@ -48,7 +62,7 @@ const createVendor = async (req, res) => {
         vendorName: vendor.vendorName,
         brandId: vendor.brandId || null,
         brandSlug: vendor.brandSlug || null,
-        createdVia: "ADMIN_PANEL",
+        createdVia: 'ADMIN_PANEL',
       },
 
       req,
@@ -74,7 +88,7 @@ const getVendorById = async (req, res) => {
     if (vendor) {
       res.status(200).json(vendor);
     } else {
-      res.status(404).json({ message: "Vendor not found" });
+      res.status(404).json({ message: 'Vendor not found' });
     }
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -88,7 +102,7 @@ const updateVendor = async (req, res) => {
 
     const vendor = await Vendor.findByPk(id);
     if (!vendor) {
-      return res.status(404).json({ message: "Vendor not found." });
+      return res.status(404).json({ message: 'Vendor not found.' });
     }
 
     let details;
@@ -106,9 +120,9 @@ const updateVendor = async (req, res) => {
     });
     await logActivity({
       userId: req.user?.userId,
-      contextTag: "PROCUREMENT",
-      subContext: "VENDOR",
-      action: "UPDATE_VENDOR",
+      contextTag: 'PROCUREMENT',
+      subContext: 'VENDOR',
+      action: 'UPDATE_VENDOR',
       entityId: vendor.id,
       entityName: vendor.vendorName,
 
@@ -135,7 +149,7 @@ const updateVendor = async (req, res) => {
 
       req,
     });
-    res.json({ message: "Vendor updated successfully.", vendor });
+    res.json({ message: 'Vendor updated successfully.', vendor });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -148,9 +162,9 @@ const deleteVendor = async (req, res) => {
       await vendor.destroy();
       await logActivity({
         userId: req.user?.userId,
-        contextTag: "PROCUREMENT",
-        subContext: "VENDOR",
-        action: "DELETE_VENDOR",
+        contextTag: 'PROCUREMENT',
+        subContext: 'VENDOR',
+        action: 'DELETE_VENDOR',
         entityId: vendor.id,
         entityName: vendor.vendorName,
 
@@ -165,15 +179,15 @@ const deleteVendor = async (req, res) => {
         },
 
         metadata: {
-          deletionType: "HARD_DELETE",
-          warning: "Vendor removed permanently from system",
+          deletionType: 'HARD_DELETE',
+          warning: 'Vendor removed permanently from system',
         },
 
         req,
       });
       res.status(204).send();
     } else {
-      res.status(404).json({ message: "Vendor not found" });
+      res.status(404).json({ message: 'Vendor not found' });
     }
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -185,7 +199,7 @@ const checkVendorId = async (req, res) => {
     const { vendorId } = req.params;
 
     // Treat empty strings as null
-    if (!vendorId || vendorId.trim() === "") {
+    if (!vendorId || vendorId.trim() === '') {
       return res.status(200).json({ isUnique: true });
     }
 

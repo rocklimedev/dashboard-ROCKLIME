@@ -1,9 +1,9 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice } from '@reduxjs/toolkit';
 
 const emailSlice = createSlice({
-  name: "email",
+  name: 'email',
   initialState: {
-    activeCategory: "Inbox",
+    activeCategory: 'Inbox',
     selectedEmails: [],
   },
   reducers: {
@@ -13,9 +13,7 @@ const emailSlice = createSlice({
     toggleEmailSelection(state, action) {
       const emailId = action.payload;
       if (state.selectedEmails.includes(emailId)) {
-        state.selectedEmails = state.selectedEmails.filter(
-          (id) => id !== emailId
-        );
+        state.selectedEmails = state.selectedEmails.filter((id) => id !== emailId);
       } else {
         state.selectedEmails.push(emailId);
       }

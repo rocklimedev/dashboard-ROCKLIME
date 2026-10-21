@@ -31,10 +31,10 @@
   color: var(--rd-text);
 
   font-family:
-    "Lato",
+    'Lato',
     -apple-system,
     BlinkMacSystemFont,
-    "Segoe UI",
+    'Segoe UI',
     Roboto,
     Arial,
     sans-serif;
@@ -936,7 +936,7 @@
 /* Small arrow */
 
 .rd-bar-tooltip::after {
-  content: "";
+  content: '';
 
   position: absolute;
 

@@ -1,19 +1,7 @@
-import React, { useEffect, useMemo, useState } from "react";
-import {
-  Modal,
-  Radio,
-  Table,
-  InputNumber,
-  Input,
-  Upload,
-  Button,
-  message,
-} from "antd";
-import { UploadOutlined, FilePdfOutlined } from "@ant-design/icons";
-import {
-  useCreateDispatchMutation,
-  useGetOrderDispatchesQuery,
-} from "../../api/orderApi";
+import React, { useEffect, useMemo, useState } from 'react';
+import { Modal, Radio, Table, InputNumber, Input, Upload, Button, message } from 'antd';
+import { UploadOutlined, FilePdfOutlined } from '@ant-design/icons';
+import { useCreateDispatchMutation, useGetOrderDispatchesQuery } from '../../api/orderApi';
 
 const { TextArea } = Input;
 
@@ -34,31 +22,32 @@ const { TextArea } = Input;
  * - Gate pass is submitted as multipart field: "gatePass"
  */
 const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
-  const [dispatchType, setDispatchType] = useState("full");
+  const [dispatchType, setDispatchType] = useState('full');
   const [quantities, setQuantities] = useState({});
 
-  const [carrier, setCarrier] = useState("");
-  const [trackingNumber, setTrackingNumber] = useState("");
-  const [remarks, setRemarks] = useState("");
+  const [carrier, setCarrier] = useState('');
+  const [trackingNumber, setTrackingNumber] = useState('');
+  const [remarks, setRemarks] = useState('');
   // Vehicle / driver / LR / e-way bill for this dispatch
   const [transport, setTransport] = useState({
-    vehicleNo: "",
-    driverName: "",
-    driverPhone: "",
-    ewayBillNo: "",
+    vehicleNo: '',
+    driverName: '',
+    driverPhone: '',
+    ewayBillNo: '',
   });
   const setT = (k) => (e) => setTransport((t) => ({ ...t, [k]: e.target.value }));
 
   const [invoiceFile, setInvoiceFile] = useState(null);
   const [gatePassFile, setGatePassFile] = useState(null);
 
-  const { data: dispatchesData, isFetching: loadingDispatches } =
-    useGetOrderDispatchesQuery(order?.id, {
+  const { data: dispatchesData, isFetching: loadingDispatches } = useGetOrderDispatchesQuery(
+    order?.id,
+    {
       skip: !visible || !order?.id,
-    });
+    },
+  );
 
-  const [createDispatch, { isLoading: isSubmitting }] =
-    useCreateDispatchMutation();
+  const [createDispatch, { isLoading: isSubmitting }] = useCreateDispatchMutation();
 
   // ------------------------------------------------------------
   // Document availability — always requires a fresh file for
@@ -66,10 +55,10 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
   // ------------------------------------------------------------
 
   // "make" = the ERP makes the document after the dispatch is saved; "upload" = attach a file
-  const [invoiceMode, setInvoiceMode] = useState("make");
-  const [gatePassMode, setGatePassMode] = useState("make");
-  const invoiceReady = invoiceMode === "make" || Boolean(invoiceFile);
-  const gatePassReady = gatePassMode === "make" || Boolean(gatePassFile);
+  const [invoiceMode, setInvoiceMode] = useState('make');
+  const [gatePassMode, setGatePassMode] = useState('make');
+  const invoiceReady = invoiceMode === 'make' || Boolean(invoiceFile);
+  const gatePassReady = gatePassMode === 'make' || Boolean(gatePassFile);
   const documentsReady = invoiceReady && gatePassReady;
 
   // ------------------------------------------------------------
@@ -106,8 +95,8 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
 
       return {
         productId,
-        name: p.name || "Unknown Product",
-        productCode: p.productCode || "",
+        name: p.name || 'Unknown Product',
+        productCode: p.productCode || '',
         price: Number(p.price) || 0,
         orderedQty,
         dispatchedSoFar,
@@ -125,16 +114,16 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
   useEffect(() => {
     if (!visible) return;
 
-    setDispatchType("full");
-    setCarrier("");
-    setTrackingNumber("");
-    setRemarks("");
-    setTransport({ vehicleNo: "", driverName: "", driverPhone: "", ewayBillNo: "" });
+    setDispatchType('full');
+    setCarrier('');
+    setTrackingNumber('');
+    setRemarks('');
+    setTransport({ vehicleNo: '', driverName: '', driverPhone: '', ewayBillNo: '' });
 
     setInvoiceFile(null);
     setGatePassFile(null);
-    setInvoiceMode("make");
-    setGatePassMode("make");
+    setInvoiceMode('make');
+    setGatePassMode('make');
   }, [visible, order?.id]);
 
   // ------------------------------------------------------------
@@ -144,7 +133,7 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
   useEffect(() => {
     if (!visible) return;
 
-    if (dispatchType === "full") {
+    if (dispatchType === 'full') {
       const full = {};
 
       lines.forEach((line) => {
@@ -240,45 +229,45 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
       .filter((item) => item.quantity > 0);
 
     if (items.length === 0) {
-      message.error("Select at least one product/quantity to dispatch");
+      message.error('Select at least one product/quantity to dispatch');
       return;
     }
 
     const formData = new FormData();
 
     // Required dispatch items
-    formData.append("items", JSON.stringify(items));
+    formData.append('items', JSON.stringify(items));
 
     // Optional fields
     if (carrier.trim()) {
-      formData.append("carrier", carrier.trim());
+      formData.append('carrier', carrier.trim());
     }
 
     if (trackingNumber.trim()) {
-      formData.append("trackingNumber", trackingNumber.trim());
+      formData.append('trackingNumber', trackingNumber.trim());
     }
 
     if (remarks.trim()) {
-      formData.append("remarks", remarks.trim());
+      formData.append('remarks', remarks.trim());
     }
 
     // Transport: the carrier doubles as the transporter, tracking as the LR no.
-    if (carrier.trim()) formData.append("transporter", carrier.trim());
-    if (trackingNumber.trim()) formData.append("lrNumber", trackingNumber.trim());
+    if (carrier.trim()) formData.append('transporter', carrier.trim());
+    if (trackingNumber.trim()) formData.append('lrNumber', trackingNumber.trim());
     for (const [k, v] of Object.entries(transport)) {
       if (String(v).trim()) formData.append(k, String(v).trim());
     }
-    const eway = transport.ewayBillNo.replace(/\s/g, "");
+    const eway = transport.ewayBillNo.replace(/\s/g, '');
     if (eway && !/^\d{12}$/.test(eway)) {
-      message.error("E-way bill number must be 12 digits");
+      message.error('E-way bill number must be 12 digits');
       return;
     }
 
     // This dispatch's own documents — always sent
-    if (invoiceMode === "make") formData.append("makeInvoice", "1");
-    else formData.append("invoice", invoiceFile);
-    if (gatePassMode === "make") formData.append("makeGatePass", "1");
-    else formData.append("gatePass", gatePassFile);
+    if (invoiceMode === 'make') formData.append('makeInvoice', '1');
+    else formData.append('invoice', invoiceFile);
+    if (gatePassMode === 'make') formData.append('makeGatePass', '1');
+    else formData.append('gatePass', gatePassFile);
 
     try {
       const result = await createDispatch({
@@ -287,17 +276,19 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
       }).unwrap();
 
       message.success(
-        (result?.orderStatus === "DISPATCHED" ? "Order fully dispatched" : "Partial dispatch recorded") +
-          (result?.invoice ? ` · invoice ${result.invoice.invoiceNo}` : ""),
+        (result?.orderStatus === 'DISPATCHED'
+          ? 'Order fully dispatched'
+          : 'Partial dispatch recorded') +
+          (result?.invoice ? ` · invoice ${result.invoice.invoiceNo}` : ''),
       );
       if (result?.note) message.info(result.note, 6);
 
       onSuccess?.(result);
       onClose();
     } catch (err) {
-      console.error("Create Dispatch Error:", err);
+      console.error('Create Dispatch Error:', err);
 
-      message.error(err?.data?.message || "Failed to create dispatch");
+      message.error(err?.data?.message || 'Failed to create dispatch');
     }
   };
 
@@ -307,31 +298,31 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
 
   const columns = [
     {
-      title: "Product",
-      dataIndex: "name",
+      title: 'Product',
+      dataIndex: 'name',
     },
 
     {
-      title: "Ordered",
-      dataIndex: "orderedQty",
+      title: 'Ordered',
+      dataIndex: 'orderedQty',
       width: 90,
     },
 
     {
-      title: "Already Dispatched",
-      dataIndex: "dispatchedSoFar",
+      title: 'Already Dispatched',
+      dataIndex: 'dispatchedSoFar',
       width: 150,
     },
 
     {
-      title: "Remaining",
-      dataIndex: "remaining",
+      title: 'Remaining',
+      dataIndex: 'remaining',
       width: 100,
     },
 
     {
-      title: "Dispatch Qty",
-      key: "dispatchQty",
+      title: 'Dispatch Qty',
+      key: 'dispatchQty',
       width: 140,
 
       render: (_, record) => (
@@ -339,11 +330,9 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
           min={0}
           max={record.remaining}
           value={quantities[record.productId] ?? 0}
-          disabled={dispatchType === "full" || record.remaining === 0}
-          onChange={(value) =>
-            handleQuantityChange(record.productId, value, record.remaining)
-          }
-          style={{ width: "100%" }}
+          disabled={dispatchType === 'full' || record.remaining === 0}
+          onChange={(value) => handleQuantityChange(record.productId, value, record.remaining)}
+          style={{ width: '100%' }}
         />
       ),
     },
@@ -355,16 +344,15 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
 
   return (
     <Modal
-      title={`Dispatch Order #${order?.orderNo || ""}`}
+      title={`Dispatch Order #${order?.orderNo || ''}`}
       open={visible}
       onCancel={onClose}
       onOk={handleSubmit}
-      okText={dispatchType === "full" ? "Dispatch All" : "Dispatch Selected"}
+      okText={dispatchType === 'full' ? 'Dispatch All' : 'Dispatch Selected'}
       footer={hasAnythingRemaining ? undefined : null}
       okButtonProps={{
         loading: isSubmitting,
-        disabled:
-          !hasAnythingRemaining || totalSelectedQty === 0 || !documentsReady,
+        disabled: !hasAnythingRemaining || totalSelectedQty === 0 || !documentsReady,
       }}
       width={720}
       destroyOnClose
@@ -372,8 +360,8 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
       {!hasAnythingRemaining && !loadingDispatches ? (
         <div className="text-muted py-3">
           {lines.length === 0
-            ? "This order has no items to dispatch."
-            : "Everything on this order has already been dispatched."}
+            ? 'This order has no items to dispatch.'
+            : 'Everything on this order has already been dispatched.'}
         </div>
       ) : (
         <>
@@ -415,14 +403,14 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
               value={invoiceMode}
               onChange={(e) => setInvoiceMode(e.target.value)}
               options={[
-                { value: "make", label: "Make the GST invoice in the ERP" },
-                { value: "upload", label: "Upload an invoice made elsewhere" },
+                { value: 'make', label: 'Make the GST invoice in the ERP' },
+                { value: 'upload', label: 'Upload an invoice made elsewhere' },
               ]}
             />
-            {invoiceMode === "make" ? (
+            {invoiceMode === 'make' ? (
               <div className="text-muted small mt-1">
-                Numbered automatically (CM/26-27/…), at the order's prices, with HSN and CGST/SGST or IGST. If these
-                pieces are already on an invoice, the dispatch is linked to it.
+                Numbered automatically (CM/26-27/…), at the order's prices, with HSN and CGST/SGST
+                or IGST. If these pieces are already on an invoice, the dispatch is linked to it.
               </div>
             ) : (
               <div className="mt-2">
@@ -453,14 +441,23 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
               <Input
                 placeholder="Vehicle no. e.g. DL1LAB1234"
                 value={transport.vehicleNo}
-                onChange={setT("vehicleNo")}
+                onChange={setT('vehicleNo')}
               />
             </div>
             <div className="col-md-4">
-              <Input placeholder="Driver name" value={transport.driverName} onChange={setT("driverName")} />
+              <Input
+                placeholder="Driver name"
+                value={transport.driverName}
+                onChange={setT('driverName')}
+              />
             </div>
             <div className="col-md-4">
-              <Input placeholder="Driver phone" value={transport.driverPhone} onChange={setT("driverPhone")} inputMode="tel" />
+              <Input
+                placeholder="Driver phone"
+                value={transport.driverPhone}
+                onChange={setT('driverPhone')}
+                inputMode="tel"
+              />
             </div>
             <div className="col-md-4">
               <Input
@@ -480,7 +477,7 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
               <Input
                 placeholder="E-way bill no. (12 digits)"
                 value={transport.ewayBillNo}
-                onChange={setT("ewayBillNo")}
+                onChange={setT('ewayBillNo')}
                 inputMode="numeric"
                 maxLength={14}
               />
@@ -509,11 +506,11 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
               value={gatePassMode}
               onChange={(e) => setGatePassMode(e.target.value)}
               options={[
-                { value: "make", label: "Make the gate pass in the ERP" },
-                { value: "upload", label: "Upload a signed gate pass" },
+                { value: 'make', label: 'Make the gate pass in the ERP' },
+                { value: 'upload', label: 'Upload a signed gate pass' },
               ]}
             />
-            {gatePassMode === "upload" && (
+            {gatePassMode === 'upload' && (
               <div className="mt-2">
                 <Upload
                   beforeUpload={handleGatePassBeforeUpload}
@@ -537,10 +534,10 @@ const DispatchModal = ({ visible, order, onClose, onSuccess }) => {
           {/* -------------------------------------------------- */}
 
           <div className="text-muted small mt-3">
-            Selected: {totalSelectedQty} unit(s) —{" "}
-            {dispatchType === "full"
-              ? "order will be marked DISPATCHED"
-              : "order will be marked PARTIALLY_DISPATCHED unless this covers everything remaining"}
+            Selected: {totalSelectedQty} unit(s) —{' '}
+            {dispatchType === 'full'
+              ? 'order will be marked DISPATCHED'
+              : 'order will be marked PARTIALLY_DISPATCHED unless this covers everything remaining'}
             .
           </div>
 

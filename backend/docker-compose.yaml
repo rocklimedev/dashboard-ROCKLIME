@@ -7,7 +7,7 @@ services:
 
     restart: unless-stopped
     ports:
-      - "4000:4000"
+      - '4000:4000'
     environment:
       - NODE_ENV=production
       - REDIS_HOST=redis
@@ -26,7 +26,7 @@ services:
     container_name: cmtrading-redis
     restart: unless-stopped
     ports:
-      - "6379" # optional, only if you want host access
+      - '6379' # optional, only if you want host access
     networks:
       - app-network
 

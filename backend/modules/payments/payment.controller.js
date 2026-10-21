@@ -4,37 +4,39 @@
 // Paid    = sum of RECEIVED payments
 // Due     = Billed − Paid
 // Draft and cancelled orders are not billed.
-const { Op, QueryTypes } = require("sequelize");
-const { r2 } = require("../../lib/quotationMath");
+const { Op, QueryTypes } = require('sequelize');
+const { r2 } = require('../../lib/quotationMath');
 
-const m = () => require("../../models");
-const fail = (res, err) => res.status(err.status || 500).json({ message: err.message || "Request failed" });
+const m = () => require('../../models');
+const fail = (res, err) =>
+  res.status(err.status || 500).json({ message: err.message || 'Request failed' });
 const bad = (msg, status = 400) => Object.assign(new Error(msg), { status });
 
-const NOT_BILLED = ["DRAFT", "CANCELED"];
-const MODES = ["CASH", "UPI", "BANK", "CHEQUE", "CARD", "OTHER"];
+const NOT_BILLED = ['DRAFT', 'CANCELED'];
+const MODES = ['CASH', 'UPI', 'BANK', 'CHEQUE', 'CARD', 'OTHER'];
 
 /** Billed / paid / due for a set of orders, computed in SQL. */
 async function orderBalances({ orderIds = null, customerId = null, customerIds = null } = {}) {
   const { sequelize } = m();
-  const where = ["o.status NOT IN (:notBilled)"];
+  const where = ['o.status NOT IN (:notBilled)'];
   const repl = { notBilled: NOT_BILLED };
   if (orderIds) {
     if (!orderIds.length) return [];
-    where.push("o.id IN (:orderIds)");
+    where.push('o.id IN (:orderIds)');
     repl.orderIds = orderIds;
   }
   if (customerId) {
-    where.push("o.createdFor = :customerId");
+    where.push('o.createdFor = :customerId');
     repl.customerId = customerId;
   }
   if (customerIds) {
     if (!customerIds.length) return [];
-    where.push("o.createdFor IN (:customerIds)");
+    where.push('o.createdFor IN (:customerIds)');
     repl.customerIds = customerIds;
   }
-  return sequelize.query(
-    `SELECT o.id, o.orderNo, o.status, o.createdAt, o.dueDate, o.createdFor AS customerId, c.name AS customerName,
+  return sequelize
+    .query(
+      `SELECT o.id, o.orderNo, o.status, o.createdAt, o.dueDate, o.createdFor AS customerId, c.name AS customerName,
             c.mobileNumber AS customerPhone,
             COALESCE(o.finalAmount, 0) AS orderAmount,
             COALESCE((SELECT SUM(cn.totalAmount) FROM order_credit_notes cn
@@ -43,16 +45,24 @@ async function orderBalances({ orderIds = null, customerId = null, customerIds =
                       WHERE p.orderId = o.id AND p.status = 'RECEIVED'), 0) AS paid
      FROM orders o
      LEFT JOIN customers c ON c.customerId = o.createdFor
-     WHERE ${where.join(" AND ")}
+     WHERE ${where.join(' AND ')}
      ORDER BY o.createdAt ASC`,
-    { replacements: repl, type: QueryTypes.SELECT },
-  ).then((rows) =>
-    rows.map((r) => {
-      const billed = r2(Number(r.orderAmount) - Number(r.credited));
-      const paid = r2(Number(r.paid));
-      return { ...r, orderAmount: Number(r.orderAmount), credited: Number(r.credited), billed, paid, due: r2(billed - paid) };
-    }),
-  );
+      { replacements: repl, type: QueryTypes.SELECT },
+    )
+    .then((rows) =>
+      rows.map((r) => {
+        const billed = r2(Number(r.orderAmount) - Number(r.credited));
+        const paid = r2(Number(r.paid));
+        return {
+          ...r,
+          orderAmount: Number(r.orderAmount),
+          credited: Number(r.credited),
+          billed,
+          paid,
+          due: r2(billed - paid),
+        };
+      }),
+    );
 }
 
 const daysSince = (d) => Math.max(0, Math.floor((Date.now() - new Date(d).getTime()) / 864e5));
@@ -63,11 +73,11 @@ exports.due = async (req, res) => {
     const rows = (await orderBalances()).filter((o) => o.due > 0.009);
     const byCustomer = {};
     for (const o of rows) {
-      const k = o.customerId || "none";
+      const k = o.customerId || 'none';
       if (!byCustomer[k]) {
         byCustomer[k] = {
           customerId: o.customerId,
-          customerName: o.customerName || "No customer",
+          customerName: o.customerName || 'No customer',
           customerPhone: o.customerPhone,
           orders: [],
           billed: 0,
@@ -83,7 +93,7 @@ exports.due = async (req, res) => {
       c.billed = r2(c.billed + o.billed);
       c.paid = r2(c.paid + o.paid);
       c.due = r2(c.due + o.due);
-      const bucket = age <= 30 ? "d0_30" : age <= 60 ? "d31_60" : age <= 90 ? "d61_90" : "d90";
+      const bucket = age <= 30 ? 'd0_30' : age <= 60 ? 'd31_60' : age <= 90 ? 'd61_90' : 'd90';
       c.ageing[bucket] = r2(c.ageing[bucket] + o.due);
       c.oldestDays = Math.max(c.oldestDays, age);
     }
@@ -102,9 +112,19 @@ exports.due = async (req, res) => {
     const [month] = await sequelize.query(
       `SELECT COALESCE(SUM(amount),0) AS collected, COUNT(*) AS n FROM order_payments
        WHERE status = 'RECEIVED' AND receivedAt >= :from`,
-      { replacements: { from: new Date(new Date().getFullYear(), new Date().getMonth(), 1) }, type: QueryTypes.SELECT },
+      {
+        replacements: { from: new Date(new Date().getFullYear(), new Date().getMonth(), 1) },
+        type: QueryTypes.SELECT,
+      },
     );
-    res.json({ customers, totals: { ...totals, collectedThisMonth: r2(Number(month.collected)), paymentsThisMonth: Number(month.n) } });
+    res.json({
+      customers,
+      totals: {
+        ...totals,
+        collectedThisMonth: r2(Number(month.collected)),
+        paymentsThisMonth: Number(month.n),
+      },
+    });
   } catch (err) {
     fail(res, err);
   }
@@ -127,20 +147,32 @@ exports.list = async (req, res) => {
     const limit = Math.min(parseInt(req.query.limit, 10) || 50, 500);
     const { rows, count } = await OrderPayment.findAndCountAll({
       where,
-      order: [["receivedAt", "DESC"], ["createdAt", "DESC"]],
+      order: [
+        ['receivedAt', 'DESC'],
+        ['createdAt', 'DESC'],
+      ],
       limit,
       offset: (page - 1) * limit,
     });
     const cids = [...new Set(rows.map((r) => r.customerId).filter(Boolean))];
     const uids = [...new Set(rows.map((r) => r.userId).filter(Boolean))];
     const [cs, us] = await Promise.all([
-      cids.length ? Customer.findAll({ where: { customerId: cids }, attributes: ["customerId", "name"] }) : [],
-      uids.length ? User.findAll({ where: { userId: uids }, attributes: ["userId", "name", "username"] }) : [],
+      cids.length
+        ? Customer.findAll({ where: { customerId: cids }, attributes: ['customerId', 'name'] })
+        : [],
+      uids.length
+        ? User.findAll({ where: { userId: uids }, attributes: ['userId', 'name', 'username'] })
+        : [],
     ]);
     const cn = Object.fromEntries(cs.map((c) => [c.customerId, c.name]));
     const un = Object.fromEntries(us.map((u) => [u.userId, u.name || u.username]));
     res.json({
-      data: rows.map((r) => ({ ...r.toJSON(), amount: Number(r.amount), customerName: cn[r.customerId] || null, recordedBy: un[r.userId] || null })),
+      data: rows.map((r) => ({
+        ...r.toJSON(),
+        amount: Number(r.amount),
+        customerName: cn[r.customerId] || null,
+        recordedBy: un[r.userId] || null,
+      })),
       pagination: { page, limit, total: count },
     });
   } catch (err) {
@@ -152,10 +184,15 @@ exports.list = async (req, res) => {
 exports.forOrder = async (req, res) => {
   try {
     const { Order, OrderPayment } = m();
-    const order = await Order.findByPk(req.params.orderId, { attributes: ["id", "orderNo", "status", "finalAmount", "createdFor"] });
-    if (!order) return res.status(404).json({ message: "Order not found" });
+    const order = await Order.findByPk(req.params.orderId, {
+      attributes: ['id', 'orderNo', 'status', 'finalAmount', 'createdFor'],
+    });
+    if (!order) return res.status(404).json({ message: 'Order not found' });
     const [bal] = await orderBalances({ orderIds: [order.id] });
-    const payments = await OrderPayment.findAll({ where: { orderId: order.id }, order: [["receivedAt", "DESC"]] });
+    const payments = await OrderPayment.findAll({
+      where: { orderId: order.id },
+      order: [['receivedAt', 'DESC']],
+    });
     res.json({
       orderId: order.id,
       orderNo: order.orderNo,
@@ -174,14 +211,21 @@ exports.forOrder = async (req, res) => {
 async function nextReceiptNo(t) {
   const { OrderPayment } = m();
   const d = new Date();
-  const stamp = `${String(d.getDate()).padStart(2, "0")}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getFullYear()).slice(2)}`;
-  const n = await OrderPayment.count({ where: { receiptNo: { [Op.like]: `RCPT${stamp}%` } }, transaction: t });
-  return `RCPT${stamp}${String(n + 1).padStart(3, "0")}`;
+  const stamp = `${String(d.getDate()).padStart(2, '0')}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getFullYear()).slice(2)}`;
+  const n = await OrderPayment.count({
+    where: { receiptNo: { [Op.like]: `RCPT${stamp}%` } },
+    transaction: t,
+  });
+  return `RCPT${stamp}${String(n + 1).padStart(3, '0')}`;
 }
 
 async function syncAmountPaid(orderId, t) {
   const { Order, OrderPayment } = m();
-  const paid = (await OrderPayment.sum("amount", { where: { orderId, status: "RECEIVED" }, transaction: t })) || 0;
+  const paid =
+    (await OrderPayment.sum('amount', {
+      where: { orderId, status: 'RECEIVED' },
+      transaction: t,
+    })) || 0;
   await Order.update({ amountPaid: r2(paid) }, { where: { id: orderId }, transaction: t });
   return r2(paid);
 }
@@ -191,21 +235,27 @@ exports.create = async (req, res) => {
   try {
     const { sequelize, Order, OrderPayment } = m();
     const result = await sequelize.transaction(async (t) => {
-      const { orderId, mode = "UPI", reference, receivedAt, notes } = req.body || {};
+      const { orderId, mode = 'UPI', reference, receivedAt, notes } = req.body || {};
       const amount = r2(Number(req.body?.amount));
-      if (!orderId) throw bad("Choose the order this payment is for.");
-      if (!(amount > 0)) throw bad("Enter the amount received.");
-      if (!MODES.includes(String(mode).toUpperCase())) throw bad(`Mode must be one of ${MODES.join(", ")}.`);
-      if (["CHEQUE", "BANK"].includes(String(mode).toUpperCase()) && !reference) throw bad("Enter the cheque number or bank reference.");
+      if (!orderId) throw bad('Choose the order this payment is for.');
+      if (!(amount > 0)) throw bad('Enter the amount received.');
+      if (!MODES.includes(String(mode).toUpperCase()))
+        throw bad(`Mode must be one of ${MODES.join(', ')}.`);
+      if (['CHEQUE', 'BANK'].includes(String(mode).toUpperCase()) && !reference)
+        throw bad('Enter the cheque number or bank reference.');
       const order = await Order.findByPk(orderId, { transaction: t, lock: t.LOCK.UPDATE });
-      if (!order) throw bad("Order not found", 404);
-      if (NOT_BILLED.includes(order.status)) throw bad(`Payments cannot be recorded on a ${order.status.toLowerCase()} order.`);
+      if (!order) throw bad('Order not found', 404);
+      if (NOT_BILLED.includes(order.status))
+        throw bad(`Payments cannot be recorded on a ${order.status.toLowerCase()} order.`);
       const [bal] = await orderBalances({ orderIds: [order.id] });
       if (amount > r2((bal?.due || 0) + 1)) {
-        throw bad(`Only ₹${(bal?.due || 0).toLocaleString("en-IN")} is due on order ${order.orderNo}.`);
+        throw bad(
+          `Only ₹${(bal?.due || 0).toLocaleString('en-IN')} is due on order ${order.orderNo}.`,
+        );
       }
       const when = receivedAt ? new Date(receivedAt) : new Date();
-      if (when.getTime() > Date.now() + 864e5) throw bad("The payment date cannot be in the future.");
+      if (when.getTime() > Date.now() + 864e5)
+        throw bad('The payment date cannot be in the future.');
       const p = await OrderPayment.create(
         {
           receiptNo: await nextReceiptNo(t),
@@ -225,12 +275,12 @@ exports.create = async (req, res) => {
       return { payment: p, paid, due: r2((bal?.billed || 0) - paid) };
     });
     try {
-      const logOrderActivity = require("../orders/order-activity-logger");
+      const logOrderActivity = require('../orders/order-activity-logger');
       await logOrderActivity({
         orderId: result.payment.orderId,
         orderNo: result.payment.orderNo,
-        action: "PAYMENT_RECEIVED",
-        description: `Payment ${result.payment.receiptNo} of ₹${Number(result.payment.amount).toLocaleString("en-IN")} received (${result.payment.mode})`,
+        action: 'PAYMENT_RECEIVED',
+        description: `Payment ${result.payment.receiptNo} of ₹${Number(result.payment.amount).toLocaleString('en-IN')} received (${result.payment.mode})`,
         performedBy: req.user.userId,
       });
     } catch {
@@ -246,17 +296,17 @@ exports.create = async (req, res) => {
 exports.cancel = async (req, res) => {
   try {
     const { sequelize, OrderPayment } = m();
-    const reason = String(req.body?.reason || "").trim();
-    if (!reason) return res.status(400).json({ message: "A reason is required." });
+    const reason = String(req.body?.reason || '').trim();
+    if (!reason) return res.status(400).json({ message: 'A reason is required.' });
     const out = await sequelize.transaction(async (t) => {
       const p = await OrderPayment.findByPk(req.params.id, { transaction: t, lock: t.LOCK.UPDATE });
-      if (!p) throw bad("Payment not found", 404);
-      if (p.status !== "RECEIVED") throw bad("This payment is already cancelled.");
-      await p.update({ status: "CANCELLED", cancelReason: reason }, { transaction: t });
+      if (!p) throw bad('Payment not found', 404);
+      if (p.status !== 'RECEIVED') throw bad('This payment is already cancelled.');
+      await p.update({ status: 'CANCELLED', cancelReason: reason }, { transaction: t });
       const paid = await syncAmountPaid(p.orderId, t);
       return { payment: p, paid };
     });
-    res.json({ message: "Payment cancelled", ...out });
+    res.json({ message: 'Payment cancelled', ...out });
   } catch (err) {
     fail(res, err);
   }

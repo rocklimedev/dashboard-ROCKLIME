@@ -1,37 +1,50 @@
-import { normalizeCharges } from "../../utils/quotationMath.js";
+import { normalizeCharges } from '../../utils/quotationMath.js';
 
 function asList(value) {
-  for (let i = 0; i < 3 && typeof value === "string"; i++) {
-    try { value = JSON.parse(value); } catch { return []; }
+  for (let i = 0; i < 3 && typeof value === 'string'; i++) {
+    try {
+      value = JSON.parse(value);
+    } catch {
+      return [];
+    }
   }
   return Array.isArray(value) ? structuredClone(value) : [];
 }
 
 export function quotationCartSnapshot(quotation, now = new Date()) {
-  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   const items = asList(quotation.items ?? quotation.products).map((item, index) => {
     const { _id, ...line } = item;
     const productId = item.productId || item.id;
-    if (!productId) throw new Error("This quotation contains a product without an ID");
-    return { ...line, id: productId, productId, quantity: Number(item.quantity ?? item.qty ?? 1), price: Number(item.price ?? item.sellingPrice ?? 0), priority: Number(item.priority ?? index) };
+    if (!productId) throw new Error('This quotation contains a product without an ID');
+    return {
+      ...line,
+      id: productId,
+      productId,
+      quantity: Number(item.quantity ?? item.qty ?? 1),
+      price: Number(item.price ?? item.sellingPrice ?? 0),
+      priority: Number(item.priority ?? index),
+    };
   });
   return {
     parent: {
-      selectedCustomer: quotation.customerId || quotation.customer?.customerId || "",
+      selectedCustomer: quotation.customerId || quotation.customer?.customerId || '',
       useBillingAddress: false,
       billingAddressId: null,
       quotationData: {
-        documentTitle: quotation.document_title || "",
+        documentTitle: quotation.document_title || '',
         quotationDate: today,
-        dueDate: "",
+        dueDate: '',
         shipTo: quotation.shipTo || null,
         floors: asList(quotation.floors),
-        signatureName: quotation.signature_name ?? "CM TRADING CO",
-        signatureImage: quotation.signature_image || "",
+        signatureName: quotation.signature_name ?? 'CM TRADING CO',
+        signatureImage: quotation.signature_image || '',
         discountAmount: Number(quotation.extraDiscount) || 0,
-        discountType: quotation.extraDiscountType || "fixed",
+        discountType: quotation.extraDiscountType || 'fixed',
         followupDates: asList(quotation.followupDates),
-        miscellaneousChargeItems: normalizeCharges(quotation.miscellaneousChargeItems ?? quotation.miscellaneousCharges),
+        miscellaneousChargeItems: normalizeCharges(
+          quotation.miscellaneousChargeItems ?? quotation.miscellaneousCharges,
+        ),
         additionalDiscount: Number(quotation.additionalDiscount) || 0,
         flatPrice: quotation.flatPrice == null ? null : Number(quotation.flatPrice),
       },
@@ -40,9 +53,13 @@ export function quotationCartSnapshot(quotation, now = new Date()) {
       localCartItems: items,
       shipping: Number(quotation.shippingAmount) || 0,
       gst: Number(quotation.gst) || 0,
-      itemDiscounts: Object.fromEntries(items.map(item => [item.productId, Number(item.discount) || 0])),
-      itemDiscountTypes: Object.fromEntries(items.map(item => [item.productId, item.discountType || "percent"])),
-      itemTaxes: Object.fromEntries(items.map(item => [item.productId, Number(item.tax) || 0])),
+      itemDiscounts: Object.fromEntries(
+        items.map((item) => [item.productId, Number(item.discount) || 0]),
+      ),
+      itemDiscountTypes: Object.fromEntries(
+        items.map((item) => [item.productId, item.discountType || 'percent']),
+      ),
+      itemTaxes: Object.fromEntries(items.map((item) => [item.productId, Number(item.tax) || 0])),
     },
   };
 }

@@ -1,4 +1,4 @@
-import { baseApi } from "../store/baseApi";
+import { baseApi } from '../store/baseApi';
 export const fgsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // ─── CREATE FGS ─────────────────────────────────────────────
@@ -33,10 +33,7 @@ export const fgsApi = baseApi.injectEndpoints({
         method: 'PUT',
         body: updates, // { vendorId?, items?, status?, expectDeliveryDate? }
       }),
-      invalidatesTags: (result, error, { id }) => [
-        { type: 'FGS', id },
-        'FGSList',
-      ],
+      invalidatesTags: (result, error, { id }) => [{ type: 'FGS', id }, 'FGSList'],
     }),
 
     // ─── DELETE FGS ──────────────────────────────────────────────
@@ -54,10 +51,7 @@ export const fgsApi = baseApi.injectEndpoints({
         url: `/fgs/${id}/convert`,
         method: 'POST',
       }),
-      invalidatesTags: (result, error, id) => [
-        { type: 'FGS', id },
-        'FGSList',
-      ],
+      invalidatesTags: (result, error, id) => [{ type: 'FGS', id }, 'FGSList'],
     }),
 
     // ─── UPDATE FGS STATUS ONLY ──────────────────────────────────
@@ -67,10 +61,7 @@ export const fgsApi = baseApi.injectEndpoints({
         method: 'PATCH',
         body: { status },
       }),
-      invalidatesTags: (result, error, { id }) => [
-        { type: 'FGS', id },
-        'FGSList',
-      ],
+      invalidatesTags: (result, error, { id }) => [{ type: 'FGS', id }, 'FGSList'],
     }),
   }),
 });

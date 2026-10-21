@@ -1,5 +1,5 @@
 // src/components/Orders/OrderForm.jsx
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Card,
   Button,
@@ -15,28 +15,28 @@ import {
   InputNumber,
   Collapse,
   message,
-} from "antd";
+} from 'antd';
 import {
   UserAddOutlined,
   CheckCircleOutlined,
   ArrowLeftOutlined,
   DeleteOutlined,
   PlusOutlined,
-} from "@ant-design/icons";
-import styled from "styled-components";
-import OrderTotal from "../../components/POS-NEW/OrderTotal";
-import moment from "moment";
-import { debounce } from "lodash";
-import { useCreateAddressMutation } from "../../api/addressApi";
-import { useGetAllOrdersQuery } from "../../api/orderApi";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
-import { useAuth } from "../../context/AuthContext";
-import AddCustomerModal from "../../components/Customers/AddCustomerModal";
+} from '@ant-design/icons';
+import styled from 'styled-components';
+import OrderTotal from '../../components/POS-NEW/OrderTotal';
+import moment from 'moment';
+import { debounce } from 'lodash';
+import { useCreateAddressMutation } from '../../api/addressApi';
+import { useGetAllOrdersQuery } from '../../api/orderApi';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import { useAuth } from '../../context/AuthContext';
+import AddCustomerModal from '../../components/Customers/AddCustomerModal';
 const { Text, Title } = Typography;
 const { Option } = Select;
 const { Panel } = Collapse;
-const RESTRICTED_ROLES = ["SUPER_ADMIN", "DEVELOPER", "ADMIN"];
+const RESTRICTED_ROLES = ['SUPER_ADMIN', 'DEVELOPER', 'ADMIN'];
 
 /* ────────────────────── Styled ────────────────────── */
 const CompactCard = styled(Card)`
@@ -99,23 +99,17 @@ const CheckoutBtn = styled(Button)`
 `;
 
 /* ────────────────────── Constants ────────────────────── */
-const SOURCE_TYPES = [
-  "Retail",
-  "Architect",
-  "Interior",
-  "Builder",
-  "Contractor",
-];
+const SOURCE_TYPES = ['Retail', 'Architect', 'Interior', 'Builder', 'Contractor'];
 const STATUS_VALUES = [
-  "PREPARING",
-  "CHECKING",
-  "INVOICE",
-  "DISPATCHED",
-  "DELIVERED",
-  "PARTIALLY_DELIVERED",
-  "CANCELED",
-  "DRAFT",
-  "ONHOLD",
+  'PREPARING',
+  'CHECKING',
+  'INVOICE',
+  'DISPATCHED',
+  'DELIVERED',
+  'PARTIALLY_DELIVERED',
+  'CANCELED',
+  'DRAFT',
+  'ONHOLD',
 ];
 
 /* ────────────────────── Helper ────────────────────── */
@@ -161,30 +155,26 @@ const OrderForm = ({
   handleClearCart,
 }) => {
   const { auth } = useAuth();
-  const canCreatePurchaseOrder =
-    auth?.role && RESTRICTED_ROLES.includes(auth.role);
+  const canCreatePurchaseOrder = auth?.role && RESTRICTED_ROLES.includes(auth.role);
 
   /* ────── Local State ────── */
   const [assignmentType, setAssignmentType] = useState(
-    orderData?.assignedTeamId ? "team" : "users",
+    orderData?.assignedTeamId ? 'team' : 'users',
   );
-  const [sourceType, setSourceType] = useState(orderData.sourceType || "");
+  const [sourceType, setSourceType] = useState(orderData.sourceType || '');
   const [isCreatingAddress, setIsCreatingAddress] = useState(false);
   const [gst, setGst] = useState(orderData.gst ?? 18);
-  const [extraDiscount, setExtraDiscount] = useState(
-    orderData.extraDiscount ?? 0,
-  );
+  const [extraDiscount, setExtraDiscount] = useState(orderData.extraDiscount ?? 0);
   const [extraDiscountType, setExtraDiscountType] = useState(
-    orderData.extraDiscountType ?? "fixed",
+    orderData.extraDiscountType ?? 'fixed',
   );
-  const [customerSearch, setCustomerSearch] = useState("");
+  const [customerSearch, setCustomerSearch] = useState('');
   const [errors, setErrors] = useState({});
   const [sourceModalVisible, setSourceModalVisible] = useState(false);
 
   /* ────── RTK ────── */
   const [createAddress] = useCreateAddressMutation();
-  const { data: allOrdersData, isLoading: ordersLoading } =
-    useGetAllOrdersQuery();
+  const { data: allOrdersData, isLoading: ordersLoading } = useGetAllOrdersQuery();
   const orders = useMemo(() => allOrdersData?.orders ?? [], [allOrdersData]);
 
   const handleAddSourceCustomer = () => setSourceModalVisible(true);
@@ -192,25 +182,19 @@ const OrderForm = ({
 
   /* ────── Memos ────── */
   const filteredAddresses = useMemo(
-    () =>
-      selectedCustomer
-        ? addresses.filter((a) => a.customerId === selectedCustomer)
-        : [],
+    () => (selectedCustomer ? addresses.filter((a) => a.customerId === selectedCustomer) : []),
     [addresses, selectedCustomer],
   );
 
   const defaultAddress = useMemo(
-    () =>
-      customers.find((c) => c.customerId === selectedCustomer)?.address ?? null,
+    () => customers.find((c) => c.customerId === selectedCustomer)?.address ?? null,
     [customers, selectedCustomer],
   );
 
   const sourceCustomers = useMemo(
     () =>
       sourceType
-        ? customers.filter(
-            (c) => c.customerType?.toLowerCase() === sourceType.toLowerCase(),
-          )
+        ? customers.filter((c) => c.customerType?.toLowerCase() === sourceType.toLowerCase())
         : [],
     [customers, sourceType],
   );
@@ -226,7 +210,7 @@ const OrderForm = ({
     if (!orderData.dueDate) {
       setOrderData((p) => ({
         ...p,
-        dueDate: moment().add(1, "day").format("YYYY-MM-DD"),
+        dueDate: moment().add(1, 'day').format('YYYY-MM-DD'),
       }));
     }
   }, [orderData.dueDate, setOrderData]);
@@ -244,20 +228,15 @@ const OrderForm = ({
 
     const match = filteredAddresses.find(
       (a) =>
-        a.street?.trim().toLowerCase() ===
-          defaultAddress.street?.trim().toLowerCase() &&
-        a.city?.trim().toLowerCase() ===
-          defaultAddress.city?.trim().toLowerCase() &&
-        a.state?.trim().toLowerCase() ===
-          defaultAddress.state?.trim().toLowerCase() &&
-        (a.postalCode || a.zip) ===
-          (defaultAddress.postalCode || defaultAddress.zip) &&
-        (a.country || "india").toLowerCase() ===
-          (defaultAddress.country || "india").toLowerCase(),
+        a.street?.trim().toLowerCase() === defaultAddress.street?.trim().toLowerCase() &&
+        a.city?.trim().toLowerCase() === defaultAddress.city?.trim().toLowerCase() &&
+        a.state?.trim().toLowerCase() === defaultAddress.state?.trim().toLowerCase() &&
+        (a.postalCode || a.zip) === (defaultAddress.postalCode || defaultAddress.zip) &&
+        (a.country || 'india').toLowerCase() === (defaultAddress.country || 'india').toLowerCase(),
     );
 
     if (match) {
-      handleOrderChange("shipTo", match.addressId);
+      handleOrderChange('shipTo', match.addressId);
       return;
     }
 
@@ -266,16 +245,16 @@ const OrderForm = ({
       try {
         const res = await createAddress({
           customerId: selectedCustomer,
-          street: defaultAddress.street ?? "",
-          city: defaultAddress.city ?? "",
-          state: defaultAddress.state ?? "",
-          postalCode: defaultAddress.postalCode ?? defaultAddress.zip ?? "",
-          country: defaultAddress.country ?? "India",
-          status: "BILLING",
+          street: defaultAddress.street ?? '',
+          city: defaultAddress.city ?? '',
+          state: defaultAddress.state ?? '',
+          postalCode: defaultAddress.postalCode ?? defaultAddress.zip ?? '',
+          country: defaultAddress.country ?? 'India',
+          status: 'BILLING',
         }).unwrap();
-        handleOrderChange("shipTo", res.addressId);
+        handleOrderChange('shipTo', res.addressId);
       } catch (e) {
-        message.error(e?.data?.message ?? "Failed to create address");
+        message.error(e?.data?.message ?? 'Failed to create address');
       } finally {
         setIsCreatingAddress(false);
       }
@@ -298,11 +277,8 @@ const OrderForm = ({
   const base = subTotal + safeShipping + tax - totalDiscount;
   const extraDiscAmt = useMemo(() => {
     const v = Number(extraDiscount) || 0;
-    return extraDiscountType === "percent"
-      ? ((base * v) / 100).toFixed(2)
-      : v.toFixed(2);
+    return extraDiscountType === 'percent' ? ((base * v) / 100).toFixed(2) : v.toFixed(2);
   }, [base, extraDiscount, extraDiscountType]);
-
 
   const availableSecondaryUsers = useMemo(() => {
     if (!orderData?.assignedUserId) return users;
@@ -314,73 +290,58 @@ const OrderForm = ({
     (field) => {
       const err = {};
       switch (field) {
-        case "customer":
-          if (!selectedCustomer) err.customer = "Customer is required";
+        case 'customer':
+          if (!selectedCustomer) err.customer = 'Customer is required';
           break;
-        case "shipping":
+        case 'shipping':
           if (!useBillingAddress && !orderData?.shipTo)
-            err.shipping = "Shipping address is required";
+            err.shipping = 'Shipping address is required';
           break;
-        case "dueDate":
-          if (!orderData?.dueDate) err.dueDate = "Due date is required";
+        case 'dueDate':
+          if (!orderData?.dueDate) err.dueDate = 'Due date is required';
           break;
-        case "assignment":
-          if (assignmentType === "team" && !orderData?.assignedTeamId) {
-            err.assignment = "Select a team";
+        case 'assignment':
+          if (assignmentType === 'team' && !orderData?.assignedTeamId) {
+            err.assignment = 'Select a team';
           }
-          if (assignmentType === "users") {
+          if (assignmentType === 'users') {
             if (!orderData?.assignedUserId) {
-              err.assignment = "Select primary user";
+              err.assignment = 'Select primary user';
             } else if (
               orderData?.secondaryUserId &&
               orderData.secondaryUserId === orderData.assignedUserId
             ) {
-              err.assignment = "Primary and Secondary user cannot be the same";
+              err.assignment = 'Primary and Secondary user cannot be the same';
             }
           }
           break;
-        case "source":
+        case 'source':
           if (sourceType && !orderData?.source) {
-            err.source = "Reference customer is required";
+            err.source = 'Reference customer is required';
           }
           break;
       }
       return err;
     },
-    [
-      selectedCustomer,
-      useBillingAddress,
-      orderData,
-      assignmentType,
-      sourceType,
-    ],
+    [selectedCustomer, useBillingAddress, orderData, assignmentType, sourceType],
   );
 
   /* ────── Force Extra Discount to Fixed ────── */
   useEffect(() => {
-    if (extraDiscountType !== "fixed") {
-      setExtraDiscountType("fixed");
-      handleOrderChange("extraDiscountType", "fixed");
+    if (extraDiscountType !== 'fixed') {
+      setExtraDiscountType('fixed');
+      handleOrderChange('extraDiscountType', 'fixed');
     }
   }, [extraDiscountType, handleOrderChange]);
 
   /* ────── Real-time Validation ────── */
   useEffect(() => {
     const newErrors = {};
-    ["customer", "shipping", "dueDate", "assignment", "source"].forEach(
-      (field) => {
-        Object.assign(newErrors, validateField(field));
-      },
-    );
+    ['customer', 'shipping', 'dueDate', 'assignment', 'source'].forEach((field) => {
+      Object.assign(newErrors, validateField(field));
+    });
     setErrors(newErrors);
-  }, [
-    selectedCustomer,
-    orderData,
-    assignmentType,
-    sourceType,
-    useBillingAddress,
-    validateField,
-  ]);
+  }, [selectedCustomer, orderData, assignmentType, sourceType, useBillingAddress, validateField]);
 
   const hasError = (field) => !!errors[field];
   const getError = (field) => errors[field];
@@ -388,43 +349,37 @@ const OrderForm = ({
 
   /* ────── UI Handlers ────── */
   const setShip = (v) => {
-    if (v === "sameAsBilling") setUseBillingAddress(true);
+    if (v === 'sameAsBilling') setUseBillingAddress(true);
     else {
       setUseBillingAddress(false);
-      handleOrderChange("shipTo", v);
+      handleOrderChange('shipTo', v);
     }
   };
 
   const addFollow = () =>
-    handleOrderChange("followupDates", [
-      ...(orderData.followupDates || []),
-      null,
-    ]);
+    handleOrderChange('followupDates', [...(orderData.followupDates || []), null]);
 
   const rmFollow = (i) =>
     handleOrderChange(
-      "followupDates",
+      'followupDates',
       (orderData.followupDates || []).filter((_, x) => x !== i),
     );
 
   const setFollow = (i, d) => {
     const arr = [...(orderData.followupDates || [])];
-    arr[i] = d ? moment(d).format("YYYY-MM-DD") : null;
-    handleOrderChange("followupDates", arr);
+    arr[i] = d ? moment(d).format('YYYY-MM-DD') : null;
+    handleOrderChange('followupDates', arr);
   };
 
   /* ────── Render ────── */
   if (!cartItems?.length) {
     return (
       <CompactCard>
-        <Empty
-          description="Cart empty"
-          image={<DeleteOutlined style={{ fontSize: 48 }} />}
-        />
+        <Empty description="Cart empty" image={<DeleteOutlined style={{ fontSize: 48 }} />} />
         <Button
           type="primary"
           icon={<ArrowLeftOutlined />}
-          onClick={() => setActiveTab("cart")}
+          onClick={() => setActiveTab('cart')}
           block
         >
           Back to Cart
@@ -438,13 +393,13 @@ const OrderForm = ({
       {/* LEFT – FORM */}
       <Col xs={24} md={16}>
         <CompactCard title={<Title level={5}>Checkout</Title>}>
-          <Collapse defaultActiveKey={["1", "2", "3", "4", "5"]} ghost>
+          <Collapse defaultActiveKey={['1', '2', '3', '4', '5']} ghost>
             {/* 1. Document & Customer */}
             <Panel header="Customer" key="1">
               <TightRow gutter={8}>
                 <Col span={8}>
                   <Text strong>
-                    Customer <span style={{ color: "red" }}>*</span>
+                    Customer <span style={{ color: 'red' }}>*</span>
                   </Text>
                 </Col>
                 <Col span={16}>
@@ -455,14 +410,14 @@ const OrderForm = ({
                       value={selectedCustomer}
                       onChange={(v) => {
                         setSelectedCustomer(v);
-                        handleOrderChange("createdFor", v);
-                        handleOrderChange("shipTo", null);
+                        handleOrderChange('createdFor', v);
+                        handleOrderChange('shipTo', null);
                         setUseBillingAddress(false);
                       }}
                       onSearch={debouncedSearch}
                       filterOption={false} // keep this – we do manual filtering
                       loading={customersLoading}
-                      status={hasError("customer") ? "error" : ""}
+                      status={hasError('customer') ? 'error' : ''}
                       optionFilterProp="label" // helps a bit with accessibility
                       dropdownMatchSelectWidth={false}
                       popupMatchSelectWidth={false}
@@ -475,40 +430,33 @@ const OrderForm = ({
                           (c) =>
                             // Use the debounced search value
                             !customerSearch ||
-                            c.name
-                              ?.toLowerCase()
-                              .includes(customerSearch.toLowerCase()) ||
-                            c.email
-                              ?.toLowerCase()
-                              .includes(customerSearch.toLowerCase()) ||
+                            c.name?.toLowerCase().includes(customerSearch.toLowerCase()) ||
+                            c.email?.toLowerCase().includes(customerSearch.toLowerCase()) ||
                             c.customerId?.includes(customerSearch),
                         )
                         .map((c) => (
                           <Option
                             key={c.customerId} // stable key
                             value={c.customerId}
-                            label={`${c.name} (${c.email || "no email"})`} // used by filter & search highlighting
+                            label={`${c.name} (${c.email || 'no email'})`} // used by filter & search highlighting
                           >
                             <div
                               style={{
-                                display: "flex",
-                                justifyContent: "space-between",
+                                display: 'flex',
+                                justifyContent: 'space-between',
                               }}
                             >
                               <span>{c.name}</span>
                               <Text type="secondary" style={{ fontSize: 12 }}>
-                                {c.email || "—"}
+                                {c.email || '—'}
                               </Text>
                             </div>
                           </Option>
                         ))}
                     </MiniSelect>
-                    {hasError("customer") && (
-                      <Text
-                        type="danger"
-                        style={{ fontSize: 12, display: "block" }}
-                      >
-                        {getError("customer")}
+                    {hasError('customer') && (
+                      <Text type="danger" style={{ fontSize: 12, display: 'block' }}>
+                        {getError('customer')}
                       </Text>
                     )}
                     <Button type="primary" onClick={handleAddCustomer}>
@@ -521,19 +469,17 @@ const OrderForm = ({
               <TightRow gutter={8}>
                 <Col span={8}>
                   <Text strong>
-                    Shipping <span style={{ color: "red" }}>*</span>
+                    Shipping <span style={{ color: 'red' }}>*</span>
                   </Text>
                 </Col>
                 <Col span={16}>
-                  <Space style={{ width: "100%", display: "flex", gap: 8 }}>
+                  <Space style={{ width: '100%', display: 'flex', gap: 8 }}>
                     <MiniSelect
-                      value={
-                        useBillingAddress ? "sameAsBilling" : orderData?.shipTo
-                      }
+                      value={useBillingAddress ? 'sameAsBilling' : orderData?.shipTo}
                       onChange={setShip}
                       loading={addressesLoading || isCreatingAddress}
                       disabled={!selectedCustomer}
-                      status={hasError("shipping") ? "error" : ""}
+                      status={hasError('shipping') ? 'error' : ''}
                       // ────── Address visibility fixes ──────
                       optionLabelProp="title"
                       popupMatchSelectWidth={340}
@@ -542,9 +488,9 @@ const OrderForm = ({
                       {defaultAddress && (
                         <Option
                           value="sameAsBilling"
-                          title={`Same as Billing: ${defaultAddress.street}, ${defaultAddress.city}, ${defaultAddress.state || ""} ${defaultAddress.postalCode || ""}`}
+                          title={`Same as Billing: ${defaultAddress.street}, ${defaultAddress.city}, ${defaultAddress.state || ''} ${defaultAddress.postalCode || ''}`}
                         >
-                          Same as Billing ({defaultAddress.city || "—"})
+                          Same as Billing ({defaultAddress.city || '—'})
                         </Option>
                       )}
 
@@ -552,21 +498,17 @@ const OrderForm = ({
                         <Option
                           key={a.addressId}
                           value={a.addressId}
-                          title={`${a.street}, ${a.city}, ${a.state || ""} ${a.postalCode || ""} (${a.status})`}
+                          title={`${a.street}, ${a.city}, ${a.state || ''} ${a.postalCode || ''} (${a.status})`}
                         >
                           {a.street?.slice(0, 28)}
-                          {a.street?.length > 28 ? "..." : ""}, {a.city} (
-                          {a.status})
+                          {a.street?.length > 28 ? '...' : ''}, {a.city} ({a.status})
                         </Option>
                       ))}
                     </MiniSelect>
 
-                    {hasError("shipping") && (
-                      <Text
-                        type="danger"
-                        style={{ fontSize: 12, display: "block" }}
-                      >
-                        {getError("shipping")}
+                    {hasError('shipping') && (
+                      <Text type="danger" style={{ fontSize: 12, display: 'block' }}>
+                        {getError('shipping')}
                       </Text>
                     )}
 
@@ -594,8 +536,8 @@ const OrderForm = ({
                     value={sourceType}
                     onChange={(v) => {
                       setSourceType(v);
-                      handleOrderChange("sourceType", v);
-                      handleOrderChange("source", "");
+                      handleOrderChange('sourceType', v);
+                      handleOrderChange('source', '');
                     }}
                     allowClear
                   >
@@ -616,10 +558,10 @@ const OrderForm = ({
                   <Space.Compact block>
                     <MiniSelect
                       value={orderData?.source}
-                      onChange={(v) => handleOrderChange("source", v)}
+                      onChange={(v) => handleOrderChange('source', v)}
                       disabled={!sourceType}
                       allowClear
-                      status={hasError("source") ? "error" : ""}
+                      status={hasError('source') ? 'error' : ''}
                       placeholder="Select reference customer"
                     >
                       {sourceCustomers.map((c) => (
@@ -628,21 +570,14 @@ const OrderForm = ({
                         </Option>
                       ))}
                     </MiniSelect>
-                    <Button
-                      type="primary"
-                      onClick={handleAddSourceCustomer}
-                      disabled={!sourceType}
-                    >
+                    <Button type="primary" onClick={handleAddSourceCustomer} disabled={!sourceType}>
                       +
                     </Button>
                   </Space.Compact>
 
-                  {hasError("source") && (
-                    <Text
-                      type="danger"
-                      style={{ fontSize: 12, display: "block" }}
-                    >
-                      {getError("source")}
+                  {hasError('source') && (
+                    <Text type="danger" style={{ fontSize: 12, display: 'block' }}>
+                      {getError('source')}
                     </Text>
                   )}
                 </Col>
@@ -654,31 +589,23 @@ const OrderForm = ({
               <TightRow gutter={8}>
                 <Col span={8}>
                   <Text strong>
-                    Due Date <span style={{ color: "red" }}>*</span>
+                    Due Date <span style={{ color: 'red' }}>*</span>
                   </Text>
                 </Col>
                 <Col span={16}>
                   <MiniDate
-                    selected={momentToDate(
-                      orderData?.dueDate ? moment(orderData.dueDate) : null,
-                    )}
+                    selected={momentToDate(orderData?.dueDate ? moment(orderData.dueDate) : null)}
                     onChange={(d) =>
-                      handleOrderChange(
-                        "dueDate",
-                        d ? moment(d).format("YYYY-MM-DD") : "",
-                      )
+                      handleOrderChange('dueDate', d ? moment(d).format('YYYY-MM-DD') : '')
                     }
                     minDate={new Date()}
-                    className={hasError("dueDate") ? "error-border" : ""}
+                    className={hasError('dueDate') ? 'error-border' : ''}
                     dateFormat="dd/MM/yyyy"
                     placeholderText="DD/MM/YYYY"
                   />
-                  {hasError("dueDate") && (
-                    <Text
-                      type="danger"
-                      style={{ fontSize: 12, display: "block" }}
-                    >
-                      {getError("dueDate")}
+                  {hasError('dueDate') && (
+                    <Text type="danger" style={{ fontSize: 12, display: 'block' }}>
+                      {getError('dueDate')}
                     </Text>
                   )}
                 </Col>
@@ -690,15 +617,13 @@ const OrderForm = ({
                 </Col>
                 <Col span={16}>
                   {(orderData?.followupDates || []).map((d, i) => (
-                    <Space key={i} style={{ width: "100%", marginBottom: 4 }}>
+                    <Space key={i} style={{ width: '100%', marginBottom: 4 }}>
                       <MiniDate
                         selected={momentToDate(d ? moment(d) : null)}
                         onChange={(v) => setFollow(i, v)}
                         minDate={new Date()}
                         maxDate={
-                          orderData?.dueDate
-                            ? moment(orderData.dueDate).toDate()
-                            : undefined
+                          orderData?.dueDate ? moment(orderData.dueDate).toDate() : undefined
                         }
                         dateFormat="dd/MM/yyyy"
                         placeholderText="DD/MM/YYYY"
@@ -711,11 +636,7 @@ const OrderForm = ({
                       />
                     </Space>
                   ))}
-                  <Button
-                    size="small"
-                    icon={<PlusOutlined />}
-                    onClick={addFollow}
-                  >
+                  <Button size="small" icon={<PlusOutlined />} onClick={addFollow}>
                     Add
                   </Button>
                 </Col>
@@ -733,9 +654,9 @@ const OrderForm = ({
                       setAssignmentType(v);
                       setOrderData((p) => ({
                         ...p,
-                        assignedTeamId: v === "team" ? p.assignedTeamId : "",
-                        assignedUserId: v === "users" ? p.assignedUserId : "",
-                        secondaryUserId: v === "users" ? p.secondaryUserId : "",
+                        assignedTeamId: v === 'team' ? p.assignedTeamId : '',
+                        assignedUserId: v === 'users' ? p.assignedUserId : '',
+                        secondaryUserId: v === 'users' ? p.secondaryUserId : '',
                       }));
                     }}
                   >
@@ -745,23 +666,23 @@ const OrderForm = ({
                 </Col>
               </TightRow>
 
-              {assignmentType === "team" && (
+              {assignmentType === 'team' && (
                 <TightRow gutter={8}>
                   <Col span={8}>
                     <Text strong>
-                      Team <span style={{ color: "red" }}>*</span>
+                      Team <span style={{ color: 'red' }}>*</span>
                     </Text>
                   </Col>
                   <Col span={16}>
                     <MiniSelect
                       value={orderData?.assignedTeamId}
-                      onChange={(v) => handleOrderChange("assignedTeamId", v)}
+                      onChange={(v) => handleOrderChange('assignedTeamId', v)}
                       loading={teamsLoading}
-                      status={hasError("assignment") ? "error" : ""}
+                      status={hasError('assignment') ? 'error' : ''}
                       dropdownRender={(menu) => (
                         <>
                           {menu}
-                          <Divider style={{ margin: "4px 0" }} />
+                          <Divider style={{ margin: '4px 0' }} />
                           <Button
                             type="primary"
                             icon={<PlusOutlined />}
@@ -780,32 +701,29 @@ const OrderForm = ({
                         </Option>
                       ))}
                     </MiniSelect>
-                    {hasError("assignment") && assignmentType === "team" && (
-                      <Text
-                        type="danger"
-                        style={{ fontSize: 12, display: "block" }}
-                      >
-                        {getError("assignment")}
+                    {hasError('assignment') && assignmentType === 'team' && (
+                      <Text type="danger" style={{ fontSize: 12, display: 'block' }}>
+                        {getError('assignment')}
                       </Text>
                     )}
                   </Col>
                 </TightRow>
               )}
 
-              {assignmentType === "users" && (
+              {assignmentType === 'users' && (
                 <>
                   <TightRow gutter={8}>
                     <Col span={8}>
                       <Text strong>
-                        Primary <span style={{ color: "red" }}>*</span>
+                        Primary <span style={{ color: 'red' }}>*</span>
                       </Text>
                     </Col>
                     <Col span={16}>
                       <MiniSelect
                         value={orderData?.assignedUserId}
-                        onChange={(v) => handleOrderChange("assignedUserId", v)}
+                        onChange={(v) => handleOrderChange('assignedUserId', v)}
                         loading={usersLoading}
-                        status={hasError("assignment") ? "error" : ""}
+                        status={hasError('assignment') ? 'error' : ''}
                       >
                         {users.map((u) => (
                           <Option key={u.userId} value={u.userId}>
@@ -813,12 +731,9 @@ const OrderForm = ({
                           </Option>
                         ))}
                       </MiniSelect>
-                      {hasError("assignment") && assignmentType === "users" && (
-                        <Text
-                          type="danger"
-                          style={{ fontSize: 12, display: "block" }}
-                        >
-                          {getError("assignment")}
+                      {hasError('assignment') && assignmentType === 'users' && (
+                        <Text type="danger" style={{ fontSize: 12, display: 'block' }}>
+                          {getError('assignment')}
                         </Text>
                       )}
                     </Col>
@@ -831,9 +746,7 @@ const OrderForm = ({
                     <Col span={16}>
                       <MiniSelect
                         value={orderData?.secondaryUserId}
-                        onChange={(v) =>
-                          handleOrderChange("secondaryUserId", v)
-                        }
+                        onChange={(v) => handleOrderChange('secondaryUserId', v)}
                         allowClear
                         loading={usersLoading}
                         placeholder="Select secondary user"
@@ -859,11 +772,11 @@ const OrderForm = ({
                 <Col span={16}>
                   <MiniSelect
                     value={orderData?.status}
-                    onChange={(v) => handleOrderChange("status", v)}
+                    onChange={(v) => handleOrderChange('status', v)}
                   >
                     {STATUS_VALUES.map((s) => (
                       <Option key={s} value={s}>
-                        {s.replace("_", " ")}
+                        {s.replace('_', ' ')}
                       </Option>
                     ))}
                   </MiniSelect>
@@ -877,7 +790,7 @@ const OrderForm = ({
                 <Col span={16}>
                   <MiniSelect
                     value={orderData?.priority}
-                    onChange={(v) => handleOrderChange("priority", v)}
+                    onChange={(v) => handleOrderChange('priority', v)}
                   >
                     <Option value="high">High</Option>
                     <Option value="medium">Medium</Option>
@@ -919,17 +832,14 @@ const OrderForm = ({
                       onChange={(v) => {
                         const val = v ?? 0;
                         setExtraDiscount(val);
-                        handleOrderChange("extraDiscount", val);
+                        handleOrderChange('extraDiscount', val);
                       }}
                       placeholder="0"
                       addonBefore="₹"
-                      style={{ width: "100%" }}
+                      style={{ width: '100%' }}
                     />
                   </Space.Compact>
-                  <Text
-                    type="secondary"
-                    style={{ fontSize: 11, display: "block", marginTop: 4 }}
-                  >
+                  <Text type="secondary" style={{ fontSize: 11, display: 'block', marginTop: 4 }}>
                     Fixed amount discount applied after subtotal, tax & shipping
                   </Text>
                 </Col>
@@ -944,9 +854,7 @@ const OrderForm = ({
                     rows={2}
                     maxLength={60}
                     value={orderData?.description}
-                    onChange={(e) =>
-                      handleOrderChange("description", e.target.value)
-                    }
+                    onChange={(e) => handleOrderChange('description', e.target.value)}
                   />
                 </Col>
               </TightRow>
@@ -965,14 +873,14 @@ const OrderForm = ({
             extraDiscount={Number(extraDiscAmt)}
             gst={gst}
           />
-          <Divider style={{ margin: "8px 0" }} />
+          <Divider style={{ margin: '8px 0' }} />
           <CheckoutBtn
             type="primary"
             block
             icon={<CheckCircleOutlined />}
             onClick={() => {
               if (!canSubmit) {
-                message.error("Please fix all required fields");
+                message.error('Please fix all required fields');
                 return;
               }
 
@@ -990,20 +898,13 @@ const OrderForm = ({
           >
             Create Order
           </CheckoutBtn>
-          <Button
-            block
-            style={{ marginTop: 4 }}
-            onClick={() => setActiveTab("cart")}
-          >
+          <Button block style={{ marginTop: 4 }} onClick={() => setActiveTab('cart')}>
             Back to Cart
           </Button>
         </CompactCard>
       </Col>
 
-      <AddCustomerModal
-        visible={sourceModalVisible}
-        onClose={() => setSourceModalVisible(false)}
-      />
+      <AddCustomerModal visible={sourceModalVisible} onClose={() => setSourceModalVisible(false)} />
     </Row>
   );
 };

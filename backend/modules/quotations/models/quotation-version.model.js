@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const quotationItemVersionSchema = new mongoose.Schema({
   productId: String,
@@ -9,14 +9,14 @@ const quotationItemVersionSchema = new mongoose.Schema({
   quantity: Number,
   price: Number,
   discount: Number,
-  discountType: { type: String, default: "fixed" },
+  discountType: { type: String, default: 'fixed' },
   tax: Number,
   total: Number,
 
   isOptionFor: { type: String, default: null },
   optionType: {
     type: String,
-    enum: ["variant", "upgrade", "addon", null],
+    enum: ['variant', 'upgrade', 'addon', null],
     default: null,
   },
   groupId: { type: String, default: null },
@@ -75,4 +75,4 @@ const quotationVersionSchema = new mongoose.Schema(
 
 quotationVersionSchema.index({ quotationId: 1, version: 1 }, { unique: true });
 
-module.exports = mongoose.model("QuotationVersion", quotationVersionSchema);
+module.exports = mongoose.model('QuotationVersion', quotationVersionSchema);

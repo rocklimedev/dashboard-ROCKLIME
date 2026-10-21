@@ -1,10 +1,10 @@
 // "My day" on the Home screen: the short list of things that need doing today.
 // Admins and managers see everyone's work; others see their own.
-const { QueryTypes } = require("sequelize");
-const { can } = require("../../middleware/permission");
+const { QueryTypes } = require('sequelize');
+const { can } = require('../../middleware/permission');
 
-const m = () => require("../../models");
-const ADMIN = ["SUPER_ADMIN", "ADMIN", "DEVELOPER"];
+const m = () => require('../../models');
+const ADMIN = ['SUPER_ADMIN', 'ADMIN', 'DEVELOPER'];
 const OPEN_Q = "('DRAFT','SENT','NEGOTIATION')";
 const TO_DISPATCH = "('PREPARING','CHECKING','INVOICE','PARTIALLY_DISPATCHED')";
 const NOT_LATE = "('DISPATCHED','DELIVERED','PARTIALLY_DELIVERED','CLOSED','CANCELED','RETURNED')";
@@ -13,25 +13,30 @@ async function myDay(req, res) {
   try {
     const { sequelize } = m();
     const roles = req.user.roles || [];
-    const everyone = roles.some((r) => ADMIN.includes(r)) || req.query.scope === "all";
+    const everyone = roles.some((r) => ADMIN.includes(r)) || req.query.scope === 'all';
     const uid = req.user.userId;
-    const q = (sql, replacements = {}) => sequelize.query(sql, { replacements: { uid, ...replacements }, type: QueryTypes.SELECT });
-    const validityDays = await require("../quotations/pipeline").validityDays();
-    const mineQ = everyone ? "" : "AND q.createdBy = :uid";
-    const mineO = everyone ? "" : "AND (o.createdBy = :uid OR o.assignedUserId = :uid OR o.secondaryUserId = :uid)";
+    const q = (sql, replacements = {}) =>
+      sequelize.query(sql, { replacements: { uid, ...replacements }, type: QueryTypes.SELECT });
+    const validityDays = await require('../quotations/pipeline').validityDays();
+    const mineQ = everyone ? '' : 'AND q.createdBy = :uid';
+    const mineO = everyone
+      ? ''
+      : 'AND (o.createdBy = :uid OR o.assignedUserId = :uid OR o.secondaryUserId = :uid)';
     const [canQuotes, canOrders, canMoney, canStock, canPurchase, canCrm] = await Promise.all([
-      can(req.user, "quotations", "view"),
-      can(req.user, "orders", "view"),
-      can(req.user, "orders", "edit"),
-      can(req.user, "inventory", "view"),
-      can(req.user, "purchase_orders", "view"),
-      can(req.user, "crm", "view"),
+      can(req.user, 'quotations', 'view'),
+      can(req.user, 'orders', 'view'),
+      can(req.user, 'orders', 'edit'),
+      can(req.user, 'inventory', 'view'),
+      can(req.user, 'purchase_orders', 'view'),
+      can(req.user, 'crm', 'view'),
     ]);
 
-    const out = { scope: everyone ? "everyone" : "mine" };
+    const out = { scope: everyone ? 'everyone' : 'mine' };
 
     if (canQuotes) {
-      await require("../quotations/pipeline").expireOverdue().catch(() => {});
+      await require('../quotations/pipeline')
+        .expireOverdue()
+        .catch(() => {});
       out.followUps = await q(
         `SELECT q.quotationId, q.reference_number, q.document_title, q.finalAmount, q.status, q.nextFollowUp,
                 c.name AS customerName, c.mobileNumber AS customerPhone
@@ -48,7 +53,9 @@ async function myDay(req, res) {
          ORDER BY validTill ASC LIMIT 8`,
         { days: validityDays },
       );
-      const [{ n }] = await q(`SELECT COUNT(*) AS n FROM quotations q WHERE q.status IN ${OPEN_Q} AND q.nextFollowUp IS NULL ${mineQ}`);
+      const [{ n }] = await q(
+        `SELECT COUNT(*) AS n FROM quotations q WHERE q.status IN ${OPEN_Q} AND q.nextFollowUp IS NULL ${mineQ}`,
+      );
       out.noFollowUp = Number(n);
       const [{ due, open }] = await q(
         `SELECT SUM(q.nextFollowUp IS NOT NULL AND q.nextFollowUp <= CURDATE()) AS due, COUNT(*) AS open
@@ -59,8 +66,8 @@ async function myDay(req, res) {
 
     if (canCrm) {
       // CRM follow-ups due today or late
-      out.crmFollowUps = await require("../crm/crm.service")
-        .tasks({ userId: uid, scope: everyone ? "all" : "mine", when: "due" })
+      out.crmFollowUps = await require('../crm/crm.service')
+        .tasks({ userId: uid, scope: everyone ? 'all' : 'mine', when: 'due' })
         .then((rows) => rows.slice(0, 6))
         .catch(() => []);
     }
@@ -72,14 +79,26 @@ async function myDay(req, res) {
          WHERE o.status IN ${TO_DISPATCH} ${mineO}
          ORDER BY (o.dueDate IS NULL), o.dueDate ASC, FIELD(o.priority,'high','medium','low') LIMIT 8`,
       );
-      const [{ n: dispatchCount }] = await q(`SELECT COUNT(*) AS n FROM orders o WHERE o.status IN ${TO_DISPATCH} ${mineO}`);
-      const [{ n: lateCount }] = await q(`SELECT COUNT(*) AS n FROM orders o WHERE o.dueDate < CURDATE() AND o.status NOT IN ${NOT_LATE} ${mineO}`);
-      const [{ n: deliverCount }] = await q(`SELECT COUNT(*) AS n FROM orders o WHERE o.status IN ('DISPATCHED','PARTIALLY_DELIVERED') ${mineO}`);
-      out.counts = { toDispatch: Number(dispatchCount), late: Number(lateCount), awaitingDelivery: Number(deliverCount) };
+      const [{ n: dispatchCount }] = await q(
+        `SELECT COUNT(*) AS n FROM orders o WHERE o.status IN ${TO_DISPATCH} ${mineO}`,
+      );
+      const [{ n: lateCount }] = await q(
+        `SELECT COUNT(*) AS n FROM orders o WHERE o.dueDate < CURDATE() AND o.status NOT IN ${NOT_LATE} ${mineO}`,
+      );
+      const [{ n: deliverCount }] = await q(
+        `SELECT COUNT(*) AS n FROM orders o WHERE o.status IN ('DISPATCHED','PARTIALLY_DELIVERED') ${mineO}`,
+      );
+      out.counts = {
+        toDispatch: Number(dispatchCount),
+        late: Number(lateCount),
+        awaitingDelivery: Number(deliverCount),
+      };
     }
 
     if (canMoney) {
-      const rows = (await require("../payments/payment.controller").orderBalances()).filter((o) => o.due > 0.009);
+      const rows = (await require('../payments/payment.controller').orderBalances()).filter(
+        (o) => o.due > 0.009,
+      );
       const old = rows.filter((o) => Date.now() - new Date(o.createdAt).getTime() > 30 * 864e5);
       out.money = {
         due: Math.round(rows.reduce((a, o) => a + o.due, 0)),
@@ -96,7 +115,9 @@ async function myDay(req, res) {
            AND po.expectDeliveryDate <= DATE_ADD(CURDATE(), INTERVAL 7 DAY)
          ORDER BY po.expectDeliveryDate ASC LIMIT 6`,
       ).catch(() => []);
-      const [{ n: toReceive }] = await q("SELECT COUNT(*) AS n FROM purchase_orders WHERE status IN ('confirmed','partial_delivered')").catch(() => [{ n: 0 }]);
+      const [{ n: toReceive }] = await q(
+        "SELECT COUNT(*) AS n FROM purchase_orders WHERE status IN ('confirmed','partial_delivered')",
+      ).catch(() => [{ n: 0 }]);
       out.toReceive = Number(toReceive);
     }
 
@@ -115,7 +136,7 @@ async function myDay(req, res) {
 
     res.json(out);
   } catch (err) {
-    res.status(500).json({ message: "Could not load your day", error: err.message });
+    res.status(500).json({ message: 'Could not load your day', error: err.message });
   }
 }
 

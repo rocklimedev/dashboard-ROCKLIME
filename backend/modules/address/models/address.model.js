@@ -1,9 +1,9 @@
 // models/Address.js
-const { v4: uuidv4 } = require("uuid");
+const { v4: uuidv4 } = require('uuid');
 
 module.exports = (sequelize, DataTypes) => {
   const Address = sequelize.define(
-    "Address",
+    'Address',
     {
       addressId: {
         type: DataTypes.UUID,
@@ -31,9 +31,9 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
       },
       status: {
-        type: DataTypes.ENUM("BILLING", "PRIMARY", "ADDITIONAL"),
+        type: DataTypes.ENUM('BILLING', 'PRIMARY', 'ADDITIONAL'),
         allowNull: false,
-        defaultValue: "ADDITIONAL",
+        defaultValue: 'ADDITIONAL',
       },
       userId: {
         type: DataTypes.UUID,
@@ -45,7 +45,7 @@ module.exports = (sequelize, DataTypes) => {
       },
     },
     {
-      tableName: "addresses",
+      tableName: 'addresses',
       timestamps: true,
       hooks: {
         beforeCreate: (address) => {
@@ -54,24 +54,24 @@ module.exports = (sequelize, DataTypes) => {
           }
         },
       },
-    }
+    },
   );
 
   // ⭐ Correct place for associations
   Address.associate = (models) => {
     Address.belongsTo(models.User, {
-      foreignKey: "userId",
-      as: "user",
+      foreignKey: 'userId',
+      as: 'user',
     });
 
     Address.belongsTo(models.Customer, {
-      foreignKey: "customerId",
-      as: "customer",
+      foreignKey: 'customerId',
+      as: 'customer',
     });
 
     Address.hasMany(models.Order, {
-      foreignKey: "shipTo",
-      as: "orders",
+      foreignKey: 'shipTo',
+      as: 'orders',
     });
   };
 

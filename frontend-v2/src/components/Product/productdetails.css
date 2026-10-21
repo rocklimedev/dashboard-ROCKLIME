@@ -1,6 +1,5 @@
-
 .cart-button {
-  background-color:  #f7f7f7;
+  background-color: #f7f7f7;
   color: var(--text-dark);
   padding: 8px 16px;
   border-radius: 6px;
@@ -12,7 +11,7 @@
 .cart-button:hover {
   background-color: #e31e24;
   border-color: #e31e24;
-  color:  #f7f7f7;
+  color: #f7f7f7;
 }
 
 .cart-button:disabled {
@@ -31,7 +30,7 @@
 .btn-print {
   background-color: var(--secondary-color);
   border: none;
-  color:  #f7f7f7;
+  color: #f7f7f7;
   padding: 8px 16px;
   border-radius: 6px;
   font-size: 14px;
@@ -115,7 +114,7 @@ input:focus {
 }
 
 .product__main-image {
-  background-color:  #f7f7f7;
+  background-color: #f7f7f7;
   border-radius: 8px;
   overflow: hidden;
   box-shadow: var(--shadow);
@@ -242,7 +241,7 @@ input:focus {
 
 .product-content-quantity__btn {
   background-color: #e31e24;
-  color:  #f7f7f7;
+  color: #f7f7f7;
   border: none;
   border-radius: 6px;
   padding: 12px 24px;
@@ -288,7 +287,7 @@ input:focus {
 .product-info__inner {
   padding: 24px;
   border-radius: 8px;
-  background-color:  #f7f7f7;
+  background-color: #f7f7f7;
   box-shadow: var(--shadow);
 }
 
@@ -380,7 +379,7 @@ input:focus {
   border: 1px solid #333333;
   border-radius: 8px;
   overflow: hidden;
-  background:  #f7f7f7;
+  background: #f7f7f7;
   box-shadow: var(--shadow);
   transition: var(--transition);
 }
@@ -433,7 +432,7 @@ input:focus {
 }
 
 .heart-button:hover svg {
-  stroke:  #f7f7f7;
+  stroke: #f7f7f7;
 }
 
 .cat-name {

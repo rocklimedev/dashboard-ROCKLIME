@@ -1,10 +1,6 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
-import {
-  ArrowLeftOutlined,
-  DeleteOutlined,
-  SearchOutlined,
-} from "@ant-design/icons";
+import React, { useState, useEffect, useMemo } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { ArrowLeftOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
 import {
   Form,
   Input,
@@ -17,34 +13,24 @@ import {
   Typography,
   InputNumber,
   message,
-} from "antd";
-import { debounce } from "lodash";
-import moment from "moment";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
-import { useGetProfileQuery } from "../../api/userApi";
-import PageHeader from "../../components/Common/PageHeader";
-import AddVendorModal from "../../components/POS-NEW/AddVendorModal";
+} from 'antd';
+import { debounce } from 'lodash';
+import moment from 'moment';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import { useGetProfileQuery } from '../../api/userApi';
+import PageHeader from '../../components/Common/PageHeader';
+import AddVendorModal from '../../components/POS-NEW/AddVendorModal';
 
-import {
-  useCreateFGSMutation,
-  useGetFGSByIdQuery,
-  useUpdateFGSMutation,
-} from "../../api/fgsApi";
-import {
-  useGetAllProductsQuery,
-  useSearchProductsQuery,
-} from "../../api/productApi";
-import {
-  useGetVendorsQuery,
-  useCreateVendorMutation,
-} from "../../api/vendorApi";
+import { useCreateFGSMutation, useGetFGSByIdQuery, useUpdateFGSMutation } from '../../api/fgsApi';
+import { useGetAllProductsQuery, useSearchProductsQuery } from '../../api/productApi';
+import { useGetVendorsQuery, useCreateVendorMutation } from '../../api/vendorApi';
 
 const { Option } = Select;
 const { Text } = Typography;
 
 // Known meta key for selling price (same as PO)
-const SELLING_PRICE_META_KEY = "9ba862ef-f993-4873-95ef-1fef10036aa5";
+const SELLING_PRICE_META_KEY = '9ba862ef-f993-4873-95ef-1fef10036aa5';
 
 const getUnitPrice = (product) => {
   if (!product) return 0;
@@ -87,20 +73,21 @@ const AddFieldgeneratedSheet = () => {
 
   const [createFGS, { isLoading: creating }] = useCreateFGSMutation();
   const [updateFGS, { isLoading: updating }] = useUpdateFGSMutation();
-  const [createVendor, { isLoading: creatingVendor }] =
-    useCreateVendorMutation();
+  const [createVendor, { isLoading: creatingVendor }] = useCreateVendorMutation();
 
   // Search
-  const [searchTerm, setSearchTerm] = useState("");
-  const { data: searchRes = [], isFetching: isSearching } =
-    useSearchProductsQuery(searchTerm.trim(), { skip: !searchTerm.trim() });
+  const [searchTerm, setSearchTerm] = useState('');
+  const { data: searchRes = [], isFetching: isSearching } = useSearchProductsQuery(
+    searchTerm.trim(),
+    { skip: !searchTerm.trim() },
+  );
 
   // Form state - default orderDate to current date
   const [formValues, setFormValues] = useState({
-    vendorId: "",
+    vendorId: '',
     orderDate: moment(),
     expectDeliveryDate: null,
-    status: "draft",
+    status: 'draft',
     items: [],
   });
 
@@ -135,12 +122,10 @@ const AddFieldgeneratedSheet = () => {
     const total = items.reduce((sum, i) => sum + i.total, 0).toFixed(2);
 
     const newValues = {
-      vendorId: vendors.some((v) => v.id === fgs.vendorId) ? fgs.vendorId : "",
+      vendorId: vendors.some((v) => v.id === fgs.vendorId) ? fgs.vendorId : '',
       orderDate: fgs.orderDate ? moment(fgs.orderDate) : moment(),
-      expectDeliveryDate: fgs.expectDeliveryDate
-        ? moment(fgs.expectDeliveryDate)
-        : null,
-      status: fgs.status || "draft",
+      expectDeliveryDate: fgs.expectDeliveryDate ? moment(fgs.expectDeliveryDate) : null,
+      status: fgs.status || 'draft',
       items,
       totalAmount: total,
     };
@@ -154,7 +139,7 @@ const AddFieldgeneratedSheet = () => {
     });
 
     if (!newValues.vendorId) {
-      message.warning("The vendor for this FGS no longer exists.");
+      message.warning('The vendor for this FGS no longer exists.');
     }
   }, [fgsData, isEditMode, products, vendors, form]);
 
@@ -162,9 +147,7 @@ const AddFieldgeneratedSheet = () => {
   // Computed total
   // ───────────────────────────────────────
   const totalAmount = useMemo(() => {
-    return formValues.items
-      .reduce((sum, item) => sum + (Number(item.total) || 0), 0)
-      .toFixed(2);
+    return formValues.items.reduce((sum, item) => sum + (Number(item.total) || 0), 0).toFixed(2);
   }, [formValues.items]);
 
   // ───────────────────────────────────────
@@ -180,21 +163,19 @@ const AddFieldgeneratedSheet = () => {
         label: (
           <div
             style={{
-              display: "flex",
-              justifyContent: "space-between",
-              width: "100%",
+              display: 'flex',
+              justifyContent: 'space-between',
+              width: '100%',
             }}
           >
             <div>
-              <div style={{ fontWeight: 500 }}>
-                {p.name || p.product_code || "Unnamed"}
-              </div>
+              <div style={{ fontWeight: 500 }}>{p.name || p.product_code || 'Unnamed'}</div>
               <Text type="secondary" style={{ fontSize: 12 }}>
-                {p.product_code || "—"}
+                {p.product_code || '—'}
               </Text>
             </div>
-            <Text strong style={{ color: "#52c41a" }}>
-              ₹{price.toLocaleString("en-IN")}
+            <Text strong style={{ color: '#52c41a' }}>
+              ₹{price.toLocaleString('en-IN')}
             </Text>
           </div>
         ),
@@ -211,12 +192,12 @@ const AddFieldgeneratedSheet = () => {
       products.find((p) => (p.id || p.productId) === productId);
 
     if (!product) {
-      message.error("Product not found");
+      message.error('Product not found');
       return;
     }
 
     if (formValues.items.some((i) => i.productId === productId)) {
-      message.warning("This product is already added");
+      message.warning('This product is already added');
       return;
     }
 
@@ -229,7 +210,7 @@ const AddFieldgeneratedSheet = () => {
     const newItem = {
       key: productId,
       productId,
-      name: product.name || product.product_code || "Unnamed Product",
+      name: product.name || product.product_code || 'Unnamed Product',
       quantity: 1,
       unitPrice,
       total: unitPrice,
@@ -240,7 +221,7 @@ const AddFieldgeneratedSheet = () => {
       items: [...prev.items, newItem],
     }));
 
-    setSearchTerm("");
+    setSearchTerm('');
   };
 
   // ───────────────────────────────────────
@@ -250,7 +231,7 @@ const AddFieldgeneratedSheet = () => {
     const updated = [...formValues.items];
     updated[index][field] = value;
 
-    if (field === "quantity" || field === "unitPrice") {
+    if (field === 'quantity' || field === 'unitPrice') {
       const qty = Number(updated[index].quantity) || 1;
       const price = Number(updated[index].unitPrice) || 0.01;
       updated[index].total = qty * price;
@@ -275,21 +256,19 @@ const AddFieldgeneratedSheet = () => {
       await form.validateFields();
 
       if (formValues.items.length === 0) {
-        message.error("Add at least one product");
+        message.error('Add at least one product');
         return;
       }
 
       if (formValues.items.some((i) => i.unitPrice <= 0)) {
-        message.error("All products must have a price > 0");
+        message.error('All products must have a price > 0');
         return;
       }
 
-      const currentUserId = profile?.user?.userId || "nill";
+      const currentUserId = profile?.user?.userId || 'nill';
 
-      if (!currentUserId || currentUserId === "nill") {
-        message.error(
-          "Cannot save: user profile not loaded. Please try again.",
-        );
+      if (!currentUserId || currentUserId === 'nill') {
+        message.error('Cannot save: user profile not loaded. Please try again.');
         return;
       }
 
@@ -301,30 +280,30 @@ const AddFieldgeneratedSheet = () => {
           unitPrice: Number(i.unitPrice),
         })),
         expectDeliveryDate: formValues.expectDeliveryDate
-          ? formValues.expectDeliveryDate.format("YYYY-MM-DD")
+          ? formValues.expectDeliveryDate.format('YYYY-MM-DD')
           : null,
       };
 
       if (isEditMode) {
         await updateFGS({ id, ...payload }).unwrap();
-        message.success("Field Guided Sheet updated");
+        message.success('Field Guided Sheet updated');
       } else {
         await createFGS(payload).unwrap();
-        message.success("Field Guided Sheet created");
+        message.success('Field Guided Sheet created');
 
         setFormValues({
-          vendorId: "",
+          vendorId: '',
           orderDate: moment(),
           expectDeliveryDate: null,
-          status: "draft",
+          status: 'draft',
           items: [],
         });
         form.resetFields();
       }
 
-      navigate("/purchase-manager?fgs=1");
+      navigate('/purchase-manager?fgs=1');
     } catch (err) {
-      message.error(err?.data?.message || "Failed to save Field Guided Sheet");
+      message.error(err?.data?.message || 'Failed to save Field Guided Sheet');
     }
   };
 
@@ -341,49 +320,44 @@ const AddFieldgeneratedSheet = () => {
   }
 
   const tableColumns = [
-    { title: "Product", dataIndex: "name", key: "name" },
+    { title: 'Product', dataIndex: 'name', key: 'name' },
     {
-      title: "Quantity",
-      key: "quantity",
+      title: 'Quantity',
+      key: 'quantity',
       width: 120,
       render: (_, record, index) => (
         <InputNumber
           min={1}
           value={record.quantity}
-          onChange={(v) => updateItem(index, "quantity", v)}
+          onChange={(v) => updateItem(index, 'quantity', v)}
         />
       ),
     },
     {
-      title: "Unit Price (₹)",
-      key: "unitPrice",
+      title: 'Unit Price (₹)',
+      key: 'unitPrice',
       width: 140,
       render: (_, record, index) => (
         <InputNumber
           min={0.01}
           step={0.01}
           value={record.unitPrice}
-          onChange={(v) => updateItem(index, "unitPrice", v)}
+          onChange={(v) => updateItem(index, 'unitPrice', v)}
         />
       ),
     },
     {
-      title: "Total (₹)",
-      key: "total",
+      title: 'Total (₹)',
+      key: 'total',
       width: 120,
       render: (_, r) => Number(r.total || 0).toFixed(2),
     },
     {
-      title: "",
-      key: "action",
+      title: '',
+      key: 'action',
       width: 60,
       render: (_, __, index) => (
-        <Button
-          type="text"
-          danger
-          icon={<DeleteOutlined />}
-          onClick={() => removeItem(index)}
-        />
+        <Button type="text" danger icon={<DeleteOutlined />} onClick={() => removeItem(index)} />
       ),
     },
   ];
@@ -394,16 +368,12 @@ const AddFieldgeneratedSheet = () => {
         <div className="card">
           <PageHeader
             exportOptions={{ pdf: false, excel: false }}
-            title={
-              isEditMode
-                ? "Edit Field Generated Sheet"
-                : "Create Field Generated Sheet"
-            }
+            title={isEditMode ? 'Edit Field Generated Sheet' : 'Create Field Generated Sheet'}
             subtitle="Temporary / negotiable purchase draft"
           />
 
           <div className="card-body">
-            <div style={{ marginBottom: 24, display: "flex", gap: 12 }}>
+            <div style={{ marginBottom: 24, display: 'flex', gap: 12 }}>
               <Link to="/purchase-manager?fgs=1">
                 <Button icon={<ArrowLeftOutlined />}>Back</Button>
               </Link>
@@ -411,7 +381,7 @@ const AddFieldgeneratedSheet = () => {
             </div>
 
             <Form form={form} layout="vertical" onFinish={handleSubmit}>
-              <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
                 {/* Vendor */}
                 <Form.Item
                   label={
@@ -420,10 +390,10 @@ const AddFieldgeneratedSheet = () => {
                     </>
                   }
                   name="vendorId"
-                  rules={[{ required: true, message: "Vendor is required" }]}
+                  rules={[{ required: true, message: 'Vendor is required' }]}
                   style={{ flex: 1, minWidth: 300 }}
                 >
-                  <div style={{ display: "flex", gap: 8 }}>
+                  <div style={{ display: 'flex', gap: 8 }}>
                     <Select
                       style={{ flex: 1 }}
                       placeholder="Select vendor"
@@ -441,10 +411,7 @@ const AddFieldgeneratedSheet = () => {
                         </Option>
                       ))}
                     </Select>
-                    <Button
-                      type="primary"
-                      onClick={() => setShowVendorModal(true)}
-                    >
+                    <Button type="primary" onClick={() => setShowVendorModal(true)}>
                       +
                     </Button>
                   </div>
@@ -458,9 +425,7 @@ const AddFieldgeneratedSheet = () => {
                     </>
                   }
                   name="orderDate"
-                  rules={[
-                    { required: true, message: "Order date is required" },
-                  ]}
+                  rules={[{ required: true, message: 'Order date is required' }]}
                   style={{ flex: 1, minWidth: 220 }}
                 >
                   <DatePicker
@@ -482,12 +447,9 @@ const AddFieldgeneratedSheet = () => {
                 </Form.Item>
               </div>
 
-              <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
                 {/* Expected Delivery */}
-                <Form.Item
-                  label="Expected Delivery"
-                  style={{ flex: 1, minWidth: 220 }}
-                >
+                <Form.Item label="Expected Delivery" style={{ flex: 1, minWidth: 220 }}>
                   <DatePicker
                     selected={formValues.expectDeliveryDate?.toDate()}
                     onChange={(date) =>
@@ -504,25 +466,13 @@ const AddFieldgeneratedSheet = () => {
                 </Form.Item>
 
                 {/* Status */}
-                <Form.Item
-                  label="Status"
-                  name="status"
-                  style={{ flex: 1, minWidth: 180 }}
-                >
+                <Form.Item label="Status" name="status" style={{ flex: 1, minWidth: 180 }}>
                   <Select
                     disabled={!isEditMode}
                     value={formValues.status}
-                    onChange={(v) =>
-                      setFormValues({ ...formValues, status: v })
-                    }
+                    onChange={(v) => setFormValues({ ...formValues, status: v })}
                   >
-                    {[
-                      "draft",
-                      "negotiating",
-                      "approved",
-                      "converted",
-                      "cancelled",
-                    ].map((s) => (
+                    {['draft', 'negotiating', 'approved', 'converted', 'cancelled'].map((s) => (
                       <Option key={s} value={s}>
                         {s.charAt(0).toUpperCase() + s.slice(1)}
                       </Option>
@@ -532,11 +482,11 @@ const AddFieldgeneratedSheet = () => {
               </div>
 
               {/* Product Search + Add */}
-              <div style={{ margin: "32px 0 16px" }}>
+              <div style={{ margin: '32px 0 16px' }}>
                 <Select
                   showSearch
                   size="large"
-                  style={{ width: "100%" }}
+                  style={{ width: '100%' }}
                   placeholder="Search product by name or code..."
                   prefix={<SearchOutlined />}
                   value={null}
@@ -545,13 +495,7 @@ const AddFieldgeneratedSheet = () => {
                   filterOption={false}
                   options={searchOptions}
                   notFoundContent={
-                    isSearching ? (
-                      <Spin />
-                    ) : searchTerm ? (
-                      "No products found"
-                    ) : (
-                      "Type to search..."
-                    )
+                    isSearching ? <Spin /> : searchTerm ? 'No products found' : 'Type to search...'
                   }
                   dropdownStyle={{ maxHeight: 420 }}
                 />
@@ -563,11 +507,11 @@ const AddFieldgeneratedSheet = () => {
                 dataSource={formValues.items}
                 rowKey="key"
                 pagination={false}
-                locale={{ emptyText: "No products added yet" }}
+                locale={{ emptyText: 'No products added yet' }}
               />
 
               {/* Total */}
-              <div style={{ marginTop: 16, textAlign: "right" }}>
+              <div style={{ marginTop: 16, textAlign: 'right' }}>
                 <Text strong>Total Amount: </Text>
                 <Text strong style={{ fontSize: 18 }}>
                   ₹{totalAmount}
@@ -575,24 +519,16 @@ const AddFieldgeneratedSheet = () => {
               </div>
 
               {/* Actions */}
-              <div style={{ marginTop: 32, textAlign: "right" }}>
+              <div style={{ marginTop: 32, textAlign: 'right' }}>
                 <Button
                   style={{ marginRight: 12 }}
-                  onClick={() => navigate("/purchase-manager?fgs=1")}
+                  onClick={() => navigate('/purchase-manager?fgs=1')}
                   disabled={creating || updating}
                 >
                   Cancel
                 </Button>
-                <Button
-                  type="primary"
-                  htmlType="submit"
-                  loading={creating || updating}
-                >
-                  {creating || updating
-                    ? "Saving..."
-                    : isEditMode
-                      ? "Update FGS"
-                      : "Create FGS"}
+                <Button type="primary" htmlType="submit" loading={creating || updating}>
+                  {creating || updating ? 'Saving...' : isEditMode ? 'Update FGS' : 'Create FGS'}
                 </Button>
               </div>
             </Form>
@@ -613,10 +549,10 @@ const AddFieldgeneratedSheet = () => {
         open={showClearConfirm}
         onOk={() => {
           setFormValues({
-            vendorId: "",
+            vendorId: '',
             orderDate: moment(),
             expectDeliveryDate: null,
-            status: "draft",
+            status: 'draft',
             items: [],
           });
           form.resetFields();

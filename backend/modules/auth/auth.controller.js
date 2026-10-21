@@ -1,36 +1,36 @@
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-const { Op } = require("sequelize");
-const { User, Role, RolePermission, Permission } = require("../../models");
-const { generateToken } = require("../../middleware/auth");
-const VerificationToken = require("./models/verification-token.model");
-const emails = require("../../middleware/sendMail");
-const ROLES = require("../../config/constant");
-const { ActivityLog } = require("../../models");
-const logActivity = require("../../utils/activityLogger");
-require("dotenv").config();
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const { Op } = require('sequelize');
+const { User, Role, RolePermission, Permission } = require('../../models');
+const { generateToken } = require('../../middleware/auth');
+const VerificationToken = require('./models/verification-token.model');
+const emails = require('../../middleware/sendMail');
+const ROLES = require('../../config/constant');
+const { ActivityLog } = require('../../models');
+const logActivity = require('../../utils/activityLogger');
+require('dotenv').config();
 
 exports.login = async (req, res) => {
   try {
     const { password } = req.body;
     // Local fix: ignore spaces around the email (pasted/autofilled values)
-    const email = String(req.body.email || "").trim();
+    const email = String(req.body.email || '').trim();
     const user = await User.findOne({ where: { email: email.toLowerCase() } });
     if (!user) {
-      return res.status(400).json({ message: "Invalid credentials" });
+      return res.status(400).json({ message: 'Invalid credentials' });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      return res.status(400).json({ message: "Invalid credentials" });
+      return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    if (user.status !== "active") {
+    if (user.status !== 'active') {
       return res.status(403).json({
         message:
-          user.status === "inactive"
-            ? "Your account is waiting for approval by an administrator."
-            : "Your account has been disabled. Contact an administrator.",
+          user.status === 'inactive'
+            ? 'Your account is waiting for approval by an administrator.'
+            : 'Your account has been disabled. Contact an administrator.',
       });
     }
 
@@ -44,13 +44,13 @@ exports.login = async (req, res) => {
         roleId: user.roleId,
       },
       process.env.REFRESH_SECRET,
-      { expiresIn: "7d" },
+      { expiresIn: '7d' },
     );
 
-    res.cookie("refreshToken", refreshToken, {
+    res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "Strict",
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'Strict',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     logActivity({
@@ -59,7 +59,7 @@ exports.login = async (req, res) => {
       contextTag: ActivityLog.CONTEXT_TAGS.AUTH,
       subContext: ActivityLog.SUB_CONTEXTS.USER,
 
-      action: "LOGIN_SUCCESS",
+      action: 'LOGIN_SUCCESS',
 
       entityId: user.userId,
       entityName: user.name || user.username,
@@ -75,7 +75,7 @@ exports.login = async (req, res) => {
       req,
     }).catch(console.error);
     res.status(200).json({
-      message: "Login successful",
+      message: 'Login successful',
       accessToken,
       user: {
         userId: user.userId,
@@ -90,7 +90,7 @@ exports.login = async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(500).json({ message: "Server Error", error: err.message });
+    res.status(500).json({ message: 'Server Error', error: err.message });
   }
 };
 
@@ -104,16 +104,14 @@ exports.register = async (req, res, next) => {
       where: { [Op.or]: [{ username }, { email: normalizedEmail }] },
     });
     if (existingUser) {
-      return res
-        .status(400)
-        .json({ message: "Username or Email already exists" });
+      return res.status(400).json({ message: 'Username or Email already exists' });
     }
 
     const roleData = await Role.findOne({
       where: { roleName: ROLES.ROLES.Users },
     });
     if (!roleData) {
-      return res.status(400).json({ message: "USERS role not found" });
+      return res.status(400).json({ message: 'USERS role not found' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -125,17 +123,13 @@ exports.register = async (req, res, next) => {
       password: hashedPassword,
       roles: [roleData.roleName],
       roleId: roleData.roleId,
-      status: "inactive",
+      status: 'inactive',
       isEmailVerified: false,
     });
 
-    const verificationToken = jwt.sign(
-      { userId: newUser.userId },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: "1d",
-      },
-    );
+    const verificationToken = jwt.sign({ userId: newUser.userId }, process.env.JWT_SECRET, {
+      expiresIn: '1d',
+    });
 
     await VerificationToken.create({
       userId: newUser.userId,
@@ -150,7 +144,7 @@ exports.register = async (req, res, next) => {
       contextTag: ActivityLog.CONTEXT_TAGS.AUTH,
       subContext: ActivityLog.SUB_CONTEXTS.USER,
 
-      action: "USER_REGISTERED",
+      action: 'USER_REGISTERED',
 
       entityId: newUser.userId,
       entityName: newUser.name || newUser.username,
@@ -169,17 +163,14 @@ exports.register = async (req, res, next) => {
       },
 
       metadata: {
-        registrationType: "SELF_REGISTRATION",
+        registrationType: 'SELF_REGISTRATION',
         verificationEmailSent: true,
       },
 
       req,
     }).catch(console.error);
     // Send verification email
-    const emailContent = emails.accountVerificationEmail(
-      req.headers.host,
-      verificationToken,
-    );
+    const emailContent = emails.accountVerificationEmail(req.headers.host, verificationToken);
     // await emails.sendMail(
     //   newUser.email,
     //   emailContent.subject,
@@ -188,7 +179,7 @@ exports.register = async (req, res, next) => {
     // );
 
     res.status(201).json({
-      message: "User registered successfully. Verification email sent.",
+      message: 'User registered successfully. Verification email sent.',
       user: {
         userId: newUser.userId,
         username: newUser.username,
@@ -214,36 +205,36 @@ exports.verifyAccount = async (req, res, next) => {
 
     const verificationToken = await VerificationToken.findOne({ token });
     if (!verificationToken) {
-      return res.status(400).json({ message: "Invalid or expired token" });
+      return res.status(400).json({ message: 'Invalid or expired token' });
     }
 
     if (verificationToken.isVerified) {
-      return res.status(400).json({ message: "Account already verified" });
+      return res.status(400).json({ message: 'Account already verified' });
     }
 
     if (verificationToken.expiresAt < new Date()) {
       await VerificationToken.deleteOne({ token });
-      return res.status(400).json({ message: "Token has expired" });
+      return res.status(400).json({ message: 'Token has expired' });
     }
 
     let decoded;
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET);
     } catch (err) {
-      if (err.name === "TokenExpiredError") {
+      if (err.name === 'TokenExpiredError') {
         await VerificationToken.deleteOne({ token });
-        return res.status(400).json({ message: "Token has expired" });
+        return res.status(400).json({ message: 'Token has expired' });
       }
-      return res.status(400).json({ message: "Invalid token" });
+      return res.status(400).json({ message: 'Invalid token' });
     }
 
     const user = await User.findByPk(decoded.userId);
     if (!user) {
-      return res.status(400).json({ message: "User not found" });
+      return res.status(400).json({ message: 'User not found' });
     }
 
     user.isEmailVerified = true;
-    user.status = "active";
+    user.status = 'active';
     await user.save();
 
     verificationToken.isVerified = true;
@@ -254,7 +245,7 @@ exports.verifyAccount = async (req, res, next) => {
       contextTag: ActivityLog.CONTEXT_TAGS.AUTH,
       subContext: ActivityLog.SUB_CONTEXTS.USER,
 
-      action: "ACCOUNT_VERIFIED",
+      action: 'ACCOUNT_VERIFIED',
 
       entityId: user.userId,
       entityName: user.name || user.username,
@@ -263,32 +254,26 @@ exports.verifyAccount = async (req, res, next) => {
 
       oldValues: {
         isEmailVerified: false,
-        status: "inactive",
+        status: 'inactive',
       },
 
       newValues: {
         isEmailVerified: true,
-        status: "active",
+        status: 'active',
       },
 
       metadata: {
         email: user.email,
-        verificationTokenId:
-          verificationToken.id || verificationToken._id || null,
+        verificationTokenId: verificationToken.id || verificationToken._id || null,
       },
 
       req,
     }).catch(console.error);
     const emailContent = emails.accountVerificationConfirmationEmail(user.name);
-    await emails.sendMail(
-      user.email,
-      emailContent.subject,
-      emailContent.text,
-      emailContent.html,
-    );
+    await emails.sendMail(user.email, emailContent.subject, emailContent.text, emailContent.html);
 
     res.status(200).json({
-      message: "Account verified successfully",
+      message: 'Account verified successfully',
       isVerified: true,
       email: user.email,
     });
@@ -301,23 +286,19 @@ exports.verifyAccount = async (req, res, next) => {
 exports.forgotPassword = async (req, res, next) => {
   try {
     const { email } = req.body;
-    if (!email || typeof email !== "string" || email.trim() === "") {
-      return res.status(400).json({ message: "Valid email is required" });
+    if (!email || typeof email !== 'string' || email.trim() === '') {
+      return res.status(400).json({ message: 'Valid email is required' });
     }
 
     const normalizedEmail = email.trim().toLowerCase();
     const user = await User.findOne({ where: { email: normalizedEmail } });
     if (!user) {
-      return res.status(400).json({ message: "User not found" });
+      return res.status(400).json({ message: 'User not found' });
     }
 
-    const resetToken = jwt.sign(
-      { userId: user.userId },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: "15m",
-      },
-    );
+    const resetToken = jwt.sign({ userId: user.userId }, process.env.JWT_SECRET, {
+      expiresIn: '15m',
+    });
 
     await VerificationToken.create({
       userId: user.userId,
@@ -334,17 +315,9 @@ exports.forgotPassword = async (req, res, next) => {
 
     const emailContent = emails.resetEmail(req.headers.host, resetToken);
     await emails
-      .sendMail(
-        user.email,
-        emailContent.subject,
-        emailContent.text,
-        emailContent.html,
-      )
+      .sendMail(user.email, emailContent.subject, emailContent.text, emailContent.html)
       .catch(async (mailError) => {
-        if (
-          mailError.responseCode === 550 ||
-          /No Such User/i.test(mailError.response)
-        ) {
+        if (mailError.responseCode === 550 || /No Such User/i.test(mailError.response)) {
           // Optional: mark user as having invalid email
           await User.update(
             { emailVerified: false, hasBounced: true },
@@ -357,14 +330,10 @@ exports.forgotPassword = async (req, res, next) => {
         throw mailError; // still fail the request or handle gracefully
       });
 
-    res
-      .status(200)
-      .json({ message: "Password reset link sent", token: resetToken });
+    res.status(200).json({ message: 'Password reset link sent', token: resetToken });
   } catch (err) {
     if (!res.headersSent) {
-      res
-        .status(500)
-        .json({ message: "Failed to send reset link", error: err.message });
+      res.status(500).json({ message: 'Failed to send reset link', error: err.message });
     }
   }
 };
@@ -374,9 +343,7 @@ exports.resetPassword = async (req, res, next) => {
   try {
     const { resetToken, newPassword, email } = req.body;
     if (!resetToken || !newPassword || !email) {
-      return res
-        .status(400)
-        .json({ message: "Token, email, and new password are required" });
+      return res.status(400).json({ message: 'Token, email, and new password are required' });
     }
 
     // Find verification token in database
@@ -385,13 +352,13 @@ exports.resetPassword = async (req, res, next) => {
     });
 
     if (!verificationToken) {
-      return res.status(400).json({ message: "Invalid or used token" });
+      return res.status(400).json({ message: 'Invalid or used token' });
     }
 
     // Check token expiration
     if (verificationToken.expiresAt < new Date()) {
       await verificationToken.destroy();
-      return res.status(400).json({ message: "Token has expired" });
+      return res.status(400).json({ message: 'Token has expired' });
     }
 
     // Verify JWT token
@@ -399,9 +366,9 @@ exports.resetPassword = async (req, res, next) => {
     try {
       decoded = jwt.verify(resetToken, process.env.JWT_SECRET);
     } catch (err) {
-      if (err.name === "TokenExpiredError") {
+      if (err.name === 'TokenExpiredError') {
         await verificationToken.destroy();
-        return res.status(400).json({ message: "Token has expired" });
+        return res.status(400).json({ message: 'Token has expired' });
       }
       throw err;
     }
@@ -409,14 +376,12 @@ exports.resetPassword = async (req, res, next) => {
     // Find user
     const user = await User.findByPk(decoded.userId);
     if (!user || user.email !== email) {
-      return res.status(400).json({ message: "Invalid token or email" });
+      return res.status(400).json({ message: 'Invalid token or email' });
     }
 
     // Validate password strength (optional, adjust as needed)
     if (newPassword.length < 8) {
-      return res
-        .status(400)
-        .json({ message: "Password must be at least 8 characters long" });
+      return res.status(400).json({ message: 'Password must be at least 8 characters long' });
     }
 
     // Hash new password
@@ -430,14 +395,9 @@ exports.resetPassword = async (req, res, next) => {
 
     // Send confirmation email
     const emailContent = emails.confirmResetPasswordEmail();
-    await emails.sendMail(
-      user.email,
-      emailContent.subject,
-      emailContent.text,
-      emailContent.html,
-    );
+    await emails.sendMail(user.email, emailContent.subject, emailContent.text, emailContent.html);
 
-    res.status(200).json({ message: "Password changed successfully" });
+    res.status(200).json({ message: 'Password changed successfully' });
   } catch (err) {
     next(err);
   }
@@ -448,7 +408,7 @@ exports.validateResetToken = async (req, res) => {
   const { token } = req.params;
   try {
     if (!token) {
-      return res.status(400).json({ message: "Token is required" });
+      return res.status(400).json({ message: 'Token is required' });
     }
 
     const verificationToken = await VerificationToken.findOne({
@@ -456,76 +416,76 @@ exports.validateResetToken = async (req, res) => {
     });
 
     if (!verificationToken) {
-      return res.status(400).json({ message: "Invalid or used token" });
+      return res.status(400).json({ message: 'Invalid or used token' });
     }
 
     if (verificationToken.expiresAt < new Date()) {
       await verificationToken.destroy();
-      return res.status(400).json({ message: "Token has expired" });
+      return res.status(400).json({ message: 'Token has expired' });
     }
 
     let decoded;
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET);
     } catch (err) {
-      if (err.name === "TokenExpiredError") {
+      if (err.name === 'TokenExpiredError') {
         await verificationToken.destroy();
-        return res.status(400).json({ message: "Token has expired" });
+        return res.status(400).json({ message: 'Token has expired' });
       }
       return res.status(400).json({ message: `Invalid token: ${err.message}` });
     }
 
     const user = await User.findByPk(decoded.userId);
     if (!user || user.email !== verificationToken.email) {
-      return res.status(400).json({ message: "Invalid token or email" });
+      return res.status(400).json({ message: 'Invalid token or email' });
     }
 
     res.json({ email: user.email });
   } catch (error) {
-    res.status(500).json({ message: "Server error during token validation" });
+    res.status(500).json({ message: 'Server error during token validation' });
   }
 };
 
 exports.logout = async (req, res) => {
   try {
-    res.clearCookie("refreshToken", {
+    res.clearCookie('refreshToken', {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "Strict",
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'Strict',
     });
-    return res.status(200).json({ message: "Logged out successfully" });
+    return res.status(200).json({ message: 'Logged out successfully' });
   } catch (err) {
-    res.status(500).json({ message: "Server Error", error: err.message });
+    res.status(500).json({ message: 'Server Error', error: err.message });
   }
 };
 
 exports.refreshToken = async (req, res) => {
   try {
-    const cookieToken = (req.headers.cookie || "")
-      .split(";")
+    const cookieToken = (req.headers.cookie || '')
+      .split(';')
       .map((c) => c.trim())
-      .find((c) => c.startsWith("refreshToken="))
-      ?.slice("refreshToken=".length);
+      .find((c) => c.startsWith('refreshToken='))
+      ?.slice('refreshToken='.length);
     const refreshToken = req.body?.refreshToken || cookieToken;
     if (!refreshToken || !process.env.REFRESH_SECRET) {
-      return res.status(401).json({ message: "Invalid refresh token" });
+      return res.status(401).json({ message: 'Invalid refresh token' });
     }
 
     let payload;
     try {
       payload = jwt.verify(refreshToken, process.env.REFRESH_SECRET);
     } catch {
-      return res.status(401).json({ message: "Invalid refresh token" });
+      return res.status(401).json({ message: 'Invalid refresh token' });
     }
 
     const user = await User.findByPk(payload.userId);
-    if (!user || user.status !== "active") {
-      return res.status(401).json({ message: "Account is not active" });
+    if (!user || user.status !== 'active') {
+      return res.status(401).json({ message: 'Account is not active' });
     }
 
     return res.status(200).json({ accessToken: generateToken(user) });
   } catch (err) {
-    res.status(500).json({ message: "Server Error", error: err.message });
+    res.status(500).json({ message: 'Server Error', error: err.message });
   }
 };
 
@@ -533,37 +493,35 @@ exports.resendVerificationEmail = async (req, res, next) => {
   try {
     const { email } = req.body;
 
-    if (!email || typeof email !== "string" || email.trim() === "") {
-      return res.status(400).json({ message: "Valid email is required" });
+    if (!email || typeof email !== 'string' || email.trim() === '') {
+      return res.status(400).json({ message: 'Valid email is required' });
     }
 
     // Optional: Add stricter email format validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      return res.status(400).json({ message: "Invalid email format" });
+      return res.status(400).json({ message: 'Invalid email format' });
     }
 
     const normalizedEmail = email.trim().toLowerCase();
 
     const user = await User.findOne({ where: { email: normalizedEmail } });
     if (!user) {
-      return res.status(400).json({ message: "User not found" });
+      return res.status(400).json({ message: 'User not found' });
     }
 
     // Check isEmailVerified instead of status
     if (user.isEmailVerified) {
-      return res.status(400).json({ message: "Account is already verified" });
+      return res.status(400).json({ message: 'Account is already verified' });
     }
 
     // Delete any existing verification tokens for this user using Mongoose
     await VerificationToken.deleteMany({ userId: user.userId });
 
     // Generate a new verification token
-    const verificationToken = jwt.sign(
-      { userId: user.userId },
-      process.env.JWT_SECRET,
-      { expiresIn: "1d" },
-    );
+    const verificationToken = jwt.sign({ userId: user.userId }, process.env.JWT_SECRET, {
+      expiresIn: '1d',
+    });
 
     // Save the new verification token
     await VerificationToken.create({
@@ -575,19 +533,11 @@ exports.resendVerificationEmail = async (req, res, next) => {
     });
 
     // Send the verification email
-    const emailContent = emails.accountVerificationEmail(
-      req.headers.host,
-      verificationToken,
-    );
+    const emailContent = emails.accountVerificationEmail(req.headers.host, verificationToken);
 
-    await emails.sendMail(
-      user.email,
-      emailContent.subject,
-      emailContent.text,
-      emailContent.html,
-    );
+    await emails.sendMail(user.email, emailContent.subject, emailContent.text, emailContent.html);
 
-    res.status(200).json({ message: "Verification email sent successfully" });
+    res.status(200).json({ message: 'Verification email sent successfully' });
   } catch (err) {
     next(err);
   }
@@ -599,58 +549,52 @@ exports.changePassword = async (req, res, next) => {
 
     // Validate input
     if (!password || !newPassword) {
-      return res
-        .status(400)
-        .json({ message: "Current password and new password are required" });
+      return res.status(400).json({ message: 'Current password and new password are required' });
     }
 
     if (password === newPassword) {
       return res.status(400).json({
-        message: "New password must be different from current password",
+        message: 'New password must be different from current password',
       });
     }
 
     // Validate password strength (optional, adjust as needed)
     if (newPassword.length < 8) {
-      return res
-        .status(400)
-        .json({ message: "New password must be at least 8 characters long" });
+      return res.status(400).json({ message: 'New password must be at least 8 characters long' });
     }
 
     // Get token from Authorization header
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({ message: "No token provided" });
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ message: 'No token provided' });
     }
 
-    const token = authHeader.split(" ")[1];
+    const token = authHeader.split(' ')[1];
     let decoded;
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET);
     } catch (err) {
-      if (err.name === "TokenExpiredError") {
-        return res.status(401).json({ message: "Token has expired" });
+      if (err.name === 'TokenExpiredError') {
+        return res.status(401).json({ message: 'Token has expired' });
       }
-      return res.status(401).json({ message: "Invalid token" });
+      return res.status(401).json({ message: 'Invalid token' });
     }
 
     // Find user
     const user = await User.findByPk(decoded.userId);
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ message: 'User not found' });
     }
 
     // Verify current password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      return res.status(400).json({ message: "Current password is incorrect" });
+      return res.status(400).json({ message: 'Current password is incorrect' });
     }
 
     // Check if account is active
-    if (user.status !== "active") {
-      return res
-        .status(403)
-        .json({ message: "Account is inactive or restricted" });
+    if (user.status !== 'active') {
+      return res.status(403).json({ message: 'Account is inactive or restricted' });
     }
 
     // Hash new password
@@ -667,7 +611,7 @@ exports.changePassword = async (req, res, next) => {
       contextTag: ActivityLog.CONTEXT_TAGS.AUTH,
       subContext: ActivityLog.SUB_CONTEXTS.USER,
 
-      action: "PASSWORD_CHANGED",
+      action: 'PASSWORD_CHANGED',
 
       entityId: user.userId,
       entityName: user.name || user.username,
@@ -683,7 +627,7 @@ exports.changePassword = async (req, res, next) => {
     }).catch(console.error);
 
     res.status(200).json({
-      message: "Password changed successfully",
+      message: 'Password changed successfully',
     });
   } catch (err) {
     next(err);
@@ -700,21 +644,21 @@ exports.getAllPermissionsOfLoggedInUser = async (req, res) => {
     const { roleId, name, email } = req.user;
 
     if (!roleId) {
-      return res.status(403).json({ message: "User role not found" });
+      return res.status(403).json({ message: 'User role not found' });
     }
 
     const role = await Role.findByPk(roleId, {
-      attributes: ["roleId", "roleName"],
+      attributes: ['roleId', 'roleName'],
       include: [
         {
           model: RolePermission,
-          as: "rolepermissions",
-          attributes: ["permissionId"],
+          as: 'rolepermissions',
+          attributes: ['permissionId'],
           include: [
             {
               model: Permission,
-              as: "permission", // ← matches belongsTo in RolePermission
-              attributes: ["permissionId", "name", "api", "route", "module"],
+              as: 'permission', // ← matches belongsTo in RolePermission
+              attributes: ['permissionId', 'name', 'api', 'route', 'module'],
             },
           ],
         },
@@ -722,7 +666,7 @@ exports.getAllPermissionsOfLoggedInUser = async (req, res) => {
     });
 
     if (!role) {
-      return res.status(404).json({ message: "Role not found" });
+      return res.status(404).json({ message: 'Role not found' });
     }
 
     // Safety: check if rolepermissions exists and has data
@@ -745,7 +689,7 @@ exports.getAllPermissionsOfLoggedInUser = async (req, res) => {
     });
   } catch (err) {
     return res.status(500).json({
-      message: "Failed to fetch permissions",
+      message: 'Failed to fetch permissions',
       error: err.message,
     });
   }
@@ -763,36 +707,36 @@ exports.validateToken = async (req, res) => {
   try {
     // 1. Get token from Authorization header
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({ message: "No token provided" });
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ message: 'No token provided' });
     }
 
-    const token = authHeader.split(" ")[1];
+    const token = authHeader.split(' ')[1];
 
     // 2. Verify JWT (signature + exp)
     let decoded;
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET);
     } catch (err) {
-      if (err.name === "TokenExpiredError") {
-        return res.status(401).json({ message: "Token has expired" });
+      if (err.name === 'TokenExpiredError') {
+        return res.status(401).json({ message: 'Token has expired' });
       }
-      return res.status(401).json({ message: "Invalid token" });
+      return res.status(401).json({ message: 'Invalid token' });
     }
 
     // 3. (Optional) Confirm user still exists & is active
     const user = await User.findByPk(decoded.userId);
     if (!user) {
-      return res.status(401).json({ message: "User not found" });
+      return res.status(401).json({ message: 'User not found' });
     }
-    if (user.status !== "active") {
-      return res.status(401).json({ message: "Account is inactive" });
+    if (user.status !== 'active') {
+      return res.status(401).json({ message: 'Account is inactive' });
     }
 
     // 4. Token is valid → just return 200
-    return res.status(200).json({ message: "Token is valid" });
+    return res.status(200).json({ message: 'Token is valid' });
   } catch (err) {
-    return res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -802,30 +746,26 @@ exports.deactivateAccount = async (req, res, next) => {
     const { userId } = req.user; // ← assuming auth middleware sets req.user
 
     if (!userId) {
-      return res.status(401).json({ message: "Authentication required" });
+      return res.status(401).json({ message: 'Authentication required' });
     }
 
     const user = await User.findByPk(userId);
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ message: 'User not found' });
     }
 
-    if (user.status === "inactive") {
-      return res
-        .status(400)
-        .json({ message: "Account is already deactivated" });
+    if (user.status === 'inactive') {
+      return res.status(400).json({ message: 'Account is already deactivated' });
     }
 
     // Optional: Prevent deactivation for super admin
     if (user.roles.includes(ROLES.SuperAdmin)) {
-      return res
-        .status(403)
-        .json({ message: "SuperAdmin account cannot be deactivated" });
+      return res.status(403).json({ message: 'SuperAdmin account cannot be deactivated' });
     }
 
     // Soft deactivate
     const oldStatus = user.status;
-    user.status = "inactive";
+    user.status = 'inactive';
     await user.save();
     // Activity Log
     logActivity({
@@ -834,7 +774,7 @@ exports.deactivateAccount = async (req, res, next) => {
       contextTag: ActivityLog.CONTEXT_TAGS.AUTH,
       subContext: ActivityLog.SUB_CONTEXTS.USER,
 
-      action: "ACCOUNT_DEACTIVATED",
+      action: 'ACCOUNT_DEACTIVATED',
 
       entityId: user.userId,
       entityName: user.name || user.username,
@@ -846,7 +786,7 @@ exports.deactivateAccount = async (req, res, next) => {
       },
 
       newValues: {
-        status: "inactive",
+        status: 'inactive',
       },
 
       metadata: {
@@ -859,8 +799,7 @@ exports.deactivateAccount = async (req, res, next) => {
     }).catch(console.error);
 
     res.status(200).json({
-      message:
-        "Account deactivated successfully. You can reactivate by logging in again.",
+      message: 'Account deactivated successfully. You can reactivate by logging in again.',
     });
   } catch (err) {
     next(err);

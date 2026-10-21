@@ -1,7 +1,7 @@
-const { Sequelize } = require("sequelize");
-const Product = require("../models/product");
-const sequelize = require("../config/database");
-const newProducts = require("../transformed_products.json");
+const { Sequelize } = require('sequelize');
+const Product = require('../models/product');
+const sequelize = require('../config/database');
+const newProducts = require('../transformed_products.json');
 
 async function updateProducts() {
   const transaction = await sequelize.transaction();
@@ -28,11 +28,11 @@ async function updateProducts() {
           {
             where: { product_code: prod.product_code },
             transaction,
-          }
+          },
         );
 
         return { code: prod.product_code, updated: affectedCount > 0 };
-      })
+      }),
     );
 
     await transaction.commit();
@@ -42,7 +42,7 @@ async function updateProducts() {
     console.log(`✅ Updated: ${updated}, ⚠️ Skipped (not found): ${skipped}`);
   } catch (error) {
     await transaction.rollback();
-    console.error("❌ Update failed:", error);
+    console.error('❌ Update failed:', error);
   }
 }
 

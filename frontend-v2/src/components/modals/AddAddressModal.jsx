@@ -1,13 +1,13 @@
 // src/components/AddressModal.jsx  (or wherever you prefer to put modals/forms)
-import React from "react";
-import { Modal, Form, Input, Button, Row, Col, message } from "antd";
+import React from 'react';
+import { Modal, Form, Input, Button, Row, Col, message } from 'antd';
 
 const AddressModal = ({
   open,
   onCancel,
   onFinish,
   initialValues = {},
-  title = "Add New Address",
+  title = 'Add New Address',
 }) => {
   const [form] = Form.useForm();
 
@@ -21,7 +21,7 @@ const AddressModal = ({
       await onFinish(values);
       form.resetFields();
     } catch (err) {
-      message.error(err?.data?.message || "Failed to save address");
+      message.error(err?.data?.message || 'Failed to save address');
     }
   };
 
@@ -35,21 +35,13 @@ const AddressModal = ({
       destroyOnClose
       afterClose={() => form.resetFields()}
     >
-      <Form
-        form={form}
-        layout="vertical"
-        onFinish={handleSubmit}
-        initialValues={initialValues}
-      >
+      <Form form={form} layout="vertical" onFinish={handleSubmit} initialValues={initialValues}>
         <Form.Item
           name="street"
           label="Street Address"
-          rules={[{ required: true, message: "Please enter street address" }]}
+          rules={[{ required: true, message: 'Please enter street address' }]}
         >
-          <Input.TextArea
-            rows={3}
-            placeholder="House no, street, landmark..."
-          />
+          <Input.TextArea rows={3} placeholder="House no, street, landmark..." />
         </Form.Item>
 
         <Row gutter={16}>
@@ -57,7 +49,7 @@ const AddressModal = ({
             <Form.Item
               name="city"
               label="City"
-              rules={[{ required: true, message: "Please enter city" }]}
+              rules={[{ required: true, message: 'Please enter city' }]}
             >
               <Input />
             </Form.Item>
@@ -66,7 +58,7 @@ const AddressModal = ({
             <Form.Item
               name="state"
               label="State"
-              rules={[{ required: true, message: "Please enter state" }]}
+              rules={[{ required: true, message: 'Please enter state' }]}
             >
               <Input />
             </Form.Item>
@@ -86,15 +78,12 @@ const AddressModal = ({
           </Col>
         </Row>
 
-        <Form.Item style={{ marginTop: 24, textAlign: "right" }}>
-          <Button
-            onClick={onCancel}
-            style={{ marginRight: 12 }}
-          >
+        <Form.Item style={{ marginTop: 24, textAlign: 'right' }}>
+          <Button onClick={onCancel} style={{ marginRight: 12 }}>
             Cancel
           </Button>
           <Button type="primary" htmlType="submit">
-            {initialValues.addressId ? "Update Address" : "Add Address"}
+            {initialValues.addressId ? 'Update Address' : 'Add Address'}
           </Button>
         </Form.Item>
       </Form>

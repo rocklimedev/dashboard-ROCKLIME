@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState, useRef } from "react";
-import { API_URL } from "../store/config";
+import { useEffect, useMemo, useState, useRef } from 'react';
+import { API_URL } from '../store/config';
 /**
  * Custom hook that fetches user and customer details safely.
  * Prevents memory leaks with AbortController + cleanup.
@@ -54,13 +54,12 @@ export default function useUserAndCustomerData(userIds = [], customerIds = []) {
       const userPromises = safeUserIds.map(async (id) => {
         if (!id) return null;
         try {
-          const token =
-            localStorage.getItem("token") || sessionStorage.getItem("token");
+          const token = localStorage.getItem('token') || sessionStorage.getItem('token');
           const response = await fetch(`${API_URL}/user/${id}`, {
             headers: {
               Authorization: token ? `Bearer ${token}` : undefined,
             },
-            credentials: "include",
+            credentials: 'include',
             signal, // ← important: allows cancellation
           });
 
@@ -72,7 +71,7 @@ export default function useUserAndCustomerData(userIds = [], customerIds = []) {
           return { userId: id, user: data };
         } catch (error) {
           // Ignore aborted requests — they are not real errors
-          if (error.name !== "AbortError") {
+          if (error.name !== 'AbortError') {
             userTempErrors.push({ userId: id, error: error.message });
           }
           return null;
@@ -83,26 +82,23 @@ export default function useUserAndCustomerData(userIds = [], customerIds = []) {
       const customerPromises = safeCustomerIds.map(async (id) => {
         if (!id) return null;
         try {
-          const token =
-            localStorage.getItem("token") || sessionStorage.getItem("token");
+          const token = localStorage.getItem('token') || sessionStorage.getItem('token');
           const response = await fetch(`${API_URL}/customers/${id}`, {
             headers: {
               Authorization: token ? `Bearer ${token}` : undefined,
             },
-            credentials: "include",
+            credentials: 'include',
             signal,
           });
 
           if (!response.ok) {
-            throw new Error(
-              `Failed to fetch customer ${id}: ${response.status}`,
-            );
+            throw new Error(`Failed to fetch customer ${id}: ${response.status}`);
           }
 
           const data = await response.json();
           return { customerId: id, customer: data };
         } catch (error) {
-          if (error.name !== "AbortError") {
+          if (error.name !== 'AbortError') {
             customerTempErrors.push({ customerId: id, error: error.message });
           }
           return null;
@@ -127,8 +123,8 @@ export default function useUserAndCustomerData(userIds = [], customerIds = []) {
 
     fetchData().catch((err) => {
       // Top-level catch — usually only AbortError reaches here
-      if (err.name !== "AbortError") {
-        console.error("Unexpected fetch error:", err);
+      if (err.name !== 'AbortError') {
+        console.error('Unexpected fetch error:', err);
       }
     });
 
@@ -144,7 +140,7 @@ export default function useUserAndCustomerData(userIds = [], customerIds = []) {
   const userMap = useMemo(() => {
     return userData.reduce((map, result) => {
       if (result?.user && result.userId) {
-        map[result.userId] = result.user.name || "Unnamed User";
+        map[result.userId] = result.user.name || 'Unnamed User';
       }
       return map;
     }, {});
@@ -153,7 +149,7 @@ export default function useUserAndCustomerData(userIds = [], customerIds = []) {
   const customerMap = useMemo(() => {
     return customerData.reduce((map, result) => {
       if (result?.customer && result.customerId) {
-        map[result.customerId] = result.customer.name || "Unnamed Customer";
+        map[result.customerId] = result.customer.name || 'Unnamed Customer';
       }
       return map;
     }, {});

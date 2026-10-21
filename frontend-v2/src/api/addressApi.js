@@ -1,42 +1,42 @@
-import { baseApi } from "../store/baseApi";
+import { baseApi } from '../store/baseApi';
 export const addressApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     createAddress: builder.mutation({
       query: (addressData) => ({
-        url: "/address",
-        method: "POST",
+        url: '/address',
+        method: 'POST',
         body: addressData,
       }),
-      invalidatesTags: ["Addresses"],
+      invalidatesTags: ['Addresses'],
     }),
     getAllAddresses: builder.query({
       query: () => ({
-        url: "/address",
-        method: "GET",
+        url: '/address',
+        method: 'GET',
       }),
-      providesTags: ["Addresses"],
+      providesTags: ['Addresses'],
     }),
     getAddressById: builder.query({
       query: (addressId) => ({
         url: `/address/${addressId}`,
-        method: "GET",
+        method: 'GET',
       }),
-      providesTags: ["Addresses"],
+      providesTags: ['Addresses'],
     }),
     updateAddress: builder.mutation({
       query: ({ addressId, updatedData }) => ({
         url: `/address/${addressId}`,
-        method: "PUT",
+        method: 'PUT',
         body: updatedData,
       }),
-      invalidatesTags: ["Addresses"],
+      invalidatesTags: ['Addresses'],
     }),
     getAllUserAddresses: builder.query({
       query: () => ({
-        url: "/address/all/users",
-        method: "GET",
+        url: '/address/all/users',
+        method: 'GET',
       }),
-      providesTags: ["Addresses"],
+      providesTags: ['Addresses'],
     }),
 
     // ─────────────────────────────────────────────
@@ -44,17 +44,17 @@ export const addressApi = baseApi.injectEndpoints({
     // ─────────────────────────────────────────────
     getAllCustomerAddresses: builder.query({
       query: () => ({
-        url: "/address/all/customers",
-        method: "GET",
+        url: '/address/all/customers',
+        method: 'GET',
       }),
-      providesTags: ["Addresses"],
+      providesTags: ['Addresses'],
     }),
     deleteAddress: builder.mutation({
       query: (addressId) => ({
         url: `/address/${addressId}`,
-        method: "DELETE",
+        method: 'DELETE',
       }),
-      invalidatesTags: ["Addresses"],
+      invalidatesTags: ['Addresses'],
     }),
   }),
 });

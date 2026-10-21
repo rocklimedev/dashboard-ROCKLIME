@@ -1,42 +1,42 @@
 // src/pages/quotations/CartLayout.jsx
-import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { Tabs, Modal, Typography, Segmented, Button, message } from "antd";
-import { ShoppingCartOutlined, CheckCircleOutlined, FileTextOutlined } from "@ant-design/icons";
-import NewOrderModal from "../../components/Orders/QuotationPicker";
-import { useDispatch } from "react-redux";
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Tabs, Modal, Typography, Segmented, Button, message } from 'antd';
+import { ShoppingCartOutlined, CheckCircleOutlined, FileTextOutlined } from '@ant-design/icons';
+import NewOrderModal from '../../components/Orders/QuotationPicker';
+import { useDispatch } from 'react-redux';
 
-import { quotationTotals } from "../../utils/quotationMath";
-import CartTab from "../../components/POS-NEW/Cart";
+import { quotationTotals } from '../../utils/quotationMath';
+import CartTab from '../../components/POS-NEW/Cart';
 import {
   useGetCartQuery,
   useUpdateCartMutation,
   useClearCartMutation,
   useRemoveFromCartMutation,
   cartApi,
-} from "../../api/cartApi";
-import useProductsData from "../../utils/useProductdata";
-import { useAuth } from "../../context/AuthContext";
-import { useGetProfileQuery } from "../../api/userApi";
-import useAutoSave from "../../utils/useAutoSave";
-import { reconcileQuotationItems } from "../../components/Quotation/quotationCartHelpers";
-import QuotationCartSwitcher from "../../components/Quotation/QuotationCartSwitcher";
+} from '../../api/cartApi';
+import useProductsData from '../../utils/useProductdata';
+import { useAuth } from '../../context/AuthContext';
+import { useGetProfileQuery } from '../../api/userApi';
+import useAutoSave from '../../utils/useAutoSave';
+import { reconcileQuotationItems } from '../../components/Quotation/quotationCartHelpers';
+import QuotationCartSwitcher from '../../components/Quotation/QuotationCartSwitcher';
 
 const { TabPane } = Tabs;
 const { Text } = Typography;
 
 const documentOptions = [
-  { label: "Quotation", value: "quotation" },
-  { label: "Order", value: "order" },
-  { label: "Purchase Order", value: "purchase-order" },
+  { label: 'Quotation', value: 'quotation' },
+  { label: 'Order', value: 'order' },
+  { label: 'Purchase Order', value: 'purchase-order' },
 ];
 
 const getDocumentTypeFromPath = (pathname) => {
   const path = pathname.toLowerCase();
-  if (path.includes("purchase-order")) return "purchase-order";
-  if (path.includes("order")) return "order";
-  if (path.includes("quotation")) return "quotation";
-  return "quotation";
+  if (path.includes('purchase-order')) return 'purchase-order';
+  if (path.includes('order')) return 'order';
+  if (path.includes('quotation')) return 'quotation';
+  return 'quotation';
 };
 
 const CartLayout = ({
@@ -62,7 +62,7 @@ const CartLayout = ({
   const [documentType, setDocumentType] = useState(() =>
     getDocumentTypeFromPath(location.pathname),
   );
-  const [activeTab, setActiveTab] = useState("cart");
+  const [activeTab, setActiveTab] = useState('cart');
   const [draftsOpen, setDraftsOpen] = useState(false);
   const [pickQuotation, setPickQuotation] = useState(false);
 
@@ -124,8 +124,8 @@ const CartLayout = ({
 
   // Routing
   useEffect(() => {
-    if (location.pathname === "/cart" || location.pathname === "/cart/") {
-      navigate("/cart/quotation", { replace: true });
+    if (location.pathname === '/cart' || location.pathname === '/cart/') {
+      navigate('/cart/quotation', { replace: true });
     }
   }, [location.pathname, navigate]);
 
@@ -145,7 +145,7 @@ const CartLayout = ({
       return;
     }
 
-    setLocalCartItems(previous => reconcileQuotationItems(allCartItems, previous));
+    setLocalCartItems((previous) => reconcileQuotationItems(allCartItems, previous));
   }, [allCartItems, cartData]);
 
   // ─────────────────────────────────────────────────────────────
@@ -155,9 +155,7 @@ const CartLayout = ({
   const mainCartItems = useMemo(() => {
     return localCartItems.filter((i) => {
       const isOptional =
-        Boolean(i.isOption) ||
-        Boolean(i.isOptionFor) ||
-        (i.optionType && i.optionType !== "main");
+        Boolean(i.isOption) || Boolean(i.isOptionFor) || (i.optionType && i.optionType !== 'main');
       return !isOptional;
     });
   }, [localCartItems]);
@@ -165,9 +163,7 @@ const CartLayout = ({
   const optionalCartItems = useMemo(() => {
     return localCartItems.filter((i) => {
       return (
-        Boolean(i.isOption) ||
-        Boolean(i.isOptionFor) ||
-        (i.optionType && i.optionType !== "main")
+        Boolean(i.isOption) || Boolean(i.isOptionFor) || (i.optionType && i.optionType !== 'main')
       );
     });
   }, [localCartItems]);
@@ -192,11 +188,9 @@ const CartLayout = ({
     return mainCartItems.reduce((sum, item) => {
       const subtotal = (Number(item.price) || 0) * (Number(item.quantity) || 1);
       const discVal = Number(itemDiscounts[item.productId]) || 0;
-      const type = itemDiscountTypes[item.productId] || "percent";
+      const type = itemDiscountTypes[item.productId] || 'percent';
       const disc =
-        type === "percent"
-          ? (subtotal * discVal) / 100
-          : discVal * (Number(item.quantity) || 1);
+        type === 'percent' ? (subtotal * discVal) / 100 : discVal * (Number(item.quantity) || 1);
       return sum + disc;
     }, 0);
   }, [mainCartItems, itemDiscounts, itemDiscountTypes]);
@@ -205,8 +199,8 @@ const CartLayout = ({
     return mainCartItems.reduce((acc, item) => {
       const subtotal = (Number(item.price) || 0) * (Number(item.quantity) || 1);
       const discVal = Number(itemDiscounts[item.productId]) || 0;
-      const type = itemDiscountTypes[item.productId] || "percent";
-      const discAmt = type === "percent" ? (subtotal * discVal) / 100 : discVal;
+      const type = itemDiscountTypes[item.productId] || 'percent';
+      const discAmt = type === 'percent' ? (subtotal * discVal) / 100 : discVal;
       const taxable = subtotal - discAmt;
       const itemTax = Number(itemTaxes[item.productId]) || 0;
       return acc + (taxable * itemTax) / 100;
@@ -224,10 +218,22 @@ const CartLayout = ({
   const totalsCalc = useMemo(
     () =>
       quotationTotals({
-        items: mainCartItems.map(item => ({ ...item, discount: Number(itemDiscounts[item.productId]) || 0, discountType: itemDiscountTypes[item.productId] || "percent" })),
+        items: mainCartItems.map((item) => ({
+          ...item,
+          discount: Number(itemDiscounts[item.productId]) || 0,
+          discountType: itemDiscountTypes[item.productId] || 'percent',
+        })),
         shipping,
         gstRate: gst,
-        ...(documentType === "quotation" ? { extraDiscount: Number(quotationData.discountAmount) || 0, extraDiscountType: quotationData.discountType || "fixed", miscellaneousChargeItems: quotationData.miscellaneousChargeItems, additionalDiscount: quotationData.additionalDiscount, flatPrice: quotationData.flatPrice } : {}),
+        ...(documentType === 'quotation'
+          ? {
+              extraDiscount: Number(quotationData.discountAmount) || 0,
+              extraDiscountType: quotationData.discountType || 'fixed',
+              miscellaneousChargeItems: quotationData.miscellaneousChargeItems,
+              additionalDiscount: quotationData.additionalDiscount,
+              flatPrice: quotationData.flatPrice,
+            }
+          : {}),
       }),
     [mainCartItems, itemDiscounts, itemDiscountTypes, shipping, gst, documentType, quotationData],
   );
@@ -248,12 +254,10 @@ const CartLayout = ({
       setLocalCartItems(withPriority);
 
       dispatch(
-        cartApi.util.updateQueryData("getCart", userId, (draft) => {
+        cartApi.util.updateQueryData('getCart', userId, (draft) => {
           if (!draft?.cart?.items) return;
           withPriority.forEach((item) => {
-            const existing = draft.cart.items.find(
-              (i) => i.productId === item.productId,
-            );
+            const existing = draft.cart.items.find((i) => i.productId === item.productId);
             if (existing) existing.priority = item.priority;
           });
         }),
@@ -265,15 +269,29 @@ const CartLayout = ({
   const handleDocumentTypeChange = useCallback(
     (newType) => {
       if (draftWorkspace) {
-        draftWorkspace.onAction("document", { parent: draftWorkspace.parent, layout: { ...draftData, localCartItems } }, draftWorkspace.workspace.activeId, { documentType: newType }).catch(error => message.error(error?.data?.message || "Could not switch carts. Your current cart is still open."));
+        draftWorkspace
+          .onAction(
+            'document',
+            { parent: draftWorkspace.parent, layout: { ...draftData, localCartItems } },
+            draftWorkspace.workspace.activeId,
+            { documentType: newType },
+          )
+          .catch((error) =>
+            message.error(
+              error?.data?.message || 'Could not switch carts. Your current cart is still open.',
+            ),
+          );
         return;
       }
-      if (onDocumentTypeChange) { onDocumentTypeChange(newType); return; }
+      if (onDocumentTypeChange) {
+        onDocumentTypeChange(newType);
+        return;
+      }
       setDocumentType(newType);
       const routeMap = {
-        quotation: "/cart/quotation",
-        order: "/cart/order",
-        "purchase-order": "/cart/purchase-order",
+        quotation: '/cart/quotation',
+        order: '/cart/order',
+        'purchase-order': '/cart/purchase-order',
       };
       navigate(routeMap[newType], { replace: true });
     },
@@ -321,7 +339,7 @@ const CartLayout = ({
           quantity: Number(newQty),
         }).unwrap();
       } catch (err) {
-        message.error(err?.data?.message || "Failed to update quantity");
+        message.error(err?.data?.message || 'Failed to update quantity');
       } finally {
         setUpdatingItems((prev) => ({ ...prev, [productId]: false }));
       }
@@ -333,13 +351,11 @@ const CartLayout = ({
     async (e, productId) => {
       e?.preventDefault?.();
       e?.stopPropagation?.();
-      if (!userId) return message.error("User not logged in");
+      if (!userId) return message.error('User not logged in');
 
       dispatch(
-        cartApi.util.updateQueryData("getCart", userId, (draft) => {
-          draft.cart.items = draft.cart.items.filter(
-            (i) => i.productId !== productId,
-          );
+        cartApi.util.updateQueryData('getCart', userId, (draft) => {
+          draft.cart.items = draft.cart.items.filter((i) => i.productId !== productId);
         }),
       );
 
@@ -359,7 +375,7 @@ const CartLayout = ({
       try {
         await removeFromCart({ userId, productId }).unwrap();
       } catch (err) {
-        message.error(err?.data?.message || "Failed to remove item");
+        message.error(err?.data?.message || 'Failed to remove item');
       }
     },
     [userId, dispatch, removeFromCart],
@@ -419,13 +435,9 @@ const CartLayout = ({
 
           let nextLocations;
           if (append) {
-            const existing = Array.isArray(item.locations)
-              ? [...item.locations]
-              : [];
+            const existing = Array.isArray(item.locations) ? [...item.locations] : [];
             const idx = existing.findIndex(
-              (l) =>
-                l.floorId === floorId &&
-                (l.roomId || null) === (roomId || null),
+              (l) => l.floorId === floorId && (l.roomId || null) === (roomId || null),
             );
             if (idx >= 0) {
               existing[idx] = { ...existing[idx], ...newLoc };
@@ -455,10 +467,12 @@ const CartLayout = ({
 
       if (floorId) {
         message.success(
-          floorName ? `Assigned to ${floorName}${roomName ? ` › ${roomName}` : ""}` : `Assigned to ${roomName || "room"}`,
+          floorName
+            ? `Assigned to ${floorName}${roomName ? ` › ${roomName}` : ''}`
+            : `Assigned to ${roomName || 'room'}`,
         );
       } else {
-        message.info("Location cleared");
+        message.info('Location cleared');
       }
     },
     [],
@@ -489,15 +503,10 @@ const CartLayout = ({
           assignedQuantity: Number(l.assignedQuantity) || 1,
         }));
 
-      const assignedSum = normalized.reduce(
-        (s, l) => s + (Number(l.assignedQuantity) || 0),
-        0,
-      );
+      const assignedSum = normalized.reduce((s, l) => s + (Number(l.assignedQuantity) || 0), 0);
 
       if (assignedSum > totalQty) {
-        message.error(
-          `Assigned qty (${assignedSum}) exceeds item quantity (${totalQty})`,
-        );
+        message.error(`Assigned qty (${assignedSum}) exceeds item quantity (${totalQty})`);
         return prev;
       }
 
@@ -528,14 +537,14 @@ const CartLayout = ({
 
   const handleMakeOption = useCallback(
     (productId, optionType, parentProductId = null) => {
-      if (!userId) return message.error("User not logged in");
+      if (!userId) return message.error('User not logged in');
 
       dispatch(
-        cartApi.util.updateQueryData("getCart", userId, (draft) => {
+        cartApi.util.updateQueryData('getCart', userId, (draft) => {
           const item = draft.cart.items.find((i) => i.productId === productId);
           if (!item) return;
 
-          if (optionType === null || optionType === "main") {
+          if (optionType === null || optionType === 'main') {
             item.isOption = false;
             item.isOptionFor = null;
             item.optionType = null;
@@ -553,7 +562,7 @@ const CartLayout = ({
         prev.map((item) => {
           if (item.productId !== productId) return item;
 
-          if (optionType === null || optionType === "main") {
+          if (optionType === null || optionType === 'main') {
             return {
               ...item,
               isOption: false,
@@ -572,24 +581,16 @@ const CartLayout = ({
         }),
       );
 
-      message.info(
-        optionType
-          ? `Item marked as ${optionType}`
-          : "Item reset to main product",
-      );
+      message.info(optionType ? `Item marked as ${optionType}` : 'Item reset to main product');
     },
     [userId, dispatch],
   );
 
   const getParentName = useCallback(
     (parentProductId) => {
-      if (!parentProductId) return "Unknown";
-      const parentItem = localCartItems.find(
-        (i) => i.productId === parentProductId,
-      );
-      return (
-        parentItem?.name || parentItem?.productId?.slice(0, 8) || "Unknown"
-      );
+      if (!parentProductId) return 'Unknown';
+      const parentItem = localCartItems.find((i) => i.productId === parentProductId);
+      return parentItem?.name || parentItem?.productId?.slice(0, 8) || 'Unknown';
     },
     [localCartItems],
   );
@@ -606,7 +607,7 @@ const CartLayout = ({
               isOption: true,
               isOptionFor: parentProductId,
               parentProductId,
-              optionType: item.optionType || "addon",
+              optionType: item.optionType || 'addon',
             };
           }
           return item;
@@ -614,34 +615,31 @@ const CartLayout = ({
       );
 
       dispatch(
-        cartApi.util.updateQueryData("getCart", userId, (draft) => {
-          const item = draft.cart?.items?.find(
-            (i) => i.productId === optionProductId,
-          );
+        cartApi.util.updateQueryData('getCart', userId, (draft) => {
+          const item = draft.cart?.items?.find((i) => i.productId === optionProductId);
           if (item) {
             item.isOption = true;
             item.isOptionFor = parentProductId;
             item.parentProductId = parentProductId;
-            item.optionType = item.optionType || "addon";
+            item.optionType = item.optionType || 'addon';
           }
         }),
       );
 
-      message.success("Optional item attached to main product");
+      message.success('Optional item attached to main product');
     },
     [userId, dispatch],
   );
 
   const handleDiscountChange = useCallback(
-    (productId, value) =>
-      setItemDiscounts((prev) => ({ ...prev, [productId]: value ?? 0 })),
+    (productId, value) => setItemDiscounts((prev) => ({ ...prev, [productId]: value ?? 0 })),
     [],
   );
 
   const handleDiscountTypeChange = useCallback(
     (productId, newType) => {
       setItemDiscountTypes((prev) => {
-        const currentType = prev[productId] || "percent";
+        const currentType = prev[productId] || 'percent';
         const currentValue = itemDiscounts[productId] || 0;
         let newValue = currentValue;
 
@@ -649,9 +647,9 @@ const CartLayout = ({
           const item = localCartItems.find((i) => i.productId === productId);
           if (item) {
             const subtotal = (item.price || 0) * (item.quantity || 1);
-            if (newType === "fixed" && currentType === "percent") {
+            if (newType === 'fixed' && currentType === 'percent') {
               newValue = (subtotal * currentValue) / 100;
-            } else if (newType === "percent" && currentType === "fixed") {
+            } else if (newType === 'percent' && currentType === 'fixed') {
               newValue = subtotal > 0 ? (currentValue / subtotal) * 100 : 0;
             }
           }
@@ -674,7 +672,7 @@ const CartLayout = ({
   );
 
   const handleClearCart = useCallback(async () => {
-    if (!userId) return message.error("User not logged in!");
+    if (!userId) return message.error('User not logged in!');
     try {
       await clearCart({ userId }).unwrap();
       setLocalCartItems([]);
@@ -685,9 +683,9 @@ const CartLayout = ({
       setGst(0);
       clearDraft();
       setShowClearCartModal(false);
-      message.success("Cart cleared successfully");
+      message.success('Cart cleared successfully');
     } catch (e) {
-      message.error(e?.data?.message || "Failed to clear cart");
+      message.error(e?.data?.message || 'Failed to clear cart');
     }
   }, [userId, clearCart, clearDraft]);
 
@@ -743,7 +741,14 @@ const CartLayout = ({
       <div className="content">
         <div style={{ marginBottom: 24 }}>
           <Segmented
-            disabled={!!draftWorkspace && (draftWorkspace.busy || !cartSyncReady || clearingCart || removingCartItem || Object.values(updatingItems).some(Boolean))}
+            disabled={
+              !!draftWorkspace &&
+              (draftWorkspace.busy ||
+                !cartSyncReady ||
+                clearingCart ||
+                removingCartItem ||
+                Object.values(updatingItems).some(Boolean))
+            }
             value={documentType}
             onChange={handleDocumentTypeChange}
             options={documentOptions}
@@ -752,10 +757,13 @@ const CartLayout = ({
           />
         </div>
 
-        {documentType === "order" && (
+        {documentType === 'order' && (
           <div className="cm-quote-hint">
             <FileTextOutlined />
-            <span>Order for a quotation the customer agreed to? Start from it and skip adding products again.</span>
+            <span>
+              Order for a quotation the customer agreed to? Start from it and skip adding products
+              again.
+            </span>
             <Button type="primary" size="small" onClick={() => setPickQuotation(true)}>
               Choose quotation
             </Button>
@@ -763,9 +771,27 @@ const CartLayout = ({
         )}
         <NewOrderModal open={pickQuotation} onClose={() => setPickQuotation(false)} />
         {renderToolbar?.(commonProps)}
-        {draftWorkspace && <QuotationCartSwitcher {...draftWorkspace} open={draftsOpen} onClose={() => setDraftsOpen(false)} documentType={documentType} ready={cartSyncReady && !clearingCart && !removingCartItem && !Object.values(updatingItems).some(Boolean)} snapshot={{ parent: draftWorkspace.parent, layout: { ...draftData, localCartItems } }} />}
+        {draftWorkspace && (
+          <QuotationCartSwitcher
+            {...draftWorkspace}
+            open={draftsOpen}
+            onClose={() => setDraftsOpen(false)}
+            documentType={documentType}
+            ready={
+              cartSyncReady &&
+              !clearingCart &&
+              !removingCartItem &&
+              !Object.values(updatingItems).some(Boolean)
+            }
+            snapshot={{ parent: draftWorkspace.parent, layout: { ...draftData, localCartItems } }}
+          />
+        )}
 
-        <Tabs activeKey={activeTab} onChange={key => key === "drafts" ? setDraftsOpen(true) : setActiveTab(key)} type="card">
+        <Tabs
+          activeKey={activeTab}
+          onChange={(key) => (key === 'drafts' ? setDraftsOpen(true) : setActiveTab(key))}
+          type="card"
+        >
           <TabPane
             tab={
               <span>
@@ -787,7 +813,9 @@ const CartLayout = ({
           >
             {children(commonProps)}
           </TabPane>
-          {draftWorkspace && <TabPane tab={`Your Drafts (${draftWorkspace.workspace.drafts.length})`} key="drafts" />}
+          {draftWorkspace && (
+            <TabPane tab={`Your Drafts (${draftWorkspace.workspace.drafts.length})`} key="drafts" />
+          )}
         </Tabs>
 
         <Modal

@@ -1,11 +1,11 @@
-import React, { Suspense } from "react";
-import { Spin } from "antd";
-import { Routes, Route, Navigate } from "react-router-dom";
-import { Helmet } from "react-helmet";
+import React, { Suspense } from 'react';
+import { Spin } from 'antd';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet';
 
-import masterRoutes from "./routes"; // Assuming this combines all routes
-import PrivateRoute from "./PrivateRoute";
-import { appPermission, pagePermission } from "./pagePermissions";
+import masterRoutes from './routes'; // Assuming this combines all routes
+import PrivateRoute from './PrivateRoute';
+import { appPermission, pagePermission } from './pagePermissions';
 
 const RouteWithHelmet = ({ element, name }) => (
   <>
@@ -19,61 +19,56 @@ const RouteWithHelmet = ({ element, name }) => (
 );
 
 const generateRoutes = (routes) =>
-  routes.flatMap(
-    ({ path, name, element, requiredPermission, submenu, children }) => {
-      const routesArray = [];
+  routes.flatMap(({ path, name, element, requiredPermission, submenu, children }) => {
+    const routesArray = [];
 
-      if (path && element) {
-        requiredPermission = requiredPermission || pagePermission(path);
-        const requiredAppPermission = appPermission(path);
-        const routeElement = requiredPermission || requiredAppPermission ? (
-          <PrivateRoute requiredPermission={requiredPermission} requiredAppPermission={requiredAppPermission}>
+    if (path && element) {
+      requiredPermission = requiredPermission || pagePermission(path);
+      const requiredAppPermission = appPermission(path);
+      const routeElement =
+        requiredPermission || requiredAppPermission ? (
+          <PrivateRoute
+            requiredPermission={requiredPermission}
+            requiredAppPermission={requiredAppPermission}
+          >
             <RouteWithHelmet element={element} name={name} />
           </PrivateRoute>
         ) : (
           <RouteWithHelmet element={element} name={name} />
         );
 
-        if (children && children.length > 0) {
-          // This is a Layout Route (like CartLayout)
-          routesArray.push(
-            <Route key={path} path={path} element={routeElement}>
-              {children.map((child, index) => (
-                <Route
-                  key={index}
-                  index={child.index}
-                  path={child.path}
-                  element={
-                    <RouteWithHelmet
-                      element={child.element}
-                      name={child.name || name}
-                    />
-                  }
-                />
-              ))}
-            </Route>,
-          );
-        } else {
-          // Normal flat route
-          routesArray.push(
-            <Route key={path} path={path} element={routeElement} />,
-          );
-        }
+      if (children && children.length > 0) {
+        // This is a Layout Route (like CartLayout)
+        routesArray.push(
+          <Route key={path} path={path} element={routeElement}>
+            {children.map((child, index) => (
+              <Route
+                key={index}
+                index={child.index}
+                path={child.path}
+                element={<RouteWithHelmet element={child.element} name={child.name || name} />}
+              />
+            ))}
+          </Route>,
+        );
+      } else {
+        // Normal flat route
+        routesArray.push(<Route key={path} path={path} element={routeElement} />);
       }
+    }
 
-      // Handle submenu recursively (if any)
-      if (submenu && submenu.length > 0) {
-        routesArray.push(...generateRoutes(submenu));
-      }
+    // Handle submenu recursively (if any)
+    if (submenu && submenu.length > 0) {
+      routesArray.push(...generateRoutes(submenu));
+    }
 
-      return routesArray;
-    },
-  );
+    return routesArray;
+  });
 
 // Each screen is loaded on first use (smaller first download).
 const PageLoading = () => (
   <div className="page-wrapper">
-    <div className="content" style={{ display: "flex", justifyContent: "center", paddingTop: 80 }}>
+    <div className="content" style={{ display: 'flex', justifyContent: 'center', paddingTop: 80 }}>
       <Spin size="large" />
     </div>
   </div>
