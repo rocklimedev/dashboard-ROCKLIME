@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { Button, Input, List, Modal, Segmented, Space, Typography, message } from "antd";
+import { Alert, Button, Input, List, Modal, Pagination, Segmented, Space, Typography, message } from "antd";
 import { FileTextOutlined, ArrowRightOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { quotationApi, useGetAllQuotationsQuery } from "../../api/quotationApi";
@@ -19,15 +19,18 @@ export function QuotationPickList({ onPicked }) {
   const [search, setSearch] = useState("");
   const [q, setQ] = useState("");
   const [which, setWhich] = useState(OPEN);
+  const [page, setPage] = useState(1);
+  const pageSize = 6;
   const [busy, setBusy] = useState(null);
   useEffect(() => {
-    const t = setTimeout(() => setQ(search), 300);
+    const t = setTimeout(() => { setQ(search); setPage(1); }, 300);
     return () => clearTimeout(t);
   }, [search]);
-  const { data, isFetching } = useGetAllQuotationsQuery({ search: q, status: which || undefined, limit: 30 });
+  const { currentData: data, isFetching, error, refetch } = useGetAllQuotationsQuery({ search: q, status: which || undefined, page, limit: pageSize });
   const rows = data?.data || [];
 
   const convert = async (row) => {
+    if (busy || isFetching || row.status === "WON") return;
     setBusy(row.quotationId);
     try {
       const full = await dispatch(quotationApi.endpoints.getQuotationById.initiate(row.quotationId, { forceRefetch: true })).unwrap();
@@ -46,7 +49,7 @@ export function QuotationPickList({ onPicked }) {
         <Input.Search autoFocus allowClear placeholder="Quotation no., customer, phone or title" value={search} onChange={(e) => setSearch(e.target.value)} style={{ width: 340, maxWidth: "100%" }} />
         <Segmented
           value={which}
-          onChange={setWhich}
+          onChange={value => { setWhich(value); setPage(1); }}
           options={[
             { value: OPEN, label: "Open" },
             { value: "SENT", label: "Sent" },
@@ -55,7 +58,8 @@ export function QuotationPickList({ onPicked }) {
           ]}
         />
       </Space>
-      <List
+      <div style={{ height: "min(400px, 45vh)", overflowY: "auto", overflowX: "hidden" }}>
+      {error ? <Alert type="error" showIcon message="Could not load quotations" action={<Button onClick={refetch}>Retry</Button>} /> : <List
         loading={isFetching}
         dataSource={rows}
         locale={{ emptyText: q ? "No quotation matches" : "No open quotations" }}
@@ -86,6 +90,18 @@ export function QuotationPickList({ onPicked }) {
             />
           </List.Item>
         )}
+      />}
+      </div>
+      <Pagination
+        size="small"
+        current={page}
+        pageSize={pageSize}
+        total={data?.pagination?.total || 0}
+        onChange={setPage}
+        showSizeChanger={false}
+        showTotal={total => `${total} quotations`}
+        disabled={isFetching || !!busy}
+        responsive
       />
     </Space>
   );
@@ -100,7 +116,10 @@ export default function NewOrderModal({ open, onClose }) {
       onCancel={onClose}
       width={760}
       title="New order"
-      footer={
+      footer={null}
+      destroyOnClose
+    >
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
         <Button
           onClick={() => {
             onClose?.();
@@ -109,9 +128,7 @@ export default function NewOrderModal({ open, onClose }) {
         >
           Start without a quotation
         </Button>
-      }
-      destroyOnClose
-    >
+      </div>
       <Text type="secondary" style={{ display: "block", marginBottom: 12 }}>
         Pick the quotation the customer agreed to. The order opens with its products, prices, discounts and GST.
       </Text>

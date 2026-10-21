@@ -5,7 +5,6 @@ import { Tabs, Modal, Typography, Segmented, Button, message } from "antd";
 import { ShoppingCartOutlined, CheckCircleOutlined, FileTextOutlined } from "@ant-design/icons";
 import NewOrderModal from "../../components/Orders/QuotationPicker";
 import { useDispatch } from "react-redux";
-import { v4 as uuidv4 } from "uuid";
 
 import { quotationTotals } from "../../utils/quotationMath";
 import CartTab from "../../components/POS-NEW/Cart";
@@ -20,6 +19,8 @@ import useProductsData from "../../utils/useProductdata";
 import { useAuth } from "../../context/AuthContext";
 import { useGetProfileQuery } from "../../api/userApi";
 import useAutoSave from "../../utils/useAutoSave";
+import { reconcileQuotationItems } from "../../components/Quotation/quotationCartHelpers";
+import QuotationCartSwitcher from "../../components/Quotation/QuotationCartSwitcher";
 
 const { TabPane } = Tabs;
 const { Text } = Typography;
@@ -42,6 +43,10 @@ const CartLayout = ({
   children,
   quotationData = { floors: [] },
   handleQuotationChange = () => {},
+  quotationWorkspace = null,
+  renderToolbar,
+  onDocumentTypeChange,
+  draftWorkspace = null,
 }) => {
   const { auth } = useAuth();
   const dispatch = useDispatch();
@@ -58,24 +63,28 @@ const CartLayout = ({
     getDocumentTypeFromPath(location.pathname),
   );
   const [activeTab, setActiveTab] = useState("cart");
+  const [draftsOpen, setDraftsOpen] = useState(false);
   const [pickQuotation, setPickQuotation] = useState(false);
 
-  const [localCartItems, setLocalCartItems] = useState([]);
+  const activeWorkspace = draftWorkspace?.active || quotationWorkspace;
+  const initialLayout = activeWorkspace?.snapshot?.layout || {};
+  const [localCartItems, setLocalCartItems] = useState(initialLayout.localCartItems || []);
+  const [cartSyncReady, setCartSyncReady] = useState(false);
   const [showClearCartModal, setShowClearCartModal] = useState(false);
 
-  const [itemDiscounts, setItemDiscounts] = useState({});
-  const [itemDiscountTypes, setItemDiscountTypes] = useState({});
-  const [itemTaxes, setItemTaxes] = useState({});
+  const [itemDiscounts, setItemDiscounts] = useState(initialLayout.itemDiscounts || {});
+  const [itemDiscountTypes, setItemDiscountTypes] = useState(initialLayout.itemDiscountTypes || {});
+  const [itemTaxes, setItemTaxes] = useState(initialLayout.itemTaxes || {});
   const [updatingItems, setUpdatingItems] = useState({});
 
-  const [shipping, setShipping] = useState(0);
-  const [gst, setGst] = useState(0);
+  const [shipping, setShipping] = useState(initialLayout.shipping || 0);
+  const [gst, setGst] = useState(initialLayout.gst || 0);
 
   // API
   const { data: cartData } = useGetCartQuery(userId, { skip: !userId });
   const [updateCart] = useUpdateCartMutation();
-  const [clearCart] = useClearCartMutation();
-  const [removeFromCart] = useRemoveFromCartMutation();
+  const [clearCart, { isLoading: clearingCart }] = useClearCartMutation();
+  const [removeFromCart, { isLoading: removingCartItem }] = useRemoveFromCartMutation();
 
   const allCartItems = useMemo(() => cartData?.cart?.items || [], [cartData]);
 
@@ -97,12 +106,12 @@ const CartLayout = ({
     DRAFT_KEY,
     draftData,
     2000,
-    !!DRAFT_KEY,
+    !!DRAFT_KEY && !activeWorkspace,
   );
 
   // Restore Draft
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || activeWorkspace) return;
     const draft = loadDraft();
     if (!draft) return;
 
@@ -129,43 +138,15 @@ const CartLayout = ({
 
   // Sync Server Cart → Local (preserve location + option + priority)
   useEffect(() => {
+    if (!cartData) return;
+    setCartSyncReady(true);
     if (!allCartItems.length) {
       setLocalCartItems([]);
       return;
     }
 
-    setLocalCartItems((prev) => {
-      const prevMap = new Map(
-        prev.map((item) => [item.id || item.productId, item]),
-      );
-
-      return allCartItems.map((serverItem) => {
-        const id = serverItem.id || serverItem.productId || uuidv4();
-        const local = prevMap.get(id);
-
-        return {
-          ...serverItem,
-          id,
-          floorId: local?.floorId ?? serverItem.floorId ?? null,
-          roomId: local?.roomId ?? serverItem.roomId ?? null,
-          areaId: local?.areaId ?? serverItem.areaId ?? null,
-          floorName: local?.floorName ?? serverItem.floorName ?? null,
-          roomName: local?.roomName ?? serverItem.roomName ?? null,
-          areaName: local?.areaName ?? serverItem.areaName ?? null,
-          assignedQuantity: local?.assignedQuantity ?? serverItem.quantity ?? 1,
-          locations: local?.locations ?? serverItem.locations ?? [],
-
-          isOption: local?.isOption ?? serverItem.isOption ?? false,
-          isOptionFor: local?.isOptionFor ?? serverItem.isOptionFor ?? null,
-          optionType: local?.optionType ?? serverItem.optionType ?? null,
-          parentProductId:
-            local?.parentProductId ?? serverItem.parentProductId ?? null,
-
-          priority: local?.priority ?? serverItem.priority ?? 0,
-        };
-      });
-    });
-  }, [allCartItems]);
+    setLocalCartItems(previous => reconcileQuotationItems(allCartItems, previous));
+  }, [allCartItems, cartData]);
 
   // ─────────────────────────────────────────────────────────────
   // MAIN vs OPTIONAL
@@ -243,11 +224,12 @@ const CartLayout = ({
   const totalsCalc = useMemo(
     () =>
       quotationTotals({
-        items: [{ price: subTotal - totalDiscount, quantity: 1 }],
+        items: mainCartItems.map(item => ({ ...item, discount: Number(itemDiscounts[item.productId]) || 0, discountType: itemDiscountTypes[item.productId] || "percent" })),
         shipping,
         gstRate: gst,
+        ...(documentType === "quotation" ? { extraDiscount: Number(quotationData.discountAmount) || 0, extraDiscountType: quotationData.discountType || "fixed", miscellaneousChargeItems: quotationData.miscellaneousChargeItems, additionalDiscount: quotationData.additionalDiscount, flatPrice: quotationData.flatPrice } : {}),
       }),
-    [subTotal, totalDiscount, shipping, gst],
+    [mainCartItems, itemDiscounts, itemDiscountTypes, shipping, gst, documentType, quotationData],
   );
   const roundOff = totalsCalc.roundOff;
   const totalAmount = totalsCalc.grandTotal;
@@ -282,6 +264,11 @@ const CartLayout = ({
 
   const handleDocumentTypeChange = useCallback(
     (newType) => {
+      if (draftWorkspace) {
+        draftWorkspace.onAction("document", { parent: draftWorkspace.parent, layout: { ...draftData, localCartItems } }, draftWorkspace.workspace.activeId, { documentType: newType }).catch(error => message.error(error?.data?.message || "Could not switch carts. Your current cart is still open."));
+        return;
+      }
+      if (onDocumentTypeChange) { onDocumentTypeChange(newType); return; }
       setDocumentType(newType);
       const routeMap = {
         quotation: "/cart/quotation",
@@ -290,7 +277,7 @@ const CartLayout = ({
       };
       navigate(routeMap[newType], { replace: true });
     },
-    [navigate],
+    [navigate, onDocumentTypeChange, draftWorkspace, draftData, localCartItems],
   );
 
   const handleUpdateQuantity = useCallback(
@@ -706,6 +693,7 @@ const CartLayout = ({
 
   // Common Props
   const commonProps = {
+    cartSyncReady,
     localCartItems,
     mainCartItems,
     optionalCartItems,
@@ -755,6 +743,7 @@ const CartLayout = ({
       <div className="content">
         <div style={{ marginBottom: 24 }}>
           <Segmented
+            disabled={!!draftWorkspace && (draftWorkspace.busy || !cartSyncReady || clearingCart || removingCartItem || Object.values(updatingItems).some(Boolean))}
             value={documentType}
             onChange={handleDocumentTypeChange}
             options={documentOptions}
@@ -773,8 +762,10 @@ const CartLayout = ({
           </div>
         )}
         <NewOrderModal open={pickQuotation} onClose={() => setPickQuotation(false)} />
+        {renderToolbar?.(commonProps)}
+        {draftWorkspace && <QuotationCartSwitcher {...draftWorkspace} open={draftsOpen} onClose={() => setDraftsOpen(false)} documentType={documentType} ready={cartSyncReady && !clearingCart && !removingCartItem && !Object.values(updatingItems).some(Boolean)} snapshot={{ parent: draftWorkspace.parent, layout: { ...draftData, localCartItems } }} />}
 
-        <Tabs activeKey={activeTab} onChange={setActiveTab} type="card">
+        <Tabs activeKey={activeTab} onChange={key => key === "drafts" ? setDraftsOpen(true) : setActiveTab(key)} type="card">
           <TabPane
             tab={
               <span>
@@ -796,6 +787,7 @@ const CartLayout = ({
           >
             {children(commonProps)}
           </TabPane>
+          {draftWorkspace && <TabPane tab={`Your Drafts (${draftWorkspace.workspace.drafts.length})`} key="drafts" />}
         </Tabs>
 
         <Modal

@@ -22,6 +22,10 @@ const ownCartOnly = (req, res, next) => {
 };
 
 // Fixed paths before "/:userId"
+router.get("/quotation-workspace", require("./quotation-workspace.controller").get);
+router.post("/quotation-workspace", require("./quotation-workspace.controller").update);
+router.get("/workspace", require("./quotation-workspace.controller").get);
+router.post("/workspace", require("./quotation-workspace.controller").update);
 router.get("/all", (req, res, next) => {
   if (!isAdmin(req.user)) {
     return res.status(403).json({ message: "Only admins can list all carts." });

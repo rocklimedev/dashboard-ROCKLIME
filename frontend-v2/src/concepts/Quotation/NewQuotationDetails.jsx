@@ -201,6 +201,7 @@ export default function NewQuotationsDetails() {
               canConvert={!fullyDispatched && !linkedOrder && !dispatchLoading && can("orders", "view") && can("orders", "write")}
               onConvert={() => navigate("/order/add", { state: orderStateFromQuotation(quotation) })}
               onEdit={() => navigate(`/quotation/${id}/edit`, { state: { quotation } })}
+              onRecreate={can("quotations", "write") ? () => navigate(`/cart/quotation?recreate=${encodeURIComponent(id)}`) : undefined}
               onDuplicate={
                 can("quotations", "write")
                   ? async () => {

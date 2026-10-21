@@ -169,6 +169,7 @@ export const {
   useGetDispatchDetailsQuery,
   useGetAllQuotationsQuery,
   useGetQuotationByIdQuery,
+  useLazyGetQuotationByIdQuery,
   useCreateQuotationMutation,
   useUpdateQuotationMutation,
   useDeleteQuotationMutation,
