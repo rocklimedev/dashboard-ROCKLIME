@@ -52,17 +52,30 @@ import {
   BarChartOutlined,
   FilePdfOutlined,
   FieldTimeOutlined,
-  UserOutlined,
   BankOutlined,
   SafetyOutlined,
   BookOutlined,
   ProjectOutlined,
   CheckSquareOutlined,
+  CalendarOutlined,
 } from '@ant-design/icons';
 
 export const ADMIN_ROLES = ['SUPER_ADMIN', 'ADMIN', 'DEVELOPER'];
 
 export const APPS = [
+  {
+    key: 'agenda',
+    name: 'AGENDA',
+    description: 'Your task board, schedule and deadlines in one workspace',
+    color: '#4f46e5',
+    icon: <CalendarOutlined />,
+    home: '/agenda/tasks',
+    match: ['/agenda', '/tasks', '/calendar'],
+    items: [
+      { label: 'Tasks board', to: '/agenda/tasks', icon: <CheckSquareOutlined /> },
+      { label: 'Calendar', to: '/agenda/calendar', icon: <CalendarOutlined /> },
+    ],
+  },
   {
     key: 'crm',
     name: 'CRM',

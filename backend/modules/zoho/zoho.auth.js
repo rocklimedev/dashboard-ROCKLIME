@@ -2,6 +2,7 @@ const axios = require('axios');
 const db = require('../../config/database');
 const { signShare, verifyShare } = require('../../lib/shareToken');
 const CLIQ_SCOPES = require('./cliq/cliq.scopes');
+const PLANNING_SCOPES = require('./planning.scopes');
 const BIGIN_SCOPES = [
   'ZohoBigin.modules.ALL',
   'ZohoBigin.settings.ALL',
@@ -68,15 +69,27 @@ async function status(userId) {
     configured: configured(),
     accountsUrl: row?.accountsUrl || accountsUrl(),
     redirectUri: redirectUri(),
-    services: { cliq: hasScopes(row, CLIQ_SCOPES), bigin: hasScopes(bigin, BIGIN_SCOPES) },
+    services: {
+      cliq: hasScopes(row, CLIQ_SCOPES),
+      bigin: hasScopes(bigin, BIGIN_SCOPES),
+      projects: hasScopes(row, PLANNING_SCOPES.projects),
+      calendar: hasScopes(row, PLANNING_SCOPES.calendar),
+    },
     ownsBigin: Boolean(bigin && bigin.userId === userId),
   };
 }
-function authorize(user, centre) {
+function authorize(user, centre, planning = false) {
   if (!configured()) throw fail('Configure ZOHO_CLIENT_ID and ZOHO_CLIENT_SECRET on the server.');
   const b = isAdmin(user);
-  const state = signShare({ t: 'zoho', u: user.userId, b, a: accountsUrl(centre) }, 1 / 96);
-  const scopes = [...CLIQ_SCOPES, ...(b ? BIGIN_SCOPES : [])];
+  const state = signShare(
+    { t: 'zoho', u: user.userId, b, p: planning, a: accountsUrl(centre) },
+    1 / 96,
+  );
+  const scopes = [
+    ...CLIQ_SCOPES,
+    ...(b ? BIGIN_SCOPES : []),
+    ...(planning ? Object.values(PLANNING_SCOPES).flat() : []),
+  ];
   return (
     accountsUrl(centre) +
     '/oauth/v2/auth?' +
@@ -115,7 +128,11 @@ async function callback(query) {
     redirect_uri: redirectUri(),
     grant_type: 'authorization_code',
   });
-  const scopes = [...CLIQ_SCOPES, ...(state.b ? BIGIN_SCOPES : [])];
+  const scopes = [
+    ...CLIQ_SCOPES,
+    ...(state.b ? BIGIN_SCOPES : []),
+    ...(state.p ? Object.values(PLANNING_SCOPES).flat() : []),
+  ];
   if (!data.refresh_token || (data.scope && !hasScopes({ scope: data.scope }, scopes)))
     throw fail('Zoho did not grant all requested permissions. Please reconnect.');
   try {

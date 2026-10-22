@@ -1,4 +1,5 @@
 import { lazy } from 'react';
+import { Navigate } from 'react-router-dom';
 import ZohoConnectionGate from '../../components/CRM/ZohoConnectionGate';
 import {
   FaHome,
@@ -46,6 +47,8 @@ const CrmFollowUps = lazy(() => import('../../concepts/CRM/CrmFollowUps'));
 const CrmSettings = lazy(() => import('../../concepts/CRM/CrmSettings'));
 const CatalogueViewer = lazy(() => import('../../concepts/Catalogue/CatalogueViewer'));
 const MyDayPage = lazy(() => import('../../components/Home/MyDayPage'));
+const TasksPage = lazy(() => import('../../modules/tasks/TasksPage'));
+const CalendarPage = lazy(() => import('../../modules/calendar/CalendarPage'));
 
 // ============================================================
 // ROLE BASED DASHBOARD
@@ -66,6 +69,31 @@ const RoleBasedDashboard = () => {
 // ============================================================
 
 export const sidebarRoutes = [
+  {
+    path: '/agenda',
+    name: 'AGENDA',
+    isSidebarActive: false,
+    element: <Navigate to="/agenda/tasks" replace />,
+  },
+  { path: '/agenda/tasks', name: 'AGENDA · Tasks', isSidebarActive: false, element: <TasksPage /> },
+  {
+    path: '/agenda/calendar',
+    name: 'AGENDA · Calendar',
+    isSidebarActive: false,
+    element: <CalendarPage />,
+  },
+  {
+    path: '/tasks',
+    name: 'AGENDA',
+    isSidebarActive: false,
+    element: <Navigate to="/agenda/tasks" replace />,
+  },
+  {
+    path: '/calendar',
+    name: 'AGENDA',
+    isSidebarActive: false,
+    element: <Navigate to="/agenda/calendar" replace />,
+  },
   {
     path: '/',
     name: 'Apps',

@@ -203,6 +203,7 @@ export default function ZohoConnector() {
     refetch,
   } = useGetZohoStatusQuery(undefined, { refetchOnMountOrArgChange: true });
   const [authorize, { isLoading: connecting }] = useZohoAuthorizeMutation();
+  const [planningAccess, setPlanningAccess] = useState(null);
   const [disconnect, { isLoading: disconnecting }] = useZohoDisconnectMutation();
   useEffect(() => {
     const result = params.get('zoho');
@@ -216,7 +217,11 @@ export default function ZohoConnector() {
   }, [params, setParams, dispatch]);
   const connect = async () => {
     try {
-      const result = await authorize(status?.connected ? status.accountsUrl : centre).unwrap();
+      const result = await authorize({
+        accountsUrl: status?.connected ? status.accountsUrl : centre,
+        planning:
+          planningAccess ?? Boolean(status?.services?.projects || status?.services?.calendar),
+      }).unwrap();
       window.location.assign(result.url);
     } catch (error) {
       message.error(error?.data?.message || 'Could not start Zoho sign-in');
@@ -241,6 +246,17 @@ export default function ZohoConnector() {
             </div>
           </Space>
           <Space wrap>
+            <Space>
+              <Switch
+                checked={
+                  planningAccess ??
+                  Boolean(status?.services?.projects || status?.services?.calendar)
+                }
+                onChange={setPlanningAccess}
+                aria-label="Include Zoho Projects and Calendar access"
+              />
+              <Text>Include Projects & Calendar access</Text>
+            </Space>
             {!status?.connected && (
               <Select
                 aria-label="Zoho data centre"
@@ -341,6 +357,21 @@ export default function ZohoConnector() {
           </Text>
         </Card>
         {can('crm', 'view') && <BiginSettings isAdmin={isAdmin} />}
+        <Card title="Projects & Calendar" style={{ marginTop: 16 }}>
+          <Space wrap>
+            <Tag color={status?.services?.projects ? 'green' : 'default'}>
+              Projects: {status?.services?.projects ? 'Authorized' : 'Not authorized'}
+            </Tag>
+            <Tag color={status?.services?.calendar ? 'green' : 'default'}>
+              Calendar: {status?.services?.calendar ? 'Authorized' : 'Not authorized'}
+            </Tag>
+          </Space>
+          <Paragraph>
+            Enable Projects & Calendar access on the Zoho card and reconnect to allow reading your
+            projects, tasks, calendars and events. ERP tasks and events are saved independently;
+            automatic synchronization is not enabled.
+          </Paragraph>
+        </Card>
       </Modal>
     </>
   );

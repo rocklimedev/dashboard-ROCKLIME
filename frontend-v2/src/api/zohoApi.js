@@ -3,8 +3,8 @@ export const zohoApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getZohoStatus: builder.query({ query: () => '/zoho/status', providesTags: ['Zoho'] }),
     zohoAuthorize: builder.mutation({
-      query: (accountsUrl) => ({
-        url: `/zoho/authorize?${new URLSearchParams({ accountsUrl })}`,
+      query: (options) => ({
+        url: `/zoho/authorize?${new URLSearchParams(typeof options === 'string' ? { accountsUrl: options } : { accountsUrl: options.accountsUrl, planning: String(options.planning) })}`,
         method: 'GET',
       }),
     }),

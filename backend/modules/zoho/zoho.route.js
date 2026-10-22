@@ -33,7 +33,9 @@ router.get(
 );
 router.get(
   '/authorize',
-  wrap((req) => ({ url: zoho.authorize(req.user, req.query.accountsUrl) })),
+  wrap((req) => ({
+    url: zoho.authorize(req.user, req.query.accountsUrl, req.query.planning === 'true'),
+  })),
 );
 router.delete(
   '/connection',
@@ -44,6 +46,8 @@ router.delete(
 );
 // Service modules share the authentication layer while keeping their own APIs.
 router.use('/cliq', require('./cliq/cliq.route'));
+router.use('/projects', require('./projects/projects.route'));
+router.use('/calendar', require('./calendar/calendar.route'));
 router.use('/bigin', guardModule('crm', [{ path: /^\//, action: 'view' }]));
 router.get(
   '/bigin/status',

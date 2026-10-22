@@ -1,6 +1,8 @@
 const { apiLimiter, burstLimiter } = require('../middleware/rateLimit');
 
 const routes = {
+  tasks: require('../modules/tasks/task.route'),
+  calendar: require('../modules/calendar/calendar.route'),
   operations: require('../modules/operations/operations.route'),
   auth: require('../modules/auth/auth.route'),
   user: require('../modules/users/user.route'),
@@ -43,6 +45,8 @@ const routes = {
 
 function registerRoutes(app) {
   app.use('/api', apiLimiter);
+  app.use('/api/tasks', routes.tasks);
+  app.use('/api/calendar/events', routes.calendar);
   app.use('/api/carts', burstLimiter);
   app.use('/api/order', burstLimiter);
   app.use('/api/quotation', burstLimiter);

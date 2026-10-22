@@ -49,6 +49,8 @@ function setup() {
     '../crm/bigin': {},
     '../../lib/shareToken': { verifyShare: () => null },
     './cliq/cliq.route': router,
+    './projects/projects.route': express.Router(),
+    './calendar/calendar.route': express.Router(),
   });
   const app = express();
   app.use(express.json());

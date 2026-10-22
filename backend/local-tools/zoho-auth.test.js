@@ -81,7 +81,12 @@ test('shared Zoho consent, token refresh and disconnect preserve service ownersh
   await auth.callback({ state: consent.searchParams.get('state'), code: 'admin' });
   assert.equal(grants.size, 1);
   assert.equal((await auth.biginConnection()).userId, 'admin');
-  assert.deepEqual((await auth.status('admin')).services, { cliq: true, bigin: true });
+  assert.deepEqual((await auth.status('admin')).services, {
+    cliq: true,
+    bigin: true,
+    projects: false,
+    calendar: false,
+  });
 
   const personal = new URL(
     auth.authorize({ userId: 'sales', roles: ['USER'] }, 'https://accounts.zoho.eu'),
@@ -116,6 +121,20 @@ test('Zoho callback and data centres cannot be redirected to arbitrary hosts', (
     'https://accounts.zoho.in:8443',
   ])
     assert.throws(() => auth.accountsUrl(centre));
+});
+
+test('optional planning consent grants Projects and Calendar without taking company Bigin ownership', async () => {
+  const url = new URL(
+    auth.authorize({ userId: 'planner', roles: ['USER'] }, 'https://accounts.zoho.in', true),
+  );
+  assert.match(url.searchParams.get('scope'), /ZohoProjects.tasks.READ/);
+  assert.match(url.searchParams.get('scope'), /ZohoCalendar.event.READ/);
+  assert.doesNotMatch(url.searchParams.get('scope'), /ZohoBigin/);
+  await auth.callback({ state: url.searchParams.get('state'), code: 'planner' });
+  const status = await auth.status('planner');
+  assert.equal(status.services.projects, true);
+  assert.equal(status.services.calendar, true);
+  assert.equal(status.ownsBigin, false);
 });
 test('incomplete consent or service access never records a connected grant', async () => {
   const url = new URL(auth.authorize({ userId: 'incomplete', roles: ['ADMIN'] }));
