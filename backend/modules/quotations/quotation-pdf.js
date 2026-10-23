@@ -11,10 +11,11 @@
 const path = require('path');
 const PDFDocument = require('pdfkit');
 const QRCode = require('qrcode');
+const { quotationProducts } = require('../../lib/quotationProducts');
 const {
   normalizeCharges,
   quotationTotals,
-  lineAmounts,
+  r2,
   amountInWords,
   inr,
   isOptional,
@@ -130,22 +131,11 @@ async function loadQuotation(quotationId, { version } = {}) {
     const v = await QuotationVersion.findOne({ quotationId, version: Number(version) }).lean();
     if (!v) throw Object.assign(new Error('Version not found'), { status: 404 });
     quotation = { ...quotation, ...(v.quotationData || {}) };
-    items = v.quotationItems || [];
+    items = quotationProducts(v.quotationData?.products, v.quotationItems || []);
     versionNo = Number(version);
   } else {
     const doc = await QuotationItem.findOne({ quotationId }).lean();
-    items = doc?.items || [];
-    if (!items.length) {
-      let p = quotation.products;
-      for (let i = 0; i < 3 && typeof p === 'string'; i++) {
-        try {
-          p = JSON.parse(p);
-        } catch {
-          p = [];
-        }
-      }
-      items = Array.isArray(p) ? p : [];
-    }
+    items = quotationProducts(quotation.products, doc?.items || []);
     const latest = await QuotationVersion.findOne({ quotationId })
       .sort({ version: -1 })
       .lean()
@@ -382,16 +372,30 @@ function groupByArea(lines) {
     return floors.size > 1 && loc.floorName ? `${loc.floorName} · ${loc.roomName}` : loc.roomName;
   };
   const rows = [];
+  // These are calculated lines: `discount` is already a money amount, not the
+  // original percentage/per-unit input. Allocate their values without taxing or
+  // discounting them a second time.
+  const shareAmounts = (line, quantity) => {
+    const share = line.qty ? quantity / line.qty : 0;
+    return {
+      ...line,
+      quantity,
+      qty: quantity,
+      gross: r2(line.gross * share),
+      discount: r2(line.discount * share),
+      net: r2(line.net * share),
+    };
+  };
   for (const l of lines) {
     const locs = Array.isArray(l.locations) && l.locations.length ? l.locations : [null];
     if (locs.length > 1) {
       for (const loc of locs) {
         const q = Number(loc.assignedQuantity) || 0;
-        if (q) rows.push({ ...l, ...lineAmounts({ ...l, quantity: q }), area: name(loc) });
+        if (q) rows.push({ ...shareAmounts(l, q), area: name(loc) });
       }
       const assigned = locs.reduce((s, loc) => s + (Number(loc.assignedQuantity) || 0), 0);
       if (l.qty - assigned > 0)
-        rows.push({ ...l, ...lineAmounts({ ...l, quantity: l.qty - assigned }), area: null });
+        rows.push({ ...shareAmounts(l, l.qty - assigned), area: null });
     } else {
       rows.push({ ...l, area: name(locs[0] || l) });
     }
@@ -765,6 +769,7 @@ async function renderQuotationPdf(
   const rowsTable = (group, { no, startY }) => {
     if (!cols.length) return startY;
     let ty = startY;
+    let rowsOnPage = 0;
     const head = (contd) => {
       ty = pageTitle(doc, ty, {
         no,
@@ -785,8 +790,11 @@ async function renderQuotationPdf(
       const nameH =
         hidden.has('name') || !pc ? 0 : heightOf(doc, r.name || 'Item', pc.w - 8, { size: 8.5 });
       const h = Math.max(withImages ? 45 : 26, nameH + (code ? 10 : 0) + 16);
-      if (ty + h > bottom) {
+      // Reserve the room totals beneath the final row so they cannot orphan a page.
+      const totalsHeight = i === group.rows.length - 1 && !hidden.has('roomTotals') ? 36 : 0;
+      if (rowsOnPage >= 12 || ty + h + totalsHeight > bottom) {
         ty = newPage();
+        rowsOnPage = 0;
         head(true);
       }
       const mid = ty + h / 2;
@@ -853,6 +861,7 @@ async function renderQuotationPdf(
         });
       }
       ty += h;
+      rowsOnPage++;
       rule(doc, ty, { color: '#ececec' });
     });
     if (hidden.has('roomTotals')) return ty + 8;
@@ -1268,6 +1277,7 @@ async function buildDraftQuotationPdf(draft, { style = 'detailed', cover = null 
 }
 
 module.exports = {
+  groupByArea,
   enrichQuotation,
   buildQuotationPdf,
   buildDraftQuotationPdf,

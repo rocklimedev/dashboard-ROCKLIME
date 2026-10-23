@@ -84,7 +84,13 @@ export default function NewQuotationsDetails() {
   };
   const [isExporting, setIsExporting] = useState(false);
 
-  const { data: quotation, isLoading: qLoading, error: qError } = useGetQuotationByIdQuery(id);
+  const {
+    data: quotation,
+    isLoading: qLoading,
+    error: qError,
+  } = useGetQuotationByIdQuery(id, {
+    refetchOnMountOrArgChange: true,
+  });
   const { data: versionsData } = useGetQuotationVersionsQuery(id);
   const { data: dispatchData, isFetching: dispatchLoading } = useGetQuotationDispatchesQuery(id);
   const fullyDispatched = dispatchData?.fullyDispatched === true;
@@ -104,7 +110,7 @@ export default function NewQuotationsDetails() {
     ? { ...quotation, ...versionObj.quotationData }
     : quotation || {};
   const items = versionObj
-    ? asList(versionObj.quotationItems)
+    ? asList(versionObj.quotationData?.products ?? versionObj.quotationItems)
     : asList(quotation?.products || quotation?.items);
 
   const { data: customerResponse } = useGetCustomerByIdQuery(shown.customerId, {

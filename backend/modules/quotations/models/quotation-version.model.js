@@ -7,6 +7,7 @@ const quotationItemVersionSchema = new mongoose.Schema({
   productCode: { type: String, trim: true },
   companyCode: { type: String, trim: true },
   quantity: Number,
+  locations: { type: [require('./quotation-location.schema')], default: undefined },
   price: Number,
   discount: Number,
   discountType: { type: String, default: 'fixed' },

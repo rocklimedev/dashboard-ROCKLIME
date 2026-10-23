@@ -8,7 +8,90 @@ require.cache[service] = {
   loaded: true,
   exports: { getSetting: async (key) => DEFAULTS[key] },
 };
-const { renderQuotationPdf } = require('../modules/quotations/quotation-pdf');
+const { renderQuotationPdf, groupByArea } = require('../modules/quotations/quotation-pdf');
+const { quotationTotals } = require('../lib/quotationMath');
+
+test('room shares allocate calculated discounts once for percentage, fixed and flat prices', () => {
+  for (const adjustments of [
+    { discount: 50, discountType: 'percent' },
+    { discount: 50, discountType: 'fixed' },
+    { discount: 50, discountType: 'percent', flatPrice: 1900, additionalDiscount: 100 },
+  ]) {
+    const totals = quotationTotals({
+      items: [
+        {
+          productId: 'tap',
+          price: 4498,
+          quantity: 3,
+          ...adjustments,
+          locations: [
+            { roomName: 'Master', assignedQuantity: 1 },
+            { roomName: 'Parents', assignedQuantity: 1 },
+          ],
+        },
+      ],
+    });
+    const { groups } = groupByArea(totals.lines);
+    assert.equal(groups.length, 3); // Includes the unassigned remaining unit.
+    for (const group of groups) {
+      assert.equal(group.mrp, 4498);
+      assert.equal(group.net, totals.goodsValue / 3);
+      assert.ok(group.net >= 0);
+      assert.equal(group.rows[0].rate, totals.lines[0].rate);
+    }
+    assert.equal(
+      groups.reduce((sum, group) => sum + group.net, 0),
+      totals.goodsValue,
+    );
+  }
+});
+
+test('product pages stop at twelve rows and keep room totals with the final products', async () => {
+  const { getDocument } =
+    await import('../../frontend-v2/node_modules/pdfjs-dist/legacy/build/pdf.mjs');
+  for (const count of [13, 15, 24, 25]) {
+    const { buffer } = await renderQuotationPdf(
+      {
+        quotation: { reference_number: 'PAGINATION', createdAt: '2026-10-23' },
+        items: Array.from({ length: count }, (_, index) => ({
+          productId: String(index),
+          name: `PAGINATIONITEM${index + 1}END`,
+          quantity: 1,
+          price: 100,
+          roomName: 'Bathroom',
+        })),
+        customer: {},
+        productInfo: {},
+        versionNo: 1,
+      },
+      { company: DEFAULTS.company, settings: DEFAULTS.quotation, cover: false },
+    );
+    const pdf = await getDocument({ data: new Uint8Array(buffer), useSystemFonts: true }).promise;
+    try {
+      let rows = 0;
+      let foundTotals = false;
+      for (let page = 1; page <= pdf.numPages; page++) {
+        const content = (await (await pdf.getPage(page)).getTextContent()).items
+          .map((item) => item.str)
+          .join(' ');
+        const productsOnPage = content.match(/PAGINATIONITEM\d+END/g) || [];
+        assert.ok(productsOnPage.length <= 12, `too many products on page ${page}`);
+        rows += productsOnPage.length;
+        if (content.includes('Subtotal (excl. GST)')) {
+          foundTotals = true;
+          assert.ok(
+            content.includes(`PAGINATIONITEM${count}END`),
+            'room totals must stay with the last product',
+          );
+        }
+      }
+      assert.equal(rows, count);
+      assert.ok(foundTotals);
+    } finally {
+      await pdf.destroy();
+    }
+  }
+});
 
 test('hidden columns render safely and preserve totals and room page labels', async () => {
   const data = {
