@@ -4,6 +4,7 @@ import { useDispatch } from 'react-redux';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { reconcileQuotationItems } from '../../components/Quotation/quotationCartHelpers';
 import {
+  createSessionStorage,
   hasSessionContent,
   newSession,
   readSessions,
@@ -36,6 +37,8 @@ export default function CartWorkspace({ children, documentType = 'quotation' }) 
   const dealId = documentType === 'quotation' ? params.get('deal') : null;
   const presetCustomer = params.get('customer');
   const recreateId = documentType === 'quotation' ? params.get('recreate') : null;
+  // Temporary edits stay in memory; persisted drafts come from the API.
+  const [editorSessions] = useState(createSessionStorage);
   const [workspace, setWorkspace] = useState(null);
   const [busy, setBusy] = useState(false);
   const [initialisationError, setInitialisationError] = useState(false);
@@ -50,7 +53,7 @@ export default function CartWorkspace({ children, documentType = 'quotation' }) 
       await pendingByUser.get(userId)?.catch(() => {});
       const fresh = await refetch().unwrap();
       server.current = fresh.workspace;
-      const bundle = readSessions(localStorage, userId);
+      const bundle = readSessions(editorSessions, userId);
       let active = bundle.sessions?.[documentType] || newSession(documentType);
       let cart = fresh.cart;
       if (!bundle.activeType || bundle.activeType === documentType) {
@@ -86,7 +89,7 @@ export default function CartWorkspace({ children, documentType = 'quotation' }) 
       }
       bundle.activeType = documentType;
       if (recreateId) bundle.sessions = { ...bundle.sessions, quotation: active };
-      localStorage.setItem(sessionKey(userId), JSON.stringify(bundle));
+      editorSessions.setItem(sessionKey(userId), JSON.stringify(bundle));
       await dispatch(cartApi.util.upsertQueryData('getCart', userId, { cart }));
       const initial = {
         ...server.current,
@@ -124,6 +127,7 @@ export default function CartWorkspace({ children, documentType = 'quotation' }) 
     recreateId,
     getQuotation,
     navigate,
+    editorSessions,
   ]);
   const onAction = useCallback(
     (action, snapshot, sourceId, extra = {}) => {
@@ -131,7 +135,7 @@ export default function CartWorkspace({ children, documentType = 'quotation' }) 
         try {
           const current = state.current;
           if (snapshot && current?.activeId === sourceId)
-            current.active = storeSession(localStorage, userId, current.active, snapshot);
+            current.active = storeSession(editorSessions, userId, current.active, snapshot);
           return Promise.resolve();
         } catch (error) {
           return Promise.reject(error);
@@ -144,7 +148,7 @@ export default function CartWorkspace({ children, documentType = 'quotation' }) 
           const current = state.current;
           if (!current || current.activeId !== sourceId) return;
           let active = current.active;
-          if (snapshot) active = storeSession(localStorage, userId, active, snapshot);
+          if (snapshot) active = storeSession(editorSessions, userId, active, snapshot);
           current.active = active;
           if (
             (action === 'save' || action === 'new') &&
@@ -162,7 +166,7 @@ export default function CartWorkspace({ children, documentType = 'quotation' }) 
             };
           } else if (action === 'document') {
             nextActive =
-              readSessions(localStorage, userId).sessions?.[extra.documentType] ||
+              readSessions(editorSessions, userId).sessions?.[extra.documentType] ||
               newSession(extra.documentType);
           } else if (action === 'new' || action === 'complete')
             nextActive = newSession(active.documentType);
@@ -186,22 +190,22 @@ export default function CartWorkspace({ children, documentType = 'quotation' }) 
             nextActive = { ...nextActive, savedDraftId: null };
           if (action === 'complete') {
             const bundle = removeClaimedFromSessions(
-              readSessions(localStorage, userId),
+              readSessions(editorSessions, userId),
               extra.claimedProductIds || [],
             );
             delete bundle.sessions[active.documentType];
-            localStorage.setItem(sessionKey(userId), JSON.stringify(bundle));
+            editorSessions.setItem(sessionKey(userId), JSON.stringify(bundle));
           }
           // A fresh session gets its baseline from the editor's initialized form defaults.
           if (changing) {
-            const bundle = readSessions(localStorage, userId);
+            const bundle = readSessions(editorSessions, userId);
             bundle.sessions ||= {};
             delete bundle.sessions[nextActive.documentType];
             if (hasSessionContent(nextActive.snapshot) || nextActive.savedDraftId)
               bundle.sessions[nextActive.documentType] = nextActive;
             bundle.activeType = nextActive.documentType;
-            localStorage.setItem(sessionKey(userId), JSON.stringify(bundle));
-          } else nextActive = storeSession(localStorage, userId, nextActive, nextActive.snapshot);
+            editorSessions.setItem(sessionKey(userId), JSON.stringify(bundle));
+          } else nextActive = storeSession(editorSessions, userId, nextActive, nextActive.snapshot);
           const next = { ...result.workspace, activeId: nextActive.id, active: nextActive };
           state.current = next;
           if (changing) {
@@ -216,7 +220,7 @@ export default function CartWorkspace({ children, documentType = 'quotation' }) 
       pendingByUser.set(userId, task);
       return task;
     },
-    [dispatch, update, userId, navigate],
+    [dispatch, update, userId, navigate, editorSessions],
   );
   if (error || initialisationError)
     return (

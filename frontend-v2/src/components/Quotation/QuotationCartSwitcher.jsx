@@ -56,7 +56,7 @@ export default function QuotationCartSwitcher({
       .then(() => {
         lastSaved.current = serialized;
       })
-      .catch(() => message.error('Could not preserve this session in local storage.'));
+      .catch(() => message.error('Could not preserve the current editing session.'));
   }, [serialized, ready, busy, onAction, sourceId]);
   // Flush the latest snapshot when navigating away; old editors cannot overwrite a switched cart.
   const exit = useRef();

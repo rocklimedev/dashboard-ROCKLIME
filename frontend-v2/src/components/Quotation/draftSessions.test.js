@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  createSessionStorage,
   hasSessionContent,
   newSession,
   readSessions,
@@ -76,4 +77,21 @@ test('completion removes claimed products from other local sessions', () => {
   removeClaimedFromSessions(bundle, ['tap']);
   assert.deepEqual(bundle.sessions.order.snapshot.layout.localCartItems, [{ productId: 'sink' }]);
   assert.equal(hasSessionContent(blank), false);
+});
+
+test('a reopened editor cannot restore an older session over API data', () => {
+  const previousEditor = createSessionStorage();
+  const snapshot = {
+    parent: { quotationData: { gst: 0 } },
+    layout: { localCartItems: [{ productId: 'old', quantity: 1 }] },
+  };
+  storeSession(previousEditor, 'alice', newSession('quotation'), snapshot);
+  assert.equal(
+    readSessions(previousEditor, 'alice').sessions.quotation.snapshot.layout.localCartItems[0]
+      .productId,
+    'old',
+  );
+  const reopenedEditor = createSessionStorage();
+  assert.deepEqual(readSessions(reopenedEditor, 'alice'), { sessions: {} });
+  assert.deepEqual(readSessions(previousEditor, 'bob'), { sessions: {} });
 });

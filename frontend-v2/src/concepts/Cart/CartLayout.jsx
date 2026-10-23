@@ -106,12 +106,12 @@ const CartLayout = ({
     DRAFT_KEY,
     draftData,
     2000,
-    !!DRAFT_KEY && !activeWorkspace,
+    !!DRAFT_KEY && !activeWorkspace && documentType !== 'quotation',
   );
 
   // Restore Draft
   useEffect(() => {
-    if (!userId || activeWorkspace) return;
+    if (!userId || activeWorkspace || documentType === 'quotation') return;
     const draft = loadDraft();
     if (!draft) return;
 
@@ -681,13 +681,13 @@ const CartLayout = ({
       setItemTaxes({});
       setShipping(0);
       setGst(0);
-      clearDraft();
+      if (documentType !== 'quotation') clearDraft();
       setShowClearCartModal(false);
       message.success('Cart cleared successfully');
     } catch (e) {
       message.error(e?.data?.message || 'Failed to clear cart');
     }
-  }, [userId, clearCart, clearDraft]);
+  }, [userId, clearCart, clearDraft, documentType]);
 
   // Common Props
   const commonProps = {

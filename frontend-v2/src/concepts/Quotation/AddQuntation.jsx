@@ -17,6 +17,7 @@ import {
   Col,
   Spin,
   Statistic,
+  Alert,
 } from 'antd';
 import {
   ArrowLeftOutlined,
@@ -150,8 +151,14 @@ const AddQuotation = () => {
   const [showCustomerModal, setShowCustomerModal] = useState(false);
 
   // ── API Hooks ─────────────────────────────────────────────────────
-  const { data: existingQuotation, isLoading: loadingQuotation } = useGetQuotationByIdQuery(id, {
+  const {
+    data: existingQuotation,
+    isLoading: loadingQuotation,
+    isFetching: fetchingQuotation,
+    error: quotationError,
+  } = useGetQuotationByIdQuery(id, {
     skip: !isEditMode,
+    refetchOnMountOrArgChange: true,
   });
   const { data: versionsData = [] } = useGetQuotationVersionsQuery(id, {
     skip: !isEditMode,
@@ -206,72 +213,8 @@ const AddQuotation = () => {
 
   const [formData, setFormData] = useState(initialFormData);
 
-  const draftKey = userData?.user?.userId
-    ? `quotation-draft:${userData.user.userId}:${id || 'new'}`
-    : null;
-  const initializedDraft = useRef(null);
-  const latestDraft = useRef(null);
-  const submitted = useRef(false);
-  const [draftStatus, setDraftStatus] = useState('');
-  const restoreDraft = (base) => {
-    try {
-      const saved = JSON.parse(localStorage.getItem(draftKey));
-      if (!saved?.formData) return base;
-      const data = saved.formData;
-      data.miscellaneousChargeItems = normalizeCharges(
-        data.miscellaneousChargeItems ?? data.miscellaneousCharges,
-      );
-      setDraftStatus('Draft restored from this browser');
-      return {
-        ...base,
-        ...data,
-        quotation_date: data.quotation_date ? new Date(data.quotation_date) : null,
-        due_date: data.due_date ? new Date(data.due_date) : null,
-        followupDates: (data.followupDates || []).map((d) => new Date(d)),
-      };
-    } catch {
-      return base;
-    }
-  };
-  useEffect(() => {
-    if (isEditMode || !draftKey || initializedDraft.current === draftKey) return;
-    initializedDraft.current = draftKey;
-    submitted.current = false;
-    setFormData(restoreDraft({ ...initialFormData, createdBy: userId }));
-  }, [draftKey, isEditMode]);
-  useEffect(() => {
-    if (!draftKey || initializedDraft.current !== draftKey || submitted.current) return;
-    latestDraft.current = { key: draftKey, formData };
-    setDraftStatus('Saving draft…');
-    const timer = setTimeout(() => {
-      try {
-        localStorage.setItem(
-          draftKey,
-          JSON.stringify({ formData, savedAt: new Date().toISOString() }),
-        );
-        setDraftStatus('Draft saved in this browser');
-      } catch {
-        setDraftStatus('Draft could not be saved: browser storage unavailable or full');
-      }
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, [draftKey, formData]);
-  useEffect(() => {
-    const flush = () => {
-      if (submitted.current || !latestDraft.current) return;
-      try {
-        const { key, formData } = latestDraft.current;
-        localStorage.setItem(key, JSON.stringify({ formData, savedAt: new Date().toISOString() }));
-      } catch {
-        /* Keep manual save available when browser storage is unavailable. */
-      }
-    };
-    window.addEventListener('pagehide', flush);
-    return () => {
-      window.removeEventListener('pagehide', flush);
-      flush();
-    };
-  }, []);
+  // Saved quotations come from the API, never a browser draft.
+  const initializedQuotation = useRef(null);
 
   // Modal Forms — each modal gets its own instance so one modal's
   // resetFields() can never wipe another's values.
@@ -327,10 +270,10 @@ const AddQuotation = () => {
 
   // ── Load Existing Quotation ───────────────────────────────────────
   useEffect(() => {
-    if (!isEditMode || !existingQuotation || !draftKey || initializedDraft.current === draftKey)
-      return;
-    initializedDraft.current = draftKey;
-    submitted.current = false;
+    if (!isEditMode || !existingQuotation || fetchingQuotation || quotationError) return;
+    const source = id + ':' + (existingQuotation.updatedAt || '');
+    if (initializedQuotation.current === source) return;
+    initializedQuotation.current = source;
 
     const parsedProducts = safeJsonParse(existingQuotation.products, []);
     const parsedFloors = safeJsonParse(existingQuotation.floors, []);
@@ -354,39 +297,36 @@ const AddQuotation = () => {
       areaName: p.areaName || null,
     }));
 
-    setFormData(
-      restoreDraft({
-        ...initialFormData,
-        quotationId: id,
-        document_title: existingQuotation.document_title || '',
-        quotation_date: existingQuotation.quotation_date
-          ? new Date(existingQuotation.quotation_date)
-          : null,
-        due_date: existingQuotation.due_date ? new Date(existingQuotation.due_date) : null,
-        miscellaneousChargeItems: normalizeCharges(
-          existingQuotation.miscellaneousChargeItems ?? existingQuotation.miscellaneousCharges,
-        ),
-        additionalDiscount: safeNum(existingQuotation.additionalDiscount),
-        flatPrice:
-          existingQuotation.flatPrice == null ? null : safeNum(existingQuotation.flatPrice),
-        shippingAmount: safeNum(existingQuotation.shippingAmount, 0),
-        gst: safeNum(existingQuotation.gst, 0),
-        extraDiscount: safeNum(existingQuotation.extraDiscount, 0),
-        extraDiscountType: existingQuotation.extraDiscountType || 'fixed',
-        signature_name: existingQuotation.signature_name || '',
-        signature_image: existingQuotation.signature_image || '',
-        customerId: existingQuotation.customerId || '',
-        shipTo: existingQuotation.shipTo || '',
-        createdBy: userId,
-        products: normalizeLoadedProducts(mappedProducts),
-        floors: parsedFloors,
-        followupDates: safeJsonParse(existingQuotation.followupDates, [])
-          .map((d) => (d ? new Date(d) : null))
-          .filter(Boolean),
-      }),
-    );
+    setFormData({
+      ...initialFormData,
+      quotationId: id,
+      document_title: existingQuotation.document_title || '',
+      quotation_date: existingQuotation.quotation_date
+        ? new Date(existingQuotation.quotation_date)
+        : null,
+      due_date: existingQuotation.due_date ? new Date(existingQuotation.due_date) : null,
+      miscellaneousChargeItems: normalizeCharges(
+        existingQuotation.miscellaneousChargeItems ?? existingQuotation.miscellaneousCharges,
+      ),
+      additionalDiscount: safeNum(existingQuotation.additionalDiscount),
+      flatPrice: existingQuotation.flatPrice == null ? null : safeNum(existingQuotation.flatPrice),
+      shippingAmount: safeNum(existingQuotation.shippingAmount, 0),
+      gst: safeNum(existingQuotation.gst, 0),
+      extraDiscount: safeNum(existingQuotation.extraDiscount, 0),
+      extraDiscountType: existingQuotation.extraDiscountType || 'fixed',
+      signature_name: existingQuotation.signature_name || '',
+      signature_image: existingQuotation.signature_image || '',
+      customerId: existingQuotation.customerId || '',
+      shipTo: existingQuotation.shipTo || '',
+      createdBy: userId,
+      products: normalizeLoadedProducts(mappedProducts),
+      floors: parsedFloors,
+      followupDates: safeJsonParse(existingQuotation.followupDates, [])
+        .map((d) => (d ? new Date(d) : null))
+        .filter(Boolean),
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isEditMode, existingQuotation, userId, draftKey]);
+  }, [isEditMode, existingQuotation, userId, id, fetchingQuotation, quotationError]);
 
   // ── Location remapping ────────────────────────────────────────────
   // Rewrites a product's locations[] with `mapLoc`, merges shares that end
@@ -915,7 +855,7 @@ const AddQuotation = () => {
       extraDiscountType: formData.extraDiscountType || 'fixed',
       signature_name: formData.signature_name || '',
       signature_image: formData.signature_image || '',
-      createdBy: formData.createdBy,
+      createdBy: userId,
 
       products: cleanProducts,
       floors: formData.floors || [],
@@ -933,25 +873,28 @@ const AddQuotation = () => {
         await createQuotation(payload).unwrap();
         message.success('Quotation created successfully');
       }
-      submitted.current = true;
-      latestDraft.current = null;
-      try {
-        localStorage.removeItem(draftKey);
-      } catch {
-        /* Saved quotation is authoritative. */
-      }
       navigate('/quotations/list');
     } catch (err) {
       message.error(err?.data?.message || 'Failed to save quotation');
     }
   };
 
-  if (loadingQuotation) {
+  if (loadingQuotation || (isEditMode && fetchingQuotation)) {
     return (
       <Spin
         tip="Loading quotation..."
         size="large"
         style={{ margin: '120px auto', display: 'block' }}
+      />
+    );
+  }
+
+  if (isEditMode && (quotationError || !existingQuotation)) {
+    return (
+      <Alert
+        type="error"
+        showIcon
+        message="Could not load quotation from the database. Reload to try again."
       />
     );
   }
@@ -1210,9 +1153,6 @@ const AddQuotation = () => {
             }}
             bodyStyle={{ padding: 16 }}
           >
-            <Text type="secondary" role="status">
-              {draftStatus}
-            </Text>
             <p>
               <Text type="secondary">
                 Item additional discounts apply per unit. Flat price replaces the discounted goods

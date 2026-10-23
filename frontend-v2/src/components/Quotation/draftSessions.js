@@ -1,3 +1,12 @@
+// Editor sessions are temporary. Persisted drafts are loaded through the cart API.
+export function createSessionStorage() {
+  const values = new Map();
+  return {
+    getItem: (key) => values.get(key) ?? null,
+    setItem: (key, value) => values.set(key, String(value)),
+  };
+}
+
 export const sessionKey = (userId) => `document-sessions-v2-${userId}`;
 export function readSessions(storage, userId) {
   try {
