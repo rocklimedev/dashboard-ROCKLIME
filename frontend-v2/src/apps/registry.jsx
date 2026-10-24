@@ -12,17 +12,16 @@
 //             Operations stays in Operations); the app you came from keeps them
 //   items     the app's menu; `section` starts a group, and an item may narrow
 //             access with its own module/action
-import {
-  PiFileTextDuotone,
-  PiClipboardTextDuotone,
-  PiWarehouseDuotone,
-  PiShoppingCartDuotone,
-  PiSquaresFourDuotone,
-  PiCurrencyInrDuotone,
-  PiChartBarDuotone,
-  PiShieldCheckDuotone,
-  PiUsersThreeDuotone,
-} from 'react-icons/pi';
+import crmIcon from '../assets/icons/crm@1024.png';
+import quotationsIcon from '../assets/icons/quotations@1024.png';
+import ordersIcon from '../assets/icons/orders@1024.png';
+import operationsIcon from '../assets/icons/operations@1024.png';
+import purchaseIcon from '../assets/icons/purchase@1024.png';
+import catalogueIcon from '../assets/icons/catalogue@1024.png';
+import accountsIcon from '../assets/icons/accounts@1024.png';
+import reportsIcon from '../assets/icons/reports@1024.png';
+import adminIcon from '../assets/icons/admin@1024.png';
+import './AppIcon.css';
 import {
   AppstoreOutlined,
   UnorderedListOutlined,
@@ -68,7 +67,7 @@ export const APPS = [
     name: 'CRM',
     description: 'Enquiries, follow-ups and the sales pipeline, synced with Zoho Bigin',
     color: '#722ed1',
-    icon: <PiUsersThreeDuotone />,
+    icon: <img className="cm-app-icon-image" src={crmIcon} alt="" aria-hidden="true" />,
     module: 'crm',
     home: '/crm',
     match: ['/crm'],
@@ -85,7 +84,7 @@ export const APPS = [
     name: 'Quotations',
     description: 'Price, share and follow up quotations',
     color: '#d4380d',
-    icon: <PiFileTextDuotone />,
+    icon: <img className="cm-app-icon-image" src={quotationsIcon} alt="" aria-hidden="true" />,
     module: 'quotations',
     home: '/quotations/list',
     match: ['/quotations', '/quotation/', '/cart/quotation'],
@@ -106,7 +105,7 @@ export const APPS = [
     name: 'Orders',
     description: 'Confirm orders, reserve stock, track every order',
     color: '#c41d7f',
-    icon: <PiClipboardTextDuotone />,
+    icon: <img className="cm-app-icon-image" src={ordersIcon} alt="" aria-hidden="true" />,
     module: 'orders',
     home: '/orders/list',
     match: ['/orders/list', '/orders/from-quotation', '/order/', '/cart/order'],
@@ -135,7 +134,7 @@ export const APPS = [
     name: 'Operations',
     description: 'Dispatch, receiving, live stock, product tools and imports',
     color: '#08979c',
-    icon: <PiWarehouseDuotone />,
+    icon: <img className="cm-app-icon-image" src={operationsIcon} alt="" aria-hidden="true" />,
     module: 'inventory',
     home: '/operations',
     match: [
@@ -202,7 +201,7 @@ export const APPS = [
     name: 'Purchase',
     description: 'Vendor quotes and purchase orders',
     color: '#d48806',
-    icon: <PiShoppingCartDuotone />,
+    icon: <img className="cm-app-icon-image" src={purchaseIcon} alt="" aria-hidden="true" />,
     module: 'purchase_orders',
     home: '/purchase-manager',
     match: ['/purchase-manager', '/po/', '/fgs/', '/cart/purchase-order'],
@@ -228,7 +227,7 @@ export const APPS = [
     name: 'Catalogue',
     description: 'Products, brands and categories',
     color: '#531dab',
-    icon: <PiSquaresFourDuotone />,
+    icon: <img className="cm-app-icon-image" src={catalogueIcon} alt="" aria-hidden="true" />,
     module: 'products',
     home: '/category-selector',
     match: [
@@ -262,7 +261,7 @@ export const APPS = [
     name: 'Accounts',
     description: 'GST invoices, payments and money due',
     color: '#0958d9',
-    icon: <PiCurrencyInrDuotone />,
+    icon: <img className="cm-app-icon-image" src={accountsIcon} alt="" aria-hidden="true" />,
     module: 'orders',
     action: 'edit',
     home: '/accounts',
@@ -279,7 +278,7 @@ export const APPS = [
     name: 'Reports',
     description: 'Sales dashboard and reports',
     color: '#7cb305',
-    icon: <PiChartBarDuotone />,
+    icon: <img className="cm-app-icon-image" src={reportsIcon} alt="" aria-hidden="true" />,
     home: '/reports/list',
     match: ['/reports', '/dashboard', '/my-day'],
     items: [
@@ -294,7 +293,7 @@ export const APPS = [
     name: 'Admin Console',
     description: 'Customers, users, roles, activity logs, company and document formats',
     color: '#434343',
-    icon: <PiShieldCheckDuotone />,
+    icon: <img className="cm-app-icon-image" src={adminIcon} alt="" aria-hidden="true" />,
     home: '/settings/company',
     match: [
       '/settings',

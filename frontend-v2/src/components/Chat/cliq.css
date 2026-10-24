@@ -1,21 +1,21 @@
 .cliq-drawer {
-  color: var(--fv2-color-233b34);
+  color: var(--fv2-color-333333);
 }
 .cliq-header {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 14px 12px;
-  border-bottom: 1px solid var(--fv2-color-e1e8e4);
+  border-bottom: 1px solid var(--fv2-color-e5e7eb);
 }
 .cliq-brand {
   display: grid;
   place-items: center;
   width: 32px;
   height: 32px;
-  background: var(--fv2-color-e5ede8);
+  background: var(--fv2-color-fbeaea);
   border-radius: 10px;
-  color: var(--fv2-color-234d40);
+  color: var(--fv2-color-e31e24);
   font-size: var(--fv2-font-18px);
 }
 .cliq-header small {
@@ -32,14 +32,14 @@
   background: var(--fv2-color-b9b9b9);
 }
 .cliq-header small i.is-connected {
-  background: var(--fv2-color-27b580);
+  background: var(--fv2-color-e31e24);
 }
 .cliq-search {
   padding: 10px 10px 6px;
 }
 .cliq-search .ant-input-affix-wrapper {
-  background: var(--fv2-color-f7faf8);
-  border-color: var(--fv2-color-dfe7e2);
+  background: var(--fv2-color-fafafa);
+  border-color: var(--fv2-color-d9d9d9);
   border-radius: 9px;
 }
 .cliq-section-title {
@@ -51,9 +51,9 @@
   background: white;
 }
 .cliq-filters .ant-segmented-item-selected {
-  background: var(--fv2-color-e2ebe5);
+  background: var(--fv2-color-fbeaea);
   box-shadow: none;
-  color: var(--fv2-color-275347);
+  color: var(--fv2-color-e31e24);
 }
 .cliq-chat-list {
   flex: 1;
@@ -67,25 +67,25 @@
   align-items: center;
   gap: 10px;
   border: 0;
-  border-bottom: 1px solid var(--fv2-color-e1e8e4);
+  border-bottom: 1px solid var(--fv2-color-e5e7eb);
   padding: 12px 0;
   background: white;
   text-align: left;
-  color: var(--fv2-color-233b34);
+  color: var(--fv2-color-333333);
   cursor: pointer;
 }
 .cliq-chat-row:hover,
 .cliq-chat-row:focus-visible {
-  background: var(--fv2-color-f2f7f4);
+  background: var(--fv2-color-fff5f5);
 }
 .cliq-avatar {
-  background: var(--fv2-color-28584a);
+  background: var(--fv2-color-e31e24);
   flex-shrink: 0;
   font-size: var(--fv2-font-12px);
   font-weight: 600;
 }
 .cliq-chat-row:nth-child(3n) .cliq-avatar {
-  background: var(--fv2-color-4e8375);
+  background: var(--fv2-color-333333);
 }
 .cliq-chat-copy {
   min-width: 0;
@@ -103,12 +103,12 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--fv2-color-586d65);
+  color: var(--fv2-color-666666);
 }
 .cliq-bottom {
   display: flex;
   flex-shrink: 0;
-  border-top: 1px solid var(--fv2-color-e1e8e4);
+  border-top: 1px solid var(--fv2-color-e5e7eb);
   padding: 8px 4px;
   background: white;
   margin-top: auto;
@@ -122,12 +122,12 @@
   font-size: var(--fv2-font-12px);
   border: 0;
   background: white;
-  color: var(--fv2-color-52645c);
+  color: var(--fv2-color-666666);
   cursor: pointer;
   padding: 4px;
 }
 .cliq-bottom button.is-active {
-  color: var(--fv2-color-168166);
+  color: var(--fv2-color-e31e24);
 }
 .cliq-bottom button .anticon {
   font-size: var(--fv2-font-17px);
@@ -138,11 +138,16 @@
   bottom: 76px;
   width: 44px;
   height: 44px;
-  background: var(--fv2-color-204e40);
+  background: var(--fv2-color-e31e24);
   color: white;
-  box-shadow: 0 4px 16px var(--fv2-color-193d4040);
+  box-shadow: 0 4px 16px var(--fv2-color-00000040);
   font-size: var(--fv2-font-20px);
   border: 0;
+}
+.cliq-new-chat.ant-btn:hover,
+.cliq-new-chat.ant-btn:focus {
+  background: var(--fv2-color-e31e24);
+  color: var(--fv2-color-fff) !important;
 }
 .cliq-disconnected {
   flex: 1;
@@ -155,7 +160,7 @@
   gap: 12px;
 }
 .cliq-disconnected p {
-  color: var(--fv2-color-66786f);
+  color: var(--fv2-color-666666);
 }
 .cliq-conversation {
   flex: 1;
@@ -165,7 +170,7 @@
 }
 .cliq-conversation-head {
   padding: 8px;
-  border-bottom: 1px solid var(--fv2-color-e1e8e4);
+  border-bottom: 1px solid var(--fv2-color-e5e7eb);
   display: flex;
   gap: 8px;
   align-items: center;
@@ -176,11 +181,11 @@
 .cliq-messages {
   flex: 1;
   overflow-y: auto;
-  background: var(--fv2-color-f5f8f6);
+  background: var(--fv2-color-fafafa);
   padding: 12px;
 }
 .cliq-message {
-  border: 1px solid var(--fv2-color-e1e8e4);
+  border: 1px solid var(--fv2-color-e5e7eb);
   border-radius: 10px;
   background: white;
   margin-bottom: 10px;
@@ -188,7 +193,7 @@
 }
 .cliq-message strong {
   font-size: var(--fv2-font-11px);
-  color: var(--fv2-color-42705d);
+  color: var(--fv2-color-e31e24);
 }
 .cliq-message p {
   white-space: pre-wrap;
@@ -197,13 +202,13 @@
 }
 .cliq-message time {
   font-size: var(--fv2-font-10px);
-  color: var(--fv2-color-718077);
+  color: var(--fv2-color-666666);
 }
 .cliq-compose {
   display: flex;
   gap: 8px;
   padding: 10px;
-  border-top: 1px solid var(--fv2-color-e1e8e4);
+  border-top: 1px solid var(--fv2-color-e5e7eb);
 }
 .cliq-more {
   display: block;

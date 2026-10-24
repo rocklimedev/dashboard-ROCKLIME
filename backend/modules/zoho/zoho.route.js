@@ -4,6 +4,7 @@ const zoho = require('./zoho.auth');
 const { guardModule } = require('../../middleware/permission');
 const bigin = require('../crm/bigin');
 const { verifyShare } = require('../../lib/shareToken');
+const clientUrl = require('../../config/clientUrl');
 const wrap = (fn) => async (req, res) => {
   try {
     res.json(await fn(req));
@@ -13,10 +14,7 @@ const wrap = (fn) => async (req, res) => {
 };
 router.get('/callback', async (req, res) => {
   const state = verifyShare(req.query.state);
-  const front = (process.env.CLIENT_URL || process.env.APP_URL || 'http://localhost:5173').replace(
-    /\/$/,
-    '',
-  );
+  const front = clientUrl();
   const back =
     state?.t === 'zoho' && state.u ? `/u/${encodeURIComponent(state.u)}/connectors` : '/';
   try {

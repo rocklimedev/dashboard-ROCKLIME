@@ -29,7 +29,7 @@ from `backend/` to verify the integration with mocked Zoho responses.
 1. Run migration `20261020000500-unified-zoho.js` with the project's normal Sequelize migration process.
 2. Configure `ZOHO_CLIENT_ID` and `ZOHO_CLIENT_SECRET` once.
 3. Register the public URL `/api/zoho/callback` in that Zoho OAuth client. Set `ZOHO_AUTH_REDIRECT_URI` to the exact registered URL; otherwise it is derived from `PUBLIC_BACKEND_URL` or `BACKEND_URL`.
-4. Set `CLIENT_URL` to the frontend origin and restart the backend.
+4. Set `CLIENT_URL` to `http://localhost:5173` locally or `https://erp.cmtradingco.com` in production and restart the backend. Keep only one `CLIENT_URL` entry. If unset, the frontend defaults to the production URL when `NODE_ENV=production`, or port 5173 otherwise.
 5. Open Connectors and press **Connect Zoho** directly on the Zoho card.
 
 An administrator's single consent requests Bigin and Cliq scopes. That user's shared grant becomes the company Bigin grant as well as their personal Cliq grant. Other users connect using the same button and shared authentication flow, with personal Cliq scopes; they never replace the company's Bigin grant or gain access to the administrator's chats.

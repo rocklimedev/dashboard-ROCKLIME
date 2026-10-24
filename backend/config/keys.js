@@ -8,7 +8,7 @@ module.exports = {
   app: {
     name: 'CM ERP Backend',
     apiURL: `${process.env.BASE_API_URL}`,
-    clientURL: process.env.CLIENT_URL || 'http://localhost:3000',
+    clientURL: require('./clientUrl')(),
   },
   port: process.env.PORT || 4000,
   jwt: {

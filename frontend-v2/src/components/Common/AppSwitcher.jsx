@@ -33,7 +33,7 @@ export default function AppSwitcher() {
             to={app.home}
             className={`app-switcher__item ${current?.key === app.key ? 'is-current' : ''}`}
           >
-            <span className="app-switcher__icon" style={{ background: app.color }}>
+            <span className="app-switcher__icon" style={{ background: 'transparent' }}>
               {app.icon}
             </span>
             {app.name}

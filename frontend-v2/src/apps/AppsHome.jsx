@@ -37,7 +37,7 @@ export default function AppsHome() {
                 aria-label={locked ? 'CRM — locked until Zoho is connected' : app.name}
               >
                 <span className="app-icon__visual">
-                  <span className="app-icon__logo" style={{ background: app.color }}>
+                  <span className="app-icon__logo" style={{ background: 'transparent' }}>
                     {app.icon}
                   </span>
                   {locked && (

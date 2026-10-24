@@ -98,7 +98,7 @@ export default function AppSidebar({ isSidebarOpen, toggleSidebar }) {
         </Link>
         {current && (
           <Link to={current.home} className="cm-app-sidebar__app">
-            <span className="cm-app-sidebar__icon" style={{ background: current.color }}>
+            <span className="cm-app-sidebar__icon" style={{ background: 'transparent' }}>
               {current.icon}
             </span>
             <span className="cm-app-sidebar__name">{current.name}</span>

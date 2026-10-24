@@ -48,6 +48,7 @@ function setup() {
     '../../middleware/permission': { guardModule: () => (req, res, next) => next() },
     '../crm/bigin': {},
     '../../lib/shareToken': { verifyShare: () => null },
+    '../../config/clientUrl': require('../config/clientUrl'),
     './cliq/cliq.route': router,
   });
   const app = express();
